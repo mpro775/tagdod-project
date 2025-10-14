@@ -1,0 +1,363 @@
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import {
+  SupportTicket,
+  SupportTicketDocument,
+  SupportStatus,
+  SupportPriority,
+  SupportCategory
+} from './schemas/support-ticket.schema';
+import {
+  SupportMessage,
+  SupportMessageDocument,
+  MessageType
+} from './schemas/support-message.schema';
+import { CreateSupportTicketDto } from './dto/create-ticket.dto';
+import { AddSupportMessageDto } from './dto/add-message.dto';
+import { UpdateSupportTicketDto } from './dto/update-ticket.dto';
+
+@Injectable()
+export class SupportService {
+  constructor(
+    @InjectModel(SupportTicket.name) private ticketModel: Model<SupportTicketDocument>,
+    @InjectModel(SupportMessage.name) private messageModel: Model<SupportMessageDocument>,
+  ) {}
+
+  /**
+   * Create a new support ticket
+   */
+  async createTicket(userId: string, dto: CreateSupportTicketDto): Promise<SupportTicketDocument> {
+    const ticket = new this.ticketModel({
+      userId,
+      title: dto.title,
+      description: dto.description,
+      category: dto.category || SupportCategory.OTHER,
+      priority: dto.priority || SupportPriority.MEDIUM,
+      attachments: dto.attachments || [],
+      metadata: dto.metadata || {},
+    });
+
+    const savedTicket = await ticket.save();
+
+    // Create initial message with the ticket description
+    await this.createMessage(savedTicket._id.toString(), userId, {
+      content: dto.description,
+      attachments: dto.attachments,
+      messageType: MessageType.USER_MESSAGE,
+    });
+
+    return savedTicket;
+  }
+
+  /**
+   * Get user's tickets
+   */
+  async getUserTickets(userId: string, page = 1, limit = 10): Promise<{
+    tickets: SupportTicketDocument[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [tickets, total] = await Promise.all([
+      this.ticketModel
+        .find({ userId, isArchived: false })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('assignedTo', 'name email')
+        .exec(),
+      this.ticketModel.countDocuments({ userId, isArchived: false }),
+    ]);
+
+    return {
+      tickets,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Get ticket by ID (with permission check)
+   */
+  async getTicket(ticketId: string, userId: string, isAdmin = false): Promise<SupportTicketDocument> {
+    const ticket = await this.ticketModel
+      .findById(ticketId)
+      .populate('assignedTo', 'name email')
+      .exec();
+
+    if (!ticket) {
+      throw new NotFoundException('Ticket not found');
+    }
+
+    // Check permissions
+    if (!isAdmin && ticket.userId.toString() !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return ticket;
+  }
+
+  /**
+   * Get all tickets (admin only)
+   */
+  async getAllTickets(
+    filters: {
+      status?: SupportStatus;
+      priority?: SupportPriority;
+      category?: SupportCategory;
+      assignedTo?: string;
+    } = {},
+    page = 1,
+    limit = 20,
+  ): Promise<{
+    tickets: SupportTicketDocument[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+    const query: any = { isArchived: false };
+
+    if (filters.status) query.status = filters.status;
+    if (filters.priority) query.priority = filters.priority;
+    if (filters.category) query.category = filters.category;
+    if (filters.assignedTo) query.assignedTo = filters.assignedTo;
+
+    const [tickets, total] = await Promise.all([
+      this.ticketModel
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('userId', 'name email')
+        .populate('assignedTo', 'name email')
+        .exec(),
+      this.ticketModel.countDocuments(query),
+    ]);
+
+    return {
+      tickets,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Update ticket (admin only)
+   */
+  async updateTicket(
+    ticketId: string,
+    dto: UpdateSupportTicketDto,
+    updatedBy: string,
+  ): Promise<SupportTicketDocument> {
+    const ticket = await this.ticketModel.findById(ticketId);
+    if (!ticket) {
+      throw new NotFoundException('Ticket not found');
+    }
+
+    // Update status timestamps
+    if (dto.status === SupportStatus.RESOLVED && !ticket.resolvedAt) {
+      dto.resolvedAt = new Date();
+    }
+
+    if (dto.status === SupportStatus.CLOSED && !ticket.closedAt) {
+      dto.closedAt = new Date();
+    }
+
+    const updatedTicket = await this.ticketModel
+      .findByIdAndUpdate(ticketId, dto, { new: true })
+      .populate('assignedTo', 'name email')
+      .exec();
+
+    if (!updatedTicket) {
+      throw new NotFoundException('Ticket not found');
+    }
+
+    // Add system message for status change
+    if (dto.status && dto.status !== ticket.status) {
+      await this.createMessage(ticketId, updatedBy, {
+        content: `Ticket status changed to ${dto.status}`,
+        messageType: MessageType.SYSTEM_MESSAGE,
+      });
+    }
+
+    return updatedTicket;
+  }
+
+  /**
+   * Add message to ticket
+   */
+  async addMessage(
+    ticketId: string,
+    senderId: string,
+    dto: AddSupportMessageDto,
+    isAdmin = false,
+  ): Promise<SupportMessageDocument> {
+    const ticket = await this.ticketModel.findById(ticketId);
+    if (!ticket) {
+      throw new NotFoundException('Ticket not found');
+    }
+
+    // Check permissions
+    if (!isAdmin && ticket.userId.toString() !== senderId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const messageType = isAdmin ? MessageType.ADMIN_REPLY : MessageType.USER_MESSAGE;
+
+    return this.createMessage(ticketId, senderId, {
+      content: dto.content,
+      attachments: dto.attachments,
+      messageType,
+      isInternal: dto.isInternal,
+      metadata: dto.metadata,
+    });
+  }
+
+  /**
+   * Get ticket messages
+   */
+  async getTicketMessages(
+    ticketId: string,
+    userId: string,
+    isAdmin = false,
+    page = 1,
+    limit = 50,
+  ): Promise<{
+    messages: SupportMessageDocument[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const ticket = await this.ticketModel.findById(ticketId);
+    if (!ticket) {
+      throw new NotFoundException('Ticket not found');
+    }
+
+    // Check permissions
+    if (!isAdmin && ticket.userId.toString() !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const skip = (page - 1) * limit;
+    const filter = isAdmin ? {} : { isInternal: false };
+
+    const [messages, total] = await Promise.all([
+      this.messageModel
+        .find({ ticketId, ...filter })
+        .sort({ createdAt: 1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('senderId', 'name email')
+        .exec(),
+      this.messageModel.countDocuments({ ticketId, ...filter }),
+    ]);
+
+    return {
+      messages,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Archive ticket (soft delete)
+   */
+  async archiveTicket(ticketId: string, userId: string, isAdmin = false): Promise<void> {
+    const ticket = await this.ticketModel.findById(ticketId);
+    if (!ticket) {
+      throw new NotFoundException('Ticket not found');
+    }
+
+    // Check permissions
+    if (!isAdmin && ticket.userId.toString() !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    await this.ticketModel.findByIdAndUpdate(ticketId, { isArchived: true });
+  }
+
+  /**
+   * Get ticket statistics (admin only)
+   */
+  async getTicketStats(): Promise<{
+    total: number;
+    open: number;
+    inProgress: number;
+    resolved: number;
+    closed: number;
+    byCategory: Record<string, number>;
+    byPriority: Record<string, number>;
+  }> {
+    const stats = await this.ticketModel.aggregate([
+      { $match: { isArchived: false } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          open: { $sum: { $cond: [{ $eq: ['$status', SupportStatus.OPEN] }, 1, 0] } },
+          inProgress: { $sum: { $cond: [{ $eq: ['$status', SupportStatus.IN_PROGRESS] }, 1, 0] } },
+          resolved: { $sum: { $cond: [{ $eq: ['$status', SupportStatus.RESOLVED] }, 1, 0] } },
+          closed: { $sum: { $cond: [{ $eq: ['$status', SupportStatus.CLOSED] }, 1, 0] } },
+        },
+      },
+    ]);
+
+    const categoryStats = await this.ticketModel.aggregate([
+      { $match: { isArchived: false } },
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+    ]);
+
+    const priorityStats = await this.ticketModel.aggregate([
+      { $match: { isArchived: false } },
+      { $group: { _id: '$priority', count: { $sum: 1 } } },
+    ]);
+
+    const baseStats = stats[0] || { total: 0, open: 0, inProgress: 0, resolved: 0, closed: 0 };
+
+    return {
+      ...baseStats,
+      byCategory: categoryStats.reduce((acc, stat) => {
+        acc[stat._id] = stat.count;
+        return acc;
+      }, {} as Record<string, number>),
+      byPriority: priorityStats.reduce((acc, stat) => {
+        acc[stat._id] = stat.count;
+        return acc;
+      }, {} as Record<string, number>),
+    };
+  }
+
+  /**
+   * Private method to create a message
+   */
+  private async createMessage(
+    ticketId: string,
+    senderId: string,
+    data: {
+      content: string;
+      attachments?: string[];
+      messageType: MessageType;
+      isInternal?: boolean;
+      metadata?: Record<string, any>;
+    },
+  ): Promise<SupportMessageDocument> {
+    const message = new this.messageModel({
+      ticketId,
+      senderId,
+      content: data.content,
+      attachments: data.attachments || [],
+      messageType: data.messageType,
+      isInternal: data.isInternal || false,
+      metadata: data.metadata || {},
+    });
+
+    return message.save();
+  }
+}

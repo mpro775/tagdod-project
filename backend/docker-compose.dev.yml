@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    command: npm run start:dev
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+      - ./:/usr/src/app
+    working_dir: /usr/src/app
+  mongo:
+    image: bitnami/mongodb:7.0
+    environment:
+      - MONGODB_REPLICA_SET_MODE=primary
+      - MONGODB_ADVERTISED_HOSTNAME=mongo
+      - MONGODB_REPLICA_SET_KEY=rskey
+      - MONGODB_ROOT_PASSWORD=pass
+      - MONGODB_ROOT_USER=root
+    ports:
+      - "27017:27017"
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"

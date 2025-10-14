@@ -1,0 +1,96 @@
+import {
+  Controller,
+  Get,
+  Put,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { Request } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminGuard } from '../../shared/guards/admin.guard';
+import { SupportService } from './support.service';
+import { UpdateSupportTicketDto } from './dto/update-ticket.dto';
+import { AddSupportMessageDto } from './dto/add-message.dto';
+import { SupportStatus, SupportPriority, SupportCategory } from './schemas/support-ticket.schema';
+
+@ApiTags('support-admin')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, AdminGuard)
+@Controller('admin/support')
+export class AdminSupportController {
+  constructor(private readonly supportService: SupportService) {}
+
+  @Get('tickets')
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: SupportStatus })
+  @ApiQuery({ name: 'priority', required: false, enum: SupportPriority })
+  @ApiQuery({ name: 'category', required: false, enum: SupportCategory })
+  @ApiQuery({ name: 'assignedTo', required: false, type: String })
+  async getAllTickets(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Query('status') status?: SupportStatus,
+    @Query('priority') priority?: SupportPriority,
+    @Query('category') category?: SupportCategory,
+    @Query('assignedTo') assignedTo?: string,
+  ) {
+    const filters = { status, priority, category, assignedTo };
+    const result = await this.supportService.getAllTickets(filters, page, limit);
+    return { data: result };
+  }
+
+  @Get('tickets/:id')
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
+  async getTicket(@Param('id') ticketId: string) {
+    const ticket = await this.supportService.getTicket(ticketId, '', true);
+    return { data: ticket };
+  }
+
+  @Put('tickets/:id')
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
+  async updateTicket(
+    @Param('id') ticketId: string,
+    @Body() dto: UpdateSupportTicketDto,
+    @Req() req: Request,
+  ) {
+    const adminId = req.user!.sub;
+    const ticket = await this.supportService.updateTicket(ticketId, dto, adminId);
+    return { data: ticket };
+  }
+
+  @Get('tickets/:id/messages')
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getTicketMessages(
+    @Param('id') ticketId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 50,
+  ) {
+    const result = await this.supportService.getTicketMessages(ticketId, '', true, page, limit);
+    return { data: result };
+  }
+
+  @Post('tickets/:id/messages')
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
+  async addMessage(
+    @Req() req: Request,
+    @Param('id') ticketId: string,
+    @Body() dto: AddSupportMessageDto,
+  ) {
+    const adminId = req.user!.sub;
+    const message = await this.supportService.addMessage(ticketId, adminId, dto, true);
+    return { data: message };
+  }
+
+  @Get('stats')
+  async getStats() {
+    const stats = await this.supportService.getTicketStats();
+    return { data: stats };
+  }
+}
