@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosResponse } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,6 +18,7 @@ export interface BunnyCredentials {
 
 @Injectable()
 export class UploadService {
+  private readonly logger = new Logger(UploadService.name);
   private readonly bunnyCredentials: BunnyCredentials;
 
   constructor(private configService: ConfigService) {
@@ -77,7 +78,7 @@ export class UploadService {
         mimeType: file.mimetype,
       };
     } catch (error) {
-      console.error('Upload error:', error);
+      this.logger.error('Upload error:', error);
       throw new BadRequestException('File upload failed');
     }
   }
@@ -116,7 +117,7 @@ export class UploadService {
         throw new BadRequestException('Failed to delete file from Bunny.net');
       }
     } catch (error) {
-      console.error('Delete error:', error);
+      this.logger.error('Delete error:', error);
       throw new BadRequestException('File deletion failed');
     }
   }

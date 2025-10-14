@@ -1,0 +1,82 @@
+{
+  "app": {
+    "name": "لوحة تحكم تقدودو",
+    "slogan": "نظام إدارة متقدم"
+  },
+  "navigation": {
+    "dashboard": "لوحة التحكم",
+    "users": "المستخدمون",
+    "catalog": "الكتالوج",
+    "products": "المنتجات",
+    "categories": "الفئات",
+    "attributes": "السمات",
+    "brands": "العلامات التجارية",
+    "sales": "المبيعات",
+    "orders": "الطلبات",
+    "coupons": "الكوبونات",
+    "settings": "الإعدادات"
+  },
+  "actions": {
+    "title": "الإجراءات",
+    "add": "إضافة",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "search": "بحث",
+    "filter": "تصفية",
+    "export": "تصدير",
+    "import": "استيراد",
+    "refresh": "تحديث",
+    "close": "إغلاق",
+    "view": "عرض",
+    "submit": "إرسال",
+    "activate": "تفعيل",
+    "suspend": "تعليق"
+  },
+  "status": {
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "pending": "قيد الانتظار",
+    "suspended": "معلق",
+    "confirmed": "مؤكد",
+    "processing": "قيد المعالجة",
+    "shipped": "تم الشحن",
+    "delivered": "تم التسليم",
+    "cancelled": "ملغى",
+    "refunded": "مسترد"
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "noData": "لا توجد بيانات",
+    "error": "حدث خطأ",
+    "success": "تم بنجاح",
+    "warning": "تحذير",
+    "info": "معلومات",
+    "yes": "نعم",
+    "no": "لا",
+    "all": "الكل",
+    "none": "لا شيء",
+    "other": "أخرى"
+  },
+  "validation": {
+    "required": "هذا الحقل مطلوب",
+    "email": "البريد الإلكتروني غير صحيح",
+    "phone": "رقم الهاتف غير صحيح",
+    "minLength": "الحد الأدنى {{min}} أحرف",
+    "maxLength": "الحد الأقصى {{max}} حرف",
+    "min": "الحد الأدنى {{min}}",
+    "max": "الحد الأقصى {{max}}",
+    "pattern": "التنسيق غير صحيح"
+  },
+  "messages": {
+    "confirmDelete": "هل أنت متأكد من الحذف؟",
+    "deleteSuccess": "تم الحذف بنجاح",
+    "saveSuccess": "تم الحفظ بنجاح",
+    "updateSuccess": "تم التحديث بنجاح",
+    "createSuccess": "تم الإنشاء بنجاح",
+    "error": "حدث خطأ، يرجى المحاولة مرة أخرى"
+  }
+}
+

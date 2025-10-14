@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { TerminusModule } from '@nestjs/terminus';
 
 import { envSchema } from './config/env.validation';
 import { HealthController } from './health.controller';
+import { RedisHealthIndicator } from './health/redis-health.indicator';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ServicesModule } from './modules/services/services.module';
@@ -44,6 +46,7 @@ import { ProductsModule } from './modules/products/products.module';
     }),
     ScheduleModule.forRoot(),
     MongooseModule.forRoot(process.env.MONGO_URI ?? ''),
+    TerminusModule,
     CacheModule,
     PromotionsModule,
     ServicesModule,
@@ -70,5 +73,6 @@ import { ProductsModule } from './modules/products/products.module';
 
   ],
   controllers: [HealthController],
+  providers: [RedisHealthIndicator],
 })
 export class AppModule {}

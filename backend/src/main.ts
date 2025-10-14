@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 
 import { AppModule } from './app.module';
 
@@ -14,6 +14,7 @@ import { SecurityLoggingInterceptor } from './modules/security/interceptors/secu
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
   // Get security services
@@ -57,7 +58,6 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  // eslint-disable-next-line no-console
-  console.log(`API running on http://localhost:${port} (docs: /docs)`);
+  logger.log(`API running on http://localhost:${port} (docs: /docs)`);
 }
 bootstrap();

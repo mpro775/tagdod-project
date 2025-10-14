@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards, Logger } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import * as bcrypt from 'bcryptjs';
 import { OtpService } from './otp.service';
@@ -20,6 +20,8 @@ import { FavoritesService } from '../favorites/favorites.service';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private otp: OtpService,
     private tokens: TokensService,
@@ -87,7 +89,7 @@ export class AuthController {
         await this.favoritesService.syncGuestToUser(dto.deviceId, String(user._id));
       } catch (error) {
         // نتجاهل الأخطاء في المزامنة لأنها ليست حرجة
-        console.error('Favorites sync error:', error);
+        this.logger.error('Favorites sync error:', error);
       }
     }
     

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Media, MediaCategory } from './schemas/media.schema';
@@ -12,6 +12,8 @@ import * as sharp from 'sharp';
 
 @Injectable()
 export class MediaService {
+  private readonly logger = new Logger(MediaService.name);
+
   constructor(
     @InjectModel(Media.name) private mediaModel: Model<Media>,
     private uploadService: UploadService,
@@ -279,7 +281,7 @@ export class MediaService {
     try {
       await this.uploadService.deleteFile(media.storedFilename);
     } catch (error) {
-      console.error('Failed to delete file from Bunny.net:', error);
+      this.logger.error('Failed to delete file from Bunny.net:', error);
       // نستمر في الحذف من قاعدة البيانات حتى لو فشل الحذف من Bunny
     }
 
