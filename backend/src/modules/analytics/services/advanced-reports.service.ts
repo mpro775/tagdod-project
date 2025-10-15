@@ -17,12 +17,12 @@ import {
   MarketingReportQueryDto,
   RealTimeMetricsDto,
 } from '../dto/advanced-analytics.dto';
-import { Order, OrderDocument } from '../../checkout/schemas/order.schema.new';
+import { Order, OrderDocument, OrderStatus } from '../../checkout/schemas/order.schema.new';
 import { Product, ProductDocument } from '../../products/schemas/product.schema';
 import { Cart, CartDocument } from '../../cart/schemas/cart.schema';
 import { User, UserDocument } from '../../users/schemas/user.schema';
 import { Coupon, CouponDocument } from '../../coupons/schemas/coupon.schema';
-import { startOfDay, endOfDay, subDays, subMonths, format, parseISO } from 'date-fns';
+import { startOfDay, subMonths, parseISO } from 'date-fns';
 
 @Injectable()
 export class AdvancedReportsService {
@@ -84,13 +84,12 @@ export class AdvancedReportsService {
       Object.assign(report, analytics);
 
       // Generate summary
-      report.summary = this.generateSummary(analytics, dto.category);
+      report.summary = this.generateSummary(analytics);
 
       // Generate insights and recommendations
       if (dto.includeRecommendations) {
         const { insights, recommendations, alerts } = await this.generateInsightsAndRecommendations(
           analytics,
-          dto.category,
         );
         report.insights = insights.ar;
         report.insightsEn = insights.en;
@@ -101,7 +100,7 @@ export class AdvancedReportsService {
 
       // Generate charts data
       if (dto.generateCharts) {
-        report.chartsData = await this.generateChartsData(analytics, dto.category);
+        report.chartsData = await this.generateChartsData(analytics);
       }
 
       // Add comparison with previous period
@@ -121,7 +120,7 @@ export class AdvancedReportsService {
         dataSourceVersion: '1.0.0',
         reportVersion: '1.0.0',
         generationMode: 'manual',
-        tags: dto.filters?.customFilters?.tags as string[] || [],
+        tags: (dto.filters?.customFilters?.tags as string[]) || [],
       };
 
       await report.save();
@@ -141,28 +140,44 @@ export class AdvancedReportsService {
     category: ReportCategory,
     startDate: Date,
     endDate: Date,
-    filters?: any,
+    filters?: Record<string, unknown>,
   ): Promise<any> {
     switch (category) {
       case ReportCategory.SALES:
         return {
-          salesAnalytics: await this.generateSalesAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString(), ...filters }),
+          salesAnalytics: await this.generateSalesAnalytics({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            ...filters,
+          }),
         };
       case ReportCategory.PRODUCTS:
         return {
-          productAnalytics: await this.generateProductAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
+          productAnalytics: await this.generateProductAnalytics({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }),
         };
       case ReportCategory.CUSTOMERS:
         return {
-          customerAnalytics: await this.generateCustomerAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
+          customerAnalytics: await this.generateCustomerAnalytics({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }),
         };
       case ReportCategory.FINANCIAL:
         return {
-          financialAnalytics: await this.generateFinancialAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
+          financialAnalytics: await this.generateFinancialAnalytics({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }),
         };
       case ReportCategory.MARKETING:
         return {
-          marketingAnalytics: await this.generateMarketingAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
+          marketingAnalytics: await this.generateMarketingAnalytics({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }),
         };
       case ReportCategory.OPERATIONS:
         return {
@@ -175,9 +190,18 @@ export class AdvancedReportsService {
       default:
         // For custom reports, generate all analytics
         return {
-          salesAnalytics: await this.generateSalesAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
-          productAnalytics: await this.generateProductAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
-          customerAnalytics: await this.generateCustomerAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
+          salesAnalytics: await this.generateSalesAnalytics({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }),
+          productAnalytics: await this.generateProductAnalytics({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }),
+          customerAnalytics: await this.generateCustomerAnalytics({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }),
         };
     }
   }
@@ -185,12 +209,35 @@ export class AdvancedReportsService {
   /**
    * Generate detailed sales analytics
    */
-  async generateSalesAnalytics(query: SalesReportQueryDto): Promise<any> {
+  async generateSalesAnalytics(query: SalesReportQueryDto): Promise<{
+    totalSales: number;
+    totalOrders: number;
+    totalRevenue: number;
+    averageOrderValue: number;
+    totalDiscount: number;
+    netRevenue: number;
+    topSellingProducts: Array<{
+      productId: string;
+      name: string;
+      quantity: number;
+      revenue: number;
+    }>;
+    salesByDate: Array<{ date: string; sales: number; orders: number; revenue: number }>;
+    salesByCategory: Array<{
+      categoryId: string;
+      categoryName: string;
+      sales: number;
+      revenue: number;
+      percentage: number;
+    }>;
+    salesByRegion: Array<{ region: string; city: string; sales: number; revenue: number }>;
+    paymentMethods: Array<{ method: string; count: number; amount: number; percentage: number }>;
+  }> {
     const startDate = query.startDate ? parseISO(query.startDate) : subMonths(new Date(), 1);
     const endDate = query.endDate ? parseISO(query.endDate) : new Date();
 
     // Build match query
-    const matchQuery: any = {
+    const matchQuery: Record<string, unknown> = {
       createdAt: { $gte: startDate, $lte: endDate },
       status: { $in: ['COMPLETED', 'DELIVERED'] },
     };
@@ -247,17 +294,29 @@ export class AdvancedReportsService {
   /**
    * Generate product performance analytics
    */
-  async generateProductAnalytics(query: ProductPerformanceQueryDto): Promise<any> {
+  async generateProductAnalytics(query: ProductPerformanceQueryDto): Promise<{
+    totalProducts: number;
+    activeProducts: number;
+    outOfStock: number;
+    lowStock: number;
+    topPerformers: any[];
+    underPerformers: any[];
+    categoryBreakdown: any[];
+    brandBreakdown: any[];
+    inventoryValue: number;
+    averageProductRating: number;
+  }> {
     const startDate = query.startDate ? parseISO(query.startDate) : subMonths(new Date(), 1);
     const endDate = query.endDate ? parseISO(query.endDate) : new Date();
 
-    const [totalProducts, activeProducts, outOfStock, topPerformers, underPerformers] = await Promise.all([
-      this.productModel.countDocuments({ deletedAt: null }),
-      this.productModel.countDocuments({ status: 'active', deletedAt: null }),
-      this.productModel.countDocuments({ status: 'out_of_stock', deletedAt: null }),
-      this.getTopPerformingProducts(startDate, endDate, query.limit || 10),
-      this.getUnderPerformingProducts(startDate, endDate, query.limit || 10),
-    ]);
+    const [totalProducts, activeProducts, outOfStock, topPerformers, underPerformers] =
+      await Promise.all([
+        this.productModel.countDocuments({ deletedAt: null }),
+        this.productModel.countDocuments({ status: 'active', deletedAt: null }),
+        this.productModel.countDocuments({ status: 'out_of_stock', deletedAt: null }),
+        this.getTopPerformingProducts(startDate, endDate, query.limit || 10),
+        this.getUnderPerformingProducts(startDate, endDate, query.limit || 10),
+      ]);
 
     return {
       totalProducts,
@@ -276,7 +335,24 @@ export class AdvancedReportsService {
   /**
    * Generate customer analytics
    */
-  async generateCustomerAnalytics(query: CustomerAnalyticsQueryDto): Promise<any> {
+  async generateCustomerAnalytics(query: CustomerAnalyticsQueryDto): Promise<{
+    totalCustomers: number;
+    newCustomers: number;
+    activeCustomers: number;
+    returningCustomers: number;
+    customerRetentionRate: number;
+    averageLifetimeValue: number;
+    topCustomers: any[];
+    customersByRegion: any[];
+    customerSegmentation: any[];
+    churnRate: number;
+    newVsReturning: {
+      new: number;
+      returning: number;
+      newPercentage: number;
+      returningPercentage: number;
+    };
+  }> {
     const startDate = query.startDate ? parseISO(query.startDate) : subMonths(new Date(), 1);
     const endDate = query.endDate ? parseISO(query.endDate) : new Date();
 
@@ -295,7 +371,11 @@ export class AdvancedReportsService {
       newCustomers,
       activeCustomers,
       returningCustomers: await this.getReturningCustomers(startDate, endDate),
-      customerRetentionRate: this.calculateRetentionRate(totalCustomers, newCustomers, activeCustomers),
+      customerRetentionRate: this.calculateRetentionRate(
+        totalCustomers,
+        newCustomers,
+        activeCustomers,
+      ),
       averageLifetimeValue: await this.getAverageLifetimeValue(),
       topCustomers: await this.getTopCustomers(startDate, endDate, query.limit || 10),
       customersByRegion: await this.getCustomersByRegion(),
@@ -305,7 +385,8 @@ export class AdvancedReportsService {
         new: newCustomers,
         returning: activeCustomers - newCustomers,
         newPercentage: totalCustomers > 0 ? (newCustomers / totalCustomers) * 100 : 0,
-        returningPercentage: totalCustomers > 0 ? ((activeCustomers - newCustomers) / totalCustomers) * 100 : 0,
+        returningPercentage:
+          totalCustomers > 0 ? ((activeCustomers - newCustomers) / totalCustomers) * 100 : 0,
       },
     };
   }
@@ -313,7 +394,21 @@ export class AdvancedReportsService {
   /**
    * Generate financial analytics
    */
-  async generateFinancialAnalytics(query: FinancialReportQueryDto): Promise<any> {
+  async generateFinancialAnalytics(query: FinancialReportQueryDto): Promise<{
+    grossRevenue: number;
+    netRevenue: number;
+    totalCosts: number;
+    grossProfit: number;
+    grossMargin: number;
+    totalDiscounts: number;
+    totalRefunds: number;
+    totalShipping: number;
+    totalTax: number;
+    revenueByChannel: any[];
+    profitByCategory: any[];
+    cashFlow: any[];
+    projections: { nextMonth: number; nextQuarter: number; nextYear: number };
+  }> {
     const startDate = parseISO(query.startDate);
     const endDate = parseISO(query.endDate);
 
@@ -371,7 +466,23 @@ export class AdvancedReportsService {
   /**
    * Generate marketing analytics
    */
-  async generateMarketingAnalytics(query: MarketingReportQueryDto): Promise<any> {
+  async generateMarketingAnalytics(query: MarketingReportQueryDto): Promise<{
+    totalCampaigns: number;
+    activeCampaigns: number;
+    totalCouponsUsed: number;
+    couponDiscounts: number;
+    conversionRate: number;
+    topCoupons: any[];
+    trafficSources: any[];
+    campaignPerformance: any[];
+    emailMarketing: {
+      sent: number;
+      opened: number;
+      clicked: number;
+      converted: number;
+      revenue: number;
+    };
+  }> {
     const startDate = parseISO(query.startDate);
     const endDate = parseISO(query.endDate);
 
@@ -428,13 +539,45 @@ export class AdvancedReportsService {
   /**
    * Generate operational analytics
    */
-  async generateOperationalAnalytics(startDate: Date, endDate: Date): Promise<any> {
+  async generateOperationalAnalytics(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{
+    orderFulfillment: {
+      averageProcessingTime: number;
+      averageDeliveryTime: number;
+      onTimeDeliveryRate: number;
+      totalShipments: number;
+      pendingShipments: number;
+    };
+    returnAnalytics: {
+      totalReturns: number;
+      returnRate: number;
+      topReturnReasons: any[];
+      returnsByProduct: any[];
+    };
+    supportMetrics: {
+      totalTickets: number;
+      openTickets: number;
+      resolvedTickets: number;
+      averageResolutionTime: number;
+      customerSatisfaction: number;
+    };
+    inventoryMetrics: {
+      turnoverRate: number;
+      stockoutRate: number;
+      excessInventory: number;
+      inventoryAccuracy: number;
+    };
+  }> {
     const orders = await this.orderModel.find({
       createdAt: { $gte: startDate, $lte: endDate },
     });
 
-    const completedOrders = orders.filter(o => o.status === 'COMPLETED' || o.status === 'DELIVERED');
-    const returnedOrders = orders.filter(o => o.isReturned);
+    const completedOrders = orders.filter(
+      (o) => o.status === OrderStatus.COMPLETED || o.status === OrderStatus.DELIVERED,
+    );
+    const returnedOrders = orders.filter((o) => o.isReturned);
 
     return {
       orderFulfillment: {
@@ -442,7 +585,9 @@ export class AdvancedReportsService {
         averageDeliveryTime: this.calculateAverageDeliveryTime(completedOrders),
         onTimeDeliveryRate: this.calculateOnTimeDeliveryRate(completedOrders),
         totalShipments: completedOrders.length,
-        pendingShipments: orders.filter(o => o.status === 'PROCESSING' || o.status === 'READY_TO_SHIP').length,
+        pendingShipments: orders.filter(
+          (o) => o.status === OrderStatus.PROCESSING || o.status === OrderStatus.READY_TO_SHIP,
+        ).length,
       },
       returnAnalytics: {
         totalReturns: returnedOrders.length,
@@ -469,7 +614,18 @@ export class AdvancedReportsService {
   /**
    * Generate inventory analytics
    */
-  async generateInventoryAnalytics(query: InventoryReportQueryDto): Promise<any> {
+  async generateInventoryAnalytics(query: InventoryReportQueryDto): Promise<{
+    totalProducts: number;
+    activeProducts: number;
+    outOfStock: number;
+    lowStock: number;
+    topPerformers: any[];
+    underPerformers: any[];
+    categoryBreakdown: any[];
+    brandBreakdown: any[];
+    inventoryValue: number;
+    averageProductRating: number;
+  }> {
     const matchQuery: any = { deletedAt: null };
 
     if (query.categoryId) matchQuery.categoryId = query.categoryId;
@@ -482,8 +638,8 @@ export class AdvancedReportsService {
 
     return {
       totalProducts: products.length,
-      activeProducts: products.filter(p => p.status === 'active').length,
-      outOfStock: products.filter(p => p.status === 'out_of_stock').length,
+      activeProducts: products.filter((p) => p.status === 'active').length,
+      outOfStock: products.filter((p) => p.status === 'out_of_stock').length,
       lowStock: 0, // TODO: Implement with inventory levels
       topPerformers: [],
       underPerformers: [],
@@ -497,7 +653,20 @@ export class AdvancedReportsService {
   /**
    * Generate cart analytics
    */
-  async generateCartAnalytics(query: CartAnalyticsQueryDto): Promise<any> {
+  async generateCartAnalytics(query: CartAnalyticsQueryDto): Promise<{
+    totalCarts: number;
+    activeCarts: number;
+    abandonedCarts: number;
+    abandonmentRate: number;
+    recoveredCarts: number;
+    recoveryRate: number;
+    averageCartValue: number;
+    averageCartItems: number;
+    conversionRate: number;
+    checkoutDropoffRate: number;
+    abandonedCartValue: number;
+    topAbandonedProducts: any[];
+  }> {
     const startDate = query.startDate ? parseISO(query.startDate) : subMonths(new Date(), 1);
     const endDate = query.endDate ? parseISO(query.endDate) : new Date();
 
@@ -553,7 +722,11 @@ export class AdvancedReportsService {
       conversionRate,
       checkoutDropoffRate: 0, // TODO: Implement checkout funnel tracking
       abandonedCartValue: stats.totalAbandoned,
-      topAbandonedProducts: await this.getTopAbandonedProducts(startDate, endDate, query.topAbandonedLimit || 10),
+      topAbandonedProducts: await this.getTopAbandonedProducts(
+        startDate,
+        endDate,
+        query.topAbandonedLimit || 10,
+      ),
     };
   }
 
@@ -564,12 +737,7 @@ export class AdvancedReportsService {
     const today = startOfDay(new Date());
     const now = new Date();
 
-    const [
-      todayOrders,
-      todayNewCustomers,
-      recentOrders,
-      topViewedProducts,
-    ] = await Promise.all([
+    const [todayOrders, todayNewCustomers, recentOrders, topViewedProducts] = await Promise.all([
       this.orderModel.find({
         createdAt: { $gte: today, $lte: now },
         status: { $in: ['COMPLETED', 'DELIVERED'] },
@@ -610,7 +778,9 @@ export class AdvancedReportsService {
     return {
       activeUsers: 0, // TODO: Implement active users tracking
       activeOrders: await this.orderModel.countDocuments({
-        status: { $in: ['PROCESSING', 'SHIPPED', 'OUT_FOR_DELIVERY'] },
+        status: {
+          $in: [OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.OUT_FOR_DELIVERY],
+        },
       }),
       todaySales,
       monthSales,
@@ -619,14 +789,14 @@ export class AdvancedReportsService {
       currentConversionRate: 0, // TODO: Calculate from analytics
       currentAverageOrderValue: avgOrderValue,
       todayAbandonedCarts,
-      recentOrders: recentOrders.map(o => ({
+      recentOrders: recentOrders.map((o) => ({
         orderId: o._id?.toString() || '',
         orderNumber: o.orderNumber,
         amount: o.total,
         status: o.status,
         createdAt: o.createdAt || new Date(),
       })),
-      topViewedProducts: topViewedProducts.map(p => ({
+      topViewedProducts: topViewedProducts.map((p) => ({
         productId: p._id?.toString() || '',
         name: p.name,
         views: p.viewsCount,
@@ -646,17 +816,26 @@ export class AdvancedReportsService {
     return `REP-${year}-${String(count + 1).padStart(5, '0')}`;
   }
 
-  private generateSummary(analytics: any, category: ReportCategory): any {
+  private generateSummary(
+    analytics: Record<string, unknown>,
+  ): {
+    totalRecords: number;
+    totalValue: number;
+    currency: string;
+    growth: number;
+  } {
     // Generate summary based on analytics data
     let totalRecords = 0;
     let totalValue = 0;
 
-    if (analytics.salesAnalytics) {
-      totalRecords = analytics.salesAnalytics.totalOrders;
-      totalValue = analytics.salesAnalytics.totalRevenue;
-    } else if (analytics.customerAnalytics) {
-      totalRecords = analytics.customerAnalytics.totalCustomers;
-      totalValue = analytics.customerAnalytics.averageLifetimeValue * totalRecords;
+    const sales = analytics as any;
+    if (sales.salesAnalytics) {
+      totalRecords = sales.salesAnalytics.totalOrders as number;
+      totalValue = sales.salesAnalytics.totalRevenue as number;
+    } else if ((analytics as any).customerAnalytics) {
+      const cust = (analytics as any).customerAnalytics;
+      totalRecords = cust.totalCustomers as number;
+      totalValue = (cust.averageLifetimeValue as number) * totalRecords;
     }
 
     return {
@@ -667,14 +846,17 @@ export class AdvancedReportsService {
     };
   }
 
-  private async generateInsightsAndRecommendations(analytics: any, category: ReportCategory) {
+  private async generateInsightsAndRecommendations(
+    analytics: Record<string, unknown>,
+  ) {
     const insights = { ar: [] as string[], en: [] as string[] };
     const recommendations = { ar: [] as string[], en: [] as string[] };
     const alerts: any[] = [];
 
     // Generate insights based on analytics
-    if (analytics.salesAnalytics) {
-      const { totalRevenue, totalOrders, averageOrderValue } = analytics.salesAnalytics;
+    const sales = analytics as any;
+    if (sales.salesAnalytics) {
+      const { totalRevenue, totalOrders, averageOrderValue } = sales.salesAnalytics;
       insights.ar.push(`إجمالي الإيرادات: ${totalRevenue.toLocaleString()} ريال`);
       insights.ar.push(`إجمالي الطلبات: ${totalOrders}`);
       insights.ar.push(`متوسط قيمة الطلب: ${averageOrderValue.toFixed(2)} ريال`);
@@ -694,7 +876,9 @@ export class AdvancedReportsService {
     return { insights, recommendations, alerts };
   }
 
-  private async generateChartsData(analytics: any, category: ReportCategory): Promise<any> {
+  private async generateChartsData(
+    analytics: Record<string, unknown>,
+  ): Promise<any> {
     // Generate charts data based on analytics
     const chartsData: any = {
       timeSeries: [],
@@ -703,16 +887,17 @@ export class AdvancedReportsService {
       lineCharts: [],
     };
 
-    if (analytics.salesAnalytics?.salesByDate) {
-      chartsData.timeSeries = analytics.salesAnalytics.salesByDate.map((item: any) => ({
+    const sales = analytics as any;
+    if (sales.salesAnalytics?.salesByDate) {
+      chartsData.timeSeries = sales.salesAnalytics.salesByDate.map((item: any) => ({
         date: item.date,
         value: item.revenue,
         label: 'Revenue',
       }));
     }
 
-    if (analytics.salesAnalytics?.salesByCategory) {
-      chartsData.pieCharts = analytics.salesAnalytics.salesByCategory.map((item: any) => ({
+    if (sales.salesAnalytics?.salesByCategory) {
+      chartsData.pieCharts = sales.salesAnalytics.salesByCategory.map((item: any) => ({
         label: item.categoryName,
         value: item.revenue,
         percentage: item.percentage,
@@ -726,8 +911,8 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
     category: ReportCategory,
-    filters?: any,
-  ): Promise<any> {
+    filters?: Record<string, unknown>,
+  ): Promise<{ enabled: boolean; startDate: Date; endDate: Date; metrics: Record<string, { current: number; previous: number; change: number; percentageChange: number }> }> {
     const periodDiff = endDate.getTime() - startDate.getTime();
     const prevStartDate = new Date(startDate.getTime() - periodDiff);
     const prevEndDate = new Date(startDate.getTime() - 1);
@@ -745,7 +930,7 @@ export class AdvancedReportsService {
       filters,
     );
 
-    const metrics: any = {};
+    const metrics: Record<string, { current: number; previous: number; change: number; percentageChange: number }> = {};
 
     if (currentAnalytics.salesAnalytics && previousAnalytics.salesAnalytics) {
       const current = currentAnalytics.salesAnalytics.totalRevenue;
@@ -768,7 +953,11 @@ export class AdvancedReportsService {
 
   // ========== Data Fetching Methods ==========
 
-  private async getTopSellingProducts(startDate: Date, endDate: Date, matchQuery: any): Promise<any[]> {
+  private async getTopSellingProducts(
+    startDate: Date,
+    endDate: Date,
+    matchQuery: Record<string, unknown>,
+  ): Promise<any[]> {
     const result = await this.orderModel.aggregate([
       { $match: matchQuery },
       { $unwind: '$items' },
@@ -796,7 +985,12 @@ export class AdvancedReportsService {
     return result;
   }
 
-  private async getSalesByDate(startDate: Date, endDate: Date, matchQuery: any, groupBy: string): Promise<any[]> {
+  private async getSalesByDate(
+    startDate: Date,
+    endDate: Date,
+    matchQuery: Record<string, unknown>,
+    groupBy: string,
+  ): Promise<any[]> {
     const dateFormat = groupBy === 'daily' ? '%Y-%m-%d' : groupBy === 'weekly' ? '%Y-W%U' : '%Y-%m';
 
     const result = await this.orderModel.aggregate([
@@ -824,7 +1018,11 @@ export class AdvancedReportsService {
     return result;
   }
 
-  private async getSalesByCategory(startDate: Date, endDate: Date, matchQuery: any): Promise<any[]> {
+  private async getSalesByCategory(
+    startDate: Date,
+    endDate: Date,
+    matchQuery: Record<string, unknown>,
+  ): Promise<any[]> {
     const result = await this.orderModel.aggregate([
       { $match: matchQuery },
       { $unwind: '$items' },
@@ -851,13 +1049,17 @@ export class AdvancedReportsService {
 
     // Calculate percentages
     const totalRevenue = result.reduce((sum, item) => sum + item.revenue, 0);
-    return result.map(item => ({
+    return result.map((item) => ({
       ...item,
       percentage: totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0,
     }));
   }
 
-  private async getSalesByRegion(startDate: Date, endDate: Date, matchQuery: any): Promise<any[]> {
+  private async getSalesByRegion(
+    startDate: Date,
+    endDate: Date,
+    matchQuery: Record<string, unknown>,
+  ): Promise<any[]> {
     const result = await this.orderModel.aggregate([
       { $match: matchQuery },
       {
@@ -885,7 +1087,11 @@ export class AdvancedReportsService {
     return result;
   }
 
-  private async getPaymentMethodBreakdown(startDate: Date, endDate: Date, matchQuery: any): Promise<any[]> {
+  private async getPaymentMethodBreakdown(
+    startDate: Date,
+    endDate: Date,
+    matchQuery: Record<string, unknown>,
+  ): Promise<any[]> {
     const result = await this.orderModel.aggregate([
       { $match: matchQuery },
       {
@@ -900,7 +1106,7 @@ export class AdvancedReportsService {
 
     const totalAmount = result.reduce((sum, item) => sum + item.amount, 0);
 
-    return result.map(item => ({
+    return result.map((item) => ({
       method: item._id,
       count: item.count,
       amount: item.amount,
@@ -908,7 +1114,11 @@ export class AdvancedReportsService {
     }));
   }
 
-  private async getTopPerformingProducts(startDate: Date, endDate: Date, limit: number): Promise<any[]> {
+  private async getTopPerformingProducts(
+    startDate: Date,
+    endDate: Date,
+    limit: number,
+  ): Promise<any[]> {
     // This would aggregate from orders
     const result = await this.orderModel.aggregate([
       {
@@ -946,7 +1156,11 @@ export class AdvancedReportsService {
     );
   }
 
-  private async getUnderPerformingProducts(startDate: Date, endDate: Date, limit: number): Promise<any[]> {
+  private async getUnderPerformingProducts(
+    startDate: Date,
+    endDate: Date,
+    limit: number,
+  ): Promise<any[]> {
     // Get products with low sales
     const allProducts = await this.productModel
       .find({ status: 'active', deletedAt: null })
@@ -954,7 +1168,7 @@ export class AdvancedReportsService {
       .limit(limit)
       .lean();
 
-    return allProducts.map(p => ({
+    return allProducts.map((p) => ({
       productId: p._id?.toString() || '',
       name: p.name,
       views: p.viewsCount,
@@ -989,9 +1203,9 @@ export class AdvancedReportsService {
       { $group: { _id: '$categoryId', count: { $sum: 1 } } },
     ]);
 
-    const countMap = new Map(categoryCounts.map(c => [c._id, c.count]));
+    const countMap = new Map(categoryCounts.map((c) => [c._id, c.count]));
 
-    return result.map(item => ({
+    return result.map((item) => ({
       categoryId: item._id?.toString() || '',
       name: item.name || 'Unknown',
       productCount: countMap.get(item._id) || 0,
@@ -1027,9 +1241,9 @@ export class AdvancedReportsService {
       { $group: { _id: '$brandId', count: { $sum: 1 } } },
     ]);
 
-    const countMap = new Map(brandCounts.map(c => [c._id, c.count]));
+    const countMap = new Map(brandCounts.map((c) => [c._id, c.count]));
 
-    return result.map(item => ({
+    return result.map((item) => ({
       brandId: item._id?.toString() || '',
       name: item.name || 'Unknown',
       productCount: countMap.get(item._id) || 0,
@@ -1132,7 +1346,9 @@ export class AdvancedReportsService {
         const user = await this.userModel.findById(item._id).lean();
         return {
           userId: item._id.toString(),
-          name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone : 'Unknown',
+          name: user
+            ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone
+            : 'Unknown',
           totalOrders: item.totalOrders,
           totalSpent: item.totalSpent,
           lastOrderDate: item.lastOrderDate,
@@ -1166,9 +1382,9 @@ export class AdvancedReportsService {
     ]);
 
     const segments = {
-      vip: result.filter(c => c.totalSpent > 10000).length,
-      regular: result.filter(c => c.totalSpent >= 3000 && c.totalSpent <= 10000).length,
-      occasional: result.filter(c => c.totalSpent < 3000).length,
+      vip: result.filter((c) => c.totalSpent > 10000).length,
+      regular: result.filter((c) => c.totalSpent >= 3000 && c.totalSpent <= 10000).length,
+      occasional: result.filter((c) => c.totalSpent < 3000).length,
     };
 
     return [
@@ -1197,7 +1413,7 @@ export class AdvancedReportsService {
 
     const totalRevenue = result.reduce((sum, item) => sum + item.revenue, 0);
 
-    return result.map(item => ({
+    return result.map((item) => ({
       channel: item._id || 'web',
       revenue: item.revenue,
       percentage: totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0,
@@ -1210,7 +1426,7 @@ export class AdvancedReportsService {
       status: { $in: ['COMPLETED', 'DELIVERED'] },
     });
 
-    return revenue.map(item => ({
+    return revenue.map((item) => ({
       categoryId: item.categoryId,
       name: item.categoryName,
       revenue: item.revenue,
@@ -1292,7 +1508,7 @@ export class AdvancedReportsService {
       .limit(limit)
       .lean();
 
-    return coupons.map(c => ({
+    return coupons.map((c) => ({
       code: c.code,
       uses: c.currentUses,
       discount: c.stats.totalDiscount,
@@ -1316,8 +1532,8 @@ export class AdvancedReportsService {
 
   private calculateAverageProcessingTime(orders: any[]): number {
     const processingTimes = orders
-      .filter(o => o.processingStartedAt && o.shippedAt)
-      .map(o => (o.shippedAt!.getTime() - o.processingStartedAt!.getTime()) / (1000 * 60 * 60)); // hours
+      .filter((o) => o.processingStartedAt && o.shippedAt)
+      .map((o) => (o.shippedAt!.getTime() - o.processingStartedAt!.getTime()) / (1000 * 60 * 60)); // hours
 
     return processingTimes.length > 0
       ? processingTimes.reduce((sum, time) => sum + time, 0) / processingTimes.length
@@ -1326,8 +1542,8 @@ export class AdvancedReportsService {
 
   private calculateAverageDeliveryTime(orders: any[]): number {
     const deliveryTimes = orders
-      .filter(o => o.shippedAt && o.deliveredAt)
-      .map(o => (o.deliveredAt!.getTime() - o.shippedAt!.getTime()) / (1000 * 60 * 60 * 24)); // days
+      .filter((o) => o.shippedAt && o.deliveredAt)
+      .map((o) => (o.deliveredAt!.getTime() - o.shippedAt!.getTime()) / (1000 * 60 * 60 * 24)); // days
 
     return deliveryTimes.length > 0
       ? deliveryTimes.reduce((sum, time) => sum + time, 0) / deliveryTimes.length
@@ -1335,8 +1551,10 @@ export class AdvancedReportsService {
   }
 
   private calculateOnTimeDeliveryRate(orders: any[]): number {
-    const ordersWithEstimate = orders.filter(o => o.estimatedDeliveryDate && o.deliveredAt);
-    const onTime = ordersWithEstimate.filter(o => o.deliveredAt! <= o.estimatedDeliveryDate!).length;
+    const ordersWithEstimate = orders.filter((o) => o.estimatedDeliveryDate && o.deliveredAt);
+    const onTime = ordersWithEstimate.filter(
+      (o) => o.deliveredAt! <= o.estimatedDeliveryDate!,
+    ).length;
 
     return ordersWithEstimate.length > 0 ? (onTime / ordersWithEstimate.length) * 100 : 0;
   }
@@ -1344,7 +1562,7 @@ export class AdvancedReportsService {
   private getTopReturnReasons(returnedOrders: any[]): any[] {
     const reasonCounts: Record<string, number> = {};
 
-    returnedOrders.forEach(order => {
+    returnedOrders.forEach((order) => {
       const reason = order.returnReason || 'Not specified';
       reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
     });
@@ -1360,7 +1578,11 @@ export class AdvancedReportsService {
       .slice(0, 5);
   }
 
-  private async getTopAbandonedProducts(startDate: Date, endDate: Date, limit: number): Promise<any[]> {
+  private async getTopAbandonedProducts(
+    startDate: Date,
+    endDate: Date,
+    limit: number,
+  ): Promise<any[]> {
     const result = await this.cartModel.aggregate([
       {
         $match: {
@@ -1416,7 +1638,12 @@ export class AdvancedReportsService {
     limit = 20,
     category?: ReportCategory,
     userId?: string,
-  ): Promise<{ reports: AdvancedReportDocument[]; total: number; page: number; totalPages: number }> {
+  ): Promise<{
+    reports: AdvancedReportDocument[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     const skip = (page - 1) * limit;
     const query: any = { isArchived: false };
 
@@ -1424,12 +1651,7 @@ export class AdvancedReportsService {
     if (userId) query.createdBy = new Types.ObjectId(userId);
 
     const [reports, total] = await Promise.all([
-      this.reportModel
-        .find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      this.reportModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       this.reportModel.countDocuments(query),
     ]);
 
@@ -1459,4 +1681,3 @@ export class AdvancedReportsService {
     await report.deleteOne();
   }
 }
-

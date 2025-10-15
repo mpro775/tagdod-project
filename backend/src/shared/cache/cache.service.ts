@@ -72,28 +72,28 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Serialize value for storage
    */
-  private serialize(value: any): string {
+  private serialize(value: unknown): string {
     return JSON.stringify(value);
   }
 
   /**
    * Deserialize value from storage
    */
-  private deserialize(value: string): any {
+  private deserialize<T>(value: string): T {
     try {
-      return JSON.parse(value);
+      return JSON.parse(value) as T;
     } catch {
-      return value;
+      return value as unknown as T;
     }
   }
 
   /**
    * Set cache value
    */
-  async set(key: string, value: any, options: CacheOptions = {}): Promise<void> {
+  async set(key: string, value: unknown, options: CacheOptions = {}): Promise<void> {
     const cacheKey = this.generateKey(key, options.prefix);
     const serializedValue = this.serialize(value);
-    const ttl = options.ttl || this.configService.get('CACHE_TTL', 3600);
+    const ttl = options.ttl ?? Number(this.configService.get<number>('CACHE_TTL') ?? 3600);
 
     try {
       if (ttl > 0) {
@@ -111,7 +111,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Get cache value
    */
-  async get<T = any>(key: string, prefix?: string): Promise<T | null> {
+  async get<T = unknown>(key: string, prefix?: string): Promise<T | null> {
     const cacheKey = this.generateKey(key, prefix);
 
     try {
@@ -122,7 +122,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
 
       this.stats.hits++;
-      return this.deserialize(value);
+      return this.deserialize<T>(value);
     } catch (error) {
       this.logger.error(`Failed to get cache key ${cacheKey}:`, error);
       this.stats.misses++;
@@ -164,13 +164,13 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Set multiple cache values
    */
-  async mset(keyValuePairs: Record<string, any>, options: CacheOptions = {}): Promise<void> {
+  async mset(keyValuePairs: Record<string, unknown>, options: CacheOptions = {}): Promise<void> {
     const pipeline = this.redis.pipeline();
 
     for (const [key, value] of Object.entries(keyValuePairs)) {
       const cacheKey = this.generateKey(key, options.prefix);
       const serializedValue = this.serialize(value);
-      const ttl = options.ttl || this.configService.get('CACHE_TTL', 3600);
+      const ttl = options.ttl ?? Number(this.configService.get<number>('CACHE_TTL') ?? 3600);
 
       if (ttl > 0) {
         pipeline.setex(cacheKey, ttl, serializedValue);
@@ -191,18 +191,18 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Get multiple cache values
    */
-  async mget<T = any>(keys: string[], prefix?: string): Promise<(T | null)[]> {
-    const cacheKeys = keys.map(key => this.generateKey(key, prefix));
+  async mget<T = unknown>(keys: string[], prefix?: string): Promise<(T | null)[]> {
+    const cacheKeys = keys.map((key) => this.generateKey(key, prefix));
 
     try {
       const values = await this.redis.mget(...cacheKeys);
-      const results = values.map(value => {
+      const results = values.map((value) => {
         if (value === null) {
           this.stats.misses++;
           return null;
         }
         this.stats.hits++;
-        return this.deserialize(value);
+        return this.deserialize<T>(value);
       });
       return results;
     } catch (error) {
@@ -216,7 +216,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Delete multiple cache keys
    */
   async mdelete(keys: string[], prefix?: string): Promise<number> {
-    const cacheKeys = keys.map(key => this.generateKey(key, prefix));
+    const cacheKeys = keys.map((key) => this.generateKey(key, prefix));
 
     try {
       const result = await this.redis.del(...cacheKeys);
@@ -231,7 +231,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Set cache value with hash
    */
-  async hset(hash: string, field: string, value: any, options: CacheOptions = {}): Promise<void> {
+  async hset(hash: string, field: string, value: unknown, options: CacheOptions = {}): Promise<void> {
     const cacheKey = this.generateKey(hash, options.prefix);
     const serializedValue = this.serialize(value);
 
@@ -250,7 +250,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Get hash field value
    */
-  async hget<T = any>(hash: string, field: string, prefix?: string): Promise<T | null> {
+  async hget<T = unknown>(hash: string, field: string, prefix?: string): Promise<T | null> {
     const cacheKey = this.generateKey(hash, prefix);
 
     try {
@@ -261,7 +261,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
 
       this.stats.hits++;
-      return this.deserialize(value);
+      return this.deserialize<T>(value);
     } catch (error) {
       this.logger.error(`Failed to get hash field ${cacheKey}:${field}:`, error);
       this.stats.misses++;
@@ -272,7 +272,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Get all hash fields
    */
-  async hgetall<T = any>(hash: string, prefix?: string): Promise<Record<string, T> | null> {
+  async hgetall<T = unknown>(hash: string, prefix?: string): Promise<Record<string, T> | null> {
     const cacheKey = this.generateKey(hash, prefix);
 
     try {
@@ -285,7 +285,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       this.stats.hits++;
       const deserialized: Record<string, T> = {};
       for (const [field, value] of Object.entries(result)) {
-        deserialized[field] = this.deserialize(value);
+        deserialized[field] = this.deserialize<T>(value);
       }
       return deserialized;
     } catch (error) {
@@ -431,7 +431,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Cache HTTP response
    */
-  async cacheResponse(key: string, response: any, ttl?: number): Promise<void> {
+  async cacheResponse(key: string, response: unknown, ttl?: number): Promise<void> {
     const cacheKey = `response:${key}`;
     const finalTtl = ttl || parseInt(process.env.CACHE_TTL || '3600');
 
@@ -441,7 +441,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Get cached HTTP response
    */
-  async getCachedResponse(key: string): Promise<any | null> {
+  async getCachedResponse(key: string): Promise<unknown | null> {
     const cacheKey = `response:${key}`;
     return this.get(cacheKey);
   }

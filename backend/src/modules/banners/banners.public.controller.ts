@@ -7,8 +7,8 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BannersService } from './banners.service';
-import { BannerLocation, BannerPromotionType } from './schemas/banner.schema';
-
+import { BannerLocation } from './schemas/banner.schema';
+ 
 @ApiTags('banners')
 @Controller('banners')
 export class BannersPublicController {

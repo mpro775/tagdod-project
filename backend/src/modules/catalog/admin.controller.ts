@@ -1,7 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CatalogService } from './catalog.service';
-import { CreateProductDto, UpdateProductDto, AddVariantDto, UpdateVariantDto, SetVariantPriceDto } from './dto/product.dto';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  AddVariantDto,
+  UpdateVariantDto,
+  SetVariantPriceDto,
+} from './dto/product.dto';
 import { Product } from './schemas/product.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';

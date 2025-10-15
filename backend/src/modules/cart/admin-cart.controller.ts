@@ -35,8 +35,9 @@ export class AdminCartController {
     const limitedCarts = carts.slice(0, limitNum);
 
     // Calculate total value
+    type CartLean = { pricingSummary?: { total?: number } };
     const totalValue = limitedCarts.reduce(
-      (sum, cart: any) => sum + (cart.pricingSummary?.total || 0),
+      (sum, cart: CartLean) => sum + (cart.pricingSummary?.total || 0),
       0,
     );
 
@@ -75,7 +76,7 @@ export class AdminCartController {
 
   @Get('analytics')
   @ApiOperation({ summary: 'Get cart analytics' })
-  async getAnalytics(@Query('period') period: string = '7d') {
+  async getAnalytics() {
     // Simple analytics for now
     // Can be enhanced later
     return {

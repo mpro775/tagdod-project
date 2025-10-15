@@ -19,12 +19,8 @@ export class CartCronService {
       const result = await this.cartService.processAbandonedCarts();
       
       this.logger.log(
-        `[Cron] Processed ${result.found} abandoned carts, sent ${result.emailsSent} emails`,
+        `[Cron] Processed ${result.processed} abandoned carts, sent ${result.emailsSent} emails`,
       );
-
-      if (result.errors > 0) {
-        this.logger.warn(`[Cron] Failed to send ${result.errors} emails`);
-      }
     } catch (error) {
       this.logger.error('[Cron] Error processing abandoned carts:', error);
     }

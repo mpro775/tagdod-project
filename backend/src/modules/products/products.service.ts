@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 import { Product, ProductStatus } from './schemas/product.schema';
 import { Variant } from './schemas/variant.schema';
 import { slugify } from '../../shared/utils/slug.util';
@@ -114,7 +114,7 @@ export class ProductsService {
 
     // جلب السمات مع قيمها
     const attributesData = await Promise.all(
-      product.attributes.map(async (attrId: any) => {
+      product.attributes.map(async (attrId: string) => {
         return this.attributesService.getAttribute(String(attrId));
       })
     );
@@ -154,7 +154,7 @@ export class ProductsService {
     } = query;
 
     const skip = (page - 1) * limit;
-    const q: any = {};
+    const q: FilterQuery<Product> = {};
 
     if (!includeDeleted) {
       q.deletedAt = null;
@@ -292,8 +292,13 @@ export class ProductsService {
       ]),
     ]);
 
-    const statusStats: any = {};
-    byStatus.forEach((item: any) => {
+    const statusStats: Record<ProductStatus, number> = {
+      draft: 0,
+      active: 0,
+      out_of_stock: 0,
+      discontinued: 0,
+    };
+    byStatus.forEach((item: { _id: ProductStatus; count: number }) => {
       statusStats[item._id] = item.count;
     });
 

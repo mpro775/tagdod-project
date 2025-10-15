@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { PriceRule } from '../promotions/schemas/price-rule.schema';
+import { FilterQuery, Model } from 'mongoose';
+import { PriceRule, PriceRuleDocument } from '../promotions/schemas/price-rule.schema';
 import { VariantPrice } from '../catalog/schemas/variant-price.schema';
 import { Variant } from '../catalog/schemas/variant.schema';
 import { Product } from '../catalog/schemas/product.schema';
@@ -57,7 +57,7 @@ export class PricingService {
    * Calculate price for a single variant with applicable promotions
    */
   async calculateVariantPrice(params: CalculatePriceParams): Promise<PriceResult> {
-    const { variantId, currency, quantity = 1, userId, accountType, couponCode } = params;
+    const { variantId, currency, quantity = 1, accountType, couponCode } = params;
 
     try {
       // 1. Get base price
@@ -80,7 +80,7 @@ export class PricingService {
       const bestPromotion = this.selectBestPromotion(applicablePromotions, basePrice);
 
       // 4. Calculate final price
-      const finalPrice = bestPromotion 
+      const finalPrice = bestPromotion
         ? this.applyPromotionToPrice(basePrice, bestPromotion)
         : basePrice;
 
@@ -144,12 +144,10 @@ export class PricingService {
 
       // Collect all applied promotions (unique)
       const appliedPromotionsMap = new Map<string, PriceRule>();
-      itemResults.forEach(item => {
+      itemResults.forEach((item) => {
         if (item.appliedPromotion) {
-          appliedPromotionsMap.set(
-            item.appliedPromotion._id.toString(),
-            item.appliedPromotion,
-          );
+          // استخدام نوع PriceRuleDocument من Mongoose الذي يحتوي على خاصية _id
+          appliedPromotionsMap.set((item.appliedPromotion as PriceRuleDocument)._id.toString(), item.appliedPromotion);
         }
       });
 
@@ -176,9 +174,7 @@ export class PricingService {
     currency: string,
     accountType?: string,
   ): Promise<number> {
-    const variantPrice = await this.variantPriceModel
-      .findOne({ variantId, currency })
-      .lean();
+    const variantPrice = await this.variantPriceModel.findOne({ variantId, currency }).lean();
 
     if (!variantPrice) {
       return 0;
@@ -213,7 +209,7 @@ export class PricingService {
     if (!product) return [];
 
     // Build query
-    const query: any = {
+    const query: FilterQuery<PriceRuleDocument> = {
       active: true,
       startAt: { $lte: now },
       endAt: { $gte: now },
@@ -225,13 +221,10 @@ export class PricingService {
     }
 
     // Find all active rules
-    const allRules = await this.priceRuleModel
-      .find(query)
-      .sort({ priority: -1 })
-      .lean();
+    const allRules = await this.priceRuleModel.find(query).sort({ priority: -1 }).lean();
 
     // Filter rules based on conditions
-    const applicableRules = allRules.filter(rule => {
+    const applicableRules = allRules.filter((rule) => {
       const cond = rule.conditions;
 
       // Check variant-specific
@@ -272,14 +265,11 @@ export class PricingService {
   /**
    * Select the best promotion from applicable ones
    */
-  private selectBestPromotion(
-    promotions: PriceRule[],
-    basePrice: number,
-  ): PriceRule | undefined {
+  private selectBestPromotion(promotions: PriceRule[], basePrice: number): PriceRule | undefined {
     if (promotions.length === 0) return undefined;
 
     // Calculate savings for each promotion
-    const promotionsWithSavings = promotions.map(promo => ({
+    const promotionsWithSavings = promotions.map((promo) => ({
       promotion: promo,
       savings: basePrice - this.applyPromotionToPrice(basePrice, promo),
     }));
@@ -319,7 +309,7 @@ export class PricingService {
   /**
    * Increment usage count for a promotion (called after order is placed)
    */
-  async incrementPromotionUsage(promotionId: string, userId?: string): Promise<void> {
+  async incrementPromotionUsage(promotionId: string): Promise<void> {
     try {
       await this.priceRuleModel.updateOne(
         { _id: promotionId },
@@ -340,11 +330,7 @@ export class PricingService {
   /**
    * Update promotion statistics (revenue, savings)
    */
-  async updatePromotionStats(
-    promotionId: string,
-    revenue: number,
-    savings: number,
-  ): Promise<void> {
+  async updatePromotionStats(promotionId: string, revenue: number, savings: number): Promise<void> {
     try {
       await this.priceRuleModel.updateOne(
         { _id: promotionId },
@@ -372,10 +358,12 @@ export class PricingService {
   }> {
     const now = new Date();
 
-    const promotion = await this.priceRuleModel.findOne({
-      couponCode,
-      active: true,
-    }).lean();
+    const promotion = await this.priceRuleModel
+      .findOne({
+        couponCode,
+        active: true,
+      })
+      .lean();
 
     if (!promotion) {
       return { valid: false, message: 'Coupon code not found' };
@@ -390,8 +378,10 @@ export class PricingService {
     }
 
     if (promotion.usageLimits) {
-      if (promotion.usageLimits.maxUses && 
-          promotion.usageLimits.currentUses >= promotion.usageLimits.maxUses) {
+      if (
+        promotion.usageLimits.maxUses &&
+        promotion.usageLimits.currentUses >= promotion.usageLimits.maxUses
+      ) {
         return { valid: false, message: 'Coupon usage limit reached' };
       }
     }
@@ -399,4 +389,3 @@ export class PricingService {
     return { valid: true, promotion };
   }
 }
-

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Request as ExpressRequest } from 'express';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
@@ -33,6 +34,10 @@ export class AdminOrdersController {
     private readonly checkoutService: CheckoutService,
     private readonly ordersService: OrdersService,
   ) {}
+
+  private getUserId(req: ExpressRequest): string {
+    return (req as unknown as { user: { userId: string } }).user.userId;
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all orders (Admin)' })
@@ -65,14 +70,14 @@ export class AdminOrdersController {
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update order status' })
   async updateStatus(
-    @Req() req: any,
+    @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: UpdateOrderStatusDto,
   ) {
     const order = await this.checkoutService.updateOrderStatus(
       orderId,
       dto.status,
-      req.user.userId,
+      this.getUserId(req),
       dto.notes,
     );
 
@@ -86,11 +91,17 @@ export class AdminOrdersController {
   @Post(':id/ship')
   @ApiOperation({ summary: 'Ship order' })
   async shipOrder(
-    @Req() req: any,
+    @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: ShipOrderDto,
   ) {
-    const order = await this.checkoutService.shipOrder(orderId, dto, req.user.userId);
+    const order = await this.checkoutService.shipOrder(orderId, dto, this.getUserId(req));
+    if (!order) {
+      return {
+        success: false,
+        message: 'Order not found or not ready to ship',
+      };
+    }
 
     return {
       success: true,
@@ -107,11 +118,17 @@ export class AdminOrdersController {
   @Post(':id/refund')
   @ApiOperation({ summary: 'Process refund' })
   async processRefund(
-    @Req() req: any,
+    @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: RefundOrderDto,
   ) {
-    const order = await this.checkoutService.processRefund(orderId, dto, req.user.userId);
+    const order = await this.checkoutService.processRefund(orderId, dto, this.getUserId(req));
+    if (!order) {
+      return {
+        success: false,
+        message: 'Order not found or not eligible for refund',
+      };
+    }
 
     return {
       success: true,
@@ -128,14 +145,14 @@ export class AdminOrdersController {
   @Post(':id/notes')
   @ApiOperation({ summary: 'Add admin notes' })
   async addNotes(
-    @Req() req: any,
+    @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() body: { notes: string },
   ) {
     const order = await this.ordersService.addAdminNotes(
       orderId,
       body.notes,
-      req.user.userId,
+      this.getUserId(req),
     );
 
     return {

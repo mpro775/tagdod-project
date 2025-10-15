@@ -43,12 +43,17 @@ export class AuthController {
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     const ok = await this.otp.verifyOtp(dto.phone, dto.code, 'register');
     if (!ok) throw new AppException('AUTH_INVALID_OTP', 'رمز التحقق غير صالح', null, 401);
-    
+
     // التحقق من أن المسمى الوظيفي موجود عند طلب أن يكون مهندساً
     if (dto.capabilityRequest === 'engineer' && !dto.jobTitle) {
-      throw new AppException('AUTH_JOB_TITLE_REQUIRED', 'المسمى الوظيفي مطلوب للمهندسين', null, 400);
+      throw new AppException(
+        'AUTH_JOB_TITLE_REQUIRED',
+        'المسمى الوظيفي مطلوب للمهندسين',
+        null,
+        400,
+      );
     }
-    
+
     let user = await this.userModel.findOne({ phone: dto.phone });
     if (!user) {
       user = await this.userModel.create({
@@ -82,7 +87,7 @@ export class AuthController {
         await caps.save();
       }
     }
-    
+
     // مزامنة المفضلات تلقائياً عند التسجيل
     if (dto.deviceId) {
       try {
@@ -92,7 +97,7 @@ export class AuthController {
         this.logger.error('Favorites sync error:', error);
       }
     }
-    
+
     const payload = { sub: String(user._id), phone: user.phone, isAdmin: user.isAdmin };
     const access = this.tokens.signAccess(payload);
     const refresh = this.tokens.signRefresh(payload);
@@ -183,29 +188,39 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   @Post('admin/approve')
   async approve(
-    @Body() body: { 
-      userId: string; 
-      capability: 'engineer' | 'wholesale'; 
+    @Body()
+    body: {
+      userId: string;
+      capability: 'engineer' | 'wholesale';
       approve: boolean;
       wholesaleDiscountPercent?: number; // نسبة الخصم للتاجر (0-100)
     },
   ) {
     const caps = await this.capsModel.findOne({ userId: body.userId });
     if (!caps) throw new AppException('CAPS_NOT_FOUND', 'سجل القدرات غير موجود', null, 404);
-    
+
     if (body.capability === 'engineer') {
       caps.engineer_status = body.approve ? 'approved' : 'rejected';
       caps.engineer_capable = body.approve;
     }
-    
+
     if (body.capability === 'wholesale') {
       caps.wholesale_status = body.approve ? 'approved' : 'rejected';
       caps.wholesale_capable = body.approve;
-      
+
       // تعيين نسبة الخصم عند الموافقة على التاجر
       if (body.approve) {
-        if (body.wholesaleDiscountPercent === undefined || body.wholesaleDiscountPercent < 0 || body.wholesaleDiscountPercent > 100) {
-          throw new AppException('INVALID_DISCOUNT', 'نسبة الخصم يجب أن تكون بين 0 و 100', null, 400);
+        if (
+          body.wholesaleDiscountPercent === undefined ||
+          body.wholesaleDiscountPercent < 0 ||
+          body.wholesaleDiscountPercent > 100
+        ) {
+          throw new AppException(
+            'INVALID_DISCOUNT',
+            'نسبة الخصم يجب أن تكون بين 0 و 100',
+            null,
+            400,
+          );
         }
         caps.wholesale_discount_percent = body.wholesaleDiscountPercent;
       } else {
@@ -213,7 +228,7 @@ export class AuthController {
         caps.wholesale_discount_percent = 0;
       }
     }
-    
+
     await caps.save();
     return { updated: true };
   }

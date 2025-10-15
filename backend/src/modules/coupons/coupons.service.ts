@@ -7,6 +7,7 @@ import {
   CouponType,
   CouponVisibility,
   DiscountAppliesTo,
+  CouponDocument,
 } from './schemas/coupon.schema';
 import {
   CreateCouponDto,
@@ -42,7 +43,7 @@ export class CouponsService {
   /**
    * Create a new coupon
    */
-  async createCoupon(dto: CreateCouponDto, adminId?: string): Promise<Coupon> {
+  async createCoupon(dto: CreateCouponDto, adminId?: string): Promise<CouponDocument> {
     // Check if code already exists
     const existing = await this.couponModel.findOne({
       code: dto.code.toUpperCase(),
@@ -50,7 +51,7 @@ export class CouponsService {
     });
 
     if (existing) {
-      throw new AppException('Coupon code already exists', 400);
+      throw new AppException('Coupon code already exists', '400');
     }
 
     // Validate dates
@@ -58,7 +59,7 @@ export class CouponsService {
     const endDate = new Date(dto.endDate);
 
     if (endDate <= startDate) {
-      throw new AppException('End date must be after start date', 400);
+      throw new AppException('End date must be after start date', '400');
     }
 
     // Validate discount configuration
@@ -101,7 +102,7 @@ export class CouponsService {
     } = dto;
 
     const skip = (page - 1) * limit;
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     // Delete filter
     if (!includeDeleted) {
@@ -149,14 +150,14 @@ export class CouponsService {
   /**
    * Get coupon by ID
    */
-  async getCouponById(id: string): Promise<Coupon> {
+  async getCouponById(id: string): Promise<CouponDocument> {
     const coupon = await this.couponModel.findOne({
       _id: id,
       deletedAt: null,
     });
 
     if (!coupon) {
-      throw new AppException('Coupon not found', 404);
+      throw new AppException('Coupon not found', '404');
     }
 
     return coupon;
@@ -165,7 +166,7 @@ export class CouponsService {
   /**
    * Get coupon by code
    */
-  async getCouponByCode(code: string): Promise<Coupon | null> {
+  async getCouponByCode(code: string): Promise<CouponDocument | null> {
     return await this.couponModel.findOne({
       code: code.toUpperCase(),
       deletedAt: null,
@@ -179,7 +180,7 @@ export class CouponsService {
     id: string,
     dto: UpdateCouponDto,
     adminId?: string,
-  ): Promise<Coupon> {
+  ): Promise<CouponDocument> {
     const coupon = await this.getCouponById(id);
 
     // Validate dates if provided
@@ -188,7 +189,7 @@ export class CouponsService {
       const endDate = dto.endDate ? new Date(dto.endDate) : coupon.endDate;
 
       if (endDate <= startDate) {
-        throw new AppException('End date must be after start date', 400);
+        throw new AppException('End date must be after start date', '400');
       }
     }
 
@@ -213,7 +214,7 @@ export class CouponsService {
   /**
    * Toggle coupon status
    */
-  async toggleStatus(id: string): Promise<Coupon> {
+  async toggleStatus(id: string): Promise<CouponDocument> {
     const coupon = await this.getCouponById(id);
 
     coupon.status =
@@ -405,7 +406,7 @@ export class CouponsService {
     const coupon = await this.getCouponByCode(couponCode);
 
     if (!coupon) {
-      throw new AppException('Coupon not found', 404);
+      throw new AppException('Coupon not found', '404');
     }
 
     // Update usage
@@ -488,7 +489,7 @@ export class CouponsService {
   ): Promise<Coupon[]> {
     const now = new Date();
 
-    const query: any = {
+    const query: Record<string, unknown> = {
       visibility: CouponVisibility.AUTO_APPLY,
       status: CouponStatus.ACTIVE,
       startDate: { $lte: now },
@@ -575,21 +576,22 @@ export class CouponsService {
   // ===== Private Helper Methods =====
 
   private validateDiscountConfiguration(dto: CreateCouponDto | UpdateCouponDto): void {
-    if (dto.type === CouponType.PERCENTAGE) {
+    
+    if ((dto as CreateCouponDto).type === CouponType.PERCENTAGE) {
       if (!dto.discountPercentage || dto.discountPercentage <= 0 || dto.discountPercentage > 100) {
-        throw new AppException('Invalid discount percentage', 400);
+        throw new AppException('Invalid discount percentage', '400');
       }
     }
 
-    if (dto.type === CouponType.FIXED_AMOUNT) {
+    if ((dto as CreateCouponDto).type === CouponType.FIXED_AMOUNT) {
       if (!dto.discountAmount || dto.discountAmount <= 0) {
-        throw new AppException('Invalid discount amount', 400);
+        throw new AppException('Invalid discount amount', '400');
       }
     }
 
-    if (dto.type === CouponType.BUY_X_GET_Y) {
+    if ((dto as CreateCouponDto).type === CouponType.BUY_X_GET_Y) {
       if (!dto.buyXGetY || !dto.buyXGetY.buyQuantity || !dto.buyXGetY.getQuantity) {
-        throw new AppException('Buy X Get Y configuration is required', 400);
+        throw new AppException('Buy X Get Y configuration is required', '400' ,);
       }
     }
   }

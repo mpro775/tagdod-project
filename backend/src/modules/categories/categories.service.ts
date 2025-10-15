@@ -23,16 +23,16 @@ export class CategoriesService {
   // ==================== إنشاء فئة ====================
   async createCategory(dto: Partial<Category>) {
     const slug = slugify(dto.nameEn!);
-    
+
     // التحقق من عدم تكرار الـ slug
     const existing = await this.categoryModel.findOne({ slug, deletedAt: null });
     if (existing) {
       throw new AppException('CATEGORY_SLUG_EXISTS', 'اسم الفئة موجود بالفعل', null, 400);
     }
-    
+
     let path = '/' + slug;
     let depth = 0;
-    
+
     if (dto.parentId) {
       const parent = await this.categoryModel.findById(dto.parentId).lean();
       if (!parent) {
@@ -43,19 +43,16 @@ export class CategoriesService {
       }
       path = `${parent.path}/${slug}`;
       depth = parent.depth + 1;
-      
+
       // تحديث عدد الأطفال للأب
-      await this.categoryModel.updateOne(
-        { _id: dto.parentId },
-        { $inc: { childrenCount: 1 } }
-      );
+      await this.categoryModel.updateOne({ _id: dto.parentId }, { $inc: { childrenCount: 1 } });
     }
-    
-    const category = await this.categoryModel.create({ 
+
+    const category = await this.categoryModel.create({
       ...dto,
-      parentId: dto.parentId ? new Types.ObjectId(dto.parentId) : null, 
-      slug, 
-      path, 
+      parentId: dto.parentId ? new Types.ObjectId(dto.parentId) : null,
+      slug,
+      path,
       depth,
       order: dto.order || 0,
       isActive: dto.isActive !== undefined ? dto.isActive : true,
@@ -76,35 +73,35 @@ export class CategoriesService {
     if (!category) {
       throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
     }
-    
+
     if (category.deletedAt) {
       throw new AppException('CATEGORY_DELETED', 'الفئة محذوفة', null, 400);
     }
-    
+
     if (patch.nameEn) {
       const slug = slugify(patch.nameEn);
-      
+
       // التحقق من عدم تكرار الـ slug
-      const existing = await this.categoryModel.findOne({ 
-        slug, 
+      const existing = await this.categoryModel.findOne({
+        slug,
         _id: { $ne: id },
-        deletedAt: null 
+        deletedAt: null,
       });
       if (existing) {
         throw new AppException('CATEGORY_SLUG_EXISTS', 'اسم الفئة موجود بالفعل', null, 400);
       }
-      
+
       patch.slug = slug;
-      
+
       // تحديث path للفئة وكل أطفالها
       const oldPath = category.path;
-      const newPath = category.parentId 
+      const newPath = category.parentId
         ? (await this.categoryModel.findById(category.parentId).lean())!.path + '/' + slug
         : '/' + slug;
-      
+
       // تحديث الفئة نفسها
       await this.categoryModel.updateOne({ _id: id }, { $set: { path: newPath, ...patch } });
-      
+
       // تحديث كل الأطفال
       const children = await this.categoryModel.find({ path: { $regex: `^${oldPath}/` } });
       for (const child of children) {
@@ -126,52 +123,55 @@ export class CategoriesService {
   // ==================== عرض فئة واحدة ====================
   async getCategory(id: string) {
     const cacheKey = `category:detail:${id}`;
-    
+
     const cached = await this.cacheService.get(cacheKey);
     if (cached) {
       this.logger.debug(`Category detail cache hit: ${id}`);
       return cached;
     }
-    
-    const category = await this.categoryModel.findById(id)
+
+    const category = await this.categoryModel
+      .findById(id)
       .populate('imageId')
       .populate('iconId')
       .lean();
-    
+
     if (!category) {
       throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
     }
-    
+
     // جلب الأطفال
     const children = await this.categoryModel
       .find({ parentId: id, deletedAt: null, isActive: true })
       .sort({ order: 1, name: 1 })
       .lean();
-    
+
     // جلب breadcrumbs
     const breadcrumbs = await this.getBreadcrumbs(category.path);
-    
+
     const result = {
       ...category,
       children,
       breadcrumbs,
     };
-    
+
     await this.cacheService.set(cacheKey, result, { ttl: this.CACHE_TTL.CATEGORY_DETAIL });
-    
+
     return result;
   }
 
   // ==================== قائمة الفئات ====================
-  async listCategories(query: { 
-    parentId?: string | null; 
-    search?: string; 
-    isActive?: boolean; 
-    isFeatured?: boolean;
-    includeDeleted?: boolean;
-  } = {}) {
+  async listCategories(
+    query: {
+      parentId?: string | null;
+      search?: string;
+      isActive?: boolean;
+      isFeatured?: boolean;
+      includeDeleted?: boolean;
+    } = {},
+  ) {
     const { parentId, search, isActive, isFeatured, includeDeleted = false } = query;
-    
+
     const cacheKey = `categories:list:${JSON.stringify(query)}`;
 
     // Try to get from cache first
@@ -182,27 +182,27 @@ export class CategoriesService {
     }
 
     // Build query
-    const q: any = {};
-    
+    const q: Record<string, unknown> = {};
+
     if (!includeDeleted) {
       q.deletedAt = null;
     }
-    
+
     if (parentId !== undefined) {
       q.parentId = parentId === null || parentId === 'null' ? null : new Types.ObjectId(parentId);
     }
-    
+
     if (search) {
       q.$or = [
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
       ];
     }
-    
+
     if (isActive !== undefined) {
       q.isActive = isActive;
     }
-    
+
     if (isFeatured !== undefined) {
       q.isFeatured = isFeatured;
     }
@@ -223,13 +223,13 @@ export class CategoriesService {
   // ==================== شجرة الفئات الكاملة ====================
   async getCategoryTree() {
     const cacheKey = 'categories:tree:full';
-    
+
     const cached = await this.cacheService.get(cacheKey);
     if (cached) {
       this.logger.debug('Category tree cache hit');
       return cached;
     }
-    
+
     // جلب جميع الفئات النشطة
     const allCategories = await this.categoryModel
       .find({ deletedAt: null, isActive: true })
@@ -237,97 +237,97 @@ export class CategoriesService {
       .populate('iconId')
       .sort({ order: 1, name: 1 })
       .lean();
-    
+
     // بناء الشجرة
     const tree = this.buildTree(allCategories, null);
-    
+
     await this.cacheService.set(cacheKey, tree, { ttl: this.CACHE_TTL.CATEGORY_TREE });
-    
+
     return tree;
   }
 
   // ==================== حذف فئة (Soft Delete) ====================
   async deleteCategory(id: string, userId: string) {
     const category = await this.categoryModel.findById(id);
-    
+
     if (!category) {
       throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
     }
-    
+
     if (category.deletedAt) {
       throw new AppException('CATEGORY_ALREADY_DELETED', 'الفئة محذوفة بالفعل', null, 400);
     }
-    
+
     // فحص إذا كان لديها أطفال
-    const childrenCount = await this.categoryModel.countDocuments({ 
-      parentId: id, 
-      deletedAt: null 
+    const childrenCount = await this.categoryModel.countDocuments({
+      parentId: id,
+      deletedAt: null,
     });
-    
+
     if (childrenCount > 0) {
       throw new AppException(
-        'CATEGORY_HAS_CHILDREN', 
+        'CATEGORY_HAS_CHILDREN',
         'لا يمكن حذف فئة تحتوي على فئات فرعية. احذف الفئات الفرعية أولاً',
         { childrenCount },
-        400
+        400,
       );
     }
-    
+
     // Soft delete
     category.deletedAt = new Date();
     category.deletedBy = userId;
     await category.save();
-    
+
     // تحديث عدد الأطفال للأب
     if (category.parentId) {
       await this.categoryModel.updateOne(
         { _id: category.parentId },
-        { $inc: { childrenCount: -1 } }
+        { $inc: { childrenCount: -1 } },
       );
     }
-    
+
     await this.clearAllCaches();
-    
+
     return category;
   }
 
   // ==================== استعادة فئة محذوفة ====================
   async restoreCategory(id: string) {
     const category = await this.categoryModel.findById(id);
-    
+
     if (!category) {
       throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
     }
-    
+
     if (!category.deletedAt) {
       throw new AppException('CATEGORY_NOT_DELETED', 'الفئة غير محذوفة', null, 400);
     }
-    
+
     category.deletedAt = null;
     category.deletedBy = undefined;
     await category.save();
-    
+
     // تحديث عدد الأطفال للأب
     if (category.parentId) {
       await this.categoryModel.updateOne(
         { _id: category.parentId },
-        { $inc: { childrenCount: 1 } }
+        { $inc: { childrenCount: 1 } },
       );
     }
-    
+
     await this.clearAllCaches();
-    
+
     return category;
   }
 
   // ==================== حذف نهائي ====================
   async permanentDeleteCategory(id: string) {
     const category = await this.categoryModel.findById(id);
-    
+
     if (!category) {
       throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
     }
-    
+
     // التحقق من عدم وجود أطفال
     const childrenCount = await this.categoryModel.countDocuments({ parentId: id });
     if (childrenCount > 0) {
@@ -335,58 +335,49 @@ export class CategoriesService {
         'CATEGORY_HAS_CHILDREN',
         'لا يمكن حذف فئة تحتوي على فئات فرعية',
         { childrenCount },
-        400
+        400,
       );
     }
-    
+
     // حذف من قاعدة البيانات
     await this.categoryModel.deleteOne({ _id: id });
-    
+
     // تحديث عدد الأطفال للأب
     if (category.parentId) {
       await this.categoryModel.updateOne(
         { _id: category.parentId },
-        { $inc: { childrenCount: -1 } }
+        { $inc: { childrenCount: -1 } },
       );
     }
-    
+
     await this.clearAllCaches();
-    
+
     return { deleted: true };
   }
 
   // ==================== تحديث الإحصائيات ====================
   async updateCategoryStats(categoryId: string) {
-    const childrenCount = await this.categoryModel.countDocuments({ 
-      parentId: categoryId, 
-      deletedAt: null 
+    const childrenCount = await this.categoryModel.countDocuments({
+      parentId: categoryId,
+      deletedAt: null,
     });
-    
-    await this.categoryModel.updateOne(
-      { _id: categoryId },
-      { $set: { childrenCount } }
-    );
-    
+
+    await this.categoryModel.updateOne({ _id: categoryId }, { $set: { childrenCount } });
+
     return { updated: true };
   }
 
   // ==================== تحديث عدد المنتجات (من خارج Module) ====================
   async updateProductsCount(categoryId: string, count: number) {
-    await this.categoryModel.updateOne(
-      { _id: categoryId },
-      { $set: { productsCount: count } }
-    );
-    
+    await this.categoryModel.updateOne({ _id: categoryId }, { $set: { productsCount: count } });
+
     await this.clearAllCaches();
   }
 
   // ==================== زيادة/تقليل عدد المنتجات ====================
   async incrementProductsCount(categoryId: string, increment: number = 1) {
-    await this.categoryModel.updateOne(
-      { _id: categoryId },
-      { $inc: { productsCount: increment } }
-    );
-    
+    await this.categoryModel.updateOne({ _id: categoryId }, { $inc: { productsCount: increment } });
+
     await this.clearAllCaches();
   }
 
@@ -404,8 +395,8 @@ export class CategoriesService {
       ]),
     ]);
 
-    const depthStats: any = {};
-    byDepth.forEach((item: any) => {
+    const depthStats: Record<string, unknown> = {};
+    byDepth.forEach((item: Record<string, unknown>) => {
       depthStats[`level_${item._id}`] = item.count;
     });
 
@@ -421,13 +412,16 @@ export class CategoriesService {
   }
 
   // ==================== Helper: بناء الشجرة ====================
-  private buildTree(categories: any[], parentId: string | null): any[] {
+  private buildTree(
+    categories: Record<string, unknown>[],
+    parentId: string | null,
+  ): Record<string, unknown>[] {
     return categories
-      .filter(cat => {
+      .filter((cat) => {
         const catParentId = cat.parentId ? String(cat.parentId) : null;
         return catParentId === parentId;
       })
-      .map(cat => ({
+      .map((cat) => ({
         ...cat,
         children: this.buildTree(categories, String(cat._id)),
       }));
@@ -436,8 +430,8 @@ export class CategoriesService {
   // ==================== Helper: Breadcrumbs ====================
   private async getBreadcrumbs(path: string) {
     const paths = path.split('/').filter(Boolean);
-    const breadcrumbs: any[] = [];
-    
+    const breadcrumbs: Record<string, unknown>[] = [];
+
     let currentPath = '';
     for (const segment of paths) {
       currentPath += '/' + segment;
@@ -451,7 +445,7 @@ export class CategoriesService {
         });
       }
     }
-    
+
     return breadcrumbs;
   }
 
@@ -466,4 +460,3 @@ export class CategoriesService {
     }
   }
 }
-

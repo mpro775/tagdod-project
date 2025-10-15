@@ -10,7 +10,6 @@ import {
   MaxLength,
   Min,
   IsIn,
-  IsUrl
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BannerType, BannerLocation, BannerPromotionType } from '../schemas/banner.schema';

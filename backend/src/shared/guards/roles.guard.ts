@@ -2,10 +2,9 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
-import { UserRole } from '../../modules/users/schemas/user.schema';
+import { UserRole, User } from '../../modules/users/schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from '../../modules/users/schemas/user.schema';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -41,7 +40,7 @@ export class RolesGuard implements CanActivate {
 
     // Fetch full user data from database
     const fullUser = await this.userModel.findById(user.sub).lean();
-    
+
     if (!fullUser) {
       return false;
     }
@@ -58,7 +57,7 @@ export class RolesGuard implements CanActivate {
 
     // Check roles
     if (requiredRoles) {
-      const hasRole = requiredRoles.some(role => fullUser.roles?.includes(role));
+      const hasRole = requiredRoles.some((role) => fullUser.roles?.includes(role));
       if (!hasRole) {
         return false;
       }
@@ -66,8 +65,8 @@ export class RolesGuard implements CanActivate {
 
     // Check permissions
     if (requiredPermissions) {
-      const hasPermission = requiredPermissions.every(permission => 
-        fullUser.permissions?.includes(permission)
+      const hasPermission = requiredPermissions.every((permission) =>
+        fullUser.permissions?.includes(permission),
       );
       if (!hasPermission) {
         return false;
@@ -77,4 +76,3 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 }
-

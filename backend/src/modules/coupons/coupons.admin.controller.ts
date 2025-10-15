@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Request as ExpressRequest } from 'express';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
@@ -31,10 +32,14 @@ import {
 export class CouponsAdminController {
   constructor(private readonly couponsService: CouponsService) {}
 
+  private getUserId(req: ExpressRequest): string | undefined {
+    return (req as unknown as { user?: { userId?: string } }).user?.userId;
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new coupon' })
-  async createCoupon(@Body() dto: CreateCouponDto, @Req() req: any) {
-    const coupon = await this.couponsService.createCoupon(dto, req.user?.userId);
+  async createCoupon(@Body() dto: CreateCouponDto, @Req() req: ExpressRequest) {
+    const coupon = await this.couponsService.createCoupon(dto, this.getUserId(req));
     return {
       success: true,
       message: 'Coupon created successfully',
@@ -68,9 +73,9 @@ export class CouponsAdminController {
   async updateCoupon(
     @Param('id') id: string,
     @Body() dto: UpdateCouponDto,
-    @Req() req: any,
+    @Req() req: ExpressRequest,
   ) {
-    const coupon = await this.couponsService.updateCoupon(id, dto, req.user?.userId);
+    const coupon = await this.couponsService.updateCoupon(id, dto, this.getUserId(req));
     return {
       success: true,
       message: 'Coupon updated successfully',
@@ -80,8 +85,8 @@ export class CouponsAdminController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete coupon (soft delete)' })
-  async deleteCoupon(@Param('id') id: string, @Req() req: any) {
-    await this.couponsService.deleteCoupon(id, req.user?.userId);
+  async deleteCoupon(@Param('id') id: string, @Req() req: ExpressRequest) {
+    await this.couponsService.deleteCoupon(id, this.getUserId(req));
     return {
       success: true,
       message: 'Coupon deleted successfully',
@@ -101,8 +106,8 @@ export class CouponsAdminController {
 
   @Post('bulk-generate')
   @ApiOperation({ summary: 'Bulk generate coupons' })
-  async bulkGenerate(@Body() dto: BulkGenerateCouponsDto, @Req() req: any) {
-    const coupons = await this.couponsService.bulkGenerateCoupons(dto, req.user?.userId);
+  async bulkGenerate(@Body() dto: BulkGenerateCouponsDto, @Req() req: ExpressRequest) {
+    const coupons = await this.couponsService.bulkGenerateCoupons(dto, this.getUserId(req));
     return {
       success: true,
       message: `Successfully generated ${coupons.length} coupons`,

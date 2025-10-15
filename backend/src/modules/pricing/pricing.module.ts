@@ -21,4 +21,3 @@ import { Product, ProductSchema } from '../catalog/schemas/product.schema';
   exports: [PricingService],
 })
 export class PricingModule {}
-

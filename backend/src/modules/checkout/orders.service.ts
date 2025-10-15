@@ -23,7 +23,7 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new AppException('الطلب غير موجود', 404);
+      throw new AppException('الطلب غير موجود', '404');
     }
 
     return order;
@@ -57,14 +57,14 @@ export class OrdersService {
 
     // Check if order is delivered/completed
     if (order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.COMPLETED) {
-      throw new AppException('يمكنك التقييم فقط بعد استلام الطلب', 400);
+      throw new AppException('يمكنك التقييم فقط بعد استلام الطلب', '400');
     }
 
     // Update rating
     order.status = OrderStatus.COMPLETED; // Auto-complete on rating
     order.metadata = {
       ...order.metadata,
-      rating: dto.rating,
+      rating: (dto as RateOrderDto).rating,
       review: dto.review,
       ratedAt: new Date().toISOString(),
     };
@@ -91,7 +91,7 @@ export class OrdersService {
     const order = await this.orderModel.findById(orderId);
 
     if (!order) {
-      throw new AppException('الطلب غير موجود', 404);
+      throw new AppException('الطلب غير موجود', '404');
     }
 
     order.adminNotes = notes;

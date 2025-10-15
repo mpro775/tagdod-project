@@ -1,28 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, SortOrder } from 'mongoose';
 import { Brand } from './schemas/brand.schema';
 import { CreateBrandDto, UpdateBrandDto, ListBrandsDto } from './dto/brand.dto';
 import { AppException } from '../../shared/exceptions/app.exception';
-import { generateSlug } from '../../shared/utils/slug.util';
+import { slugify } from '../../shared/utils/slug.util';
 
 @Injectable()
 export class BrandsService {
-  constructor(
-    @InjectModel(Brand.name) private brandModel: Model<Brand>,
-  ) {}
+  constructor(@InjectModel(Brand.name) private brandModel: Model<Brand>) {}
 
   /**
    * Create a new brand
    */
   async createBrand(dto: CreateBrandDto): Promise<Brand> {
     // Generate slug from name
-    const slug = generateSlug(dto.name);
+    const slug = slugify(dto.name);
 
     // Check if slug already exists
     const existing = await this.brandModel.findOne({ slug });
     if (existing) {
-      throw new AppException('Brand with this name already exists', 400);
+      throw new AppException('Brand with this name already exists', '400');
     }
 
     const brand = new this.brandModel({
@@ -40,9 +38,9 @@ export class BrandsService {
    */
   async listBrands(dto: ListBrandsDto) {
     const { page = 1, limit = 20, search, isActive, sortBy = 'sortOrder', sortOrder = 'asc' } = dto;
-    
+
     const skip = (page - 1) * limit;
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     // Search filter
     if (search) {
@@ -58,16 +56,11 @@ export class BrandsService {
     }
 
     // Sort options
-    const sortOptions: any = {};
+    const sortOptions: Record<string, SortOrder> = {};
     sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [brands, total] = await Promise.all([
-      this.brandModel
-        .find(query)
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      this.brandModel.find(query).sort(sortOptions).skip(skip).limit(limit).lean(),
       this.brandModel.countDocuments(query),
     ]);
 
@@ -88,7 +81,7 @@ export class BrandsService {
   async getBrandById(id: string): Promise<Brand> {
     const brand = await this.brandModel.findById(id);
     if (!brand) {
-      throw new AppException('Brand not found', 404);
+      throw new AppException('Brand not found', '404');
     }
     return brand;
   }
@@ -99,7 +92,7 @@ export class BrandsService {
   async getBrandBySlug(slug: string): Promise<Brand> {
     const brand = await this.brandModel.findOne({ slug });
     if (!brand) {
-      throw new AppException('Brand not found', 404);
+      throw new AppException('Brand not found', '404');
     }
     return brand;
   }
@@ -110,18 +103,18 @@ export class BrandsService {
   async updateBrand(id: string, dto: UpdateBrandDto): Promise<Brand> {
     const brand = await this.brandModel.findById(id);
     if (!brand) {
-      throw new AppException('Brand not found', 404);
+      throw new AppException('Brand not found', '404');
     }
 
     // If name is being updated, regenerate slug
     if (dto.name && dto.name !== brand.name) {
-      const newSlug = generateSlug(dto.name);
-      const existing = await this.brandModel.findOne({ 
-        slug: newSlug, 
-        _id: { $ne: id } 
+      const newSlug = slugify(dto.name);
+      const existing = await this.brandModel.findOne({
+        slug: newSlug,
+        _id: { $ne: id },
       });
       if (existing) {
-        throw new AppException('Brand with this name already exists', 400);
+        throw new AppException('Brand with this name already exists', '400');
       }
       brand.slug = newSlug;
     }
@@ -138,7 +131,7 @@ export class BrandsService {
   async deleteBrand(id: string): Promise<void> {
     const brand = await this.brandModel.findById(id);
     if (!brand) {
-      throw new AppException('Brand not found', 404);
+      throw new AppException('Brand not found', '404');
     }
 
     // Note: You might want to check if there are products using this brand
@@ -150,10 +143,7 @@ export class BrandsService {
    * Get all active brands (for public use)
    */
   async getActiveBrands() {
-    return await this.brandModel
-      .find({ isActive: true })
-      .sort({ sortOrder: 1, name: 1 })
-      .lean();
+    return await this.brandModel.find({ isActive: true }).sort({ sortOrder: 1, name: 1 }).lean();
   }
 
   /**
@@ -162,11 +152,10 @@ export class BrandsService {
   async toggleBrandStatus(id: string): Promise<Brand> {
     const brand = await this.brandModel.findById(id);
     if (!brand) {
-      throw new AppException('Brand not found', 404);
+      throw new AppException('Brand not found', '404');
     }
 
     brand.isActive = !brand.isActive;
     return await brand.save();
   }
 }
-

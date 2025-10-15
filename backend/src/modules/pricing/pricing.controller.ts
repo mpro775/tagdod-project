@@ -33,7 +33,8 @@ export class PricingController {
   @Post('cart')
   @ApiOperation({ summary: 'Calculate total for cart with promotions' })
   async calculateCart(
-    @Body() body: {
+    @Body()
+    body: {
       items: CartItem[];
       currency: string;
       accountType?: string;
@@ -66,4 +67,3 @@ export class PricingController {
     };
   }
 }
-

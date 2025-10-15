@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CatalogService } from './catalog.service';
-import { ResponseCacheInterceptor, CacheResponse, CacheTTL } from '../../shared/interceptors/response-cache.interceptor';
+import { ResponseCacheInterceptor, CacheResponse } from '../../shared/interceptors/response-cache.interceptor';
 
 interface ListProductsQuery {
   page?: string;

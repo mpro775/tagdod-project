@@ -174,31 +174,31 @@ export class AdvancedProductSearchDto {
 
 // ==================== Response DTOs ====================
 export class SearchResultDto {
-  type: 'product' | 'category' | 'brand';
-  id: string;
-  title: string;
+  type!: 'product' | 'category' | 'brand';
+  id!: string;
+  title!: string;
   titleEn?: string;
   description?: string;
   descriptionEn?: string;
   thumbnail?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   relevanceScore?: number;
   createdAt?: Date;
 }
 
 export class FacetDto {
-  field: string;
-  values: Array<{
+  field!: string;
+  values!: Array<{
     value: string;
     count: number;
   }>;
 }
 
 export class ProductSearchResultDto {
-  results: SearchResultDto[];
-  total: number;
-  page: number;
-  totalPages: number;
+  results!: SearchResultDto[];
+  total!: number;
+  page!: number;
+  totalPages!: number;
   facets?: FacetDto[];
   priceRange?: {
     min: number;

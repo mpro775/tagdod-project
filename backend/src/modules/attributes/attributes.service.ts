@@ -85,7 +85,7 @@ export class AttributesService {
   } = {}) {
     const { search, isActive, isFilterable, groupId, includeDeleted = false } = query;
 
-    const q: any = {};
+    const q: Record<string, unknown> = {};
 
     if (!includeDeleted) {
       q.deletedAt = null;
@@ -269,8 +269,8 @@ export class AttributesService {
       ]),
     ]);
 
-    const typeStats: any = {};
-    byType.forEach((item: any) => {
+    const typeStats: Record<string, number> = {};
+    byType.forEach((item: { _id: string; count: number }) => {
       typeStats[item._id] = item.count;
     });
 

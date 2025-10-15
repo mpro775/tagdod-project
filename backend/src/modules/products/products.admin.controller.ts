@@ -71,7 +71,7 @@ export class ProductsAdminController {
 
   @Post(':id/restore')
   async restoreProduct(@Param('id') id: string) {
-    const product = await this.productsService.restoreProduct(id);
+    await this.productsService.restoreProduct(id);
     return { data: { restored: true } };
   }
 
@@ -118,7 +118,7 @@ export class ProductsAdminController {
 
   @Delete('variants/:id')
   async deleteVariant(@Param('id') id: string) {
-    const variant = await this.variantsService.deleteVariant(id);
+    await this.variantsService.deleteVariant(id);
     return { data: { deleted: true } };
   }
 

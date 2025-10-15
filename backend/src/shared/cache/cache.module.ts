@@ -15,7 +15,6 @@ import { CacheGuard } from '../guards/cache.guard';
         const logger = new Logger('RedisClient');
         const redisUrl = configService.get('REDIS_URL');
         return new Redis(redisUrl, {
-          retryDelayOnFailover: 100,
           enableReadyCheck: false,
           maxRetriesPerRequest: 3,
           lazyConnect: true,
@@ -23,8 +22,6 @@ import { CacheGuard } from '../guards/cache.guard';
             logger.warn(`Redis reconnect on error: ${err.message}`);
             return err.message.includes('READONLY');
           },
-          retryDelayOnClusterDown: 1000,
-          clusterRetryDelay: 1000,
         });
       },
       inject: ['ConfigService'],

@@ -20,6 +20,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { AdvancedReportsService } from './services/advanced-reports.service';
@@ -58,9 +59,9 @@ export class AdvancedAnalyticsController {
   })
   async generateReport(
     @Body() dto: GenerateAdvancedReportDto,
-    @Request() req: any,
+    @Request() req: ExpressRequest,
   ) {
-    const userId = req.user.userId;
+    const userId = req.user!.userId;
     const report = await this.reportsService.generateAdvancedReport(dto, userId);
     return {
       success: true,
@@ -82,7 +83,7 @@ export class AdvancedAnalyticsController {
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('category') category?: ReportCategory,
-    @Request() req?: any,
+    @Request() req?: ExpressRequest,
   ) {
     const result = await this.reportsService.listReports(
       Number(page),
@@ -424,24 +425,25 @@ export class AdvancedAnalyticsController {
     @Query('endDate') endDate: string,
     @Query('groupBy') groupBy = 'daily',
   ) {
+    type SalesByDate = { date: string; sales: number; orders: number; revenue: number };
     const analytics = await this.reportsService.generateSalesAnalytics({
       startDate,
       endDate,
-      groupBy: groupBy as any,
+      groupBy: groupBy as 'daily' | 'weekly' | 'monthly',
     });
 
-    let trendData: any[] = [];
+    let trendData: Array<{ date: string; value: number; label: string }> = [];
 
     switch (metric) {
       case 'revenue':
-        trendData = analytics.salesByDate.map((item: any) => ({
+        trendData = analytics.salesByDate.map((item: SalesByDate) => ({
           date: item.date,
           value: item.revenue,
           label: 'الإيرادات',
         }));
         break;
       case 'orders':
-        trendData = analytics.salesByDate.map((item: any) => ({
+        trendData = analytics.salesByDate.map((item: SalesByDate) => ({
           date: item.date,
           value: item.orders,
           label: 'الطلبات',

@@ -78,7 +78,7 @@ export class CategoriesAdminController {
   // ==================== استعادة فئة محذوفة ====================
   @Post(':id/restore')
   async restoreCategory(@Param('id') id: string) {
-    const category = await this.categoriesService.restoreCategory(id);
+    await this.categoriesService.restoreCategory(id);
     return { data: { restored: true } };
   }
 

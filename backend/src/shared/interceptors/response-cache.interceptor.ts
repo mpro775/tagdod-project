@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
 import { CacheService } from '../cache/cache.service';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 
 export const CACHE_KEY = 'cache';
 export const CACHE_TTL_KEY = 'cache_ttl';
@@ -23,7 +23,7 @@ export class ResponseCacheInterceptor {
     private reflector: Reflector,
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse<Response>();
 
@@ -71,7 +71,6 @@ export class ResponseCacheInterceptor {
 
       // Set cache miss header
       response.setHeader('X-Cache-Status', 'MISS');
-
     } catch (error) {
       this.logger.error(`Cache read error for key ${cacheKey}:`, error);
       // Continue without caching
@@ -92,14 +91,19 @@ export class ResponseCacheInterceptor {
     );
   }
 
-  private generateCacheKey(request: any, customKey?: string): string {
+  private generateCacheKey(request: Request, customKey?: string): string {
     if (customKey) {
       return `response:${customKey}`;
     }
 
     // Generate key based on request
-    const { method, url, user, query, body } = request;
-    const userId = user?.id || user?._id || 'anonymous';
+    const { method, url, query, body } = request;
+    const userObj = (request as Request & { user?: Record<string, unknown> }).user;
+    const userId =
+      typeof userObj?.['id'] === 'string' ? (userObj['id'] as string) :
+      typeof userObj?.['_id'] === 'string' ? String(userObj['_id']) :
+      typeof userObj?.['userId'] === 'string' ? (userObj['userId'] as string) :
+      'anonymous';
 
     // Create a hash of the request parameters
     const keyComponents = [
@@ -119,22 +123,22 @@ export class ResponseCacheInterceptor {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(36);
   }
 
-  private hashRequestBody(body: any): string {
+  private hashRequestBody(body: unknown): string {
     if (!body || typeof body !== 'object') return '';
 
     // For sensitive operations, create a simplified hash
-    const safeBody = { ...body };
+    const safeBody: Record<string, unknown> = { ...(body as Record<string, unknown>) };
     // Remove sensitive fields
-    delete safeBody.password;
-    delete safeBody.token;
-    delete safeBody.creditCard;
-    delete safeBody.cvv;
+    delete safeBody['password'];
+    delete safeBody['token'];
+    delete safeBody['creditCard'];
+    delete safeBody['cvv'];
 
     return this.hashString(JSON.stringify(safeBody));
   }
@@ -142,14 +146,14 @@ export class ResponseCacheInterceptor {
 
 // Decorator to enable response caching
 export function CacheResponse(options?: CacheOptions) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+  return (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) => {
     Reflect.defineMetadata(CACHE_KEY, options || {}, descriptor.value);
   };
 }
 
 // Decorator to set cache TTL
 export function CacheTTL(ttl: number) {
-  return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+  return (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) => {
     const existingOptions = Reflect.getMetadata(CACHE_KEY, descriptor.value) || {};
     Reflect.defineMetadata(CACHE_KEY, { ...existingOptions, ttl }, descriptor.value);
   };

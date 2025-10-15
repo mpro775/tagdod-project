@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, SortOrder } from 'mongoose';
 import { Banner, BannerLocation, BannerPromotionType } from './schemas/banner.schema';
 import { CreateBannerDto, UpdateBannerDto, ListBannersDto } from './dto/banner.dto';
 import { AppException } from '../../shared/exceptions/app.exception';
@@ -35,7 +35,7 @@ export class BannersService {
     const { page = 1, limit = 20, search, isActive, location, sortBy = 'sortOrder', sortOrder = 'asc' } = dto;
     
     const skip = (page - 1) * limit;
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     // Search filter
     if (search) {
@@ -65,7 +65,7 @@ export class BannersService {
     ];
 
     // Sort options
-    const sortOptions: any = {};
+    const sortOptions: Record<string, SortOrder> = {};
     sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [banners, total] = await Promise.all([
@@ -95,7 +95,7 @@ export class BannersService {
   async getBannerById(id: string): Promise<Banner> {
     const banner = await this.bannerModel.findById(id);
     if (!banner) {
-      throw new AppException('Banner not found', 404);
+      throw new AppException('Banner not found', '404');
     }
     return banner;
   }
@@ -106,7 +106,7 @@ export class BannersService {
   async updateBanner(id: string, dto: UpdateBannerDto): Promise<Banner> {
     const banner = await this.bannerModel.findById(id);
     if (!banner) {
-      throw new AppException('Banner not found', 404);
+      throw new AppException('Banner not found', '404');
     }
 
     // Update fields
@@ -121,7 +121,7 @@ export class BannersService {
   async deleteBanner(id: string): Promise<void> {
     const banner = await this.bannerModel.findById(id);
     if (!banner) {
-      throw new AppException('Banner not found', 404);
+      throw new AppException('Banner not found', '404');
     }
 
     await this.bannerModel.deleteOne({ _id: id });
@@ -132,7 +132,7 @@ export class BannersService {
    */
   async getActiveBanners(location?: BannerLocation) {
     const now = new Date();
-    const query: any = { isActive: true };
+    const query: Record<string, unknown> = { isActive: true };
 
     if (location) {
       query.location = location;
@@ -158,7 +158,7 @@ export class BannersService {
   async toggleBannerStatus(id: string): Promise<Banner> {
     const banner = await this.bannerModel.findById(id);
     if (!banner) {
-      throw new AppException('Banner not found', 404);
+      throw new AppException('Banner not found', '404');
     }
 
     banner.isActive = !banner.isActive;
@@ -192,7 +192,7 @@ export class BannersService {
     const banner = await this.bannerModel.findById(id).lean();
     
     if (!banner) {
-      throw new AppException('Banner not found', 404);
+      throw new AppException('Banner not found', '404');
     }
 
     let linkedPromotion = null;

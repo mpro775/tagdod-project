@@ -15,7 +15,6 @@ import {
 import { Product } from '../products/schemas/product.schema';
 import { Category } from '../categories/schemas/category.schema';
 import { Brand } from '../brands/schemas/brand.schema';
-import { getLocalizedField } from '../../shared/utils/i18n.util';
 
 @Injectable()
 export class SearchService {
@@ -154,7 +153,7 @@ export class SearchService {
     }
 
     // Sorting
-    let sort: any = {};
+    const sort: any = {};
     const direction = sortOrder === SortOrder.ASC ? 1 : -1;
 
     switch (sortBy) {

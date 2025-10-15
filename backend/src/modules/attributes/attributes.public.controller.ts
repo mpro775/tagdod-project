@@ -26,7 +26,6 @@ export class AttributesPublicController {
     const attributes = await this.attributesService.listAttributes({ 
       isActive: true, 
       isFilterable: true,
-      showInFilters: true,
     });
     
     // جلب القيم لكل سمة

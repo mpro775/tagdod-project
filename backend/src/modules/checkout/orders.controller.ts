@@ -1,15 +1,7 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Request as ExpressRequest } from 'express';
 import { CheckoutService } from './checkout.service';
 import { OrdersService } from './orders.service';
 import {
@@ -18,7 +10,6 @@ import {
   RateOrderDto,
   ListOrdersDto,
 } from './dto/checkout.dto';
-import { OrderStatus } from './schemas/order.schema';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -32,8 +23,14 @@ export class OrdersController {
 
   @Post('create')
   @ApiOperation({ summary: 'Create order from cart' })
-  async createOrder(@Req() req: any, @Body() dto: CheckoutConfirmDto) {
-    const order = await this.checkoutService.createOrder(dto, req.user.userId);
+  async createOrder(@Req() req: ExpressRequest, @Body() dto: CheckoutConfirmDto) {
+    const order = await this.checkoutService.createOrder(
+      dto,
+      (req as unknown as { user: { userId: string } }).user.userId,
+    );
+    if (!order) {
+      return { success: false, message: 'Order creation failed' };
+    }
 
     return {
       success: true,
@@ -50,9 +47,9 @@ export class OrdersController {
 
   @Get()
   @ApiOperation({ summary: 'Get user orders' })
-  async getMyOrders(@Req() req: any, @Query() dto: ListOrdersDto) {
+  async getMyOrders(@Req() req: ExpressRequest, @Query() dto: ListOrdersDto) {
     const result = await this.checkoutService.getUserOrders(
-      req.user.userId,
+      (req as unknown as { user: { userId: string } }).user.userId,
       dto.page,
       dto.limit,
       dto.status,
@@ -67,8 +64,11 @@ export class OrdersController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get order details' })
-  async getOrderDetails(@Req() req: any, @Param('id') orderId: string) {
-    const order = await this.checkoutService.getOrderDetails(orderId, req.user.userId);
+  async getOrderDetails(@Req() req: ExpressRequest, @Param('id') orderId: string) {
+    const order = await this.checkoutService.getOrderDetails(
+      orderId,
+      (req as unknown as { user: { userId: string } }).user.userId,
+    );
 
     return {
       success: true,
@@ -78,8 +78,11 @@ export class OrdersController {
 
   @Get(':id/track')
   @ApiOperation({ summary: 'Track order' })
-  async trackOrder(@Req() req: any, @Param('id') orderId: string) {
-    const tracking = await this.ordersService.getOrderTracking(orderId, req.user.userId);
+  async trackOrder(@Req() req: ExpressRequest, @Param('id') orderId: string) {
+    const tracking = await this.ordersService.getOrderTracking(
+      orderId,
+      (req as unknown as { user: { userId: string } }).user.userId,
+    );
 
     return {
       success: true,
@@ -90,13 +93,13 @@ export class OrdersController {
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Cancel order' })
   async cancelOrder(
-    @Req() req: any,
+    @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: CancelOrderDto,
   ) {
     const order = await this.checkoutService.cancelOrder(
       orderId,
-      req.user.userId,
+      (req as unknown as { user: { userId: string } }).user.userId,
       dto.reason,
     );
 
@@ -110,11 +113,15 @@ export class OrdersController {
   @Post(':id/rate')
   @ApiOperation({ summary: 'Rate order' })
   async rateOrder(
-    @Req() req: any,
+    @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: RateOrderDto,
   ) {
-    const order = await this.ordersService.rateOrder(orderId, req.user.userId, dto);
+    const order = await this.ordersService.rateOrder(
+      orderId,
+      (req as unknown as { user: { userId: string } }).user.userId,
+      dto,
+    );
 
     return {
       success: true,
@@ -125,8 +132,10 @@ export class OrdersController {
 
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get user order statistics' })
-  async getMyStatistics(@Req() req: any) {
-    const stats = await this.ordersService.getOrderStatistics(req.user.userId);
+  async getMyStatistics(@Req() req: ExpressRequest) {
+    const stats = await this.ordersService.getOrderStatistics(
+      (req as unknown as { user: { userId: string } }).user.userId,
+    );
 
     return {
       success: true,
@@ -134,4 +143,3 @@ export class OrdersController {
     };
   }
 }
-

@@ -75,7 +75,10 @@ export class CatalogService {
   }
 
   async setVariantPrice(dto: Partial<VariantPrice>) {
-    const existing = await this.priceModel.findOne({ variantId: dto.variantId, currency: dto.currency });
+    const existing = await this.priceModel.findOne({
+      variantId: dto.variantId,
+      currency: dto.currency,
+    });
     let price;
     if (existing) {
       if (dto.amount !== undefined) existing.amount = dto.amount;
@@ -97,25 +100,34 @@ export class CatalogService {
   }
 
   // -------- Public queries
-  async listProducts({ page=1, limit=20, search, categoryId, brandId }: ListProductsParams) {
+  async listProducts({ page = 1, limit = 20, search, categoryId, brandId }: ListProductsParams) {
     const cacheKey = `products:list:${page}:${limit}:${search || ''}:${categoryId || ''}:${brandId || ''}`;
 
     // Try to get from cache first
-    const cached = await this.cacheService.get<{ items: any[]; meta: any }>(cacheKey);
+    const cached = await this.cacheService.get<{ items: unknown[]; meta: { page: number; limit: number; total: number } }>(cacheKey);
     if (cached) {
-      this.logger.debug(`Products list cache hit: page=${page}, search=${search}, category=${categoryId}, brand=${brandId}`);
+      this.logger.debug(
+        `Products list cache hit: page=${page}, search=${search}, category=${categoryId}, brand=${brandId}`,
+      );
       return cached;
     }
 
     // Cache miss - fetch from database
-    this.logger.debug(`Products list cache miss: page=${page}, search=${search}, category=${categoryId}, brand=${brandId}`);
+    this.logger.debug(
+      `Products list cache miss: page=${page}, search=${search}, category=${categoryId}, brand=${brandId}`,
+    );
     const q: Record<string, unknown> = { status: 'Active' };
     if (categoryId) q.categoryId = new Types.ObjectId(categoryId);
     if (brandId) q.brandId = brandId;
     if (search) q.$text = { $search: search };
 
     const skip = (page - 1) * limit;
-    const items = await this.productModel.find(q).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+    const items = await this.productModel
+      .find(q)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
     const total = await this.productModel.countDocuments(q);
 
     const result = { items, meta: { page, limit, total } };
@@ -142,8 +154,10 @@ export class CatalogService {
     if (!product) return null;
 
     const variants = await this.variantModel.find({ productId }).lean();
-    const variantIds = variants.map(v => v._id);
-    const prices = await this.priceModel.find({ variantId: { $in: variantIds }, ...(currency ? { currency } : {}) }).lean();
+    const variantIds = variants.map((v) => v._id);
+    const prices = await this.priceModel
+      .find({ variantId: { $in: variantIds }, ...(currency ? { currency } : {}) })
+      .lean();
 
     const result = { product, variants, prices };
 

@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
-import { Order } from './schemas/order.schema';
+import { Order, OrderStatus, PaymentStatus } from './schemas/order.schema';
 import { Inventory } from './schemas/inventory.schema';
 import { Reservation } from './schemas/reservation.schema';
 import { InventoryLedger } from './schemas/inventory-ledger.schema';
 import { CartService } from '../cart/cart.service';
 import * as crypto from 'crypto';
+import { RefundOrderDto, ShipOrderDto, CheckoutConfirmDto } from './dto/checkout.dto';
 
 interface CartLine {
   itemId: string;
@@ -43,7 +44,13 @@ export class CheckoutService {
   }
 
   // ---- Confirm
-  async confirm(userId: string, currency: string, method: 'COD'|'ONLINE', provider?: string, addressId?: string) {
+  async confirm(
+    userId: string,
+    currency: string,
+    method: 'COD' | 'ONLINE',
+    provider?: string,
+    addressId?: string,
+  ) {
     // Recalculate from cart to prevent tampering
     const quote = await this.preview(userId, currency);
     const total = quote.subtotal;
@@ -52,25 +59,32 @@ export class CheckoutService {
     let orderDoc!: Order;
     await session.withTransaction(async () => {
       // 1) Create Order (PENDING)
-      const createdOrders = await this.orders.create([{
-        userId: new Types.ObjectId(userId),
-        addressId,
-        status: 'PENDING',
-        currency,
-        total,
-        wholesaleDiscountPercent: quote.meta.wholesaleDiscountPercent || 0,
-        wholesaleDiscountAmount: quote.meta.wholesaleDiscountAmount || 0,
-        items: quote.items.map((ln: CartLine) => ({
-          productId: null, // Optional: fill if productId available in preview
-          variantId: new Types.ObjectId(ln.variantId),
-          qty: ln.qty,
-          unitPrice: ln.unit.final,
-          currency,
-          snapshot: { /* could be enriched from catalog if needed */ },
-        })),
-        paymentMethod: method,
-        paymentProvider: provider,
-      }], { session });
+      const createdOrders = await this.orders.create(
+        [
+          {
+            userId: new Types.ObjectId(userId),
+            addressId,
+            status: 'PENDING',
+            currency,
+            total,
+            wholesaleDiscountPercent: quote.meta.wholesaleDiscountPercent || 0,
+            wholesaleDiscountAmount: quote.meta.wholesaleDiscountAmount || 0,
+            items: quote.items.map((ln: CartLine) => ({
+              productId: null, // Optional: fill if productId available in preview
+              variantId: new Types.ObjectId(ln.variantId),
+              qty: ln.qty,
+              unitPrice: ln.unit.final,
+              currency,
+              snapshot: {
+                /* could be enriched from catalog if needed */
+              },
+            })),
+            paymentMethod: method,
+            paymentProvider: provider,
+          },
+        ],
+        { session },
+      );
       orderDoc = createdOrders[0];
 
       // 2) Reserve inventory for each line
@@ -85,7 +99,7 @@ export class CheckoutService {
           { upsert: true, new: true, session },
         );
 
-        const available = (inv.on_hand - inv.reserved) - inv.safety_stock;
+        const available = inv.on_hand - inv.reserved - inv.safety_stock;
         if (available < ln.qty) {
           throw new Error('Inventory shortage');
         }
@@ -93,13 +107,18 @@ export class CheckoutService {
         inv.reserved += ln.qty;
         await inv.save({ session });
 
-        await this.reservations.create([{
-          variantId: new Types.ObjectId(ln.variantId),
-          orderId: orderDoc._id,
-          qty: ln.qty,
-          expiresAt,
-          status: 'ACTIVE',
-        }], { session });
+        await this.reservations.create(
+          [
+            {
+              variantId: new Types.ObjectId(ln.variantId),
+              orderId: orderDoc._id,
+              qty: ln.qty,
+              expiresAt,
+              status: 'ACTIVE',
+            },
+          ],
+          { session },
+        );
       }
 
       // 3) If COD → commit immediately
@@ -111,9 +130,23 @@ export class CheckoutService {
             inv.reserved -= ln.qty;
             await inv.save({ session });
           }
-          await this.ledger.create([{ variantId: ln.variantId, change: -ln.qty, reason: 'ORDER_CONFIRMED_OUT', refId: String(orderDoc._id) }], { session });
+          await this.ledger.create(
+            [
+              {
+                variantId: ln.variantId,
+                change: -ln.qty,
+                reason: 'ORDER_CONFIRMED_OUT',
+                refId: String(orderDoc._id),
+              },
+            ],
+            { session },
+          );
         }
-        await this.orders.updateOne({ _id: orderDoc._id }, { $set: { status: 'CONFIRMED' } }, { session });
+        await this.orders.updateOne(
+          { _id: orderDoc._id },
+          { $set: { status: 'CONFIRMED' } },
+          { session },
+        );
       }
     });
 
@@ -123,14 +156,22 @@ export class CheckoutService {
       const payload = `${intentId}|PENDING|${total}`;
       const signature = this.hmac(payload);
       await this.orders.updateOne({ _id: orderDoc._id }, { $set: { paymentIntentId: intentId } });
-      return { orderId: String(orderDoc._id), payment: { intentId, provider, amount: total, signature } };
+      return {
+        orderId: String(orderDoc._id),
+        payment: { intentId, provider, amount: total, signature },
+      };
     } else {
       return { orderId: String(orderDoc._id), status: 'CONFIRMED' };
     }
   }
 
   // ---- Webhook
-  async handleWebhook(intentId: string, status: 'SUCCESS'|'FAILED', amount: string, signature: string) {
+  async handleWebhook(
+    intentId: string,
+    status: 'SUCCESS' | 'FAILED',
+    amount: string,
+    signature: string,
+  ) {
     const expected = this.hmac(`${intentId}|${status}|${amount}`);
     if (signature !== expected) return { ok: false, reason: 'BAD_SIGNATURE' };
 
@@ -154,10 +195,18 @@ export class CheckoutService {
             inv.reserved -= qty;
             await inv.save({ session });
           }
-          await this.ledger.create([{ variantId, change: -qty, reason: 'ORDER_CONFIRMED_OUT', refId: String(order._id) }], { session });
-          await this.reservations.updateMany({ orderId: order._id, variantId, status: 'ACTIVE' }, { $set: { status: 'COMMITTED' } }).session(session);
+          await this.ledger.create(
+            [{ variantId, change: -qty, reason: 'ORDER_CONFIRMED_OUT', refId: String(order._id) }],
+            { session },
+          );
+          await this.reservations
+            .updateMany(
+              { orderId: order._id, variantId, status: 'ACTIVE' },
+              { $set: { status: 'COMMITTED' } },
+            )
+            .session(session);
         }
-        order.status = 'CONFIRMED';
+        order.status = OrderStatus.CONFIRMED;
         order.paidAt = new Date();
         await order.save({ session });
       } else {
@@ -168,10 +217,18 @@ export class CheckoutService {
             inv.reserved -= qty;
             await inv.save({ session });
           }
-          await this.ledger.create([{ variantId, change: 0, reason: 'PAYMENT_FAILED_RELEASE', refId: String(order._id) }], { session });
-          await this.reservations.updateMany({ orderId: order._id, variantId, status: 'ACTIVE' }, { $set: { status: 'CANCELLED' } }).session(session);
+          await this.ledger.create(
+            [{ variantId, change: 0, reason: 'PAYMENT_FAILED_RELEASE', refId: String(order._id) }],
+            { session },
+          );
+          await this.reservations
+            .updateMany(
+              { orderId: order._id, variantId, status: 'ACTIVE' },
+              { $set: { status: 'CANCELLED' } },
+            )
+            .session(session);
         }
-        order.status = 'PAYMENT_FAILED';
+        order.status = OrderStatus.PAYMENT_FAILED;
         await order.save({ session });
       }
     });
@@ -180,13 +237,13 @@ export class CheckoutService {
 
   // ---- FSM transitions
   private canUserCancel(status: string) {
-    return ['PENDING','CONFIRMED','PROCESSING'].includes(status);
+    return ['PENDING', 'CONFIRMED', 'PROCESSING'].includes(status);
   }
   private nextAllowed(current: string, next: string) {
     const allowed = {
-      PENDING: ['CONFIRMED','CANCELLED'],
-      CONFIRMED: ['PROCESSING','CANCELLED'],
-      PROCESSING: ['SHIPPED','CANCELLED'],
+      PENDING: ['CONFIRMED', 'CANCELLED'],
+      CONFIRMED: ['PROCESSING', 'CANCELLED'],
+      PROCESSING: ['SHIPPED', 'CANCELLED'],
       SHIPPED: ['DELIVERED'],
       DELIVERED: ['COMPLETED'],
     } as Record<string, string[]>;
@@ -203,21 +260,164 @@ export class CheckoutService {
     const order = await this.orders.findOne({ _id: id, userId });
     if (!order) return null;
     if (!this.canUserCancel(order.status)) return { error: 'ORDER_CANNOT_CANCEL' };
-    order.status = 'CANCELLED';
+    order.status = OrderStatus.CANCELLED;
     await order.save();
     // NOTE: in real flow, if order had reserved inventory (ONLINE not completed), release it.
     return { ok: true };
   }
 
+  // ===== User helpers used by OrdersController =====
+  async getUserOrders(userId: string, page = 1, limit = 20, status?: OrderStatus) {
+    const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = { userId };
+    if (status) query.status = status;
+    const [orders, total] = await Promise.all([
+      this.orders
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.orders.countDocuments(query),
+    ]);
+    return {
+      orders,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async cancelOrder(orderId: string, userId: string, reason: string) {
+    const order = await this.orders.findOne({ _id: orderId, userId });
+    if (!order) return null;
+    if (!this.canUserCancel(order.status)) return { error: 'ORDER_CANNOT_CANCEL' };
+    order.status = OrderStatus.CANCELLED;
+    order.cancelledAt = new Date();
+    order.cancellationReason = reason;
+    await order.save();
+    return order;
+  }
+
   async adminList() {
     return this.orders.find().sort({ createdAt: -1 }).lean();
   }
-  async adminSetStatus(id: string, status: 'PROCESSING'|'SHIPPED'|'DELIVERED'|'COMPLETED') {
+  async adminSetStatus(id: string, status: 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'COMPLETED') {
     const order = await this.orders.findById(id);
     if (!order) return null;
     if (!this.nextAllowed(order.status, status)) return { error: 'INVALID_TRANSITION' };
-    order.status = status;
+    order.status = status as OrderStatus;
     await order.save();
     return { ok: true };
+  }
+
+  // ===== Admin helpers used by AdminOrdersController =====
+  async createOrder(dto: CheckoutConfirmDto, userId: string) {
+    // Re-use confirm flow to create an order and then fetch it
+    const res = await this.confirm(
+      userId,
+      dto.currency,
+      (dto.paymentMethod === 'COD' ? 'COD' : 'ONLINE'),
+      dto.paymentProvider,
+      dto.deliveryAddressId,
+    );
+    const order = await this.orders.findById(res.orderId);
+    return order;
+  }
+
+  async getAllOrders(
+    page = 1,
+    limit = 20,
+    status?: OrderStatus,
+    search?: string,
+  ) {
+    const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (search) {
+      query.$or = [
+        { orderNumber: { $regex: search, $options: 'i' } },
+        { 'deliveryAddress.recipientName': { $regex: search, $options: 'i' } },
+        { 'deliveryAddress.recipientPhone': { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [orders, total] = await Promise.all([
+      this.orders
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.orders.countDocuments(query),
+    ]);
+
+    return {
+      orders,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getOrderDetails(orderId: string, userId?: string) {
+    const q: Record<string, unknown> = { _id: orderId };
+    if (userId) q.userId = userId;
+    const order = await this.orders.findOne(q as Record<string, unknown>);
+    return order;
+  }
+
+  async updateOrderStatus(
+    orderId: string,
+    newStatus: OrderStatus,
+    adminId: string,
+    notes?: string,
+  ) {
+    const order = await this.orders.findById(orderId);
+    if (!order) return null;
+    if (!this.nextAllowed(order.status, newStatus)) return { error: 'INVALID_TRANSITION' };
+    order.status = newStatus;
+    order.statusHistory.push({ status: newStatus, changedAt: new Date(), changedBy: new Types.ObjectId(adminId), changedByRole: 'admin', notes });
+    await order.save();
+    return order;
+  }
+
+  async shipOrder(orderId: string, dto: ShipOrderDto, adminId: string) {
+    const order = await this.orders.findById(orderId);
+    if (!order) return null;
+    if (![OrderStatus.PROCESSING, OrderStatus.READY_TO_SHIP].includes(order.status)) return null;
+    order.trackingNumber = dto.trackingNumber;
+    order.trackingUrl = '';
+    order.estimatedDeliveryDate = dto.estimatedDeliveryDate ? new Date(dto.estimatedDeliveryDate) : undefined;
+    order.status = OrderStatus.SHIPPED;
+    order.statusHistory.push({ status: OrderStatus.SHIPPED, changedAt: new Date(), changedBy: new Types.ObjectId(adminId), changedByRole: 'admin', notes: dto.notes });
+    await order.save();
+    return order;
+  }
+
+  async processRefund(orderId: string, dto: RefundOrderDto, adminId: string) {
+    const order = await this.orders.findById(orderId);
+    if (!order) return null;
+    if (order.paymentStatus !== PaymentStatus.PAID) return null;
+    if (dto.amount > order.total) return null;
+    order.isRefunded = true;
+    order.refundAmount = dto.amount;
+    order.refundReason = dto.reason;
+    order.refundedAt = new Date();
+    order.paymentStatus = PaymentStatus.REFUNDED;
+    order.status = OrderStatus.REFUNDED;
+    order.statusHistory.push({ status: order.status, changedAt: new Date(), changedBy: new Types.ObjectId(adminId), changedByRole: 'admin', notes: `Refund ${dto.amount}` });
+    await order.save();
+    return order;
   }
 }

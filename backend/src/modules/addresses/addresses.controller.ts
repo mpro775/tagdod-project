@@ -10,7 +10,17 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
+  ApiQuery,
+  ApiParam,
+} from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AddressesService } from './addresses.service';
@@ -25,6 +35,9 @@ export class AddressesController {
 
   @Get()
   @ApiOperation({ summary: 'Get all user addresses' })
+  @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean, description: 'Include soft-deleted addresses' })
+  @ApiOkResponse({ description: 'Addresses fetched successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async list(@Req() req: Request, @Query('includeDeleted') includeDeleted?: string) {
     const addresses = await this.addressesService.list(
       req.user!.userId,
@@ -40,6 +53,8 @@ export class AddressesController {
 
   @Get('active')
   @ApiOperation({ summary: 'Get active addresses only' })
+  @ApiOkResponse({ description: 'Active addresses fetched successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async getActive(@Req() req: Request) {
     const addresses = await this.addressesService.getActiveAddresses(req.user!.userId);
 
@@ -52,6 +67,8 @@ export class AddressesController {
 
   @Get('default')
   @ApiOperation({ summary: 'Get default address' })
+  @ApiOkResponse({ description: 'Default address fetched successfully (or null if none)' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async getDefault(@Req() req: Request) {
     const address = await this.addressesService.getDefault(req.user!.userId);
 
@@ -71,6 +88,9 @@ export class AddressesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get address by ID' })
+  @ApiParam({ name: 'id', description: 'Address ID' })
+  @ApiOkResponse({ description: 'Address fetched successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async getAddress(@Req() req: Request, @Param('id') id: string) {
     const address = await this.addressesService.get(req.user!.userId, id);
 
@@ -82,6 +102,9 @@ export class AddressesController {
 
   @Post()
   @ApiOperation({ summary: 'Create new address' })
+  @ApiCreatedResponse({ description: 'Address created successfully' })
+  @ApiBadRequestResponse({ description: 'Validation error' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async create(@Req() req: Request, @Body() dto: CreateAddressDto) {
     const address = await this.addressesService.create(req.user!.userId, dto);
 
@@ -94,6 +117,10 @@ export class AddressesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update address' })
+  @ApiParam({ name: 'id', description: 'Address ID' })
+  @ApiOkResponse({ description: 'Address updated successfully' })
+  @ApiBadRequestResponse({ description: 'Validation error' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async update(
     @Req() req: Request,
     @Param('id') id: string,
@@ -110,6 +137,9 @@ export class AddressesController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete address (soft delete)' })
+  @ApiParam({ name: 'id', description: 'Address ID' })
+  @ApiOkResponse({ description: 'Address deleted successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async remove(@Req() req: Request, @Param('id') id: string) {
     const result = await this.addressesService.remove(req.user!.userId, id);
 
@@ -122,6 +152,9 @@ export class AddressesController {
 
   @Post(':id/set-default')
   @ApiOperation({ summary: 'Set address as default' })
+  @ApiParam({ name: 'id', description: 'Address ID' })
+  @ApiOkResponse({ description: 'Default address set successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async setDefault(@Req() req: Request, @Param('id') id: string) {
     const address = await this.addressesService.setDefault(req.user!.userId, id);
 
@@ -134,6 +167,9 @@ export class AddressesController {
 
   @Post(':id/restore')
   @ApiOperation({ summary: 'Restore deleted address' })
+  @ApiParam({ name: 'id', description: 'Address ID' })
+  @ApiOkResponse({ description: 'Address restored successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async restore(@Req() req: Request, @Param('id') id: string) {
     const address = await this.addressesService.restore(req.user!.userId, id);
 
@@ -146,6 +182,9 @@ export class AddressesController {
 
   @Get('validate/:id')
   @ApiOperation({ summary: 'Validate address ownership' })
+  @ApiParam({ name: 'id', description: 'Address ID' })
+  @ApiOkResponse({ description: 'Ownership validation result' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async validateOwnership(@Req() req: Request, @Param('id') id: string) {
     const isValid = await this.addressesService.validateAddressOwnership(
       id,

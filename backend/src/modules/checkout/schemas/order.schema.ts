@@ -15,6 +15,7 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
   REFUNDED = 'refunded',
   RETURNED = 'returned',
+  PAYMENT_FAILED = 'payment_failed',
 }
 
 export enum PaymentStatus {
@@ -197,6 +198,9 @@ export class Order {
   metadata?: {
     cartId?: string;
     source?: string;
+    rating?: number;
+    review?: string;
+    ratedAt?: string;
   };
 }
 export const OrderSchema = SchemaFactory.createForClass(Order);

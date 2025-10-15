@@ -313,7 +313,7 @@ export class FavoritesService {
         totalGuests,
         totalSynced,
         total: totalUsers + totalGuests,
-        topTags: topTags.map((t: any) => ({ tag: t._id, count: t.count })),
+        topTags: topTags.map((t: { _id: string; count: number }) => ({ tag: t._id, count: t.count })),
       },
     };
   }

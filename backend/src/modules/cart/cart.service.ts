@@ -1,7 +1,7 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Cart, CartItem } from './schemas/cart.schema';
+import { Cart, CartItem, CartStatus } from './schemas/cart.schema';
 import { Variant } from '../catalog/schemas/variant.schema';
 import { VariantPrice } from '../catalog/schemas/variant-price.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
@@ -229,5 +229,62 @@ export class CartService {
   async previewGuest(deviceId: string, currency: string, accountType: 'any'|'customer'|'engineer'|'wholesale' = 'any') {
     const cart = await this.getOrCreateGuestCart(deviceId);
     return this.previewByCart(cart, currency, accountType);
+  }
+
+  // ---------- abandoned carts (admin)
+  async findAbandonedCarts(hoursInactive: number) {
+    const threshold = new Date(Date.now() - hoursInactive * 60 * 60 * 1000);
+    return this.cartModel
+      .find({
+        $or: [
+          { isAbandoned: true },
+          { status: CartStatus.ABANDONED },
+          { $and: [ { status: CartStatus.ACTIVE }, { lastActivityAt: { $lte: threshold } } ] },
+        ],
+      })
+      .sort({ updatedAt: -1 })
+      .lean();
+  }
+
+  async sendAbandonmentReminder(cartId: string) {
+    const cart = await this.cartModel.findById(cartId);
+    if (!cart) return { sent: false };
+    cart.isAbandoned = true;
+    cart.status = CartStatus.ABANDONED;
+    cart.abandonmentEmailsSent = (cart.abandonmentEmailsSent || 0) + 1;
+    cart.lastAbandonmentEmailAt = new Date();
+    await cart.save();
+    return { sent: true, cartId };
+  }
+
+  async processAbandonedCarts() {
+    const candidates = await this.findAbandonedCarts(24);
+    let emailsSent = 0;
+    type AbandonedLean = { _id?: unknown; lastAbandonmentEmailAt?: Date };
+    for (const c of candidates as AbandonedLean[]) {
+      const lastSent = c.lastAbandonmentEmailAt;
+      const shouldSend = !lastSent || (Date.now() - lastSent.getTime()) > 24 * 60 * 60 * 1000;
+      if (shouldSend) {
+        const res = await this.sendAbandonmentReminder(String(c._id || ''));
+        if (res.sent) emailsSent++;
+      }
+    }
+    return { processed: candidates.length, emailsSent };
+  }
+
+  // ---------- maintenance/cleanup
+  async cleanupExpiredCarts() {
+    const now = new Date();
+    const res = await this.cartModel.deleteMany({ expiresAt: { $lte: now } });
+    return { deleted: res.deletedCount || 0 };
+  }
+
+  async deleteOldConvertedCarts(days: number) {
+    const threshold = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const res = await this.cartModel.deleteMany({
+      convertedToOrderId: { $ne: null },
+      convertedAt: { $lte: threshold },
+    });
+    return { deleted: res.deletedCount || 0 };
   }
 }

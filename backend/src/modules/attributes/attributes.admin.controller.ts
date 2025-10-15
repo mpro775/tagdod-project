@@ -37,7 +37,7 @@ export class AttributesAdminController {
   }
 
   @Get()
-  async listAttributes(@Query() query: any) {
+  async listAttributes(@Query() query: Record<string, unknown>) {
     const attributes = await this.attributesService.listAttributes(query);
     return { data: attributes };
   }
@@ -68,7 +68,7 @@ export class AttributesAdminController {
 
   @Post(':id/restore')
   async restoreAttribute(@Param('id') id: string) {
-    const attribute = await this.attributesService.restoreAttribute(id);
+    await this.attributesService.restoreAttribute(id);
     return { data: { restored: true } };
   }
 
@@ -103,7 +103,7 @@ export class AttributesAdminController {
     @Param('id') id: string,
     @Req() req: { user: { sub: string } }
   ) {
-    const value = await this.attributesService.deleteValue(id, req.user.sub);
+    await this.attributesService.deleteValue(id, req.user.sub);
     return { data: { deleted: true } };
   }
 

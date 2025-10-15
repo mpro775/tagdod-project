@@ -9,6 +9,15 @@ export class JwtAuthGuard implements CanActivate {
     if (!h) return false;
     const [type, token] = String(h).split(' ');
     if (type !== 'Bearer' || !token) return false;
-    try { req.user = this.tokens.verifyAccess(token) as { sub: string; phone: string; isAdmin: boolean }; return true; } catch { return false; }
+    try {
+      req.user = this.tokens.verifyAccess(token) as {
+        sub: string;
+        phone: string;
+        isAdmin: boolean;
+      };
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

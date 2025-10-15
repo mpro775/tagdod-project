@@ -7,7 +7,6 @@ import { AppModule } from './app.module';
 
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
 import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-envelope.interceptor';
-import { RequestIdMiddleware } from './shared/middleware/request-id.middleware';
 import { CORSService } from './modules/security/cors.service';
 import { SecurityLoggingInterceptor } from './modules/security/interceptors/security-logging.interceptor';
 

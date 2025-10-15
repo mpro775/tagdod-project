@@ -10,17 +10,25 @@ import { AdminGuard } from '../../shared/guards/admin.guard';
 export class CheckoutController {
   constructor(private svc: CheckoutService) {}
 
-  @ApiBearerAuth() @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('checkout/preview')
   async preview(@Req() req: { user: { sub: string } }, @Body() dto: CheckoutPreviewDto) {
     const data = await this.svc.preview(req.user.sub, dto.currency);
     return { data };
   }
 
-  @ApiBearerAuth() @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('checkout/confirm')
   async confirm(@Req() req: { user: { sub: string } }, @Body() dto: CheckoutConfirmDto) {
-    const data = await this.svc.confirm(req.user.sub, dto.currency, dto.method, dto.provider, dto.addressId);
+    const data = await this.svc.confirm(
+      req.user.sub,
+      dto.currency,
+      dto.paymentMethod,
+      dto.paymentProvider,
+      dto.deliveryAddressId,
+    );
     return { data };
   }
 
@@ -32,21 +40,24 @@ export class CheckoutController {
   }
 
   // Orders (user)
-  @ApiBearerAuth() @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get('orders')
   async myOrders(@Req() req: { user: { sub: string } }) {
     const items = await this.svc.listMy(req.user.sub);
     return { data: items };
   }
 
-  @ApiBearerAuth() @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get('orders/:id')
   async myOrder(@Req() req: { user: { sub: string } }, @Param('id') id: string) {
     const item = await this.svc.getMy(req.user.sub, id);
     return { data: item };
   }
 
-  @ApiBearerAuth() @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('orders/:id/cancel')
   async cancel(@Req() req: { user: { sub: string } }, @Param('id') id: string) {
     const res = await this.svc.userCancel(req.user.sub, id);
@@ -54,16 +65,21 @@ export class CheckoutController {
   }
 
   // Admin
-  @ApiBearerAuth() @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @Get('admin/orders')
   async adminList() {
     const items = await this.svc.adminList();
     return { data: items };
   }
 
-  @ApiBearerAuth() @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @Post('admin/orders/:id/status')
-  async adminSet(@Param('id') id: string, @Body() body: { status: 'PROCESSING'|'SHIPPED'|'DELIVERED'|'COMPLETED' }) {
+  async adminSet(
+    @Param('id') id: string,
+    @Body() body: { status: 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'COMPLETED' },
+  ) {
     const res = await this.svc.adminSetStatus(id, body.status);
     return { data: res };
   }
