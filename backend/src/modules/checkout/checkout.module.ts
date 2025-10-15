@@ -15,12 +15,15 @@ import { Variant, VariantSchema } from '../catalog/schemas/variant.schema';
 import { CartModule } from '../cart/cart.module';
 import { AddressesModule } from '../addresses/addresses.module';
 import { CouponsModule } from '../coupons/coupons.module';
+import { AuthModule } from '../auth/auth.module';
+import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [
     CartModule,
     AddressesModule,
     CouponsModule,
+    AuthModule,
     MongooseModule.forFeature([
       { name: Order.name, schema: OrderSchema },
       { name: Cart.name, schema: CartSchema },
@@ -29,6 +32,7 @@ import { CouponsModule } from '../coupons/coupons.module';
       { name: Inventory.name, schema: InventorySchema },
       { name: Reservation.name, schema: ReservationSchema },
       { name: InventoryLedger.name, schema: InventoryLedgerSchema },
+      { name: User.name, schema: UserSchema },
     ]),
   ],
   controllers: [

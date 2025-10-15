@@ -1,0 +1,17 @@
+%% Cart: Add item & Guest->User Sync
+%% View at https://mermaid.live
+flowchart TD
+  A[Start] --> B{Authenticated?}
+  B -- No --> C[Use deviceId cart]
+  B -- Yes --> D[Use userId cart]
+  C --> E[Add Variant to cart (qty)]
+  D --> E
+  E --> F[Recalculate pricing summary]
+  F --> G[Auto discounts & coupons]
+  G --> H[Save cart]
+  H --> I{User logs in?}
+  I -- No --> Z[End]
+  I -- Yes --> J[Find guest cart by deviceId]
+  J --> K[Merge guest cart into user cart]
+  K --> L[Mark isMerged, mergedAt]
+  L --> Z[End]

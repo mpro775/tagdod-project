@@ -1,0 +1,29 @@
+%% Favorites Management & Sync Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[User interacts with product] --> B{Action?}
+  B -->|Add to Favorites| C[Add to favorites]
+  B -->|Remove from Favorites| D[Remove from favorites]
+  B -->|User Logs In| E[Sync guest favorites]
+  
+  C --> F{User authenticated?}
+  F -->|Yes| G[Save to user favorites]
+  F -->|No| H[Save to device favorites]
+  
+  D --> I{User authenticated?}
+  I -->|Yes| J[Remove from user favorites]
+  I -->|No| K[Remove from device favorites]
+  
+  E --> L[Find guest favorites by deviceId]
+  L --> M[Find user favorites by userId]
+  M --> N[Merge favorites lists]
+  N --> O[Remove duplicates]
+  O --> P[Mark guest favorites as synced]
+  P --> Q[Update sync timestamp]
+  
+  G --> R[Update product favorites count]
+  H --> R
+  J --> R
+  K --> R
+  Q --> R
+  R --> Z[End]

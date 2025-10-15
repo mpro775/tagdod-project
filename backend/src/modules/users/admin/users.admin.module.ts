@@ -3,7 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UsersAdminController } from './users.admin.controller';
 import { User, UserSchema } from '../schemas/user.schema';
 import { Capabilities, CapabilitiesSchema } from '../../capabilities/schemas/capabilities.schema';
-import { TokensService } from '../../auth/tokens.service';
+import { AuthModule } from '../../auth/auth.module';
 
 @Module({
   imports: [
@@ -11,9 +11,10 @@ import { TokensService } from '../../auth/tokens.service';
       { name: User.name, schema: UserSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
+    AuthModule,
   ],
   controllers: [UsersAdminController],
-  providers: [TokensService],
+  providers: [],
   exports: [MongooseModule],
 })
 export class UsersAdminModule {}

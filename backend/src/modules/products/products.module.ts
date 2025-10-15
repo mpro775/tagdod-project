@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ProductsService } from './products.service';
 import { VariantsService } from './variants.service';
@@ -10,7 +10,7 @@ import { CacheModule } from '../../shared/cache/cache.module';
 import { AttributesModule } from '../attributes/attributes.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
-import { TokensService } from '../auth/tokens.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -22,9 +22,10 @@ import { TokensService } from '../auth/tokens.service';
     CacheModule,
     AttributesModule,
     CategoriesModule,
+    forwardRef(() => AuthModule),
   ],
   controllers: [ProductsAdminController, ProductsPublicController],
-  providers: [ProductsService, VariantsService, TokensService],
+  providers: [ProductsService, VariantsService],
   exports: [ProductsService, VariantsService, MongooseModule],
 })
 export class ProductsModule {}

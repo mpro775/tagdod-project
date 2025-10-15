@@ -1,0 +1,371 @@
+%% Mermaid ER diagram for TagDoD database (MongoDB via Mongoose)
+%% View online: https://mermaid.live
+
+erDiagram
+  User ||--o{ Address : has
+  User ||--o{ Cart : has
+  User ||--o{ Order : places
+  User ||--o{ Favorite : marks
+  User ||--o{ Media : uploads
+
+  Category ||--o{ Product : categorizes
+  Brand ||--o{ Product : brands
+
+  Media ||--o{ Product : used_in
+  Media ||--o{ Variant : used_in
+  Media ||--o{ Category : used_in
+
+  Attribute ||--o{ AttributeValue : defines
+  Product ||--o{ Variant : has
+  Product ||--o{ Favorite : is_favorited
+  Product ||--o{ CartItem : referenced_by
+  Product ||--o{ OrderItem : referenced_by
+
+  Variant ||--o{ CartItem : added_as
+  Variant ||--o{ OrderItem : ordered_as
+  Variant }o--o{ AttributeValue : composes
+
+  Cart ||--o{ CartItem : contains
+  Order ||--o{ OrderItem : contains
+
+  User {
+    string phone PK "unique"
+    string firstName
+    string lastName
+    string gender
+    string jobTitle
+    string passwordHash
+    boolean isAdmin
+    string[] roles
+    string[] permissions
+    string status
+    date deletedAt
+    string deletedBy
+    string suspendedReason
+    string suspendedBy
+    date suspendedAt
+    date createdAt
+    date updatedAt
+  }
+
+  Address {
+    ObjectId userId FK
+    string label
+    string addressType
+    string recipientName
+    string recipientPhone
+    string line1
+    string line2
+    string city
+    string region
+    string country
+    string postalCode
+    object coords
+    string notes
+    boolean isDefault
+    boolean isActive
+    string placeId
+    date deletedAt
+    ObjectId deletedBy
+    date lastUsedAt
+    number usageCount
+    date createdAt
+    date updatedAt
+  }
+
+  Media {
+    string url
+    string filename
+    string storedFilename
+    string name
+    string category
+    string type
+    string mimeType
+    number size
+    number width
+    number height
+    string fileHash
+    string description
+    string[] tags
+    ObjectId uploadedBy FK
+    number usageCount
+    string[] usedIn
+    boolean isPublic
+    date deletedAt
+    string deletedBy
+    date createdAt
+    date updatedAt
+  }
+
+  Category {
+    ObjectId parentId FK "Category"
+    string name
+    string nameEn
+    string slug "unique"
+    string path
+    string description
+    string descriptionEn
+    string image
+    ObjectId imageId FK "Media"
+    string icon
+    ObjectId iconId FK "Media"
+    string metaTitle
+    string metaDescription
+    string[] metaKeywords
+    number order
+    boolean isActive
+    boolean showInMenu
+    boolean isFeatured
+    number productsCount
+    number childrenCount
+    date deletedAt
+    string deletedBy
+    date createdAt
+    date updatedAt
+  }
+
+  Brand {
+    string name
+    string nameEn
+    string slug "unique"
+    string image
+    string description
+    string descriptionEn
+    boolean isActive
+    number sortOrder
+    object metadata
+    date createdAt
+    date updatedAt
+  }
+
+  Attribute {
+    string name
+    string nameEn "unique"
+    string slug "unique"
+    string type
+    string description
+    number order
+    boolean isActive
+    boolean isFilterable
+    boolean isRequired
+    boolean showInFilters
+    ObjectId groupId FK "AttributeGroup"
+    number usageCount
+    date deletedAt
+    string deletedBy
+    date createdAt
+    date updatedAt
+  }
+
+  AttributeValue {
+    ObjectId attributeId FK
+    string value
+    string valueEn
+    string slug
+    string hexCode
+    string imageUrl
+    ObjectId imageId FK "Media"
+    string description
+    number order
+    boolean isActive
+    number usageCount
+    date deletedAt
+    string deletedBy
+    date createdAt
+    date updatedAt
+  }
+
+  Product {
+    string name
+    string nameEn
+    string slug "unique"
+    string description
+    string descriptionEn
+    ObjectId categoryId FK
+    string brandId
+    string sku
+    string mainImage
+    ObjectId mainImageId FK "Media"
+    ObjectId[] imageIds FK "Media[]"
+    string[] images
+    ObjectId[] attributes FK "Attribute[]"
+    string metaTitle
+    string metaDescription
+    string[] metaKeywords
+    string status
+    boolean isActive
+    boolean isFeatured
+    boolean isNew
+    boolean isBestseller
+    number order
+    number viewsCount
+    number salesCount
+    number variantsCount
+    number reviewsCount
+    number averageRating
+    date deletedAt
+    ObjectId deletedBy FK "User"
+    date createdAt
+    date updatedAt
+  }
+
+  Variant {
+    ObjectId productId FK
+    string sku "unique,sparse"
+    object attributeValues "[{attributeId,valueId,name?,value?}]"
+    number price
+    number compareAtPrice
+    number costPrice
+    number stock
+    boolean trackInventory
+    boolean allowBackorder
+    number lowStockThreshold
+    string image
+    ObjectId imageId FK "Media"
+    number weight
+    number length
+    number width
+    number height
+    boolean isActive
+    boolean isAvailable
+    number salesCount
+    date deletedAt
+    date createdAt
+    date updatedAt
+  }
+
+  Cart {
+    ObjectId userId FK "User"
+    string deviceId
+    string status
+    object[] items "CartItem[]"
+    string currency
+    string accountType
+    string appliedCouponCode
+    number couponDiscount
+    string[] autoAppliedCouponCodes
+    number[] autoAppliedDiscounts
+    object pricingSummary
+    date lastActivityAt
+    boolean isAbandoned
+    number abandonmentEmailsSent
+    date lastAbandonmentEmailAt
+    ObjectId convertedToOrderId FK "Order"
+    date convertedAt
+    boolean isMerged
+    ObjectId mergedIntoUserId FK "User"
+    date mergedAt
+    object metadata
+    date expiresAt
+    date createdAt
+    date updatedAt
+  }
+
+  CartItem {
+    ObjectId variantId FK
+    ObjectId productId FK
+    number qty
+    date addedAt
+    object productSnapshot
+    object pricing
+  }
+
+  Order {
+    string orderNumber "unique"
+    ObjectId userId FK
+    string accountType
+    string source
+    string status
+    string paymentStatus
+    object[] statusHistory
+    object deliveryAddress
+    object[] items "OrderItem[]"
+    string currency
+    number subtotal
+    number itemsDiscount
+    string appliedCouponCode
+    number couponDiscount
+    object couponDetails
+    object[] autoAppliedCoupons
+    number autoDiscountsTotal
+    number shippingCost
+    number shippingDiscount
+    number tax
+    number taxRate
+    number totalDiscount
+    number total
+    string paymentMethod
+    string paymentProvider
+    string paymentIntentId "sparse"
+    string paymentTransactionId
+    date paidAt
+    string shippingMethod
+    string shippingCompany
+    string trackingNumber
+    string trackingUrl
+    date estimatedDeliveryDate
+    date actualDeliveryDate
+    date deliveredAt
+    boolean isRefunded
+    number refundAmount
+    string refundReason
+    date refundedAt
+    ObjectId refundedBy FK "User"
+    boolean isReturned
+    string returnReason
+    date returnedAt
+    object[] returnItems
+    string customerNotes
+    string adminNotes
+    string internalNotes
+    string invoiceNumber
+    string invoiceUrl
+    string receiptUrl
+    number rating
+    string review
+    date ratedAt
+    object metadata
+    date confirmedAt
+    date processingStartedAt
+    date shippedAt
+    date completedAt
+    date cancelledAt
+    ObjectId cancelledBy FK "User"
+    date createdAt
+    date updatedAt
+  }
+
+  OrderItem {
+    ObjectId productId FK
+    ObjectId variantId FK
+    number qty
+    number basePrice
+    number discount
+    number finalPrice
+    number lineTotal
+    string currency
+    ObjectId appliedPromotionId FK "PriceRule"
+    number promotionDiscount
+    object snapshot
+    string itemStatus
+    boolean isReturned
+    number returnQty
+    string returnReason
+    date returnedAt
+  }
+
+  Favorite {
+    ObjectId userId FK "User"
+    string deviceId
+    ObjectId productId FK "Product"
+    ObjectId variantId FK "Variant"
+    string note
+    string[] tags
+    number viewsCount
+    date lastViewedAt
+    boolean isSynced
+    date syncedAt
+    date deletedAt
+    date createdAt
+    date updatedAt
+  }

@@ -1,0 +1,19 @@
+%% Auth: Signup & Login (Phone + Password)
+%% View at https://mermaid.live
+flowchart TD
+  A[Start] --> B{Existing user?}
+  B -- No: Signup --> S1[Enter phone, name, password]
+  S1 --> S2[Validate phone uniqueness]
+  S2 -- Unique --> S3[Hash password]
+  S3 --> S4[Create User {phone, passwordHash, roles=["user"], status=ACTIVE}]
+  S4 --> L1[Proceed to Login]
+  B -- Yes: Login --> L1[Enter phone + password]
+  L1 --> L2[Find user by phone]
+  L2 -->|Not found| E1[Fail: invalid credentials]
+  L2 -->|Found| L3[Compare passwordHash]
+  L3 -->|Mismatch| E1
+  L3 -->|Match| L4{status allowed?}
+  L4 -->|SUSPENDED/PENDING| E2[Fail: account not active]
+  L4 -->|ACTIVE| L5[Issue JWT, create session]
+  L5 --> L6[Return profile, roles, permissions]
+  L6 --> Z[End]

@@ -7,6 +7,8 @@ import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabi
 import { CartService } from './cart.service';
 import { CartController } from './cart.controller';
 import { GuestCartController } from './guest-cart.controller';
+import { AuthModule } from '../auth/auth.module';
+import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [
@@ -15,7 +17,9 @@ import { GuestCartController } from './guest-cart.controller';
       { name: Variant.name, schema: VariantSchema },
       { name: VariantPrice.name, schema: VariantPriceSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
+      { name: User.name, schema: UserSchema },
     ]),
+    AuthModule,
   ],
   controllers: [CartController, GuestCartController],
   providers: [CartService],

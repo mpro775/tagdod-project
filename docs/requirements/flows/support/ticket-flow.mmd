@@ -1,0 +1,19 @@
+%% Support Ticket Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[Customer creates ticket] --> B[Select category]
+  B --> C[Describe issue]
+  C --> D[Attach files if needed]
+  D --> E[Submit ticket]
+  E --> F[System assigns to support agent]
+  F --> G{Agent available?}
+  G -- No --> H[Add to queue]
+  G -- Yes --> I[Agent reviews ticket]
+  I --> J[Agent responds]
+  J --> K{Customer satisfied?}
+  K -- No --> L[Continue conversation]
+  K -- Yes --> M[Mark as resolved]
+  L --> J
+  M --> N[Send satisfaction survey]
+  N --> Z[End]
+

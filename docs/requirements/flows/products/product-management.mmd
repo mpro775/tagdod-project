@@ -1,0 +1,39 @@
+%% Product Management Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[Admin manages product] --> B{Action?}
+  B -->|Create| C[Fill product details]
+  B -->|Edit| D[Load existing product]
+  B -->|Delete| E[Select product to delete]
+  B -->|Publish| F[Select product to publish]
+  
+  C --> G[Validate required fields]
+  G --> H{Valid?}
+  H -->|No| I[Show validation errors]
+  H -->|Yes| J[Generate unique slug]
+  J --> K[Upload product images]
+  K --> L[Create product record]
+  L --> M[Create variants if needed]
+  M --> N[Update category product count]
+  
+  D --> O[Load product data]
+  O --> P[Make changes]
+  P --> G
+  
+  E --> Q{Has active orders?}
+  Q -->|Yes| R[Show warning about active orders]
+  Q -->|No| S[Soft delete product]
+  R --> T{Confirm deletion?}
+  T -->|Yes| S
+  T -->|No| U[Cancel deletion]
+  
+  F --> V[Update product status to ACTIVE]
+  V --> W[Make product visible in catalog]
+  W --> X[Send product published notification]
+  
+  N --> Y[Update search indexes]
+  S --> Y
+  X --> Y
+  Y --> Z[End]
+  I --> Z
+  U --> Z

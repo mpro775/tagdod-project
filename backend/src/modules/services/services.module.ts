@@ -9,6 +9,7 @@ import { EngineerOffer, EngineerOfferSchema } from './schemas/engineer-offer.sch
 import { Address, AddressSchema } from '../addresses/schemas/address.schema';
 import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabilities.schema';
 import { EngineerGuard } from '../../shared/guards/engineer.guard';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EngineerGuard } from '../../shared/guards/engineer.guard';
       { name: Address.name, schema: AddressSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
+    AuthModule,
   ],
   controllers: [CustomerServicesController, EngineerServicesController, AdminServicesController],
   providers: [ServicesService, EngineerGuard],

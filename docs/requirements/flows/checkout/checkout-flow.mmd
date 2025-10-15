@@ -1,0 +1,18 @@
+%% Checkout: Address -> Shipping -> Payment -> Confirm
+%% View at https://mermaid.live
+flowchart TD
+  A[Start Checkout] --> B[Validate cart items availability]
+  B --> C[Select/Confirm delivery address]
+  C --> D[Select shipping method]
+  D --> E[Apply coupons / auto discounts]
+  E --> F[Select payment method]
+  F --> G{Payment method?}
+  G -- COD --> H[Create Order (status: pending_payment)]
+  G -- ONLINE --> I[Create Order + Payment Intent]
+  H --> M[Confirm order]
+  I --> J[Redirect to payment provider]
+  J --> K[Await payment webhook]
+  K -->|PAID| M[Confirm order]
+  K -->|FAILED| N[Mark payment_failed]
+  M --> O[Emit notifications, adjust inventory]
+  O --> Z[End]

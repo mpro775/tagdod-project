@@ -1,0 +1,35 @@
+%% Address Management Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[User wants to manage addresses] --> B{Action?}
+  B -->|Add New| C[Enter address details]
+  B -->|Edit Existing| D[Select address to edit]
+  B -->|Delete| E[Select address to delete]
+  B -->|Set Default| F[Select address to set as default]
+  
+  C --> G[Validate address format]
+  G --> H{Valid?}
+  H -->|No| I[Show validation errors]
+  H -->|Yes| J[Geocode address for coordinates]
+  J --> K[Save address to database]
+  K --> L[Update usage statistics]
+  
+  D --> M[Load existing address data]
+  M --> G
+  
+  E --> N{Is default address?}
+  N -->|Yes| O[Show warning about default]
+  N -->|No| P[Mark as deleted]
+  O --> Q{Confirm deletion?}
+  Q -->|Yes| P
+  Q -->|No| R[Cancel deletion]
+  
+  F --> S[Update default flag]
+  S --> T[Clear other default flags]
+  T --> L
+  
+  P --> U[Soft delete address]
+  U --> L
+  L --> Z[End]
+  I --> Z
+  R --> Z

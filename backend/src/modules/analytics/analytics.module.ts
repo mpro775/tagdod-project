@@ -25,6 +25,7 @@ import { Coupon, CouponSchema } from '../coupons/schemas/coupon.schema';
 import { ServiceRequest, ServiceRequestSchema } from '../services/schemas/service-request.schema';
 import { SupportTicket, SupportTicketSchema } from '../support/schemas/support-ticket.schema';
 import { CacheModule } from '../../shared/cache/cache.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -44,6 +45,9 @@ import { CacheModule } from '../../shared/cache/cache.module';
 
     // Cache Module
     CacheModule,
+
+    // Auth Module for JwtAuthGuard
+    AuthModule,
 
     // Enable scheduling for automated reports
     ScheduleModule.forRoot(),

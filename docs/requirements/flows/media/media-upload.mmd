@@ -1,0 +1,25 @@
+%% Media Upload & Management Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[User uploads file] --> B[Validate file type]
+  B --> C{Valid type?}
+  C -->|No| D[Show error: Invalid file type]
+  C -->|Yes| E[Check file size]
+  E --> F{Size OK?}
+  F -->|No| G[Show error: File too large]
+  F -->|Yes| H[Generate unique filename]
+  H --> I[Upload to storage]
+  I --> J{Upload success?}
+  J -->|No| K[Show error: Upload failed]
+  J -->|Yes| L[Generate file hash]
+  L --> M[Check for duplicates]
+  M --> N{Duplicate found?}
+  N -->|Yes| O[Use existing file]
+  N -->|No| P[Save new media record]
+  O --> Q[Update usage count]
+  P --> Q
+  Q --> R[Return media URL]
+  R --> Z[End]
+  D --> Z
+  G --> Z
+  K --> Z

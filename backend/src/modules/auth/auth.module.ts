@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthController } from './auth.controller';
 import { OtpService } from './otp.service';
@@ -13,9 +13,10 @@ import { FavoritesModule } from '../favorites/favorites.module';
       { name: User.name, schema: UserSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
-    FavoritesModule, // لمزامنة المفضلات
+    forwardRef(() => FavoritesModule), // لمزامنة المفضلات
   ],
   controllers: [AuthController],
   providers: [OtpService, TokensService],
+  exports: [TokensService],
 })
 export class AuthModule {}

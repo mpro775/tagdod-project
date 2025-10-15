@@ -1,0 +1,22 @@
+%% Abandoned Cart Recovery Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[System checks for abandoned carts] --> B[Find carts with no activity for 24h]
+  B --> C{Cart has email/phone?}
+  C -->|No| D[Skip cart]
+  C -->|Yes| E[Send first reminder email]
+  E --> F[Wait 24 hours]
+  F --> G{Cart still abandoned?}
+  G -->|No| H[Mark as recovered]
+  G -->|Yes| I[Send second reminder with discount]
+  I --> J[Wait 48 hours]
+  J --> K{Cart still abandoned?}
+  K -->|No| H
+  K -->|Yes| L[Send final reminder]
+  L --> M[Mark as fully abandoned]
+  M --> N[Archive cart data]
+  
+  H --> O[Update recovery statistics]
+  D --> O
+  N --> O
+  O --> Z[End]

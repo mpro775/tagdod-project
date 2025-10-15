@@ -7,6 +7,7 @@ import { Product, ProductSchema } from './schemas/product.schema';
 import { Variant, VariantSchema } from './schemas/variant.schema';
 import { VariantPrice, VariantPriceSchema } from './schemas/variant-price.schema';
 import { CategoriesModule } from '../categories/categories.module'; // استيراد Categories Module
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CategoriesModule } from '../categories/categories.module'; // استي�
       { name: VariantPrice.name, schema: VariantPriceSchema },
     ]),
     CategoriesModule, // ربط مع Categories Module
+    AuthModule,
   ],
   controllers: [CatalogPublicController, CatalogAdminController],
   providers: [CatalogService],

@@ -1,0 +1,15 @@
+%% Catalog: Search, Browse, Filters
+%% View at https://mermaid.live
+flowchart TD
+  A[Start] --> B[Open Catalog]
+  B --> C{Path?}
+  C -->|Category| D[Load Category tree + products]
+  C -->|Search| E[Text search name+description]
+  D --> F[Apply filters: attributes, price, brand]
+  E --> F
+  F --> G[Sort: popularity, price, newest]
+  G --> H[Paginate results]
+  H --> I[View Product Details]
+  I --> J[Load Variants + AttributeValues]
+  J --> K[Select Variant]
+  K --> Z[End]

@@ -8,6 +8,7 @@ import { DeviceToken, DeviceTokenSchema } from './schemas/device-token.schema';
 import { NOTIFICATIONS_PORT } from './notifications.port';
 import { PUSH_PORT, NullPushAdapter } from './ports/push.port';
 import { SMS_PORT, NullSmsAdapter } from './ports/sms.port';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SMS_PORT, NullSmsAdapter } from './ports/sms.port';
       { name: Notification.name, schema: NotificationSchema },
       { name: DeviceToken.name, schema: DeviceTokenSchema },
     ]),
+    AuthModule,
   ],
   controllers: [NotificationsController, AdminNotificationsController],
   providers: [

@@ -5,6 +5,7 @@ import { AdminSupportController } from './admin.controller';
 import { SupportService } from './support.service';
 import { SupportTicket, SupportTicketSchema } from './schemas/support-ticket.schema';
 import { SupportMessage, SupportMessageSchema } from './schemas/support-message.schema';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { SupportMessage, SupportMessageSchema } from './schemas/support-message.
       { name: SupportTicket.name, schema: SupportTicketSchema },
       { name: SupportMessage.name, schema: SupportMessageSchema },
     ]),
+    AuthModule,
   ],
   controllers: [CustomerSupportController, AdminSupportController],
   providers: [SupportService],

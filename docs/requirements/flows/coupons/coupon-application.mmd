@@ -1,0 +1,21 @@
+%% Coupon Application Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[Customer enters coupon code] --> B[Validate coupon]
+  B --> C{Valid coupon?}
+  C -- No --> D[Show error message]
+  C -- Yes --> E{Active & not expired?}
+  E -- No --> D
+  E -- Yes --> F{Usage limit reached?}
+  F -- Yes --> D
+  F -- No --> G{Minimum order value met?}
+  G -- No --> D
+  G -- Yes --> H{User eligible?}
+  H -- No --> D
+  H -- Yes --> I[Calculate discount]
+  I --> J[Apply to cart/order]
+  J --> K[Update total price]
+  K --> L[Show success message]
+  L --> Z[End]
+  D --> Z
+

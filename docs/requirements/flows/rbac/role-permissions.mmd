@@ -1,0 +1,27 @@
+%% RBAC (Role-Based Access Control) Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[API Request] --> B[Extract JWT Token]
+  B --> C[Validate Token]
+  C --> D{Valid Token?}
+  D -->|No| E[Return 401 Unauthorized]
+  D -->|Yes| F[Decode User Info]
+  F --> G[Get User Roles & Permissions]
+  G --> H[Check Required Permission]
+  H --> I{Has Permission?}
+  I -->|No| J[Return 403 Forbidden]
+  I -->|Yes| K[Check Resource Access]
+  K --> L{Can Access Resource?}
+  L -->|No| J
+  L -->|Yes| M[Execute Operation]
+  M --> N[Log Access]
+  N --> O[Return Response]
+  
+  P[Admin assigns roles] --> Q[Update user roles]
+  Q --> R[Update permissions cache]
+  R --> S[Notify user of changes]
+  
+  E --> Z[End]
+  J --> Z
+  O --> Z
+  S --> Z

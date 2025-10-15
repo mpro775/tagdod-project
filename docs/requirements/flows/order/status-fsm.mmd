@@ -1,0 +1,27 @@
+%% Order Status State Machine
+%% View at https://mermaid.live
+stateDiagram-v2
+  [*] --> draft
+  draft --> pending_payment
+  pending_payment --> confirmed: payment authorized/paid
+  pending_payment --> payment_failed
+  confirmed --> processing
+  processing --> ready_to_ship
+  ready_to_ship --> shipped
+  shipped --> out_for_delivery
+  out_for_delivery --> delivered
+  delivered --> completed
+  state cancelled <<choice>>
+  draft --> cancelled
+  pending_payment --> cancelled
+  confirmed --> cancelled
+  processing --> cancelled
+  ready_to_ship --> cancelled
+  shipped --> cancelled
+  out_for_delivery --> cancelled
+  delivered --> refunded
+  delivered --> returned
+  cancelled --> [*]
+  completed --> [*]
+  refunded --> [*]
+  returned --> [*]

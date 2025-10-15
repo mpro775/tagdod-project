@@ -1,0 +1,15 @@
+%% Inventory Adjustments: reservation, confirmation, return
+%% View at https://mermaid.live
+flowchart TD
+  A[Cart Add/Reserve] --> B{Track inventory?}
+  B -- No --> Z[End]
+  B -- Yes --> C[Decrease available stock (reservation)]
+  C --> D[Checkout -> Order created]
+  D --> E{Payment success?}
+  E -- Yes --> F[Commit reservation]
+  E -- No --> G[Expire reservation -> restore]
+  F --> H[Ship item]
+  H --> I{Return/Refund?}
+  I -- No --> Z[End]
+  I -- Yes --> J[Increase stock, mark returned]
+  J --> Z[End]

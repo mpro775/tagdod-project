@@ -57,10 +57,7 @@ export class AdvancedAnalyticsController {
     status: 201,
     description: 'تم إنشاء التقرير بنجاح',
   })
-  async generateReport(
-    @Body() dto: GenerateAdvancedReportDto,
-    @Request() req: ExpressRequest,
-  ) {
+  async generateReport(@Body() dto: GenerateAdvancedReportDto, @Request() req: ExpressRequest) {
     const userId = req.user!.userId;
     const report = await this.reportsService.generateAdvancedReport(dto, userId);
     return {
@@ -161,10 +158,7 @@ export class AdvancedAnalyticsController {
   @ApiParam({ name: 'reportId', description: 'معرف التقرير' })
   @ApiBody({ type: ExportReportDto })
   @ApiResponse({ status: 200, description: 'تم تصدير التقرير بنجاح' })
-  async exportReport(
-    @Param('reportId') reportId: string,
-    @Body() dto: ExportReportDto,
-  ) {
+  async exportReport(@Param('reportId') reportId: string, @Body() dto: ExportReportDto) {
     // TODO: Implement actual file generation
     const report = await this.reportsService.getReportById(reportId);
 
@@ -190,7 +184,9 @@ export class AdvancedAnalyticsController {
     description: 'الحصول على تحليلات شاملة للمبيعات والإيرادات',
   })
   @ApiResponse({ status: 200, description: 'تم استرجاع تحليلات المبيعات بنجاح' })
-  async getSalesAnalytics(@Query() query: SalesReportQueryDto) {
+  async getSalesAnalytics(
+    @Query() query: SalesReportQueryDto,
+  ): Promise<{ success: boolean; data: any; query: SalesReportQueryDto }> {
     const analytics = await this.reportsService.generateSalesAnalytics(query);
     return {
       success: true,
@@ -205,7 +201,9 @@ export class AdvancedAnalyticsController {
     description: 'تحليل مفصل لأداء المنتجات والمبيعات والتقييمات',
   })
   @ApiResponse({ status: 200, description: 'تم استرجاع تحليل الأداء بنجاح' })
-  async getProductPerformance(@Query() query: ProductPerformanceQueryDto) {
+  async getProductPerformance(
+    @Query() query: ProductPerformanceQueryDto,
+  ): Promise<{ success: boolean; data: any; query: ProductPerformanceQueryDto }> {
     const analytics = await this.reportsService.generateProductAnalytics(query);
     return {
       success: true,
@@ -220,7 +218,9 @@ export class AdvancedAnalyticsController {
     description: 'تحليل شامل للعملاء والسلوك الشرائي والقطاعات',
   })
   @ApiResponse({ status: 200, description: 'تم استرجاع تحليلات العملاء بنجاح' })
-  async getCustomerAnalytics(@Query() query: CustomerAnalyticsQueryDto) {
+  async getCustomerAnalytics(
+    @Query() query: CustomerAnalyticsQueryDto,
+  ): Promise<{ success: boolean; data: any; query: CustomerAnalyticsQueryDto }> {
     const analytics = await this.reportsService.generateCustomerAnalytics(query);
     return {
       success: true,
@@ -235,7 +235,9 @@ export class AdvancedAnalyticsController {
     description: 'تقرير شامل عن حالة المخزون والمنتجات',
   })
   @ApiResponse({ status: 200, description: 'تم استرجاع تقرير المخزون بنجاح' })
-  async getInventoryReport(@Query() query: InventoryReportQueryDto) {
+  async getInventoryReport(
+    @Query() query: InventoryReportQueryDto,
+  ): Promise<{ success: boolean; data: any; query: InventoryReportQueryDto }> {
     const analytics = await this.reportsService.generateInventoryAnalytics(query);
     return {
       success: true,
@@ -250,7 +252,9 @@ export class AdvancedAnalyticsController {
     description: 'تقرير مالي شامل مع الإيرادات والأرباح والتدفقات النقدية',
   })
   @ApiResponse({ status: 200, description: 'تم استرجاع التقرير المالي بنجاح' })
-  async getFinancialReport(@Query() query: FinancialReportQueryDto) {
+  async getFinancialReport(
+    @Query() query: FinancialReportQueryDto,
+  ): Promise<{ success: boolean; data: any; query: FinancialReportQueryDto }> {
     const analytics = await this.reportsService.generateFinancialAnalytics(query);
     return {
       success: true,
@@ -265,7 +269,9 @@ export class AdvancedAnalyticsController {
     description: 'تحليل السلل المهجورة ومعدل التحويل',
   })
   @ApiResponse({ status: 200, description: 'تم استرجاع تحليلات السلة بنجاح' })
-  async getCartAnalytics(@Query() query: CartAnalyticsQueryDto) {
+  async getCartAnalytics(
+    @Query() query: CartAnalyticsQueryDto,
+  ): Promise<{ success: boolean; data: any; query: CartAnalyticsQueryDto }> {
     const analytics = await this.reportsService.generateCartAnalytics(query);
     return {
       success: true,
@@ -280,7 +286,9 @@ export class AdvancedAnalyticsController {
     description: 'تحليل الحملات التسويقية والكوبونات و ROI',
   })
   @ApiResponse({ status: 200, description: 'تم استرجاع تحليلات التسويق بنجاح' })
-  async getMarketingAnalytics(@Query() query: MarketingReportQueryDto) {
+  async getMarketingAnalytics(
+    @Query() query: MarketingReportQueryDto,
+  ): Promise<{ success: boolean; data: any; query: MarketingReportQueryDto }> {
     const analytics = await this.reportsService.generateMarketingAnalytics(query);
     return {
       success: true,
@@ -414,7 +422,11 @@ export class AdvancedAnalyticsController {
     summary: 'اتجاهات المقاييس',
     description: 'الحصول على اتجاهات مقياس محدد عبر الزمن',
   })
-  @ApiParam({ name: 'metric', description: 'اسم المقياس', enum: ['revenue', 'orders', 'customers', 'products'] })
+  @ApiParam({
+    name: 'metric',
+    description: 'اسم المقياس',
+    enum: ['revenue', 'orders', 'customers', 'products'],
+  })
   @ApiQuery({ name: 'startDate', required: true })
   @ApiQuery({ name: 'endDate', required: true })
   @ApiQuery({ name: 'groupBy', required: false, enum: ['daily', 'weekly', 'monthly'] })
@@ -556,6 +568,8 @@ export class AdvancedAnalyticsController {
     // TODO: Implement actual file generation
     const fileUrl = `https://cdn.example.com/exports/customers_${Date.now()}.${format}`;
 
+
+    
     return {
       success: true,
       message: 'تم إنشاء ملف التصدير بنجاح',
@@ -568,4 +582,3 @@ export class AdvancedAnalyticsController {
     };
   }
 }
-

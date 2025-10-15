@@ -12,7 +12,7 @@ export class Favorite {
   userId?: string | null;
 
   // دعم الزوار (Guest users)
-  @Prop({ index: true, sparse: true })
+  @Prop({ type: String, index: true, sparse: true })
   deviceId?: string | null; // معرف الجهاز للزوار
 
   // المنتج/Variant

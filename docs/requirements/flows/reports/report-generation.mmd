@@ -1,0 +1,27 @@
+%% Report Generation Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[Report Request] --> B{Report Type?}
+  B -->|Sales Report| C[Query orders collection]
+  B -->|Customer Report| D[Query users collection]
+  B -->|Product Report| E[Query products collection]
+  B -->|Inventory Report| F[Query variants collection]
+  
+  C --> G[Apply date filters]
+  D --> G
+  E --> G
+  F --> G
+  
+  G --> H[Group and aggregate data]
+  H --> I[Generate charts/graphs]
+  I --> J{Format?}
+  J -->|PDF| K[Generate PDF]
+  J -->|Excel| L[Generate Excel]
+  J -->|CSV| M[Generate CSV]
+  
+  K --> N[Send via email]
+  L --> N
+  M --> N
+  N --> O[Log report generation]
+  O --> Z[End]
+

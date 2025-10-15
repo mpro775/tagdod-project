@@ -1,0 +1,21 @@
+%% Payment Webhook Handling
+%% View at https://mermaid.live
+sequenceDiagram
+  participant Pay as PaymentProvider
+  participant API as Backend API
+  participant ORD as OrderService
+  participant INV as InventoryService
+  participant NOTI as NotificationService
+
+  Pay->>API: POST /payments/webhook (event)
+  API->>API: Verify signature
+  API->>ORD: Load order by paymentIntentId
+  alt event == payment_succeeded
+    ORD->>ORD: Update status: PAID -> CONFIRMED
+    INV->>INV: Reserve/adjust stock
+    NOTI->>API: Send order confirmation
+  else event == payment_failed
+    ORD->>ORD: Update status: PAYMENT_FAILED
+    NOTI->>API: Notify failure
+  end
+  API-->>Pay: 200 OK

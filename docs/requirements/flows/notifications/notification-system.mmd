@@ -1,0 +1,28 @@
+%% Notification System Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[Event Trigger] --> B{Event Type?}
+  B -->|Order Created| C[Order Confirmation]
+  B -->|Payment Success| D[Payment Confirmation]
+  B -->|Order Shipped| E[Shipping Update]
+  B -->|Order Delivered| F[Delivery Confirmation]
+  B -->|Support Ticket| G[Support Notification]
+  
+  C --> H[Check user preferences]
+  D --> H
+  E --> H
+  F --> H
+  G --> H
+  
+  H --> I{Channels enabled?}
+  I -->|Email| J[Send Email]
+  I -->|SMS| K[Send SMS]
+  I -->|Push| L[Send Push Notification]
+  I -->|In-App| M[Store in database]
+  
+  J --> N[Log notification]
+  K --> N
+  L --> N
+  M --> N
+  N --> Z[End]
+
