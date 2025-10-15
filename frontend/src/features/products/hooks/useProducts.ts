@@ -167,4 +167,3 @@ export const useGenerateVariants = () => {
     onError: ErrorHandler.showError,
   });
 };
-

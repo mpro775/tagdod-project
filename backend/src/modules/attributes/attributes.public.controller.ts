@@ -1,7 +1,11 @@
 import { Controller, Get, Param, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AttributesService } from './attributes.service';
-import { ResponseCacheInterceptor, CacheResponse } from '../../shared/interceptors/response-cache.interceptor';
+import type { Attribute } from './schemas/attribute.schema';
+import {
+  ResponseCacheInterceptor,
+  CacheResponse,
+} from '../../shared/interceptors/response-cache.interceptor';
 
 @ApiTags('attributes-public')
 @Controller('attributes')
@@ -13,8 +17,8 @@ export class AttributesPublicController {
   @Get()
   @CacheResponse({ ttl: 1800 }) // 30 minutes
   async listAttributes() {
-    const attributes = await this.attributesService.listAttributes({ 
-      isActive: true 
+    const attributes = await this.attributesService.listAttributes({
+      isActive: true,
     });
     return { data: attributes };
   }
@@ -23,20 +27,20 @@ export class AttributesPublicController {
   @Get('filterable')
   @CacheResponse({ ttl: 1800 }) // 30 minutes
   async getFilterableAttributes() {
-    const attributes = await this.attributesService.listAttributes({ 
-      isActive: true, 
+    const attributes = await this.attributesService.listAttributes({
+      isActive: true,
       isFilterable: true,
     });
-    
+
     // جلب القيم لكل سمة
     const attributesWithValues = await Promise.all(
-      attributes.map(async (attr: any) => {
+      attributes.map(async (attr: Attribute & { _id: unknown }) => {
         const values = await this.attributesService.listValues(String(attr._id));
         return {
           ...attr,
           values,
         };
-      })
+      }),
     );
 
     return { data: attributesWithValues };
@@ -50,4 +54,3 @@ export class AttributesPublicController {
     return { data: attribute };
   }
 }
-

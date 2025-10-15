@@ -4,7 +4,7 @@ import { STORAGE_KEYS, DEFAULT_THEME } from '@/config/constants';
 interface ThemeState {
   mode: 'light' | 'dark';
   direction: 'ltr' | 'rtl';
-  
+
   // Actions
   toggleMode: () => void;
   setMode: (mode: 'light' | 'dark') => void;
@@ -35,7 +35,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   initialize: () => {
     const savedMode = localStorage.getItem(STORAGE_KEYS.THEME) as 'light' | 'dark' | null;
     const savedLanguage = localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'ar';
-    
+
     if (savedMode) {
       set({ mode: savedMode });
     }
@@ -45,4 +45,3 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     document.dir = direction;
   },
 }));
-

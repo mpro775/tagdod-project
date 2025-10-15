@@ -18,4 +18,3 @@ export const useService = (id: string) => {
     enabled: !!id,
   });
 };
-

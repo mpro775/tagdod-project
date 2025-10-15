@@ -52,9 +52,8 @@ export interface CreatePriceRuleDto {
   couponCode?: string;
 }
 
-export interface UpdatePriceRuleDto extends Partial<CreatePriceRuleDto> {}
+export type UpdatePriceRuleDto = Partial<CreatePriceRuleDto>;
 
 export interface ListPriceRulesParams extends ListParams {
   active?: boolean;
 }
-

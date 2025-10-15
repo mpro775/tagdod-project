@@ -44,10 +44,7 @@ export const authApi = {
    * إعادة تعيين كلمة المرور
    */
   resetPassword: async (data: ResetPasswordDto) => {
-    const response = await apiClient.post<{ updated: boolean }>(
-      '/auth/reset-password',
-      data
-    );
+    const response = await apiClient.post<{ updated: boolean }>('/auth/reset-password', data);
     return response.data;
   },
 
@@ -55,10 +52,7 @@ export const authApi = {
    * تعيين كلمة المرور (بعد تسجيل الدخول)
    */
   setPassword: async (data: SetPasswordDto) => {
-    const response = await apiClient.post<{ updated: boolean }>(
-      '/auth/set-password',
-      data
-    );
+    const response = await apiClient.post<{ updated: boolean }>('/auth/set-password', data);
     return response.data;
   },
 
@@ -101,4 +95,3 @@ export const authApi = {
     return response.data;
   },
 };
-

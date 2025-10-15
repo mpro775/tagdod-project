@@ -76,7 +76,10 @@ export const OrderDetailsPage: React.FC = () => {
             </Typography>
           </Box>
           <Chip label={order.status} color="primary" />
-          <Chip label={order.paymentStatus} color={order.paymentStatus === 'paid' ? 'success' : 'warning'} />
+          <Chip
+            label={order.paymentStatus}
+            color={order.paymentStatus === 'paid' ? 'success' : 'warning'}
+          />
         </Box>
 
         {/* Action Buttons */}
@@ -176,7 +179,15 @@ export const OrderDetailsPage: React.FC = () => {
             </Table>
 
             {/* Totals */}
-            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+            <Box
+              sx={{
+                mt: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                gap: 1,
+              }}
+            >
               <Box sx={{ display: 'flex', gap: 10 }}>
                 <Typography>المجموع الفرعي:</Typography>
                 <Typography fontWeight="bold">
@@ -239,9 +250,7 @@ export const OrderDetailsPage: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 عنوان التوصيل
               </Typography>
-              <Typography variant="body2">
-                {order.deliveryAddress.line1}
-              </Typography>
+              <Typography variant="body2">{order.deliveryAddress.line1}</Typography>
               {order.deliveryAddress.line2 && (
                 <Typography variant="body2">{order.deliveryAddress.line2}</Typography>
               )}
@@ -327,7 +336,10 @@ export const OrderDetailsPage: React.FC = () => {
             variant="contained"
             color="error"
             onClick={() => {
-              cancelOrder({ id: id!, reason: cancelReason }, { onSuccess: () => setCancelDialog(false) });
+              cancelOrder(
+                { id: id!, reason: cancelReason },
+                { onSuccess: () => setCancelDialog(false) }
+              );
             }}
             disabled={!cancelReason}
           >
@@ -370,4 +382,3 @@ export const OrderDetailsPage: React.FC = () => {
     </Box>
   );
 };
-

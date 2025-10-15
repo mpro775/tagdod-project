@@ -141,9 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
 
   // Toggle expand
   const handleToggleExpand = (id: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+    setExpandedItems((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
   // Navigate
@@ -244,4 +242,3 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     </Drawer>
   );
 };
-

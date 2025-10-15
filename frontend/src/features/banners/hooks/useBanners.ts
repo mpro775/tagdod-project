@@ -36,7 +36,8 @@ export const useCreateBanner = () => {
 export const useUpdateBanner = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateBannerDto }) => bannersApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateBannerDto }) =>
+      bannersApi.update(id, data),
     onSuccess: () => {
       toast.success('تم تحديث البانر بنجاح');
       queryClient.invalidateQueries({ queryKey: [BANNERS_KEY] });
@@ -68,4 +69,3 @@ export const useToggleBannerStatus = () => {
     onError: ErrorHandler.showError,
   });
 };
-

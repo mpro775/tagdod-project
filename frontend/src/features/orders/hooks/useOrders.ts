@@ -47,8 +47,7 @@ export const useUpdateOrderStatus = () => {
 export const useShipOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: ShipOrderDto }) =>
-      ordersApi.ship(id, data),
+    mutationFn: ({ id, data }: { id: string; data: ShipOrderDto }) => ordersApi.ship(id, data),
     onSuccess: () => {
       toast.success('تم شحن الطلب بنجاح');
       queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
@@ -74,8 +73,7 @@ export const useConfirmDelivery = () => {
 export const useRefundOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: RefundOrderDto }) =>
-      ordersApi.refund(id, data),
+    mutationFn: ({ id, data }: { id: string; data: RefundOrderDto }) => ordersApi.refund(id, data),
     onSuccess: () => {
       toast.success('تم استرداد المبلغ بنجاح');
       queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
@@ -88,8 +86,7 @@ export const useRefundOrder = () => {
 export const useCancelOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      ordersApi.cancel(id, reason),
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => ordersApi.cancel(id, reason),
     onSuccess: () => {
       toast.success('تم إلغاء الطلب بنجاح');
       queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
@@ -124,4 +121,3 @@ export const useOrderStats = () => {
     queryFn: () => ordersApi.getStats(),
   });
 };
-

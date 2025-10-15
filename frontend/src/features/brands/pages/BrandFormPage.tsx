@@ -74,7 +74,12 @@ export const BrandFormPage: React.FC = () => {
     }
   };
 
-  if (isEditMode && isLoading) return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
+  if (isEditMode && isLoading)
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <CircularProgress />
+      </Box>
+    );
 
   return (
     <Box>
@@ -108,30 +113,65 @@ export const BrandFormPage: React.FC = () => {
                     <FormInput name="nameEn" label="Brand Name (English) *" />
                   </Grid>
                   <Grid size={{ xs: 12 }}>
-                    <FormInput name="descriptionEn" label="Description (English)" multiline rows={3} />
+                    <FormInput
+                      name="descriptionEn"
+                      label="Description (English)"
+                      multiline
+                      rows={3}
+                    />
                   </Grid>
                 </>
               )}
 
-              <Grid size={{ xs: 12 }}><Divider sx={{ my: 2 }} /><Typography variant="h6">معلومات الاتصال</Typography></Grid>
-              <Grid size={{ xs: 12, md: 4 }}><FormInput name="website" label="الموقع الإلكتروني" /></Grid>
-              <Grid size={{ xs: 12, md: 4 }}><FormInput name="email" label="البريد الإلكتروني" type="email" /></Grid>
-              <Grid size={{ xs: 12, md: 4 }}><FormInput name="phone" label="رقم الهاتف" /></Grid>
+              <Grid size={{ xs: 12 }}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6">معلومات الاتصال</Typography>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormInput name="website" label="الموقع الإلكتروني" />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormInput name="email" label="البريد الإلكتروني" type="email" />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormInput name="phone" label="رقم الهاتف" />
+              </Grid>
 
-              <Grid size={{ xs: 12 }}><FormInput name="logo" label="رابط الشعار (Logo)" /></Grid>
+              <Grid size={{ xs: 12 }}>
+                <FormInput name="logo" label="رابط الشعار (Logo)" />
+              </Grid>
 
               <Grid size={{ xs: 12 }}>
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                  <FormControlLabel control={<Switch {...methods.register('isActive')} defaultChecked />} label="نشط" />
-                  <FormControlLabel control={<Switch {...methods.register('isFeatured')} />} label="مميزة" />
+                  <FormControlLabel
+                    control={<Switch {...methods.register('isActive')} defaultChecked />}
+                    label="نشط"
+                  />
+                  <FormControlLabel
+                    control={<Switch {...methods.register('isFeatured')} />}
+                    label="مميزة"
+                  />
                 </Box>
               </Grid>
 
               <Grid size={{ xs: 12 }}>
                 <Divider sx={{ my: 2 }} />
                 <Box display="flex" gap={2}>
-                  <Button type="submit" variant="contained" startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />} disabled={isCreating || isUpdating}>حفظ</Button>
-                  <Button variant="outlined" startIcon={<Cancel />} onClick={() => navigate('/brands')}>إلغاء</Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
+                    disabled={isCreating || isUpdating}
+                  >
+                    حفظ
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Cancel />}
+                    onClick={() => navigate('/brands')}
+                  >
+                    إلغاء
+                  </Button>
                 </Box>
               </Grid>
             </Grid>
@@ -141,4 +181,3 @@ export const BrandFormPage: React.FC = () => {
     </Box>
   );
 };
-

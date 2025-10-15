@@ -161,12 +161,7 @@ export const ProductFormPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
-                    <FormInput
-                      name="description"
-                      label="وصف المنتج (عربي) *"
-                      multiline
-                      rows={4}
-                    />
+                    <FormInput name="description" label="وصف المنتج (عربي) *" multiline rows={4} />
                   </Grid>
                 </>
               )}
@@ -270,9 +265,7 @@ export const ProductFormPage: React.FC = () => {
                   <Button
                     type="submit"
                     variant="contained"
-                    startIcon={
-                      isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />
-                    }
+                    startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
                   >
                     حفظ
@@ -293,4 +286,3 @@ export const ProductFormPage: React.FC = () => {
     </Box>
   );
 };
-

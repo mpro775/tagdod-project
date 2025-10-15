@@ -177,4 +177,3 @@ export const AttributeFormPage: React.FC = () => {
     </Box>
   );
 };
-

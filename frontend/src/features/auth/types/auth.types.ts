@@ -60,4 +60,3 @@ export interface UserProfile {
     wholesale_discount_percent?: number;
   };
 }
-

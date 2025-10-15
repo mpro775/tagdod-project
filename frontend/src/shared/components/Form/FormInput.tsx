@@ -8,12 +8,7 @@ interface FormInputProps extends Omit<TextFieldProps, 'name'> {
   rules?: Record<string, unknown>;
 }
 
-export const FormInput: React.FC<FormInputProps> = ({
-  name,
-  label,
-  rules,
-  ...textFieldProps
-}) => {
+export const FormInput: React.FC<FormInputProps> = ({ name, label, rules, ...textFieldProps }) => {
   const { control } = useFormContext();
 
   return (
@@ -34,4 +29,3 @@ export const FormInput: React.FC<FormInputProps> = ({
     />
   );
 };
-

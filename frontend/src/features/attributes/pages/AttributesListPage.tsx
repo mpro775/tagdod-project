@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Chip, IconButton, Tooltip } from '@mui/material';
 import { Edit, Delete, Restore, AddCircle } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +15,10 @@ const attributeTypeLabels: Record<AttributeType, string> = {
   boolean: 'نعم/لا',
 };
 
-const attributeTypeColors: Record<AttributeType, 'primary' | 'secondary' | 'info' | 'warning' | 'success'> = {
+const attributeTypeColors: Record<
+  AttributeType,
+  'primary' | 'secondary' | 'info' | 'warning' | 'success'
+> = {
   select: 'primary',
   multiselect: 'secondary',
   text: 'info',
@@ -38,9 +40,7 @@ export const AttributesListPage: React.FC = () => {
       renderCell: (params) => (
         <Box>
           <Box sx={{ fontWeight: 'medium' }}>{params.row.name}</Box>
-          <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-            {params.row.nameEn}
-          </Box>
+          <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{params.row.nameEn}</Box>
         </Box>
       ),
     },
@@ -78,9 +78,7 @@ export const AttributesListPage: React.FC = () => {
       headerName: 'إلزامي',
       width: 100,
       renderCell: (params) =>
-        params.row.isRequired ? (
-          <Chip label="نعم" color="error" size="small" />
-        ) : null,
+        params.row.isRequired ? <Chip label="نعم" color="error" size="small" /> : null,
     },
     {
       field: 'isActive',
@@ -195,4 +193,3 @@ export const AttributesListPage: React.FC = () => {
     </Box>
   );
 };
-

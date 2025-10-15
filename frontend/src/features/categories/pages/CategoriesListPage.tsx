@@ -4,11 +4,7 @@ import { Edit, Delete, Restore, AccountTree, Visibility, Star } from '@mui/icons
 import { useNavigate } from 'react-router-dom';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import {
-  useCategories,
-  useDeleteCategory,
-  useRestoreCategory,
-} from '../hooks/useCategories';
+import { useCategories, useDeleteCategory, useRestoreCategory } from '../hooks/useCategories';
 import { formatDate } from '@/shared/utils/formatters';
 import type { Category } from '../types/category.types';
 import { CategoryTreeView } from '../components/CategoryTreeView';
@@ -66,9 +62,7 @@ export const CategoriesListPage: React.FC = () => {
           )}
           <Box>
             <Box sx={{ fontWeight: 'medium' }}>{params.row.name}</Box>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-              {params.row.nameEn}
-            </Box>
+            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{params.row.nameEn}</Box>
           </Box>
         </Box>
       ),
@@ -203,12 +197,7 @@ export const CategoriesListPage: React.FC = () => {
       {/* View Mode Tabs */}
       <Box sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={viewMode} onChange={(_, v) => setViewMode(v)}>
-          <Tab
-            icon={<AccountTree />}
-            label="عرض شجري"
-            value="tree"
-            iconPosition="start"
-          />
+          <Tab icon={<AccountTree />} label="عرض شجري" value="tree" iconPosition="start" />
           <Tab label="عرض قائمة" value="list" />
         </Tabs>
       </Box>
@@ -243,4 +232,3 @@ export const CategoriesListPage: React.FC = () => {
     </Box>
   );
 };
-

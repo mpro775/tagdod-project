@@ -24,6 +24,230 @@ import { User, UserDocument } from '../../users/schemas/user.schema';
 import { Coupon, CouponDocument } from '../../coupons/schemas/coupon.schema';
 import { startOfDay, subMonths, parseISO } from 'date-fns';
 
+// Local interfaces to replace any types
+interface TopSellingProduct {
+  productId: string;
+  name: string;
+  quantity: number;
+  revenue: number;
+}
+
+interface SalesByDateEntry {
+  date: string;
+  sales: number;
+  orders: number;
+  revenue: number;
+}
+
+interface SalesByCategoryEntry {
+  categoryId: string;
+  categoryName: string;
+  sales: number;
+  revenue: number;
+  percentage: number;
+}
+
+interface SalesByRegionEntry {
+  region: string;
+  city: string;
+  sales: number;
+  revenue: number;
+}
+
+interface PaymentMethodBreakdownEntry {
+  method: string;
+  count: number;
+  amount: number;
+  percentage: number;
+}
+
+interface ProductPerformanceItem {
+  productId: string;
+  name: string;
+  views: number;
+  sales: number;
+  revenue?: number;
+  rating?: number;
+  lastSold?: Date | undefined;
+}
+
+interface CategoryBreakdownItem {
+  categoryId: string;
+  name: string;
+  productCount: number;
+  totalSales: number;
+  revenue: number;
+}
+
+interface BrandBreakdownItem {
+  brandId: string;
+  name: string;
+  productCount: number;
+  totalSales: number;
+  revenue: number;
+}
+
+interface CampaignPerformanceItem {
+  // Placeholder for future campaign performance structure
+}
+
+interface TrafficSourceItem {
+  // Placeholder for future traffic source structure
+}
+
+interface MarketingTopCoupon {
+  code: string;
+  uses: number;
+  discount: number;
+  revenue: number;
+}
+
+interface OperationalOrderFulfillmentMetrics {
+  averageProcessingTime: number;
+  averageDeliveryTime: number;
+  onTimeDeliveryRate: number;
+  totalShipments: number;
+  pendingShipments: number;
+}
+
+interface ReturnAnalyticsItem {
+  reason: string;
+  count: number;
+  percentage: number;
+}
+
+interface ReturnAnalyticsMetrics {
+  totalReturns: number;
+  returnRate: number;
+  topReturnReasons: ReturnAnalyticsItem[];
+  returnsByProduct: Array<unknown>;
+}
+
+interface SupportMetrics {
+  totalTickets: number;
+  openTickets: number;
+  resolvedTickets: number;
+  averageResolutionTime: number;
+  customerSatisfaction: number;
+}
+
+interface InventoryMetrics {
+  turnoverRate: number;
+  stockoutRate: number;
+  excessInventory: number;
+  inventoryAccuracy: number;
+}
+
+interface ChartTimeSeriesPoint {
+  date: string;
+  value: number;
+  label: string;
+}
+
+interface ChartPieSlice {
+  label: string;
+  value: number;
+  percentage: number;
+}
+
+interface BarChartItem {
+  label: string;
+  value: number;
+  category?: string;
+}
+
+interface LineChartSeriesPoint {
+  name: string;
+  value: number;
+}
+
+interface LineChartEntry {
+  date: string;
+  series: LineChartSeriesPoint[];
+}
+
+interface ChartData {
+  timeSeries: ChartTimeSeriesPoint[];
+  pieCharts: ChartPieSlice[];
+  barCharts: BarChartItem[];
+  lineCharts: LineChartEntry[];
+}
+
+interface AlertItem {
+  type: 'info' | 'warning' | 'error';
+  message: string;
+  messageEn: string;
+  severity: 'low' | 'medium' | 'high';
+  actionRequired: boolean;
+}
+
+interface InsightsRecommendationsResult {
+  insights: { ar: string[]; en: string[] };
+  recommendations: { ar: string[]; en: string[] };
+  alerts: AlertItem[];
+}
+
+interface RevenueByChannelItem {
+  channel: string;
+  revenue: number;
+  percentage: number;
+}
+
+interface ProfitByCategoryItem {
+  categoryId: string;
+  name: string;
+  revenue: number;
+  cost: number;
+  profit: number;
+  margin: number;
+}
+
+interface CashFlowEntry {
+  date: string;
+  inflow: number;
+  outflow: number;
+  net: number;
+}
+
+interface RevenueProjection {
+  nextMonth: number;
+  nextQuarter: number;
+  nextYear: number;
+}
+
+interface TopCustomerItem {
+  userId: string;
+  name: string;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrderDate: Date;
+}
+
+interface CustomerSegmentItem {
+  segment: string;
+  count: number;
+  revenue: number;
+  averageOrderValue: number;
+}
+
+interface AbandonedProductItem {
+  productId: string;
+  name: string;
+  abandonedCount: number;
+  lostRevenue: number;
+}
+
+type AnalyticsByCategory = {
+  salesAnalytics?: Awaited<ReturnType<AdvancedReportsService['generateSalesAnalytics']>>;
+  productAnalytics?: Awaited<ReturnType<AdvancedReportsService['generateProductAnalytics']>>;
+  customerAnalytics?: Awaited<ReturnType<AdvancedReportsService['generateCustomerAnalytics']>>;
+  financialAnalytics?: Awaited<ReturnType<AdvancedReportsService['generateFinancialAnalytics']>>;
+  marketingAnalytics?: Awaited<ReturnType<AdvancedReportsService['generateMarketingAnalytics']>>;
+  operationalAnalytics?: Awaited<
+    ReturnType<AdvancedReportsService['generateOperationalAnalytics']>
+  >;
+};
+
 @Injectable()
 export class AdvancedReportsService {
   private readonly logger = new Logger(AdvancedReportsService.name);
@@ -88,9 +312,8 @@ export class AdvancedReportsService {
 
       // Generate insights and recommendations
       if (dto.includeRecommendations) {
-        const { insights, recommendations, alerts } = await this.generateInsightsAndRecommendations(
-          analytics,
-        );
+        const { insights, recommendations, alerts } =
+          await this.generateInsightsAndRecommendations(analytics);
         report.insights = insights.ar;
         report.insightsEn = insights.en;
         report.recommendations = recommendations.ar;
@@ -141,7 +364,7 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
     filters?: Record<string, unknown>,
-  ): Promise<any> {
+  ): Promise<AnalyticsByCategory> {
     switch (category) {
       case ReportCategory.SALES:
         return {
@@ -216,22 +439,11 @@ export class AdvancedReportsService {
     averageOrderValue: number;
     totalDiscount: number;
     netRevenue: number;
-    topSellingProducts: Array<{
-      productId: string;
-      name: string;
-      quantity: number;
-      revenue: number;
-    }>;
-    salesByDate: Array<{ date: string; sales: number; orders: number; revenue: number }>;
-    salesByCategory: Array<{
-      categoryId: string;
-      categoryName: string;
-      sales: number;
-      revenue: number;
-      percentage: number;
-    }>;
-    salesByRegion: Array<{ region: string; city: string; sales: number; revenue: number }>;
-    paymentMethods: Array<{ method: string; count: number; amount: number; percentage: number }>;
+    topSellingProducts: TopSellingProduct[];
+    salesByDate: SalesByDateEntry[];
+    salesByCategory: SalesByCategoryEntry[];
+    salesByRegion: SalesByRegionEntry[];
+    paymentMethods: PaymentMethodBreakdownEntry[];
   }> {
     const startDate = query.startDate ? parseISO(query.startDate) : subMonths(new Date(), 1);
     const endDate = query.endDate ? parseISO(query.endDate) : new Date();
@@ -299,10 +511,10 @@ export class AdvancedReportsService {
     activeProducts: number;
     outOfStock: number;
     lowStock: number;
-    topPerformers: any[];
-    underPerformers: any[];
-    categoryBreakdown: any[];
-    brandBreakdown: any[];
+    topPerformers: ProductPerformanceItem[];
+    underPerformers: ProductPerformanceItem[];
+    categoryBreakdown: CategoryBreakdownItem[];
+    brandBreakdown: BrandBreakdownItem[];
     inventoryValue: number;
     averageProductRating: number;
   }> {
@@ -342,9 +554,9 @@ export class AdvancedReportsService {
     returningCustomers: number;
     customerRetentionRate: number;
     averageLifetimeValue: number;
-    topCustomers: any[];
-    customersByRegion: any[];
-    customerSegmentation: any[];
+    topCustomers: TopCustomerItem[];
+    customersByRegion: Array<unknown>;
+    customerSegmentation: CustomerSegmentItem[];
     churnRate: number;
     newVsReturning: {
       new: number;
@@ -404,9 +616,9 @@ export class AdvancedReportsService {
     totalRefunds: number;
     totalShipping: number;
     totalTax: number;
-    revenueByChannel: any[];
-    profitByCategory: any[];
-    cashFlow: any[];
+    revenueByChannel: RevenueByChannelItem[];
+    profitByCategory: ProfitByCategoryItem[];
+    cashFlow: CashFlowEntry[];
     projections: { nextMonth: number; nextQuarter: number; nextYear: number };
   }> {
     const startDate = parseISO(query.startDate);
@@ -472,9 +684,9 @@ export class AdvancedReportsService {
     totalCouponsUsed: number;
     couponDiscounts: number;
     conversionRate: number;
-    topCoupons: any[];
-    trafficSources: any[];
-    campaignPerformance: any[];
+    topCoupons: MarketingTopCoupon[];
+    trafficSources: TrafficSourceItem[];
+    campaignPerformance: CampaignPerformanceItem[];
     emailMarketing: {
       sent: number;
       opened: number;
@@ -543,32 +755,10 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
   ): Promise<{
-    orderFulfillment: {
-      averageProcessingTime: number;
-      averageDeliveryTime: number;
-      onTimeDeliveryRate: number;
-      totalShipments: number;
-      pendingShipments: number;
-    };
-    returnAnalytics: {
-      totalReturns: number;
-      returnRate: number;
-      topReturnReasons: any[];
-      returnsByProduct: any[];
-    };
-    supportMetrics: {
-      totalTickets: number;
-      openTickets: number;
-      resolvedTickets: number;
-      averageResolutionTime: number;
-      customerSatisfaction: number;
-    };
-    inventoryMetrics: {
-      turnoverRate: number;
-      stockoutRate: number;
-      excessInventory: number;
-      inventoryAccuracy: number;
-    };
+    orderFulfillment: OperationalOrderFulfillmentMetrics;
+    returnAnalytics: ReturnAnalyticsMetrics;
+    supportMetrics: SupportMetrics;
+    inventoryMetrics: InventoryMetrics;
   }> {
     const orders = await this.orderModel.find({
       createdAt: { $gte: startDate, $lte: endDate },
@@ -619,14 +809,14 @@ export class AdvancedReportsService {
     activeProducts: number;
     outOfStock: number;
     lowStock: number;
-    topPerformers: any[];
-    underPerformers: any[];
-    categoryBreakdown: any[];
-    brandBreakdown: any[];
+    topPerformers: ProductPerformanceItem[];
+    underPerformers: ProductPerformanceItem[];
+    categoryBreakdown: CategoryBreakdownItem[];
+    brandBreakdown: BrandBreakdownItem[];
     inventoryValue: number;
     averageProductRating: number;
   }> {
-    const matchQuery: any = { deletedAt: null };
+    const matchQuery: Record<string, unknown> = { deletedAt: null };
 
     if (query.categoryId) matchQuery.categoryId = query.categoryId;
     if (query.brandId) matchQuery.brandId = query.brandId;
@@ -665,12 +855,12 @@ export class AdvancedReportsService {
     conversionRate: number;
     checkoutDropoffRate: number;
     abandonedCartValue: number;
-    topAbandonedProducts: any[];
+    topAbandonedProducts: AbandonedProductItem[];
   }> {
     const startDate = query.startDate ? parseISO(query.startDate) : subMonths(new Date(), 1);
     const endDate = query.endDate ? parseISO(query.endDate) : new Date();
 
-    const matchQuery: any = {
+    const matchQuery: Record<string, unknown> = {
       createdAt: { $gte: startDate, $lte: endDate },
     };
 
@@ -816,9 +1006,7 @@ export class AdvancedReportsService {
     return `REP-${year}-${String(count + 1).padStart(5, '0')}`;
   }
 
-  private generateSummary(
-    analytics: Record<string, unknown>,
-  ): {
+  private generateSummary(analytics: Record<string, unknown>): {
     totalRecords: number;
     totalValue: number;
     currency: string;
@@ -828,14 +1016,16 @@ export class AdvancedReportsService {
     let totalRecords = 0;
     let totalValue = 0;
 
-    const sales = analytics as any;
+    const sales = analytics as Partial<AnalyticsByCategory>;
     if (sales.salesAnalytics) {
-      totalRecords = sales.salesAnalytics.totalOrders as number;
-      totalValue = sales.salesAnalytics.totalRevenue as number;
-    } else if ((analytics as any).customerAnalytics) {
-      const cust = (analytics as any).customerAnalytics;
-      totalRecords = cust.totalCustomers as number;
-      totalValue = (cust.averageLifetimeValue as number) * totalRecords;
+      totalRecords = sales.salesAnalytics.totalOrders;
+      totalValue = sales.salesAnalytics.totalRevenue;
+    } else if ((analytics as Partial<AnalyticsByCategory>).customerAnalytics) {
+      const cust = (analytics as Partial<AnalyticsByCategory>).customerAnalytics;
+      if (cust) {
+        totalRecords = cust.totalCustomers;
+        totalValue = cust.averageLifetimeValue * totalRecords;
+      }
     }
 
     return {
@@ -848,13 +1038,13 @@ export class AdvancedReportsService {
 
   private async generateInsightsAndRecommendations(
     analytics: Record<string, unknown>,
-  ) {
+  ): Promise<InsightsRecommendationsResult> {
     const insights = { ar: [] as string[], en: [] as string[] };
     const recommendations = { ar: [] as string[], en: [] as string[] };
-    const alerts: any[] = [];
+    const alerts: AlertItem[] = [];
 
     // Generate insights based on analytics
-    const sales = analytics as any;
+    const sales = analytics as Partial<AnalyticsByCategory>;
     if (sales.salesAnalytics) {
       const { totalRevenue, totalOrders, averageOrderValue } = sales.salesAnalytics;
       insights.ar.push(`إجمالي الإيرادات: ${totalRevenue.toLocaleString()} ريال`);
@@ -876,20 +1066,18 @@ export class AdvancedReportsService {
     return { insights, recommendations, alerts };
   }
 
-  private async generateChartsData(
-    analytics: Record<string, unknown>,
-  ): Promise<any> {
+  private async generateChartsData(analytics: Record<string, unknown>): Promise<ChartData> {
     // Generate charts data based on analytics
-    const chartsData: any = {
+    const chartsData: ChartData = {
       timeSeries: [],
       pieCharts: [],
       barCharts: [],
       lineCharts: [],
     };
 
-    const sales = analytics as any;
+    const sales = analytics as Partial<AnalyticsByCategory>;
     if (sales.salesAnalytics?.salesByDate) {
-      chartsData.timeSeries = sales.salesAnalytics.salesByDate.map((item: any) => ({
+      chartsData.timeSeries = sales.salesAnalytics.salesByDate.map((item: SalesByDateEntry) => ({
         date: item.date,
         value: item.revenue,
         label: 'Revenue',
@@ -897,7 +1085,7 @@ export class AdvancedReportsService {
     }
 
     if (sales.salesAnalytics?.salesByCategory) {
-      chartsData.pieCharts = sales.salesAnalytics.salesByCategory.map((item: any) => ({
+      chartsData.pieCharts = sales.salesAnalytics.salesByCategory.map((item: SalesByCategoryEntry) => ({
         label: item.categoryName,
         value: item.revenue,
         percentage: item.percentage,
@@ -912,7 +1100,15 @@ export class AdvancedReportsService {
     endDate: Date,
     category: ReportCategory,
     filters?: Record<string, unknown>,
-  ): Promise<{ enabled: boolean; startDate: Date; endDate: Date; metrics: Record<string, { current: number; previous: number; change: number; percentageChange: number }> }> {
+  ): Promise<{
+    enabled: boolean;
+    startDate: Date;
+    endDate: Date;
+    metrics: Record<
+      string,
+      { current: number; previous: number; change: number; percentageChange: number }
+    >;
+  }> {
     const periodDiff = endDate.getTime() - startDate.getTime();
     const prevStartDate = new Date(startDate.getTime() - periodDiff);
     const prevEndDate = new Date(startDate.getTime() - 1);
@@ -930,7 +1126,10 @@ export class AdvancedReportsService {
       filters,
     );
 
-    const metrics: Record<string, { current: number; previous: number; change: number; percentageChange: number }> = {};
+    const metrics: Record<
+      string,
+      { current: number; previous: number; change: number; percentageChange: number }
+    > = {};
 
     if (currentAnalytics.salesAnalytics && previousAnalytics.salesAnalytics) {
       const current = currentAnalytics.salesAnalytics.totalRevenue;
@@ -957,7 +1156,7 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
     matchQuery: Record<string, unknown>,
-  ): Promise<any[]> {
+  ): Promise<TopSellingProduct[]> {
     const result = await this.orderModel.aggregate([
       { $match: matchQuery },
       { $unwind: '$items' },
@@ -990,7 +1189,7 @@ export class AdvancedReportsService {
     endDate: Date,
     matchQuery: Record<string, unknown>,
     groupBy: string,
-  ): Promise<any[]> {
+  ): Promise<SalesByDateEntry[]> {
     const dateFormat = groupBy === 'daily' ? '%Y-%m-%d' : groupBy === 'weekly' ? '%Y-W%U' : '%Y-%m';
 
     const result = await this.orderModel.aggregate([
@@ -1022,7 +1221,7 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
     matchQuery: Record<string, unknown>,
-  ): Promise<any[]> {
+  ): Promise<SalesByCategoryEntry[]> {
     const result = await this.orderModel.aggregate([
       { $match: matchQuery },
       { $unwind: '$items' },
@@ -1059,7 +1258,7 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
     matchQuery: Record<string, unknown>,
-  ): Promise<any[]> {
+  ): Promise<SalesByRegionEntry[]> {
     const result = await this.orderModel.aggregate([
       { $match: matchQuery },
       {
@@ -1091,7 +1290,7 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
     matchQuery: Record<string, unknown>,
-  ): Promise<any[]> {
+  ): Promise<PaymentMethodBreakdownEntry[]> {
     const result = await this.orderModel.aggregate([
       { $match: matchQuery },
       {
@@ -1118,7 +1317,7 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
     limit: number,
-  ): Promise<any[]> {
+  ): Promise<ProductPerformanceItem[]> {
     // This would aggregate from orders
     const result = await this.orderModel.aggregate([
       {
@@ -1160,7 +1359,7 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
     limit: number,
-  ): Promise<any[]> {
+  ): Promise<ProductPerformanceItem[]> {
     // Get products with low sales
     const allProducts = await this.productModel
       .find({ status: 'active', deletedAt: null })
@@ -1177,7 +1376,10 @@ export class AdvancedReportsService {
     }));
   }
 
-  private async getCategoryBreakdown(startDate: Date, endDate: Date): Promise<any[]> {
+  private async getCategoryBreakdown(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<CategoryBreakdownItem[]> {
     const result = await this.orderModel.aggregate([
       {
         $match: {
@@ -1214,7 +1416,7 @@ export class AdvancedReportsService {
     }));
   }
 
-  private async getBrandBreakdown(startDate: Date, endDate: Date): Promise<any[]> {
+  private async getBrandBreakdown(startDate: Date, endDate: Date): Promise<BrandBreakdownItem[]> {
     const result = await this.orderModel.aggregate([
       {
         $match: {
@@ -1321,7 +1523,11 @@ export class AdvancedReportsService {
     return result[0]?.avgLifetimeValue || 0;
   }
 
-  private async getTopCustomers(startDate: Date, endDate: Date, limit: number): Promise<any[]> {
+  private async getTopCustomers(
+    startDate: Date,
+    endDate: Date,
+    limit: number,
+  ): Promise<TopCustomerItem[]> {
     const result = await this.orderModel.aggregate([
       {
         $match: {
@@ -1357,13 +1563,16 @@ export class AdvancedReportsService {
     );
   }
 
-  private async getCustomersByRegion(): Promise<any[]> {
+  private async getCustomersByRegion(): Promise<Array<unknown>> {
     // This would require address data linked to users
     // Placeholder implementation
     return [];
   }
 
-  private async getCustomerSegmentation(startDate: Date, endDate: Date): Promise<any[]> {
+  private async getCustomerSegmentation(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<CustomerSegmentItem[]> {
     // Placeholder segmentation based on order value
     const result = await this.orderModel.aggregate([
       {
@@ -1394,7 +1603,10 @@ export class AdvancedReportsService {
     ];
   }
 
-  private async getRevenueByChannel(startDate: Date, endDate: Date): Promise<any[]> {
+  private async getRevenueByChannel(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<RevenueByChannelItem[]> {
     const result = await this.orderModel.aggregate([
       {
         $match: {
@@ -1420,7 +1632,10 @@ export class AdvancedReportsService {
     }));
   }
 
-  private async getProfitByCategory(startDate: Date, endDate: Date): Promise<any[]> {
+  private async getProfitByCategory(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<ProfitByCategoryItem[]> {
     const revenue = await this.getSalesByCategory(startDate, endDate, {
       createdAt: { $gte: startDate, $lte: endDate },
       status: { $in: ['COMPLETED', 'DELIVERED'] },
@@ -1436,7 +1651,11 @@ export class AdvancedReportsService {
     }));
   }
 
-  private async getCashFlow(startDate: Date, endDate: Date, groupBy: string): Promise<any[]> {
+  private async getCashFlow(
+    startDate: Date,
+    endDate: Date,
+    groupBy: string,
+  ): Promise<CashFlowEntry[]> {
     const dateFormat = groupBy === 'daily' ? '%Y-%m-%d' : groupBy === 'weekly' ? '%Y-W%U' : '%Y-%m';
 
     const result = await this.orderModel.aggregate([
@@ -1472,7 +1691,10 @@ export class AdvancedReportsService {
     return result;
   }
 
-  private async generateRevenueProjections(startDate: Date, endDate: Date): Promise<any> {
+  private async generateRevenueProjections(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<RevenueProjection> {
     // Simple growth-based projection
     const periodRevenue = await this.orderModel.aggregate([
       {
@@ -1499,7 +1721,11 @@ export class AdvancedReportsService {
     };
   }
 
-  private async getTopCoupons(startDate: Date, endDate: Date, limit: number): Promise<any[]> {
+  private async getTopCoupons(
+    startDate: Date,
+    endDate: Date,
+    limit: number,
+  ): Promise<MarketingTopCoupon[]> {
     const coupons = await this.couponModel
       .find({
         createdAt: { $gte: startDate, $lte: endDate },
@@ -1530,7 +1756,7 @@ export class AdvancedReportsService {
     return totalCarts > 0 ? (convertedCarts / totalCarts) * 100 : 0;
   }
 
-  private calculateAverageProcessingTime(orders: any[]): number {
+  private calculateAverageProcessingTime(orders: OrderDocument[]): number {
     const processingTimes = orders
       .filter((o) => o.processingStartedAt && o.shippedAt)
       .map((o) => (o.shippedAt!.getTime() - o.processingStartedAt!.getTime()) / (1000 * 60 * 60)); // hours
@@ -1540,7 +1766,7 @@ export class AdvancedReportsService {
       : 0;
   }
 
-  private calculateAverageDeliveryTime(orders: any[]): number {
+  private calculateAverageDeliveryTime(orders: OrderDocument[]): number {
     const deliveryTimes = orders
       .filter((o) => o.shippedAt && o.deliveredAt)
       .map((o) => (o.deliveredAt!.getTime() - o.shippedAt!.getTime()) / (1000 * 60 * 60 * 24)); // days
@@ -1550,7 +1776,7 @@ export class AdvancedReportsService {
       : 0;
   }
 
-  private calculateOnTimeDeliveryRate(orders: any[]): number {
+  private calculateOnTimeDeliveryRate(orders: OrderDocument[]): number {
     const ordersWithEstimate = orders.filter((o) => o.estimatedDeliveryDate && o.deliveredAt);
     const onTime = ordersWithEstimate.filter(
       (o) => o.deliveredAt! <= o.estimatedDeliveryDate!,
@@ -1559,7 +1785,7 @@ export class AdvancedReportsService {
     return ordersWithEstimate.length > 0 ? (onTime / ordersWithEstimate.length) * 100 : 0;
   }
 
-  private getTopReturnReasons(returnedOrders: any[]): any[] {
+  private getTopReturnReasons(returnedOrders: OrderDocument[]): ReturnAnalyticsItem[] {
     const reasonCounts: Record<string, number> = {};
 
     returnedOrders.forEach((order) => {
@@ -1582,7 +1808,7 @@ export class AdvancedReportsService {
     startDate: Date,
     endDate: Date,
     limit: number,
-  ): Promise<any[]> {
+  ): Promise<AbandonedProductItem[]> {
     const result = await this.cartModel.aggregate([
       {
         $match: {
@@ -1645,7 +1871,7 @@ export class AdvancedReportsService {
     totalPages: number;
   }> {
     const skip = (page - 1) * limit;
-    const query: any = { isArchived: false };
+    const query: Record<string, unknown> = { isArchived: false };
 
     if (category) query.category = category;
     if (userId) query.createdBy = new Types.ObjectId(userId);

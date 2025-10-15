@@ -1,19 +1,6 @@
 import React from 'react';
-import {
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  LinearProgress,
-} from '@mui/material';
-import {
-  People,
-  ShoppingCart,
-  AttachMoney,
-  TrendingUp,
-  Inventory,
-} from '@mui/icons-material';
+import { Box, Grid, Card, CardContent, Typography, LinearProgress } from '@mui/material';
+import { People, ShoppingCart, AttachMoney, TrendingUp, Inventory } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 
 interface DashboardStats {
@@ -58,10 +45,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, growth, color
                     transform: growth < 0 ? 'rotate(180deg)' : 'none',
                   }}
                 />
-                <Typography
-                  variant="body2"
-                  color={growth >= 0 ? 'success.main' : 'error.main'}
-                >
+                <Typography variant="body2" color={growth >= 0 ? 'success.main' : 'error.main'}>
                   {Math.abs(growth)}%
                 </Typography>
               </Box>
@@ -95,7 +79,7 @@ export const DashboardPage: React.FC = () => {
       // This will be replaced with actual API call
       // const response = await apiClient.get('/admin/dashboard/stats');
       // return response.data;
-      
+
       // Mock data for now
       return {
         totalUsers: 1250,
@@ -149,7 +133,7 @@ export const DashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="إجمالي الإيرادات"
-            value={`${stats?.totalRevenue.toLocaleString('ar-SA')} ر.س` || '0 ر.س'}
+            value={`${stats?.totalRevenue?.toLocaleString('ar-SA') || 0} ر.س`}
             icon={<AttachMoney sx={{ fontSize: 30 }} />}
             growth={stats?.revenueGrowth}
             color="warning"

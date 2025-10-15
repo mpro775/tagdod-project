@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, FilterQuery, SortOrder } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
@@ -52,7 +52,7 @@ export class UsersAdminController {
     } = dto;
 
     const skip = (page - 1) * limit;
-    const query: any = {};
+    const query: FilterQuery<User> = {};
 
     // فلترة المحذوفين
     if (!includeDeleted) {
@@ -84,7 +84,7 @@ export class UsersAdminController {
     }
 
     // الترتيب
-    const sort: any = {};
+    const sort: Record<string, SortOrder> = {};
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [users, total] = await Promise.all([
@@ -143,7 +143,7 @@ export class UsersAdminController {
     }
 
     // تجهيز البيانات
-    const userData: any = {
+    const userData: Partial<User> & { passwordHash?: string } = {
       phone: dto.phone,
       firstName: dto.firstName,
       lastName: dto.lastName,
@@ -163,8 +163,8 @@ export class UsersAdminController {
     const user = await this.userModel.create(userData);
 
     // إنشاء Capabilities
-    const capsData: any = {
-      userId: user._id,
+    const capsData: Partial<Capabilities> = {
+      userId: user._id.toString(),
       customer_capable: true,
     };
 

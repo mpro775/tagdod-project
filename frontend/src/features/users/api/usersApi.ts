@@ -95,10 +95,9 @@ export const usersApi = {
    * Assign role to user
    */
   assignRole: async (id: string, role: string): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(
-      `/admin/users/${id}/assign-role`,
-      { role }
-    );
+    const { data } = await apiClient.post<ApiResponse<User>>(`/admin/users/${id}/assign-role`, {
+      role,
+    });
     return data.data;
   },
 
@@ -106,10 +105,9 @@ export const usersApi = {
    * Remove role from user
    */
   removeRole: async (id: string, role: string): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(
-      `/admin/users/${id}/remove-role`,
-      { role }
-    );
+    const { data } = await apiClient.post<ApiResponse<User>>(`/admin/users/${id}/remove-role`, {
+      role,
+    });
     return data.data;
   },
 
@@ -117,10 +115,9 @@ export const usersApi = {
    * Add permission to user
    */
   addPermission: async (id: string, permission: string): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(
-      `/admin/users/${id}/add-permission`,
-      { permission }
-    );
+    const { data } = await apiClient.post<ApiResponse<User>>(`/admin/users/${id}/add-permission`, {
+      permission,
+    });
     return data.data;
   },
 
@@ -135,4 +132,3 @@ export const usersApi = {
     return data.data;
   },
 };
-

@@ -31,9 +31,7 @@ export const BrandsListPage: React.FC = () => {
           )}
           <Box>
             <Box sx={{ fontWeight: 'medium' }}>{params.row.name}</Box>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-              {params.row.nameEn}
-            </Box>
+            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{params.row.nameEn}</Box>
           </Box>
         </Box>
       ),
@@ -145,4 +143,3 @@ export const BrandsListPage: React.FC = () => {
     </Box>
   );
 };
-

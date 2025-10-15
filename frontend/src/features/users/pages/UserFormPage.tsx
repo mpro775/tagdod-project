@@ -3,15 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  Grid,
-  Divider,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Paper, Typography, Button, Grid, Divider, CircularProgress } from '@mui/material';
 import { Save, Cancel } from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
@@ -211,13 +203,7 @@ export const UserFormPage: React.FC = () => {
                   <Button
                     type="submit"
                     variant="contained"
-                    startIcon={
-                      isCreating || isUpdating ? (
-                        <CircularProgress size={20} />
-                      ) : (
-                        <Save />
-                      )
-                    }
+                    startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
                   >
                     حفظ
@@ -238,4 +224,3 @@ export const UserFormPage: React.FC = () => {
     </Box>
   );
 };
-

@@ -116,4 +116,3 @@ export const useCategoryStats = () => {
     queryFn: () => categoriesApi.getStats(),
   });
 };
-

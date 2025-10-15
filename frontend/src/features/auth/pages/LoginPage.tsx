@@ -38,7 +38,7 @@ type OtpFormData = z.infer<typeof otpSchema>;
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  
+
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [devCode, setDevCode] = useState('');
@@ -88,7 +88,7 @@ export const LoginPage: React.FC = () => {
       // الحصول على بيانات المستخدم الكاملة
       try {
         const profile = await authApi.getProfile();
-        
+
         // التحقق من أن المستخدم admin
         if (!profile.user.isAdmin) {
           toast.error('هذا الحساب غير مصرح له بالدخول للوحة التحكم');
@@ -176,11 +176,12 @@ export const LoginPage: React.FC = () => {
                     {showDevCode ? devCode : '******'}
                   </Typography>
                 </Typography>
-                <IconButton
-                  size="small"
-                  onClick={() => setShowDevCode(!showDevCode)}
-                >
-                  {showDevCode ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                <IconButton size="small" onClick={() => setShowDevCode(!showDevCode)}>
+                  {showDevCode ? (
+                    <VisibilityOff fontSize="small" />
+                  ) : (
+                    <Visibility fontSize="small" />
+                  )}
                 </IconButton>
               </Box>
             </Alert>
@@ -244,7 +245,11 @@ export const LoginPage: React.FC = () => {
                 inputProps={{ maxLength: 6 }}
               />
 
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 3, textAlign: 'center' }}
+              >
                 تم إرسال الرمز إلى {phone}
               </Typography>
 
@@ -288,4 +293,3 @@ export const LoginPage: React.FC = () => {
     </Box>
   );
 };
-

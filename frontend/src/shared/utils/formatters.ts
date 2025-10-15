@@ -23,7 +23,7 @@ export const formatCurrency = (
   locale: 'ar' | 'en' = 'ar'
 ): string => {
   const localeStr = locale === 'ar' ? 'ar-SA' : 'en-US';
-  
+
   return new Intl.NumberFormat(localeStr, {
     style: 'currency',
     currency,
@@ -50,17 +50,19 @@ export const formatNumber = (
 export const formatPhoneNumber = (phone: string): string => {
   // Remove all non-digits
   const cleaned = phone.replace(/\D/g, '');
-  
+
   // Format as: +966 XX XXX XXXX
   if (cleaned.startsWith('966')) {
-    return `+${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8)}`;
+    return `+${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(
+      8
+    )}`;
   }
-  
+
   // Format as: 0XX XXX XXXX
   if (cleaned.startsWith('0')) {
     return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
   }
-  
+
   return phone;
 };
 
@@ -77,11 +79,10 @@ export const truncateText = (text: string, maxLength = 50, suffix = '...'): stri
  */
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-};
 
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+};

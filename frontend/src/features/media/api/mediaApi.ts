@@ -86,4 +86,3 @@ export const mediaApi = {
     return response.data.data;
   },
 };
-

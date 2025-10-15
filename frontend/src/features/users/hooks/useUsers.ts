@@ -49,8 +49,7 @@ export const useUpdateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) =>
-      usersApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) => usersApi.update(id, data),
     onSuccess: (_, variables) => {
       toast.success('تم تحديث المستخدم بنجاح');
       queryClient.invalidateQueries({ queryKey: [USERS_KEY, variables.id] });
@@ -79,8 +78,7 @@ export const useSuspendUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data?: SuspendUserDto }) =>
-      usersApi.suspend(id, data),
+    mutationFn: ({ id, data }: { id: string; data?: SuspendUserDto }) => usersApi.suspend(id, data),
     onSuccess: () => {
       toast.success('تم إيقاف المستخدم بنجاح');
       queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
@@ -124,4 +122,3 @@ export const useUserStats = () => {
     queryFn: () => usersApi.getStats(),
   });
 };
-

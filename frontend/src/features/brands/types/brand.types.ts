@@ -88,4 +88,3 @@ export interface BrandStats {
   featured: number;
   withProducts: number;
 }
-

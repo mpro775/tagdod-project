@@ -3,7 +3,11 @@ import { Box, Chip, IconButton, Tooltip } from '@mui/material';
 import { Send, Delete } from '@mui/icons-material';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useNotifications, useSendNotification, useDeleteNotification } from '../hooks/useNotifications';
+import {
+  useNotifications,
+  useSendNotification,
+  useDeleteNotification,
+} from '../hooks/useNotifications';
 import { formatDate } from '@/shared/utils/formatters';
 import type { Notification } from '../types/notification.types';
 
@@ -21,10 +25,19 @@ export const NotificationsListPage: React.FC = () => {
       headerName: 'الحالة',
       width: 100,
       renderCell: (params) => (
-        <Chip label={params.row.isSent ? 'مرسل' : 'قيد الانتظار'} color={params.row.isSent ? 'success' : 'warning'} size="small" />
+        <Chip
+          label={params.row.isSent ? 'مرسل' : 'قيد الانتظار'}
+          color={params.row.isSent ? 'success' : 'warning'}
+          size="small"
+        />
       ),
     },
-    { field: 'createdAt', headerName: 'تاريخ الإنشاء', width: 140, valueFormatter: (value) => formatDate(value as Date) },
+    {
+      field: 'createdAt',
+      headerName: 'تاريخ الإنشاء',
+      width: 140,
+      valueFormatter: (value) => formatDate(value as Date),
+    },
     {
       field: 'actions',
       headerName: 'الإجراءات',
@@ -36,13 +49,28 @@ export const NotificationsListPage: React.FC = () => {
           <Box display="flex" gap={0.5}>
             {!notif.isSent && (
               <Tooltip title="إرسال">
-                <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); sendNotification(notif._id, { onSuccess: () => refetch() }); }}>
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    sendNotification(notif._id, { onSuccess: () => refetch() });
+                  }}
+                >
                   <Send fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
             <Tooltip title="حذف">
-              <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); if (window.confirm('هل تريد حذف التنبيه؟')) deleteNotification(notif._id, { onSuccess: () => refetch() }); }}>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm('هل تريد حذف التنبيه؟'))
+                    deleteNotification(notif._id, { onSuccess: () => refetch() });
+                }}
+              >
                 <Delete fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -68,4 +96,3 @@ export const NotificationsListPage: React.FC = () => {
     </Box>
   );
 };
-

@@ -48,4 +48,3 @@ export const useDeleteNotification = () => {
     onError: ErrorHandler.showError,
   });
 };
-

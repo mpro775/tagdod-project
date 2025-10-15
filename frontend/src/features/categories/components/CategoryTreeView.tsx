@@ -53,22 +53,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, level, onEdit, onDelete }) =>
         secondaryAction={
           <Box display="flex" gap={0.5}>
             {onEdit && (
-              <IconButton
-                edge="end"
-                size="small"
-                onClick={() => onEdit(node)}
-                color="primary"
-              >
+              <IconButton edge="end" size="small" onClick={() => onEdit(node)} color="primary">
                 <Edit fontSize="small" />
               </IconButton>
             )}
             {onDelete && (
-              <IconButton
-                edge="end"
-                size="small"
-                onClick={() => onDelete(node)}
-                color="error"
-              >
+              <IconButton edge="end" size="small" onClick={() => onDelete(node)} color="error">
                 <Delete fontSize="small" />
               </IconButton>
             )}
@@ -99,18 +89,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, level, onEdit, onDelete }) =>
                 <Typography variant="body2" color="text.secondary">
                   ({node.nameEn})
                 </Typography>
-                {node.isFeatured && (
-                  <Star sx={{ fontSize: 16, color: 'warning.main' }} />
-                )}
+                {node.isFeatured && <Star sx={{ fontSize: 16, color: 'warning.main' }} />}
               </Box>
             }
             secondary={
               <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                <Chip
-                  label={`${node.productsCount} منتج`}
-                  size="small"
-                  variant="outlined"
-                />
+                <Chip label={`${node.productsCount} منتج`} size="small" variant="outlined" />
                 {hasChildren && (
                   <Chip
                     label={`${node.children.length} فئة فرعية`}
@@ -174,16 +158,9 @@ export const CategoryTreeView: React.FC<CategoryTreeViewProps> = ({ onEdit, onDe
     <Paper>
       <List>
         {tree.map((node) => (
-          <TreeNode
-            key={node._id}
-            node={node}
-            level={0}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
+          <TreeNode key={node._id} node={node} level={0} onEdit={onEdit} onDelete={onDelete} />
         ))}
       </List>
     </Paper>
   );
 };
-

@@ -7,6 +7,7 @@ import type {
   ReportGenerationDto,
   ExportReportDto,
   ListReportsParams,
+  PeriodType,
 } from '../types/analytics.types';
 
 const ANALYTICS_KEY = 'analytics';
@@ -120,7 +121,7 @@ export const useReport = (id: string) => {
 export const useMetricTrends = (metric: string, period?: string, days?: number) => {
   return useQuery({
     queryKey: [ANALYTICS_KEY, 'trends', metric, period, days],
-    queryFn: () => analyticsApi.getMetricTrends(metric, period as any, days),
+    queryFn: () => analyticsApi.getMetricTrends(metric, period as PeriodType, days),
     enabled: !!metric,
   });
 };
@@ -165,7 +166,7 @@ export const useExportData = () => {
       format: string;
       type: string;
       period?: string;
-    }) => analyticsApi.exportData(format, type, period as any),
+    }) => analyticsApi.exportData(format, type, period as PeriodType),
     onSuccess: (data) => {
       toast.success('تم التصدير بنجاح');
       if (data.fileUrl) {
@@ -178,49 +179,49 @@ export const useExportData = () => {
 
 // ==================== Advanced Analytics ====================
 
-export const useSalesAnalytics = (params: any = {}) => {
+export const useSalesAnalytics = (params: Record<string, unknown> = {}) => {
   return useQuery({
     queryKey: [ANALYTICS_KEY, 'advanced', 'sales', params],
     queryFn: () => analyticsApi.getSalesAnalytics(params),
   });
 };
 
-export const useProductPerformance = (params: any = {}) => {
+export const useProductPerformance = (params: Record<string, unknown> = {}) => {
   return useQuery({
     queryKey: [ANALYTICS_KEY, 'advanced', 'products', params],
     queryFn: () => analyticsApi.getProductPerformance(params),
   });
 };
 
-export const useCustomerAnalytics = (params: any = {}) => {
+export const useCustomerAnalytics = (params: Record<string, unknown> = {}) => {
   return useQuery({
     queryKey: [ANALYTICS_KEY, 'advanced', 'customers', params],
     queryFn: () => analyticsApi.getCustomerAnalytics(params),
   });
 };
 
-export const useInventoryReport = (params: any = {}) => {
+export const useInventoryReport = (params: Record<string, unknown> = {}) => {
   return useQuery({
     queryKey: [ANALYTICS_KEY, 'advanced', 'inventory', params],
     queryFn: () => analyticsApi.getInventoryReport(params),
   });
 };
 
-export const useFinancialReport = (params: any = {}) => {
+export const useFinancialReport = (params: Record<string, unknown> = {}) => {
   return useQuery({
     queryKey: [ANALYTICS_KEY, 'advanced', 'financial', params],
     queryFn: () => analyticsApi.getFinancialReport(params),
   });
 };
 
-export const useCartAnalytics = (params: any = {}) => {
+export const useCartAnalytics = (params: Record<string, unknown> = {}) => {
   return useQuery({
     queryKey: [ANALYTICS_KEY, 'advanced', 'cart', params],
     queryFn: () => analyticsApi.getCartAnalytics(params),
   });
 };
 
-export const useMarketingReport = (params: any = {}) => {
+export const useMarketingReport = (params: Record<string, unknown> = {}) => {
   return useQuery({
     queryKey: [ANALYTICS_KEY, 'advanced', 'marketing', params],
     queryFn: () => analyticsApi.getMarketingReport(params),
@@ -248,7 +249,7 @@ export const useQuickStats = () => {
 export const useGenerateAdvancedReport = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => analyticsApi.generateAdvancedReport(data),
+    mutationFn: (data: Record<string, unknown>) => analyticsApi.generateAdvancedReport(data),
     onSuccess: () => {
       toast.success('تم إنشاء التقرير بنجاح');
       queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'advanced', 'reports'] });

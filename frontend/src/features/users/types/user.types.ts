@@ -35,22 +35,22 @@ export interface User extends BaseEntity {
   lastName?: string;
   gender?: 'male' | 'female' | 'other';
   jobTitle?: string;
-  
+
   // Roles & Permissions
   isAdmin: boolean;
   roles: UserRole[];
   permissions: string[];
-  
+
   // Status
   status: UserStatus;
-  
+
   // Soft Delete
   deletedAt?: Date | null;
   deletedBy?: string;
   suspendedReason?: string;
   suspendedBy?: string;
   suspendedAt?: Date;
-  
+
   // Relations
   capabilities?: UserCapabilities | null;
 }
@@ -104,4 +104,3 @@ export interface UserStats {
   engineers: number;
   wholesale: number;
 }
-

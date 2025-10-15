@@ -23,11 +23,7 @@ interface MediaUploaderProps {
   onSuccess?: () => void;
 }
 
-export const MediaUploader: React.FC<MediaUploaderProps> = ({
-  open,
-  onClose,
-  onSuccess,
-}) => {
+export const MediaUploader: React.FC<MediaUploaderProps> = ({ open, onClose, onSuccess }) => {
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<MediaCategory>(MediaCategory.OTHER);
@@ -183,15 +179,10 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         <Button onClick={handleClose} disabled={isPending}>
           إلغاء
         </Button>
-        <Button
-          variant="contained"
-          onClick={handleUpload}
-          disabled={!file || !name || isPending}
-        >
+        <Button variant="contained" onClick={handleUpload} disabled={!file || !name || isPending}>
           رفع
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
-

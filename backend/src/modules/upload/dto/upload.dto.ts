@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { Express } from 'express';
 import { IsOptional, IsString } from 'class-validator';
 
 export class UploadFileDto {
@@ -7,7 +8,7 @@ export class UploadFileDto {
     format: 'binary',
     description: 'File to upload',
   })
-  file: any;
+  file!: Express.Multer.File;
 
   @ApiProperty({
     description: 'Folder to upload to',

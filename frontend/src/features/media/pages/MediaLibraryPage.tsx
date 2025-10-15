@@ -225,4 +225,3 @@ export const MediaLibraryPage: React.FC = () => {
     </Box>
   );
 };
-

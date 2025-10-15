@@ -4,11 +4,7 @@ import { Edit, Delete, Restore, Visibility, Star, NewReleases } from '@mui/icons
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import {
-  useProducts,
-  useDeleteProduct,
-  useRestoreProduct,
-} from '../hooks/useProducts';
+import { useProducts, useDeleteProduct, useRestoreProduct } from '../hooks/useProducts';
 import { formatDate } from '@/shared/utils/formatters';
 import type { Product, ProductStatus } from '../types/product.types';
 
@@ -21,9 +17,7 @@ export const ProductsListPage: React.FC = () => {
     pageSize: 20,
   });
   const [search, setSearch] = useState('');
-  const [sortModel, setSortModel] = useState<GridSortModel>([
-    { field: 'createdAt', sort: 'desc' },
-  ]);
+  const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'createdAt', sort: 'desc' }]);
 
   // API
   const { data, isLoading, refetch } = useProducts({
@@ -77,9 +71,7 @@ export const ProductsListPage: React.FC = () => {
           )}
           <Box>
             <Box sx={{ fontWeight: 'medium' }}>{params.row.name}</Box>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-              {params.row.nameEn}
-            </Box>
+            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{params.row.nameEn}</Box>
           </Box>
         </Box>
       ),
@@ -256,4 +248,3 @@ export const ProductsListPage: React.FC = () => {
     </Box>
   );
 };
-

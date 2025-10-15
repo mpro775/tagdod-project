@@ -67,4 +67,3 @@ export type Direction = 'ltr' | 'rtl';
 
 // Theme
 export type ThemeMode = 'light' | 'dark';
-

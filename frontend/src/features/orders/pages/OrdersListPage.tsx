@@ -111,7 +111,9 @@ export const OrdersListPage: React.FC = () => {
           WALLET: 'محفظة',
           BANK_TRANSFER: 'تحويل بنكي',
         };
-        return <Chip label={labels[params.row.paymentMethod] || params.row.paymentMethod} size="small" />;
+        return (
+          <Chip label={labels[params.row.paymentMethod] || params.row.paymentMethod} size="small" />
+        );
       },
     },
     {
@@ -190,4 +192,3 @@ export const OrdersListPage: React.FC = () => {
     </Box>
   );
 };
-

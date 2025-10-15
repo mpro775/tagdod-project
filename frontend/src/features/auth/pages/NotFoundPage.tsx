@@ -19,19 +19,19 @@ export const NotFoundPage: React.FC = () => {
         }}
       >
         <SearchOff sx={{ fontSize: 100, color: 'text.secondary', mb: 3 }} />
-        
+
         <Typography variant="h3" fontWeight="bold" gutterBottom>
           404
         </Typography>
-        
+
         <Typography variant="h5" color="text.secondary" gutterBottom>
           الصفحة غير موجودة
         </Typography>
-        
+
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
           عذراً، الصفحة التي تبحث عنها غير موجودة
         </Typography>
-        
+
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button variant="contained" onClick={() => navigate('/dashboard')}>
             العودة للرئيسية
@@ -44,4 +44,3 @@ export const NotFoundPage: React.FC = () => {
     </Container>
   );
 };
-

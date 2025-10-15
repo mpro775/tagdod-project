@@ -25,21 +25,23 @@ const phoneSchema = z.object({
   phone: z.string().min(10, 'رقم الهاتف يجب أن يكون 10 أرقام على الأقل'),
 });
 
-const resetSchema = z.object({
-  code: z.string().length(6, 'رمز التحقق يجب أن يكون 6 أرقام'),
-  newPassword: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'كلمة المرور غير متطابقة',
-  path: ['confirmPassword'],
-});
+const resetSchema = z
+  .object({
+    code: z.string().length(6, 'رمز التحقق يجب أن يكون 6 أرقام'),
+    newPassword: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'كلمة المرور غير متطابقة',
+    path: ['confirmPassword'],
+  });
 
 type PhoneFormData = z.infer<typeof phoneSchema>;
 type ResetFormData = z.infer<typeof resetSchema>;
 
 export const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
-  
+
   const [step, setStep] = useState<'phone' | 'reset'>('phone');
   const [phone, setPhone] = useState('');
   const [devCode, setDevCode] = useState('');
@@ -219,7 +221,11 @@ export const ForgotPasswordPage: React.FC = () => {
                 sx={{ mb: 3 }}
               />
 
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 3, textAlign: 'center' }}
+              >
                 تم إرسال الرمز إلى {phone}
               </Typography>
 
@@ -250,4 +256,3 @@ export const ForgotPasswordPage: React.FC = () => {
     </Box>
   );
 };
-

@@ -23,9 +23,7 @@ export const UsersListPage: React.FC = () => {
     pageSize: 20,
   });
   const [search, setSearch] = useState('');
-  const [sortModel, setSortModel] = useState<GridSortModel>([
-    { field: 'createdAt', sort: 'desc' },
-  ]);
+  const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'createdAt', sort: 'desc' }]);
 
   // API
   const { data, isLoading, refetch } = useUsers({
@@ -105,13 +103,7 @@ export const UsersListPage: React.FC = () => {
           moderator: 'مشرف',
           user: 'مستخدم',
         };
-        return (
-          <Chip
-            label={labelMap[role] || role}
-            color={colorMap[role]}
-            size="small"
-          />
-        );
+        return <Chip label={labelMap[role] || role} color={colorMap[role]} size="small" />;
       },
     },
     {
@@ -273,4 +265,3 @@ export const UsersListPage: React.FC = () => {
     </Box>
   );
 };
-

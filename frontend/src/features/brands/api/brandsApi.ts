@@ -34,9 +34,7 @@ export const brandsApi = {
   },
 
   toggleStatus: async (id: string): Promise<Brand> => {
-    const response = await apiClient.patch<ApiResponse<Brand>>(
-      `/admin/brands/${id}/toggle-status`
-    );
+    const response = await apiClient.patch<ApiResponse<Brand>>(`/admin/brands/${id}/toggle-status`);
     return response.data.data;
   },
 
@@ -45,4 +43,3 @@ export const brandsApi = {
     return response.data.data;
   },
 };
-

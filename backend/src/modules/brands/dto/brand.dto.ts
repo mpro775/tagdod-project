@@ -6,7 +6,6 @@ import {
   IsObject,
   MinLength,
   MaxLength,
-  IsUrl,
   Min,
   IsIn
 } from 'class-validator';

@@ -43,10 +43,7 @@ export const productsApi = {
    * Update product
    */
   update: async (id: string, data: UpdateProductDto): Promise<Product> => {
-    const response = await apiClient.patch<ApiResponse<Product>>(
-      `/admin/products/${id}`,
-      data
-    );
+    const response = await apiClient.patch<ApiResponse<Product>>(`/admin/products/${id}`, data);
     return response.data.data;
   },
 
@@ -61,9 +58,7 @@ export const productsApi = {
    * Restore deleted product
    */
   restore: async (id: string): Promise<Product> => {
-    const response = await apiClient.post<ApiResponse<Product>>(
-      `/admin/products/${id}/restore`
-    );
+    const response = await apiClient.post<ApiResponse<Product>>(`/admin/products/${id}/restore`);
     return response.data.data;
   },
 
@@ -122,10 +117,7 @@ export const productsApi = {
   /**
    * Generate variants automatically
    */
-  generateVariants: async (
-    productId: string,
-    data: GenerateVariantsDto
-  ): Promise<Variant[]> => {
+  generateVariants: async (productId: string, data: GenerateVariantsDto): Promise<Variant[]> => {
     const response = await apiClient.post<ApiResponse<Variant[]>>(
       `/admin/products/${productId}/generate-variants`,
       data
@@ -143,4 +135,3 @@ export const productsApi = {
     return response.data.data;
   },
 };
-

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Grid,
@@ -9,13 +9,7 @@ import {
   Button,
   CircularProgress,
 } from '@mui/material';
-import {
-  AttachMoney,
-  ShoppingCart,
-  People,
-  TrendingUp,
-  Refresh,
-} from '@mui/icons-material';
+import { AttachMoney, ShoppingCart, People, TrendingUp, Refresh } from '@mui/icons-material';
 import { useDashboard, useRefreshAnalytics } from '../hooks/useAnalytics';
 import { StatsCard } from '../components/StatsCard';
 import { RevenueChart } from '../components/RevenueChart';
@@ -139,12 +133,10 @@ export const AnalyticsDashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <PieChartComponent
             data={
-              data?.productCharts?.topSelling
-                ?.slice(0, 5)
-                .map((item) => ({
-                  name: item.product,
-                  value: item.sales,
-                })) || []
+              data?.productCharts?.topSelling?.slice(0, 5).map((item) => ({
+                name: item.product,
+                value: item.sales,
+              })) || []
             }
             title="أكثر المنتجات مبيعاً"
           />
@@ -166,4 +158,3 @@ export const AnalyticsDashboardPage: React.FC = () => {
     </Box>
   );
 };
-

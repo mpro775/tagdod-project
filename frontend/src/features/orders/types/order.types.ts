@@ -222,4 +222,3 @@ export interface OrderStats {
   totalRevenue: number;
   averageOrderValue: number;
 }
-

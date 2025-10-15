@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { i18n } = useTranslation();
   const { user, logout } = useAuthStore();
   const { mode, toggleMode } = useThemeStore();
-  
+
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const isMenuOpen = Boolean(anchorEl);
 
@@ -110,12 +110,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </IconButton>
 
           {/* User Menu */}
-          <IconButton
-            edge="end"
-            color="inherit"
-            onClick={handleMenuOpen}
-            sx={{ ml: 1 }}
-          >
+          <IconButton edge="end" color="inherit" onClick={handleMenuOpen} sx={{ ml: 1 }}>
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
               {user?.firstName?.[0] || 'A'}
             </Avatar>
@@ -171,4 +166,3 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     </AppBar>
   );
 };
-

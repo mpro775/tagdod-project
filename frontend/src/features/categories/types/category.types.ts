@@ -110,4 +110,3 @@ export interface CategoryStats {
   topLevel: number; // Categories with no parent
   withProducts: number;
 }
-

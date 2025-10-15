@@ -28,7 +28,7 @@ export const couponsApi = {
     const response = await apiClient.get<{
       success: boolean;
       data: Coupon[];
-      pagination: any;
+      pagination: { page: number; limit: number; total: number; totalPages: number };
     }>('/admin/coupons', { params });
     return {
       data: response.data.data,
@@ -103,4 +103,3 @@ export const couponsApi = {
     return response.data;
   },
 };
-

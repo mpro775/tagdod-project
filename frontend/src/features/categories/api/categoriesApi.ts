@@ -33,9 +33,7 @@ export const categoriesApi = {
    * Get category tree
    */
   getTree: async (): Promise<CategoryTreeNode[]> => {
-    const response = await apiClient.get<ApiResponse<CategoryTreeNode[]>>(
-      '/admin/categories/tree'
-    );
+    const response = await apiClient.get<ApiResponse<CategoryTreeNode[]>>('/admin/categories/tree');
     return response.data.data;
   },
 
@@ -43,9 +41,7 @@ export const categoriesApi = {
    * Get category by ID
    */
   getById: async (id: string): Promise<Category> => {
-    const response = await apiClient.get<ApiResponse<Category>>(
-      `/admin/categories/${id}`
-    );
+    const response = await apiClient.get<ApiResponse<Category>>(`/admin/categories/${id}`);
     return response.data.data;
   },
 
@@ -53,10 +49,7 @@ export const categoriesApi = {
    * Update category
    */
   update: async (id: string, data: UpdateCategoryDto): Promise<Category> => {
-    const response = await apiClient.patch<ApiResponse<Category>>(
-      `/admin/categories/${id}`,
-      data
-    );
+    const response = await apiClient.patch<ApiResponse<Category>>(`/admin/categories/${id}`, data);
     return response.data.data;
   },
 
@@ -71,9 +64,7 @@ export const categoriesApi = {
    * Restore deleted category
    */
   restore: async (id: string): Promise<Category> => {
-    const response = await apiClient.post<ApiResponse<Category>>(
-      `/admin/categories/${id}/restore`
-    );
+    const response = await apiClient.post<ApiResponse<Category>>(`/admin/categories/${id}/restore`);
     return response.data.data;
   },
 
@@ -88,10 +79,7 @@ export const categoriesApi = {
    * Get category statistics
    */
   getStats: async (): Promise<CategoryStats> => {
-    const response = await apiClient.get<ApiResponse<CategoryStats>>(
-      '/admin/categories/stats'
-    );
+    const response = await apiClient.get<ApiResponse<CategoryStats>>('/admin/categories/stats');
     return response.data.data;
   },
 };
-

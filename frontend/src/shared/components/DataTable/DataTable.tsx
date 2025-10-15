@@ -83,9 +83,7 @@ export const DataTable: React.FC<DataTableProps> = ({
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-            {title && (
-              <Box sx={{ fontSize: 18, fontWeight: 'bold' }}>{title}</Box>
-            )}
+            {title && <Box sx={{ fontSize: 18, fontWeight: 'bold' }}>{title}</Box>}
             {onSearch && (
               <TextField
                 size="small"
@@ -149,4 +147,3 @@ export const DataTable: React.FC<DataTableProps> = ({
     </Paper>
   );
 };
-

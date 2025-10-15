@@ -4,7 +4,11 @@ import { Edit, Delete, ToggleOn, ToggleOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { usePromotions, useDeletePromotion, useTogglePromotionStatus } from '../hooks/usePromotions';
+import {
+  usePromotions,
+  useDeletePromotion,
+  useTogglePromotionStatus,
+} from '../hooks/usePromotions';
 import { formatDate } from '@/shared/utils/formatters';
 import type { PriceRule } from '../types/promotion.types';
 
@@ -15,7 +19,12 @@ export const PromotionsListPage: React.FC = () => {
   const { mutate: toggleStatus } = useTogglePromotionStatus();
 
   const columns: GridColDef[] = [
-    { field: 'metadata.title', headerName: 'العنوان', width: 200, valueGetter: (_v, row) => row.metadata?.title || 'بدون عنوان' },
+    {
+      field: 'metadata.title',
+      headerName: 'العنوان',
+      width: 200,
+      valueGetter: (_v, row) => row.metadata?.title || 'بدون عنوان',
+    },
     { field: 'priority', headerName: 'الأولوية', width: 100, align: 'center' },
     {
       field: 'effects',
@@ -28,14 +37,36 @@ export const PromotionsListPage: React.FC = () => {
         return '-';
       },
     },
-    { field: 'stats.appliedCount', headerName: 'الاستخدامات', width: 120, align: 'center', valueGetter: (_v, row) => row.stats?.appliedCount || 0 },
-    { field: 'startAt', headerName: 'البداية', width: 130, valueFormatter: (value) => formatDate(value as Date) },
-    { field: 'endAt', headerName: 'النهاية', width: 130, valueFormatter: (value) => formatDate(value as Date) },
+    {
+      field: 'stats.appliedCount',
+      headerName: 'الاستخدامات',
+      width: 120,
+      align: 'center',
+      valueGetter: (_v, row) => row.stats?.appliedCount || 0,
+    },
+    {
+      field: 'startAt',
+      headerName: 'البداية',
+      width: 130,
+      valueFormatter: (value) => formatDate(value as Date),
+    },
+    {
+      field: 'endAt',
+      headerName: 'النهاية',
+      width: 130,
+      valueFormatter: (value) => formatDate(value as Date),
+    },
     {
       field: 'active',
       headerName: 'الحالة',
       width: 100,
-      renderCell: (params) => <Chip label={params.row.active ? 'نشط' : 'غير نشط'} color={params.row.active ? 'success' : 'default'} size="small" />,
+      renderCell: (params) => (
+        <Chip
+          label={params.row.active ? 'نشط' : 'غير نشط'}
+          color={params.row.active ? 'success' : 'default'}
+          size="small"
+        />
+      ),
     },
     {
       field: 'actions',
@@ -46,9 +77,43 @@ export const PromotionsListPage: React.FC = () => {
         const promo = params.row as PriceRule;
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title="تعديل"><IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); navigate(`/promotions/${promo._id}`); }}><Edit fontSize="small" /></IconButton></Tooltip>
-            <Tooltip title={promo.active ? 'تعطيل' : 'تفعيل'}><IconButton size="small" color={promo.active ? 'warning' : 'success'} onClick={(e) => { e.stopPropagation(); toggleStatus(promo._id, { onSuccess: () => refetch() }); }}>{promo.active ? <ToggleOff fontSize="small" /> : <ToggleOn fontSize="small" />}</IconButton></Tooltip>
-            <Tooltip title="حذف"><IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); if (window.confirm('هل تريد حذف العرض؟')) deletePromotion(promo._id, { onSuccess: () => refetch() }); }}><Delete fontSize="small" /></IconButton></Tooltip>
+            <Tooltip title="تعديل">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/promotions/${promo._id}`);
+                }}
+              >
+                <Edit fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={promo.active ? 'تعطيل' : 'تفعيل'}>
+              <IconButton
+                size="small"
+                color={promo.active ? 'warning' : 'success'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleStatus(promo._id, { onSuccess: () => refetch() });
+                }}
+              >
+                {promo.active ? <ToggleOff fontSize="small" /> : <ToggleOn fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="حذف">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm('هل تريد حذف العرض؟'))
+                    deletePromotion(promo._id, { onSuccess: () => refetch() });
+                }}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
         );
       },
@@ -72,4 +137,3 @@ export const PromotionsListPage: React.FC = () => {
     </Box>
   );
 };
-

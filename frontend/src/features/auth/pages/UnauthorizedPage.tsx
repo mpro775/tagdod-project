@@ -19,19 +19,19 @@ export const UnauthorizedPage: React.FC = () => {
         }}
       >
         <Block sx={{ fontSize: 100, color: 'error.main', mb: 3 }} />
-        
+
         <Typography variant="h3" fontWeight="bold" gutterBottom>
           403
         </Typography>
-        
+
         <Typography variant="h5" color="text.secondary" gutterBottom>
           غير مصرح لك بالوصول
         </Typography>
-        
+
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
           عذراً، لا تملك الصلاحيات الكافية للوصول إلى هذه الصفحة
         </Typography>
-        
+
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button variant="contained" onClick={() => navigate('/dashboard')}>
             العودة للرئيسية
@@ -44,4 +44,3 @@ export const UnauthorizedPage: React.FC = () => {
     </Container>
   );
 };
-

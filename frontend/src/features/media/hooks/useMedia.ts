@@ -2,11 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { mediaApi } from '../api/mediaApi';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
 import toast from 'react-hot-toast';
-import type {
-  ListMediaParams,
-  UploadMediaDto,
-  UpdateMediaDto,
-} from '../types/media.types';
+import type { ListMediaParams, UploadMediaDto, UpdateMediaDto } from '../types/media.types';
 
 const MEDIA_KEY = 'media';
 
@@ -50,8 +46,7 @@ export const useUploadMedia = () => {
 export const useUpdateMedia = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateMediaDto }) =>
-      mediaApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateMediaDto }) => mediaApi.update(id, data),
     onSuccess: () => {
       toast.success('تم تحديث الملف بنجاح');
       queryClient.invalidateQueries({ queryKey: [MEDIA_KEY] });
@@ -106,4 +101,3 @@ export const useMediaStats = () => {
     queryFn: () => mediaApi.getStats(),
   });
 };
-

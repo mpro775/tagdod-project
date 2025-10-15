@@ -53,7 +53,7 @@ export interface SupportTicket extends BaseEntity {
   feedback?: string;
   feedbackAt?: Date;
   
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Support Message Interface

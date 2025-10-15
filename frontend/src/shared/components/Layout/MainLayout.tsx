@@ -41,7 +41,7 @@ export const MainLayout: React.FC = () => {
         }}
       >
         <Header onMenuClick={toggleSidebar} />
-        
+
         <Box sx={{ p: 3 }}>
           <Outlet />
         </Box>
@@ -49,4 +49,3 @@ export const MainLayout: React.FC = () => {
     </Box>
   );
 };
-

@@ -59,11 +59,10 @@ export interface CreateBannerDto {
   linkedCouponCode?: string;
 }
 
-export interface UpdateBannerDto extends Partial<CreateBannerDto> {}
+export type UpdateBannerDto = Partial<CreateBannerDto>;
 
 export interface ListBannersParams extends ListParams {
   location?: BannerLocation;
   isActive?: boolean;
   type?: BannerType;
 }
-

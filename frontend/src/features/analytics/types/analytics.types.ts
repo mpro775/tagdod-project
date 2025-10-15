@@ -268,7 +268,7 @@ export interface AdvancedReport {
     start: Date;
     end: Date;
   };
-  data: any;
+  data: Record<string, unknown>;
   insights: string[];
   recommendations: string[];
   fileUrls?: string[];
@@ -314,4 +314,3 @@ export interface ListReportsParams {
   limit?: number;
   category?: ReportCategory;
 }
-

@@ -172,12 +172,7 @@ export const CategoryFormPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
-                    <FormInput
-                      name="description"
-                      label="وصف الفئة (عربي)"
-                      multiline
-                      rows={3}
-                    />
+                    <FormInput name="description" label="وصف الفئة (عربي)" multiline rows={3} />
                   </Grid>
                 </>
               )}
@@ -231,12 +226,7 @@ export const CategoryFormPage: React.FC = () => {
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <FormInput
-                  name="order"
-                  label="الترتيب"
-                  type="number"
-                  placeholder="0"
-                />
+                <FormInput name="order" label="الترتيب" type="number" placeholder="0" />
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
@@ -317,9 +307,7 @@ export const CategoryFormPage: React.FC = () => {
                   <Button
                     type="submit"
                     variant="contained"
-                    startIcon={
-                      isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />
-                    }
+                    startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
                   >
                     حفظ
@@ -340,4 +328,3 @@ export const CategoryFormPage: React.FC = () => {
     </Box>
   );
 };
-

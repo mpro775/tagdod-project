@@ -35,4 +35,3 @@ export interface ListNotificationsParams extends ListParams {
   type?: NotificationType;
   isSent?: boolean;
 }
-

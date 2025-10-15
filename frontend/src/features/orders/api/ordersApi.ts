@@ -32,10 +32,7 @@ export const ordersApi = {
    * Update order status
    */
   updateStatus: async (id: string, data: UpdateOrderStatusDto): Promise<Order> => {
-    const response = await apiClient.patch<ApiResponse<Order>>(
-      `/admin/orders/${id}/status`,
-      data
-    );
+    const response = await apiClient.patch<ApiResponse<Order>>(`/admin/orders/${id}/status`, data);
     return response.data.data;
   },
 
@@ -43,10 +40,7 @@ export const ordersApi = {
    * Ship order
    */
   ship: async (id: string, data: ShipOrderDto): Promise<Order> => {
-    const response = await apiClient.post<ApiResponse<Order>>(
-      `/admin/orders/${id}/ship`,
-      data
-    );
+    const response = await apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/ship`, data);
     return response.data.data;
   },
 
@@ -64,10 +58,7 @@ export const ordersApi = {
    * Refund order
    */
   refund: async (id: string, data: RefundOrderDto): Promise<Order> => {
-    const response = await apiClient.post<ApiResponse<Order>>(
-      `/admin/orders/${id}/refund`,
-      data
-    );
+    const response = await apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/refund`, data);
     return response.data.data;
   },
 
@@ -75,10 +66,9 @@ export const ordersApi = {
    * Cancel order
    */
   cancel: async (id: string, reason: string): Promise<Order> => {
-    const response = await apiClient.post<ApiResponse<Order>>(
-      `/admin/orders/${id}/cancel`,
-      { reason }
-    );
+    const response = await apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/cancel`, {
+      reason,
+    });
     return response.data.data;
   },
 
@@ -89,10 +79,7 @@ export const ordersApi = {
     id: string,
     notes: { adminNotes?: string; internalNotes?: string }
   ): Promise<Order> => {
-    const response = await apiClient.patch<ApiResponse<Order>>(
-      `/admin/orders/${id}/notes`,
-      notes
-    );
+    const response = await apiClient.patch<ApiResponse<Order>>(`/admin/orders/${id}/notes`, notes);
     return response.data.data;
   },
 
@@ -104,4 +91,3 @@ export const ordersApi = {
     return response.data.data;
   },
 };
-

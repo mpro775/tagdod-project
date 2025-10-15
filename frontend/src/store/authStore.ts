@@ -15,7 +15,7 @@ interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  
+
   // Actions
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
@@ -76,4 +76,3 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 }));
-

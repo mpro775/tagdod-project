@@ -14,10 +14,7 @@ export const attributesApi = {
   // ==================== Attributes ====================
 
   create: async (data: CreateAttributeDto): Promise<Attribute> => {
-    const response = await apiClient.post<ApiResponse<Attribute>>(
-      '/admin/attributes',
-      data
-    );
+    const response = await apiClient.post<ApiResponse<Attribute>>('/admin/attributes', data);
     return response.data.data;
   },
 
@@ -29,17 +26,12 @@ export const attributesApi = {
   },
 
   getById: async (id: string): Promise<Attribute> => {
-    const response = await apiClient.get<ApiResponse<Attribute>>(
-      `/admin/attributes/${id}`
-    );
+    const response = await apiClient.get<ApiResponse<Attribute>>(`/admin/attributes/${id}`);
     return response.data.data;
   },
 
   update: async (id: string, data: UpdateAttributeDto): Promise<Attribute> => {
-    const response = await apiClient.patch<ApiResponse<Attribute>>(
-      `/admin/attributes/${id}`,
-      data
-    );
+    const response = await apiClient.patch<ApiResponse<Attribute>>(`/admin/attributes/${id}`, data);
     return response.data.data;
   },
 
@@ -86,4 +78,3 @@ export const attributesApi = {
     await apiClient.delete(`/admin/attributes/values/${id}`);
   },
 };
-

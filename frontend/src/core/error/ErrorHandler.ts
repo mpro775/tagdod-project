@@ -72,7 +72,7 @@ export class ErrorHandler {
    * Log error
    */
   static logError(error: unknown, context?: string): void {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.MODE === 'development') {
       console.error(`[Error${context ? ` - ${context}` : ''}]:`, error);
     }
 
