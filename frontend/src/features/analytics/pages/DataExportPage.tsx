@@ -18,11 +18,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Divider,
+ 
 } from '@mui/material';
 import {
   GetApp,
@@ -33,7 +29,6 @@ import {
   Code,
   ExpandMore,
   CheckCircle,
-  Schedule,
   Analytics,
   Inventory,
   People,
@@ -155,7 +150,7 @@ export const DataExportPage: React.FC = () => {
     exportMutation.mutate(exportConfig);
   };
 
-  const handleConfigChange = (field: keyof ExportConfig, value: any) => {
+  const handleConfigChange = (field: keyof ExportConfig, value: unknown) => {
     setExportConfig(prev => ({ ...prev, [field]: value }));
   };
 
@@ -185,7 +180,7 @@ export const DataExportPage: React.FC = () => {
         <CardContent>
           <Accordion
             expanded={expandedPanel === 'export-panel'}
-            onChange={(event, isExpanded) => setExpandedPanel(isExpanded ? 'export-panel' : false)}
+            onChange={(_, isExpanded) => setExpandedPanel(isExpanded ? 'export-panel' : false)}
           >
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -196,7 +191,7 @@ export const DataExportPage: React.FC = () => {
             <AccordionDetails>
               <Grid container spacing={3}>
                 {/* Data Type Selection */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{xs: 12, md: 6}}>
                   <FormControl fullWidth>
                     <InputLabel>نوع البيانات</InputLabel>
                     <Select
@@ -224,7 +219,7 @@ export const DataExportPage: React.FC = () => {
                 </Grid>
 
                 {/* Format Selection */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{xs: 12, md: 6}}>
                   <FormControl fullWidth>
                     <InputLabel>صيغة الملف</InputLabel>
                     <Select
@@ -247,7 +242,7 @@ export const DataExportPage: React.FC = () => {
                 </Grid>
 
                 {/* Period Selection */}
-                <Grid item xs={12} md={6}>
+                <Grid size={{xs: 12, md: 6}}>
                   <FormControl fullWidth>
                     <InputLabel>الفترة الزمنية</InputLabel>
                     <Select
@@ -265,7 +260,7 @@ export const DataExportPage: React.FC = () => {
                 </Grid>
 
                 {/* Date Range (for custom periods) */}
-                <Grid item xs={12} md={3}>
+                <Grid size={{xs: 12, md: 3}}>
                   <TextField
                     fullWidth
                     label="تاريخ البداية"
@@ -275,7 +270,7 @@ export const DataExportPage: React.FC = () => {
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
-                <Grid item xs={12} md={3}>
+                <Grid size={{xs: 12, md: 3}}>
                   <TextField
                     fullWidth
                     label="تاريخ النهاية"
@@ -287,7 +282,7 @@ export const DataExportPage: React.FC = () => {
                 </Grid>
 
                 {/* Export Options */}
-                <Grid item xs={12}>
+                <Grid size={{xs: 12}}>
                   <Typography variant="h6" gutterBottom>
                     خيارات التصدير
                   </Typography>
@@ -310,7 +305,7 @@ export const DataExportPage: React.FC = () => {
                 </Grid>
 
                 {/* Export Button */}
-                <Grid item xs={12}>
+                <Grid size={{xs: 12}}>
                   <Button
                     variant="contained"
                     size="large"
@@ -336,7 +331,7 @@ export const DataExportPage: React.FC = () => {
           </Typography>
           <Grid container spacing={2}>
             {dataTypes.map((type) => (
-              <Grid item xs={12} sm={6} md={4} key={type.id}>
+              <Grid size={{xs: 12, sm: 6, md: 4}} key={type.id}>
                 <Card variant="outlined">
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>

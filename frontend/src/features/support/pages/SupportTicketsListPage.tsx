@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Chip, IconButton, Tooltip } from '@mui/material';
-import { Visibility } from '@mui/icons-material';
+import { Box, Chip, IconButton, Tooltip, Button, Typography } from '@mui/material';
+import { Visibility, Analytics } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -138,6 +138,18 @@ export const SupportTicketsListPage: React.FC = () => {
 
   return (
     <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" fontWeight="bold">
+          إدارة تذاكر الدعم
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<Analytics />}
+          onClick={() => navigate('/support/stats')}
+        >
+          عرض الإحصائيات
+        </Button>
+      </Box>
       <DataTable
         title="إدارة تذاكر الدعم"
         columns={columns}

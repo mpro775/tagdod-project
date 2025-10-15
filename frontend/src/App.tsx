@@ -5,6 +5,7 @@ import { ThemeProvider } from './core/theme/ThemeProvider';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
 import { AppRouter } from './core/router/AppRouter';
+import { ErrorBoundary } from './core/error/ErrorBoundary';
 import './core/i18n/config';
 
 const queryClient = new QueryClient({
@@ -24,14 +25,16 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <BrowserRouter>
-          <AppRouter />
-        </BrowserRouter>
-        <Toaster position="top-center" />
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <AppRouter />
+          </BrowserRouter>
+          <Toaster position="top-center" />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

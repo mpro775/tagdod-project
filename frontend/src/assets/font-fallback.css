@@ -1,0 +1,17 @@
+/* Font Fallback Strategy for Arabic Text */
+/* Note: This file provides CSS variables and fallback strategy */
+/* Actual fonts are loaded from Google Fonts via index.html */
+
+/* Enhanced Arabic font stack - Cairo as primary */
+:root {
+  --arabic-font-stack: 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+/* Apply Arabic font stack to all MUI components */
+.MuiTypography-root,
+.MuiButton-root,
+.MuiTextField-root,
+.MuiInputBase-root,
+.MuiFormLabel-root {
+  font-family: var(--arabic-font-stack) !important;
+}

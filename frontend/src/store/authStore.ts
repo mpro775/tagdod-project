@@ -30,10 +30,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
 
   login: (user, accessToken, refreshToken) => {
+    console.log('🔐 Logging in user:', user.phone);
     TokenService.setAccessToken(accessToken);
     TokenService.setRefreshToken(refreshToken);
     localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
     set({ user, isAuthenticated: true });
+    console.log('✅ Login successful');
   },
 
   logout: () => {
@@ -62,17 +64,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   initialize: () => {
-    const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-    const isAuthenticated = TokenService.isAuthenticated();
+    try {
+      const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+      const isAuthenticated = TokenService.isAuthenticated();
 
-    if (userDataStr && isAuthenticated) {
-      try {
+      console.log('🔍 Initializing auth store...');
+      console.log('📱 User data exists:', !!userDataStr);
+      console.log('🔑 Token exists:', isAuthenticated);
+
+      if (userDataStr && isAuthenticated) {
         const user = JSON.parse(userDataStr);
+        console.log('✅ User authenticated:', user.phone);
         set({ user, isAuthenticated: true });
-      } catch (error) {
-        console.error('Failed to parse user data:', error);
-        get().logout();
+      } else {
+        console.log('❌ No valid auth data found');
+        set({ user: null, isAuthenticated: false });
       }
+    } catch (error) {
+      console.error('❌ Failed to initialize auth store:', error);
+      get().logout();
     }
   },
 }));

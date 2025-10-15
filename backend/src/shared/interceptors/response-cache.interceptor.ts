@@ -4,6 +4,7 @@ import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
 import { CacheService } from '../cache/cache.service';
 import { Request, Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 export const CACHE_KEY = 'cache';
 export const CACHE_TTL_KEY = 'cache_ttl';
@@ -17,15 +18,28 @@ export interface CacheOptions {
 @Injectable()
 export class ResponseCacheInterceptor {
   private readonly logger = new Logger(ResponseCacheInterceptor.name);
+  private readonly isDevelopment: boolean;
 
   constructor(
     private cacheService: CacheService,
     private reflector: Reflector,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.isDevelopment = this.configService.get<string>('NODE_ENV', 'development') === 'development';
+    
+    if (this.isDevelopment) {
+      this.logger.warn('🚧 Development mode detected - Response caching is DISABLED');
+    }
+  }
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse<Response>();
+
+    // Skip caching in development mode
+    if (this.isDevelopment) {
+      return next.handle();
+    }
 
     // Check if caching is enabled globally
     const isCacheEnabled = process.env.CACHE_ENABLED !== 'false';

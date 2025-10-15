@@ -71,6 +71,7 @@ export interface MediaStats {
   byCategory: Record<MediaCategory, number>;
   byType: Record<MediaType, number>;
   totalSize: number;
+  totalSizeMB: string;
   averageSize: number;
 }
 

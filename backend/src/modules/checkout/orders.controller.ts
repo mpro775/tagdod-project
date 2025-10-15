@@ -26,7 +26,7 @@ export class OrdersController {
   async createOrder(@Req() req: ExpressRequest, @Body() dto: CheckoutConfirmDto) {
     const order = await this.checkoutService.createOrder(
       dto,
-      (req as unknown as { user: { userId: string } }).user.userId,
+      (req as unknown as { user: { sub: string } }).user.sub,
     );
     if (!order) {
       return { success: false, message: 'Order creation failed' };
@@ -49,7 +49,7 @@ export class OrdersController {
   @ApiOperation({ summary: 'Get user orders' })
   async getMyOrders(@Req() req: ExpressRequest, @Query() dto: ListOrdersDto) {
     const result = await this.checkoutService.getUserOrders(
-      (req as unknown as { user: { userId: string } }).user.userId,
+      (req as unknown as { user: { sub: string } }).user.sub,
       dto.page,
       dto.limit,
       dto.status,
@@ -62,12 +62,28 @@ export class OrdersController {
     };
   }
 
+  @Get('recent')
+  @ApiOperation({ summary: 'Get recent orders' })
+  async getRecentOrders(@Req() req: ExpressRequest, @Query('limit') limit?: string) {
+    const result = await this.checkoutService.getUserOrders(
+      (req as unknown as { user: { sub: string } }).user.sub,
+      1, // page 1
+      limit ? Number(limit) : 5, // default limit 5
+      undefined, // no status filter
+    );
+
+    return {
+      success: true,
+      data: result.orders,
+    };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get order details' })
   async getOrderDetails(@Req() req: ExpressRequest, @Param('id') orderId: string) {
     const order = await this.checkoutService.getOrderDetails(
       orderId,
-      (req as unknown as { user: { userId: string } }).user.userId,
+      (req as unknown as { user: { sub: string } }).user.sub,
     );
 
     return {
@@ -81,7 +97,7 @@ export class OrdersController {
   async trackOrder(@Req() req: ExpressRequest, @Param('id') orderId: string) {
     const tracking = await this.ordersService.getOrderTracking(
       orderId,
-      (req as unknown as { user: { userId: string } }).user.userId,
+      (req as unknown as { user: { sub: string } }).user.sub,
     );
 
     return {
@@ -99,7 +115,7 @@ export class OrdersController {
   ) {
     const order = await this.checkoutService.cancelOrder(
       orderId,
-      (req as unknown as { user: { userId: string } }).user.userId,
+      (req as unknown as { user: { sub: string } }).user.sub,
       dto.reason,
     );
 
@@ -119,7 +135,7 @@ export class OrdersController {
   ) {
     const order = await this.ordersService.rateOrder(
       orderId,
-      (req as unknown as { user: { userId: string } }).user.userId,
+      (req as unknown as { user: { sub: string } }).user.sub,
       dto,
     );
 
@@ -134,7 +150,7 @@ export class OrdersController {
   @ApiOperation({ summary: 'Get user order statistics' })
   async getMyStatistics(@Req() req: ExpressRequest) {
     const stats = await this.ordersService.getOrderStatistics(
-      (req as unknown as { user: { userId: string } }).user.userId,
+      (req as unknown as { user: { sub: string } }).user.sub,
     );
 
     return {

@@ -1,17 +1,22 @@
 import React from 'react';
-import { Box, Grid, Card, CardContent, Typography, LinearProgress } from '@mui/material';
-import { People, ShoppingCart, AttachMoney, TrendingUp, Inventory } from '@mui/icons-material';
+import { Box, Grid, Card, CardContent, Typography, LinearProgress, Button, CircularProgress } from '@mui/material';
+import { People, ShoppingCart, AttachMoney, TrendingUp, Inventory, Refresh, Support } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
+import { useDashboard, useRefreshAnalytics, usePerformanceMetrics } from '../../analytics/hooks/useAnalytics';
+import { useSupportStats } from '../../support/hooks/useSupport';
+import { apiClient } from '@/core/api/client';
+import { QuickStatsWidget } from '../components/QuickStatsWidget';
+import { MiniChartWidget } from '../components/MiniChartWidget';
 
-interface DashboardStats {
-  totalUsers: number;
-  totalOrders: number;
-  totalRevenue: number;
-  totalProducts: number;
-  usersGrowth: number;
-  ordersGrowth: number;
-  revenueGrowth: number;
-  productsGrowth: number;
+// Interfaces
+interface RecentOrder {
+  id: string;
+  orderNumber?: string;
+  customer?: {
+    name: string;
+  };
+  total?: number;
+  status: 'completed' | 'pending' | 'cancelled' | string;
 }
 
 // Stats Card Component
@@ -72,42 +77,69 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, growth, color
 };
 
 export const DashboardPage: React.FC = () => {
-  // Fetch dashboard stats
-  const { data: stats, isLoading } = useQuery<DashboardStats>({
-    queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      // This will be replaced with actual API call
-      // const response = await apiClient.get('/admin/dashboard/stats');
-      // return response.data;
+  // Fetch real dashboard data from analytics API
+  const { data: dashboardData, isLoading, error } = useDashboard();
+  const { data: supportStats } = useSupportStats();
+  const { mutate: refresh, isPending: isRefreshing } = useRefreshAnalytics();
 
-      // Mock data for now
-      return {
-        totalUsers: 1250,
-        totalOrders: 847,
-        totalRevenue: 125000,
-        totalProducts: 456,
-        usersGrowth: 12.5,
-        ordersGrowth: 8.3,
-        revenueGrowth: 15.7,
-        productsGrowth: 5.2,
-      };
+  // Get additional stats for products count
+  const { data: productsData, isLoading: productsLoading } = useQuery({
+    queryKey: ['products-count'],
+    queryFn: async () => {
+      const response = await apiClient.get('/products/count');
+      return response.data.data;
     },
   });
 
-  if (isLoading) {
+  // Get recent orders
+  const { data: recentOrders, isLoading: ordersLoading } = useQuery({
+    queryKey: ['recent-orders'],
+    queryFn: async () => {
+      const response = await apiClient.get('/orders/recent?limit=5');
+      return response.data.data;
+    },
+  });
+
+  // Get performance metrics
+  const { data: performanceData, isLoading: performanceLoading } = usePerformanceMetrics();
+
+  if (isLoading || productsLoading) {
     return <LinearProgress />;
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="h6" color="error" gutterBottom>
+          خطأ في تحميل البيانات
+        </Typography>
+        <Button variant="outlined" onClick={() => refresh()}>
+          إعادة المحاولة
+        </Button>
+      </Box>
+    );
   }
 
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          لوحة التحكم
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          مرحباً بك في لوحة تحكم تقدودو
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            لوحة التحكم
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            مرحباً بك في لوحة تحكم تقدودو
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          startIcon={isRefreshing ? <CircularProgress size={20} /> : <Refresh />}
+          onClick={() => refresh()}
+          disabled={isRefreshing}
+        >
+          تحديث البيانات
+        </Button>
       </Box>
 
       {/* Stats Cards */}
@@ -115,42 +147,78 @@ export const DashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="إجمالي المستخدمين"
-            value={stats?.totalUsers.toLocaleString('ar-SA') || 0}
+            value={dashboardData?.overview?.totalUsers?.toLocaleString('ar-SA') || 0}
             icon={<People sx={{ fontSize: 30 }} />}
-            growth={stats?.usersGrowth}
+            growth={dashboardData?.kpis?.userGrowth}
             color="primary"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="إجمالي الطلبات"
-            value={stats?.totalOrders.toLocaleString('ar-SA') || 0}
+            value={dashboardData?.overview?.totalOrders?.toLocaleString('ar-SA') || 0}
             icon={<ShoppingCart sx={{ fontSize: 30 }} />}
-            growth={stats?.ordersGrowth}
+            growth={dashboardData?.kpis?.orderGrowth}
             color="success"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="إجمالي الإيرادات"
-            value={`${stats?.totalRevenue?.toLocaleString('ar-SA') || 0} ر.س`}
+            value={`${dashboardData?.overview?.totalRevenue?.toLocaleString('ar-SA') || 0} ر.س`}
             icon={<AttachMoney sx={{ fontSize: 30 }} />}
-            growth={stats?.revenueGrowth}
+            growth={dashboardData?.kpis?.revenueGrowth}
             color="warning"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="إجمالي المنتجات"
-            value={stats?.totalProducts.toLocaleString('ar-SA') || 0}
+            value={productsData?.count?.toLocaleString('ar-SA') || 0}
             icon={<Inventory sx={{ fontSize: 30 }} />}
-            growth={stats?.productsGrowth}
+            growth={dashboardData?.kpis?.conversionRate}
             color="info"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatsCard
+            title="تذاكر الدعم المفتوحة"
+            value={supportStats?.open?.toLocaleString('ar-SA') || 0}
+            icon={<Support sx={{ fontSize: 30 }} />}
+            growth={supportStats?.slaBreached ? -1 : 0}
+            color={supportStats?.slaBreached && supportStats.slaBreached > 0 ? "error" : "success"}
           />
         </Grid>
       </Grid>
 
-      {/* Quick Actions */}
+      {/* Performance Stats */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <QuickStatsWidget
+            title="إحصائيات الأداء"
+            stats={{
+              activeUsers: dashboardData?.overview?.totalUsers,
+              systemHealth: performanceData?.uptime,
+              errorRate: performanceData?.errorRate,
+              responseTime: performanceData?.averageApiResponseTime,
+            }}
+            isLoading={performanceLoading}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <MiniChartWidget
+            title="الاتجاهات اليومية"
+            data={dashboardData?.revenueCharts?.daily?.slice(-7).map((item) => ({
+              name: new Date(item.date).toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' }),
+              value: item.revenue,
+            })) || []}
+            color="#4caf50"
+            isLoading={isLoading}
+          />
+        </Grid>
+      </Grid>
+
+      {/* Recent Orders & Quick Actions */}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Card>
@@ -158,9 +226,54 @@ export const DashboardPage: React.FC = () => {
               <Typography variant="h6" fontWeight="bold" gutterBottom>
                 الطلبات الأخيرة
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                سيتم عرض الطلبات الأخيرة هنا...
-              </Typography>
+              {ordersLoading ? (
+                <LinearProgress />
+              ) : recentOrders && recentOrders.length > 0 ? (
+                <Box>
+                  {recentOrders.map((order: RecentOrder, index: number) => (
+                    <Box
+                      key={order.id || index}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        py: 1,
+                        borderBottom: index < recentOrders.length - 1 ? '1px solid' : 'none',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">
+                          طلب #{order.orderNumber || order.id}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {order.customer?.name || 'عميل'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: 'left' }}>
+                        <Typography variant="body2" fontWeight="medium">
+                          {order.total?.toLocaleString('ar-SA') || 0} ر.س
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: order.status === 'completed' ? 'success.main' : 
+                                   order.status === 'pending' ? 'warning.main' : 'error.main'
+                          }}
+                        >
+                          {order.status === 'completed' ? 'مكتمل' :
+                           order.status === 'pending' ? 'معلق' :
+                           order.status === 'cancelled' ? 'ملغي' : order.status}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  لا توجد طلبات حديثة
+                </Typography>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -171,9 +284,23 @@ export const DashboardPage: React.FC = () => {
               <Typography variant="h6" fontWeight="bold" gutterBottom>
                 إجراءات سريعة
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                إضافة منتج، إنشاء كوبون، إلخ...
-              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button variant="outlined" size="small" fullWidth>
+                  إضافة منتج جديد
+                </Button>
+                <Button variant="outlined" size="small" fullWidth>
+                  إنشاء كوبون خصم
+                </Button>
+                <Button variant="outlined" size="small" fullWidth>
+                  إضافة فئة جديدة
+                </Button>
+                <Button variant="outlined" size="small" fullWidth>
+                  إدارة المخزون
+                </Button>
+                <Button variant="outlined" size="small" fullWidth>
+                  عرض التقارير
+                </Button>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

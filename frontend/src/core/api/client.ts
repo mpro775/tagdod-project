@@ -17,6 +17,9 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Adding token to request:', config.url);
+    } else {
+      console.log('❌ No token found for request:', config.url);
     }
 
     // Add language header

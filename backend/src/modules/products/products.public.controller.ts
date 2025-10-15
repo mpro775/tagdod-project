@@ -38,6 +38,14 @@ export class ProductsPublicController {
     });
   }
 
+  // ==================== عدد المنتجات ====================
+  @Get('count')
+  @CacheResponse({ ttl: 300 }) // 5 minutes
+  async getProductsCount() {
+    const count = await this.productsService.getProductsCount();
+    return { data: { count } };
+  }
+
   // ==================== تفاصيل منتج ====================
   @Get(':id')
   @CacheResponse({ ttl: 600 }) // 10 minutes

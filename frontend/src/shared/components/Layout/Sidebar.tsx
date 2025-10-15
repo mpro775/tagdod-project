@@ -25,8 +25,18 @@ import {
   ExpandMore,
   Storefront,
   Campaign,
+  PhotoLibrary,
+  Support,
+  Analytics,
+  Build,
+  Notifications,
+  Assessment,
+  GetApp,
+  Description,
+  ViewModule,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface MenuItem {
   id: string;
@@ -47,47 +57,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
-
+  const { t } = useTranslation();
   // Menu items
   const menuItems: MenuItem[] = [
     {
       id: 'dashboard',
-      label: 'لوحة التحكم',
+      label: t('navigation.dashboard'),
       icon: <Dashboard />,
       path: '/dashboard',
     },
     {
       id: 'users',
-      label: 'المستخدمون',
+      label: t('navigation.users'),
       icon: <People />,
       path: '/users',
     },
     {
       id: 'catalog',
-      label: 'الكتالوج',
+      label: t('navigation.catalog'),
       icon: <Inventory />,
       children: [
         {
           id: 'products',
-          label: 'المنتجات',
+          label: t('navigation.products'),
           icon: <Inventory />,
           path: '/products',
         },
         {
           id: 'categories',
-          label: 'الفئات',
+          label: t('navigation.categories'),
           icon: <Category />,
           path: '/categories',
         },
         {
           id: 'attributes',
-          label: 'السمات',
+          label: t('navigation.attributes'),
           icon: <Tune />,
           path: '/attributes',
         },
         {
           id: 'brands',
-          label: 'العلامات',
+          label: t('navigation.brands'),
           icon: <Storefront />,
           path: '/brands',
         },
@@ -95,18 +105,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     },
     {
       id: 'sales',
-      label: 'المبيعات',
+      label: t('navigation.sales'),
       icon: <ShoppingCart />,
       children: [
         {
           id: 'orders',
-          label: 'الطلبات',
+          label: t('navigation.orders'),
           icon: <Receipt />,
           path: '/orders',
         },
         {
           id: 'coupons',
-          label: 'الكوبونات',
+          label: t('navigation.coupons'),
           icon: <LocalOffer />,
           path: '/coupons',
         },
@@ -114,26 +124,100 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     },
     {
       id: 'marketing',
-      label: 'التسويق',
+      label: t('navigation.marketing', 'التسويق'),
       icon: <Campaign />,
       children: [
         {
           id: 'banners',
-          label: 'البنرات',
+          label: t('navigation.banners', 'البنرات'),
           icon: <Campaign />,
           path: '/banners',
         },
         {
           id: 'promotions',
-          label: 'العروض',
+          label: t('navigation.promotions', 'العروض'),
           icon: <LocalOffer />,
           path: '/promotions',
         },
       ],
-    },
+      },
+      {
+        id: 'services',
+        label: t('navigation.services', 'الخدمات'),
+        icon: <Build />,
+        path: '/services',
+      },
+      {
+        id: 'media',
+        label: t('navigation.media', 'مكتبة الوسائط'),
+        icon: <PhotoLibrary />,
+        path: '/media',
+      },
+      {
+        id: 'analytics',
+        label: t('navigation.analytics', 'الإحصائيات'),
+        icon: <Analytics />,
+        children: [
+          {
+            id: 'analytics-dashboard',
+            label: t('navigation.analyticsDashboard', 'لوحة الإحصائيات'),
+            icon: <Analytics />,
+            path: '/analytics',
+          },
+          {
+            id: 'analytics-advanced',
+            label: t('navigation.analyticsAdvanced', 'إحصائيات متقدمة'),
+            icon: <Assessment />,
+            path: '/analytics/advanced',
+          },
+          {
+            id: 'analytics-export',
+            label: t('navigation.analyticsExport', 'تصدير البيانات'),
+            icon: <GetApp />,
+            path: '/analytics/export',
+          },
+          {
+            id: 'analytics-reports',
+            label: t('navigation.analyticsReports', 'إدارة التقارير'),
+            icon: <Description />,
+            path: '/analytics/reports',
+          },
+        ],
+      },
+      {
+        id: 'support',
+        label: t('navigation.support', 'الدعم الفني'),
+        icon: <Support />,
+        path: '/support',
+      },
+      {
+        id: 'notifications',
+        label: t('navigation.notifications', 'الإشعارات'),
+        icon: <Notifications />,
+        children: [
+          {
+            id: 'notifications-list',
+            label: t('navigation.notificationsList', 'قائمة الإشعارات'),
+            icon: <Notifications />,
+            path: '/notifications',
+          },
+          {
+            id: 'notifications-analytics',
+            label: t('navigation.notificationsAnalytics', 'إحصائيات الإشعارات'),
+            icon: <Assessment />,
+            path: '/notifications/analytics',
+          },
+          {
+            id: 'notifications-templates',
+            label: t('navigation.notificationsTemplates', 'قوالب الإشعارات'),
+            icon: <ViewModule />,
+            path: '/notifications/templates',
+          },
+        ],
+      },
     {
       id: 'settings',
-      label: 'الإعدادات',
+      label: t('navigation.settings'),
       icon: <Settings />,
       path: '/settings',
     },
@@ -199,10 +283,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       {/* Logo/Title */}
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Typography variant="h6" fontWeight="bold">
-          تقدودو
+          {t('app.name')}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          لوحة التحكم
+          {t('navigation.dashboard')}
         </Typography>
       </Box>
 

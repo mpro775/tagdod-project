@@ -18,17 +18,14 @@ import {
   Snackbar,
   IconButton,
   Tooltip,
-  Card,
-  CardContent,
+
 } from '@mui/material';
 import {
   Add,
   Delete,
-  GetApp,
   Edit,
   Archive,
   Visibility,
-  FilterList,
   Refresh,
   Print,
   FileDownload,
@@ -44,6 +41,7 @@ import {
   PeriodType,
   ListReportsParams,
 } from '../types/analytics.types';
+import { GridRenderCellParams, GridSortModel } from '@mui/x-data-grid';
 
 interface CreateReportFormData {
   title: string;
@@ -67,7 +65,7 @@ export const ReportsManagementPage: React.FC = () => {
 
   // State for filters and pagination
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
-  const [sortModel, setSortModel] = useState([{ field: 'generatedAt', sort: 'desc' as const }]);
+  const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'generatedAt', sort: 'desc' }]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<ReportCategory | ''>('');
 
@@ -195,7 +193,7 @@ export const ReportsManagementPage: React.FC = () => {
       field: 'reportId',
       headerName: 'معرف التقرير',
       width: 150,
-      renderCell: (params: any) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Typography variant="body2" fontFamily="monospace">
           {params.value}
         </Typography>
@@ -205,7 +203,7 @@ export const ReportsManagementPage: React.FC = () => {
       field: 'title',
       headerName: 'عنوان التقرير',
       width: 200,
-      renderCell: (params: any) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Typography variant="body2" fontWeight="medium">
           {params.value}
         </Typography>
@@ -215,7 +213,7 @@ export const ReportsManagementPage: React.FC = () => {
       field: 'category',
       headerName: 'الفئة',
       width: 120,
-      renderCell: (params: any) => {
+      renderCell: (params: GridRenderCellParams) => {
         const categoryLabels = {
           [ReportCategory.SALES]: 'المبيعات',
           [ReportCategory.PRODUCTS]: 'المنتجات',
@@ -237,7 +235,7 @@ export const ReportsManagementPage: React.FC = () => {
       field: 'period',
       headerName: 'الفترة',
       width: 100,
-      renderCell: (params: any) => {
+      renderCell: (params: GridRenderCellParams) => {
         const periodLabels = {
           [PeriodType.DAILY]: 'يومي',
           [PeriodType.WEEKLY]: 'أسبوعي',
@@ -256,7 +254,7 @@ export const ReportsManagementPage: React.FC = () => {
       field: 'generatedAt',
       headerName: 'تاريخ الإنشاء',
       width: 150,
-      renderCell: (params: any) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Typography variant="body2">
           {new Date(params.value).toLocaleDateString('ar-SA')}
         </Typography>
@@ -266,7 +264,7 @@ export const ReportsManagementPage: React.FC = () => {
       field: 'generatedBy',
       headerName: 'أنشأه',
       width: 120,
-      renderCell: (params: any) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Typography variant="body2">
           {params.value}
         </Typography>
@@ -276,7 +274,7 @@ export const ReportsManagementPage: React.FC = () => {
       field: 'isArchived',
       headerName: 'الحالة',
       width: 100,
-      renderCell: (params: any) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Chip
           label={params.value ? 'مؤرشف' : 'نشط'}
           color={params.value ? 'default' : 'success'}
@@ -289,7 +287,7 @@ export const ReportsManagementPage: React.FC = () => {
       headerName: 'الإجراءات',
       width: 200,
       sortable: false,
-      renderCell: (params: any) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           <Tooltip title="عرض التقرير">
             <IconButton size="small" color="primary">
@@ -434,7 +432,7 @@ export const ReportsManagementPage: React.FC = () => {
         <DialogTitle>إنشاء تقرير جديد</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} md={6}>
+            <Grid  size={{xs: 12, md: 6}}>
               <TextField
                 fullWidth
                 label="عنوان التقرير"
@@ -443,7 +441,7 @@ export const ReportsManagementPage: React.FC = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs: 12, md: 6}}>
               <FormControl fullWidth required>
                 <InputLabel>الفئة</InputLabel>
                 <Select
@@ -460,7 +458,7 @@ export const ReportsManagementPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs: 12, md: 6}}>
               <FormControl fullWidth required>
                 <InputLabel>نوع التقرير</InputLabel>
                 <Select
@@ -477,7 +475,7 @@ export const ReportsManagementPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs: 12, md: 6}}>
               <FormControl fullWidth required>
                 <InputLabel>الفترة</InputLabel>
                 <Select
@@ -493,7 +491,7 @@ export const ReportsManagementPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs: 12, md: 6}}>
               <TextField
                 fullWidth
                 label="تاريخ البداية"
@@ -503,7 +501,7 @@ export const ReportsManagementPage: React.FC = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs: 12, md: 6}}>
               <TextField
                 fullWidth
                 label="تاريخ النهاية"
@@ -513,7 +511,7 @@ export const ReportsManagementPage: React.FC = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{xs: 12}}>
               <TextField
                 fullWidth
                 multiline

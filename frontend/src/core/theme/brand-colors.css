@@ -1,0 +1,163 @@
+/* Tagadodo Brand Colors - ألوان العلامة التجارية */
+
+:root {
+  /* الألوان الأساسية */
+  --tagadodo-primary: #1A8BC2;
+  --tagadodo-primary-light: #4DB8E6;
+  --tagadodo-primary-dark: #1470A3;
+  
+  /* الألوان الثانوية */
+  --tagadodo-secondary: #90EE90;
+  --tagadodo-secondary-light: #B8F5B8;
+  --tagadodo-secondary-dark: #7DD87D;
+  
+  /* الألوان المحايدة */
+  --tagadodo-black: #000000;
+  --tagadodo-dark: #333333;
+  --tagadodo-light: #F5F5F5;
+  --tagadodo-white: #FFFFFF;
+  
+  /* ألوان الحالة */
+  --tagadodo-success: #90EE90;
+  --tagadodo-warning: #FFA500;
+  --tagadodo-error: #FF6B6B;
+  --tagadodo-info: #1A8BC2;
+  
+  /* ألوان الخلفية */
+  --tagadodo-bg-primary: #1A8BC2;
+  --tagadodo-bg-secondary: #90EE90;
+  --tagadodo-bg-light: #F5F5F5;
+  --tagadodo-bg-dark: #333333;
+  
+  /* ألوان النص */
+  --tagadodo-text-primary: #000000;
+  --tagadodo-text-secondary: #666666;
+  --tagadodo-text-light: #FFFFFF;
+  --tagadodo-text-muted: #999999;
+}
+
+/* فئات مساعدة للألوان */
+.bg-primary {
+  background-color: var(--tagadodo-primary) !important;
+  color: var(--tagadodo-white) !important;
+}
+
+.bg-secondary {
+  background-color: var(--tagadodo-secondary) !important;
+  color: var(--tagadodo-black) !important;
+}
+
+.bg-light {
+  background-color: var(--tagadodo-light) !important;
+  color: var(--tagadodo-black) !important;
+}
+
+.bg-dark {
+  background-color: var(--tagadodo-dark) !important;
+  color: var(--tagadodo-white) !important;
+}
+
+.text-primary {
+  color: var(--tagadodo-primary) !important;
+}
+
+.text-secondary {
+  color: var(--tagadodo-secondary) !important;
+}
+
+.text-dark {
+  color: var(--tagadodo-dark) !important;
+}
+
+.text-light {
+  color: var(--tagadodo-light) !important;
+}
+
+/* أزرار مخصصة */
+.btn-primary {
+  background-color: var(--tagadodo-primary);
+  border-color: var(--tagadodo-primary);
+  color: var(--tagadodo-white);
+}
+
+.btn-primary:hover {
+  background-color: var(--tagadodo-primary-dark);
+  border-color: var(--tagadodo-primary-dark);
+}
+
+.btn-secondary {
+  background-color: var(--tagadodo-secondary);
+  border-color: var(--tagadodo-secondary);
+  color: var(--tagadodo-black);
+}
+
+.btn-secondary:hover {
+  background-color: var(--tagadodo-secondary-dark);
+  border-color: var(--tagadodo-secondary-dark);
+}
+
+/* حدود مخصصة */
+.border-primary {
+  border-color: var(--tagadodo-primary) !important;
+}
+
+.border-secondary {
+  border-color: var(--tagadodo-secondary) !important;
+}
+
+/* تأثيرات hover */
+.hover-primary:hover {
+  color: var(--tagadodo-primary) !important;
+}
+
+.hover-secondary:hover {
+  color: var(--tagadodo-secondary) !important;
+}
+
+/* خلفيات متدرجة */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--tagadodo-primary) 0%, var(--tagadodo-primary-light) 100%);
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, var(--tagadodo-secondary) 0%, var(--tagadodo-secondary-light) 100%);
+}
+
+.gradient-brand {
+  background: linear-gradient(135deg, var(--tagadodo-primary) 0%, var(--tagadodo-secondary) 100%);
+}
+
+/* ظلال مخصصة */
+.shadow-primary {
+  box-shadow: 0 4px 8px rgba(26, 139, 194, 0.3);
+}
+
+.shadow-secondary {
+  box-shadow: 0 4px 8px rgba(144, 238, 144, 0.3);
+}
+
+/* تأثيرات انتقالية */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+.transition-colors {
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+/* استجابة للأجهزة المختلفة */
+@media (max-width: 768px) {
+  :root {
+    --tagadodo-primary: #1A8BC2;
+    --tagadodo-secondary: #90EE90;
+  }
+}
+
+/* وضع الظلام */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tagadodo-bg-light: #1a1a1a;
+    --tagadodo-text-primary: #ffffff;
+    --tagadodo-text-secondary: #cccccc;
+  }
+}

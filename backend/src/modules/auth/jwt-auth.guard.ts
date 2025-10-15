@@ -14,6 +14,8 @@ export class JwtAuthGuard implements CanActivate {
         sub: string;
         phone: string;
         isAdmin: boolean;
+        roles?: string[];
+        permissions?: string[];
       };
       return true;
     } catch {

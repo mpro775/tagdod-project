@@ -1,0 +1,35 @@
+/* Arabic Fonts - Cairo Font Configuration */
+/* Note: Fonts are loaded from Google Fonts via index.html */
+
+/* Global font configuration - Cairo as primary */
+* {
+  font-family: 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+/* Global Arabic font settings */
+body,
+html {
+  font-family: 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Force Cairo font for Arabic text */
+[lang="ar"], 
+[dir="rtl"],
+.arabic-text,
+.rtl-text,
+.rtl-content {
+  font-family: 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+}
+
+/* Enhanced Arabic text rendering */
+.arabic-text,
+[lang="ar"],
+[dir="rtl"] {
+  font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

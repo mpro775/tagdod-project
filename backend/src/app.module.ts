@@ -11,6 +11,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ServicesModule } from './modules/services/services.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { UsersModule } from './modules/users/users.module';
+import { UsersAdminModule } from './modules/users/admin/users.admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
@@ -70,6 +71,7 @@ import { ProductsModule } from './modules/products/products.module';
     BannersModule,
     PricingModule,
     CouponsModule,
+    UsersAdminModule,
 
   ],
   controllers: [HealthController],

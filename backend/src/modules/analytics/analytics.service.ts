@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { ConfigService } from '@nestjs/config';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, subMonths, format, parseISO } from 'date-fns';
 import {
   AnalyticsSnapshot,
@@ -23,6 +24,7 @@ import { CacheService } from '../../shared/cache/cache.service';
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
+  private readonly isDevelopment: boolean;
   private readonly CACHE_TTL = {
     DASHBOARD_DATA: 300, // 5 minutes
     ANALYTICS_DATA: 600, // 10 minutes
@@ -39,7 +41,14 @@ export class AnalyticsService {
     @InjectModel(ServiceRequest.name) private serviceModel: Model<ServiceRequestDocument>,
     @InjectModel(SupportTicket.name) private supportModel: Model<SupportTicketDocument>,
     private cacheService: CacheService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.isDevelopment = this.configService.get<string>('NODE_ENV', 'development') === 'development';
+    
+    if (this.isDevelopment) {
+      this.logger.warn('🚧 Development mode detected - Analytics service is DISABLED');
+    }
+  }
 
   /**
    * Generate comprehensive analytics snapshot
@@ -101,9 +110,13 @@ export class AnalyticsService {
       });
 
       // Save or update snapshot
+      const snapshotData = snapshot.toObject();
+      // Remove _id and __v fields to avoid MongoDB immutable field errors
+      const { _id, __v, ...cleanData } = snapshotData;
+      
       const existing = await this.analyticsModel.findOneAndUpdate(
         { date: snapshot.date, period },
-        snapshot.toObject(),
+        { $set: cleanData },
         { upsert: true, new: true }
       );
 

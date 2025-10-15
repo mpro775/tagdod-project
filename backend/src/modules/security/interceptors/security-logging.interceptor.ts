@@ -8,10 +8,12 @@ import {
 import { Observable, tap } from 'rxjs';
 import { Request, Response } from 'express';
 import { format } from 'date-fns';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class SecurityLoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger(SecurityLoggingInterceptor.name);
+  private readonly isDevelopment: boolean;
   private readonly sensitiveHeaders = [
     'authorization',
     'x-api-key',
@@ -19,7 +21,20 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
     'set-cookie',
   ];
 
+  constructor(private readonly configService: ConfigService) {
+    this.isDevelopment = this.configService.get<string>('NODE_ENV', 'development') === 'development';
+    
+    if (this.isDevelopment) {
+      this.logger.warn('🚧 Development mode detected - Security logging is DISABLED');
+    }
+  }
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    // Skip security logging in development mode
+    if (this.isDevelopment) {
+      return next.handle();
+    }
+
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse<Response>();
     const startTime = Date.now();

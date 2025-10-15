@@ -36,7 +36,7 @@ export class AdminOrdersController {
   ) {}
 
   private getUserId(req: ExpressRequest): string {
-    return (req as unknown as { user: { userId: string } }).user.userId;
+    return (req as unknown as { user: { sub: string } }).user.sub;
   }
 
   @Get()

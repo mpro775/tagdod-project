@@ -32,6 +32,11 @@ i18n
       caches: ['localStorage'],
       lookupLocalStorage: 'language',
     },
+
+    // React-specific options
+    react: {
+      useSuspense: false,
+    },
   });
 
 export default i18n;

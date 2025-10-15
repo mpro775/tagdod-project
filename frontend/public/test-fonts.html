@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار خط Cairo</title>
+    
+    <!-- Load Cairo Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #1A8BC2 0%, #90EE90 100%);
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-family: 'Cairo', sans-serif;
+            color: #1A8BC2;
+            font-weight: 700;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            font-family: 'Cairo', sans-serif;
+            color: #333;
+            font-weight: 600;
+            font-size: 2em;
+            margin-top: 30px;
+        }
+        
+        p {
+            font-family: 'Cairo', sans-serif;
+            font-size: 1.3em;
+            line-height: 2;
+            color: #555;
+            margin: 20px 0;
+        }
+        
+        .weight-test {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-right: 4px solid #1A8BC2;
+        }
+        
+        .light { font-weight: 300; }
+        .regular { font-weight: 400; }
+        .medium { font-weight: 500; }
+        .semibold { font-weight: 600; }
+        .bold { font-weight: 700; }
+        .extrabold { font-weight: 800; }
+        .black { font-weight: 900; }
+        
+        .success {
+            background: #90EE90;
+            color: #2d5016;
+            padding: 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: center;
+            margin: 30px 0;
+            font-size: 1.4em;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-right: 4px solid #2196f3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ اختبار خط Cairo</h1>
+        
+        <div class="success">
+            🎉 إذا كنت ترى هذا النص بخط Cairo الجميل، فإن كل شيء يعمل بشكل صحيح!
+        </div>
+        
+        <h2>النص العربي الجميل</h2>
+        <p>
+            مرحباً بك في تجادودو! هذا النص مكتوب بخط Cairo الرائع. 
+            الخط واضح وجميل ومناسب للواجهات العربية الحديثة.
+        </p>
+        
+        <h2>اختبار أوزان الخط</h2>
+        
+        <div class="weight-test light">
+            <strong>Light (300):</strong> خط خفيف جداً - مناسب للنصوص الثانوية
+        </div>
+        
+        <div class="weight-test regular">
+            <strong>Regular (400):</strong> الخط العادي - للنصوص الأساسية
+        </div>
+        
+        <div class="weight-test medium">
+            <strong>Medium (500):</strong> خط متوسط - للعناوين الفرعية
+        </div>
+        
+        <div class="weight-test semibold">
+            <strong>SemiBold (600):</strong> خط شبه غامق - للتأكيد
+        </div>
+        
+        <div class="weight-test bold">
+            <strong>Bold (700):</strong> خط غامق - للعناوين الرئيسية
+        </div>
+        
+        <div class="weight-test extrabold">
+            <strong>ExtraBold (800):</strong> خط غامق جداً - للتأكيد الشديد
+        </div>
+        
+        <div class="weight-test black">
+            <strong>Black (900):</strong> خط أسود - للعناوين البارزة
+        </div>
+        
+        <div class="info-box">
+            <strong>ملاحظة:</strong> يتم تحميل خط Cairo من Google Fonts، وهو خط عربي حديث ومُحسّن للويب.
+        </div>
+        
+        <h2>نص طويل للاختبار</h2>
+        <p>
+            Lorem ipsum dolor sit amet في اللغة العربية يعني: 
+            الألم نفسه مهم جداً، سيتبعه الطالب النخبوي، لكن في مثل هذا الوقت يحدث أن يكون هناك الكثير من العمل والألم.
+            هذا النص يُستخدم لاختبار جودة الخط وسهولة القراءة. 
+            خط Cairo يوفر تجربة قراءة ممتازة مع دعم كامل للحروف العربية والأرقام ١٢٣٤٥٦٧٨٩٠ 
+            والعلامات مثل: ()[]{}!@#$%^&*
+        </p>
+    </div>
+    
+    <script>
+        // Check if Cairo font is loaded
+        document.fonts.ready.then(function() {
+            const fontFaces = [];
+            document.fonts.forEach(font => {
+                if (font.family === 'Cairo') {
+                    fontFaces.push(`${font.family} ${font.weight} ${font.style}`);
+                }
+            });
+            
+            if (fontFaces.length > 0) {
+                console.log('✅ Cairo font loaded successfully!');
+                console.log('Loaded weights:', fontFaces);
+            } else {
+                console.log('⚠️ Cairo font not detected. It might be loading from system fonts.');
+            }
+        });
+    </script>
+</body>
+</html>
+

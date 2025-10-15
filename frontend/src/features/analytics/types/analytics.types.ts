@@ -313,4 +313,5 @@ export interface ListReportsParams {
   page?: number;
   limit?: number;
   category?: ReportCategory;
+  search?: string;
 }

@@ -17,13 +17,14 @@ import {
 import { Save, Cancel } from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
+import { ImageField } from '@/features/media';
 import { useBanner, useCreateBanner, useUpdateBanner } from '../hooks/useBanners';
 import { BannerType, BannerLocation } from '../types/banner.types';
 
 const bannerSchema = z.object({
   title: z.string().min(3),
   description: z.string().optional(),
-  image: z.string().url('رابط غير صحيح'),
+  image: z.string().optional(),
   type: z.nativeEnum(BannerType).optional(),
   location: z.nativeEnum(BannerLocation).optional(),
   linkUrl: z.string().optional(),
@@ -38,6 +39,7 @@ export const BannerFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditMode = id !== 'new' && !!id;
+  const [selectedImage, setSelectedImage] = React.useState<any>(null);
 
   const methods = useForm<BannerFormData>({
     resolver: zodResolver(bannerSchema),
@@ -49,14 +51,26 @@ export const BannerFormPage: React.FC = () => {
   const { mutate: updateBanner, isPending: isUpdating } = useUpdateBanner();
 
   useEffect(() => {
-    if (isEditMode && banner) methods.reset(banner as BannerFormData);
+    if (isEditMode && banner) {
+      methods.reset(banner as BannerFormData);
+      
+      // Set image if exists
+      if (banner.image) {
+        setSelectedImage({ url: banner.image, name: 'صورة البانر' });
+      }
+    }
   }, [banner, isEditMode, methods]);
 
   const onSubmit = (data: BannerFormData) => {
+    const bannerData = {
+      ...data,
+      image: selectedImage?.url || data.image,
+    };
+    
     if (isEditMode) {
-      updateBanner({ id: id!, data }, { onSuccess: () => navigate('/banners') });
+      updateBanner({ id: id!, data: bannerData }, { onSuccess: () => navigate('/banners') });
     } else {
-      createBanner(data, { onSuccess: () => navigate('/banners') });
+      createBanner(bannerData, { onSuccess: () => navigate('/banners') });
     }
   };
 
@@ -84,7 +98,16 @@ export const BannerFormPage: React.FC = () => {
                 <FormInput name="description" label="الوصف" multiline rows={2} />
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <FormInput name="image" label="رابط الصورة *" />
+                <ImageField
+                  label="صورة البانر"
+                  value={selectedImage}
+                  onChange={(media) => {
+                    setSelectedImage(media);
+                    methods.setValue('image', media?.url || '');
+                  }}
+                  category="banner"
+                  helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
+                />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
                 <FormSelect

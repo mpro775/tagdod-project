@@ -11,6 +11,9 @@ import {
   Typography,
   LinearProgress,
   Alert,
+  FormControlLabel,
+  Switch,
+  Chip,
 } from '@mui/material';
 import { CloudUpload } from '@mui/icons-material';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
@@ -28,6 +31,9 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({ open, onClose, onS
   const [name, setName] = useState('');
   const [category, setCategory] = useState<MediaCategory>(MediaCategory.OTHER);
   const [description, setDescription] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [isPublic, setIsPublic] = useState(true);
   const [preview, setPreview] = useState<string | null>(null);
 
   const { mutate: upload, isPending } = useUploadMedia();
@@ -49,6 +55,17 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({ open, onClose, onS
     }
   };
 
+  const handleAddTag = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
   const handleUpload = () => {
     if (!file || !name) return;
 
@@ -59,7 +76,8 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({ open, onClose, onS
           name,
           category,
           description,
-          isPublic: true,
+          tags,
+          isPublic,
         },
       },
       {
@@ -75,6 +93,9 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({ open, onClose, onS
     setFile(null);
     setName('');
     setDescription('');
+    setTags([]);
+    setTagInput('');
+    setIsPublic(true);
     setPreview(null);
     onClose();
   };
@@ -94,7 +115,12 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({ open, onClose, onS
               sx={{ py: 2 }}
             >
               اختر ملف
-              <input type="file" hidden onChange={handleFileChange} accept="image/*" />
+              <input 
+                type="file" 
+                hidden 
+                onChange={handleFileChange} 
+                accept="image/*,video/*,.pdf,.doc,.docx,.txt" 
+              />
             </Button>
           </Grid>
 
@@ -159,6 +185,50 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({ open, onClose, onS
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                />
+              </Grid>
+
+              {/* Tags */}
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="إضافة وسوم"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                  placeholder="اكتب وسماً واضغط Enter"
+                />
+                {tags.length > 0 && (
+                  <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                    {tags.map((tag) => (
+                      <Chip
+                        key={tag}
+                        label={tag}
+                        size="small"
+                        onDelete={() => handleRemoveTag(tag)}
+                        color="primary"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Box>
+                )}
+              </Grid>
+
+              {/* Public/Private */}
+              <Grid size={{ xs: 12 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                    />
+                  }
+                  label="ملف عام (يمكن للجميع الوصول إليه)"
                 />
               </Grid>
 

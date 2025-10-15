@@ -19,6 +19,7 @@ import {
 import { Save, Cancel } from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
+import { ImageField } from '@/features/media';
 import {
   useCategory,
   useCategories,
@@ -52,6 +53,7 @@ export const CategoryFormPage: React.FC = () => {
   const isEditMode = id !== 'new' && !!id;
 
   const [activeTab, setActiveTab] = React.useState(0);
+  const [selectedImage, setSelectedImage] = React.useState<any>(null);
 
   // Form
   const methods = useForm<CategoryFormData>({
@@ -93,6 +95,11 @@ export const CategoryFormPage: React.FC = () => {
         showInMenu: category.showInMenu,
         isFeatured: category.isFeatured,
       });
+      
+      // Set image if exists
+      if (category.image) {
+        setSelectedImage({ url: category.image, name: 'صورة الفئة' });
+      }
     }
   }, [category, isEditMode, methods]);
 
@@ -104,7 +111,7 @@ export const CategoryFormPage: React.FC = () => {
       nameEn: data.nameEn,
       description: data.description,
       descriptionEn: data.descriptionEn,
-      image: data.image,
+      image: selectedImage?.url || data.image,
       icon: data.icon,
       metaTitle: data.metaTitle,
       metaDescription: data.metaDescription,
@@ -233,8 +240,17 @@ export const CategoryFormPage: React.FC = () => {
                 <FormInput name="icon" label="الأيقونة (Emoji)" placeholder="🛍️" />
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
-                <FormInput name="image" label="رابط الصورة" placeholder="https://..." />
+              <Grid size={{ xs: 12 }}>
+                <ImageField
+                  label="صورة الفئة"
+                  value={selectedImage}
+                  onChange={(media) => {
+                    setSelectedImage(media);
+                    methods.setValue('image', media?.url || '');
+                  }}
+                  category="category"
+                  helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
+                />
               </Grid>
 
               {/* SEO */}

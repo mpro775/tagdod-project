@@ -14,7 +14,22 @@
     "sales": "المبيعات",
     "orders": "الطلبات",
     "coupons": "الكوبونات",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "marketing": "التسويق",
+    "banners": "البنرات",
+    "promotions": "العروض",
+    "media": "مكتبة الوسائط",
+    "support": "الدعم الفني",
+    "notifications": "الإشعارات",
+    "services": "الخدمات",
+    "analytics": "الإحصائيات",
+    "analyticsDashboard": "لوحة الإحصائيات",
+    "analyticsAdvanced": "إحصائيات متقدمة",
+    "analyticsExport": "تصدير البيانات",
+    "analyticsReports": "إدارة التقارير",
+    "notificationsList": "قائمة الإشعارات",
+    "notificationsAnalytics": "إحصائيات الإشعارات",
+    "notificationsTemplates": "قوالب الإشعارات"
   },
   "actions": {
     "title": "الإجراءات",
@@ -58,7 +73,10 @@
     "no": "لا",
     "all": "الكل",
     "none": "لا شيء",
-    "other": "أخرى"
+    "other": "أخرى",
+    "user": "المستخدم",
+    "profile": "الملف الشخصي",
+    "logout": "تسجيل الخروج"
   },
   "validation": {
     "required": "هذا الحقل مطلوب",

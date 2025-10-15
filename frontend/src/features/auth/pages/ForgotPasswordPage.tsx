@@ -1,258 +1,122 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress,
-  InputAdornment,
-} from '@mui/material';
-import { Phone, Lock, ArrowBack } from '@mui/icons-material';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
+import { AuthLayout, PhoneInputStep, OtpInputStep, AuthStepper } from '../components';
 import toast from 'react-hot-toast';
-
-// Validation Schemas
-const phoneSchema = z.object({
-  phone: z.string().min(10, 'رقم الهاتف يجب أن يكون 10 أرقام على الأقل'),
-});
-
-const resetSchema = z
-  .object({
-    code: z.string().length(6, 'رمز التحقق يجب أن يكون 6 أرقام'),
-    newPassword: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'كلمة المرور غير متطابقة',
-    path: ['confirmPassword'],
-  });
-
-type PhoneFormData = z.infer<typeof phoneSchema>;
-type ResetFormData = z.infer<typeof resetSchema>;
 
 export const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [step, setStep] = useState<'phone' | 'reset'>('phone');
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [devCode, setDevCode] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [otpError, setOtpError] = useState('');
 
-  // Phone Form
-  const phoneForm = useForm<PhoneFormData>({
-    resolver: zodResolver(phoneSchema),
-    defaultValues: { phone: '' },
-  });
+  const steps = ['إدخال رقم الهاتف', 'التحقق من الرمز'];
 
-  // Reset Form
-  const resetForm = useForm<ResetFormData>({
-    resolver: zodResolver(resetSchema),
-    defaultValues: {
-      code: '',
-      newPassword: '',
-      confirmPassword: '',
-    },
-  });
-
-  // Forgot Password Mutation
-  const forgotMutation = useMutation({
-    mutationFn: authApi.forgotPassword,
+  // Send OTP Mutation
+  const sendOtpMutation = useMutation({
+    mutationFn: authApi.sendOtp,
     onSuccess: (data) => {
       setDevCode(data.devCode || '');
-      setStep('reset');
+      setStep('otp');
+      setPhoneError('');
       toast.success('تم إرسال رمز التحقق بنجاح');
     },
     onError: (error) => {
+      setPhoneError('فشل في إرسال رمز التحقق. يرجى المحاولة مرة أخرى.');
       ErrorHandler.showError(error);
     },
   });
 
-  // Reset Password Mutation
-  const resetMutation = useMutation({
-    mutationFn: authApi.resetPassword,
-    onSuccess: () => {
-      toast.success('تم إعادة تعيين كلمة المرور بنجاح');
+  // Verify OTP Mutation
+  const verifyOtpMutation = useMutation({
+    mutationFn: authApi.verifyOtp,
+    onSuccess: async () => {
+      setOtpError('');
+      toast.success('تم التحقق من الرمز بنجاح');
+      // يمكن إضافة خطوة إعادة تعيين كلمة المرور هنا
       navigate('/login');
     },
     onError: (error) => {
+      setOtpError('رمز التحقق غير صحيح. يرجى المحاولة مرة أخرى.');
       ErrorHandler.showError(error);
     },
   });
 
   // Handle Phone Submit
-  const handlePhoneSubmit = (data: PhoneFormData) => {
-    setPhone(data.phone);
-    forgotMutation.mutate({ phone: data.phone });
-  };
-
-  // Handle Reset Submit
-  const handleResetSubmit = (data: ResetFormData) => {
-    resetMutation.mutate({
-      phone,
-      code: data.code,
-      newPassword: data.newPassword,
+  const handlePhoneSubmit = (phoneNumber: string) => {
+    setPhone(phoneNumber);
+    setPhoneError('');
+    sendOtpMutation.mutate({
+      phone: phoneNumber,
+      context: 'reset',
     });
   };
 
+  // Handle OTP Submit
+  const handleOtpSubmit = (code: string) => {
+    setOtpError('');
+    verifyOtpMutation.mutate({
+      phone,
+      code,
+    });
+  };
+
+  // Resend OTP
+  const handleResend = () => {
+    setOtpError('');
+    sendOtpMutation.mutate({
+      phone,
+      context: 'reset',
+    });
+  };
+
+  // Handle Back to Phone Step
+  const handleBackToPhone = () => {
+    setStep('phone');
+    setOtpError('');
+  };
+
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        p: 2,
-      }}
+    <AuthLayout
+      title="إعادة تعيين كلمة المرور"
+      subtitle={
+        step === 'phone' 
+          ? 'أدخل رقم هاتفك لإعادة تعيين كلمة المرور' 
+          : 'أدخل رمز التحقق المرسل'
+      }
+      showLogo={true}
     >
-      <Card sx={{ maxWidth: 450, width: '100%' }}>
-        <CardContent sx={{ p: 4 }}>
-          {/* Header */}
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              إعادة تعيين كلمة المرور
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {step === 'phone'
-                ? 'أدخل رقم هاتفك لإرسال رمز التحقق'
-                : 'أدخل رمز التحقق وكلمة المرور الجديدة'}
-            </Typography>
-          </Box>
+      <AuthStepper
+        activeStep={step === 'phone' ? 0 : 1}
+        steps={steps}
+        showStepper={true}
+      />
 
-          {/* Dev Code Alert */}
-          {devCode && (
-            <Alert severity="info" sx={{ mb: 3 }}>
-              رمز التطوير: <strong>{devCode}</strong>
-            </Alert>
-          )}
+      {step === 'phone' && (
+        <PhoneInputStep
+          onSubmit={handlePhoneSubmit}
+          isLoading={sendOtpMutation.isPending}
+          error={phoneError}
+        />
+      )}
 
-          {/* Phone Step */}
-          {step === 'phone' && (
-            <form onSubmit={phoneForm.handleSubmit(handlePhoneSubmit)}>
-              <TextField
-                {...phoneForm.register('phone')}
-                fullWidth
-                label="رقم الهاتف"
-                placeholder="05XXXXXXXX"
-                error={!!phoneForm.formState.errors.phone}
-                helperText={phoneForm.formState.errors.phone?.message}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Phone />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 3 }}
-                autoFocus
-                dir="ltr"
-              />
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                disabled={forgotMutation.isPending}
-                startIcon={forgotMutation.isPending ? <CircularProgress size={20} /> : null}
-                sx={{ mb: 2 }}
-              >
-                {forgotMutation.isPending ? 'جارٍ الإرسال...' : 'إرسال رمز التحقق'}
-              </Button>
-
-              <Button
-                fullWidth
-                variant="text"
-                startIcon={<ArrowBack />}
-                onClick={() => navigate('/login')}
-              >
-                العودة لتسجيل الدخول
-              </Button>
-            </form>
-          )}
-
-          {/* Reset Step */}
-          {step === 'reset' && (
-            <form onSubmit={resetForm.handleSubmit(handleResetSubmit)}>
-              <TextField
-                {...resetForm.register('code')}
-                fullWidth
-                label="رمز التحقق"
-                placeholder="000000"
-                error={!!resetForm.formState.errors.code}
-                helperText={resetForm.formState.errors.code?.message}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
-                dir="ltr"
-                inputProps={{ maxLength: 6 }}
-              />
-
-              <TextField
-                {...resetForm.register('newPassword')}
-                fullWidth
-                type="password"
-                label="كلمة المرور الجديدة"
-                error={!!resetForm.formState.errors.newPassword}
-                helperText={resetForm.formState.errors.newPassword?.message}
-                sx={{ mb: 2 }}
-              />
-
-              <TextField
-                {...resetForm.register('confirmPassword')}
-                fullWidth
-                type="password"
-                label="تأكيد كلمة المرور"
-                error={!!resetForm.formState.errors.confirmPassword}
-                helperText={resetForm.formState.errors.confirmPassword?.message}
-                sx={{ mb: 3 }}
-              />
-
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mb: 3, textAlign: 'center' }}
-              >
-                تم إرسال الرمز إلى {phone}
-              </Typography>
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                disabled={resetMutation.isPending}
-                startIcon={resetMutation.isPending ? <CircularProgress size={20} /> : null}
-                sx={{ mb: 2 }}
-              >
-                {resetMutation.isPending ? 'جارٍ التحديث...' : 'إعادة تعيين كلمة المرور'}
-              </Button>
-
-              <Button
-                fullWidth
-                variant="text"
-                onClick={() => setStep('phone')}
-                disabled={forgotMutation.isPending}
-              >
-                تغيير رقم الهاتف
-              </Button>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-    </Box>
+      {step === 'otp' && (
+        <OtpInputStep
+          phone={phone}
+          onSubmit={handleOtpSubmit}
+          onResend={handleResend}
+          onBack={handleBackToPhone}
+          isLoading={verifyOtpMutation.isPending}
+          isResending={sendOtpMutation.isPending}
+          error={otpError}
+          devCode={devCode}
+        />
+      )}
+    </AuthLayout>
   );
 };

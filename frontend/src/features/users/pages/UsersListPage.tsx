@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Chip, IconButton, Tooltip } from '@mui/material';
 import { Edit, Delete, Block, CheckCircle, Restore } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ import {
 } from '../hooks/useUsers';
 import { formatDate } from '@/shared/utils/formatters';
 import type { User, UserStatus } from '../types/user.types';
+import '../styles/responsive-users.css';
 
 export const UsersListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,14 @@ export const UsersListPage: React.FC = () => {
   });
   const [search, setSearch] = useState('');
   const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'createdAt', sort: 'desc' }]);
+  const [screenSize, setScreenSize] = useState(window.innerWidth);
+
+  // Listen to window resize
+  useEffect(() => {
+    const handleResize = () => setScreenSize(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // API
   const { data, isLoading, refetch } = useUsers({
@@ -75,11 +84,14 @@ export const UsersListPage: React.FC = () => {
     {
       field: 'phone',
       headerName: 'رقم الهاتف',
-      width: 150,
+      minWidth: 140,
+      flex: 1,
       renderCell: (params) => (
         <Box>
-          <Box sx={{ fontWeight: 'medium' }}>{params.row.phone}</Box>
-          <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+          <Box sx={{ fontWeight: 'medium', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+            {params.row.phone}
+          </Box>
+          <Box sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' }, color: 'text.secondary' }}>
             {params.row.firstName} {params.row.lastName || ''}
           </Box>
         </Box>
@@ -88,7 +100,8 @@ export const UsersListPage: React.FC = () => {
     {
       field: 'roles',
       headerName: 'الدور',
-      width: 130,
+      minWidth: 100,
+      flex: 0.8,
       renderCell: (params) => {
         const role = params.row.roles?.[0] || 'user';
         const colorMap: Record<string, 'error' | 'warning' | 'info' | 'default'> = {
@@ -103,13 +116,21 @@ export const UsersListPage: React.FC = () => {
           moderator: 'مشرف',
           user: 'مستخدم',
         };
-        return <Chip label={labelMap[role] || role} color={colorMap[role]} size="small" />;
+        return (
+          <Chip 
+            label={labelMap[role] || role} 
+            color={colorMap[role]} 
+            size="small"
+            sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+          />
+        );
       },
     },
     {
       field: 'status',
       headerName: 'الحالة',
-      width: 120,
+      minWidth: 90,
+      flex: 0.7,
       renderCell: (params) => {
         const statusMap: Record<
           UserStatus,
@@ -120,13 +141,22 @@ export const UsersListPage: React.FC = () => {
           pending: { label: 'قيد الانتظار', color: 'warning' },
         };
         const status = statusMap[params.row.status as UserStatus];
-        return <Chip label={status.label} color={status.color} size="small" />;
+        return (
+          <Chip 
+            label={status.label} 
+            color={status.color} 
+            size="small"
+            sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+          />
+        );
       },
     },
     {
       field: 'capabilities',
       headerName: 'القدرات',
-      width: 180,
+      minWidth: 120,
+      flex: 1,
+      hide: screenSize < 768, // إخفاء في الشاشات الصغيرة
       renderCell: (params) => {
         const caps = params.row.capabilities;
         if (!caps) return '-';
@@ -138,9 +168,23 @@ export const UsersListPage: React.FC = () => {
 
         return (
           <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-            {badges.map((badge) => (
-              <Chip key={badge} label={badge} size="small" variant="outlined" />
+            {badges.slice(0, 2).map((badge) => (
+              <Chip 
+                key={badge} 
+                label={badge} 
+                size="small" 
+                variant="outlined"
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+              />
             ))}
+            {badges.length > 2 && (
+              <Chip 
+                label={`+${badges.length - 2}`} 
+                size="small" 
+                variant="outlined"
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+              />
+            )}
           </Box>
         );
       },
@@ -148,13 +192,16 @@ export const UsersListPage: React.FC = () => {
     {
       field: 'createdAt',
       headerName: 'تاريخ الإنشاء',
-      width: 150,
+      minWidth: 120,
+      flex: 0.8,
+      hide: screenSize < 1024, // إخفاء في الشاشات المتوسطة
       valueFormatter: (value) => formatDate(value as Date),
     },
     {
       field: 'actions',
       headerName: 'الإجراءات',
-      width: 180,
+      minWidth: 120,
+      flex: 0.8,
       sortable: false,
       renderCell: (params) => {
         const user = params.row as User;
@@ -162,7 +209,7 @@ export const UsersListPage: React.FC = () => {
 
         if (isDeleted) {
           return (
-            <Box display="flex" gap={0.5}>
+            <Box display="flex" gap={0.5} flexWrap="wrap">
               <Tooltip title="استعادة">
                 <IconButton
                   size="small"
@@ -171,6 +218,7 @@ export const UsersListPage: React.FC = () => {
                     e.stopPropagation();
                     handleRestore(user);
                   }}
+                  sx={{ p: { xs: 0.5, sm: 1 } }}
                 >
                   <Restore fontSize="small" />
                 </IconButton>
@@ -180,7 +228,7 @@ export const UsersListPage: React.FC = () => {
         }
 
         return (
-          <Box display="flex" gap={0.5}>
+          <Box display="flex" gap={0.5} flexWrap="wrap">
             <Tooltip title="تعديل">
               <IconButton
                 size="small"
@@ -189,6 +237,7 @@ export const UsersListPage: React.FC = () => {
                   e.stopPropagation();
                   navigate(`/users/${user._id}`);
                 }}
+                sx={{ p: { xs: 0.5, sm: 1 } }}
               >
                 <Edit fontSize="small" />
               </IconButton>
@@ -203,6 +252,7 @@ export const UsersListPage: React.FC = () => {
                     e.stopPropagation();
                     handleActivate(user);
                   }}
+                  sx={{ p: { xs: 0.5, sm: 1 } }}
                 >
                   <CheckCircle fontSize="small" />
                 </IconButton>
@@ -216,6 +266,7 @@ export const UsersListPage: React.FC = () => {
                     e.stopPropagation();
                     handleSuspend(user);
                   }}
+                  sx={{ p: { xs: 0.5, sm: 1 } }}
                 >
                   <Block fontSize="small" />
                 </IconButton>
@@ -230,6 +281,7 @@ export const UsersListPage: React.FC = () => {
                   e.stopPropagation();
                   handleDelete(user);
                 }}
+                sx={{ p: { xs: 0.5, sm: 1 } }}
               >
                 <Delete fontSize="small" />
               </IconButton>
@@ -256,11 +308,12 @@ export const UsersListPage: React.FC = () => {
         onSearch={setSearch}
         onAdd={() => navigate('/users/new')}
         addButtonText="إضافة مستخدم"
+        getRowId={(row) => row._id}
         onRowClick={(params) => {
           const row = params.row as User;
           navigate(`/users/${row._id}`);
         }}
-        height="calc(100vh - 200px)"
+        height={screenSize < 600 ? "calc(100vh - 140px)" : "calc(100vh - 180px)"}
       />
     </Box>
   );

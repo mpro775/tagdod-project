@@ -1,4 +1,4 @@
-import  { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Box, CircularProgress } from '@mui/material';
@@ -17,13 +17,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const location = useLocation();
   const { isAuthenticated, user, hasRole, hasPermission, initialize } = useAuthStore();
 
-  // Initialize auth on mount
+  // Loading state - check if we're still initializing
+  const [isInitializing, setIsInitializing] = React.useState(true);
+  
   useEffect(() => {
-    initialize();
+    // Initialize auth and then set loading to false
+    try {
+      console.log('🔄 Initializing ProtectedRoute...');
+      initialize();
+      // Add a small delay to ensure state is updated
+      setTimeout(() => {
+        setIsInitializing(false);
+      }, 100);
+    } catch (error) {
+      console.error('❌ Error initializing auth:', error);
+      setIsInitializing(false);
+    }
   }, [initialize]);
 
-  // Loading state
-  if (isAuthenticated === null) {
+  if (isInitializing) {
     return (
       <Box
         sx={{
@@ -40,6 +52,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Not authenticated
   if (!isAuthenticated) {
+    console.log('❌ User not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -60,9 +73,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check if user is admin (for admin dashboard)
   if (user && !user.roles.includes('admin') && !user.roles.includes('super_admin')) {
+    console.log('❌ User does not have admin privileges');
     return <Navigate to="/unauthorized" replace />;
   }
 
+  console.log('✅ User authenticated and authorized');
   return <>{children}</>;
 };
 

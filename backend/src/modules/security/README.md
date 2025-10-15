@@ -173,6 +173,26 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
 /\.\\/g
 ```
 
+## إعدادات التطوير
+
+### تعطيل Threat Detection في وضع التطوير:
+
+```env
+# في ملف .env
+NODE_ENV=development
+DISABLE_THREAT_DETECTION=true
+```
+
+#### خيارات التعطيل:
+1. **تلقائي في وضع التطوير**: عندما `NODE_ENV=development`
+2. **تعطيل صريح**: عندما `DISABLE_THREAT_DETECTION=true`
+3. **تفعيل كامل**: عندما `NODE_ENV=production` و `DISABLE_THREAT_DETECTION=false`
+
+#### رسائل التحذير:
+```
+🚧 Development mode detected - Threat detection is DISABLED for easier development
+```
+
 ## إعدادات الأمان
 
 ### متغيرات البيئة:

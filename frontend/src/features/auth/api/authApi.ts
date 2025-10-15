@@ -94,4 +94,35 @@ export const authApi = {
     });
     return response.data;
   },
+
+  /**
+   * تسجيل دخول التطوير (للاستخدام في مرحلة التطوير فقط)
+   */
+  devLogin: async (data: { phone: string; password: string }) => {
+    const response = await apiClient.post<LoginResponse>('/auth/dev-login', data);
+    return response.data;
+  },
+
+  /**
+   * إنشاء السوبر أدمن (للاستخدام الأولي فقط)
+   */
+  createSuperAdmin: async (secretKey: string) => {
+    const response = await apiClient.post<{
+      success: boolean;
+      message: string;
+      admin: {
+        id: string;
+        phone: string;
+        firstName: string;
+        lastName: string;
+        roles: string[];
+        status: string;
+      };
+      loginInfo: {
+        phone: string;
+        password: string;
+      };
+    }>('/auth/create-super-admin', { secretKey });
+    return response.data;
+  },
 };

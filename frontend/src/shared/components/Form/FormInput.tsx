@@ -24,6 +24,7 @@ export const FormInput: React.FC<FormInputProps> = ({ name, label, rules, ...tex
           error={!!error}
           helperText={error?.message as string}
           fullWidth
+          value={field.value || ''}
         />
       )}
     />

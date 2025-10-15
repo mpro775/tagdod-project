@@ -14,7 +14,22 @@
     "sales": "Sales",
     "orders": "Orders",
     "coupons": "Coupons",
-    "settings": "Settings"
+    "settings": "Settings",
+    "marketing": "Marketing",
+    "banners": "Banners",
+    "promotions": "Promotions",
+    "media": "Media Library",
+    "support": "Support",
+    "notifications": "Notifications",
+    "services": "Services",
+    "analytics": "Analytics",
+    "analyticsDashboard": "Analytics Dashboard",
+    "analyticsAdvanced": "Advanced Analytics",
+    "analyticsExport": "Data Export",
+    "analyticsReports": "Reports Management",
+    "notificationsList": "Notifications List",
+    "notificationsAnalytics": "Notifications Analytics",
+    "notificationsTemplates": "Notification Templates"
   },
   "actions": {
     "title": "Actions",
@@ -58,7 +73,10 @@
     "no": "No",
     "all": "All",
     "none": "None",
-    "other": "Other"
+    "other": "Other",
+    "user": "User",
+    "profile": "Profile",
+    "logout": "Logout"
   },
   "validation": {
     "required": "This field is required",

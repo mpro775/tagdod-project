@@ -87,6 +87,21 @@ const AnalyticsDashboardPage = lazy(() =>
     default: m.AnalyticsDashboardPage,
   }))
 );
+const AdvancedAnalyticsDashboardPage = lazy(() =>
+  import('@/features/analytics/pages/AdvancedAnalyticsDashboardPage').then((m) => ({
+    default: m.AdvancedAnalyticsDashboardPage,
+  }))
+);
+const DataExportPage = lazy(() =>
+  import('@/features/analytics/pages/DataExportPage').then((m) => ({
+    default: m.DataExportPage,
+  }))
+);
+const ReportsManagementPage = lazy(() =>
+  import('@/features/analytics/pages/ReportsManagementPage').then((m) => ({
+    default: m.ReportsManagementPage,
+  }))
+);
 const CouponsListPage = lazy(() =>
   import('@/features/coupons/pages/CouponsListPage').then((m) => ({
     default: m.CouponsListPage,
@@ -127,9 +142,24 @@ const SupportTicketDetailsPage = lazy(() =>
     default: m.SupportTicketDetailsPage,
   }))
 );
+const SupportStatsPage = lazy(() =>
+  import('@/features/support/pages/SupportStatsPage').then((m) => ({
+    default: m.SupportStatsPage,
+  }))
+);
 const NotificationsListPage = lazy(() =>
   import('@/features/notifications/pages/NotificationsListPage').then((m) => ({
     default: m.NotificationsListPage,
+  }))
+);
+const NotificationsAnalyticsPage = lazy(() =>
+  import('@/features/notifications/pages/NotificationsAnalyticsPage').then((m) => ({
+    default: m.NotificationsAnalyticsPage,
+  }))
+);
+const NotificationTemplatesPage = lazy(() =>
+  import('@/features/notifications/pages/NotificationTemplatesPage').then((m) => ({
+    default: m.NotificationTemplatesPage,
   }))
 );
 const ServicesListPage = lazy(() =>
@@ -255,6 +285,18 @@ export const routes: RouteObject[] = [
         path: 'analytics',
         element: <AnalyticsDashboardPage />,
       },
+      {
+        path: 'analytics/advanced',
+        element: <AdvancedAnalyticsDashboardPage />,
+      },
+      {
+        path: 'analytics/export',
+        element: <DataExportPage />,
+      },
+      {
+        path: 'analytics/reports',
+        element: <ReportsManagementPage />,
+      },
       // Coupons routes
       {
         path: 'coupons',
@@ -300,10 +342,22 @@ export const routes: RouteObject[] = [
         path: 'support/:id',
         element: <SupportTicketDetailsPage />,
       },
+      {
+        path: 'support/stats',
+        element: <SupportStatsPage />,
+      },
       // Notifications routes
       {
         path: 'notifications',
         element: <NotificationsListPage />,
+      },
+      {
+        path: 'notifications/analytics',
+        element: <NotificationsAnalyticsPage />,
+      },
+      {
+        path: 'notifications/templates',
+        element: <NotificationTemplatesPage />,
       },
       // Services routes
       {

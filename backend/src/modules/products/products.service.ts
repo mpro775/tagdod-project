@@ -314,6 +314,14 @@ export class ProductsService {
     };
   }
 
+  async getProductsCount() {
+    const count = await this.productModel.countDocuments({ 
+      status: ProductStatus.ACTIVE, 
+      deletedAt: null 
+    });
+    return count;
+  }
+
   async clearAllCaches() {
     try {
       await this.cacheService.clear('product:*');

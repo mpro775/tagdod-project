@@ -10,7 +10,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from '../users/schemas/user.schema';
+import { User, UserRole, UserStatus } from '../users/schemas/user.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
@@ -98,7 +98,13 @@ export class AuthController {
       }
     }
 
-    const payload = { sub: String(user._id), phone: user.phone, isAdmin: user.isAdmin };
+    const payload = { 
+      sub: String(user._id), 
+      phone: user.phone, 
+      isAdmin: user.isAdmin,
+      roles: user.roles || [],
+      permissions: user.permissions || []
+    };
     const access = this.tokens.signAccess(payload);
     const refresh = this.tokens.signRefresh(payload);
     return { tokens: { access, refresh }, me: { id: user._id, phone: user.phone } };
@@ -231,5 +237,143 @@ export class AuthController {
 
     await caps.save();
     return { updated: true };
+  }
+
+  // ==================== إنشاء الادمن الرئيسي (للاستخدام الأولي فقط) ====================
+  @Post('create-super-admin')
+  async createSuperAdmin(@Body() body: { secretKey: string }) {
+    // التحقق من المفتاح السري (يجب أن يكون في متغيرات البيئة)
+    const expectedSecret = process.env.SUPER_ADMIN_SECRET || 'TAGADODO_SUPER_ADMIN_2024';
+    if (body.secretKey !== expectedSecret) {
+      throw new AppException('INVALID_SECRET', 'مفتاح سري غير صحيح', null, 403);
+    }
+
+    // التحقق من وجود ادمن رئيسي بالفعل
+    const existingSuperAdmin = await this.userModel.findOne({
+      roles: { $in: [UserRole.SUPER_ADMIN] },
+    });
+
+    if (existingSuperAdmin) {
+      throw new AppException('SUPER_ADMIN_EXISTS', 'الادمن الرئيسي موجود بالفعل', null, 400);
+    }
+
+    // بيانات الادمن الرئيسي
+    const superAdminData = {
+      phone: '777777777',
+      firstName: 'Super',
+      lastName: 'Admin',
+      gender: 'male' as const,
+      jobTitle: 'System Administrator',
+      passwordHash: await bcrypt.hash('Admin123!@#', 10),
+      isAdmin: true,
+      roles: [UserRole.SUPER_ADMIN],
+      permissions: [
+        'users.create',
+        'users.read',
+        'users.update',
+        'users.delete',
+        'products.create',
+        'products.read',
+        'products.update',
+        'products.delete',
+        'orders.create',
+        'orders.read',
+        'orders.update',
+        'orders.delete',
+        'analytics.read',
+        'reports.read',
+        'settings.read',
+        'settings.update',
+        'admin.access',
+        'super_admin.access',
+      ],
+      status: UserStatus.ACTIVE,
+    };
+
+    // إنشاء الادمن الرئيسي
+    const superAdmin = await this.userModel.create(superAdminData);
+
+    // إنشاء capabilities
+    const adminCapabilities = {
+      userId: superAdmin._id.toString(),
+      customer_capable: true,
+      engineer_capable: true,
+      engineer_status: 'approved',
+      wholesale_capable: true,
+      wholesale_status: 'approved',
+      wholesale_discount_percent: 0,
+      admin_capable: true,
+      admin_status: 'approved',
+    };
+
+    await this.capsModel.create(adminCapabilities);
+
+    return {
+      success: true,
+      message: 'تم إنشاء الادمن الرئيسي بنجاح',
+      admin: {
+        id: superAdmin._id,
+        phone: superAdmin.phone,
+        firstName: superAdmin.firstName,
+        lastName: superAdmin.lastName,
+        roles: superAdmin.roles,
+        status: superAdmin.status,
+      },
+      loginInfo: {
+        phone: superAdmin.phone,
+        password: 'Admin123!@#',
+      },
+    };
+  }
+
+  // ==================== تسجيل دخول السوبر أدمن (للاستخدام في مرحلة التطوير) ====================
+  @Post('dev-login')
+  async devLogin(@Body() body: { phone: string; password: string }) {
+    // هذا الـ endpoint مخصص للتطوير فقط
+    if (process.env.NODE_ENV === 'production') {
+      throw new AppException('NOT_ALLOWED', 'هذا الـ endpoint غير متاح في الإنتاج', null, 403);
+    }
+
+    const user = await this.userModel.findOne({ phone: body.phone });
+    if (!user) {
+      throw new AppException('AUTH_USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+    }
+
+    // التحقق من كلمة المرور
+    if (!user.passwordHash) {
+      throw new AppException('AUTH_NO_PASSWORD', 'كلمة المرور غير محددة', null, 400);
+    }
+
+    const isPasswordValid = await bcrypt.compare(body.password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new AppException('AUTH_INVALID_PASSWORD', 'كلمة المرور غير صحيحة', null, 401);
+    }
+
+    // التحقق من أن المستخدم admin أو super admin
+    if (!user.isAdmin && !user.roles?.includes(UserRole.SUPER_ADMIN)) {
+      throw new AppException('AUTH_NOT_ADMIN', 'هذا الحساب غير مصرح له بالدخول للوحة التحكم', null, 403);
+    }
+
+    const payload = { 
+      sub: String(user._id), 
+      phone: user.phone, 
+      isAdmin: user.isAdmin,
+      roles: user.roles || [],
+      permissions: user.permissions || []
+    };
+    const access = this.tokens.signAccess(payload);
+    const refresh = this.tokens.signRefresh(payload);
+
+    return { 
+      tokens: { access, refresh }, 
+      me: { 
+        id: user._id, 
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: user.roles,
+        isAdmin: user.isAdmin
+      } 
+    };
   }
 }

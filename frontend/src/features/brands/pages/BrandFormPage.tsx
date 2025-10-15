@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { Save, Cancel } from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
+import { ImageField } from '@/features/media';
 import { useBrand, useCreateBrand, useUpdateBrand } from '../hooks/useBrands';
 import type { CreateBrandDto } from '../types/brand.types';
 
@@ -42,6 +43,7 @@ export const BrandFormPage: React.FC = () => {
   const navigate = useNavigate();
   const isEditMode = id !== 'new' && !!id;
   const [activeTab, setActiveTab] = React.useState(0);
+  const [selectedLogo, setSelectedLogo] = React.useState<any>(null);
 
   const methods = useForm<BrandFormData>({
     resolver: zodResolver(brandSchema),
@@ -61,11 +63,19 @@ export const BrandFormPage: React.FC = () => {
   useEffect(() => {
     if (isEditMode && brand) {
       methods.reset(brand as BrandFormData);
+      
+      // Set logo if exists
+      if (brand.logo) {
+        setSelectedLogo({ url: brand.logo, name: 'شعار البراند' });
+      }
     }
   }, [brand, isEditMode, methods]);
 
   const onSubmit = (data: BrandFormData) => {
-    const brandData: CreateBrandDto = data;
+    const brandData: CreateBrandDto = {
+      ...data,
+      logo: selectedLogo?.url || data.logo,
+    };
 
     if (isEditMode) {
       updateBrand({ id: id!, data: brandData }, { onSuccess: () => navigate('/brands') });
@@ -138,7 +148,16 @@ export const BrandFormPage: React.FC = () => {
               </Grid>
 
               <Grid size={{ xs: 12 }}>
-                <FormInput name="logo" label="رابط الشعار (Logo)" />
+                <ImageField
+                  label="شعار البراند"
+                  value={selectedLogo}
+                  onChange={(media) => {
+                    setSelectedLogo(media);
+                    methods.setValue('logo', media?.url || '');
+                  }}
+                  category="brand"
+                  helperText="يمكنك اختيار شعار من المكتبة أو رفع شعار جديد"
+                />
               </Grid>
 
               <Grid size={{ xs: 12 }}>

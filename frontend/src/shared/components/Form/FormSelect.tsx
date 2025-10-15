@@ -38,7 +38,12 @@ export const FormSelect: React.FC<FormSelectProps> = ({
       render={({ field, fieldState: { error } }) => (
         <FormControl fullWidth error={!!error}>
           <InputLabel>{label}</InputLabel>
-          <Select {...field} {...selectProps} label={label}>
+          <Select 
+            {...field} 
+            {...selectProps} 
+            label={label}
+            value={field.value || ''}
+          >
             {options.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}

@@ -30,6 +30,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   setDirection: (direction) => {
     set({ direction });
     document.dir = direction;
+    document.documentElement.setAttribute('dir', direction);
   },
 
   initialize: () => {
@@ -43,5 +44,6 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     const direction = savedLanguage === 'ar' ? 'rtl' : 'ltr';
     set({ direction });
     document.dir = direction;
+    document.documentElement.setAttribute('dir', direction);
   },
 }));

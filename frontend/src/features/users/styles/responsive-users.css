@@ -1,0 +1,84 @@
+/* تحسينات إضافية لواجهة إدارة المستخدمين للشاشات الصغيرة */
+
+/* إخفاء بعض العناصر في الشاشات الصغيرة جداً */
+@media (max-width: 480px) {
+  .MuiDataGrid-columnHeader--sortable {
+    font-size: 0.7rem !important;
+  }
+  
+  .MuiChip-root {
+    font-size: 0.6rem !important;
+    height: 20px !important;
+  }
+  
+  .MuiIconButton-root {
+    padding: 2px !important;
+  }
+  
+  .MuiIconButton-root svg {
+    font-size: 1rem !important;
+  }
+}
+
+/* تحسينات للشاشات المتوسطة */
+@media (max-width: 768px) {
+  .MuiDataGrid-cell {
+    padding: 4px 6px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .MuiDataGrid-columnHeader {
+    padding: 4px 6px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .MuiToolbar-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+}
+
+/* تحسينات للشاشات الكبيرة */
+@media (min-width: 1200px) {
+  .MuiDataGrid-root {
+    font-size: 0.875rem !important;
+  }
+}
+
+/* تحسينات للنماذج */
+@media (max-width: 600px) {
+  .MuiTextField-root {
+    margin-bottom: 16px !important;
+  }
+  
+  .MuiFormControl-root {
+    margin-bottom: 16px !important;
+  }
+  
+  .MuiButton-root {
+    margin-bottom: 8px !important;
+  }
+}
+
+/* تحسينات للجداول */
+@media (max-width: 480px) {
+  .MuiDataGrid-main {
+    overflow-x: auto !important;
+  }
+  
+  .MuiDataGrid-virtualScroller {
+    overflow-x: auto !important;
+  }
+}
+
+/* تحسينات للأزرار */
+@media (max-width: 600px) {
+  .MuiButton-root {
+    width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .MuiButton-root:last-child {
+    margin-bottom: 0 !important;
+  }
+}

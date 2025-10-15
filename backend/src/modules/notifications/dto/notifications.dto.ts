@@ -27,3 +27,35 @@ export class AdminTestDto {
   @IsString() templateKey!: string;
   payload!: Record<string, unknown>;
 }
+
+export class AdminListNotificationsDto {
+  @Type(() => Number) @IsInt() @Min(1) page: number = 1;
+  @Type(() => Number) @IsInt() @Min(1) @Max(100) limit: number = 20;
+  @IsOptional() @IsIn(['inapp','push','sms','email']) channel?: 'inapp'|'push'|'sms'|'email';
+  @IsOptional() @IsIn(['queued','sent','failed','read']) status?: 'queued'|'sent'|'failed'|'read';
+  @IsOptional() @IsString() search?: string;
+  @IsOptional() @IsMongoId() userId?: string;
+}
+
+export class AdminCreateNotificationDto {
+  @IsString() title!: string;
+  @IsString() body!: string;
+  @IsIn(['inapp','push','sms','email']) channel!: 'inapp'|'push'|'sms'|'email';
+  @IsOptional() @IsString() templateKey?: string;
+  @IsOptional() payload?: Record<string, unknown>;
+  @IsOptional() @IsString() link?: string;
+  @IsOptional() @IsArray() @IsMongoId({ each: true }) targetUsers?: string[];
+  @IsOptional() @IsString() scheduledAt?: string; // ISO date string
+}
+
+export class AdminUpdateNotificationDto {
+  @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() body?: string;
+  @IsOptional() @IsString() link?: string;
+  @IsOptional() payload?: Record<string, unknown>;
+}
+
+export class AdminSendNotificationDto {
+  @IsOptional() @IsArray() @IsMongoId({ each: true }) targetUsers?: string[];
+  @IsOptional() @IsString() scheduledAt?: string; // ISO date string
+}

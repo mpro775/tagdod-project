@@ -17,6 +17,7 @@ import {
 import { Save, Cancel } from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
+import { ImageField } from '@/features/media';
 import { useProduct, useCreateProduct, useUpdateProduct } from '../hooks/useProducts';
 import { ProductStatus } from '../types/product.types';
 import type { CreateProductDto } from '../types/product.types';
@@ -35,6 +36,7 @@ const productSchema = z.object({
   isNew: z.boolean().optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
+  imageUrl: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -45,6 +47,7 @@ export const ProductFormPage: React.FC = () => {
   const isEditMode = id !== 'new' && !!id;
 
   const [activeTab, setActiveTab] = React.useState(0);
+  const [selectedImage, setSelectedImage] = React.useState<any>(null);
 
   // Form
   const methods = useForm<ProductFormData>({
@@ -82,7 +85,13 @@ export const ProductFormPage: React.FC = () => {
         isNew: product.isNew,
         metaTitle: product.metaTitle,
         metaDescription: product.metaDescription,
+        imageUrl: product.imageUrl,
       });
+      
+      // Set image if exists
+      if (product.imageUrl) {
+        setSelectedImage({ url: product.imageUrl, name: 'صورة المنتج' });
+      }
     }
   }, [product, isEditMode, methods]);
 
@@ -101,6 +110,7 @@ export const ProductFormPage: React.FC = () => {
       isNew: data.isNew,
       metaTitle: data.metaTitle,
       metaDescription: data.metaDescription,
+      imageUrl: selectedImage?.url || data.imageUrl,
     };
 
     if (isEditMode) {
@@ -196,6 +206,20 @@ export const ProductFormPage: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   معلومات عامة
                 </Typography>
+              </Grid>
+
+              {/* Product Image */}
+              <Grid size={{ xs: 12 }}>
+                <ImageField
+                  label="صورة المنتج"
+                  value={selectedImage}
+                  onChange={(media) => {
+                    setSelectedImage(media);
+                    methods.setValue('imageUrl', media?.url || '');
+                  }}
+                  category="product"
+                  helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
+                />
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>

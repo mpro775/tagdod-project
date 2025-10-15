@@ -5,8 +5,8 @@ export type NotificationDocument = HydratedDocument<Notification>;
 
 @Schema({ timestamps: true })
 export class Notification {
-  @Prop({ type: Types.ObjectId, ref: 'User', index: true })
-  userId!: string;
+  @Prop({ type: Types.ObjectId, ref: 'User', index: true, required: false })
+  userId?: string;
 
   @Prop({ required: true, index: true })
   channel!: 'inapp' | 'push' | 'sms' | 'email';
@@ -27,6 +27,11 @@ export class Notification {
   @Prop() sentAt?: Date;
   @Prop() readAt?: Date;
   @Prop() error?: string;
+
+  @Prop({ default: false })
+  isAdminCreated?: boolean;
+
+  @Prop() scheduledAt?: Date;
 }
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
 

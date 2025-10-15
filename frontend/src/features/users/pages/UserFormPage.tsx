@@ -10,16 +10,20 @@ import { FormSelect } from '@/shared/components/Form/FormSelect';
 import { useUser, useCreateUser, useUpdateUser } from '../hooks/useUsers';
 import { UserRole, UserStatus } from '../types/user.types';
 import type { CreateUserDto } from '../types/user.types';
+import '../styles/responsive-users.css';
 
 // Validation Schema
 const userSchema = z.object({
-  phone: z.string().min(10, 'رقم الهاتف غير صحيح'),
-  firstName: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل').optional(),
-  lastName: z.string().optional(),
-  gender: z.enum(['male', 'female', 'other']).optional(),
-  jobTitle: z.string().optional(),
-  password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل').optional(),
-  roles: z.array(z.nativeEnum(UserRole)).min(1, 'يجب اختيار دور واحد على الأقل'),
+  phone: z.string()
+    .min(9, 'رقم الهاتف يجب أن يكون 9 أرقام على الأقل')
+    .max(10, 'رقم الهاتف يجب أن يكون 10 أرقام على الأكثر')
+    .regex(/^[0-9]+$/, 'رقم الهاتف يجب أن يحتوي على أرقام فقط'),
+  firstName: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل').optional().or(z.literal('')),
+  lastName: z.string().optional().or(z.literal('')),
+  gender: z.enum(['male', 'female', 'other']).optional().or(z.literal('')),
+  jobTitle: z.string().optional().or(z.literal('')),
+  password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل').optional().or(z.literal('')),
+  role: z.nativeEnum(UserRole, { required_error: 'يجب اختيار دور' }),
   status: z.nativeEnum(UserStatus),
 });
 
@@ -37,7 +41,10 @@ export const UserFormPage: React.FC = () => {
       phone: '',
       firstName: '',
       lastName: '',
-      roles: [UserRole.USER],
+      gender: '',
+      jobTitle: '',
+      password: '',
+      role: UserRole.USER,
       status: UserStatus.ACTIVE,
     },
   });
@@ -51,13 +58,14 @@ export const UserFormPage: React.FC = () => {
   useEffect(() => {
     if (isEditMode && user) {
       methods.reset({
-        phone: user.phone,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        gender: user.gender,
-        jobTitle: user.jobTitle,
-        roles: user.roles || [UserRole.USER],
-        status: user.status,
+        phone: user.phone || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        gender: user.gender || '',
+        jobTitle: user.jobTitle || '',
+        password: '', // لا نحمل كلمة المرور في وضع التعديل
+        role: user.roles?.[0] || UserRole.USER, // نأخذ الدور الأول فقط
+        status: user.status || UserStatus.ACTIVE,
       });
     }
   }, [user, isEditMode, methods]);
@@ -66,12 +74,12 @@ export const UserFormPage: React.FC = () => {
   const onSubmit = (data: UserFormData) => {
     const userData: CreateUserDto = {
       phone: data.phone,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      gender: data.gender,
-      jobTitle: data.jobTitle,
-      password: data.password,
-      roles: data.roles,
+      firstName: data.firstName || undefined,
+      lastName: data.lastName || undefined,
+      gender: data.gender || undefined,
+      jobTitle: data.jobTitle || undefined,
+      password: data.password || undefined,
+      roles: [data.role], // نرسل الدور كمصفوفة كما يتوقع الـ backend
       status: data.status,
     };
 
@@ -102,25 +110,34 @@ export const UserFormPage: React.FC = () => {
   }
 
   return (
-    <Box>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" fontWeight="bold" gutterBottom>
+    <Box sx={{ p: { xs: 1, sm: 2 } }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+        <Typography 
+          variant="h5" 
+          fontWeight="bold" 
+          gutterBottom
+          sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+        >
           {isEditMode ? 'تعديل المستخدم' : 'إضافة مستخدم جديد'}
         </Typography>
 
-        <Divider sx={{ my: 3 }} />
+        <Divider sx={{ my: { xs: 2, sm: 3 } }} />
 
         <FormProvider {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)}>
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 2, sm: 3 }}>
               {/* معلومات أساسية */}
               <Grid size={{ xs: 12 }}>
-                <Typography variant="h6" gutterBottom>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                >
                   المعلومات الأساسية
                 </Typography>
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormInput
                   name="phone"
                   label="رقم الهاتف *"
@@ -129,15 +146,15 @@ export const UserFormPage: React.FC = () => {
                 />
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormInput name="firstName" label="الاسم الأول" />
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormInput name="lastName" label="الاسم الأخير" />
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormSelect
                   name="gender"
                   label="الجنس"
@@ -149,12 +166,12 @@ export const UserFormPage: React.FC = () => {
                 />
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormInput name="jobTitle" label="المسمى الوظيفي" />
               </Grid>
 
               {!isEditMode && (
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormInput
                     name="password"
                     label="كلمة المرور"
@@ -166,14 +183,21 @@ export const UserFormPage: React.FC = () => {
 
               {/* الأدوار والصلاحيات */}
               <Grid size={{ xs: 12 }}>
-                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom 
+                  sx={{ 
+                    mt: { xs: 1, sm: 2 },
+                    fontSize: { xs: '1rem', sm: '1.25rem' }
+                  }}
+                >
                   الأدوار والصلاحيات
                 </Typography>
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormSelect
-                  name="roles"
+                  name="role"
                   label="الدور *"
                   options={[
                     { value: UserRole.USER, label: 'مستخدم' },
@@ -184,7 +208,7 @@ export const UserFormPage: React.FC = () => {
                 />
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <FormSelect
                   name="status"
                   label="الحالة *"
@@ -198,13 +222,22 @@ export const UserFormPage: React.FC = () => {
 
               {/* الأزرار */}
               <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 2 }} />
-                <Box display="flex" gap={2}>
+                <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
+                <Box 
+                  display="flex" 
+                  gap={2}
+                  flexDirection={{ xs: 'column', sm: 'row' }}
+                  alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+                >
                   <Button
                     type="submit"
                     variant="contained"
                     startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
+                    sx={{ 
+                      width: { xs: '100%', sm: 'auto' },
+                      minWidth: { xs: 'auto', sm: 120 }
+                    }}
                   >
                     حفظ
                   </Button>
@@ -212,6 +245,10 @@ export const UserFormPage: React.FC = () => {
                     variant="outlined"
                     startIcon={<Cancel />}
                     onClick={() => navigate('/users')}
+                    sx={{ 
+                      width: { xs: '100%', sm: 'auto' },
+                      minWidth: { xs: 'auto', sm: 120 }
+                    }}
                   >
                     إلغاء
                   </Button>

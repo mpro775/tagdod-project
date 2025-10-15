@@ -33,7 +33,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
   const { mode, toggleMode } = useThemeStore();
 
@@ -59,6 +59,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     i18n.changeLanguage(newLang);
     const newDir = newLang === 'ar' ? 'rtl' : 'ltr';
     useThemeStore.getState().setDirection(newDir);
+    localStorage.setItem('language', newLang);
     handleMenuClose();
   };
 
@@ -87,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
         {/* Title */}
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          لوحة التحكم
+          {t('navigation.dashboard')}
         </Typography>
 
         {/* Actions */}
@@ -98,7 +99,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </IconButton>
 
           {/* Language Toggle */}
-          <IconButton color="inherit" onClick={handleToggleLanguage}>
+          <IconButton 
+            color="inherit" 
+            onClick={handleToggleLanguage}
+            title={i18n.language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
+          >
             <Language />
           </IconButton>
 
@@ -129,7 +134,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           {/* User Info */}
           <Box sx={{ px: 2, py: 1 }}>
             <Typography variant="subtitle2" fontWeight="bold">
-              {user?.firstName || 'المستخدم'}
+              {user?.firstName || t('common.user', 'المستخدم')}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {user?.phone}
@@ -143,14 +148,14 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             <ListItemIcon>
               <AccountCircle fontSize="small" />
             </ListItemIcon>
-            الملف الشخصي
+            {t('common.profile', 'الملف الشخصي')}
           </MenuItem>
 
           <MenuItem onClick={() => navigate('/settings')}>
             <ListItemIcon>
               <Settings fontSize="small" />
             </ListItemIcon>
-            الإعدادات
+            {t('navigation.settings')}
           </MenuItem>
 
           <Divider />
@@ -159,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             <ListItemIcon>
               <Logout fontSize="small" />
             </ListItemIcon>
-            تسجيل الخروج
+            {t('common.logout', 'تسجيل الخروج')}
           </MenuItem>
         </Menu>
       </Toolbar>

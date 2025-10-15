@@ -1,9 +1,21 @@
 import { Injectable, NestMiddleware, Logger, BadRequestException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ThreatDetectionMiddleware implements NestMiddleware {
   private readonly logger = new Logger(ThreatDetectionMiddleware.name);
+  private readonly isDevelopment: boolean;
+  private readonly isThreatDetectionDisabled: boolean;
+
+  constructor(private readonly configService: ConfigService) {
+    this.isDevelopment = this.configService.get<string>('NODE_ENV', 'development') === 'development';
+    this.isThreatDetectionDisabled = this.configService.get<string>('DISABLE_THREAT_DETECTION', 'false') === 'true';
+    
+    if (this.isDevelopment || this.isThreatDetectionDisabled) {
+      this.logger.warn('🚧 Threat detection is DISABLED for easier development');
+    }
+  }
 
   // SQL Injection patterns
   private readonly sqlInjectionPatterns = [
@@ -56,6 +68,17 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction) {
     try {
+      // Skip threat detection in development mode or if explicitly disabled
+      if (this.isDevelopment || this.isThreatDetectionDisabled) {
+        this.logger.debug('Threat detection skipped', {
+          path: req.path,
+          method: req.method,
+          reason: this.isDevelopment ? 'development mode' : 'explicitly disabled',
+        });
+        next();
+        return;
+      }
+
       // Check query parameters
       this.checkForThreats(req.query, 'query parameters', req);
 

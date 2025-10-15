@@ -39,6 +39,9 @@ export interface DataTableProps {
 
   // Row actions
   onRowClick?: (params: { row: unknown }) => void;
+
+  // Row ID
+  getRowId?: (row: unknown) => string | number;
 }
 
 export const DataTable: React.FC<DataTableProps> = ({
@@ -59,6 +62,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   addButtonText = 'إضافة',
   height = 600,
   onRowClick,
+  getRowId,
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
 
@@ -74,23 +78,42 @@ export const DataTable: React.FC<DataTableProps> = ({
       {(title || onSearch || onAdd) && (
         <Box
           sx={{
-            p: 2,
+            p: { xs: 1.5, sm: 2 },
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: { xs: 2, sm: 0 },
             borderBottom: 1,
             borderColor: 'divider',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-            {title && <Box sx={{ fontSize: 18, fontWeight: 'bold' }}>{title}</Box>}
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 2, 
+            flex: 1,
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' }
+          }}>
+            {title && (
+              <Box sx={{ 
+                fontSize: { xs: 16, sm: 18 }, 
+                fontWeight: 'bold',
+                textAlign: { xs: 'center', sm: 'left' }
+              }}>
+                {title}
+              </Box>
+            )}
             {onSearch && (
               <TextField
                 size="small"
                 placeholder={searchPlaceholder || 'بحث...'}
                 value={searchQuery}
                 onChange={handleSearchChange}
-                sx={{ minWidth: 300 }}
+                sx={{ 
+                  minWidth: { xs: '100%', sm: 250, md: 300 },
+                  width: { xs: '100%', sm: 'auto' }
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -103,7 +126,15 @@ export const DataTable: React.FC<DataTableProps> = ({
           </Box>
 
           {onAdd && (
-            <Button variant="contained" startIcon={<Add />} onClick={onAdd}>
+            <Button 
+              variant="contained" 
+              startIcon={<Add />} 
+              onClick={onAdd}
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                minWidth: { xs: 'auto', sm: 120 }
+              }}
+            >
               {addButtonText}
             </Button>
           )}
@@ -115,12 +146,14 @@ export const DataTable: React.FC<DataTableProps> = ({
         rows={rows}
         columns={columns}
         loading={loading}
+        // Row ID
+        getRowId={getRowId}
         // Pagination
         paginationMode="server"
         paginationModel={paginationModel}
         onPaginationModelChange={onPaginationModelChange}
         rowCount={rowCount}
-        pageSizeOptions={[10, 20, 50, 100]}
+        pageSizeOptions={[5, 10, 20, 50]}
         // Sorting
         sortingMode="server"
         sortModel={sortModel}
@@ -142,7 +175,23 @@ export const DataTable: React.FC<DataTableProps> = ({
           '& .MuiDataGrid-row:hover': {
             cursor: onRowClick ? 'pointer' : 'default',
           },
+          '& .MuiDataGrid-columnHeaders': {
+            backgroundColor: 'background.paper',
+          },
+          '& .MuiDataGrid-cell': {
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            padding: { xs: '4px 8px', sm: '8px 16px' },
+          },
+          '& .MuiDataGrid-columnHeader': {
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            padding: { xs: '4px 8px', sm: '8px 16px' },
+          },
         }}
+        // Responsive settings
+        autoHeight={false}
+        disableColumnMenu={false}
+        disableColumnFilter={false}
+        disableColumnSelector={false}
       />
     </Paper>
   );

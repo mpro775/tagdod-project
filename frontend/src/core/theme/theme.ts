@@ -1,39 +1,31 @@
 import { createTheme, ThemeOptions } from '@mui/material/styles';
 import { arSA, enUS } from '@mui/material/locale';
+import './brand-colors.css';
+import { colors } from './colors';
 
-// Color palette
-const colors = {
-  primary: {
-    main: '#1976d2',
-    light: '#42a5f5',
-    dark: '#1565c0',
-    contrastText: '#fff',
-  },
-  secondary: {
-    main: '#9c27b0',
-    light: '#ba68c8',
-    dark: '#7b1fa2',
-    contrastText: '#fff',
-  },
+// Color palette - Tagadodo Brand Colors
+const themeColors = {
+  primary: colors.primary,
+  secondary: colors.secondary,
   success: {
-    main: '#2e7d32',
-    light: '#4caf50',
-    dark: '#1b5e20',
+    main: colors.status.success,
+    light: colors.secondary.light,
+    dark: colors.secondary.dark,
   },
   error: {
-    main: '#d32f2f',
-    light: '#ef5350',
-    dark: '#c62828',
+    main: colors.status.error,
+    light: '#ff8a80',
+    dark: '#d32f2f',
   },
   warning: {
-    main: '#ed6c02',
-    light: '#ff9800',
-    dark: '#e65100',
+    main: colors.status.warning,
+    light: '#ffb74d',
+    dark: '#f57c00',
   },
   info: {
-    main: '#0288d1',
-    light: '#03a9f4',
-    dark: '#01579b',
+    main: colors.status.info,
+    light: colors.primary.light,
+    dark: colors.primary.dark,
   },
 };
 
@@ -41,16 +33,16 @@ const colors = {
 const getBaseTheme = (mode: 'light' | 'dark'): ThemeOptions => ({
   palette: {
     mode,
-    ...colors,
+    ...themeColors,
     ...(mode === 'light'
       ? {
           background: {
-            default: '#f5f5f5',
-            paper: '#ffffff',
+            default: colors.background.light,
+            paper: colors.background.paper,
           },
           text: {
-            primary: '#212121',
-            secondary: '#757575',
+            primary: colors.text.primary,
+            secondary: colors.text.secondary,
           },
         }
       : {
@@ -59,23 +51,28 @@ const getBaseTheme = (mode: 'light' | 'dark'): ThemeOptions => ({
             paper: '#1e1e1e',
           },
           text: {
-            primary: '#ffffff',
-            secondary: '#b0b0b0',
+            primary: colors.text.light,
+            secondary: colors.text.muted,
           },
         }),
   },
   typography: {
     fontFamily: [
+      '"Cairo"',
+      '"Tajawal"',
+      '"Amiri"',
+      '"Scheherazade New"',
+      '"Noto Sans Arabic"',
+      '"Arial Unicode MS"',
+      'system-ui',
       '-apple-system',
       'BlinkMacSystemFont',
       '"Segoe UI"',
+      '"Segoe UI Arabic"',
       'Roboto',
       '"Helvetica Neue"',
       'Arial',
       'sans-serif',
-      '"Apple Color Emoji"',
-      '"Segoe UI Emoji"',
-      '"Segoe UI Symbol"',
     ].join(','),
     button: {
       textTransform: 'none',
@@ -89,6 +86,16 @@ const getBaseTheme = (mode: 'light' | 'dark'): ThemeOptions => ({
       styleOverrides: {
         root: {
           borderRadius: 8,
+          fontFamily: 'inherit',
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          fontFamily: 'inherit',
+          fontFeatureSettings: '"liga" 1, "calt" 1',
+          textRendering: 'optimizeLegibility',
         },
       },
     },

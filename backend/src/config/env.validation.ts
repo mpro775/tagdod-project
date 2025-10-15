@@ -38,6 +38,7 @@ export const envSchema = z.object({
   CORS_ORIGINS: z.string().optional(),
   IP_WHITELIST: z.string().optional(),
   IP_BLACKLIST: z.string().optional(),
+  DISABLE_THREAT_DETECTION: z.coerce.boolean().default(false),
   
   // Logging Configuration
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),

@@ -13,6 +13,7 @@ export class TokenService {
    */
   static setAccessToken(token: string): void {
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+    console.log('🔑 Access token saved');
   }
 
   /**
@@ -27,6 +28,7 @@ export class TokenService {
    */
   static setRefreshToken(token: string): void {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
+    console.log('🔄 Refresh token saved');
   }
 
   /**
@@ -41,7 +43,28 @@ export class TokenService {
    * Check if user is authenticated
    */
   static isAuthenticated(): boolean {
-    return !!this.getAccessToken();
+    const token = this.getAccessToken();
+    if (!token) {
+      console.log('❌ No access token found');
+      return false;
+    }
+    
+    // Check if token is expired (basic check)
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const now = Date.now() / 1000;
+      if (payload.exp && payload.exp < now) {
+        console.log('❌ Token expired');
+        this.clearTokens();
+        return false;
+      }
+      console.log('✅ Token is valid');
+      return true;
+    } catch (error) {
+      console.log('❌ Invalid token format');
+      this.clearTokens();
+      return false;
+    }
   }
 }
 
