@@ -16,13 +16,13 @@ export class IPWhitelistGuard implements CanActivate {
     // Load whitelist from environment
     const whitelist = this.configService.get<string>('IP_WHITELIST', '');
     if (whitelist) {
-      this.whitelist = whitelist.split(',').map(ip => ip.trim());
+      this.whitelist.push(...whitelist.split(',').map(ip => ip.trim()));
     }
 
     // Load blacklist from environment
     const blacklist = this.configService.get<string>('IP_BLACKLIST', '');
     if (blacklist) {
-      this.blacklist = blacklist.split(',').map(ip => ip.trim());
+      this.blacklist.push(...blacklist.split(',').map(ip => ip.trim()));
     }
 
     // Add localhost for development

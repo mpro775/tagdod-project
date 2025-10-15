@@ -37,8 +37,12 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
 
     if (isDevelopment) {
       // Relax CSP for development
-      cspDirectives.push("script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:*");
-      cspDirectives.push("connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:*");
+      cspDirectives.push(
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:*",
+      );
+      cspDirectives.push(
+        "connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:*",
+      );
     }
 
     res.setHeader('Content-Security-Policy', cspDirectives.join('; '));
@@ -62,7 +66,8 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
     res.setHeader('X-Request-ID', requestId);
 
     // Log security headers application (occasionally)
-    if (Math.random() < 0.001) { // 0.1% of requests
+    if (Math.random() < 0.001) {
+      // 0.1% of requests
       this.logger.debug(`Security headers applied for ${req.method} ${req.path}`);
     }
 

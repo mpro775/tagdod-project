@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, Min, Max, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UserRole, UserStatus } from '../../schemas/user.schema';
 
@@ -46,4 +46,3 @@ export class ListUsersDto {
   @IsIn(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
-

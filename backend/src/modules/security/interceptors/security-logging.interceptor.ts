@@ -19,7 +19,7 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
     'set-cookie',
   ];
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse<Response>();
     const startTime = Date.now();
@@ -29,7 +29,7 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap({
-        next: (data) => {
+        next: (data: unknown) => {
           const duration = Date.now() - startTime;
           const responseInfo = this.extractResponseInfo(response, data, duration);
 
@@ -52,7 +52,7 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
             });
           }
         },
-        error: (error) => {
+        error: (error: unknown) => {
           const duration = Date.now() - startTime;
           const errorInfo = this.extractErrorInfo(error, duration);
 
@@ -60,7 +60,7 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
           this.logSecurityIncident(requestInfo, errorInfo);
 
           // Log authentication failures
-          if (error.status === 401 || error.status === 403) {
+          if (errorInfo.statusCode === 401 || errorInfo.statusCode === 403) {
             this.logger.warn(`Authentication/Authorization failure: ${requestInfo.method} ${requestInfo.path}`, {
               ...requestInfo,
               error: errorInfo,
@@ -68,7 +68,7 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
           }
 
           // Log rate limiting
-          if (error.status === 429) {
+          if (errorInfo.statusCode === 429) {
             this.logger.warn(`Rate limit exceeded: ${requestInfo.ip}`, {
               ...requestInfo,
               error: errorInfo,
@@ -95,30 +95,31 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
       headers,
       bodySize: request.headers['content-length'] || 0,
       requestId: request.headers['x-request-id'] || 'unknown',
-      userId: (request as any).user?.sub || 'anonymous',
-      deviceFingerprint: (request as any).deviceFingerprint || 'unknown',
+      userId: request.user?.sub || 'anonymous',
+      deviceFingerprint: request.deviceFingerprint || 'unknown',
     };
   }
 
-  private extractResponseInfo(response: Response, data: any, duration: number) {
+  private extractResponseInfo(response: Response, data: unknown, duration: number) {
     return {
       statusCode: response.statusCode,
       duration,
       responseSize: this.calculateResponseSize(data),
-      headers: this.sanitizeHeaders(response.getHeaders()),
+      headers: this.sanitizeHeaders(response.getHeaders() as Record<string, unknown>),
     };
   }
 
-  private extractErrorInfo(error: any, duration: number) {
+  private extractErrorInfo(error: unknown, duration: number) {
+    const e = error as { status?: number; message?: string; stack?: string };
     return {
-      statusCode: error.status || 500,
-      message: error.message || 'Unknown error',
+      statusCode: e?.status ?? 500,
+      message: e?.message ?? 'Unknown error',
       duration,
-      stack: error.stack ? error.stack.substring(0, 500) : undefined,
+      stack: e?.stack ? e.stack.substring(0, 500) : undefined,
     };
   }
 
-  private sanitizeHeaders(headers: any): Record<string, string> {
+  private sanitizeHeaders(headers: Record<string, unknown>): Record<string, string> {
     const sanitized: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(headers)) {
@@ -146,7 +147,7 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
     return request.connection.remoteAddress || request.socket.remoteAddress || 'unknown';
   }
 
-  private calculateResponseSize(data: any): number {
+  private calculateResponseSize(data: unknown): number {
     try {
       if (typeof data === 'string') {
         return Buffer.byteLength(data, 'utf8');
@@ -158,9 +159,10 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
     }
   }
 
-  private logSecurityEvent(requestInfo: any, responseInfo: any): void {
+  private logSecurityEvent(requestInfo: Record<string, unknown>, responseInfo: Record<string, unknown>): void {
     // Log important security events
-    const { method, path, ip, userId, statusCode } = { ...requestInfo, ...responseInfo };
+    const merged = { ...requestInfo, ...responseInfo } as { method: string; path: string; ip: string; userId: string; statusCode: number };
+    const { method, path, ip, userId, statusCode } = merged;
 
     // Log admin actions
     if (path.includes('/admin/') && userId !== 'anonymous') {
@@ -193,8 +195,9 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
     }
   }
 
-  private logSecurityIncident(requestInfo: any, errorInfo: any): void {
-    const { method, path, ip, userId, statusCode } = { ...requestInfo, ...errorInfo };
+  private logSecurityIncident(requestInfo: Record<string, unknown>, errorInfo: Record<string, unknown>): void {
+    const merged = { ...requestInfo, ...errorInfo } as { method: string; path: string; ip: string; userId: string; statusCode: number; timestamp?: string };
+    const { method, path, ip, userId, statusCode } = merged;
 
     // Log potential security incidents
     if (statusCode === 401 || statusCode === 403) {

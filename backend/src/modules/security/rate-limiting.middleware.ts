@@ -1,4 +1,4 @@
-import { Injectable, NestMiddleware, Logger, Inject } from '@nestjs/common';
+import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { RateLimitingService } from './rate-limiting.service';
 
@@ -10,7 +10,6 @@ export class RateLimitingMiddleware implements NestMiddleware {
 
   async use(req: Request, res: Response, next: NextFunction) {
     const clientIP = this.getClientIP(req);
-    const userAgent = req.get('User-Agent') || 'unknown';
     const path = req.path;
     const method = req.method;
 
@@ -21,7 +20,10 @@ export class RateLimitingMiddleware implements NestMiddleware {
 
     try {
       // Determine which rate limiter to use based on path
-      const limiterName = this.getLimiterName(path, method);
+      const limiterName = this.getLimiterName(
+        path,
+        method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS' | 'HEAD',
+      );
       const key = this.generateKey(clientIP, path, method);
 
       // Check rate limit
@@ -55,7 +57,9 @@ export class RateLimitingMiddleware implements NestMiddleware {
 
       // Log successful requests occasionally (1% of requests)
       if (Math.random() < 0.01) {
-        this.logger.debug(`Rate limit check passed for ${clientIP} on ${method} ${path} (${result.remainingPoints} remaining)`);
+        this.logger.debug(
+          `Rate limit check passed for ${clientIP} on ${method} ${path} (${result.remainingPoints} remaining)`,
+        );
       }
 
       next();
@@ -87,8 +91,10 @@ export class RateLimitingMiddleware implements NestMiddleware {
     return req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
   }
 
-  private getLimiterName(path: string, method: string): string {
+  private getLimiterName(path: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS' | 'HEAD'): string {
     // Authentication endpoints
+
+    void method;
     if (path.includes('/auth/') || path.includes('/otp/')) {
       if (path.includes('/login') || path.includes('/signin')) {
         return 'login';
@@ -141,6 +147,6 @@ export class RateLimitingMiddleware implements NestMiddleware {
       analytics: 100,
     };
 
-    return limits[limiterName] || 1000;
+    return limits[limiterName as keyof typeof limits] || 1000;
   }
 }

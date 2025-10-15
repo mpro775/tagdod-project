@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible';
+import { RateLimiterMemory, RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible';
 import { ConfigService } from '@nestjs/config';
 
 export interface RateLimitConfig {
@@ -107,8 +107,8 @@ export class RateLimitingService {
         points: config.points,
         duration: config.duration,
         blockDuration: config.blockDuration,
-        inmemoryBlockOnConsumed: config.points,
-        inmemoryBlockDuration: config.blockDuration,
+        inMemoryBlockOnConsumed: config.points,
+        inMemoryBlockDuration: config.blockDuration,
         insuranceLimiter: new RateLimiterMemory({
           keyPrefix: config.keyPrefix,
           points: config.points,
@@ -162,7 +162,8 @@ export class RateLimitingService {
       }
 
       // Rate limit exceeded
-      const msBeforeNext = rejRes.msBeforeNext;
+      const res = rejRes as RateLimiterRes;
+      const msBeforeNext = res.msBeforeNext;
       const blockExpiresAt = new Date(Date.now() + msBeforeNext);
 
       this.logger.warn(`Rate limit exceeded for key '${key}' on limiter '${limiterName}'`);
@@ -187,14 +188,17 @@ export class RateLimitingService {
       const result = await limiter.get(key);
       if (!result) return null;
 
+      const isBlocked = result.msBeforeNext > 0 && result.remainingPoints <= 0;
+
       return {
         remainingPoints: result.remainingPoints,
         msBeforeNext: result.msBeforeNext,
-        isBlocked: result.blocked || false,
-        blockExpiresAt: result.blocked ? new Date(Date.now() + result.msBeforeNext) : undefined,
+        isBlocked,
+        blockExpiresAt: isBlocked ? new Date(Date.now() + result.msBeforeNext) : undefined,
       };
     } catch (error) {
-      this.logger.error('Error getting rate limit status:', error);
+      const e = error as Error;
+      this.logger.error('Error getting rate limit status:', e);
       return null;
     }
   }
@@ -219,23 +223,25 @@ export class RateLimitingService {
   /**
    * Get all rate limiters status
    */
-  async getAllLimitersStatus(): Promise<Record<string, any>> {
-    const status: Record<string, any> = {};
+  async getAllLimitersStatus(): Promise<Record<string, unknown>> {
+    const status: Record<string, unknown> = {};
 
     for (const [name, limiter] of this.rateLimiters) {
       try {
         const limiterStatus = await limiter.get('');
+        const limiterMeta = limiter as unknown as { points?: number; duration?: number; blockDuration?: number };
         status[name] = {
           active: true,
-          points: (limiter as any).points,
-          duration: (limiter as any).duration,
-          blockDuration: (limiter as any).blockDuration,
+          points: limiterMeta.points ?? null,
+          duration: limiterMeta.duration ?? null,
+          blockDuration: limiterMeta.blockDuration ?? null,
           totalKeys: limiterStatus ? 1 : 0, // Simplified
         };
       } catch (error) {
+        const e = error as Error;
         status[name] = {
           active: false,
-          error: error.message,
+          error: e.message,
         };
       }
     }
@@ -267,7 +273,7 @@ export class RateLimitingService {
     uptime: number;
   }> {
     const status = await this.getAllLimitersStatus();
-    const activeLimiters = Object.values(status).filter(s => s.active).length;
+    const activeLimiters = Object.values(status).filter(s => (s as { active?: boolean }).active).length;
 
     return {
       totalLimiters: Object.keys(status).length,

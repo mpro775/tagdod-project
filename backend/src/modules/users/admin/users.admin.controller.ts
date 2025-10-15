@@ -1,15 +1,14 @@
-import { 
-  Body, 
-  Controller, 
-  Delete, 
-  Get, 
-  Param, 
-  Patch, 
-  Post, 
-  Put,
-  Query, 
-  Req, 
-  UseGuards 
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
@@ -18,7 +17,6 @@ import * as bcrypt from 'bcryptjs';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
-import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { User, UserRole, UserStatus } from '../schemas/user.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
 import { AppException } from '../../../shared/exceptions/app.exception';
@@ -41,8 +39,18 @@ export class UsersAdminController {
   // ==================== قائمة المستخدمين مع Pagination ====================
   @Get()
   async listUsers(@Query() dto: ListUsersDto) {
-    const { page = 1, limit = 20, search, status, role, isAdmin, includeDeleted, sortBy = 'createdAt', sortOrder = 'desc' } = dto;
-    
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      status,
+      role,
+      isAdmin,
+      includeDeleted,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = dto;
+
     const skip = (page - 1) * limit;
     const query: any = {};
 
@@ -80,22 +88,16 @@ export class UsersAdminController {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [users, total] = await Promise.all([
-      this.userModel
-        .find(query)
-        .select('-passwordHash')
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      this.userModel.find(query).select('-passwordHash').sort(sort).skip(skip).limit(limit).lean(),
       this.userModel.countDocuments(query),
     ]);
 
     // جلب capabilities لكل مستخدم
-    const userIds = users.map(u => u._id);
+    const userIds = users.map((u) => u._id);
     const capabilities = await this.capsModel.find({ userId: { $in: userIds } }).lean();
-    const capsMap = new Map(capabilities.map(c => [String(c.userId), c]));
+    const capsMap = new Map(capabilities.map((c) => [String(c.userId), c]));
 
-    const usersWithCaps = users.map(user => ({
+    const usersWithCaps = users.map((user) => ({
       ...user,
       capabilities: capsMap.get(String(user._id)) || null,
     }));
@@ -133,7 +135,7 @@ export class UsersAdminController {
 
   // ==================== إنشاء مستخدم جديد ====================
   @Post()
-  async createUser(@Body() dto: CreateUserAdminDto, @Req() req: { user: { sub: string } }) {
+  async createUser(@Body() dto: CreateUserAdminDto) {
     // التحقق من عدم وجود المستخدم
     const existingUser = await this.userModel.findOne({ phone: dto.phone });
     if (existingUser) {
@@ -200,7 +202,7 @@ export class UsersAdminController {
   async updateUser(
     @Param('id') id: string,
     @Body() dto: UpdateUserAdminDto,
-    @Req() req: { user: { sub: string } }
+    @Req() req: { user: { sub: string } },
   ) {
     const user = await this.userModel.findById(id);
     if (!user) {
@@ -209,7 +211,10 @@ export class UsersAdminController {
 
     // منع تعديل Super Admin من قبل Admin عادي
     const adminUser = await this.userModel.findById(req.user.sub);
-    if (user.roles?.includes(UserRole.SUPER_ADMIN) && !adminUser?.roles?.includes(UserRole.SUPER_ADMIN)) {
+    if (
+      user.roles?.includes(UserRole.SUPER_ADMIN) &&
+      !adminUser?.roles?.includes(UserRole.SUPER_ADMIN)
+    ) {
       throw new AppException('PERMISSION_DENIED', 'لا يمكن تعديل Super Admin', null, 403);
     }
 
@@ -248,7 +253,7 @@ export class UsersAdminController {
   async suspendUser(
     @Param('id') id: string,
     @Body() dto: SuspendUserDto,
-    @Req() req: { user: { sub: string } }
+    @Req() req: { user: { sub: string } },
   ) {
     const user = await this.userModel.findById(id);
     if (!user) {
@@ -301,10 +306,7 @@ export class UsersAdminController {
 
   // ==================== Soft Delete مستخدم ====================
   @Delete(':id')
-  async deleteUser(
-    @Param('id') id: string,
-    @Req() req: { user: { sub: string } }
-  ) {
+  async deleteUser(@Param('id') id: string, @Req() req: { user: { sub: string } }) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new AppException('USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);

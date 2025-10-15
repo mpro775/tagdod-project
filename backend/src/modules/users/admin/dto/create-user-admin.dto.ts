@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsIn, IsArray, IsEnum, IsPhoneNumber, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsIn,
+  IsArray,
+  IsEnum,
+  MinLength,
+} from 'class-validator';
 import { UserRole, UserStatus } from '../../schemas/user.schema';
 
 export class CreateUserAdminDto {
@@ -48,4 +55,3 @@ export class CreateUserAdminDto {
   @IsOptional()
   wholesaleDiscountPercent?: number;
 }
-

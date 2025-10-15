@@ -105,7 +105,7 @@ export class SupportTicket {
   feedbackAt?: Date; // متى تم التقييم
 
   @Prop({ type: Object, default: {} })
-  metadata?: Record<string, any>; // Additional data like orderId, productId, etc.
+  metadata?: Record<string, unknown>; // Additional data like orderId, productId, etc.
 }
 
 export const SupportTicketSchema = SchemaFactory.createForClass(SupportTicket);

@@ -5,4 +5,3 @@ export class SuspendUserDto {
   @IsString()
   reason?: string; // سبب الإيقاف
 }
-

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Media, MediaCategory } from './schemas/media.schema';
+import { Media } from './schemas/media.schema';
 import { UploadService } from './upload.service';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
@@ -22,19 +22,17 @@ export class MediaService {
   /**
    * رفع صورة إلى المستودع
    */
-  async uploadToLibrary(
-    file: Express.Multer.File,
-    dto: UploadMediaDto,
-    userId: string,
-  ) {
+  async uploadToLibrary(file: Express.Multer.File, dto: UploadMediaDto, userId: string) {
     // حساب hash للملف للكشف عن التكرار
     const fileHash = this.calculateFileHash(file.buffer);
 
     // فحص التكرار
-    const existingMedia = await this.mediaModel.findOne({ 
-      fileHash, 
-      deletedAt: null 
-    }).lean();
+    const existingMedia = await this.mediaModel
+      .findOne({
+        fileHash,
+        deletedAt: null,
+      })
+      .lean();
 
     if (existingMedia) {
       // الصورة موجودة بالفعل - نرجع الموجودة
@@ -91,20 +89,20 @@ export class MediaService {
    * قائمة الصور من المستودع مع Pagination
    */
   async listMedia(dto: ListMediaDto) {
-    const { 
-      page = 1, 
-      limit = 24, 
-      search, 
-      category, 
-      type, 
-      isPublic, 
-      includeDeleted = false, 
-      sortBy = 'createdAt', 
-      sortOrder = 'desc' 
+    const {
+      page = 1,
+      limit = 24,
+      search,
+      category,
+      type,
+      isPublic,
+      includeDeleted = false,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
     } = dto;
 
     const skip = (page - 1) * limit;
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     // فلترة المحذوفة
     if (!includeDeleted) {
@@ -137,7 +135,7 @@ export class MediaService {
     }
 
     // الترتيب
-    const sort: any = {};
+    const sort: Record<string, 1 | -1> = {};
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [items, total] = await Promise.all([
@@ -301,7 +299,7 @@ export class MediaService {
    */
   async incrementUsage(id: string, usedInId: string) {
     const media = await this.mediaModel.findById(id);
-    
+
     if (media) {
       media.usageCount += 1;
       if (!media.usedIn?.includes(usedInId)) {
@@ -316,10 +314,10 @@ export class MediaService {
    */
   async decrementUsage(id: string, usedInId: string) {
     const media = await this.mediaModel.findById(id);
-    
+
     if (media) {
       media.usageCount = Math.max(0, media.usageCount - 1);
-      media.usedIn = media.usedIn?.filter(item => item !== usedInId) || [];
+      media.usedIn = media.usedIn?.filter((item) => item !== usedInId) || [];
       await media.save();
     }
   }
@@ -338,15 +336,16 @@ export class MediaService {
         { $match: { deletedAt: null } },
         { $group: { _id: null, totalSize: { $sum: '$size' } } },
       ]),
-      this.mediaModel.find({ deletedAt: null })
+      this.mediaModel
+        .find({ deletedAt: null })
         .sort({ createdAt: -1 })
         .limit(5)
         .select('name category url createdAt')
         .lean(),
     ]);
 
-    const categoryStats: any = {};
-    byCategory.forEach((item: any) => {
+    const categoryStats: Record<string, number> = {};
+    byCategory.forEach((item: { _id: string; count: number }) => {
       categoryStats[item._id] = item.count;
     });
 
@@ -354,7 +353,9 @@ export class MediaService {
       data: {
         total,
         byCategory: categoryStats,
-        totalSizeMB: totalSize[0]?.totalSize ? (totalSize[0].totalSize / (1024 * 1024)).toFixed(2) : '0',
+        totalSizeMB: totalSize[0]?.totalSize
+          ? (totalSize[0].totalSize / (1024 * 1024)).toFixed(2)
+          : '0',
         recentlyAdded,
       },
     };
@@ -367,4 +368,3 @@ export class MediaService {
     return crypto.createHash('sha256').update(buffer).digest('hex');
   }
 }
-

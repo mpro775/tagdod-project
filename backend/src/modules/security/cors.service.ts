@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 export interface CORSConfig {
-  origin: string | string[] | ((origin: string) => boolean);
+  origin:
+    | string
+    | string[]
+    | ((origin: string) => boolean)
+    | ((origin: string, callback: (err: Error | null, success: boolean) => void) => void);
   methods: string[];
   allowedHeaders: string[];
   exposedHeaders: string[];
@@ -27,7 +31,7 @@ export class CORSService {
     const isDevelopment = nodeEnv === 'development';
 
     return {
-      origin: (origin, callback) => {
+      origin: (origin: string, callback: (err: Error | null, success: boolean) => void) => {
         // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true);
 

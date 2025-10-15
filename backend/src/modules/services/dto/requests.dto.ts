@@ -1,5 +1,15 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsDateString, IsMongoId, IsNumber, IsOptional, IsString, MaxLength, Min, Max } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class CreateServiceRequestDto {
   @IsString() @MaxLength(140) title!: string;

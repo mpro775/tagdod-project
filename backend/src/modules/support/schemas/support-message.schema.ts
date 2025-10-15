@@ -35,7 +35,7 @@ export class SupportMessage {
   isInternal!: boolean; // For admin-only messages
 
   @Prop({ type: Object, default: {} })
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export const SupportMessageSchema = SchemaFactory.createForClass(SupportMessage);

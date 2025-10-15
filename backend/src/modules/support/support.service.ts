@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import {
   SupportTicket,
   SupportTicketDocument,
@@ -120,7 +120,7 @@ export class SupportService {
     totalPages: number;
   }> {
     const skip = (page - 1) * limit;
-    const query: any = { isArchived: false };
+    const query: FilterQuery<SupportTicketDocument> = { isArchived: false };
 
     if (filters.status) query.status = filters.status;
     if (filters.priority) query.priority = filters.priority;
@@ -345,7 +345,7 @@ export class SupportService {
       attachments?: string[];
       messageType: MessageType;
       isInternal?: boolean;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     },
   ): Promise<SupportMessageDocument> {
     const message = new this.messageModel({

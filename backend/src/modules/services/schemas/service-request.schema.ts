@@ -28,7 +28,14 @@ export class ServiceRequest {
   location!: { type: 'Point'; coordinates: [number, number] }; // [lng, lat]
 
   @Prop({ default: 'OPEN', index: true })
-  status!: 'OPEN' | 'OFFERS_COLLECTING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RATED' | 'CANCELLED';
+  status!:
+    | 'OPEN'
+    | 'OFFERS_COLLECTING'
+    | 'ASSIGNED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'RATED'
+    | 'CANCELLED';
 
   @Prop() scheduledAt?: Date;
 

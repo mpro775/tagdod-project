@@ -1,6 +1,56 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+
+// Lean result types
+type PopulatedName = { name: string; nameEn: string };
+type PriceRange = { min: number; max: number };
+type ProductLean = {
+  _id: Types.ObjectId;
+  name: string;
+  nameEn: string;
+  description?: string;
+  descriptionEn?: string;
+  mainImage?: string;
+  categoryId: Types.ObjectId | PopulatedName;
+  brandId?: Types.ObjectId | PopulatedName;
+  priceRange?: PriceRange | null;
+  rating?: number;
+  reviewsCount?: number;
+  isFeatured?: boolean;
+  isNew?: boolean;
+  tags?: string[];
+  createdAt: Date;
+};
+type ProductSimpleLean = {
+  _id: Types.ObjectId;
+  name: string;
+  nameEn: string;
+  description?: string;
+  descriptionEn?: string;
+  mainImage?: string;
+  isFeatured?: boolean;
+  createdAt: Date;
+};
+type CategoryLean = {
+  _id: Types.ObjectId;
+  name: string;
+  nameEn: string;
+  description?: string;
+  descriptionEn?: string;
+  image?: string;
+  productsCount?: number;
+  depth?: number;
+  createdAt: Date;
+};
+type BrandLean = {
+  _id: Types.ObjectId;
+  name: string;
+  nameEn: string;
+  description?: string;
+  descriptionEn?: string;
+  image?: string;
+};
 import { CacheService } from '../../shared/cache/cache.service';
 import {
   SearchQueryDto,
@@ -26,22 +76,38 @@ export class SearchService {
   };
 
   constructor(
-    @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Product.name)
+    private productModel: Model<
+      Product & { priceRange?: { min: number; max: number } | null; rating?: number }
+    >,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Brand.name) private brandModel: Model<Brand>,
     private cacheService: CacheService,
   ) {}
 
+  // Types for lean results and populated refs
+  private getNameFromRef(ref: Types.ObjectId | PopulatedName | undefined, lang: 'ar' | 'en') {
+    if (ref && typeof ref === 'object' && 'name' in ref && 'nameEn' in ref) {
+      return lang === 'ar' ? ref.name : ref.nameEn;
+    }
+    return undefined;
+  }
+
   // ==================== البحث الشامل ====================
   async universalSearch(dto: SearchQueryDto) {
     const { q, lang = 'ar', entity = SearchEntity.ALL, page = 1, limit = 20 } = dto;
-    
+
     const cacheKey = `search:universal:${JSON.stringify(dto)}`;
-    const cached = await this.cacheService.get<any>(cacheKey);
+    const cached = await this.cacheService.get<{
+      results: SearchResultDto[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }>(cacheKey);
     if (cached) return cached;
 
     const results: SearchResultDto[] = [];
-    
+
     // بحث في المنتجات
     if (!entity || entity === SearchEntity.ALL || entity === SearchEntity.PRODUCTS) {
       const products = await this.searchProductsSimple(q, lang, limit);
@@ -66,7 +132,7 @@ export class SearchService {
     // Pagination
     const skip = (page - 1) * limit;
     const paginatedResults = results.slice(skip, skip + limit);
-    
+
     const result = {
       results: paginatedResults,
       total: results.length,
@@ -101,11 +167,11 @@ export class SearchService {
     } = dto;
 
     const skip = (page - 1) * limit;
-    
+
     // Build query
-    const query: any = { 
+    const query: Record<string, unknown> = {
       status,
-      deletedAt: null 
+      deletedAt: null,
     };
 
     // Text search
@@ -131,7 +197,7 @@ export class SearchService {
     if (minPrice !== undefined || maxPrice !== undefined) {
       query['priceRange.min'] = query['priceRange.min'] || {};
       query['priceRange.max'] = query['priceRange.max'] || {};
-      
+
       if (minPrice !== undefined) {
         query['priceRange.min'] = { $gte: minPrice };
       }
@@ -144,7 +210,7 @@ export class SearchService {
     if (attributes) {
       try {
         const attrObj = JSON.parse(attributes);
-        Object.keys(attrObj).forEach(key => {
+        Object.keys(attrObj).forEach((key) => {
           query[`attributes.${key}`] = attrObj[key];
         });
       } catch (e) {
@@ -153,7 +219,7 @@ export class SearchService {
     }
 
     // Sorting
-    const sort: any = {};
+    const sort: Record<string, 1 | -1> = {};
     const direction = sortOrder === SortOrder.ASC ? 1 : -1;
 
     switch (sortBy) {
@@ -191,12 +257,12 @@ export class SearchService {
         .sort(sort)
         .skip(skip)
         .limit(limit)
-        .lean(),
+        .lean<ProductLean[]>(),
       this.productModel.countDocuments(query),
     ]);
 
     // Map results
-    const results: SearchResultDto[] = products.map(product => ({
+    const results: SearchResultDto[] = products.map((product) => ({
       type: 'product' as const,
       id: String(product._id),
       title: lang === 'ar' ? product.name : product.nameEn,
@@ -205,8 +271,8 @@ export class SearchService {
       descriptionEn: product.descriptionEn,
       thumbnail: product.mainImage,
       metadata: {
-        category: (product.categoryId as any)?.[lang === 'ar' ? 'name' : 'nameEn'],
-        brand: (product.brandId as any)?.[lang === 'ar' ? 'name' : 'nameEn'],
+        category: this.getNameFromRef(product.categoryId, lang),
+        brand: this.getNameFromRef(product.brandId, lang),
         priceRange: product.priceRange,
         rating: product.rating,
         reviewsCount: product.reviewsCount,
@@ -235,9 +301,13 @@ export class SearchService {
   }
 
   // ==================== بحث بسيط للمنتجات (للبحث الشامل) ====================
-  private async searchProductsSimple(q: string | undefined, lang: 'ar' | 'en', limit: number): Promise<SearchResultDto[]> {
-    const query: any = { status: 'active', deletedAt: null };
-    
+  private async searchProductsSimple(
+    q: string | undefined,
+    lang: 'ar' | 'en',
+    limit: number,
+  ): Promise<SearchResultDto[]> {
+    const query: Record<string, unknown> = { status: 'active', deletedAt: null };
+
     if (q) {
       query.$or = [
         { name: { $regex: q, $options: 'i' } },
@@ -250,9 +320,9 @@ export class SearchService {
       .find(query)
       .sort({ isFeatured: -1, createdAt: -1 })
       .limit(limit)
-      .lean();
+      .lean<ProductSimpleLean[]>();
 
-    return products.map(p => ({
+    return products.map((p) => ({
       type: 'product' as const,
       id: String(p._id),
       title: lang === 'ar' ? p.name : p.nameEn,
@@ -266,9 +336,13 @@ export class SearchService {
   }
 
   // ==================== بحث الفئات ====================
-  private async searchCategories(q: string | undefined, lang: 'ar' | 'en', limit: number): Promise<SearchResultDto[]> {
-    const query: any = { isActive: true, deletedAt: null };
-    
+  private async searchCategories(
+    q: string | undefined,
+    lang: 'ar' | 'en',
+    limit: number,
+  ): Promise<SearchResultDto[]> {
+    const query: Record<string, unknown> = { isActive: true, deletedAt: null };
+
     if (q) {
       query.$or = [
         { name: { $regex: q, $options: 'i' } },
@@ -280,16 +354,16 @@ export class SearchService {
       .find(query)
       .sort({ isFeatured: -1, order: 1 })
       .limit(limit)
-      .lean();
+      .lean<CategoryLean[]>();
 
-    return categories.map(c => ({
+    return categories.map((c) => ({
       type: 'category' as const,
       id: String(c._id),
       title: lang === 'ar' ? c.name : c.nameEn,
       titleEn: c.nameEn,
       description: lang === 'ar' ? c.description : c.descriptionEn,
       thumbnail: c.image,
-      metadata: { 
+      metadata: {
         type: 'category',
         productsCount: c.productsCount,
         depth: c.depth,
@@ -300,9 +374,13 @@ export class SearchService {
   }
 
   // ==================== بحث البراندات ====================
-  private async searchBrands(q: string | undefined, lang: 'ar' | 'en', limit: number): Promise<SearchResultDto[]> {
-    const query: any = { isActive: true };
-    
+  private async searchBrands(
+    q: string | undefined,
+    lang: 'ar' | 'en',
+    limit: number,
+  ): Promise<SearchResultDto[]> {
+    const query: Record<string, unknown> = { isActive: true };
+
     if (q) {
       query.$or = [
         { name: { $regex: q, $options: 'i' } },
@@ -314,9 +392,9 @@ export class SearchService {
       .find(query)
       .sort({ sortOrder: 1 })
       .limit(limit)
-      .lean();
+      .lean<BrandLean[]>();
 
-    return brands.map(b => ({
+    return brands.map((b) => ({
       type: 'brand' as const,
       id: String(b._id),
       title: lang === 'ar' ? b.name : b.nameEn,
@@ -329,7 +407,11 @@ export class SearchService {
   }
 
   // ==================== الاقتراحات (Autocomplete) ====================
-  async getSearchSuggestions(query: string, lang: 'ar' | 'en' = 'ar', limit = 10): Promise<string[]> {
+  async getSearchSuggestions(
+    query: string,
+    lang: 'ar' | 'en' = 'ar',
+    limit = 10,
+  ): Promise<string[]> {
     if (!query || query.length < 2) return [];
 
     const cacheKey = `search:suggestions:${query}:${lang}:${limit}`;
@@ -352,7 +434,7 @@ export class SearchService {
       .select('name nameEn')
       .lean();
 
-    suggestions.push(...products.map(p => lang === 'ar' ? p.name : p.nameEn));
+    suggestions.push(...products.map((p) => (lang === 'ar' ? p.name : p.nameEn)));
 
     // اقتراحات من الفئات
     const categories = await this.categoryModel
@@ -368,7 +450,7 @@ export class SearchService {
       .select('name nameEn')
       .lean();
 
-    suggestions.push(...categories.map(c => lang === 'ar' ? c.name : c.nameEn));
+    suggestions.push(...categories.map((c) => (lang === 'ar' ? c.name : c.nameEn)));
 
     // إزالة التكرار
     const unique = [...new Set(suggestions)].slice(0, limit);
@@ -378,7 +460,7 @@ export class SearchService {
   }
 
   // ==================== Facets (فلاتر ديناميكية) ====================
-  private async generateFacets(baseQuery: any): Promise<FacetDto[]> {
+  private async generateFacets(baseQuery: Record<string, unknown>): Promise<FacetDto[]> {
     const facets: FacetDto[] = [];
 
     // Facet: Categories
@@ -401,7 +483,7 @@ export class SearchService {
     if (categoryFacet.length > 0) {
       facets.push({
         field: 'category',
-        values: categoryFacet.map(f => ({
+        values: categoryFacet.map((f) => ({
           value: f.category.name,
           count: f.count,
         })),
@@ -428,7 +510,7 @@ export class SearchService {
     if (brandFacet.length > 0) {
       facets.push({
         field: 'brand',
-        values: brandFacet.map(f => ({
+        values: brandFacet.map((f) => ({
           value: f.brand.name,
           count: f.count,
         })),
@@ -447,7 +529,7 @@ export class SearchService {
     if (tagsFacet.length > 0) {
       facets.push({
         field: 'tags',
-        values: tagsFacet.map(f => ({
+        values: tagsFacet.map((f) => ({
           value: f._id,
           count: f.count,
         })),
@@ -458,7 +540,9 @@ export class SearchService {
   }
 
   // ==================== Price Range ====================
-  private async getPriceRange(query: any): Promise<{ min: number; max: number }> {
+  private async getPriceRange(
+    query: Record<string, unknown>,
+  ): Promise<{ min: number; max: number }> {
     const result = await this.productModel.aggregate([
       { $match: query },
       {
@@ -474,11 +558,18 @@ export class SearchService {
   }
 
   // ==================== Relevance Scoring ====================
-  private calculateRelevance(product: any, query: string, lang: 'ar' | 'en'): number {
+  private calculateRelevance(
+    product: Pick<
+      ProductLean,
+      'name' | 'nameEn' | 'description' | 'descriptionEn' | 'tags' | 'isFeatured' | 'rating'
+    >,
+    query: string,
+    lang: 'ar' | 'en',
+  ): number {
     let score = 0;
     const q = query.toLowerCase();
     const name = (lang === 'ar' ? product.name : product.nameEn).toLowerCase();
-    const desc = (lang === 'ar' ? product.description : product.descriptionEn).toLowerCase();
+    const desc = (lang === 'ar' ? product.description : product.descriptionEn)?.toLowerCase();
 
     // اسم المنتج يطابق تماماً
     if (name === q) score += 100;
@@ -488,7 +579,7 @@ export class SearchService {
     else if (name.includes(q)) score += 25;
 
     // الوصف يحتوي على نص البحث
-    if (desc.includes(q)) score += 10;
+    if (desc && desc.includes(q)) score += 10;
 
     // Tags
     if (product.tags?.some((tag: string) => tag.toLowerCase().includes(q))) {
@@ -497,14 +588,21 @@ export class SearchService {
 
     // Boost for featured
     if (product.isFeatured) score += 10;
-    
+
     // Boost for rating
     if (product.rating) score += product.rating * 2;
 
     return score;
   }
 
-  private simpleRelevance(item: any, query: string, lang: 'ar' | 'en'): number {
+  private simpleRelevance(
+    item:
+      | Pick<ProductLean, 'name' | 'nameEn'>
+      | Pick<CategoryLean, 'name' | 'nameEn'>
+      | Pick<BrandLean, 'name' | 'nameEn'>,
+    query: string,
+    lang: 'ar' | 'en',
+  ): number {
     let score = 0;
     const q = query.toLowerCase();
     const name = (lang === 'ar' ? item.name : item.nameEn).toLowerCase();

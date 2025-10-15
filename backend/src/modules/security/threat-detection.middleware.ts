@@ -39,7 +39,7 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
     /\.\.\//g,
     /\.\\/g,
     /%2e%2e%2f/g,
-    /%2e%2e\/g,
+    /%2e%2e\//g,
     /\.\.%5c/g,
     /%2e%2e%5c/g,
   ];
@@ -90,7 +90,7 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
     }
   }
 
-  private checkForThreats(data: any, source: string, req: Request): void {
+  private checkForThreats(data: Record<string, unknown>, source: string, req: Request): void {
     const threats = this.scanForThreats(data);
 
     if (threats.length > 0) {
@@ -100,10 +100,10 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
     }
   }
 
-  private scanForThreats(data: any): Array<{ type: string; pattern: string; value: string }> {
+  private scanForThreats(data: unknown): Array<{ type: string; pattern: string; value: string }> {
     const threats: Array<{ type: string; pattern: string; value: string }> = [];
 
-    const scanValue = (value: any, path: string = ''): void => {
+    const scanValue = (value: unknown, path: string = ''): void => {
       if (typeof value === 'string') {
         // Check for SQL injection
         for (const pattern of this.sqlInjectionPatterns) {
@@ -140,14 +140,15 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
             break;
           }
         }
-      } else if (typeof value === 'object' && value !== null) {
-        for (const [key, val] of Object.entries(value)) {
-          scanValue(val, path ? `${path}.${key}` : key);
-        }
       } else if (Array.isArray(value)) {
-        value.forEach((item, index) => {
+        (value as unknown[]).forEach((item, index) => {
           scanValue(item, `${path}[${index}]`);
         });
+      } else if (typeof value === 'object' && value !== null) {
+        const obj = value as Record<string, unknown>;
+        for (const [key, val] of Object.entries(obj)) {
+          scanValue(val, path ? `${path}.${key}` : key);
+        }
       }
     };
 
@@ -203,13 +204,18 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
     return suspiciousPatterns.some(pattern => pattern.test(userAgent));
   }
 
-  private countNestedKeys(obj: any): number {
+  private countNestedKeys(obj: unknown): number {
     let count = 0;
 
-    const countKeys = (value: any): void => {
+    const countKeys = (value: unknown): void => {
+      if (Array.isArray(value)) {
+        for (const item of value) countKeys(item);
+        return;
+      }
       if (typeof value === 'object' && value !== null) {
-        count += Object.keys(value).length;
-        for (const val of Object.values(value)) {
+        const obj = value as Record<string, unknown>;
+        count += Object.keys(obj).length;
+        for (const val of Object.values(obj)) {
           countKeys(val);
         }
       }

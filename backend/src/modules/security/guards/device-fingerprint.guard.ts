@@ -21,8 +21,7 @@ export class DeviceFingerprintGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     const userAgent = request.get('User-Agent') || '';
-    const accept = request.get('Accept') || '';
-    const acceptLanguage = request.get('Accept-Language') || '';
+
     const clientIP = this.getClientIP(request);
 
     // Check for suspicious user agents
@@ -39,7 +38,7 @@ export class DeviceFingerprintGuard implements CanActivate {
 
     // Generate device fingerprint for monitoring
     const fingerprint = this.generateDeviceFingerprint(request);
-    request['deviceFingerprint'] = fingerprint;
+    request.deviceFingerprint = fingerprint;
 
     // Log device information for security monitoring
     if (Math.random() < 0.001) { // Log 0.1% of requests
@@ -109,6 +108,7 @@ export class DeviceFingerprintGuard implements CanActivate {
   isSuspiciousFingerprint(fingerprint: string): boolean {
     // This could be enhanced with a database of known suspicious fingerprints
     // For now, just return false
+    console.log('fingerprint', fingerprint);
     return false;
   }
 }

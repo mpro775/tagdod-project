@@ -12,7 +12,11 @@ export class AdminServicesController {
   constructor(private svc: ServicesService) {}
 
   @Get('requests')
-  async list(@Query('status') status?: string, @Query('page') page = '1', @Query('limit') limit = '20') {
+  async list(
+    @Query('status') status?: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+  ) {
     const data = await this.svc.adminList(status, Number(page), Number(limit));
     return { data: data.items, meta: data.meta };
   }

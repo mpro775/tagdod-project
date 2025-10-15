@@ -15,12 +15,7 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UploadService, UploadResult } from './upload.service';
-import {
-  UploadFileDto,
-  UploadResponseDto,
-  DeleteFileDto,
-  FileInfoResponseDto,
-} from './dto/upload.dto';
+import { UploadFileDto, DeleteFileDto } from './dto/upload.dto';
 
 @ApiTags('upload')
 @ApiBearerAuth()
@@ -82,14 +77,14 @@ export class UploadController {
   }
 
   @Get('file/:filePath(*)')
-  async getFileInfo(@Param('filePath') filePath: string): Promise<{ data: any }> {
+  async getFileInfo(@Param('filePath') filePath: string): Promise<{ data: unknown }> {
     const info = await this.uploadService.getFileInfo(filePath);
     return { data: info };
   }
 
   // Public endpoint for accessing uploaded files (if needed)
   @Get('public/*')
-  async serveFile(@Param() params: any): Promise<any> {
+  async serveFile(@Param() params: Record<string, string>): Promise<{ data: unknown }> {
     // This endpoint can be used for serving files through the API
     // In production, files should be served directly from CDN
     const filePath = params[0];

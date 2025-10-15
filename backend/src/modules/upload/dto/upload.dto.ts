@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsIn } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UploadFileDto {
   @ApiProperty({
@@ -33,25 +33,25 @@ export class UploadResponseDto {
     description: 'Public URL of the uploaded file',
     example: 'https://cdn.bunny.net/uploads/my-image.jpg',
   })
-  url: string;
+  url!: string;
 
   @ApiProperty({
     description: 'Internal filename/path',
     example: 'uploads/my-image.jpg',
   })
-  filename: string;
+  filename!: string;
 
   @ApiProperty({
     description: 'File size in bytes',
     example: 1024000,
   })
-  size: number;
+  size!: number;
 
   @ApiProperty({
     description: 'File MIME type',
     example: 'image/jpeg',
   })
-  mimeType: string;
+  mimeType!: string;
 }
 
 export class DeleteFileDto {
@@ -60,7 +60,7 @@ export class DeleteFileDto {
     example: 'uploads/my-image.jpg',
   })
   @IsString()
-  filePath: string;
+  filePath!: string;
 }
 
 export class FileInfoResponseDto {
@@ -68,7 +68,7 @@ export class FileInfoResponseDto {
     description: 'Whether the file exists',
     example: true,
   })
-  exists: boolean;
+  exists!: boolean;
 
   @ApiProperty({
     description: 'File size in bytes',
