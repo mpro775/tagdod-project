@@ -62,6 +62,8 @@ export class ListProductsDto {
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsBoolean() isNew?: boolean;
   @IsOptional() @IsBoolean() includeDeleted?: boolean;
+  @IsOptional() @IsString() sortBy?: string;
+  @IsOptional() @IsString() sortOrder?: 'asc' | 'desc';
 }
 
 export class CreateVariantDto {

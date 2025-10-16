@@ -51,13 +51,15 @@ export class RolesGuard implements CanActivate {
     }
 
     // Super admin has access to everything
-    if (fullUser.roles?.includes(UserRole.SUPER_ADMIN)) {
+    if (fullUser.roles?.includes(UserRole.SUPER_ADMIN) || user.roles?.includes(UserRole.SUPER_ADMIN)) {
       return true;
     }
 
     // Check roles
     if (requiredRoles) {
-      const hasRole = requiredRoles.some((role) => fullUser.roles?.includes(role));
+      const hasRole = requiredRoles.some((role) => 
+        fullUser.roles?.includes(role) || user.roles?.includes(role)
+      );
       if (!hasRole) {
         return false;
       }
@@ -66,7 +68,7 @@ export class RolesGuard implements CanActivate {
     // Check permissions
     if (requiredPermissions) {
       const hasPermission = requiredPermissions.every((permission) =>
-        fullUser.permissions?.includes(permission),
+        fullUser.permissions?.includes(permission) || user.permissions?.includes(permission),
       );
       if (!hasPermission) {
         return false;

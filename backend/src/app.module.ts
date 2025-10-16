@@ -7,7 +7,6 @@ import { TerminusModule } from '@nestjs/terminus';
 import { envSchema } from './config/env.validation';
 import { HealthController } from './health.controller';
 import { RedisHealthIndicator } from './health/redis-health.indicator';
-import { PromotionsModule } from './modules/promotions/promotions.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ServicesModule } from './modules/services/services.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -27,12 +26,11 @@ import { SecurityModule } from './modules/security/security.module';
 import { RequestMetricsInterceptor } from './modules/security/interceptors/request-metrics.interceptor';
 import { CacheModule } from './shared/cache/cache.module';
 import { BrandsModule } from './modules/brands/brands.module';
-import { BannersModule } from './modules/banners/banners.module';
-import { PricingModule } from './modules/pricing/pricing.module';
 import { CategoriesModule } from './modules/categories/categories.module';
-import { CouponsModule } from './modules/coupons/coupons.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
 import { ProductsModule } from './modules/products/products.module';
+import { MarketingModule } from './modules/marketing/marketing.module';
+import { ExchangeRatesModule } from './modules/exchange-rates/exchange-rates.module';
 
 @Module({
   imports: [
@@ -51,7 +49,7 @@ import { ProductsModule } from './modules/products/products.module';
     MongooseModule.forRoot(process.env.MONGO_URI ?? ''),
     TerminusModule,
     CacheModule,
-    PromotionsModule,
+    MarketingModule, // Unified marketing module (replaces PromotionsModule, BannersModule, PricingModule, CouponsModule)
     ServicesModule,
     UsersModule,
     AuthModule,
@@ -70,10 +68,8 @@ import { ProductsModule } from './modules/products/products.module';
     SecurityModule,
     NotificationsModule,
     BrandsModule,
-    BannersModule,
-    PricingModule,
-    CouponsModule,
     UsersAdminModule,
+    ExchangeRatesModule, // نظام أسعار الصرف
 
   ],
   controllers: [HealthController],

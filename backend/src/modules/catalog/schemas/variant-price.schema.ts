@@ -1,14 +1,37 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+
 export type VariantPriceDocument = HydratedDocument<VariantPrice>;
+
 @Schema({ timestamps: true })
 export class VariantPrice {
-  @Prop({ type: Types.ObjectId, ref: 'Variant', index: true }) variantId!: string;
-  @Prop({ required: true }) currency!: string; // YER/SAR/USD
-  @Prop({ required: true }) amount!: number;
-  @Prop() compareAt?: number;
-  @Prop() wholesaleAmount?: number;
-  @Prop() moq?: number;
+  @Prop({ type: Types.ObjectId, ref: 'Variant', index: true }) 
+  variantId!: string;
+  
+  // السعر الأساسي بالدولار الأمريكي (مطلوب)
+  @Prop({ required: true, min: 0 }) 
+  basePriceUSD!: number;
+  
+  // السعر المقارن بالدولار (اختياري)
+  @Prop() 
+  compareAtUSD?: number;
+  
+  // السعر بالجملة بالدولار (اختياري)
+  @Prop() 
+  wholesalePriceUSD?: number;
+  
+  // الحد الأدنى للطلب بالدولار (اختياري)
+  @Prop() 
+  moq?: number;
+  
+  // ملاحظات إضافية
+  @Prop() 
+  notes?: string;
 }
+
 export const VariantPriceSchema = SchemaFactory.createForClass(VariantPrice);
-VariantPriceSchema.index({ variantId: 1, currency: 1 }, { unique: true });
+
+// فهرسة للبحث السريع
+VariantPriceSchema.index({ variantId: 1 }, { unique: true });
+VariantPriceSchema.index({ basePriceUSD: 1 });
+VariantPriceSchema.index({ createdAt: -1 });

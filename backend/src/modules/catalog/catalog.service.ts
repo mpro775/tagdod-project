@@ -6,13 +6,15 @@ import { Variant } from './schemas/variant.schema';
 import { VariantPrice } from './schemas/variant-price.schema';
 import { slugify } from '../../shared/utils/slug.util';
 import { CacheService } from '../../shared/cache/cache.service';
+import { CurrencyConversionService } from '../exchange-rates/currency-conversion.service';
+import { Currency } from '../exchange-rates/schemas/exchange-rate.schema';
 
 interface ListProductsParams {
   page?: number;
   limit?: number;
   search?: string;
   categoryId?: string;
-  currency?: string;
+  currency?: Currency;
   brandId?: string;
 }
 
@@ -29,6 +31,7 @@ export class CatalogService {
     @InjectModel(Variant.name) private variantModel: Model<Variant>,
     @InjectModel(VariantPrice.name) private priceModel: Model<VariantPrice>,
     private cacheService: CacheService,
+    private currencyConversionService: CurrencyConversionService,
   ) {}
 
   // ======================================================================
@@ -74,17 +77,25 @@ export class CatalogService {
     return variant;
   }
 
-  async setVariantPrice(dto: Partial<VariantPrice>) {
+  async setVariantPrice(dto: {
+    variantId: string;
+    basePriceUSD: number;
+    compareAtUSD?: number;
+    wholesalePriceUSD?: number;
+    moq?: number;
+    notes?: string;
+  }) {
     const existing = await this.priceModel.findOne({
       variantId: dto.variantId,
-      currency: dto.currency,
     });
+    
     let price;
     if (existing) {
-      if (dto.amount !== undefined) existing.amount = dto.amount;
-      if (dto.compareAt !== undefined) existing.compareAt = dto.compareAt;
-      if (dto.wholesaleAmount !== undefined) existing.wholesaleAmount = dto.wholesaleAmount;
+      existing.basePriceUSD = dto.basePriceUSD;
+      if (dto.compareAtUSD !== undefined) existing.compareAtUSD = dto.compareAtUSD;
+      if (dto.wholesalePriceUSD !== undefined) existing.wholesalePriceUSD = dto.wholesalePriceUSD;
       if (dto.moq !== undefined) existing.moq = dto.moq;
+      if (dto.notes !== undefined) existing.notes = dto.notes;
       price = await existing.save();
     } else {
       price = await this.priceModel.create(dto);
@@ -138,8 +149,8 @@ export class CatalogService {
     return result;
   }
 
-  async getProduct(productId: string, currency?: string) {
-    const cacheKey = `product:detail:${productId}:${currency || 'all'}`;
+  async getProduct(productId: string, currency?: Currency, userId?: string) {
+    const cacheKey = `product:detail:${productId}:${currency || 'all'}:${userId || 'guest'}`;
 
     // Try to get from cache first
     const cached = await this.cacheService.get(cacheKey);
@@ -156,10 +167,40 @@ export class CatalogService {
     const variants = await this.variantModel.find({ productId }).lean();
     const variantIds = variants.map((v) => v._id);
     const prices = await this.priceModel
-      .find({ variantId: { $in: variantIds }, ...(currency ? { currency } : {}) })
+      .find({ variantId: { $in: variantIds } })
       .lean();
 
-    const result = { product, variants, prices };
+    // تحويل الأسعار إذا تم تحديد عملة
+    let convertedPrices = prices;
+    if (currency && currency !== Currency.USD) {
+      try {
+        convertedPrices = await Promise.all(
+          prices.map(async (price) => {
+            const converted = await this.currencyConversionService.convertFromUSD(
+              price.basePriceUSD, 
+              currency
+            );
+            return {
+              ...price,
+              convertedAmount: converted.amount,
+              convertedCurrency: currency,
+              formattedPrice: converted.formatted,
+              exchangeRate: converted.exchangeRate
+            };
+          })
+        );
+      } catch (error) {
+        this.logger.error(`Error converting prices for product ${productId}:`, error);
+        // في حالة فشل التحويل، نعيد الأسعار الأصلية
+      }
+    }
+
+    const result = { 
+      product, 
+      variants, 
+      prices: convertedPrices,
+      currency: currency || Currency.USD
+    };
 
     // Cache the result
     await this.cacheService.set(cacheKey, result, { ttl: this.CACHE_TTL.PRODUCT_DETAIL });

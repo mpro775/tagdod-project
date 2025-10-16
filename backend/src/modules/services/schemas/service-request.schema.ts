@@ -48,6 +48,9 @@ export class ServiceRequest {
 
   @Prop({ type: ServiceRatingSchema, default: {} })
   rating?: ServiceRating;
+
+  @Prop({ type: [{ note: String, at: Date }], default: [] })
+  adminNotes?: Array<{ note: string; at: Date }>;
 }
 export const ServiceRequestSchema = SchemaFactory.createForClass(ServiceRequest);
 

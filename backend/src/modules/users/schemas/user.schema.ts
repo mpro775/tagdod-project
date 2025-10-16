@@ -1,6 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+
 export type UserDocument = HydratedDocument<User>;
+
+export enum Currency {
+  USD = 'USD',
+  YER = 'YER', // الريال اليمني
+  SAR = 'SAR', // الريال السعودي
+}
 
 export enum UserStatus {
   ACTIVE = 'active',
@@ -35,6 +42,10 @@ export class User {
   // حالة الحساب
   @Prop({ type: String, enum: Object.values(UserStatus), default: UserStatus.ACTIVE })
   status!: UserStatus;
+  
+  // العملة المفضلة
+  @Prop({ type: String, enum: Object.values(Currency), default: Currency.USD })
+  preferredCurrency!: Currency;
   
   // Soft Delete
   @Prop({ type: Date, default: null }) deletedAt?: Date | null;

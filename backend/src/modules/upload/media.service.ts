@@ -326,11 +326,15 @@ export class MediaService {
    * إحصائيات المستودع
    */
   async getStats() {
-    const [total, byCategory, totalSize, recentlyAdded] = await Promise.all([
+    const [total, byCategory, byType, totalSize, recentlyAdded] = await Promise.all([
       this.mediaModel.countDocuments({ deletedAt: null }),
       this.mediaModel.aggregate([
         { $match: { deletedAt: null } },
         { $group: { _id: '$category', count: { $sum: 1 } } },
+      ]),
+      this.mediaModel.aggregate([
+        { $match: { deletedAt: null } },
+        { $group: { _id: '$type', count: { $sum: 1 } } },
       ]),
       this.mediaModel.aggregate([
         { $match: { deletedAt: null } },
@@ -349,13 +353,22 @@ export class MediaService {
       categoryStats[item._id] = item.count;
     });
 
+    const typeStats: Record<string, number> = {};
+    byType.forEach((item: { _id: string; count: number }) => {
+      typeStats[item._id] = item.count;
+    });
+
+    const totalSizeInBytes = totalSize[0]?.totalSize || 0;
+    const averageSize = total > 0 ? totalSizeInBytes / total : 0;
+
     return {
       data: {
         total,
         byCategory: categoryStats,
-        totalSizeMB: totalSize[0]?.totalSize
-          ? (totalSize[0].totalSize / (1024 * 1024)).toFixed(2)
-          : '0',
+        byType: typeStats,
+        totalSize: totalSizeInBytes,
+        totalSizeMB: (totalSizeInBytes / (1024 * 1024)).toFixed(2),
+        averageSize,
         recentlyAdded,
       },
     };

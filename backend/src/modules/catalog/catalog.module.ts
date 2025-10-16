@@ -8,6 +8,7 @@ import { Variant, VariantSchema } from './schemas/variant.schema';
 import { VariantPrice, VariantPriceSchema } from './schemas/variant-price.schema';
 import { CategoriesModule } from '../categories/categories.module'; // استيراد Categories Module
 import { AuthModule } from '../auth/auth.module';
+import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from '../auth/auth.module';
     ]),
     CategoriesModule, // ربط مع Categories Module
     AuthModule,
+    ExchangeRatesModule, // ربط مع Exchange Rates Module
   ],
   controllers: [CatalogPublicController, CatalogAdminController],
   providers: [CatalogService],

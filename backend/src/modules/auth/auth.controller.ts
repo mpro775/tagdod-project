@@ -8,6 +8,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdatePreferredCurrencyDto } from './dto/update-preferred-currency.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserRole, UserStatus } from '../users/schemas/user.schema';
@@ -103,11 +104,19 @@ export class AuthController {
       phone: user.phone, 
       isAdmin: user.isAdmin,
       roles: user.roles || [],
-      permissions: user.permissions || []
+      permissions: user.permissions || [],
+      preferredCurrency: user.preferredCurrency || 'USD'
     };
     const access = this.tokens.signAccess(payload);
     const refresh = this.tokens.signRefresh(payload);
-    return { tokens: { access, refresh }, me: { id: user._id, phone: user.phone } };
+    return { 
+      tokens: { access, refresh }, 
+      me: { 
+        id: user._id, 
+        phone: user.phone,
+        preferredCurrency: user.preferredCurrency || 'USD'
+      } 
+    };
   }
 
   @ApiBearerAuth()
@@ -117,6 +126,29 @@ export class AuthController {
     const hash = await bcrypt.hash(dto.password, 10);
     await this.userModel.updateOne({ _id: req.user.sub }, { $set: { passwordHash: hash } });
     return { updated: true };
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('preferred-currency')
+  async updatePreferredCurrency(
+    @Req() req: { user: { sub: string } }, 
+    @Body() dto: UpdatePreferredCurrencyDto
+  ) {
+    const user = await this.userModel.findByIdAndUpdate(
+      req.user.sub, 
+      { $set: { preferredCurrency: dto.currency } },
+      { new: true }
+    );
+    
+    if (!user) {
+      throw new AppException('User not found', '404');
+    }
+
+    return { 
+      updated: true, 
+      preferredCurrency: user.preferredCurrency 
+    };
   }
 
   @Post('forgot-password') async forgot(@Body() dto: ForgotPasswordDto) {

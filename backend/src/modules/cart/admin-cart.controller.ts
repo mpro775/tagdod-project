@@ -75,16 +75,124 @@ export class AdminCartController {
   }
 
   @Get('analytics')
-  @ApiOperation({ summary: 'Get cart analytics' })
-  async getAnalytics() {
-    // Simple analytics for now
-    // Can be enhanced later
+  @ApiOperation({ summary: 'Get comprehensive cart analytics' })
+  async getAnalytics(@Query('period') period: string = '30') {
+    const analytics = await this.cartService.getCartAnalytics(parseInt(period));
     return {
       success: true,
-      message: 'Analytics feature - to be implemented',
-      data: {
-        note: 'Use abandoned carts endpoint for basic analytics',
-      },
+      data: analytics,
+    };
+  }
+
+  @Get('statistics')
+  @ApiOperation({ summary: 'Get cart statistics overview' })
+  async getStatistics() {
+    const stats = await this.cartService.getCartStatistics();
+    return {
+      success: true,
+      data: stats,
+    };
+  }
+
+  @Get('conversion-rates')
+  @ApiOperation({ summary: 'Get cart conversion rates' })
+  async getConversionRates(@Query('period') period: string = '30') {
+    const rates = await this.cartService.getConversionRates(parseInt(period));
+    return {
+      success: true,
+      data: rates,
+    };
+  }
+
+  @Get('all')
+  @ApiOperation({ summary: 'Get all carts with pagination and filters' })
+  async getAllCarts(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20',
+    @Query('status') status?: string,
+    @Query('userId') userId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    const filters = {
+      status: status as any,
+      userId,
+      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+      dateTo: dateTo ? new Date(dateTo) : undefined,
+    };
+
+    const result = await this.cartService.getAllCarts(
+      parseInt(page),
+      parseInt(limit),
+      filters,
+    );
+
+    return {
+      success: true,
+      data: result.carts,
+      pagination: result.pagination,
+    };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get cart details by ID' })
+  async getCartById(@Param('id') cartId: string) {
+    const cart = await this.cartService.getCartById(cartId);
+    return {
+      success: true,
+      data: cart,
+    };
+  }
+
+  @Post(':id/convert-to-order')
+  @ApiOperation({ summary: 'Manually convert cart to order' })
+  async convertToOrder(@Param('id') cartId: string) {
+    const result = await this.cartService.convertToOrder(cartId);
+    return {
+      success: true,
+      message: 'Cart converted to order successfully',
+      data: result,
+    };
+  }
+
+  @Get('recovery-campaigns')
+  @ApiOperation({ summary: 'Get cart recovery campaign analytics' })
+  async getRecoveryCampaigns(@Query('period') period: string = '30') {
+    const analytics = await this.cartService.getRecoveryCampaignAnalytics(parseInt(period));
+    return {
+      success: true,
+      data: analytics,
+    };
+  }
+
+  @Get('customer-behavior')
+  @ApiOperation({ summary: 'Get customer behavior analytics' })
+  async getCustomerBehavior(@Query('period') period: string = '30') {
+    const analytics = await this.cartService.getCustomerBehaviorAnalytics(parseInt(period));
+    return {
+      success: true,
+      data: analytics,
+    };
+  }
+
+  @Get('revenue-impact')
+  @ApiOperation({ summary: 'Get revenue impact analysis' })
+  async getRevenueImpact(@Query('period') period: string = '30') {
+    const analytics = await this.cartService.getRevenueImpactAnalytics(parseInt(period));
+    return {
+      success: true,
+      data: analytics,
+    };
+  }
+
+  @Post('bulk-actions')
+  @ApiOperation({ summary: 'Perform bulk actions on carts' })
+  async performBulkActions(@Body() body: { action: string; cartIds: string[] }) {
+    const result = await this.cartService.performBulkActions(body.action, body.cartIds);
+    return {
+      success: true,
+      message: `Bulk action completed: ${result.processed} carts processed`,
+      data: result,
     };
   }
 }

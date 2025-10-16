@@ -4,10 +4,10 @@ import * as jwt from 'jsonwebtoken';
 export class TokensService {
   private jwtSecret = process.env.JWT_SECRET as string;
   private refreshSecret = process.env.REFRESH_SECRET as string;
-  signAccess(payload: { sub: string; phone: string; isAdmin: boolean }) {
+  signAccess(payload: { sub: string; phone: string; isAdmin: boolean; roles?: string[]; permissions?: string[] }) {
     return jwt.sign(payload, this.jwtSecret, { expiresIn: '15m' });
   }
-  signRefresh(payload: { sub: string; phone: string; isAdmin: boolean }) {
+  signRefresh(payload: { sub: string; phone: string; isAdmin: boolean; roles?: string[]; permissions?: string[] }) {
     return jwt.sign(payload, this.refreshSecret, { expiresIn: '30d' });
   }
   verifyAccess(token: string) {

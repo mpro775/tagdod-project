@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AnalyticsController } from './analytics.controller';
 import { AdvancedAnalyticsController } from './advanced-analytics.controller';
 import { AnalyticsService } from './analytics.service';
+import { AdvancedAnalyticsService } from './advanced-analytics.service';
 import { AdvancedReportsService } from './services/advanced-reports.service';
 import {
   AnalyticsSnapshot,
@@ -53,7 +54,7 @@ import { AuthModule } from '../auth/auth.module';
     ScheduleModule.forRoot(),
   ],
   controllers: [AnalyticsController, AdvancedAnalyticsController],
-  providers: [AnalyticsService, AdvancedReportsService],
-  exports: [AnalyticsService, AdvancedReportsService], // Export for use in other modules
+  providers: [AnalyticsService, AdvancedAnalyticsService, AdvancedReportsService],
+  exports: [AnalyticsService, AdvancedAnalyticsService, AdvancedReportsService], // Export for use in other modules
 })
 export class AnalyticsModule {}

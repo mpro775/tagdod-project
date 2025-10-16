@@ -15,8 +15,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../../shared/guards/roles.guard';
-import { Roles } from '../../shared/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { MediaService } from './media.service';
 import { UploadMediaDto } from './dto/upload-media.dto';
@@ -25,8 +23,7 @@ import { ListMediaDto } from './dto/list-media.dto';
 
 @ApiTags('admin-media')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+@UseGuards(JwtAuthGuard)
 @Controller('admin/media')
 export class MediaController {
   constructor(private mediaService: MediaService) {}
@@ -40,15 +37,26 @@ export class MediaController {
     @Body() dto: UploadMediaDto,
     @Req() req: { user: { sub: string } },
   ) {
-    const result = await this.mediaService.uploadToLibrary(file, dto, req.user.sub);
-    
-    return {
-      data: result.media,
-      meta: {
-        isDuplicate: result.isDuplicate,
-      },
-      message: result.message,
-    };
+    try {
+      // التحقق من وجود الملف
+      if (!file) {
+        throw new Error('No file uploaded');
+      }
+
+      const result = await this.mediaService.uploadToLibrary(file, dto, req.user.sub);
+      
+      return {
+        success: true,
+        data: result.media,
+        meta: {
+          isDuplicate: result.isDuplicate,
+        },
+        message: result.message,
+      };
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
   }
 
   // ==================== قائمة الصور (مع Pagination) ====================
@@ -89,8 +97,14 @@ export class MediaController {
 
   // ==================== حذف نهائي ====================
   @Delete(':id/permanent')
-  @Roles(UserRole.SUPER_ADMIN) // فقط Super Admin
-  async permanentDeleteMedia(@Param('id') id: string) {
+  async permanentDeleteMedia(
+    @Param('id') id: string,
+    @Req() req: { user: { sub: string; roles?: string[] } }
+  ) {
+    // Check if user is SUPER_ADMIN
+    if (!req.user.roles?.includes(UserRole.SUPER_ADMIN)) {
+      throw new Error('Access denied. Super Admin required.');
+    }
     return this.mediaService.permanentDeleteMedia(id);
   }
 

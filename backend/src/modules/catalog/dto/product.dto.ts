@@ -47,9 +47,9 @@ export class UpdateVariantDto {
 
 export class SetVariantPriceDto {
   @IsString() variantId!: string;
-  @IsString() currency!: string; // YER/SAR/USD
-  @IsNumber() amount!: number;
-  @IsOptional() @IsNumber() compareAt?: number;
-  @IsOptional() @IsNumber() wholesaleAmount?: number;
-  @IsOptional() @IsNumber() moq?: number;
+  @IsNumber() basePriceUSD!: number; // السعر الأساسي بالدولار
+  @IsOptional() @IsNumber() compareAtUSD?: number; // السعر المقارن بالدولار
+  @IsOptional() @IsNumber() wholesalePriceUSD?: number; // السعر بالجملة بالدولار
+  @IsOptional() @IsNumber() moq?: number; // الحد الأدنى للطلب
+  @IsOptional() @IsString() notes?: string; // ملاحظات إضافية
 }

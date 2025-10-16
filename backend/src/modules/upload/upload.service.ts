@@ -50,18 +50,21 @@ export class UploadService {
       const filePath = `${folder}/${filename}`;
 
       // Upload to Bunny.net
-      const uploadUrl = `https://${this.bunnyCredentials.hostname}/${this.bunnyCredentials.storageZoneName}/${filePath}`;
+      const rawHost = this.configService.get<string>('BUNNY_HOSTNAME') || 'storage.bunnycdn.com';
+      const hostname = rawHost.replace(/^https?:\/\//, ''); // يشيل http/https لو موجود
 
-      const response: AxiosResponse = await axios.put(uploadUrl, file.buffer, {
+      const uploadUrl = `https://${hostname}/${this.bunnyCredentials.storageZoneName}/${filePath}`;
+
+      const res = await axios.put(uploadUrl, file.buffer, {
         headers: {
-          'AccessKey': this.bunnyCredentials.apiKey,
+          AccessKey: this.bunnyCredentials.apiKey, // Storage Zone Password
           'Content-Type': file.mimetype,
         },
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
+        validateStatus: () => true,
       });
 
-      if (response.status !== 201) {
+      if (res.status !== 201) {
+        this.logger.error(`Bunny upload failed: ${res.status} ${res.statusText} | ${uploadUrl}`);
         throw new BadRequestException('Failed to upload file to Bunny.net');
       }
 

@@ -204,26 +204,596 @@ export class ServicesService {
       .lean();
   }
 
-  // ---- Admin
-  async adminList(status?: string, page = 1, limit = 20) {
-    const q: Record<string, unknown> = {}; if (status) q.status = status;
-    page = Number(page); limit = Number(limit);
+  // ---- Admin - إدارة متقدمة
+  async adminList(params: {
+    status?: string;
+    type?: string;
+    engineerId?: string;
+    userId?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const { status, type, engineerId, userId, dateFrom, dateTo, search, page = 1, limit = 20 } = params;
+    const q: Record<string, unknown> = {};
+    
+    if (status) q.status = status;
+    if (type) q.type = { $regex: type, $options: 'i' };
+    if (engineerId) q.engineerId = new Types.ObjectId(engineerId);
+    if (userId) q.userId = new Types.ObjectId(userId);
+    if (dateFrom || dateTo) {
+      q.createdAt = {};
+      if (dateFrom) q.createdAt.$gte = dateFrom;
+      if (dateTo) q.createdAt.$lte = dateTo;
+    }
+    if (search) {
+      q.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { type: { $regex: search, $options: 'i' } },
+      ];
+    }
+
     const skip = (page - 1) * limit;
     const [items, total] = await Promise.all([
-      this.requests.find(q).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      this.requests
+        .find(q)
+        .populate('userId', 'firstName lastName phone email')
+        .populate('engineerId', 'firstName lastName phone jobTitle')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
       this.requests.countDocuments(q),
     ]);
     return { items, meta: { page, limit, total } };
   }
 
-  async adminCancel(id: string) {
+  async adminGetRequest(id: string) {
+    const request = await this.requests
+      .findById(id)
+      .populate('userId', 'firstName lastName phone email')
+      .populate('engineerId', 'firstName lastName phone jobTitle')
+      .lean();
+    
+    if (!request) return null;
+    
+    const offers = await this.offers
+      .find({ requestId: id })
+      .populate('engineerId', 'firstName lastName phone jobTitle')
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    return { ...request, offers };
+  }
+
+  async adminGetRequestOffers(id: string) {
+    return this.offers
+      .find({ requestId: id })
+      .populate('engineerId', 'firstName lastName phone jobTitle')
+      .sort({ createdAt: -1 })
+      .lean();
+  }
+
+  async adminUpdateRequestStatus(id: string, status: string, note?: string) {
+    const r = await this.requests.findById(id);
+    if (!r) return { error: 'NOT_FOUND' };
+    
+    const validStatuses = ['OPEN', 'OFFERS_COLLECTING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+    if (!validStatuses.includes(status)) return { error: 'INVALID_STATUS' };
+    
+    r.status = status as any;
+    if (note) {
+      r.adminNotes = r.adminNotes || [];
+      r.adminNotes.push({ note, at: new Date() });
+    }
+    await r.save();
+    
+    await this.notifier?.emit(String(r.userId), 'SERVICE_STATUS_UPDATED', { 
+      requestId: String(r._id), 
+      status, 
+      note 
+    });
+    
+    return { ok: true };
+  }
+
+  async adminCancel(id: string, reason?: string) {
     const r = await this.requests.findById(id);
     if (!r) return { error: 'NOT_FOUND' };
     if (['COMPLETED','RATED','CANCELLED'].includes(r.status)) return { error: 'INVALID_STATUS' };
+    
     r.status = 'CANCELLED';
+    if (reason) {
+      r.adminNotes = r.adminNotes || [];
+      r.adminNotes.push({ note: `إلغاء إداري: ${reason}`, at: new Date() });
+    }
     await r.save();
+    
     await this.offers.updateMany({ requestId: r._id, status: 'OFFERED' }, { $set: { status: 'REJECTED' } });
+    
+    await this.notifier?.emit(String(r.userId), 'SERVICE_CANCELLED_BY_ADMIN', { 
+      requestId: String(r._id), 
+      reason 
+    });
+    
     return { ok: true };
+  }
+
+  async adminAssignEngineer(id: string, engineerId: string, note?: string) {
+    const r = await this.requests.findById(id);
+    if (!r) return { error: 'NOT_FOUND' };
+    if (r.status !== 'OPEN' && r.status !== 'OFFERS_COLLECTING') return { error: 'INVALID_STATUS' };
+    
+    r.status = 'ASSIGNED';
+    r.engineerId = new Types.ObjectId(engineerId);
+    if (note) {
+      r.adminNotes = r.adminNotes || [];
+      r.adminNotes.push({ note: `تعيين مهندس: ${note}`, at: new Date() });
+    }
+    await r.save();
+    
+    await this.offers.updateMany({ requestId: r._id }, { $set: { status: 'REJECTED' } });
+    
+    await this.notifier?.emit(String(r.userId), 'ENGINEER_ASSIGNED_BY_ADMIN', { 
+      requestId: String(r._id), 
+      engineerId 
+    });
+    
+    return { ok: true };
+  }
+
+  // === إحصائيات شاملة ===
+  async getOverviewStatistics() {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+
+    const [
+      totalRequests,
+      totalOffers,
+      totalEngineers,
+      monthlyRequests,
+      weeklyRequests,
+      dailyRequests,
+      completedRequests,
+      cancelledRequests,
+      averageRating,
+      totalRevenue,
+    ] = await Promise.all([
+      this.requests.countDocuments(),
+      this.offers.countDocuments(),
+      this.requests.distinct('engineerId').then(ids => ids.filter(id => id !== null).length),
+      this.requests.countDocuments({ createdAt: { $gte: startOfMonth } }),
+      this.requests.countDocuments({ createdAt: { $gte: startOfWeek } }),
+      this.requests.countDocuments({ createdAt: { $gte: startOfDay } }),
+      this.requests.countDocuments({ status: 'COMPLETED' }),
+      this.requests.countDocuments({ status: 'CANCELLED' }),
+      this.requests.aggregate([
+        { $match: { 'rating.score': { $exists: true } } },
+        { $group: { _id: null, avgRating: { $avg: '$rating.score' } } },
+      ]).then(result => result[0]?.avgRating || 0),
+      this.requests.aggregate([
+        { $match: { status: 'COMPLETED', acceptedOffer: { $exists: true } } },
+        { $group: { _id: null, total: { $sum: '$acceptedOffer.amount' } } },
+      ]).then(result => result[0]?.total || 0),
+    ]);
+
+    return {
+      totalRequests,
+      totalOffers,
+      totalEngineers,
+      monthlyRequests,
+      weeklyRequests,
+      dailyRequests,
+      completedRequests,
+      cancelledRequests,
+      completionRate: totalRequests > 0 ? (completedRequests / totalRequests * 100).toFixed(1) : 0,
+      averageRating: Number(averageRating.toFixed(1)),
+      totalRevenue,
+    };
+  }
+
+  async getRequestsStatistics(params: {
+    dateFrom?: Date;
+    dateTo?: Date;
+    groupBy: 'day' | 'week' | 'month';
+  }) {
+    const { dateFrom, dateTo, groupBy } = params;
+    const matchStage: Record<string, unknown> = {};
+    
+    if (dateFrom || dateTo) {
+      matchStage.createdAt = {};
+      if (dateFrom) matchStage.createdAt.$gte = dateFrom;
+      if (dateTo) matchStage.createdAt.$lte = dateTo;
+    }
+
+    const groupFormat = groupBy === 'day' ? '%Y-%m-%d' : groupBy === 'week' ? '%Y-W%U' : '%Y-%m';
+    
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: groupFormat, date: '$createdAt' },
+          },
+          total: { $sum: 1 },
+          completed: {
+            $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] },
+          },
+          cancelled: {
+            $sum: { $cond: [{ $eq: ['$status', 'CANCELLED'] }, 1, 0] },
+          },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ];
+
+    return this.requests.aggregate(pipeline);
+  }
+
+  async getEngineersStatistics(params: {
+    dateFrom?: Date;
+    dateTo?: Date;
+    limit: number;
+  }) {
+    const { dateFrom, dateTo, limit } = params;
+    const matchStage: Record<string, unknown> = { engineerId: { $ne: null } };
+    
+    if (dateFrom || dateTo) {
+      matchStage.createdAt = {};
+      if (dateFrom) matchStage.createdAt.$gte = dateFrom;
+      if (dateTo) matchStage.createdAt.$lte = dateTo;
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$engineerId',
+          totalRequests: { $sum: 1 },
+          completedRequests: {
+            $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] },
+          },
+          averageRating: {
+            $avg: {
+              $cond: [
+                { $gt: ['$rating.score', 0] },
+                '$rating.score',
+                null,
+              ],
+            },
+          },
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$status', 'COMPLETED'] }, { $gt: ['$acceptedOffer.amount', 0] }] },
+                '$acceptedOffer.amount',
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'engineer',
+        },
+      },
+      { $unwind: '$engineer' },
+      {
+        $project: {
+          engineerId: '$_id',
+          engineerName: { $concat: ['$engineer.firstName', ' ', '$engineer.lastName'] },
+          engineerPhone: '$engineer.phone',
+          totalRequests: 1,
+          completedRequests: 1,
+          completionRate: {
+            $multiply: [
+              { $divide: ['$completedRequests', '$totalRequests'] },
+              100,
+            ],
+          },
+          averageRating: { $round: ['$averageRating', 1] },
+          totalRevenue: 1,
+        },
+      },
+      { $sort: { totalRequests: -1 } },
+      { $limit: limit },
+    ];
+
+    return this.requests.aggregate(pipeline);
+  }
+
+  async getServiceTypesStatistics(params: {
+    dateFrom?: Date;
+    dateTo?: Date;
+  }) {
+    const { dateFrom, dateTo } = params;
+    const matchStage: Record<string, unknown> = {};
+    
+    if (dateFrom || dateTo) {
+      matchStage.createdAt = {};
+      if (dateFrom) matchStage.createdAt.$gte = dateFrom;
+      if (dateTo) matchStage.createdAt.$lte = dateTo;
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$type',
+          total: { $sum: 1 },
+          completed: {
+            $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] },
+          },
+          averageRevenue: {
+            $avg: {
+              $cond: [
+                { $and: [{ $eq: ['$status', 'COMPLETED'] }, { $gt: ['$acceptedOffer.amount', 0] }] },
+                '$acceptedOffer.amount',
+                null,
+              ],
+            },
+          },
+        },
+      },
+      { $sort: { total: -1 } },
+    ];
+
+    return this.requests.aggregate(pipeline);
+  }
+
+  async getRevenueStatistics(params: {
+    dateFrom?: Date;
+    dateTo?: Date;
+    groupBy: 'day' | 'week' | 'month';
+  }) {
+    const { dateFrom, dateTo, groupBy } = params;
+    const matchStage = {
+      status: 'COMPLETED',
+      'acceptedOffer.amount': { $gt: 0 },
+    };
+    
+    if (dateFrom || dateTo) {
+      matchStage.createdAt = {};
+      if (dateFrom) matchStage.createdAt.$gte = dateFrom;
+      if (dateTo) matchStage.createdAt.$lte = dateTo;
+    }
+
+    const groupFormat = groupBy === 'day' ? '%Y-%m-%d' : groupBy === 'week' ? '%Y-W%U' : '%Y-%m';
+    
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: groupFormat, date: '$createdAt' },
+          },
+          totalRevenue: { $sum: '$acceptedOffer.amount' },
+          requestsCount: { $sum: 1 },
+          averageRevenue: { $avg: '$acceptedOffer.amount' },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ];
+
+    return this.requests.aggregate(pipeline);
+  }
+
+  // === إدارة المهندسين ===
+  async getEngineersList(params: {
+    page: number;
+    limit: number;
+    search?: string;
+  }) {
+    const { page, limit, search } = params;
+    const matchStage: Record<string, unknown> = {};
+    
+    if (search) {
+      matchStage.$or = [
+        { 'engineer.firstName': { $regex: search, $options: 'i' } },
+        { 'engineer.lastName': { $regex: search, $options: 'i' } },
+        { 'engineer.phone': { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const pipeline = [
+      { $match: { engineerId: { $ne: null } } },
+      {
+        $group: {
+          _id: '$engineerId',
+          totalRequests: { $sum: 1 },
+          completedRequests: {
+            $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] },
+          },
+          averageRating: {
+            $avg: {
+              $cond: [
+                { $gt: ['$rating.score', 0] },
+                '$rating.score',
+                null,
+              ],
+            },
+          },
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$status', 'COMPLETED'] }, { $gt: ['$acceptedOffer.amount', 0] }] },
+                '$acceptedOffer.amount',
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'engineer',
+        },
+      },
+      { $unwind: '$engineer' },
+      {
+        $project: {
+          engineerId: '$_id',
+          engineerName: { $concat: ['$engineer.firstName', ' ', '$engineer.lastName'] },
+          engineerPhone: '$engineer.phone',
+          engineerEmail: '$engineer.email',
+          totalRequests: 1,
+          completedRequests: 1,
+          completionRate: {
+            $multiply: [
+              { $divide: ['$completedRequests', '$totalRequests'] },
+              100,
+            ],
+          },
+          averageRating: { $round: ['$averageRating', 1] },
+          totalRevenue: 1,
+        },
+      },
+      { $match: matchStage },
+      { $sort: { totalRequests: -1 } },
+    ];
+
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.requests.aggregate([...pipeline, { $skip: skip }, { $limit: limit }]),
+      this.requests.aggregate([...pipeline, { $count: 'total' }]).then(result => result[0]?.total || 0),
+    ]);
+
+    return { items, meta: { page, limit, total } };
+  }
+
+  async getEngineerStatistics(engineerId: string) {
+    const pipeline = [
+      { $match: { engineerId: new Types.ObjectId(engineerId) } },
+      {
+        $group: {
+          _id: '$engineerId',
+          totalRequests: { $sum: 1 },
+          completedRequests: {
+            $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] },
+          },
+          inProgressRequests: {
+            $sum: { $cond: [{ $eq: ['$status', 'IN_PROGRESS'] }, 1, 0] },
+          },
+          averageRating: {
+            $avg: {
+              $cond: [
+                { $gt: ['$rating.score', 0] },
+                '$rating.score',
+                null,
+              ],
+            },
+          },
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$status', 'COMPLETED'] }, { $gt: ['$acceptedOffer.amount', 0] }] },
+                '$acceptedOffer.amount',
+                0,
+              ],
+            },
+          },
+          averageRevenue: {
+            $avg: {
+              $cond: [
+                { $and: [{ $eq: ['$status', 'COMPLETED'] }, { $gt: ['$acceptedOffer.amount', 0] }] },
+                '$acceptedOffer.amount',
+                null,
+              ],
+            },
+          },
+        },
+      },
+    ];
+
+    const stats = await this.requests.aggregate(pipeline);
+    const engineer = await this.requests
+      .findOne({ engineerId: new Types.ObjectId(engineerId) })
+      .populate('engineerId', 'firstName lastName phone email jobTitle')
+      .lean();
+
+    const offersStats = await this.offers.aggregate([
+      { $match: { engineerId: new Types.ObjectId(engineerId) } },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          averageAmount: { $avg: '$amount' },
+        },
+      },
+    ]);
+
+    return {
+      engineer: engineer?.engineerId,
+      statistics: stats[0] || {},
+      offersStats,
+    };
+  }
+
+  async getEngineerOffers(engineerId: string, params: {
+    status?: string;
+    page: number;
+    limit: number;
+  }) {
+    const { status, page, limit } = params;
+    const q: Record<string, unknown> = { engineerId: new Types.ObjectId(engineerId) };
+    if (status) q.status = status;
+
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.offers
+        .find(q)
+        .populate('requestId', 'title type status createdAt')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.offers.countDocuments(q),
+    ]);
+
+    return { items, meta: { page, limit, total } };
+  }
+
+  // === إدارة العروض ===
+  async getOffersList(params: {
+    status?: string;
+    requestId?: string;
+    engineerId?: string;
+    page: number;
+    limit: number;
+  }) {
+    const { status, requestId, engineerId, page, limit } = params;
+    const q: Record<string, unknown> = {};
+    
+    if (status) q.status = status;
+    if (requestId) q.requestId = new Types.ObjectId(requestId);
+    if (engineerId) q.engineerId = new Types.ObjectId(engineerId);
+
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.offers
+        .find(q)
+        .populate('requestId', 'title type status createdAt userId')
+        .populate('engineerId', 'firstName lastName phone jobTitle')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.offers.countDocuments(q),
+    ]);
+
+    return { items, meta: { page, limit, total } };
   }
 }
 

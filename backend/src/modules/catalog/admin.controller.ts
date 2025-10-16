@@ -48,7 +48,7 @@ export class CatalogAdminController {
 
   @Post('variant-prices')
   async setPrice(@Body() dto: SetVariantPriceDto) {
-    const price = await this.svc.setVariantPrice(dto as Partial<VariantPrice>);
+    const price = await this.svc.setVariantPrice(dto);
     return { data: price };
   }
 }

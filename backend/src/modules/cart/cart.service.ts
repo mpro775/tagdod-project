@@ -257,19 +257,427 @@ export class CartService {
     return { sent: true, cartId };
   }
 
-  async processAbandonedCarts() {
-    const candidates = await this.findAbandonedCarts(24);
+  async processAbandonedCarts(hoursInactive: number = 24) {
+    const candidates = await this.findAbandonedCarts(hoursInactive);
     let emailsSent = 0;
-    type AbandonedLean = { _id?: unknown; lastAbandonmentEmailAt?: Date };
+    type AbandonedLean = { _id?: unknown; lastAbandonmentEmailAt?: Date; abandonmentEmailsSent?: number };
+    
     for (const c of candidates as AbandonedLean[]) {
       const lastSent = c.lastAbandonmentEmailAt;
-      const shouldSend = !lastSent || (Date.now() - lastSent.getTime()) > 24 * 60 * 60 * 1000;
+      const emailsSentCount = c.abandonmentEmailsSent || 0;
+      
+      // Determine if we should send email based on hours inactive and previous emails sent
+      let shouldSend = false;
+      
+      if (hoursInactive === 1 && emailsSentCount === 0) {
+        // First reminder after 1 hour
+        shouldSend = !lastSent || (Date.now() - lastSent.getTime()) > 60 * 60 * 1000;
+      } else if (hoursInactive === 24 && emailsSentCount === 1) {
+        // Second reminder after 24 hours (only if first was sent)
+        shouldSend = !lastSent || (Date.now() - lastSent.getTime()) > 24 * 60 * 60 * 1000;
+      } else if (hoursInactive === 72 && emailsSentCount === 2) {
+        // Final reminder after 72 hours (only if second was sent)
+        shouldSend = !lastSent || (Date.now() - lastSent.getTime()) > 72 * 60 * 60 * 1000;
+      }
+      
       if (shouldSend) {
         const res = await this.sendAbandonmentReminder(String(c._id || ''));
         if (res.sent) emailsSent++;
       }
     }
     return { processed: candidates.length, emailsSent };
+  }
+
+  async markAbandonedCarts() {
+    const now = new Date();
+    const abandonmentThresholds = [
+      { hours: 1, status: 'inactive' },
+      { hours: 24, status: 'abandoned' },
+    ];
+
+    let marked = 0;
+
+    for (const threshold of abandonmentThresholds) {
+      const cutoffTime = new Date(now.getTime() - threshold.hours * 60 * 60 * 1000);
+      
+      const result = await this.cartModel.updateMany(
+        {
+          status: CartStatus.ACTIVE,
+          lastActivityAt: { $lte: cutoffTime },
+          isAbandoned: { $ne: true },
+        },
+        {
+          $set: {
+            isAbandoned: threshold.status === 'abandoned',
+            status: threshold.status === 'abandoned' ? CartStatus.ABANDONED : CartStatus.ACTIVE,
+            abandonedAt: threshold.status === 'abandoned' ? now : undefined,
+          },
+        },
+      );
+
+      marked += result.modifiedCount || 0;
+    }
+
+    return { marked };
+  }
+
+  // ---------- admin analytics and statistics
+  async getCartAnalytics(periodDays: number) {
+    const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
+    
+    const [
+      totalCarts,
+      activeCarts,
+      abandonedCarts,
+      convertedCarts,
+      avgCartValue,
+      avgItemsPerCart,
+      conversionRate,
+      abandonmentRate,
+      recentActivity,
+      topProducts,
+      cartValueDistribution,
+      hourlyActivity,
+    ] = await Promise.all([
+      this.cartModel.countDocuments({ createdAt: { $gte: startDate } }),
+      this.cartModel.countDocuments({ status: CartStatus.ACTIVE, createdAt: { $gte: startDate } }),
+      this.cartModel.countDocuments({ status: CartStatus.ABANDONED, createdAt: { $gte: startDate } }),
+      this.cartModel.countDocuments({ status: CartStatus.CONVERTED, createdAt: { $gte: startDate } }),
+      this.getAverageCartValue(startDate),
+      this.getAverageItemsPerCart(startDate),
+      this.getConversionRate(startDate),
+      this.getAbandonmentRate(startDate),
+      this.getRecentCartActivity(7),
+      this.getTopProductsInCarts(startDate),
+      this.getCartValueDistribution(startDate),
+      this.getHourlyCartActivity(startDate),
+    ]);
+
+    return {
+      overview: {
+        totalCarts,
+        activeCarts,
+        abandonedCarts,
+        convertedCarts,
+        avgCartValue,
+        avgItemsPerCart,
+        conversionRate,
+        abandonmentRate,
+      },
+      trends: {
+        recentActivity,
+        hourlyActivity,
+      },
+      insights: {
+        topProducts,
+        cartValueDistribution,
+      },
+      period: periodDays,
+    };
+  }
+
+  async getCartStatistics() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const [
+      todayStats,
+      yesterdayStats,
+      weekStats,
+      totalStats,
+    ] = await Promise.all([
+      this.getPeriodStats(today, now),
+      this.getPeriodStats(yesterday, today),
+      this.getPeriodStats(lastWeek, now),
+      this.getPeriodStats(new Date(0), now),
+    ]);
+
+    return {
+      today: todayStats,
+      yesterday: yesterdayStats,
+      lastWeek: weekStats,
+      allTime: totalStats,
+    };
+  }
+
+  async getConversionRates(periodDays: number) {
+    const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
+    
+    const conversionData = await this.cartModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+            day: { $dayOfMonth: '$createdAt' },
+          },
+          totalCarts: { $sum: 1 },
+          convertedCarts: {
+            $sum: {
+              $cond: [{ $eq: ['$status', CartStatus.CONVERTED] }, 1, 0],
+            },
+          },
+          totalValue: {
+            $sum: { $ifNull: ['$pricingSummary.total', 0] },
+          },
+          convertedValue: {
+            $sum: {
+              $cond: [
+                { $eq: ['$status', CartStatus.CONVERTED] },
+                { $ifNull: ['$pricingSummary.total', 0] },
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          conversionRate: {
+            $cond: [
+              { $eq: ['$totalCarts', 0] },
+              0,
+              { $multiply: [{ $divide: ['$convertedCarts', '$totalCarts'] }, 100] },
+            ],
+          },
+          date: {
+            $dateFromParts: {
+              year: '$_id.year',
+              month: '$_id.month',
+              day: '$_id.day',
+            },
+          },
+        },
+      },
+      { $sort: { date: 1 } },
+    ]);
+
+    return {
+      dailyRates: conversionData,
+      averageRate: conversionData.length > 0 
+        ? conversionData.reduce((sum, day) => sum + day.conversionRate, 0) / conversionData.length
+        : 0,
+      period: periodDays,
+    };
+  }
+
+  async getAllCarts(page: number, limit: number, filters: any) {
+    const skip = (page - 1) * limit;
+    const matchStage: any = {};
+
+    if (filters.status) {
+      matchStage.status = filters.status;
+    }
+    if (filters.userId) {
+      matchStage.userId = new Types.ObjectId(filters.userId);
+    }
+    if (filters.dateFrom || filters.dateTo) {
+      matchStage.createdAt = {};
+      if (filters.dateFrom) matchStage.createdAt.$gte = filters.dateFrom;
+      if (filters.dateTo) matchStage.createdAt.$lte = filters.dateTo;
+    }
+
+    const [carts, total] = await Promise.all([
+      this.cartModel
+        .find(matchStage)
+        .populate('userId', 'name email phone')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.cartModel.countDocuments(matchStage),
+    ]);
+
+    return {
+      carts,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getCartById(cartId: string) {
+    const cart = await this.cartModel
+      .findById(cartId)
+      .populate('userId', 'name email phone')
+      .populate('items.variantId')
+      .lean();
+
+    if (!cart) {
+      throw new Error('Cart not found');
+    }
+
+    return cart;
+  }
+
+  async convertToOrder(cartId: string) {
+    const cart = await this.cartModel.findById(cartId);
+    if (!cart) {
+      throw new Error('Cart not found');
+    }
+
+    if (cart.status === CartStatus.CONVERTED) {
+      throw new Error('Cart already converted');
+    }
+
+    // Update cart status
+    cart.status = CartStatus.CONVERTED;
+    cart.convertedAt = new Date();
+    cart.convertedToOrderId = new Types.ObjectId(); // Placeholder - should be actual order ID
+    await cart.save();
+
+    return {
+      cartId: cart._id,
+      orderId: cart.convertedToOrderId,
+      convertedAt: cart.convertedAt,
+    };
+  }
+
+  // ---------- helper methods for analytics
+  private async getAverageCartValue(startDate: Date) {
+    const result = await this.cartModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $group: { _id: null, avgValue: { $avg: '$pricingSummary.total' } } },
+    ]);
+    return result[0]?.avgValue || 0;
+  }
+
+  private async getAverageItemsPerCart(startDate: Date) {
+    const result = await this.cartModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $group: { _id: null, avgItems: { $avg: { $size: '$items' } } } },
+    ]);
+    return result[0]?.avgItems || 0;
+  }
+
+  private async getConversionRate(startDate: Date) {
+    const [total, converted] = await Promise.all([
+      this.cartModel.countDocuments({ createdAt: { $gte: startDate } }),
+      this.cartModel.countDocuments({ 
+        status: CartStatus.CONVERTED, 
+        createdAt: { $gte: startDate } 
+      }),
+    ]);
+    return total > 0 ? (converted / total) * 100 : 0;
+  }
+
+  private async getAbandonmentRate(startDate: Date) {
+    const [total, abandoned] = await Promise.all([
+      this.cartModel.countDocuments({ createdAt: { $gte: startDate } }),
+      this.cartModel.countDocuments({ 
+        status: CartStatus.ABANDONED, 
+        createdAt: { $gte: startDate } 
+      }),
+    ]);
+    return total > 0 ? (abandoned / total) * 100 : 0;
+  }
+
+  private async getRecentCartActivity(days: number) {
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    return this.cartModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+            day: { $dayOfMonth: '$createdAt' },
+          },
+          count: { $sum: 1 },
+          totalValue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+    ]);
+  }
+
+  private async getTopProductsInCarts(startDate: Date) {
+    return this.cartModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.variantId',
+          totalQuantity: { $sum: '$items.qty' },
+          cartCount: { $sum: 1 },
+        },
+      },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 10 },
+    ]);
+  }
+
+  private async getCartValueDistribution(startDate: Date) {
+    return this.cartModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $bucket: {
+          groupBy: '$pricingSummary.total',
+          boundaries: [0, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
+          default: '10000+',
+          output: {
+            count: { $sum: 1 },
+            totalValue: { $sum: '$pricingSummary.total' },
+          },
+        },
+      },
+    ]);
+  }
+
+  private async getHourlyCartActivity(startDate: Date) {
+    return this.cartModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: { $hour: '$createdAt' },
+          count: { $sum: 1 },
+          totalValue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+  }
+
+  private async getPeriodStats(startDate: Date, endDate: Date) {
+    const [total, active, abandoned, converted, totalValue] = await Promise.all([
+      this.cartModel.countDocuments({ createdAt: { $gte: startDate, $lt: endDate } }),
+      this.cartModel.countDocuments({ 
+        status: CartStatus.ACTIVE, 
+        createdAt: { $gte: startDate, $lt: endDate } 
+      }),
+      this.cartModel.countDocuments({ 
+        status: CartStatus.ABANDONED, 
+        createdAt: { $gte: startDate, $lt: endDate } 
+      }),
+      this.cartModel.countDocuments({ 
+        status: CartStatus.CONVERTED, 
+        createdAt: { $gte: startDate, $lt: endDate } 
+      }),
+      this.cartModel.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lt: endDate } } },
+        { $group: { _id: null, total: { $sum: { $ifNull: ['$pricingSummary.total', 0] } } } },
+      ]),
+    ]);
+
+    return {
+      total,
+      active,
+      abandoned,
+      converted,
+      totalValue: totalValue[0]?.total || 0,
+      conversionRate: total > 0 ? (converted / total) * 100 : 0,
+      abandonmentRate: total > 0 ? (abandoned / total) * 100 : 0,
+    };
   }
 
   // ---------- maintenance/cleanup
@@ -286,5 +694,407 @@ export class CartService {
       convertedAt: { $lte: threshold },
     });
     return { deleted: res.deletedCount || 0 };
+  }
+
+  // ---------- advanced analytics
+  async getRecoveryCampaignAnalytics(periodDays: number) {
+    const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
+    
+    const [
+      totalAbandoned,
+      recoveredAfterEmail,
+      emailOpenRates,
+      clickThroughRates,
+      recoveryByHour,
+    ] = await Promise.all([
+      this.cartModel.countDocuments({
+        status: CartStatus.ABANDONED,
+        createdAt: { $gte: startDate },
+      }),
+      this.getRecoveredCartsAfterEmail(startDate),
+      this.getEmailOpenRates(startDate),
+      this.getClickThroughRates(startDate),
+      this.getRecoveryByHour(startDate),
+    ]);
+
+    return {
+      totalAbandoned,
+      recoveredAfterEmail,
+      recoveryRate: totalAbandoned > 0 ? (recoveredAfterEmail / totalAbandoned) * 100 : 0,
+      emailOpenRates,
+      clickThroughRates,
+      recoveryByHour,
+      period: periodDays,
+    };
+  }
+
+  async getCustomerBehaviorAnalytics(periodDays: number) {
+    const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
+    
+    const [
+      sessionDuration,
+      cartValueByDevice,
+      abandonmentByTimeOfDay,
+      abandonmentByDayOfWeek,
+      repeatCustomers,
+      newCustomers,
+    ] = await Promise.all([
+      this.getAverageSessionDuration(startDate),
+      this.getCartValueByDevice(startDate),
+      this.getAbandonmentByTimeOfDay(startDate),
+      this.getAbandonmentByDayOfWeek(startDate),
+      this.getRepeatCustomerStats(startDate),
+      this.getNewCustomerStats(startDate),
+    ]);
+
+    return {
+      sessionDuration,
+      cartValueByDevice,
+      abandonmentByTimeOfDay,
+      abandonmentByDayOfWeek,
+      repeatCustomers,
+      newCustomers,
+      period: periodDays,
+    };
+  }
+
+  async getRevenueImpactAnalytics(periodDays: number) {
+    const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
+    
+    const [
+      lostRevenue,
+      recoveredRevenue,
+      potentialRevenue,
+      revenueByHour,
+      topLostProducts,
+    ] = await Promise.all([
+      this.getLostRevenue(startDate),
+      this.getRecoveredRevenue(startDate),
+      this.getPotentialRevenue(startDate),
+      this.getRevenueByHour(startDate),
+      this.getTopLostProducts(startDate),
+    ]);
+
+    return {
+      lostRevenue,
+      recoveredRevenue,
+      potentialRevenue,
+      recoveryEfficiency: lostRevenue > 0 ? (recoveredRevenue / lostRevenue) * 100 : 0,
+      revenueByHour,
+      topLostProducts,
+      period: periodDays,
+    };
+  }
+
+  async performBulkActions(action: string, cartIds: string[]) {
+    let processed = 0;
+    
+    switch (action) {
+      case 'send_reminders':
+        for (const cartId of cartIds) {
+          try {
+            await this.sendAbandonmentReminder(cartId);
+            processed++;
+          } catch (error) {
+            // Log error but continue processing
+          }
+        }
+        break;
+        
+      case 'mark_abandoned':
+        const result = await this.cartModel.updateMany(
+          { _id: { $in: cartIds } },
+          { 
+            $set: { 
+              status: CartStatus.ABANDONED,
+              isAbandoned: true,
+              abandonedAt: new Date(),
+            }
+          }
+        );
+        processed = result.modifiedCount || 0;
+        break;
+        
+      case 'clear_carts':
+        const clearResult = await this.cartModel.updateMany(
+          { _id: { $in: cartIds } },
+          { $set: { items: [], status: CartStatus.EXPIRED } }
+        );
+        processed = clearResult.modifiedCount || 0;
+        break;
+    }
+
+    return { processed, action };
+  }
+
+  // ---------- helper methods for advanced analytics
+  private async getRecoveredCartsAfterEmail(startDate: Date) {
+    const result = await this.cartModel.countDocuments({
+      status: CartStatus.CONVERTED,
+      lastAbandonmentEmailAt: { $exists: true, $gte: startDate },
+      convertedAt: { $gte: startDate },
+    });
+    return result;
+  }
+
+  private async getEmailOpenRates(startDate: Date) {
+    // This would integrate with email service to get actual open rates
+    // For now, return mock data
+    return {
+      firstEmail: 65.2,
+      secondEmail: 45.8,
+      thirdEmail: 32.1,
+    };
+  }
+
+  private async getClickThroughRates(startDate: Date) {
+    // This would integrate with email service to get actual click rates
+    return {
+      firstEmail: 12.5,
+      secondEmail: 8.3,
+      thirdEmail: 5.7,
+    };
+  }
+
+  private async getRecoveryByHour(startDate: Date) {
+    return this.cartModel.aggregate([
+      {
+        $match: {
+          status: CartStatus.CONVERTED,
+          lastAbandonmentEmailAt: { $exists: true, $gte: startDate },
+          convertedAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: { $hour: '$convertedAt' },
+          count: { $sum: 1 },
+          totalValue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+  }
+
+  private async getAverageSessionDuration(startDate: Date) {
+    const result = await this.cartModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: null,
+          avgDuration: {
+            $avg: {
+              $subtract: ['$lastActivityAt', '$createdAt'],
+            },
+          },
+        },
+      },
+    ]);
+    return result[0]?.avgDuration || 0;
+  }
+
+  private async getCartValueByDevice(startDate: Date) {
+    return this.cartModel.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: { $cond: [{ $ifNull: ['$userId', false] }, 'registered', 'guest'] },
+          avgValue: { $avg: { $ifNull: ['$pricingSummary.total', 0] } },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+  }
+
+  private async getAbandonmentByTimeOfDay(startDate: Date) {
+    return this.cartModel.aggregate([
+      {
+        $match: {
+          status: CartStatus.ABANDONED,
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: { $hour: '$createdAt' },
+          count: { $sum: 1 },
+          totalValue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+  }
+
+  private async getAbandonmentByDayOfWeek(startDate: Date) {
+    return this.cartModel.aggregate([
+      {
+        $match: {
+          status: CartStatus.ABANDONED,
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: { $dayOfWeek: '$createdAt' },
+          count: { $sum: 1 },
+          totalValue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+  }
+
+  private async getRepeatCustomerStats(startDate: Date) {
+    return this.cartModel.aggregate([
+      {
+        $match: {
+          userId: { $exists: true },
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: '$userId',
+          cartCount: { $sum: 1 },
+          totalValue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          repeatCustomers: { $sum: { $cond: [{ $gt: ['$cartCount', 1] }, 1, 0] } },
+          totalCustomers: { $sum: 1 },
+          avgCartsPerCustomer: { $avg: '$cartCount' },
+          avgValuePerCustomer: { $avg: '$totalValue' },
+        },
+      },
+    ]);
+  }
+
+  private async getNewCustomerStats(startDate: Date) {
+    return this.cartModel.aggregate([
+      {
+        $match: {
+          userId: { $exists: true },
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: '$userId',
+          firstCartDate: { $min: '$createdAt' },
+          cartCount: { $sum: 1 },
+          totalValue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+      {
+        $match: {
+          firstCartDate: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          newCustomers: { $sum: 1 },
+          avgValuePerNewCustomer: { $avg: '$totalValue' },
+        },
+      },
+    ]);
+  }
+
+  private async getLostRevenue(startDate: Date) {
+    const result = await this.cartModel.aggregate([
+      {
+        $match: {
+          status: CartStatus.ABANDONED,
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          lostRevenue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+    ]);
+    return result[0]?.lostRevenue || 0;
+  }
+
+  private async getRecoveredRevenue(startDate: Date) {
+    const result = await this.cartModel.aggregate([
+      {
+        $match: {
+          status: CartStatus.CONVERTED,
+          lastAbandonmentEmailAt: { $exists: true },
+          convertedAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          recoveredRevenue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+    ]);
+    return result[0]?.recoveredRevenue || 0;
+  }
+
+  private async getPotentialRevenue(startDate: Date) {
+    const result = await this.cartModel.aggregate([
+      {
+        $match: {
+          status: { $in: [CartStatus.ACTIVE, CartStatus.ABANDONED] },
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          potentialRevenue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+        },
+      },
+    ]);
+    return result[0]?.potentialRevenue || 0;
+  }
+
+  private async getRevenueByHour(startDate: Date) {
+    return this.cartModel.aggregate([
+      {
+        $match: {
+          status: CartStatus.CONVERTED,
+          convertedAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: { $hour: '$convertedAt' },
+          revenue: { $sum: { $ifNull: ['$pricingSummary.total', 0] } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+  }
+
+  private async getTopLostProducts(startDate: Date) {
+    return this.cartModel.aggregate([
+      {
+        $match: {
+          status: CartStatus.ABANDONED,
+          createdAt: { $gte: startDate },
+        },
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.variantId',
+          totalQuantity: { $sum: '$items.qty' },
+          cartCount: { $sum: 1 },
+          totalLostValue: { $sum: { $multiply: ['$items.qty', 100] } }, // Mock price calculation
+        },
+      },
+      { $sort: { totalLostValue: -1 } },
+      { $limit: 10 },
+    ]);
   }
 }

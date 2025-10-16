@@ -1,14 +1,15 @@
-import { Controller, Get, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Query, UseInterceptors, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CatalogService } from './catalog.service';
 import { ResponseCacheInterceptor, CacheResponse } from '../../shared/interceptors/response-cache.interceptor';
+import { Currency } from '../exchange-rates/schemas/exchange-rate.schema';
 
 interface ListProductsQuery {
   page?: string;
   limit?: string;
   search?: string;
   categoryId?: string;
-  currency?: string;
+  currency?: Currency;
   brandId?: string;
 }
 
@@ -33,8 +34,17 @@ export class CatalogPublicController {
 
   @Get('products/detail')
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async productDetail(@Query('id') id: string, @Query('currency') currency?: string) {
-    const res = await this.svc.getProduct(id, currency);
+  async productDetail(
+    @Query('id') id: string, 
+    @Query('currency') currency?: Currency,
+    @Req() req?: { user?: { sub: string; preferredCurrency?: Currency } }
+  ) {
+    // استخدام العملة المفضلة للمستخدم إذا لم يتم تحديد عملة أخرى
+    const userCurrency = req?.user?.preferredCurrency;
+    const finalCurrency = currency || userCurrency || Currency.USD;
+    const userId = req?.user?.sub;
+    
+    const res = await this.svc.getProduct(id, finalCurrency, userId);
     return { data: res };
   }
 }
