@@ -27,7 +27,7 @@ import {
 @ApiTags('admin-orders')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/orders')
 export class AdminOrdersController {
   constructor(

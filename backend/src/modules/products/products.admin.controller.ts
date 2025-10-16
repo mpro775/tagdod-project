@@ -24,7 +24,7 @@ import { Variant } from './schemas/variant.schema';
 @ApiTags('admin-products')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/products')
 export class ProductsAdminController {
   constructor(

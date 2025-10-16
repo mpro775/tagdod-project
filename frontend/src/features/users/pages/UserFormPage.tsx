@@ -23,8 +23,9 @@ const userSchema = z.object({
   gender: z.enum(['male', 'female', 'other']).optional().or(z.literal('')),
   jobTitle: z.string().optional().or(z.literal('')),
   password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل').optional().or(z.literal('')),
-  role: z.nativeEnum(UserRole, { required_error: 'يجب اختيار دور' }),
+  role: z.nativeEnum(UserRole, { errorMap: () => ({ message: 'يجب اختيار دور' }) }),
   status: z.nativeEnum(UserStatus),
+  wholesaleDiscountPercent: z.number().min(0).max(100).optional().or(z.literal('')),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -41,11 +42,12 @@ export const UserFormPage: React.FC = () => {
       phone: '',
       firstName: '',
       lastName: '',
-      gender: '',
+      gender: 'male', // ذكر كاختيار افتراضي
       jobTitle: '',
       password: '',
       role: UserRole.USER,
       status: UserStatus.ACTIVE,
+      wholesaleDiscountPercent: '',
     },
   });
 
@@ -61,18 +63,19 @@ export const UserFormPage: React.FC = () => {
         phone: user.phone || '',
         firstName: user.firstName || '',
         lastName: user.lastName || '',
-        gender: user.gender || '',
+        gender: user.gender || 'male',
         jobTitle: user.jobTitle || '',
         password: '', // لا نحمل كلمة المرور في وضع التعديل
         role: user.roles?.[0] || UserRole.USER, // نأخذ الدور الأول فقط
         status: user.status || UserStatus.ACTIVE,
+        wholesaleDiscountPercent: user.capabilities?.wholesale_discount_percent || '',
       });
     }
   }, [user, isEditMode, methods]);
 
   // Submit
   const onSubmit = (data: UserFormData) => {
-    const userData: CreateUserDto = {
+    const userData: any = {
       phone: data.phone,
       firstName: data.firstName || undefined,
       lastName: data.lastName || undefined,
@@ -82,6 +85,16 @@ export const UserFormPage: React.FC = () => {
       roles: [data.role], // نرسل الدور كمصفوفة كما يتوقع الـ backend
       status: data.status,
     };
+
+    // ربط القدرات حسب نوع المستخدم
+    if (data.role === UserRole.ENGINEER) {
+      userData.capabilityRequest = 'engineer';
+    } else if (data.role === UserRole.MERCHANT) {
+      userData.capabilityRequest = 'wholesale';
+      if (data.wholesaleDiscountPercent) {
+        userData.wholesaleDiscountPercent = Number(data.wholesaleDiscountPercent);
+      }
+    }
 
     if (isEditMode) {
       updateUser(
@@ -126,12 +139,54 @@ export const UserFormPage: React.FC = () => {
         <FormProvider {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)}>
             <Grid container spacing={{ xs: 2, sm: 3 }}>
+              {/* الأدوار والصلاحيات - في الأعلى */}
+              <Grid size={{ xs: 12 }}>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom 
+                  sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.25rem' }
+                  }}
+                >
+                  الأدوار والصلاحيات
+                </Typography>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormSelect
+                  name="role"
+                  label="الدور *"
+                  options={[
+                    { value: UserRole.USER, label: 'مستخدم' },
+                    { value: UserRole.ENGINEER, label: 'مهندس' },
+                    { value: UserRole.MERCHANT, label: 'تاجر' },
+                    { value: UserRole.ADMIN, label: 'مدير' },
+                    { value: UserRole.SUPER_ADMIN, label: 'مدير عام' },
+                  ]}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormSelect
+                  name="status"
+                  label="الحالة *"
+                  options={[
+                    { value: UserStatus.ACTIVE, label: 'نشط' },
+                    { value: UserStatus.PENDING, label: 'قيد الانتظار' },
+                    { value: UserStatus.SUSPENDED, label: 'معلق' },
+                  ]}
+                />
+              </Grid>
+
               {/* معلومات أساسية */}
               <Grid size={{ xs: 12 }}>
                 <Typography 
                   variant="h6" 
                   gutterBottom
-                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  sx={{ 
+                    mt: { xs: 1, sm: 2 },
+                    fontSize: { xs: '1rem', sm: '1.25rem' } 
+                  }}
                 >
                   المعلومات الأساسية
                 </Typography>
@@ -166,9 +221,12 @@ export const UserFormPage: React.FC = () => {
                 />
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <FormInput name="jobTitle" label="المسمى الوظيفي" />
-              </Grid>
+              {/* المسمى الوظيفي يظهر فقط للمهندس */}
+              {methods.watch('role') === UserRole.ENGINEER && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormInput name="jobTitle" label="المسمى الوظيفي" placeholder="مهندس كهربائي، ميكانيكي، إلخ..." />
+                </Grid>
+              )}
 
               {!isEditMode && (
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -181,44 +239,17 @@ export const UserFormPage: React.FC = () => {
                 </Grid>
               )}
 
-              {/* الأدوار والصلاحيات */}
-              <Grid size={{ xs: 12 }}>
-                <Typography 
-                  variant="h6" 
-                  gutterBottom 
-                  sx={{ 
-                    mt: { xs: 1, sm: 2 },
-                    fontSize: { xs: '1rem', sm: '1.25rem' }
-                  }}
-                >
-                  الأدوار والصلاحيات
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <FormSelect
-                  name="role"
-                  label="الدور *"
-                  options={[
-                    { value: UserRole.USER, label: 'مستخدم' },
-                    { value: UserRole.MODERATOR, label: 'مشرف' },
-                    { value: UserRole.ADMIN, label: 'مدير' },
-                    { value: UserRole.SUPER_ADMIN, label: 'مدير عام' },
-                  ]}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <FormSelect
-                  name="status"
-                  label="الحالة *"
-                  options={[
-                    { value: UserStatus.ACTIVE, label: 'نشط' },
-                    { value: UserStatus.PENDING, label: 'قيد الانتظار' },
-                    { value: UserStatus.SUSPENDED, label: 'معلق' },
-                  ]}
-                />
-              </Grid>
+              {/* نسبة الخصم للتاجر */}
+              {methods.watch('role') === UserRole.MERCHANT && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormInput
+                    name="wholesaleDiscountPercent"
+                    label="نسبة خصم الجملة (%)"
+                    type="number"
+                    placeholder="0-100"
+                  />
+                </Grid>
+              )}
 
               {/* الأزرار */}
               <Grid size={{ xs: 12 }}>

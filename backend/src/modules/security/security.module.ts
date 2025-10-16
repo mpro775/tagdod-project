@@ -6,6 +6,7 @@ import { RateLimitingMiddleware } from './rate-limiting.middleware';
 import { SecurityHeadersMiddleware } from './security-headers.middleware';
 import { ThreatDetectionMiddleware } from './threat-detection.middleware';
 import { SecurityLoggingInterceptor } from './interceptors/security-logging.interceptor';
+import { RequestMetricsInterceptor } from './interceptors/request-metrics.interceptor';
 import { IPWhitelistGuard } from './guards/ip-whitelist.guard';
 import { DeviceFingerprintGuard } from './guards/device-fingerprint.guard';
 
@@ -17,6 +18,7 @@ import { DeviceFingerprintGuard } from './guards/device-fingerprint.guard';
     RateLimitingService,
     CORSService,
     SecurityLoggingInterceptor,
+    RequestMetricsInterceptor,
     IPWhitelistGuard,
     DeviceFingerprintGuard,
   ],
@@ -24,6 +26,7 @@ import { DeviceFingerprintGuard } from './guards/device-fingerprint.guard';
     RateLimitingService,
     CORSService,
     SecurityLoggingInterceptor,
+    RequestMetricsInterceptor,
     IPWhitelistGuard,
     DeviceFingerprintGuard,
   ],

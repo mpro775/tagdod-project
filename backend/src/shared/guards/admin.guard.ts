@@ -15,7 +15,7 @@ export class AdminGuard implements CanActivate {
     // التحقق من الأدوار الجديدة
     if (user?.roles && Array.isArray(user.roles)) {
       return user.roles.some((role: UserRole) => 
-        [UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR].includes(role)
+        [UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(role)
       );
     }
     

@@ -20,7 +20,7 @@ import { CreateBannerDto, UpdateBannerDto, ListBannersDto } from './dto/banner.d
 @ApiTags('admin-banners')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/banners')
 export class BannersAdminController {
   constructor(private readonly bannersService: BannersService) {}

@@ -131,7 +131,7 @@ export const TEMPLATES: Record<string, Tpl> = {
   NEW_FEATURE: {
     title: 'ميزة جديدة متاحة',
     body: 'ميزة {{featureName}} متاحة الآن! جربها الآن',
-    link: (p) => p.featureLink || '/features',
+    link: (p) => (typeof p.featureLink === 'string' && p.featureLink) ? p.featureLink : '/features',
   },
   
   // Marketing

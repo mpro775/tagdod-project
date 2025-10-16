@@ -28,7 +28,7 @@ import { SuspendUserDto } from './dto/suspend-user.dto';
 @ApiTags('admin-users')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/users')
 export class UsersAdminController {
   constructor(
@@ -235,6 +235,39 @@ export class UsersAdminController {
     }
 
     await user.save();
+
+    // تحديث القدرات حسب النوع
+    if (dto.roles && dto.roles.length > 0) {
+      const mainRole = dto.roles[0];
+      let capabilities = await this.capsModel.findOne({ userId: id });
+
+      // إنشاء القدرات إذا لم تكن موجودة
+      if (!capabilities) {
+        capabilities = await this.capsModel.create({
+          userId: id,
+          customer_capable: true,
+        });
+      }
+
+      // تنظيف القدرات القديمة أولاً
+      capabilities.engineer_capable = false;
+      capabilities.engineer_status = 'pending';
+      capabilities.wholesale_capable = false;
+      capabilities.wholesale_status = 'pending';
+      capabilities.wholesale_discount_percent = 0;
+
+      // إضافة القدرات حسب النوع الجديد
+      if (mainRole === UserRole.ENGINEER) {
+        capabilities.engineer_capable = true;
+        capabilities.engineer_status = 'approved';
+      } else if (mainRole === UserRole.MERCHANT) {
+        capabilities.wholesale_capable = true;
+        capabilities.wholesale_status = 'approved';
+        capabilities.wholesale_discount_percent = dto.wholesaleDiscountPercent || 0;
+      }
+
+      await capabilities.save();
+    }
 
     return {
       data: {

@@ -11,6 +11,7 @@ import {
   Typography,
   Collapse,
 } from '@mui/material';
+import logoImage from '../../../assets/images/logo.png';
 import {
   Dashboard,
   People,
@@ -282,11 +283,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Logo/Title */}
       <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Box
+          component="img"
+          src={logoImage}
+          alt="Tagadodo Logo"
+          sx={{
+            height: 60,
+            width: 'auto',
+            maxWidth: '100%',
+            objectFit: 'contain',
+            mb: 1,
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+          }}
+        />
         <Typography variant="h6" fontWeight="bold">
           {t('app.name')}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {t('navigation.dashboard')}
         </Typography>
       </Box>
 

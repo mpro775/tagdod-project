@@ -1,0 +1,52 @@
+/* Graphik Arabic Font Implementation */
+/* This file ensures proper font loading and fallback for Graphik Arabic */
+
+/* Import the font definitions */
+@import './fonts/stylesheet.css';
+
+/* Global font application */
+* {
+  font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+}
+
+/* Ensure proper font rendering for Arabic text */
+body,
+html {
+  font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Force Graphik Arabic for all Arabic and RTL content */
+[lang="ar"], 
+[dir="rtl"],
+.arabic-text,
+.rtl-text,
+.rtl-content {
+  font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+}
+
+/* Material-UI component overrides */
+.MuiTypography-root,
+.MuiButton-root,
+.MuiTextField-root,
+.MuiInputBase-root,
+.MuiFormLabel-root,
+.MuiChip-root,
+.MuiTab-root,
+.MuiMenuItem-root {
+  font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+}
+
+/* Font weight mappings for Graphik Arabic */
+.font-thin { font-weight: 100; }
+.font-extralight { font-weight: 200; }
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-black { font-weight: 900; }
+.font-super { font-weight: 950; }

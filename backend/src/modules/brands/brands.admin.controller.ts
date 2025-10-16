@@ -20,7 +20,7 @@ import { CreateBrandDto, UpdateBrandDto, ListBrandsDto } from './dto/brand.dto';
 @ApiTags('admin-brands')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/brands')
 export class BrandsAdminController {
   constructor(private readonly brandsService: BrandsService) {}

@@ -22,7 +22,7 @@ import { Category } from './schemas/category.schema';
 @ApiTags('admin-categories')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/categories')
 export class CategoriesAdminController {
   constructor(private categoriesService: CategoriesService) {}

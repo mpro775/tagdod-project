@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, subMonths, format, parseISO } from 'date-fns';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, subMonths, subMinutes, format, parseISO } from 'date-fns';
 import {
   AnalyticsSnapshot,
   AnalyticsSnapshotDocument,
@@ -638,37 +638,84 @@ export class AnalyticsService {
   private async calculatePerformanceMetrics(): Promise<PerformanceMetricsDto> {
     const cacheKey = 'performance:metrics';
 
-    // Try to get from cache first
     const cached = await this.cacheService.get<PerformanceMetricsDto>(cacheKey);
     if (cached) {
       this.logger.debug('Performance metrics cache hit');
       return cached;
     }
 
-    // Cache miss - calculate performance metrics
-    this.logger.debug('Performance metrics cache miss');
+    // Aggregate last 10 minutes from request metrics buckets
+    const client = this.cacheService.getClient();
+    const now = new Date();
+    const buckets: string[] = [];
+    for (let i = 0; i < 10; i++) {
+      const d = subMinutes(now, i); // needs import
+      buckets.push(`solar:metrics:requests:${format(d, 'yyyyMMddHHmm')}`);
+    }
+
+    let total = 0;
+    let errors = 0;
+    let durationMs = 0;
+    for (const key of buckets) {
+      try {
+        const res = await client.hgetall(key);
+        if (res) {
+          total += parseInt(res.total || '0', 10);
+          errors += parseInt(res.errors || '0', 10);
+          durationMs += parseInt(res.durationMs || '0', 10);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // If no recent traffic, return healthy defaults
+    if (total === 0) {
+      const emptyMetrics: PerformanceMetricsDto = {
+        apiResponseTime: 0,
+        errorRate: 0,
+        uptime: 100,
+        concurrentUsers: 0,
+        memoryUsage: 0,
+        cpuUsage: 0,
+        diskUsage: 0,
+        activeConnections: 0,
+        slowestEndpoints: [],
+        databaseStats: {
+          totalCollections: 0,
+          totalDocuments: 0,
+          databaseSize: 0,
+          indexSize: 0,
+        },
+      };
+      await this.cacheService.set(cacheKey, emptyMetrics, { ttl: this.CACHE_TTL.PERFORMANCE_METRICS });
+      return emptyMetrics;
+    }
+
+    const apiResponseTime = Math.round(durationMs / total);
+    const errorRate = errors / total;
+
+    // Uptime rough estimate based on error rate
+    const uptime = 100 - Math.min(100, errorRate * 500);
+
     const metrics: PerformanceMetricsDto = {
-      apiResponseTime: 245,
-      errorRate: 0.02,
-      uptime: 99.9,
-      concurrentUsers: 1250,
-      memoryUsage: 75.5,
-      cpuUsage: 45.2,
-      diskUsage: 68.3,
-      activeConnections: 5,
-      slowestEndpoints: [
-        { endpoint: '/api/search', method: 'GET', averageTime: 1200, maxTime: 5000, callCount: 5000 },
-        { endpoint: '/api/analytics/dashboard', method: 'GET', averageTime: 800, maxTime: 3000, callCount: 200 },
-      ],
+      apiResponseTime,
+      errorRate,
+      uptime,
+      concurrentUsers: 0,
+      memoryUsage: 0,
+      cpuUsage: 0,
+      diskUsage: 0,
+      activeConnections: 0,
+      slowestEndpoints: [],
       databaseStats: {
-        totalCollections: 12,
-        totalDocuments: 50000,
-        databaseSize: 500000000, // 500MB
-        indexSize: 50000000, // 50MB
+        totalCollections: 0,
+        totalDocuments: 0,
+        databaseSize: 0,
+        indexSize: 0,
       },
     };
 
-    // Cache the result
     await this.cacheService.set(cacheKey, metrics, { ttl: this.CACHE_TTL.PERFORMANCE_METRICS });
 
     return metrics;
@@ -776,6 +823,11 @@ export class AnalyticsService {
     const errorRate = snapshot.performance.errorRate;
     const responseTime = snapshot.performance.apiResponseTime;
 
+    // If no recent metrics, assume healthy
+    if (responseTime === 0 && errorRate === 0 && uptime >= 100) {
+      return 100;
+    }
+
     // Simple health calculation (0-100)
     let health = 100;
 
@@ -794,19 +846,82 @@ export class AnalyticsService {
 
   // Additional helper methods for building charts
   private async buildRevenueCharts() {
-    // Simplified revenue charts - in real implementation, these would aggregate real data
-    const daily = Array.from({ length: 30 }, (_, i) => ({
-      date: format(subDays(new Date(), 29 - i), 'yyyy-MM-dd'),
-      revenue: Math.floor(Math.random() * 5000) + 1000,
-      orders: Math.floor(Math.random() * 50) + 10,
-    }));
+    // Real aggregation from orders collection
+    const today = new Date();
+    const thirtyDaysAgo = subDays(today, 29);
 
-    const monthly = Array.from({ length: 12 }, (_, i) => ({
-      month: format(subMonths(new Date(), 11 - i), 'yyyy-MM'),
-      revenue: Math.floor(Math.random() * 50000) + 10000,
-      growth: (Math.random() - 0.5) * 30,
-    }));
+    // Build daily revenue for last 30 days
+    const dailyAgg = await this.orderModel.aggregate([
+      {
+        $match: {
+          status: 'COMPLETED',
+          createdAt: { $gte: startOfDay(thirtyDaysAgo), $lte: endOfDay(today) },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            y: { $year: '$createdAt' },
+            m: { $month: '$createdAt' },
+            d: { $dayOfMonth: '$createdAt' },
+          },
+          revenue: { $sum: '$totalAmount' },
+          orders: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.y': 1, '_id.m': 1, '_id.d': 1 } },
+    ]);
 
+    const dailyMap = new Map<string, { revenue: number; orders: number }>();
+    for (const row of dailyAgg) {
+      const date = new Date(row._id.y, row._id.m - 1, row._id.d);
+      const key = format(date, 'yyyy-MM-dd');
+      dailyMap.set(key, { revenue: row.revenue || 0, orders: row.orders || 0 });
+    }
+
+    const daily = Array.from({ length: 30 }, (_, i) => {
+      const date = subDays(today, 29 - i);
+      const key = format(date, 'yyyy-MM-dd');
+      const found = dailyMap.get(key) || { revenue: 0, orders: 0 };
+      return { date: key, revenue: found.revenue, orders: found.orders };
+    });
+
+    // Build monthly revenue for last 12 months
+    const twelveMonthsAgo = subMonths(today, 11);
+    const monthlyAgg = await this.orderModel.aggregate([
+      {
+        $match: {
+          status: 'COMPLETED',
+          createdAt: { $gte: startOfMonth(twelveMonthsAgo), $lte: endOfMonth(today) },
+        },
+      },
+      {
+        $group: {
+          _id: { y: { $year: '$createdAt' }, m: { $month: '$createdAt' } },
+          revenue: { $sum: '$totalAmount' },
+        },
+      },
+      { $sort: { '_id.y': 1, '_id.m': 1 } },
+    ]);
+
+    const monthlyMap = new Map<string, number>();
+    for (const row of monthlyAgg) {
+      const date = new Date(row._id.y, row._id.m - 1, 1);
+      const key = format(date, 'yyyy-MM');
+      monthlyMap.set(key, row.revenue || 0);
+    }
+
+    const monthly: Array<{ month: string; revenue: number; growth: number }> = [];
+    for (let i = 0; i < 12; i++) {
+      const date = subMonths(today, 11 - i);
+      const key = format(date, 'yyyy-MM');
+      const revenue = monthlyMap.get(key) || 0;
+      const prevRevenue = monthly.length > 0 ? monthly[monthly.length - 1].revenue : 0;
+      const growth = prevRevenue > 0 ? ((revenue - prevRevenue) / prevRevenue) * 100 : 0;
+      monthly.push({ month: key, revenue, growth });
+    }
+
+    // Keep byCategory static until order items/categories are modeled in orders
     const byCategory = [
       { category: 'Solar Panels', revenue: 75000, percentage: 50 },
       { category: 'Inverters', revenue: 45000, percentage: 30 },

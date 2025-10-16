@@ -43,7 +43,7 @@ export const colors = {
   background: {
     primary: '#1A8BC2',
     secondary: '#90EE90',
-    light: '#F5F5F5',
+    light: '#FFFFFF',
     dark: '#333333',
     paper: '#FFFFFF',
   },
@@ -146,7 +146,8 @@ export const colorUtils = {
     
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
     
     if (max !== min) {
       const d = max - min;

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TerminusModule } from '@nestjs/terminus';
@@ -23,6 +24,7 @@ import { SupportModule } from './modules/support/support.module';
 import { SearchModule } from './modules/search/search.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { SecurityModule } from './modules/security/security.module';
+import { RequestMetricsInterceptor } from './modules/security/interceptors/request-metrics.interceptor';
 import { CacheModule } from './shared/cache/cache.module';
 import { BrandsModule } from './modules/brands/brands.module';
 import { BannersModule } from './modules/banners/banners.module';
@@ -75,6 +77,12 @@ import { ProductsModule } from './modules/products/products.module';
 
   ],
   controllers: [HealthController],
-  providers: [RedisHealthIndicator],
+  providers: [
+    RedisHealthIndicator,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestMetricsInterceptor,
+    },
+  ],
 })
 export class AppModule {}

@@ -40,5 +40,13 @@ export class UpdateUserAdminDto {
   @IsOptional()
   @IsBoolean()
   isAdmin?: boolean;
+
+  // Capabilities
+  @IsOptional()
+  @IsIn(['engineer', 'wholesale'])
+  capabilityRequest?: 'engineer' | 'wholesale';
+
+  @IsOptional()
+  wholesaleDiscountPercent?: number;
 }
 

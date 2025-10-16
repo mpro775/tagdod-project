@@ -16,7 +16,7 @@ import { CartService } from './cart.service';
 @ApiTags('admin-carts')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/carts')
 export class AdminCartController {
   constructor(private readonly cartService: CartService) {}

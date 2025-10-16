@@ -23,7 +23,7 @@ import { AttributeValue } from './schemas/attribute-value.schema';
 @ApiTags('admin-attributes')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/attributes')
 export class AttributesAdminController {
   constructor(private attributesService: AttributesService) {}

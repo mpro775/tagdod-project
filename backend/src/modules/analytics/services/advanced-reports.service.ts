@@ -1236,18 +1236,22 @@ export class AdvancedReportsService {
       },
       {
         $project: {
+          _id: 0,
           categoryId: { $toString: '$_id' },
           categoryName: { $ifNull: ['$categoryName', 'Unknown'] },
-          sales: 1,
-          revenue: 1,
-          percentage: 0, // Will calculate after getting total
-          _id: 0,
+          sales: '$sales',
+          revenue: '$revenue',
         },
       },
     ]);
 
+    // If no results, return empty array
+    if (!result || result.length === 0) {
+      return [];
+    }
+
     // Calculate percentages
-    const totalRevenue = result.reduce((sum, item) => sum + item.revenue, 0);
+    const totalRevenue = result.reduce((sum, item) => sum + (item.revenue || 0), 0);
     return result.map((item) => ({
       ...item,
       percentage: totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0,

@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Chip, IconButton, Tooltip } from '@mui/material';
-import { Edit, Delete, Block, CheckCircle, Restore } from '@mui/icons-material';
+import { 
+  Box, 
+  Chip, 
+  IconButton, 
+  Tooltip, 
+  Switch,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  TextField
+} from '@mui/material';
+import { Edit, Delete, Restore } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -26,6 +39,17 @@ export const UsersListPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'createdAt', sort: 'desc' }]);
   const [screenSize, setScreenSize] = useState(window.innerWidth);
+  
+  // Dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    user: User | null;
+    action: 'delete' | null;
+  }>({
+    open: false,
+    user: null,
+    action: null,
+  });
 
   // Listen to window resize
   useEffect(() => {
@@ -49,34 +73,64 @@ export const UsersListPage: React.FC = () => {
   const { mutate: restoreUser } = useRestoreUser();
 
   // Actions
-  const handleDelete = (user: User) => {
-    if (window.confirm(`هل أنت متأكد من حذف المستخدم ${user.firstName}؟`)) {
-      deleteUser(user._id, {
+  const handleStatusToggle = (user: User, checked: boolean) => {
+    // تنفيذ العملية فوراً
+    if (checked) {
+      // المستخدم يريد التفعيل (السويتش ON)
+      activateUser(user._id, {
         onSuccess: () => refetch(),
+        onError: () => {
+          // في حالة الخطأ، نعيد السويتش للحالة السابقة
+          refetch();
+        }
+      });
+    } else {
+      // المستخدم يريد الإيقاف (السويتش OFF)
+      suspendUser(
+        { 
+          id: user._id, 
+          data: { reason: 'تم الإيقاف من لوحة التحكم' }
+        },
+        { 
+          onSuccess: () => refetch(),
+          onError: () => {
+            // في حالة الخطأ، نعيد السويتش للحالة السابقة
+            refetch();
+          }
+        }
+      );
+    }
+  };
+
+  const handleConfirmAction = () => {
+    if (!confirmDialog.user) return;
+
+    if (confirmDialog.action === 'delete') {
+      deleteUser(confirmDialog.user._id, {
+        onSuccess: () => {
+          refetch();
+          handleCloseDialog();
+        },
       });
     }
   };
 
-  const handleSuspend = (user: User) => {
-    const reason = prompt('سبب الإيقاف (اختياري):');
-    suspendUser(
-      { id: user._id, data: reason ? { reason } : undefined },
-      { onSuccess: () => refetch() }
-    );
+  const handleCloseDialog = () => {
+    setConfirmDialog({ open: false, user: null, action: null });
   };
 
-  const handleActivate = (user: User) => {
-    activateUser(user._id, {
-      onSuccess: () => refetch(),
+  const handleDelete = (user: User) => {
+    setConfirmDialog({
+      open: true,
+      user,
+      action: 'delete',
     });
   };
 
   const handleRestore = (user: User) => {
-    if (window.confirm(`هل تريد استعادة المستخدم ${user.firstName}؟`)) {
-      restoreUser(user._id, {
-        onSuccess: () => refetch(),
-      });
-    }
+    restoreUser(user._id, {
+      onSuccess: () => refetch(),
+    });
   };
 
   // Columns
@@ -84,18 +138,27 @@ export const UsersListPage: React.FC = () => {
     {
       field: 'phone',
       headerName: 'رقم الهاتف',
-      minWidth: 140,
-      flex: 1,
+      minWidth: 130,
+      flex: 0.9,
       renderCell: (params) => (
-        <Box>
-          <Box sx={{ fontWeight: 'medium', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-            {params.row.phone}
-          </Box>
-          <Box sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' }, color: 'text.secondary' }}>
-            {params.row.firstName} {params.row.lastName || ''}
-          </Box>
+        <Box sx={{ fontWeight: 'medium', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+          {params.row.phone}
         </Box>
       ),
+    },
+    {
+      field: 'name',
+      headerName: 'الاسم',
+      minWidth: 150,
+      flex: 1.2,
+      renderCell: (params) => {
+        const fullName = `${params.row.firstName || ''} ${params.row.lastName || ''}`.trim();
+        return (
+          <Box sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+            {fullName || '-'}
+          </Box>
+        );
+      },
     },
     {
       field: 'roles',
@@ -104,16 +167,18 @@ export const UsersListPage: React.FC = () => {
       flex: 0.8,
       renderCell: (params) => {
         const role = params.row.roles?.[0] || 'user';
-        const colorMap: Record<string, 'error' | 'warning' | 'info' | 'default'> = {
+        const colorMap: Record<string, 'error' | 'warning' | 'info' | 'success' | 'default'> = {
           super_admin: 'error',
           admin: 'warning',
-          moderator: 'info',
+          merchant: 'info',
+          engineer: 'success',
           user: 'default',
         };
         const labelMap: Record<string, string> = {
           super_admin: 'مدير عام',
           admin: 'مدير',
-          moderator: 'مشرف',
+          merchant: 'تاجر',
+          engineer: 'مهندس',
           user: 'مستخدم',
         };
         return (
@@ -156,7 +221,6 @@ export const UsersListPage: React.FC = () => {
       headerName: 'القدرات',
       minWidth: 120,
       flex: 1,
-      hide: screenSize < 768, // إخفاء في الشاشات الصغيرة
       renderCell: (params) => {
         const caps = params.row.capabilities;
         if (!caps) return '-';
@@ -194,7 +258,6 @@ export const UsersListPage: React.FC = () => {
       headerName: 'تاريخ الإنشاء',
       minWidth: 120,
       flex: 0.8,
-      hide: screenSize < 1024, // إخفاء في الشاشات المتوسطة
       valueFormatter: (value) => formatDate(value as Date),
     },
     {
@@ -228,7 +291,7 @@ export const UsersListPage: React.FC = () => {
         }
 
         return (
-          <Box display="flex" gap={0.5} flexWrap="wrap">
+          <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
             <Tooltip title="تعديل">
               <IconButton
                 size="small"
@@ -243,35 +306,30 @@ export const UsersListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            {user.status === 'suspended' ? (
-              <Tooltip title="تفعيل">
-                <IconButton
-                  size="small"
-                  color="success"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleActivate(user);
+            <Tooltip title={user.status === 'active' ? 'نشط' : 'موقوف'}>
+              <Box 
+                onClick={(e) => e.stopPropagation()}
+                sx={{ display: 'flex', alignItems: 'center' }}
+              >
+                <Switch
+                  checked={user.status === 'active'}
+                  onChange={(e) => {
+                    handleStatusToggle(user, e.target.checked);
                   }}
-                  sx={{ p: { xs: 0.5, sm: 1 } }}
-                >
-                  <CheckCircle fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            ) : (
-              <Tooltip title="إيقاف">
-                <IconButton
                   size="small"
-                  color="warning"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSuspend(user);
+                  color={user.status === 'active' ? 'success' : 'default'}
+                  sx={{ 
+                    m: 0,
+                    '& .MuiSwitch-switchBase.Mui-checked': {
+                      color: 'success.main',
+                    },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      backgroundColor: 'success.main',
+                    },
                   }}
-                  sx={{ p: { xs: 0.5, sm: 1 } }}
-                >
-                  <Block fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
+                />
+              </Box>
+            </Tooltip>
 
             <Tooltip title="حذف">
               <IconButton
@@ -308,13 +366,56 @@ export const UsersListPage: React.FC = () => {
         onSearch={setSearch}
         onAdd={() => navigate('/users/new')}
         addButtonText="إضافة مستخدم"
-        getRowId={(row) => row._id}
+        getRowId={(row: any) => row._id}
         onRowClick={(params) => {
           const row = params.row as User;
           navigate(`/users/${row._id}`);
         }}
         height={screenSize < 600 ? "calc(100vh - 140px)" : "calc(100vh - 180px)"}
       />
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={confirmDialog.open}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: 2,
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1, fontSize: '1.25rem', fontWeight: 'bold' }}>
+          🗑️ حذف المستخدم
+        </DialogTitle>
+        
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2, fontSize: '0.95rem' }}>
+            هل أنت متأكد من حذف المستخدم <strong>{confirmDialog.user?.firstName} {confirmDialog.user?.lastName}</strong>؟
+            <br />
+            يمكنك استعادة المستخدم لاحقاً من المستخدمين المحذوفين.
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            onClick={handleCloseDialog} 
+            color="inherit"
+            variant="outlined"
+          >
+            إلغاء
+          </Button>
+          <Button 
+            onClick={handleConfirmAction} 
+            variant="contained"
+            color="error"
+            autoFocus
+          >
+            حذف
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

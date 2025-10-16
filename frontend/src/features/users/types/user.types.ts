@@ -3,9 +3,10 @@ import { BaseEntity, ListParams } from '@/shared/types/common.types';
 // User Role - متطابق مع الباك إند
 export enum UserRole {
   USER = 'user',
-  MODERATOR = 'moderator',
   ADMIN = 'admin',
   SUPER_ADMIN = 'super_admin',
+  MERCHANT = 'merchant',
+  ENGINEER = 'engineer',
 }
 
 // User Status - متطابق مع الباك إند
@@ -81,6 +82,8 @@ export interface UpdateUserDto {
   permissions?: string[];
   status?: UserStatus;
   isAdmin?: boolean;
+  capabilityRequest?: 'engineer' | 'wholesale';
+  wholesaleDiscountPercent?: number;
 }
 
 export interface ListUsersParams extends ListParams {

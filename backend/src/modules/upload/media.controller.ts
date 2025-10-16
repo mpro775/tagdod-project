@@ -26,7 +26,7 @@ import { ListMediaDto } from './dto/list-media.dto';
 @ApiTags('admin-media')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.MODERATOR)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/media')
 export class MediaController {
   constructor(private mediaService: MediaService) {}

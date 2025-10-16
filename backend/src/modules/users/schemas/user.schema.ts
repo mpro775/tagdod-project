@@ -12,7 +12,8 @@ export enum UserRole {
   USER = 'user',
   ADMIN = 'admin',
   SUPER_ADMIN = 'super_admin',
-  MODERATOR = 'moderator',
+  MERCHANT = 'merchant',
+  ENGINEER = 'engineer',
 }
 
 @Schema({ timestamps: true })
