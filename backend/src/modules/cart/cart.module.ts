@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Cart, CartSchema } from './schemas/cart.schema';
 import { Variant, VariantSchema } from '../catalog/schemas/variant.schema';
@@ -9,6 +9,7 @@ import { CartController } from './cart.controller';
 import { GuestCartController } from './guest-cart.controller';
 import { AuthModule } from '../auth/auth.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { AdminCartController } from './admin-cart.controller';
 
 @Module({
   imports: [
@@ -19,9 +20,9 @@ import { User, UserSchema } from '../users/schemas/user.schema';
       { name: Capabilities.name, schema: CapabilitiesSchema },
       { name: User.name, schema: UserSchema },
     ]),
-    AuthModule,
+    forwardRef(() => AuthModule),
   ],
-  controllers: [CartController, GuestCartController],
+  controllers: [CartController, GuestCartController, AdminCartController],
   providers: [CartService],
   exports: [MongooseModule, CartService],
 })

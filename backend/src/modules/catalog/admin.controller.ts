@@ -12,7 +12,6 @@ import { Product } from './schemas/product.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { Variant } from './schemas/variant.schema';
-import { VariantPrice } from './schemas/variant-price.schema';
 
 @ApiTags('catalog-admin')
 @ApiBearerAuth()

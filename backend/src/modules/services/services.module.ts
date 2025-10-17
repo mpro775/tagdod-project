@@ -10,6 +10,7 @@ import { Address, AddressSchema } from '../addresses/schemas/address.schema';
 import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabilities.schema';
 import { EngineerGuard } from '../../shared/guards/engineer.guard';
 import { AuthModule } from '../auth/auth.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
     AuthModule,
+    NotificationsModule,
   ],
   controllers: [CustomerServicesController, EngineerServicesController, AdminServicesController],
   providers: [ServicesService, EngineerGuard],

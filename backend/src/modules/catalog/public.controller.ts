@@ -2,7 +2,8 @@ import { Controller, Get, Query, UseInterceptors, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CatalogService } from './catalog.service';
 import { ResponseCacheInterceptor, CacheResponse } from '../../shared/interceptors/response-cache.interceptor';
-import { Currency } from '../exchange-rates/schemas/exchange-rate.schema';
+// Currency type definition
+type Currency = 'USD' | 'SAR' | 'YER' ;
 
 interface ListProductsQuery {
   page?: string;
@@ -41,7 +42,7 @@ export class CatalogPublicController {
   ) {
     // استخدام العملة المفضلة للمستخدم إذا لم يتم تحديد عملة أخرى
     const userCurrency = req?.user?.preferredCurrency;
-    const finalCurrency = currency || userCurrency || Currency.USD;
+    const finalCurrency = currency || userCurrency || 'USD';
     const userId = req?.user?.sub;
     
     const res = await this.svc.getProduct(id, finalCurrency, userId);

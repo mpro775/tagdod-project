@@ -7,14 +7,13 @@ import { VariantPrice } from './schemas/variant-price.schema';
 import { slugify } from '../../shared/utils/slug.util';
 import { CacheService } from '../../shared/cache/cache.service';
 import { CurrencyConversionService } from '../exchange-rates/currency-conversion.service';
-import { Currency } from '../exchange-rates/schemas/exchange-rate.schema';
 
 interface ListProductsParams {
   page?: number;
   limit?: number;
   search?: string;
   categoryId?: string;
-  currency?: Currency;
+  currency?: 'USD' | 'SAR' | 'YER';
   brandId?: string;
 }
 
@@ -88,7 +87,7 @@ export class CatalogService {
     const existing = await this.priceModel.findOne({
       variantId: dto.variantId,
     });
-    
+
     let price;
     if (existing) {
       existing.basePriceUSD = dto.basePriceUSD;
@@ -115,7 +114,10 @@ export class CatalogService {
     const cacheKey = `products:list:${page}:${limit}:${search || ''}:${categoryId || ''}:${brandId || ''}`;
 
     // Try to get from cache first
-    const cached = await this.cacheService.get<{ items: unknown[]; meta: { page: number; limit: number; total: number } }>(cacheKey);
+    const cached = await this.cacheService.get<{
+      items: unknown[];
+      meta: { page: number; limit: number; total: number };
+    }>(cacheKey);
     if (cached) {
       this.logger.debug(
         `Products list cache hit: page=${page}, search=${search}, category=${categoryId}, brand=${brandId}`,
@@ -149,7 +151,7 @@ export class CatalogService {
     return result;
   }
 
-  async getProduct(productId: string, currency?: Currency, userId?: string) {
+  async getProduct(productId: string, currency?: 'USD' | 'SAR' | 'YER', userId?: string) {
     const cacheKey = `product:detail:${productId}:${currency || 'all'}:${userId || 'guest'}`;
 
     // Try to get from cache first
@@ -166,28 +168,30 @@ export class CatalogService {
 
     const variants = await this.variantModel.find({ productId }).lean();
     const variantIds = variants.map((v) => v._id);
-    const prices = await this.priceModel
-      .find({ variantId: { $in: variantIds } })
-      .lean();
+    const prices = await this.priceModel.find({ variantId: { $in: variantIds } }).lean();
 
     // تحويل الأسعار إذا تم تحديد عملة
     let convertedPrices = prices;
-    if (currency && currency !== Currency.USD) {
+    if (currency && currency !== 'USD') {
       try {
         convertedPrices = await Promise.all(
           prices.map(async (price) => {
-            const converted = await this.currencyConversionService.convertFromUSD(
-              price.basePriceUSD, 
-              currency
+            const converted = await this.currencyConversionService.convertCurrencyAdvanced(
+              'USD',
+              currency,
+              price.basePriceUSD,
+              {
+                rateType: 'buy',
+              },
             );
             return {
               ...price,
               convertedAmount: converted.amount,
               convertedCurrency: currency,
-              formattedPrice: converted.formatted,
-              exchangeRate: converted.exchangeRate
+              formattedPrice: converted.result.toFixed(2),
+              exchangeRate: converted.rate,
             };
-          })
+          }),
         );
       } catch (error) {
         this.logger.error(`Error converting prices for product ${productId}:`, error);
@@ -195,11 +199,11 @@ export class CatalogService {
       }
     }
 
-    const result = { 
-      product, 
-      variants, 
+    const result = {
+      product,
+      variants,
       prices: convertedPrices,
-      currency: currency || Currency.USD
+      currency: currency || 'USD',
     };
 
     // Cache the result

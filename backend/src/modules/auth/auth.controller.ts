@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards, Logger } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { OtpService } from './otp.service';
 import { TokensService } from './tokens.service';
 import { SendOtpDto } from './dto/send-otp.dto';

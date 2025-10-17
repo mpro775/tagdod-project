@@ -2,9 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User } from '../schemas/user.schema';
-import { Order, OrderStatus } from '../../checkout/schemas/order.schema';
+import { Order, OrderItem } from '../../checkout/schemas/order.schema';
 import { Favorite } from '../../favorites/schemas/favorite.schema';
 import { SupportTicket } from '../../support/schemas/support-ticket.schema';
+
+interface PopulatedProduct {
+  _id: string;
+  name: string;
+  category: string;
+}
 
 export interface UserStats {
   // معلومات أساسية
@@ -14,7 +20,7 @@ export interface UserStats {
     firstName?: string;
     lastName?: string;
     status: string;
-    role: string[];
+    roles: string[];
     createdAt: Date;
     lastLogin?: Date;
   };
@@ -122,8 +128,8 @@ export class UserAnalyticsService {
           firstName: user.firstName,
           lastName: user.lastName,
           status: user.status,
-          role: user.roles || [],
-          createdAt: user.createdAt,
+          roles: user.roles || [],
+          createdAt: (user as User & { createdAt?: Date }).createdAt || new Date(),
         },
         orders: orderStats,
         favorites: favoriteStats,
@@ -224,7 +230,6 @@ export class UserAnalyticsService {
     try {
       const now = new Date();
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
       const [
         totalUsers,
@@ -289,15 +294,15 @@ export class UserAnalyticsService {
       .lean();
   }
 
-  private calculateOrderStats(orders: any[]) {
-    const completedOrders = orders.filter(o => ['COMPLETED', 'DELIVERED'].includes(o.status));
+  private calculateOrderStats(orders: Order[]) {
+    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
     const totalSpent = completedOrders.reduce((sum, order) => sum + order.total, 0);
     const averageOrderValue = completedOrders.length > 0 ? totalSpent / completedOrders.length : 0;
 
     // تحليل الفئات المفضلة
     const categoryStats = new Map<string, { count: number; amount: number }>();
     completedOrders.forEach(order => {
-      order.items.forEach((item: any) => {
+      order.items.forEach((item: OrderItem) => {
         const category = item.snapshot?.categoryName || 'غير محدد';
         const current = categoryStats.get(category) || { count: 0, amount: 0 };
         categoryStats.set(category, {
@@ -315,22 +320,23 @@ export class UserAnalyticsService {
     return {
       total: orders.length,
       completed: completedOrders.length,
-      pending: orders.filter(o => o.status === 'PENDING').length,
-      cancelled: orders.filter(o => o.status === 'CANCELLED').length,
+      pending: orders.filter(o => o.status === 'pending').length,
+      cancelled: orders.filter(o => o.status === 'cancelled').length,
       totalSpent,
       averageOrderValue,
-      firstOrderDate: orders.length > 0 ? orders[orders.length - 1].createdAt : undefined,
-      lastOrderDate: orders.length > 0 ? orders[0].createdAt : undefined,
+      firstOrderDate: orders.length > 0 ? (orders[orders.length - 1] as Order & { createdAt?: Date }).createdAt : undefined,
+      lastOrderDate: orders.length > 0 ? (orders[0] as Order & { createdAt?: Date }).createdAt : undefined,
       favoriteCategories,
     };
   }
 
-  private calculateFavoriteStats(favorites: any[]) {
+  private calculateFavoriteStats(favorites: Favorite[]) {
     const categoryStats = new Map<string, number>();
     favorites.forEach(fav => {
-      if (fav.productId?.category) {
-        const current = categoryStats.get(fav.productId.category) || 0;
-        categoryStats.set(fav.productId.category, current + 1);
+      const product = fav.productId as unknown as PopulatedProduct;
+      if (product?.category) {
+        const current = categoryStats.get(product.category) || 0;
+        categoryStats.set(product.category, current + 1);
       }
     });
 
@@ -340,9 +346,9 @@ export class UserAnalyticsService {
       .slice(0, 5);
 
     const recentFavorites = favorites.slice(0, 10).map(fav => ({
-      productId: fav.productId._id,
-      productName: fav.productId?.name || 'منتج محذوف',
-      addedAt: fav.createdAt,
+      productId: (fav.productId as unknown as PopulatedProduct)?._id || '',
+      productName: (fav.productId as unknown as PopulatedProduct)?.name || 'منتج محذوف',
+      addedAt: (fav as Favorite & { createdAt?: Date }).createdAt || new Date(),
     }));
 
     return {
@@ -352,9 +358,9 @@ export class UserAnalyticsService {
     };
   }
 
-  private calculateSupportStats(tickets: any[]) {
-    const resolvedTickets = tickets.filter(t => t.status === 'RESOLVED');
-    const openTickets = tickets.filter(t => ['OPEN', 'IN_PROGRESS'].includes(t.status));
+  private calculateSupportStats(tickets: SupportTicket[]) {
+    const resolvedTickets = tickets.filter(t => t.status === 'resolved');
+    const openTickets = tickets.filter(t => ['open', 'in_progress'].includes(t.status));
 
     return {
       totalTickets: tickets.length,
@@ -363,8 +369,8 @@ export class UserAnalyticsService {
     };
   }
 
-  private analyzeUserBehavior(orders: any[]) {
-    const completedOrders = orders.filter(o => ['COMPLETED', 'DELIVERED'].includes(o.status));
+  private analyzeUserBehavior(orders: Order[]) {
+    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
     
     // طريقة الدفع المفضلة
     const paymentMethods = new Map<string, number>();
@@ -380,14 +386,15 @@ export class UserAnalyticsService {
     if (completedOrders.length > 1) {
       const firstOrder = completedOrders[completedOrders.length - 1];
       const lastOrder = completedOrders[0];
-      const daysDiff = (lastOrder.createdAt - firstOrder.createdAt) / (1000 * 60 * 60 * 24);
-      averageOrderFrequency = daysDiff / (completedOrders.length - 1);
+      const daysDiff = ((lastOrder as Order & { createdAt?: Date }).createdAt?.getTime() || 0) - ((firstOrder as Order & { createdAt?: Date }).createdAt?.getTime() || 0);
+      const daysDiffInDays = daysDiff / (1000 * 60 * 60 * 24);
+      averageOrderFrequency = daysDiffInDays / (completedOrders.length - 1);
     }
 
     // الأنماط الموسمية
     const monthlyStats = new Map<string, { orders: number; amount: number }>();
     completedOrders.forEach(order => {
-      const month = order.createdAt.toISOString().substring(0, 7); // YYYY-MM
+      const month = (order as Order & { createdAt?: Date }).createdAt?.toISOString().substring(0, 7) || new Date().toISOString().substring(0, 7); // YYYY-MM
       const current = monthlyStats.get(month) || { orders: 0, amount: 0 };
       monthlyStats.set(month, {
         orders: current.orders + 1,
@@ -407,7 +414,7 @@ export class UserAnalyticsService {
     };
   }
 
-  private async calculateUserScore(userId: string, orderStats: any, supportStats: any) {
+  private async calculateUserScore(userId: string, orderStats: { total: number; completed: number; totalSpent: number }, supportStats: { totalTickets: number; openTickets: number }) {
     // حساب نقاط الولاء
     const loyaltyScore = Math.min(100, (orderStats.total * 10) + (orderStats.completed * 15));
     
@@ -440,14 +447,14 @@ export class UserAnalyticsService {
     };
   }
 
-  private generatePredictions(orders: any[], behavior: any) {
-    const completedOrders = orders.filter(o => ['COMPLETED', 'DELIVERED'].includes(o.status));
+  private generatePredictions(orders: Order[], behavior: { averageOrderFrequency: number }) {
+    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
     
     // تحليل مخاطر فقدان العميل
     let churnRisk: 'low' | 'medium' | 'high' = 'low';
     if (completedOrders.length > 0) {
       const lastOrder = completedOrders[0];
-      const daysSinceLastOrder = (Date.now() - lastOrder.createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      const daysSinceLastOrder = (Date.now() - ((lastOrder as Order & { createdAt?: Date }).createdAt?.getTime() || Date.now())) / (1000 * 60 * 60 * 24);
       
       if (daysSinceLastOrder > 90) churnRisk = 'high';
       else if (daysSinceLastOrder > 30) churnRisk = 'medium';
@@ -484,7 +491,7 @@ export class UserAnalyticsService {
 
   private async getTopSpenders(limit: number) {
     return this.orderModel.aggregate([
-      { $match: { status: { $in: ['COMPLETED', 'DELIVERED'] } } },
+      { $match: { status: { $in: ['completed', 'delivered'] } } },
       {
         $group: {
           _id: '$userId',
@@ -533,7 +540,7 @@ export class UserAnalyticsService {
 
   private async getAverageOrderValue(): Promise<number> {
     const result = await this.orderModel.aggregate([
-      { $match: { status: { $in: ['COMPLETED', 'DELIVERED'] } } },
+      { $match: { status: { $in: ['completed', 'delivered'] } } },
       {
         $group: {
           _id: null,

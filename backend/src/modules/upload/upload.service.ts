@@ -37,9 +37,9 @@ export class UploadService {
    * Upload file to Bunny.net Storage
    */
   async uploadFile(
-    file: Express.Multer.File,
+    file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
     folder: string = 'uploads',
-    customFilename?: string
+    customFilename?: string,
   ): Promise<UploadResult> {
     try {
       // Validate file
@@ -90,8 +90,8 @@ export class UploadService {
    * Upload multiple files
    */
   async uploadFiles(
-    files: Express.Multer.File[],
-    folder: string = 'uploads'
+    files: { buffer: Buffer; originalname: string; mimetype: string; size: number }[],
+    folder: string = 'uploads',
   ): Promise<UploadResult[]> {
     const results: UploadResult[] = [];
 
@@ -112,7 +112,7 @@ export class UploadService {
 
       const response: AxiosResponse = await axios.delete(deleteUrl, {
         headers: {
-          'AccessKey': this.bunnyCredentials.apiKey,
+          AccessKey: this.bunnyCredentials.apiKey,
         },
       });
 
@@ -128,7 +128,12 @@ export class UploadService {
   /**
    * Validate file before upload
    */
-  private validateFile(file: Express.Multer.File): void {
+  private validateFile(file: {
+    buffer: Buffer;
+    originalname: string;
+    mimetype: string;
+    size: number;
+  }): void {
     // Check file size (max 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
@@ -148,7 +153,7 @@ export class UploadService {
 
     if (!allowedTypes.includes(file.mimetype)) {
       throw new BadRequestException(
-        `File type ${file.mimetype} not allowed. Allowed types: ${allowedTypes.join(', ')}`
+        `File type ${file.mimetype} not allowed. Allowed types: ${allowedTypes.join(', ')}`,
       );
     }
   }
@@ -167,7 +172,7 @@ export class UploadService {
 
       const response: AxiosResponse = await axios.head(url, {
         headers: {
-          'AccessKey': this.bunnyCredentials.apiKey,
+          AccessKey: this.bunnyCredentials.apiKey,
         },
       });
 

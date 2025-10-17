@@ -1,7 +1,8 @@
 import { Controller, Get, Query, Param } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { MarketingService } from './marketing.service';
-import { PricingQueryDto, ValidateCouponDto } from './dto/price-rule.dto';
+import { PricingQueryDto } from './dto/price-rule.dto';
+import { ValidateCouponDto } from './dto/coupon.dto';
 import { BannerLocation } from './schemas/banner.schema';
 
 @ApiTags('marketing-public')

@@ -47,6 +47,10 @@ export class User {
   @Prop({ type: String, enum: Object.values(Currency), default: Currency.USD })
   preferredCurrency!: Currency;
   
+  // تتبع النشاط
+  @Prop({ type: Date, default: Date.now })
+  lastActivityAt!: Date;
+  
   // Soft Delete
   @Prop({ type: Date, default: null }) deletedAt?: Date | null;
   @Prop() deletedBy?: string; // userId of admin who deleted
@@ -65,3 +69,5 @@ UserSchema.index({ status: 1 });
 UserSchema.index({ deletedAt: 1 });
 UserSchema.index({ roles: 1 });
 UserSchema.index({ status: 1, deletedAt: 1, createdAt: -1 });
+UserSchema.index({ lastActivityAt: -1 });
+UserSchema.index({ status: 1, lastActivityAt: -1 });

@@ -14,7 +14,7 @@ import { Product, ProductSchema } from '../catalog/schemas/product.schema';
 import { Variant, VariantSchema } from '../catalog/schemas/variant.schema';
 import { CartModule } from '../cart/cart.module';
 import { AddressesModule } from '../addresses/addresses.module';
-import { CouponsModule } from '../coupons/coupons.module';
+import { MarketingModule } from '../marketing/marketing.module';
 import { AuthModule } from '../auth/auth.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 
@@ -22,7 +22,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
   imports: [
     CartModule,
     AddressesModule,
-    CouponsModule,
+    MarketingModule,
     AuthModule,
     MongooseModule.forFeature([
       { name: Order.name, schema: OrderSchema },

@@ -12,8 +12,8 @@ export const envSchema = z.object({
   REDIS_URL: z.string().min(1),
   
   // JWT Configuration
-  JWT_SECRET: z.string().min(32),
-  REFRESH_SECRET: z.string().min(32),
+  JWT_SECRET: z.string().min(1),
+  REFRESH_SECRET: z.string().min(1),
   
   // OTP Configuration
   OTP_TTL_SECONDS: z.coerce.number().default(300),

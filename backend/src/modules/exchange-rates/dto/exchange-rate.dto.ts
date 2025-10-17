@@ -1,16 +1,54 @@
-import { IsEnum, IsNumber, IsOptional, IsString, IsDateString, Min } from 'class-validator';
-import { Currency } from '../schemas/exchange-rate.schema';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsDateString,
+  IsObject,
+  Min,
+} from 'class-validator';
 
 export class CreateExchangeRateDto {
-  @IsEnum(Currency)
-  fromCurrency!: Currency;
+  @IsString()
+  fromCurrency!: string;
 
-  @IsEnum(Currency)
-  toCurrency!: Currency;
+  @IsString()
+  toCurrency!: string;
 
   @IsNumber()
-  @Min(0)
+  @Min(0.0001)
   rate!: number;
+
+  @IsNumber()
+  @Min(0.0001)
+  baseRate!: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.0001)
+  buyRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.0001)
+  sellRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  spread?: number;
+
+  @IsOptional()
+  @IsEnum(['manual', 'automatic', 'api'])
+  source?: 'manual' | 'automatic' | 'api';
+
+  @IsOptional()
+  @IsString()
+  apiProvider?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 
   @IsOptional()
   @IsDateString()
@@ -21,15 +59,50 @@ export class CreateExchangeRateDto {
   expiryDate?: string;
 
   @IsOptional()
-  @IsString()
-  notes?: string;
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class UpdateExchangeRateDto {
   @IsOptional()
   @IsNumber()
-  @Min(0)
+  @Min(0.0001)
   rate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.0001)
+  baseRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.0001)
+  buyRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.0001)
+  sellRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  spread?: number;
+
+  @IsOptional()
+  @IsEnum(['manual', 'automatic', 'api'])
+  source?: 'manual' | 'automatic' | 'api';
+
+  @IsOptional()
+  @IsString()
+  apiProvider?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 
   @IsOptional()
   @IsDateString()
@@ -40,21 +113,126 @@ export class UpdateExchangeRateDto {
   expiryDate?: string;
 
   @IsOptional()
-  @IsString()
-  notes?: string;
-
-  @IsOptional()
-  isActive?: boolean;
+  @IsObject()
+  metadata?: Record<string, unknown>;
 }
 
 export class ConvertCurrencyDto {
+  @IsString()
+  fromCurrency!: string;
+
+  @IsString()
+  toCurrency!: string;
+
   @IsNumber()
-  @Min(0)
+  @Min(0.01)
   amount!: number;
 
-  @IsEnum(Currency)
-  fromCurrency!: Currency;
+  @IsOptional()
+  @IsString()
+  rateType?: 'buy' | 'sell' | 'mid'; // نوع السعر
+}
 
-  @IsEnum(Currency)
-  toCurrency!: Currency;
+export class ExchangeRateQueryDto {
+  @IsOptional()
+  @IsString()
+  fromCurrency?: string;
+
+  @IsOptional()
+  @IsString()
+  toCurrency?: string;
+
+  @IsOptional()
+  @IsEnum(['manual', 'automatic', 'api'])
+  source?: 'manual' | 'automatic' | 'api';
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  limit?: number = 50;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  offset?: number = 0;
+}
+
+export class ExchangeRateHistoryQueryDto {
+  @IsOptional()
+  @IsString()
+  fromCurrency?: string;
+
+  @IsOptional()
+  @IsString()
+  toCurrency?: string;
+
+  @IsOptional()
+  @IsString()
+  updatedBy?: string;
+
+  @IsOptional()
+  @IsEnum(['increase', 'decrease', 'no_change'])
+  changeType?: 'increase' | 'decrease' | 'no_change';
+
+  @IsOptional()
+  @IsString()
+  source?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  limit?: number = 50;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  offset?: number = 0;
+}
+
+export class BulkUpdateExchangeRatesDto {
+  @IsObject()
+  updates!: Array<{
+    fromCurrency: string;
+    toCurrency: string;
+    rate: number;
+    reason?: string;
+  }>;
+}
+
+export class ExchangeRateStatisticsDto {
+  @IsOptional()
+  @IsString()
+  fromCurrency?: string;
+
+  @IsOptional()
+  @IsString()
+  toCurrency?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }

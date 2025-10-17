@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsArray, IsBoolean } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsArray } from 'class-validator';
 import { CouponType, CouponStatus, CouponVisibility, DiscountAppliesTo } from '../schemas/coupon.schema';
 
 export class CreateCouponDto {

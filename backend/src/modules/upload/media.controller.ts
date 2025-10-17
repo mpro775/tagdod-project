@@ -33,7 +33,7 @@ export class MediaController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
   async uploadMedia(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
     @Body() dto: UploadMediaDto,
     @Req() req: { user: { sub: string } },
   ) {

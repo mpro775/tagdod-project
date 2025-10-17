@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
@@ -115,17 +108,13 @@ export class AdminCartController {
     @Query('dateTo') dateTo?: string,
   ) {
     const filters = {
-      status: status as any,
+      status: status as string | undefined,
       userId,
       dateFrom: dateFrom ? new Date(dateFrom) : undefined,
       dateTo: dateTo ? new Date(dateTo) : undefined,
     };
 
-    const result = await this.cartService.getAllCarts(
-      parseInt(page),
-      parseInt(limit),
-      filters,
-    );
+    const result = await this.cartService.getAllCarts(parseInt(page), parseInt(limit), filters);
 
     return {
       success: true,
@@ -196,4 +185,3 @@ export class AdminCartController {
     };
   }
 }
-

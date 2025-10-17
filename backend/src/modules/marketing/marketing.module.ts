@@ -9,6 +9,7 @@ import { AuthModule } from '../auth/auth.module';
 import { PriceRule, PriceRuleSchema } from './schemas/price-rule.schema';
 import { Coupon, CouponSchema } from './schemas/coupon.schema';
 import { Banner, BannerSchema } from './schemas/banner.schema';
+import { VariantPrice, VariantPriceSchema } from '../catalog/schemas/variant-price.schema';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { Banner, BannerSchema } from './schemas/banner.schema';
       { name: PriceRule.name, schema: PriceRuleSchema },
       { name: Coupon.name, schema: CouponSchema },
       { name: Banner.name, schema: BannerSchema },
+      { name: VariantPrice.name, schema: VariantPriceSchema },
     ]),
     AuthModule,
   ],

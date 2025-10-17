@@ -113,7 +113,8 @@ export class AnalyticsService {
       const snapshotData = snapshot.toObject();
       // Remove _id and __v fields to avoid MongoDB immutable field errors
       const { _id, __v, ...cleanData } = snapshotData;
-      
+      void _id;
+      void __v;
       const existing = await this.analyticsModel.findOneAndUpdate(
         { date: snapshot.date, period },
         { $set: cleanData },
@@ -199,9 +200,15 @@ export class AnalyticsService {
    */
   private async calculateUserAnalytics(startDate: Date, endDate: Date) {
     const [totalUsers, activeUsers, newUsers] = await Promise.all([
-      this.userModel.countDocuments({}),
-      this.userModel.countDocuments({ lastLogin: { $gte: startDate } }),
-      this.userModel.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
+      this.userModel.countDocuments({ deletedAt: null }),
+      this.userModel.countDocuments({ 
+        lastActivityAt: { $gte: startDate },
+        deletedAt: null 
+      }),
+      this.userModel.countDocuments({ 
+        createdAt: { $gte: startDate, $lte: endDate },
+        deletedAt: null 
+      }),
     ]);
 
     // Get user types breakdown
@@ -272,8 +279,11 @@ export class AnalyticsService {
       .select('name adminRating')
       .lean();
 
-    // Low stock alerts (assuming we have inventory tracking)
-    const lowStock: Array<{ productId: string; name: string; stock: number }> = []; // Will be populated when inventory system is complete
+    // Low stock alerts - will be populated when inventory system is integrated
+    const lowStock: Array<{ productId: string; name: string; stock: number }> = [];
+
+    // Inventory value - will be calculated when inventory system is integrated
+    const inventoryValue = 0;
 
     return {
       total: totalProducts,
@@ -284,6 +294,7 @@ export class AnalyticsService {
       averageRating,
       topRated: topRated.map(p => ({ productId: p._id, name: p.name, rating: p.adminRating, sales: 0 })),
       lowStock,
+      inventoryValue,
     };
   }
 

@@ -6,6 +6,10 @@ import { Favorite, FavoriteSchema } from '../favorites/schemas/favorite.schema';
 import { SupportTicket, SupportTicketSchema } from '../support/schemas/support-ticket.schema';
 import { UserAnalyticsService } from './services/user-analytics.service';
 import { UserAnalyticsController } from './controllers/user-analytics.controller';
+import { CheckoutModule } from '../checkout/checkout.module';
+import { FavoritesModule } from '../favorites/favorites.module';
+import { SupportModule } from '../support/support.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -16,9 +20,10 @@ import { UserAnalyticsController } from './controllers/user-analytics.controller
       { name: SupportTicket.name, schema: SupportTicketSchema },
     ]),
     // استيراد الوحدات المطلوبة
-    forwardRef(() => import('../checkout/checkout.module')),
-    forwardRef(() => import('../favorites/favorites.module')),
-    forwardRef(() => import('../support/support.module')),
+    forwardRef(() => AuthModule),
+    forwardRef(() => CheckoutModule),
+    forwardRef(() => FavoritesModule),
+    forwardRef(() => SupportModule),
   ],
   controllers: [UserAnalyticsController],
   providers: [UserAnalyticsService],

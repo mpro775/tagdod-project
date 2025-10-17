@@ -1,62 +1,66 @@
 import { NestFactory } from '@nestjs/core';
-import helmet from 'helmet';
-
 import { ValidationPipe, Logger } from '@nestjs/common';
-
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-
-import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
-import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-envelope.interceptor';
-import { CORSService } from './modules/security/cors.service';
-import { SecurityLoggingInterceptor } from './modules/security/interceptors/security-logging.interceptor';
-
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  
+  let app;
+  try {
+    app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn', 'debug', 'verbose'],
+    });
+  } catch (error) {
+    logger.error('Failed to create NestJS application:', error);
+    logger.error('Error stack:', error instanceof Error ? error.stack : 'Unknown error');
+    process.exit(1);
+  }
 
-  // Get security services
-  const corsService = app.get(CORSService);
-  const securityLoggingInterceptor = app.get(SecurityLoggingInterceptor);
-
-  // Configure CORS with advanced settings
-  app.enableCors(corsService.getConfig());
-
-  // Configure Helmet with custom settings
-  app.use(helmet({
-    contentSecurityPolicy: false, // We handle CSP in middleware
-    crossOriginEmbedderPolicy: false,
+  // Global validation pipe
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    // Suppress Zod reserved keys warning
+    disableErrorMessages: false,
   }));
 
-  // Apply security middlewares (defined in SecurityModule)
+  // CORS configuration
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    credentials: true,
+  });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
-  app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(
-    new ResponseEnvelopeInterceptor(),
-    securityLoggingInterceptor, // Add security logging
-  );
-
+  // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle('Solar Backend API')
+    .setTitle('Solar Commerce API')
+    .setDescription('Complete e-commerce platform for solar products')
     .setVersion('1.0')
     .addBearerAuth()
+    .addTag('auth', 'Authentication endpoints')
+    .addTag('users', 'User management')
+    .addTag('products', 'Product management')
+    .addTag('analytics', 'Analytics and reporting')
+    .addTag('cart', 'Shopping cart')
+    .addTag('checkout', 'Order processing')
+    .addTag('support', 'Customer support')
+    .addTag('services', 'Service requests')
+    .addTag('marketing', 'Marketing and campaigns')
     .build();
-  const doc = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, doc);
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  // Global prefix
+  app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  logger.log(`API running on http://localhost:${port} (docs: /docs)`);
+
+  logger.log(`🚀 Application is running on: http://localhost:${port}`);
+  logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  logger.log(`🔍 Analytics Dashboard: http://localhost:${port}/api/analytics/dashboard`);
 }
+
 bootstrap();

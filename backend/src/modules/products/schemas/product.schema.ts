@@ -101,6 +101,22 @@ export class Product {
   @Prop({ default: 0 })
   averageRating!: number; // متوسط التقييم
 
+  // المخزون
+  @Prop({ default: 0 })
+  stock!: number; // الكمية المتاحة
+
+  @Prop({ default: 0 })
+  minStock!: number; // الحد الأدنى للمخزون
+
+  @Prop({ default: 0 })
+  maxStock!: number; // الحد الأقصى للمخزون
+
+  @Prop({ default: false })
+  trackStock!: boolean; // تتبع المخزون
+
+  @Prop({ default: false })
+  allowBackorder!: boolean; // السماح بالطلب عند نفاد المخزون
+
   // Soft Delete
   @Prop({ type: Date, default: null })
   deletedAt?: Date | null;
@@ -126,4 +142,9 @@ ProductSchema.index({ deletedAt: 1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ salesCount: -1 });
 ProductSchema.index({ viewsCount: -1 });
+
+// Inventory indexes
+ProductSchema.index({ stock: 1, minStock: 1 });
+ProductSchema.index({ trackStock: 1, stock: 1 });
+ProductSchema.index({ status: 1, stock: 1 });
 

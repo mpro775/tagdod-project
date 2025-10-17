@@ -4,6 +4,8 @@ import { Search, FilterList } from '@mui/icons-material';
 import ProductCard from '../components/ProductCard';
 import { CurrencySelector } from '@/shared/components/CurrencySelector';
 import { useCurrency } from '@/shared/hooks/useCurrency';
+import { useCart } from '../../cart/hooks/useCart';
+import { useFavorites, useIsFavorited } from '../../favorites/hooks/useFavorites';
 
 interface Product {
   _id: string;
@@ -43,6 +45,10 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Hooks for cart and favorites
+  const { addToCart, isAddingToCart } = useCart();
+  const { toggleFavorite, isTogglingFavorite } = useFavorites();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
@@ -111,13 +117,11 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
   };
 
   const handleAddToCart = (variantId: string) => {
-    // TODO: تنفيذ إضافة للسلة
-    console.log('Add to cart:', variantId);
+    addToCart({ variantId, quantity: 1 });
   };
 
   const handleToggleFavorite = (productId: string) => {
-    // TODO: تنفيذ إضافة/إزالة من المفضلة
-    console.log('Toggle favorite:', productId);
+    toggleFavorite(productId);
   };
 
   if (error) {
@@ -216,7 +220,7 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
           <Grid container spacing={3}>
             {products.map((product) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
-                <ProductCard
+                <ProductCardWithFavorites
                   product={product}
                   onAddToCart={handleAddToCart}
                   onToggleFavorite={handleToggleFavorite}
@@ -257,6 +261,24 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
         )}
       </Box>
     </Box>
+  );
+};
+
+// Component that wraps ProductCard with favorites functionality
+const ProductCardWithFavorites: React.FC<{
+  product: Product;
+  onAddToCart: (variantId: string) => void;
+  onToggleFavorite: (productId: string) => void;
+}> = ({ product, onAddToCart, onToggleFavorite }) => {
+  const { data: isFavorited } = useIsFavorited(product._id);
+
+  return (
+    <ProductCard
+      product={product}
+      onAddToCart={onAddToCart}
+      onToggleFavorite={onToggleFavorite}
+      isFavorite={isFavorited}
+    />
   );
 };
 

@@ -5,7 +5,6 @@ import {
   Param,
   Query,
   UseGuards,
-  Req,
   Body,
   HttpException,
   HttpStatus,
@@ -17,15 +16,12 @@ import { Roles } from '../../../shared/decorators/roles.decorator';
 import { UserRole } from '../schemas/user.schema';
 import { UserAnalyticsService } from '../services/user-analytics.service';
 import {
-  GetUserStatsDto,
   GetCustomerRankingsDto,
-  GetUserAnalyticsQueryDto,
   UserDetailedStatsDto,
   CustomerRankingDto,
   OverallUserAnalyticsDto,
   UserStatsFilterDto,
   PaginatedUserStatsDto,
-  PaginatedCustomerRankingsDto,
 } from '../dto/user-analytics.dto';
 
 @ApiTags('user-analytics')
@@ -39,9 +35,9 @@ export class UserAnalyticsController {
   // ==================== تفاصيل مستخدم واحد ====================
 
   @Get('user/:userId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'الحصول على تفاصيل وإحصائيات مستخدم واحد',
-    description: 'يعرض جميع الإحصائيات والتفاصيل الشاملة لمستخدم معين'
+    description: 'يعرض جميع الإحصائيات والتفاصيل الشاملة لمستخدم معين',
   })
   @ApiResponse({
     status: 200,
@@ -49,15 +45,12 @@ export class UserAnalyticsController {
     type: UserDetailedStatsDto,
   })
   @ApiResponse({ status: 404, description: 'المستخدم غير موجود' })
-  async getUserDetailedStats(
-    @Param('userId') userId: string,
-    @Query() query: GetUserAnalyticsQueryDto,
-  ): Promise<UserDetailedStatsDto> {
+  async getUserDetailedStats(@Param('userId') userId: string): Promise<UserDetailedStatsDto> {
     try {
       return await this.userAnalyticsService.getUserDetailedStats(userId);
     } catch (error) {
       throw new HttpException(
-        `خطأ في جلب بيانات المستخدم: ${error.message}`,
+        `خطأ في جلب بيانات المستخدم: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -66,23 +59,21 @@ export class UserAnalyticsController {
   // ==================== ترتيب العملاء ====================
 
   @Get('rankings')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'ترتيب العملاء حسب القيمة والأداء',
-    description: 'يعرض قائمة مرتبة للعملاء حسب المبلغ المنفق وعدد الطلبات'
+    description: 'يعرض قائمة مرتبة للعملاء حسب المبلغ المنفق وعدد الطلبات',
   })
   @ApiResponse({
     status: 200,
     description: 'تم جلب ترتيب العملاء بنجاح',
     type: [CustomerRankingDto],
   })
-  async getCustomerRankings(
-    @Query() dto: GetCustomerRankingsDto,
-  ): Promise<CustomerRankingDto[]> {
+  async getCustomerRankings(@Query() dto: GetCustomerRankingsDto): Promise<CustomerRankingDto[]> {
     try {
       return await this.userAnalyticsService.getCustomerRankings(dto.limit || 50);
     } catch (error) {
       throw new HttpException(
-        `خطأ في جلب ترتيب العملاء: ${error.message}`,
+        `خطأ في جلب ترتيب العملاء: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -91,9 +82,9 @@ export class UserAnalyticsController {
   // ==================== إحصائيات عامة ====================
 
   @Get('overview')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'الإحصائيات العامة للمستخدمين',
-    description: 'يعرض إحصائيات شاملة عن جميع المستخدمين في النظام'
+    description: 'يعرض إحصائيات شاملة عن جميع المستخدمين في النظام',
   })
   @ApiResponse({
     status: 200,
@@ -105,7 +96,7 @@ export class UserAnalyticsController {
       return await this.userAnalyticsService.getOverallUserAnalytics();
     } catch (error) {
       throw new HttpException(
-        `خطأ في جلب الإحصائيات العامة: ${error.message}`,
+        `خطأ في جلب الإحصائيات العامة: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -114,9 +105,9 @@ export class UserAnalyticsController {
   // ==================== تحليل متقدم ====================
 
   @Post('analyze')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تحليل متقدم للمستخدمين',
-    description: 'تحليل شامل للمستخدمين حسب المعايير المحددة'
+    description: 'تحليل شامل للمستخدمين حسب المعايير المحددة',
   })
   @ApiResponse({
     status: 200,
@@ -131,13 +122,11 @@ export class UserAnalyticsController {
     try {
       // تطبيق الفلاتر والتحليل المتقدم
       // سيتم تطوير هذا الجزء لاحقاً
-      throw new HttpException(
-        'هذه الميزة قيد التطوير',
-        HttpStatus.NOT_IMPLEMENTED,
-      );
+      console.log('Filter:', filter, 'Page:', page, 'Limit:', limit); // استخدام المعاملات لتجنب التحذير
+      throw new HttpException('هذه الميزة قيد التطوير', HttpStatus.NOT_IMPLEMENTED);
     } catch (error) {
       throw new HttpException(
-        `خطأ في التحليل المتقدم: ${error.message}`,
+        `خطأ في التحليل المتقدم: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -146,9 +135,9 @@ export class UserAnalyticsController {
   // ==================== تقارير مخصصة ====================
 
   @Get('reports/top-customers')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تقرير أفضل العملاء',
-    description: 'تقرير مفصل عن أفضل العملاء حسب معايير متعددة'
+    description: 'تقرير مفصل عن أفضل العملاء حسب معايير متعددة',
   })
   @ApiResponse({
     status: 200,
@@ -161,7 +150,7 @@ export class UserAnalyticsController {
     try {
       // تطبيق معايير التقرير
       const rankings = await this.userAnalyticsService.getCustomerRankings(100);
-      
+
       return {
         period,
         metric,
@@ -170,22 +159,24 @@ export class UserAnalyticsController {
         summary: {
           totalCustomers: rankings.length,
           totalValue: rankings.reduce((sum, customer) => sum + customer.totalSpent, 0),
-          averageValue: rankings.length > 0 ? 
-            rankings.reduce((sum, customer) => sum + customer.totalSpent, 0) / rankings.length : 0,
+          averageValue:
+            rankings.length > 0
+              ? rankings.reduce((sum, customer) => sum + customer.totalSpent, 0) / rankings.length
+              : 0,
         },
       };
     } catch (error) {
       throw new HttpException(
-        `خطأ في إنشاء التقرير: ${error.message}`,
+        `خطأ في إنشاء التقرير: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
         HttpStatus.BAD_REQUEST,
       );
     }
   }
 
   @Get('reports/customer-segments')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تقرير شرائح العملاء',
-    description: 'تقرير تحليلي لشرائح العملاء المختلفة'
+    description: 'تقرير تحليلي لشرائح العملاء المختلفة',
   })
   @ApiResponse({
     status: 200,
@@ -194,13 +185,13 @@ export class UserAnalyticsController {
   async getCustomerSegmentsReport() {
     try {
       const rankings = await this.userAnalyticsService.getCustomerRankings(1000);
-      
+
       // تقسيم العملاء إلى شرائح
       const segments = {
-        vip: rankings.filter(c => c.totalSpent >= 5000).length,
-        premium: rankings.filter(c => c.totalSpent >= 2000 && c.totalSpent < 5000).length,
-        regular: rankings.filter(c => c.totalSpent >= 500 && c.totalSpent < 2000).length,
-        new: rankings.filter(c => c.totalSpent < 500).length,
+        vip: rankings.filter((c) => c.totalSpent >= 5000).length,
+        premium: rankings.filter((c) => c.totalSpent >= 2000 && c.totalSpent < 5000).length,
+        regular: rankings.filter((c) => c.totalSpent >= 500 && c.totalSpent < 2000).length,
+        new: rankings.filter((c) => c.totalSpent < 500).length,
       };
 
       return {
@@ -211,7 +202,7 @@ export class UserAnalyticsController {
       };
     } catch (error) {
       throw new HttpException(
-        `خطأ في إنشاء التقرير: ${error.message}`,
+        `خطأ في إنشاء التقرير: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -220,9 +211,9 @@ export class UserAnalyticsController {
   // ==================== تنبيهات وتحذيرات ====================
 
   @Get('alerts/churn-risk')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تنبيهات مخاطر فقدان العملاء',
-    description: 'قائمة العملاء المعرضين لخطر فقدانهم'
+    description: 'قائمة العملاء المعرضين لخطر فقدانهم',
   })
   @ApiResponse({
     status: 200,
@@ -232,9 +223,9 @@ export class UserAnalyticsController {
     try {
       // جلب العملاء المعرضين لخطر الفقدان
       const rankings = await this.userAnalyticsService.getCustomerRankings(100);
-      
+
       // تحليل مخاطر الفقدان (سيتم تطويره لاحقاً)
-      const churnRiskCustomers = rankings.slice(0, 10).map(customer => ({
+      const churnRiskCustomers = rankings.slice(0, 10).map((customer) => ({
         ...customer,
         churnRisk: 'medium' as const,
         lastOrderDays: 45, // سيتم حسابها من البيانات الفعلية
@@ -249,7 +240,7 @@ export class UserAnalyticsController {
       };
     } catch (error) {
       throw new HttpException(
-        `خطأ في جلب التنبيهات: ${error.message}`,
+        `خطأ في جلب التنبيهات: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -257,17 +248,22 @@ export class UserAnalyticsController {
 
   // ==================== Private Methods ====================
 
-  private generateSegmentRecommendations(segments: any) {
+  private generateSegmentRecommendations(segments: {
+    vip: number;
+    premium: number;
+    regular: number;
+    new: number;
+  }) {
     const recommendations = [];
-    
+
     if (segments.vip > 0) {
       recommendations.push('العملاء VIP يحتاجون خدمة مخصصة واهتمام خاص');
     }
-    
+
     if (segments.premium > segments.vip) {
       recommendations.push('فرصة لترقية العملاء Premium إلى VIP');
     }
-    
+
     if (segments.new > segments.regular) {
       recommendations.push('حملات ترحيبية للعملاء الجدد لزيادة الولاء');
     }

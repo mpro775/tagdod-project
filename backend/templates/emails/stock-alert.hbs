@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تنبيه: مخزون منخفض - {{name}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        .alert-title {
+            color: #e74c3c;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .alert-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .product-details {
+            margin: 20px 0;
+        }
+        .stock-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #e74c3c;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">{{siteName}}</div>
+            <h1 class="alert-title">⚠️ تنبيه: مخزون منخفض</h1>
+        </div>
+        
+        <div class="alert-info">
+            <h3>تحذير: المخزون منخفض!</h3>
+            <p>المنتج <strong>{{name}}</strong> يحتوي على مخزون منخفض ويحتاج إلى إعادة تموين.</p>
+        </div>
+        
+        <div class="product-details">
+            <h3>تفاصيل المنتج:</h3>
+            <div class="stock-info">
+                <p><strong>اسم المنتج:</strong> {{name}}</p>
+                <p><strong>المخزون الحالي:</strong> {{currentStock}} وحدة</p>
+                <p><strong>الحد الأدنى:</strong> {{minStock}} وحدة</p>
+                <p><strong>الفئة:</strong> {{category}}</p>
+                <p><strong>السعر:</strong> {{price}} ريال</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="{{productUrl}}" class="button">عرض المنتج</a>
+        </div>
+        
+        <div class="footer">
+            <p>يرجى اتخاذ الإجراءات اللازمة لإعادة تموين المخزون</p>
+            <p>فريق {{siteName}}</p>
+        </div>
+    </div>
+</body>
+</html>

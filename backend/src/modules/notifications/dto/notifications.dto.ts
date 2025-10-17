@@ -1,10 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsIn, IsInt, IsMongoId, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsMongoId, IsOptional, IsString, Max, Min, IsObject } from 'class-validator';
+import { NotificationChannel, NotificationStatus } from '../schemas/notification.schema';
 
 export class ListQueryDto {
   @Type(() => Number) @IsInt() @Min(1) page: number = 1;
   @Type(() => Number) @IsInt() @Min(1) @Max(100) limit: number = 20;
-  @IsOptional() @IsIn(['inapp','push','sms','email']) channel?: 'inapp'|'push'|'sms'|'email';
+  @IsOptional() @IsIn(Object.values(NotificationChannel)) channel?: NotificationChannel;
 }
 
 export class MarkReadDto {
@@ -12,7 +13,7 @@ export class MarkReadDto {
 }
 
 export class ReadAllDto {
-  @IsOptional() @IsIn(['inapp','push','sms','email']) channel?: 'inapp'|'push'|'sms'|'email';
+  @IsOptional() @IsIn(Object.values(NotificationChannel)) channel?: NotificationChannel;
 }
 
 export class RegisterDeviceDto {
@@ -25,14 +26,14 @@ export class RegisterDeviceDto {
 export class AdminTestDto {
   @IsMongoId() userId!: string;
   @IsString() templateKey!: string;
-  payload!: Record<string, unknown>;
+  @IsOptional() @IsObject() payload?: Record<string, unknown>;
 }
 
 export class AdminListNotificationsDto {
   @Type(() => Number) @IsInt() @Min(1) page: number = 1;
   @Type(() => Number) @IsInt() @Min(1) @Max(100) limit: number = 20;
-  @IsOptional() @IsIn(['inapp','push','sms','email']) channel?: 'inapp'|'push'|'sms'|'email';
-  @IsOptional() @IsIn(['queued','sent','failed','read']) status?: 'queued'|'sent'|'failed'|'read';
+  @IsOptional() @IsIn(Object.values(NotificationChannel)) channel?: NotificationChannel;
+  @IsOptional() @IsIn(Object.values(NotificationStatus)) status?: NotificationStatus;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsMongoId() userId?: string;
 }
@@ -40,9 +41,9 @@ export class AdminListNotificationsDto {
 export class AdminCreateNotificationDto {
   @IsString() title!: string;
   @IsString() body!: string;
-  @IsIn(['inapp','push','sms','email']) channel!: 'inapp'|'push'|'sms'|'email';
+  @IsIn(Object.values(NotificationChannel)) channel!: NotificationChannel;
   @IsOptional() @IsString() templateKey?: string;
-  @IsOptional() payload?: Record<string, unknown>;
+  @IsOptional() @IsObject() payload?: Record<string, unknown>;
   @IsOptional() @IsString() link?: string;
   @IsOptional() @IsArray() @IsMongoId({ each: true }) targetUsers?: string[];
   @IsOptional() @IsString() scheduledAt?: string; // ISO date string
@@ -52,7 +53,7 @@ export class AdminUpdateNotificationDto {
   @IsOptional() @IsString() title?: string;
   @IsOptional() @IsString() body?: string;
   @IsOptional() @IsString() link?: string;
-  @IsOptional() payload?: Record<string, unknown>;
+  @IsOptional() @IsObject() payload?: Record<string, unknown>;
 }
 
 export class AdminSendNotificationDto {

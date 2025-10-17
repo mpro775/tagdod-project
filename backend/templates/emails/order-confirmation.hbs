@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تأكيد الطلب #{{orderNumber}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        .order-title {
+            color: #2c5aa0;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .order-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .order-details {
+            margin: 20px 0;
+        }
+        .product-item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .total {
+            font-weight: bold;
+            font-size: 18px;
+            color: #2c5aa0;
+            margin-top: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2c5aa0;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">{{siteName}}</div>
+            <h1 class="order-title">تم تأكيد طلبك بنجاح! ✅</h1>
+        </div>
+        
+        <div class="order-info">
+            <h3>تفاصيل الطلب</h3>
+            <p><strong>رقم الطلب:</strong> #{{orderNumber}}</p>
+            <p><strong>تاريخ الطلب:</strong> {{orderDate}}</p>
+            <p><strong>الحالة:</strong> {{status}}</p>
+            <p><strong>المجموع:</strong> {{total}} ريال</p>
+        </div>
+        
+        <div class="order-details">
+            <h3>المنتجات المطلوبة:</h3>
+            {{#each items}}
+            <div class="product-item">
+                <strong>{{name}}</strong><br>
+                الكمية: {{quantity}} × {{price}} ريال
+            </div>
+            {{/each}}
+        </div>
+        
+        <div class="total">
+            المجموع الإجمالي: {{total}} ريال
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="{{orderUrl}}" class="button">متابعة الطلب</a>
+        </div>
+        
+        <div class="footer">
+            <p>شكراً لاختيارك {{siteName}}</p>
+            <p>سيتم التواصل معك قريباً لتأكيد التفاصيل</p>
+        </div>
+    </div>
+</body>
+</html>

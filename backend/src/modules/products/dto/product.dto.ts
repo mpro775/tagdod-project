@@ -24,6 +24,13 @@ export class CreateProductDto {
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsBoolean() isNew?: boolean;
   @IsOptional() @IsNumber() @Min(0) order?: number;
+  
+  // حقول المخزون
+  @IsOptional() @IsNumber() @Min(0) stock?: number;
+  @IsOptional() @IsNumber() @Min(0) minStock?: number;
+  @IsOptional() @IsNumber() @Min(0) maxStock?: number;
+  @IsOptional() @IsBoolean() trackStock?: boolean;
+  @IsOptional() @IsBoolean() allowBackorder?: boolean;
 }
 
 export class UpdateProductDto {
@@ -50,6 +57,13 @@ export class UpdateProductDto {
   @IsOptional() @IsBoolean() isNew?: boolean;
   @IsOptional() @IsBoolean() isBestseller?: boolean;
   @IsOptional() @IsNumber() @Min(0) order?: number;
+  
+  // حقول المخزون
+  @IsOptional() @IsNumber() @Min(0) stock?: number;
+  @IsOptional() @IsNumber() @Min(0) minStock?: number;
+  @IsOptional() @IsNumber() @Min(0) maxStock?: number;
+  @IsOptional() @IsBoolean() trackStock?: boolean;
+  @IsOptional() @IsBoolean() allowBackorder?: boolean;
 }
 
 export class ListProductsDto {
@@ -64,6 +78,11 @@ export class ListProductsDto {
   @IsOptional() @IsBoolean() includeDeleted?: boolean;
   @IsOptional() @IsString() sortBy?: string;
   @IsOptional() @IsString() sortOrder?: 'asc' | 'desc';
+  
+  // فلاتر المخزون
+  @IsOptional() @IsBoolean() lowStock?: boolean;
+  @IsOptional() @IsBoolean() outOfStock?: boolean;
+  @IsOptional() @IsBoolean() trackStock?: boolean;
 }
 
 export class CreateVariantDto {
@@ -92,5 +111,25 @@ export class GenerateVariantsDto {
   @IsNumber() @Min(0) defaultPrice!: number;
   @IsNumber() @Min(0) defaultStock!: number;
   @IsOptional() @IsBoolean() overwriteExisting?: boolean;
+}
+
+export class UpdateStockDto {
+  @IsString() productId!: string;
+  @IsNumber() @Min(0) stock!: number;
+  @IsOptional() @IsString() reason?: string;
+}
+
+export class BulkUpdateStockDto {
+  @IsArray() updates!: Array<{
+    productId: string;
+    stock: number;
+    reason?: string;
+  }>;
+}
+
+export class StockAlertDto {
+  @IsOptional() @IsNumber() @Min(0) minStockThreshold?: number;
+  @IsOptional() @IsBoolean() includeOutOfStock?: boolean;
+  @IsOptional() @IsBoolean() includeLowStock?: boolean;
 }
 

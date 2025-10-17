@@ -1,249 +1,92 @@
-import { useState, useEffect } from 'react';
-import { cartApi } from '../api/cartApi';
-import {
-  Cart,
-  CartFilters,
-  CartAnalytics,
-  CartStatistics,
-  ConversionRates,
-  CartListResponse,
-  AbandonedCartResponse,
-  SendReminderResponse,
-  CartStatus,
-} from '../types/cart.types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { publicCartApi, AddToCartRequest, UpdateCartItemRequest } from '../api/publicCartApi';
+import { toast } from 'react-hot-toast';
 
-// Hook for managing cart list
-export const useCartList = (filters?: CartFilters) => {
-  const [carts, setCarts] = useState<Cart[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    pages: 0,
+const CART_KEY = 'cart';
+
+export const useCart = () => {
+  const queryClient = useQueryClient();
+
+  // Get current cart
+  const { data: cart, isLoading, error } = useQuery({
+    queryKey: [CART_KEY, 'my'],
+    queryFn: () => publicCartApi.getMyCart(),
+    retry: 1,
   });
 
-  const fetchCarts = async (page: number = 1, limit: number = 20) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await cartApi.getAllCarts(page, limit, filters);
-      setCarts(response.carts);
-      setPagination(response.pagination);
-    } catch (err: any) {
-      setError(err.message || 'فشل في جلب السلال');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Get cart item count
+  const { data: itemCount } = useQuery({
+    queryKey: [CART_KEY, 'count'],
+    queryFn: () => publicCartApi.getCartItemCount(),
+    select: (data) => data.count,
+    retry: 1,
+  });
 
-  useEffect(() => {
-    fetchCarts(pagination.page, pagination.limit);
-  }, [filters]);
+  // Add to cart mutation
+  const addToCartMutation = useMutation({
+    mutationFn: (data: AddToCartRequest) => publicCartApi.addToCart(data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: [CART_KEY] });
+      toast.success(response.message || 'تمت إضافة المنتج للسلة بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'فشل في إضافة المنتج للسلة');
+    },
+  });
 
-  const refetch = () => {
-    fetchCarts(pagination.page, pagination.limit);
-  };
+  // Update cart item mutation
+  const updateCartItemMutation = useMutation({
+    mutationFn: (data: UpdateCartItemRequest) => publicCartApi.updateCartItem(data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: [CART_KEY] });
+      toast.success(response.message || 'تم تحديث السلة بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'فشل في تحديث السلة');
+    },
+  });
+
+  // Remove from cart mutation
+  const removeFromCartMutation = useMutation({
+    mutationFn: (itemId: string) => publicCartApi.removeFromCart(itemId),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: [CART_KEY] });
+      toast.success(response.message || 'تم حذف المنتج من السلة');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'فشل في حذف المنتج من السلة');
+    },
+  });
+
+  // Clear cart mutation
+  const clearCartMutation = useMutation({
+    mutationFn: () => publicCartApi.clearCart(),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: [CART_KEY] });
+      toast.success(response.message || 'تم مسح السلة بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'فشل في مسح السلة');
+    },
+  });
 
   return {
-    carts,
-    loading,
-    error,
-    pagination,
-    fetchCarts,
-    refetch,
-  };
-};
-
-// Hook for cart details
-export const useCartDetails = (cartId: string) => {
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchCart = async () => {
-    if (!cartId) return;
-    
-    setLoading(true);
-    setError(null);
-    try {
-      const cartData = await cartApi.getCartById(cartId);
-      setCart(cartData);
-    } catch (err: any) {
-      setError(err.message || 'فشل في جلب تفاصيل السلة');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCart();
-  }, [cartId]);
-
-  return {
+    // Data
     cart,
-    loading,
+    itemCount: itemCount || 0,
+    isLoading,
     error,
-    refetch: fetchCart,
-  };
-};
 
-// Hook for abandoned carts
-export const useAbandonedCarts = (hours: number = 24, limit: number = 50) => {
-  const [abandonedCarts, setAbandonedCarts] = useState<Cart[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState({
-    count: 0,
-    totalCarts: 0,
-    totalValue: 0,
-  });
+    // Mutations
+    addToCart: addToCartMutation.mutate,
+    updateCartItem: updateCartItemMutation.mutate,
+    removeFromCart: removeFromCartMutation.mutate,
+    clearCart: clearCartMutation.mutate,
 
-  const fetchAbandonedCarts = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await cartApi.getAbandonedCarts(hours, limit);
-      setAbandonedCarts(response.data);
-      setStats({
-        count: response.count,
-        totalCarts: response.totalCarts,
-        totalValue: response.totalValue,
-      });
-    } catch (err: any) {
-      setError(err.message || 'فشل في جلب السلال المتروكة');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAbandonedCarts();
-  }, [hours, limit]);
-
-  const sendReminder = async (cartId: string): Promise<boolean> => {
-    try {
-      await cartApi.sendSingleReminder(cartId);
-      await fetchAbandonedCarts(); // Refresh the list
-      return true;
-    } catch (err: any) {
-      setError(err.message || 'فشل في إرسال التذكير');
-      return false;
-    }
-  };
-
-  const sendAllReminders = async (): Promise<boolean> => {
-    try {
-      const response = await cartApi.sendReminders();
-      await fetchAbandonedCarts(); // Refresh the list
-      return true;
-    } catch (err: any) {
-      setError(err.message || 'فشل في إرسال التذكيرات');
-      return false;
-    }
-  };
-
-  return {
-    abandonedCarts,
-    loading,
-    error,
-    stats,
-    fetchAbandonedCarts,
-    sendReminder,
-    sendAllReminders,
-  };
-};
-
-// Hook for cart analytics
-export const useCartAnalytics = (period: number = 30) => {
-  const [analytics, setAnalytics] = useState<CartAnalytics | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAnalytics = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await cartApi.getCartAnalytics(period);
-      setAnalytics(data);
-    } catch (err: any) {
-      setError(err.message || 'فشل في جلب التحليلات');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAnalytics();
-  }, [period]);
-
-  return {
-    analytics,
-    loading,
-    error,
-    refetch: fetchAnalytics,
-  };
-};
-
-// Hook for cart statistics
-export const useCartStatistics = () => {
-  const [statistics, setStatistics] = useState<CartStatistics | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchStatistics = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await cartApi.getCartStatistics();
-      setStatistics(data);
-    } catch (err: any) {
-      setError(err.message || 'فشل في جلب الإحصائيات');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStatistics();
-  }, []);
-
-  return {
-    statistics,
-    loading,
-    error,
-    refetch: fetchStatistics,
-  };
-};
-
-// Hook for conversion rates
-export const useConversionRates = (period: number = 30) => {
-  const [conversionRates, setConversionRates] = useState<ConversionRates | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchConversionRates = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await cartApi.getConversionRates(period);
-      setConversionRates(data);
-    } catch (err: any) {
-      setError(err.message || 'فشل في جلب معدلات التحويل');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchConversionRates();
-  }, [period]);
-
-  return {
-    conversionRates,
-    loading,
-    error,
-    refetch: fetchConversionRates,
+    // Loading states
+    isAddingToCart: addToCartMutation.isPending,
+    isUpdatingCart: updateCartItemMutation.isPending,
+    isRemovingFromCart: removeFromCartMutation.isPending,
+    isClearingCart: clearCartMutation.isPending,
   };
 };

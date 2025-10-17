@@ -1,4 +1,4 @@
-import {
+  import {
   Controller,
   Get,
   Post,
@@ -12,6 +12,33 @@ import { ApiTags, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiOperation, ApiR
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { AdvancedAnalyticsService } from './advanced-analytics.service';
+
+interface QueryParams {
+  period?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: string;
+  limit?: string;
+  status?: string;
+  format?: string;
+}
+
+interface ReportData {
+  title?: string;
+  type?: string;
+  format?: string;
+}
+
+// Helper function to convert QueryParams to AnalyticsParams
+function convertQueryParams(params: QueryParams) {
+  return {
+    startDate: params.startDate,
+    endDate: params.endDate,
+    category: params.period,
+    limit: params.limit ? parseInt(params.limit, 10) : undefined,
+    page: params.page ? parseInt(params.page, 10) : undefined,
+  };
+}
 
 @ApiTags('analytics/advanced')
 @ApiBearerAuth()
@@ -27,8 +54,8 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Sales analytics retrieved successfully' })
-  async getSalesAnalytics(@Query() params: any) {
-    const data = await this.advancedAnalyticsService.getSalesAnalytics(params);
+  async getSalesAnalytics(@Query() params: QueryParams) {
+    const data = await this.advancedAnalyticsService.getSalesAnalytics(convertQueryParams(params));
     return { success: true, data };
   }
 
@@ -39,8 +66,8 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Product performance retrieved successfully' })
-  async getProductPerformance(@Query() params: any) {
-    const data = await this.advancedAnalyticsService.getProductPerformance(params);
+  async getProductPerformance(@Query() params: QueryParams) {
+    const data = await this.advancedAnalyticsService.getProductPerformance(convertQueryParams(params));
     return { success: true, data };
   }
 
@@ -51,8 +78,8 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Customer analytics retrieved successfully' })
-  async getCustomerAnalytics(@Query() params: any) {
-    const data = await this.advancedAnalyticsService.getCustomerAnalytics(params);
+  async getCustomerAnalytics(@Query() params: QueryParams) {
+    const data = await this.advancedAnalyticsService.getCustomerAnalytics(convertQueryParams(params));
     return { success: true, data };
   }
 
@@ -63,8 +90,8 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Inventory report retrieved successfully' })
-  async getInventoryReport(@Query() params: any) {
-    const data = await this.advancedAnalyticsService.getInventoryReport(params);
+  async getInventoryReport(@Query() params: QueryParams) {
+    const data = await this.advancedAnalyticsService.getInventoryReport(convertQueryParams(params));
     return { success: true, data };
   }
 
@@ -75,8 +102,8 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Financial report retrieved successfully' })
-  async getFinancialReport(@Query() params: any) {
-    const data = await this.advancedAnalyticsService.getFinancialReport(params);
+  async getFinancialReport(@Query() params: QueryParams) {
+    const data = await this.advancedAnalyticsService.getFinancialReport(convertQueryParams(params));
     return { success: true, data };
   }
 
@@ -87,8 +114,8 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Cart analytics retrieved successfully' })
-  async getCartAnalytics(@Query() params: any) {
-    const data = await this.advancedAnalyticsService.getCartAnalytics(params);
+  async getCartAnalytics(@Query() params: QueryParams) {
+    const data = await this.advancedAnalyticsService.getCartAnalytics(convertQueryParams(params));
     return { success: true, data };
   }
 
@@ -99,8 +126,8 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Marketing report retrieved successfully' })
-  async getMarketingReport(@Query() params: any) {
-    const data = await this.advancedAnalyticsService.getMarketingReport(params);
+  async getMarketingReport(@Query() params: QueryParams) {
+    const data = await this.advancedAnalyticsService.getMarketingReport(convertQueryParams(params));
     return { success: true, data };
   }
 
@@ -127,7 +154,7 @@ export class AdvancedAnalyticsController {
   @ApiOperation({ summary: 'Generate advanced report' })
   @ApiBody({ schema: { type: 'object' } })
   @ApiResponse({ status: 201, description: 'Report generated successfully' })
-  async generateAdvancedReport(@Body() data: any) {
+  async generateAdvancedReport(@Body() data: ReportData) {
     const report = await this.advancedAnalyticsService.generateAdvancedReport(data);
     return { success: true, data: report };
   }
@@ -138,8 +165,8 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'status', required: false })
   @ApiResponse({ status: 200, description: 'Reports retrieved successfully' })
-  async listAdvancedReports(@Query() params: any) {
-    const result = await this.advancedAnalyticsService.listAdvancedReports(params);
+  async listAdvancedReports(@Query() params: QueryParams) {
+    const result = await this.advancedAnalyticsService.listAdvancedReports(convertQueryParams(params));
     return { 
       success: true, 
       data: result.data,
@@ -179,7 +206,7 @@ export class AdvancedAnalyticsController {
   @ApiParam({ name: 'reportId', description: 'Report ID' })
   @ApiBody({ schema: { type: 'object' } })
   @ApiResponse({ status: 200, description: 'Report exported successfully' })
-  async exportReport(@Param('reportId') reportId: string, @Body() data: any) {
+  async exportReport(@Param('reportId') reportId: string, @Body() data: ReportData) {
     const exportData = await this.advancedAnalyticsService.exportReport(reportId, data);
     return { success: true, data: exportData };
   }

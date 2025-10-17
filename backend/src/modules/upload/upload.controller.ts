@@ -32,7 +32,7 @@ export class UploadController {
     type: UploadFileDto,
   })
   async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
     @Query('folder') folder?: string,
     @Query('filename') customFilename?: string,
   ): Promise<{ data: UploadResult }> {
@@ -63,7 +63,7 @@ export class UploadController {
     },
   })
   async uploadFiles(
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles() files: { buffer: Buffer; originalname: string; mimetype: string; size: number }[],
     @Query('folder') folder?: string,
   ): Promise<{ data: UploadResult[] }> {
     const results = await this.uploadService.uploadFiles(files, folder);

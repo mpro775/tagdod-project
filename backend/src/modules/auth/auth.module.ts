@@ -9,11 +9,11 @@ import { FavoritesModule } from '../favorites/favorites.module';
 
 @Module({
   imports: [
+    forwardRef(() => FavoritesModule),
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
-    forwardRef(() => FavoritesModule), // لمزامنة المفضلات
   ],
   controllers: [AuthController],
   providers: [OtpService, TokensService],

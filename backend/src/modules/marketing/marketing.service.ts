@@ -2,8 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PriceRule, PriceRuleDocument } from './schemas/price-rule.schema';
-import { Coupon, CouponDocument, CouponStatus, CouponType } from './schemas/coupon.schema';
+import { Coupon, CouponDocument, CouponStatus } from './schemas/coupon.schema';
 import { Banner, BannerDocument, BannerLocation } from './schemas/banner.schema';
+import { VariantPrice, VariantPriceDocument } from '../catalog/schemas/variant-price.schema';
 
 // DTOs
 import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto, PricingQueryDto } from './dto/price-rule.dto';
@@ -21,6 +22,7 @@ export class MarketingService {
     @InjectModel(PriceRule.name) private priceRuleModel: Model<PriceRuleDocument>,
     @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
     @InjectModel(Banner.name) private bannerModel: Model<BannerDocument>,
+    @InjectModel(VariantPrice.name) private variantPriceModel: Model<VariantPriceDocument>,
   ) {}
 
   // ==================== PRICE RULES ====================
@@ -70,12 +72,21 @@ export class MarketingService {
     const rule = await this.priceRuleModel.findById(dto.ruleId);
     if (!rule || !rule.active) return null;
 
-    // Mock calculation - should integrate with catalog service
+    // Get actual base price from catalog
+    if (!dto.variantId) {
+      throw new Error('Variant ID is required for price preview');
+    }
+    const basePrice = await this.getBasePrice(dto.variantId, dto.currency || 'YER');
+    if (basePrice === null) return null;
+
+    // Calculate effective price based on rule effects
+    const effectivePrice = this.calculateEffectivePriceFromRule(basePrice, rule);
+
     return {
-      originalPrice: 100,
-      effectivePrice: 80,
+      originalPrice: basePrice,
+      effectivePrice,
       appliedRule: rule,
-      savings: 20,
+      savings: basePrice - effectivePrice,
     };
   }
 
@@ -83,8 +94,11 @@ export class MarketingService {
     const now = new Date();
     const { variantId, currency = 'YER', qty = 1, accountType } = dto;
 
-    // Get base price from catalog service (mock for now)
-    const originalPrice = 100;
+    // Get actual base price from catalog
+    const originalPrice = await this.getBasePrice(variantId, currency);
+    if (originalPrice === null) {
+      throw new Error(`Price not found for variant ${variantId} in currency ${currency}`);
+    }
 
     // Find applicable rules
     const applicableRules = await this.priceRuleModel.find({
@@ -109,24 +123,15 @@ export class MarketingService {
       return { originalPrice, effectivePrice: originalPrice };
     }
 
-    let effectivePrice = originalPrice;
-    const effects = appliedRule.effects;
-
-    if (effects.specialPrice) {
-      effectivePrice = effects.specialPrice;
-    } else if (effects.percentOff) {
-      effectivePrice = originalPrice * (1 - effects.percentOff / 100);
-    } else if (effects.amountOff) {
-      effectivePrice = Math.max(0, originalPrice - effects.amountOff);
-    }
+    const effectivePrice = this.calculateEffectivePriceFromRule(originalPrice, appliedRule);
 
     return {
       originalPrice,
       effectivePrice,
       appliedRule,
       savings: originalPrice - effectivePrice,
-      badge: effects.badge,
-      giftSku: effects.giftSku,
+      badge: appliedRule.effects.badge,
+      giftSku: appliedRule.effects.giftSku,
     };
   }
 
@@ -297,8 +302,8 @@ export class MarketingService {
       isActive: true,
       deletedAt: null,
       $or: [
-        { startDate: { $exists: false } || { startDate: { $lte: now } },
-        { endDate: { $exists: false } || { endDate: { $gte: now } },
+        { startDate: { $exists: false } }, { startDate: { $lte: now } },
+        { endDate: { $exists: false } }, { endDate: { $gte: now } },
       ],
     };
 
@@ -313,5 +318,60 @@ export class MarketingService {
 
   async incrementBannerClick(id: string): Promise<void> {
     await this.bannerModel.findByIdAndUpdate(id, { $inc: { clickCount: 1 } });
+  }
+
+  // ==================== Helper Methods ====================
+
+  /**
+   * Get base price for a variant in specific currency
+   */
+  private async getBasePrice(variantId: string, currency: string): Promise<number | null> {
+    try {
+      const priceRecord = await this.variantPriceModel.findOne({
+        variantId,
+        currency,
+        deletedAt: null
+      }).lean();
+
+      if (!priceRecord) {
+        // Fallback to YER if requested currency not found
+        if (currency !== 'YER') {
+          const yerPrice = await this.variantPriceModel.findOne({
+            variantId,
+            currency: 'YER',
+            deletedAt: null
+          }).lean();
+          
+          if (yerPrice) {
+            // Simple conversion (in real app, use exchange rates)
+            return yerPrice.basePriceUSD;
+          }
+        }
+        return null;
+      }
+
+      return priceRecord.basePriceUSD;
+    } catch (error) {
+      this.logger.error(`Error getting base price for variant ${variantId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Calculate effective price based on rule effects
+   */
+  private calculateEffectivePriceFromRule(originalPrice: number, rule: PriceRule): number {
+    const effects = rule.effects;
+    let effectivePrice = originalPrice;
+
+    if (effects.specialPrice) {
+      effectivePrice = effects.specialPrice;
+    } else if (effects.percentOff) {
+      effectivePrice = originalPrice * (1 - effects.percentOff / 100);
+    } else if (effects.amountOff) {
+      effectivePrice = Math.max(0, originalPrice - effects.amountOff);
+    }
+
+    return Math.round(effectivePrice * 100) / 100; // Round to 2 decimal places
   }
 }

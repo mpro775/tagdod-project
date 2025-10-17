@@ -18,8 +18,15 @@ type CartLine = {
 
 // Optional promotions interface (duck-typing)
 interface PromotionsLike {
-  preview(input: { variantId: string; currency: string; qty: number; accountType: 'any'|'customer'|'engineer'|'wholesale' }): Promise<{
-    finalPrice: number; basePrice: number; appliedRule: unknown;
+  preview(input: {
+    variantId: string;
+    currency: string;
+    qty: number;
+    accountType: 'any' | 'customer' | 'engineer' | 'wholesale';
+  }): Promise<{
+    finalPrice: number;
+    basePrice: number;
+    appliedRule: unknown;
   } | null>;
 }
 
@@ -38,7 +45,8 @@ export class CartService {
   // ---------- helpers
   private async getOrCreateUserCart(userId: string) {
     let cart = await this.cartModel.findOne({ userId });
-    if (!cart) cart = await this.cartModel.create({ userId: new Types.ObjectId(userId), items: [] });
+    if (!cart)
+      cart = await this.cartModel.create({ userId: new Types.ObjectId(userId), items: [] });
     return cart;
   }
   private async getOrCreateGuestCart(deviceId: string) {
@@ -85,7 +93,11 @@ export class CartService {
   }
   async removeUserItem(userId: string, itemId: string) {
     const cart = await this.getOrCreateUserCart(userId);
-    ((cart.items as Types.DocumentArray<CartItem>).id(itemId) as unknown as Types.Subdocument & { remove(): void })?.remove();
+    (
+      (cart.items as Types.DocumentArray<CartItem>).id(itemId) as unknown as Types.Subdocument & {
+        remove(): void;
+      }
+    )?.remove();
     await cart.save();
     return { items: this.toView(cart) };
   }
@@ -120,7 +132,11 @@ export class CartService {
   }
   async removeGuestItem(deviceId: string, itemId: string) {
     const cart = await this.getOrCreateGuestCart(deviceId);
-    ((cart.items as Types.DocumentArray<CartItem>).id(itemId) as unknown as Types.Subdocument & { remove(): void })?.remove();
+    (
+      (cart.items as Types.DocumentArray<CartItem>).id(itemId) as unknown as Types.Subdocument & {
+        remove(): void;
+      }
+    )?.remove();
     await cart.save();
     return { items: this.toView(cart) };
   }
@@ -148,10 +164,10 @@ export class CartService {
 
   // ---------- preview
   async previewByCart(
-    cart: Cart, 
-    currency: string, 
-    accountType: 'any'|'customer'|'engineer'|'wholesale',
-    userId?: string
+    cart: Cart,
+    currency: string,
+    accountType: 'any' | 'customer' | 'engineer' | 'wholesale',
+    userId?: string,
   ) {
     // Gather prices and totals
     const lines: CartLine[] = [];
@@ -171,16 +187,23 @@ export class CartService {
       const vp = await this.priceModel.findOne({ variantId: it.variantId, currency }).lean();
       if (!vp) continue; // skip items without price in selected currency
 
-      let final = vp.amount;
-      let base = vp.amount;
+      let final = vp.basePriceUSD;
+      let base = vp.basePriceUSD;
       let appliedRule = null;
 
       // تطبيق العروض الترويجية أولاً
       if (this.promotions && typeof this.promotions.preview === 'function') {
         const res = await this.promotions.preview({
-          variantId: String(it.variantId), currency, qty: it.qty, accountType,
+          variantId: String(it.variantId),
+          currency,
+          qty: it.qty,
+          accountType,
         });
-        if (res) { final = res.finalPrice; base = res.basePrice; appliedRule = res.appliedRule; }
+        if (res) {
+          final = res.finalPrice;
+          base = res.basePrice;
+          appliedRule = res.appliedRule;
+        }
       }
 
       // تطبيق خصم التاجر بعد العروض الترويجية
@@ -204,16 +227,16 @@ export class CartService {
     if (wholesaleDiscountPercent > 0) {
       const subtotalBeforeWholesaleDiscount = lines.reduce((sum, line) => {
         const priceBeforeWholesaleDiscount = line.unit.final / (1 - wholesaleDiscountPercent / 100);
-        return sum + (priceBeforeWholesaleDiscount * line.qty);
+        return sum + priceBeforeWholesaleDiscount * line.qty;
       }, 0);
       wholesaleDiscountAmount = subtotalBeforeWholesaleDiscount - subtotal;
     }
 
     return {
-      currency, 
-      subtotal, 
+      currency,
+      subtotal,
       items: lines,
-      meta: { 
+      meta: {
         count: lines.length,
         wholesaleDiscountPercent,
         wholesaleDiscountAmount: Math.round(wholesaleDiscountAmount * 100) / 100,
@@ -221,12 +244,20 @@ export class CartService {
     };
   }
 
-  async previewUser(userId: string, currency: string, accountType: 'any'|'customer'|'engineer'|'wholesale' = 'any') {
+  async previewUser(
+    userId: string,
+    currency: string,
+    accountType: 'any' | 'customer' | 'engineer' | 'wholesale' = 'any',
+  ) {
     const cart = await this.getOrCreateUserCart(userId);
     return this.previewByCart(cart, currency, accountType, userId);
   }
 
-  async previewGuest(deviceId: string, currency: string, accountType: 'any'|'customer'|'engineer'|'wholesale' = 'any') {
+  async previewGuest(
+    deviceId: string,
+    currency: string,
+    accountType: 'any' | 'customer' | 'engineer' | 'wholesale' = 'any',
+  ) {
     const cart = await this.getOrCreateGuestCart(deviceId);
     return this.previewByCart(cart, currency, accountType);
   }
@@ -239,7 +270,7 @@ export class CartService {
         $or: [
           { isAbandoned: true },
           { status: CartStatus.ABANDONED },
-          { $and: [ { status: CartStatus.ACTIVE }, { lastActivityAt: { $lte: threshold } } ] },
+          { $and: [{ status: CartStatus.ACTIVE }, { lastActivityAt: { $lte: threshold } }] },
         ],
       })
       .sort({ updatedAt: -1 })
@@ -260,26 +291,30 @@ export class CartService {
   async processAbandonedCarts(hoursInactive: number = 24) {
     const candidates = await this.findAbandonedCarts(hoursInactive);
     let emailsSent = 0;
-    type AbandonedLean = { _id?: unknown; lastAbandonmentEmailAt?: Date; abandonmentEmailsSent?: number };
-    
+    type AbandonedLean = {
+      _id?: unknown;
+      lastAbandonmentEmailAt?: Date;
+      abandonmentEmailsSent?: number;
+    };
+
     for (const c of candidates as AbandonedLean[]) {
       const lastSent = c.lastAbandonmentEmailAt;
       const emailsSentCount = c.abandonmentEmailsSent || 0;
-      
+
       // Determine if we should send email based on hours inactive and previous emails sent
       let shouldSend = false;
-      
+
       if (hoursInactive === 1 && emailsSentCount === 0) {
         // First reminder after 1 hour
-        shouldSend = !lastSent || (Date.now() - lastSent.getTime()) > 60 * 60 * 1000;
+        shouldSend = !lastSent || Date.now() - lastSent.getTime() > 60 * 60 * 1000;
       } else if (hoursInactive === 24 && emailsSentCount === 1) {
         // Second reminder after 24 hours (only if first was sent)
-        shouldSend = !lastSent || (Date.now() - lastSent.getTime()) > 24 * 60 * 60 * 1000;
+        shouldSend = !lastSent || Date.now() - lastSent.getTime() > 24 * 60 * 60 * 1000;
       } else if (hoursInactive === 72 && emailsSentCount === 2) {
         // Final reminder after 72 hours (only if second was sent)
-        shouldSend = !lastSent || (Date.now() - lastSent.getTime()) > 72 * 60 * 60 * 1000;
+        shouldSend = !lastSent || Date.now() - lastSent.getTime() > 72 * 60 * 60 * 1000;
       }
-      
+
       if (shouldSend) {
         const res = await this.sendAbandonmentReminder(String(c._id || ''));
         if (res.sent) emailsSent++;
@@ -299,7 +334,7 @@ export class CartService {
 
     for (const threshold of abandonmentThresholds) {
       const cutoffTime = new Date(now.getTime() - threshold.hours * 60 * 60 * 1000);
-      
+
       const result = await this.cartModel.updateMany(
         {
           status: CartStatus.ACTIVE,
@@ -324,7 +359,7 @@ export class CartService {
   // ---------- admin analytics and statistics
   async getCartAnalytics(periodDays: number) {
     const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
-    
+
     const [
       totalCarts,
       activeCarts,
@@ -341,8 +376,14 @@ export class CartService {
     ] = await Promise.all([
       this.cartModel.countDocuments({ createdAt: { $gte: startDate } }),
       this.cartModel.countDocuments({ status: CartStatus.ACTIVE, createdAt: { $gte: startDate } }),
-      this.cartModel.countDocuments({ status: CartStatus.ABANDONED, createdAt: { $gte: startDate } }),
-      this.cartModel.countDocuments({ status: CartStatus.CONVERTED, createdAt: { $gte: startDate } }),
+      this.cartModel.countDocuments({
+        status: CartStatus.ABANDONED,
+        createdAt: { $gte: startDate },
+      }),
+      this.cartModel.countDocuments({
+        status: CartStatus.CONVERTED,
+        createdAt: { $gte: startDate },
+      }),
       this.getAverageCartValue(startDate),
       this.getAverageItemsPerCart(startDate),
       this.getConversionRate(startDate),
@@ -382,12 +423,7 @@ export class CartService {
     const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
     const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const [
-      todayStats,
-      yesterdayStats,
-      weekStats,
-      totalStats,
-    ] = await Promise.all([
+    const [todayStats, yesterdayStats, weekStats, totalStats] = await Promise.all([
       this.getPeriodStats(today, now),
       this.getPeriodStats(yesterday, today),
       this.getPeriodStats(lastWeek, now),
@@ -404,7 +440,7 @@ export class CartService {
 
   async getConversionRates(periodDays: number) {
     const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
-    
+
     const conversionData = await this.cartModel.aggregate([
       {
         $match: {
@@ -461,27 +497,28 @@ export class CartService {
 
     return {
       dailyRates: conversionData,
-      averageRate: conversionData.length > 0 
-        ? conversionData.reduce((sum, day) => sum + day.conversionRate, 0) / conversionData.length
-        : 0,
+      averageRate:
+        conversionData.length > 0
+          ? conversionData.reduce((sum, day) => sum + day.conversionRate, 0) / conversionData.length
+          : 0,
       period: periodDays,
     };
   }
 
-  async getAllCarts(page: number, limit: number, filters: any) {
+  async getAllCarts(page: number, limit: number, filters: Record<string, unknown>) {
     const skip = (page - 1) * limit;
-    const matchStage: any = {};
+    const matchStage: Record<string, unknown> = {};
 
     if (filters.status) {
       matchStage.status = filters.status;
     }
-    if (filters.userId) {
+    if (filters.userId && typeof filters.userId === 'string') {
       matchStage.userId = new Types.ObjectId(filters.userId);
     }
     if (filters.dateFrom || filters.dateTo) {
-      matchStage.createdAt = {};
-      if (filters.dateFrom) matchStage.createdAt.$gte = filters.dateFrom;
-      if (filters.dateTo) matchStage.createdAt.$lte = filters.dateTo;
+      matchStage.createdAt = {} as Record<string, unknown>;
+      if (filters.dateFrom) (matchStage.createdAt as Record<string, unknown>).$gte = filters.dateFrom;
+      if (filters.dateTo) (matchStage.createdAt as Record<string, unknown>).$lte = filters.dateTo;
     }
 
     const [carts, total] = await Promise.all([
@@ -563,9 +600,9 @@ export class CartService {
   private async getConversionRate(startDate: Date) {
     const [total, converted] = await Promise.all([
       this.cartModel.countDocuments({ createdAt: { $gte: startDate } }),
-      this.cartModel.countDocuments({ 
-        status: CartStatus.CONVERTED, 
-        createdAt: { $gte: startDate } 
+      this.cartModel.countDocuments({
+        status: CartStatus.CONVERTED,
+        createdAt: { $gte: startDate },
       }),
     ]);
     return total > 0 ? (converted / total) * 100 : 0;
@@ -574,9 +611,9 @@ export class CartService {
   private async getAbandonmentRate(startDate: Date) {
     const [total, abandoned] = await Promise.all([
       this.cartModel.countDocuments({ createdAt: { $gte: startDate } }),
-      this.cartModel.countDocuments({ 
-        status: CartStatus.ABANDONED, 
-        createdAt: { $gte: startDate } 
+      this.cartModel.countDocuments({
+        status: CartStatus.ABANDONED,
+        createdAt: { $gte: startDate },
       }),
     ]);
     return total > 0 ? (abandoned / total) * 100 : 0;
@@ -651,17 +688,17 @@ export class CartService {
   private async getPeriodStats(startDate: Date, endDate: Date) {
     const [total, active, abandoned, converted, totalValue] = await Promise.all([
       this.cartModel.countDocuments({ createdAt: { $gte: startDate, $lt: endDate } }),
-      this.cartModel.countDocuments({ 
-        status: CartStatus.ACTIVE, 
-        createdAt: { $gte: startDate, $lt: endDate } 
+      this.cartModel.countDocuments({
+        status: CartStatus.ACTIVE,
+        createdAt: { $gte: startDate, $lt: endDate },
       }),
-      this.cartModel.countDocuments({ 
-        status: CartStatus.ABANDONED, 
-        createdAt: { $gte: startDate, $lt: endDate } 
+      this.cartModel.countDocuments({
+        status: CartStatus.ABANDONED,
+        createdAt: { $gte: startDate, $lt: endDate },
       }),
-      this.cartModel.countDocuments({ 
-        status: CartStatus.CONVERTED, 
-        createdAt: { $gte: startDate, $lt: endDate } 
+      this.cartModel.countDocuments({
+        status: CartStatus.CONVERTED,
+        createdAt: { $gte: startDate, $lt: endDate },
       }),
       this.cartModel.aggregate([
         { $match: { createdAt: { $gte: startDate, $lt: endDate } } },
@@ -699,23 +736,18 @@ export class CartService {
   // ---------- advanced analytics
   async getRecoveryCampaignAnalytics(periodDays: number) {
     const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
-    
-    const [
-      totalAbandoned,
-      recoveredAfterEmail,
-      emailOpenRates,
-      clickThroughRates,
-      recoveryByHour,
-    ] = await Promise.all([
-      this.cartModel.countDocuments({
-        status: CartStatus.ABANDONED,
-        createdAt: { $gte: startDate },
-      }),
-      this.getRecoveredCartsAfterEmail(startDate),
-      this.getEmailOpenRates(startDate),
-      this.getClickThroughRates(startDate),
-      this.getRecoveryByHour(startDate),
-    ]);
+
+    const [totalAbandoned, recoveredAfterEmail, emailOpenRates, clickThroughRates, recoveryByHour] =
+      await Promise.all([
+        this.cartModel.countDocuments({
+          status: CartStatus.ABANDONED,
+          createdAt: { $gte: startDate },
+        }),
+        this.getRecoveredCartsAfterEmail(startDate),
+        this.getEmailOpenRates(startDate),
+        this.getClickThroughRates(startDate),
+        this.getRecoveryByHour(startDate),
+      ]);
 
     return {
       totalAbandoned,
@@ -730,7 +762,7 @@ export class CartService {
 
   async getCustomerBehaviorAnalytics(periodDays: number) {
     const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
-    
+
     const [
       sessionDuration,
       cartValueByDevice,
@@ -760,20 +792,15 @@ export class CartService {
 
   async getRevenueImpactAnalytics(periodDays: number) {
     const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
-    
-    const [
-      lostRevenue,
-      recoveredRevenue,
-      potentialRevenue,
-      revenueByHour,
-      topLostProducts,
-    ] = await Promise.all([
-      this.getLostRevenue(startDate),
-      this.getRecoveredRevenue(startDate),
-      this.getPotentialRevenue(startDate),
-      this.getRevenueByHour(startDate),
-      this.getTopLostProducts(startDate),
-    ]);
+
+    const [lostRevenue, recoveredRevenue, potentialRevenue, revenueByHour, topLostProducts] =
+      await Promise.all([
+        this.getLostRevenue(startDate),
+        this.getRecoveredRevenue(startDate),
+        this.getPotentialRevenue(startDate),
+        this.getRevenueByHour(startDate),
+        this.getTopLostProducts(startDate),
+      ]);
 
     return {
       lostRevenue,
@@ -788,7 +815,7 @@ export class CartService {
 
   async performBulkActions(action: string, cartIds: string[]) {
     let processed = 0;
-    
+
     switch (action) {
       case 'send_reminders':
         for (const cartId of cartIds) {
@@ -800,28 +827,30 @@ export class CartService {
           }
         }
         break;
-        
-      case 'mark_abandoned':
+
+      case 'mark_abandoned': {
         const result = await this.cartModel.updateMany(
           { _id: { $in: cartIds } },
-          { 
-            $set: { 
+          {
+            $set: {
               status: CartStatus.ABANDONED,
               isAbandoned: true,
               abandonedAt: new Date(),
-            }
-          }
+            },
+          },
         );
         processed = result.modifiedCount || 0;
         break;
-        
-      case 'clear_carts':
+      }
+
+      case 'clear_carts': {
         const clearResult = await this.cartModel.updateMany(
           { _id: { $in: cartIds } },
-          { $set: { items: [], status: CartStatus.EXPIRED } }
+          { $set: { items: [], status: CartStatus.EXPIRED } },
         );
         processed = clearResult.modifiedCount || 0;
         break;
+      }
     }
 
     return { processed, action };
@@ -837,9 +866,10 @@ export class CartService {
     return result;
   }
 
-  private async getEmailOpenRates(startDate: Date) {
+  private async getEmailOpenRates(_startDate: Date) {
     // This would integrate with email service to get actual open rates
     // For now, return mock data
+    void _startDate;
     return {
       firstEmail: 65.2,
       secondEmail: 45.8,
@@ -849,6 +879,7 @@ export class CartService {
 
   private async getClickThroughRates(startDate: Date) {
     // This would integrate with email service to get actual click rates
+    void startDate;
     return {
       firstEmail: 12.5,
       secondEmail: 8.3,
@@ -1086,11 +1117,27 @@ export class CartService {
       },
       { $unwind: '$items' },
       {
+        $lookup: {
+          from: 'variantprices',
+          localField: 'items.variantId',
+          foreignField: 'variantId',
+          as: 'priceInfo'
+        }
+      },
+      { $unwind: { path: '$priceInfo', preserveNullAndEmptyArrays: true } },
+      {
         $group: {
           _id: '$items.variantId',
           totalQuantity: { $sum: '$items.qty' },
           cartCount: { $sum: 1 },
-          totalLostValue: { $sum: { $multiply: ['$items.qty', 100] } }, // Mock price calculation
+          totalLostValue: { 
+            $sum: { 
+              $multiply: [
+                '$items.qty', 
+                { $ifNull: ['$priceInfo.basePriceUSD', 0] }
+              ] 
+            } 
+          },
         },
       },
       { $sort: { totalLostValue: -1 } },

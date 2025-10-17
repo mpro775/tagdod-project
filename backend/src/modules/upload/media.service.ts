@@ -22,7 +22,7 @@ export class MediaService {
   /**
    * رفع صورة إلى المستودع
    */
-  async uploadToLibrary(file: Express.Multer.File, dto: UploadMediaDto, userId: string) {
+  async uploadToLibrary(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, dto: UploadMediaDto, userId: string) {
     // حساب hash للملف للكشف عن التكرار
     const fileHash = this.calculateFileHash(file.buffer);
 

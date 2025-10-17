@@ -1,4 +1,4 @@
-import { Injectable, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
+import { Injectable, ExecutionContext, CallHandler, Logger, NestInterceptor } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
@@ -16,7 +16,7 @@ export interface CacheOptions {
 }
 
 @Injectable()
-export class ResponseCacheInterceptor {
+export class ResponseCacheInterceptor implements NestInterceptor {
   private readonly logger = new Logger(ResponseCacheInterceptor.name);
   private readonly isDevelopment: boolean;
 
