@@ -1,5 +1,17 @@
 import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { 
+  ApiBearerAuth, 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiParam,
+  ApiBody,
+  ApiOkResponse,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
+  ApiNotFoundResponse,
+  ApiCreatedResponse
+} from '@nestjs/swagger';
 import { CheckoutService } from './checkout.service';
 import { CheckoutConfirmDto, CheckoutPreviewDto, WebhookDto } from './dto/checkout.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -13,6 +25,33 @@ export class CheckoutController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('checkout/preview')
+  @ApiOperation({ 
+    summary: 'Preview checkout',
+    description: 'Preview order details, pricing, and delivery options before confirmation'
+  })
+  @ApiBody({ type: CheckoutPreviewDto })
+  @ApiOkResponse({ 
+    description: 'Checkout preview generated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            items: { type: 'array', items: { type: 'object' } },
+            subtotal: { type: 'number', example: 599.98 },
+            shipping: { type: 'number', example: 25.00 },
+            tax: { type: 'number', example: 62.50 },
+            total: { type: 'number', example: 687.48 },
+            currency: { type: 'string', example: 'USD' },
+            deliveryOptions: { type: 'array', items: { type: 'object' } }
+          }
+        }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Invalid cart or currency' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT token' })
   async preview(@Req() req: { user: { sub: string } }, @Body() dto: CheckoutPreviewDto) {
     const data = await this.svc.preview(req.user.sub, dto.currency);
     return { data };
@@ -21,6 +60,33 @@ export class CheckoutController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('checkout/confirm')
+  @ApiOperation({ 
+    summary: 'Confirm checkout',
+    description: 'Confirm and process the checkout with payment and delivery details'
+  })
+  @ApiBody({ type: CheckoutConfirmDto })
+  @ApiCreatedResponse({ 
+    description: 'Order created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            orderId: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            orderNumber: { type: 'string', example: 'ORD-2024-001' },
+            status: { type: 'string', example: 'PENDING' },
+            totalAmount: { type: 'number', example: 687.48 },
+            currency: { type: 'string', example: 'USD' },
+            paymentUrl: { type: 'string', example: 'https://payment.example.com/checkout/...' },
+            estimatedDelivery: { type: 'string', example: '2024-01-20T00:00:00Z' }
+          }
+        }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ description: 'Invalid payment method or delivery address' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT token' })
   async confirm(@Req() req: { user: { sub: string } }, @Body() dto: CheckoutConfirmDto) {
     const data = await this.svc.confirm(
       req.user.sub,

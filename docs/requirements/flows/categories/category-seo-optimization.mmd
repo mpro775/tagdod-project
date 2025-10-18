@@ -1,0 +1,238 @@
+%% Category SEO Optimization and Meta Management
+%% View at https://mermaid.live
+flowchart TD
+  A[Category SEO System] --> B[SEO Components]
+  
+  %% SEO Components
+  B --> C[Meta Tags]
+  B --> D[URL Optimization]
+  B --> E[Content Optimization]
+  B --> F[Search Optimization]
+  B --> G[Performance Optimization]
+  
+  %% Meta Tags
+  C --> C1[Meta Title]
+  C --> C2[Meta Description]
+  C --> C3[Meta Keywords]
+  C --> C4[Open Graph Tags]
+  C --> C5[Twitter Cards]
+  
+  %% Meta Title
+  C1 --> C1A[Generate Title]
+  C1A --> C1B[Validate Title Length]
+  C1B --> C1C[Check Title Uniqueness]
+  C1C --> C1D[Optimize for Keywords]
+  C1D --> C1E[Add Brand Name]
+  
+  %% Generate Title
+  C1A --> C1A1[Use Category Name]
+  C1A1 --> C1A2[Add Parent Context]
+  C1A2 --> C1A3[Include Keywords]
+  C1A3 --> C1A4[Add Brand Suffix]
+  
+  %% Validate Title Length
+  C1B --> C1B1[Check Length < 60 chars]
+  C1B1 --> C1B2[Truncate if Needed]
+  C1B2 --> C1B3[Preserve Important Words]
+  C1B3 --> C1B4[Add Ellipsis if Truncated]
+  
+  %% Meta Description
+  C2 --> C2A[Generate Description]
+  C2A --> C2B[Validate Description Length]
+  C2B --> C2C[Include Keywords]
+  C2C --> C2D[Add Call to Action]
+  C2D --> C2E[Make Compelling]
+  
+  %% Generate Description
+  C2A --> C2A1[Use Category Description]
+  C2A1 --> C2A2[Add Product Count]
+  C2A2 --> C2A3[Include Benefits]
+  C2A3 --> C2A4[Add Unique Value]
+  
+  %% Validate Description Length
+  C2B --> C2B1[Check Length < 160 chars]
+  C2B1 --> C2B2[Truncate if Needed]
+  C2B2 --> C2B3[Preserve Key Information]
+  C2B3 --> C2B4[End with Action Word]
+  
+  %% Meta Keywords
+  C3 --> C3A[Extract Keywords]
+  C3A --> C3B[Add Category Keywords]
+  C3B --> C3C[Include Parent Keywords]
+  C3C --> C3D[Add Related Terms]
+  C3D --> C3E[Remove Duplicates]
+  
+  %% Extract Keywords
+  C3A --> C3A1[Parse Category Name]
+  C3A1 --> C3A2[Extract from Description]
+  C3A2 --> C3A3[Add Industry Terms]
+  C3A3 --> C3A4[Include Synonyms]
+  
+  %% URL Optimization
+  D --> D1[Slug Generation]
+  D --> D2[Path Optimization]
+  D --> D3[URL Structure]
+  D --> D4[Canonical URLs]
+  
+  %% Slug Generation
+  D1 --> D1A[Convert to Slug]
+  D1A --> D1B[Remove Special Characters]
+  D1B --> D1C[Handle Arabic Text]
+  D1C --> D1D[Ensure Uniqueness]
+  D1D --> D1E[Validate Slug Format]
+  
+  %% Convert to Slug
+  D1A --> D1A1[Convert to Lowercase]
+  D1A1 --> D1A2[Replace Spaces with Dashes]
+  D1A2 --> D1A3[Remove Accents]
+  D1A3 --> D1A4[Handle Arabic Characters]
+  
+  %% Remove Special Characters
+  D1B --> D1B1[Remove Non-Alphanumeric]
+  D1B1 --> D1B2[Keep Dashes and Underscores]
+  D1B2 --> D1B3[Remove Multiple Dashes]
+  D1B3 --> D1B4[Trim Leading/Trailing Dashes]
+  
+  %% Path Optimization
+  D2 --> D2A[Build Category Path]
+  D2A --> D2B[Optimize Path Length]
+  D2B --> D2C[Ensure Path Uniqueness]
+  D2C --> D2D[Update Children Paths]
+  
+  %% Build Category Path
+  D2A --> D2A1[Get Parent Path]
+  D2A1 --> D2A2[Append Current Slug]
+  D2A2 --> D2A3[Validate Path Format]
+  D2A3 --> D2A4[Store Path in Database]
+  
+  %% URL Structure
+  D3 --> D3A[Root Category URLs]
+  D3A --> D3B[Sub Category URLs]
+  D3B --> D3C[Nested Category URLs]
+  D3C --> D3D[URL Consistency]
+  
+  %% Root Category URLs
+  D3A --> D3A1[Format: /category-slug]
+  D3A1 --> D3A2[No Parent Path]
+  D3A2 --> D3A3[Direct Access]
+  D3A3 --> D3A4[SEO Friendly]
+  
+  %% Sub Category URLs
+  D3B --> D3B1[Format: /parent/category-slug]
+  D3B1 --> D3B2[Include Parent Path]
+  D3B2 --> D3B3[Hierarchical Structure]
+  D3B3 --> D3B4[Clear Navigation]
+  
+  %% Content Optimization
+  E --> E1[Content Structure]
+  E --> E2[Keyword Optimization]
+  E --> E3[Content Quality]
+  E --> E4[Content Updates]
+  
+  %% Content Structure
+  E1 --> E1A[Heading Structure]
+  E1A --> E1B[Content Hierarchy]
+  E1B --> E1C[Image Optimization]
+  E1C --> E1D[Link Structure]
+  
+  %% Heading Structure
+  E1A --> E1A1[H1: Category Name]
+  E1A1 --> E1A2[H2: Sub Categories]
+  E1A2 --> E1A3[H3: Product Groups]
+  E1A3 --> E1A4[Proper Heading Order]
+  
+  %% Keyword Optimization
+  E2 --> E2A[Primary Keywords]
+  E2A --> E2B[Secondary Keywords]
+  E2B --> E2C[Long-tail Keywords]
+  E2C --> E2D[Keyword Density]
+  
+  %% Primary Keywords
+  E2A --> E2A1[Category Name Keywords]
+  E2A1 --> E2A2[Industry Terms]
+  E2A2 --> E2A3[Product Type Terms]
+  E2A3 --> E2A4[Brand Terms]
+  
+  %% Search Optimization
+  F --> F1[Search Engine Indexing]
+  F --> F2[Search Result Optimization]
+  F --> F3[Local SEO]
+  F --> F4[Mobile Optimization]
+  
+  %% Search Engine Indexing
+  F1 --> F1A[XML Sitemap]
+  F1A --> F1B[Robots.txt]
+  F1B --> F1C[Meta Robots]
+  F1C --> F1D[Indexing Control]
+  
+  %% XML Sitemap
+  F1A --> F1A1[Include Category URLs]
+  F1A1 --> F1A2[Set Priority Levels]
+  F1A2 --> F1A3[Update Frequencies]
+  F1A3 --> F1A4[Last Modified Dates]
+  
+  %% Search Result Optimization
+  F2 --> F2A[Rich Snippets]
+  F2A --> F2B[Structured Data]
+  F2B --> F2C[Schema Markup]
+  F2C --> F2D[Search Appearance]
+  
+  %% Rich Snippets
+  F2A --> F2A1[Category Name]
+  F2A1 --> F2A2[Product Count]
+  F2A2 --> F2A3[Category Description]
+  F2A3 --> F2A4[Category Image]
+  
+  %% Performance Optimization
+  G --> G1[Page Speed]
+  G --> G2[Image Optimization]
+  G --> G3[Code Optimization]
+  G --> G4[Caching Strategy]
+  
+  %% Page Speed
+  G1 --> G1A[Minimize HTTP Requests]
+  G1A --> G1B[Optimize CSS/JS]
+  G1B --> G1C[Enable Compression]
+  G1C --> G1D[Use CDN]
+  
+  %% Image Optimization
+  G2 --> G2A[Compress Images]
+  G2A --> G2B[Use WebP Format]
+  G2B --> G2C[Lazy Loading]
+  G2C --> G2D[Responsive Images]
+  
+  %% SEO Monitoring
+  H[SEO Monitoring] --> H1[SEO Metrics]
+  H1 --> H2[Performance Tracking]
+  H2 --> H3[Keyword Rankings]
+  H3 --> H4[Competitor Analysis]
+  
+  %% SEO Metrics
+  H1 --> H1A[Organic Traffic]
+  H1A --> H1B[Click-through Rates]
+  H1B --> H1C[Conversion Rates]
+  H1C --> H1D[Search Rankings]
+  
+  %% Performance Tracking
+  H2 --> H2A[Page Load Times]
+  H2A --> H2B[Core Web Vitals]
+  H2B --> H2C[Mobile Performance]
+  H2C --> H2D[User Experience]
+  
+  %% Keyword Rankings
+  H3 --> H3A[Track Primary Keywords]
+  H3A --> H3B[Monitor Competitors]
+  H3B --> H3C[Identify Opportunities]
+  H3C --> H3D[Optimize Content]
+  
+  %% End points
+  C1E --> Z[End]
+  C2E --> Z
+  C3E --> Z
+  D1E --> Z
+  D2D --> Z
+  D3D --> Z
+  E4 --> Z
+  F4 --> Z
+  G4 --> Z
+  H4 --> Z

@@ -1,5 +1,19 @@
 import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards, Logger } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { 
+  ApiBearerAuth, 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiBody,
+  ApiParam,
+  ApiQuery,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
+  ApiNotFoundResponse,
+  ApiForbiddenResponse,
+  ApiCreatedResponse,
+  ApiOkResponse
+} from '@nestjs/swagger';
 import bcrypt from 'bcrypt';
 import { OtpService } from './otp.service';
 import { TokensService } from './tokens.service';
@@ -32,6 +46,32 @@ export class AuthController {
   ) {}
 
   @Post('send-otp')
+  @ApiOperation({ 
+    summary: 'Send OTP to phone number',
+    description: 'Sends a one-time password (OTP) to the specified phone number for authentication'
+  })
+  @ApiBody({ type: SendOtpDto })
+  @ApiCreatedResponse({ 
+    description: 'OTP sent successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        sent: { type: 'boolean', example: true },
+        devCode: { type: 'string', example: '123456', description: 'Development code (only in dev environment)' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ 
+    description: 'Invalid phone number or context',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'Invalid phone number format' },
+        error: { type: 'string', example: 'Bad Request' }
+      }
+    }
+  })
   async sendOtp(@Body() dto: SendOtpDto) {
     const result = await this.otp.sendOtp(
       dto.phone,
@@ -41,6 +81,56 @@ export class AuthController {
   }
 
   @Post('verify-otp')
+  @ApiOperation({ 
+    summary: 'Verify OTP and complete registration/login',
+    description: 'Verifies the OTP code and completes user registration or login process'
+  })
+  @ApiBody({ type: VerifyOtpDto })
+  @ApiCreatedResponse({ 
+    description: 'OTP verified successfully and user authenticated',
+    schema: {
+      type: 'object',
+      properties: {
+        tokens: {
+          type: 'object',
+          properties: {
+            access: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+            refresh: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
+          }
+        },
+        me: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            phone: { type: 'string', example: '+966501234567' },
+            preferredCurrency: { type: 'string', example: 'USD' }
+          }
+        }
+      }
+    }
+  })
+  @ApiUnauthorizedResponse({ 
+    description: 'Invalid OTP code',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'رمز التحقق غير صالح' },
+        error: { type: 'string', example: 'Unauthorized' }
+      }
+    }
+  })
+  @ApiBadRequestResponse({ 
+    description: 'Missing required fields for engineer registration',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'المسمى الوظيفي مطلوب للمهندسين' },
+        error: { type: 'string', example: 'Bad Request' }
+      }
+    }
+  })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     const ok = await this.otp.verifyOtp(dto.phone, dto.code, 'register');
     if (!ok) throw new AppException('AUTH_INVALID_OTP', 'رمز التحقق غير صالح', null, 401);
@@ -171,6 +261,39 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get('me')
+  @ApiOperation({ 
+    summary: 'Get current user profile',
+    description: 'Retrieves the current authenticated user profile and capabilities'
+  })
+  @ApiOkResponse({ 
+    description: 'User profile retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            phone: { type: 'string', example: '+966501234567' },
+            firstName: { type: 'string', example: 'أحمد' },
+            lastName: { type: 'string', example: 'محمد' },
+            gender: { type: 'string', example: 'male', enum: ['male', 'female'] },
+            jobTitle: { type: 'string', example: 'مهندس كهرباء' },
+            isAdmin: { type: 'boolean', example: false }
+          }
+        },
+        capabilities: {
+          type: 'object',
+          properties: {
+            customer_capable: { type: 'boolean', example: true },
+            engineer_capable: { type: 'boolean', example: false },
+            wholesale_capable: { type: 'boolean', example: false }
+          }
+        }
+      }
+    }
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT token' })
   async me(@Req() req: { user: { sub: string } }) {
     const user = await this.userModel.findById(req.user.sub).lean();
     const caps = await this.capsModel.findOne({ userId: req.user.sub }).lean();

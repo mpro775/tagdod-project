@@ -1,0 +1,67 @@
+%% Catalog: Advanced Caching & Search Performance
+%% View at https://mermaid.live
+flowchart TD
+  A[User requests data] --> B{Data type?}
+  B -->|Search Results| C[Check search cache]
+  B -->|Product Details| D[Check product cache]
+  B -->|Suggestions| E[Check suggestions cache]
+  B -->|Facets| F[Check facets cache]
+  
+  %% Search Results Caching
+  C --> C1{Cache hit?}
+  C1 -->|Yes| C2[Return cached results]
+  C1 -->|No| C3[Execute search query]
+  C3 --> C4[Calculate relevance scores]
+  C4 --> C5[Sort and paginate results]
+  C5 --> C6[Cache results for 5 minutes]
+  C6 --> C7[Return search results]
+  
+  %% Product Details Caching
+  D --> D1{Cache hit?}
+  D1 -->|Yes| D2[Return cached product]
+  D1 -->|No| D3[Load product from database]
+  D3 --> D4[Load variants and pricing]
+  D4 --> D5[Convert currency if needed]
+  D5 --> D6[Load attributes and reviews]
+  D6 --> D7[Cache product for 10 minutes]
+  D7 --> D8[Return product details]
+  
+  %% Suggestions Caching
+  E --> E1{Cache hit?}
+  E1 -->|Yes| E2[Return cached suggestions]
+  E1 -->|No| E3[Generate suggestions]
+  E3 --> E4[Rank by popularity]
+  E4 --> E5[Cache suggestions for 30 minutes]
+  E5 --> E6[Return suggestions]
+  
+  %% Facets Caching
+  F --> F1{Cache hit?}
+  F1 -->|Yes| F2[Return cached facets]
+  F1 -->|No| F3[Calculate facet counts]
+  F3 --> F4[Group by attributes]
+  F4 --> F5[Cache facets for 10 minutes]
+  F5 --> F6[Return facets]
+  
+  %% Cache Invalidation
+  G[Product updated] --> G1[Invalidate product cache]
+  G1 --> G2[Invalidate search cache]
+  G2 --> G3[Invalidate facets cache]
+  G3 --> G4[Update cache timestamps]
+  
+  %% Performance Optimization
+  H[High traffic] --> H1[Increase cache TTL]
+  H1 --> H2[Pre-warm popular searches]
+  H2 --> H3[Optimize database queries]
+  H3 --> H4[Monitor cache hit rates]
+  
+  %% End points
+  C2 --> Z[End]
+  C7 --> Z
+  D2 --> Z
+  D8 --> Z
+  E2 --> Z
+  E6 --> Z
+  F2 --> Z
+  F6 --> Z
+  G4 --> Z
+  H4 --> Z

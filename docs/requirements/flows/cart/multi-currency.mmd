@@ -1,0 +1,40 @@
+%% Cart: Multi-Currency System
+%% View at https://mermaid.live
+flowchart TD
+  A[User changes currency] --> B[Get current cart items]
+  B --> C[Get exchange rates]
+  C --> D[Convert base prices to new currency]
+  D --> E[Recalculate all item prices]
+  E --> F[Apply currency-specific discounts]
+  F --> G[Update pricing summary]
+  G --> H[Save cart with new currency]
+  H --> I[Return updated cart]
+  
+  %% Currency Selection
+  J[User selects currency] --> K{Currency supported?}
+  K -->|No| L[Error: Currency not supported]
+  K -->|Yes| M[Set cart currency]
+  M --> N[Update all prices]
+  N --> O[Apply currency-specific rules]
+  O --> A
+  
+  %% Price Conversion
+  P[Convert price] --> Q[Get base price in USD]
+  Q --> R[Get exchange rate]
+  R --> S[Calculate converted price]
+  S --> T[Apply currency formatting]
+  T --> U[Return formatted price]
+  
+  %% Discount Application by Currency
+  V[Apply discounts] --> W[Check currency-specific discounts]
+  W --> X[Apply wholesale discounts]
+  X --> Y[Apply engineer discounts]
+  Y --> Z[Apply customer discounts]
+  Z --> AA[Calculate final price]
+  AA --> BB[Update item pricing]
+  
+  %% End Points
+  I --> CC[End]
+  L --> CC
+  U --> CC
+  BB --> CC

@@ -1,0 +1,354 @@
+%% Brand Search and Filtering System
+%% View at https://mermaid.live
+flowchart TD
+  A[Brand Search and Filtering System] --> B[Search Types]
+  
+  %% Search Types
+  B --> C[Text Search]
+  B --> D[Status Filtering]
+  B --> E[Sorting Options]
+  B --> F[Pagination]
+  B --> G[Advanced Filtering]
+  
+  %% Text Search
+  C --> C1[Search in Brand Name]
+  C1 --> C2[Search in Description]
+  C2 --> C3[Search in Metadata]
+  C3 --> C4[Search Results Processing]
+  
+  %% Search in Brand Name
+  C1 --> C1A[Search in Name Field]
+  C1A --> C1B[Search in NameEn Field]
+  C1B --> C1C[Apply Case Insensitive Search]
+  C1C --> C1D[Return Name Search Results]
+  
+  %% Search in Name Field
+  C1A --> C1A1[Query Brands by Name]
+  C1A1 --> C1A2[Apply Name Filter]
+  C1A2 --> C1A3[Sort by Relevance]
+  C1A3 --> C1A4[Return Name Matches]
+  
+  %% Search in Description
+  C2 --> C2A[Search in Description Field]
+  C2A --> C2B[Search in DescriptionEn Field]
+  C2B --> C2C[Apply Full Text Search]
+  C2C --> C2D[Return Description Search Results]
+  
+  %% Search in Description Field
+  C2A --> C2A1[Query Brands by Description]
+  C2A1 --> C2A2[Apply Description Filter]
+  C2A2 --> C2A3[Sort by Relevance]
+  C2A3 --> C2A4[Return Description Matches]
+  
+  %% Search in Metadata
+  C3 --> C3A[Search in Metadata Fields]
+  C3A --> C3B[Apply Metadata Filter]
+  C3B --> C3C[Sort by Metadata Relevance]
+  C3C --> C3D[Return Metadata Search Results]
+  
+  %% Search in Metadata Fields
+  C3A --> C3A1[Query Brands by Metadata]
+  C3A1 --> C3A2[Apply Metadata Filter]
+  C3A2 --> C3A3[Sort by Metadata Relevance]
+  C3A3 --> C3A4[Return Metadata Matches]
+  
+  %% Search Results Processing
+  C4 --> C4A[Combine Search Results]
+  C4A --> C4B[Remove Duplicates]
+  C4B --> C4C[Sort by Relevance]
+  C4C --> C4D[Return Processed Results]
+  
+  %% Combine Search Results
+  C4A --> C4A1[Merge Name Results]
+  C4A1 --> C4A2[Merge Description Results]
+  C4A2 --> C4A3[Merge Metadata Results]
+  C4A3 --> C4A4[Return Combined Results]
+  
+  %% Status Filtering
+  D --> D1[Filter by Active Status]
+  D1 --> D2[Filter by Inactive Status]
+  D2 --> D3[Filter by Status Range]
+  D3 --> D4[Status Filter Results]
+  
+  %% Filter by Active Status
+  D1 --> D1A[Query Active Brands]
+  D1A --> D1B[Apply Active Filter]
+  D1B --> D1C[Sort Active Brands]
+  D1C --> D1D[Return Active Results]
+  
+  %% Query Active Brands
+  D1A --> D1A1[Filter by isActive = true]
+  D1A1 --> D1A2[Apply Active Status Filter]
+  D1A2 --> D1A3[Return Active Brand List]
+  
+  %% Filter by Inactive Status
+  D2 --> D2A[Query Inactive Brands]
+  D2A --> D2B[Apply Inactive Filter]
+  D2B --> D2C[Sort Inactive Brands]
+  D2C --> D2D[Return Inactive Results]
+  
+  %% Query Inactive Brands
+  D2A --> D2A1[Filter by isActive = false]
+  D2A1 --> D2A2[Apply Inactive Status Filter]
+  D2A2 --> D2A3[Return Inactive Brand List]
+  
+  %% Filter by Status Range
+  D3 --> D3A[Query Brands by Status Range]
+  D3A --> D3B[Apply Status Range Filter]
+  D3B --> D3C[Sort by Status Range]
+  D3C --> D3D[Return Status Range Results]
+  
+  %% Sorting Options
+  E --> E1[Sort by Name]
+  E1 --> E2[Sort by Created Date]
+  E2 --> E3[Sort by Sort Order]
+  E3 --> E4[Sort by Status]
+  
+  %% Sort by Name
+  E1 --> E1A[Sort by Name Ascending]
+  E1A --> E1B[Sort by Name Descending]
+  E1B --> E1C[Sort by NameEn]
+  E1C --> E1D[Return Name Sorted Results]
+  
+  %% Sort by Name Ascending
+  E1A --> E1A1[Apply Name ASC Sort]
+  E1A1 --> E1A2[Sort by Name Field]
+  E1A2 --> E1A3[Return Ascending Results]
+  
+  %% Sort by Created Date
+  E2 --> E2A[Sort by Created Date Ascending]
+  E2A --> E2B[Sort by Created Date Descending]
+  E2B --> E2C[Sort by Updated Date]
+  E2C --> E2D[Return Date Sorted Results]
+  
+  %% Sort by Created Date Ascending
+  E2A --> E2A1[Apply Created Date ASC Sort]
+  E2A1 --> E2A2[Sort by Created At Field]
+  E2A2 --> E2A3[Return Date Ascending Results]
+  
+  %% Sort by Sort Order
+  E3 --> E3A[Sort by Sort Order Ascending]
+  E3A --> E3B[Sort by Sort Order Descending]
+  E3B --> E3C[Sort by Custom Order]
+  E3C --> E3D[Return Sort Order Results]
+  
+  %% Sort by Sort Order Ascending
+  E3A --> E3A1[Apply Sort Order ASC Sort]
+  E3A1 --> E3A2[Sort by Sort Order Field]
+  E3A2 --> E3A3[Return Sort Order Ascending Results]
+  
+  %% Sort by Status
+  E4 --> E4A[Sort by Active Status]
+  E4A --> E4B[Sort by Status Priority]
+  E4B --> E4C[Sort by Status Order]
+  E4C --> E4D[Return Status Sorted Results]
+  
+  %% Sort by Active Status
+  E4A --> E4A1[Apply Active Status Sort]
+  E4A1 --> E4A2[Sort by isActive Field]
+  E4A2 --> E4A3[Return Status Sorted Results]
+  
+  %% Pagination
+  F --> F1[Calculate Pagination]
+  F1 --> F2[Apply Page Limit]
+  F2 --> F3[Calculate Total Pages]
+  F3 --> F4[Return Paginated Results]
+  
+  %% Calculate Pagination
+  F1 --> F1A[Get Page Number]
+  F1A --> F1B[Get Page Limit]
+  F1B --> F1C[Calculate Skip Value]
+  F1C --> F1D[Return Pagination Data]
+  
+  %% Get Page Number
+  F1A --> F1A1[Validate Page Number]
+  F1A1 --> F1A2[Set Default Page]
+  F1A2 --> F1A3[Return Page Number]
+  
+  %% Get Page Limit
+  F1B --> F1B1[Validate Page Limit]
+  F1B1 --> F1B2[Set Default Limit]
+  F1B2 --> F1B3[Return Page Limit]
+  
+  %% Calculate Skip Value
+  F1C --> F1C1[Calculate Skip = (page - 1) * limit]
+  F1C1 --> F1C2[Validate Skip Value]
+  F1C2 --> F1C3[Return Skip Value]
+  
+  %% Apply Page Limit
+  F2 --> F2A[Apply Skip to Query]
+  F2A --> F2B[Apply Limit to Query]
+  F2B --> F2C[Execute Paginated Query]
+  F2C --> F2D[Return Paginated Data]
+  
+  %% Apply Skip to Query
+  F2A --> F2A1[Add Skip to Query]
+  F2A1 --> F2A2[Validate Skip Value]
+  F2A2 --> F2A3[Return Skip Applied]
+  
+  %% Apply Limit to Query
+  F2B --> F2B1[Add Limit to Query]
+  F2B1 --> F2B2[Validate Limit Value]
+  F2B2 --> F2B3[Return Limit Applied]
+  
+  %% Calculate Total Pages
+  F3 --> F3A[Count Total Results]
+  F3A --> F3B[Calculate Total Pages]
+  F3B --> F3C[Calculate Page Info]
+  F3C --> F3D[Return Pagination Info]
+  
+  %% Count Total Results
+  F3A --> F3A1[Execute Count Query]
+  F3A1 --> F3A2[Get Total Count]
+  F3A2 --> F3A3[Return Total Count]
+  
+  %% Calculate Total Pages
+  F3B --> F3B1[Calculate Total Pages = Math.ceil(total / limit)]
+  F3B1 --> F3B2[Validate Total Pages]
+  F3B2 --> F3B3[Return Total Pages]
+  
+  %% Calculate Page Info
+  F3C --> F3C1[Calculate Current Page]
+  F3C1 --> F3C2[Calculate Has Next Page]
+  F3C2 --> F3C3[Calculate Has Previous Page]
+  F3C3 --> F3C4[Return Page Info]
+  
+  %% Advanced Filtering
+  G --> G1[Filter by Date Range]
+  G1 --> G2[Filter by Metadata]
+  G2 --> G3[Filter by Sort Order Range]
+  G3 --> G4[Filter by Custom Criteria]
+  
+  %% Filter by Date Range
+  G1 --> G1A[Filter by Created Date Range]
+  G1A --> G1B[Filter by Updated Date Range]
+  G1B --> G1C[Apply Date Range Filter]
+  G1C --> G1D[Return Date Range Results]
+  
+  %% Filter by Created Date Range
+  G1A --> G1A1[Set Start Date]
+  G1A1 --> G1A2[Set End Date]
+  G1A2 --> G1A3[Apply Date Range Filter]
+  G1A3 --> G1A4[Return Created Date Range Results]
+  
+  %% Filter by Metadata
+  G2 --> G2A[Filter by Metadata Keys]
+  G2A --> G2B[Filter by Metadata Values]
+  G2B --> G2C[Apply Metadata Filter]
+  G2C --> G2D[Return Metadata Filter Results]
+  
+  %% Filter by Metadata Keys
+  G2A --> G2A1[Set Metadata Key Filter]
+  G2A1 --> G2A2[Apply Key Filter]
+  G2A2 --> G2A3[Return Key Filter Results]
+  
+  %% Filter by Metadata Values
+  G2B --> G2B1[Set Metadata Value Filter]
+  G2B1 --> G2B2[Apply Value Filter]
+  G2B2 --> G2B3[Return Value Filter Results]
+  
+  %% Filter by Sort Order Range
+  G3 --> G3A[Filter by Sort Order Min]
+  G3A --> G3B[Filter by Sort Order Max]
+  G3B --> G3C[Apply Sort Order Range Filter]
+  G3C --> G3D[Return Sort Order Range Results]
+  
+  %% Filter by Sort Order Min
+  G3A --> G3A1[Set Sort Order Minimum]
+  G3A1 --> G3A2[Apply Min Filter]
+  G3A2 --> G3A3[Return Min Filter Results]
+  
+  %% Filter by Sort Order Max
+  G3B --> G3B1[Set Sort Order Maximum]
+  G3B1 --> G3B2[Apply Max Filter]
+  G3B2 --> G3B3[Return Max Filter Results]
+  
+  %% Filter by Custom Criteria
+  G4 --> G4A[Filter by Custom Fields]
+  G4A --> G4B[Filter by Custom Values]
+  G4B --> G4C[Apply Custom Filter]
+  G4C --> G4D[Return Custom Filter Results]
+  
+  %% Filter by Custom Fields
+  G4A --> G4A1[Set Custom Field Filter]
+  G4A1 --> G4A2[Apply Custom Field Filter]
+  G4A2 --> G4A3[Return Custom Field Results]
+  
+  %% Filter by Custom Values
+  G4B --> G4B1[Set Custom Value Filter]
+  G4B1 --> G4B2[Apply Custom Value Filter]
+  G4B2 --> G4B3[Return Custom Value Results]
+  
+  %% Search Optimization
+  H[Search Optimization] --> I[Query Optimization]
+  I --> J[Index Optimization]
+  J --> K[Cache Optimization]
+  K --> L[Performance Monitoring]
+  
+  %% Query Optimization
+  I --> I1[Optimize Search Queries]
+  I1 --> I2[Optimize Filter Queries]
+  I2 --> I3[Optimize Sort Queries]
+  I3 --> I4[Optimize Pagination Queries]
+  
+  %% Optimize Search Queries
+  I1 --> I1A[Use Database Indexes]
+  I1A --> I1B[Optimize Query Structure]
+  I1B --> I1C[Reduce Query Complexity]
+  I1C --> I1D[Improve Query Performance]
+  
+  %% Use Database Indexes
+  I1A --> I1A1[Use Name Index]
+  I1A1 --> I1A2[Use Description Index]
+  I1A2 --> I1A3[Use Metadata Index]
+  I1A3 --> I1A4[Return Index Usage]
+  
+  %% Index Optimization
+  J --> J1[Create Search Indexes]
+  J1 --> J2[Create Filter Indexes]
+  J2 --> J3[Create Sort Indexes]
+  J3 --> J4[Monitor Index Performance]
+  
+  %% Create Search Indexes
+  J1 --> J1A[Create Name Search Index]
+  J1A --> J1B[Create Description Search Index]
+  J1B --> J1C[Create Metadata Search Index]
+  J1C --> J1D[Return Search Index Status]
+  
+  %% Create Filter Indexes
+  J2 --> J2A[Create Status Filter Index]
+  J2A --> J2B[Create Date Filter Index]
+  J2B --> J2C[Create Sort Order Filter Index]
+  J2C --> J2D[Return Filter Index Status]
+  
+  %% Cache Optimization
+  K --> K1[Cache Search Results]
+  K1 --> K2[Cache Filter Results]
+  K2 --> K3[Cache Sort Results]
+  K3 --> K4[Manage Cache Invalidation]
+  
+  %% Cache Search Results
+  K1 --> K1A[Cache Text Search Results]
+  K1A --> K1B[Cache Advanced Search Results]
+  K1B --> K1C[Cache Search Analytics]
+  K1C --> K1D[Return Cache Status]
+  
+  %% Performance Monitoring
+  L --> L1[Monitor Search Performance]
+  L1 --> L2[Monitor Filter Performance]
+  L2 --> L3[Monitor Sort Performance]
+  L3 --> L4[Generate Performance Reports]
+  
+  %% Monitor Search Performance
+  L1 --> L1A[Track Search Response Time]
+  L1A --> L1B[Track Search Accuracy]
+  L1B --> L1C[Track Search Usage]
+  L1C --> L1D[Return Search Performance]
+  
+  %% End points
+  C4D --> Z[End]
+  D4 --> Z
+  E4D --> Z
+  F4 --> Z
+  G4D --> Z
+  L4 --> Z

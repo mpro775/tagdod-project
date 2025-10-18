@@ -22,14 +22,19 @@ export class UploadService {
   private readonly bunnyCredentials: BunnyCredentials;
 
   constructor(private configService: ConfigService) {
+    // Read all configuration from environment variables only
     this.bunnyCredentials = {
       storageZoneName: this.configService.get<string>('BUNNY_STORAGE_ZONE') || '',
       apiKey: this.configService.get<string>('BUNNY_API_KEY') || '',
-      hostname: this.configService.get<string>('BUNNY_HOSTNAME') || '',
+      hostname: this.configService.get<string>('BUNNY_HOSTNAME') || 'storage.bunnycdn.com',
     };
 
-    if (!this.bunnyCredentials.storageZoneName || !this.bunnyCredentials.apiKey) {
-      throw new Error('Bunny.net credentials not configured');
+    // Validate required credentials with clear error messages
+    if (!this.bunnyCredentials.storageZoneName) {
+      throw new Error('BUNNY_STORAGE_ZONE environment variable is required');
+    }
+    if (!this.bunnyCredentials.apiKey) {
+      throw new Error('BUNNY_API_KEY environment variable is required');
     }
   }
 
@@ -65,7 +70,17 @@ export class UploadService {
 
       if (res.status !== 201) {
         this.logger.error(`Bunny upload failed: ${res.status} ${res.statusText} | ${uploadUrl}`);
-        throw new BadRequestException('Failed to upload file to Bunny.net');
+        
+        // Return specific error messages based on status code
+        if (res.status === 401) {
+          throw new BadRequestException('Invalid Bunny.net API credentials (401 Unauthorized)');
+        } else if (res.status === 403) {
+          throw new BadRequestException('Access denied to Bunny.net storage (403 Forbidden)');
+        } else if (res.status === 413) {
+          throw new BadRequestException('File size exceeds Bunny.net storage limit');
+        } else {
+          throw new BadRequestException(`Failed to upload file to Bunny.net (${res.status})`);
+        }
       }
 
       // Generate public URL (assuming CDN is enabled)
@@ -82,7 +97,15 @@ export class UploadService {
       };
     } catch (error) {
       this.logger.error('Upload error:', error);
-      throw new BadRequestException('File upload failed');
+      
+      // Handle specific error types
+      if (error instanceof BadRequestException) {
+        throw error; // Re-throw our custom errors
+      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+        throw new BadRequestException('Cannot connect to Bunny.net storage service');
+      } else {
+        throw new BadRequestException('File upload failed due to server error');
+      }
     }
   }
 
@@ -134,26 +157,33 @@ export class UploadService {
     mimetype: string;
     size: number;
   }): void {
-    // Check file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Get limits from environment variables
+    const maxSize = parseInt(process.env.MAX_FILE_SIZE || '10485760'); // 10MB default
+    const allowedTypes = process.env.ALLOWED_FILE_TYPES 
+      ? process.env.ALLOWED_FILE_TYPES.split(',').map(type => type.trim())
+      : [
+          'image/jpeg',
+          'image/jpg',
+          'image/png', 
+          'image/gif',
+          'image/webp',
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
+
+    // Check file size
     if (file.size > maxSize) {
-      throw new BadRequestException('File size exceeds 10MB limit');
+      const maxSizeMB = Math.round(maxSize / (1024 * 1024));
+      throw new BadRequestException(`File size exceeds ${maxSizeMB}MB limit`);
     }
 
     // Check file type
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ];
-
     if (!allowedTypes.includes(file.mimetype)) {
       throw new BadRequestException(
-        `File type ${file.mimetype} not allowed. Allowed types: ${allowedTypes.join(', ')}`,
+        `File type '${file.mimetype}' not allowed. Allowed types: ${allowedTypes.join(', ')}`,
       );
     }
   }

@@ -1,0 +1,271 @@
+%% Attribute Filtering System and Advanced Search
+%% View at https://mermaid.live
+flowchart TD
+  A[Attribute Filtering System] --> B[Filter Types]
+  
+  %% Filter Types
+  B --> C[Basic Filtering]
+  B --> D[Advanced Filtering]
+  B --> E[Search Filtering]
+  B --> F[Combined Filtering]
+  B --> G[Filter Optimization]
+  
+  %% Basic Filtering
+  C --> C1[Filter by Attribute Type]
+  C1 --> C2[Filter by Attribute Status]
+  C2 --> C3[Filter by Attribute Group]
+  C3 --> C4[Filter by Attribute Properties]
+  
+  %% Filter by Attribute Type
+  C1 --> C1A[Filter SELECT Attributes]
+  C1A --> C1B[Filter MULTISELECT Attributes]
+  C1B --> C1C[Filter TEXT Attributes]
+  C1C --> C1D[Filter NUMBER Attributes]
+  C1D --> C1E[Filter BOOLEAN Attributes]
+  
+  %% Filter SELECT Attributes
+  C1A --> C1A1[Get SELECT Attributes]
+  C1A1 --> C1A2[Filter by Value Selection]
+  C1A2 --> C1A3[Apply Single Value Filter]
+  C1A3 --> C1A4[Return Filtered Results]
+  
+  %% Filter MULTISELECT Attributes
+  C1B --> C1B1[Get MULTISELECT Attributes]
+  C1B1 --> C1B2[Filter by Multiple Values]
+  C1B2 --> C1B3[Apply Multiple Value Filter]
+  C1B3 --> C1B4[Return Filtered Results]
+  
+  %% Filter TEXT Attributes
+  C1C --> C1C1[Get TEXT Attributes]
+  C1C1 --> C1C2[Filter by Text Content]
+  C1C2 --> C1C3[Apply Text Search Filter]
+  C1C3 --> C1C4[Return Filtered Results]
+  
+  %% Filter NUMBER Attributes
+  C1D --> C1D1[Get NUMBER Attributes]
+  C1D1 --> C1D2[Filter by Number Range]
+  C1D2 --> C1D3[Apply Numeric Filter]
+  C1D3 --> C1D4[Return Filtered Results]
+  
+  %% Filter BOOLEAN Attributes
+  C1E --> C1E1[Get BOOLEAN Attributes]
+  C1E1 --> C1E2[Filter by Boolean Value]
+  C1E2 --> C1E3[Apply Boolean Filter]
+  C1E3 --> C1E4[Return Filtered Results]
+  
+  %% Filter by Attribute Status
+  C2 --> C2A[Filter Active Attributes]
+  C2A --> C2B[Filter Inactive Attributes]
+  C2B --> C2C[Filter Deleted Attributes]
+  C2C --> C2D[Filter by Usage Status]
+  
+  %% Filter Active Attributes
+  C2A --> C2A1[Check isActive Field]
+  C2A1 --> C2A2[Filter by Active Status]
+  C2A2 --> C2A3[Return Active Attributes]
+  
+  %% Filter by Usage Status
+  C2D --> C2D1[Filter by Usage Count]
+  C2D1 --> C2D2[Filter Most Used Attributes]
+  C2D2 --> C2D3[Filter Least Used Attributes]
+  C2D3 --> C2D4[Filter Unused Attributes]
+  
+  %% Advanced Filtering
+  D --> D1[Complex Filter Combinations]
+  D1 --> D2[Filter by Multiple Criteria]
+  D2 --> D3[Filter by Attribute Relationships]
+  D3 --> D4[Filter by Value Dependencies]
+  
+  %% Complex Filter Combinations
+  D1 --> D1A[Combine Attribute Filters]
+  D1A --> D1B[Combine Value Filters]
+  D1B --> D1C[Combine Status Filters]
+  D1C --> D1D[Apply Complex Logic]
+  
+  %% Combine Attribute Filters
+  D1A --> D1A1[Filter by Multiple Types]
+  D1A1 --> D1A2[Filter by Multiple Groups]
+  D1A2 --> D1A3[Filter by Multiple Statuses]
+  D1A3 --> D1A4[Apply AND Logic]
+  
+  %% Filter by Multiple Criteria
+  D2 --> D2A[Filter by Type and Status]
+  D2A --> D2B[Filter by Group and Usage]
+  D2B --> D2C[Filter by Properties and Values]
+  D2C --> D2D[Apply OR Logic]
+  
+  %% Filter by Attribute Relationships
+  D3 --> D3A[Filter Related Attributes]
+  D3A --> D3B[Filter Dependent Attributes]
+  D3B --> D3C[Filter Conflicting Attributes]
+  D3C --> D3D[Apply Relationship Logic]
+  
+  %% Search Filtering
+  E --> E1[Text Search]
+  E1 --> E2[Keyword Search]
+  E2 --> E3[Fuzzy Search]
+  E3 --> E4[Advanced Search]
+  
+  %% Text Search
+  E1 --> E1A[Search in Attribute Names]
+  E1A --> E1B[Search in Descriptions]
+  E1B --> E1C[Search in Value Names]
+  E1C --> E1D[Search in Value Descriptions]
+  
+  %% Search in Attribute Names
+  E1A --> E1A1[Search in Name Field]
+  E1A1 --> E1A2[Search in NameEn Field]
+  E1A2 --> E1A3[Apply Case Insensitive Search]
+  E1A3 --> E1A4[Return Matching Attributes]
+  
+  %% Search in Descriptions
+  E1B --> E1B1[Search in Description Field]
+  E1B1 --> E1B2[Search in Value Descriptions]
+  E1B2 --> E1B3[Apply Full Text Search]
+  E1B3 --> E1B4[Return Matching Descriptions]
+  
+  %% Keyword Search
+  E2 --> E2A[Extract Keywords]
+  E2A --> E2B[Search by Keywords]
+  E2B --> E2C[Match Keyword Combinations]
+  E2C --> E2D[Return Keyword Results]
+  
+  %% Extract Keywords
+  E2A --> E2A1[Parse Search Query]
+  E2A1 --> E2A2[Extract Key Terms]
+  E2A2 --> E2A3[Remove Stop Words]
+  E2A3 --> E2A4[Return Keywords]
+  
+  %% Fuzzy Search
+  E3 --> E3A[Apply Fuzzy Matching]
+  E3A --> E3B[Calculate Similarity Scores]
+  E3B --> E3C[Rank Results by Similarity]
+  E3C --> E3D[Return Fuzzy Results]
+  
+  %% Apply Fuzzy Matching
+  E3A --> E3A1[Calculate Edit Distance]
+  E3A1 --> E3A2[Apply Similarity Threshold]
+  E3A2 --> E3A3[Match Similar Terms]
+  E3A3 --> E3A4[Return Fuzzy Matches]
+  
+  %% Advanced Search
+  E4 --> E4A[Search with Filters]
+  E4A --> E4B[Search with Sorting]
+  E4B --> E4C[Search with Pagination]
+  E4C --> E4D[Search with Aggregation]
+  
+  %% Combined Filtering
+  F --> F1[Combine Basic and Advanced]
+  F1 --> F2[Combine Search and Filters]
+  F2 --> F3[Combine Multiple Filter Types]
+  F3 --> F4[Apply Complex Filter Logic]
+  
+  %% Combine Basic and Advanced
+  F1 --> F1A[Apply Basic Filters First]
+  F1A --> F1B[Apply Advanced Filters]
+  F1B --> F1C[Combine Filter Results]
+  F1C --> F1D[Return Combined Results]
+  
+  %% Combine Search and Filters
+  F2 --> F2A[Apply Search Query]
+  F2A --> F2B[Apply Additional Filters]
+  F2B --> F2C[Combine Search and Filter Results]
+  F2C --> F2D[Return Combined Results]
+  
+  %% Filter Optimization
+  G --> G1[Query Optimization]
+  G1 --> G2[Index Optimization]
+  G2 --> G3[Cache Optimization]
+  G3 --> G4[Performance Optimization]
+  
+  %% Query Optimization
+  G1 --> G1A[Optimize Filter Queries]
+  G1A --> G1B[Optimize Search Queries]
+  G1B --> G1C[Optimize Combined Queries]
+  G1C --> G1D[Return Optimized Results]
+  
+  %% Optimize Filter Queries
+  G1A --> G1A1[Use Database Indexes]
+  G1A1 --> G1A2[Optimize Query Structure]
+  G1A2 --> G1A3[Reduce Query Complexity]
+  G1A3 --> G1A4[Improve Query Performance]
+  
+  %% Index Optimization
+  G2 --> G2A[Create Filter Indexes]
+  G2A --> G2B[Create Search Indexes]
+  G2B --> G2C[Optimize Index Usage]
+  G2C --> G2D[Monitor Index Performance]
+  
+  %% Create Filter Indexes
+  G2A --> G2A1[Index Attribute Types]
+  G2A1 --> G2A2[Index Attribute Status]
+  G2A2 --> G2A3[Index Attribute Groups]
+  G2A3 --> G2A4[Index Attribute Properties]
+  
+  %% Cache Optimization
+  G3 --> G3A[Cache Filter Results]
+  G3A --> G3B[Cache Search Results]
+  G3B --> G3C[Cache Combined Results]
+  G3C --> G3D[Optimize Cache Performance]
+  
+  %% Cache Filter Results
+  G3A --> G3A1[Cache Basic Filter Results]
+  G3A1 --> G3A2[Cache Advanced Filter Results]
+  G3A2 --> G3A3[Cache Search Results]
+  G3A3 --> G3A4[Manage Cache Invalidation]
+  
+  %% Performance Optimization
+  G4 --> G4A[Monitor Filter Performance]
+  G4A --> G4B[Optimize Filter Algorithms]
+  G4B --> G4C[Improve Filter Response Time]
+  G4C --> G4D[Enhance Filter User Experience]
+  
+  %% Monitor Filter Performance
+  G4A --> G4A1[Track Filter Response Times]
+  G4A1 --> G4A2[Monitor Filter Usage]
+  G4A2 --> G4A3[Analyze Filter Patterns]
+  G4A3 --> G4A4[Generate Performance Reports]
+  
+  %% Filter Analytics
+  H[Filter Analytics] --> H1[Filter Usage Statistics]
+  H1 --> H2[Filter Performance Metrics]
+  H2 --> H3[Filter User Behavior]
+  H3 --> H4[Filter Optimization Insights]
+  
+  %% Filter Usage Statistics
+  H1 --> H1A[Track Filter Usage]
+  H1A --> H1B[Analyze Filter Patterns]
+  H1B --> H1C[Identify Popular Filters]
+  H1C --> H1D[Generate Usage Reports]
+  
+  %% Track Filter Usage
+  H1A --> H1A1[Log Filter Requests]
+  H1A1 --> H1A2[Track Filter Combinations]
+  H1A2 --> H1A3[Monitor Filter Frequency]
+  H1A3 --> H1A4[Store Filter Analytics]
+  
+  %% Filter Performance Metrics
+  H2 --> H2A[Measure Filter Response Time]
+  H2A --> H2B[Track Filter Accuracy]
+  H2B --> H2C[Monitor Filter Efficiency]
+  H2C --> H2D[Generate Performance Reports]
+  
+  %% Filter User Behavior
+  H3 --> H3A[Analyze User Filter Patterns]
+  H3A --> H3B[Track Filter Success Rates]
+  H3B --> H3C[Identify Filter Issues]
+  H3C --> H3D[Generate Behavior Reports]
+  
+  %% Filter Optimization Insights
+  H4 --> H4A[Identify Optimization Opportunities]
+  H4A --> H4B[Recommend Filter Improvements]
+  H4B --> H4C[Suggest Filter Enhancements]
+  H4C --> H4D[Generate Optimization Reports]
+  
+  %% End points
+  C4D --> Z[End]
+  D4D --> Z
+  E4D --> Z
+  F4D --> Z
+  G4D --> Z
+  H4D --> Z

@@ -214,6 +214,9 @@ const CartAnalyticsPage = lazy(() =>
 );
 const UnauthorizedPage = lazy(() => import('@/features/auth/pages/UnauthorizedPage').then((m) => ({ default: m.UnauthorizedPage })));
 const NotFoundPage = lazy(() => import('@/features/auth/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage').then((m) => ({ default: m.default })));
+const DemoPage = lazy(() => import('@/features/demo/pages/DemoPage').then((m) => ({ default: m.default })));
+const ResponsiveListDemoPage = lazy(() => import('@/features/demo/pages/ResponsiveListDemoPage').then((m) => ({ default: m.default })));
 
 export const routes: RouteObject[] = [
   // Public routes
@@ -445,6 +448,20 @@ export const routes: RouteObject[] = [
       {
         path: 'carts/analytics',
         element: <CartAnalyticsPage />,
+      },
+      // Settings routes
+      {
+        path: 'settings',
+        element: <SettingsPage />,
+      },
+      // Demo routes
+      {
+        path: 'demo',
+        element: <DemoPage />,
+      },
+      {
+        path: 'demo/responsive-lists',
+        element: <ResponsiveListDemoPage />,
       },
     ],
   },

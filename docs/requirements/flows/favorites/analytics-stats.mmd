@@ -1,0 +1,98 @@
+%% Favorites Analytics & Statistics Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[Analytics Request] --> B{Analytics Type?}
+  B -->|User Stats| C[User Favorites Statistics]
+  B -->|Product Stats| D[Product Favorites Statistics]
+  B -->|System Stats| E[System-wide Statistics]
+  B -->|Tag Stats| F[Tag Usage Statistics]
+  
+  %% User Favorites Statistics
+  C --> C1[Get user ID]
+  C1 --> C2[Count user favorites]
+  C2 --> C3[Get user favorites by tags]
+  C3 --> C4[Calculate user engagement]
+  C4 --> C5[Get user sync history]
+  C5 --> C6[Return user statistics]
+  
+  %% Product Favorites Statistics
+  D --> D1[Get product ID]
+  D1 --> D2[Count product favorites]
+  D2 --> D3[Get favorites by user type]
+  D3 --> D4[Calculate popularity score]
+  D4 --> D5[Get trending data]
+  D5 --> D6[Return product statistics]
+  
+  %% System-wide Statistics
+  E --> E1[Count total user favorites]
+  E1 --> E2[Count total guest favorites]
+  E2 --> E3[Count synced favorites]
+  E3 --> E4[Get most favorited products]
+  E4 --> E5[Calculate system metrics]
+  E5 --> E6[Return system statistics]
+  
+  %% Tag Usage Statistics
+  F --> F1[Get all tags from favorites]
+  F1 --> F2[Count tag usage frequency]
+  F2 --> F3[Sort by popularity]
+  F3 --> F4[Get tag trends]
+  F4 --> F5[Calculate tag metrics]
+  F5 --> F6[Return tag statistics]
+  
+  %% Most Favorited Products Analysis
+  G[Most Favorited Products] --> G1[Query favorites aggregation]
+  G1 --> G2[Group by productId]
+  G2 --> G3[Count favorites per product]
+  G3 --> G4[Sort by count descending]
+  G4 --> G5[Limit to top N products]
+  G5 --> G6[Populate product details]
+  G6 --> G7[Return top products list]
+  
+  %% Tag Analysis
+  H[Tag Analysis] --> H1[Query favorites with tags]
+  H1 --> H2[Unwind tags array]
+  H2 --> H3[Group by tag name]
+  H3 --> H4[Count tag usage]
+  H4 --> H5[Sort by usage count]
+  H5 --> H6[Limit to top tags]
+  H6 --> H7[Return tag analysis]
+  
+  %% Sync Statistics
+  I[Sync Statistics] --> I1[Count total syncs]
+  I1 --> I2[Get sync success rate]
+  I2 --> I3[Calculate sync efficiency]
+  I3 --> I4[Get sync trends]
+  I4 --> I5[Return sync statistics]
+  
+  %% View Statistics
+  J[View Statistics] --> J1[Get view counts]
+  J1 --> J2[Calculate average views]
+  J2 --> J3[Get most viewed favorites]
+  J3 --> J4[Calculate engagement rate]
+  J4 --> J5[Return view statistics]
+  
+  %% Performance Metrics
+  K[Performance Metrics] --> K1[Measure query performance]
+  K1 --> K2[Check index usage]
+  K2 --> K3[Calculate response times]
+  K3 --> K4[Monitor memory usage]
+  K4 --> K5[Return performance data]
+  
+  %% Data Export
+  L[Data Export] --> L1[Select export format]
+  L1 --> L2[Query all relevant data]
+  L2 --> L3[Format data for export]
+  L3 --> L4[Generate export file]
+  L4 --> L5[Return export data]
+  
+  %% End points
+  C6 --> Z[End]
+  D6 --> Z
+  E6 --> Z
+  F6 --> Z
+  G7 --> Z
+  H7 --> Z
+  I5 --> Z
+  J5 --> Z
+  K5 --> Z
+  L5 --> Z

@@ -1,0 +1,457 @@
+%% Service Management Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[Service Management System] --> B{Management Type?}
+  B -->|Admin Management| C[Admin Service Management]
+  B -->|Engineer Management| D[Engineer Service Management]
+  B -->|Customer Management| E[Customer Service Management]
+  B -->|Analytics Management| F[Service Analytics Management]
+  
+  %% Admin Service Management
+  C --> C1[View All Services]
+  C1 --> C2[Manage Service Status]
+  C2 --> C3[Assign Engineers]
+  C3 --> C4[Monitor Performance]
+  C4 --> C5[Generate Reports]
+  C5 --> C6[Optimize Operations]
+  
+  %% View All Services
+  C1 --> C1A[Load Service Dashboard]
+  C1A --> C1B[Apply Service Filters]
+  C1B --> C1C[Sort Service Results]
+  C1C --> C1D[Display Service List]
+  C1D --> C1E[Show Service Details]
+  
+  %% Service Dashboard
+  C1A --> C1A1[Load overview statistics]
+  C1A1 --> C1A2[Load service trends]
+  C1A2 --> C1A3[Load engineer performance]
+  C1A3 --> C1A4[Load revenue data]
+  C1A4 --> C1A5[Load customer satisfaction]
+  C1A5 --> C1A6[Display dashboard]
+  
+  %% Service Filters
+  C1B --> C1B1[Filter by status]
+  C1B1 --> C1B2[Filter by service type]
+  C1B2 --> C1B3[Filter by engineer]
+  C1B3 --> C1B4[Filter by customer]
+  C1B4 --> C1B5[Filter by date range]
+  C1B5 --> C1B6[Search by text]
+  C1B6 --> C1B7[Apply filters]
+  
+  %% Service Status Filter
+  C1B1 --> C1B1A[OPEN - Waiting for offers]
+  C1B1A --> C1B1B[OFFERS_COLLECTING - Collecting offers]
+  C1B1B --> C1B1C[ASSIGNED - Engineer assigned]
+  C1B1C --> C1B1D[IN_PROGRESS - Work in progress]
+  C1B1D --> C1B1E[COMPLETED - Work completed]
+  C1B1E --> C1B1F[RATED - Service rated]
+  C1B1F --> C1B1G[CANCELLED - Service cancelled]
+  
+  %% Sort Service Results
+  C1C --> C1C1[Sort by date]
+  C1C1 --> C1C2[Sort by status]
+  C1C2 --> C1C3[Sort by priority]
+  C1C3 --> C1C4[Sort by engineer]
+  C1C4 --> C1C5[Sort by customer]
+  C1C5 --> C1C6[Apply sorting]
+  
+  %% Display Service List
+  C1D --> C1D1[Show service summary]
+  C1D1 --> C1D2[Show service status]
+  C1D2 --> C1D3[Show assigned engineer]
+  C1D3 --> C1D4[Show service metrics]
+  C1D4 --> C1D5[Show quick actions]
+  C1D5 --> C1D6[Display service list]
+  
+  %% Show Service Details
+  C1E --> C1E1[Load full service data]
+  C1E1 --> C1E2[Show customer information]
+  C1E2 --> C1E3[Show engineer information]
+  C1E3 --> C1E4[Show service history]
+  C1E4 --> C1E5[Show offers received]
+  C1E5 --> C1E6[Show service timeline]
+  C1E6 --> C1E7[Display service details]
+  
+  %% Manage Service Status
+  C2 --> C2A[Select Service]
+  C2A --> C2B[Choose New Status]
+  C2B --> C2C[Add Admin Notes]
+  C2C --> C2D[Update Service Status]
+  C2D --> C2E[Notify Stakeholders]
+  C2E --> C2F[Log Status Change]
+  
+  %% Select Service
+  C2A --> C2A1[Browse service list]
+  C2A1 --> C2A2[Filter services]
+  C2A2 --> C2A3[Select target service]
+  C2A3 --> C2A4[Load service data]
+  C2A4 --> C2A5[Prepare for status change]
+  
+  %% Choose New Status
+  C2B --> C2B1[Select from status list]
+  C2B1 --> C2B2[Validate status transition]
+  C2B2 --> C2B3[Check status requirements]
+  C2B3 --> C2B4[Confirm status change]
+  
+  %% Status Transition Validation
+  C2B2 --> C2B2A[Check current status]
+  C2B2A --> C2B2B[Validate transition rules]
+  C2B2B --> C2B2C[Check prerequisites]
+  C2B2C --> C2B2D[Allow transition]
+  
+  %% Add Admin Notes
+  C2C --> C2C1[Add status change reason]
+  C2C1 --> C2C2[Add special instructions]
+  C2C2 --> C2C3[Add follow-up notes]
+  C2C3 --> C2C4[Set priority level]
+  C2C4 --> C2C5[Save admin notes]
+  
+  %% Update Service Status
+  C2D --> C2D1[Update service record]
+  C2D1 --> C2D2[Update timestamps]
+  C2D2 --> C2D3[Update related records]
+  C2D3 --> C2D4[Trigger status events]
+  C2D4 --> C2D5[Save changes]
+  
+  %% Notify Stakeholders
+  C2E --> C2E1[Notify customer]
+  C2E1 --> C2E2[Notify engineer]
+  C2E2 --> C2E3[Notify admin team]
+  C2E3 --> C2E4[Log notifications]
+  C2E4 --> C2E5[Track delivery]
+  C2E5 --> C2E6[Stakeholders notified]
+  
+  %% Assign Engineers
+  C3 --> C3A[Select Service]
+  C3A --> C3B[Choose Engineer]
+  C3B --> C3C[Set Assignment Details]
+  C3C --> C3D[Update Service Assignment]
+  C3D --> C3E[Notify Engineer]
+  C3E --> C3F[Track Assignment]
+  
+  %% Select Service
+  C3A --> C3A1[Browse unassigned services]
+  C3A1 --> C3A2[Filter by service type]
+  C3A2 --> C3A3[Check service requirements]
+  C3A3 --> C3A4[Select target service]
+  C3A4 --> C3A5[Load service details]
+  
+  %% Choose Engineer
+  C3B --> C3B1[Load available engineers]
+  C3B1 --> C3B2[Filter by skills]
+  C3B2 --> C3B3[Filter by location]
+  C3B3 --> C3B4[Check engineer availability]
+  C3B4 --> C3B5[Select suitable engineer]
+  
+  %% Engineer Selection Criteria
+  C3B1 --> C3B1A[Check engineer skills]
+  C3B1A --> C3B1B[Check experience level]
+  C3B1B --> C3B1C[Check availability]
+  C3B1C --> C3B1D[Check location proximity]
+  C3B1D --> C3B1E[Check performance rating]
+  C3B1E --> C3B1F[Rank engineers]
+  
+  %% Set Assignment Details
+  C3C --> C3C1[Set assignment date]
+  C3C1 --> C3C2[Add special instructions]
+  C3C2 --> C3C3[Set priority level]
+  C3C3 --> C3C4[Add admin notes]
+  C3C4 --> C3C5[Set assignment terms]
+  C3C5 --> C3C6[Save assignment details]
+  
+  %% Update Service Assignment
+  C3D --> C3D1[Update service record]
+  C3D1 --> C3D2[Update engineer assignment]
+  C3D2 --> C3D3[Update service status]
+  C3D3 --> C3D4[Update assignment timestamp]
+  C3D4 --> C3D5[Save changes]
+  
+  %% Notify Engineer
+  C3E --> C3E1[Prepare assignment notification]
+  C3E1 --> C3E2[Send notification to engineer]
+  C3E2 --> C3E3[Include assignment details]
+  C3E3 --> C3E4[Log notification]
+  C3E4 --> C3E5[Track notification delivery]
+  C3E5 --> C3E6[Engineer notified]
+  
+  %% Track Assignment
+  C3F --> C3F1[Log assignment event]
+  C3F1 --> C3F2[Update performance metrics]
+  C3F2 --> C3F3[Track assignment success]
+  C3F3 --> C3F4[Update statistics]
+  C3F4 --> C3F5[Assignment tracked]
+  
+  %% Monitor Performance
+  C4 --> C4A[Track Service Metrics]
+  C4A --> C4B[Monitor Engineer Performance]
+  C4B --> C4C[Track Customer Satisfaction]
+  C4C --> C4D[Monitor System Performance]
+  C4D --> C4E[Generate Performance Reports]
+  
+  %% Track Service Metrics
+  C4A --> C4A1[Track service completion rate]
+  C4A1 --> C4A2[Track average service time]
+  C4A2 --> C4A3[Track service quality]
+  C4A3 --> C4A4[Track customer satisfaction]
+  C4A4 --> C4A5[Track revenue per service]
+  C4A5 --> C4A6[Update service metrics]
+  
+  %% Monitor Engineer Performance
+  C4B --> C4B1[Track engineer workload]
+  C4B1 --> C4B2[Track completion rate]
+  C4B2 --> C4B3[Track customer ratings]
+  C4B3 --> C4B4[Track response time]
+  C4B4 --> C4B5[Track revenue generated]
+  C4B5 --> C4B6[Update engineer metrics]
+  
+  %% Track Customer Satisfaction
+  C4C --> C4C1[Monitor rating trends]
+  C4C1 --> C4C2[Track complaint patterns]
+  C4C2 --> C4C3[Analyze feedback]
+  C4C3 --> C4C4[Identify improvement areas]
+  C4C4 --> C4C5[Update satisfaction metrics]
+  
+  %% Monitor System Performance
+  C4D --> C4D1[Track system response time]
+  C4D1 --> C4D2[Monitor database performance]
+  C4D2 --> C4D3[Track API usage]
+  C4D3 --> C4D4[Monitor error rates]
+  C4D4 --> C4D5[Update system metrics]
+  
+  %% Generate Performance Reports
+  C4E --> C4E1[Create service performance report]
+  C4E1 --> C4E2[Create engineer performance report]
+  C4E2 --> C4E3[Create customer satisfaction report]
+  C4E3 --> C4E4[Create system performance report]
+  C4E4 --> C4E5[Export reports]
+  
+  %% Generate Reports
+  C5 --> C5A[Choose Report Type]
+  C5A --> C5B[Set Report Parameters]
+  C5B --> C5C[Generate Report Data]
+  C5C --> C5D[Format Report]
+  C5D --> C5E[Export Report]
+  C5E --> C5F[Distribute Report]
+  
+  %% Choose Report Type
+  C5A --> C5A1[Service summary report]
+  C5A1 --> C5A2[Engineer performance report]
+  C5A2 --> C5A3[Customer satisfaction report]
+  C5A3 --> C5A4[Revenue analysis report]
+  C5A4 --> C5A5[System performance report]
+  C5A5 --> C5A6[Select report type]
+  
+  %% Set Report Parameters
+  C5B --> C5B1[Set date range]
+  C5B1 --> C5B2[Set service filters]
+  C5B2 --> C5B3[Set engineer filters]
+  C5B3 --> C5B4[Set customer filters]
+  C5B4 --> C5B5[Set report format]
+  C5B5 --> C5B6[Configure report parameters]
+  
+  %% Generate Report Data
+  C5C --> C5C1[Query service data]
+  C5C1 --> C5C2[Query engineer data]
+  C5C2 --> C5C3[Query customer data]
+  C5C3 --> C5C4[Calculate metrics]
+  C5C4 --> C5C5[Aggregate data]
+  C5C5 --> C5C6[Prepare report data]
+  
+  %% Format Report
+  C5D --> C5D1[Create report structure]
+  C5D1 --> C5D2[Add charts and graphs]
+  C5D2 --> C5D3[Format data tables]
+  C5D3 --> C5D4[Add summary sections]
+  C5D4 --> C5D5[Apply formatting]
+  C5D5 --> C5D6[Finalize report]
+  
+  %% Export Report
+  C5E --> C5E1[Choose export format]
+  C5E1 --> C5E2[Generate export file]
+  C5E2 --> C5E3[Validate export data]
+  C5E3 --> C5E4[Create download link]
+  C5E4 --> C5E5[Report exported]
+  
+  %% Distribute Report
+  C5F --> C5F1[Send to stakeholders]
+  C5F1 --> C5F2[Schedule regular reports]
+  C5F2 --> C5F3[Archive report]
+  C5F3 --> C5F4[Track report usage]
+  C5F4 --> C5F5[Report distributed]
+  
+  %% Optimize Operations
+  C6 --> C6A[Analyze Performance Data]
+  C6A --> C6B[Identify Optimization Opportunities]
+  C6B --> C6C[Implement Improvements]
+  C6C --> C6D[Monitor Improvement Impact]
+  C6D --> C6E[Continuous Optimization]
+  
+  %% Analyze Performance Data
+  C6A --> C6A1[Analyze service trends]
+  C6A1 --> C6A2[Analyze engineer performance]
+  C6A2 --> C6A3[Analyze customer feedback]
+  C6A3 --> C6A4[Analyze system bottlenecks]
+  C6A4 --> C6A5[Generate insights]
+  
+  %% Identify Optimization Opportunities
+  C6B --> C6B1[Identify process improvements]
+  C6B1 --> C6B2[Identify resource optimizations]
+  C6B2 --> C6B3[Identify technology upgrades]
+  C6B3 --> C6B4[Identify training needs]
+  C6B4 --> C6B5[Prioritize opportunities]
+  
+  %% Implement Improvements
+  C6C --> C6C1[Update processes]
+  C6C1 --> C6C2[Optimize resource allocation]
+  C6C2 --> C6C3[Upgrade technology]
+  C6C3 --> C6C4[Provide training]
+  C6C4 --> C6C5[Deploy improvements]
+  
+  %% Monitor Improvement Impact
+  C6D --> C6D1[Track improvement metrics]
+  C6D1 --> C6D2[Measure performance changes]
+  C6D2 --> C6D3[Analyze impact data]
+  C6D3 --> C6D4[Validate improvements]
+  C6D4 --> C6D5[Update optimization strategy]
+  
+  %% Continuous Optimization
+  C6E --> C6E1[Regular performance review]
+  C6E1 --> C6E2[Continuous improvement planning]
+  C6E2 --> C6E3[Implementation monitoring]
+  C6E3 --> C6E4[Feedback integration]
+  C6E4 --> C6E5[Optimization cycle]
+  
+  %% Engineer Service Management
+  D --> D1[View Assigned Services]
+  D1 --> D2[Update Service Status]
+  D2 --> D3[Manage Service Progress]
+  D3 --> D4[Complete Service]
+  D4 --> D5[Track Service Performance]
+  
+  %% View Assigned Services
+  D1 --> D1A[Load engineer services]
+  D1A --> D1B[Filter by status]
+  D1B --> D1C[Sort by priority]
+  D1C --> D1D[Display service list]
+  D1D --> D1E[Show service details]
+  
+  %% Update Service Status
+  D2 --> D2A[Select service]
+  D2A --> D2B[Choose new status]
+  D2B --> D2C[Add progress notes]
+  D2C --> D2D[Update service record]
+  D2D --> D2E[Notify stakeholders]
+  D2E --> D2F[Status updated]
+  
+  %% Manage Service Progress
+  D3 --> D3A[Track work progress]
+  D3A --> D3B[Update work notes]
+  D3B --> D3C[Upload progress photos]
+  D3C --> D3D[Update time estimates]
+  D3D --> D3E[Manage service timeline]
+  D3E --> D3F[Progress managed]
+  
+  %% Complete Service
+  D4 --> D4A[Verify completion requirements]
+  D4A --> D4B[Add completion notes]
+  D4B --> D4C[Upload completion photos]
+  D4C --> D4D[Update service status]
+  D4D --> D4E[Notify customer]
+  D4E --> D4F[Service completed]
+  
+  %% Track Service Performance
+  D5 --> D5A[Monitor service metrics]
+  D5A --> D5B[Track customer feedback]
+  D5B --> D5C[Analyze performance data]
+  D5C --> D5D[Identify improvements]
+  D5D --> D5E[Optimize service delivery]
+  
+  %% Customer Service Management
+  E --> E1[View Service History]
+  E1 --> E2[Track Service Progress]
+  E2 --> E3[Rate Service]
+  E3 --> E4[Manage Service Requests]
+  E4 --> E5[Track Service Satisfaction]
+  
+  %% View Service History
+  E1 --> E1A[Load customer services]
+  E1A --> E1B[Filter by status]
+  E1B --> E1C[Sort by date]
+  E1C --> E1D[Display service history]
+  E1D --> E1E[Show service details]
+  
+  %% Track Service Progress
+  E2 --> E2A[View current services]
+  E2A --> E2B[Track service timeline]
+  E2B --> E2C[Monitor progress updates]
+  E2C --> E2D[Receive notifications]
+  E2D --> E2E[Progress tracked]
+  
+  %% Rate Service
+  E3 --> E3A[Check rating eligibility]
+  E3A --> E3B[Submit rating score]
+  E3B --> E3C[Add rating comment]
+  E3C --> E3D[Submit rating]
+  E3D --> E3E[Rating submitted]
+  
+  %% Manage Service Requests
+  E4 --> E4A[Create new request]
+  E4A --> E4B[Modify existing request]
+  E4B --> E4C[Cancel request]
+  E4C --> E4D[Track request status]
+  E4D --> E4E[Request managed]
+  
+  %% Track Service Satisfaction
+  E5 --> E5A[Monitor service quality]
+  E5A --> E5B[Track satisfaction trends]
+  E5B --> E5C[Analyze feedback]
+  E5C --> E5D[Identify preferences]
+  E5D --> E5E[Satisfaction tracked]
+  
+  %% Service Analytics Management
+  F --> F1[Collect Service Data]
+  F1 --> F2[Analyze Service Trends]
+  F2 --> F3[Generate Analytics Reports]
+  F3 --> F4[Optimize Service Strategy]
+  F4 --> F5[Monitor Analytics Performance]
+  
+  %% Collect Service Data
+  F1 --> F1A[Gather service metrics]
+  F1A --> F1B[Collect customer feedback]
+  F1B --> F1C[Track engineer performance]
+  F1C --> F1D[Monitor system data]
+  F1D --> F1E[Aggregate data sources]
+  F1E --> F1F[Data collected]
+  
+  %% Analyze Service Trends
+  F2 --> F2A[Analyze service patterns]
+  F2A --> F2B[Identify trend changes]
+  F2B --> F2C[Correlate data points]
+  F2C --> F2D[Generate insights]
+  F2D --> F2E[Trends analyzed]
+  
+  %% Generate Analytics Reports
+  F3 --> F3A[Create trend reports]
+  F3A --> F3B[Generate performance dashboards]
+  F3B --> F3C[Create predictive analytics]
+  F3C --> F3D[Export analytics data]
+  F3D --> F3E[Reports generated]
+  
+  %% Optimize Service Strategy
+  F4 --> F4A[Implement strategy changes]
+  F4A --> F4B[Monitor strategy impact]
+  F4B --> F4C[Adjust strategy based on data]
+  F4C --> F4D[Strategy optimized]
+  
+  %% Monitor Analytics Performance
+  F5 --> F5A[Track analytics accuracy]
+  F5A --> F5B[Monitor prediction performance]
+  F5B --> F5C[Validate analytics models]
+  F5C --> F5D[Analytics monitored]
+  
+  %% End points
+  C6E --> Z[Service Management Complete]
+  D5E --> Z
+  E5E --> Z
+  F5D --> Z

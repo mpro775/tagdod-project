@@ -1,0 +1,209 @@
+%% Pricing Engine System
+%% View at https://mermaid.live
+flowchart TD
+  A[Pricing Engine] --> B{Request Type?}
+  B -->|Calculate Price| C[Calculate Effective Price]
+  B -->|Preview Price| D[Preview Price Rule]
+  B -->|Bulk Pricing| E[Bulk Price Calculation]
+  B -->|Price Comparison| F[Price Comparison]
+  B -->|Price History| G[Price History Tracking]
+  
+  %% Calculate Effective Price
+  C --> C1[Get Base Price]
+  C1 --> C2[Find Applicable Rules]
+  C2 --> C3[Filter Rules by Conditions]
+  C3 --> C4[Sort Rules by Priority]
+  C4 --> C5[Apply Highest Priority Rule]
+  C5 --> C6[Calculate Final Price]
+  C6 --> C7[Return Price Result]
+  
+  %% Get Base Price
+  C1 --> C1A[Query variant price]
+  C1A --> C1B[Check currency availability]
+  C1B --> C1C[Handle currency conversion]
+  C1C --> C1D[Validate price data]
+  C1D --> C1E[Return base price]
+  
+  %% Find Applicable Rules
+  C2 --> C2A[Query active rules]
+  C2A --> C2B[Filter by date range]
+  C2B --> C2C[Filter by status]
+  C2C --> C2D[Sort by priority]
+  C2D --> C2E[Return rule list]
+  
+  %% Filter Rules by Conditions
+  C3 --> C3A[Check category match]
+  C3A --> C3B[Check product match]
+  C3B --> C3C[Check variant match]
+  C3C --> C3D[Check brand match]
+  C3D --> C3E[Check currency match]
+  C3E --> C3F[Check quantity match]
+  C3F --> C3G[Check account type match]
+  C3G --> C3H[Return matching rules]
+  
+  %% Apply Rule Effects
+  C5 --> C5A[Check special price]
+  C5A --> C5B[Apply percentage discount]
+  C5B --> C5C[Apply fixed amount discount]
+  C5C --> C5D[Add product badge]
+  C5D --> C5E[Include gift item]
+  C5E --> C5F[Update usage statistics]
+  
+  %% Preview Price Rule
+  D --> D1[Load Rule Details]
+  D1 --> D2[Get Current Base Price]
+  D2 --> D3[Apply Rule Conditions]
+  D3 --> D4[Calculate Rule Effect]
+  D4 --> D5[Show Price Comparison]
+  D5 --> D6[Display Savings Amount]
+  D6 --> D7[Show Applied Effects]
+  
+  %% Bulk Price Calculation
+  E --> E1[Get Multiple Variants]
+  E1 --> E2[Apply Bulk Rules]
+  E2 --> E3[Calculate All Prices]
+  E3 --> E4[Optimize Performance]
+  E4 --> E5[Return Bulk Results]
+  
+  %% Bulk Processing
+  E1 --> E1A[Load variant list]
+  E1A --> E1B[Validate variants]
+  E1B --> E1C[Check permissions]
+  E1C --> E1D[Prepare batch processing]
+  E1D --> E1E[Queue processing tasks]
+  
+  %% Price Comparison
+  F --> F1[Get Original Price]
+  F1 --> F2[Get Discounted Price]
+  F2 --> F3[Calculate Savings]
+  F3 --> F4[Show Price Breakdown]
+  F4 --> F5[Display Comparison]
+  
+  %% Price History Tracking
+  G --> G1[Record Price Change]
+  G1 --> G2[Track Price Trends]
+  G2 --> G3[Generate Price Reports]
+  G3 --> G4[Analyze Price Patterns]
+  G4 --> G5[Optimize Pricing Strategy]
+  
+  %% Price Change Recording
+  G1 --> G1A[Log original price]
+  G1A --> G1B[Log effective price]
+  G1B --> G1C[Record applied rules]
+  G1C --> G1D[Track change timestamp]
+  G1D --> G1E[Store change metadata]
+  
+  %% Price Calculation Engine
+  H[Price Calculation Engine] --> I[Base Price Engine]
+  I --> J[Rule Engine]
+  J --> K[Discount Engine]
+  K --> L[Tax Engine]
+  L --> M[Currency Engine]
+  M --> N[Final Price Engine]
+  
+  %% Base Price Engine
+  I --> I1[Product price lookup]
+  I1 --> I2[Variant price lookup]
+  I2 --> I3[Currency price lookup]
+  I3 --> I4[Price validation]
+  I4 --> I5[Price formatting]
+  
+  %% Rule Engine
+  J --> J1[Rule condition matching]
+  J1 --> J2[Rule priority sorting]
+  J2 --> J3[Rule application logic]
+  J3 --> J4[Rule conflict resolution]
+  J4 --> J5[Rule performance tracking]
+  
+  %% Discount Engine
+  K --> K1[Percentage discount calculation]
+  K1 --> K2[Fixed amount discount calculation]
+  K2 --> K3[Special price application]
+  K3 --> K4[Maximum discount limits]
+  K4 --> K5[Discount validation]
+  
+  %% Tax Engine
+  L --> L1[Tax rate lookup]
+  L1 --> L2[Tax calculation]
+  L2 --> L3[Tax validation]
+  L3 --> L4[Tax formatting]
+  L4 --> L5[Tax reporting]
+  
+  %% Currency Engine
+  M --> M1[Currency conversion]
+  M1 --> M2[Exchange rate lookup]
+  M2 --> M3[Currency formatting]
+  M3 --> M4[Currency validation]
+  M4 --> M5[Currency reporting]
+  
+  %% Final Price Engine
+  N --> N1[Price aggregation]
+  N1 --> N2[Price rounding]
+  N2 --> N3[Price validation]
+  N3 --> N4[Price formatting]
+  N4 --> N5[Price caching]
+  
+  %% Price Optimization
+  O[Price Optimization] --> P[Performance Monitoring]
+  P --> Q[Rule Effectiveness Analysis]
+  Q --> R[Price Sensitivity Analysis]
+  R --> S[Competitive Analysis]
+  S --> T[Optimization Recommendations]
+  
+  %% Performance Monitoring
+  P --> P1[Response time tracking]
+  P1 --> P2[Throughput monitoring]
+  P2 --> P3[Error rate tracking]
+  P3 --> P4[Resource usage monitoring]
+  P4 --> P5[Performance optimization]
+  
+  %% Rule Effectiveness Analysis
+  Q --> Q1[Rule usage tracking]
+  Q1 --> Q2[Rule impact analysis]
+  Q2 --> Q3[Rule ROI calculation]
+  Q3 --> Q4[Rule optimization]
+  Q4 --> Q5[Rule performance tuning]
+  
+  %% Price Sensitivity Analysis
+  R --> R1[Price elasticity analysis]
+  R1 --> R2[Demand curve analysis]
+  R2 --> R3[Price point optimization]
+  R3 --> R4[Revenue maximization]
+  R4 --> R5[Profit optimization]
+  
+  %% Competitive Analysis
+  S --> S1[Competitor price tracking]
+  S1 --> S2[Market price analysis]
+  S2 --> S3[Price positioning analysis]
+  S3 --> S4[Competitive advantage analysis]
+  S4 --> S5[Market strategy optimization]
+  
+  %% Price Caching System
+  U[Price Caching System] --> V[Cache Management]
+  V --> W[Cache Invalidation]
+  W --> X[Cache Performance]
+  X --> Y[Cache Optimization]
+  
+  %% Cache Management
+  V --> V1[Cache key generation]
+  V1 --> V2[Cache storage]
+  V2 --> V3[Cache retrieval]
+  V3 --> V4[Cache expiration]
+  V4 --> V5[Cache cleanup]
+  
+  %% Cache Invalidation
+  W --> W1[Rule change invalidation]
+  W1 --> W2[Price change invalidation]
+  W2 --> W3[Time-based invalidation]
+  W3 --> W4[Manual invalidation]
+  W4 --> W5[Selective invalidation]
+  
+  %% End points
+  C7 --> Z[Price Calculated Successfully]
+  D7 --> Z
+  E5 --> Z
+  F5 --> Z
+  G5 --> Z
+  N5 --> Z
+  T --> Z
+  Y --> Z

@@ -1,22 +1,70 @@
-%% Abandoned Cart Recovery Flow
+%% Advanced Abandoned Cart Recovery Flow with Multi-Stage Campaigns
 %% View at https://mermaid.live
 flowchart TD
   A[System checks for abandoned carts] --> B[Find carts with no activity for 24h]
-  B --> C{Cart has email/phone?}
-  C -->|No| D[Skip cart]
-  C -->|Yes| E[Send first reminder email]
-  E --> F[Wait 24 hours]
-  F --> G{Cart still abandoned?}
-  G -->|No| H[Mark as recovered]
-  G -->|Yes| I[Send second reminder with discount]
-  I --> J[Wait 48 hours]
-  J --> K{Cart still abandoned?}
-  K -->|No| H
-  K -->|Yes| L[Send final reminder]
-  L --> M[Mark as fully abandoned]
-  M --> N[Archive cart data]
+  B --> C[Filter by cart status and value]
+  C --> D{Cart has contact info?}
+  D -->|No| E[Skip cart - no contact]
+  D -->|Yes| F[Check cart value threshold]
+  F --> G{Cart value > minimum?}
+  G -->|No| H[Skip cart - low value]
+  G -->|Yes| I[Check if already processed]
+  I --> J{Already sent emails?}
+  J -->|Yes| K[Skip cart - already processed]
+  J -->|No| L[Send first reminder email]
   
-  H --> O[Update recovery statistics]
-  D --> O
-  N --> O
-  O --> Z[End]
+  %% First Reminder
+  L --> M[Mark first email sent]
+  M --> N[Update abandonmentEmailsSent = 1]
+  N --> O[Set lastAbandonmentEmailAt]
+  O --> P[Wait 24 hours]
+  P --> Q{Cart still abandoned?}
+  Q -->|No| R[Mark as recovered]
+  Q -->|Yes| S[Check if second email needed]
+  
+  %% Second Reminder with Discount
+  S --> T{Time for second email?}
+  T -->|No| U[Wait for next check]
+  T -->|Yes| V[Send second reminder with discount]
+  V --> W[Apply automatic discount coupon]
+  W --> X[Mark second email sent]
+  X --> Y[Update abandonmentEmailsSent = 2]
+  Y --> Z[Wait 48 hours]
+  Z --> AA{Cart still abandoned?}
+  AA -->|No| R
+  AA -->|Yes| BB[Check if final email needed]
+  
+  %% Final Reminder
+  BB --> CC{Time for final email?}
+  CC -->|No| DD[Wait for next check]
+  CC -->|Yes| EE[Send final reminder with urgency]
+  EE --> FF[Apply maximum discount]
+  FF --> GG[Mark final email sent]
+  GG --> HH[Update abandonmentEmailsSent = 3]
+  HH --> II[Wait 72 hours]
+  II --> JJ{Cart still abandoned?}
+  JJ -->|No| R
+  JJ -->|Yes| KK[Mark as fully abandoned]
+  
+  %% Final Processing
+  KK --> LL[Set status = abandoned]
+  LL --> MM[Archive cart data]
+  MM --> NN[Update abandonment statistics]
+  
+  %% Recovery Processing
+  R --> OO[Set status = recovered]
+  OO --> PP[Update recovery statistics]
+  PP --> QQ[Track conversion source]
+  
+  %% Skip Processing
+  E --> RR[Update skip statistics]
+  H --> RR
+  K --> RR
+  U --> SS[Continue monitoring]
+  DD --> SS
+  
+  %% End Processing
+  NN --> TT[End]
+  QQ --> TT
+  RR --> TT
+  SS --> TT

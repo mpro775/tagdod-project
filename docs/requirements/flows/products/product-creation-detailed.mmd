@@ -1,0 +1,97 @@
+%% Product Creation with Variants and Attributes
+%% View at https://mermaid.live
+flowchart TD
+  A[Admin creates product] --> B[Fill basic product info]
+  B --> C[Product Name & Description]
+  C --> D[Select Category]
+  D --> E[Add Product Images]
+  E --> F[Define Product Attributes]
+  
+  %% Basic Product Information
+  C --> C1[Name in Arabic]
+  C1 --> C2[Name in English]
+  C2 --> C3[Description in Arabic]
+  C3 --> C4[Description in English]
+  C4 --> C5[SEO Meta Description]
+  C5 --> C6[Product Tags]
+  
+  %% Category Selection
+  D --> D1[Browse category tree]
+  D1 --> D2[Select parent category]
+  D2 --> D3[Validate category selection]
+  D3 --> D4[Check category requirements]
+  
+  %% Image Management
+  E --> E1[Upload main product image]
+  E1 --> E2[Upload additional images]
+  E2 --> E3[Set image order/priority]
+  E3 --> E4[Optimize image sizes]
+  E4 --> E5[Generate thumbnails]
+  
+  %% Attribute Definition
+  F --> F1[Select attribute types]
+  F1 --> F2[Define attribute values]
+  F2 --> F3[Set attribute constraints]
+  F3 --> F4[Configure variant combinations]
+  
+  %% Variant Creation Process
+  G[Create Product Variants] --> G1[Generate attribute combinations]
+  G1 --> G2[For each combination]
+  G2 --> G3[Create variant record]
+  G3 --> G4[Set variant-specific data]
+  G4 --> G5[Upload variant images]
+  G5 --> G6[Set variant pricing]
+  G6 --> G7[Configure inventory]
+  G7 --> G8[Set variant status]
+  
+  %% Variant-specific Data
+  G4 --> G4A[Variant Name]
+  G4A --> G4B[Variant SKU]
+  G4B --> G4C[Variant Barcode]
+  G4C --> G4D[Variant Weight]
+  G4D --> G4E[Variant Dimensions]
+  
+  %% Variant Pricing
+  G6 --> G6A[Base Price USD]
+  G6A --> G6B[Price in YER]
+  G6B --> G6C[Price in SAR]
+  G6C --> G6D[Compare with exchange rates]
+  G6D --> G6E[Set profit margins]
+  
+  %% Inventory Configuration
+  G7 --> G7A[Initial stock quantity]
+  G7A --> G7B[Safety stock level]
+  G7B --> G7C[Reorder point]
+  G7C --> G7D[Maximum stock level]
+  
+  %% Validation Process
+  H[Validate Product Data] --> H1[Check required fields]
+  H1 --> H2[Validate attribute combinations]
+  H2 --> H3[Check SKU uniqueness]
+  H3 --> H4[Validate pricing data]
+  H4 --> H5[Check image requirements]
+  H5 --> H6[Validate category constraints]
+  
+  %% Save Process
+  I[Save Product] --> I1[Create product record]
+  I1 --> I2[Generate unique slug]
+  I2 --> I3[Create all variants]
+  I3 --> I4[Set up inventory records]
+  I4 --> I5[Create pricing records]
+  I5 --> I6[Update category counts]
+  I6 --> I7[Update search indexes]
+  I7 --> I8[Send creation notification]
+  
+  %% Error Handling
+  J[Handle Errors] --> J1[Validation errors]
+  J1 --> J2[Image upload errors]
+  J2 --> J3[Pricing errors]
+  J3 --> J4[Inventory errors]
+  J4 --> J5[Display error messages]
+  J5 --> J6[Allow corrections]
+  
+  %% End points
+  I8 --> Z[Product Created Successfully]
+  J6 --> Z
+  H6 -->|Invalid| J
+  H6 -->|Valid| I

@@ -1,4 +1,4 @@
-%% Address Management Flow
+%% Address Management Flow - Complete Implementation
 %% View at https://mermaid.live
 flowchart TD
   A[User wants to manage addresses] --> B{Action?}
@@ -6,30 +6,78 @@ flowchart TD
   B -->|Edit Existing| D[Select address to edit]
   B -->|Delete| E[Select address to delete]
   B -->|Set Default| F[Select address to set as default]
+  B -->|Restore| G[Select deleted address to restore]
+  B -->|Get Active| H[Get active addresses only]
+  B -->|Validate Ownership| I[Check address ownership]
+  B -->|Mark as Used| J[Mark address as used]
   
-  C --> G[Validate address format]
-  G --> H{Valid?}
-  H -->|No| I[Show validation errors]
-  H -->|Yes| J[Geocode address for coordinates]
-  J --> K[Save address to database]
-  K --> L[Update usage statistics]
+  %% Add New Address Flow
+  C --> K[Validate address format]
+  K --> L{Valid?}
+  L -->|No| M[Show validation errors]
+  L -->|Yes| N[Check if first address]
+  N --> O{First address?}
+  O -->|Yes| P[Set as default automatically]
+  O -->|No| Q[Check if user wants default]
+  Q --> R{Set as default?}
+  R -->|Yes| S[Clear other default flags]
+  R -->|No| T[Save with isDefault=false]
+  S --> U[Save with isDefault=true]
+  T --> V[Save address to database]
+  U --> V
+  P --> V
+  V --> W[Update usage statistics]
   
-  D --> M[Load existing address data]
-  M --> G
+  %% Edit Address Flow
+  D --> X[Load existing address data]
+  X --> K
   
-  E --> N{Is default address?}
-  N -->|Yes| O[Show warning about default]
-  N -->|No| P[Mark as deleted]
-  O --> Q{Confirm deletion?}
-  Q -->|Yes| P
-  Q -->|No| R[Cancel deletion]
+  %% Delete Address Flow
+  E --> Y[Check if only active address]
+  Y --> Z{Only address?}
+  Z -->|Yes| AA[Show error: Cannot delete only address]
+  Z -->|No| BB{Is default address?}
+  BB -->|Yes| CC[Find next address to set as default]
+  BB -->|No| DD[Soft delete address]
+  CC --> EE[Set next address as default]
+  EE --> DD
+  DD --> FF[Set deletedAt timestamp]
+  FF --> W
   
-  F --> S[Update default flag]
-  S --> T[Clear other default flags]
-  T --> L
+  %% Set Default Flow
+  F --> GG[Clear all other default flags]
+  GG --> HH[Set selected address as default]
+  HH --> W
   
-  P --> U[Soft delete address]
-  U --> L
-  L --> Z[End]
-  I --> Z
-  R --> Z
+  %% Restore Address Flow
+  G --> II[Check if address exists and is deleted]
+  II --> JJ{Found and deleted?}
+  JJ -->|No| KK[Show error: Address not found or not deleted]
+  JJ -->|Yes| LL[Clear deletedAt timestamp]
+  LL --> MM[Set isActive = true]
+  MM --> W
+  
+  %% Get Active Addresses Flow
+  H --> NN[Filter active and non-deleted addresses]
+  NN --> OO[Sort by default, lastUsed, createdAt]
+  OO --> PP[Return sorted addresses]
+  
+  %% Validate Ownership Flow
+  I --> QQ[Check if address belongs to user]
+  QQ --> RR{Ownership valid?}
+  RR -->|Yes| SS[Return true]
+  RR -->|No| TT[Return false]
+  
+  %% Mark as Used Flow
+  J --> UU[Update lastUsedAt timestamp]
+  UU --> VV[Increment usageCount]
+  VV --> W
+  
+  %% End points
+  W --> WW[End]
+  M --> WW
+  AA --> WW
+  KK --> WW
+  PP --> WW
+  SS --> WW
+  TT --> WW

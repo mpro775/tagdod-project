@@ -1,27 +1,103 @@
-%% RBAC (Role-Based Access Control) Flow
+%% RBAC System Overview
 %% View at https://mermaid.live
 flowchart TD
-  A[API Request] --> B[Extract JWT Token]
-  B --> C[Validate Token]
-  C --> D{Valid Token?}
-  D -->|No| E[Return 401 Unauthorized]
-  D -->|Yes| F[Decode User Info]
-  F --> G[Get User Roles & Permissions]
-  G --> H[Check Required Permission]
-  H --> I{Has Permission?}
-  I -->|No| J[Return 403 Forbidden]
-  I -->|Yes| K[Check Resource Access]
-  K --> L{Can Access Resource?}
-  L -->|No| J
-  L -->|Yes| M[Execute Operation]
-  M --> N[Log Access]
-  N --> O[Return Response]
+  A[RBAC System Overview] --> B{System Component?}
+  B -->|Authentication| C[User Authentication Flow]
+  B -->|Authorization| D[Permission Control Flow]
+  B -->|Role Management| E[Role Assignment Flow]
+  B -->|Capabilities| F[Capabilities Management Flow]
+  B -->|Security| G[Security Measures Flow]
   
-  P[Admin assigns roles] --> Q[Update user roles]
-  Q --> R[Update permissions cache]
-  R --> S[Notify user of changes]
+  %% Authentication Flow
+  C --> C1[User Login Request]
+  C1 --> C2[OTP Verification]
+  C2 --> C3[JWT Token Generation]
+  C3 --> C4[Token Validation]
+  C4 --> C5[User Session Creation]
   
-  E --> Z[End]
-  J --> Z
-  O --> Z
-  S --> Z
+  %% Authorization Flow
+  D --> D1[API Request with Token]
+  D1 --> D2[Token Validation]
+  D2 --> D3[Load User Capabilities]
+  D3 --> D4[Check Required Permission]
+  D4 --> D5[Validate Resource Access]
+  D5 --> D6[Grant or Deny Access]
+  
+  %% Role Management Flow
+  E --> E1[Role Assignment Request]
+  E1 --> E2[Validate Assignment Criteria]
+  E2 --> E3[Create Capability Record]
+  E3 --> E4[Set Role Status]
+  E4 --> E5[Grant Role Permissions]
+  E5 --> E6[Notify User]
+  
+  %% Capabilities Management Flow
+  F --> F1[View User Capabilities]
+  F1 --> F2[Update Capability Status]
+  F2 --> F3[Approve Role Requests]
+  F3 --> F4[Set Discount Percentages]
+  F4 --> F5[Monitor Role Usage]
+  
+  %% Security Measures Flow
+  G --> G1[Authentication Security]
+  G1 --> G2[Authorization Security]
+  G2 --> G3[Data Protection]
+  G3 --> G4[Network Security]
+  G4 --> G5[Audit and Monitoring]
+  
+  %% User Roles
+  H[User Roles] --> I[Customer Role]
+  I --> J[Engineer Role]
+  J --> K[Wholesale Role]
+  K --> L[Admin Role]
+  
+  %% Customer Role
+  I --> I1[Basic customer permissions]
+  I1 --> I2[Product browsing]
+  I2 --> I3[Order management]
+  I3 --> I4[Support tickets]
+  I4 --> I5[Product reviews]
+  
+  %% Engineer Role
+  J --> J1[All customer permissions]
+  J1 --> J2[Service management]
+  J2 --> J3[Job acceptance]
+  J3 --> J4[Service updates]
+  J4 --> J5[Engineer dashboard]
+  
+  %% Wholesale Role
+  K --> K1[All customer permissions]
+  K1 --> K2[Wholesale pricing]
+  K2 --> K3[Bulk ordering]
+  K3 --> K4[Volume discounts]
+  K4 --> K5[Wholesale reports]
+  
+  %% Admin Role
+  L --> L1[All system permissions]
+  L1 --> L2[User management]
+  L2 --> L3[System configuration]
+  L3 --> L4[Analytics access]
+  L4 --> L5[Security control]
+  
+  %% Capability Statuses
+  M[Capability Statuses] --> N[none - No capability]
+  N --> O[pending - Awaiting approval]
+  O --> P[approved - Capability granted]
+  P --> Q[rejected - Capability denied]
+  
+  %% Security Features
+  R[Security Features] --> S[Multi-Factor Authentication]
+  S --> T[Role-Based Access Control]
+  T --> U[Data Encryption]
+  U --> V[Audit Logging]
+  V --> W[Threat Detection]
+  
+  %% End points
+  C5 --> X[Authentication Complete]
+  D6 --> X
+  E6 --> X
+  F5 --> X
+  G5 --> X
+  L5 --> X
+  Q --> X
+  W --> X

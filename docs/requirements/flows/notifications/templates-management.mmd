@@ -1,0 +1,164 @@
+%% Notification Templates Management Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[Template Management Request] --> B{Action Type?}
+  B -->|Create Template| C[Create New Template]
+  B -->|Update Template| D[Update Existing Template]
+  B -->|Delete Template| E[Delete Template]
+  B -->|List Templates| F[List Templates]
+  B -->|Use Template| G[Use Template for Notification]
+  
+  %% Create Template Flow
+  C --> C1[Define Template Name]
+  C1 --> C2[Set Template Type]
+  C2 --> C3[Define Template Variables]
+  C3 --> C4[Set Arabic Content]
+  C4 --> C5[Set English Content]
+  C5 --> C6[Configure Channels]
+  C6 --> C7[Set Priority Level]
+  C7 --> C8[Set Category]
+  C8 --> C9[Add Description]
+  C9 --> C10[Set Example Data]
+  C10 --> C11[Save Template]
+  C11 --> C12[Validate Template]
+  C12 --> C13{Valid?}
+  C13 -->|Yes| C14[Template Created Successfully]
+  C13 -->|No| C15[Show Validation Errors]
+  
+  %% Update Template Flow
+  D --> D1[Load Existing Template]
+  D1 --> D2{Template Found?}
+  D2 -->|No| D3[Return Template Not Found]
+  D2 -->|Yes| D4[Check Template Usage]
+  D4 --> D5{In Use?}
+  D5 -->|Yes| D6[Show Usage Warning]
+  D5 -->|No| D7[Allow Update]
+  D7 --> D8[Update Template Fields]
+  D8 --> D9[Validate Updated Template]
+  D9 --> D10{Valid?}
+  D10 -->|Yes| D11[Save Updated Template]
+  D10 -->|No| D12[Show Validation Errors]
+  D11 --> D13[Template Updated Successfully]
+  
+  %% Delete Template Flow
+  E --> E1[Load Template to Delete]
+  E1 --> E2{Template Found?}
+  E2 -->|No| E3[Return Template Not Found]
+  E2 -->|Yes| E4[Check Template Usage]
+  E4 --> E5{In Use?}
+  E5 -->|Yes| E6[Prevent Deletion]
+  E5 -->|No| E7[Confirm Deletion]
+  E7 --> E8[Delete Template]
+  E8 --> E9[Template Deleted Successfully]
+  
+  %% List Templates Flow
+  F --> F1[Apply Filters]
+  F1 --> F2[Filter by Type]
+  F2 --> F3[Filter by Category]
+  F3 --> F4[Filter by Status]
+  F4 --> F5[Sort Templates]
+  F5 --> F6[Apply Pagination]
+  F6 --> F7[Return Template List]
+  
+  %% Use Template Flow
+  G --> G1[Load Template]
+  G1 --> G2{Template Found?}
+  G2 -->|No| G3[Return Template Not Found]
+  G2 -->|Yes| G4[Check Template Status]
+  G4 --> G5{Active?}
+  G5 -->|No| G6[Return Template Inactive]
+  G5 -->|Yes| G7[Prepare Template Data]
+  G7 --> G8[Validate Required Variables]
+  G8 --> G9{All Required Variables Present?}
+  G9 -->|No| G10[Return Missing Variables Error]
+  G9 -->|Yes| G11[Render Template]
+  G11 --> G12[Generate Notification]
+  G12 --> G13[Send Notification]
+  
+  %% Template Variables Management
+  H[Template Variables] --> H1{Variable Type?}
+  H1 -->|String| H2[String Variable]
+  H1 -->|Number| H3[Number Variable]
+  H1 -->|Boolean| H4[Boolean Variable]
+  H1 -->|Date| H5[Date Variable]
+  
+  H2 --> H6[Set String Properties]
+  H3 --> H7[Set Number Properties]
+  H4 --> H8[Set Boolean Properties]
+  H5 --> H9[Set Date Properties]
+  
+  H6 --> H10[Set Required Status]
+  H7 --> H10
+  H8 --> H10
+  H9 --> H10
+  
+  H10 --> H11[Set Default Value]
+  H11 --> H12[Set Description]
+  H12 --> H13[Save Variable]
+  
+  %% Template Rendering
+  I[Template Rendering] --> I1[Load Template Content]
+  I1 --> I2[Parse Template Variables]
+  I2 --> I3[Replace Variables with Data]
+  I3 --> I4[Generate Final Content]
+  I4 --> I5[Validate Rendered Content]
+  I5 --> I6{Valid?}
+  I6 -->|Yes| I7[Return Rendered Template]
+  I6 -->|No| I8[Return Rendering Error]
+  
+  %% Template Categories
+  J[Template Categories] --> J1{Category Type?}
+  J1 -->|Order| J2[Order Templates]
+  J1 -->|Service| J3[Service Templates]
+  J1 -->|Product| J4[Product Templates]
+  J1 -->|Promotion| J5[Promotion Templates]
+  J1 -->|Account| J6[Account Templates]
+  J1 -->|Support| J7[Support Templates]
+  J1 -->|System| J8[System Templates]
+  J1 -->|Marketing| J9[Marketing Templates]
+  
+  %% Template Status Management
+  K[Template Status] --> K1{Status?}
+  K1 -->|Active| K2[Active Template]
+  K1 -->|Inactive| K3[Inactive Template]
+  K1 -->|Draft| K4[Draft Template]
+  K1 -->|Archived| K5[Archived Template]
+  
+  %% Template Analytics
+  L[Template Analytics] --> L1[Track Template Usage]
+  L1 --> L2[Count Template Sends]
+  L2 --> L3[Track Success Rate]
+  L3 --> L4[Track Read Rate]
+  L4 --> L5[Generate Template Report]
+  
+  %% End points
+  C14 --> Z[End]
+  C15 --> Z
+  D13 --> Z
+  D12 --> Z
+  D3 --> Z
+  D6 --> Z
+  E9 --> Z
+  E3 --> Z
+  E6 --> Z
+  F7 --> Z
+  G13 --> Z
+  G3 --> Z
+  G6 --> Z
+  G10 --> Z
+  H13 --> Z
+  I7 --> Z
+  I8 --> Z
+  J2 --> Z
+  J3 --> Z
+  J4 --> Z
+  J5 --> Z
+  J6 --> Z
+  J7 --> Z
+  J8 --> Z
+  J9 --> Z
+  K2 --> Z
+  K3 --> Z
+  K4 --> Z
+  K5 --> Z
+  L5 --> Z

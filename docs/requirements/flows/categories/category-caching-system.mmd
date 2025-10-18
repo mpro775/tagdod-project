@@ -1,0 +1,254 @@
+%% Category Caching System and Performance Optimization
+%% View at https://mermaid.live
+flowchart TD
+  A[Category Caching System] --> B[Cache Types]
+  
+  %% Cache Types
+  B --> C[Categories List Cache]
+  B --> D[Category Tree Cache]
+  B --> E[Category Detail Cache]
+  B --> F[Category Stats Cache]
+  B --> G[Category Search Cache]
+  
+  %% Categories List Cache
+  C --> C1[Cache Key Generation]
+  C1 --> C2[Cache Data Structure]
+  C2 --> C3[Cache TTL Management]
+  C3 --> C4[Cache Invalidation]
+  
+  %% Cache Key Generation
+  C1 --> C1A[Base Key: categories:list]
+  C1A --> C1B[Add Query Parameters]
+  C1B --> C1C[Hash Query Object]
+  C1C --> C1D[Generate Unique Key]
+  
+  %% Add Query Parameters
+  C1B --> C1B1[Parent ID Filter]
+  C1B1 --> C1B2[Search Term Filter]
+  C1B2 --> C1B3[Status Filters]
+  C1B3 --> C1B4[Featured Filter]
+  C1B4 --> C1B5[Include Deleted Filter]
+  
+  %% Cache Data Structure
+  C2 --> C2A[Store Category Array]
+  C2A --> C2B[Include Media References]
+  C2B --> C2C[Add Metadata]
+  C2C --> C2D[Store Query Info]
+  
+  %% Store Category Array
+  C2A --> C2A1[Category Objects]
+  C2A1 --> C2A2[Populated Media]
+  C2A2 --> C2A3[Sorted Results]
+  C2A3 --> C2A4[Filtered Results]
+  
+  %% Cache TTL Management
+  C3 --> C3A[Set TTL: 30 minutes]
+  C3A --> C3B[Auto-expiration]
+  C3B --> C3C[TTL Extension]
+  C3C --> C3D[TTL Refresh]
+  
+  %% Category Tree Cache
+  D --> D1[Tree Cache Key]
+  D1 --> D2[Tree Data Structure]
+  D2 --> D3[Tree TTL Management]
+  D3 --> D4[Tree Cache Invalidation]
+  
+  %% Tree Cache Key
+  D1 --> D1A[Key: categories:tree:full]
+  D1A --> D1B[No Query Parameters]
+  D1B --> D1C[Single Tree Cache]
+  D1C --> D1D[Global Tree Access]
+  
+  %% Tree Data Structure
+  D2 --> D2A[Root Categories Array]
+  D2A --> D2B[Nested Children]
+  D2B --> D2C[Complete Hierarchy]
+  D2C --> D2D[Sorted Structure]
+  
+  %% Root Categories Array
+  D2A --> D2A1[Level 0 Categories]
+  D2A1 --> D2A2[No Parent Categories]
+  D2A2 --> D2A3[Active Categories Only]
+  D2A3 --> D2A4[Sorted by Order]
+  
+  %% Nested Children
+  D2B --> D2B1[Recursive Structure]
+  D2B1 --> D2B2[Children Arrays]
+  D2B2 --> D2B3[Grandchildren Arrays]
+  D2B3 --> D2B4[Complete Tree]
+  
+  %% Tree TTL Management
+  D3 --> D3A[Set TTL: 1 hour]
+  D3A --> D3B[Longer Cache Duration]
+  D3B --> D3C[Tree Stability]
+  D3C --> D3D[Less Frequent Updates]
+  
+  %% Category Detail Cache
+  E --> E1[Detail Cache Key]
+  E1 --> E2[Detail Data Structure]
+  E2 --> E3[Detail TTL Management]
+  E3 --> E4[Detail Cache Invalidation]
+  
+  %% Detail Cache Key
+  E1 --> E1A[Key: category:detail:{id}]
+  E1A --> E1B[Unique per Category]
+  E1B --> E1C[Individual Caching]
+  E1C --> E1D[Per-Category Access]
+  
+  %% Detail Data Structure
+  E2 --> E2A[Category Object]
+  E2A --> E2B[Children Categories]
+  E2B --> E2C[Breadcrumbs Array]
+  E2C --> E2D[Media References]
+  
+  %% Category Object
+  E2A --> E2A1[Full Category Data]
+  E2A1 --> E2A2[All Fields Included]
+  E2A2 --> E2A3[Populated References]
+  E2A3 --> E2A4[Complete Information]
+  
+  %% Children Categories
+  E2B --> E2B1[Direct Children Only]
+  E2B1 --> E2B2[Active Children]
+  E2B2 --> E2B3[Sorted Children]
+  E2B3 --> E2B4[Limited Depth]
+  
+  %% Breadcrumbs Array
+  E2C --> E2C1[Parent Categories]
+  E2C1 --> E2C2[Navigation Path]
+  E2C2 --> E2C3[Category Names]
+  E2C3 --> E2C4[Category Slugs]
+  
+  %% Detail TTL Management
+  E3 --> E3A[Set TTL: 10 minutes]
+  E3A --> E3B[Shorter Cache Duration]
+  E3B --> E3C[Frequent Updates]
+  E3C --> E3D[Real-time Data]
+  
+  %% Cache Invalidation
+  F[Cache Invalidation] --> F1[Automatic Invalidation]
+  F1 --> F2[Manual Invalidation]
+  F2 --> F3[Pattern Invalidation]
+  F3 --> F4[Selective Invalidation]
+  
+  %% Automatic Invalidation
+  F1 --> F1A[Category Created]
+  F1A --> F1B[Category Updated]
+  F1B --> F1C[Category Deleted]
+  F1C --> F1D[Category Restored]
+  
+  %% Category Created
+  F1A --> F1A1[Clear List Caches]
+  F1A1 --> F1A2[Clear Tree Cache]
+  F1A2 --> F1A3[Clear Stats Cache]
+  F1A3 --> F1A4[Update Parent Caches]
+  
+  %% Category Updated
+  F1B --> F1B1[Clear Detail Cache]
+  F1B1 --> F1B2[Clear List Caches]
+  F1B2 --> F1B3[Clear Tree Cache]
+  F1B3 --> F1B4[Update Children Caches]
+  
+  %% Category Deleted
+  F1C --> F1C1[Clear All Caches]
+  F1C1 --> F1C2[Update Parent Counters]
+  F1C2 --> F1C3[Clear Related Caches]
+  F1C3 --> F1C4[Update Statistics]
+  
+  %% Manual Invalidation
+  F2 --> F2A[Admin Cache Clear]
+  F2A --> F2B[System Cache Clear]
+  F2B --> F2C[Selective Cache Clear]
+  F2C --> F2D[Emergency Cache Clear]
+  
+  %% Admin Cache Clear
+  F2A --> F2A1[Clear All Category Caches]
+  F2A1 --> F2A2[Clear Specific Caches]
+  F2A2 --> F2A3[Clear Pattern Caches]
+  F2A3 --> F2A4[Force Cache Refresh]
+  
+  %% Pattern Invalidation
+  F3 --> F3A[Clear categories:*]
+  F3A --> F3B[Clear category:*]
+  F3B --> F3C[Clear tree:*]
+  F3C --> F3D[Clear stats:*]
+  
+  %% Clear categories:*
+  F3A --> F3A1[All List Caches]
+  F3A1 --> F3A2[All Query Caches]
+  F3A2 --> F3A3[All Filter Caches]
+  F3A3 --> F3A4[All Search Caches]
+  
+  %% Clear category:*
+  F3B --> F3B1[All Detail Caches]
+  F3B1 --> F3B2[All Individual Caches]
+  F3B2 --> F3B3[All Breadcrumb Caches]
+  F3B3 --> F3B4[All Media Caches]
+  
+  %% Cache Performance
+  G[Cache Performance] --> G1[Cache Hit Rate]
+  G1 --> G2[Cache Miss Rate]
+  G2 --> G3[Cache Response Time]
+  G3 --> G4[Cache Memory Usage]
+  
+  %% Cache Hit Rate
+  G1 --> G1A[Monitor Hit Percentage]
+  G1A --> G1B[Track Hit Patterns]
+  G1B --> G1C[Optimize Hit Rate]
+  G1C --> G1D[Improve Cache Strategy]
+  
+  %% Cache Miss Rate
+  G2 --> G2A[Monitor Miss Percentage]
+  G2A --> G2B[Identify Miss Causes]
+  G2B --> G2C[Reduce Miss Rate]
+  G2C --> G2D[Optimize Cache Keys]
+  
+  %% Cache Response Time
+  G3 --> G3A[Measure Cache Access Time]
+  G3A --> G3B[Compare with DB Access]
+  G3B --> G3C[Optimize Cache Speed]
+  G3C --> G3D[Improve Performance]
+  
+  %% Cache Memory Usage
+  G4 --> G4A[Monitor Memory Consumption]
+  G4A --> G4B[Track Cache Size]
+  G4B --> G4C[Optimize Memory Usage]
+  G4C --> G4D[Prevent Memory Leaks]
+  
+  %% Cache Monitoring
+  H[Cache Monitoring] --> H1[Cache Statistics]
+  H1 --> H2[Cache Alerts]
+  H2 --> H3[Cache Reports]
+  H3 --> H4[Cache Optimization]
+  
+  %% Cache Statistics
+  H1 --> H1A[Cache Size Statistics]
+  H1A --> H1B[Cache Hit Statistics]
+  H1B --> H1C[Cache Performance Statistics]
+  H1C --> H1D[Cache Usage Statistics]
+  
+  %% Cache Alerts
+  H2 --> H2A[Low Hit Rate Alert]
+  H2A --> H2B[High Memory Usage Alert]
+  H2B --> H2C[Cache Error Alert]
+  H2C --> H2D[Performance Alert]
+  
+  %% Cache Reports
+  H3 --> H3A[Daily Cache Report]
+  H3A --> H3B[Weekly Cache Report]
+  H3B --> H3C[Monthly Cache Report]
+  H3C --> H3D[Cache Performance Report]
+  
+  %% Cache Optimization
+  H4 --> H4A[TTL Optimization]
+  H4A --> H4B[Key Optimization]
+  H4B --> H4C[Data Optimization]
+  H4C --> H4D[Strategy Optimization]
+  
+  %% End points
+  C4 --> Z[End]
+  D4 --> Z
+  E4 --> Z
+  F4 --> Z
+  G4 --> Z
+  H4 --> Z

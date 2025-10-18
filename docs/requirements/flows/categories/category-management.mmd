@@ -1,0 +1,187 @@
+%% Category Management Flow with Advanced Features
+%% View at https://mermaid.live
+flowchart TD
+  A[Category Management System] --> B[Category Operations]
+  
+  %% Category Operations
+  B --> C[Create Category]
+  B --> D[Update Category]
+  B --> E[Delete Category]
+  B --> F[View Category]
+  B --> G[List Categories]
+  B --> H[Category Tree]
+  
+  %% Create Category
+  C --> C1[Validate Input Data]
+  C1 --> C2[Check Parent Category]
+  C2 --> C3[Generate Slug]
+  C3 --> C4[Calculate Path and Depth]
+  C4 --> C5[Create Category Record]
+  C5 --> C6[Update Parent Children Count]
+  C6 --> C7[Clear Cache]
+  C7 --> C8[Return Created Category]
+  
+  %% Validate Input Data
+  C1 --> C1A[Validate Required Fields]
+  C1A --> C1B[Validate Data Types]
+  C1B --> C1C[Validate String Lengths]
+  C1C --> C1D[Validate Boolean Values]
+  C1D --> C1E[Validate Number Ranges]
+  
+  %% Check Parent Category
+  C2 --> C2A{Parent ID Provided?}
+  C2A -->|Yes| C2B[Find Parent Category]
+  C2A -->|No| C2C[Set as Root Category]
+  C2B --> C2D{Parent Exists?}
+  C2D -->|Yes| C2E{Parent Not Deleted?}
+  C2D -->|No| C2F[Throw Parent Not Found Error]
+  C2E -->|Yes| C2G[Continue with Parent]
+  C2E -->|No| C2H[Throw Parent Deleted Error]
+  C2C --> C2I[Set Parent ID to Null]
+  
+  %% Generate Slug
+  C3 --> C3A[Slugify English Name]
+  C3A --> C3B[Check Slug Uniqueness]
+  C3B --> C3C{Slug Unique?}
+  C3C -->|Yes| C3D[Use Generated Slug]
+  C3C -->|No| C3E[Throw Slug Exists Error]
+  
+  %% Calculate Path and Depth
+  C4 --> C4A{Has Parent?}
+  C4A -->|Yes| C4B[Calculate Path from Parent]
+  C4A -->|No| C4C[Set Root Path]
+  C4B --> C4D[Set Depth = Parent Depth + 1]
+  C4C --> C4E[Set Depth = 0]
+  C4D --> C4F[Set Full Path]
+  C4E --> C4F
+  
+  %% Create Category Record
+  C5 --> C5A[Set Default Values]
+  C5A --> C5B[Set Order Value]
+  C5B --> C5C[Set Active Status]
+  C5C --> C5D[Set Menu Visibility]
+  C5D --> C5E[Set Featured Status]
+  C5E --> C5F[Initialize Counters]
+  C5F --> C5G[Save to Database]
+  
+  %% Update Parent Children Count
+  C6 --> C6A{Has Parent?}
+  C6A -->|Yes| C6B[Increment Parent Children Count]
+  C6A -->|No| C6C[Skip Parent Update]
+  
+  %% Update Category
+  D --> D1[Find Category by ID]
+  D1 --> D2[Validate Category Exists]
+  D2 --> D3[Check if Deleted]
+  D3 --> D4[Validate Update Data]
+  D4 --> D5{Name Changed?}
+  D5 -->|Yes| D6[Update Slug and Path]
+  D5 -->|No| D7[Update Other Fields]
+  D6 --> D8[Update Children Paths]
+  D7 --> D9[Save Changes]
+  D8 --> D9
+  D9 --> D10[Clear Cache]
+  D10 --> D11[Return Updated Category]
+  
+  %% Update Slug and Path
+  D6 --> D6A[Generate New Slug]
+  D6A --> D6B[Check Slug Uniqueness]
+  D6B --> D6C[Calculate New Path]
+  D6C --> D6D[Update Category Path]
+  D6D --> D6E[Find All Children]
+  D6E --> D6F[Update Children Paths]
+  
+  %% Delete Category
+  E --> E1[Find Category by ID]
+  E1 --> E2[Validate Category Exists]
+  E2 --> E3[Check if Already Deleted]
+  E3 --> E4[Check for Children]
+  E4 --> E5{Has Children?}
+  E5 -->|Yes| E6[Throw Has Children Error]
+  E5 -->|No| E7[Perform Soft Delete]
+  E7 --> E8[Update Parent Children Count]
+  E8 --> E9[Clear Cache]
+  E9 --> E10[Return Deletion Result]
+  
+  %% View Category
+  F --> F1[Check Cache]
+  F1 --> F2{Cache Hit?}
+  F2 -->|Yes| F3[Return Cached Data]
+  F2 -->|No| F4[Query Database]
+  F4 --> F5[Populate Media References]
+  F5 --> F6[Get Children Categories]
+  F6 --> F7[Generate Breadcrumbs]
+  F7 --> F8[Cache Result]
+  F8 --> F9[Return Category Data]
+  
+  %% List Categories
+  G --> G1[Build Query Filters]
+  G1 --> G2[Apply Parent Filter]
+  G2 --> G3[Apply Search Filter]
+  G3 --> G4[Apply Status Filters]
+  G4 --> G5[Apply Featured Filter]
+  G5 --> G6[Check Cache]
+  G6 --> G7{Cache Hit?}
+  G7 -->|Yes| G8[Return Cached List]
+  G7 -->|No| G9[Execute Query]
+  G9 --> G10[Populate Media References]
+  G10 --> G11[Sort Results]
+  G11 --> G12[Cache Results]
+  G12 --> G13[Return Category List]
+  
+  %% Category Tree
+  H --> H1[Check Tree Cache]
+  H1 --> H2{Cache Hit?}
+  H2 -->|Yes| H3[Return Cached Tree]
+  H2 -->|No| H4[Get All Active Categories]
+  H4 --> H5[Populate Media References]
+  H5 --> H6[Build Tree Structure]
+  H6 --> H7[Sort by Order and Name]
+  H7 --> H8[Cache Tree]
+  H8 --> H9[Return Tree Structure]
+  
+  %% Build Tree Structure
+  H6 --> H6A[Filter Root Categories]
+  H6A --> H6B[Recursively Build Children]
+  H6B --> H6C[Add Children to Parents]
+  H6C --> H6D[Return Complete Tree]
+  
+  %% Cache Management
+  I[Cache Management] --> I1[Clear All Caches]
+  I1 --> I2[Clear Categories List Cache]
+  I2 --> I3[Clear Category Tree Cache]
+  I3 --> I4[Clear Category Detail Cache]
+  I4 --> I5[Log Cache Clear]
+  
+  %% Statistics Management
+  J[Statistics Management] --> J1[Update Category Stats]
+  J1 --> J2[Count Children Categories]
+  J2 --> J3[Update Children Count]
+  J3 --> J4[Update Products Count]
+  J4 --> J5[Clear Related Caches]
+  
+  %% Media Integration
+  K[Media Integration] --> K1[Handle Image Upload]
+  K1 --> K2[Handle Icon Upload]
+  K2 --> K3[Update Media References]
+  K3 --> K4[Populate Media Data]
+  K4 --> K5[Clear Category Caches]
+  
+  %% SEO Management
+  L[SEO Management] --> L1[Generate Meta Tags]
+  L1 --> L2[Update SEO Fields]
+  L2 --> L3[Validate SEO Data]
+  L3 --> L4[Update Category SEO]
+  L4 --> L5[Clear SEO Caches]
+  
+  %% End points
+  C8 --> Z[End]
+  D11 --> Z
+  E10 --> Z
+  F9 --> Z
+  G13 --> Z
+  H9 --> Z
+  I5 --> Z
+  J5 --> Z
+  K5 --> Z
+  L5 --> Z

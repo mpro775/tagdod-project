@@ -1,0 +1,96 @@
+%% Inventory Validation & Tracking System
+%% View at https://mermaid.live
+flowchart TD
+  A[Inventory Check Request] --> B{Check Type?}
+  B -->|Availability| C[Check Stock Availability]
+  B -->|Reservation| D[Validate Reservation]
+  B -->|Commitment| E[Validate Commitment]
+  B -->|Return| F[Validate Return]
+  
+  %% Stock Availability Check
+  C --> C1[Get inventory record]
+  C1 --> C2[Calculate available stock]
+  C2 --> C3[Available = on_hand - reserved - safety_stock]
+  C3 --> C4{Available >= requested?}
+  C4 -->|Yes| C5[Return available quantity]
+  C4 -->|No| C6[Return insufficient stock error]
+  C5 --> C7[Log availability check]
+  C6 --> C8[Log shortage event]
+  
+  %% Reservation Validation
+  D --> D1[Check reservation exists]
+  D1 --> D2{Reservation found?}
+  D2 -->|No| D3[Return not found error]
+  D2 -->|Yes| D4[Check reservation status]
+  D4 --> D5{Status is ACTIVE?}
+  D5 -->|Yes| D6[Check expiration time]
+  D5 -->|No| D7[Return invalid status error]
+  D6 --> D8{Not expired?}
+  D8 -->|Yes| D9[Return valid reservation]
+  D8 -->|No| D10[Mark as expired]
+  D10 --> D11[Return expired error]
+  
+  %% Commitment Validation
+  E --> E1[Check all reservations for order]
+  E1 --> E2[Validate each reservation]
+  E2 --> E3{All valid?}
+  E3 -->|Yes| E4[Proceed with commitment]
+  E3 -->|No| E5[Return validation error]
+  E4 --> E6[Update reservation statuses]
+  E6 --> E7[Update inventory quantities]
+  E7 --> E8[Create ledger entries]
+  E8 --> E9[Return success]
+  
+  %% Return Validation
+  F --> F1[Check return eligibility]
+  F1 --> F2{Can return?}
+  F2 -->|Yes| F3[Validate return quantity]
+  F2 -->|No| F4[Return not eligible error]
+  F3 --> F5{Valid quantity?}
+  F5 -->|Yes| F6[Process return]
+  F5 -->|No| F7[Return invalid quantity error]
+  F6 --> F8[Update inventory]
+  F8 --> F9[Create ledger entry]
+  F9 --> F10[Return success]
+  
+  %% Inventory Tracking
+  G[Inventory Tracking] --> G1[Get inventory history]
+  G1 --> G2[Filter by date range]
+  G2 --> G3[Filter by operation type]
+  G3 --> G4[Calculate trends]
+  G4 --> G5[Generate tracking report]
+  
+  %% Low Stock Alerts
+  H[Low Stock Check] --> H1[Get all inventory records]
+  H1 --> H2[Check against safety stock]
+  H2 --> H3{Below safety stock?}
+  H3 -->|Yes| H4[Generate alert]
+  H3 -->|No| H5[No action needed]
+  H4 --> H6[Send notification]
+  H6 --> H7[Log alert event]
+  
+  %% Inventory Analytics
+  I[Inventory Analytics] --> I1[Calculate turnover rate]
+  I1 --> I2[Analyze demand patterns]
+  I2 --> I3[Predict stock needs]
+  I3 --> I4[Generate recommendations]
+  I4 --> I5[Create analytics report]
+  
+  %% Performance Monitoring
+  J[Performance Monitoring] --> J1[Monitor query performance]
+  J1 --> J2[Check index usage]
+  J2 --> J3[Measure response times]
+  J3 --> J4[Identify bottlenecks]
+  J4 --> J5[Optimize queries]
+  
+  %% End points
+  C7 --> Z[End]
+  C8 --> Z
+  D9 --> Z
+  D11 --> Z
+  E9 --> Z
+  F10 --> Z
+  G5 --> Z
+  H7 --> Z
+  I5 --> Z
+  J5 --> Z

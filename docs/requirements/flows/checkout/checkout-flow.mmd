@@ -1,18 +1,86 @@
-%% Checkout: Address -> Shipping -> Payment -> Confirm
+%% Advanced Checkout: Preview -> Confirm -> Payment -> Inventory -> Notifications
 %% View at https://mermaid.live
 flowchart TD
-  A[Start Checkout] --> B[Validate cart items availability]
-  B --> C[Select/Confirm delivery address]
-  C --> D[Select shipping method]
-  D --> E[Apply coupons / auto discounts]
-  E --> F[Select payment method]
-  F --> G{Payment method?}
-  G -- COD --> H[Create Order (status: pending_payment)]
-  G -- ONLINE --> I[Create Order + Payment Intent]
-  H --> M[Confirm order]
-  I --> J[Redirect to payment provider]
-  J --> K[Await payment webhook]
-  K -->|PAID| M[Confirm order]
-  K -->|FAILED| N[Mark payment_failed]
-  M --> O[Emit notifications, adjust inventory]
-  O --> Z[End]
+  A[Start Checkout] --> B[Checkout Preview]
+  B --> C[Validate cart items availability]
+  C --> D[Calculate pricing with discounts]
+  D --> E[Apply currency conversion]
+  E --> F[Calculate shipping costs]
+  F --> G[Apply wholesale/engineer discounts]
+  G --> H[Return preview with totals]
+  
+  %% Checkout Confirmation
+  H --> I[User confirms checkout]
+  I --> J[Start Database Transaction]
+  J --> K[Create Order with PENDING status]
+  K --> L[Reserve inventory items]
+  L --> M[Generate order number]
+  M --> N[Save order snapshot]
+  N --> O{Payment method?}
+  
+  %% COD Payment Flow
+  O -->|COD| P[Set payment status to PENDING]
+  P --> Q[Mark order as CONFIRMED]
+  Q --> R[Update inventory]
+  R --> S[Send confirmation notifications]
+  S --> T[End - COD Order Complete]
+  
+  %% Online Payment Flow
+  O -->|ONLINE| U[Create Payment Intent]
+  U --> V[Generate payment URL]
+  V --> W[Return payment URL to user]
+  W --> X[User redirects to payment]
+  X --> Y[Payment provider processes]
+  Y --> Z[Payment webhook received]
+  Z --> AA{Payment successful?}
+  AA -->|SUCCESS| BB[Verify webhook signature]
+  BB --> CC[Update payment status to PAID]
+  CC --> DD[Mark order as CONFIRMED]
+  DD --> EE[Update inventory]
+  EE --> FF[Send confirmation notifications]
+  FF --> GG[End - Online Payment Complete]
+  AA -->|FAILED| HH[Mark payment status to FAILED]
+  HH --> II[Mark order as PAYMENT_FAILED]
+  II --> JJ[Release reserved inventory]
+  JJ --> KK[Send failure notifications]
+  KK --> LL[End - Payment Failed]
+  
+  %% Order Management Flow
+  MM[Order Status Update] --> NN{New status?}
+  NN -->|PROCESSING| OO[Update to PROCESSING]
+  NN -->|SHIPPED| PP[Add tracking number]
+  NN -->|DELIVERED| QQ[Mark as DELIVERED]
+  NN -->|CANCELLED| RR[Release inventory]
+  OO --> SS[Send status notification]
+  PP --> SS
+  QQ --> SS
+  RR --> SS
+  
+  %% Inventory Management
+  TT[Inventory Reservation] --> UU[Check stock availability]
+  UU --> VV{Stock available?}
+  VV -->|Yes| WW[Reserve items with TTL]
+  VV -->|No| XX[Return out of stock error]
+  WW --> YY[Create inventory ledger entry]
+  YY --> ZZ[End - Inventory Reserved]
+  XX --> AAA[End - Insufficient Stock]
+  
+  %% Webhook Processing
+  BBB[Payment Webhook] --> CCC[Verify signature]
+  CCC --> DDD{Signature valid?}
+  DDD -->|Yes| EEE[Process payment status]
+  DDD -->|No| FFF[Reject webhook]
+  EEE --> GGG[Update order status]
+  GGG --> HHH[Send notifications]
+  HHH --> III[End - Webhook Processed]
+  FFF --> JJJ[End - Invalid Webhook]
+  
+  %% End points
+  T --> KKK[End]
+  GG --> KKK
+  LL --> KKK
+  SS --> KKK
+  ZZ --> KKK
+  AAA --> KKK
+  III --> KKK
+  JJJ --> KKK

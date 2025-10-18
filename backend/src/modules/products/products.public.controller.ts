@@ -1,11 +1,20 @@
 import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiParam,
+  ApiQuery,
+  ApiOkResponse,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse
+} from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { VariantsService } from './variants.service';
 import { ResponseCacheInterceptor, CacheResponse } from '../../shared/interceptors/response-cache.interceptor';
 import { ProductStatus } from './schemas/product.schema';
 
-@ApiTags('products-public')
+@ApiTags('products')
 @Controller('products')
 @UseInterceptors(ResponseCacheInterceptor)
 export class ProductsPublicController {
@@ -16,6 +25,52 @@ export class ProductsPublicController {
 
   // ==================== قائمة المنتجات ====================
   @Get()
+  @ApiOperation({ 
+    summary: 'Get products list',
+    description: 'Retrieves a paginated list of products with optional filtering'
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 20)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search term for product name or description' })
+  @ApiQuery({ name: 'categoryId', required: false, type: String, description: 'Filter by category ID' })
+  @ApiQuery({ name: 'brandId', required: false, type: String, description: 'Filter by brand ID' })
+  @ApiQuery({ name: 'isFeatured', required: false, type: Boolean, description: 'Filter featured products' })
+  @ApiQuery({ name: 'isNew', required: false, type: Boolean, description: 'Filter new products' })
+  @ApiOkResponse({ 
+    description: 'Products list retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+              name: { type: 'string', example: 'Solar Panel 300W' },
+              description: { type: 'string', example: 'High efficiency solar panel' },
+              price: { type: 'number', example: 299.99 },
+              currency: { type: 'string', example: 'USD' },
+              images: { type: 'array', items: { type: 'string' } },
+              category: { type: 'object' },
+              brand: { type: 'object' },
+              isFeatured: { type: 'boolean', example: true },
+              isNew: { type: 'boolean', example: false }
+            }
+          }
+        },
+        pagination: {
+          type: 'object',
+          properties: {
+            page: { type: 'number', example: 1 },
+            limit: { type: 'number', example: 20 },
+            total: { type: 'number', example: 150 },
+            pages: { type: 'number', example: 8 }
+          }
+        }
+      }
+    }
+  })
   @CacheResponse({ ttl: 300 }) // 5 minutes
   async listProducts(
     @Query('page') page?: string,
@@ -48,6 +103,38 @@ export class ProductsPublicController {
 
   // ==================== تفاصيل منتج ====================
   @Get(':id')
+  @ApiOperation({ 
+    summary: 'Get product details',
+    description: 'Retrieves detailed information about a specific product'
+  })
+  @ApiParam({ name: 'id', description: 'Product ID', example: '507f1f77bcf86cd799439011' })
+  @ApiOkResponse({ 
+    description: 'Product details retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            name: { type: 'string', example: 'Solar Panel 300W' },
+            description: { type: 'string', example: 'High efficiency solar panel with 20% efficiency' },
+            price: { type: 'number', example: 299.99 },
+            currency: { type: 'string', example: 'USD' },
+            images: { type: 'array', items: { type: 'string' } },
+            variants: { type: 'array', items: { type: 'object' } },
+            specifications: { type: 'object' },
+            category: { type: 'object' },
+            brand: { type: 'object' },
+            isFeatured: { type: 'boolean', example: true },
+            isNew: { type: 'boolean', example: false },
+            views: { type: 'number', example: 150 }
+          }
+        }
+      }
+    }
+  })
+  @ApiNotFoundResponse({ description: 'Product not found' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
   async getProduct(@Param('id') id: string) {
     const product = await this.productsService.getProduct(id);

@@ -1,0 +1,231 @@
+%% Category Tree Structure and Hierarchy Management
+%% View at https://mermaid.live
+flowchart TD
+  A[Category Tree System] --> B[Tree Structure]
+  
+  %% Tree Structure
+  B --> C[Root Categories]
+  B --> D[Sub Categories]
+  B --> E[Nested Categories]
+  B --> F[Tree Building]
+  B --> G[Path Management]
+  B --> H[Breadcrumbs]
+  
+  %% Root Categories
+  C --> C1[Level 0 Categories]
+  C1 --> C2[No Parent ID]
+  C2 --> C3[Depth = 0]
+  C3 --> C4[Path = /slug]
+  C4 --> C5[Top Level Navigation]
+  
+  %% Sub Categories
+  D --> D1[Level 1 Categories]
+  D1 --> D2[Has Parent ID]
+  D2 --> D3[Depth = 1]
+  D3 --> D4[Path = /parent/slug]
+  D4 --> D5[Second Level Navigation]
+  
+  %% Nested Categories
+  E --> E1[Level 2+ Categories]
+  E1 --> E2[Multiple Parent Levels]
+  E2 --> E3[Depth = 2, 3, 4...]
+  E3 --> E4[Path = /parent/grandparent/slug]
+  E4 --> E5[Deep Navigation]
+  
+  %% Tree Building
+  F --> F1[Get All Categories]
+  F1 --> F2[Filter Active Categories]
+  F2 --> F3[Sort by Order and Name]
+  F3 --> F4[Build Tree Recursively]
+  F4 --> F5[Add Children to Parents]
+  F5 --> F6[Return Complete Tree]
+  
+  %% Get All Categories
+  F1 --> F1A[Query Database]
+  F1A --> F1B[Apply Filters]
+  F1B --> F1C[Populate Media References]
+  F1C --> F1D[Sort Results]
+  
+  %% Filter Active Categories
+  F2 --> F2A[Check isActive = true]
+  F2A --> F2B[Check deletedAt = null]
+  F2B --> F2C[Check showInMenu = true]
+  F2C --> F2D[Apply Additional Filters]
+  
+  %% Sort by Order and Name
+  F3 --> F3A[Primary Sort: order]
+  F3A --> F3B[Secondary Sort: name]
+  F3B --> F3C[Group by Parent ID]
+  F3C --> F3D[Maintain Hierarchy]
+  
+  %% Build Tree Recursively
+  F4 --> F4A[Start with Root Categories]
+  F4A --> F4B[For Each Root Category]
+  F4B --> F4C[Find Children]
+  F4C --> F4D[Recursively Build Children]
+  F4D --> F4E[Add Children to Parent]
+  F4E --> F4F[Continue for All Levels]
+  
+  %% Path Management
+  G --> G1[Path Generation]
+  G1 --> G2[Path Updates]
+  G2 --> G3[Path Validation]
+  G3 --> G4[Path Uniqueness]
+  
+  %% Path Generation
+  G1 --> G1A[Root Category Path]
+  G1A --> G1B[Sub Category Path]
+  G1B --> G1C[Nested Category Path]
+  G1C --> G1D[Path Construction]
+  
+  %% Root Category Path
+  G1A --> G1A1[Path = /slug]
+  G1A1 --> G1A2[No Parent Path]
+  G1A2 --> G1A3[Direct URL Access]
+  
+  %% Sub Category Path
+  G1B --> G1B1[Get Parent Path]
+  G1B1 --> G1B2[Append Current Slug]
+  G1B2 --> G1B3[Path = /parent/slug]
+  
+  %% Nested Category Path
+  G1C --> G1C1[Get Full Parent Path]
+  G1C1 --> G1C2[Append Current Slug]
+  G1C2 --> G1C3[Path = /parent/grandparent/slug]
+  
+  %% Path Updates
+  G2 --> G2A[Category Name Change]
+  G2A --> G2B[Parent Change]
+  G2B --> G2C[Slug Change]
+  G2C --> G2D[Update All Children]
+  
+  %% Category Name Change
+  G2A --> G2A1[Generate New Slug]
+  G2A1 --> G2A2[Calculate New Path]
+  G2A2 --> G2A3[Update Category Path]
+  G2A3 --> G2A4[Update Children Paths]
+  
+  %% Parent Change
+  G2B --> G2B1[Get New Parent Path]
+  G2B1 --> G2B2[Calculate New Path]
+  G2B2 --> G2B3[Update Category Path]
+  G2B3 --> G2B4[Update Children Paths]
+  
+  %% Slug Change
+  G2C --> G2C1[Validate New Slug]
+  G2C1 --> G2C2[Check Slug Uniqueness]
+  G2C2 --> G2C3[Update Category Path]
+  G2C3 --> G2C4[Update Children Paths]
+  
+  %% Update All Children
+  G2D --> G2D1[Find All Children]
+  G2D1 --> G2D2[For Each Child]
+  G2D2 --> G2D3[Update Child Path]
+  G2D3 --> G2D4[Recursively Update Grandchildren]
+  
+  %% Path Validation
+  G3 --> G3A[Check Path Format]
+  G3A --> G3B[Validate Path Segments]
+  G3B --> G3C[Check Path Length]
+  G3C --> G3D[Validate Special Characters]
+  
+  %% Path Uniqueness
+  G4 --> G4A[Check Path Uniqueness]
+  G4A --> G4B[Handle Path Conflicts]
+  G4B --> G4C[Generate Unique Path]
+  G4C --> G4D[Update Conflicting Categories]
+  
+  %% Breadcrumbs
+  H --> H1[Breadcrumb Generation]
+  H1 --> H2[Breadcrumb Navigation]
+  H2 --> H3[Breadcrumb Display]
+  H3 --> H4[Breadcrumb Updates]
+  
+  %% Breadcrumb Generation
+  H1 --> H1A[Parse Category Path]
+  H1A --> H1B[Split Path Segments]
+  H1B --> H1C[Find Each Path Segment]
+  H1C --> H1D[Build Breadcrumb Array]
+  
+  %% Parse Category Path
+  H1A --> H1A1[Get Category Path]
+  H1A1 --> H1A2[Remove Leading Slash]
+  H1A2 --> H1A3[Split by Slash]
+  H1A3 --> H1A4[Filter Empty Segments]
+  
+  %% Split Path Segments
+  H1B --> H1B1[Create Path Array]
+  H1B1 --> H1B2[Process Each Segment]
+  H1B2 --> H1B3[Validate Segments]
+  H1B3 --> H1B4[Return Clean Segments]
+  
+  %% Find Each Path Segment
+  H1C --> H1C1[For Each Segment]
+  H1C1 --> H1C2[Build Current Path]
+  H1C2 --> H1C3[Find Category by Path]
+  H1C3 --> H1C4[Add to Breadcrumb]
+  
+  %% Build Breadcrumb Array
+  H1D --> H1D1[Create Breadcrumb Object]
+  H1D1 --> H1D2[Add Category ID]
+  H1D2 --> H1D3[Add Category Name]
+  H1D3 --> H1D4[Add Category Slug]
+  H1D4 --> H1D5[Add Category Path]
+  
+  %% Breadcrumb Navigation
+  H2 --> H2A[Home Navigation]
+  H2A --> H2B[Parent Navigation]
+  H2B --> H2C[Current Category]
+  H2C --> H2D[Child Navigation]
+  
+  %% Breadcrumb Display
+  H3 --> H3A[Render Breadcrumb HTML]
+  H3A --> H3B[Add Navigation Links]
+  H3B --> H3C[Style Breadcrumb]
+  H3C --> H3D[Add Separators]
+  
+  %% Breadcrumb Updates
+  H4 --> H4A[Path Change Detection]
+  H4A --> H4B[Rebuild Breadcrumbs]
+  H4B --> H4C[Update Navigation]
+  H4C --> H4D[Clear Breadcrumb Cache]
+  
+  %% Tree Operations
+  I[Tree Operations] --> I1[Move Category]
+  I1 --> I2[Reorder Categories]
+  I2 --> I3[Bulk Operations]
+  I3 --> I4[Tree Validation]
+  
+  %% Move Category
+  I1 --> I1A[Validate New Parent]
+  I1A --> I1B[Update Parent Reference]
+  I1B --> I1C[Recalculate Paths]
+  I1C --> I1D[Update Children Paths]
+  I1D --> I1E[Update Counters]
+  
+  %% Reorder Categories
+  I2 --> I2A[Update Order Values]
+  I2A --> I2B[Maintain Hierarchy]
+  I2B --> I2C[Update Display Order]
+  I2C --> I2D[Clear Tree Cache]
+  
+  %% Bulk Operations
+  I3 --> I3A[Bulk Move]
+  I3A --> I3B[Bulk Reorder]
+  I3B --> I3C[Bulk Delete]
+  I3C --> I3D[Bulk Update]
+  
+  %% Tree Validation
+  I4 --> I4A[Check Circular References]
+  I4A --> I4B[Validate Depth Limits]
+  I4B --> I4C[Check Path Consistency]
+  I4C --> I4D[Validate Order Values]
+  
+  %% End points
+  C5 --> Z[End]
+  D5 --> Z
+  E5 --> Z
+  F6 --> Z
+  G4D --> Z
+  H4D --> Z
+  I4D --> Z

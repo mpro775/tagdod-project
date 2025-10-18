@@ -1,29 +1,116 @@
-%% Favorites Management & Sync Flow
+%% Advanced Favorites Management & Sync Flow
 %% View at https://mermaid.live
 flowchart TD
   A[User interacts with product] --> B{Action?}
   B -->|Add to Favorites| C[Add to favorites]
   B -->|Remove from Favorites| D[Remove from favorites]
-  B -->|User Logs In| E[Sync guest favorites]
+  B -->|Update Favorite| E[Update favorite]
+  B -->|User Logs In| F[Sync guest favorites]
+  B -->|View Favorite| G[Increment view count]
   
-  C --> F{User authenticated?}
-  F -->|Yes| G[Save to user favorites]
-  F -->|No| H[Save to device favorites]
+  %% Add to Favorites Flow
+  C --> C1{User authenticated?}
+  C1 -->|Yes| C2[Add to user favorites]
+  C1 -->|No| C3[Add to device favorites]
   
-  D --> I{User authenticated?}
-  I -->|Yes| J[Remove from user favorites]
-  I -->|No| K[Remove from device favorites]
+  C2 --> C4[Check for duplicates]
+  C4 --> C5{Already exists?}
+  C5 -->|Yes| C6[Update existing favorite]
+  C5 -->|No| C7[Create new favorite with note/tags]
+  C6 --> C8[Save with updated data]
+  C7 --> C8
+  C8 --> C9[Return success response]
   
-  E --> L[Find guest favorites by deviceId]
-  L --> M[Find user favorites by userId]
-  M --> N[Merge favorites lists]
-  N --> O[Remove duplicates]
-  O --> P[Mark guest favorites as synced]
-  P --> Q[Update sync timestamp]
+  C3 --> C10[Check for duplicates by deviceId]
+  C10 --> C11{Already exists?}
+  C11 -->|Yes| C12[Update existing guest favorite]
+  C11 -->|No| C13[Create new guest favorite]
+  C12 --> C14[Save with updated data]
+  C13 --> C14
+  C14 --> C15[Return success response]
   
-  G --> R[Update product favorites count]
-  H --> R
-  J --> R
-  K --> R
-  Q --> R
-  R --> Z[End]
+  %% Remove from Favorites Flow
+  D --> D1{User authenticated?}
+  D1 -->|Yes| D2[Soft delete user favorite]
+  D1 -->|No| D3[Soft delete device favorite]
+  
+  D2 --> D4[Set deletedAt timestamp]
+  D4 --> D5[Keep data for recovery]
+  D5 --> D6[Return deletion confirmation]
+  
+  D3 --> D7[Set deletedAt timestamp]
+  D7 --> D8[Keep data for recovery]
+  D8 --> D9[Return deletion confirmation]
+  
+  %% Update Favorite Flow
+  E --> E1[Find favorite by ID]
+  E1 --> E2{Favorite exists?}
+  E2 -->|Yes| E3[Update note and/or tags]
+  E2 -->|No| E4[Return not found error]
+  E3 --> E5[Save updated favorite]
+  E5 --> E6[Return updated favorite]
+  E4 --> E7[End - Not Found]
+  
+  %% View Favorite Flow
+  G --> G1[Find favorite by ID]
+  G1 --> G2[Increment viewsCount]
+  G2 --> G3[Update lastViewedAt]
+  G3 --> G4[Save updated statistics]
+  G4 --> G5[Return view confirmation]
+  
+  %% Sync Guest to User Flow
+  F --> F1[Find guest favorites by deviceId]
+  F1 --> F2[Find user favorites by userId]
+  F2 --> F3[Initialize sync counters]
+  F3 --> F4[Loop through guest favorites]
+  F4 --> F5{Check for duplicates}
+  F5 -->|Exists in user favorites| F6[Skip - mark as skipped]
+  F5 -->|New favorite| F7[Create user favorite]
+  F7 --> F8[Mark as synced]
+  F8 --> F9[Increment synced counter]
+  F6 --> F10[Increment skipped counter]
+  F9 --> F11[Continue to next favorite]
+  F10 --> F11
+  F11 --> F12{More favorites?}
+  F12 -->|Yes| F4
+  F12 -->|No| F13[Mark guest favorites as synced]
+  F13 --> F14[Set syncedAt timestamp]
+  F14 --> F15[Return sync statistics]
+  
+  %% Analytics and Statistics
+  H[Get Favorites Statistics] --> H1[Count user favorites]
+  H1 --> H2[Count guest favorites]
+  H2 --> H3[Count synced favorites]
+  H3 --> H4[Get most favorited products]
+  H4 --> H5[Get top tags usage]
+  H5 --> H6[Calculate total statistics]
+  H6 --> H7[Return comprehensive stats]
+  
+  %% Search by Tags
+  I[Search by Tags] --> I1[Get user ID]
+  I1 --> I2[Filter favorites by tags]
+  I2 --> I3[Populate product details]
+  I3 --> I4[Sort by creation date]
+  I4 --> I5[Return filtered results]
+  
+  %% Clear All Favorites
+  J[Clear All Favorites] --> J1{User authenticated?}
+  J1 -->|Yes| J2[Soft delete all user favorites]
+  J1 -->|No| J3[Soft delete all device favorites]
+  J2 --> J4[Set deletedAt for all user favorites]
+  J3 --> J5[Set deletedAt for all device favorites]
+  J4 --> J6[Return cleared count]
+  J5 --> J6
+  
+  %% End points
+  C9 --> Z[End]
+  C15 --> Z
+  D6 --> Z
+  D9 --> Z
+  E6 --> Z
+  E7 --> Z
+  G5 --> Z
+  F15 --> Z
+  H7 --> Z
+  I5 --> Z
+  J6 --> Z

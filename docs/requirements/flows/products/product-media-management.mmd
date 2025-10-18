@@ -1,0 +1,169 @@
+%% Product Media Management: Images, Videos, Documents
+%% View at https://mermaid.live
+flowchart TD
+  A[Product Media Management] --> B{Media Type?}
+  B -->|Images| C[Image Management]
+  B -->|Videos| D[Video Management]
+  B -->|Documents| E[Document Management]
+  B -->|Bulk Upload| F[Bulk Media Upload]
+  
+  %% Image Management
+  C --> C1[Upload Product Images]
+  C1 --> C2[Image Processing]
+  C2 --> C3[Image Optimization]
+  C3 --> C4[Image Storage]
+  C4 --> C5[Image Organization]
+  
+  %% Image Upload Process
+  C1 --> C1A[Select image files]
+  C1A --> C1B[Validate file types]
+  C1B --> C1C[Check file sizes]
+  C1C --> C1D[Validate image dimensions]
+  C1D --> C1E[Upload to temporary storage]
+  
+  %% Image Processing
+  C2 --> C2A[Generate thumbnails]
+  C2A --> C2B[Create multiple sizes]
+  C2B --> C2C[Apply image filters]
+  C2C --> C2D[Optimize for web]
+  C2D --> C2E[Generate alt text]
+  
+  %% Image Sizes Generation
+  C2B --> C2B1[Thumbnail 150x150]
+  C2B1 --> C2B2[Small 300x300]
+  C2B2 --> C2B3[Medium 600x600]
+  C2B3 --> C2B4[Large 1200x1200]
+  C2B4 --> C2B5[Original size]
+  
+  %% Image Optimization
+  C3 --> C3A[Compress images]
+  C3A --> C3B[Convert to WebP]
+  C3B --> C3C[Maintain quality]
+  C3C --> C3D[Reduce file size]
+  C3D --> C3E[Generate progressive JPEGs]
+  
+  %% Image Storage
+  C4 --> C4A[Store in cloud storage]
+  C4A --> C4B[Generate CDN URLs]
+  C4B --> C4C[Set cache headers]
+  C4C --> C4D[Create backup copies]
+  C4D --> C4E[Update database records]
+  
+  %% Image Organization
+  C5 --> C5A[Set image order]
+  C5A --> C5B[Assign to variants]
+  C5B --> C5C[Set as main image]
+  C5C --> C5D[Add image metadata]
+  C5D --> C5E[Generate image gallery]
+  
+  %% Video Management
+  D --> D1[Upload Product Videos]
+  D1 --> D2[Video Processing]
+  D2 --> D3[Video Optimization]
+  D3 --> D4[Video Storage]
+  D4 --> D5[Video Streaming]
+  
+  %% Video Upload
+  D1 --> D1A[Select video files]
+  D1A --> D1B[Validate video format]
+  D1B --> D1C[Check file size limits]
+  D1C --> D1D[Validate duration limits]
+  D1D --> D1E[Upload to processing queue]
+  
+  %% Video Processing
+  D2 --> D2A[Generate video thumbnails]
+  D2A --> D2B[Create multiple resolutions]
+  D2B --> D2C[Extract video metadata]
+  D2C --> D2D[Generate video previews]
+  D2D --> D2E[Optimize for streaming]
+  
+  %% Video Resolutions
+  D2B --> D2B1[240p for mobile]
+  D2B1 --> D2B2[480p for standard]
+  D2B2 --> D2B3[720p for HD]
+  D2B3 --> D2B4[1080p for full HD]
+  
+  %% Video Optimization
+  D3 --> D3A[Compress video files]
+  D3A --> D3B[Convert to MP4]
+  D3B --> D3C[Optimize bitrate]
+  D3C --> D3D[Generate streaming formats]
+  D3D --> D3E[Create adaptive bitrate]
+  
+  %% Document Management
+  E --> E1[Upload Product Documents]
+  E1 --> E2[Document Processing]
+  E2 --> E3[Document Storage]
+  E3 --> E4[Document Access]
+  
+  %% Document Upload
+  E1 --> E1A[Select document files]
+  E1A --> E1B[Validate file types]
+  E1B --> E1C[Check file sizes]
+  E1C --> E1D[Scan for viruses]
+  E1D --> E1E[Extract document metadata]
+  
+  %% Document Types
+  E1B --> E1B1[PDF manuals]
+  E1B1 --> E1B2[Specification sheets]
+  E1B2 --> E1B3[Installation guides]
+  E1B3 --> E1B4[Warranty documents]
+  E1B4 --> E1B5[Certificates]
+  
+  %% Document Processing
+  E2 --> E2A[Extract text content]
+  E2A --> E2B[Generate document preview]
+  E2B --> E2C[Create searchable index]
+  E2C --> E2D[Generate download links]
+  E2D --> E2E[Set access permissions]
+  
+  %% Bulk Media Upload
+  F --> F1[Prepare Bulk Upload]
+  F1 --> F2[Process Multiple Files]
+  F2 --> F3[Bulk Processing]
+  F3 --> F4[Bulk Organization]
+  F4 --> F5[Bulk Validation]
+  
+  %% Bulk Upload Preparation
+  F1 --> F1A[Create upload package]
+  F1A --> F1B[Validate package structure]
+  F1B --> F1C[Check file associations]
+  F1C --> F1D[Prepare processing queue]
+  F1D --> F1E[Start batch processing]
+  
+  %% Bulk Processing
+  F3 --> F3A[Process images in parallel]
+  F3A --> F3B[Process videos in sequence]
+  F3B --> F3C[Process documents in batch]
+  F3C --> F3D[Update progress status]
+  F3D --> F3E[Handle processing errors]
+  
+  %% Media Validation
+  G[Media Validation] --> G1[Check file integrity]
+  G1 --> G2[Validate media quality]
+  G2 --> G3[Check copyright compliance]
+  G3 --> G4[Verify accessibility]
+  G4 --> G5[Approve or reject media]
+  
+  %% Media Analytics
+  H[Media Analytics] --> H1[Track download counts]
+  H1 --> H2[Monitor bandwidth usage]
+  H2 --> H3[Analyze user engagement]
+  H3 --> H4[Generate usage reports]
+  H4 --> H5[Optimize media delivery]
+  
+  %% Media Cleanup
+  I[Media Cleanup] --> I1[Remove unused media]
+  I1 --> I2[Archive old versions]
+  I2 --> I3[Compress archived files]
+  I3 --> I4[Update media references]
+  I4 --> I5[Clean up temporary files]
+  
+  %% End points
+  C5E --> Z[Media Management Complete]
+  D5 --> Z
+  E4 --> Z
+  F5 --> Z
+  G5 --> Z
+  H5 --> Z
+  I5 --> Z

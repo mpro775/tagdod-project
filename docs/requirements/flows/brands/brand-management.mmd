@@ -1,0 +1,279 @@
+%% Brand Management Flow with Advanced Features
+%% View at https://mermaid.live
+flowchart TD
+  A[Brand Management System] --> B[Brand Operations]
+  
+  %% Brand Operations
+  B --> C[Create Brand]
+  B --> D[Update Brand]
+  B --> E[Delete Brand]
+  B --> F[View Brand]
+  B --> G[List Brands]
+  B --> H[Toggle Status]
+  
+  %% Create Brand
+  C --> C1[Validate Input Data]
+  C1 --> C2[Check Brand Uniqueness]
+  C2 --> C3[Generate Slug]
+  C3 --> C4[Set Default Values]
+  C4 --> C5[Create Brand Record]
+  C5 --> C6[Return Created Brand]
+  
+  %% Validate Input Data
+  C1 --> C1A[Validate Required Fields]
+  C1A --> C1B[Validate String Lengths]
+  C1B --> C1C[Validate Image URL]
+  C1C --> C1D[Validate Metadata]
+  C1D --> C1E[Validate Sort Order]
+  
+  %% Validate Required Fields
+  C1A --> C1A1[Check Name Field]
+  C1A1 --> C1A2[Check Image Field]
+  C1A2 --> C1A3[Validate Field Requirements]
+  C1A3 --> C1A4[Return Validation Result]
+  
+  %% Validate String Lengths
+  C1B --> C1B1[Check Name Length 2-100]
+  C1B1 --> C1B2[Check Description Length max 500]
+  C1B2 --> C1B3[Validate String Limits]
+  C1B3 --> C1B4[Return Length Validation]
+  
+  %% Check Brand Uniqueness
+  C2 --> C2A[Check Name Uniqueness]
+  C2A --> C2B[Check Slug Uniqueness]
+  C2B --> C2C[Check Image Uniqueness]
+  C2C --> C2D{All Unique?}
+  C2D -->|Yes| C2E[Continue Creation]
+  C2D -->|No| C2F[Throw Uniqueness Error]
+  
+  %% Check Name Uniqueness
+  C2A --> C2A1[Query Brands by Name]
+  C2A1 --> C2A2[Check for Duplicates]
+  C2A2 --> C2A3[Return Uniqueness Result]
+  
+  %% Generate Slug
+  C3 --> C3A[Slugify Brand Name]
+  C3A --> C3B[Check Slug Uniqueness]
+  C3B --> C3C{Slug Unique?}
+  C3C -->|Yes| C3D[Use Generated Slug]
+  C3C -->|No| C3E[Generate Unique Slug]
+  
+  %% Set Default Values
+  C4 --> C4A[Set Active Status]
+  C4A --> C4B[Set Sort Order]
+  C4B --> C4C[Set Metadata]
+  C4C --> C4D[Set Timestamps]
+  
+  %% Set Active Status
+  C4A --> C4A1[Set isActive = true]
+  C4A1 --> C4A2[Set Default Status]
+  
+  %% Set Sort Order
+  C4B --> C4B1[Get Next Sort Order]
+  C4B1 --> C4B2[Set Sort Order Value]
+  C4B2 --> C4B3[Update Sort Sequence]
+  
+  %% Update Brand
+  D --> D1[Find Brand by ID]
+  D1 --> D2[Validate Brand Exists]
+  D2 --> D3[Validate Update Data]
+  D3 --> D4[Update Brand Fields]
+  D4 --> D5[Update Slug if Needed]
+  D5 --> D6[Save Changes]
+  D6 --> D7[Return Updated Brand]
+  
+  %% Find Brand by ID
+  D1 --> D1A[Query Brand by ID]
+  D1A --> D1B[Check Brand Status]
+  D1B --> D1C[Validate Brand Access]
+  D1C --> D1D[Return Brand Data]
+  
+  %% Validate Update Data
+  D3 --> D3A[Validate Updated Fields]
+  D3A --> D3B[Check Field Constraints]
+  D3B --> D3C[Validate Data Types]
+  D3C --> D3D[Return Validation Result]
+  
+  %% Update Brand Fields
+  D4 --> D4A[Update Basic Fields]
+  D4A --> D4B[Update Display Fields]
+  D4B --> D4C[Update Metadata Fields]
+  D4C --> D4D[Update Timestamps]
+  
+  %% Update Basic Fields
+  D4A --> D4A1[Update Name if Changed]
+  D4A1 --> D4A2[Update Image if Changed]
+  D4A2 --> D4A3[Update Description if Changed]
+  D4A3 --> D4A4[Update Other Basic Fields]
+  
+  %% Update Display Fields
+  D4B --> D4B1[Update isActive if Changed]
+  D4B1 --> D4B2[Update sortOrder if Changed]
+  D4B2 --> D4B3[Update Display Properties]
+  
+  %% Delete Brand
+  E --> E1[Find Brand by ID]
+  E1 --> E2[Validate Brand Exists]
+  E2 --> E3[Check Brand Usage]
+  E3 --> E4{In Use?}
+  E4 -->|Yes| E5[Throw In Use Error]
+  E4 -->|No| E6[Perform Soft Delete]
+  E6 --> E7[Set Deleted At]
+  E7 --> E8[Set Deleted By]
+  E8 --> E9[Save Changes]
+  E9 --> E10[Return Deletion Result]
+  
+  %% Check Brand Usage
+  E3 --> E3A[Check Products Using Brand]
+  E3A --> E3B[Check Categories Using Brand]
+  E3B --> E3C[Check Other Dependencies]
+  E3C --> E3D{Any Dependencies?}
+  E3D -->|Yes| E3E[Brand In Use]
+  E3D -->|No| E3F[Safe to Delete]
+  
+  %% Perform Soft Delete
+  E6 --> E6A[Set Deleted Timestamp]
+  E6A --> E6B[Set Deleted By User]
+  E6B --> E6C[Update Brand Status]
+  E6C --> E6D[Log Deletion Event]
+  
+  %% View Brand
+  F --> F1[Find Brand by ID]
+  F1 --> F2[Validate Brand Exists]
+  F2 --> F3[Populate Brand Data]
+  F3 --> F4[Return Brand Details]
+  
+  %% Find Brand by ID
+  F1 --> F1A[Query Brand by ID]
+  F1A --> F1B[Check Brand Status]
+  F1B --> F1C[Validate Brand Access]
+  F1C --> F1D[Return Brand Data]
+  
+  %% Populate Brand Data
+  F3 --> F3A[Get Basic Brand Info]
+  F3A --> F3B[Get Brand Metadata]
+  F3B --> F3C[Get Brand Statistics]
+  F3C --> F3D[Get Related Data]
+  
+  %% List Brands
+  G --> G1[Build Query Filters]
+  G1 --> G2[Apply Search Filter]
+  G2 --> G3[Apply Status Filter]
+  G3 --> G4[Apply Sorting]
+  G4 --> G5[Apply Pagination]
+  G5 --> G6[Execute Query]
+  G6 --> G7[Return Brand List]
+  
+  %% Build Query Filters
+  G1 --> G1A[Initialize Query Object]
+  G1A --> G1B[Add Basic Filters]
+  G1B --> G1C[Add Advanced Filters]
+  G1C --> G1D[Add Metadata Filters]
+  
+  %% Apply Search Filter
+  G2 --> G2A{Search Term Provided?}
+  G2A -->|Yes| G2B[Add Text Search]
+  G2A -->|No| G2C[Skip Search Filter]
+  G2B --> G2D[Search in Name and Description]
+  G2C --> G2E[Continue with Other Filters]
+  
+  %% Apply Status Filter
+  G3 --> G3A{Status Filter Provided?}
+  G3A -->|Yes| G3B[Add Status Filter]
+  G3A -->|No| G3C[Skip Status Filter]
+  G3B --> G3D[Filter by isActive Status]
+  G3C --> G3E[Continue with Other Filters]
+  
+  %% Apply Sorting
+  G4 --> G4A[Get Sort Parameters]
+  G4A --> G4B[Apply Primary Sort]
+  G4B --> G4C[Apply Secondary Sort]
+  G4C --> G4D[Apply Sort Direction]
+  
+  %% Get Sort Parameters
+  G4A --> G4A1[Get sortBy Parameter]
+  G4A1 --> G4A2[Get sortOrder Parameter]
+  G4A2 --> G4A3[Validate Sort Parameters]
+  G4A3 --> G4A4[Return Sort Configuration]
+  
+  %% Apply Pagination
+  G5 --> G5A[Get Pagination Parameters]
+  G5A --> G5B[Calculate Skip Value]
+  G5B --> G5C[Apply Limit]
+  G5C --> G5D[Calculate Total Count]
+  
+  %% Get Pagination Parameters
+  G5A --> G5A1[Get page Parameter]
+  G5A1 --> G5A2[Get limit Parameter]
+  G5A2 --> G5A3[Validate Pagination Parameters]
+  G5A3 --> G5A4[Return Pagination Configuration]
+  
+  %% Toggle Status
+  H --> H1[Find Brand by ID]
+  H1 --> H2[Validate Brand Exists]
+  H2 --> H3[Get Current Status]
+  H3 --> H4[Toggle Status]
+  H4 --> H5[Update Brand]
+  H5 --> H6[Return Updated Brand]
+  
+  %% Find Brand by ID
+  H1 --> H1A[Query Brand by ID]
+  H1A --> H1B[Check Brand Status]
+  H1B --> H1C[Validate Brand Access]
+  H1C --> H1D[Return Brand Data]
+  
+  %% Get Current Status
+  H3 --> H3A[Get isActive Field]
+  H3A --> H3B[Check Current Status]
+  H3B --> H3C[Return Status Value]
+  
+  %% Toggle Status
+  H4 --> H4A[Invert Current Status]
+  H4A --> H4B[Set New Status]
+  H4B --> H4C[Update Status Timestamp]
+  H4C --> H4D[Log Status Change]
+  
+  %% Brand Analytics
+  I[Brand Analytics] --> I1[Track Brand Usage]
+  I1 --> I2[Analyze Brand Performance]
+  I2 --> I3[Generate Brand Reports]
+  I3 --> I4[Optimize Brand Management]
+  
+  %% Track Brand Usage
+  I1 --> I1A[Track Brand Views]
+  I1A --> I1B[Track Brand Searches]
+  I1B --> I1C[Track Brand Interactions]
+  I1C --> I1D[Log Brand Analytics]
+  
+  %% Track Brand Views
+  I1A --> I1A1[Log Brand View Event]
+  I1A1 --> I1A2[Update View Count]
+  I1A2 --> I1A3[Track View Patterns]
+  I1A3 --> I1A4[Generate View Reports]
+  
+  %% Analyze Brand Performance
+  I2 --> I2A[Analyze Brand Metrics]
+  I2A --> I2B[Track Brand Trends]
+  I2B --> I2C[Identify Brand Opportunities]
+  I2C --> I2D[Generate Performance Insights]
+  
+  %% Generate Brand Reports
+  I3 --> I3A[Generate Usage Reports]
+  I3A --> I3B[Generate Performance Reports]
+  I3B --> I3C[Generate Trend Reports]
+  I3C --> I3D[Export Report Data]
+  
+  %% Optimize Brand Management
+  I4 --> I4A[Optimize Brand Queries]
+  I4A --> I4B[Optimize Brand Performance]
+  I4B --> I4C[Optimize Brand User Experience]
+  I4C --> I4D[Enhance Brand Management]
+  
+  %% End points
+  C6 --> Z[End]
+  D7 --> Z
+  E10 --> Z
+  F4 --> Z
+  G7 --> Z
+  H6 --> Z
+  I4D --> Z

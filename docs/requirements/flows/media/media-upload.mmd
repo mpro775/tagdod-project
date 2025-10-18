@@ -1,25 +1,124 @@
-%% Media Upload & Management Flow
+%% Advanced Media Upload & Management Flow with Bunny.net Integration
 %% View at https://mermaid.live
 flowchart TD
-  A[User uploads file] --> B[Validate file type]
-  B --> C{Valid type?}
+  A[User uploads file] --> B[Validate file type with Multer]
+  B --> C{Valid MIME type?}
   C -->|No| D[Show error: Invalid file type]
-  C -->|Yes| E[Check file size]
-  E --> F{Size OK?}
+  C -->|Yes| E[Check file size limits]
+  E --> F{Size within limits?}
   F -->|No| G[Show error: File too large]
-  F -->|Yes| H[Generate unique filename]
-  H --> I[Upload to storage]
-  I --> J{Upload success?}
-  J -->|No| K[Show error: Upload failed]
-  J -->|Yes| L[Generate file hash]
-  L --> M[Check for duplicates]
-  M --> N{Duplicate found?}
-  N -->|Yes| O[Use existing file]
-  N -->|No| P[Save new media record]
-  O --> Q[Update usage count]
-  P --> Q
-  Q --> R[Return media URL]
-  R --> Z[End]
-  D --> Z
-  G --> Z
-  K --> Z
+  F -->|Yes| H[Calculate SHA256 hash]
+  H --> I[Check for duplicates in database]
+  I --> J{Duplicate found?}
+  J -->|Yes| K[Return existing media record]
+  J -->|No| L[Generate unique filename with UUID]
+  L --> M[Upload to Bunny.net Storage]
+  M --> N{Upload successful?}
+  N -->|No| O[Handle Bunny.net errors]
+  O --> P{Error type?}
+  P -->|401| Q[Invalid API credentials]
+  P -->|403| R[Access denied]
+  P -->|413| S[File size exceeds limit]
+  P -->|Other| T[Generic upload error]
+  N -->|Yes| U[Extract image metadata with Sharp]
+  U --> V[Create media record in database]
+  V --> W[Set category and type]
+  W --> X[Save with usage tracking]
+  X --> Y[Return media URL and info]
+  
+  %% Duplicate handling
+  K --> K1[Increment usage count]
+  K1 --> K2[Update usedIn array]
+  K2 --> K3[Return existing media info]
+  
+  %% Image processing
+  U --> U1{Is image file?}
+  U1 -->|Yes| U2[Extract width and height]
+  U1 -->|No| U3[Skip image processing]
+  U2 --> U4[Save image dimensions]
+  U3 --> U4
+  U4 --> V
+  
+  %% Media Library Management
+  AA[Media Library Management] --> BB{Action?}
+  BB -->|List| CC[List Media with Filters]
+  BB -->|Update| DD[Update Media Info]
+  BB -->|Delete| EE[Soft Delete Media]
+  BB -->|Restore| FF[Restore Deleted Media]
+  BB -->|Permanent Delete| GG[Permanent Delete]
+  
+  %% List Media Flow
+  CC --> CC1[Apply search filters]
+  CC1 --> CC2[Filter by category/type]
+  CC2 --> CC3[Apply pagination]
+  CC3 --> CC4[Sort results]
+  CC4 --> CC5[Populate user info]
+  CC5 --> CC6[Return paginated results]
+  
+  %% Update Media Flow
+  DD --> DD1[Find media by ID]
+  DD1 --> DD2{Media exists?}
+  DD2 -->|No| DD3[Return not found error]
+  DD2 -->|Yes| DD4[Update name/description/tags]
+  DD4 --> DD5[Update category if needed]
+  DD5 --> DD6[Update privacy settings]
+  DD6 --> DD7[Save changes]
+  DD7 --> DD8[Return updated media]
+  
+  %% Soft Delete Flow
+  EE --> EE1[Find media by ID]
+  EE1 --> EE2{Media exists?}
+  EE2 -->|No| EE3[Return not found error]
+  EE2 -->|Yes| EE4[Set deletedAt timestamp]
+  EE4 --> EE5[Set deletedBy user ID]
+  EE5 --> EE6[Save soft delete]
+  EE6 --> EE7[Return deletion confirmation]
+  
+  %% Restore Flow
+  FF --> FF1[Find media by ID]
+  FF1 --> FF2{Media exists and deleted?}
+  FF2 -->|No| FF3[Return not found or not deleted error]
+  FF2 -->|Yes| FF4[Clear deletedAt and deletedBy]
+  FF4 --> FF5[Save restoration]
+  FF5 --> FF6[Return restoration confirmation]
+  
+  %% Permanent Delete Flow
+  GG --> GG1[Check Super Admin role]
+  GG1 --> GG2{Is Super Admin?}
+  GG2 -->|No| GG3[Return access denied error]
+  GG2 -->|Yes| GG4[Delete from Bunny.net]
+  GG4 --> GG5[Delete from database]
+  GG5 --> GG6[Return permanent deletion confirmation]
+  
+  %% Usage Tracking
+  HH[Usage Tracking] --> HH1[Increment usage count]
+  HH1 --> HH2[Add to usedIn array]
+  HH2 --> HH3[Update media record]
+  HH3 --> HH4[Track usage statistics]
+  
+  %% Statistics and Analytics
+  II[Statistics & Analytics] --> II1[Count total media]
+  II1 --> II2[Group by category]
+  II2 --> II3[Group by type]
+  II3 --> II4[Calculate total size]
+  II4 --> II5[Get recent uploads]
+  II5 --> II6[Generate comprehensive stats]
+  
+  %% End points
+  Y --> Z[End]
+  K3 --> Z
+  Q --> Z
+  R --> Z
+  S --> Z
+  T --> Z
+  CC6 --> Z
+  DD8 --> Z
+  DD3 --> Z
+  EE7 --> Z
+  EE3 --> Z
+  FF6 --> Z
+  FF3 --> Z
+  GG6 --> Z
+  GG3 --> Z
+  HH4 --> Z
+  II6 --> Z

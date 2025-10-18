@@ -1,0 +1,551 @@
+%% User Ranking System
+%% View at https://mermaid.live
+flowchart TD
+  A[User Ranking System] --> B{Ranking Type?}
+  B -->|Customer Rankings| C[Customer Ranking System]
+  B -->|Engineer Rankings| D[Engineer Ranking System]
+  B -->|User Segments| E[User Segmentation System]
+  B -->|Performance Rankings| F[Performance Ranking System]
+  B -->|Loyalty Rankings| G[Loyalty Ranking System]
+  
+  %% Customer Ranking System
+  C --> C1[Calculate Customer Scores]
+  C1 --> C2[Rank Customers by Value]
+  C2 --> C3[Assign Customer Tiers]
+  C3 --> C4[Generate Customer Reports]
+  C4 --> C5[Optimize Customer Experience]
+  C5 --> C6[Customer Rankings Complete]
+  
+  %% Calculate Customer Scores
+  C1 --> C1A[Calculate Loyalty Score]
+  C1A --> C1B[Calculate Value Score]
+  C1B --> C1C[Calculate Activity Score]
+  C1C --> C1D[Calculate Support Score]
+  C1D --> C1E[Calculate Total Score]
+  C1E --> C1F[Scores calculated]
+  
+  %% Loyalty Score Calculation
+  C1A --> C1A1[Count total orders]
+  C1A1 --> C1A2[Count completed orders]
+  C1A2 --> C1A3[Apply loyalty formula]
+  C1A3 --> C1A4[Calculate loyalty score]
+  C1A4 --> C1A5[Loyalty score calculated]
+  
+  %% Loyalty Formula
+  C1A3 --> C1A3A[loyaltyScore = Math.min(100, (totalOrders * 10) + (completedOrders * 15))]
+  C1A3A --> C1A3B[Apply score limits]
+  C1A3B --> C1A3C[Calculate final score]
+  C1A3C --> C1A3D[Formula applied]
+  
+  %% Value Score Calculation
+  C1B --> C1B1[Sum total spent]
+  C1B1 --> C1B2[Calculate average order value]
+  C1B2 --> C1B3[Apply value formula]
+  C1B3 --> C1B4[Calculate value score]
+  C1B4 --> C1B5[Value score calculated]
+  
+  %% Value Formula
+  C1B3 --> C1B3A[valueScore = Math.min(100, (totalSpent / 1000) * 10)]
+  C1B3A --> C1B3B[Apply score limits]
+  C1B3B --> C1B3C[Calculate final score]
+  C1B3C --> C1B3D[Formula applied]
+  
+  %% Activity Score Calculation
+  C1C --> C1C1[Count login frequency]
+  C1C1 --> C1C2[Count feature usage]
+  C1C2 --> C1C3[Apply activity formula]
+  C1C3 --> C1C4[Calculate activity score]
+  C1C4 --> C1C5[Activity score calculated]
+  
+  %% Activity Formula
+  C1C3 --> C1C3A[activityScore = Math.min(100, (totalOrders * 5) + (noSupportTickets ? 20 : 0))]
+  C1C3A --> C1C3B[Apply score limits]
+  C1C3B --> C1C3C[Calculate final score]
+  C1C3C --> C1C3D[Formula applied]
+  
+  %% Support Score Calculation
+  C1D --> C1D1[Count support tickets]
+  C1D1 --> C1D2[Track ticket resolution]
+  C1D2 --> C1D3[Apply support formula]
+  C1D3 --> C1D4[Calculate support score]
+  C1D4 --> C1D5[Support score calculated]
+  
+  %% Total Score Calculation
+  C1E --> C1E1[Weight loyalty score]
+  C1E1 --> C1E2[Weight value score]
+  C1E2 --> C1E3[Weight activity score]
+  C1E3 --> C1E4[Weight support score]
+  C1E4 --> C1E5[Calculate total score]
+  C1E5 --> C1E6[Total score calculated]
+  
+  %% Score Weighting
+  C1E1 --> C1E1A[Loyalty weight: 30%]
+  C1E1A --> C1E1B[Value weight: 40%]
+  C1E1B --> C1E1C[Activity weight: 20%]
+  C1E1C --> C1E1D[Support weight: 10%]
+  C1E1D --> C1E1E[Weights applied]
+  
+  %% Rank Customers by Value
+  C2 --> C2A[Sort by Total Score]
+  C2A --> C2B[Sort by Value Score]
+  C2B --> C2C[Sort by Loyalty Score]
+  C2C --> C2D[Sort by Activity Score]
+  C2D --> C2E[Assign Rank Numbers]
+  C2E --> C2F[Customers ranked]
+  
+  %% Sort by Total Score
+  C2A --> C2A1[Sort descending by total score]
+  C2A1 --> C2A2[Handle score ties]
+  C2A2 --> C2A3[Apply secondary sorting]
+  C2A3 --> C2A4[Total score sorted]
+  
+  %% Sort by Value Score
+  C2B --> C2B1[Sort descending by value score]
+  C2B1 --> C2B2[Handle score ties]
+  C2B2 --> C2B3[Apply secondary sorting]
+  C2B3 --> C2B4[Value score sorted]
+  
+  %% Sort by Loyalty Score
+  C2C --> C2C1[Sort descending by loyalty score]
+  C2C1 --> C2C2[Handle score ties]
+  C2C2 --> C2C3[Apply secondary sorting]
+  C2C3 --> C2C4[Loyalty score sorted]
+  
+  %% Sort by Activity Score
+  C2D --> C2D1[Sort descending by activity score]
+  C2D1 --> C2D2[Handle score ties]
+  C2D2 --> C2D3[Apply secondary sorting]
+  C2D3 --> C2D4[Activity score sorted]
+  
+  %% Assign Rank Numbers
+  C2E --> C2E1[Assign sequential rank numbers]
+  C2E1 --> C2E2[Handle tied ranks]
+  C2E2 --> C2E3[Calculate percentile ranks]
+  C2E3 --> C2E4[Rank numbers assigned]
+  
+  %% Assign Customer Tiers
+  C3 --> C3A[Define Tier Criteria]
+  C3A --> C3B[Apply Tier Rules]
+  C3B --> C3C[Assign Tier Levels]
+  C3C --> C3D[Update Customer Tiers]
+  C3D --> C3E[Tiers assigned]
+  
+  %% Define Tier Criteria
+  C3A --> C3A1[VIP tier criteria]
+  C3A1 --> C3A2[Premium tier criteria]
+  C3A2 --> C3A3[Regular tier criteria]
+  C3A3 --> C3A4[New tier criteria]
+  C3A4 --> C3A5[Criteria defined]
+  
+  %% VIP Tier Criteria
+  C3A1 --> C3A1A[Total score >= 90]
+  C3A1A --> C3A1B[Total spent >= 10000]
+  C3A1B --> C3A1C[Orders >= 50]
+  C3A1C --> C3A1D[VIP criteria set]
+  
+  %% Premium Tier Criteria
+  C3A2 --> C3A2A[Total score >= 70]
+  C3A2A --> C3A2B[Total spent >= 5000]
+  C3A2B --> C3A2C[Orders >= 20]
+  C3A2C --> C3A2D[Premium criteria set]
+  
+  %% Regular Tier Criteria
+  C3A3 --> C3A3A[Total score >= 40]
+  C3A3A --> C3A3B[Total spent >= 1000]
+  C3A3B --> C3A3C[Orders >= 5]
+  C3A3C --> C3A3D[Regular criteria set]
+  
+  %% New Tier Criteria
+  C3A4 --> C3A4A[Total score < 40]
+  C3A4A --> C3A4B[Total spent < 1000]
+  C3A4B --> C3A4C[Orders < 5]
+  C3A4C --> C3A4D[New criteria set]
+  
+  %% Apply Tier Rules
+  C3B --> C3B1[Check VIP criteria]
+  C3B1 --> C3B2[Check Premium criteria]
+  C3B2 --> C3B3[Check Regular criteria]
+  C3B3 --> C3B4[Check New criteria]
+  C3B4 --> C3B5[Rules applied]
+  
+  %% Assign Tier Levels
+  C3C --> C3C1[Assign VIP tier]
+  C3C1 --> C3C2[Assign Premium tier]
+  C3C2 --> C3C3[Assign Regular tier]
+  C3C3 --> C3C4[Assign New tier]
+  C3C4 --> C3C5[Tier levels assigned]
+  
+  %% Update Customer Tiers
+  C3D --> C3D1[Update customer records]
+  C3D1 --> C3D2[Set tier timestamps]
+  C3D2 --> C3D3[Log tier changes]
+  C3D3 --> C3D4[Tiers updated]
+  
+  %% Generate Customer Reports
+  C4 --> C4A[Create Customer Summary Report]
+  C4A --> C4B[Create Tier Distribution Report]
+  C4B --> C4C[Create Top Customers Report]
+  C4C --> C4D[Create Customer Growth Report]
+  C4D --> C4E[Reports generated]
+  
+  %% Customer Summary Report
+  C4A --> C4A1[Compile customer data]
+  C4A1 --> C4A2[Calculate summary metrics]
+  C4A2 --> C4A3[Create summary charts]
+  C4A3 --> C4A4[Format summary report]
+  C4A4 --> C4A5[Summary report created]
+  
+  %% Tier Distribution Report
+  C4B --> C4B1[Count customers by tier]
+  C4B1 --> C4B2[Calculate tier percentages]
+  C4B2 --> C4B3[Create tier charts]
+  C4B3 --> C4B4[Format tier report]
+  C4B4 --> C4B5[Tier report created]
+  
+  %% Top Customers Report
+  C4C --> C4C1[Identify top customers]
+  C4C1 --> C4C2[Compile top customer data]
+  C4C2 --> C4C3[Create top customer charts]
+  C4C3 --> C4C4[Format top customer report]
+  C4C4 --> C4C5[Top customer report created]
+  
+  %% Customer Growth Report
+  C4D --> C4D1[Track customer growth]
+  C4D1 --> C4D2[Analyze growth trends]
+  C4D2 --> C4D3[Create growth charts]
+  C4D3 --> C4D4[Format growth report]
+  C4D4 --> C4D5[Growth report created]
+  
+  %% Optimize Customer Experience
+  C5 --> C5A[Implement Tier Benefits]
+  C5A --> C5B[Personalize Customer Experience]
+  C5B --> C5C[Optimize Customer Journey]
+  C5C --> C5D[Enhance Customer Engagement]
+  C5D --> C5E[Experience optimized]
+  
+  %% Implement Tier Benefits
+  C5A --> C5A1[VIP benefits]
+  C5A1 --> C5A2[Premium benefits]
+  C5A2 --> C5A3[Regular benefits]
+  C5A3 --> C5A4[New customer benefits]
+  C5A4 --> C5A5[Benefits implemented]
+  
+  %% VIP Benefits
+  C5A1 --> C5A1A[Priority support]
+  C5A1A --> C5A1B[Exclusive offers]
+  C5A1B --> C5A1C[Free shipping]
+  C5A1C --> C5A1D[VIP benefits set]
+  
+  %% Premium Benefits
+  C5A2 --> C5A2A[Faster support]
+  C5A2A --> C5A2B[Special offers]
+  C5A2B --> C5A2C[Discount codes]
+  C5A2C --> C5A2D[Premium benefits set]
+  
+  %% Regular Benefits
+  C5A3 --> C5A3A[Standard support]
+  C5A3A --> C5A3B[Regular offers]
+  C5A3B --> C5A3C[Standard shipping]
+  C5A3C --> C5A3D[Regular benefits set]
+  
+  %% New Customer Benefits
+  C5A4 --> C5A4A[Welcome offers]
+  C5A4A --> C5A4B[First order discounts]
+  C5A4B --> C5A4C[Onboarding support]
+  C5A4C --> C5A4D[New customer benefits set]
+  
+  %% Personalize Customer Experience
+  C5B --> C5B1[Customize product recommendations]
+  C5B1 --> C5B2[Personalize marketing messages]
+  C5B2 --> C5B3[Customize user interface]
+  C5B3 --> C5B4[Personalize notifications]
+  C5B4 --> C5B5[Experience personalized]
+  
+  %% Optimize Customer Journey
+  C5C --> C5C1[Optimize onboarding process]
+  C5C1 --> C5C2[Improve purchase flow]
+  C5C2 --> C5C3[Enhance support experience]
+  C5C3 --> C5C4[Optimize retention strategies]
+  C5C4 --> C5C5[Journey optimized]
+  
+  %% Enhance Customer Engagement
+  C5D --> C5D1[Implement loyalty programs]
+  C5D1 --> C5D2[Create engagement campaigns]
+  C5D2 --> C5D3[Develop community features]
+  C5D3 --> C5D4[Enhance social features]
+  C5D4 --> C5D5[Engagement enhanced]
+  
+  %% Engineer Ranking System
+  D --> D1[Calculate Engineer Scores]
+  D1 --> D2[Rank Engineers by Performance]
+  D2 --> D3[Assign Engineer Tiers]
+  D3 --> D4[Generate Engineer Reports]
+  D4 --> D5[Optimize Engineer Experience]
+  D5 --> D6[Engineer Rankings Complete]
+  
+  %% Calculate Engineer Scores
+  D1 --> D1A[Calculate Service Quality Score]
+  D1A --> D1B[Calculate Response Time Score]
+  D1B --> D1C[Calculate Customer Satisfaction Score]
+  D1C --> D1D[Calculate Revenue Score]
+  D1D --> D1E[Calculate Total Score]
+  D1E --> D1F[Scores calculated]
+  
+  %% Service Quality Score
+  D1A --> D1A1[Track service completion rate]
+  D1A1 --> D1A2[Track service quality metrics]
+  D1A2 --> D1A3[Apply quality formula]
+  D1A3 --> D1A4[Calculate quality score]
+  D1A4 --> D1A5[Quality score calculated]
+  
+  %% Response Time Score
+  D1B --> D1B1[Track offer response time]
+  D1B1 --> D1B2[Track service start time]
+  D1B2 --> D1B3[Apply response formula]
+  D1B3 --> D1B4[Calculate response score]
+  D1B4 --> D1B5[Response score calculated]
+  
+  %% Customer Satisfaction Score
+  D1C --> D1C1[Track customer ratings]
+  D1C1 --> D1C2[Track customer feedback]
+  D1C2 --> D1C3[Apply satisfaction formula]
+  D1C3 --> D1C4[Calculate satisfaction score]
+  D1C4 --> D1C5[Satisfaction score calculated]
+  
+  %% Revenue Score
+  D1D --> D1D1[Track total revenue]
+  D1D1 --> D1D2[Track revenue per service]
+  D1D2 --> D1D3[Apply revenue formula]
+  D1D3 --> D1D4[Calculate revenue score]
+  D1D4 --> D1D5[Revenue score calculated]
+  
+  %% Rank Engineers by Performance
+  D2 --> D2A[Sort by Total Score]
+  D2A --> D2B[Sort by Quality Score]
+  D2B --> D2C[Sort by Satisfaction Score]
+  D2C --> D2D[Sort by Revenue Score]
+  D2D --> D2E[Assign Rank Numbers]
+  D2E --> D2F[Engineers ranked]
+  
+  %% Assign Engineer Tiers
+  D3 --> D3A[Define Engineer Tier Criteria]
+  D3A --> D3B[Apply Engineer Tier Rules]
+  D3B --> D3C[Assign Engineer Tier Levels]
+  D3C --> D3D[Update Engineer Tiers]
+  D3D --> D3E[Engineer tiers assigned]
+  
+  %% Engineer Tier Criteria
+  D3A --> D3A1[Expert tier criteria]
+  D3A1 --> D3A2[Professional tier criteria]
+  D3A2 --> D3A3[Standard tier criteria]
+  D3A3 --> D3A4[Beginner tier criteria]
+  D3A4 --> D3A5[Engineer criteria defined]
+  
+  %% Expert Tier Criteria
+  D3A1 --> D3A1A[Total score >= 90]
+  D3A1A --> D3A1B[Customer rating >= 4.5]
+  D3A1B --> D3A1C[Services completed >= 100]
+  D3A1C --> D3A1D[Expert criteria set]
+  
+  %% Professional Tier Criteria
+  D3A2 --> D3A2A[Total score >= 70]
+  D3A2A --> D3A2B[Customer rating >= 4.0]
+  D3A2B --> D3A2C[Services completed >= 50]
+  D3A2C --> D3A2D[Professional criteria set]
+  
+  %% Standard Tier Criteria
+  D3A3 --> D3A3A[Total score >= 40]
+  D3A3A --> D3A3B[Customer rating >= 3.5]
+  D3A3B --> D3A3C[Services completed >= 20]
+  D3A3C --> D3A3D[Standard criteria set]
+  
+  %% Beginner Tier Criteria
+  D3A4 --> D3A4A[Total score < 40]
+  D3A4A --> D3A4B[Customer rating < 3.5]
+  D3A4B --> D3A4C[Services completed < 20]
+  D3A4C --> D3A4D[Beginner criteria set]
+  
+  %% Generate Engineer Reports
+  D4 --> D4A[Create Engineer Summary Report]
+  D4A --> D4B[Create Engineer Performance Report]
+  D4B --> D4C[Create Top Engineers Report]
+  D4C --> D4D[Create Engineer Growth Report]
+  D4D --> D4E[Engineer reports generated]
+  
+  %% Optimize Engineer Experience
+  D5 --> D5A[Implement Engineer Benefits]
+  D5A --> D5B[Personalize Engineer Experience]
+  D5B --> D5C[Optimize Engineer Journey]
+  D5C --> D5D[Enhance Engineer Engagement]
+  D5D --> D5E[Engineer experience optimized]
+  
+  %% Engineer Benefits
+  D5A --> D5A1[Expert benefits]
+  D5A1 --> D5A2[Professional benefits]
+  D5A2 --> D5A3[Standard benefits]
+  D5A3 --> D5A4[Beginner benefits]
+  D5A4 --> D5A5[Engineer benefits implemented]
+  
+  %% Expert Benefits
+  D5A1 --> D5A1A[Priority service assignments]
+  D5A1A --> D5A1B[Higher commission rates]
+  D5A1B --> D5A1C[Exclusive training programs]
+  D5A1C --> D5A1D[Expert benefits set]
+  
+  %% Professional Benefits
+  D5A2 --> D5A2A[Preferred service assignments]
+  D5A2A --> D5A2B[Standard commission rates]
+  D5A2B --> D5A2C[Professional training programs]
+  D5A2C --> D5A2D[Professional benefits set]
+  
+  %% Standard Benefits
+  D5A3 --> D5A3A[Regular service assignments]
+  D5A3A --> D5A3B[Standard commission rates]
+  D5A3B --> D5A3C[Basic training programs]
+  D5A3C --> D5A3D[Standard benefits set]
+  
+  %% Beginner Benefits
+  D5A4 --> D5A4A[Basic service assignments]
+  D5A4A --> D5A4B[Learning commission rates]
+  D5A4B --> D5A4C[Comprehensive training programs]
+  D5A4C --> D5A4D[Beginner benefits set]
+  
+  %% User Segmentation System
+  E --> E1[Define Segmentation Criteria]
+  E1 --> E2[Apply Segmentation Rules]
+  E2 --> E3[Analyze Segment Performance]
+  E3 --> E4[Optimize Segment Strategy]
+  E4 --> E5[User Segments Complete]
+  
+  %% Define Segmentation Criteria
+  E1 --> E1A[Define demographic criteria]
+  E1A --> E1B[Define behavioral criteria]
+  E1B --> E1C[Define value criteria]
+  E1C --> E1D[Define engagement criteria]
+  E1D --> E1E[Segmentation criteria defined]
+  
+  %% Demographic Criteria
+  E1A --> E1A1[Age groups]
+  E1A1 --> E1A2[Gender distribution]
+  E1A2 --> E1A3[Geographic location]
+  E1A3 --> E1A4[Income levels]
+  E1A4 --> E1A5[Demographic criteria set]
+  
+  %% Behavioral Criteria
+  E1B --> E1B1[Purchase frequency]
+  E1B1 --> E1B2[Product preferences]
+  E1B2 --> E1B3[Channel preferences]
+  E1B3 --> E1B4[Time patterns]
+  E1B4 --> E1B5[Behavioral criteria set]
+  
+  %% Value Criteria
+  E1C --> E1C1[Total spending]
+  E1C1 --> E1C2[Average order value]
+  E1C2 --> E1C3[Revenue potential]
+  E1C3 --> E1C4[Profitability]
+  E1C4 --> E1C5[Value criteria set]
+  
+  %% Engagement Criteria
+  E1D --> E1D1[Login frequency]
+  E1D1 --> E1D2[Feature usage]
+  E1D2 --> E1D3[Session duration]
+  E1D3 --> E1D4[Interaction patterns]
+  E1D4 --> E1D5[Engagement criteria set]
+  
+  %% Apply Segmentation Rules
+  E2 --> E2A[Apply demographic rules]
+  E2A --> E2B[Apply behavioral rules]
+  E2B --> E2C[Apply value rules]
+  E2C --> E2D[Apply engagement rules]
+  E2D --> E2E[Segmentation rules applied]
+  
+  %% Analyze Segment Performance
+  E3 --> E3A[Analyze segment size]
+  E3A --> E3B[Analyze segment growth]
+  E3B --> E3C[Analyze segment value]
+  E3C --> E3D[Analyze segment engagement]
+  E3D --> E3E[Segment performance analyzed]
+  
+  %% Optimize Segment Strategy
+  E4 --> E4A[Optimize segment targeting]
+  E4A --> E4B[Optimize segment messaging]
+  E4B --> E4C[Optimize segment offers]
+  E4C --> E4D[Optimize segment experience]
+  E4D --> E4E[Segment strategy optimized]
+  
+  %% Performance Ranking System
+  F --> F1[Define Performance Metrics]
+  F1 --> F2[Calculate Performance Scores]
+  F2 --> F3[Rank by Performance]
+  F3 --> F4[Analyze Performance Trends]
+  F4 --> F5[Performance Rankings Complete]
+  
+  %% Define Performance Metrics
+  F1 --> F1A[Define efficiency metrics]
+  F1A --> F1B[Define quality metrics]
+  F1B --> F1C[Define productivity metrics]
+  F1C --> F1D[Define satisfaction metrics]
+  F1D --> F1E[Performance metrics defined]
+  
+  %% Calculate Performance Scores
+  F2 --> F2A[Calculate efficiency scores]
+  F2A --> F2B[Calculate quality scores]
+  F2B --> F2C[Calculate productivity scores]
+  F2C --> F2D[Calculate satisfaction scores]
+  F2D --> F2E[Performance scores calculated]
+  
+  %% Rank by Performance
+  F3 --> F3A[Sort by total performance]
+  F3A --> F3B[Sort by efficiency]
+  F3B --> F3C[Sort by quality]
+  F3C --> F3D[Sort by productivity]
+  F3D --> F3E[Performance rankings assigned]
+  
+  %% Analyze Performance Trends
+  F4 --> F4A[Analyze performance over time]
+  F4A --> F4B[Identify performance patterns]
+  F4B --> F4C[Detect performance anomalies]
+  F4C --> F4D[Generate performance insights]
+  F4D --> F4E[Performance trends analyzed]
+  
+  %% Loyalty Ranking System
+  G --> G1[Define Loyalty Metrics]
+  G1 --> G2[Calculate Loyalty Scores]
+  G2 --> G3[Rank by Loyalty]
+  G3 --> G4[Analyze Loyalty Trends]
+  G4 --> G5[Loyalty Rankings Complete]
+  
+  %% Define Loyalty Metrics
+  G1 --> G1A[Define retention metrics]
+  G1A --> G1B[Define engagement metrics]
+  G1B --> G1C[Define advocacy metrics]
+  G1C --> G1D[Define satisfaction metrics]
+  G1D --> G1E[Loyalty metrics defined]
+  
+  %% Calculate Loyalty Scores
+  G2 --> G2A[Calculate retention scores]
+  G2A --> G2B[Calculate engagement scores]
+  G2B --> G2C[Calculate advocacy scores]
+  G2C --> G2D[Calculate satisfaction scores]
+  G2D --> G2E[Loyalty scores calculated]
+  
+  %% Rank by Loyalty
+  G3 --> G3A[Sort by total loyalty]
+  G3A --> G3B[Sort by retention]
+  G3B --> G3C[Sort by engagement]
+  G3C --> G3D[Sort by advocacy]
+  G3D --> G3E[Loyalty rankings assigned]
+  
+  %% Analyze Loyalty Trends
+  G4 --> G4A[Analyze loyalty over time]
+  G4A --> G4B[Identify loyalty patterns]
+  G4B --> G4C[Detect loyalty changes]
+  G4C --> G4D[Generate loyalty insights]
+  G4D --> G4E[Loyalty trends analyzed]
+  
+  %% End points
+  C6 --> Z[User Ranking Complete]
+  D6 --> Z
+  E5 --> Z
+  F5 --> Z
+  G5 --> Z

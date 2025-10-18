@@ -1,0 +1,241 @@
+%% Attribute Management Flow with Advanced Features
+%% View at https://mermaid.live
+flowchart TD
+  A[Attribute Management System] --> B[Attribute Operations]
+  
+  %% Attribute Operations
+  B --> C[Create Attribute]
+  B --> D[Update Attribute]
+  B --> E[Delete Attribute]
+  B --> F[View Attribute]
+  B --> G[List Attributes]
+  B --> H[Attribute Values]
+  
+  %% Create Attribute
+  C --> C1[Validate Input Data]
+  C1 --> C2[Check Attribute Uniqueness]
+  C2 --> C3[Generate Slug]
+  C3 --> C4[Set Default Values]
+  C4 --> C5[Create Attribute Record]
+  C5 --> C6[Return Created Attribute]
+  
+  %% Validate Input Data
+  C1 --> C1A[Validate Required Fields]
+  C1A --> C1B[Validate Attribute Type]
+  C1B --> C1C[Validate String Lengths]
+  C1C --> C1D[Validate Boolean Values]
+  C1D --> C1E[Validate Number Ranges]
+  
+  %% Check Attribute Uniqueness
+  C2 --> C2A[Check Name Uniqueness]
+  C2A --> C2B[Check NameEn Uniqueness]
+  C2B --> C2C[Check Slug Uniqueness]
+  C2C --> C2D{All Unique?}
+  C2D -->|Yes| C2E[Continue Creation]
+  C2D -->|No| C2F[Throw Uniqueness Error]
+  
+  %% Generate Slug
+  C3 --> C3A[Slugify English Name]
+  C3A --> C3B[Check Slug Uniqueness]
+  C3B --> C3C{Slug Unique?}
+  C3C -->|Yes| C3D[Use Generated Slug]
+  C3C -->|No| C3E[Throw Slug Exists Error]
+  
+  %% Set Default Values
+  C4 --> C4A[Set Order Value]
+  C4A --> C4B[Set Active Status]
+  C4B --> C4C[Set Filterable Status]
+  C4C --> C4D[Set Required Status]
+  C4D --> C4E[Set Show in Filters]
+  C4E --> C4F[Initialize Usage Count]
+  
+  %% Update Attribute
+  D --> D1[Find Attribute by ID]
+  D1 --> D2[Validate Attribute Exists]
+  D2 --> D3[Check if Deleted]
+  D3 --> D4[Validate Update Data]
+  D4 --> D5{Name Changed?}
+  D5 -->|Yes| D6[Update Slug]
+  D5 -->|No| D7[Update Other Fields]
+  D6 --> D8[Save Changes]
+  D7 --> D8
+  D8 --> D9[Return Updated Attribute]
+  
+  %% Update Slug
+  D6 --> D6A[Generate New Slug]
+  D6A --> D6B[Check Slug Uniqueness]
+  D6B --> D6C[Update Slug Field]
+  D6C --> D6D[Save Changes]
+  
+  %% Delete Attribute
+  E --> E1[Find Attribute by ID]
+  E1 --> E2[Validate Attribute Exists]
+  E2 --> E3[Check Usage Count]
+  E3 --> E4{In Use?}
+  E4 -->|Yes| E5[Throw In Use Error]
+  E4 -->|No| E6[Perform Soft Delete]
+  E6 --> E7[Set Deleted At]
+  E7 --> E8[Set Deleted By]
+  E8 --> E9[Save Changes]
+  E9 --> E10[Return Deletion Result]
+  
+  %% Check Usage Count
+  E3 --> E3A[Get Usage Count]
+  E3A --> E3B{Usage Count > 0?}
+  E3B -->|Yes| E3C[Attribute In Use]
+  E3B -->|No| E3D[Safe to Delete]
+  
+  %% View Attribute
+  F --> F1[Find Attribute by ID]
+  F1 --> F2[Populate Group Reference]
+  F2 --> F3[Get Attribute Values]
+  F3 --> F4[Sort Values by Order]
+  F4 --> F5[Return Complete Attribute]
+  
+  %% Get Attribute Values
+  F3 --> F3A[Query Values Collection]
+  F3A --> F3B[Filter by Attribute ID]
+  F3B --> F3C[Filter Active Values]
+  F3C --> F3D[Sort by Order and Value]
+  F3D --> F3E[Return Values Array]
+  
+  %% List Attributes
+  G --> G1[Build Query Filters]
+  G1 --> G2[Apply Search Filter]
+  G2 --> G3[Apply Status Filters]
+  G3 --> G4[Apply Type Filters]
+  G4 --> G5[Apply Group Filters]
+  G5 --> G6[Execute Query]
+  G6 --> G7[Populate Group References]
+  G7 --> G8[Sort Results]
+  G8 --> G9[Return Attribute List]
+  
+  %% Build Query Filters
+  G1 --> G1A[Initialize Query Object]
+  G1A --> G1B[Add Deleted Filter]
+  G1B --> G1C[Add Search Filter]
+  G1C --> G1D[Add Status Filters]
+  G1D --> G1E[Add Type Filters]
+  G1E --> G1F[Add Group Filters]
+  
+  %% Apply Search Filter
+  G2 --> G2A{Search Term Provided?}
+  G2A -->|Yes| G2B[Add Text Search]
+  G2A -->|No| G2C[Skip Search Filter]
+  G2B --> G2D[Search in Name and NameEn]
+  G2C --> G2E[Continue with Other Filters]
+  
+  %% Attribute Values Management
+  H --> H1[Create Value]
+  H --> H2[Update Value]
+  H --> H3[Delete Value]
+  H --> H4[List Values]
+  
+  %% Create Value
+  H1 --> H1A[Validate Attribute Exists]
+  H1A --> H1B[Validate Value Data]
+  H1B --> H1C[Check Value Uniqueness]
+  H1C --> H1D[Generate Value Slug]
+  H1D --> H1E[Set Default Values]
+  H1E --> H1F[Create Value Record]
+  H1F --> H1G[Return Created Value]
+  
+  %% Validate Value Data
+  H1B --> H1B1[Validate Required Fields]
+  H1B1 --> H1B2[Validate String Lengths]
+  H1B2 --> H1B3[Validate Hex Code Format]
+  H1B3 --> H1B4[Validate Image References]
+  
+  %% Check Value Uniqueness
+  H1C --> H1C1[Check Value Uniqueness in Attribute]
+  H1C1 --> H1C2[Check Slug Uniqueness]
+  H1C2 --> H1C3{Value Unique?}
+  H1C3 -->|Yes| H1C4[Continue Creation]
+  H1C3 -->|No| H1C5[Throw Value Exists Error]
+  
+  %% Update Value
+  H2 --> H2A[Find Value by ID]
+  H2A --> H2B[Validate Value Exists]
+  H2B --> H2C[Check Usage Count]
+  H2C --> H2D{In Use?}
+  H2D -->|Yes| H2E[Throw In Use Error]
+  H2D -->|No| H2F[Update Value Fields]
+  H2F --> H2G[Update Slug if Needed]
+  H2G --> H2H[Save Changes]
+  H2H --> H2I[Return Updated Value]
+  
+  %% Delete Value
+  H3 --> H3A[Find Value by ID]
+  H3A --> H3B[Validate Value Exists]
+  H3B --> H3C[Check Usage Count]
+  H3C --> H3D{In Use?}
+  H3D -->|Yes| H3E[Throw In Use Error]
+  H3D -->|No| H3F[Perform Soft Delete]
+  H3F --> H3G[Set Deleted At]
+  H3G --> H3H[Set Deleted By]
+  H3H --> H3I[Save Changes]
+  H3I --> H3J[Return Deletion Result]
+  
+  %% List Values
+  H4 --> H4A[Get Attribute ID]
+  H4A --> H4B[Query Values Collection]
+  H4B --> H4C[Filter by Attribute ID]
+  H4C --> H4D[Filter Active Values]
+  H4D --> H4E[Sort by Order and Value]
+  H4E --> H4F[Return Values List]
+  
+  %% Usage Tracking
+  I[Usage Tracking] --> I1[Increment Usage]
+  I1 --> I2[Decrement Usage]
+  I2 --> I3[Update Usage Counts]
+  I3 --> I4[Track Usage Changes]
+  
+  %% Increment Usage
+  I1 --> I1A[Increment Attribute Usage]
+  I1A --> I1B[Increment Value Usage]
+  I1B --> I1C[Update Database]
+  I1C --> I1D[Log Usage Change]
+  
+  %% Decrement Usage
+  I2 --> I2A[Decrement Attribute Usage]
+  I2A --> I2B[Decrement Value Usage]
+  I2B --> I2C[Update Database]
+  I2C --> I2D[Log Usage Change]
+  
+  %% Statistics Management
+  J[Statistics Management] --> J1[Get Attribute Stats]
+  J1 --> J2[Get Value Stats]
+  J2 --> J3[Get Usage Stats]
+  J3 --> J4[Generate Statistics Report]
+  
+  %% Get Attribute Stats
+  J1 --> J1A[Count Total Attributes]
+  J1A --> J1B[Count Active Attributes]
+  J1B --> J1C[Count Filterable Attributes]
+  J1C --> J1D[Count by Type]
+  J1D --> J1E[Return Attribute Stats]
+  
+  %% Get Value Stats
+  J2 --> J2A[Count Total Values]
+  J2A --> J2B[Count Active Values]
+  J2B --> J2C[Count by Attribute]
+  J2C --> J2D[Return Value Stats]
+  
+  %% Get Usage Stats
+  J3 --> J3A[Get Usage Counts]
+  J3A --> J3B[Get Most Used Attributes]
+  J3B --> J3C[Get Most Used Values]
+  J3C --> J3D[Return Usage Stats]
+  
+  %% End points
+  C6 --> Z[End]
+  D9 --> Z
+  E10 --> Z
+  F5 --> Z
+  G9 --> Z
+  H1G --> Z
+  H2I --> Z
+  H3J --> Z
+  H4F --> Z
+  I4 --> Z
+  J4 --> Z

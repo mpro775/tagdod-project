@@ -1,0 +1,447 @@
+%% Brand Status Management and Toggle System
+%% View at https://mermaid.live
+flowchart TD
+  A[Brand Status Management System] --> B[Status Operations]
+  
+  %% Status Operations
+  B --> C[Toggle Brand Status]
+  B --> D[Activate Brand]
+  B --> E[Deactivate Brand]
+  B --> F[Check Status]
+  B --> G[Status History]
+  B --> H[Status Analytics]
+  
+  %% Toggle Brand Status
+  C --> C1[Find Brand by ID]
+  C1 --> C2[Get Current Status]
+  C2 --> C3[Toggle Status Value]
+  C3 --> C4[Update Brand Status]
+  C4 --> C5[Log Status Change]
+  C5 --> C6[Return Updated Brand]
+  
+  %% Find Brand by ID
+  C1 --> C1A[Query Brand by ID]
+  C1A --> C1B[Validate Brand Exists]
+  C1B --> C1C[Check Brand Access]
+  C1C --> C1D[Return Brand Data]
+  
+  %% Query Brand by ID
+  C1A --> C1A1[Execute Brand Query]
+  C1A1 --> C1A2[Check Query Results]
+  C1A2 --> C1A3[Validate Brand Found]
+  C1A3 --> C1A4[Return Brand Object]
+  
+  %% Get Current Status
+  C2 --> C2A[Get isActive Field]
+  C2A --> C2B[Check Current Status]
+  C2B --> C2C[Return Status Value]
+  
+  %% Get isActive Field
+  C2A --> C2A1[Access isActive Property]
+  C2A1 --> C2A2[Check Status Value]
+  C2A2 --> C2A3[Return Boolean Status]
+  
+  %% Toggle Status Value
+  C3 --> C3A[Invert Current Status]
+  C3A --> C3B[Set New Status]
+  C3B --> C3C[Validate New Status]
+  C3C --> C3D[Return Toggled Status]
+  
+  %% Invert Current Status
+  C3A --> C3A1[Check Current Status]
+  C3A1 --> C3A2[Invert Boolean Value]
+  C3A2 --> C3A3[Return Inverted Status]
+  
+  %% Update Brand Status
+  C4 --> C4A[Update isActive Field]
+  C4A --> C4B[Update Status Timestamp]
+  C4B --> C4C[Save Brand Changes]
+  C4C --> C4D[Return Update Status]
+  
+  %% Update isActive Field
+  C4A --> C4A1[Set New isActive Value]
+  C4A1 --> C4A2[Validate Status Change]
+  C4A2 --> C4A3[Return Status Update]
+  
+  %% Update Status Timestamp
+  C4B --> C4B1[Set Updated At Timestamp]
+  C4B1 --> C4B2[Set Status Change Time]
+  C4B2 --> C4B3[Return Timestamp Update]
+  
+  %% Save Brand Changes
+  C4C --> C4C1[Execute Save Operation]
+  C4C1 --> C4C2[Handle Save Response]
+  C4C2 --> C4C3[Validate Save Success]
+  C4C3 --> C4C4[Return Save Status]
+  
+  %% Log Status Change
+  C5 --> C5A[Create Status Change Log]
+  C5A --> C5B[Log Previous Status]
+  C5B --> C5C[Log New Status]
+  C5C --> C5D[Log Change Timestamp]
+  C5D --> C5E[Save Status Log]
+  
+  %% Create Status Change Log
+  C5A --> C5A1[Initialize Log Object]
+  C5A1 --> C5A2[Set Log Properties]
+  C5A2 --> C5A3[Set Log Metadata]
+  C5A3 --> C5A4[Return Log Object]
+  
+  %% Log Previous Status
+  C5B --> C5B1[Get Previous Status]
+  C5B1 --> C5B2[Set Previous Status in Log]
+  C5B2 --> C5B3[Return Previous Status Log]
+  
+  %% Log New Status
+  C5C --> C5C1[Get New Status]
+  C5C1 --> C5C2[Set New Status in Log]
+  C5C2 --> C5C3[Return New Status Log]
+  
+  %% Log Change Timestamp
+  C5D --> C5D1[Get Current Timestamp]
+  C5D1 --> C5D2[Set Change Timestamp]
+  C5D2 --> C5D3[Return Timestamp Log]
+  
+  %% Save Status Log
+  C5E --> C5E1[Execute Log Save]
+  C5E1 --> C5E2[Handle Log Save Response]
+  C5E2 --> C5E3[Validate Log Save Success]
+  C5E3 --> C5E4[Return Log Save Status]
+  
+  %% Activate Brand
+  D --> D1[Find Brand by ID]
+  D1 --> D2[Check Current Status]
+  D2 --> D3{Already Active?}
+  D3 -->|Yes| D4[Return Already Active]
+  D3 -->|No| D5[Set Active Status]
+  D5 --> D6[Update Brand]
+  D6 --> D7[Log Activation]
+  D7 --> D8[Return Activated Brand]
+  
+  %% Check Current Status
+  D2 --> D2A[Get isActive Field]
+  D2A --> D2B[Check Status Value]
+  D2B --> D2C[Return Status Check]
+  
+  %% Set Active Status
+  D5 --> D5A[Set isActive = true]
+  D5A --> D5B[Set Activation Timestamp]
+  D5B --> D5C[Return Active Status]
+  
+  %% Set isActive = true
+  D5A --> D5A1[Set Status to Active]
+  D5A1 --> D5A2[Validate Active Status]
+  D5A2 --> D5A3[Return Active Status Set]
+  
+  %% Set Activation Timestamp
+  D5B --> D5B1[Get Current Timestamp]
+  D5B1 --> D5B2[Set Activation Time]
+  D5B2 --> D5B3[Return Activation Timestamp]
+  
+  %% Update Brand
+  D6 --> D6A[Execute Brand Update]
+  D6A --> D6B[Handle Update Response]
+  D6B --> D6C[Validate Update Success]
+  D6C --> D6D[Return Update Status]
+  
+  %% Log Activation
+  D7 --> D7A[Create Activation Log]
+  D7A --> D7B[Log Activation Event]
+  D7B --> D7C[Save Activation Log]
+  D7C --> D7D[Return Activation Log Status]
+  
+  %% Create Activation Log
+  D7A --> D7A1[Initialize Activation Log]
+  D7A1 --> D7A2[Set Activation Properties]
+  D7A2 --> D7A3[Set Activation Metadata]
+  D7A3 --> D7A4[Return Activation Log Object]
+  
+  %% Log Activation Event
+  D7B --> D7B1[Set Activation Event Type]
+  D7B1 --> D7B2[Set Activation Timestamp]
+  D7B2 --> D7B3[Set Activation Details]
+  D7B3 --> D7B4[Return Activation Event Log]
+  
+  %% Save Activation Log
+  D7C --> D7C1[Execute Activation Log Save]
+  D7C1 --> D7C2[Handle Activation Log Response]
+  D7C2 --> D7C3[Validate Activation Log Save]
+  D7C3 --> D7C4[Return Activation Log Save Status]
+  
+  %% Deactivate Brand
+  E --> E1[Find Brand by ID]
+  E1 --> E2[Check Current Status]
+  E2 --> E3{Already Inactive?}
+  E3 -->|Yes| E4[Return Already Inactive]
+  E3 -->|No| E5[Set Inactive Status]
+  E5 --> E6[Update Brand]
+  E6 --> E7[Log Deactivation]
+  E7 --> E8[Return Deactivated Brand]
+  
+  %% Check Current Status
+  E2 --> E2A[Get isActive Field]
+  E2A --> E2B[Check Status Value]
+  E2B --> E2C[Return Status Check]
+  
+  %% Set Inactive Status
+  E5 --> E5A[Set isActive = false]
+  E5A --> E5B[Set Deactivation Timestamp]
+  E5B --> E5C[Return Inactive Status]
+  
+  %% Set isActive = false
+  E5A --> E5A1[Set Status to Inactive]
+  E5A1 --> E5A2[Validate Inactive Status]
+  E5A2 --> E5A3[Return Inactive Status Set]
+  
+  %% Set Deactivation Timestamp
+  E5B --> E5B1[Get Current Timestamp]
+  E5B1 --> E5B2[Set Deactivation Time]
+  E5B2 --> E5B3[Return Deactivation Timestamp]
+  
+  %% Update Brand
+  E6 --> E6A[Execute Brand Update]
+  E6A --> E6B[Handle Update Response]
+  E6B --> E6C[Validate Update Success]
+  E6C --> E6D[Return Update Status]
+  
+  %% Log Deactivation
+  E7 --> E7A[Create Deactivation Log]
+  E7A --> E7B[Log Deactivation Event]
+  E7B --> E7C[Save Deactivation Log]
+  E7C --> E7D[Return Deactivation Log Status]
+  
+  %% Create Deactivation Log
+  E7A --> E7A1[Initialize Deactivation Log]
+  E7A1 --> E7A2[Set Deactivation Properties]
+  E7A2 --> E7A3[Set Deactivation Metadata]
+  E7A3 --> E7A4[Return Deactivation Log Object]
+  
+  %% Log Deactivation Event
+  E7B --> E7B1[Set Deactivation Event Type]
+  E7B1 --> E7B2[Set Deactivation Timestamp]
+  E7B2 --> E7B3[Set Deactivation Details]
+  E7B3 --> E7B4[Return Deactivation Event Log]
+  
+  %% Save Deactivation Log
+  E7C --> E7C1[Execute Deactivation Log Save]
+  E7C1 --> E7C2[Handle Deactivation Log Response]
+  E7C2 --> E7C3[Validate Deactivation Log Save]
+  E7C3 --> E7C4[Return Deactivation Log Save Status]
+  
+  %% Check Status
+  F --> F1[Find Brand by ID]
+  F1 --> F2[Get Brand Status]
+  F2 --> F3[Return Status Information]
+  
+  %% Find Brand by ID
+  F1 --> F1A[Query Brand by ID]
+  F1A --> F1B[Validate Brand Exists]
+  F1B --> F1C[Return Brand Data]
+  
+  %% Get Brand Status
+  F2 --> F2A[Get isActive Field]
+  F2A --> F2B[Get Status Timestamp]
+  F2B --> F2C[Get Status History]
+  F2C --> F2D[Return Status Information]
+  
+  %% Get isActive Field
+  F2A --> F2A1[Access isActive Property]
+  F2A1 --> F2A2[Check Status Value]
+  F2A2 --> F2A3[Return Boolean Status]
+  
+  %% Get Status Timestamp
+  F2B --> F2B1[Get Updated At Timestamp]
+  F2B1 --> F2B2[Get Status Change Time]
+  F2B2 --> F2B3[Return Status Timestamp]
+  
+  %% Get Status History
+  F2C --> F2C1[Query Status History]
+  F2C1 --> F2C2[Get Status Changes]
+  F2C2 --> F2C3[Return Status History]
+  
+  %% Query Status History
+  F2C1 --> F2C1A[Query Status Logs]
+  F2C1A --> F2C1B[Filter by Brand ID]
+  F2C1B --> F2C1C[Sort by Timestamp]
+  F2C1C --> F2C1D[Return Status History Data]
+  
+  %% Status History
+  G --> G1[Get Status History]
+  G1 --> G2[Filter Status History]
+  G2 --> G3[Sort Status History]
+  G3 --> G4[Return Status History]
+  
+  %% Get Status History
+  G1 --> G1A[Query Status Logs]
+  G1A --> G1B[Get Status Changes]
+  G1B --> G1C[Get Status Timestamps]
+  G1C --> G1D[Return Status History Data]
+  
+  %% Query Status Logs
+  G1A --> G1A1[Execute Status Log Query]
+  G1A1 --> G1A2[Filter by Brand ID]
+  G1A2 --> G1A3[Get Status Log Results]
+  G1A3 --> G1A4[Return Status Log Data]
+  
+  %% Filter Status History
+  G2 --> G2A[Filter by Date Range]
+  G2A --> G2B[Filter by Status Type]
+  G2B --> G2C[Filter by User]
+  G2C --> G2D[Return Filtered History]
+  
+  %% Filter by Date Range
+  G2A --> G2A1[Set Start Date]
+  G2A1 --> G2A2[Set End Date]
+  G2A2 --> G2A3[Apply Date Range Filter]
+  G2A3 --> G2A4[Return Date Range Results]
+  
+  %% Filter by Status Type
+  G2B --> G2B1[Filter by Activation]
+  G2B1 --> G2B2[Filter by Deactivation]
+  G2B2 --> G2B3[Filter by Toggle]
+  G2B3 --> G2B4[Return Status Type Results]
+  
+  %% Sort Status History
+  G3 --> G3A[Sort by Timestamp]
+  G3A --> G3B[Sort by Status Type]
+  G3B --> G3C[Sort by User]
+  G3C --> G3D[Return Sorted History]
+  
+  %% Sort by Timestamp
+  G3A --> G3A1[Sort by Date Ascending]
+  G3A1 --> G3A2[Sort by Date Descending]
+  G3A2 --> G3A3[Return Timestamp Sorted Results]
+  
+  %% Sort by Status Type
+  G3B --> G3B1[Sort by Activation First]
+  G3B1 --> G3B2[Sort by Deactivation First]
+  G3B2 --> G3B3[Return Status Type Sorted Results]
+  
+  %% Status Analytics
+  H --> H1[Track Status Changes]
+  H1 --> H2[Analyze Status Patterns]
+  H2 --> H3[Generate Status Reports]
+  H3 --> H4[Optimize Status Management]
+  
+  %% Track Status Changes
+  H1 --> H1A[Track Activation Events]
+  H1A --> H1B[Track Deactivation Events]
+  H1B --> H1C[Track Toggle Events]
+  H1C --> H1D[Track Status Metrics]
+  
+  %% Track Activation Events
+  H1A --> H1A1[Count Activation Events]
+  H1A1 --> H1A2[Track Activation Frequency]
+  H1A2 --> H1A3[Track Activation Patterns]
+  H1A3 --> H1A4[Return Activation Analytics]
+  
+  %% Track Deactivation Events
+  H1B --> H1B1[Count Deactivation Events]
+  H1B1 --> H1B2[Track Deactivation Frequency]
+  H1B2 --> H1B3[Track Deactivation Patterns]
+  H1B3 --> H1B4[Return Deactivation Analytics]
+  
+  %% Track Toggle Events
+  H1C --> H1C1[Count Toggle Events]
+  H1C1 --> H1C2[Track Toggle Frequency]
+  H1C2 --> H1C3[Track Toggle Patterns]
+  H1C3 --> H1C4[Return Toggle Analytics]
+  
+  %% Track Status Metrics
+  H1D --> H1D1[Track Status Duration]
+  H1D1 --> H1D2[Track Status Stability]
+  H1D2 --> H1D3[Track Status Changes]
+  H1D3 --> H1D4[Return Status Metrics]
+  
+  %% Analyze Status Patterns
+  H2 --> H2A[Analyze Activation Patterns]
+  H2A --> H2B[Analyze Deactivation Patterns]
+  H2B --> H2C[Analyze Toggle Patterns]
+  H2C --> H2D[Analyze Status Trends]
+  
+  %% Analyze Activation Patterns
+  H2A --> H2A1[Analyze Activation Frequency]
+  H2A1 --> H2A2[Analyze Activation Timing]
+  H2A2 --> H2A3[Analyze Activation Causes]
+  H2A3 --> H2A4[Return Activation Analysis]
+  
+  %% Analyze Deactivation Patterns
+  H2B --> H2B1[Analyze Deactivation Frequency]
+  H2B1 --> H2B2[Analyze Deactivation Timing]
+  H2B2 --> H2B3[Analyze Deactivation Causes]
+  H2B3 --> H2B4[Return Deactivation Analysis]
+  
+  %% Analyze Toggle Patterns
+  H2C --> H2C1[Analyze Toggle Frequency]
+  H2C1 --> H2C2[Analyze Toggle Timing]
+  H2C2 --> H2C3[Analyze Toggle Causes]
+  H2C3 --> H2C4[Return Toggle Analysis]
+  
+  %% Analyze Status Trends
+  H2D --> H2D1[Analyze Status Trends Over Time]
+  H2D1 --> H2D2[Analyze Status Correlations]
+  H2D2 --> H2D3[Analyze Status Predictions]
+  H2D3 --> H2D4[Return Status Trend Analysis]
+  
+  %% Generate Status Reports
+  H3 --> H3A[Generate Status Summary Report]
+  H3A --> H3B[Generate Status Change Report]
+  H3B --> H3C[Generate Status Analytics Report]
+  H3C --> H3D[Export Status Reports]
+  
+  %% Generate Status Summary Report
+  H3A --> H3A1[Generate Status Overview]
+  H3A1 --> H3A2[Generate Status Statistics]
+  H3A2 --> H3A3[Generate Status Metrics]
+  H3A3 --> H3A4[Return Status Summary Report]
+  
+  %% Generate Status Change Report
+  H3B --> H3B1[Generate Change History]
+  H3B1 --> H3B2[Generate Change Patterns]
+  H3B2 --> H3B3[Generate Change Analytics]
+  H3B3 --> H3B4[Return Status Change Report]
+  
+  %% Generate Status Analytics Report
+  H3C --> H3C1[Generate Analytics Overview]
+  H3C1 --> H3C2[Generate Analytics Statistics]
+  H3C2 --> H3C3[Generate Analytics Insights]
+  H3C3 --> H3C4[Return Status Analytics Report]
+  
+  %% Export Status Reports
+  H3D --> H3D1[Export to PDF]
+  H3D1 --> H3D2[Export to Excel]
+  H3D2 --> H3D3[Export to CSV]
+  H3D3 --> H3D4[Export to JSON]
+  H3D4 --> H3D5[Return Export Status]
+  
+  %% Optimize Status Management
+  H4 --> H4A[Optimize Status Queries]
+  H4A --> H4B[Optimize Status Performance]
+  H4B --> H4C[Optimize Status User Experience]
+  H4C --> H4D[Enhance Status Management]
+  
+  %% Optimize Status Queries
+  H4A --> H4A1[Optimize Status Query Performance]
+  H4A1 --> H4A2[Optimize Status Query Structure]
+  H4A2 --> H4A3[Optimize Status Query Caching]
+  H4A3 --> H4A4[Return Status Query Optimization]
+  
+  %% Optimize Status Performance
+  H4B --> H4B1[Optimize Status Response Time]
+  H4B1 --> H4B2[Optimize Status Throughput]
+  H4B2 --> H4B3[Optimize Status Scalability]
+  H4B3 --> H4B4[Return Status Performance Optimization]
+  
+  %% Optimize Status User Experience
+  H4C --> H4C1[Optimize Status Interface]
+  H4C1 --> H4C2[Optimize Status Interactions]
+  H4C2 --> H4C3[Optimize Status Feedback]
+  H4C3 --> H4C4[Return Status UX Optimization]
+  
+  %% End points
+  C6 --> Z[End]
+  D8 --> Z
+  E8 --> Z
+  F3 --> Z
+  G4 --> Z
+  H4D --> Z

@@ -1,7 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
+import compression from 'compression';
 import { AppModule } from './app.module';
+import { setupSwagger } from './swagger';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -17,6 +19,13 @@ async function bootstrap() {
     process.exit(1);
   }
 
+  // Global prefix
+  app.setGlobalPrefix('api/v1');
+
+  // Security and performance middleware
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(compression());
+
   // Global validation pipe
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -27,33 +36,14 @@ async function bootstrap() {
   }));
 
   // CORS configuration
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-    credentials: true,
+  const allowed = (process.env.CORS_ORIGINS ?? '').split(',').filter(Boolean);
+  app.enableCors({ 
+    origin: allowed.length ? allowed : [/localhost/], 
+    credentials: true 
   });
 
-  // Swagger documentation
-  const config = new DocumentBuilder()
-    .setTitle('Solar Commerce API')
-    .setDescription('Complete e-commerce platform for solar products')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addTag('auth', 'Authentication endpoints')
-    .addTag('users', 'User management')
-    .addTag('products', 'Product management')
-    .addTag('analytics', 'Analytics and reporting')
-    .addTag('cart', 'Shopping cart')
-    .addTag('checkout', 'Order processing')
-    .addTag('support', 'Customer support')
-    .addTag('services', 'Service requests')
-    .addTag('marketing', 'Marketing and campaigns')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
-
-  // Global prefix
-  app.setGlobalPrefix('api');
+  // Setup Swagger documentation
+  setupSwagger(app);
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

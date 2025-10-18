@@ -1,19 +1,116 @@
-%% Auth: Signup & Login (Phone + Password)
+%% Auth: OTP-based Authentication System
 %% View at https://mermaid.live
 flowchart TD
-  A[Start] --> B{Existing user?}
-  B -- No: Signup --> S1[Enter phone, name, password]
-  S1 --> S2[Validate phone uniqueness]
-  S2 -- Unique --> S3[Hash password]
-  S3 --> S4[Create User {phone, passwordHash, roles=["user"], status=ACTIVE}]
-  S4 --> L1[Proceed to Login]
-  B -- Yes: Login --> L1[Enter phone + password]
-  L1 --> L2[Find user by phone]
-  L2 -->|Not found| E1[Fail: invalid credentials]
-  L2 -->|Found| L3[Compare passwordHash]
-  L3 -->|Mismatch| E1
-  L3 -->|Match| L4{status allowed?}
-  L4 -->|SUSPENDED/PENDING| E2[Fail: account not active]
-  L4 -->|ACTIVE| L5[Issue JWT, create session]
-  L5 --> L6[Return profile, roles, permissions]
-  L6 --> Z[End]
+  A[Start] --> B{Action?}
+  B -->|Send OTP| C[Enter phone number]
+  B -->|Verify OTP| D[Enter phone + OTP code]
+  B -->|Forgot Password| E[Enter phone for reset]
+  B -->|Reset Password| F[Enter phone + OTP + new password]
+  B -->|Set Password| G[Set password for existing user]
+  B -->|Profile Management| H[Manage user profile]
+  B -->|Capability Request| I[Request engineer/wholesale access]
+  B -->|Admin Approval| J[Admin approve/deny requests]
+  
+  %% Send OTP Flow
+  C --> C1[Validate phone format]
+  C1 --> C2[Generate random OTP code]
+  C2 --> C3[Store hashed OTP in Redis with TTL]
+  C3 --> C4[Send SMS with OTP]
+  C4 --> C5[Return success + devCode if dev env]
+  
+  %% Verify OTP Flow
+  D --> D1[Find OTP in Redis by phone]
+  D1 --> D2{OTP exists?}
+  D2 -->|No| D3[Error: OTP expired/invalid]
+  D2 -->|Yes| D3[Verify OTP code]
+  D3 --> D4{Code matches?}
+  D4 -->|No| D5[Error: Invalid OTP]
+  D4 -->|Yes| D6[Check if user exists]
+  D6 --> D7{User exists?}
+  D7 -->|No| D8[Create new user with default roles]
+  D7 -->|Yes| D9[Load existing user]
+  D8 --> D10[Set user status to ACTIVE]
+  D9 --> D11[Check user status]
+  D11 --> D12{Status allowed?}
+  D12 -->|SUSPENDED/PENDING| D13[Error: Account not active]
+  D12 -->|ACTIVE| D14[Update lastActivityAt]
+  D10 --> D15[Generate JWT tokens]
+  D14 --> D15
+  D15 --> D16[Return tokens + user data]
+  
+  %% Forgot Password Flow
+  E --> E1[Find user by phone]
+  E1 --> E2{User exists?}
+  E2 -->|No| E3[Error: User not found]
+  E2 -->|Yes| E4[Send OTP with context='reset']
+  E4 --> E5[Return success]
+  
+  %% Reset Password Flow
+  F --> F1[Verify OTP with context='reset']
+  F1 --> F2{OTP valid?}
+  F2 -->|No| F3[Error: Invalid OTP]
+  F2 -->|Yes| F4[Hash new password with bcrypt]
+  F4 --> F5[Update user passwordHash]
+  F5 --> F6[Return success]
+  
+  %% Set Password Flow (Protected)
+  G --> G1[Verify JWT token]
+  G1 --> G2{Token valid?}
+  G2 -->|No| G3[Error: Unauthorized]
+  G2 -->|Yes| G4[Hash password with bcrypt]
+  G4 --> G5[Update user passwordHash]
+  G5 --> G6[Return success]
+  
+  %% Profile Management Flow
+  H --> H1[Verify JWT token]
+  H1 --> H2{Token valid?}
+  H2 -->|No| H3[Error: Unauthorized]
+  H2 -->|Yes| H4{Action?}
+  H4 -->|Get Profile| H5[Return user + capabilities data]
+  H4 -->|Update Profile| H6[Update allowed fields]
+  H4 -->|Delete Account| H7[Soft delete user + capabilities]
+  
+  %% Capability Request Flow
+  I --> I1[Verify JWT token]
+  I1 --> I2{Token valid?}
+  I2 -->|No| I3[Error: Unauthorized]
+  I2 -->|Yes| I4[Check capability type]
+  I4 --> I5{Type?}
+  I5 -->|Engineer| I6[Require jobTitle]
+  I5 -->|Wholesale| I7[Set pending status]
+  I6 --> I8[Create capability request]
+  I7 --> I8
+  I8 --> I9[Return success]
+  
+  %% Admin Approval Flow
+  J --> J1[Verify JWT + Admin role]
+  J1 --> J2{Admin authorized?}
+  J2 -->|No| J3[Error: Forbidden]
+  J2 -->|Yes| J4[Get pending requests]
+  J4 --> J5{Action?}
+  J5 -->|View Pending| J6[Return pending capability requests]
+  J5 -->|Approve/Deny| J7[Update capability status]
+  J7 --> J8[Set wholesale discount if approved]
+  J8 --> J9[Return success]
+  
+  %% End points
+  C5 --> Z[End]
+  D16 --> Z
+  D3 --> Z
+  D5 --> Z
+  D13 --> Z
+  E3 --> Z
+  E5 --> Z
+  F3 --> Z
+  F6 --> Z
+  G3 --> Z
+  G6 --> Z
+  H3 --> Z
+  H5 --> Z
+  H6 --> Z
+  H7 --> Z
+  I3 --> Z
+  I9 --> Z
+  J3 --> Z
+  J6 --> Z
+  J9 --> Z

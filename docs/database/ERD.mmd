@@ -1,5 +1,6 @@
-%% Mermaid ER diagram for TagDoD database (MongoDB via Mongoose)
+%% Mermaid ER diagram for Tagadodo database (MongoDB via Mongoose)
 %% View online: https://mermaid.live
+%% Updated to reflect current implementation
 
 erDiagram
   User ||--o{ Address : has
@@ -7,15 +8,18 @@ erDiagram
   User ||--o{ Order : places
   User ||--o{ Favorite : marks
   User ||--o{ Media : uploads
+  User ||--o{ SupportTicket : creates
+  User ||--o{ ServiceRequest : requests
 
   Category ||--o{ Product : categorizes
-  Brand ||--o{ Product : brands
+  Category ||--o{ Category : parent_child
 
   Media ||--o{ Product : used_in
   Media ||--o{ Variant : used_in
   Media ||--o{ Category : used_in
 
   Attribute ||--o{ AttributeValue : defines
+  AttributeGroup ||--o{ Attribute : groups
   Product ||--o{ Variant : has
   Product ||--o{ Favorite : is_favorited
   Product ||--o{ CartItem : referenced_by
@@ -27,6 +31,10 @@ erDiagram
 
   Cart ||--o{ CartItem : contains
   Order ||--o{ OrderItem : contains
+  Order ||--o{ Order : converted_from
+
+  SupportTicket ||--o{ SupportMessage : contains
+  ServiceRequest ||--o{ EngineerOffer : receives
 
   User {
     string phone PK "unique"
@@ -39,6 +47,8 @@ erDiagram
     string[] roles
     string[] permissions
     string status
+    string preferredCurrency
+    date lastActivityAt
     date deletedAt
     string deletedBy
     string suspendedReason
@@ -176,42 +186,25 @@ erDiagram
   }
 
   Product {
+    ObjectId categoryId FK
     string name
-    string nameEn
     string slug "unique"
     string description
-    string descriptionEn
-    ObjectId categoryId FK
     string brandId
-    string sku
-    string mainImage
-    ObjectId mainImageId FK "Media"
-    ObjectId[] imageIds FK "Media[]"
-    string[] images
-    ObjectId[] attributes FK "Attribute[]"
-    string metaTitle
-    string metaDescription
-    string[] metaKeywords
-    string status
-    boolean isActive
+    number adminRating
+    string[] tags
     boolean isFeatured
     boolean isNew
-    boolean isBestseller
-    number order
-    number viewsCount
-    number salesCount
-    number variantsCount
-    number reviewsCount
-    number averageRating
-    date deletedAt
-    ObjectId deletedBy FK "User"
+    string status
+    object[] images
+    object[] specs
     date createdAt
     date updatedAt
   }
 
   Variant {
     ObjectId productId FK
-    string sku "unique,sparse"
+    string sku
     object attributeValues "[{attributeId,valueId,name?,value?}]"
     number price
     number compareAtPrice
@@ -273,8 +266,6 @@ erDiagram
   Order {
     string orderNumber "unique"
     ObjectId userId FK
-    string accountType
-    string source
     string status
     string paymentStatus
     object[] statusHistory
@@ -286,51 +277,28 @@ erDiagram
     string appliedCouponCode
     number couponDiscount
     object couponDetails
-    object[] autoAppliedCoupons
-    number autoDiscountsTotal
     number shippingCost
-    number shippingDiscount
     number tax
-    number taxRate
     number totalDiscount
     number total
     string paymentMethod
     string paymentProvider
-    string paymentIntentId "sparse"
-    string paymentTransactionId
+    string paymentIntentId
     date paidAt
     string shippingMethod
-    string shippingCompany
     string trackingNumber
     string trackingUrl
     date estimatedDeliveryDate
-    date actualDeliveryDate
     date deliveredAt
+    string customerNotes
+    string adminNotes
     boolean isRefunded
     number refundAmount
     string refundReason
     date refundedAt
-    ObjectId refundedBy FK "User"
-    boolean isReturned
-    string returnReason
-    date returnedAt
-    object[] returnItems
-    string customerNotes
-    string adminNotes
-    string internalNotes
-    string invoiceNumber
-    string invoiceUrl
-    string receiptUrl
-    number rating
-    string review
-    date ratedAt
-    object metadata
-    date confirmedAt
-    date processingStartedAt
-    date shippedAt
-    date completedAt
     date cancelledAt
-    ObjectId cancelledBy FK "User"
+    string cancellationReason
+    object metadata
     date createdAt
     date updatedAt
   }
@@ -368,4 +336,82 @@ erDiagram
     date deletedAt
     date createdAt
     date updatedAt
+  }
+
+  SupportTicket {
+    ObjectId userId FK "User"
+    string title
+    string description
+    string status
+    string priority
+    string category
+    ObjectId assignedTo FK "User"
+    date dueDate
+    date closedAt
+    number slaHours
+    date createdAt
+    date updatedAt
+  }
+
+  SupportMessage {
+    ObjectId ticketId FK "SupportTicket"
+    ObjectId senderId FK "User"
+    string content
+    string type
+    object[] attachments
+    date createdAt
+  }
+
+  ServiceRequest {
+    ObjectId userId FK "User"
+    string title
+    string description
+    string status
+    string category
+    object location
+    date requestedDate
+    date createdAt
+    date updatedAt
+  }
+
+  EngineerOffer {
+    ObjectId serviceRequestId FK "ServiceRequest"
+    ObjectId engineerId FK "User"
+    string description
+    number price
+    string status
+    date validUntil
+    date createdAt
+    date updatedAt
+  }
+
+  AttributeGroup {
+    string name
+    string nameEn
+    string slug
+    number order
+    boolean isActive
+    date createdAt
+    date updatedAt
+  }
+
+  Notification {
+    ObjectId userId FK "User"
+    string title
+    string message
+    string type
+    string status
+    object data
+    date readAt
+    date createdAt
+  }
+
+  AnalyticsSnapshot {
+    date date
+    string period
+    object users
+    object products
+    object orders
+    object services
+    date createdAt
   }

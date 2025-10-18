@@ -1,0 +1,141 @@
+%% Authentication and Authorization Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[API Request] --> B[Extract Authorization Header]
+  B --> C{Header Present?}
+  C -->|No| D[Return 401 Unauthorized]
+  C -->|Yes| E[Parse Bearer Token]
+  E --> F[Validate Token Format]
+  F --> G{Valid Format?}
+  G -->|No| D
+  G -->|Yes| H[Verify JWT Token]
+  H --> I{Token Valid?}
+  I -->|No| J[Return 401 Invalid Token]
+  I -->|Yes| K[Decode User Information]
+  K --> L[Extract User ID and Phone]
+  L --> M[Load User Capabilities]
+  M --> N[Check Required Permission]
+  N --> O{Has Permission?}
+  O -->|No| P[Return 403 Forbidden]
+  O -->|Yes| Q[Check Resource Access]
+  Q --> R{Can Access Resource?}
+  R -->|No| P
+  R -->|Yes| S[Execute Operation]
+  S --> T[Log Access Attempt]
+  T --> U[Return Response]
+  
+  %% Token Validation Process
+  H --> H1[Check Token Signature]
+  H1 --> H2[Verify Token Expiry]
+  H2 --> H3[Validate Token Issuer]
+  H3 --> H4[Check Token Audience]
+  H4 --> H5[Validate Token Claims]
+  
+  %% User Information Extraction
+  K --> K1[Extract sub (User ID)]
+  K1 --> K2[Extract phone number]
+  K2 --> K3[Extract isAdmin flag]
+  K3 --> K4[Extract preferred currency]
+  K4 --> K5[Extract role information]
+  
+  %% Capabilities Loading
+  M --> M1[Query Capabilities Collection]
+  M1 --> M2[Load Customer Capability]
+  M2 --> M3[Load Engineer Capability]
+  M3 --> M4[Load Wholesale Capability]
+  M4 --> M5[Load Admin Capability]
+  M5 --> M6[Check Capability Statuses]
+  
+  %% Permission Checking
+  N --> N1[Identify Required Permission]
+  N1 --> N2[Check Customer Permission]
+  N2 --> N3[Check Engineer Permission]
+  N3 --> N4[Check Wholesale Permission]
+  N4 --> N5[Check Admin Permission]
+  N5 --> N6[Apply Permission Logic]
+  
+  %% Resource Access Control
+  Q --> Q1[Check Resource Ownership]
+  Q1 --> Q2[Check Resource Sharing]
+  Q2 --> Q3[Check Resource Visibility]
+  Q3 --> Q4[Check Resource Permissions]
+  Q4 --> Q5[Apply Access Rules]
+  
+  %% Guard-Specific Logic
+  V[Guard-Specific Checks] --> W{Guard Type?}
+  W -->|JwtAuthGuard| X[Basic Authentication]
+  W -->|AdminGuard| Y[Admin Role Check]
+  W -->|EngineerGuard| Z[Engineer Capability Check]
+  W -->|WholesaleGuard| AA[Wholesale Capability Check]
+  
+  %% Admin Guard Logic
+  Y --> Y1[Check isAdmin flag]
+  Y1 --> Y2[Check admin_capable]
+  Y2 --> Y3[Check admin_status = approved]
+  Y3 --> Y4[Validate admin permissions]
+  
+  %% Engineer Guard Logic
+  Z --> Z1[Check engineer_capable]
+  Z1 --> Z2[Check engineer_status = approved]
+  Z2 --> Z3[Validate engineer permissions]
+  Z3 --> Z4[Check service access]
+  
+  %% Wholesale Guard Logic
+  AA --> AA1[Check wholesale_capable]
+  AA1 --> AA2[Check wholesale_status = approved]
+  AA2 --> AA3[Validate wholesale permissions]
+  AA3 --> AA4[Check discount access]
+  
+  %% OTP Authentication Flow
+  BB[OTP Authentication] --> CC[Send OTP Request]
+  CC --> DD[Generate OTP Code]
+  DD --> EE[Send SMS/Email]
+  EE --> FF[User Enters OTP]
+  FF --> GG[Verify OTP Code]
+  GG --> HH{OTP Valid?}
+  HH -->|No| II[Return Invalid OTP]
+  HH -->|Yes| JJ[Generate JWT Token]
+  JJ --> KK[Return Authentication Response]
+  
+  %% OTP Generation
+  DD --> DD1[Generate 6-digit code]
+  DD1 --> DD2[Set expiry time (5 minutes)]
+  DD2 --> DD3[Store in cache]
+  DD3 --> DD4[Send via SMS service]
+  
+  %% OTP Verification
+  GG --> GG1[Check OTP in cache]
+  GG1 --> GG2[Verify code matches]
+  GG2 --> GG3[Check not expired]
+  GG3 --> GG4[Mark as used]
+  
+  %% Token Generation
+  JJ --> JJ1[Create access token]
+  JJ1 --> JJ2[Create refresh token]
+  JJ2 --> JJ3[Set token expiry]
+  JJ3 --> JJ4[Sign with secret key]
+  JJ4 --> JJ5[Return token pair]
+  
+  %% Session Management
+  LL[Session Management] --> MM[Check Active Sessions]
+  MM --> NN[Limit Concurrent Sessions]
+  NN --> OO[Handle Session Expiry]
+  OO --> PP[Cleanup Expired Sessions]
+  PP --> QQ[Update Session Activity]
+  
+  %% Security Measures
+  RR[Security Measures] --> SS[Rate Limiting]
+  SS --> TT[IP Whitelisting]
+  TT --> UU[Device Fingerprinting]
+  UU --> VV[Anomaly Detection]
+  VV --> WW[Security Logging]
+  
+  %% End points
+  D --> ZZ[Authentication Failed]
+  J --> ZZ
+  P --> ZZ
+  U --> ZZ
+  II --> ZZ
+  KK --> ZZ
+  QQ --> ZZ
+  WW --> ZZ

@@ -1,21 +1,117 @@
-%% Payment Webhook Handling
+%% Advanced Payment System with COD, Online Payment, and Webhook Handling
 %% View at https://mermaid.live
 sequenceDiagram
-  participant Pay as PaymentProvider
+  participant User as User
   participant API as Backend API
-  participant ORD as OrderService
+  participant DB as Database
   participant INV as InventoryService
+  participant LED as InventoryLedger
   participant NOTI as NotificationService
+  participant Pay as PaymentProvider
 
-  Pay->>API: POST /payments/webhook (event)
-  API->>API: Verify signature
-  API->>ORD: Load order by paymentIntentId
-  alt event == payment_succeeded
-    ORD->>ORD: Update status: PAID -> CONFIRMED
-    INV->>INV: Reserve/adjust stock
-    NOTI->>API: Send order confirmation
-  else event == payment_failed
-    ORD->>ORD: Update status: PAYMENT_FAILED
-    NOTI->>API: Notify failure
+  %% COD Payment Flow
+  Note over User, Pay: COD (Cash on Delivery) Payment Flow
+  User->>API: POST /checkout/confirm (method: COD)
+  API->>API: Start Database Transaction
+  API->>DB: Create Order (PENDING)
+  API->>INV: Reserve Inventory
+  API->>LED: Create Ledger Entry
+  API->>DB: Update Order Status (CONFIRMED)
+  API->>INV: Commit Inventory Reservation
+  API->>LED: Create Confirmation Entry
+  API->>NOTI: Send Order Confirmation
+  API->>User: Return Order Details
+  Note over API: COD Payment Confirmed Immediately
+
+  %% Online Payment Flow
+  Note over User, Pay: Online Payment Flow
+  User->>API: POST /checkout/confirm (method: ONLINE)
+  API->>API: Start Database Transaction
+  API->>DB: Create Order (PENDING)
+  API->>INV: Reserve Inventory (TTL)
+  API->>LED: Create Reservation Entry
+  API->>API: Generate Payment Intent
+  API->>API: Create HMAC Signature
+  API->>DB: Save Payment Intent ID
+  API->>User: Return Payment Intent + Signature
+  User->>Pay: Redirect to Payment Provider
+  Pay->>Pay: Process Payment
+  Pay->>API: POST /payments/webhook (SUCCESS/FAILED)
+  
+  %% Webhook Processing
+  Note over Pay, API: Webhook Processing
+  API->>API: Verify HMAC Signature
+  alt Signature Valid
+    API->>API: Start Database Transaction
+    API->>DB: Load Order by Payment Intent ID
+    alt Payment Status == SUCCESS
+      API->>DB: Update Order Status (CONFIRMED)
+      API->>INV: Commit Inventory Reservation
+      API->>LED: Create Confirmation Entry
+      API->>NOTI: Send Success Notification
+      API->>Pay: Return 200 OK
+    else Payment Status == FAILED
+      API->>DB: Update Order Status (PAYMENT_FAILED)
+      API->>INV: Release Inventory Reservation
+      API->>LED: Create Release Entry
+      API->>NOTI: Send Failure Notification
+      API->>Pay: Return 200 OK
+    end
+  else Signature Invalid
+    API->>API: Log Security Alert
+    API->>Pay: Return 401 Unauthorized
   end
-  API-->>Pay: 200 OK
+
+  %% Multi-currency Support
+  Note over User, API: Multi-currency Support
+  User->>API: POST /checkout/preview (currency: YER/SAR/USD)
+  API->>API: Convert Currency
+  API->>API: Calculate Exchange Rate
+  API->>User: Return Converted Amounts
+
+  %% Inventory Management
+  Note over INV, LED: Advanced Inventory Management
+  INV->>INV: Check Stock Availability
+  INV->>INV: Calculate Available Stock
+  INV->>INV: Reserve Stock (TTL)
+  INV->>LED: Log Reservation
+  alt Payment Success
+    INV->>INV: Commit Reservation
+    INV->>LED: Log Confirmation
+  else Payment Failed
+    INV->>INV: Release Reservation
+    INV->>LED: Log Release
+  end
+
+  %% Database Transactions
+  Note over API, DB: Database Transaction Management
+  API->>DB: Begin Transaction
+  API->>DB: Execute Operations
+  alt All Operations Success
+    API->>DB: Commit Transaction
+  else Any Operation Failed
+    API->>DB: Rollback Transaction
+    API->>API: Handle Error
+  end
+
+  %% Notification System
+  Note over NOTI, User: Notification System
+  NOTI->>NOTI: Create Notification
+  NOTI->>NOTI: Set Notification Type
+  NOTI->>NOTI: Set Notification Channel
+  NOTI->>User: Send Notification (Email/SMS/Push)
+  NOTI->>DB: Log Notification
+
+  %% Error Handling
+  Note over API, Pay: Error Handling
+  alt Payment Provider Error
+    API->>API: Log Error
+    API->>API: Update Order Status (PAYMENT_FAILED)
+    API->>INV: Release Inventory
+    API->>NOTI: Send Error Notification
+  else Database Error
+    API->>API: Rollback Transaction
+    API->>API: Log Database Error
+    API->>INV: Release All Reservations
+    API->>User: Return Error Response
+  end

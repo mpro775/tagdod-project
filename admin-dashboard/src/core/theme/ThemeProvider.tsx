@@ -5,6 +5,7 @@ import createCache from '@emotion/cache';
 import rtlPlugin from 'stylis-plugin-rtl';
 import { useThemeStore } from '@/store/themeStore';
 import { createAppTheme } from './theme';
+import './accessibility.css';
 
 interface Props {
   children: React.ReactNode;

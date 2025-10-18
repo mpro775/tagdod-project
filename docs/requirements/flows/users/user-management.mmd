@@ -1,0 +1,366 @@
+%% User Management System
+%% View at https://mermaid.live
+flowchart TD
+  A[User Management System] --> B{Management Type?}
+  B -->|User Registration| C[User Registration Flow]
+  B -->|User Authentication| D[User Authentication Flow]
+  B -->|User Profile Management| E[User Profile Management]
+  B -->|User Administration| F[User Administration]
+  B -->|User Analytics| G[User Analytics]
+  
+  %% User Registration Flow
+  C --> C1[User Registration Request]
+  C1 --> C2[Validate Registration Data]
+  C2 --> C3[Check User Existence]
+  C3 --> C4[Create User Account]
+  C4 --> C5[Send Verification]
+  C5 --> C6[Activate User Account]
+  C6 --> C7[User Registration Complete]
+  
+  %% Registration Data Validation
+  C2 --> C2A[Validate Phone Number]
+  C2A --> C2B[Validate Email Format]
+  C2B --> C2C[Validate Password Strength]
+  C2C --> C2D[Validate Personal Information]
+  C2D --> C2E[Check Data Completeness]
+  C2E --> C2F[Data Validated]
+  
+  %% Phone Number Validation
+  C2A --> C2A1[Check phone format]
+  C2A1 --> C2A2[Verify phone uniqueness]
+  C2A2 --> C2A3[Validate country code]
+  C2A3 --> C2A4[Phone validated]
+  
+  %% Email Validation
+  C2B --> C2B1[Check email format]
+  C2B1 --> C2B2[Verify email uniqueness]
+  C2B2 --> C2B3[Validate domain]
+  C2B3 --> C2B4[Email validated]
+  
+  %% Password Validation
+  C2C --> C2C1[Check password length]
+  C2C1 --> C2C2[Check password complexity]
+  C2C2 --> C2C3[Check password history]
+  C2C3 --> C2C4[Password validated]
+  
+  %% Personal Information Validation
+  C2D --> C2D1[Validate first name]
+  C2D1 --> C2D2[Validate last name]
+  C2D2 --> C2D3[Validate date of birth]
+  C2D3 --> C2D4[Validate gender]
+  C2D4 --> C2D5[Personal info validated]
+  
+  %% Check User Existence
+  C3 --> C3A[Check phone existence]
+  C3A --> C3B[Check email existence]
+  C3B --> C3C[Check duplicate accounts]
+  C3C --> C3D[User uniqueness verified]
+  
+  %% Create User Account
+  C4 --> C4A[Generate User ID]
+  C4A --> C4B[Hash Password]
+  C4B --> C4C[Create User Record]
+  C4C --> C4D[Set Default Preferences]
+  C4D --> C4E[Initialize User Statistics]
+  C4E --> C4F[Account Created]
+  
+  %% Generate User ID
+  C4A --> C4A1[Generate unique ID]
+  C4A1 --> C4A2[Check ID uniqueness]
+  C4A2 --> C4A3[Assign user ID]
+  C4A3 --> C4A4[ID generated]
+  
+  %% Hash Password
+  C4B --> C4B1[Apply salt to password]
+  C4B1 --> C4B2[Hash with bcrypt]
+  C4B2 --> C4B3[Store hash securely]
+  C4B3 --> C4B4[Password hashed]
+  
+  %% Create User Record
+  C4C --> C4C1[Create user document]
+  C4C1 --> C4C2[Set user status]
+  C4C2 --> C4C3[Set creation timestamp]
+  C4C3 --> C4C4[Set default roles]
+  C4C4 --> C4C5[User record created]
+  
+  %% Set Default Preferences
+  C4D --> C4D1[Set language preference]
+  C4D1 --> C4D2[Set timezone]
+  C4D2 --> C4D3[Set notification preferences]
+  C4D3 --> C4D4[Set privacy settings]
+  C4D4 --> C4D5[Preferences set]
+  
+  %% Initialize User Statistics
+  C4E --> C4E1[Initialize order count]
+  C4E1 --> C4E2[Initialize total spent]
+  C4E2 --> C4E3[Initialize loyalty points]
+  C4E3 --> C4E4[Initialize activity score]
+  C4E4 --> C4E5[Statistics initialized]
+  
+  %% Send Verification
+  C5 --> C5A[Generate Verification Code]
+  C5A --> C5B[Send SMS Verification]
+  C5B --> C5C[Send Email Verification]
+  C5C --> C5D[Set Verification Expiry]
+  C5D --> C5E[Verification Sent]
+  
+  %% Generate Verification Code
+  C5A --> C5A1[Generate random code]
+  C5A1 --> C5A2[Set code expiry time]
+  C5A2 --> C5A3[Store verification data]
+  C5A3 --> C5A4[Code generated]
+  
+  %% Send SMS Verification
+  C5B --> C5B1[Format SMS message]
+  C5B1 --> C5B2[Send via SMS gateway]
+  C5B2 --> C5B3[Track delivery status]
+  C5B3 --> C5B4[SMS sent]
+  
+  %% Send Email Verification
+  C5C --> C5C1[Format email template]
+  C5C1 --> C5C2[Send via email service]
+  C5C2 --> C5C3[Track delivery status]
+  C5C3 --> C5C4[Email sent]
+  
+  %% Activate User Account
+  C6 --> C6A[Verify Code]
+  C6A --> C6B[Update Account Status]
+  C6B --> C6C[Send Welcome Message]
+  C6C --> C6D[Log Activation Event]
+  C6D --> C6E[Account Activated]
+  
+  %% Verify Code
+  C6A --> C6A1[Check code validity]
+  C6A1 --> C6A2[Check code expiry]
+  C6A2 --> C6A3[Validate code format]
+  C6A3 --> C6A4[Code verified]
+  
+  %% Update Account Status
+  C6B --> C6B1[Set account as active]
+  C6B1 --> C6B2[Update verification status]
+  C6B2 --> C6B3[Set activation timestamp]
+  C6B3 --> C6B4[Status updated]
+  
+  %% User Authentication Flow
+  D --> D1[Login Request]
+  D1 --> D2[Validate Credentials]
+  D2 --> D3[Check Account Status]
+  D3 --> D4[Generate JWT Token]
+  D4 --> D5[Update Login Statistics]
+  D5 --> D6[Authentication Complete]
+  
+  %% Login Request
+  D1 --> D1A[Receive login credentials]
+  D1A --> D1B[Validate request format]
+  D1B --> D1C[Check required fields]
+  D1C --> D1D[Login request validated]
+  
+  %% Validate Credentials
+  D2 --> D2A[Find user by phone/email]
+  D2A --> D2B[Verify password hash]
+  D2B --> D2C[Check credential validity]
+  D2C --> D2D[Credentials validated]
+  
+  %% Find User
+  D2A --> D2A1[Search by phone number]
+  D2A1 --> D2A2[Search by email]
+  D2A2 --> D2A3[Check user existence]
+  D2A3 --> D2A4[User found]
+  
+  %% Verify Password
+  D2B --> D2B1[Retrieve stored hash]
+  D2B1 --> D2B2[Compare with input]
+  D2B2 --> D2B3[Verify password match]
+  D2B3 --> D2B4[Password verified]
+  
+  %% Check Account Status
+  D3 --> D3A[Check account active status]
+  D3A --> D3B[Check account suspension]
+  D3B --> D3C[Check account verification]
+  D3C --> D3D[Account status verified]
+  
+  %% Generate JWT Token
+  D4 --> D4A[Create token payload]
+  D4A --> D4B[Sign token with secret]
+  D4B --> D4C[Set token expiry]
+  D4C --> D4D[Generate refresh token]
+  D4D --> D4E[Token generated]
+  
+  %% Create Token Payload
+  D4A --> D4A1[Include user ID]
+  D4A1 --> D4A2[Include user roles]
+  D4A2 --> D4A3[Include permissions]
+  D4A3 --> D4A4[Include timestamp]
+  D4A4 --> D4A5[Payload created]
+  
+  %% Update Login Statistics
+  D5 --> D5A[Update last login time]
+  D5A --> D5B[Increment login count]
+  D5B --> D5C[Update login location]
+  D5C --> D5D[Log login event]
+  D5D --> D5E[Statistics updated]
+  
+  %% User Profile Management
+  E --> E1[View Profile]
+  E1 --> E2[Update Profile]
+  E2 --> E3[Change Password]
+  E3 --> E4[Update Preferences]
+  E4 --> E5[Manage Privacy Settings]
+  E5 --> E6[Profile Management Complete]
+  
+  %% View Profile
+  E1 --> E1A[Load user data]
+  E1A --> E1B[Load profile information]
+  E1B --> E1C[Load preferences]
+  E1C --> E1D[Load statistics]
+  E1D --> E1E[Display profile]
+  
+  %% Update Profile
+  E2 --> E2A[Validate update data]
+  E2A --> E2B[Check data permissions]
+  E2B --> E2C[Update user record]
+  E2C --> E2D[Log update event]
+  E2D --> E2E[Profile updated]
+  
+  %% Change Password
+  E3 --> E3A[Verify current password]
+  E3A --> E3B[Validate new password]
+  E3B --> E3C[Hash new password]
+  E3C --> E3D[Update password]
+  E3D --> E3E[Password changed]
+  
+  %% Update Preferences
+  E4 --> E4A[Load current preferences]
+  E4A --> E4B[Update preference values]
+  E4B --> E4C[Save preferences]
+  E4C --> E4D[Preferences updated]
+  
+  %% Manage Privacy Settings
+  E5 --> E5A[Load privacy settings]
+  E5A --> E5B[Update privacy options]
+  E5B --> E5C[Save privacy settings]
+  E5C --> E5D[Privacy settings updated]
+  
+  %% User Administration
+  F --> F1[View All Users]
+  F1 --> F2[Manage User Status]
+  F2 --> F3[Assign User Roles]
+  F3 --> F4[Monitor User Activity]
+  F4 --> F5[Generate User Reports]
+  F5 --> F6[User Administration Complete]
+  
+  %% View All Users
+  F1 --> F1A[Load user list]
+  F1A --> F1B[Apply filters]
+  F1B --> F1C[Sort results]
+  F1C --> F1D[Paginate results]
+  F1D --> F1E[Display users]
+  
+  %% User Filters
+  F1B --> F1B1[Filter by status]
+  F1B1 --> F1B2[Filter by role]
+  F1B2 --> F1B3[Filter by date range]
+  F1B3 --> F1B4[Filter by activity]
+  F1B4 --> F1B5[Search by text]
+  F1B5 --> F1B6[Filters applied]
+  
+  %% Manage User Status
+  F2 --> F2A[Select user]
+  F2A --> F2B[Choose new status]
+  F2B --> F2C[Update user status]
+  F2C --> F2D[Notify user]
+  F2D --> F2E[Status updated]
+  
+  %% User Status Options
+  F2B --> F2B1[Active]
+  F2B1 --> F2B2[Suspended]
+  F2B2 --> F2B3[Inactive]
+  F2B3 --> F2B4[Banned]
+  F2B4 --> F2B5[Status selected]
+  
+  %% Assign User Roles
+  F3 --> F3A[Select user]
+  F3A --> F3B[Choose roles]
+  F3B --> F3C[Validate role assignment]
+  F3C --> F3D[Update user roles]
+  F3D --> F3E[Roles assigned]
+  
+  %% Role Options
+  F3B --> F3B1[Customer]
+  F3B1 --> F3B2[Engineer]
+  F3B2 --> F3B3[Wholesale]
+  F3B3 --> F3B4[Admin]
+  F3B4 --> F3B5[Super Admin]
+  F3B5 --> F3B6[Roles selected]
+  
+  %% Monitor User Activity
+  F4 --> F4A[Track login activity]
+  F4A --> F4B[Monitor user behavior]
+  F4B --> F4C[Track user interactions]
+  F4C --> F4D[Generate activity reports]
+  F4D --> F4E[Activity monitored]
+  
+  %% Generate User Reports
+  F5 --> F5A[Choose report type]
+  F5A --> F5B[Set report parameters]
+  F5B --> F5C[Generate report data]
+  F5C --> F5D[Format report]
+  F5D --> F5E[Export report]
+  F5E --> F5F[Report generated]
+  
+  %% Report Types
+  F5A --> F5A1[User registration report]
+  F5A1 --> F5A2[User activity report]
+  F5A2 --> F5A3[User engagement report]
+  F5A3 --> F5A4[User retention report]
+  F5A4 --> F5A5[Report type selected]
+  
+  %% User Analytics
+  G --> G1[Collect User Data]
+  G1 --> G2[Analyze User Behavior]
+  G2 --> G3[Generate User Insights]
+  G3 --> G4[Create User Reports]
+  G4 --> G5[Optimize User Experience]
+  G5 --> G6[User Analytics Complete]
+  
+  %% Collect User Data
+  G1 --> G1A[Track user interactions]
+  G1A --> G1B[Collect user preferences]
+  G1B --> G1C[Monitor user activity]
+  G1C --> G1D[Aggregate user data]
+  G1D --> G1E[Data collected]
+  
+  %% Analyze User Behavior
+  G2 --> G2A[Analyze usage patterns]
+  G2A --> G2B[Identify user segments]
+  G2B --> G2C[Track user journey]
+  G2C --> G2D[Analyze user preferences]
+  G2D --> G2E[Behavior analyzed]
+  
+  %% Generate User Insights
+  G3 --> G3A[Identify trends]
+  G3A --> G3B[Detect anomalies]
+  G3B --> G3C[Predict user behavior]
+  G3C --> G3D[Generate recommendations]
+  G3D --> G3E[Insights generated]
+  
+  %% Create User Reports
+  G4 --> G4A[Create user summary report]
+  G4A --> G4B[Create behavior analysis report]
+  G4B --> G4C[Create engagement report]
+  G4C --> G4D[Create retention report]
+  G4D --> G4E[Reports created]
+  
+  %% Optimize User Experience
+  G5 --> G5A[Implement improvements]
+  G5A --> G5B[Monitor improvement impact]
+  G5B --> G5C[Adjust strategies]
+  G5C --> G5D[Continuous optimization]
+  G5D --> G5E[Experience optimized]
+  
+  %% End points
+  C7 --> Z[User Management Complete]
+  D6 --> Z
+  E6 --> Z
+  F6 --> Z
+  G6 --> Z

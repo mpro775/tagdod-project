@@ -1,0 +1,296 @@
+%% Brand Creation Workflow and Validation
+%% View at https://mermaid.live
+flowchart TD
+  A[Brand Creation Workflow] --> B[Input Validation]
+  
+  %% Input Validation
+  B --> C[Required Fields Validation]
+  C --> D[String Length Validation]
+  D --> E[Data Type Validation]
+  E --> F[Business Logic Validation]
+  
+  %% Required Fields Validation
+  C --> C1[Validate Name Field]
+  C1 --> C2[Validate Image Field]
+  C2 --> C3[Check Required Field Completeness]
+  C3 --> C4[Return Required Field Status]
+  
+  %% Validate Name Field
+  C1 --> C1A[Check Name is Provided]
+  C1A --> C1B[Check Name is Not Empty]
+  C1B --> C1C[Check Name is String]
+  C1C --> C1D[Return Name Validation Result]
+  
+  %% Validate Image Field
+  C2 --> C2A[Check Image is Provided]
+  C2A --> C2B[Check Image is Not Empty]
+  C2B --> C2C[Check Image is String]
+  C2C --> C2D[Return Image Validation Result]
+  
+  %% String Length Validation
+  D --> D1[Validate Name Length]
+  D1 --> D2[Validate Description Length]
+  D2 --> D3[Check String Length Limits]
+  D3 --> D4[Return Length Validation Status]
+  
+  %% Validate Name Length
+  D1 --> D1A[Check Name Length >= 2]
+  D1A --> D1B[Check Name Length <= 100]
+  D1B --> D1C[Validate Name Length Rules]
+  D1C --> D1D[Return Name Length Result]
+  
+  %% Validate Description Length
+  D2 --> D2A[Check Description Length <= 500]
+  D2A --> D2B[Validate Description Rules]
+  D2B --> D2C[Return Description Length Result]
+  
+  %% Data Type Validation
+  E --> E1[Validate String Types]
+  E1 --> E2[Validate Boolean Types]
+  E2 --> E3[Validate Number Types]
+  E3 --> E4[Validate Object Types]
+  
+  %% Validate String Types
+  E1 --> E1A[Validate Name Type]
+  E1A --> E1B[Validate Image Type]
+  E1B --> E1C[Validate Description Type]
+  E1C --> E1D[Return String Type Results]
+  
+  %% Validate Boolean Types
+  E2 --> E2A[Validate isActive Type]
+  E2A --> E2B[Check Boolean Constraints]
+  E2B --> E2C[Return Boolean Type Results]
+  
+  %% Validate Number Types
+  E3 --> E3A[Validate sortOrder Type]
+  E3A --> E3B[Check Number Constraints]
+  E3B --> E3C[Return Number Type Results]
+  
+  %% Validate Object Types
+  E4 --> E4A[Validate metadata Type]
+  E4A --> E4B[Check Object Structure]
+  E4B --> E4C[Return Object Type Results]
+  
+  %% Business Logic Validation
+  F --> F1[Check Brand Uniqueness]
+  F1 --> F2[Validate Image URL]
+  F2 --> F3[Check Business Rules]
+  F3 --> F4[Return Business Validation Status]
+  
+  %% Check Brand Uniqueness
+  F1 --> F1A[Check Name Uniqueness]
+  F1A --> F1B[Check Slug Uniqueness]
+  F1B --> F1C[Check Image Uniqueness]
+  F1C --> F1D{All Unique?}
+  F1D -->|Yes| F1E[Continue Validation]
+  F1D -->|No| F1F[Throw Uniqueness Error]
+  
+  %% Check Name Uniqueness
+  F1A --> F1A1[Query Existing Brands]
+  F1A1 --> F1A2[Compare with New Name]
+  F1A2 --> F1A3[Check for Duplicates]
+  F1A3 --> F1A4[Return Name Uniqueness Result]
+  
+  %% Check Slug Uniqueness
+  F1B --> F1B1[Generate Slug from Name]
+  F1B1 --> F1B2[Query Existing Slugs]
+  F1B2 --> F1B3[Check Slug Conflicts]
+  F1B3 --> F1B4[Return Slug Uniqueness Result]
+  
+  %% Validate Image URL
+  F2 --> F2A[Check Image URL Format]
+  F2A --> F2B[Validate Image Accessibility]
+  F2B --> F2C[Check Image File Type]
+  F2C --> F2D[Return Image Validation Result]
+  
+  %% Check Image URL Format
+  F2A --> F2A1[Validate URL Structure]
+  F2A1 --> F2A2[Check URL Protocol]
+  F2A2 --> F2A3[Validate URL Domain]
+  F2A3 --> F2A4[Return URL Format Result]
+  
+  %% Check Business Rules
+  F3 --> F3A[Check Sort Order Rules]
+  F3A --> F3B[Check Metadata Rules]
+  F3B --> F3C[Check Status Rules]
+  F3C --> F3D[Return Business Rules Status]
+  
+  %% Check Sort Order Rules
+  F3A --> F3A1[Validate Sort Order >= 0]
+  F3A1 --> F3A2[Check Sort Order Uniqueness]
+  F3A2 --> F3A3[Apply Sort Order Rules]
+  F3A3 --> F3A4[Return Sort Order Result]
+  
+  %% Brand Creation Process
+  G[Brand Creation Process] --> H[Generate Brand Data]
+  H --> I[Create Brand Record]
+  I --> J[Set Default Values]
+  J --> K[Save Brand to Database]
+  
+  %% Generate Brand Data
+  H --> H1[Generate Slug]
+  H1 --> H2[Set Timestamps]
+  H2 --> H3[Prepare Brand Object]
+  H3 --> H4[Return Brand Data]
+  
+  %% Generate Slug
+  H1 --> H1A[Slugify Brand Name]
+  H1A --> H1B[Check Slug Uniqueness]
+  H1B --> H1C{Slug Unique?}
+  H1C -->|Yes| H1D[Use Generated Slug]
+  H1C -->|No| H1E[Generate Unique Slug]
+  
+  %% Slugify Brand Name
+  H1A --> H1A1[Convert to Lowercase]
+  H1A1 --> H1A2[Replace Spaces with Dashes]
+  H1A2 --> H1A3[Remove Special Characters]
+  H1A3 --> H1A4[Trim and Clean Slug]
+  
+  %% Set Timestamps
+  H2 --> H2A[Set Created At]
+  H2A --> H2B[Set Updated At]
+  H2B --> H2C[Set Timestamp Values]
+  H2C --> H2D[Return Timestamp Data]
+  
+  %% Create Brand Record
+  I --> I1[Initialize Brand Object]
+  I1 --> I2[Set Required Fields]
+  I2 --> I3[Set Optional Fields]
+  I3 --> I4[Set Default Values]
+  
+  %% Initialize Brand Object
+  I1 --> I1A[Create New Brand Instance]
+  I1A --> I1B[Set Basic Properties]
+  I1B --> I1C[Set Display Properties]
+  I1C --> I1D[Set Metadata Properties]
+  
+  %% Set Required Fields
+  I2 --> I2A[Set Name Field]
+  I2A --> I2B[Set Image Field]
+  I2B --> I2C[Set Slug Field]
+  I2C --> I2D[Set Timestamp Fields]
+  
+  %% Set Optional Fields
+  I3 --> I3A[Set Description Field]
+  I3A --> I3B[Set DescriptionEn Field]
+  I3B --> I3C[Set Metadata Field]
+  I3C --> I3D[Set Other Optional Fields]
+  
+  %% Set Default Values
+  J --> J1[Set isActive Default]
+  J1 --> J2[Set sortOrder Default]
+  J2 --> J3[Set Other Defaults]
+  J3 --> J4[Return Default Values]
+  
+  %% Set isActive Default
+  J1 --> J1A[Set isActive = true]
+  J1A --> J1B[Set Default Status]
+  J1B --> J1C[Return Status Default]
+  
+  %% Set sortOrder Default
+  J2 --> J2A[Get Next Sort Order]
+  J2A --> J2B[Set Sort Order Value]
+  J2B --> J2C[Update Sort Sequence]
+  J2C --> J2D[Return Sort Order Default]
+  
+  %% Save Brand to Database
+  K --> K1[Validate Brand Object]
+  K1 --> K2[Save to Database]
+  K2 --> K3[Handle Save Errors]
+  K3 --> K4[Return Save Result]
+  
+  %% Validate Brand Object
+  K1 --> K1A[Check Object Completeness]
+  K1A --> K1B[Validate Object Structure]
+  K1B --> K1C[Check Object Constraints]
+  K1C --> K1D[Return Object Validation]
+  
+  %% Save to Database
+  K2 --> K2A[Execute Save Operation]
+  K2A --> K2B[Handle Database Response]
+  K2B --> K2C[Update Object with ID]
+  K2C --> K2D[Return Save Status]
+  
+  %% Handle Save Errors
+  K3 --> K3A[Check for Save Errors]
+  K3A --> K3B[Handle Duplicate Errors]
+  K3B --> K3C[Handle Validation Errors]
+  K3C --> K3D[Handle Database Errors]
+  K3D --> K3E[Return Error Status]
+  
+  %% Post-Creation Process
+  L[Post-Creation Process] --> M[Update Related Data]
+  M --> N[Send Notifications]
+  N --> O[Log Creation Event]
+  O --> P[Return Success Response]
+  
+  %% Update Related Data
+  M --> M1[Update Brand Statistics]
+  M1 --> M2[Update Search Index]
+  M2 --> M3[Update Cache]
+  M3 --> M4[Return Update Status]
+  
+  %% Update Brand Statistics
+  M1 --> M1A[Increment Brand Count]
+  M1A --> M1B[Update Brand Metrics]
+  M1B --> M1C[Update Brand Analytics]
+  M1C --> M1D[Return Statistics Update]
+  
+  %% Update Search Index
+  M2 --> M2A[Index Brand Name]
+  M2A --> M2B[Index Brand Description]
+  M2B --> M2C[Index Brand Metadata]
+  M2C --> M2D[Return Index Update]
+  
+  %% Update Cache
+  M3 --> M3A[Clear Brand Caches]
+  M3A --> M3B[Update Brand Lists]
+  M3B --> M3C[Update Brand Details]
+  M3C --> M3D[Return Cache Update]
+  
+  %% Send Notifications
+  N --> N1[Send Admin Notification]
+  N1 --> N2[Send System Notification]
+  N2 --> N3[Log Notification Event]
+  N3 --> N4[Return Notification Status]
+  
+  %% Send Admin Notification
+  N1 --> N1A[Prepare Admin Message]
+  N1A --> N1B[Send Admin Email]
+  N1B --> N1C[Send Admin Dashboard Alert]
+  N1C --> N1D[Return Admin Notification]
+  
+  %% Log Creation Event
+  O --> O1[Log Brand Creation]
+  O1 --> O2[Log User Action]
+  O2 --> O3[Log System Event]
+  O3 --> O4[Return Log Status]
+  
+  %% Log Brand Creation
+  O1 --> O1A[Create Event Log]
+  O1A --> O1B[Set Event Details]
+  O1B --> O1C[Set Event Timestamp]
+  O1C --> O1D[Save Event Log]
+  
+  %% Return Success Response
+  P --> P1[Prepare Success Response]
+  P1 --> P2[Include Brand Data]
+  P2 --> P3[Include Metadata]
+  P3 --> P4[Return Final Response]
+  
+  %% Prepare Success Response
+  P1 --> P1A[Set Success Status]
+  P1A --> P1B[Set Success Message]
+  P1B --> P1C[Set Response Headers]
+  P1C --> P1D[Return Response Structure]
+  
+  %% Include Brand Data
+  P2 --> P2A[Include Basic Brand Info]
+  P2A --> P2B[Include Brand Metadata]
+  P2B --> P2C[Include Brand Statistics]
+  P2C --> P2D[Return Brand Data]
+  
+  %% End points
+  F4 --> Z[End]
+  K4 --> Z
+  P4 --> Z

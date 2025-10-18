@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
 import { AppRouter } from './core/router/AppRouter';
 import { ErrorBoundary } from './core/error/ErrorBoundary';
+import { initializeGA4, setupScrollTracking } from './lib/analytics';
 import './core/i18n/config';
 
 const queryClient = new QueryClient({
@@ -22,6 +23,16 @@ const App: React.FC = () => {
   // Initialize auth store
   useEffect(() => {
     useAuthStore.getState().initialize();
+  }, []);
+
+  // Initialize analytics and tracking
+  useEffect(() => {
+    initializeGA4();
+    const cleanupScrollTracking = setupScrollTracking();
+    
+    return () => {
+      cleanupScrollTracking();
+    };
   }, []);
 
   return (

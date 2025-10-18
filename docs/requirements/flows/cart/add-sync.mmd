@@ -1,17 +1,58 @@
-%% Cart: Add item & Guest->User Sync
+%% Cart: Advanced Add Item & Guest->User Sync with Coupons & Multi-Currency
 %% View at https://mermaid.live
 flowchart TD
   A[Start] --> B{Authenticated?}
   B -- No --> C[Use deviceId cart]
   B -- Yes --> D[Use userId cart]
-  C --> E[Add Variant to cart (qty)]
-  D --> E
-  E --> F[Recalculate pricing summary]
-  F --> G[Auto discounts & coupons]
-  G --> H[Save cart]
-  H --> I{User logs in?}
-  I -- No --> Z[End]
-  I -- Yes --> J[Find guest cart by deviceId]
-  J --> K[Merge guest cart into user cart]
-  K --> L[Mark isMerged, mergedAt]
-  L --> Z[End]
+  
+  %% Add Item Flow
+  C --> E[Add Variant to guest cart]
+  D --> F[Add Variant to user cart]
+  E --> G[Check cart capacity (max 200 items)]
+  F --> G
+  G --> H{Capacity OK?}
+  H -->|No| I[Error: Cart capacity exceeded]
+  H -->|Yes| J[Check if variant exists in cart]
+  J --> K{Variant exists?}
+  K -->|Yes| L[Update quantity (max 999)]
+  K -->|No| M[Add new item with qty]
+  L --> N[Update addedAt timestamp]
+  M --> N
+  
+  %% Pricing Calculation
+  N --> O[Get user capabilities for discounts]
+  O --> P[Calculate base price in selected currency]
+  P --> Q[Apply automatic discounts]
+  Q --> R[Apply promotion rules]
+  R --> S[Apply coupon discounts]
+  S --> T[Calculate wholesale discount]
+  T --> U[Update pricing summary]
+  U --> V[Cache product snapshot]
+  V --> W[Save cart with metadata]
+  
+  %% Guest to User Sync
+  W --> X{User logs in?}
+  X -->|No| Y[End - Guest cart active]
+  X -->|Yes| Z[Find guest cart by deviceId]
+  Z --> AA{Guest cart exists?}
+  AA -->|No| BB[End - No merge needed]
+  AA -->|Yes| CC[Merge guest items into user cart]
+  CC --> DD[Handle duplicate variants]
+  DD --> EE[Update quantities (max 999)]
+  EE --> FF[Transfer metadata]
+  FF --> GG[Mark isMerged = true]
+  GG --> HH[Set mergedAt timestamp]
+  HH --> II[Set mergedIntoUserId]
+  II --> JJ[Clear guest cart]
+  JJ --> KK[Save user cart]
+  KK --> LL[End - Cart merged]
+  
+  %% Error handling
+  I --> MM[Return error response]
+  MM --> NN[End with error]
+  
+  %% End points
+  Y --> OO[End]
+  BB --> OO
+  LL --> OO
+  NN --> OO

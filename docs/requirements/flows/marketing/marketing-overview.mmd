@@ -1,0 +1,231 @@
+%% Marketing System Overview
+%% View at https://mermaid.live
+flowchart TD
+  A[Marketing System Overview] --> B{Marketing Component?}
+  B -->|Price Rules| C[Price Rules Management]
+  B -->|Coupons| D[Coupons Management]
+  B -->|Banners| E[Banners Management]
+  B -->|Pricing Engine| F[Pricing Engine]
+  B -->|Analytics| G[Marketing Analytics]
+  B -->|Campaigns| H[Campaign Management]
+  
+  %% Price Rules Management
+  C --> C1[Create Price Rules]
+  C1 --> C2[Manage Rule Conditions]
+  C2 --> C3[Configure Rule Effects]
+  C3 --> C4[Set Usage Limits]
+  C4 --> C5[Track Rule Performance]
+  C5 --> C6[Optimize Rule Strategy]
+  
+  %% Rule Conditions
+  C2 --> C2A[Category-based conditions]
+  C2A --> C2B[Product-specific conditions]
+  C2B --> C2C[Variant-specific conditions]
+  C2C --> C2D[Brand-based conditions]
+  C2D --> C2E[Currency-based conditions]
+  C2E --> C2F[Quantity-based conditions]
+  C2F --> C2G[Account type conditions]
+  
+  %% Rule Effects
+  C3 --> C3A[Percentage discounts]
+  C3A --> C3B[Fixed amount discounts]
+  C3B --> C3C[Special pricing]
+  C3C --> C3D[Product badges]
+  C3D --> C3E[Gift items]
+  C3E --> C3F[Free shipping]
+  
+  %% Coupons Management
+  D --> D1[Create Coupons]
+  D1 --> D2[Configure Coupon Types]
+  D2 --> D3[Set Discount Rules]
+  D3 --> D4[Manage Usage Limits]
+  D4 --> D5[Track Coupon Performance]
+  D5 --> D6[Optimize Coupon Strategy]
+  
+  %% Coupon Types
+  D2 --> D2A[Percentage coupons]
+  D2A --> D2B[Fixed amount coupons]
+  D2B --> D2C[Free shipping coupons]
+  D2C --> D2D[Buy X Get Y coupons]
+  D2D --> D2E[Special offer coupons]
+  D2E --> D2F[Seasonal coupons]
+  
+  %% Discount Rules
+  D3 --> D3A[Minimum order rules]
+  D3A --> D3B[Maximum discount rules]
+  D3B --> D3C[Product restriction rules]
+  D3C --> D3D[User restriction rules]
+  D3D --> D3E[Time-based rules]
+  D3E --> D3F[Geographic rules]
+  
+  %% Banners Management
+  E --> E1[Create Banners]
+  E1 --> E2[Configure Banner Content]
+  E2 --> E3[Set Display Locations]
+  E3 --> E4[Configure Targeting]
+  E4 --> E5[Track Banner Performance]
+  E5 --> E6[Optimize Banner Strategy]
+  
+  %% Banner Content
+  E2 --> E2A[Banner titles]
+  E2A --> E2B[Banner descriptions]
+  E2B --> E2C[Banner images]
+  E2C --> E2D[Banner links]
+  E2D --> E2E[Call-to-action text]
+  E2E --> E2F[Promotional content]
+  
+  %% Display Locations
+  E3 --> E3A[Home page banners]
+  E3A --> E3B[Category page banners]
+  E3B --> E3C[Product page banners]
+  E3C --> E3D[Cart page banners]
+  E3D --> E3E[Checkout page banners]
+  E3E --> E3F[Sidebar banners]
+  E3F --> E3G[Footer banners]
+  
+  %% Pricing Engine
+  F --> F1[Calculate Base Prices]
+  F1 --> F2[Apply Price Rules]
+  F2 --> F3[Apply Coupon Discounts]
+  F3 --> F4[Calculate Final Prices]
+  F4 --> F5[Handle Currency Conversion]
+  F5 --> F6[Optimize Price Performance]
+  
+  %% Price Calculation
+  F1 --> F1A[Product price lookup]
+  F1A --> F1B[Variant price lookup]
+  F1B --> F1C[Currency price lookup]
+  F1C --> F1D[Price validation]
+  F1D --> F1E[Price formatting]
+  
+  %% Rule Application
+  F2 --> F2A[Rule condition matching]
+  F2A --> F2B[Rule priority sorting]
+  F2B --> F2C[Rule effect application]
+  F2C --> F2D[Rule conflict resolution]
+  F2D --> F2E[Rule performance tracking]
+  
+  %% Marketing Analytics
+  G --> G1[Campaign Analytics]
+  G1 --> G2[Price Rule Analytics]
+  G2 --> G3[Coupon Analytics]
+  G3 --> G4[Banner Analytics]
+  G4 --> G5[Revenue Analytics]
+  G5 --> G6[User Behavior Analytics]
+  
+  %% Campaign Analytics
+  G1 --> G1A[Campaign performance tracking]
+  G1A --> G1B[Campaign ROI analysis]
+  G1B --> G1C[Campaign optimization]
+  G1C --> G1D[Campaign prediction]
+  G1D --> G1E[Campaign benchmarking]
+  
+  %% Revenue Analytics
+  G5 --> G5A[Revenue tracking]
+  G5A --> G5B[Revenue attribution]
+  G5B --> G5C[Revenue optimization]
+  G5C --> G5D[Revenue forecasting]
+  G5D --> G5E[Revenue benchmarking]
+  
+  %% Campaign Management
+  H --> H1[Create Campaigns]
+  H1 --> H2[Configure Campaign Rules]
+  H2 --> H3[Set Campaign Budgets]
+  H3 --> H4[Launch Campaigns]
+  H4 --> H5[Monitor Campaign Performance]
+  H5 --> H6[Optimize Campaign Strategy]
+  
+  %% Campaign Creation
+  H1 --> H1A[Define campaign goals]
+  H1A --> H1B[Set campaign parameters]
+  H1B --> H1C[Configure campaign rules]
+  H1C --> H1D[Set campaign budget]
+  H1D --> H1E[Create campaign assets]
+  
+  %% Campaign Rules
+  H2 --> H2A[Targeting rules]
+  H2A --> H2B[Timing rules]
+  H2B --> H2C[Budget rules]
+  H2C --> H2D[Performance rules]
+  H2D --> H2E[Optimization rules]
+  
+  %% Marketing Integration
+  I[Marketing Integration] --> J[Product Integration]
+  J --> K[User Integration]
+  K --> L[Order Integration]
+  L --> M[Payment Integration]
+  M --> N[Analytics Integration]
+  
+  %% Product Integration
+  J --> J1[Product catalog integration]
+  J1 --> J2[Product pricing integration]
+  J2 --> J3[Product inventory integration]
+  J3 --> J4[Product category integration]
+  J4 --> J5[Product brand integration]
+  
+  %% User Integration
+  K --> K1[User profile integration]
+  K1 --> K2[User behavior integration]
+  K2 --> K3[User preference integration]
+  K3 --> K4[User segment integration]
+  K4 --> K5[User history integration]
+  
+  %% Order Integration
+  L --> L1[Order creation integration]
+  L1 --> L2[Order pricing integration]
+  L2 --> L3[Order discount integration]
+  L3 --> L4[Order tracking integration]
+  L4 --> L5[Order analytics integration]
+  
+  %% Marketing Automation
+  O[Marketing Automation] --> P[Trigger Management]
+  P --> Q[Action Execution]
+  Q --> R[Performance Monitoring]
+  R --> S[Optimization Loop]
+  
+  %% Trigger Management
+  P --> P1[User behavior triggers]
+  P1 --> P2[Time-based triggers]
+  P2 --> P3[Event-based triggers]
+  P3 --> P4[Condition-based triggers]
+  P4 --> P5[Trigger optimization]
+  
+  %% Action Execution
+  Q --> Q1[Email campaign execution]
+  Q1 --> Q2[Banner display execution]
+  Q2 --> Q3[Coupon distribution execution]
+  Q3 --> Q4[Price rule application]
+  Q4 --> Q5[Personalization execution]
+  
+  %% Marketing Performance
+  T[Marketing Performance] --> U[KPI Tracking]
+  U --> V[Performance Analysis]
+  V --> W[Optimization Recommendations]
+  W --> X[Implementation Planning]
+  
+  %% KPI Tracking
+  U --> U1[Revenue KPIs]
+  U1 --> U2[Conversion KPIs]
+  U2 --> U3[Engagement KPIs]
+  U3 --> U4[Cost KPIs]
+  U4 --> U5[ROI KPIs]
+  U5 --> U6[Growth KPIs]
+  
+  %% Performance Analysis
+  V --> V1[Trend analysis]
+  V1 --> V2[Correlation analysis]
+  V2 --> V3[Regression analysis]
+  V3 --> V4[Clustering analysis]
+  V4 --> V5[Classification analysis]
+  V5 --> V6[Time series analysis]
+  
+  %% End points
+  C6 --> Y[Marketing System Complete]
+  D6 --> Y
+  E6 --> Y
+  F6 --> Y
+  G6 --> Y
+  H6 --> Y
+  N --> Y
+  S --> Y
+  X --> Y

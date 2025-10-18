@@ -17,6 +17,8 @@ import { Edit, Delete, Restore } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { ResponsiveListWrapper } from '@/shared/components/ResponsiveList';
+import { UserCard } from '@/shared/components/Cards';
 import {
   useUsers,
   useDeleteUser,
@@ -352,26 +354,57 @@ export const UsersListPage: React.FC = () => {
 
   return (
     <Box>
-      <DataTable
-        title="إدارة المستخدمين"
-        columns={columns}
-        rows={data?.data || []}
+      <Box sx={{ mb: 2 }}>
+        <DataTable
+          title="إدارة المستخدمين"
+          columns={columns}
+          rows={data?.data || []}
+          loading={isLoading}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+          rowCount={data?.meta?.total || 0}
+          sortModel={sortModel}
+          onSortModelChange={setSortModel}
+          searchPlaceholder="البحث في المستخدمين..."
+          onSearch={setSearch}
+          onAdd={() => navigate('/users/new')}
+          addButtonText="إضافة مستخدم"
+          getRowId={(row: any) => row._id}
+          onRowClick={(params) => {
+            const row = params.row as User;
+            navigate(`/users/${row._id}`);
+          }}
+          height={screenSize < 600 ? "calc(100vh - 140px)" : "calc(100vh - 180px)"}
+        />
+      </Box>
+
+      {/* Responsive List for Mobile */}
+      <ResponsiveListWrapper
+        data={data?.data || []}
         loading={isLoading}
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        rowCount={data?.meta?.total || 0}
-        sortModel={sortModel}
-        onSortModelChange={setSortModel}
-        searchPlaceholder="البحث في المستخدمين..."
-        onSearch={setSearch}
-        onAdd={() => navigate('/users/new')}
-        addButtonText="إضافة مستخدم"
-        getRowId={(row: any) => row._id}
-        onRowClick={(params) => {
-          const row = params.row as User;
-          navigate(`/users/${row._id}`);
+        columns={columns}
+        CardComponent={UserCard}
+        getRowId={(user) => user._id}
+        onEdit={(user) => navigate(`/users/${user._id}`)}
+        onDelete={handleDelete}
+        onView={(user) => navigate(`/users/${user._id}`)}
+        showActions={true}
+        cardBreakpoint="md"
+        emptyMessage="لا يوجد مستخدمون"
+        emptyDescription="لم يتم العثور على أي مستخدمين في النظام"
+        errorMessage="حدث خطأ أثناء تحميل المستخدمين"
+        cardContainerProps={{
+          sx: { 
+            display: { xs: 'block', md: 'none' },
+            px: 2 
+          }
         }}
-        height={screenSize < 600 ? "calc(100vh - 140px)" : "calc(100vh - 180px)"}
+        gridProps={{
+          sx: { 
+            display: { xs: 'none', md: 'block' },
+            height: screenSize < 600 ? "calc(100vh - 140px)" : "calc(100vh - 180px)"
+          }
+        }}
       />
 
       {/* Confirmation Dialog */}

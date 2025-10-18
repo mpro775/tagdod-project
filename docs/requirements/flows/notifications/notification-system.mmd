@@ -1,28 +1,162 @@
-%% Notification System Flow
+%% Advanced Notification System Flow with Templates and Multi-language Support
 %% View at https://mermaid.live
 flowchart TD
   A[Event Trigger] --> B{Event Type?}
-  B -->|Order Created| C[Order Confirmation]
-  B -->|Payment Success| D[Payment Confirmation]
-  B -->|Order Shipped| E[Shipping Update]
-  B -->|Order Delivered| F[Delivery Confirmation]
-  B -->|Support Ticket| G[Support Notification]
+  B -->|Order Created| C[Order Confirmation Template]
+  B -->|Payment Success| D[Payment Confirmation Template]
+  B -->|Order Shipped| E[Shipping Update Template]
+  B -->|Order Delivered| F[Delivery Confirmation Template]
+  B -->|Support Ticket| G[Support Notification Template]
+  B -->|Low Stock| H[Stock Alert Template]
+  B -->|System Alert| I[System Alert Template]
+  B -->|Promotion| J[Promotion Template]
   
-  C --> H[Check user preferences]
-  D --> H
-  E --> H
-  F --> H
-  G --> H
+  %% Template Processing
+  C --> K[Load Template: ORDER_CONFIRMED]
+  D --> L[Load Template: PAYMENT_SUCCESS]
+  E --> M[Load Template: ORDER_SHIPPED]
+  F --> N[Load Template: ORDER_DELIVERED]
+  G --> O[Load Template: TICKET_CREATED]
+  H --> P[Load Template: LOW_STOCK]
+  I --> Q[Load Template: SYSTEM_ALERT]
+  J --> R[Load Template: PROMOTION_STARTED]
   
-  H --> I{Channels enabled?}
-  I -->|Email| J[Send Email]
-  I -->|SMS| K[Send SMS]
-  I -->|Push| L[Send Push Notification]
-  I -->|In-App| M[Store in database]
+  %% Template Rendering
+  K --> S[Render Template with Variables]
+  L --> S
+  M --> S
+  N --> S
+  O --> S
+  P --> S
+  Q --> S
+  R --> S
   
-  J --> N[Log notification]
-  K --> N
-  L --> N
-  M --> N
-  N --> Z[End]
+  %% Multi-language Support
+  S --> T[Check User Language Preference]
+  T --> U{Language?}
+  U -->|Arabic| V[Use Arabic Message]
+  U -->|English| W[Use English Message]
+  U -->|Auto| X[Detect Language from Template]
+  
+  %% Channel Selection
+  V --> Y[Check User Channel Preferences]
+  W --> Y
+  X --> Y
+  
+  Y --> Z{Channels Enabled?}
+  Z -->|Email| AA[Send Email Notification]
+  Z -->|SMS| BB[Send SMS Notification]
+  Z -->|Push| CC[Send Push Notification]
+  Z -->|Dashboard| DD[Store in Database]
+  
+  %% Email Flow
+  AA --> AA1[Prepare Email Template]
+  AA1 --> AA2[Render Email Content]
+  AA2 --> AA3[Send via Email Service]
+  AA3 --> AA4{Email Sent?}
+  AA4 -->|Success| AA5[Mark as SENT]
+  AA4 -->|Failed| AA6[Mark as FAILED]
+  AA6 --> AA7[Increment Retry Count]
+  AA7 --> AA8{Max Retries?}
+  AA8 -->|No| AA9[Schedule Retry]
+  AA8 -->|Yes| AA10[Log Error]
+  
+  %% SMS Flow
+  BB --> BB1[Prepare SMS Template]
+  BB1 --> BB2[Render SMS Content]
+  BB2 --> BB3[Send via SMS Service]
+  BB3 --> BB4{SMS Sent?}
+  BB4 -->|Success| BB5[Mark as SENT]
+  BB4 -->|Failed| BB6[Mark as FAILED]
+  BB6 --> BB7[Increment Retry Count]
+  BB7 --> BB8{Max Retries?}
+  BB8 -->|No| BB9[Schedule Retry]
+  BB8 -->|Yes| BB10[Log Error]
+  
+  %% Push Notification Flow
+  CC --> CC1[Prepare Push Template]
+  CC1 --> CC2[Render Push Content]
+  CC2 --> CC3[Send via FCM]
+  CC3 --> CC4{Push Sent?}
+  CC4 -->|Success| CC5[Mark as SENT]
+  CC4 -->|Failed| CC6[Mark as FAILED]
+  CC6 --> CC7[Increment Retry Count]
+  CC7 --> CC8{Max Retries?}
+  CC8 -->|No| CC9[Schedule Retry]
+  CC8 -->|Yes| CC10[Log Error]
+  
+  %% Dashboard Notification Flow
+  DD --> DD1[Create Notification Record]
+  DD1 --> DD2[Set Status: PENDING]
+  DD2 --> DD3[Store in Database]
+  DD3 --> DD4[Update User Notification Count]
+  
+  %% Scheduling System
+  EE[Scheduled Notification] --> EE1[Check Schedule Time]
+  EE1 --> EE2{Time to Send?}
+  EE2 -->|No| EE3[Wait for Schedule]
+  EE2 -->|Yes| EE4[Process Notification]
+  EE4 --> S
+  
+  %% Retry System
+  FF[Retry Failed Notification] --> FF1[Check Retry Count]
+  FF1 --> FF2{Max Retries Reached?}
+  FF2 -->|Yes| FF3[Mark as Permanently Failed]
+  FF2 -->|No| FF4[Increment Retry Count]
+  FF4 --> FF5[Schedule Retry]
+  FF5 --> FF6[Wait for Retry Interval]
+  FF6 --> S
+  
+  %% Analytics and Tracking
+  GG[Notification Analytics] --> GG1[Track Send Rate]
+  GG1 --> GG2[Track Read Rate]
+  GG2 --> GG3[Track Click Rate]
+  GG3 --> GG4[Generate Analytics Report]
+  
+  %% Template Management
+  HH[Template Management] --> HH1{Action?}
+  HH1 -->|Create| HH2[Create New Template]
+  HH1 -->|Update| HH3[Update Existing Template]
+  HH1 -->|Delete| HH4[Delete Template]
+  HH1 -->|List| HH5[List Templates]
+  
+  %% Template Creation
+  HH2 --> HH2A[Define Template Variables]
+  HH2A --> HH2B[Set Arabic Content]
+  HH2B --> HH2C[Set English Content]
+  HH2C --> HH2D[Configure Channels]
+  HH2D --> HH2E[Save Template]
+  
+  %% Template Update
+  HH3 --> HH3A[Load Existing Template]
+  HH3A --> HH3B[Update Content]
+  HH3B --> HH3C[Update Variables]
+  HH3C --> HH3D[Save Changes]
+  
+  %% Template Deletion
+  HH4 --> HH4A[Check Template Usage]
+  HH4A --> HH4B{In Use?}
+  HH4B -->|Yes| HH4C[Prevent Deletion]
+  HH4B -->|No| HH4D[Delete Template]
+  
+  %% Template Listing
+  HH5 --> HH5A[Filter Templates]
+  HH5A --> HH5B[Sort Templates]
+  HH5B --> HH5C[Return Template List]
+  
+  %% End points
+  AA5 --> Z[End]
+  BB5 --> Z
+  CC5 --> Z
+  DD4 --> Z
+  AA10 --> Z
+  BB10 --> Z
+  CC10 --> Z
+  FF3 --> Z
+  GG4 --> Z
+  HH2E --> Z
+  HH3D --> Z
+  HH4C --> Z
+  HH4D --> Z
+  HH5C --> Z
 

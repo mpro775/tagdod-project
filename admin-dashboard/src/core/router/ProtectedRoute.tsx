@@ -1,18 +1,24 @@
 import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, Alert, Typography, Button } from '@mui/material';
+import { Security, Home } from '@mui/icons-material';
+import { trackError, trackAdminAction } from '@/lib/analytics';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRoles?: string[];
   requiredPermissions?: string[];
+  requireAdmin?: boolean;
+  fallbackPath?: string;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredRoles = [],
   requiredPermissions = [],
+  requireAdmin = true,
+  fallbackPath = '/unauthorized',
 }) => {
   const location = useLocation();
   const { isAuthenticated, user, hasRole, hasPermission, initialize } = useAuthStore();
@@ -56,9 +62,20 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Check if user is admin (for admin dashboard)
+  if (requireAdmin && user && !user.roles.includes('admin') && !user.roles.includes('super_admin')) {
+    console.log('❌ User does not have admin privileges');
+    trackError('Access denied: Admin privileges required', 'ADMIN_REQUIRED', 'ProtectedRoute');
+    trackAdminAction('access_denied', 'admin_dashboard', { reason: 'insufficient_admin_privileges' });
+    return <Navigate to={fallbackPath} replace />;
+  }
+
   // Check role permissions
   if (requiredRoles.length > 0 && !hasRole(requiredRoles)) {
-    return <Navigate to="/unauthorized" replace />;
+    console.log('❌ User does not have required roles:', requiredRoles);
+    trackError('Access denied: Required roles missing', 'ROLE_REQUIRED', 'ProtectedRoute');
+    trackAdminAction('access_denied', 'protected_route', { requiredRoles, userRoles: user?.roles });
+    return <Navigate to={fallbackPath} replace />;
   }
 
   // Check specific permissions
@@ -67,14 +84,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       hasPermission(permission)
     );
     if (!hasAllPermissions) {
-      return <Navigate to="/unauthorized" replace />;
+      const missingPermissions = requiredPermissions.filter(permission => !hasPermission(permission));
+      console.log('❌ User does not have required permissions:', missingPermissions);
+      trackError('Access denied: Required permissions missing', 'PERMISSION_REQUIRED', 'ProtectedRoute');
+      trackAdminAction('access_denied', 'protected_route', { 
+        requiredPermissions, 
+        missingPermissions,
+        userPermissions: user?.permissions 
+      });
+      return <Navigate to={fallbackPath} replace />;
     }
-  }
-
-  // Check if user is admin (for admin dashboard)
-  if (user && !user.roles.includes('admin') && !user.roles.includes('super_admin')) {
-    console.log('❌ User does not have admin privileges');
-    return <Navigate to="/unauthorized" replace />;
   }
 
   console.log('✅ User authenticated and authorized');

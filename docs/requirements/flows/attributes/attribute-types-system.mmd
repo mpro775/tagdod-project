@@ -1,0 +1,269 @@
+%% Attribute Types System and Value Management
+%% View at https://mermaid.live
+flowchart TD
+  A[Attribute Types System] --> B[Attribute Types]
+  
+  %% Attribute Types
+  B --> C[SELECT Type]
+  B --> D[MULTISELECT Type]
+  B --> E[TEXT Type]
+  B --> F[NUMBER Type]
+  B --> G[BOOLEAN Type]
+  
+  %% SELECT Type
+  C --> C1[Single Choice Selection]
+  C1 --> C2[Predefined Values]
+  C2 --> C3[Value Management]
+  C3 --> C4[Filtering Support]
+  
+  %% Single Choice Selection
+  C1 --> C1A[User Selects One Value]
+  C1A --> C1B[Validate Selection]
+  C1B --> C1C[Store Selected Value]
+  C1C --> C1D[Update Usage Count]
+  
+  %% Predefined Values
+  C2 --> C2A[Create Value Options]
+  C2A --> C2B[Set Value Properties]
+  C2B --> C2C[Add Hex Codes for Colors]
+  C2C --> C2D[Add Images for Values]
+  C2D --> C2E[Set Value Order]
+  
+  %% Create Value Options
+  C2A --> C2A1[Define Value Name]
+  C2A1 --> C2A2[Define Value NameEn]
+  C2A2 --> C2A3[Generate Value Slug]
+  C2A3 --> C2A4[Set Value Properties]
+  
+  %% Set Value Properties
+  C2B --> C2B1[Set Hex Code]
+  C2B1 --> C2B2[Set Image URL]
+  C2B2 --> C2B3[Set Image ID]
+  C2B3 --> C2B4[Set Description]
+  C2B4 --> C2B5[Set Order]
+  
+  %% Value Management
+  C3 --> C3A[Add New Value]
+  C3A --> C3B[Update Existing Value]
+  C3B --> C3C[Delete Value]
+  C3C --> C3D[Reorder Values]
+  C3D --> C3E[Activate/Deactivate Value]
+  
+  %% Add New Value
+  C3A --> C3A1[Validate Value Uniqueness]
+  C3A1 --> C3A2[Create Value Record]
+  C3A2 --> C3A3[Set Default Properties]
+  C3A3 --> C3A4[Return Created Value]
+  
+  %% Update Existing Value
+  C3B --> C3B1[Find Value by ID]
+  C3B1 --> C3B2[Validate Update Data]
+  C3B2 --> C3B3[Update Value Fields]
+  C3B3 --> C3B4[Save Changes]
+  
+  %% Delete Value
+  C3C --> C3C1[Check Usage Count]
+  C3C1 --> C3C2{In Use?}
+  C3C2 -->|Yes| C3C3[Throw In Use Error]
+  C3C2 -->|No| C3C4[Perform Soft Delete]
+  
+  %% Filtering Support
+  C4 --> C4A[Filter by Selected Value]
+  C4A --> C4B[Filter by Multiple Values]
+  C4B --> C4C[Filter by Value Properties]
+  C4C --> C4D[Advanced Filtering]
+  
+  %% Filter by Selected Value
+  C4A --> C4A1[Get Selected Value]
+  C4A1 --> C4A2[Find Products with Value]
+  C4A2 --> C4A3[Apply Filter]
+  C4A3 --> C4A4[Return Filtered Results]
+  
+  %% MULTISELECT Type
+  D --> D1[Multiple Choice Selection]
+  D1 --> D2[Multiple Values]
+  D2 --> D3[Value Combination Management]
+  D3 --> D4[Advanced Filtering]
+  
+  %% Multiple Choice Selection
+  D1 --> D1A[User Selects Multiple Values]
+  D1A --> D1B[Validate Selections]
+  D1B --> D1C[Store Selected Values]
+  D1C --> D1D[Update Usage Counts]
+  
+  %% Multiple Values
+  D2 --> D2A[Create Multiple Value Options]
+  D2A --> D2B[Set Value Combinations]
+  D2B --> D2C[Handle Value Conflicts]
+  D2C --> D2D[Manage Value Dependencies]
+  
+  %% Value Combination Management
+  D3 --> D3A[Track Value Combinations]
+  D3A --> D3B[Handle Value Conflicts]
+  D3B --> D3C[Manage Value Dependencies]
+  D3C --> D3D[Optimize Value Selection]
+  
+  %% Advanced Filtering
+  D4 --> D4A[Filter by Any Selected Value]
+  D4A --> D4B[Filter by All Selected Values]
+  D4B --> D4C[Filter by Value Combinations]
+  D4C --> D4D[Filter by Value Exclusions]
+  
+  %% TEXT Type
+  E --> E1[Free Text Input]
+  E1 --> E2[Text Validation]
+  E2 --> E3[Text Processing]
+  E3 --> E4[Text Search]
+  
+  %% Free Text Input
+  E1 --> E1A[User Enters Free Text]
+  E1A --> E1B[Validate Text Length]
+  E1B --> E1C[Validate Text Format]
+  E1C --> E1D[Store Text Value]
+  
+  %% Text Validation
+  E2 --> E2A[Check Text Length]
+  E2A --> E2B[Check Text Format]
+  E2B --> E2C[Check Text Content]
+  E2C --> E2D[Validate Text Rules]
+  
+  %% Text Processing
+  E3 --> E3A[Clean Text Input]
+  E3A --> E3B[Normalize Text]
+  E3B --> E3C[Extract Keywords]
+  E3C --> E3D[Generate Text Summary]
+  
+  %% Text Search
+  E4 --> E4A[Full Text Search]
+  E4A --> E4B[Keyword Search]
+  E4B --> E4C[Fuzzy Search]
+  E4C --> E4D[Advanced Text Filtering]
+  
+  %% NUMBER Type
+  F --> F1[Numeric Input]
+  F1 --> F2[Number Validation]
+  F2 --> F3[Number Processing]
+  F3 --> F4[Numeric Filtering]
+  
+  %% Numeric Input
+  F1 --> F1A[User Enters Number]
+  F1A --> F1B[Validate Number Format]
+  F1B --> F1C[Validate Number Range]
+  F1C --> F1D[Store Number Value]
+  
+  %% Number Validation
+  F2 --> F2A[Check Number Format]
+  F2A --> F2B[Check Number Range]
+  F2B --> F2C[Check Number Precision]
+  F2C --> F2D[Validate Number Rules]
+  
+  %% Number Processing
+  F3 --> F3A[Format Number]
+  F3A --> F3B[Round Number]
+  F3B --> F3C[Convert Units]
+  F3C --> F3D[Calculate Number Statistics]
+  
+  %% Numeric Filtering
+  F4 --> F4A[Filter by Exact Number]
+  F4A --> F4B[Filter by Number Range]
+  F4B --> F4C[Filter by Number Comparison]
+  F4C --> F4D[Filter by Number Statistics]
+  
+  %% BOOLEAN Type
+  G --> G1[Boolean Input]
+  G1 --> G2[Boolean Validation]
+  G2 --> G3[Boolean Processing]
+  G3 --> G4[Boolean Filtering]
+  
+  %% Boolean Input
+  G1 --> G1A[User Selects True/False]
+  G1A --> G1B[Validate Boolean Value]
+  G1B --> G1C[Store Boolean Value]
+  G1C --> G1D[Update Usage Count]
+  
+  %% Boolean Validation
+  G2 --> G2A[Check Boolean Format]
+  G2A --> G2B[Validate Boolean Value]
+  G2B --> G2C[Check Boolean Rules]
+  G2C --> G2D[Validate Boolean Logic]
+  
+  %% Boolean Processing
+  G3 --> G3A[Convert Boolean Value]
+  G3A --> G3B[Format Boolean Display]
+  G3B --> G3C[Calculate Boolean Statistics]
+  G3C --> G3D[Generate Boolean Reports]
+  
+  %% Boolean Filtering
+  G4 --> G4A[Filter by True Values]
+  G4A --> G4B[Filter by False Values]
+  G4B --> G4C[Filter by Boolean Logic]
+  G4C --> G4D[Filter by Boolean Combinations]
+  
+  %% Value Management System
+  H[Value Management System] --> H1[Value Creation]
+  H1 --> H2[Value Updates]
+  H2 --> H3[Value Deletion]
+  H3 --> H4[Value Organization]
+  
+  %% Value Creation
+  H1 --> H1A[Create New Value]
+  H1A --> H1B[Set Value Properties]
+  H1B --> H1C[Validate Value Data]
+  H1C --> H1D[Save Value Record]
+  
+  %% Value Updates
+  H2 --> H2A[Update Value Properties]
+  H2A --> H2B[Update Value Order]
+  H2B --> H2C[Update Value Status]
+  H2C --> H2D[Update Value Usage]
+  
+  %% Value Deletion
+  H3 --> H3A[Check Value Usage]
+  H3A --> H3B[Perform Soft Delete]
+  H3B --> H3C[Update Related Records]
+  H3C --> H3D[Clean Up Value Data]
+  
+  %% Value Organization
+  H4 --> H4A[Group Values by Attribute]
+  H4A --> H4B[Sort Values by Order]
+  H4B --> H4C[Filter Values by Status]
+  H4C --> H4D[Organize Value Display]
+  
+  %% Advanced Features
+  I[Advanced Features] --> I1[Value Dependencies]
+  I1 --> I2[Value Validation Rules]
+  I2 --> I3[Value Display Options]
+  I3 --> I4[Value Analytics]
+  
+  %% Value Dependencies
+  I1 --> I1A[Set Value Dependencies]
+  I1A --> I1B[Handle Value Conflicts]
+  I1B --> I1C[Manage Value Relationships]
+  I1C --> I1D[Optimize Value Selection]
+  
+  %% Value Validation Rules
+  I2 --> I2A[Set Validation Rules]
+  I2A --> I2B[Apply Validation Logic]
+  I2B --> I2C[Handle Validation Errors]
+  I2C --> I2D[Generate Validation Reports]
+  
+  %% Value Display Options
+  I3 --> I3A[Set Display Format]
+  I3A --> I3B[Configure Display Options]
+  I3B --> I3C[Customize Display Style]
+  I3C --> I3D[Optimize Display Performance]
+  
+  %% Value Analytics
+  I4 --> I4A[Track Value Usage]
+  I4A --> I4B[Analyze Value Performance]
+  I4B --> I4C[Generate Value Reports]
+  I4C --> I4D[Optimize Value Management]
+  
+  %% End points
+  C4D --> Z[End]
+  D4D --> Z
+  E4D --> Z
+  F4D --> Z
+  G4D --> Z
+  H4D --> Z
+  I4D --> Z

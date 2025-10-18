@@ -1,0 +1,319 @@
+%% Category Statistics and Analytics System
+%% View at https://mermaid.live
+flowchart TD
+  A[Category Statistics System] --> B[Statistics Types]
+  
+  %% Statistics Types
+  B --> C[Category Counters]
+  B --> D[Hierarchy Statistics]
+  B --> E[Performance Statistics]
+  B --> F[Usage Statistics]
+  B --> G[Analytics Statistics]
+  
+  %% Category Counters
+  C --> C1[Products Count]
+  C --> C2[Children Count]
+  C --> C3[Views Count]
+  C --> C4[Activity Count]
+  
+  %% Products Count
+  C1 --> C1A[Count Products in Category]
+  C1A --> C1B[Count Products in Subcategories]
+  C1B --> C1C[Update Products Counter]
+  C1C --> C1D[Track Product Changes]
+  
+  %% Count Products in Category
+  C1A --> C1A1[Query Products Collection]
+  C1A1 --> C1A2[Filter by Category ID]
+  C1A2 --> C1A3[Count Active Products]
+  C1A3 --> C1A4[Return Product Count]
+  
+  %% Count Products in Subcategories
+  C1B --> C1B1[Get All Subcategories]
+  C1B1 --> C1B2[Count Products in Each]
+  C1B2 --> C1B3[Sum All Counts]
+  C1B3 --> C1B4[Return Total Count]
+  
+  %% Update Products Counter
+  C1C --> C1C1[Increment Counter]
+  C1C1 --> C1C2[Decrement Counter]
+  C1C2 --> C1C3[Reset Counter]
+  C1C3 --> C1C4[Validate Counter]
+  
+  %% Increment Counter
+  C1C1 --> C1C1A[Add Product to Category]
+  C1C1A --> C1C1B[Increase productsCount]
+  C1C1B --> C1C1C[Update Database]
+  C1C1C --> C1C1D[Clear Cache]
+  
+  %% Decrement Counter
+  C1C2 --> C1C2A[Remove Product from Category]
+  C1C2A --> C1C2B[Decrease productsCount]
+  C1C2B --> C1C2C[Update Database]
+  C1C2C --> C1C2D[Clear Cache]
+  
+  %% Children Count
+  C2 --> C2A[Count Direct Children]
+  C2A --> C2B[Count All Descendants]
+  C2B --> C2C[Update Children Counter]
+  C2C --> C2D[Track Hierarchy Changes]
+  
+  %% Count Direct Children
+  C2A --> C2A1[Query Categories Collection]
+  C2A1 --> C2A2[Filter by Parent ID]
+  C2A2 --> C2A3[Count Active Children]
+  C2A3 --> C2A4[Return Children Count]
+  
+  %% Count All Descendants
+  C2B --> C2B1[Get Direct Children]
+  C2B1 --> C2B2[Recursively Count Descendants]
+  C2B2 --> C2B3[Sum All Levels]
+  C2B3 --> C2B4[Return Total Descendants]
+  
+  %% Update Children Counter
+  C2C --> C2C1[Add Child Category]
+  C2C1 --> C2C2[Remove Child Category]
+  C2C2 --> C2C3[Move Child Category]
+  C2C3 --> C2C4[Update Counters]
+  
+  %% Add Child Category
+  C2C1 --> C2C1A[Create New Child]
+  C2C1A --> C2C1B[Increment childrenCount]
+  C2C1B --> C2C1C[Update Parent]
+  C2C1C --> C2C1D[Clear Cache]
+  
+  %% Views Count
+  C3 --> C3A[Track Category Views]
+  C3A --> C3B[Count Unique Views]
+  C3B --> C3C[Update Views Counter]
+  C3C --> C3D[Analyze View Patterns]
+  
+  %% Track Category Views
+  C3A --> C3A1[Log Category Access]
+  C3A1 --> C3A2[Track User Sessions]
+  C3A2 --> C3A3[Record View Timestamp]
+  C3A3 --> C3A4[Store View Data]
+  
+  %% Count Unique Views
+  C3B --> C3B1[Count by User ID]
+  C3B1 --> C3B2[Count by Session]
+  C3B2 --> C3B3[Count by IP Address]
+  C3B3 --> C3B4[Return View Statistics]
+  
+  %% Activity Count
+  C4 --> C4A[Track Category Activity]
+  C4A --> C4B[Count Activity Types]
+  C4B --> C4C[Update Activity Counter]
+  C4C --> C4D[Generate Activity Report]
+  
+  %% Track Category Activity
+  C4A --> C4A1[Category Created]
+  C4A1 --> C4A2[Category Updated]
+  C4A2 --> C4A3[Category Viewed]
+  C4A3 --> C4A4[Category Searched]
+  
+  %% Hierarchy Statistics
+  D --> D1[Depth Statistics]
+  D --> D2[Width Statistics]
+  D --> D3[Balance Statistics]
+  D --> D4[Structure Statistics]
+  
+  %% Depth Statistics
+  D1 --> D1A[Calculate Max Depth]
+  D1A --> D1B[Calculate Average Depth]
+  D1B --> D1C[Count by Depth Level]
+  D1C --> D1D[Analyze Depth Distribution]
+  
+  %% Calculate Max Depth
+  D1A --> D1A1[Find Deepest Category]
+  D1A1 --> D1A2[Get Maximum Depth Value]
+  D1A2 --> D1A3[Return Max Depth]
+  D1A3 --> D1A4[Update Statistics]
+  
+  %% Calculate Average Depth
+  D1B --> D1B1[Sum All Depths]
+  D1B1 --> D1B2[Count Total Categories]
+  D1B2 --> D1B3[Calculate Average]
+  D1B3 --> D1B4[Return Average Depth]
+  
+  %% Count by Depth Level
+  D1C --> D1C1[Group by Depth]
+  D1C1 --> D1C2[Count Each Level]
+  D1C2 --> D1C3[Create Depth Distribution]
+  D1C3 --> D1C4[Return Depth Stats]
+  
+  %% Width Statistics
+  D2 --> D2A[Calculate Max Width]
+  D2A --> D2B[Calculate Average Width]
+  D2B --> D2C[Count by Width Level]
+  D2C --> D2D[Analyze Width Distribution]
+  
+  %% Calculate Max Width
+  D2A --> D2A1[Find Widest Level]
+  D2A1 --> D2A2[Get Maximum Width Value]
+  D2A2 --> D2A3[Return Max Width]
+  D2A3 --> D2A4[Update Statistics]
+  
+  %% Performance Statistics
+  E --> E1[Response Time Statistics]
+  E --> E2[Cache Performance]
+  E --> E3[Database Performance]
+  E --> E4[System Performance]
+  
+  %% Response Time Statistics
+  E1 --> E1A[Measure API Response Time]
+  E1A --> E1B[Track Query Performance]
+  E1B --> E1C[Monitor Cache Hit Rate]
+  E1C --> E1D[Analyze Performance Trends]
+  
+  %% Measure API Response Time
+  E1A --> E1A1[Start Timer]
+  E1A1 --> E1A2[Execute Operation]
+  E1A2 --> E1A3[End Timer]
+  E1A3 --> E1A4[Record Response Time]
+  
+  %% Track Query Performance
+  E1B --> E1B1[Monitor Database Queries]
+  E1B1 --> E1B2[Track Query Execution Time]
+  E1B2 --> E1B3[Identify Slow Queries]
+  E1B3 --> E1B4[Optimize Query Performance]
+  
+  %% Cache Performance
+  E2 --> E2A[Cache Hit Rate]
+  E2A --> E2B[Cache Miss Rate]
+  E2B --> E2C[Cache Response Time]
+  E2C --> E2D[Cache Memory Usage]
+  
+  %% Cache Hit Rate
+  E2A --> E2A1[Count Cache Hits]
+  E2A1 --> E2A2[Count Total Requests]
+  E2A2 --> E2A3[Calculate Hit Percentage]
+  E2A3 --> E2A4[Track Hit Rate Trends]
+  
+  %% Usage Statistics
+  F --> F1[User Usage Statistics]
+  F --> F2[Admin Usage Statistics]
+  F --> F3[API Usage Statistics]
+  F --> F4[Feature Usage Statistics]
+  
+  %% User Usage Statistics
+  F1 --> F1A[Track User Interactions]
+  F1A --> F1B[Count User Sessions]
+  F1B --> F1C[Analyze User Behavior]
+  F1C --> F1D[Generate User Reports]
+  
+  %% Track User Interactions
+  F1A --> F1A1[Category Views]
+  F1A1 --> F1A2[Category Searches]
+  F1A2 --> F1A3[Category Navigation]
+  F1A3 --> F1A4[Category Interactions]
+  
+  %% Admin Usage Statistics
+  F2 --> F2A[Track Admin Actions]
+  F2A --> F2B[Count Admin Sessions]
+  F2B --> F2C[Analyze Admin Behavior]
+  F2C --> F2D[Generate Admin Reports]
+  
+  %% Track Admin Actions
+  F2A --> F2A1[Category Creation]
+  F2A1 --> F2A2[Category Updates]
+  F2A2 --> F2A3[Category Deletions]
+  F2A3 --> F2A4[Category Management]
+  
+  %% Analytics Statistics
+  G --> G1[Trend Analysis]
+  G --> G2[Comparative Analysis]
+  G --> G3[Predictive Analysis]
+  G --> G4[Performance Analysis]
+  
+  %% Trend Analysis
+  G1 --> G1A[Analyze Growth Trends]
+  G1A --> G1B[Track Usage Trends]
+  G1B --> G1C[Monitor Performance Trends]
+  G1C --> G1D[Generate Trend Reports]
+  
+  %% Analyze Growth Trends
+  G1A --> G1A1[Category Growth Rate]
+  G1A1 --> G1A2[Product Growth Rate]
+  G1A2 --> G1A3[User Growth Rate]
+  G1A3 --> G1A4[Revenue Growth Rate]
+  
+  %% Comparative Analysis
+  G2 --> G2A[Compare Categories]
+  G2A --> G2B[Compare Time Periods]
+  G2B --> G2C[Compare Performance]
+  G2C --> G2D[Generate Comparison Reports]
+  
+  %% Compare Categories
+  G2A --> G2A1[Compare Category Performance]
+  G2A1 --> G2A2[Compare Category Usage]
+  G2A2 --> G2A3[Compare Category Growth]
+  G2A3 --> G2A4[Identify Top Performers]
+  
+  %% Statistics Reporting
+  H[Statistics Reporting] --> H1[Real-time Reports]
+  H1 --> H2[Scheduled Reports]
+  H2 --> H3[Custom Reports]
+  H3 --> H4[Export Reports]
+  
+  %% Real-time Reports
+  H1 --> H1A[Live Dashboard]
+  H1A --> H1B[Real-time Metrics]
+  H1B --> H1C[Live Updates]
+  H1C --> H1D[Interactive Charts]
+  
+  %% Live Dashboard
+  H1A --> H1A1[Category Overview]
+  H1A1 --> H1A2[Performance Metrics]
+  H1A2 --> H1A3[Usage Statistics]
+  H1A3 --> H1A4[Trend Indicators]
+  
+  %% Scheduled Reports
+  H2 --> H2A[Daily Reports]
+  H2A --> H2B[Weekly Reports]
+  H2B --> H2C[Monthly Reports]
+  H2C --> H2D[Custom Schedule]
+  
+  %% Daily Reports
+  H2A --> H2A1[Daily Statistics]
+  H2A1 --> H2A2[Daily Performance]
+  H2A2 --> H2A3[Daily Usage]
+  H2A3 --> H2A4[Daily Trends]
+  
+  %% Export Reports
+  H4 --> H4A[PDF Export]
+  H4A --> H4B[Excel Export]
+  H4B --> H4C[CSV Export]
+  H4C --> H4D[JSON Export]
+  
+  %% PDF Export
+  H4A --> H4A1[Generate PDF Report]
+  H4A1 --> H4A2[Include Charts]
+  H4A2 --> H4A3[Add Statistics]
+  H4A3 --> H4A4[Format Report]
+  
+  %% End points
+  C1D --> Z[End]
+  C2D --> Z
+  C3D --> Z
+  C4D --> Z
+  D1D --> Z
+  D2D --> Z
+  D3D --> Z
+  D4D --> Z
+  E1D --> Z
+  E2D --> Z
+  E3D --> Z
+  E4D --> Z
+  F1D --> Z
+  F2D --> Z
+  F3D --> Z
+  F4D --> Z
+  G1D --> Z
+  G2D --> Z
+  G3D --> Z
+  G4D --> Z
+  H1D --> Z
+  H2D --> Z
+  H3D --> Z
+  H4D --> Z

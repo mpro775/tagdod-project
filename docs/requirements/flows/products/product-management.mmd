@@ -1,39 +1,79 @@
-%% Product Management Flow
+%% Product Management - High Level Overview
 %% View at https://mermaid.live
 flowchart TD
-  A[Admin manages product] --> B{Action?}
-  B -->|Create| C[Fill product details]
-  B -->|Edit| D[Load existing product]
-  B -->|Delete| E[Select product to delete]
-  B -->|Publish| F[Select product to publish]
+  A[Product Management System] --> B{Management Area?}
+  B -->|Product Creation| C[Product Creation Flow]
+  B -->|Product Editing| D[Product Editing Flow]
+  B -->|Product Deletion| E[Product Deletion Flow]
+  B -->|Product Publishing| F[Product Publishing Flow]
+  B -->|Inventory Management| G[Inventory Management Flow]
+  B -->|Media Management| H[Media Management Flow]
+  B -->|Pricing Management| I[Pricing Management Flow]
+  B -->|Catalog Display| J[Catalog Display Flow]
   
-  C --> G[Validate required fields]
-  G --> H{Valid?}
-  H -->|No| I[Show validation errors]
-  H -->|Yes| J[Generate unique slug]
-  J --> K[Upload product images]
-  K --> L[Create product record]
-  L --> M[Create variants if needed]
-  M --> N[Update category product count]
+  %% Product Creation
+  C --> C1[Create Basic Product Info]
+  C1 --> C2[Define Product Attributes]
+  C2 --> C3[Create Product Variants]
+  C3 --> C4[Set Up Pricing]
+  C4 --> C5[Upload Media Files]
+  C5 --> C6[Configure Inventory]
+  C6 --> C7[Publish Product]
   
-  D --> O[Load product data]
-  O --> P[Make changes]
-  P --> G
+  %% Product Editing
+  D --> D1[Load Existing Product]
+  D1 --> D2[Edit Product Information]
+  D2 --> D3[Update Variants]
+  D3 --> D4[Modify Pricing]
+  D4 --> D5[Update Media]
+  D5 --> D6[Adjust Inventory]
+  D6 --> D7[Save Changes]
   
-  E --> Q{Has active orders?}
-  Q -->|Yes| R[Show warning about active orders]
-  Q -->|No| S[Soft delete product]
-  R --> T{Confirm deletion?}
-  T -->|Yes| S
-  T -->|No| U[Cancel deletion]
+  %% Product Deletion
+  E --> E1[Check Active Orders]
+  E1 --> E2{Has Active Orders?}
+  E2 -->|Yes| E3[Show Warning]
+  E2 -->|No| E4[Soft Delete Product]
+  E3 --> E5{Confirm Deletion?}
+  E5 -->|Yes| E4
+  E5 -->|No| E6[Cancel Deletion]
   
-  F --> V[Update product status to ACTIVE]
-  V --> W[Make product visible in catalog]
-  W --> X[Send product published notification]
+  %% Product Publishing
+  F --> F1[Validate Product Data]
+  F1 --> F2[Check Required Fields]
+  F2 --> F3[Verify Media Upload]
+  F3 --> F4[Update Status to Active]
+  F4 --> F5[Make Visible in Catalog]
+  F5 --> F6[Send Publication Notification]
   
-  N --> Y[Update search indexes]
-  S --> Y
-  X --> Y
-  Y --> Z[End]
-  I --> Z
-  U --> Z
+  %% Integration Points
+  G --> G1[Stock Adjustments]
+  G1 --> G2[Reservation Management]
+  G2 --> G3[Commitment Processing]
+  G3 --> G4[Return Handling]
+  
+  H --> H1[Image Management]
+  H1 --> H2[Video Processing]
+  H2 --> H3[Document Handling]
+  H3 --> H4[Bulk Upload]
+  
+  I --> I1[Base Price Setting]
+  I1 --> I2[Currency Conversion]
+  I2 --> I3[Bulk Price Updates]
+  I3 --> I4[Price History]
+  
+  J --> J1[Category Display]
+  J1 --> J2[Search Results]
+  J2 --> J3[Product Details]
+  J3 --> J4[Related Products]
+  
+  %% End points
+  C7 --> Z[Product Management Complete]
+  D7 --> Z
+  E4 --> Z
+  E6 --> Z
+  F6 --> Z
+  G4 --> Z
+  H4 --> Z
+  I4 --> Z
+  J4 --> Z

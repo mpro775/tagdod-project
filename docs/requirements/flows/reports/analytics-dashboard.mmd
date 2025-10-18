@@ -1,0 +1,195 @@
+%% Analytics Dashboard and Real-time Monitoring Flow
+%% View at https://mermaid.live
+flowchart TD
+  A[Analytics Dashboard] --> B[Dashboard Components]
+  
+  %% Dashboard Components
+  B --> C[KPI Cards]
+  B --> D[Charts and Graphs]
+  B --> E[Real-time Data]
+  B --> F[Filters and Controls]
+  
+  %% KPI Cards
+  C --> C1[Revenue KPIs]
+  C --> C2[Customer KPIs]
+  C --> C3[Product KPIs]
+  C --> C4[Service KPIs]
+  C --> C5[System KPIs]
+  
+  %% Revenue KPIs
+  C1 --> C1A[Total Revenue]
+  C1 --> C1B[Revenue Growth]
+  C1 --> C1C[Average Order Value]
+  C1 --> C1D[Conversion Rate]
+  
+  %% Customer KPIs
+  C2 --> C2A[Total Customers]
+  C2 --> C2B[New Customers]
+  C2 --> C2C[Customer Retention]
+  C2 --> C2D[Customer Satisfaction]
+  
+  %% Product KPIs
+  C3 --> C3A[Total Products]
+  C3 --> C3B[Top Selling Products]
+  C3 --> C3C[Product Performance]
+  C3 --> C3D[Inventory Levels]
+  
+  %% Service KPIs
+  C4 --> C4A[Service Requests]
+  C4 --> C4B[Service Completion Rate]
+  C4 --> C4C[Average Response Time]
+  C4 --> C4D[Service Satisfaction]
+  
+  %% System KPIs
+  C5 --> C5A[System Uptime]
+  C5 --> C5B[Response Time]
+  C5 --> C5C[Error Rate]
+  C5 --> C5D[Active Users]
+  
+  %% Charts and Graphs
+  D --> D1[Revenue Charts]
+  D --> D2[Customer Charts]
+  D --> D3[Product Charts]
+  D --> D4[Service Charts]
+  D --> D5[Geographic Charts]
+  
+  %% Revenue Charts
+  D1 --> D1A[Daily Revenue Trend]
+  D1 --> D1B[Monthly Revenue Comparison]
+  D1 --> D1C[Revenue by Category]
+  D1 --> D1D[Revenue by Region]
+  
+  %% Customer Charts
+  D2 --> D2A[Customer Growth Trend]
+  D2 --> D2B[Customer Acquisition Cost]
+  D2 --> D2C[Customer Lifetime Value]
+  D2 --> D2D[Customer Satisfaction Trend]
+  
+  %% Product Charts
+  D3 --> D3A[Product Sales Performance]
+  D3 --> D3B[Product Category Distribution]
+  D3 --> D3C[Product Rating Trends]
+  D3 --> D3D[Inventory Turnover]
+  
+  %% Service Charts
+  D4 --> D4A[Service Request Trends]
+  D4 --> D4B[Service Completion Rates]
+  D4 --> D4C[Service Response Times]
+  D4 --> D4D[Service Satisfaction Scores]
+  
+  %% Geographic Charts
+  D5 --> D5A[Sales by Region]
+  D5 --> D5B[Customer Distribution]
+  D5 --> D5C[Service Coverage]
+  D5 --> D5D[Regional Performance]
+  
+  %% Real-time Data
+  E --> E1[Live Updates]
+  E --> E2[Real-time Metrics]
+  E --> E3[Live Notifications]
+  E --> E4[System Status]
+  
+  %% Live Updates
+  E1 --> E1A[Auto-refresh Data]
+  E1 --> E1B[Real-time Charts]
+  E1 --> E1C[Live Counters]
+  E1 --> E1D[Instant Updates]
+  
+  %% Real-time Metrics
+  E2 --> E2A[Current Revenue]
+  E2 --> E2B[Active Users]
+  E2 --> E2C[System Performance]
+  E2 --> E2D[Error Monitoring]
+  
+  %% Live Notifications
+  E3 --> E3A[Alert System]
+  E3 --> E3B[Threshold Alerts]
+  E3 --> E3C[Performance Alerts]
+  E3 --> E3D[Security Alerts]
+  
+  %% System Status
+  E4 --> E4A[Server Status]
+  E4 --> E4B[Database Status]
+  E4 --> E4C[API Status]
+  E4 --> E4D[Service Health]
+  
+  %% Filters and Controls
+  F --> F1[Date Range Filters]
+  F --> F2[Category Filters]
+  F --> F3[Region Filters]
+  F --> F4[User Filters]
+  
+  %% Date Range Filters
+  F1 --> F1A[Today]
+  F1 --> F1B[This Week]
+  F1 --> F1C[This Month]
+  F1 --> F1D[Custom Range]
+  
+  %% Category Filters
+  F2 --> F2A[All Categories]
+  F2 --> F2B[Product Categories]
+  F2 --> F2C[Service Categories]
+  F2 --> F2D[Customer Segments]
+  
+  %% Region Filters
+  F3 --> F3A[All Regions]
+  F3 --> F3B[Specific Cities]
+  F3 --> F3C[Geographic Areas]
+  F3 --> F3D[Service Areas]
+  
+  %% User Filters
+  F4 --> F4A[All Users]
+  F4 --> F4B[Customer Types]
+  F4 --> F4C[User Roles]
+  F4 --> F4D[Activity Levels]
+  
+  %% Data Processing
+  G[Data Processing] --> G1[Data Collection]
+  G1 --> G2[Data Aggregation]
+  G2 --> G3[Data Analysis]
+  G3 --> G4[Data Visualization]
+  
+  %% Data Collection
+  G1 --> G1A[Collect from Database]
+  G1 --> G1B[Collect from APIs]
+  G1 --> G1C[Collect from External Sources]
+  G1 --> G1D[Collect Real-time Data]
+  
+  %% Data Aggregation
+  G2 --> G2A[Group by Time Periods]
+  G2 --> G2B[Group by Categories]
+  G2 --> G2C[Group by Regions]
+  G2 --> G2D[Group by User Segments]
+  
+  %% Data Analysis
+  G3 --> G3A[Calculate KPIs]
+  G3 --> G3B[Identify Trends]
+  G3 --> G3C[Detect Anomalies]
+  G3 --> G3D[Generate Insights]
+  
+  %% Data Visualization
+  G4 --> G4A[Create Charts]
+  G4 --> G4B[Generate Tables]
+  G4 --> G4C[Build Dashboards]
+  G4 --> G4D[Update Real-time Display]
+  
+  %% End points
+  C1D --> Z[End]
+  C2D --> Z
+  C3D --> Z
+  C4D --> Z
+  C5D --> Z
+  D1D --> Z
+  D2D --> Z
+  D3D --> Z
+  D4D --> Z
+  D5D --> Z
+  E1D --> Z
+  E2D --> Z
+  E3D --> Z
+  E4D --> Z
+  F1D --> Z
+  F2D --> Z
+  F3D --> Z
+  F4D --> Z
+  G4D --> Z

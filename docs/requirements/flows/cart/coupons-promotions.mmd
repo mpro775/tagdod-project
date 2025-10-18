@@ -1,0 +1,52 @@
+%% Cart: Coupons & Promotions System
+%% View at https://mermaid.live
+flowchart TD
+  A[User applies coupon/promotion] --> B{Type of discount?}
+  B -->|Manual Coupon| C[Enter coupon code]
+  B -->|Auto Coupon| D[System applies auto coupon]
+  B -->|Promotion| E[System applies promotion rule]
+  
+  %% Manual Coupon Flow
+  C --> F[Validate coupon code]
+  F --> G{Coupon valid?}
+  G -->|No| H[Error: Invalid coupon]
+  G -->|Yes| I[Check coupon conditions]
+  I --> J{Conditions met?}
+  J -->|No| K[Error: Conditions not met]
+  J -->|Yes| L[Apply coupon discount]
+  
+  %% Auto Coupon Flow
+  D --> M[Check cart value]
+  M --> N[Check user type]
+  N --> O[Find applicable auto coupons]
+  O --> P{Any auto coupons?}
+  P -->|No| Q[No auto discount applied]
+  P -->|Yes| R[Apply best auto coupon]
+  
+  %% Promotion Flow
+  E --> S[Check promotion rules]
+  S --> T[Match cart items to rules]
+  T --> U{Rules match?}
+  U -->|No| V[No promotion applied]
+  U -->|Yes| W[Apply promotion discount]
+  
+  %% Discount Application
+  L --> X[Calculate discount amount]
+  R --> X
+  W --> X
+  X --> Y[Update cart pricing]
+  Y --> Z[Recalculate totals]
+  Z --> AA[Update pricing summary]
+  AA --> BB[Save cart with discount]
+  BB --> CC[Return updated cart]
+  
+  %% Error Handling
+  H --> DD[Return error response]
+  K --> DD
+  Q --> EE[Continue without discount]
+  V --> EE
+  
+  %% End Points
+  CC --> FF[End]
+  DD --> FF
+  EE --> FF

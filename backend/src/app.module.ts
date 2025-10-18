@@ -1,7 +1,9 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { User, UserSchema } from './modules/users/schemas/user.schema';
 
 // Core modules
@@ -34,7 +36,13 @@ import { CacheModule } from './shared/cache/cache.module';
 
 // Middleware
 import { ActivityTrackingMiddleware } from './shared/middleware/activity-tracking.middleware';
+import { RequestIdMiddleware } from './shared/middleware/request-id.middleware';
+import { IdempotencyMiddleware } from './shared/middleware/idempotency.middleware';
 import { HealthModule } from './health/health.module';
+
+// Global filters and interceptors
+import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
+import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-envelope.interceptor';
 
 // Configuration
 // Using basic validation without Joi to avoid dependency conflicts
@@ -58,6 +66,12 @@ import { HealthModule } from './health/health.module';
 
     // Scheduling
     ScheduleModule.forRoot(),
+
+    // Throttling - Global rate limiting (100 requests per minute)
+    ThrottlerModule.forRoot([{
+      ttl: 60,
+      limit: 100,
+    }]),
 
     // Core modules
     AuthModule,
@@ -87,12 +101,31 @@ import { HealthModule } from './health/health.module';
     // Shared modules
     CacheModule,
   ],
+  providers: [
+    { provide: APP_FILTER, useClass: GlobalExceptionFilter },
+    { provide: APP_INTERCEPTOR, useClass: ResponseEnvelopeInterceptor },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    // Apply request ID middleware to all routes
+    consumer
+      .apply(RequestIdMiddleware)
+      .forRoutes('*');
+    
     // Apply activity tracking middleware to all routes
     consumer
       .apply(ActivityTrackingMiddleware)
       .forRoutes('*');
+    
+    // Apply idempotency middleware to critical routes (Orders/Checkout)
+    consumer
+      .apply(IdempotencyMiddleware)
+      .forRoutes(
+        { path: 'api/v1/checkout', method: RequestMethod.POST },
+        { path: 'api/v1/orders', method: RequestMethod.POST },
+        { path: 'api/v1/cart/checkout', method: RequestMethod.POST },
+      );
   }
 }

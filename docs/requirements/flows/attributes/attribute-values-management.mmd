@@ -1,0 +1,282 @@
+%% Attribute Values Management and Advanced Features
+%% View at https://mermaid.live
+flowchart TD
+  A[Attribute Values Management] --> B[Value Operations]
+  
+  %% Value Operations
+  B --> C[Create Value]
+  B --> D[Update Value]
+  B --> E[Delete Value]
+  B --> F[List Values]
+  B --> G[Value Properties]
+  B --> H[Value Organization]
+  
+  %% Create Value
+  C --> C1[Validate Attribute Exists]
+  C1 --> C2[Validate Value Data]
+  C2 --> C3[Check Value Uniqueness]
+  C3 --> C4[Generate Value Slug]
+  C4 --> C5[Set Value Properties]
+  C5 --> C6[Create Value Record]
+  C6 --> C7[Return Created Value]
+  
+  %% Validate Attribute Exists
+  C1 --> C1A[Find Attribute by ID]
+  C1A --> C1B{Attribute Exists?}
+  C1B -->|Yes| C1C[Check Attribute Status]
+  C1B -->|No| C1D[Throw Attribute Not Found Error]
+  C1C --> C1E{Attribute Active?}
+  C1E -->|Yes| C1F[Continue with Creation]
+  C1E -->|No| C1G[Throw Attribute Inactive Error]
+  
+  %% Validate Value Data
+  C2 --> C2A[Validate Required Fields]
+  C2A --> C2B[Validate String Lengths]
+  C2B --> C2C[Validate Hex Code Format]
+  C2C --> C2D[Validate Image References]
+  C2D --> C2E[Validate Number Ranges]
+  
+  %% Validate Required Fields
+  C2A --> C2A1[Check Value Field]
+  C2A1 --> C2A2[Check ValueEn Field]
+  C2A2 --> C2A3[Check Slug Field]
+  C2A3 --> C2A4[Validate Field Requirements]
+  
+  %% Validate String Lengths
+  C2B --> C2B1[Check Value Length]
+  C2B1 --> C2B2[Check Description Length]
+  C2B2 --> C2B3[Check Image URL Length]
+  C2B3 --> C2B4[Validate String Limits]
+  
+  %% Validate Hex Code Format
+  C2C --> C2C1[Check Hex Code Format]
+  C2C1 --> C2C2[Validate Color Codes]
+  C2C2 --> C2C3[Check Hex Code Length]
+  C2C3 --> C2C4[Validate Hex Code Rules]
+  
+  %% Check Value Uniqueness
+  C3 --> C3A[Check Value Uniqueness in Attribute]
+  C3A --> C3B[Check Slug Uniqueness]
+  C3B --> C3C[Check ValueEn Uniqueness]
+  C3C --> C3D{All Unique?}
+  C3D -->|Yes| C3E[Continue with Creation]
+  C3D -->|No| C3F[Throw Uniqueness Error]
+  
+  %% Check Value Uniqueness in Attribute
+  C3A --> C3A1[Query Values by Attribute]
+  C3A1 --> C3A2[Filter by Value Name]
+  C3A2 --> C3A3[Check for Duplicates]
+  C3A3 --> C3A4[Return Uniqueness Result]
+  
+  %% Generate Value Slug
+  C4 --> C4A[Slugify Value Name]
+  C4A --> C4B[Check Slug Uniqueness]
+  C4B --> C4C{Slug Unique?}
+  C4C -->|Yes| C4D[Use Generated Slug]
+  C4C -->|No| C4E[Generate Unique Slug]
+  
+  %% Set Value Properties
+  C5 --> C5A[Set Default Order]
+  C5A --> C5B[Set Active Status]
+  C5B --> C5C[Set Usage Count]
+  C5C --> C5D[Set Additional Properties]
+  
+  %% Set Default Order
+  C5A --> C5A1[Get Next Order Value]
+  C5A1 --> C5A2[Set Order Value]
+  C5A2 --> C5A3[Update Order Sequence]
+  
+  %% Set Additional Properties
+  C5D --> C5D1[Set Hex Code if Provided]
+  C5D1 --> C5D2[Set Image URL if Provided]
+  C5D2 --> C5D3[Set Image ID if Provided]
+  C5D3 --> C5D4[Set Description if Provided]
+  
+  %% Update Value
+  D --> D1[Find Value by ID]
+  D1 --> D2[Validate Value Exists]
+  D2 --> D3[Check Usage Count]
+  D3 --> D4[Validate Update Data]
+  D4 --> D5[Update Value Fields]
+  D5 --> D6[Update Slug if Needed]
+  D6 --> D7[Save Changes]
+  D7 --> D8[Return Updated Value]
+  
+  %% Find Value by ID
+  D1 --> D1A[Query Value by ID]
+  D1A --> D1B[Check Value Status]
+  D1B --> D1C[Validate Value Access]
+  D1C --> D1D[Return Value Data]
+  
+  %% Check Usage Count
+  D3 --> D3A[Get Current Usage Count]
+  D3A --> D3B{Usage Count > 0?}
+  D3B -->|Yes| D3C[Value In Use]
+  D3B -->|No| D3D[Safe to Update]
+  
+  %% Update Value Fields
+  D5 --> D5A[Update Basic Fields]
+  D5A --> D5B[Update Additional Fields]
+  D5B --> D5C[Update Display Fields]
+  D5C --> D5D[Update Status Fields]
+  
+  %% Update Basic Fields
+  D5A --> D5A1[Update Value Name]
+  D5A1 --> D5A2[Update ValueEn Name]
+  D5A2 --> D5A3[Update Description]
+  D5A3 --> D5A4[Update Order]
+  
+  %% Update Additional Fields
+  D5B --> D5B1[Update Hex Code]
+  D5B1 --> D5B2[Update Image URL]
+  D5B2 --> D5B3[Update Image ID]
+  D5B3 --> D5B4[Update Additional Properties]
+  
+  %% Delete Value
+  E --> E1[Find Value by ID]
+  E1 --> E2[Validate Value Exists]
+  E2 --> E3[Check Usage Count]
+  E3 --> E4{In Use?}
+  E4 -->|Yes| E5[Throw In Use Error]
+  E4 -->|No| E6[Perform Soft Delete]
+  E6 --> E7[Set Deleted At]
+  E7 --> E8[Set Deleted By]
+  E8 --> E9[Save Changes]
+  E9 --> E10[Return Deletion Result]
+  
+  %% Perform Soft Delete
+  E6 --> E6A[Set Deleted Timestamp]
+  E6A --> E6B[Set Deleted By User]
+  E6B --> E6C[Update Value Status]
+  E6C --> E6D[Log Deletion Event]
+  
+  %% List Values
+  F --> F1[Get Attribute ID]
+  F1 --> F2[Query Values Collection]
+  F2 --> F3[Filter by Attribute ID]
+  F3 --> F4[Filter Active Values]
+  F4 --> F5[Sort by Order and Value]
+  F5 --> F6[Return Values List]
+  
+  %% Get Attribute ID
+  F1 --> F1A[Extract Attribute ID]
+  F1A --> F1B[Validate Attribute ID]
+  F1B --> F1C[Check Attribute Exists]
+  F1C --> F1D[Return Attribute ID]
+  
+  %% Query Values Collection
+  F2 --> F2A[Build Query Object]
+  F2A --> F2B[Add Attribute Filter]
+  F2B --> F2C[Add Status Filter]
+  F2C --> F2D[Add Additional Filters]
+  
+  %% Filter Active Values
+  F4 --> F4A[Check isActive Field]
+  F4A --> F4B[Check deletedAt Field]
+  F4B --> F4C[Apply Status Filters]
+  F4C --> F4D[Return Active Values]
+  
+  %% Sort by Order and Value
+  F5 --> F5A[Primary Sort by Order]
+  F5A --> F5B[Secondary Sort by Value]
+  F5B --> F5C[Apply Sorting Rules]
+  F5C --> F5D[Return Sorted Values]
+  
+  %% Value Properties
+  G --> G1[Basic Properties]
+  G1 --> G2[Display Properties]
+  G2 --> G3[Additional Properties]
+  G3 --> G4[Status Properties]
+  
+  %% Basic Properties
+  G1 --> G1A[Value Name]
+  G1A --> G1B[Value NameEn]
+  G1B --> G1C[Value Slug]
+  G1C --> G1D[Value Description]
+  
+  %% Display Properties
+  G2 --> G2A[Display Order]
+  G2A --> G2B[Display Status]
+  G2B --> G2C[Display Format]
+  G2C --> G2D[Display Options]
+  
+  %% Additional Properties
+  G3 --> G3A[Hex Code]
+  G3A --> G3B[Image URL]
+  G3B --> G3C[Image ID]
+  G3C --> G3D[Custom Properties]
+  
+  %% Status Properties
+  G4 --> G4A[Active Status]
+  G4A --> G4B[Usage Count]
+  G4B --> G4C[Creation Date]
+  G4C --> G4D[Last Updated]
+  
+  %% Value Organization
+  H --> H1[Group by Attribute]
+  H1 --> H2[Sort by Order]
+  H2 --> H3[Filter by Status]
+  H3 --> H4[Organize Display]
+  
+  %% Group by Attribute
+  H1 --> H1A[Group Values by Attribute ID]
+  H1A --> H1B[Create Attribute Groups]
+  H1B --> H1C[Organize by Attribute Type]
+  H1C --> H1D[Return Grouped Values]
+  
+  %% Sort by Order
+  H2 --> H2A[Sort Values by Order Field]
+  H2A --> H2B[Apply Secondary Sort]
+  H2B --> H2C[Maintain Sort Consistency]
+  H2C --> H2D[Return Sorted Values]
+  
+  %% Filter by Status
+  H3 --> H3A[Filter Active Values]
+  H3A --> H3B[Filter Inactive Values]
+  H3B --> H3C[Filter Deleted Values]
+  H3C --> H3D[Apply Status Filters]
+  
+  %% Organize Display
+  H4 --> H4A[Organize by Display Order]
+  H4A --> H4B[Group by Attribute Type]
+  H4B --> H4C[Apply Display Rules]
+  H4C --> H4D[Return Organized Values]
+  
+  %% Advanced Value Features
+  I[Advanced Value Features] --> I1[Value Dependencies]
+  I1 --> I2[Value Validation]
+  I2 --> I3[Value Analytics]
+  I3 --> I4[Value Performance]
+  
+  %% Value Dependencies
+  I1 --> I1A[Set Value Dependencies]
+  I1A --> I1B[Handle Value Conflicts]
+  I1B --> I1C[Manage Value Relationships]
+  I1C --> I1D[Optimize Value Selection]
+  
+  %% Value Validation
+  I2 --> I2A[Set Validation Rules]
+  I2A --> I2B[Apply Validation Logic]
+  I2B --> I2C[Handle Validation Errors]
+  I2C --> I2D[Generate Validation Reports]
+  
+  %% Value Analytics
+  I3 --> I3A[Track Value Usage]
+  I3A --> I3B[Analyze Value Performance]
+  I3B --> I3C[Generate Value Reports]
+  I3C --> I3D[Optimize Value Management]
+  
+  %% Value Performance
+  I4 --> I4A[Monitor Value Performance]
+  I4A --> I4B[Optimize Value Queries]
+  I4B --> I4C[Improve Value Display]
+  I4C --> I4D[Enhance Value Management]
+  
+  %% End points
+  C7 --> Z[End]
+  D8 --> Z
+  E10 --> Z
+  F6 --> Z
+  G4D --> Z
+  H4D --> Z
+  I4D --> Z

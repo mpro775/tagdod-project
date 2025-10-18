@@ -1,0 +1,98 @@
+%% Order Management: Status Updates, Shipping, Refunds, Ratings
+%% View at https://mermaid.live
+flowchart TD
+  A[Order Management] --> B{Action Type?}
+  B -->|Status Update| C[Update Order Status]
+  B -->|Shipping| D[Process Shipping]
+  B -->|Refund| E[Process Refund]
+  B -->|Rating| F[Process Rating]
+  B -->|Cancel| G[Process Cancellation]
+  
+  %% Status Update Flow
+  C --> C1[Validate new status]
+  C1 --> C2[Check status transition rules]
+  C2 --> C3{Valid transition?}
+  C3 -->|Yes| C4[Update order status]
+  C3 -->|No| C5[Return invalid transition error]
+  C4 --> C6[Add to status history]
+  C6 --> C7[Send status notification]
+  C7 --> C8[Update inventory if needed]
+  C8 --> C9[End - Status Updated]
+  C5 --> C10[End - Invalid Status]
+  
+  %% Shipping Flow
+  D --> D1[Validate shipping data]
+  D1 --> D2[Add tracking information]
+  D2 --> D3[Update status to SHIPPED]
+  D3 --> D4[Set estimated delivery date]
+  D4 --> D5[Send shipping notification]
+  D5 --> D6[Update inventory ledger]
+  D6 --> D7[End - Order Shipped]
+  
+  %% Refund Flow
+  E --> E1[Validate refund amount]
+  E1 --> E2[Check refund eligibility]
+  E2 --> E3{Eligible for refund?}
+  E3 -->|Yes| E4[Process refund with provider]
+  E3 -->|No| E5[Return not eligible error]
+  E4 --> E6[Update payment status to REFUNDED]
+  E6 --> E7[Update order status to REFUNDED]
+  E7 --> E8[Restore inventory]
+  E8 --> E9[Send refund notification]
+  E9 --> E10[End - Refund Processed]
+  E5 --> E11[End - Not Eligible]
+  
+  %% Rating Flow
+  F --> F1[Validate rating (1-5)]
+  F1 --> F2[Check if order is delivered]
+  F2 --> F3{Can rate?}
+  F3 -->|Yes| F4[Save rating and review]
+  F3 -->|No| F5[Return cannot rate error]
+  F4 --> F6[Update product average rating]
+  F6 --> F7[Update order metadata]
+  F7 --> F8[End - Rating Saved]
+  F5 --> F9[End - Cannot Rate]
+  
+  %% Cancellation Flow
+  G --> G1[Check cancellation eligibility]
+  G1 --> G2{Can cancel?}
+  G2 -->|Yes| G3[Update status to CANCELLED]
+  G2 -->|No| G4[Return cannot cancel error]
+  G3 --> G5[Release reserved inventory]
+  G5 --> G6[Process refund if paid]
+  G6 --> G7[Send cancellation notification]
+  G7 --> G8[End - Order Cancelled]
+  G4 --> G9[End - Cannot Cancel]
+  
+  %% Inventory Management
+  H[Inventory Update] --> I[Check order status]
+  I --> J{Status requires inventory change?}
+  J -->|Yes| K[Update inventory levels]
+  J -->|No| L[Skip inventory update]
+  K --> M[Create ledger entry]
+  M --> N[Update product stock]
+  N --> O[End - Inventory Updated]
+  L --> P[End - No Change Needed]
+  
+  %% Notification System
+  Q[Send Notification] --> R[Determine notification type]
+  R --> S[Get user preferences]
+  S --> T[Send email notification]
+  T --> U[Send SMS if enabled]
+  U --> V[Send push notification]
+  V --> W[Log notification sent]
+  W --> X[End - Notification Sent]
+  
+  %% End points
+  C9 --> Y[End]
+  C10 --> Y
+  D7 --> Y
+  E10 --> Y
+  E11 --> Y
+  F8 --> Y
+  F9 --> Y
+  G8 --> Y
+  G9 --> Y
+  O --> Y
+  P --> Y
+  X --> Y

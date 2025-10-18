@@ -1,0 +1,366 @@
+%% Services System Overview
+%% View at https://mermaid.live
+flowchart TD
+  A[Services System Overview] --> B{System Component?}
+  B -->|Service Requests| C[Service Request Management]
+  B -->|Engineer Offers| D[Engineer Offer Management]
+  B -->|Service Management| E[Service Management]
+  B -->|Distance Calculation| F[Distance Calculation System]
+  B -->|Analytics| G[Service Analytics]
+  B -->|Admin Management| H[Admin Management]
+  
+  %% Service Request Management
+  C --> C1[Customer Service Requests]
+  C1 --> C2[Request Processing]
+  C2 --> C3[Request Status Management]
+  C3 --> C4[Request Completion]
+  C4 --> C5[Request Rating]
+  
+  %% Customer Service Requests
+  C1 --> C1A[Create Service Request]
+  C1A --> C1B[Set Request Details]
+  C1B --> C1C[Select Service Type]
+  C1C --> C1D[Add Service Description]
+  C1D --> C1E[Upload Service Images]
+  C1E --> C1F[Select Service Address]
+  C1F --> C1G[Set Service Schedule]
+  C1G --> C1H[Submit Service Request]
+  
+  %% Request Details
+  C1B --> C1B1[Service title]
+  C1B1 --> C1B2[Service description]
+  C1B2 --> C1B3[Urgency level]
+  C1B3 --> C1B4[Special requirements]
+  C1B4 --> C1B5[Contact preferences]
+  
+  %% Service Types
+  C1C --> C1C1[Home maintenance]
+  C1C1 --> C1C2[Electrical work]
+  C1C2 --> C1C3[Plumbing]
+  C1C3 --> C1C4[Appliance repair]
+  C1C4 --> C1C5[Cleaning services]
+  C1C5 --> C1C6[Other services]
+  
+  %% Request Processing
+  C2 --> C2A[Validate Request Data]
+  C2A --> C2B[Check Request Eligibility]
+  C2B --> C2C[Process Request Submission]
+  C2C --> C2D[Notify Relevant Engineers]
+  C2D --> C2E[Update Request Status]
+  C2E --> C2F[Request Processed]
+  
+  %% Request Status Management
+  C3 --> C3A[Track Request Status]
+  C3A --> C3B[Update Status Changes]
+  C3B --> C3C[Notify Status Updates]
+  C3C --> C3D[Log Status History]
+  C3D --> C3E[Status Managed]
+  
+  %% Request Statuses
+  C3A --> C3A1[OPEN - Waiting for offers]
+  C3A1 --> C3A2[OFFERS_COLLECTING - Collecting offers]
+  C3A2 --> C3A3[ASSIGNED - Engineer assigned]
+  C3A3 --> C3A4[IN_PROGRESS - Work in progress]
+  C3A4 --> C3A5[COMPLETED - Work completed]
+  C3A5 --> C3A6[RATED - Service rated]
+  C3A6 --> C3A7[CANCELLED - Service cancelled]
+  
+  %% Request Completion
+  C4 --> C4A[Verify Completion Requirements]
+  C4A --> C4B[Update Completion Status]
+  C4B --> C4C[Notify Customer]
+  C4C --> C4D[Log Completion Event]
+  C4D --> C4E[Request Completed]
+  
+  %% Request Rating
+  C5 --> C5A[Check Rating Eligibility]
+  C5A --> C5B[Submit Rating Score]
+  C5B --> C5C[Add Rating Comment]
+  C5C --> C5D[Submit Rating]
+  C5D --> C5E[Update Engineer Rating]
+  C5E --> C5F[Service Rated]
+  
+  %% Engineer Offer Management
+  D --> D1[Engineer Offer Submission]
+  D1 --> D2[Offer Processing]
+  D2 --> D3[Offer Status Management]
+  D3 --> D4[Offer Acceptance]
+  D4 --> D5[Offer Completion]
+  
+  %% Engineer Offer Submission
+  D1 --> D1A[Find Service Requests]
+  D1A --> D1B[Check Request Eligibility]
+  D1B --> D1C[Calculate Offer Details]
+  D1C --> D1D[Submit Offer]
+  D1D --> D1E[Notify Customer]
+  D1E --> D1F[Offer Submitted]
+  
+  %% Find Service Requests
+  D1A --> D1A1[Search nearby requests]
+  D1A1 --> D1A2[Filter by service type]
+  D1A2 --> D1A3[Filter by distance]
+  D1A3 --> D1A4[Check request status]
+  D1A4 --> D1A5[Select suitable request]
+  
+  %% Calculate Offer Details
+  D1C --> D1C1[Calculate base price]
+  D1C1 --> D1C2[Add travel costs]
+  D1C2 --> D1C3[Add material costs]
+  D1C3 --> D1C4[Calculate labor costs]
+  D1C4 --> D1C5[Add profit margin]
+  D1C5 --> D1C6[Calculate total price]
+  D1C6 --> D1C7[Add offer note]
+  D1C7 --> D1C8[Calculate distance]
+  
+  %% Offer Processing
+  D2 --> D2A[Validate Offer Data]
+  D2A --> D2B[Check Offer Eligibility]
+  D2B --> D2C[Process Offer Submission]
+  D2C --> D2D[Update Request Status]
+  D2D --> D2E[Notify Stakeholders]
+  D2E --> D2F[Offer Processed]
+  
+  %% Offer Status Management
+  D3 --> D3A[Track Offer Status]
+  D3A --> D3B[Update Status Changes]
+  D3B --> D3C[Notify Status Updates]
+  D3C --> D3D[Log Status History]
+  D3D --> D3E[Status Managed]
+  
+  %% Offer Statuses
+  D3A --> D3A1[OFFERED - Waiting for response]
+  D3A1 --> D3A2[ACCEPTED - Offer accepted]
+  D3A2 --> D3A3[REJECTED - Offer rejected]
+  D3A3 --> D3A4[CANCELLED - Offer cancelled]
+  
+  %% Offer Acceptance
+  D4 --> D4A[Customer Selects Offer]
+  D4A --> D4B[Validate Offer Selection]
+  D4B --> D4C[Update Offer Status]
+  D4C --> D4D[Reject Other Offers]
+  D4D --> D4E[Notify Engineer]
+  D4E --> D4F[Offer Accepted]
+  
+  %% Offer Completion
+  D5 --> D5A[Track Service Progress]
+  D5A --> D5B[Update Service Status]
+  D5B --> D5C[Complete Service]
+  D5C --> D5D[Notify Customer]
+  D5D --> D5E[Offer Completed]
+  
+  %% Service Management
+  E --> E1[Service Assignment]
+  E1 --> E2[Service Progress Tracking]
+  E2 --> E3[Service Quality Management]
+  E3 --> E4[Service Completion]
+  E4 --> E5[Service Evaluation]
+  
+  %% Service Assignment
+  E1 --> E1A[Assign Engineer to Service]
+  E1A --> E1B[Set Assignment Details]
+  E1B --> E1C[Notify Engineer]
+  E1C --> E1D[Update Service Status]
+  E1D --> E1E[Service Assigned]
+  
+  %% Service Progress Tracking
+  E2 --> E2A[Track Work Progress]
+  E2A --> E2B[Update Progress Notes]
+  E2B --> E2C[Upload Progress Photos]
+  E2C --> E2D[Update Time Estimates]
+  E2D --> E2E[Progress Tracked]
+  
+  %% Service Quality Management
+  E3 --> E3A[Monitor Service Quality]
+  E3A --> E3B[Track Customer Feedback]
+  E3B --> E3C[Manage Quality Issues]
+  E3C --> E3D[Implement Quality Improvements]
+  E3D --> E3E[Quality Managed]
+  
+  %% Service Completion
+  E4 --> E4A[Verify Completion Requirements]
+  E4A --> E4B[Update Completion Status]
+  E4B --> E4C[Notify Customer]
+  E4C --> E4D[Log Completion Event]
+  E4D --> E4E[Service Completed]
+  
+  %% Service Evaluation
+  E5 --> E5A[Collect Customer Feedback]
+  E5A --> E5B[Analyze Service Performance]
+  E5B --> E5C[Update Engineer Ratings]
+  E5C --> E5D[Generate Service Reports]
+  E5D --> E5E[Service Evaluated]
+  
+  %% Distance Calculation System
+  F --> F1[Haversine Distance Calculation]
+  F1 --> F2[Geospatial Database Query]
+  F2 --> F3[Route Distance Calculation]
+  F3 --> F4[Bulk Distance Calculation]
+  F4 --> F5[Distance Validation]
+  
+  %% Haversine Distance Calculation
+  F1 --> F1A[Get Coordinates]
+  F1A --> F1B[Apply Haversine Formula]
+  F1B --> F1C[Calculate Distance]
+  F1C --> F1D[Convert Units]
+  F1D --> F1E[Return Distance]
+  
+  %% Geospatial Database Query
+  F2 --> F2A[Prepare Geospatial Query]
+  F2A --> F2B[Execute Database Query]
+  F2B --> F2C[Process Query Results]
+  F2C --> F2D[Calculate Distances]
+  F2D --> F2E[Return Distance Results]
+  
+  %% Route Distance Calculation
+  F3 --> F3A[Get Route Coordinates]
+  F3A --> F3B[Calculate Route Distance]
+  F3B --> F3C[Apply Route Factors]
+  F3C --> F3D[Calculate Travel Time]
+  F3D --> F3E[Return Route Information]
+  
+  %% Bulk Distance Calculation
+  F4 --> F4A[Prepare Bulk Data]
+  F4A --> F4B[Process Bulk Calculation]
+  F4B --> F4C[Optimize Performance]
+  F4C --> F4D[Return Bulk Results]
+  
+  %% Distance Validation
+  F5 --> F5A[Validate Input Coordinates]
+  F5A --> F5B[Validate Calculation Results]
+  F5B --> F5C[Handle Edge Cases]
+  F5C --> F5D[Return Validated Results]
+  
+  %% Service Analytics
+  G --> G1[Service Performance Analytics]
+  G1 --> G2[Engineer Performance Analytics]
+  G2 --> G3[Customer Satisfaction Analytics]
+  G3 --> G4[Revenue Analytics]
+  G4 --> G5[System Performance Analytics]
+  
+  %% Service Performance Analytics
+  G1 --> G1A[Track Service Metrics]
+  G1A --> G1B[Analyze Service Trends]
+  G1B --> G1C[Monitor Service Quality]
+  G1C --> G1D[Generate Service Reports]
+  G1D --> G1E[Optimize Service Delivery]
+  
+  %% Engineer Performance Analytics
+  G2 --> G2A[Track Engineer Metrics]
+  G2A --> G2B[Analyze Engineer Performance]
+  G2B --> G2C[Monitor Engineer Quality]
+  G2C --> G2D[Generate Engineer Reports]
+  G2D --> G2E[Optimize Engineer Performance]
+  
+  %% Customer Satisfaction Analytics
+  G3 --> G3A[Track Satisfaction Metrics]
+  G3A --> G3B[Analyze Satisfaction Trends]
+  G3B --> G3C[Monitor Feedback Patterns]
+  G3C --> G3D[Generate Satisfaction Reports]
+  G3D --> G3E[Optimize Customer Experience]
+  
+  %% Revenue Analytics
+  G4 --> G4A[Track Revenue Metrics]
+  G4A --> G4B[Analyze Revenue Trends]
+  G4B --> G4C[Monitor Revenue Sources]
+  G4C --> G4D[Generate Revenue Reports]
+  G4D --> G4E[Optimize Revenue Strategy]
+  
+  %% System Performance Analytics
+  G5 --> G5A[Track System Metrics]
+  G5A --> G5B[Analyze System Performance]
+  G5B --> G5C[Monitor System Health]
+  G5C --> G5D[Generate System Reports]
+  G5D --> G5E[Optimize System Performance]
+  
+  %% Admin Management
+  H --> H1[Admin Dashboard]
+  H1 --> H2[Service Management]
+  H2 --> H3[Engineer Management]
+  H3 --> H4[Customer Management]
+  H4 --> H5[Analytics Management]
+  
+  %% Admin Dashboard
+  H1 --> H1A[Load Overview Statistics]
+  H1A --> H1B[Display Key Metrics]
+  H1B --> H1C[Show Recent Activity]
+  H1C --> H1D[Display Alerts]
+  H1D --> H1E[Dashboard Loaded]
+  
+  %% Service Management
+  H2 --> H2A[View All Services]
+  H2A --> H2B[Manage Service Status]
+  H2B --> H2C[Assign Engineers]
+  H2C --> H2D[Monitor Service Performance]
+  H2D --> H2E[Services Managed]
+  
+  %% Engineer Management
+  H3 --> H3A[View All Engineers]
+  H3A --> H3B[Monitor Engineer Performance]
+  H3B --> H3C[Manage Engineer Assignments]
+  H3C --> H3D[Track Engineer Statistics]
+  H3D --> H3E[Engineers Managed]
+  
+  %% Customer Management
+  H4 --> H4A[View All Customers]
+  H4A --> H4B[Monitor Customer Satisfaction]
+  H4B --> H4C[Track Customer Feedback]
+  H4C --> H4D[Manage Customer Issues]
+  H4D --> H4E[Customers Managed]
+  
+  %% Analytics Management
+  H5 --> H5A[Generate Analytics Reports]
+  H5A --> H5B[Monitor System Performance]
+  H5B --> H5C[Track Key Performance Indicators]
+  H5C --> H5D[Optimize System Operations]
+  H5D --> H5E[Analytics Managed]
+  
+  %% System Integration
+  I[System Integration] --> J[User Integration]
+  J --> K[Location Integration]
+  K --> L[Notification Integration]
+  L --> M[Payment Integration]
+  M --> N[Analytics Integration]
+  
+  %% User Integration
+  J --> J1[Customer integration]
+  J1 --> J2[Engineer integration]
+  J2 --> J3[Admin integration]
+  J3 --> J4[Role-based access control]
+  J4 --> J5[User management]
+  
+  %% Location Integration
+  K --> K1[Address management]
+  K1 --> K2[Coordinate tracking]
+  K2 --> K3[Distance calculations]
+  K3 --> K4[Geospatial queries]
+  K4 --> K5[Location services]
+  
+  %% Notification Integration
+  L --> L1[Email notifications]
+  L1 --> L2[SMS notifications]
+  L2 --> L3[Push notifications]
+  L3 --> L4[In-app notifications]
+  L4 --> L5[Notification management]
+  
+  %% Payment Integration
+  M --> M1[Payment processing]
+  M1 --> M2[Invoice generation]
+  M2 --> M3[Payment tracking]
+  M3 --> M4[Revenue management]
+  M4 --> M5[Financial reporting]
+  
+  %% Analytics Integration
+  N --> N1[Data collection]
+  N1 --> N2[Data processing]
+  N2 --> N3[Report generation]
+  N3 --> N4[Performance monitoring]
+  N4 --> N5[Analytics optimization]
+  
+  %% End points
+  C5F --> Z[Services System Complete]
+  D5E --> Z
+  E5E --> Z
+  F5D --> Z
+  G5E --> Z
+  H5E --> Z
+  N5 --> Z
