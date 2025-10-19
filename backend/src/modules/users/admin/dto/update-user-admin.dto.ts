@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsArray, IsEnum, MinLength, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsArray, IsEnum, MinLength } from 'class-validator';
 import { UserRole, UserStatus } from '../../schemas/user.schema';
 
 export class UpdateUserAdminDto {
@@ -37,9 +37,7 @@ export class UpdateUserAdminDto {
   @IsEnum(UserStatus)
   status?: UserStatus;
 
-  @IsOptional()
-  @IsBoolean()
-  isAdmin?: boolean;
+  // تم إزالة isAdmin - استخدم roles بدلاً منه
 
   // Capabilities
   @IsOptional()

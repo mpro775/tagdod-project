@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class AddFavoriteDto {
   @IsString()
@@ -11,11 +11,6 @@ export class AddFavoriteDto {
   @IsOptional()
   @IsString()
   note?: string; // ملاحظة خاصة
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[]; // وسوم
 }
 
 export class RemoveFavoriteDto {
@@ -31,11 +26,6 @@ export class UpdateFavoriteDto {
   @IsOptional()
   @IsString()
   note?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
 }
 
 export class GuestAddFavoriteDto {
@@ -52,11 +42,6 @@ export class GuestAddFavoriteDto {
   @IsOptional()
   @IsString()
   note?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
 }
 
 export class GuestRemoveFavoriteDto {

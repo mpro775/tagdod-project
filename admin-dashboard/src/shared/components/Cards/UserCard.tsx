@@ -25,9 +25,13 @@ import { ROLE_COLORS } from '@/config/constants';
 
 interface UserCardProps {
   user: User;
+  // eslint-disable-next-line no-unused-vars
   onEdit?: (user: User) => void;
+  // eslint-disable-next-line no-unused-vars
   onDelete?: (user: User) => void;
+  // eslint-disable-next-line no-unused-vars
   onView?: (user: User) => void;
+  // eslint-disable-next-line no-unused-vars
   onToggleStatus?: (user: User) => void;
   showActions?: boolean;
 }
@@ -51,6 +55,7 @@ export const UserCard: React.FC<UserCardProps> = ({
     setAnchorEl(null);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleAction = (action: (user: User) => void) => {
     action(user);
     handleMenuClose();

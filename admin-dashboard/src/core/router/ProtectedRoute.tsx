@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
-import { Box, CircularProgress, Alert, Typography, Button } from '@mui/material';
-import { Security, Home } from '@mui/icons-material';
+import { Box, CircularProgress } from '@mui/material';
 import { trackError, trackAdminAction } from '@/lib/analytics';
 
 interface ProtectedRouteProps {
@@ -29,6 +28,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   useEffect(() => {
     // Initialize auth and then set loading to false
     try {
+      // eslint-disable-next-line no-console
       console.log('🔄 Initializing ProtectedRoute...');
       initialize();
       // Add a small delay to ensure state is updated
@@ -36,6 +36,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         setIsInitializing(false);
       }, 100);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('❌ Error initializing auth:', error);
       setIsInitializing(false);
     }
@@ -58,12 +59,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Not authenticated
   if (!isAuthenticated) {
+    // eslint-disable-next-line no-console
     console.log('❌ User not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check if user is admin (for admin dashboard)
   if (requireAdmin && user && !user.roles.includes('admin') && !user.roles.includes('super_admin')) {
+    // eslint-disable-next-line no-console
     console.log('❌ User does not have admin privileges');
     trackError('Access denied: Admin privileges required', 'ADMIN_REQUIRED', 'ProtectedRoute');
     trackAdminAction('access_denied', 'admin_dashboard', { reason: 'insufficient_admin_privileges' });
@@ -72,6 +75,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check role permissions
   if (requiredRoles.length > 0 && !hasRole(requiredRoles)) {
+    // eslint-disable-next-line no-console
     console.log('❌ User does not have required roles:', requiredRoles);
     trackError('Access denied: Required roles missing', 'ROLE_REQUIRED', 'ProtectedRoute');
     trackAdminAction('access_denied', 'protected_route', { requiredRoles, userRoles: user?.roles });
@@ -85,6 +89,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
     if (!hasAllPermissions) {
       const missingPermissions = requiredPermissions.filter(permission => !hasPermission(permission));
+      // eslint-disable-next-line no-console
       console.log('❌ User does not have required permissions:', missingPermissions);
       trackError('Access denied: Required permissions missing', 'PERMISSION_REQUIRED', 'ProtectedRoute');
       trackAdminAction('access_denied', 'protected_route', { 
@@ -96,6 +101,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }
 
+  // eslint-disable-next-line no-console
   console.log('✅ User authenticated and authorized');
   return <>{children}</>;
 };

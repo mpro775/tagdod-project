@@ -34,61 +34,84 @@
   "data": {
     "_id": "cart_123",
     "userId": "user_456",
+    "status": "active",
     "items": [
       {
         "_id": "item_001",
         "variantId": "var_789",
+        "productId": "prod_123",
         "qty": 2,
         "addedAt": "2025-10-15T10:00:00.000Z",
-        "product": {
-          "name": {
-            "ar": "لوح شمسي 550 واط",
-            "en": "Solar Panel 550W"
-          },
+        "productSnapshot": {
+          "name": "لوح شمسي 550 واط",
+          "slug": "solar-panel-550w",
           "image": "https://cdn.example.com/products/solar-panel.jpg",
-          "sku": "SP-550-001"
+          "brandId": "brand_123",
+          "brandName": "SolarTech",
+          "categoryId": "cat_123"
         },
         "pricing": {
           "currency": "YER",
           "basePrice": 150000,
-          "salePrice": 135000
-        },
-        "availability": {
-          "inStock": true,
-          "available": 45,
-          "maxQty": 45
+          "finalPrice": 135000,
+          "discount": 15000,
+          "appliedPromotionId": "promo_123"
         }
       },
       {
         "_id": "item_002",
         "variantId": "var_012",
+        "productId": "prod_456",
         "qty": 1,
         "addedAt": "2025-10-15T11:30:00.000Z",
-        "product": {
-          "name": {
-            "ar": "بطارية ليثيوم 10 كيلو واط",
-            "en": "Lithium Battery 10kW"
-          },
+        "productSnapshot": {
+          "name": "بطارية ليثيوم 10 كيلو واط",
+          "slug": "lithium-battery-10kw",
           "image": "https://cdn.example.com/products/battery.jpg",
-          "sku": "BAT-10K-001"
+          "brandId": "brand_456",
+          "brandName": "BatteryPro",
+          "categoryId": "cat_456"
         },
         "pricing": {
           "currency": "YER",
           "basePrice": 850000,
-          "salePrice": null
-        },
-        "availability": {
-          "inStock": true,
-          "available": 12,
-          "maxQty": 12
+          "finalPrice": 850000,
+          "discount": 0
         }
       }
     ],
-    "itemsCount": 2,
+    "currency": "YER",
+    "accountType": "customer",
+    "appliedCouponCode": "SUMMER20",
+    "couponDiscount": 50000,
+    "autoAppliedCouponCodes": ["WELCOME10"],
+    "autoAppliedDiscounts": [25000],
+    "pricingSummary": {
+      "subtotal": 1000000,
+      "promotionDiscount": 15000,
+      "couponDiscount": 50000,
+      "autoDiscount": 25000,
+      "totalDiscount": 90000,
+      "total": 910000,
+      "itemsCount": 2,
+      "currency": "YER",
+      "lastCalculatedAt": "2025-10-15T11:30:00.000Z"
+    },
+    "lastActivityAt": "2025-10-15T11:30:00.000Z",
+    "isAbandoned": false,
+    "abandonmentEmailsSent": 0,
+    "isMerged": false,
+    "metadata": {
+      "source": "mobile",
+      "campaign": "summer_sale",
+      "utmSource": "facebook",
+      "utmMedium": "social",
+      "utmCampaign": "summer2025"
+    },
+    "expiresAt": "2025-11-15T11:30:00.000Z",
     "createdAt": "2025-10-10T08:00:00.000Z",
     "updatedAt": "2025-10-15T11:30:00.000Z"
   },
-  "meta": null,
   "requestId": "req_cart_001"
 }
 ```
@@ -101,12 +124,30 @@
   "data": {
     "_id": "cart_123",
     "userId": "user_456",
+    "status": "active",
     "items": [],
-    "itemsCount": 0,
+    "currency": "YER",
+    "accountType": "customer",
+    "pricingSummary": {
+      "subtotal": 0,
+      "promotionDiscount": 0,
+      "couponDiscount": 0,
+      "autoDiscount": 0,
+      "totalDiscount": 0,
+      "total": 0,
+      "itemsCount": 0,
+      "currency": "YER",
+      "lastCalculatedAt": "2025-10-10T08:00:00.000Z"
+    },
+    "lastActivityAt": "2025-10-10T08:00:00.000Z",
+    "isAbandoned": false,
+    "abandonmentEmailsSent": 0,
+    "isMerged": false,
+    "metadata": {},
+    "expiresAt": "2025-11-10T08:00:00.000Z",
     "createdAt": "2025-10-10T08:00:00.000Z",
     "updatedAt": "2025-10-10T08:00:00.000Z"
   },
-  "meta": null,
   "requestId": "req_cart_001"
 }
 ```
@@ -519,17 +560,47 @@ Future<CartPreview> previewCart({
 ```dart
 class Cart {
   final String id;
-  final String userId;
+  final String? userId;
+  final String status;
   final List<CartItem> items;
-  final int itemsCount;
+  final String currency;
+  final String? accountType;
+  final String? appliedCouponCode;
+  final double couponDiscount;
+  final List<String> autoAppliedCouponCodes;
+  final List<double> autoAppliedDiscounts;
+  final CartPricingSummary? pricingSummary;
+  final DateTime? lastActivityAt;
+  final bool isAbandoned;
+  final int abandonmentEmailsSent;
+  final bool isMerged;
+  final String? mergedIntoUserId;
+  final DateTime? mergedAt;
+  final CartMetadata? metadata;
+  final DateTime? expiresAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   Cart({
     required this.id,
-    required this.userId,
+    this.userId,
+    required this.status,
     required this.items,
-    required this.itemsCount,
+    required this.currency,
+    this.accountType,
+    this.appliedCouponCode,
+    required this.couponDiscount,
+    required this.autoAppliedCouponCodes,
+    required this.autoAppliedDiscounts,
+    this.pricingSummary,
+    this.lastActivityAt,
+    required this.isAbandoned,
+    required this.abandonmentEmailsSent,
+    required this.isMerged,
+    this.mergedIntoUserId,
+    this.mergedAt,
+    this.metadata,
+    this.expiresAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -538,10 +609,35 @@ class Cart {
     return Cart(
       id: json['_id'],
       userId: json['userId'],
-      items: (json['items'] as List)
-          .map((item) => CartItem.fromJson(item))
-          .toList(),
-      itemsCount: json['itemsCount'] ?? json['items'].length,
+      status: json['status'] ?? 'active',
+      items: (json['items'] as List?)
+          ?.map((item) => CartItem.fromJson(item))
+          .toList() ?? [],
+      currency: json['currency'] ?? 'YER',
+      accountType: json['accountType'],
+      appliedCouponCode: json['appliedCouponCode'],
+      couponDiscount: (json['couponDiscount'] ?? 0).toDouble(),
+      autoAppliedCouponCodes: List<String>.from(json['autoAppliedCouponCodes'] ?? []),
+      autoAppliedDiscounts: List<double>.from(json['autoAppliedDiscounts'] ?? []),
+      pricingSummary: json['pricingSummary'] != null 
+          ? CartPricingSummary.fromJson(json['pricingSummary'])
+          : null,
+      lastActivityAt: json['lastActivityAt'] != null 
+          ? DateTime.parse(json['lastActivityAt'])
+          : null,
+      isAbandoned: json['isAbandoned'] ?? false,
+      abandonmentEmailsSent: json['abandonmentEmailsSent'] ?? 0,
+      isMerged: json['isMerged'] ?? false,
+      mergedIntoUserId: json['mergedIntoUserId'],
+      mergedAt: json['mergedAt'] != null 
+          ? DateTime.parse(json['mergedAt'])
+          : null,
+      metadata: json['metadata'] != null 
+          ? CartMetadata.fromJson(json['metadata'])
+          : null,
+      expiresAt: json['expiresAt'] != null 
+          ? DateTime.parse(json['expiresAt'])
+          : null,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
@@ -563,68 +659,81 @@ class Cart {
   int get totalQuantity {
     return items.fold(0, (sum, item) => sum + item.qty);
   }
+
+  // إجمالي السعر
+  double get totalPrice => pricingSummary?.total ?? 0.0;
 }
 
 class CartItem {
   final String id;
   final String variantId;
+  final String? productId;
   final int qty;
   final DateTime addedAt;
-  final CartItemProduct product;
-  final CartItemPricing pricing;
-  final CartItemAvailability availability;
+  final CartItemProductSnapshot? productSnapshot;
+  final CartItemPricing? pricing;
 
   CartItem({
     required this.id,
     required this.variantId,
+    this.productId,
     required this.qty,
     required this.addedAt,
-    required this.product,
-    required this.pricing,
-    required this.availability,
+    this.productSnapshot,
+    this.pricing,
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
       id: json['_id'],
       variantId: json['variantId'],
+      productId: json['productId'],
       qty: json['qty'],
       addedAt: DateTime.parse(json['addedAt']),
-      product: CartItemProduct.fromJson(json['product']),
-      pricing: CartItemPricing.fromJson(json['pricing']),
-      availability: CartItemAvailability.fromJson(json['availability']),
+      productSnapshot: json['productSnapshot'] != null 
+          ? CartItemProductSnapshot.fromJson(json['productSnapshot'])
+          : null,
+      pricing: json['pricing'] != null 
+          ? CartItemPricing.fromJson(json['pricing'])
+          : null,
     );
   }
 
   // السعر الإجمالي للسطر
   double get lineTotal {
-    final price = pricing.salePrice ?? pricing.basePrice;
-    return price * qty;
+    if (pricing == null) return 0.0;
+    return pricing!.finalPrice * qty;
   }
 
-  // هل يمكن زيادة الكمية
-  bool get canIncreaseQty => qty < availability.maxQty;
-
-  // الكمية المتوفرة للإضافة
-  int get availableToAdd => availability.maxQty - qty;
+  // هل هناك خصم
+  bool get hasDiscount => pricing?.discount != null && pricing!.discount > 0;
 }
 
-class CartItemProduct {
-  final LocalizedString name;
-  final String image;
-  final String sku;
+class CartItemProductSnapshot {
+  final String name;
+  final String slug;
+  final String? image;
+  final String? brandId;
+  final String? brandName;
+  final String? categoryId;
 
-  CartItemProduct({
+  CartItemProductSnapshot({
     required this.name,
-    required this.image,
-    required this.sku,
+    required this.slug,
+    this.image,
+    this.brandId,
+    this.brandName,
+    this.categoryId,
   });
 
-  factory CartItemProduct.fromJson(Map<String, dynamic> json) {
-    return CartItemProduct(
-      name: LocalizedString.fromJson(json['name']),
-      image: json['image'] ?? '',
-      sku: json['sku'] ?? '',
+  factory CartItemProductSnapshot.fromJson(Map<String, dynamic> json) {
+    return CartItemProductSnapshot(
+      name: json['name'] ?? '',
+      slug: json['slug'] ?? '',
+      image: json['image'],
+      brandId: json['brandId'],
+      brandName: json['brandName'],
+      categoryId: json['categoryId'],
     );
   }
 }
@@ -632,45 +741,99 @@ class CartItemProduct {
 class CartItemPricing {
   final String currency;
   final double basePrice;
-  final double? salePrice;
+  final double finalPrice;
+  final double discount;
+  final String? appliedPromotionId;
 
   CartItemPricing({
     required this.currency,
     required this.basePrice,
-    this.salePrice,
+    required this.finalPrice,
+    required this.discount,
+    this.appliedPromotionId,
   });
 
   factory CartItemPricing.fromJson(Map<String, dynamic> json) {
     return CartItemPricing(
-      currency: json['currency'],
+      currency: json['currency'] ?? 'YER',
       basePrice: (json['basePrice'] ?? 0).toDouble(),
-      salePrice: json['salePrice']?.toDouble(),
+      finalPrice: (json['finalPrice'] ?? 0).toDouble(),
+      discount: (json['discount'] ?? 0).toDouble(),
+      appliedPromotionId: json['appliedPromotionId'],
     );
   }
 
-  bool get hasDiscount => salePrice != null && salePrice! < basePrice;
-  double get finalPrice => salePrice ?? basePrice;
-  double get discountAmount => hasDiscount ? basePrice - salePrice! : 0;
+  bool get hasDiscount => discount > 0;
   double get discountPercent => 
-      hasDiscount ? (discountAmount / basePrice * 100) : 0;
+      hasDiscount ? (discount / basePrice * 100) : 0;
 }
 
-class CartItemAvailability {
-  final bool inStock;
-  final int available;
-  final int maxQty;
+class CartPricingSummary {
+  final double subtotal;
+  final double promotionDiscount;
+  final double couponDiscount;
+  final double autoDiscount;
+  final double totalDiscount;
+  final double total;
+  final int itemsCount;
+  final String currency;
+  final DateTime lastCalculatedAt;
 
-  CartItemAvailability({
-    required this.inStock,
-    required this.available,
-    required this.maxQty,
+  CartPricingSummary({
+    required this.subtotal,
+    required this.promotionDiscount,
+    required this.couponDiscount,
+    required this.autoDiscount,
+    required this.totalDiscount,
+    required this.total,
+    required this.itemsCount,
+    required this.currency,
+    required this.lastCalculatedAt,
   });
 
-  factory CartItemAvailability.fromJson(Map<String, dynamic> json) {
-    return CartItemAvailability(
-      inStock: json['inStock'] ?? false,
-      available: json['available'] ?? 0,
-      maxQty: json['maxQty'] ?? 0,
+  factory CartPricingSummary.fromJson(Map<String, dynamic> json) {
+    return CartPricingSummary(
+      subtotal: (json['subtotal'] ?? 0).toDouble(),
+      promotionDiscount: (json['promotionDiscount'] ?? 0).toDouble(),
+      couponDiscount: (json['couponDiscount'] ?? 0).toDouble(),
+      autoDiscount: (json['autoDiscount'] ?? 0).toDouble(),
+      totalDiscount: (json['totalDiscount'] ?? 0).toDouble(),
+      total: (json['total'] ?? 0).toDouble(),
+      itemsCount: json['itemsCount'] ?? 0,
+      currency: json['currency'] ?? 'YER',
+      lastCalculatedAt: DateTime.parse(json['lastCalculatedAt']),
+    );
+  }
+
+  bool get hasDiscount => totalDiscount > 0;
+  double get savingsAmount => totalDiscount;
+}
+
+class CartMetadata {
+  final String? source;
+  final String? campaign;
+  final String? referrer;
+  final String? utmSource;
+  final String? utmMedium;
+  final String? utmCampaign;
+
+  CartMetadata({
+    this.source,
+    this.campaign,
+    this.referrer,
+    this.utmSource,
+    this.utmMedium,
+    this.utmCampaign,
+  });
+
+  factory CartMetadata.fromJson(Map<String, dynamic> json) {
+    return CartMetadata(
+      source: json['source'],
+      campaign: json['campaign'],
+      referrer: json['referrer'],
+      utmSource: json['utmSource'],
+      utmMedium: json['utmMedium'],
+      utmCampaign: json['utmCampaign'],
     );
   }
 }
@@ -698,7 +861,7 @@ class CartPreviewItem {
   final String itemId;
   final String variantId;
   final int qty;
-  final CartItemProduct product;
+  final CartItemProductSnapshot product;
   final double unitPrice;
   final double lineTotal;
 
@@ -716,7 +879,7 @@ class CartPreviewItem {
       itemId: json['itemId'],
       variantId: json['variantId'],
       qty: json['qty'],
-      product: CartItemProduct.fromJson(json['product']),
+      product: CartItemProductSnapshot.fromJson(json['product']),
       unitPrice: (json['unitPrice'] ?? 0).toDouble(),
       lineTotal: (json['lineTotal'] ?? 0).toDouble(),
     );
@@ -764,19 +927,32 @@ class CartSummary {
    - للزوار: استخدم `deviceId` وخزن السلة محلياً
    - عند تسجيل الدخول: استدعِ `/cart/merge` لدمج السلتين
 
-2. **التحقق من التوفر:**
-   - تحقق من `availability.inStock` قبل إضافة المنتج
-   - استخدم `availability.maxQty` لمعرفة الحد الأقصى
+2. **البيانات المخزنة:**
+   - `productSnapshot`: معلومات المنتج المحفوظة في السلة
+   - `pricing`: الأسعار المحفوظة مع الخصومات
+   - `pricingSummary`: ملخص شامل للأسعار
 
 3. **تحديث السلة:**
    - بعد أي عملية، يتم إرجاع السلة الكاملة محدثة
    - احفظها في State Management (Provider, Bloc, إلخ)
 
-4. **الأسعار:**
-   - الأسعار في السلة قد تتغير (عروض، خصومات)
-   - استخدم `/cart/preview` للحصول على الأسعار المحدثة
+4. **الأسعار والخصومات:**
+   - `basePrice`: السعر الأساسي
+   - `finalPrice`: السعر النهائي بعد الخصم
+   - `discount`: مبلغ الخصم
+   - `appliedPromotionId`: ID العرض المطبق
 
-5. **معالجة الأخطاء:**
+5. **الكوبونات:**
+   - `appliedCouponCode`: الكوبون المطبق يدوياً
+   - `autoAppliedCouponCodes`: الكوبونات المطبقة تلقائياً
+   - `couponDiscount`: إجمالي خصم الكوبونات
+
+6. **تتبع النشاط:**
+   - `lastActivityAt`: آخر نشاط في السلة
+   - `isAbandoned`: هل السلة مهجورة
+   - `abandonmentEmailsSent`: عدد رسائل التذكير المرسلة
+
+7. **معالجة الأخطاء:**
    - `PRODUCT_OUT_OF_STOCK`: اعرض الكمية المتوفرة
    - `CART_ITEM_NOT_FOUND`: قم بتحديث السلة
    - `VARIANT_NOT_FOUND`: المنتج قد يكون محذوف

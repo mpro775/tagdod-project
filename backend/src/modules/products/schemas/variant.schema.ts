@@ -30,19 +30,22 @@ export class Variant {
   @Prop({ type: [VariantAttribute], default: [] })
   attributeValues!: VariantAttribute[];
 
-  // التسعير
-  @Prop({ required: true })
-  price!: number;
+  // التسعير (مبسط - بالدولار فقط)
+  @Prop({ required: true, min: 0 })
+  basePriceUSD!: number;
 
-  @Prop()
-  compareAtPrice?: number; // السعر قبل التخفيض
+  @Prop({ min: 0 })
+  compareAtPriceUSD?: number; // السعر قبل التخفيض
 
-  @Prop()
-  costPrice?: number; // سعر التكلفة
+  @Prop({ min: 0 })
+  costPriceUSD?: number; // سعر التكلفة
 
-  // المخزون
-  @Prop({ required: true, default: 0 })
+  // المخزون (مبسط)
+  @Prop({ required: true, default: 0, min: 0 })
   stock!: number;
+
+  @Prop({ default: 0, min: 0 })
+  minStock!: number; // الحد الأدنى للمخزون
 
   @Prop({ default: false })
   trackInventory!: boolean; // تتبع المخزون
@@ -50,27 +53,21 @@ export class Variant {
   @Prop({ default: true })
   allowBackorder!: boolean; // السماح بالطلب عند نفاذ المخزون
 
-  @Prop({ default: 0 })
-  lowStockThreshold!: number; // تحذير عند انخفاض المخزون
-
   // الصور الخاصة بالـ Variant
-  @Prop()
-  image?: string;
-
   @Prop({ type: Types.ObjectId, ref: 'Media' })
   imageId?: string;
 
   // الوزن والأبعاد
-  @Prop()
+  @Prop({ min: 0 })
   weight?: number; // بالجرام
 
-  @Prop()
+  @Prop({ min: 0 })
   length?: number; // بالسم
 
-  @Prop()
+  @Prop({ min: 0 })
   width?: number;
 
-  @Prop()
+  @Prop({ min: 0 })
   height?: number;
 
   // الحالة
@@ -87,17 +84,21 @@ export class Variant {
   // Soft Delete
   @Prop({ type: Date, default: null })
   deletedAt?: Date | null;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  deletedBy?: string;
 }
 
 export const VariantSchema = SchemaFactory.createForClass(Variant);
 
-// Indexes
+// Indexes (مبسطة)
 VariantSchema.index({ productId: 1, isActive: 1 });
 VariantSchema.index({ sku: 1 }, { unique: true, sparse: true });
-VariantSchema.index({ price: 1 });
+VariantSchema.index({ basePriceUSD: 1 });
 VariantSchema.index({ stock: 1 });
 VariantSchema.index({ 'attributeValues.attributeId': 1 });
 VariantSchema.index({ 'attributeValues.valueId': 1 });
 VariantSchema.index({ deletedAt: 1 });
 VariantSchema.index({ productId: 1, deletedAt: 1, isActive: 1 });
+VariantSchema.index({ trackInventory: 1, stock: 1 });
 

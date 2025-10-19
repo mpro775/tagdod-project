@@ -37,7 +37,7 @@ const PriceRulesListPage: React.FC = () => {
     active: ''
   });
 
-  const { data: priceRules = [], isLoading } = usePriceRules(filters);
+  const { data: priceRules = [] } = usePriceRules(filters);
   const deletePriceRule = useDeletePriceRule();
   const togglePriceRule = useTogglePriceRule();
 

@@ -1,35 +1,56 @@
 // Analytics Types - متطابق 100% مع Backend
 
 export enum PeriodType {
+  // eslint-disable-next-line no-unused-vars
   DAILY = 'daily',
+  // eslint-disable-next-line no-unused-vars
   WEEKLY = 'weekly',
+  // eslint-disable-next-line no-unused-vars
   MONTHLY = 'monthly',
+  // eslint-disable-next-line no-unused-vars
   QUARTERLY = 'quarterly',
+  // eslint-disable-next-line no-unused-vars
   YEARLY = 'yearly',
 }
 
 export enum ReportType {
+  // eslint-disable-next-line no-unused-vars
   DAILY_REPORT = 'daily_report',
+  // eslint-disable-next-line no-unused-vars
   WEEKLY_REPORT = 'weekly_report',
+  // eslint-disable-next-line no-unused-vars
   MONTHLY_REPORT = 'monthly_report',
+  // eslint-disable-next-line no-unused-vars
   QUARTERLY_REPORT = 'quarterly_report',
+  // eslint-disable-next-line no-unused-vars
   YEARLY_REPORT = 'yearly_report',
+  // eslint-disable-next-line no-unused-vars
   CUSTOM_REPORT = 'custom_report',
 }
 
 export enum ReportFormat {
+  // eslint-disable-next-line no-unused-vars
   PDF = 'pdf',
+  // eslint-disable-next-line no-unused-vars
   EXCEL = 'excel',
+  // eslint-disable-next-line no-unused-vars
   CSV = 'csv',
+  // eslint-disable-next-line no-unused-vars
   JSON = 'json',
 }
 
 export enum ReportCategory {
+  // eslint-disable-next-line no-unused-vars
   SALES = 'sales',
+  // eslint-disable-next-line no-unused-vars
   PRODUCTS = 'products',
+  // eslint-disable-next-line no-unused-vars
   CUSTOMERS = 'customers',
+  // eslint-disable-next-line no-unused-vars
   INVENTORY = 'inventory',
+  // eslint-disable-next-line no-unused-vars
   FINANCIAL = 'financial',
+  // eslint-disable-next-line no-unused-vars
   MARKETING = 'marketing',
 }
 

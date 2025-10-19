@@ -12,16 +12,7 @@ import { ApiTags, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiOperation, ApiR
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { AdvancedAnalyticsService } from './advanced-analytics.service';
-
-interface QueryParams {
-  period?: string;
-  startDate?: string;
-  endDate?: string;
-  page?: string;
-  limit?: string;
-  status?: string;
-  format?: string;
-}
+import { BaseAnalyticsController, QueryParams } from './base-analytics.controller';
 
 interface ReportData {
   title?: string;
@@ -29,23 +20,14 @@ interface ReportData {
   format?: string;
 }
 
-// Helper function to convert QueryParams to AnalyticsParams
-function convertQueryParams(params: QueryParams) {
-  return {
-    startDate: params.startDate,
-    endDate: params.endDate,
-    category: params.period,
-    limit: params.limit ? parseInt(params.limit, 10) : undefined,
-    page: params.page ? parseInt(params.page, 10) : undefined,
-  };
-}
-
 @ApiTags('analytics/advanced')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, AdminGuard)
 @Controller('analytics/advanced')
-export class AdvancedAnalyticsController {
-  constructor(private readonly advancedAnalyticsService: AdvancedAnalyticsService) {}
+export class AdvancedAnalyticsController extends BaseAnalyticsController {
+  constructor(private readonly advancedAnalyticsService: AdvancedAnalyticsService) {
+    super();
+  }
 
   // ==================== Sales Analytics ====================
   @Get('sales')
@@ -55,8 +37,12 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Sales analytics retrieved successfully' })
   async getSalesAnalytics(@Query() params: QueryParams) {
-    const data = await this.advancedAnalyticsService.getSalesAnalytics(convertQueryParams(params));
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getSalesAnalytics(this.convertQueryParams(params));
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getSalesAnalytics');
+    }
   }
 
   // ==================== Product Performance ====================
@@ -67,8 +53,12 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Product performance retrieved successfully' })
   async getProductPerformance(@Query() params: QueryParams) {
-    const data = await this.advancedAnalyticsService.getProductPerformance(convertQueryParams(params));
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getProductPerformance(this.convertQueryParams(params));
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getProductPerformance');
+    }
   }
 
   // ==================== Customer Analytics ====================
@@ -79,8 +69,12 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Customer analytics retrieved successfully' })
   async getCustomerAnalytics(@Query() params: QueryParams) {
-    const data = await this.advancedAnalyticsService.getCustomerAnalytics(convertQueryParams(params));
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getCustomerAnalytics(this.convertQueryParams(params));
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getCustomerAnalytics');
+    }
   }
 
   // ==================== Inventory Report ====================
@@ -91,8 +85,12 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Inventory report retrieved successfully' })
   async getInventoryReport(@Query() params: QueryParams) {
-    const data = await this.advancedAnalyticsService.getInventoryReport(convertQueryParams(params));
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getInventoryReport(this.convertQueryParams(params));
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getInventoryReport');
+    }
   }
 
   // ==================== Financial Report ====================
@@ -103,8 +101,12 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Financial report retrieved successfully' })
   async getFinancialReport(@Query() params: QueryParams) {
-    const data = await this.advancedAnalyticsService.getFinancialReport(convertQueryParams(params));
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getFinancialReport(this.convertQueryParams(params));
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getFinancialReport');
+    }
   }
 
   // ==================== Cart Analytics ====================
@@ -115,8 +117,12 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Cart analytics retrieved successfully' })
   async getCartAnalytics(@Query() params: QueryParams) {
-    const data = await this.advancedAnalyticsService.getCartAnalytics(convertQueryParams(params));
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getCartAnalytics(this.convertQueryParams(params));
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getCartAnalytics');
+    }
   }
 
   // ==================== Marketing Report ====================
@@ -127,8 +133,12 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'Marketing report retrieved successfully' })
   async getMarketingReport(@Query() params: QueryParams) {
-    const data = await this.advancedAnalyticsService.getMarketingReport(convertQueryParams(params));
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getMarketingReport(this.convertQueryParams(params));
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getMarketingReport');
+    }
   }
 
   // ==================== Real-time Metrics ====================
@@ -136,8 +146,12 @@ export class AdvancedAnalyticsController {
   @ApiOperation({ summary: 'Get real-time metrics' })
   @ApiResponse({ status: 200, description: 'Real-time metrics retrieved successfully' })
   async getRealTimeMetrics() {
-    const data = await this.advancedAnalyticsService.getRealTimeMetrics();
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getRealTimeMetrics();
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getRealTimeMetrics');
+    }
   }
 
   // ==================== Quick Stats ====================
@@ -145,8 +159,12 @@ export class AdvancedAnalyticsController {
   @ApiOperation({ summary: 'Get quick stats' })
   @ApiResponse({ status: 200, description: 'Quick stats retrieved successfully' })
   async getQuickStats() {
-    const data = await this.advancedAnalyticsService.getQuickStats();
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getQuickStats();
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getQuickStats');
+    }
   }
 
   // ==================== Advanced Reports ====================
@@ -155,8 +173,12 @@ export class AdvancedAnalyticsController {
   @ApiBody({ schema: { type: 'object' } })
   @ApiResponse({ status: 201, description: 'Report generated successfully' })
   async generateAdvancedReport(@Body() data: ReportData) {
-    const report = await this.advancedAnalyticsService.generateAdvancedReport(data);
-    return { success: true, data: report };
+    try {
+      const report = await this.advancedAnalyticsService.generateAdvancedReport(data);
+      return this.formatSuccessResponse(report);
+    } catch (error) {
+      return this.handleError(error as Error, 'generateAdvancedReport');
+    }
   }
 
   @Get('reports')
@@ -166,12 +188,15 @@ export class AdvancedAnalyticsController {
   @ApiQuery({ name: 'status', required: false })
   @ApiResponse({ status: 200, description: 'Reports retrieved successfully' })
   async listAdvancedReports(@Query() params: QueryParams) {
-    const result = await this.advancedAnalyticsService.listAdvancedReports(convertQueryParams(params));
-    return { 
-      success: true, 
-      data: result.data,
-      meta: result.meta 
-    };
+    try {
+      const result = await this.advancedAnalyticsService.listAdvancedReports(this.convertQueryParams(params));
+      return this.formatSuccessResponse({
+        data: result.data,
+        meta: result.meta
+      });
+    } catch (error) {
+      return this.handleError(error as Error, 'listAdvancedReports');
+    }
   }
 
   @Get('reports/:reportId')
@@ -179,8 +204,12 @@ export class AdvancedAnalyticsController {
   @ApiParam({ name: 'reportId', description: 'Report ID' })
   @ApiResponse({ status: 200, description: 'Report retrieved successfully' })
   async getAdvancedReport(@Param('reportId') reportId: string) {
-    const report = await this.advancedAnalyticsService.getAdvancedReport(reportId);
-    return { success: true, data: report };
+    try {
+      const report = await this.advancedAnalyticsService.getAdvancedReport(reportId);
+      return this.formatSuccessResponse(report);
+    } catch (error) {
+      return this.handleError(error as Error, 'getAdvancedReport');
+    }
   }
 
   @Post('reports/:reportId/archive')
@@ -188,8 +217,12 @@ export class AdvancedAnalyticsController {
   @ApiParam({ name: 'reportId', description: 'Report ID' })
   @ApiResponse({ status: 200, description: 'Report archived successfully' })
   async archiveReport(@Param('reportId') reportId: string) {
-    const report = await this.advancedAnalyticsService.archiveReport(reportId);
-    return { success: true, data: report };
+    try {
+      const report = await this.advancedAnalyticsService.archiveReport(reportId);
+      return this.formatSuccessResponse(report);
+    } catch (error) {
+      return this.handleError(error as Error, 'archiveReport');
+    }
   }
 
   @Delete('reports/:reportId')
@@ -197,8 +230,12 @@ export class AdvancedAnalyticsController {
   @ApiParam({ name: 'reportId', description: 'Report ID' })
   @ApiResponse({ status: 200, description: 'Report deleted successfully' })
   async deleteReport(@Param('reportId') reportId: string) {
-    await this.advancedAnalyticsService.deleteReport(reportId);
-    return { success: true, message: 'Report deleted successfully' };
+    try {
+      await this.advancedAnalyticsService.deleteReport(reportId);
+      return this.formatSuccessResponse(null, 'Report deleted successfully');
+    } catch (error) {
+      return this.handleError(error as Error, 'deleteReport');
+    }
   }
 
   @Post('reports/:reportId/export')
@@ -207,8 +244,12 @@ export class AdvancedAnalyticsController {
   @ApiBody({ schema: { type: 'object' } })
   @ApiResponse({ status: 200, description: 'Report exported successfully' })
   async exportReport(@Param('reportId') reportId: string, @Body() data: ReportData) {
-    const exportData = await this.advancedAnalyticsService.exportReport(reportId, data);
-    return { success: true, data: exportData };
+    try {
+      const exportData = await this.advancedAnalyticsService.exportReport(reportId, data);
+      return this.formatSuccessResponse(exportData);
+    } catch (error) {
+      return this.handleError(error as Error, 'exportReport');
+    }
   }
 
   // ==================== Data Export ====================
@@ -223,8 +264,12 @@ export class AdvancedAnalyticsController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
-    const data = await this.advancedAnalyticsService.exportSalesData(format, startDate, endDate);
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.exportSalesData(format, startDate, endDate);
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'exportSalesData');
+    }
   }
 
   @Get('export/products')
@@ -238,8 +283,12 @@ export class AdvancedAnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const data = await this.advancedAnalyticsService.exportProductsData(format, startDate, endDate);
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.exportProductsData(format, startDate, endDate);
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'exportProductsData');
+    }
   }
 
   @Get('export/customers')
@@ -253,8 +302,12 @@ export class AdvancedAnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const data = await this.advancedAnalyticsService.exportCustomersData(format, startDate, endDate);
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.exportCustomersData(format, startDate, endDate);
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'exportCustomersData');
+    }
   }
 
   // ==================== Comparison & Trends ====================
@@ -271,13 +324,17 @@ export class AdvancedAnalyticsController {
     @Query('previousStart') previousStart: string,
     @Query('previousEnd') previousEnd: string,
   ) {
-    const data = await this.advancedAnalyticsService.comparePeriodsAdvanced(
-      currentStart,
-      currentEnd,
-      previousStart,
-      previousEnd,
-    );
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.comparePeriodsAdvanced(
+        currentStart,
+        currentEnd,
+        previousStart,
+        previousEnd,
+      );
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'comparePeriodsAdvanced');
+    }
   }
 
   @Get('trends/:metric')
@@ -293,12 +350,16 @@ export class AdvancedAnalyticsController {
     @Query('endDate') endDate: string,
     @Query('groupBy') groupBy?: string,
   ) {
-    const data = await this.advancedAnalyticsService.getMetricTrendsAdvanced(
-      metric,
-      startDate,
-      endDate,
-      groupBy,
-    );
-    return { success: true, data };
+    try {
+      const data = await this.advancedAnalyticsService.getMetricTrendsAdvanced(
+        metric,
+        startDate,
+        endDate,
+        groupBy,
+      );
+      return this.formatSuccessResponse(data);
+    } catch (error) {
+      return this.handleError(error as Error, 'getMetricTrendsAdvanced');
+    }
   }
 }

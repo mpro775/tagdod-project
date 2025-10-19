@@ -49,7 +49,7 @@ export class UserInfoDto {
   @ApiPropertyOptional({ description: 'الاسم الأخير' })
   lastName?: string;
 
-  @ApiProperty({ description: 'حالة الحساب' })
+  @ApiProperty({ description: 'حالة الحساب', enum: ['active', 'suspended', 'pending', 'deleted'] })
   status!: string;
 
   @ApiProperty({ description: 'أدوار المستخدم' })
@@ -293,6 +293,37 @@ export class PaginatedCustomerRankingsDto {
   };
 }
 
+// ==================== Scoring Configuration DTOs ====================
+
+export class ScoringConfigDto {
+  @ApiPropertyOptional({ description: 'إعدادات نقاط الولاء' })
+  loyalty?: {
+    orderWeight?: number;
+    completedOrderWeight?: number;
+    maxScore?: number;
+  };
+
+  @ApiPropertyOptional({ description: 'إعدادات نقاط القيمة' })
+  value?: {
+    spendingThreshold?: number;
+    scorePerThreshold?: number;
+    maxScore?: number;
+  };
+
+  @ApiPropertyOptional({ description: 'إعدادات نقاط النشاط' })
+  activity?: {
+    orderWeight?: number;
+    noSupportBonus?: number;
+    maxScore?: number;
+  };
+
+  @ApiPropertyOptional({ description: 'إعدادات نقاط الدعم' })
+  support?: {
+    ticketPenalty?: number;
+    maxScore?: number;
+  };
+}
+
 // ==================== Filter DTOs ====================
 
 export class UserStatsFilterDto {
@@ -317,10 +348,10 @@ export class UserStatsFilterDto {
   @IsEnum(['low', 'medium', 'high'])
   churnRisk?: 'low' | 'medium' | 'high';
 
-  @ApiPropertyOptional({ description: 'تصفية حسب حالة الحساب' })
+  @ApiPropertyOptional({ description: 'تصفية حسب حالة الحساب', enum: ['active', 'suspended', 'pending', 'deleted'] })
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsEnum(['active', 'suspended', 'pending', 'deleted'])
+  status?: 'active' | 'suspended' | 'pending' | 'deleted';
 
   @ApiPropertyOptional({ description: 'تصفية حسب الدور' })
   @IsOptional()

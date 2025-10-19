@@ -19,10 +19,8 @@ import {
 import { 
   Add, 
   Edit, 
-  Delete, 
   Send,
-  Code,
-  Preview
+  Code
 } from '@mui/icons-material';
 import { useNotificationTemplates, useTestNotification } from '../hooks/useNotifications';
 import { NotificationTemplate } from '../types/notification.types';

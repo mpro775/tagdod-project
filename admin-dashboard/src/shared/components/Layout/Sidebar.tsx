@@ -266,6 +266,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
         ],
       },
     {
+      id: 'exchange-rates',
+      label: 'أسعار الصرف',
+      icon: <Assessment />,
+      path: '/exchange-rates',
+    },
+    {
       id: 'settings',
       label: t('navigation.settings'),
       icon: <Settings />,

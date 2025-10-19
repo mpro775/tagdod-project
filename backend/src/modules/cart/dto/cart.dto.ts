@@ -21,6 +21,16 @@ export class AddItemDto {
   @Min(1)
   @Max(999)
   qty: number = 1;
+
+  @ApiProperty({ example: 'YER', enum: ['YER', 'SAR', 'USD'], required: false })
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @ApiProperty({ example: 'retail', enum: ['retail', 'wholesale', 'engineer'], required: false })
+  @IsOptional()
+  @IsString()
+  accountType?: string;
 }
 
 export class UpdateItemDto {
@@ -96,4 +106,57 @@ export class MergeCartDto {
   @ApiProperty({ required: false, default: true })
   @IsOptional()
   clearGuestCart?: boolean;
+}
+
+export class UpdateCartSettingsDto {
+  @ApiProperty({ example: 'YER', enum: ['YER', 'SAR', 'USD'], required: false })
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @ApiProperty({ example: 'retail', enum: ['retail', 'wholesale', 'engineer'], required: false })
+  @IsOptional()
+  @IsString()
+  accountType?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsObject()
+  metadata?: {
+    source?: string;
+    campaign?: string;
+    referrer?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+  };
+}
+
+export class PricingSummaryDto {
+  @ApiProperty({ example: 100.50 })
+  subtotal!: number;
+
+  @ApiProperty({ example: 10.00 })
+  promotionDiscount!: number;
+
+  @ApiProperty({ example: 5.00 })
+  couponDiscount!: number;
+
+  @ApiProperty({ example: 2.00 })
+  autoDiscount!: number;
+
+  @ApiProperty({ example: 17.00 })
+  totalDiscount!: number;
+
+  @ApiProperty({ example: 83.50 })
+  total!: number;
+
+  @ApiProperty({ example: 3 })
+  itemsCount!: number;
+
+  @ApiProperty({ example: 'YER' })
+  currency!: string;
+
+  @ApiProperty({ example: '2024-01-15T10:30:00Z' })
+  lastCalculatedAt!: Date;
 }

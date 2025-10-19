@@ -2,16 +2,24 @@ import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
 // Media Enums - متطابق 100% مع Backend
 export enum MediaCategory {
+  // eslint-disable-next-line no-unused-vars
   BANNER = 'banner',
+  // eslint-disable-next-line no-unused-vars
   PRODUCT = 'product',
+  // eslint-disable-next-line no-unused-vars
   CATEGORY = 'category',
+  // eslint-disable-next-line no-unused-vars
   BRAND = 'brand',
+  // eslint-disable-next-line no-unused-vars
   OTHER = 'other',
 }
 
 export enum MediaType {
+  // eslint-disable-next-line no-unused-vars
   IMAGE = 'image',
+  // eslint-disable-next-line no-unused-vars
   VIDEO = 'video',
+  // eslint-disable-next-line no-unused-vars
   DOCUMENT = 'document',
 }
 

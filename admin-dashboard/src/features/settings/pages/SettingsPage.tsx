@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   FormControl,
   InputLabel,
@@ -16,7 +15,7 @@ import {
   Chip,
   Button,
 } from '@mui/material';
-import { Settings as SettingsIcon, Language, Palette, Security, Analytics } from '@mui/icons-material';
+import { Settings as SettingsIcon, Palette, Security, Analytics } from '@mui/icons-material';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 

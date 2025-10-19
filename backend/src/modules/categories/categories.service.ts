@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Category } from './schemas/category.schema';
+import { Category, CategoryDocument } from './schemas/category.schema';
 import { slugify } from '../../shared/utils/slug.util';
 import { CacheService } from '../../shared/cache/cache.service';
 import { AppException } from '../../shared/exceptions/app.exception';
@@ -30,9 +30,6 @@ export class CategoriesService {
       throw new AppException('CATEGORY_SLUG_EXISTS', 'اسم الفئة موجود بالفعل', null, 400);
     }
 
-    let path = '/' + slug;
-    let depth = 0;
-
     if (dto.parentId) {
       const parent = await this.categoryModel.findById(dto.parentId).lean();
       if (!parent) {
@@ -41,8 +38,6 @@ export class CategoriesService {
       if (parent.deletedAt) {
         throw new AppException('PARENT_DELETED', 'الفئة الأب محذوفة', null, 400);
       }
-      path = `${parent.path}/${slug}`;
-      depth = parent.depth + 1;
 
       // تحديث عدد الأطفال للأب
       await this.categoryModel.updateOne({ _id: dto.parentId }, { $inc: { childrenCount: 1 } });
@@ -52,11 +47,8 @@ export class CategoriesService {
       ...dto,
       parentId: dto.parentId ? new Types.ObjectId(dto.parentId) : null,
       slug,
-      path,
-      depth,
       order: dto.order || 0,
       isActive: dto.isActive !== undefined ? dto.isActive : true,
-      showInMenu: dto.showInMenu !== undefined ? dto.showInMenu : true,
       childrenCount: 0,
       productsCount: 0,
     });
@@ -92,25 +84,14 @@ export class CategoriesService {
       }
 
       patch.slug = slug;
-
-      // تحديث path للفئة وكل أطفالها
-      const oldPath = category.path;
-      const newPath = category.parentId
-        ? (await this.categoryModel.findById(category.parentId).lean())!.path + '/' + slug
-        : '/' + slug;
-
-      // تحديث الفئة نفسها
-      await this.categoryModel.updateOne({ _id: id }, { $set: { path: newPath, ...patch } });
-
-      // تحديث كل الأطفال
-      const children = await this.categoryModel.find({ path: { $regex: `^${oldPath}/` } });
-      for (const child of children) {
-        const updatedPath = child.path.replace(oldPath, newPath);
-        await this.categoryModel.updateOne({ _id: child._id }, { $set: { path: updatedPath } });
-      }
-    } else {
-      await this.categoryModel.updateOne({ _id: id }, { $set: patch });
     }
+
+    // إذا تم تغيير parentId، نحتاج لتحديث الأطفال
+    if (patch.parentId !== undefined && patch.parentId !== category.parentId) {
+      await this.handleParentChange(id, category.parentId, patch.parentId);
+    }
+
+    await this.categoryModel.updateOne({ _id: id }, { $set: patch });
 
     const updated = await this.categoryModel.findById(id);
 
@@ -133,7 +114,6 @@ export class CategoriesService {
     const category = await this.categoryModel
       .findById(id)
       .populate('imageId')
-      .populate('iconId')
       .lean();
 
     if (!category) {
@@ -147,7 +127,7 @@ export class CategoriesService {
       .lean();
 
     // جلب breadcrumbs
-    const breadcrumbs = await this.getBreadcrumbs(category.path);
+    const breadcrumbs = await this.getBreadcrumbs(id);
 
     const result = {
       ...category,
@@ -210,8 +190,7 @@ export class CategoriesService {
     const categories = await this.categoryModel
       .find(q)
       .populate('imageId')
-      .populate('iconId')
-      .sort({ order: 1, depth: 1, name: 1 })
+      .sort({ order: 1, name: 1 })
       .lean();
 
     // Cache the result
@@ -234,7 +213,6 @@ export class CategoriesService {
     const allCategories = await this.categoryModel
       .find({ deletedAt: null, isActive: true })
       .populate('imageId')
-      .populate('iconId')
       .sort({ order: 1, name: 1 })
       .lean();
 
@@ -428,26 +406,87 @@ export class CategoriesService {
   }
 
   // ==================== Helper: Breadcrumbs ====================
-  private async getBreadcrumbs(path: string) {
-    const paths = path.split('/').filter(Boolean);
+  private async getBreadcrumbs(categoryId: string) {
     const breadcrumbs: Record<string, unknown>[] = [];
+    let currentCategoryId: string | null = categoryId;
 
-    let currentPath = '';
-    for (const segment of paths) {
-      currentPath += '/' + segment;
-      const cat = await this.categoryModel.findOne({ path: currentPath, deletedAt: null }).lean();
-      if (cat) {
-        breadcrumbs.push({
-          id: cat._id,
-          name: cat.name,
-          slug: cat.slug,
-          path: cat.path,
-        });
+    while (currentCategoryId) {
+      const category = await this.categoryModel.findById(currentCategoryId).lean() as CategoryDocument;
+      if (!category || category.deletedAt) {
+        break;
       }
+
+      breadcrumbs.unshift({
+        id: category._id.toString(),
+        name: category.name,
+        nameEn: category.nameEn,
+        slug: category.slug,
+      });
+
+      currentCategoryId = category.parentId || null;
     }
 
     return breadcrumbs;
   }
+
+  // ==================== Helper: تحديث الأطفال عند تغيير الأب ====================
+  private async handleParentChange(categoryId: string, oldParentId: string | null, newParentId: string | null) {
+    // التحقق من أن الـ newParentId صحيح
+    if (newParentId) {
+      const newParent = await this.categoryModel.findById(newParentId);
+      if (!newParent || newParent.deletedAt) {
+        throw new AppException('PARENT_NOT_FOUND', 'الفئة الأب الجديدة غير موجودة', null, 404);
+      }
+      
+      // التحقق من عدم إنشاء حلقة (الفئة لا يمكن أن تكون أب لنفسها)
+      if (newParentId === categoryId) {
+        throw new AppException('INVALID_PARENT', 'لا يمكن للفئة أن تكون أب لنفسها', null, 400);
+      }
+      
+      // التحقق من عدم إنشاء حلقة مع الأحفاد
+      const isDescendant = await this.isDescendant(categoryId, newParentId);
+      if (isDescendant) {
+        throw new AppException('INVALID_PARENT', 'لا يمكن للفئة أن تكون أب لأحد أحفادها', null, 400);
+      }
+    }
+
+    // تحديث عدد الأطفال للوالد القديم
+    if (oldParentId) {
+      await this.categoryModel.updateOne(
+        { _id: oldParentId },
+        { $inc: { childrenCount: -1 } }
+      );
+    }
+
+    // تحديث عدد الأطفال للوالد الجديد
+    if (newParentId) {
+      await this.categoryModel.updateOne(
+        { _id: newParentId },
+        { $inc: { childrenCount: 1 } }
+      );
+    }
+  }
+
+  // ==================== Helper: التحقق من النسب ====================
+  private async isDescendant(ancestorId: string, descendantId: string): Promise<boolean> {
+    let currentId = descendantId;
+    
+    while (currentId) {
+      const category = await this.categoryModel.findById(currentId).lean();
+      if (!category || !category.parentId) {
+        break;
+      }
+      
+      if (String(category.parentId) === ancestorId) {
+        return true;
+      }
+      
+      currentId = String(category.parentId);
+    }
+    
+    return false;
+  }
+
 
   // ==================== Cache Management ====================
   async clearAllCaches() {

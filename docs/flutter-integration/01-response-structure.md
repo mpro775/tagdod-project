@@ -12,7 +12,6 @@
 {
   "success": true,
   "data": { /* البيانات المطلوبة */ },
-  "meta": { /* معلومات إضافية - اختياري */ },
   "requestId": "uuid-string"
 }
 ```
@@ -23,12 +22,11 @@
 |---------|------|-------|
 | `success` | `boolean` | دائماً `true` عند النجاح |
 | `data` | `any` | البيانات المطلوبة (قد تكون object، array، أو primitive) |
-| `meta` | `object` أو `null` | معلومات إضافية مثل pagination |
 | `requestId` | `string` أو `null` | معرف فريد للطلب (مفيد للتتبع) |
 
 ### أمثلة واقعية
 
-#### مثال 1: استجابة بسيطة بدون meta
+#### مثال 1: استجابة بسيطة
 ```json
 {
   "success": true,
@@ -38,12 +36,11 @@
     "firstName": "أحمد",
     "lastName": "محمد"
   },
-  "meta": null,
   "requestId": "req_123456789"
 }
 ```
 
-#### مثال 2: استجابة مع pagination
+#### مثال 2: استجابة مع قائمة
 ```json
 {
   "success": true,
@@ -59,12 +56,6 @@
       "price": 200
     }
   ],
-  "meta": {
-    "total": 50,
-    "page": 1,
-    "limit": 20,
-    "totalPages": 3
-  },
   "requestId": "req_987654321"
 }
 ```
@@ -76,7 +67,6 @@
   "data": {
     "updated": true
   },
-  "meta": null,
   "requestId": "req_555444333"
 }
 ```
@@ -181,6 +171,9 @@
 | `AUTH_USER_NOT_FOUND` | المستخدم غير موجود | 404 | رقم الهاتف غير مسجل |
 | `AUTH_JOB_TITLE_REQUIRED` | المسمى الوظيفي مطلوب للمهندسين | 400 | عند طلب صلاحية مهندس |
 | `AUTH_UNAUTHORIZED` | غير مصرح | 401 | التوكن منتهي أو غير صحيح |
+| `AUTH_INVALID_PASSWORD` | كلمة المرور غير صحيحة | 401 | كلمة المرور خاطئة |
+| `AUTH_NO_PASSWORD` | كلمة المرور غير محددة | 400 | المستخدم ليس لديه كلمة مرور |
+| `AUTH_NOT_ADMIN` | هذا الحساب غير مصرح له بالدخول للوحة التحكم | 403 | المستخدم ليس admin |
 
 ### أخطاء Validation
 
@@ -195,8 +188,31 @@
 |-------|---------|-------------|--------|
 | `PRODUCT_NOT_FOUND` | المنتج غير موجود | 404 | المنتج المطلوب غير موجود |
 | `PRODUCT_OUT_OF_STOCK` | المنتج غير متوفر | 400 | الكمية المطلوبة غير متوفرة |
+| `PRODUCT_SLUG_EXISTS` | اسم المنتج موجود بالفعل | 400 | الـ slug مستخدم |
+| `PRODUCT_DELETED` | المنتج محذوف | 400 | المنتج محذوف |
 | `VARIANT_NOT_FOUND` | المتغير غير موجود | 404 | الـ variant المطلوب غير موجود |
 | `CART_ITEM_NOT_FOUND` | عنصر السلة غير موجود | 404 | المنتج غير موجود في السلة |
+
+### أخطاء الفئات
+
+| الكود | الرسالة | HTTP Status | الوصف |
+|-------|---------|-------------|--------|
+| `CATEGORY_NOT_FOUND` | الفئة غير موجودة | 404 | الفئة المطلوبة غير موجودة |
+| `CATEGORY_SLUG_EXISTS` | اسم الفئة موجود بالفعل | 400 | الـ slug مستخدم |
+| `CATEGORY_DELETED` | الفئة محذوفة | 400 | الفئة محذوفة |
+| `CATEGORY_HAS_CHILDREN` | لا يمكن حذف فئة تحتوي على فئات فرعية | 400 | الفئة لديها أطفال |
+| `PARENT_NOT_FOUND` | الفئة الأب غير موجودة | 404 | الفئة الأب غير موجودة |
+
+### أخطاء المستخدمين
+
+| الكود | الرسالة | HTTP Status | الوصف |
+|-------|---------|-------------|--------|
+| `USER_NOT_FOUND` | المستخدم غير موجود | 404 | المستخدم المطلوب غير موجود |
+| `USER_ALREADY_EXISTS` | رقم الهاتف مستخدم بالفعل | 400 | رقم الهاتف مستخدم |
+| `USER_ALREADY_SUSPENDED` | المستخدم موقوف بالفعل | 400 | المستخدم موقوف |
+| `USER_ALREADY_DELETED` | المستخدم محذوف بالفعل | 400 | المستخدم محذوف |
+| `CANNOT_DELETE_SUPER_ADMIN` | لا يمكن حذف Super Admin | 403 | محاولة حذف super admin |
+| `PERMISSION_DENIED` | لا يمكن تعديل Super Admin | 403 | محاولة تعديل super admin |
 
 ### أخطاء الطلبات
 
@@ -206,6 +222,14 @@
 | `CART_EMPTY` | السلة فارغة | 400 | لا يمكن إنشاء طلب من سلة فارغة |
 | `ADDRESS_NOT_FOUND` | العنوان غير موجود | 404 | عنوان التوصيل غير موجود |
 
+### أخطاء الملفات
+
+| الكود | الرسالة | HTTP Status | الوصف |
+|-------|---------|-------------|--------|
+| `MEDIA_NOT_FOUND` | الصورة غير موجودة | 404 | الملف المطلوب غير موجود |
+| `MEDIA_DELETED` | الصورة محذوفة | 400 | الملف محذوف |
+| `MEDIA_ALREADY_DELETED` | الصورة محذوفة بالفعل | 400 | الملف محذوف بالفعل |
+
 ### أخطاء عامة
 
 | الكود | الرسالة | HTTP Status | الوصف |
@@ -213,6 +237,9 @@
 | `UNEXPECTED_ERROR` | حدث خطأ غير متوقع | 500 | خطأ داخلي في السيرفر |
 | `NOT_FOUND` | غير موجود | 404 | المورد المطلوب غير موجود |
 | `FORBIDDEN` | ممنوع | 403 | ليس لديك صلاحية |
+| `NOT_ALLOWED` | هذا الـ endpoint غير متاح في الإنتاج | 403 | endpoint غير متاح |
+| `INVALID_SECRET` | مفتاح سري غير صحيح | 403 | مفتاح سري خاطئ |
+| `SUPER_ADMIN_EXISTS` | الادمن الرئيسي موجود بالفعل | 400 | super admin موجود |
 
 ---
 
@@ -227,14 +254,12 @@ class ApiResponse<T> {
   final bool success;
   final T? data;
   final ApiError? error;
-  final Map<String, dynamic>? meta;
   final String? requestId;
 
   ApiResponse({
     required this.success,
     this.data,
     this.error,
-    this.meta,
     this.requestId,
   });
 
@@ -250,7 +275,6 @@ class ApiResponse<T> {
       error: json['error'] != null
           ? ApiError.fromJson(json['error'])
           : null,
-      meta: json['meta'],
       requestId: json['requestId'],
     );
   }
@@ -548,8 +572,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
 1. **دائماً تحقق من `success`** قبل استخدام `data`
 2. **استخدم `error.code`** للبرمجة و `error.message` للعرض
 3. **`fieldErrors`** موجودة فقط في أخطاء الـ Validation
-4. **`meta`** موجودة فقط في بعض الاستجابات (مثل lists مع pagination)
-5. **`requestId`** مفيد للـ Debugging وتتبع الأخطاء
+4. **`requestId`** مفيد للـ Debugging وتتبع الأخطاء
+5. **الاستجابات الناجحة لا تحتوي على `meta`** - هذه المعلومة غير صحيحة في الوثائق السابقة
 
 ---
 

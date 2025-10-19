@@ -10,8 +10,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button,
-  TextField
+  Button
 } from '@mui/material';
 import { Edit, Delete, Restore } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -443,7 +442,7 @@ export const UsersListPage: React.FC = () => {
             onClick={handleConfirmAction} 
             variant="contained"
             color="error"
-            autoFocus
+            // autoFocus
           >
             حذف
           </Button>

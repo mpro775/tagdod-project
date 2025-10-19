@@ -11,7 +11,6 @@ import {
  * Accessibility hook for common accessibility patterns
  */
 export const useAccessibility = () => {
-  const [announcements, setAnnouncements] = useState<string[]>([]);
 
   // Focus trap hook
   const useFocusTrap = (isActive: boolean = true) => {
@@ -53,7 +52,6 @@ export const useAccessibility = () => {
   const useLiveRegion = (priority: 'polite' | 'assertive' = 'polite') => {
     const announce = useCallback((message: string) => {
       screenReader.announce(message, priority);
-      setAnnouncements(prev => [...prev, message]);
     }, [priority]);
 
     return { announce };
@@ -140,7 +138,7 @@ export const useAccessibility = () => {
       return {
         id: `${fieldId}-error`,
         role: 'alert',
-        'aria-live': 'polite',
+        'aria-live': 'polite' as const,
       };
     }, [fieldId, hasError]);
 
@@ -176,8 +174,7 @@ export const useAccessibility = () => {
 
   // Button accessibility
   const useButtonAccessibility = (
-    variant: 'primary' | 'secondary' | 'danger' = 'primary',
-    size: 'small' | 'medium' | 'large' = 'medium'
+    variant: 'primary' | 'secondary' | 'danger' = 'primary'
   ) => {
     const getButtonProps = useCallback(() => {
       const baseProps = {
@@ -221,7 +218,7 @@ export const useAccessibility = () => {
     const getLoadingProps = useCallback(() => ({
       ref: loadingRef,
       role: 'status',
-      'aria-live': 'polite',
+      'aria-live': 'polite' as const,
       'aria-label': loadingText,
     }), [loadingText]);
 

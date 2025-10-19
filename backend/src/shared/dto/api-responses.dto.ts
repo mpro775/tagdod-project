@@ -2,23 +2,23 @@ import { ApiProperty } from '@nestjs/swagger';
 
 // ==================== Common API Response Schemas ====================
 
-export class ApiSuccessResponse<T = any> {
+export class ApiSuccessResponse<T = unknown> {
   @ApiProperty({ 
     example: true, 
     description: 'Indicates if the operation was successful' 
   })
-  success: boolean;
+  success!: boolean;
 
   @ApiProperty({ 
     example: 'Operation completed successfully', 
     description: 'Success message' 
   })
-  message: string;
+  message!: string;
 
   @ApiProperty({ 
     description: 'Response data' 
   })
-  data: T;
+  data!: T;
 }
 
 export class ApiErrorResponse {
@@ -26,19 +26,19 @@ export class ApiErrorResponse {
     example: 400, 
     description: 'HTTP status code' 
   })
-  statusCode: number;
+  statusCode!: number;
 
   @ApiProperty({ 
     example: 'Validation failed', 
     description: 'Error message' 
   })
-  message: string;
+  message!: string;
 
   @ApiProperty({ 
     example: 'Bad Request', 
     description: 'Error type' 
   })
-  error: string;
+  error!: string;
 
   @ApiProperty({ 
     example: ['Field is required'], 
@@ -54,50 +54,50 @@ export class PaginationMetaDto {
     example: 1, 
     description: 'Current page number' 
   })
-  page: number;
+  page!: number;
 
   @ApiProperty({ 
     example: 20, 
     description: 'Items per page' 
   })
-  limit: number;
+  limit!: number;
 
   @ApiProperty({ 
     example: 150, 
     description: 'Total number of items' 
   })
-  total: number;
+  total!: number;
 
   @ApiProperty({ 
     example: 8, 
     description: 'Total number of pages' 
   })
-  pages: number;
+  pages!: number;
 
   @ApiProperty({ 
     example: true, 
     description: 'Whether there is a next page' 
   })
-  hasNext: boolean;
+  hasNext!: boolean;
 
   @ApiProperty({ 
     example: false, 
     description: 'Whether there is a previous page' 
   })
-  hasPrev: boolean;
+  hasPrev!: boolean;
 }
 
-export class PaginatedResponseDto<T = any> {
+export class PaginatedResponseDto<T = unknown> {
   @ApiProperty({ 
     description: 'Array of items' 
   })
-  data: T[];
+  data!: T[];
 
   @ApiProperty({ 
     type: PaginationMetaDto, 
     description: 'Pagination metadata' 
   })
-  pagination: PaginationMetaDto;
+  pagination!: PaginationMetaDto;
 }
 
 // ==================== Authentication Responses ====================
@@ -107,13 +107,13 @@ export class LoginResponseDto {
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...', 
     description: 'JWT access token' 
   })
-  access: string;
+  access!: string;
 
   @ApiProperty({ 
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...', 
     description: 'JWT refresh token' 
   })
-  refresh: string;
+  refresh!: string;
 }
 
 export class UserProfileDto {
@@ -121,32 +121,32 @@ export class UserProfileDto {
     example: '507f1f77bcf86cd799439011', 
     description: 'User unique identifier' 
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({ 
     example: '+966501234567', 
     description: 'User phone number' 
   })
-  phone: string;
+  phone!: string;
 
   @ApiProperty({ 
     example: 'أحمد', 
     description: 'User first name' 
   })
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({ 
     example: 'محمد', 
     description: 'User last name' 
   })
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty({ 
     example: 'male', 
     enum: ['male', 'female'], 
     description: 'User gender' 
   })
-  gender: string;
+  gender!: string;
 
   @ApiProperty({ 
     example: 'مهندس كهرباء', 
@@ -158,13 +158,13 @@ export class UserProfileDto {
     example: false, 
     description: 'Whether user is admin' 
   })
-  isAdmin: boolean;
+  isAdmin!: boolean;
 
   @ApiProperty({ 
     example: 'USD', 
     description: 'User preferred currency' 
   })
-  preferredCurrency: string;
+  preferredCurrency!: string;
 }
 
 export class AuthResponseDto {
@@ -172,13 +172,13 @@ export class AuthResponseDto {
     type: LoginResponseDto, 
     description: 'Authentication tokens' 
   })
-  tokens: LoginResponseDto;
+  tokens!: LoginResponseDto;
 
   @ApiProperty({ 
     type: UserProfileDto, 
     description: 'User profile information' 
   })
-  me: UserProfileDto;
+  me! : UserProfileDto;
 }
 
 // ==================== Product Responses ====================
@@ -188,37 +188,37 @@ export class ProductVariantDto {
     example: '507f1f77bcf86cd799439014', 
     description: 'Variant unique identifier' 
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({ 
     example: '300W - Black', 
     description: 'Variant name' 
   })
-  name: string;
+  name!: string;
 
   @ApiProperty({ 
     example: 299.99, 
     description: 'Variant price' 
   })
-  price: number;
+  price!: number;
 
   @ApiProperty({ 
     example: 'USD', 
     description: 'Variant currency' 
   })
-  currency: string;
+  currency!: string;
 
   @ApiProperty({ 
     example: 50, 
     description: 'Available stock quantity' 
   })
-  stock: number;
+  stock!: number;
 
   @ApiProperty({ 
     example: { color: 'Black', size: '300W' }, 
     description: 'Variant attributes' 
   })
-  attributes: Record<string, any>;
+  attributes!: Record<string, string>;
 }
 
 export class ProductDto {
@@ -226,44 +226,44 @@ export class ProductDto {
     example: '507f1f77bcf86cd799439011', 
     description: 'Product unique identifier' 
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({ 
     example: 'Solar Panel 300W', 
     description: 'Product name' 
   })
-  name: string;
+  name!: string;
 
   @ApiProperty({ 
     example: 'High efficiency solar panel with 20% efficiency', 
     description: 'Product description' 
   })
-  description: string;
+  description!: string;
 
   @ApiProperty({ 
     example: 299.99, 
     description: 'Product base price' 
   })
-  price: number;
+  price!: number;
 
   @ApiProperty({ 
     example: 'USD', 
     description: 'Product currency' 
   })
-  currency: string;
+  currency!: string;
 
   @ApiProperty({ 
     example: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'], 
     type: [String], 
     description: 'Product images URLs' 
   })
-  images: string[];
+  images!: string[];
 
   @ApiProperty({ 
     type: [ProductVariantDto], 
     description: 'Product variants' 
   })
-  variants: ProductVariantDto[];
+  variants! : ProductVariantDto[];
 
   @ApiProperty({ 
     example: { 
@@ -273,7 +273,7 @@ export class ProductDto {
     }, 
     description: 'Product category' 
   })
-  category: any;
+  category!: Record<string, string>;
 
   @ApiProperty({ 
     example: { 
@@ -283,31 +283,31 @@ export class ProductDto {
     }, 
     description: 'Product brand' 
   })
-  brand: any;
+  brand!: Record<string, string>;
 
   @ApiProperty({ 
     example: true, 
     description: 'Whether product is featured' 
   })
-  isFeatured: boolean;
+  isFeatured!: boolean;
 
   @ApiProperty({ 
     example: false, 
     description: 'Whether product is new' 
   })
-  isNew: boolean;
+  isNew!: boolean;
 
   @ApiProperty({ 
     example: 150, 
     description: 'Product view count' 
   })
-  views: number;
+  views!: number;
 
   @ApiProperty({ 
     example: '2024-01-15T10:30:00Z', 
     description: 'Product creation date' 
   })
-  createdAt: string;
+  createdAt!: string;
 }
 
 // ==================== Cart Responses ====================
@@ -317,37 +317,37 @@ export class CartItemDto {
     example: '507f1f77bcf86cd799439013', 
     description: 'Cart item unique identifier' 
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({ 
     example: '507f1f77bcf86cd799439014', 
     description: 'Product variant ID' 
   })
-  variantId: string;
+  variantId!: string;
 
   @ApiProperty({ 
     example: 2, 
     description: 'Item quantity' 
   })
-  quantity: number;
+  quantity!: number;
 
   @ApiProperty({ 
     type: ProductDto, 
     description: 'Product information' 
   })
-  product: ProductDto;
+  product!: ProductDto;
 
   @ApiProperty({ 
     type: ProductVariantDto, 
     description: 'Product variant information' 
   })
-  variant: ProductVariantDto;
+  variant!: ProductVariantDto;
 
   @ApiProperty({ 
     example: 599.98, 
     description: 'Total price for this item' 
   })
-  totalPrice: number;
+  totalPrice!: number;
 }
 
 export class CartDto {
@@ -355,43 +355,43 @@ export class CartDto {
     example: '507f1f77bcf86cd799439011', 
     description: 'Cart unique identifier' 
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({ 
     example: '507f1f77bcf86cd799439012', 
     description: 'User ID who owns the cart' 
   })
-  userId: string;
+  userId!: string;
 
   @ApiProperty({ 
     type: [CartItemDto], 
     description: 'Cart items' 
   })
-  items: CartItemDto[];
+  items!: CartItemDto[];
 
   @ApiProperty({ 
     example: 3, 
     description: 'Total number of items in cart' 
   })
-  totalItems: number;
+  totalItems!: number;
 
   @ApiProperty({ 
     example: 599.98, 
     description: 'Total cart price' 
   })
-  totalPrice: number;
+  totalPrice!: number;
 
   @ApiProperty({ 
     example: 'USD', 
     description: 'Cart currency' 
   })
-  currency: string;
+  currency!: string;
 
   @ApiProperty({ 
     example: '2024-01-15T10:30:00Z', 
     description: 'Cart last updated date' 
   })
-  updatedAt: string;
+  updatedAt!: string;
 }
 
 // ==================== Order Responses ====================
@@ -401,37 +401,37 @@ export class OrderItemDto {
     example: '507f1f77bcf86cd799439013', 
     description: 'Order item unique identifier' 
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({ 
     type: ProductDto, 
     description: 'Product information' 
   })
-  product: ProductDto;
+  product!: ProductDto;
 
   @ApiProperty({ 
     type: ProductVariantDto, 
     description: 'Product variant information' 
   })
-  variant: ProductVariantDto;
+  variant!: ProductVariantDto;
 
   @ApiProperty({ 
     example: 2, 
     description: 'Item quantity' 
   })
-  quantity: number;
+  quantity!: number;
 
   @ApiProperty({ 
     example: 299.99, 
     description: 'Item unit price' 
   })
-  unitPrice: number;
+  unitPrice!:  number;
 
   @ApiProperty({ 
     example: 599.98, 
     description: 'Total price for this item' 
   })
-  totalPrice: number;
+  totalPrice!: number;
 }
 
 export class OrderDto {
@@ -439,62 +439,62 @@ export class OrderDto {
     example: '507f1f77bcf86cd799439011', 
     description: 'Order unique identifier' 
   })
-  id: string;
+  id!: string;
 
   @ApiProperty({ 
     example: 'ORD-2024-001', 
     description: 'Order number' 
   })
-  orderNumber: string;
+  orderNumber!: string;
 
   @ApiProperty({ 
     example: 'pending', 
     enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'], 
     description: 'Order status' 
   })
-  status: string;
+  status!: string;
 
   @ApiProperty({ 
     type: [OrderItemDto], 
     description: 'Order items' 
   })
-  items: OrderItemDto[];
+  items!: OrderItemDto[];
 
   @ApiProperty({ 
     example: 599.98, 
     description: 'Order subtotal' 
   })
-  subtotal: number;
+  subtotal!: number;
 
   @ApiProperty({ 
     example: 25.00, 
     description: 'Shipping cost' 
   })
-  shipping: number;
+  shipping!: number;
 
   @ApiProperty({ 
     example: 62.50, 
     description: 'Tax amount' 
   })
-  tax: number;
+  tax!: number;
 
   @ApiProperty({ 
     example: 687.48, 
     description: 'Order total amount' 
   })
-  totalAmount: number;
+  totalAmount!: number;
 
   @ApiProperty({ 
     example: 'USD', 
     description: 'Order currency' 
   })
-  currency: string;
+  currency!: string;
 
   @ApiProperty({ 
     example: '2024-01-15T10:30:00Z', 
     description: 'Order creation date' 
   })
-  createdAt: string;
+  createdAt!: string;
 
   @ApiProperty({ 
     example: '2024-01-20T00:00:00Z', 
@@ -510,23 +510,43 @@ export class AnalyticsKpiDto {
     example: 'totalRevenue', 
     description: 'KPI metric name' 
   })
-  metric: string;
+  metric!: string;
 
   @ApiProperty({ 
     example: 125000.50, 
     description: 'Current value' 
   })
-  value: number;
+  value!: number;
 
   @ApiProperty({ 
     example: 15.5, 
     description: 'Percentage change from previous period' 
   })
-  change: number;
+  change!: number;
 
   @ApiProperty({ 
     example: 'USD', 
     description: 'Value currency' 
+  })
+  currency?: string;
+}
+
+export class ChartDataPointDto {
+  @ApiProperty({ 
+    example: '2024-01-15', 
+    description: 'Data point label (usually date)' 
+  })
+  label!: string;
+
+  @ApiProperty({ 
+    example: 12500.50, 
+    description: 'Data point value' 
+  })
+  value!: number;
+
+  @ApiProperty({ 
+    example: 'USD', 
+    description: 'Value currency (optional)' 
   })
   currency?: string;
 }
@@ -536,25 +556,25 @@ export class AnalyticsChartDto {
     example: 'revenue', 
     description: 'Chart type' 
   })
-  type: string;
+  type!: string;
 
   @ApiProperty({ 
     example: 'Revenue Trends', 
     description: 'Chart title' 
   })
-  title: string;
+  title!: string;
 
   @ApiProperty({ 
     example: 'line', 
     description: 'Chart visualization type' 
   })
-  chartType: string;
+  chartType!: string;
 
   @ApiProperty({ 
-    type: [Object], 
+    type: [ChartDataPointDto], 
     description: 'Chart data points' 
   })
-  data: any[];
+  data!: ChartDataPointDto[];
 }
 
 export class AnalyticsDashboardDto {
@@ -562,23 +582,23 @@ export class AnalyticsDashboardDto {
     type: [AnalyticsKpiDto], 
     description: 'Key performance indicators' 
   })
-  kpis: AnalyticsKpiDto[];
+  kpis!: AnalyticsKpiDto[];
 
   @ApiProperty({ 
     type: [AnalyticsChartDto], 
     description: 'Analytics charts' 
   })
-  charts: AnalyticsChartDto[];
+  charts!: AnalyticsChartDto[];
 
   @ApiProperty({ 
     example: '2024-01-15', 
     description: 'Analytics date' 
   })
-  date: string;
+  date!: string;
 
   @ApiProperty({ 
     example: 'monthly', 
     description: 'Analytics period' 
   })
-  period: string;
+  period!: string;
 }

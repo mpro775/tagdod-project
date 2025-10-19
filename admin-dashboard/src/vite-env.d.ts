@@ -15,6 +15,7 @@ interface ImportMetaEnv {
   readonly VITE_MAX_PAGE_SIZE: string;
 }
 
+// eslint-disable-next-line no-unused-vars
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }

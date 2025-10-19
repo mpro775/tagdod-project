@@ -7,6 +7,7 @@ import { useAuthStore } from './store/authStore';
 import { AppRouter } from './core/router/AppRouter';
 import { ErrorBoundary } from './core/error/ErrorBoundary';
 import { initializeGA4, setupScrollTracking } from './lib/analytics';
+import { initSentry } from './core/sentry';
 import './core/i18n/config';
 
 const queryClient = new QueryClient({
@@ -25,11 +26,15 @@ const App: React.FC = () => {
     useAuthStore.getState().initialize();
   }, []);
 
-  // Initialize analytics and tracking
+  // Initialize analytics, tracking, and error monitoring
   useEffect(() => {
+    // Initialize Sentry for error tracking
+    initSentry();
+
+    // Initialize analytics
     initializeGA4();
     const cleanupScrollTracking = setupScrollTracking();
-    
+
     return () => {
       cleanupScrollTracking();
     };

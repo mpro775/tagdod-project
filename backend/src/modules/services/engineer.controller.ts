@@ -2,19 +2,21 @@ import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { EngineerGuard } from '../../shared/guards/engineer.guard';
 import { ServicesService } from './services.service';
 import { CreateOfferDto, UpdateOfferDto } from './dto/offers.dto';
 import { NearbyQueryDto } from './dto/requests.dto';
+import { ServicesPermissionGuard, ServicePermission } from './guards/services-permission.guard';
+import { RequireServicePermission } from './decorators/service-permission.decorator';
 
 @ApiTags('services-engineer')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, EngineerGuard)
-@Controller('services')
+@UseGuards(JwtAuthGuard, ServicesPermissionGuard)
+@Controller('services/engineer')
 export class EngineerServicesController {
   constructor(private svc: ServicesService) {}
 
   @Get('requests/nearby')
+  @RequireServicePermission(ServicePermission.ENGINEER)
   async nearby(@Req() req: Request, @Query() q: NearbyQueryDto) {
     const data = await this.svc.nearby(req.user!.sub, q.lat, q.lng, q.radiusKm);
     return { data };

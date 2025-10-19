@@ -11,8 +11,6 @@ import {
   TrendingUpIcon,
   CurrencyDollarIcon,
   CubeIcon,
-  ClockIcon,
-  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 export const CartAnalyticsPage: React.FC = () => {

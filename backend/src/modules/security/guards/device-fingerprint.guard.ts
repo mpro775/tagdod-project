@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, Logger, BadRequestException } from '@nestjs/common';
 import { Request } from 'express';
 import { createHash } from 'crypto';
+import { ClientIPService } from '../services/client-ip.service';
 
 @Injectable()
 export class DeviceFingerprintGuard implements CanActivate {
@@ -18,11 +19,13 @@ export class DeviceFingerprintGuard implements CanActivate {
     /insomnia/i,
   ];
 
+  constructor(private readonly clientIPService: ClientIPService) {}
+
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     const userAgent = request.get('User-Agent') || '';
 
-    const clientIP = this.getClientIP(request);
+    const clientIP = this.clientIPService.getClientIP(request);
 
     // Check for suspicious user agents
     if (this.isSuspiciousUserAgent(userAgent)) {
@@ -48,19 +51,6 @@ export class DeviceFingerprintGuard implements CanActivate {
     return true;
   }
 
-  private getClientIP(request: Request): string {
-    const forwarded = request.get('x-forwarded-for');
-    if (forwarded) {
-      return forwarded.split(',')[0].trim();
-    }
-
-    const realIP = request.get('x-real-ip');
-    if (realIP) {
-      return realIP;
-    }
-
-    return request.connection.remoteAddress || request.socket.remoteAddress || 'unknown';
-  }
 
   private isSuspiciousUserAgent(userAgent: string): boolean {
     if (!userAgent) return true;
@@ -94,7 +84,7 @@ export class DeviceFingerprintGuard implements CanActivate {
       request.get('Accept-Language') || '',
       request.get('Accept-Encoding') || '',
       request.get('Accept') || '',
-      this.getClientIP(request),
+      this.clientIPService.getClientIP(request),
       request.get('sec-ch-ua') || '', // Chrome user agent hints
       request.get('sec-ch-ua-mobile') || '',
       request.get('sec-ch-ua-platform') || '',
@@ -108,7 +98,7 @@ export class DeviceFingerprintGuard implements CanActivate {
   isSuspiciousFingerprint(fingerprint: string): boolean {
     // This could be enhanced with a database of known suspicious fingerprints
     // For now, just return false
-    console.log('fingerprint', fingerprint);
+    this.logger.debug(`Device fingerprint generated: ${fingerprint}`);
     return false;
   }
 }

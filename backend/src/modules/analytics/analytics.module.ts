@@ -6,9 +6,11 @@ import { AnalyticsService } from './analytics.service';
 import { AdvancedAnalyticsService } from './advanced-analytics.service';
 import { AdvancedReportsService } from './services/advanced-reports.service';
 import { AnalyticsCronService } from './services/analytics-cron.service';
+import { AnalyticsCalculationService } from './services/analytics-calculation.service';
+import { AnalyticsCacheService } from './services/analytics-cache.service';
 import { StockAlertService } from '../products/services/stock-alert.service';
 import { ActivityTrackingMiddleware } from '../../shared/middleware/activity-tracking.middleware';
-import { NotificationsModule } from '../notifications/notifications.module';
+import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { AuthModule } from '../auth/auth.module';
 
 // Schemas
@@ -19,6 +21,7 @@ import { AdvancedReport, AdvancedReportSchema } from './schemas/advanced-report.
 // Related schemas
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
+import { Variant, VariantSchema } from '../products/schemas/variant.schema';
 import { Order, OrderSchema } from '../checkout/schemas/order.schema';
 import { ServiceRequest, ServiceRequestSchema } from '../services/schemas/service-request.schema';
 import { SupportTicket, SupportTicketSchema } from '../support/schemas/support-ticket.schema';
@@ -30,7 +33,7 @@ import { CacheService } from '../../shared/cache/cache.service';
 
 @Module({
   imports: [
-    NotificationsModule,
+    NotificationsCompleteModule,
     forwardRef(() => AuthModule),
     MongooseModule.forFeature([
       { name: AnalyticsSnapshot.name, schema: AnalyticsSnapshotSchema },
@@ -38,6 +41,7 @@ import { CacheService } from '../../shared/cache/cache.service';
       { name: AdvancedReport.name, schema: AdvancedReportSchema },
       { name: User.name, schema: UserSchema },
       { name: Product.name, schema: ProductSchema },
+      { name: Variant.name, schema: VariantSchema },
       { name: Order.name, schema: OrderSchema },
       { name: ServiceRequest.name, schema: ServiceRequestSchema },
       { name: SupportTicket.name, schema: SupportTicketSchema },
@@ -54,6 +58,8 @@ import { CacheService } from '../../shared/cache/cache.service';
     AdvancedAnalyticsService,
     AdvancedReportsService,
     AnalyticsCronService,
+    AnalyticsCalculationService,
+    AnalyticsCacheService,
     StockAlertService,
     ActivityTrackingMiddleware,
     CacheService,
@@ -63,6 +69,8 @@ import { CacheService } from '../../shared/cache/cache.service';
     AdvancedAnalyticsService,
     AdvancedReportsService,
     AnalyticsCronService,
+    AnalyticsCalculationService,
+    AnalyticsCacheService,
     StockAlertService,
     ActivityTrackingMiddleware,
   ],

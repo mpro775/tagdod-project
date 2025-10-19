@@ -110,10 +110,17 @@ export class CORSService {
           'https://localhost:8080',
         ];
       } else {
-        // In production, be more restrictive
+        // In production, use environment-specific origins
+        const productionOrigins = this.configService.get<string>('PRODUCTION_ORIGINS', '');
+        if (productionOrigins) {
+          return productionOrigins.split(',').map(origin => origin.trim());
+        }
+        
+        // Fallback to secure defaults
         return [
-          'https://your-frontend-domain.com',
-          'https://admin.your-frontend-domain.com',
+          'https://tagadodo.com',
+          'https://admin.tagadodo.com',
+          'https://api.tagadodo.com',
         ];
       }
     }

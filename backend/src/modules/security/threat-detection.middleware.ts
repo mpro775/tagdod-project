@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware, Logger, BadRequestException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { ClientIPService } from './services/client-ip.service';
 
 @Injectable()
 export class ThreatDetectionMiddleware implements NestMiddleware {
@@ -8,7 +9,10 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
   private readonly isDevelopment: boolean;
   private readonly isThreatDetectionDisabled: boolean;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly clientIPService: ClientIPService,
+  ) {
     this.isDevelopment = this.configService.get<string>('NODE_ENV', 'development') === 'development';
     this.isThreatDetectionDisabled = this.configService.get<string>('DISABLE_THREAT_DETECTION', 'false') === 'true';
     
@@ -103,7 +107,7 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
     } catch (error) {
       if (error instanceof BadRequestException) {
         this.logger.warn(`Threat detected and blocked: ${error.message}`, {
-          ip: this.getClientIP(req),
+          ip: this.clientIPService.getClientIP(req),
           path: req.path,
           method: req.method,
           userAgent: req.get('User-Agent'),
@@ -252,25 +256,11 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
     this.logger.warn(`🚨 ${threatType} detected: ${details}`, {
       threatType,
       details,
-      ip: this.getClientIP(req),
+      ip: this.clientIPService.getClientIP(req),
       method: req.method,
       path: req.path,
       userAgent: req.get('User-Agent'),
       timestamp: new Date().toISOString(),
     });
-  }
-
-  private getClientIP(req: Request): string {
-    const forwarded = req.get('x-forwarded-for');
-    if (forwarded) {
-      return forwarded.split(',')[0].trim();
-    }
-
-    const realIP = req.get('x-real-ip');
-    if (realIP) {
-      return realIP;
-    }
-
-    return req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
   }
 }

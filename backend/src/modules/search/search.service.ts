@@ -193,16 +193,42 @@ export class SearchService {
     if (minRating) query.rating = { $gte: minRating };
     if (tags && tags.length > 0) query.tags = { $in: tags };
 
-    // Price Range (من priceRange field)
+    // Price Range - البحث في Variants
     if (minPrice !== undefined || maxPrice !== undefined) {
-      query['priceRange.min'] = query['priceRange.min'] || {};
-      query['priceRange.max'] = query['priceRange.max'] || {};
+      // البحث في Variants للأسعار
+      const productsWithPriceRange = await this.productModel.aggregate([
+        {
+          $lookup: {
+            from: 'variants',
+            localField: '_id',
+            foreignField: 'productId',
+            as: 'variants',
+            pipeline: [
+              { $match: { deletedAt: null, isActive: true } }
+            ]
+          }
+        },
+        {
+          $match: {
+            'variants.basePriceUSD': {
+              ...(minPrice !== undefined && { $gte: minPrice }),
+              ...(maxPrice !== undefined && { $lte: maxPrice })
+            }
+          }
+        },
+        {
+          $project: {
+            variants: 0 // إزالة variants من النتيجة النهائية
+          }
+        }
+      ]);
 
-      if (minPrice !== undefined) {
-        query['priceRange.min'] = { $gte: minPrice };
-      }
-      if (maxPrice !== undefined) {
-        query['priceRange.max'] = { $lte: maxPrice };
+      // إضافة IDs للمنتجات المطابقة للفلتر
+      if (productsWithPriceRange.length > 0) {
+        query._id = { $in: productsWithPriceRange.map(p => p._id) };
+      } else {
+        // إذا لم توجد منتجات في نطاق السعر، إرجاع قائمة فارغة
+        query._id = { $in: [] };
       }
     }
 

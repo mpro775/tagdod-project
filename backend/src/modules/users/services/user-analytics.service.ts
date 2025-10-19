@@ -1,10 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { User } from '../schemas/user.schema';
+import { Model } from 'mongoose';
+import { User, UserStatus } from '../schemas/user.schema';
 import { Order, OrderItem } from '../../checkout/schemas/order.schema';
 import { Favorite } from '../../favorites/schemas/favorite.schema';
 import { SupportTicket } from '../../support/schemas/support-ticket.schema';
+import { UserScoringService, UserStats as ScoringUserStats } from './user-scoring.service';
+import { UserBehaviorService } from './user-behavior.service';
+import { UserCacheService } from './user-cache.service';
+import { UserErrorService } from './user-error.service';
+import { UserQueryService } from './user-query.service';
 
 interface PopulatedProduct {
   _id: string;
@@ -93,6 +98,11 @@ export class UserAnalyticsService {
     @InjectModel(Order.name) private orderModel: Model<Order>,
     @InjectModel(Favorite.name) private favoriteModel: Model<Favorite>,
     @InjectModel(SupportTicket.name) private supportModel: Model<SupportTicket>,
+    private readonly userScoringService: UserScoringService,
+    private readonly userBehaviorService: UserBehaviorService,
+    private readonly userCacheService: UserCacheService,
+    private readonly userErrorService: UserErrorService,
+    private readonly userQueryService: UserQueryService,
   ) {}
 
   /**
@@ -100,6 +110,15 @@ export class UserAnalyticsService {
    */
   async getUserDetailedStats(userId: string): Promise<UserStats> {
     try {
+      // التحقق من التخزين المؤقت
+      const cacheKey = this.userCacheService.createUserKey(userId, 'detailed-stats');
+      const cachedData = this.userCacheService.get<UserStats>(cacheKey);
+      
+      if (cachedData) {
+        this.logger.debug(`Cache hit for user stats: ${userId}`);
+        return cachedData;
+      }
+
       // جلب بيانات المستخدم الأساسية
       const user = await this.userModel.findById(userId).lean();
       if (!user) {
@@ -121,7 +140,7 @@ export class UserAnalyticsService {
       const score = await this.calculateUserScore(userId, orderStats, supportStats);
       const predictions = this.generatePredictions(orders, behaviorAnalysis);
 
-      return {
+      const result = {
         userId,
         userInfo: {
           phone: user.phone,
@@ -138,9 +157,17 @@ export class UserAnalyticsService {
         behavior: behaviorAnalysis,
         predictions,
       };
+
+      // حفظ البيانات في التخزين المؤقت (5 دقائق)
+      this.userCacheService.set(cacheKey, result, 300);
+      
+      return result;
     } catch (error) {
-      this.logger.error(`Error getting user stats for ${userId}:`, error);
-      throw error;
+      throw this.userErrorService.handleAnalyticsError(error, {
+        userId,
+        operation: 'getUserDetailedStats',
+        additionalInfo: { userId },
+      });
     }
   }
 
@@ -156,8 +183,24 @@ export class UserAnalyticsService {
     score: number;
   }>> {
     try {
-      // تجميع بيانات العملاء
-      const customerStats = await this.orderModel.aggregate([
+      // التحقق من التخزين المؤقت
+      const cacheKey = this.userCacheService.createRankingKey(limit);
+      const cachedData = this.userCacheService.get<Array<{
+        userId: string;
+        userInfo: { phone: string; firstName?: string; lastName?: string };
+        totalSpent: number;
+        totalOrders: number;
+        rank: number;
+        score: number;
+      }>>(cacheKey);
+      
+      if (cachedData) {
+        this.logger.debug(`Cache hit for customer rankings: ${limit}`);
+        return cachedData;
+      }
+
+      // تجميع بيانات العملاء مع تحسين الاستعلام
+      const pipeline = [
         {
           $match: {
             status: { $in: ['COMPLETED', 'DELIVERED'] },
@@ -201,17 +244,36 @@ export class UserAnalyticsService {
         {
           $limit: limit,
         },
-      ]);
+      ];
+
+      const result = await this.userQueryService.getOptimizedAggregation(
+        this.orderModel,
+        pipeline,
+        { maxLimit: limit }
+      );
+      
+      // تحليل الأداء
+      const performance = this.userQueryService.analyzeQueryPerformance(result);
+      this.logger.debug(`Customer rankings query performance: ${performance.performance} (${performance.score}/100)`);
+      
+      const customerStats = result.data;
 
       // إضافة الترتيب والنقاط
-      return customerStats.map((customer, index) => ({
+      const finalResult = customerStats.map((customer, index) => ({
         ...customer,
         rank: index + 1,
         score: this.calculateCustomerScore(customer.totalSpent, customer.totalOrders),
       }));
+
+      // حفظ البيانات في التخزين المؤقت (10 دقائق)
+      this.userCacheService.set(cacheKey, finalResult, 600);
+      
+      return finalResult;
     } catch (error) {
-      this.logger.error('Error getting customer rankings:', error);
-      throw error;
+      throw this.userErrorService.handleAnalyticsError(error, {
+        operation: 'getCustomerRankings',
+        additionalInfo: { limit },
+      });
     }
   }
 
@@ -228,6 +290,23 @@ export class UserAnalyticsService {
     customerLifetimeValue: number;
   }> {
     try {
+      // التحقق من التخزين المؤقت
+      const cacheKey = this.userCacheService.createOverviewKey();
+      const cachedData = this.userCacheService.get<{
+        totalUsers: number;
+        activeUsers: number;
+        newUsersThisMonth: number;
+        topSpenders: Array<{ userId: string; totalSpent: number }>;
+        userGrowth: Array<{ month: string; newUsers: number }>;
+        averageOrderValue: number;
+        customerLifetimeValue: number;
+      }>(cacheKey);
+      
+      if (cachedData) {
+        this.logger.debug('Cache hit for overall analytics');
+        return cachedData;
+      }
+
       const now = new Date();
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -239,13 +318,18 @@ export class UserAnalyticsService {
         userGrowth,
         averageOrderValue,
       ] = await Promise.all([
-        this.userModel.countDocuments({ deletedAt: null }),
+        this.userModel.countDocuments({ 
+          deletedAt: null,
+          status: { $ne: UserStatus.DELETED }
+        }),
         this.userModel.countDocuments({ 
           deletedAt: null, 
+          status: { $ne: UserStatus.DELETED },
           lastLogin: { $gte: thisMonth } 
         }),
         this.userModel.countDocuments({ 
           deletedAt: null, 
+          status: { $ne: UserStatus.DELETED },
           createdAt: { $gte: thisMonth } 
         }),
         this.getTopSpenders(10),
@@ -255,7 +339,7 @@ export class UserAnalyticsService {
 
       const customerLifetimeValue = averageOrderValue * 2.5; // تقدير بسيط
 
-      return {
+      const result = {
         totalUsers,
         activeUsers,
         newUsersThisMonth,
@@ -264,34 +348,60 @@ export class UserAnalyticsService {
         averageOrderValue,
         customerLifetimeValue,
       };
+
+      // حفظ البيانات في التخزين المؤقت (15 دقيقة)
+      this.userCacheService.set(cacheKey, result, 900);
+      
+      return result;
     } catch (error) {
-      this.logger.error('Error getting overall user analytics:', error);
-      throw error;
+      throw this.userErrorService.handleAnalyticsError(error, {
+        operation: 'getOverallUserAnalytics',
+      });
     }
   }
 
   // ==================== Private Methods ====================
 
   private async getUserOrders(userId: string) {
-    return this.orderModel
-      .find({ userId: new Types.ObjectId(userId) })
-      .sort({ createdAt: -1 })
-      .lean();
+    const result = await this.userQueryService.getOptimizedOrders(
+      this.orderModel,
+      userId,
+      { maxLimit: 100 }
+    );
+    
+    // تحليل الأداء
+    const performance = this.userQueryService.analyzeQueryPerformance(result);
+    this.logger.debug(`Order query performance: ${performance.performance} (${performance.score}/100)`);
+    
+    return result.data;
   }
 
   private async getUserFavorites(userId: string) {
-    return this.favoriteModel
-      .find({ userId: new Types.ObjectId(userId) })
-      .populate('productId', 'name category')
-      .sort({ createdAt: -1 })
-      .lean();
+    const result = await this.userQueryService.getOptimizedFavorites(
+      this.favoriteModel,
+      userId,
+      { maxLimit: 50 }
+    );
+    
+    // تحليل الأداء
+    const performance = this.userQueryService.analyzeQueryPerformance(result);
+    this.logger.debug(`Favorite query performance: ${performance.performance} (${performance.score}/100)`);
+    
+    return result.data;
   }
 
   private async getUserSupportTickets(userId: string) {
-    return this.supportModel
-      .find({ userId: new Types.ObjectId(userId) })
-      .sort({ createdAt: -1 })
-      .lean();
+    const result = await this.userQueryService.getOptimizedSupportTickets(
+      this.supportModel,
+      userId,
+      { maxLimit: 50 }
+    );
+    
+    // تحليل الأداء
+    const performance = this.userQueryService.analyzeQueryPerformance(result);
+    this.logger.debug(`Support query performance: ${performance.performance} (${performance.score}/100)`);
+    
+    return result.data;
   }
 
   private calculateOrderStats(orders: Order[]) {
@@ -370,109 +480,34 @@ export class UserAnalyticsService {
   }
 
   private analyzeUserBehavior(orders: Order[]) {
-    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
-    
-    // طريقة الدفع المفضلة
-    const paymentMethods = new Map<string, number>();
-    completedOrders.forEach(order => {
-      const method = order.paymentMethod || 'COD';
-      paymentMethods.set(method, (paymentMethods.get(method) || 0) + 1);
-    });
-    const preferredPaymentMethod = Array.from(paymentMethods.entries())
-      .sort((a, b) => b[1] - a[1])[0]?.[0] || 'COD';
-
-    // تكرار الطلبات
-    let averageOrderFrequency = 0;
-    if (completedOrders.length > 1) {
-      const firstOrder = completedOrders[completedOrders.length - 1];
-      const lastOrder = completedOrders[0];
-      const daysDiff = ((lastOrder as Order & { createdAt?: Date }).createdAt?.getTime() || 0) - ((firstOrder as Order & { createdAt?: Date }).createdAt?.getTime() || 0);
-      const daysDiffInDays = daysDiff / (1000 * 60 * 60 * 24);
-      averageOrderFrequency = daysDiffInDays / (completedOrders.length - 1);
-    }
-
-    // الأنماط الموسمية
-    const monthlyStats = new Map<string, { orders: number; amount: number }>();
-    completedOrders.forEach(order => {
-      const month = (order as Order & { createdAt?: Date }).createdAt?.toISOString().substring(0, 7) || new Date().toISOString().substring(0, 7); // YYYY-MM
-      const current = monthlyStats.get(month) || { orders: 0, amount: 0 };
-      monthlyStats.set(month, {
-        orders: current.orders + 1,
-        amount: current.amount + order.total,
-      });
-    });
-
-    const seasonalPatterns = Array.from(monthlyStats.entries())
-      .map(([month, stats]) => ({ month, ...stats }))
-      .sort((a, b) => a.month.localeCompare(b.month));
-
-    return {
-      preferredPaymentMethod,
-      averageOrderFrequency,
-      seasonalPatterns,
-      productPreferences: [], // سيتم تطويره لاحقاً
-    };
+    // استخدام الخدمة الجديدة لتحليل السلوك
+    return this.userBehaviorService.analyzeUserBehavior(orders);
   }
 
   private async calculateUserScore(userId: string, orderStats: { total: number; completed: number; totalSpent: number }, supportStats: { totalTickets: number; openTickets: number }) {
-    // حساب نقاط الولاء
-    const loyaltyScore = Math.min(100, (orderStats.total * 10) + (orderStats.completed * 15));
-    
-    // حساب نقاط القيمة المالية
-    const valueScore = Math.min(100, (orderStats.totalSpent / 1000) * 10);
-    
-    // حساب نقاط النشاط
-    const activityScore = Math.min(100, 
-      (orderStats.total * 5) + 
-      (supportStats.totalTickets === 0 ? 20 : 0) // نقاط إضافية لعدم وجود مشاكل
-    );
-    
-    // حساب نقاط خدمة العملاء
-    const supportScore = supportStats.totalTickets === 0 ? 100 : 
-      Math.max(0, 100 - (supportStats.openTickets * 20));
-
-    const overallScore = (loyaltyScore + valueScore + activityScore + supportScore) / 4;
+    // تحضير البيانات للخدمة الجديدة
+    const scoringStats: ScoringUserStats = {
+      totalOrders: orderStats.total,
+      completedOrders: orderStats.completed,
+      totalSpent: orderStats.totalSpent,
+      supportTickets: supportStats.totalTickets,
+      openSupportTickets: supportStats.openTickets,
+    };
 
     // حساب الترتيب
     const rankings = await this.getCustomerRankings(1000);
     const userRank = rankings.findIndex(r => r.userId === userId) + 1;
 
-    return {
-      loyaltyScore,
-      valueScore,
-      activityScore,
-      supportScore,
-      overallScore,
-      rank: userRank || 0,
-    };
+    // استخدام الخدمة الجديدة لحساب النقاط
+    return this.userScoringService.calculateUserScore(scoringStats, userRank || 0);
   }
 
   private generatePredictions(orders: Order[], behavior: { averageOrderFrequency: number }) {
-    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
-    
-    // تحليل مخاطر فقدان العميل
-    let churnRisk: 'low' | 'medium' | 'high' = 'low';
-    if (completedOrders.length > 0) {
-      const lastOrder = completedOrders[0];
-      const daysSinceLastOrder = (Date.now() - ((lastOrder as Order & { createdAt?: Date }).createdAt?.getTime() || Date.now())) / (1000 * 60 * 60 * 24);
-      
-      if (daysSinceLastOrder > 90) churnRisk = 'high';
-      else if (daysSinceLastOrder > 30) churnRisk = 'medium';
-    }
-
-    // احتمالية الشراء القادم
-    const nextPurchaseProbability = Math.max(0, Math.min(1, 
-      1 - (completedOrders.length === 0 ? 0.5 : 0.1) - (churnRisk === 'high' ? 0.3 : 0)
-    ));
-
-    // القيمة المتوقعة للعميل
-    const estimatedLifetimeValue = completedOrders.reduce((sum, order) => sum + order.total, 0) * 1.5;
-
-    // التوصيات
-    const recommendedActions: string[] = [];
-    if (churnRisk === 'high') recommendedActions.push('تواصل مع العميل لاستعادة الثقة');
-    if (completedOrders.length === 0) recommendedActions.push('ارسل عروض ترحيبية');
-    if (behavior.averageOrderFrequency > 60) recommendedActions.push('ارسل تذكيرات منتظمة');
+    // استخدام الخدمة الجديدة لتحليل السلوك
+    const churnRisk = this.userBehaviorService.analyzeChurnRisk(orders);
+    const nextPurchaseProbability = this.userBehaviorService.calculateNextPurchaseProbability(orders, churnRisk);
+    const estimatedLifetimeValue = this.userBehaviorService.calculateEstimatedLifetimeValue(orders);
+    const recommendedActions = this.userBehaviorService.generateRecommendations(orders, behavior, churnRisk);
 
     return {
       churnRisk,
@@ -483,10 +518,8 @@ export class UserAnalyticsService {
   }
 
   private calculateCustomerScore(totalSpent: number, totalOrders: number): number {
-    // خوارزمية بسيطة لحساب النقاط
-    const valueScore = Math.min(50, (totalSpent / 1000) * 25);
-    const loyaltyScore = Math.min(50, totalOrders * 5);
-    return Math.round(valueScore + loyaltyScore);
+    // استخدام الخدمة الجديدة لحساب النقاط
+    return this.userScoringService.calculateCustomerScore(totalSpent, totalOrders);
   }
 
   private async getTopSpenders(limit: number) {
@@ -527,6 +560,8 @@ export class UserAnalyticsService {
 
       const newUsers = await this.userModel.countDocuments({
         createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+        deletedAt: null,
+        status: { $ne: UserStatus.DELETED }
       });
 
       growthData.push({

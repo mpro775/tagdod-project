@@ -30,9 +30,8 @@ import {
   Visibility,
   Phone,
   Email,
-  Person,
 } from '@mui/icons-material';
-import { useEngineers, useEngineerStatistics } from '../hooks/useServices';
+import { useEngineers, useEngineersOverviewStatistics } from '../hooks/useServices';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
 
 export const EngineersManagementPage: React.FC = () => {
@@ -40,8 +39,11 @@ export const EngineersManagementPage: React.FC = () => {
   const [selectedEngineer, setSelectedEngineer] = useState<any>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
-  const { data: engineers = [], isLoading } = useEngineers({ search: searchTerm });
-  const { data: engineerStats } = useEngineerStatistics(selectedEngineer?._id || '');
+  const { data: engineersData, isLoading: isEngineersLoading } = useEngineers({ search: searchTerm });
+  const { data: engineersStats, isLoading: isStatsLoading } = useEngineersOverviewStatistics();
+
+  const engineers = engineersData?.data || [];
+  const isLoading = isEngineersLoading || isStatsLoading;
 
   const handleViewDetails = (engineer: any) => {
     setSelectedEngineer(engineer);
@@ -89,7 +91,7 @@ export const EngineersManagementPage: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* إحصائيات سريعة */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -98,7 +100,7 @@ export const EngineersManagementPage: React.FC = () => {
                     إجمالي المهندسين
                   </Typography>
                   <Typography variant="h4">
-                    {formatNumber(engineers.length)}
+                    {formatNumber(engineersStats?.totalEngineers || 0)}
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'primary.main' }}>
@@ -109,7 +111,7 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -118,10 +120,7 @@ export const EngineersManagementPage: React.FC = () => {
                     متوسط التقييم
                   </Typography>
                   <Typography variant="h4">
-                    {engineers.length > 0 
-                      ? (engineers.reduce((sum, eng) => sum + eng.averageRating, 0) / engineers.length).toFixed(1)
-                      : '0.0'
-                    }
+                    {engineersStats?.averageRating?.toFixed(1) || '0.0'}
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'warning.main' }}>
@@ -132,7 +131,7 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -141,10 +140,7 @@ export const EngineersManagementPage: React.FC = () => {
                     متوسط معدل الإنجاز
                   </Typography>
                   <Typography variant="h4">
-                    {engineers.length > 0 
-                      ? (engineers.reduce((sum, eng) => sum + eng.completionRate, 0) / engineers.length).toFixed(1)
-                      : '0.0'
-                    }%
+                    {engineersStats?.averageCompletionRate?.toFixed(1) || '0.0'}%
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'success.main' }}>
@@ -155,7 +151,7 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -164,7 +160,7 @@ export const EngineersManagementPage: React.FC = () => {
                     إجمالي الإيرادات
                   </Typography>
                   <Typography variant="h4">
-                    {formatCurrency(engineers.reduce((sum, eng) => sum + eng.totalRevenue, 0))}
+                    {formatCurrency(engineersStats?.totalRevenue || 0)}
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'info.main' }}>
@@ -287,7 +283,7 @@ export const EngineersManagementPage: React.FC = () => {
           {selectedEngineer && (
             <Box>
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid  size={{ xs: 12, md: 6 }}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
@@ -321,14 +317,14 @@ export const EngineersManagementPage: React.FC = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid  size={{ xs: 12, md: 6 }}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
                         الإحصائيات
                       </Typography>
                       <Grid container spacing={2}>
-                        <Grid item xs={6}>
+                        <Grid  size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="primary">
                               {formatNumber(selectedEngineer.totalRequests)}
@@ -338,7 +334,7 @@ export const EngineersManagementPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid  size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="success.main">
                               {formatNumber(selectedEngineer.completedRequests)}
@@ -348,7 +344,7 @@ export const EngineersManagementPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid  size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="warning.main">
                               {selectedEngineer.averageRating.toFixed(1)}
@@ -358,7 +354,7 @@ export const EngineersManagementPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid  size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="info.main">
                               {formatCurrency(selectedEngineer.totalRevenue)}
@@ -373,7 +369,7 @@ export const EngineersManagementPage: React.FC = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid  size={{ xs: 12 }}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>

@@ -10,18 +10,14 @@ import {
   Card,
   CardMedia,
   CardContent,
-  CardActions,
-  IconButton,
   Typography,
   Chip,
-  Tooltip,
   TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   InputAdornment,
-  Alert,
   LinearProgress,
   Badge,
   Avatar,
@@ -29,13 +25,8 @@ import {
 import {
   CloudUpload,
   Search,
-  FilterList,
-  ContentCopy,
   Check,
-  Close,
   Image,
-  VideoLibrary,
-  Description,
 } from '@mui/icons-material';
 import { useMedia } from '../hooks/useMedia';
 import { MediaUploader } from './MediaUploader';
@@ -45,6 +36,7 @@ import type { Media, MediaCategory, MediaType } from '../types/media.types';
 interface MediaPickerProps {
   open: boolean;
   onClose: () => void;
+  // eslint-disable-next-line no-unused-vars
   onSelect: (media: Media) => void;
   category?: MediaCategory;
   multiple?: boolean;
@@ -64,7 +56,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<MediaCategory | ''>(category || '');
   const [typeFilter, setTypeFilter] = useState<MediaType | ''>('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage] = useState(1);
   const [selectedMedia, setSelectedMedia] = useState<Media[]>([]);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
@@ -119,7 +111,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
 
   const filteredMedia = data?.data?.filter(media => {
     if (acceptTypes.length > 0) {
-      return acceptTypes.includes(media.type);
+      return acceptTypes.some(type => type === media.type);
     }
     return true;
   }) || [];

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -163,7 +163,7 @@ export const ReportsManagementPage: React.FC = () => {
   };
 
   // Handle export report
-  const handleExportReport = (report: AdvancedReport, format: ReportFormat) => {
+  const handleExportReport = useCallback((report: AdvancedReport, format: ReportFormat) => {
     exportReportMutation.mutate(
       { reportId: report.reportId, format },
       {
@@ -175,17 +175,18 @@ export const ReportsManagementPage: React.FC = () => {
         },
       }
     );
-  };
+  }, [exportReportMutation]);
 
   // Handle archive report
-  const handleArchiveReport = async (report: AdvancedReport) => {
+  const handleArchiveReport = useCallback(async (report: AdvancedReport) => {
     try {
       await analyticsApi.archiveReport(report.reportId);
       queryClient.invalidateQueries({ queryKey: ['advanced-reports'] });
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to archive report:', error);
     }
-  };
+  }, [queryClient]);
 
   // DataTable columns
   const columns = useMemo(() => [
@@ -348,7 +349,7 @@ export const ReportsManagementPage: React.FC = () => {
         </Box>
       ),
     },
-  ], []);
+  ], [handleArchiveReport, handleExportReport]);
 
   return (
     <Box sx={{ width: '100%' }}>

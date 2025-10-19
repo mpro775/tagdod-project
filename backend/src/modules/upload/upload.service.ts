@@ -50,8 +50,10 @@ export class UploadService {
       // Validate file
       this.validateFile(file);
 
-      // Generate unique filename
-      const filename = customFilename || `${uuidv4()}-${file.originalname}`;
+      // Generate unique filename with consistent naming
+      const fileExtension = file.originalname.split('.').pop();
+      const baseName = file.originalname.replace(/\.[^/.]+$/, '');
+      const filename = customFilename || `${uuidv4()}-${baseName}.${fileExtension}`;
       const filePath = `${folder}/${filename}`;
 
       // Upload to Bunny.net
@@ -83,11 +85,19 @@ export class UploadService {
         }
       }
 
-      // Generate public URL (assuming CDN is enabled)
+      // Generate public URL with CDN fallback
       const cdnHostname = this.configService.get<string>('BUNNY_CDN_HOSTNAME');
-      const publicUrl = cdnHostname
-        ? `https://${cdnHostname}/${filePath}`
-        : `https://${this.bunnyCredentials.hostname}/${filePath}`;
+      let publicUrl: string;
+      
+      if (cdnHostname) {
+        // Use CDN URL if available
+        publicUrl = `https://${cdnHostname.replace(/^https?:\/\//, '')}/${filePath}`;
+      } else {
+        // Fallback to direct storage URL
+        publicUrl = `https://${this.bunnyCredentials.hostname}/${this.bunnyCredentials.storageZoneName}/${filePath}`;
+      }
+
+      this.logger.log(`File uploaded successfully: ${publicUrl}`);
 
       return {
         url: publicUrl,
@@ -101,7 +111,7 @@ export class UploadService {
       // Handle specific error types
       if (error instanceof BadRequestException) {
         throw error; // Re-throw our custom errors
-      } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      } else if (error instanceof Error && ('code' in error) && (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')) {
         throw new BadRequestException('Cannot connect to Bunny.net storage service');
       } else {
         throw new BadRequestException('File upload failed due to server error');

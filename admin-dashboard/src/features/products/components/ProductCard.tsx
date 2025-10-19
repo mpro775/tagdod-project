@@ -2,8 +2,6 @@ import React from 'react';
 import { Card, CardContent, CardMedia, Typography, Box, Chip, IconButton } from '@mui/material';
 import { Favorite, FavoriteBorder, ShoppingCart } from '@mui/icons-material';
 import { PriceDisplay } from '@/shared/components/PriceDisplay';
-import { useCurrency } from '@/shared/hooks/useCurrency';
-import { Currency } from '@/shared/types/currency.types';
 
 interface ProductCardProps {
   product: {
@@ -27,7 +25,9 @@ interface ProductCardProps {
       }>;
     }>;
   };
+  // eslint-disable-next-line no-unused-vars
   onAddToCart?: (variantId: string) => void;
+  // eslint-disable-next-line no-unused-vars
   onToggleFavorite?: (productId: string) => void;
   isFavorite?: boolean;
   className?: string;
@@ -40,7 +40,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   isFavorite = false,
   className = '',
 }) => {
-  const { selectedCurrency } = useCurrency();
 
   // الحصول على السعر الأساسي من أول variant
   const basePrice = product.variants?.[0]?.prices?.[0]?.basePriceUSD || 0;

@@ -13,29 +13,42 @@ import {
   SupportMessageDocument,
   MessageType
 } from './schemas/support-message.schema';
+import {
+  CannedResponse,
+  CannedResponseDocument
+} from './schemas/canned-response.schema';
 import { CreateSupportTicketDto } from './dto/create-ticket.dto';
 import { AddSupportMessageDto } from './dto/add-message.dto';
 import { UpdateSupportTicketDto } from './dto/update-ticket.dto';
+import { RateTicketDto } from './dto/rate-ticket.dto';
+import { CreateCannedResponseDto, UpdateCannedResponseDto } from './dto/canned-response.dto';
 
 @Injectable()
 export class SupportService {
   constructor(
     @InjectModel(SupportTicket.name) private ticketModel: Model<SupportTicketDocument>,
     @InjectModel(SupportMessage.name) private messageModel: Model<SupportMessageDocument>,
+    @InjectModel(CannedResponse.name) private cannedResponseModel: Model<CannedResponseDocument>,
   ) {}
 
   /**
    * Create a new support ticket
    */
   async createTicket(userId: string, dto: CreateSupportTicketDto): Promise<SupportTicketDocument> {
+    const priority = dto.priority || SupportPriority.MEDIUM;
+    const slaHours = this.calculateSLAHours(priority);
+    const slaDueDate = new Date(Date.now() + slaHours * 60 * 60 * 1000);
+
     const ticket = new this.ticketModel({
       userId,
       title: dto.title,
       description: dto.description,
       category: dto.category || SupportCategory.OTHER,
-      priority: dto.priority || SupportPriority.MEDIUM,
+      priority,
       attachments: dto.attachments || [],
       metadata: dto.metadata || {},
+      slaHours,
+      slaDueDate,
     });
 
     const savedTicket = await ticket.save();
@@ -161,16 +174,23 @@ export class SupportService {
     }
 
     // Update status timestamps
+    const updateData: UpdateSupportTicketDto & { firstResponseAt?: Date } = { ...dto };
+    
     if (dto.status === SupportStatus.RESOLVED && !ticket.resolvedAt) {
-      dto.resolvedAt = new Date();
+      updateData.resolvedAt = new Date();
     }
 
     if (dto.status === SupportStatus.CLOSED && !ticket.closedAt) {
-      dto.closedAt = new Date();
+      updateData.closedAt = new Date();
+    }
+
+    // Track first response time
+    if (dto.status === SupportStatus.IN_PROGRESS && !ticket.firstResponseAt) {
+      updateData.firstResponseAt = new Date();
     }
 
     const updatedTicket = await this.ticketModel
-      .findByIdAndUpdate(ticketId, dto, { new: true })
+      .findByIdAndUpdate(ticketId, updateData, { new: true })
       .populate('assignedTo', 'name email')
       .exec();
 
@@ -294,6 +314,9 @@ export class SupportService {
     closed: number;
     byCategory: Record<string, number>;
     byPriority: Record<string, number>;
+    averageResponseTime: number;
+    averageResolutionTime: number;
+    slaBreachedCount: number;
   }> {
     const stats = await this.ticketModel.aggregate([
       { $match: { isArchived: false } },
@@ -321,6 +344,54 @@ export class SupportService {
 
     const baseStats = stats[0] || { total: 0, open: 0, inProgress: 0, resolved: 0, closed: 0 };
 
+    // Calculate average response time
+    const responseTimeStats = await this.ticketModel.aggregate([
+      { $match: { isArchived: false, firstResponseAt: { $exists: true } } },
+      {
+        $addFields: {
+          responseTimeHours: {
+            $divide: [
+              { $subtract: ['$firstResponseAt', '$createdAt'] },
+              1000 * 60 * 60
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          averageResponseTime: { $avg: '$responseTimeHours' }
+        }
+      }
+    ]);
+
+    // Calculate average resolution time
+    const resolutionTimeStats = await this.ticketModel.aggregate([
+      { $match: { isArchived: false, resolvedAt: { $exists: true } } },
+      {
+        $addFields: {
+          resolutionTimeHours: {
+            $divide: [
+              { $subtract: ['$resolvedAt', '$createdAt'] },
+              1000 * 60 * 60
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          averageResolutionTime: { $avg: '$resolutionTimeHours' }
+        }
+      }
+    ]);
+
+    // Count SLA breached tickets
+    const slaBreachedCount = await this.ticketModel.countDocuments({
+      isArchived: false,
+      slaBreached: true
+    });
+
     return {
       ...baseStats,
       byCategory: categoryStats.reduce((acc, stat) => {
@@ -331,7 +402,229 @@ export class SupportService {
         acc[stat._id] = stat.count;
         return acc;
       }, {} as Record<string, number>),
+      averageResponseTime: responseTimeStats[0]?.averageResponseTime || 0,
+      averageResolutionTime: resolutionTimeStats[0]?.averageResolutionTime || 0,
+      slaBreachedCount,
     };
+  }
+
+  /**
+   * Calculate SLA hours based on priority
+   */
+  private calculateSLAHours(priority: SupportPriority): number {
+    const slaMap = {
+      [SupportPriority.URGENT]: 1,
+      [SupportPriority.HIGH]: 4,
+      [SupportPriority.MEDIUM]: 24,
+      [SupportPriority.LOW]: 48,
+    };
+    return slaMap[priority];
+  }
+
+  /**
+   * Check and update SLA breach status
+   */
+  async checkSLAStatus(ticketId: string): Promise<boolean> {
+    const ticket = await this.ticketModel.findById(ticketId);
+    if (!ticket || ticket.slaBreached) {
+      return ticket?.slaBreached || false;
+    }
+
+    const now = new Date();
+    const isBreached = ticket.slaDueDate && now > ticket.slaDueDate;
+
+    if (isBreached) {
+      await this.ticketModel.findByIdAndUpdate(ticketId, { slaBreached: true });
+    }
+
+    return isBreached || false;
+  }
+
+  /**
+   * Get tickets with breached SLA
+   */
+  async getBreachedSLATickets(): Promise<SupportTicketDocument[]> {
+    const now = new Date();
+    return this.ticketModel
+      .find({
+        slaDueDate: { $lt: now },
+        slaBreached: false,
+        status: { $nin: [SupportStatus.RESOLVED, SupportStatus.CLOSED] },
+      })
+      .populate('userId', 'name email')
+      .populate('assignedTo', 'name email')
+      .exec();
+  }
+
+  /**
+   * Rate a support ticket
+   */
+  async rateTicket(
+    ticketId: string,
+    userId: string,
+    dto: RateTicketDto,
+  ): Promise<SupportTicketDocument> {
+    const ticket = await this.ticketModel.findById(ticketId);
+    if (!ticket) {
+      throw new NotFoundException('Ticket not found');
+    }
+
+    // Check permissions
+    if (ticket.userId.toString() !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    // Check if ticket is resolved or closed
+    if (![SupportStatus.RESOLVED, SupportStatus.CLOSED].includes(ticket.status)) {
+      throw new ForbiddenException('Ticket must be resolved or closed before rating');
+    }
+
+    // Check if already rated
+    if (ticket.rating) {
+      throw new ForbiddenException('Ticket already rated');
+    }
+
+    const updatedTicket = await this.ticketModel
+      .findByIdAndUpdate(
+        ticketId,
+        {
+          rating: dto.rating,
+          feedback: dto.feedback,
+          feedbackAt: new Date(),
+        },
+        { new: true }
+      )
+      .populate('assignedTo', 'name email')
+      .exec();
+
+    if (!updatedTicket) {
+      throw new NotFoundException('Ticket not found');
+    }
+
+    return updatedTicket;
+  }
+
+  /**
+   * Create a canned response
+   */
+  async createCannedResponse(dto: CreateCannedResponseDto): Promise<CannedResponseDocument> {
+    const cannedResponse = new this.cannedResponseModel(dto);
+    return cannedResponse.save();
+  }
+
+  /**
+   * Get all canned responses
+   */
+  async getCannedResponses(
+    category?: SupportCategory,
+    search?: string,
+    page = 1,
+    limit = 20,
+  ): Promise<{
+    responses: CannedResponseDocument[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+    const query: FilterQuery<CannedResponseDocument> = { isActive: true };
+
+    if (category) {
+      query.category = category;
+    }
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } },
+      ];
+    }
+
+    const [responses, total] = await Promise.all([
+      this.cannedResponseModel
+        .find(query)
+        .sort({ usageCount: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.cannedResponseModel.countDocuments(query),
+    ]);
+
+    return {
+      responses,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Get canned response by ID
+   */
+  async getCannedResponse(id: string): Promise<CannedResponseDocument> {
+    const response = await this.cannedResponseModel.findById(id);
+    if (!response) {
+      throw new NotFoundException('Canned response not found');
+    }
+    return response;
+  }
+
+  /**
+   * Update canned response
+   */
+  async updateCannedResponse(
+    id: string,
+    dto: UpdateCannedResponseDto,
+  ): Promise<CannedResponseDocument> {
+    const response = await this.cannedResponseModel.findByIdAndUpdate(
+      id,
+      dto,
+      { new: true }
+    );
+    if (!response) {
+      throw new NotFoundException('Canned response not found');
+    }
+    return response;
+  }
+
+  /**
+   * Delete canned response
+   */
+  async deleteCannedResponse(id: string): Promise<void> {
+    const response = await this.cannedResponseModel.findByIdAndDelete(id);
+    if (!response) {
+      throw new NotFoundException('Canned response not found');
+    }
+  }
+
+  /**
+   * Use canned response (increment usage count)
+   */
+  async useCannedResponse(id: string): Promise<CannedResponseDocument> {
+    const response = await this.cannedResponseModel.findByIdAndUpdate(
+      id,
+      { $inc: { usageCount: 1 } },
+      { new: true }
+    );
+    if (!response) {
+      throw new NotFoundException('Canned response not found');
+    }
+    return response;
+  }
+
+  /**
+   * Get canned response by shortcut
+   */
+  async getCannedResponseByShortcut(shortcut: string): Promise<CannedResponseDocument> {
+    const response = await this.cannedResponseModel.findOne({
+      shortcut,
+      isActive: true,
+    });
+    if (!response) {
+      throw new NotFoundException('Canned response not found');
+    }
+    return response;
   }
 
   /**

@@ -40,6 +40,15 @@ export class GenerateAdvancedReportDto {
   description?: string;
 
   @ApiProperty({
+    description: 'وصف التقرير بالإنجليزية',
+    example: 'Comprehensive sales and revenue report for the month',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  descriptionEn?: string;
+
+  @ApiProperty({
     description: 'فئة التقرير',
     enum: ReportCategory,
     example: ReportCategory.SALES,

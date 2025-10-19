@@ -16,20 +16,24 @@ export interface DataTableProps {
 
   // Pagination
   paginationModel: GridPaginationModel;
+  // eslint-disable-next-line no-unused-vars
   onPaginationModelChange: (model: GridPaginationModel) => void;
   rowCount: number;
 
   // Sorting
   sortModel?: GridSortModel;
+  // eslint-disable-next-line no-unused-vars
   onSortModelChange?: (model: GridSortModel) => void;
 
   // Selection
   selectable?: boolean;
+  // eslint-disable-next-line no-unused-vars
   onRowSelectionModelChange?: (selection: string[]) => void;
 
   // Toolbar
   title?: string;
   searchPlaceholder?: string;
+  // eslint-disable-next-line no-unused-vars
   onSearch?: (query: string) => void;
   onAdd?: () => void;
   addButtonText?: string;
@@ -38,9 +42,11 @@ export interface DataTableProps {
   height?: number | string;
 
   // Row actions
+  // eslint-disable-next-line no-unused-vars
   onRowClick?: (params: { row: unknown }) => void;
 
   // Row ID
+  // eslint-disable-next-line no-unused-vars
   getRowId?: (row: unknown) => string | number;
 }
 

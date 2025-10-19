@@ -2,9 +2,9 @@ import { Injectable, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cart, CartItem, CartStatus } from './schemas/cart.schema';
-import { Variant } from '../catalog/schemas/variant.schema';
-import { VariantPrice } from '../catalog/schemas/variant-price.schema';
+import { Variant } from '../products/schemas/variant.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
+import { MarketingService } from '../marketing/marketing.service';
 
 type ItemView = { itemId: string; variantId: string; qty: number };
 
@@ -37,21 +37,42 @@ export class CartService {
   constructor(
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
     @InjectModel(Variant.name) private variantModel: Model<Variant>,
-    @InjectModel(VariantPrice.name) private priceModel: Model<VariantPrice>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     @Optional() private promotions?: PromotionsLike,
+    @Optional() private marketingService?: MarketingService,
   ) {}
 
   // ---------- helpers
-  private async getOrCreateUserCart(userId: string) {
+  private async getOrCreateUserCart(
+    userId: string,
+    currency: string = 'YER',
+    accountType: string = 'retail',
+  ) {
     let cart = await this.cartModel.findOne({ userId });
     if (!cart)
-      cart = await this.cartModel.create({ userId: new Types.ObjectId(userId), items: [] });
+      cart = await this.cartModel.create({
+        userId: new Types.ObjectId(userId),
+        items: [],
+        currency,
+        accountType,
+        lastActivityAt: new Date(),
+      });
     return cart;
   }
-  private async getOrCreateGuestCart(deviceId: string) {
+  private async getOrCreateGuestCart(
+    deviceId: string,
+    currency: string = 'YER',
+    accountType: string = 'retail',
+  ) {
     let cart = await this.cartModel.findOne({ deviceId });
-    if (!cart) cart = await this.cartModel.create({ deviceId, items: [] });
+    if (!cart)
+      cart = await this.cartModel.create({
+        deviceId,
+        items: [],
+        currency,
+        accountType,
+        lastActivityAt: new Date(),
+      });
     return cart;
   }
 
@@ -74,6 +95,160 @@ export class CartService {
     const cart = await this.getOrCreateUserCart(userId);
     return { items: this.toView(cart) };
   }
+
+  async updateCartSettings(
+    userId: string,
+    settings: { currency?: string; accountType?: string; metadata?: Record<string, unknown> },
+  ) {
+    const cart = await this.getOrCreateUserCart(userId);
+
+    if (settings.currency) cart.currency = settings.currency;
+    if (settings.accountType) cart.accountType = settings.accountType;
+    if (settings.metadata) cart.metadata = { ...cart.metadata, ...settings.metadata };
+
+    cart.lastActivityAt = new Date();
+    await cart.save();
+
+    return { items: this.toView(cart) };
+  }
+
+  async applyCoupon(userId: string, couponCode: string) {
+    const cart = await this.getOrCreateUserCart(userId);
+
+    // Validate coupon code with marketing service
+    if (this.marketingService) {
+      const validation = await this.marketingService.validateCoupon({
+        code: couponCode,
+        userId: userId,
+        orderAmount: cart.pricingSummary?.subtotal || 0,
+      });
+
+      if (!validation.valid) {
+        throw new Error(validation.message || 'Invalid coupon code');
+      }
+
+      // Store coupon details for discount calculation
+      cart.appliedCouponCode = couponCode;
+      cart.lastActivityAt = new Date();
+
+      // Recalculate pricing with validated coupon
+      await this.recalculatePricing(cart);
+      await cart.save();
+    } else {
+      // Fallback if marketing service is not available
+      cart.appliedCouponCode = couponCode;
+      cart.lastActivityAt = new Date();
+
+      await this.recalculatePricing(cart);
+      await cart.save();
+    }
+
+    return { items: this.toView(cart) };
+  }
+
+  async removeCoupon(userId: string) {
+    const cart = await this.getOrCreateUserCart(userId);
+
+    cart.appliedCouponCode = undefined;
+    cart.couponDiscount = 0;
+    cart.lastActivityAt = new Date();
+
+    // Recalculate pricing
+    await this.recalculatePricing(cart);
+    await cart.save();
+
+    return { items: this.toView(cart) };
+  }
+
+  private async recalculatePricing(cart: Cart) {
+    // This is a simplified version - in reality, you'd integrate with pricing service
+    const pricingSummary = {
+      subtotal: 0,
+      promotionDiscount: 0,
+      couponDiscount: 0,
+      autoDiscount: 0,
+      totalDiscount: 0,
+      total: 0,
+      itemsCount: cart.items.length,
+      currency: cart.currency,
+      lastCalculatedAt: new Date(),
+    };
+
+    // Calculate subtotal from items
+    for (const item of cart.items) {
+      if (item.pricing) {
+        pricingSummary.subtotal += item.pricing.finalPrice * item.qty;
+      }
+    }
+
+    // Apply coupon discount if exists
+    if (cart.appliedCouponCode && this.marketingService) {
+      // Calculate actual coupon discount
+      const couponDiscount = await this.calculateCouponDiscount(
+        cart.appliedCouponCode,
+        pricingSummary.subtotal,
+      );
+      pricingSummary.couponDiscount = couponDiscount;
+    } else if (cart.appliedCouponCode) {
+      // Fallback calculation if marketing service is not available
+      pricingSummary.couponDiscount = pricingSummary.subtotal * 0.1; // 10% example
+    }
+
+    pricingSummary.totalDiscount =
+      pricingSummary.promotionDiscount +
+      pricingSummary.couponDiscount +
+      pricingSummary.autoDiscount;
+    pricingSummary.total = pricingSummary.subtotal - pricingSummary.totalDiscount;
+
+    cart.pricingSummary = pricingSummary;
+  }
+
+  private async calculateCouponDiscount(couponCode: string, subtotal: number): Promise<number> {
+    if (!this.marketingService) {
+      return 0;
+    }
+
+    try {
+      // Get coupon details
+      const validation = await this.marketingService.validateCoupon({
+        code: couponCode,
+        userId: '',
+        orderAmount: subtotal,
+      });
+
+      if (!validation.valid || !validation.coupon) {
+        return 0;
+      }
+
+      const coupon = validation.coupon;
+
+      // Check minimum order amount
+      if (coupon.minimumOrderAmount && subtotal < coupon.minimumOrderAmount) {
+        return 0;
+      }
+
+      let discount = 0;
+
+      // Calculate discount based on type
+      if (coupon.type === 'percentage' && coupon.discountValue) {
+        discount = (subtotal * coupon.discountValue) / 100;
+      } else if (coupon.type === 'fixed_amount' && coupon.discountValue) {
+        discount = coupon.discountValue;
+      }
+
+      // Apply maximum discount limit if set
+      if (coupon.maximumDiscountAmount && discount > coupon.maximumDiscountAmount) {
+        discount = coupon.maximumDiscountAmount;
+      }
+
+      // Ensure discount doesn't exceed subtotal
+      return Math.min(discount, subtotal);
+    } catch (error) {
+      // Return 0 if calculation fails
+      return 0;
+    }
+  }
+
   async addUserItem(userId: string, variantId: string, qty: number) {
     const cart = await this.getOrCreateUserCart(userId);
     const exist = cart.items.find((it: CartItem) => String(it.variantId) === String(variantId));
@@ -184,11 +359,12 @@ export class CartService {
     }
 
     for (const it of cart.items) {
-      const vp = await this.priceModel.findOne({ variantId: it.variantId, currency }).lean();
-      if (!vp) continue; // skip items without price in selected currency
+      // Get variant pricing - simplified approach without priceModel
+      const variant = await this.variantModel.findById(it.variantId).lean();
+      if (!variant) continue; // skip items without variant
 
-      let final = vp.basePriceUSD;
-      let base = vp.basePriceUSD;
+      let final = variant.basePriceUSD || 0;
+      let base = variant.basePriceUSD || 0;
       let appliedRule = null;
 
       // تطبيق العروض الترويجية أولاً
@@ -517,7 +693,8 @@ export class CartService {
     }
     if (filters.dateFrom || filters.dateTo) {
       matchStage.createdAt = {} as Record<string, unknown>;
-      if (filters.dateFrom) (matchStage.createdAt as Record<string, unknown>).$gte = filters.dateFrom;
+      if (filters.dateFrom)
+        (matchStage.createdAt as Record<string, unknown>).$gte = filters.dateFrom;
       if (filters.dateTo) (matchStage.createdAt as Record<string, unknown>).$lte = filters.dateTo;
     }
 
@@ -1121,8 +1298,8 @@ export class CartService {
           from: 'variantprices',
           localField: 'items.variantId',
           foreignField: 'variantId',
-          as: 'priceInfo'
-        }
+          as: 'priceInfo',
+        },
       },
       { $unwind: { path: '$priceInfo', preserveNullAndEmptyArrays: true } },
       {
@@ -1130,13 +1307,10 @@ export class CartService {
           _id: '$items.variantId',
           totalQuantity: { $sum: '$items.qty' },
           cartCount: { $sum: 1 },
-          totalLostValue: { 
-            $sum: { 
-              $multiply: [
-                '$items.qty', 
-                { $ifNull: ['$priceInfo.basePriceUSD', 0] }
-              ] 
-            } 
+          totalLostValue: {
+            $sum: {
+              $multiply: ['$items.qty', { $ifNull: ['$priceInfo.basePriceUSD', 0] }],
+            },
           },
         },
       },

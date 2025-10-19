@@ -52,10 +52,9 @@ export class RequestMetricsInterceptor implements NestInterceptor {
   }
 
   private withPrefix(key: string): string {
-    // Reuse CacheService key prefixing behavior; it adds prefix in its APIs,
-    // but here we operate directly on the client, so we need to prepend it.
-    // CacheService default prefix is 'solar:'.
-    return `solar:${key}`;
+    // Use environment-specific prefix to avoid conflicts
+    const prefix = process.env.CACHE_PREFIX || 'tagadodo';
+    return `${prefix}:${key}`;
   }
 
   private extractStatusCode(err: unknown): number {

@@ -1,49 +1,52 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { CheckoutController } from './checkout.controller';
-import { CheckoutService } from './checkout.service';
-import { OrdersService } from './orders.service';
-import { OrdersController } from './orders.controller';
-import { AdminOrdersController } from './admin-orders.controller';
+
+// Schemas
 import { Order, OrderSchema } from './schemas/order.schema';
 import { Inventory, InventorySchema } from './schemas/inventory.schema';
 import { Reservation, ReservationSchema } from './schemas/reservation.schema';
 import { InventoryLedger, InventoryLedgerSchema } from './schemas/inventory-ledger.schema';
-import { Cart, CartSchema } from '../cart/schemas/cart.schema';
-import { Product, ProductSchema } from '../catalog/schemas/product.schema';
-import { Variant, VariantSchema } from '../catalog/schemas/variant.schema';
-import { CartModule } from '../cart/cart.module';
-import { AddressesModule } from '../addresses/addresses.module';
-import { MarketingModule } from '../marketing/marketing.module';
-import { AuthModule } from '../auth/auth.module';
-import { User, UserSchema } from '../users/schemas/user.schema';
 
+// Services
+import { OrderService } from './services/order.service';
+
+// Controllers
+import { OrderController } from './controllers/order.controller';
+import { AdminOrderController } from './controllers/admin-order.controller';
+import { WebhookController } from './controllers/webhook.controller';
+
+// External Services
+import { CartModule } from '../cart/cart.module';
+
+/**
+ * Module موحد للطلبات والدفع - نظام احترافي شامل
+ */
 @Module({
   imports: [
-    CartModule,
-    AddressesModule,
-    MarketingModule,
-    AuthModule,
     MongooseModule.forFeature([
       { name: Order.name, schema: OrderSchema },
-      { name: Cart.name, schema: CartSchema },
-      { name: Product.name, schema: ProductSchema },
-      { name: Variant.name, schema: VariantSchema },
       { name: Inventory.name, schema: InventorySchema },
       { name: Reservation.name, schema: ReservationSchema },
       { name: InventoryLedger.name, schema: InventoryLedgerSchema },
-      { name: User.name, schema: UserSchema },
     ]),
+    CartModule,
   ],
   controllers: [
-    CheckoutController,
-    OrdersController,
-    AdminOrdersController,
+    OrderController,
+    AdminOrderController,
+    WebhookController,
   ],
   providers: [
-    CheckoutService,
-    OrdersService,
+    OrderService,
   ],
-  exports: [MongooseModule, CheckoutService, OrdersService],
+  exports: [
+    OrderService,
+    MongooseModule.forFeature([
+      { name: Order.name, schema: OrderSchema },
+      { name: Inventory.name, schema: InventorySchema },
+      { name: Reservation.name, schema: ReservationSchema },
+      { name: InventoryLedger.name, schema: InventoryLedgerSchema },
+    ]),
+  ],
 })
 export class CheckoutModule {}

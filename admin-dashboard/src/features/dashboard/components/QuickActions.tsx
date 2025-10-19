@@ -6,8 +6,6 @@ import {
   LocalOffer, 
   Category,
   Assessment,
-  Person,
-  Settings,
   ShoppingCart
 } from '@mui/icons-material';
 

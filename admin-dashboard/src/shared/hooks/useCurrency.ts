@@ -60,10 +60,19 @@ export const useCurrency = () => {
       
       setExchangeRates(rates);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error loading exchange rates:', error);
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  // تنسيق السعر
+  const formatPrice = useCallback((amount: number, currency: Currency): string => {
+    const info = CURRENCY_INFO[currency];
+    const roundedAmount = Math.round(amount * Math.pow(10, info.decimalPlaces)) / Math.pow(10, info.decimalPlaces);
+    
+    return `${info.symbol}${roundedAmount.toFixed(info.decimalPlaces)}`;
   }, []);
 
   // تحويل السعر
@@ -89,15 +98,7 @@ export const useCurrency = () => {
       exchangeRate: rate,
       formatted: formatPrice(convertedAmount, targetCurrency),
     };
-  }, [exchangeRates]);
-
-  // تنسيق السعر
-  const formatPrice = useCallback((amount: number, currency: Currency): string => {
-    const info = CURRENCY_INFO[currency];
-    const roundedAmount = Math.round(amount * Math.pow(10, info.decimalPlaces)) / Math.pow(10, info.decimalPlaces);
-    
-    return `${info.symbol}${roundedAmount.toFixed(info.decimalPlaces)}`;
-  }, []);
+  }, [exchangeRates, formatPrice]);
 
   // الحصول على معلومات العملة الحالية
   const getCurrentCurrencyInfo = useCallback((): CurrencyInfo => {

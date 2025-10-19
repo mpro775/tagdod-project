@@ -2,37 +2,63 @@ import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
 // Order Status - متطابق مع Backend
 export enum OrderStatus {
+  // eslint-disable-next-line no-unused-vars
   DRAFT = 'draft',
+  // eslint-disable-next-line no-unused-vars
   PENDING_PAYMENT = 'pending_payment',
+  // eslint-disable-next-line no-unused-vars
   CONFIRMED = 'confirmed',
+  // eslint-disable-next-line no-unused-vars
   PAYMENT_FAILED = 'payment_failed',
+  // eslint-disable-next-line no-unused-vars
   PROCESSING = 'processing',
+  // eslint-disable-next-line no-unused-vars
   READY_TO_SHIP = 'ready_to_ship',
+  // eslint-disable-next-line no-unused-vars
   SHIPPED = 'shipped',
+  // eslint-disable-next-line no-unused-vars
   OUT_FOR_DELIVERY = 'out_for_delivery',
+  // eslint-disable-next-line no-unused-vars
   DELIVERED = 'delivered',
+  // eslint-disable-next-line no-unused-vars
   COMPLETED = 'completed',
+  // eslint-disable-next-line no-unused-vars
   ON_HOLD = 'on_hold',
+  // eslint-disable-next-line no-unused-vars
   CANCELLED = 'cancelled',
+  // eslint-disable-next-line no-unused-vars
   REFUNDED = 'refunded',
+  // eslint-disable-next-line no-unused-vars
   PARTIALLY_REFUNDED = 'partially_refunded',
+  // eslint-disable-next-line no-unused-vars
   RETURNED = 'returned',
 }
 
 export enum PaymentStatus {
+  // eslint-disable-next-line no-unused-vars
   PENDING = 'pending',
+  // eslint-disable-next-line no-unused-vars
   AUTHORIZED = 'authorized',
+  // eslint-disable-next-line no-unused-vars
   PAID = 'paid',
+  // eslint-disable-next-line no-unused-vars
   FAILED = 'failed',
+  // eslint-disable-next-line no-unused-vars
   REFUNDED = 'refunded',
+  // eslint-disable-next-line no-unused-vars
   PARTIALLY_REFUNDED = 'partially_refunded',
+  // eslint-disable-next-line no-unused-vars
   CANCELLED = 'cancelled',
 }
 
 export enum ShippingMethod {
+  // eslint-disable-next-line no-unused-vars
   STANDARD = 'standard',
+  // eslint-disable-next-line no-unused-vars
   EXPRESS = 'express',
+  // eslint-disable-next-line no-unused-vars
   SAME_DAY = 'same_day',
+  // eslint-disable-next-line no-unused-vars
   PICKUP = 'pickup',
 }
 

@@ -6,7 +6,6 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -74,16 +73,6 @@ export class FavoritesUserController {
     return { data: { count } };
   }
 
-  // ==================== المفضلات حسب الوسوم ====================
-  @Get('by-tags')
-  async getFavoritesByTags(
-    @Req() req: { user: { sub: string } },
-    @Query('tags') tags: string
-  ) {
-    const tagArray = tags.split(',');
-    const favorites = await this.favoritesService.getUserFavoritesByTags(req.user.sub, tagArray);
-    return { data: favorites };
-  }
 
   // ==================== مزامنة من الزائر ====================
   @Post('sync')

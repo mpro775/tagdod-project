@@ -24,6 +24,7 @@ import type { Media } from '../types/media.types';
 interface ImageFieldProps {
   label?: string;
   value?: string; // URL أو Media object
+  // eslint-disable-next-line no-unused-vars
   onChange: (media: Media | null) => void;
   required?: boolean;
   error?: boolean;

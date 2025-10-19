@@ -1,203 +1,470 @@
 # 🔔 خدمة الإشعارات (Notifications Service)
 
-خدمة الإشعارات توفر endpoints لإدارة الإشعارات وتسجيل الأجهزة.
+خدمة الإشعارات توفر endpoints لإدارة الإشعارات وتسجيل الأجهزة مع دعم قنوات متعددة.
 
 ---
 
-## Endpoints
+## 📋 جدول المحتويات
 
-### 1. قائمة الإشعارات
-- **GET** `/notifications?page=1&limit=20&channel=ORDER`
-- **Auth:** ✅ Required
-- **Query Parameters:**
-  - `page`: رقم الصفحة (optional)
-  - `limit`: عدد العناصر (optional)
-  - `channel`: نوع الإشعار - `ORDER`, `PROMOTION`, `SYSTEM` (optional)
+1. [قائمة الإشعارات](#1-قائمة-الإشعارات)
+2. [تحديد كمقروء](#2-تحديد-كمقروء)
+3. [تحديد الكل كمقروء](#3-تحديد-الكل-كمقروء)
+4. [عدد الإشعارات غير المقروءة](#4-عدد-الإشعارات-غير-المقروءة)
+5. [Models في Flutter](#models-في-flutter)
 
-- **Response:**
+---
+
+## 1. قائمة الإشعارات
+
+يسترجع قائمة إشعارات المستخدم مع إمكانية الفلترة والترقيم.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/notifications/history`
+- **Auth Required:** ✅ نعم
+- **Cache:** ✅ نعم (5 دقائق)
+
+### Query Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `limit` | `number` | ❌ | عدد العناصر (افتراضي: 20) |
+| `offset` | `number` | ❌ | الإزاحة (افتراضي: 0) |
+
+### Response - نجاح
+
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "_id": "notif_123",
-      "userId": "user_456",
-      "channel": "ORDER",
-      "title": {
-        "ar": "تم شحن طلبك",
-        "en": "Your order has been shipped"
-      },
-      "body": {
-        "ar": "طلب رقم ORD-2025-001234 في الطريق إليك",
-        "en": "Order #ORD-2025-001234 is on its way"
-      },
-      "data": {
-        "orderId": "order_123",
-        "orderNumber": "ORD-2025-001234"
-      },
-      "isRead": false,
-      "createdAt": "2025-10-15T14:30:00.000Z"
-    }
-  ],
-  "meta": {
-    "total": 45,
-    "page": 1,
-    "limit": 20,
-    "totalPages": 3
+  "data": {
+    "notifications": [
+      {
+        "_id": "64notif123",
+        "type": "ORDER_STATUS",
+        "title": "تم شحن طلبك",
+        "message": "طلب رقم ORD-2025-001234 في الطريق إليك",
+        "messageEn": "Order #ORD-2025-001234 is on its way",
+        "data": {
+          "orderId": "order_123",
+          "orderNumber": "ORD-2025-001234"
+        },
+        "channel": "push",
+        "status": "sent",
+        "recipientId": "64user123",
+        "recipientEmail": "user@example.com",
+        "recipientPhone": "+967123456789",
+        "sentAt": "2025-01-15T14:30:00.000Z",
+        "readAt": null,
+        "errorMessage": null,
+        "retryCount": 0,
+        "scheduledFor": "2025-01-15T14:30:00.000Z",
+        "createdBy": "64admin123",
+        "isSystemGenerated": true,
+        "createdAt": "2025-01-15T14:30:00.000Z",
+        "updatedAt": "2025-01-15T14:30:00.000Z"
+      }
+    ],
+    "total": 45
+  },
+  "requestId": "req_notif_001"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<PaginatedNotifications> getNotifications({
+  int limit = 20,
+  int offset = 0,
+}) async {
+  final response = await _dio.get('/notifications/history', queryParameters: {
+    'limit': limit,
+    'offset': offset,
+  });
+
+  final apiResponse = ApiResponse<PaginatedNotifications>.fromJson(
+    response.data,
+    (json) => PaginatedNotifications.fromJson(json),
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
   }
 }
 ```
 
-### 2. عدد الإشعارات غير المقروءة
-- **GET** `/notifications/unread-count`
-- **Auth:** ✅ Required
-- **Response:**
+---
+
+## 2. تحديد كمقروء
+
+يحدد إشعار محدد كمقروء.
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/notifications/:id/read`
+- **Auth Required:** ✅ نعم
+- **Cache:** ❌ لا
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "modified": true
+  },
+  "requestId": "req_notif_002"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<bool> markAsRead(String notificationId) async {
+  final response = await _dio.post('/notifications/$notificationId/read');
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!['modified'] ?? false;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 3. تحديد الكل كمقروء
+
+يحدد جميع الإشعارات كمقروءة.
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/notifications/read-all`
+- **Auth Required:** ✅ نعم
+- **Cache:** ❌ لا
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "modifiedCount": 5
+  },
+  "requestId": "req_notif_003"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<int> markAllAsRead() async {
+  final response = await _dio.post('/notifications/read-all');
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!['modifiedCount'] ?? 0;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 4. عدد الإشعارات غير المقروءة
+
+يسترجع عدد الإشعارات غير المقروءة.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/notifications/unread-count`
+- **Auth Required:** ✅ نعم
+- **Cache:** ✅ نعم (1 دقيقة)
+
+### Response - نجاح
+
 ```json
 {
   "success": true,
   "data": {
     "total": 5,
+    "byType": {
+      "LOW_STOCK": 1,
+      "OUT_OF_STOCK": 0,
+      "ORDER_STATUS": 2,
+      "PAYMENT_FAILED": 0,
+      "SYSTEM_ALERT": 1,
+      "PROMOTION": 1
+    },
     "byChannel": {
-      "ORDER": 2,
-      "PROMOTION": 3,
-      "SYSTEM": 0
+      "email": 2,
+      "sms": 1,
+      "push": 3,
+      "dashboard": 5
     }
+  },
+  "requestId": "req_notif_004"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<UnreadCount> getUnreadCount() async {
+  final response = await _dio.get('/notifications/unread-count');
+
+  final apiResponse = ApiResponse<UnreadCount>.fromJson(
+    response.data,
+    (json) => UnreadCount.fromJson(json),
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
   }
 }
 ```
-
-### 3. تحديد كمقروء
-- **POST** `/notifications/read`
-- **Auth:** ✅ Required
-- **Body:**
-```json
-{
-  "ids": ["notif_123", "notif_124"]
-}
-```
-
-### 4. تحديد الكل كمقروء
-- **POST** `/notifications/read-all`
-- **Auth:** ✅ Required
-- **Body:**
-```json
-{
-  "channel": "ORDER"
-}
-```
-> إذا لم يتم تحديد `channel`، سيتم تحديد جميع الإشعارات كمقروءة.
-
-### 5. تسجيل جهاز للإشعارات (FCM)
-- **POST** `/devices/register`
-- **Auth:** ✅ Required
-- **Body:**
-```json
-{
-  "deviceToken": "fcm_token_here",
-  "platform": "ANDROID",
-  "deviceId": "device_abc123",
-  "deviceName": "Samsung Galaxy S21"
-}
-```
-
-- **Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "device_reg_123"
-  }
-}
-```
-
-### 6. حذف تسجيل جهاز
-- **DELETE** `/devices/:id`
-- **Auth:** ✅ Required
 
 ---
 
 ## Models في Flutter
 
+### ملف: `lib/models/notification/notification_models.dart`
+
 ```dart
+enum NotificationType {
+  lowStock,
+  outOfStock,
+  orderStatus,
+  paymentFailed,
+  systemAlert,
+  promotion,
+}
+
+enum NotificationStatus {
+  pending,
+  sent,
+  failed,
+  read,
+}
+
+enum NotificationChannel {
+  email,
+  sms,
+  push,
+  dashboard,
+}
+
 class Notification {
   final String id;
-  final String userId;
-  final String channel;
-  final LocalizedString title;
-  final LocalizedString body;
-  final Map<String, dynamic>? data;
-  final bool isRead;
+  final NotificationType type;
+  final String title;
+  final String message;
+  final String messageEn;
+  final Map<String, dynamic> data;
+  final NotificationChannel channel;
+  final NotificationStatus status;
+  final String? recipientId;
+  final String? recipientEmail;
+  final String? recipientPhone;
+  final DateTime? sentAt;
+  final DateTime? readAt;
+  final String? errorMessage;
+  final int retryCount;
+  final DateTime? scheduledFor;
+  final String? createdBy;
+  final bool isSystemGenerated;
   final DateTime createdAt;
+  final DateTime updatedAt;
 
   Notification({
     required this.id,
-    required this.userId,
-    required this.channel,
+    required this.type,
     required this.title,
-    required this.body,
-    this.data,
-    required this.isRead,
+    required this.message,
+    required this.messageEn,
+    required this.data,
+    required this.channel,
+    required this.status,
+    this.recipientId,
+    this.recipientEmail,
+    this.recipientPhone,
+    this.sentAt,
+    this.readAt,
+    this.errorMessage,
+    required this.retryCount,
+    this.scheduledFor,
+    this.createdBy,
+    required this.isSystemGenerated,
     required this.createdAt,
+    required this.updatedAt,
   });
 
   factory Notification.fromJson(Map<String, dynamic> json) {
     return Notification(
-      id: json['_id'],
-      userId: json['userId'],
-      channel: json['channel'],
-      title: LocalizedString.fromJson(json['title']),
-      body: LocalizedString.fromJson(json['body']),
-      data: json['data'],
-      isRead: json['isRead'] ?? false,
+      id: json['_id'] ?? '',
+      type: NotificationType.values.firstWhere(
+        (e) => e.name.toUpperCase() == json['type'],
+        orElse: () => NotificationType.systemAlert,
+      ),
+      title: json['title'] ?? '',
+      message: json['message'] ?? '',
+      messageEn: json['messageEn'] ?? '',
+      data: Map<String, dynamic>.from(json['data'] ?? {}),
+      channel: NotificationChannel.values.firstWhere(
+        (e) => e.name == json['channel'],
+        orElse: () => NotificationChannel.dashboard,
+      ),
+      status: NotificationStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+        orElse: () => NotificationStatus.pending,
+      ),
+      recipientId: json['recipientId'],
+      recipientEmail: json['recipientEmail'],
+      recipientPhone: json['recipientPhone'],
+      sentAt: json['sentAt'] != null ? DateTime.parse(json['sentAt']) : null,
+      readAt: json['readAt'] != null ? DateTime.parse(json['readAt']) : null,
+      errorMessage: json['errorMessage'],
+      retryCount: json['retryCount'] ?? 0,
+      scheduledFor: json['scheduledFor'] != null ? DateTime.parse(json['scheduledFor']) : null,
+      createdBy: json['createdBy'],
+      isSystemGenerated: json['isSystemGenerated'] ?? false,
       createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
 
-  bool get isOrder => channel == 'ORDER';
-  bool get isPromotion => channel == 'PROMOTION';
-  bool get isSystem => channel == 'SYSTEM';
+  String getMessage(String locale) {
+    if (locale == 'en') return messageEn;
+    return message;
+  }
+
+  bool get isLowStock => type == NotificationType.lowStock;
+  bool get isOutOfStock => type == NotificationType.outOfStock;
+  bool get isOrderStatus => type == NotificationType.orderStatus;
+  bool get isPaymentFailed => type == NotificationType.paymentFailed;
+  bool get isSystemAlert => type == NotificationType.systemAlert;
+  bool get isPromotion => type == NotificationType.promotion;
+  
+  bool get isPending => status == NotificationStatus.pending;
+  bool get isSent => status == NotificationStatus.sent;
+  bool get isFailed => status == NotificationStatus.failed;
+  bool get isRead => status == NotificationStatus.read;
+  bool get isUnread => !isRead;
+  
+  bool get isEmail => channel == NotificationChannel.email;
+  bool get isSms => channel == NotificationChannel.sms;
+  bool get isPush => channel == NotificationChannel.push;
+  bool get isDashboard => channel == NotificationChannel.dashboard;
+  
+  bool get hasRecipient => recipientId != null;
+  bool get hasEmail => recipientEmail != null && recipientEmail!.isNotEmpty;
+  bool get hasPhone => recipientPhone != null && recipientPhone!.isNotEmpty;
+  bool get hasError => errorMessage != null && errorMessage!.isNotEmpty;
+  bool get hasRetries => retryCount > 0;
+  bool get isScheduled => scheduledFor != null;
+  bool get hasCreator => createdBy != null;
+  bool get isSystemGenerated => isSystemGenerated;
+  
+  String? get orderId => data['orderId']?.toString();
+  String? get orderNumber => data['orderNumber']?.toString();
+  String? get productId => data['productId']?.toString();
+  String? get userId => data['userId']?.toString();
+  
+  bool get hasOrderData => orderId != null || orderNumber != null;
+  bool get hasProductData => productId != null;
+  bool get hasUserData => userId != null;
+  
+  DateTime get displayDate => readAt ?? sentAt ?? createdAt;
+  bool get isRecent => DateTime.now().difference(displayDate).inDays < 7;
+  bool get isOld => DateTime.now().difference(displayDate).inDays > 30;
+}
+
+class PaginatedNotifications {
+  final List<Notification> notifications;
+  final int total;
+
+  PaginatedNotifications({
+    required this.notifications,
+    required this.total,
+  });
+
+  factory PaginatedNotifications.fromJson(Map<String, dynamic> json) {
+    return PaginatedNotifications(
+      notifications: (json['notifications'] as List)
+          .map((item) => Notification.fromJson(item))
+          .toList(),
+      total: json['total'] ?? 0,
+    );
+  }
+
+  bool get hasNotifications => notifications.isNotEmpty;
+  bool get isEmpty => notifications.isEmpty;
+  int get count => notifications.length;
+  List<Notification> get unreadNotifications => notifications.where((n) => n.isUnread).toList();
+  List<Notification> get readNotifications => notifications.where((n) => n.isRead).toList();
+  int get unreadCount => unreadNotifications.length;
+  int get readCount => readNotifications.length;
 }
 
 class UnreadCount {
   final int total;
+  final Map<String, int> byType;
   final Map<String, int> byChannel;
 
   UnreadCount({
     required this.total,
+    required this.byType,
     required this.byChannel,
   });
 
   factory UnreadCount.fromJson(Map<String, dynamic> json) {
     return UnreadCount(
       total: json['total'] ?? 0,
+      byType: Map<String, int>.from(json['byType'] ?? {}),
       byChannel: Map<String, int>.from(json['byChannel'] ?? {}),
     );
   }
 
-  int getChannelCount(String channel) => byChannel[channel] ?? 0;
-}
-
-class DeviceRegistration {
-  final String deviceToken;
-  final String platform; // ANDROID, IOS
-  final String deviceId;
-  final String? deviceName;
-
-  DeviceRegistration({
-    required this.deviceToken,
-    required this.platform,
-    required this.deviceId,
-    this.deviceName,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'deviceToken': deviceToken,
-      'platform': platform,
-      'deviceId': deviceId,
-      if (deviceName != null) 'deviceName': deviceName,
-    };
-  }
+  int getTypeCount(NotificationType type) => byType[type.name.toUpperCase()] ?? 0;
+  int getChannelCount(NotificationChannel channel) => byChannel[channel.name] ?? 0;
+  
+  int get lowStockCount => getTypeCount(NotificationType.lowStock);
+  int get outOfStockCount => getTypeCount(NotificationType.outOfStock);
+  int get orderStatusCount => getTypeCount(NotificationType.orderStatus);
+  int get paymentFailedCount => getTypeCount(NotificationType.paymentFailed);
+  int get systemAlertCount => getTypeCount(NotificationType.systemAlert);
+  int get promotionCount => getTypeCount(NotificationType.promotion);
+  
+  int get emailCount => getChannelCount(NotificationChannel.email);
+  int get smsCount => getChannelCount(NotificationChannel.sms);
+  int get pushCount => getChannelCount(NotificationChannel.push);
+  int get dashboardCount => getChannelCount(NotificationChannel.dashboard);
+  
+  bool get hasUnread => total > 0;
+  bool get hasLowStock => lowStockCount > 0;
+  bool get hasOutOfStock => outOfStockCount > 0;
+  bool get hasOrderStatus => orderStatusCount > 0;
+  bool get hasPaymentFailed => paymentFailedCount > 0;
+  bool get hasSystemAlert => systemAlertCount > 0;
+  bool get hasPromotion => promotionCount > 0;
 }
 ```
 
@@ -399,25 +666,120 @@ Future<void> markAllAsRead({String? channel}) async {
 
 ## 📝 ملاحظات مهمة
 
-1. **FCM Token:**
-   - احفظ التوكن عند كل تسجيل دخول
-   - حدّث التوكن عند التغيير (`onTokenRefresh`)
-   - احذف التوكن عند تسجيل الخروج
-
-2. **أنواع الإشعارات:**
-   - `ORDER`: إشعارات الطلبات
+1. **أنواع الإشعارات:**
+   - `LOW_STOCK`: تنبيه مخزون منخفض
+   - `OUT_OF_STOCK`: تنبيه نفاد المخزون
+   - `ORDER_STATUS`: إشعارات الطلبات
+   - `PAYMENT_FAILED`: فشل الدفع
+   - `SYSTEM_ALERT`: إشعارات النظام
    - `PROMOTION`: العروض والخصومات
-   - `SYSTEM`: إشعارات النظام
 
-3. **معالجة الإشعارات:**
-   - `onMessage`: التطبيق مفتوح
-   - `onMessageOpenedApp`: التطبيق في الخلفية
-   - `getInitialMessage`: التطبيق مغلق
+2. **حالات الإشعارات:**
+   - `pending`: في الانتظار
+   - `sent`: تم الإرسال
+   - `failed`: فشل الإرسال
+   - `read`: مقروء
 
-4. **الأذونات:**
-   - اطلب الأذونات عند أول استخدام
-   - اشرح للمستخدم فائدة الإشعارات
-   - احترم اختيار المستخدم
+3. **قنوات الإشعارات:**
+   - `email`: البريد الإلكتروني
+   - `sms`: الرسائل النصية
+   - `push`: الإشعارات الفورية
+   - `dashboard`: لوحة التحكم
+
+4. **البيانات الإضافية:**
+   - `data`: بيانات إضافية (orderId, productId, userId)
+   - `recipientId`: معرف المستلم
+   - `recipientEmail`: بريد المستلم
+   - `recipientPhone`: هاتف المستلم
+   - `sentAt`: وقت الإرسال
+   - `readAt`: وقت القراءة
+   - `errorMessage`: رسالة الخطأ
+   - `retryCount`: عدد المحاولات
+
+5. **التحقق من الصحة:**
+   - `isLowStock`: تنبيه مخزون منخفض
+   - `isOutOfStock`: تنبيه نفاد المخزون
+   - `isOrderStatus`: إشعار طلب
+   - `isPaymentFailed`: فشل دفع
+   - `isSystemAlert`: إشعار نظام
+   - `isPromotion`: إشعار عرض
+
+6. **الحالة:**
+   - `isPending`: في الانتظار
+   - `isSent`: تم الإرسال
+   - `isFailed`: فشل الإرسال
+   - `isRead`: مقروء
+   - `isUnread`: غير مقروء
+
+7. **القناة:**
+   - `isEmail`: بريد إلكتروني
+   - `isSms`: رسالة نصية
+   - `isPush`: إشعار فوري
+   - `isDashboard`: لوحة تحكم
+
+8. **البيانات:**
+   - `hasRecipient`: له مستلم
+   - `hasEmail`: له بريد إلكتروني
+   - `hasPhone`: له هاتف
+   - `hasError`: له خطأ
+   - `hasRetries`: له محاولات
+   - `isScheduled`: مجدول
+   - `hasCreator`: له منشئ
+   - `isSystemGenerated`: منشأ تلقائياً
+
+9. **البيانات الإضافية:**
+   - `orderId`: معرف الطلب
+   - `orderNumber`: رقم الطلب
+   - `productId`: معرف المنتج
+   - `userId`: معرف المستخدم
+   - `hasOrderData`: له بيانات طلب
+   - `hasProductData`: له بيانات منتج
+   - `hasUserData`: له بيانات مستخدم
+
+10. **التوقيت:**
+    - `displayDate`: تاريخ العرض
+    - `isRecent`: حديث (أقل من 7 أيام)
+    - `isOld`: قديم (أكثر من 30 يوم)
+
+11. **الصفحات:**
+    - `PaginatedNotifications`: للنتائج مع الصفحات
+    - `hasNotifications`: له إشعارات
+    - `isEmpty`: فارغ
+    - `unreadNotifications`: إشعارات غير مقروءة
+    - `readNotifications`: إشعارات مقروءة
+    - `unreadCount`: عدد غير مقروء
+    - `readCount`: عدد مقروء
+
+12. **العدد:**
+    - `UnreadCount`: عدد الإشعارات غير المقروءة
+    - `byType`: حسب النوع
+    - `byChannel`: حسب القناة
+    - `getTypeCount()`: عدد حسب النوع
+    - `getChannelCount()`: عدد حسب القناة
+
+13. **الاستخدام:**
+    - استخدم `getMessage(locale)` للحصول على الرسالة حسب اللغة
+    - استخدم `isLowStock`, `isOutOfStock`, `isOrderStatus` للتمييز
+    - استخدم `isRead`, `isUnread` للتحقق من القراءة
+    - استخدم `isEmail`, `isSms`, `isPush` للتمييز بين القنوات
+
+14. **البيانات:**
+    - استخدم `orderId`, `orderNumber` لبيانات الطلب
+    - استخدم `productId` لبيانات المنتج
+    - استخدم `userId` لبيانات المستخدم
+    - استخدم `hasOrderData`, `hasProductData`, `hasUserData` للتحقق
+
+15. **التوقيت:**
+    - استخدم `displayDate` لعرض التاريخ
+    - استخدم `isRecent` للإشعارات الحديثة
+    - استخدم `isOld` للإشعارات القديمة
+    - استخدم `sentAt`, `readAt` للتوقيتات المحددة
+
+16. **التحسين:**
+    - استخدم `unreadCount` لعرض العدد
+    - استخدم `byType` للفلترة حسب النوع
+    - استخدم `byChannel` للفلترة حسب القناة
+    - استخدم `hasUnread` للتحقق من وجود إشعارات غير مقروءة
 
 ---
 

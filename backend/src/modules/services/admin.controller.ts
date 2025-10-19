@@ -1,17 +1,20 @@
 import { Controller, Get, Param, Post, Query, UseGuards, Patch, Body } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { AdminGuard } from '../../shared/guards/admin.guard';
 import { ServicesService } from './services.service';
+import { ServicesPermissionGuard, ServicePermission } from './guards/services-permission.guard';
+import { RequireServicePermission } from './decorators/service-permission.decorator';
+import { OffersStatisticsDto, OffersManagementResponseDto, EngineersOverviewStatisticsDto } from './dto/offers.dto';
 
 @ApiTags('services-admin')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, AdminGuard)
-@Controller('admin/services')
+@UseGuards(JwtAuthGuard, ServicesPermissionGuard)
+@Controller('services/admin')
 export class AdminServicesController {
   constructor(private svc: ServicesService) {}
 
   @Get('requests')
+  @RequireServicePermission(ServicePermission.ADMIN)
   async list(
     @Query('status') status?: string,
     @Query('type') type?: string,
@@ -172,19 +175,50 @@ export class AdminServicesController {
     return { data: data.items, meta: data.meta };
   }
 
+  // === إحصائيات المهندسين ===
+  @Get('engineers/statistics/overview')
+  @RequireServicePermission(ServicePermission.ADMIN)
+  @ApiOperation({ summary: 'احصل على إحصائيات عامة للمهندسين' })
+  @ApiResponse({ status: 200, type: EngineersOverviewStatisticsDto })
+  async getEngineersOverviewStatistics(): Promise<{ data: EngineersOverviewStatisticsDto }> {
+    const data = await this.svc.getEngineersOverviewStatistics();
+    return { data };
+  }
+
+  // === إحصائيات العروض ===
+  @Get('offers/statistics')
+  @RequireServicePermission(ServicePermission.ADMIN)
+  @ApiOperation({ summary: 'احصل على إحصائيات العروض' })
+  @ApiResponse({ status: 200, type: OffersStatisticsDto })
+  async getOffersStatistics(
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ): Promise<{ data: OffersStatisticsDto }> {
+    const data = await this.svc.getOffersStatistics({
+      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+      dateTo: dateTo ? new Date(dateTo) : undefined,
+    });
+    return { data };
+  }
+
   // === إدارة العروض ===
   @Get('offers')
-  async getOffersList(
+  @RequireServicePermission(ServicePermission.ADMIN)
+  @ApiOperation({ summary: 'احصل على قائمة العروض للإدارة' })
+  @ApiResponse({ status: 200, type: OffersManagementResponseDto })
+  async getOffersManagementList(
     @Query('status') status?: string,
     @Query('requestId') requestId?: string,
     @Query('engineerId') engineerId?: string,
+    @Query('search') search?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
-  ) {
-    const data = await this.svc.getOffersList({
+  ): Promise<OffersManagementResponseDto> {
+    const data = await this.svc.getOffersManagementList({
       status,
       requestId,
       engineerId,
+      search,
       page: Number(page),
       limit: Number(limit),
     });

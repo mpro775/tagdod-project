@@ -4,11 +4,22 @@ import { ErrorHandler } from '@/core/error/ErrorHandler';
 import toast from 'react-hot-toast';
 import type {
   ListTicketsParams,
+  CreateSupportTicketDto,
   UpdateSupportTicketDto,
   AddSupportMessageDto,
 } from '../types/support.types';
 
 const SUPPORT_KEY = 'support';
+
+export const useCreateSupportTicket = () => {
+  return useMutation({
+    mutationFn: (data: CreateSupportTicketDto) => supportApi.create(data),
+    onSuccess: () => {
+      toast.success('تم إرسال طلب الدعم بنجاح');
+    },
+    onError: ErrorHandler.showError,
+  });
+};
 
 export const useSupportTickets = (params: ListTicketsParams) => {
   return useQuery({

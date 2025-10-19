@@ -5,6 +5,8 @@ import type {
   ListServicesParams,
   ListEngineersParams,
   ListOffersParams,
+  OffersStatistics,
+  EngineersOverviewStatistics,
   OverviewStatistics,
   RequestsStatisticsParams,
   RequestsStatisticsItem,
@@ -20,30 +22,30 @@ import type {
 
 export const servicesApi = {
   // === إدارة الطلبات ===
-  list: async (params: ListServicesParams = {}): Promise<ServiceRequest[]> => {
-    const response = await apiClient.get<{ data: ServiceRequest[] }>('/admin/services/requests', {
+  list: async (params: ListServicesParams = {}): Promise<{ data: ServiceRequest[]; meta: any }> => {
+    const response = await apiClient.get<{ data: ServiceRequest[]; meta: any }>('/services/admin/requests', {
       params,
     });
-    return response.data.data;
+    return response.data;
   },
 
   getById: async (id: string): Promise<ServiceRequest> => {
     const response = await apiClient.get<{ data: ServiceRequest }>(
-      `/admin/services/requests/${id}`
+      `/services/admin/requests/${id}`
     );
     return response.data.data;
   },
 
   getOffers: async (id: string): Promise<EngineerOffer[]> => {
     const response = await apiClient.get<{ data: EngineerOffer[] }>(
-      `/admin/services/requests/${id}/offers`
+      `/services/admin/requests/${id}/offers`
     );
     return response.data.data;
   },
 
   updateStatus: async (id: string, status: string, note?: string) => {
     const response = await apiClient.patch<{ data: any }>(
-      `/admin/services/requests/${id}/status`,
+      `/services/admin/requests/${id}/status`,
       { status, note }
     );
     return response.data.data;
@@ -51,7 +53,7 @@ export const servicesApi = {
 
   cancel: async (id: string, reason?: string) => {
     const response = await apiClient.post<{ data: any }>(
-      `/admin/services/requests/${id}/cancel`,
+      `/services/admin/requests/${id}/cancel`,
       { reason }
     );
     return response.data.data;
@@ -59,7 +61,7 @@ export const servicesApi = {
 
   assignEngineer: async (id: string, engineerId: string, note?: string) => {
     const response = await apiClient.post<{ data: any }>(
-      `/admin/services/requests/${id}/assign-engineer`,
+      `/services/admin/requests/${id}/assign-engineer`,
       { engineerId, note }
     );
     return response.data.data;
@@ -68,7 +70,7 @@ export const servicesApi = {
   // === إحصائيات شاملة ===
   getOverviewStatistics: async (): Promise<OverviewStatistics> => {
     const response = await apiClient.get<{ data: OverviewStatistics }>(
-      '/admin/services/statistics/overview'
+      '/services/admin/statistics/overview'
     );
     return response.data.data;
   },
@@ -77,7 +79,7 @@ export const servicesApi = {
     params: RequestsStatisticsParams
   ): Promise<RequestsStatisticsItem[]> => {
     const response = await apiClient.get<{ data: RequestsStatisticsItem[] }>(
-      '/admin/services/statistics/requests',
+      '/services/admin/statistics/requests',
       { params }
     );
     return response.data.data;
@@ -87,7 +89,7 @@ export const servicesApi = {
     params: EngineersStatisticsParams
   ): Promise<EngineerStatistics[]> => {
     const response = await apiClient.get<{ data: EngineerStatistics[] }>(
-      '/admin/services/statistics/engineers',
+      '/services/admin/statistics/engineers',
       { params }
     );
     return response.data.data;
@@ -97,7 +99,7 @@ export const servicesApi = {
     params: ServiceTypesStatisticsParams
   ): Promise<ServiceTypeStatistics[]> => {
     const response = await apiClient.get<{ data: ServiceTypeStatistics[] }>(
-      '/admin/services/statistics/services-types',
+      '/services/admin/statistics/services-types',
       { params }
     );
     return response.data.data;
@@ -107,23 +109,28 @@ export const servicesApi = {
     params: RevenueStatisticsParams
   ): Promise<RevenueStatisticsItem[]> => {
     const response = await apiClient.get<{ data: RevenueStatisticsItem[] }>(
-      '/admin/services/statistics/revenue',
+      '/services/admin/statistics/revenue',
       { params }
     );
     return response.data.data;
   },
 
   // === إدارة المهندسين ===
-  getEngineersList: async (params: ListEngineersParams = {}): Promise<EngineerDetails[]> => {
-    const response = await apiClient.get<{ data: EngineerDetails[] }>('/admin/services/engineers', {
+  getEngineersOverviewStatistics: async (): Promise<EngineersOverviewStatistics> => {
+    const response = await apiClient.get<{ data: EngineersOverviewStatistics }>('/services/admin/engineers/statistics/overview');
+    return response.data.data;
+  },
+
+  getEngineersList: async (params: ListEngineersParams = {}): Promise<{ data: EngineerDetails[]; meta: any }> => {
+    const response = await apiClient.get<{ data: EngineerDetails[]; meta: any }>('/services/admin/engineers', {
       params,
     });
-    return response.data.data;
+    return response.data;
   },
 
   getEngineerStatistics: async (id: string): Promise<EngineerStatisticsDetails> => {
     const response = await apiClient.get<{ data: EngineerStatisticsDetails }>(
-      `/admin/services/engineers/${id}/statistics`
+      `/services/admin/engineers/${id}/statistics`
     );
     return response.data.data;
   },
@@ -131,19 +138,26 @@ export const servicesApi = {
   getEngineerOffers: async (
     id: string,
     params: { status?: string; page?: number; limit?: number } = {}
-  ): Promise<EngineerOffer[]> => {
-    const response = await apiClient.get<{ data: EngineerOffer[] }>(
-      `/admin/services/engineers/${id}/offers`,
+  ): Promise<{ data: EngineerOffer[]; meta: any }> => {
+    const response = await apiClient.get<{ data: EngineerOffer[]; meta: any }>(
+      `/services/admin/engineers/${id}/offers`,
       { params }
     );
-    return response.data.data;
+    return response.data;
   },
 
   // === إدارة العروض ===
-  getOffersList: async (params: ListOffersParams = {}): Promise<EngineerOffer[]> => {
-    const response = await apiClient.get<{ data: EngineerOffer[] }>('/admin/services/offers', {
+  getOffersStatistics: async (params?: { dateFrom?: string; dateTo?: string }): Promise<OffersStatistics> => {
+    const response = await apiClient.get<{ data: OffersStatistics }>('/services/admin/offers/statistics', {
       params,
     });
     return response.data.data;
+  },
+
+  getOffersList: async (params: ListOffersParams = {}): Promise<{ data: EngineerOffer[]; meta: any }> => {
+    const response = await apiClient.get<{ data: EngineerOffer[]; meta: any }>('/services/admin/offers', {
+      params,
+    });
+    return response.data;
   },
 };

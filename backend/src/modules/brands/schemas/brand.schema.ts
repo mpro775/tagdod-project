@@ -38,5 +38,7 @@ export const BrandSchema = SchemaFactory.createForClass(Brand);
 // Indexes
 BrandSchema.index({ slug: 1 });
 BrandSchema.index({ name: 1 });
+BrandSchema.index({ nameEn: 1 });
 BrandSchema.index({ isActive: 1, sortOrder: 1 });
+BrandSchema.index({ name: 'text', nameEn: 'text', description: 'text', descriptionEn: 'text' });
 

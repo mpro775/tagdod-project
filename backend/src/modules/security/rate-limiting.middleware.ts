@@ -1,15 +1,19 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { RateLimitingService } from './rate-limiting.service';
+import { ClientIPService } from './services/client-ip.service';
 
 @Injectable()
 export class RateLimitingMiddleware implements NestMiddleware {
   private readonly logger = new Logger(RateLimitingMiddleware.name);
 
-  constructor(private rateLimitingService: RateLimitingService) {}
+  constructor(
+    private rateLimitingService: RateLimitingService,
+    private clientIPService: ClientIPService,
+  ) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
-    const clientIP = this.getClientIP(req);
+    const clientIP = this.clientIPService.getClientIP(req);
     const path = req.path;
     const method = req.method;
 
@@ -70,30 +74,9 @@ export class RateLimitingMiddleware implements NestMiddleware {
     }
   }
 
-  private getClientIP(req: Request): string {
-    // Check for forwarded IP headers
-    const forwarded = req.get('x-forwarded-for');
-    if (forwarded) {
-      return forwarded.split(',')[0].trim();
-    }
-
-    const realIP = req.get('x-real-ip');
-    if (realIP) {
-      return realIP;
-    }
-
-    const cfConnectingIP = req.get('cf-connecting-ip');
-    if (cfConnectingIP) {
-      return cfConnectingIP;
-    }
-
-    // Fallback to connection remote address
-    return req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
-  }
 
   private getLimiterName(path: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS' | 'HEAD'): string {
     // Authentication endpoints
-
     void method;
     if (path.includes('/auth/') || path.includes('/otp/')) {
       if (path.includes('/login') || path.includes('/signin')) {
@@ -105,6 +88,16 @@ export class RateLimitingMiddleware implements NestMiddleware {
       return 'auth';
     }
 
+    // Analytics endpoints (check before admin to avoid conflict)
+    if (path.includes('/analytics/')) {
+      return 'analytics';
+    }
+
+    // Admin endpoints
+    if (path.includes('/admin/')) {
+      return 'admin';
+    }
+
     // File upload endpoints
     if (path.includes('/upload/')) {
       return 'upload';
@@ -113,16 +106,6 @@ export class RateLimitingMiddleware implements NestMiddleware {
     // Search endpoints
     if (path.includes('/search/')) {
       return 'search';
-    }
-
-    // Admin endpoints
-    if (path.includes('/admin/') || path.includes('/analytics/')) {
-      return 'admin';
-    }
-
-    // Analytics endpoints
-    if (path.includes('/analytics/')) {
-      return 'analytics';
     }
 
     // Default API limiter

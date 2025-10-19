@@ -4,13 +4,15 @@ import { CustomerServicesController } from './customer.controller';
 import { EngineerServicesController } from './engineer.controller';
 import { AdminServicesController } from './admin.controller';
 import { ServicesService } from './services.service';
+import { DistanceService } from './services/distance.service';
+import { ServicesPermissionGuard } from './guards/services-permission.guard';
 import { ServiceRequest, ServiceRequestSchema } from './schemas/service-request.schema';
 import { EngineerOffer, EngineerOfferSchema } from './schemas/engineer-offer.schema';
 import { Address, AddressSchema } from '../addresses/schemas/address.schema';
 import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabilities.schema';
 import { EngineerGuard } from '../../shared/guards/engineer.guard';
 import { AuthModule } from '../auth/auth.module';
-import { NotificationsModule } from '../notifications/notifications.module';
+import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 
 @Module({
   imports: [
@@ -21,10 +23,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
     AuthModule,
-    NotificationsModule,
+    NotificationsCompleteModule,
   ],
   controllers: [CustomerServicesController, EngineerServicesController, AdminServicesController],
-  providers: [ServicesService, EngineerGuard],
+  providers: [ServicesService, DistanceService, ServicesPermissionGuard, EngineerGuard],
   exports: [MongooseModule, ServicesService],
 })
 export class ServicesModule {}

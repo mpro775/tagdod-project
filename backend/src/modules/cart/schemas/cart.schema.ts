@@ -151,6 +151,7 @@ CartSchema.index({ deviceId: 1, status: 1, updatedAt: -1 });
 CartSchema.index({ status: 1, lastActivityAt: -1 });
 CartSchema.index({ isAbandoned: 1, abandonmentEmailsSent: 1 });
 CartSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-CartSchema.index({ createdAt: -1 });CartSchema.index({ updatedAt: -1 });
+CartSchema.index({ createdAt: -1 });
+CartSchema.index({ updatedAt: -1 });
 CartSchema.index({ convertedToOrderId: 1 }, { sparse: true });
 

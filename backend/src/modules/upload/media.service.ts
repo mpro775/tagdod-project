@@ -60,8 +60,8 @@ export class MediaService {
     // حفظ البيانات في قاعدة البيانات
     const media = await this.mediaModel.create({
       url: uploadResult.url,
-      filename: file.originalname,
-      storedFilename: uploadResult.filename,
+      filename: file.originalname, // الاسم الأصلي للملف
+      storedFilename: uploadResult.filename, // المسار الكامل المخزن في Bunny
       name: dto.name,
       category: dto.category,
       type: file.mimetype.startsWith('image/') ? 'image' : 'document',
@@ -379,5 +379,158 @@ export class MediaService {
    */
   private calculateFileHash(buffer: Buffer): string {
     return crypto.createHash('sha256').update(buffer).digest('hex');
+  }
+
+  /**
+   * تنظيف الملفات المحذوفة نهائياً (Hard Delete)
+   */
+  async cleanupDeletedFiles(): Promise<{ deletedCount: number; errors: string[] }> {
+    const errors: string[] = [];
+    let deletedCount = 0;
+
+    try {
+      // البحث عن الملفات المحذوفة منذ أكثر من 30 يوم
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const deletedFiles = await this.mediaModel.find({
+        deletedAt: { $lt: thirtyDaysAgo },
+      }).lean();
+
+      this.logger.log(`Found ${deletedFiles.length} files to cleanup`);
+
+      for (const file of deletedFiles) {
+        try {
+          // حذف من Bunny.net
+          await this.uploadService.deleteFile(file.storedFilename);
+          
+          // حذف من قاعدة البيانات
+          await this.mediaModel.deleteOne({ _id: file._id });
+          
+          deletedCount++;
+          this.logger.log(`Successfully cleaned up file: ${file.storedFilename}`);
+        } catch (error) {
+          const errorMsg = `Failed to cleanup file ${file.storedFilename}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          errors.push(errorMsg);
+          this.logger.error(errorMsg);
+        }
+      }
+
+      this.logger.log(`Cleanup completed. Deleted: ${deletedCount}, Errors: ${errors.length}`);
+    } catch (error) {
+      this.logger.error('Cleanup process failed:', error);
+      errors.push(`Cleanup process failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    return { deletedCount, errors };
+  }
+
+  /**
+   * تنظيف الملفات المكررة
+   */
+  async cleanupDuplicateFiles(): Promise<{ removedCount: number; errors: string[] }> {
+    const errors: string[] = [];
+    let removedCount = 0;
+
+    try {
+      // البحث عن الملفات المكررة بناءً على fileHash
+      const duplicates = await this.mediaModel.aggregate([
+        {
+          $match: {
+            fileHash: { $exists: true, $ne: null },
+            deletedAt: null,
+          },
+        },
+        {
+          $group: {
+            _id: '$fileHash',
+            count: { $sum: 1 },
+            files: { $push: '$$ROOT' },
+          },
+        },
+        {
+          $match: {
+            count: { $gt: 1 },
+          },
+        },
+      ]);
+
+      this.logger.log(`Found ${duplicates.length} duplicate file groups`);
+
+      for (const group of duplicates) {
+        // الاحتفاظ بالملف الأقدم وحذف الباقي
+        const sortedFiles = group.files.sort((a: Media, b: Media) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+        const filesToDelete = sortedFiles.slice(1);
+
+        for (const file of filesToDelete) {
+          try {
+            // حذف من Bunny.net
+            await this.uploadService.deleteFile(file.storedFilename);
+            
+            // حذف من قاعدة البيانات
+            await this.mediaModel.deleteOne({ _id: file._id });
+            
+            removedCount++;
+            this.logger.log(`Removed duplicate file: ${file.storedFilename}`);
+          } catch (error) {
+            const errorMsg = `Failed to remove duplicate file ${file.storedFilename}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            errors.push(errorMsg);
+            this.logger.error(errorMsg);
+          }
+        }
+      }
+
+      this.logger.log(`Duplicate cleanup completed. Removed: ${removedCount}, Errors: ${errors.length}`);
+    } catch (error) {
+      this.logger.error('Duplicate cleanup process failed:', error);
+      errors.push(`Duplicate cleanup process failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    return { removedCount, errors };
+  }
+
+  /**
+   * تنظيف الملفات غير المستخدمة (usageCount = 0 ولم تُستخدم منذ فترة طويلة)
+   */
+  async cleanupUnusedFiles(daysThreshold: number = 90): Promise<{ removedCount: number; errors: string[] }> {
+    const errors: string[] = [];
+    let removedCount = 0;
+
+    try {
+      const thresholdDate = new Date();
+      thresholdDate.setDate(thresholdDate.getDate() - daysThreshold);
+
+      const unusedFiles = await this.mediaModel.find({
+        usageCount: 0,
+        createdAt: { $lt: thresholdDate },
+        deletedAt: null,
+      }).lean();
+
+      this.logger.log(`Found ${unusedFiles.length} unused files to cleanup`);
+
+      for (const file of unusedFiles) {
+        try {
+          // حذف من Bunny.net
+          await this.uploadService.deleteFile(file.storedFilename);
+          
+          // حذف من قاعدة البيانات
+          await this.mediaModel.deleteOne({ _id: file._id });
+          
+          removedCount++;
+          this.logger.log(`Removed unused file: ${file.storedFilename}`);
+        } catch (error) {
+          const errorMsg = `Failed to remove unused file ${file.storedFilename}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          errors.push(errorMsg);
+          this.logger.error(errorMsg);
+        }
+      }
+
+      this.logger.log(`Unused files cleanup completed. Removed: ${removedCount}, Errors: ${errors.length}`);
+    } catch (error) {
+      this.logger.error('Unused files cleanup process failed:', error);
+      errors.push(`Unused files cleanup process failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    return { removedCount, errors };
   }
 }

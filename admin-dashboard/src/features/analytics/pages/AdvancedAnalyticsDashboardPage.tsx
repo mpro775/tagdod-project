@@ -93,6 +93,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
 
   const handleExportData = (type: string, format: string) => {
     // Implementation for data export
+    // eslint-disable-next-line no-console
     console.log(`Exporting ${type} data in ${format} format`);
   };
 

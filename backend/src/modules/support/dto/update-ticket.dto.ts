@@ -55,4 +55,11 @@ export class UpdateSupportTicketDto {
   })
   @IsOptional()
   closedAt?: Date;
+
+  @ApiProperty({
+    description: 'تاريخ أول رد (يتم تعيينه تلقائياً عند تغيير الحالة إلى IN_PROGRESS)',
+    required: false,
+  })
+  @IsOptional()
+  firstResponseAt?: Date;
 }

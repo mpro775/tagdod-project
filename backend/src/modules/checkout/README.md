@@ -1,61 +1,307 @@
-# Checkout Module
+# نظام الطلبات والدفع الموحد
 
-يوفّر إنشاء الطلبات من السلة، تتبّع حالة الطلب، إدارة الطلبات للمستخدم والإدارة، والتكامل مع المخزون والقسائم.
+## 📋 نظرة عامة
 
-## المكونات
-- Controllers:
-  - `checkout.controller.ts`: نقاط إنشاء الطلب وتأكيد/معاينة الدفع للمستخدم
-  - `orders.controller.ts`: قراءة وتتبع وإلغاء وتقييم طلبات المستخدم
-  - `admin-orders.controller.ts`: إدارة الطلبات (قائمة/تفاصيل/تحديث حالة/شحن/استرداد)
-- Services:
-  - `checkout.service.ts`: منطق الإنشاء، المعاينة، الويب هوك، وواجهات الإدارة والمستخدم
-  - `orders.service.ts`: تتبع الطلب، إحصاءات المستخدم/الإدارة، التقييم والملاحظات
-- Schemas: `schemas/order.schema.ts`, `schemas/reservation.schema.ts`, `schemas/inventory.schema.ts`, `schemas/inventory-ledger.schema.ts`
+نظام موحد احترافي لإدارة الطلبات والدفع، يوفر:
+- إدارة شاملة لحالات الطلبات
+- نظام دفع متكامل
+- تتبع الطلبات في الوقت الفعلي
+- تحليلات وإحصائيات متقدمة
+- واجهات API موحدة
 
-## مخطط Order (مختصر)
-- الحقول: `orderNumber`, `userId`, `status`, `paymentStatus`, `deliveryAddress`, `items[]`, `currency`, `subtotal`, `total`, `coupon*`, `shippingCost`, `tax`, `statusHistory[]`, `paymentIntentId?`, `tracking*`, `estimatedDeliveryDate?`, `metadata{ cartId, source, rating?, review?, ratedAt? }`
-- الحالات: pending, confirmed, processing, ready_to_ship, shipped, out_for_delivery, delivered, completed, cancelled, refunded, returned, payment_failed
+## 🏗️ الهيكل الموحد
 
-## CheckoutService (أبرز الوظائف)
-- المستخدم:
-  - `preview(userId, currency)`: معاينة الأسعار من سلة المستخدم
-  - `confirm(userId, currency, method, provider?, addressId?)`: إنشاء الطلب ومعالجة الحجز/الدفع
-  - `handleWebhook(intentId, status, amount, signature)`: إتمام/فشل الدفع وتحديث المخزون والحجوزات
-  - `getUserOrders(userId, page?, limit?, status?)`: قائمة طلبات المستخدم مع ترقيم
-  - `getOrderDetails(orderId, userId?)`: تفاصيل الطلب (يمكن تمرير userId للتقييد)
-  - `cancelOrder(orderId, userId, reason)`: إلغاء الطلب إن كان مسموحاً
-  - `createOrder(dto, userId)`: مسار مساعد يبني على confirm وفق DTO
-- الإدارة:
-  - `getAllOrders(page?, limit?, status?, search?)`: بحث وترقيم للطلبات
-  - `updateOrderStatus(orderId, newStatus, adminId, notes?)`
-  - `shipOrder(orderId, dto, adminId)`
-  - `processRefund(orderId, dto, adminId)`
+```
+checkout/
+├── schemas/
+│   ├── order.schema.ts          # Schema موحد للطلبات
+│   ├── inventory.schema.ts      # إدارة المخزون
+│   ├── reservation.schema.ts    # حجز المنتجات
+│   └── inventory-ledger.schema.ts # سجل المخزون
+├── services/
+│   └── order.service.ts          # خدمة موحدة للطلبات
+├── controllers/
+│   ├── order.controller.ts       # Controller للعملاء
+│   ├── admin-order.controller.ts # Controller للإدارة
+│   └── webhook.controller.ts     # Controller للـ Webhooks
+├── dto/
+│   └── order.dto.ts             # DTOs موحدة
+├── utils/
+│   └── order-state-machine.ts   # State Machine للطلبات
+└── checkout.module.ts           # Module موحد
+```
 
-## OrdersService (أبرز الوظائف)
-- `getOrderTracking(orderId, userId)`: تتبع الطلب وخط الزمن
-- `rateOrder(orderId, userId, dto)`: تقييم الطلب (يضبط metadata.rating/review)
-- `addAdminNotes(orderId, notes, adminId)`: إضافة ملاحظات إدارية
-- إحصاءات المستخدم: `getOrderStatistics(userId)`
-- تحليلات الإدارة: `getAdminAnalytics(days)`
+## 🔄 حالات الطلبات (OrderStatus)
 
-## نقاط النهاية (مختصر)
-- المستخدم (`orders.controller.ts`):
-  - POST `orders/create` (CheckoutConfirmDto)
-  - GET `orders` (ListOrdersDto: page/limit/status)
-  - GET `orders/:id`
-  - GET `orders/:id/track`
-  - POST `orders/:id/cancel` (CancelOrderDto)
-  - POST `orders/:id/rate` (RateOrderDto)
-  - GET `orders/stats/summary`
-- الإدارة (`admin-orders.controller.ts`):
-  - GET `admin/orders` (ListOrdersDto)
-  - GET `admin/orders/:id`
-  - PATCH `admin/orders/:id/status` (UpdateOrderStatusDto)
-  - POST `admin/orders/:id/ship` (ShipOrderDto)
-  - POST `admin/orders/:id/refund` (RefundOrderDto)
-  - POST `admin/orders/:id/notes` ({ notes })
+### مراحل الإنشاء
+- `DRAFT` - مسودة
+- `PENDING_PAYMENT` - في انتظار الدفع
 
-## تكاملات
-- المخزون والحجوزات: عند الإنشاء/الدفع/الإلغاء يتم حجز/تثبيت/تحرير الكميات وتسجيل قيود `InventoryLedger`.
-- القسائم: عبر `CouponsService` للتحقق والتطبيق وتحديث الإحصائيات.
-- الأمن: معظم نقاط المستخدم محمية بـ `JwtAuthGuard`؛ نقاط الإدارة محمية أيضاً بحارس الأدوار.
+### مراحل التأكيد
+- `CONFIRMED` - مؤكد
+- `PAYMENT_FAILED` - فشل الدفع
+
+### مراحل التنفيذ
+- `PROCESSING` - قيد المعالجة
+- `READY_TO_SHIP` - جاهز للشحن
+- `SHIPPED` - تم الشحن
+- `OUT_FOR_DELIVERY` - جاري التوصيل
+
+### مراحل التسليم
+- `DELIVERED` - تم التسليم
+- `COMPLETED` - مكتمل
+
+### حالات خاصة
+- `ON_HOLD` - معلق
+- `CANCELLED` - ملغي
+- `REFUNDED` - مسترد
+- `PARTIALLY_REFUNDED` - مسترد جزئياً
+- `RETURNED` - مرتجع
+
+## 💳 حالات الدفع (PaymentStatus)
+
+- `PENDING` - في الانتظار
+- `AUTHORIZED` - مخول
+- `PAID` - مدفوع
+- `FAILED` - فشل
+- `REFUNDED` - مسترد
+- `PARTIALLY_REFUNDED` - مسترد جزئياً
+- `CANCELLED` - ملغي
+
+## 🚚 طرق الشحن (ShippingMethod)
+
+- `STANDARD` - عادي
+- `EXPRESS` - سريع
+- `SAME_DAY` - نفس اليوم
+- `PICKUP` - استلام شخصي
+
+## 💰 طرق الدفع (PaymentMethod)
+
+- `COD` - الدفع عند الاستلام
+- `ONLINE` - دفع إلكتروني
+- `WALLET` - محفظة إلكترونية
+- `BANK_TRANSFER` - تحويل بنكي
+
+## 🔧 State Machine
+
+نظام إدارة حالات متقدم يضمن:
+- انتقالات صحيحة بين الحالات
+- التحقق من الصلاحيات
+- منع الانتقالات غير المسموحة
+- تتبع تاريخ التغييرات
+
+### مثال على الاستخدام:
+
+```typescript
+import { OrderStateMachine } from './utils/order-state-machine';
+
+// التحقق من إمكانية الانتقال
+const canTransition = OrderStateMachine.canTransition(
+  OrderStatus.PENDING_PAYMENT, 
+  OrderStatus.CONFIRMED
+);
+
+// الحصول على الحالات التالية
+const nextStates = OrderStateMachine.getNextStates(OrderStatus.PROCESSING);
+
+// التحقق من إمكانية الإلغاء
+const canCancel = OrderStateMachine.canCancel(OrderStatus.CONFIRMED);
+```
+
+## 📡 API Endpoints
+
+### للعملاء (`/orders`)
+
+#### Checkout
+- `POST /orders/checkout/preview` - معاينة الطلب
+- `POST /orders/checkout/confirm` - تأكيد الطلب
+
+#### إدارة الطلبات
+- `GET /orders` - قائمة الطلبات
+- `GET /orders/recent` - الطلبات الأخيرة
+- `GET /orders/:id` - تفاصيل الطلب
+- `GET /orders/:id/track` - تتبع الطلب
+- `POST /orders/:id/cancel` - إلغاء الطلب
+- `POST /orders/:id/rate` - تقييم الطلب
+- `POST /orders/:id/notes` - إضافة ملاحظات
+
+#### الإحصائيات
+- `GET /orders/stats/summary` - إحصائيات المستخدم
+
+### للإدارة (`/admin/orders`)
+
+#### إدارة الطلبات
+- `GET /admin/orders` - جميع الطلبات
+- `GET /admin/orders/:id` - تفاصيل الطلب
+- `PATCH /admin/orders/:id/status` - تحديث الحالة
+- `POST /admin/orders/:id/ship` - شحن الطلب
+- `POST /admin/orders/:id/refund` - معالجة الاسترداد
+- `POST /admin/orders/:id/notes` - ملاحظات إدارية
+
+#### العمليات المجمعة
+- `POST /admin/orders/bulk/update-status` - تحديث عدة طلبات
+
+#### التحليلات
+- `GET /admin/orders/analytics/summary` - تحليلات شاملة
+- `GET /admin/orders/analytics/revenue` - تحليل الإيرادات
+- `GET /admin/orders/analytics/performance` - تحليل الأداء
+
+#### التقارير
+- `GET /admin/orders/reports/orders` - تقرير الطلبات
+- `GET /admin/orders/reports/financial` - التقرير المالي
+
+### Webhooks (`/webhooks`)
+
+- `POST /webhooks/payment` - إشعارات الدفع
+- `POST /webhooks/shipping` - إشعارات الشحن
+- `POST /webhooks/inventory` - إشعارات المخزون
+
+## 📊 الميزات المتقدمة
+
+### 1. تتبع الطلبات
+- خط زمني تفاعلي
+- تحديثات في الوقت الفعلي
+- إشعارات تلقائية
+
+### 2. إدارة المخزون
+- حجز تلقائي للمنتجات
+- تتبع المخزون المتاح
+- تنبيهات نفاد المخزون
+
+### 3. التحليلات المتقدمة
+- إحصائيات شاملة
+- تحليل الإيرادات
+- تقارير الأداء
+- تحليل سلوك العملاء
+
+### 4. الأمان
+- تشفير البيانات الحساسة
+- التحقق من التوقيعات
+- تسجيل جميع العمليات
+
+## 🔧 التكوين
+
+### متغيرات البيئة المطلوبة:
+
+```env
+# إعدادات الحجز
+RESERVATION_TTL_SECONDS=900
+
+# مفتاح توقيع الدفع
+PAYMENT_SIGNING_KEY=your_signing_key
+
+# إعدادات قاعدة البيانات
+MONGODB_URI=mongodb://localhost:27017/tagadodo
+```
+
+## 🚀 الاستخدام
+
+### 1. استيراد الـ Module:
+
+```typescript
+import { CheckoutModule } from './modules/checkout/checkout.module';
+
+@Module({
+  imports: [CheckoutModule],
+})
+export class AppModule {}
+```
+
+### 2. استخدام الخدمة:
+
+```typescript
+import { OrderService } from './modules/checkout/services/order.service';
+
+@Injectable()
+export class MyService {
+  constructor(private orderService: OrderService) {}
+
+  async createOrder(dto: CreateOrderDto) {
+    return this.orderService.confirmCheckout(userId, dto);
+  }
+}
+```
+
+## 📈 الأداء
+
+### فهارس قاعدة البيانات المحسنة:
+- فهرس رقم الطلب (فريد)
+- فهرس المستخدم والحالة
+- فهرس تاريخ الإنشاء
+- فهرس رقم التتبع
+- فهرس المدينة والحالة
+
+### تحسينات الأداء:
+- استعلامات محسنة
+- تجميع البيانات
+- تخزين مؤقت للنتائج
+- معالجة متوازية
+
+## 🔒 الأمان
+
+### حماية البيانات:
+- تشفير البيانات الحساسة
+- التحقق من الصلاحيات
+- تسجيل العمليات
+- حماية من SQL Injection
+
+### التحقق من التوقيعات:
+- HMAC للـ Webhooks
+- التحقق من المصدر
+- منع التلاعب
+
+## 🧪 الاختبار
+
+### اختبارات الوحدة:
+```bash
+npm run test:unit
+```
+
+### اختبارات التكامل:
+```bash
+npm run test:e2e
+```
+
+### اختبارات الأداء:
+```bash
+npm run test:performance
+```
+
+## 📝 السجلات
+
+### أنواع السجلات:
+- سجل العمليات
+- سجل الأخطاء
+- سجل الأداء
+- سجل الأمان
+
+### مستويات السجلات:
+- `ERROR` - أخطاء
+- `WARN` - تحذيرات
+- `INFO` - معلومات
+- `DEBUG` - تفاصيل
+
+## 🔄 التحديثات
+
+### إصدار 1.0.0:
+- نظام موحد للطلبات
+- State Machine متقدم
+- API موحدة
+- تحليلات شاملة
+
+### الميزات المستقبلية:
+- دعم العملات المتعددة
+- تكامل مع أنظمة الشحن
+- ذكاء اصطناعي للتنبؤات
+- تطبيق جوال
+
+## 📞 الدعم
+
+للحصول على الدعم أو الإبلاغ عن مشاكل:
+- إنشاء Issue في GitHub
+- التواصل عبر البريد الإلكتروني
+- مراجعة الوثائق
+
+## 📄 الترخيص
+
+هذا المشروع مرخص تحت رخصة MIT.

@@ -22,9 +22,6 @@ import {
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
-  Home as HomeIcon,
-  Dashboard as DashboardIcon,
-  Settings as SettingsIcon,
   AccountCircle as AccountIcon,
   Language as LanguageIcon,
   Accessibility as AccessibilityIcon,
@@ -47,8 +44,10 @@ interface NavigationItem {
 interface AccessibleNavigationProps {
   title: string;
   items: NavigationItem[];
+  // eslint-disable-next-line no-unused-vars
   onItemClick?: (item: NavigationItem) => void;
   userMenuItems?: NavigationItem[];
+  // eslint-disable-next-line no-unused-vars
   onUserMenuClick?: (item: NavigationItem) => void;
   showAccessibilitySettings?: boolean;
   onAccessibilitySettingsClick?: () => void;
@@ -65,26 +64,18 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { useKeyboardNavigation, useSkipLink } = useAccessibility();
-  const { isRTL, getTextAlign, getFlexDirection } = useRTL();
+  const { useSkipLink } = useAccessibility();
+  const { isRTL, getTextAlign } = useRTL();
   const { toggleDirection, toggleMode, mode } = useThemeStore();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
   const [accessibilityMenuAnchor, setAccessibilityMenuAnchor] = useState<null | HTMLElement>(null);
-  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   const drawerRef = useRef<HTMLDivElement>(null);
-  const navigationRef = useRef<HTMLElement>(null);
 
   // Skip link functionality
   const { handleSkip } = useSkipLink('main-content');
-
-  // Keyboard navigation for menu items
-  const { currentIndex, handleKeyDown } = useKeyboardNavigation(
-    items.map((_, index) => document.getElementById(`nav-item-${index}`)).filter(Boolean) as HTMLElement[],
-    'vertical'
-  );
 
   // Handle mobile drawer toggle
   const handleDrawerToggle = () => {
@@ -122,23 +113,6 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
 
   const handleAccessibilityMenuClose = () => {
     setAccessibilityMenuAnchor(null);
-  };
-
-  // Handle keyboard navigation
-  const handleNavigationKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      if (mobileOpen) {
-        setMobileOpen(false);
-      }
-      if (userMenuAnchor) {
-        handleUserMenuClose();
-      }
-      if (accessibilityMenuAnchor) {
-        handleAccessibilityMenuClose();
-      }
-    }
-    
-    handleKeyDown(event as any);
   };
 
   // Focus management
@@ -230,7 +204,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
         <>
           <Divider />
           <List component="nav">
-            {userMenuItems.map((item, index) => (
+            {userMenuItems.map((item) => (
               <ListItem key={item.id} disablePadding>
                 <ListItemButton
                   onClick={() => {
@@ -273,7 +247,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
       {/* Skip link */}
       <Button
         className="skip-link"
-        onClick={handleSkip}
+        onClick={() => handleSkip({} as React.KeyboardEvent)}
         onKeyDown={handleSkip}
         sx={{
           position: 'absolute',

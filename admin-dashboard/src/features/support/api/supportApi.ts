@@ -3,6 +3,7 @@ import type {
   SupportTicket,
   SupportMessage,
   ListTicketsParams,
+  CreateSupportTicketDto,
   UpdateSupportTicketDto,
   AddSupportMessageDto,
   SupportStats,
@@ -10,6 +11,17 @@ import type {
 import type { PaginatedResponse } from '@/shared/types/common.types';
 
 export const supportApi = {
+  /**
+   * Create new support ticket
+   */
+  create: async (data: CreateSupportTicketDto): Promise<SupportTicket> => {
+    const response = await apiClient.post<{ data: SupportTicket }>(
+      '/support/tickets',
+      data
+    );
+    return response.data.data;
+  },
+
   /**
    * List tickets
    */

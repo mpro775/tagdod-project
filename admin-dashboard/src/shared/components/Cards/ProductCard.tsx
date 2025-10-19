@@ -23,14 +23,18 @@ import {
   Category,
   Store,
 } from '@mui/icons-material';
-import { Product } from '@/features/products/types/product.types';
+import { Product, ProductStatus } from '@/features/products/types/product.types';
 import { STATUS_COLORS } from '@/config/constants';
 
 interface ProductCardProps {
   product: Product;
+  // eslint-disable-next-line no-unused-vars
   onEdit?: (product: Product) => void;
+  // eslint-disable-next-line no-unused-vars
   onDelete?: (product: Product) => void;
+  // eslint-disable-next-line no-unused-vars
   onView?: (product: Product) => void;
+  // eslint-disable-next-line no-unused-vars
   onToggleStatus?: (product: Product) => void;
   showActions?: boolean;
 }
@@ -54,6 +58,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     setAnchorEl(null);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleAction = (action: (product: Product) => void) => {
     action(product);
     handleMenuClose();
@@ -66,15 +71,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }).format(price);
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ar-SA', {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('ar-SA', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: ProductStatus | string) => {
     return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'default';
   };
 
@@ -84,7 +90,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Header with Image and Status */}
         <Box sx={{ display: 'flex', mb: 2 }}>
           <Avatar
-            src={product.images?.[0]?.url}
+            src={product.images?.[0] || product.mainImage}
             variant="rounded"
             sx={{ width: 80, height: 80, mr: 2 }}
           >
@@ -99,15 +105,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {product.sku || 'بدون كود'}
             </Typography>
             
-            {product.rating && (
+            {product.averageRating && product.averageRating > 0 && (
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 <Rating 
-                  value={product.rating} 
+                  value={product.averageRating} 
                   size="small" 
                   readOnly 
                 />
                 <Typography variant="caption" sx={{ ml: 1 }}>
-                  ({product.reviewCount || 0})
+                  ({product.reviewsCount || 0})
                 </Typography>
               </Box>
             )}
@@ -129,15 +135,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary">
-              السعر: {formatPrice(product.price)}
+              السعر: {product.variants && product.variants.length > 0 
+                ? formatPrice(product.variants[0].price)
+                : 'غير محدد'
+              }
             </Typography>
-            {product.comparePrice && (
+            {product.variants && product.variants.length > 0 && product.variants[0].compareAtPrice && (
               <Typography 
                 variant="body2" 
                 color="text.disabled" 
                 sx={{ textDecoration: 'line-through', ml: 1 }}
               >
-                {formatPrice(product.comparePrice)}
+                {formatPrice(product.variants[0].compareAtPrice)}
               </Typography>
             )}
           </Box>
@@ -145,7 +154,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Inventory sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary">
-              المخزون: {product.stock || 0} وحدة
+              المخزون: {product.variants && product.variants.length > 0 
+                ? product.variants.reduce((total, variant) => total + variant.stock, 0)
+                : 0
+              } وحدة
             </Typography>
           </Box>
 
@@ -172,25 +184,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
           <Chip
             label={product.status || 'غير محدد'}
-            color={getStatusColor(product.status || 'inactive') as any}
+            color={getStatusColor(product.status || ProductStatus.DRAFT) as any}
             size="small"
             variant="outlined"
           />
           
-          {product.tags && product.tags.length > 0 && (
-            product.tags.slice(0, 2).map((tag) => (
+          {product.attributes && product.attributes.length > 0 && (
+            product.attributes.slice(0, 2).map((attribute: string) => (
               <Chip
-                key={tag}
-                label={tag}
+                key={attribute}
+                label={attribute}
                 size="small"
                 variant="outlined"
               />
             ))
           )}
           
-          {product.tags && product.tags.length > 2 && (
+          {product.attributes && product.attributes.length > 2 && (
             <Chip
-              label={`+${product.tags.length - 2}`}
+              label={`+${product.attributes.length - 2}`}
               size="small"
               variant="outlined"
             />
@@ -232,10 +244,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {onToggleStatus && (
             <Button
               size="small"
-              color={product.status === 'active' ? 'warning' : 'success'}
+              color={product.isActive ? 'warning' : 'success'}
               onClick={() => handleAction(onToggleStatus)}
             >
-              {product.status === 'active' ? 'إيقاف' : 'تفعيل'}
+              {product.isActive ? 'إيقاف' : 'تفعيل'}
             </Button>
           )}
         </CardActions>
@@ -270,8 +282,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {onToggleStatus && (
           <MenuItem onClick={() => handleAction(onToggleStatus)}>
             <Chip
-              label={product.status === 'active' ? 'إيقاف' : 'تفعيل'}
-              color={product.status === 'active' ? 'warning' : 'success'}
+              label={product.isActive ? 'إيقاف' : 'تفعيل'}
+              color={product.isActive ? 'warning' : 'success'}
               size="small"
               sx={{ mr: 1 }}
             />

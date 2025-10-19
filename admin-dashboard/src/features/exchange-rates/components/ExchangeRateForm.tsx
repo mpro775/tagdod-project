@@ -85,10 +85,11 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="from-currency" className="block text-sm font-medium text-gray-700 mb-1">
               العملة المصدر
             </label>
             <select
+              id="from-currency"
               value={formData.fromCurrency}
               onChange={(e) => handleChange('fromCurrency', e.target.value as Currency)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -101,10 +102,11 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="to-currency" className="block text-sm font-medium text-gray-700 mb-1">
               العملة الهدف
             </label>
             <select
+              id="to-currency"
               value={formData.toCurrency}
               onChange={(e) => handleChange('toCurrency', e.target.value as Currency)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -118,10 +120,11 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="rate-input" className="block text-sm font-medium text-gray-700 mb-1">
             السعر
           </label>
           <input
+            id="rate-input"
             type="number"
             step="0.0001"
             min="0"
@@ -138,10 +141,11 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="effective-date" className="block text-sm font-medium text-gray-700 mb-1">
               تاريخ البداية (اختياري)
             </label>
             <input
+              id="effective-date"
               type="date"
               value={formData.effectiveDate}
               onChange={(e) => handleChange('effectiveDate', e.target.value)}
@@ -150,10 +154,11 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="expiry-date" className="block text-sm font-medium text-gray-700 mb-1">
               تاريخ النهاية (اختياري)
             </label>
             <input
+              id="expiry-date"
               type="date"
               value={formData.expiryDate}
               onChange={(e) => handleChange('expiryDate', e.target.value)}
@@ -163,10 +168,11 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="notes-textarea" className="block text-sm font-medium text-gray-700 mb-1">
             ملاحظات (اختياري)
           </label>
           <textarea
+            id="notes-textarea"
             value={formData.notes}
             onChange={(e) => handleChange('notes', e.target.value)}
             rows={3}

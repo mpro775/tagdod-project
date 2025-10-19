@@ -18,7 +18,7 @@ import { Save, Cancel } from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
 import { ImageField } from '@/features/media';
-import { useProduct, useCreateProduct, useUpdateProduct } from '../hooks/useProducts';
+import { useProduct, useCreateProduct, useUpdateProduct, useGenerateVariants } from '../hooks/useProducts';
 import { useProductFormData } from '../hooks/useProductData';
 import { AttributeSelector } from '../components/AttributeSelector';
 import { MultipleImagesSelector } from '../components/MultipleImagesSelector';
@@ -82,7 +82,42 @@ export const ProductFormPage: React.FC = () => {
   const { data: product, isLoading } = useProduct(id!);
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
+  const { mutateAsync: generateVariants, isPending: isGeneratingVariants } = useGenerateVariants();
   const { categoryOptions, brandOptions, isLoading: dataLoading } = useProductFormData();
+
+  // Generate variants handler
+  const handleGenerateVariants = async () => {
+    if (!isEditMode || !id) {
+      alert('يجب حفظ المنتج أولاً قبل توليد المتغيرات');
+      return;
+    }
+
+    if (selectedAttributes.length === 0) {
+      alert('يجب اختيار سمات واحدة على الأقل لتوليد المتغيرات');
+      return;
+    }
+
+    if (defaultPrice <= 0 || defaultStock <= 0) {
+      alert('يجب إدخال سعر وكمية افتراضية صحيحة');
+      return;
+    }
+
+    try {
+      await generateVariants({
+        productId: id,
+        data: {
+          defaultPrice,
+          defaultStock,
+          overwriteExisting: false, // لا نريد الكتابة فوق المتغيرات الموجودة
+        },
+      });
+
+      alert('تم توليد المتغيرات بنجاح! يمكنك الآن عرضها في صفحة المتغيرات.');
+    } catch {
+      // الخطأ سيتم التعامل معه تلقائياً بواسطة ErrorHandler في الـ hook
+      // لا نحتاج لمعالجة إضافية هنا
+    }
+  };
 
   // Load product data in edit mode
   useEffect(() => {
@@ -415,15 +450,14 @@ export const ProductFormPage: React.FC = () => {
                     <Button
                       variant="outlined"
                       size="small"
-                      disabled={defaultPrice <= 0 || defaultStock <= 0}
+                      disabled={defaultPrice <= 0 || defaultStock <= 0 || isGeneratingVariants}
                       onClick={() => {
                         if (window.confirm(`هل تريد توليد متغيرات تلقائياً للسعر ${defaultPrice} ريال والكمية ${defaultStock}؟`)) {
-                          // TODO: Implement generate variants from form
-                          alert('سيتم تنفيذ هذه الميزة قريباً!');
+                          handleGenerateVariants();
                         }
                       }}
                     >
-                      توليد المتغيرات
+                      {isGeneratingVariants ? 'جاري التوليد...' : 'توليد المتغيرات'}
                     </Button>
                   </Box>
                 </Grid>

@@ -75,6 +75,10 @@ export class Media {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   deletedBy?: string;
+
+  // Timestamps (automatically added by Mongoose)
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const MediaSchema = SchemaFactory.createForClass(Media);

@@ -17,6 +17,10 @@ export const useServices = (params: ListServicesParams = {}) => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'list', params],
     queryFn: () => servicesApi.list(params),
+    select: (data) => ({
+      data: data.data,
+      meta: data.meta,
+    }),
   });
 };
 
@@ -109,10 +113,21 @@ export const useRevenueStatistics = (params: RevenueStatisticsParams) => {
 };
 
 // === إدارة المهندسين ===
+export const useEngineersOverviewStatistics = () => {
+  return useQuery({
+    queryKey: [SERVICES_KEY, 'engineers-overview-stats'],
+    queryFn: () => servicesApi.getEngineersOverviewStatistics(),
+  });
+};
+
 export const useEngineers = (params: ListEngineersParams = {}) => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'engineers', params],
     queryFn: () => servicesApi.getEngineersList(params),
+    select: (data) => ({
+      data: data.data,
+      meta: data.meta,
+    }),
   });
 };
 
@@ -132,13 +147,28 @@ export const useEngineerOffers = (
     queryKey: [SERVICES_KEY, 'engineer', 'offers', id, params],
     queryFn: () => servicesApi.getEngineerOffers(id, params),
     enabled: !!id,
+    select: (data) => ({
+      data: data.data,
+      meta: data.meta,
+    }),
   });
 };
 
 // === إدارة العروض ===
+export const useOffersStatistics = (params?: { dateFrom?: string; dateTo?: string }) => {
+  return useQuery({
+    queryKey: [SERVICES_KEY, 'offers-statistics', params],
+    queryFn: () => servicesApi.getOffersStatistics(params),
+  });
+};
+
 export const useOffers = (params: ListOffersParams = {}) => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'offers', params],
     queryFn: () => servicesApi.getOffersList(params),
+    select: (data) => ({
+      data: data.data,
+      meta: data.meta,
+    }),
   });
 };

@@ -83,7 +83,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
     groupBy: dateRange.groupBy,
   });
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
@@ -128,7 +128,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
             فلترة التاريخ
           </Typography>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
                 <InputLabel>من تاريخ</InputLabel>
                 <Select
@@ -144,7 +144,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
               </FormControl>
             </Grid>
             
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
                 <InputLabel>إلى تاريخ</InputLabel>
                 <Select
@@ -182,7 +182,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
           ) : (
             <Grid container spacing={3}>
               {requestsStats?.map((stat, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
+                <Grid  size={{ xs: 12, sm: 6, md: 4 }} key={index}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
@@ -225,8 +225,8 @@ export const ServicesAnalyticsPage: React.FC = () => {
             <Typography>جاري تحميل البيانات...</Typography>
           ) : (
             <Grid container spacing={3}>
-              {engineersStats?.map((engineer, index) => (
-                <Grid item xs={12} sm={6} md={4} key={engineer.engineerId}>
+              {engineersStats?.map((engineer) => (
+                <Grid  size={{ xs: 12, sm: 6, md: 4 }} key={engineer.engineerId}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
@@ -237,25 +237,25 @@ export const ServicesAnalyticsPage: React.FC = () => {
                       </Typography>
                       
                       <Grid container spacing={2} mt={1}>
-                        <Grid item xs={6}>
+                        <Grid  size={{ xs: 6 }}>
                           <Typography variant="h4" color="primary">
                             {engineer.totalRequests}
                           </Typography>
                           <Typography variant="caption">طلبات</Typography>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid  size={{ xs: 6 }}>
                           <Typography variant="h4" color="success.main">
                             {engineer.completionRate.toFixed(1)}%
                           </Typography>
                           <Typography variant="caption">معدل الإنجاز</Typography>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid  size={{ xs: 6 }}>
                           <Typography variant="h4" color="warning.main">
                             {engineer.averageRating.toFixed(1)}
                           </Typography>
                           <Typography variant="caption">التقييم</Typography>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid  size={{ xs: 6 }}>
                           <Typography variant="h4" color="info.main">
                             {engineer.totalRevenue.toLocaleString()}
                           </Typography>
@@ -280,7 +280,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
           ) : (
             <Grid container spacing={3}>
               {serviceTypesStats?.map((serviceType, index) => (
-                <Grid item xs={12} sm={6} md={4} key={serviceType._id || index}>
+                <Grid  size={{ xs: 12, sm: 6, md: 4 }} key={serviceType._id || index}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
@@ -325,7 +325,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
           ) : (
             <Grid container spacing={3}>
               {revenueStats?.map((revenue, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
+                <Grid  size={{ xs: 12, sm: 6, md: 4 }} key={index}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>

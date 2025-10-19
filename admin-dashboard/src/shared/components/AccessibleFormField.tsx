@@ -1,19 +1,11 @@
-import React, { forwardRef, useState } from 'react';
+import React, { forwardRef } from 'react';
 import {
   TextField,
   TextFieldProps,
   FormControl,
-  FormLabel,
-  FormHelperText,
   FormControlLabel,
   Checkbox,
   Switch,
-  Radio,
-  RadioGroup,
-  Select,
-  MenuItem,
-  InputLabel,
-  Box,
   Typography,
 } from '@mui/material';
 import { useAccessibility } from '@/shared/hooks/useAccessibility';
@@ -34,8 +26,11 @@ interface AccessibleFormFieldProps extends Omit<TextFieldProps, 'error'> {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
   placeholder?: string;
   value?: string | number;
+  // eslint-disable-next-line no-unused-vars
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  // eslint-disable-next-line no-unused-vars
   onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
+  // eslint-disable-next-line no-unused-vars
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
 }
 
@@ -66,9 +61,6 @@ export const AccessibleFormField = forwardRef<HTMLDivElement, AccessibleFormFiel
   ) => {
     const { useFormFieldAccessibility } = useAccessibility();
     const { isRTL, getTextAlign } = useRTL();
-    
-    const [isFocused, setIsFocused] = useState(false);
-    const [hasBeenTouched, setHasBeenTouched] = useState(false);
 
     // Generate unique ID if not provided
     const fieldId = id || `field-${Math.random().toString(36).substr(2, 9)}`;
@@ -77,8 +69,6 @@ export const AccessibleFormField = forwardRef<HTMLDivElement, AccessibleFormFiel
 
     // Get accessibility props
     const {
-      isFocused: accessibilityFocused,
-      hasBeenTouched: accessibilityTouched,
       handleFocus: accessibilityHandleFocus,
       handleBlur: accessibilityHandleBlur,
       getAriaProps,
@@ -87,7 +77,6 @@ export const AccessibleFormField = forwardRef<HTMLDivElement, AccessibleFormFiel
 
     // Handle focus
     const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(true);
       accessibilityHandleFocus();
       if (onFocus) {
         onFocus(event);
@@ -96,8 +85,6 @@ export const AccessibleFormField = forwardRef<HTMLDivElement, AccessibleFormFiel
 
     // Handle blur
     const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(false);
-      setHasBeenTouched(true);
       accessibilityHandleBlur();
       if (onBlur) {
         onBlur(event);
@@ -158,12 +145,10 @@ export const AccessibleFormField = forwardRef<HTMLDivElement, AccessibleFormFiel
           FormHelperTextProps={getHelperTextProps()}
           InputProps={{
             readOnly,
-            'aria-describedby': [
-              description ? descriptionId : '',
-              error && errorMessage ? errorId : '',
-              helperText && !error ? `${fieldId}-helper` : '',
-            ].filter(Boolean).join(' ') || undefined,
-            'aria-invalid': error,
+            ...(description ? { 'aria-describedby': descriptionId } : {}),
+            ...(error && errorMessage ? { 'aria-describedby': errorId } : {}),
+            ...(helperText && !error ? { 'aria-describedby': `${fieldId}-helper` } : {}),
+            ...(error ? { 'aria-invalid': true } : {}),
             'aria-required': required,
             ...ariaProps,
           }}
@@ -184,18 +169,14 @@ export const AccessibleFormField = forwardRef<HTMLDivElement, AccessibleFormFiel
           }}
           {...props}
         />
-        
+
         {/* Hidden description for screen readers */}
         {description && (
-          <Typography
-            id={descriptionId}
-            variant="caption"
-            className="sr-only"
-          >
+          <Typography id={descriptionId} variant="caption" className="sr-only">
             {description}
           </Typography>
         )}
-        
+
         {/* Error message for screen readers */}
         {error && errorMessage && (
           <Typography
@@ -209,14 +190,10 @@ export const AccessibleFormField = forwardRef<HTMLDivElement, AccessibleFormFiel
             {errorMessage}
           </Typography>
         )}
-        
+
         {/* Helper text for screen readers */}
         {helperText && !error && (
-          <Typography
-            id={`${fieldId}-helper`}
-            variant="caption"
-            className="sr-only"
-          >
+          <Typography id={`${fieldId}-helper`} variant="caption" className="sr-only">
             {helperText}
           </Typography>
         )}
@@ -231,6 +208,7 @@ AccessibleFormField.displayName = 'AccessibleFormField';
 interface AccessibleCheckboxProps {
   label: string;
   checked: boolean;
+  // eslint-disable-next-line no-unused-vars
   onChange: (checked: boolean) => void;
   disabled?: boolean;
   required?: boolean;
@@ -280,6 +258,7 @@ export const AccessibleCheckbox: React.FC<AccessibleCheckboxProps> = ({
 interface AccessibleSwitchProps {
   label: string;
   checked: boolean;
+  // eslint-disable-next-line no-unused-vars
   onChange: (checked: boolean) => void;
   disabled?: boolean;
   description?: string;

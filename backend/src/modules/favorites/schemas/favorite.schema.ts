@@ -26,9 +26,6 @@ export class Favorite {
   @Prop({ default: '' })
   note?: string; // ملاحظة خاصة (مثل: "هدية لأحمد")
 
-  @Prop({ type: [String], default: [] })
-  tags?: string[]; // وسوم (مثل: ["هدايا", "أولوية عالية"])
-
   // الإحصائيات
   @Prop({ default: 0 })
   viewsCount!: number; // عدد مرات فتح المفضلة من القائمة

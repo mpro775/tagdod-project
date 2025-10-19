@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
-import { AddCircleOutline, Refresh } from '@mui/icons-material';
+import { AddCircleOutline } from '@mui/icons-material';
 import { EmptyProps } from './types';
 
 export const Empty: React.FC<EmptyProps> = ({

@@ -2,17 +2,25 @@ import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
 // User Role - متطابق مع الباك إند
 export enum UserRole {
+  // eslint-disable-next-line no-unused-vars
   USER = 'user',
+  // eslint-disable-next-line no-unused-vars
   ADMIN = 'admin',
+  // eslint-disable-next-line no-unused-vars
   SUPER_ADMIN = 'super_admin',
+  // eslint-disable-next-line no-unused-vars
   MERCHANT = 'merchant',
+  // eslint-disable-next-line no-unused-vars
   ENGINEER = 'engineer',
 }
 
 // User Status - متطابق مع الباك إند
 export enum UserStatus {
+  // eslint-disable-next-line no-unused-vars
   ACTIVE = 'active',
+  // eslint-disable-next-line no-unused-vars
   SUSPENDED = 'suspended',
+  // eslint-disable-next-line no-unused-vars
   PENDING = 'pending',
 }
 

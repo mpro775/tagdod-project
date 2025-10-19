@@ -2,6 +2,7 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { RateLimitingService } from './rate-limiting.service';
 import { CORSService } from './cors.service';
+import { ClientIPService } from './services/client-ip.service';
 import { RateLimitingMiddleware } from './rate-limiting.middleware';
 import { SecurityHeadersMiddleware } from './security-headers.middleware';
 import { ThreatDetectionMiddleware } from './threat-detection.middleware';
@@ -17,6 +18,7 @@ import { DeviceFingerprintGuard } from './guards/device-fingerprint.guard';
   providers: [
     RateLimitingService,
     CORSService,
+    ClientIPService,
     SecurityLoggingInterceptor,
     RequestMetricsInterceptor,
     IPWhitelistGuard,
@@ -25,6 +27,7 @@ import { DeviceFingerprintGuard } from './guards/device-fingerprint.guard';
   exports: [
     RateLimitingService,
     CORSService,
+    ClientIPService,
     SecurityLoggingInterceptor,
     RequestMetricsInterceptor,
     IPWhitelistGuard,

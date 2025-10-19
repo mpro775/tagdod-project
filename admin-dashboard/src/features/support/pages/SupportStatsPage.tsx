@@ -7,11 +7,10 @@ import {
   CheckCircle, 
   Error, 
   Warning,
-  People,
-  Chat
+
 } from '@mui/icons-material';
 import { useSupportStats } from '../hooks/useSupport';
-import { SupportCategory, SupportPriority, SupportStatus } from '../types/support.types';
+import { SupportCategory, SupportPriority } from '../types/support.types';
 
 interface StatsCardProps {
   title: string;
@@ -64,13 +63,6 @@ const priorityLabels: Record<SupportPriority, string> = {
   urgent: 'عاجلة',
 };
 
-const statusLabels: Record<SupportStatus, string> = {
-  open: 'مفتوحة',
-  in_progress: 'قيد المعالجة',
-  waiting_for_user: 'انتظار العميل',
-  resolved: 'محلولة',
-  closed: 'مغلقة',
-};
 
 export const SupportStatsPage: React.FC = () => {
   const { data: stats, isLoading } = useSupportStats();
@@ -100,7 +92,6 @@ export const SupportStatsPage: React.FC = () => {
   }
 
   const totalTickets = stats.total;
-  const resolvedPercentage = totalTickets > 0 ? Math.round((stats.resolved / totalTickets) * 100) : 0;
   const slaCompliance = totalTickets > 0 ? Math.round(((totalTickets - stats.slaBreached) / totalTickets) * 100) : 100;
 
   return (

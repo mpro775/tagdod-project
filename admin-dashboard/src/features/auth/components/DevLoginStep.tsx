@@ -23,7 +23,7 @@ const devLoginSchema = z.object({
 type DevLoginFormData = z.infer<typeof devLoginSchema>;
 
 interface DevLoginStepProps {
-  onSubmit: (data: { phone: string; password: string }) => void;
+  onSubmit: (data: { phone: string; password: string }) => void; // eslint-disable-line no-unused-vars
   isLoading?: boolean;
   error?: string;
 }
@@ -85,7 +85,7 @@ export const DevLoginStep: React.FC<DevLoginStepProps> = ({
               ),
             }}
             sx={{ mb: 2, fontFamily: 'Cairo' }}
-            autoFocus
+            // autoFocus
             dir="ltr"
             disabled={isLoading}
           />

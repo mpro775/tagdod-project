@@ -22,22 +22,23 @@ import {
   Delete,
   ArrowBack,
   AutoFixHigh,
-  Visibility,
-  Inventory,
 } from '@mui/icons-material';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useProduct, useAddVariant, useUpdateVariant, useDeleteVariant, useGenerateVariants } from '../hooks/useProducts';
 import { formatCurrency } from '@/shared/utils/formatters';
-import type { Product, Variant } from '../types/product.types';
+import type { Variant, VariantAttribute } from '../types/product.types';
+import { AttributeValueSelector } from '../components/AttributeValueSelector';
 
 interface VariantFormData {
   _id?: string;
   sku?: string;
   price: number;
   compareAtPrice?: number;
+  costPrice?: number;
   stock: number;
   isActive: boolean;
   imageId?: string;
+  attributeValues: VariantAttribute[];
 }
 
 export const ProductVariantsPage: React.FC = () => {
@@ -45,7 +46,6 @@ export const ProductVariantsPage: React.FC = () => {
   const navigate = useNavigate();
   const [variantFormOpen, setVariantFormOpen] = useState(false);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const [editingVariant, setEditingVariant] = useState<VariantFormData | null>(null);
 
   // API Hooks
@@ -55,7 +55,7 @@ export const ProductVariantsPage: React.FC = () => {
   const { mutate: deleteVariant } = useDeleteVariant();
   const { mutate: generateVariants, isPending: isGenerating } = useGenerateVariants();
 
-  const product = productData?.product;
+  const product = productData;
   const variants = productData?.variants || [];
 
   // Actions
@@ -64,20 +64,22 @@ export const ProductVariantsPage: React.FC = () => {
       price: 0,
       stock: 0,
       isActive: true,
+      attributeValues: [],
     });
     setVariantFormOpen(true);
   };
 
   const handleEditVariant = (variant: Variant) => {
-    setSelectedVariant(variant);
     setEditingVariant({
       _id: variant._id,
       sku: variant.sku,
       price: variant.price,
       compareAtPrice: variant.compareAtPrice,
+      costPrice: variant.costPrice,
       stock: variant.stock,
       isActive: variant.isActive,
       imageId: variant.imageId,
+      attributeValues: variant.attributeValues || [],
     });
     setVariantFormOpen(true);
   };
@@ -108,6 +110,7 @@ export const ProductVariantsPage: React.FC = () => {
             sku: formData.sku,
             price: formData.price,
             compareAtPrice: formData.compareAtPrice,
+            costPrice: formData.costPrice,
             stock: formData.stock,
             isActive: formData.isActive,
             imageId: formData.imageId,
@@ -127,9 +130,10 @@ export const ProductVariantsPage: React.FC = () => {
         {
           productId: id!,
           sku: formData.sku,
-          attributeValues: [], // TODO: Add attribute selection
+          attributeValues: formData.attributeValues,
           price: formData.price,
           compareAtPrice: formData.compareAtPrice,
+          costPrice: formData.costPrice,
           stock: formData.stock,
           trackInventory: true,
           imageId: formData.imageId,
@@ -145,13 +149,13 @@ export const ProductVariantsPage: React.FC = () => {
     }
   };
 
-  const handleGenerateSubmit = (defaultPrice: number, defaultStock: number) => {
+  const handleGenerateSubmit = (_defaultPrice: number, _defaultStock: number) => {
     generateVariants(
       {
         productId: id!,
         data: {
-          defaultPrice,
-          defaultStock,
+          defaultPrice: _defaultPrice,
+          defaultStock: _defaultStock,
           overwriteExisting: false,
         },
       },
@@ -281,7 +285,7 @@ export const ProductVariantsPage: React.FC = () => {
       {/* Product Info */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h6" gutterBottom>
               معلومات المنتج
             </Typography>
@@ -290,7 +294,7 @@ export const ProductVariantsPage: React.FC = () => {
             <Typography><strong>الفئة:</strong> {product.category?.name || '-'}</Typography>
             <Typography><strong>العلامة التجارية:</strong> {product.brand?.name || '-'}</Typography>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h6" gutterBottom>
               إحصائيات
             </Typography>
@@ -323,12 +327,13 @@ export const ProductVariantsPage: React.FC = () => {
       {/* Variants Table */}
       <Paper>
         <DataTable
-          title="متغيرات المنتج"
           columns={columns}
           rows={variants}
           loading={isLoading}
           height="calc(100vh - 400px)"
-          hideToolbar
+          paginationModel={{ page: 0, pageSize: 10 }}
+          onPaginationModelChange={() => {}}
+          rowCount={variants.length}
         />
       </Paper>
 
@@ -360,7 +365,8 @@ export const ProductVariantsPage: React.FC = () => {
 interface VariantFormDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: VariantFormData) => void;
+  // eslint-disable-next-line no-unused-vars
+  onSubmit: (formData: VariantFormData) => void;
   variant?: VariantFormData | null;
   isSubmitting: boolean;
   productId: string;
@@ -374,10 +380,12 @@ const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
   isSubmitting,
   productId,
 }) => {
+  const { data: productData } = useProduct(productId);
   const [formData, setFormData] = useState<VariantFormData>({
     price: 0,
     stock: 0,
     isActive: true,
+    attributeValues: [],
   });
 
   React.useEffect(() => {
@@ -388,6 +396,7 @@ const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
         price: 0,
         stock: 0,
         isActive: true,
+        attributeValues: [],
       });
     }
   }, [variant]);
@@ -405,7 +414,7 @@ const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="subtitle2" gutterBottom>
                 SKU
               </Typography>
@@ -423,7 +432,7 @@ const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
               />
             </Grid>
             
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Typography variant="subtitle2" gutterBottom>
                 السعر *
               </Typography>
@@ -443,7 +452,7 @@ const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Typography variant="subtitle2" gutterBottom>
                 سعر المقارنة
               </Typography>
@@ -462,7 +471,26 @@ const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                سعر التكلفة
+              </Typography>
+              <input
+                type="number"
+                value={formData.costPrice || ''}
+                onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) || undefined })}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                }}
+                min="0"
+                step="0.01"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
               <Typography variant="subtitle2" gutterBottom>
                 المخزون *
               </Typography>
@@ -481,7 +509,7 @@ const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Typography variant="subtitle2" gutterBottom>
                 الحالة
               </Typography>
@@ -498,6 +526,14 @@ const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
                 <option value="active">نشط</option>
                 <option value="inactive">غير نشط</option>
               </select>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <AttributeValueSelector
+                value={formData.attributeValues}
+                onChange={(attributeValues) => setFormData({ ...formData, attributeValues })}
+                productAttributes={productData?.attributes || []}
+              />
             </Grid>
           </Grid>
         </DialogContent>
@@ -523,6 +559,7 @@ const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
 interface GenerateVariantsDialogProps {
   open: boolean;
   onClose: () => void;
+  // eslint-disable-next-line no-unused-vars
   onSubmit: (defaultPrice: number, defaultStock: number) => void;
   isSubmitting: boolean;
 }
@@ -551,7 +588,7 @@ const GenerateVariantsDialog: React.FC<GenerateVariantsDialogProps> = ({
           </Alert>
           
           <Grid container spacing={2}>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Typography variant="subtitle2" gutterBottom>
                 السعر الافتراضي *
               </Typography>
@@ -571,7 +608,7 @@ const GenerateVariantsDialog: React.FC<GenerateVariantsDialogProps> = ({
               />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Typography variant="subtitle2" gutterBottom>
                 المخزون الافتراضي *
               </Typography>

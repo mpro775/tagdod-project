@@ -6,9 +6,7 @@ import type {
   ListNotificationsParams, 
   CreateNotificationDto, 
   UpdateNotificationDto,
-  SendNotificationDto,
-  NotificationTemplate,
-  NotificationStats
+  SendNotificationDto
 } from '../types/notification.types';
 
 const NOTIFICATIONS_KEY = 'notifications';

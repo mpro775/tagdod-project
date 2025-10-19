@@ -23,7 +23,7 @@ const phoneSchema = z.object({
 type PhoneFormData = z.infer<typeof phoneSchema>;
 
 interface PhoneInputStepProps {
-  onSubmit: (phone: string) => void;
+  onSubmit: (phone: string) => void; // eslint-disable-line no-unused-vars
   isLoading?: boolean;
   error?: string;
 }
@@ -59,7 +59,7 @@ export const PhoneInputStep: React.FC<PhoneInputStepProps> = ({
           ),
         }}
         sx={{ mb: 3, fontFamily: 'Cairo' }}
-        autoFocus
+        // autoFocus
         dir="ltr"
         disabled={isLoading}
       />

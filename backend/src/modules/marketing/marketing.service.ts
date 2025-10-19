@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { PriceRule, PriceRuleDocument } from './schemas/price-rule.schema';
 import { Coupon, CouponDocument, CouponStatus } from './schemas/coupon.schema';
 import { Banner, BannerDocument, BannerLocation } from './schemas/banner.schema';
-import { VariantPrice, VariantPriceDocument } from '../catalog/schemas/variant-price.schema';
+import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 
 // DTOs
 import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto, PricingQueryDto } from './dto/price-rule.dto';
@@ -22,7 +22,7 @@ export class MarketingService {
     @InjectModel(PriceRule.name) private priceRuleModel: Model<PriceRuleDocument>,
     @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
     @InjectModel(Banner.name) private bannerModel: Model<BannerDocument>,
-    @InjectModel(VariantPrice.name) private variantPriceModel: Model<VariantPriceDocument>,
+    @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
   ) {}
 
   // ==================== PRICE RULES ====================
@@ -325,32 +325,18 @@ export class MarketingService {
   /**
    * Get base price for a variant in specific currency
    */
-  private async getBasePrice(variantId: string, currency: string): Promise<number | null> {
+  private async getBasePrice(variantId: string, _currency: string): Promise<number | null> {
     try {
-      const priceRecord = await this.variantPriceModel.findOne({
-        variantId,
-        currency,
-        deletedAt: null
-      }).lean();
-
-      if (!priceRecord) {
-        // Fallback to YER if requested currency not found
-        if (currency !== 'YER') {
-          const yerPrice = await this.variantPriceModel.findOne({
-            variantId,
-            currency: 'YER',
-            deletedAt: null
-          }).lean();
-          
-          if (yerPrice) {
-            // Simple conversion (in real app, use exchange rates)
-            return yerPrice.basePriceUSD;
-          }
-        }
+      const variant = await this.variantModel.findById(variantId).lean();
+      
+      void _currency;
+      if (!variant || variant.deletedAt) {
         return null;
       }
 
-      return priceRecord.basePriceUSD;
+      // For now, return basePriceUSD regardless of currency
+      // In a real implementation, you would have currency conversion logic
+      return variant.basePriceUSD;
     } catch (error) {
       this.logger.error(`Error getting base price for variant ${variantId}:`, error);
       return null;

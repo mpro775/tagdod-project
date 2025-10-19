@@ -151,11 +151,10 @@ export class AnalyticsController {
   })
   @ApiResponse({ status: 200, description: 'Performance metrics retrieved successfully', type: PerformanceMetricsDto })
   async getPerformanceMetrics(): Promise<PerformanceMetricsDto> {
-    // This would typically come from a monitoring service
-    // For now, we'll use the analytics service calculation
-    const snapshot = await this.analyticsService['generateAnalyticsSnapshot']();
+    // Get performance metrics from analytics service
+    const metrics = await this.analyticsService.getPerformanceMetrics();
     return {
-      ...snapshot.performance,
+      ...metrics,
       memoryUsage: 75.5,
       cpuUsage: 45.2,
       diskUsage: 68.3,
@@ -166,7 +165,7 @@ export class AnalyticsController {
         databaseSize: 256000000,
         indexSize: 128000000,
       },
-      slowestEndpoints: snapshot.performance.slowestEndpoints.map(endpoint => ({
+      slowestEndpoints: metrics.slowestEndpoints.map(endpoint => ({
         ...endpoint,
         method: 'GET',
         maxTime: endpoint.averageTime * 1.5,
@@ -399,8 +398,8 @@ export class AnalyticsController {
   })
   @ApiResponse({ status: 200, description: 'Analytics data refreshed successfully' })
   async refreshAnalytics() {
-    // Implementation would trigger analytics recalculation
-    await this.analyticsService['generateAnalyticsSnapshot']();
+    // Trigger analytics recalculation
+    await this.analyticsService.refreshAnalytics();
 
     return {
       message: 'Analytics data refreshed successfully',

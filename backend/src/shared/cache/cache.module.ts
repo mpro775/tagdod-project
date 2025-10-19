@@ -2,6 +2,7 @@ import { Module, Global, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { CacheService } from './cache.service';
+import { RedisCacheService } from './redis-cache.service';
 import { ResponseCacheInterceptor } from '../interceptors/response-cache.interceptor';
 import { CacheGuard } from '../guards/cache.guard';
 
@@ -27,9 +28,10 @@ import { CacheGuard } from '../guards/cache.guard';
       inject: [ConfigService],
     },
     CacheService,
+    RedisCacheService,
     ResponseCacheInterceptor,
     CacheGuard,
   ],
-  exports: ['REDIS_CLIENT', CacheService, ResponseCacheInterceptor, CacheGuard],
+  exports: ['REDIS_CLIENT', CacheService, RedisCacheService, ResponseCacheInterceptor, CacheGuard],
 })
 export class CacheModule {}

@@ -17,7 +17,7 @@ export class EngineerOffer {
   // المسافة بين المهندس والطلب (بالكيلومتر)
   @Prop() distanceKm?: number;
 
-  @Prop({ default: 'OFFERED', index: true })
+  @Prop({ default: 'OFFERED', enum: ['OFFERED', 'ACCEPTED', 'REJECTED', 'CANCELLED'], index: true })
   status!: 'OFFERED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
 }
 export const EngineerOfferSchema = SchemaFactory.createForClass(EngineerOffer);

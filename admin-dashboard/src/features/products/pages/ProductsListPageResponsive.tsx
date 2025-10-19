@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button
+} from '@mui/material';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { useNavigate } from 'react-router-dom';
 import { ResponsiveListWrapper } from '@/shared/components/ResponsiveList';
 import { ProductCard } from '@/shared/components/Cards';
-import { useProducts } from '../hooks/useProducts';
+import { useProducts, useDeleteProduct, useUpdateProduct } from '../hooks/useProducts';
 import { formatDate } from '@/shared/utils/formatters';
 import type { Product } from '../types/product.types';
 
@@ -12,12 +21,12 @@ export const ProductsListPageResponsive: React.FC = () => {
   const navigate = useNavigate();
 
   // State
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+  const [paginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 20,
   });
-  const [search, setSearch] = useState('');
-  const [sortModel, setSortModel] = useState<GridSortModel>([
+  const [search] = useState('');
+  const [sortModel] = useState<GridSortModel>([
     { field: 'createdAt', sort: 'desc' }
   ]);
 
@@ -30,6 +39,21 @@ export const ProductsListPageResponsive: React.FC = () => {
     sortOrder: sortModel[0]?.sort || 'desc',
   });
 
+  // Mutations
+  const deleteProductMutation = useDeleteProduct();
+  const updateProductMutation = useUpdateProduct();
+
+  // Dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    product: Product | null;
+    action: 'delete' | 'toggle_status' | null;
+  }>({
+    open: false,
+    product: null,
+    action: null,
+  });
+
   // Actions
   const handleEdit = (product: Product) => {
     navigate(`/products/${product._id}`);
@@ -40,13 +64,46 @@ export const ProductsListPageResponsive: React.FC = () => {
   };
 
   const handleDelete = (product: Product) => {
-    // TODO: Implement delete functionality
-    console.log('Delete product:', product);
+    setConfirmDialog({
+      open: true,
+      product,
+      action: 'delete',
+    });
   };
 
   const handleToggleStatus = (product: Product) => {
-    // TODO: Implement status toggle
-    console.log('Toggle status for product:', product);
+    setConfirmDialog({
+      open: true,
+      product,
+      action: 'toggle_status',
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.product || !confirmDialog.action) return;
+
+    const { product, action } = confirmDialog;
+
+    if (action === 'delete') {
+      await deleteProductMutation.mutateAsync(product._id);
+    } else if (action === 'toggle_status') {
+      // Toggle between active and archived
+      const newStatus = product.status === 'active' ? 'archived' : 'active';
+      await updateProductMutation.mutateAsync({
+        id: product._id,
+        data: { status: newStatus as any }
+      });
+    }
+
+    handleCloseDialog();
+  };
+
+  const handleCloseDialog = () => {
+    setConfirmDialog({
+      open: false,
+      product: null,
+      action: null,
+    });
   };
 
   // Columns for DataGrid
@@ -109,7 +166,7 @@ export const ProductsListPageResponsive: React.FC = () => {
       renderCell: (params) => {
         const statusMap: Record<string, { label: string; color: any }> = {
           active: { label: 'نشط', color: 'success' },
-          inactive: { label: 'غير نشط', color: 'default' },
+          archived: { label: 'غير نشط', color: 'default' },
           draft: { label: 'مسودة', color: 'warning' },
         };
         const status = statusMap[params.row.status] || { label: 'غير محدد', color: 'default' };
@@ -175,6 +232,7 @@ export const ProductsListPageResponsive: React.FC = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onView={handleView}
+        onToggleStatus={handleToggleStatus}
         showActions={true}
         cardBreakpoint="md"
         emptyMessage="لا يوجد منتجات"
@@ -201,6 +259,46 @@ export const ProductsListPageResponsive: React.FC = () => {
           }
         }}
       />
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={confirmDialog.open}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {confirmDialog.action === 'delete' ? 'تأكيد حذف المنتج' : 'تأكيد تغيير الحالة'}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {confirmDialog.action === 'delete'
+              ? `هل أنت متأكد من حذف المنتج "${confirmDialog.product?.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
+              : `هل أنت متأكد من تغيير حالة المنتج "${confirmDialog.product?.name}" إلى "${
+                  confirmDialog.product?.status === 'active' ? 'غير نشط' : 'نشط'
+                }"?`
+            }
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="inherit">
+            إلغاء
+          </Button>
+          <Button
+            onClick={handleConfirmAction}
+            color={confirmDialog.action === 'delete' ? 'error' : 'primary'}
+            variant="contained"
+            disabled={deleteProductMutation.isPending || updateProductMutation.isPending}
+          >
+            {deleteProductMutation.isPending || updateProductMutation.isPending
+              ? 'جاري التنفيذ...'
+              : confirmDialog.action === 'delete'
+                ? 'حذف'
+                : 'تأكيد'
+            }
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

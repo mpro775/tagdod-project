@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { publicCartApi, AddToCartRequest, UpdateCartItemRequest } from '../api/publicCartApi';
+import { cartApi } from '../api/cartApi';
 import { toast } from 'react-hot-toast';
+import { CartFilters, CartListResponse } from '../types/cart.types';
 
 const CART_KEY = 'cart';
+const ADMIN_CART_KEY = 'admin-cart';
 
 export const useCart = () => {
   const queryClient = useQueryClient();
@@ -89,4 +92,87 @@ export const useCart = () => {
     isRemovingFromCart: removeFromCartMutation.isPending,
     isClearingCart: clearCartMutation.isPending,
   };
+};
+
+// === Admin Cart Management Hooks ===
+
+export const useCartList = (filters: CartFilters = {}) => {
+  const queryClient = useQueryClient();
+
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: [ADMIN_CART_KEY, 'list', filters],
+    queryFn: () => cartApi.getAllCarts(1, 20, filters),
+    select: (response: CartListResponse) => ({
+      carts: response.carts,
+      pagination: response.pagination,
+    }),
+  });
+
+  const fetchCarts = async (page: number, limit: number) => {
+    try {
+      const response = await cartApi.getAllCarts(page, limit, filters);
+      queryClient.setQueryData([ADMIN_CART_KEY, 'list', filters], response);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return {
+    carts: data?.carts || [],
+    pagination: data?.pagination || { page: 1, limit: 20, total: 0, pages: 0 },
+    loading: isLoading,
+    error: error?.message || null,
+    fetchCarts,
+    refetch,
+  };
+};
+
+export const useCartDetails = (cartId: string) => {
+  const { data: cart, isLoading, error } = useQuery({
+    queryKey: [ADMIN_CART_KEY, 'details', cartId],
+    queryFn: () => cartApi.getCartById(cartId),
+    enabled: !!cartId,
+  });
+
+  return {
+    cart,
+    loading: isLoading,
+    error: error?.message || null,
+  };
+};
+
+export const useSendCartReminder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (cartId: string) => cartApi.sendSingleReminder(cartId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [ADMIN_CART_KEY] });
+      toast.success('تم إرسال التذكير بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'فشل في إرسال التذكير');
+    },
+  });
+};
+
+export const useConvertCartToOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (cartId: string) => cartApi.convertToOrder(cartId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [ADMIN_CART_KEY] });
+      toast.success('تم تحويل السلة إلى طلب بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'فشل في تحويل السلة إلى طلب');
+    },
+  });
 };

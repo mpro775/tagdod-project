@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Product, ProductDocument } from '../schemas/product.schema';
-import { NotificationsService } from '../../notifications/notifications.service';
+import { NotificationService } from '../../notifications/services/notification.service';
+import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
 
 @Injectable()
 export class StockAlertService {
@@ -10,7 +11,7 @@ export class StockAlertService {
 
   constructor(
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
-    private notificationsService: NotificationsService,
+    private notificationService: NotificationService,
   ) {}
 
   /**
@@ -142,14 +143,19 @@ export class StockAlertService {
     messageEn: string;
   }): Promise<void> {
     try {
-      await this.notificationsService.createStockAlert({
-        type: alert.type,
-        productId: alert.productId,
-        productName: alert.productName,
-        currentStock: alert.currentStock,
-        minStock: alert.minStock,
+      await this.notificationService.createNotification({
+        type: alert.type === 'LOW_STOCK' ? NotificationType.LOW_STOCK : NotificationType.OUT_OF_STOCK,
+        title: alert.type === 'LOW_STOCK' ? 'تنبيه مخزون منخفض' : 'تنبيه نفاد المخزون',
         message: alert.message,
         messageEn: alert.messageEn,
+        channel: NotificationChannel.DASHBOARD,
+        priority: NotificationPriority.HIGH,
+        data: {
+          productId: alert.productId,
+          currentStock: alert.currentStock,
+          minStock: alert.minStock,
+        },
+        isSystemGenerated: true,
       });
       
       this.logger.log(`Stock alert notification created: ${alert.type} for product ${alert.productId}`);

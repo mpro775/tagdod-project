@@ -112,6 +112,7 @@ export const CategoryFormPage: React.FC = () => {
 
   // Submit
   const onSubmit = (data: CategoryFormData) => {
+    // eslint-disable-next-line no-console
     console.log('📤 Form data before submit:', data);
     
     const categoryData: CreateCategoryDto = {
@@ -130,6 +131,7 @@ export const CategoryFormPage: React.FC = () => {
       isFeatured: data.isFeatured,
     };
 
+    // eslint-disable-next-line no-console
     console.log('📤 Category data to send:', categoryData);
 
     if (isEditMode) {

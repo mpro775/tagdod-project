@@ -17,7 +17,7 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
   size = 'md',
   variant = 'default',
 }) => {
-  const { selectedCurrency, convertPrice, formatPrice } = useCurrency();
+  const { selectedCurrency, convertPrice } = useCurrency();
 
   const priceInfo = convertPrice(amountUSD, selectedCurrency);
 

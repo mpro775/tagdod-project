@@ -25,7 +25,7 @@ export class FavoritesService {
     return favorites;
   }
 
-  async addUserFavorite(userId: string, dto: { productId: string; variantId?: string; note?: string; tags?: string[] }) {
+  async addUserFavorite(userId: string, dto: { productId: string; variantId?: string; note?: string }) {
     // التحقق من عدم التكرار
     const existing = await this.favoriteModel.findOne({
       userId,
@@ -37,7 +37,6 @@ export class FavoritesService {
     if (existing) {
       // إذا كان موجوداً، نحدث البيانات فقط
       if (dto.note) existing.note = dto.note;
-      if (dto.tags) existing.tags = dto.tags;
       await existing.save();
       return existing;
     }
@@ -48,7 +47,6 @@ export class FavoritesService {
       productId: new Types.ObjectId(dto.productId),
       variantId: dto.variantId ? new Types.ObjectId(dto.variantId) : null,
       note: dto.note || '',
-      tags: dto.tags || [],
       viewsCount: 0,
       isSynced: false,
     });
@@ -71,7 +69,7 @@ export class FavoritesService {
     return { deleted: result.modifiedCount === 1 };
   }
 
-  async updateUserFavorite(userId: string, favoriteId: string, dto: { note?: string; tags?: string[] }) {
+  async updateUserFavorite(userId: string, favoriteId: string, dto: { note?: string }) {
     const favorite = await this.favoriteModel.findOne({
       _id: favoriteId,
       userId,
@@ -83,7 +81,6 @@ export class FavoritesService {
     }
 
     if (dto.note !== undefined) favorite.note = dto.note;
-    if (dto.tags !== undefined) favorite.tags = dto.tags;
 
     await favorite.save();
 
@@ -112,7 +109,7 @@ export class FavoritesService {
     return favorites;
   }
 
-  async addGuestFavorite(deviceId: string, dto: { productId: string; variantId?: string; note?: string; tags?: string[] }) {
+  async addGuestFavorite(deviceId: string, dto: { productId: string; variantId?: string; note?: string }) {
     // التحقق من عدم التكرار
     const existing = await this.favoriteModel.findOne({
       deviceId,
@@ -124,7 +121,6 @@ export class FavoritesService {
 
     if (existing) {
       if (dto.note) existing.note = dto.note;
-      if (dto.tags) existing.tags = dto.tags;
       await existing.save();
       return existing;
     }
@@ -136,7 +132,6 @@ export class FavoritesService {
       productId: new Types.ObjectId(dto.productId),
       variantId: dto.variantId ? new Types.ObjectId(dto.variantId) : null,
       note: dto.note || '',
-      tags: dto.tags || [],
       viewsCount: 0,
       isSynced: false,
     });
@@ -205,7 +200,6 @@ export class FavoritesService {
           productId: guestFav.productId,
           variantId: guestFav.variantId,
           note: guestFav.note,
-          tags: guestFav.tags,
           viewsCount: guestFav.viewsCount || 0,
           isSynced: true,
           syncedAt: new Date(),
@@ -270,18 +264,6 @@ export class FavoritesService {
     }));
   }
 
-  async getUserFavoritesByTags(userId: string, tags: string[]) {
-    return this.favoriteModel
-      .find({
-        userId,
-        tags: { $in: tags },
-        deletedAt: null,
-      })
-      .populate('productId')
-      .populate('variantId')
-      .sort({ createdAt: -1 })
-      .lean();
-  }
 
   async incrementViews(favoriteId: string) {
     await this.favoriteModel.updateOne(
@@ -294,17 +276,10 @@ export class FavoritesService {
   }
 
   async getStats() {
-    const [totalUsers, totalGuests, totalSynced, topTags] = await Promise.all([
+    const [totalUsers, totalGuests, totalSynced] = await Promise.all([
       this.favoriteModel.countDocuments({ userId: { $ne: null }, deletedAt: null }),
       this.favoriteModel.countDocuments({ deviceId: { $ne: null }, userId: null, deletedAt: null }),
       this.favoriteModel.countDocuments({ isSynced: true }),
-      this.favoriteModel.aggregate([
-        { $match: { deletedAt: null, tags: { $exists: true, $ne: [] } } },
-        { $unwind: '$tags' },
-        { $group: { _id: '$tags', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 10 },
-      ]),
     ]);
 
     return {
@@ -313,7 +288,6 @@ export class FavoritesService {
         totalGuests,
         totalSynced,
         total: totalUsers + totalGuests,
-        topTags: topTags.map((t: { _id: string; count: number }) => ({ tag: t._id, count: t.count })),
       },
     };
   }

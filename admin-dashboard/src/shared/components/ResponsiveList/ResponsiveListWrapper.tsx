@@ -12,15 +12,23 @@ export interface ResponsiveListWrapperProps<T> {
   
   // Grid configuration
   columns: GridColDef[];
+  // eslint-disable-next-line no-unused-vars
   getRowId?: (row: T) => string | number;
   
   // Card component
   CardComponent: React.ComponentType<any>;
   
   // Actions
+  // eslint-disable-next-line no-unused-vars
   onEdit?: (item: T) => void;
+  // eslint-disable-next-line no-unused-vars
   onDelete?: (item: T) => void;
+  // eslint-disable-next-line no-unused-vars
   onView?: (item: T) => void;
+  // eslint-disable-next-line no-unused-vars
+  onToggleStatus?: (item: T) => void;
+  // eslint-disable-next-line no-unused-vars
+  onUpdateStatus?: (item: T) => void;
   showActions?: boolean;
   
   // Pagination
@@ -53,6 +61,8 @@ export function ResponsiveListWrapper<T extends Record<string, any>>({
   onEdit,
   onDelete,
   onView,
+  onToggleStatus,
+  onUpdateStatus,
   showActions = true,
   pagination = true,
   pageSize = 10,
@@ -148,6 +158,8 @@ export function ResponsiveListWrapper<T extends Record<string, any>>({
             onEdit,
             onDelete,
             onView,
+            onToggleStatus,
+            onUpdateStatus,
             showActions,
           };
 

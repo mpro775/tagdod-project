@@ -23,6 +23,7 @@ interface MediaItem {
 
 interface MultipleImagesSelectorProps {
   value: MediaItem[];
+  // eslint-disable-next-line no-unused-vars
   onChange: (images: MediaItem[]) => void;
   maxImages?: number;
   label?: string;

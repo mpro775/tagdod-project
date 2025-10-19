@@ -1,69 +1,82 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { 
+  NotificationStatus, 
+  NotificationChannel, 
+  NotificationPriority,
+  DevicePlatform 
+} from '../enums/notification.enums';
 
 export type NotificationLogDocument = HydratedDocument<NotificationLog>;
 
-export enum NotificationStatus {
-  PENDING = 'pending',
-  QUEUED = 'queued',
-  SENDING = 'sending',
-  SENT = 'sent',
-  DELIVERED = 'delivered',
-  READ = 'read',
-  CLICKED = 'clicked',
-  FAILED = 'failed',
-  BOUNCED = 'bounced',
-  REJECTED = 'rejected',
-}
-
-@Schema({ timestamps: true })
+@Schema({ 
+  timestamps: true,
+  collection: 'notification_logs',
+  versionKey: false
+})
 export class NotificationLog {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   userId!: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'UnifiedNotification', index: true })
+  notificationId?: Types.ObjectId;
+
   @Prop({ type: Types.ObjectId, ref: 'NotificationTemplate', index: true })
   templateId?: Types.ObjectId;
 
-  @Prop({ index: true })
+  @Prop({ maxlength: 100, index: true })
   templateKey!: string;
 
-  @Prop({ required: true, index: true })
-  channel!: 'inApp' | 'push' | 'sms' | 'email';
+  @Prop({ 
+    type: String, 
+    enum: Object.values(NotificationChannel), 
+    required: true,
+    index: true 
+  })
+  channel!: NotificationChannel;
 
-  @Prop({ type: String, enum: Object.values(NotificationStatus), default: NotificationStatus.PENDING, index: true })
+  @Prop({ 
+    type: String, 
+    enum: Object.values(NotificationStatus), 
+    default: NotificationStatus.PENDING,
+    index: true 
+  })
   status!: NotificationStatus;
 
   // ===== Content =====
-  @Prop({ required: true })
+  @Prop({ required: true, maxlength: 200 })
   title!: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, maxlength: 1000 })
   body!: string;
 
   @Prop({ type: Object, default: {} })
-  data!: Record<string, unknown>; // Additional data/payload
+  data!: Record<string, unknown>;
 
-  @Prop()
+  @Prop({ maxlength: 500 })
   actionUrl?: string;
 
-  @Prop()
+  @Prop({ maxlength: 500 })
   imageUrl?: string;
 
   // ===== Delivery Information =====
-  @Prop()
+  @Prop({ maxlength: 255 })
   recipientEmail?: string;
 
-  @Prop()
+  @Prop({ maxlength: 20 })
   recipientPhone?: string;
 
-  @Prop()
+  @Prop({ maxlength: 500 })
   deviceToken?: string;
 
-  @Prop()
-  platform?: 'ios' | 'android' | 'web';
+  @Prop({ 
+    type: String, 
+    enum: Object.values(DevicePlatform) 
+  })
+  platform?: DevicePlatform;
 
   // ===== Timestamps =====
-  @Prop({ type: Date })
+  @Prop({ type: Date, index: true })
   scheduledAt?: Date;
 
   @Prop({ type: Date, index: true })
@@ -82,53 +95,62 @@ export class NotificationLog {
   failedAt?: Date;
 
   // ===== Error Handling =====
-  @Prop()
+  @Prop({ maxlength: 500 })
   errorMessage?: string;
 
-  @Prop()
+  @Prop({ maxlength: 50 })
   errorCode?: string;
 
-  @Prop({ default: 0 })
+  @Prop({ default: 0, min: 0, max: 5 })
   retryCount!: number;
 
   @Prop({ type: Date })
   nextRetryAt?: Date;
 
   // ===== Tracking =====
-  @Prop()
-  trackingId?: string; // Unique ID for tracking across services
+  @Prop({ maxlength: 100, unique: true, sparse: true })
+  trackingId?: string;
 
-  @Prop()
-  externalId?: string; // ID from external service (e.g., SendGrid, Twilio)
+  @Prop({ maxlength: 100 })
+  externalId?: string;
 
-  @Prop({ type: Object, default: {} })
+  @Prop({ 
+    type: Object, 
+    default: {} 
+  })
   metadata!: {
-    provider?: string; // SMS/Email provider name
+    provider?: string;
     providerResponse?: Record<string, unknown>;
-    cost?: number; // Cost of sending (e.g., SMS cost)
-    credits?: number; // Credits consumed
+    cost?: number;
+    credits?: number;
     campaign?: string;
     tags?: string[];
   };
 
   // ===== Priority & Grouping =====
-  @Prop({ type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' })
-  priority!: string;
+  @Prop({ 
+    type: String, 
+    enum: Object.values(NotificationPriority), 
+    default: NotificationPriority.MEDIUM 
+  })
+  priority!: NotificationPriority;
 
-  @Prop()
-  groupId?: string; // For grouping related notifications
+  @Prop({ maxlength: 100 })
+  groupId?: string;
 
-  @Prop()
-  batchId?: string; // For batch sending
+  @Prop({ maxlength: 100 })
+  batchId?: string;
 
   // ===== User Interaction =====
-  @Prop()
+  @Prop({ type: Date })
   dismissedAt?: Date;
 
   @Prop({ default: false })
   isArchived!: boolean;
 
-  @Prop({ type: Object })
+  @Prop({ 
+    type: Object 
+  })
   interaction?: {
     opened: boolean;
     clicked: boolean;
@@ -138,6 +160,7 @@ export class NotificationLog {
     lastInteractionAt?: Date;
   };
 
+  // System fields
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -156,6 +179,5 @@ NotificationLogSchema.index({ batchId: 1 }, { sparse: true });
 NotificationLogSchema.index({ createdAt: -1 });
 NotificationLogSchema.index({ readAt: 1 }, { sparse: true });
 
-// TTL Index: Auto-delete old notifications after 90 days
+// TTL Index: Auto-delete old logs after 90 days
 NotificationLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // 90 days
-

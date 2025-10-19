@@ -1,31 +1,27 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/Card';
-import { Button } from '../../../shared/components/ui/Button';
 import { CartFilters } from '../components/CartFilters';
 import { CartTable } from '../components/CartTable';
 import { CartDetailsModal } from '../components/CartDetailsModal';
-import { useCartList, useCartDetails } from '../hooks/useCart';
-import { CartFilters as CartFiltersType, CartStatus } from '../types/cart.types';
-import { toast } from 'react-hot-toast';
+import {
+  useCartList,
+  useCartDetails,
+  useSendCartReminder,
+  useConvertCartToOrder,
+} from '../hooks/useCart';
+import { CartFilters as CartFiltersType } from '../types/cart.types';
+import { Card, CardContent, Button } from '@mui/material';
 
 export const CartManagementPage: React.FC = () => {
   const [filters, setFilters] = useState<CartFiltersType>({});
   const [selectedCartId, setSelectedCartId] = useState<string | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  const {
-    carts,
-    loading,
-    error,
-    pagination,
-    fetchCarts,
-    refetch,
-  } = useCartList(filters);
+  const { carts, loading, error, pagination, fetchCarts, refetch } = useCartList(filters);
 
-  const {
-    cart: selectedCart,
-    loading: loadingDetails,
-  } = useCartDetails(selectedCartId || '');
+  const { cart: selectedCart } = useCartDetails(selectedCartId || '');
+
+  const sendReminderMutation = useSendCartReminder();
+  const convertToOrderMutation = useConvertCartToOrder();
 
   const handleFiltersChange = (newFilters: CartFiltersType) => {
     setFilters(newFilters);
@@ -50,24 +46,12 @@ export const CartManagementPage: React.FC = () => {
     setSelectedCartId(null);
   };
 
-  const handleSendReminder = async (cartId: string) => {
-    try {
-      // This would call the API to send reminder
-      toast.success('تم إرسال التذكير بنجاح');
-      refetch();
-    } catch (error) {
-      toast.error('فشل في إرسال التذكير');
-    }
+  const handleSendReminder = (cartId: string) => {
+    sendReminderMutation.mutate(cartId);
   };
 
-  const handleConvertToOrder = async (cartId: string) => {
-    try {
-      // This would call the API to convert cart to order
-      toast.success('تم تحويل السلة إلى طلب بنجاح');
-      refetch();
-    } catch (error) {
-      toast.error('فشل في تحويل السلة إلى طلب');
-    }
+  const handleConvertToOrder = (cartId: string) => {
+    convertToOrderMutation.mutate(cartId);
   };
 
   const handlePageChange = (page: number) => {
@@ -82,10 +66,7 @@ export const CartManagementPage: React.FC = () => {
             <div className="text-center text-red-600">
               <p className="text-lg font-medium">خطأ في تحميل السلال</p>
               <p className="text-sm mt-2">{error}</p>
-              <Button
-                onClick={refetch}
-                className="mt-4"
-              >
+              <Button onClick={() => refetch()} className="mt-4">
                 إعادة المحاولة
               </Button>
             </div>
@@ -101,12 +82,10 @@ export const CartManagementPage: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">إدارة السلال</h1>
-          <p className="text-gray-600 mt-1">
-            إدارة وعرض جميع سلال التسوق في النظام
-          </p>
+          <p className="text-gray-600 mt-1">إدارة وعرض جميع سلال التسوق في النظام</p>
         </div>
         <Button
-          onClick={refetch}
+          onClick={() => refetch()}
           disabled={loading}
           className="bg-blue-600 hover:bg-blue-700"
         >
@@ -138,12 +117,14 @@ export const CartManagementPage: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex justify-between items-center">
               <div className="text-sm text-gray-600">
-                عرض {((pagination.page - 1) * pagination.limit) + 1} إلى {Math.min(pagination.page * pagination.limit, pagination.total)} من {pagination.total} سلة
+                عرض {(pagination.page - 1) * pagination.limit + 1} إلى{' '}
+                {Math.min(pagination.page * pagination.limit, pagination.total)} من{' '}
+                {pagination.total} سلة
               </div>
               <div className="flex space-x-2">
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="outlined"
+                  size="small"
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 1 || loading}
                 >
@@ -153,8 +134,8 @@ export const CartManagementPage: React.FC = () => {
                   صفحة {pagination.page} من {pagination.pages}
                 </span>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="outlined"
+                  size="small"
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={pagination.page === pagination.pages || loading}
                 >
@@ -168,7 +149,7 @@ export const CartManagementPage: React.FC = () => {
 
       {/* Cart Details Modal */}
       <CartDetailsModal
-        cart={selectedCart}
+        cart={selectedCart || null}
         isOpen={isDetailsModalOpen}
         onClose={handleCloseDetailsModal}
         onSendReminder={handleSendReminder}

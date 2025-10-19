@@ -12,7 +12,6 @@ import {
   TableRow,
   TablePagination,
   TableSortLabel,
-  Chip,
   IconButton,
   Tooltip,
   TextField,
@@ -20,17 +19,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Button,
 } from '@mui/material';
 import {
   Search,
-  FilterList,
-  Sort,
   GetApp,
-  Visibility,
-  Edit,
-  Delete,
-  MoreVert,
 } from '@mui/icons-material';
 
 interface Column {
@@ -38,6 +30,7 @@ interface Column {
   label: string;
   minWidth?: number;
   align?: 'left' | 'center' | 'right';
+  // eslint-disable-next-line no-unused-vars
   format?: (value: any) => string | React.ReactNode;
   sortable?: boolean;
 }
@@ -55,6 +48,7 @@ interface AnalyticsDataTableProps {
   actions?: Array<{
     icon: React.ReactNode;
     label: string;
+    // eslint-disable-next-line no-unused-vars
     onClick: (row: any) => void;
     color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
   }>;
@@ -63,6 +57,7 @@ interface AnalyticsDataTableProps {
     label: string;
     options: Array<{ value: string; label: string }>;
   }>;
+  // eslint-disable-next-line no-unused-vars
   onRowClick?: (row: any) => void;
 }
 
@@ -87,7 +82,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -117,6 +112,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
 
   const handleExport = () => {
     // Export functionality
+    // eslint-disable-next-line no-console
     console.log('Exporting data...');
   };
 
@@ -322,7 +318,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
-          count={filteredData.length}
+          count={totalCount}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

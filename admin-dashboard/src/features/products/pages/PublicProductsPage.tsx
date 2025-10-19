@@ -1,11 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Grid, Typography, TextField, Select, MenuItem, FormControl, InputLabel, Button, Chip } from '@mui/material';
-import { Search, FilterList } from '@mui/icons-material';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Box,
+  Grid,
+  Typography,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+} from '@mui/material';
+import { Search } from '@mui/icons-material';
 import ProductCard from '../components/ProductCard';
 import { CurrencySelector } from '@/shared/components/CurrencySelector';
 import { useCurrency } from '@/shared/hooks/useCurrency';
 import { useCart } from '../../cart/hooks/useCart';
 import { useFavorites, useIsFavorited } from '../../favorites/hooks/useFavorites';
+import { useCategories } from '../../categories/hooks/useCategories';
+import { useBrands } from '../../brands/hooks/useBrands';
 
 interface Product {
   _id: string;
@@ -39,16 +51,14 @@ interface PublicProductsPageProps {
   className?: string;
 }
 
-export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
-  className = '',
-}) => {
+export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({ className = '' }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Hooks for cart and favorites
-  const { addToCart, isAddingToCart } = useCart();
-  const { toggleFavorite, isTogglingFavorite } = useFavorites();
+  const { addToCart } = useCart();
+  const { toggleFavorite } = useFavorites();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
@@ -59,8 +69,16 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
 
   const { selectedCurrency } = useCurrency();
 
+  // Load categories and brands
+  const { data: categories = [] } = useCategories({
+    isActive: true,
+  });
+  const { data: brands = [] } = useBrands({
+    isActive: true,
+  });
+
   // تحميل المنتجات
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -89,11 +107,20 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, selectedCurrency, search, categoryFilter, brandFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     loadProducts();
-  }, [page, selectedCurrency, search, categoryFilter, brandFilter, sortBy, sortOrder]);
+  }, [
+    page,
+    selectedCurrency,
+    search,
+    categoryFilter,
+    brandFilter,
+    sortBy,
+    sortOrder,
+    loadProducts,
+  ]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -144,7 +171,7 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
         <Typography variant="h4" component="h1" sx={{ mb: 2, fontWeight: 'bold' }}>
           منتجاتنا
         </Typography>
-        
+
         {/* Filters */}
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
@@ -152,11 +179,11 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             InputProps={{
-              startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />
+              startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
             }}
             sx={{ minWidth: 200 }}
           />
-          
+
           <FormControl sx={{ minWidth: 150 }}>
             <InputLabel>الفئة</InputLabel>
             <Select
@@ -165,7 +192,11 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
               label="الفئة"
             >
               <MenuItem value="">جميع الفئات</MenuItem>
-              {/* TODO: تحميل الفئات من API */}
+              {categories.map((category) => (
+                <MenuItem key={category._id} value={category._id}>
+                  {category.name}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -177,7 +208,11 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
               label="العلامة"
             >
               <MenuItem value="">جميع العلامات</MenuItem>
-              {/* TODO: تحميل العلامات من API */}
+              {brands.map((brand) => (
+                <MenuItem key={brand._id} value={brand._id}>
+                  {brand.name}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -219,7 +254,7 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
         ) : (
           <Grid container spacing={3}>
             {products.map((product) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product._id}>
                 <ProductCardWithFavorites
                   product={product}
                   onAddToCart={handleAddToCart}
@@ -233,13 +268,10 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
         {/* Pagination */}
         {totalPages > 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, gap: 1 }}>
-            <Button
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-            >
+            <Button disabled={page === 1} onClick={() => setPage(page - 1)}>
               السابق
             </Button>
-            
+
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
               <Button
                 key={pageNum}
@@ -250,11 +282,8 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
                 {pageNum}
               </Button>
             ))}
-            
-            <Button
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-            >
+
+            <Button disabled={page === totalPages} onClick={() => setPage(page + 1)}>
               التالي
             </Button>
           </Box>
@@ -267,7 +296,9 @@ export const PublicProductsPage: React.FC<PublicProductsPageProps> = ({
 // Component that wraps ProductCard with favorites functionality
 const ProductCardWithFavorites: React.FC<{
   product: Product;
+  // eslint-disable-next-line no-unused-vars
   onAddToCart: (variantId: string) => void;
+  // eslint-disable-next-line no-unused-vars
   onToggleFavorite: (productId: string) => void;
 }> = ({ product, onAddToCart, onToggleFavorite }) => {
   const { data: isFavorited } = useIsFavorited(product._id);

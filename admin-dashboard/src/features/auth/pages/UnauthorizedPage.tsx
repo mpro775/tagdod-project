@@ -1,13 +1,43 @@
-import React from 'react';
-import { Box, Typography, Button, Alert, Paper } from '@mui/material';
-import { Security, Home, ArrowBack } from '@mui/icons-material';
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  Alert,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress
+} from '@mui/material';
+import { Security, Home, ArrowBack, ContactSupport } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
+import { useCreateSupportTicket } from '@/features/support/hooks/useSupport';
+import { SupportCategory, SupportPriority } from '@/features/support/types/support.types';
 
 const UnauthorizedPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthStore();
+
+  // Support ticket dialog state
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [supportTicket, setSupportTicket] = useState({
+    title: '',
+    description: '',
+    category: SupportCategory.ACCOUNT,
+    priority: SupportPriority.MEDIUM,
+  });
+
+  // API hook
+  const createSupportTicket = useCreateSupportTicket();
 
   const handleGoHome = () => {
     navigate('/');
@@ -18,8 +48,44 @@ const UnauthorizedPage: React.FC = () => {
   };
 
   const handleContactAdmin = () => {
-    // TODO: Implement contact admin functionality
-    console.log('Contact admin requested');
+    setContactDialogOpen(true);
+  };
+
+  const handleCloseContactDialog = () => {
+    setContactDialogOpen(false);
+    setSupportTicket({
+      title: '',
+      description: '',
+      category: SupportCategory.ACCOUNT,
+      priority: SupportPriority.MEDIUM,
+    });
+  };
+
+  const handleSubmitSupportTicket = async () => {
+    if (!supportTicket.title.trim() || !supportTicket.description.trim()) {
+      alert('يرجى ملء العنوان والوصف');
+      return;
+    }
+
+    try {
+      await createSupportTicket.mutateAsync({
+        ...supportTicket,
+        metadata: {
+          userId: user?._id,
+          userName: user ? `${user.firstName} ${user.lastName || ''}`.trim() : '',
+          userEmail: user?.email,
+          userRoles: user?.roles,
+          accessAttempt: {
+            path: location.pathname,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+
+      handleCloseContactDialog();
+    } catch {
+      // Error is handled by the hook
+    }
   };
 
   return (
@@ -61,7 +127,7 @@ const UnauthorizedPage: React.FC = () => {
         {user && (
           <Alert severity="info" sx={{ mb: 3, textAlign: 'left' }}>
             <Typography variant="body2">
-              <strong>المستخدم الحالي:</strong> {user.name || user.email}
+              <strong>المستخدم الحالي:</strong> {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.email}
             </Typography>
             <Typography variant="body2">
               <strong>الأدوار:</strong> {user.roles?.join(', ') || 'غير محدد'}
@@ -106,6 +172,7 @@ const UnauthorizedPage: React.FC = () => {
 
           <Button
             variant="text"
+            startIcon={<ContactSupport />}
             onClick={handleContactAdmin}
             size="large"
           >
@@ -117,6 +184,107 @@ const UnauthorizedPage: React.FC = () => {
           إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع مدير النظام
         </Typography>
       </Paper>
+
+      {/* Contact Admin Dialog */}
+      <Dialog
+        open={contactDialogOpen}
+        onClose={handleCloseContactDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ContactSupport color="primary" />
+            <Typography variant="h6">التواصل مع الإدارة</Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            يرجى وصف المشكلة التي تواجهها. سيتم إرسال هذا الطلب إلى فريق الدعم الفني.
+          </Typography>
+
+          <TextField
+            fullWidth
+            label="عنوان المشكلة *"
+            placeholder="مثال: لا أستطيع الوصول إلى صفحة المنتجات"
+            value={supportTicket.title}
+            onChange={(e) => setSupportTicket(prev => ({ ...prev, title: e.target.value }))}
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="وصف المشكلة *"
+            placeholder="يرجى وصف المشكلة بالتفصيل..."
+            value={supportTicket.description}
+            onChange={(e) => setSupportTicket(prev => ({ ...prev, description: e.target.value }))}
+            sx={{ mb: 2 }}
+          />
+
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>تصنيف المشكلة</InputLabel>
+              <Select
+                value={supportTicket.category}
+                label="تصنيف المشكلة"
+                onChange={(e) => setSupportTicket(prev => ({
+                  ...prev,
+                  category: e.target.value as SupportCategory
+                }))}
+              >
+                <MenuItem value={SupportCategory.ACCOUNT}>حساب المستخدم</MenuItem>
+                <MenuItem value={SupportCategory.TECHNICAL}>مشاكل فنية</MenuItem>
+                <MenuItem value={SupportCategory.PRODUCTS}>المنتجات</MenuItem>
+                <MenuItem value={SupportCategory.BILLING}>الفوترة والدفع</MenuItem>
+                <MenuItem value={SupportCategory.SERVICES}>الخدمات</MenuItem>
+                <MenuItem value={SupportCategory.OTHER}>أخرى</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel>أولوية المشكلة</InputLabel>
+              <Select
+                value={supportTicket.priority}
+                label="أولوية المشكلة"
+                onChange={(e) => setSupportTicket(prev => ({
+                  ...prev,
+                  priority: e.target.value as SupportPriority
+                }))}
+              >
+                <MenuItem value={SupportPriority.LOW}>منخفضة</MenuItem>
+                <MenuItem value={SupportPriority.MEDIUM}>متوسطة</MenuItem>
+                <MenuItem value={SupportPriority.HIGH}>عالية</MenuItem>
+                <MenuItem value={SupportPriority.URGENT}>عاجلة</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          {user && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                سيتم تضمين معلومات حسابك (الاسم والبريد الإلكتروني) مع الطلب لمساعدة فريق الدعم.
+              </Typography>
+            </Alert>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleCloseContactDialog} color="inherit">
+            إلغاء
+          </Button>
+          <Button
+            onClick={handleSubmitSupportTicket}
+            variant="contained"
+            disabled={createSupportTicket.isPending}
+            startIcon={createSupportTicket.isPending ? <CircularProgress size={16} /> : null}
+          >
+            {createSupportTicket.isPending ? 'جاري الإرسال...' : 'إرسال الطلب'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -17,8 +17,10 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      // eslint-disable-next-line no-console
       console.log('🔑 Adding token to request:', config.url);
     } else {
+      // eslint-disable-next-line no-console
       console.log('❌ No token found for request:', config.url);
     }
 

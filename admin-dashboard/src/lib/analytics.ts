@@ -1,15 +1,18 @@
 import { ENABLE_ANALYTICS } from '@/config/constants';
 
+/* eslint-disable no-unused-vars */
 declare global {
   interface Window {
-    gtag: (...args: any[]) => void;
-    dataLayer: any[];
+    gtag: (..._args: unknown[]) => void;
+    dataLayer: unknown[];
   }
 }
+/* eslint-enable no-unused-vars */
 
 // Initialize GA4
 export const initializeGA4 = () => {
   if (!ENABLE_ANALYTICS || !import.meta.env.VITE_GA4_ID) {
+    // eslint-disable-next-line no-console
     console.log('📊 Analytics disabled or GA4_ID not configured');
     return;
   }
@@ -35,6 +38,7 @@ export const initializeGA4 = () => {
     page_location: window.location.href,
   });
 
+  // eslint-disable-next-line no-console
   console.log('📊 GA4 initialized with ID:', GA4_ID);
 };
 
@@ -47,6 +51,7 @@ export const trackPageView = (pagePath: string, pageTitle?: string) => {
     page_title: pageTitle || document.title,
   });
 
+  // eslint-disable-next-line no-console
   console.log('📊 Page view tracked:', { pagePath, pageTitle });
 };
 
@@ -60,6 +65,7 @@ export const trackEvent = (eventName: string, parameters?: Record<string, any>) 
     timestamp: new Date().toISOString(),
   });
 
+  // eslint-disable-next-line no-console
   console.log('📊 Event tracked:', { eventName, parameters });
 };
 

@@ -7,8 +7,11 @@ import { formatCurrency, formatDate, formatCartStatus } from '../api/cartApi';
 interface CartTableProps {
   carts: Cart[];
   loading?: boolean;
+  // eslint-disable-next-line no-unused-vars
   onViewCart: (cartId: string) => void;
+  // eslint-disable-next-line no-unused-vars
   onSendReminder?: (cartId: string) => void;
+  // eslint-disable-next-line no-unused-vars
   onConvertToOrder?: (cartId: string) => void;
 }
 

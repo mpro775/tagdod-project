@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, Logger, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
+import { ClientIPService } from '../services/client-ip.service';
 
 @Injectable()
 export class IPWhitelistGuard implements CanActivate {
@@ -8,7 +9,10 @@ export class IPWhitelistGuard implements CanActivate {
   private readonly whitelist: string[] = [];
   private readonly blacklist: string[] = [];
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private clientIPService: ClientIPService,
+  ) {
     this.loadIPLists();
   }
 
@@ -34,7 +38,7 @@ export class IPWhitelistGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
-    const clientIP = this.getClientIP(request);
+    const clientIP = this.clientIPService.getClientIP(request);
 
     // Check blacklist first
     if (this.isBlacklisted(clientIP)) {
@@ -51,26 +55,6 @@ export class IPWhitelistGuard implements CanActivate {
     return true;
   }
 
-  private getClientIP(request: Request): string {
-    // Check for forwarded IP headers
-    const forwarded = request.get('x-forwarded-for');
-    if (forwarded) {
-      return forwarded.split(',')[0].trim();
-    }
-
-    const realIP = request.get('x-real-ip');
-    if (realIP) {
-      return realIP;
-    }
-
-    const cfConnectingIP = request.get('cf-connecting-ip');
-    if (cfConnectingIP) {
-      return cfConnectingIP;
-    }
-
-    // Fallback to connection remote address
-    return request.connection.remoteAddress || request.socket.remoteAddress || 'unknown';
-  }
 
   private isWhitelisted(ip: string): boolean {
     return this.whitelist.some(allowedIP => {

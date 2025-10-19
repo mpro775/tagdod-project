@@ -17,12 +17,6 @@ export class Category {
   @Prop({ required: true, unique: true }) 
   slug!: string;
   
-  @Prop({ required: true, index: true }) 
-  path!: string; // e.g. /electronics/phones
-  
-  @Prop({ default: 0 }) 
-  depth!: number;
-  
   // البيانات الوصفية (ثنائي اللغة)
   @Prop({ default: '' }) 
   description?: string; // الوصف بالعربية
@@ -30,17 +24,8 @@ export class Category {
   @Prop({ default: '' }) 
   descriptionEn?: string; // الوصف بالإنجليزية
   
-  @Prop() 
-  image?: string; // صورة رئيسية للفئة
-  
   @Prop({ type: Types.ObjectId, ref: 'Media' }) 
-  imageId?: string; // من مستودع الصور
-  
-  @Prop() 
-  icon?: string; // أيقونة صغيرة (للقوائم)
-  
-  @Prop({ type: Types.ObjectId, ref: 'Media' }) 
-  iconId?: string; // أيقونة من المستودع
+  imageId?: string; // صورة رئيسية للفئة
   
   // SEO
   @Prop() 
@@ -58,9 +43,6 @@ export class Category {
   
   @Prop({ default: true }) 
   isActive!: boolean;
-  
-  @Prop({ default: true }) 
-  showInMenu!: boolean; // عرض في القائمة الرئيسية
   
   @Prop({ default: false }) 
   isFeatured!: boolean; // فئة مميزة
@@ -84,9 +66,8 @@ export const CategorySchema = SchemaFactory.createForClass(Category);
 
 // Performance indexes
 CategorySchema.index({ parentId: 1, order: 1 });
-CategorySchema.index({ path: 1 });
 CategorySchema.index({ slug: 1 });
-CategorySchema.index({ isActive: 1, showInMenu: 1 });
+CategorySchema.index({ isActive: 1 });
 CategorySchema.index({ isFeatured: 1 });
 CategorySchema.index({ deletedAt: 1 });
 CategorySchema.index({ parentId: 1, isActive: 1, order: 1 });

@@ -3,10 +3,6 @@ import { marketingApi } from '../api/marketingApi';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
 import toast from 'react-hot-toast';
 import type { 
-  PriceRule, 
-  Coupon, 
-  Banner, 
-  EffectivePriceResult,
   CreatePriceRuleDto,
   UpdatePriceRuleDto,
   CreateCouponDto,
@@ -17,9 +13,7 @@ import type {
   ListCouponsParams,
   ListBannersParams,
   ValidateCouponDto,
-  PreviewPriceRuleDto,
-  PricingQueryDto,
-  CouponAnalytics
+  PricingQueryDto
 } from '../api/marketingApi';
 
 const MARKETING_KEY = 'marketing';

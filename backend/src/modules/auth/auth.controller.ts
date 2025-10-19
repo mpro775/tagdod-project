@@ -1,18 +1,13 @@
 import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards, Logger } from '@nestjs/common';
-import { 
-  ApiBearerAuth, 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
   ApiBody,
-  ApiParam,
-  ApiQuery,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
-  ApiNotFoundResponse,
-  ApiForbiddenResponse,
   ApiCreatedResponse,
-  ApiOkResponse
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import bcrypt from 'bcrypt';
 import { OtpService } from './otp.service';
@@ -46,31 +41,35 @@ export class AuthController {
   ) {}
 
   @Post('send-otp')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Send OTP to phone number',
-    description: 'Sends a one-time password (OTP) to the specified phone number for authentication'
+    description: 'Sends a one-time password (OTP) to the specified phone number for authentication',
   })
   @ApiBody({ type: SendOtpDto })
-  @ApiCreatedResponse({ 
+  @ApiCreatedResponse({
     description: 'OTP sent successfully',
     schema: {
       type: 'object',
       properties: {
         sent: { type: 'boolean', example: true },
-        devCode: { type: 'string', example: '123456', description: 'Development code (only in dev environment)' }
-      }
-    }
+        devCode: {
+          type: 'string',
+          example: '123456',
+          description: 'Development code (only in dev environment)',
+        },
+      },
+    },
   })
-  @ApiBadRequestResponse({ 
+  @ApiBadRequestResponse({
     description: 'Invalid phone number or context',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
         message: { type: 'string', example: 'Invalid phone number format' },
-        error: { type: 'string', example: 'Bad Request' }
-      }
-    }
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
   })
   async sendOtp(@Body() dto: SendOtpDto) {
     const result = await this.otp.sendOtp(
@@ -81,12 +80,12 @@ export class AuthController {
   }
 
   @Post('verify-otp')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Verify OTP and complete registration/login',
-    description: 'Verifies the OTP code and completes user registration or login process'
+    description: 'Verifies the OTP code and completes user registration or login process',
   })
   @ApiBody({ type: VerifyOtpDto })
-  @ApiCreatedResponse({ 
+  @ApiCreatedResponse({
     description: 'OTP verified successfully and user authenticated',
     schema: {
       type: 'object',
@@ -95,41 +94,41 @@ export class AuthController {
           type: 'object',
           properties: {
             access: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
-            refresh: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
-          }
+            refresh: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+          },
         },
         me: {
           type: 'object',
           properties: {
             id: { type: 'string', example: '507f1f77bcf86cd799439011' },
             phone: { type: 'string', example: '+966501234567' },
-            preferredCurrency: { type: 'string', example: 'USD' }
-          }
-        }
-      }
-    }
+            preferredCurrency: { type: 'string', example: 'USD' },
+          },
+        },
+      },
+    },
   })
-  @ApiUnauthorizedResponse({ 
+  @ApiUnauthorizedResponse({
     description: 'Invalid OTP code',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 401 },
         message: { type: 'string', example: 'رمز التحقق غير صالح' },
-        error: { type: 'string', example: 'Unauthorized' }
-      }
-    }
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
   })
-  @ApiBadRequestResponse({ 
+  @ApiBadRequestResponse({
     description: 'Missing required fields for engineer registration',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
         message: { type: 'string', example: 'المسمى الوظيفي مطلوب للمهندسين' },
-        error: { type: 'string', example: 'Bad Request' }
-      }
-    }
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
   })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     const ok = await this.otp.verifyOtp(dto.phone, dto.code, 'register');
@@ -189,23 +188,23 @@ export class AuthController {
       }
     }
 
-    const payload = { 
-      sub: String(user._id), 
-      phone: user.phone, 
+    const payload = {
+      sub: String(user._id),
+      phone: user.phone,
       isAdmin: user.isAdmin,
       roles: user.roles || [],
       permissions: user.permissions || [],
-      preferredCurrency: user.preferredCurrency || 'USD'
+      preferredCurrency: user.preferredCurrency || 'USD',
     };
     const access = this.tokens.signAccess(payload);
     const refresh = this.tokens.signRefresh(payload);
-    return { 
-      tokens: { access, refresh }, 
-      me: { 
-        id: user._id, 
+    return {
+      tokens: { access, refresh },
+      me: {
+        id: user._id,
         phone: user.phone,
-        preferredCurrency: user.preferredCurrency || 'USD'
-      } 
+        preferredCurrency: user.preferredCurrency || 'USD',
+      },
     };
   }
 
@@ -222,22 +221,22 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Patch('preferred-currency')
   async updatePreferredCurrency(
-    @Req() req: { user: { sub: string } }, 
-    @Body() dto: UpdatePreferredCurrencyDto
+    @Req() req: { user: { sub: string } },
+    @Body() dto: UpdatePreferredCurrencyDto,
   ) {
     const user = await this.userModel.findByIdAndUpdate(
-      req.user.sub, 
+      req.user.sub,
       { $set: { preferredCurrency: dto.currency } },
-      { new: true }
+      { new: true },
     );
-    
+
     if (!user) {
       throw new AppException('User not found', '404');
     }
 
-    return { 
-      updated: true, 
-      preferredCurrency: user.preferredCurrency 
+    return {
+      updated: true,
+      preferredCurrency: user.preferredCurrency,
     };
   }
 
@@ -261,11 +260,11 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get current user profile',
-    description: 'Retrieves the current authenticated user profile and capabilities'
+    description: 'Retrieves the current authenticated user profile and capabilities',
   })
-  @ApiOkResponse({ 
+  @ApiOkResponse({
     description: 'User profile retrieved successfully',
     schema: {
       type: 'object',
@@ -279,19 +278,19 @@ export class AuthController {
             lastName: { type: 'string', example: 'محمد' },
             gender: { type: 'string', example: 'male', enum: ['male', 'female'] },
             jobTitle: { type: 'string', example: 'مهندس كهرباء' },
-            isAdmin: { type: 'boolean', example: false }
-          }
+            isAdmin: { type: 'boolean', example: false },
+          },
         },
         capabilities: {
           type: 'object',
           properties: {
             customer_capable: { type: 'boolean', example: true },
             engineer_capable: { type: 'boolean', example: false },
-            wholesale_capable: { type: 'boolean', example: false }
-          }
-        }
-      }
-    }
+            wholesale_capable: { type: 'boolean', example: false },
+          },
+        },
+      },
+    },
   })
   @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT token' })
   async me(@Req() req: { user: { sub: string } }) {
@@ -506,29 +505,34 @@ export class AuthController {
 
     // التحقق من أن المستخدم admin أو super admin
     if (!user.isAdmin && !user.roles?.includes(UserRole.SUPER_ADMIN)) {
-      throw new AppException('AUTH_NOT_ADMIN', 'هذا الحساب غير مصرح له بالدخول للوحة التحكم', null, 403);
+      throw new AppException(
+        'AUTH_NOT_ADMIN',
+        'هذا الحساب غير مصرح له بالدخول للوحة التحكم',
+        null,
+        403,
+      );
     }
 
-    const payload = { 
-      sub: String(user._id), 
-      phone: user.phone, 
+    const payload = {
+      sub: String(user._id),
+      phone: user.phone,
       isAdmin: user.isAdmin,
       roles: user.roles || [],
-      permissions: user.permissions || []
+      permissions: user.permissions || [],
     };
     const access = this.tokens.signAccess(payload);
     const refresh = this.tokens.signRefresh(payload);
 
-    return { 
-      tokens: { access, refresh }, 
-      me: { 
-        id: user._id, 
+    return {
+      tokens: { access, refresh },
+      me: {
+        id: user._id,
         phone: user.phone,
         firstName: user.firstName,
         lastName: user.lastName,
         roles: user.roles,
-        isAdmin: user.isAdmin
-      } 
+        isAdmin: user.isAdmin,
+      },
     };
   }
 }

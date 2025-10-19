@@ -25,14 +25,18 @@ import { useCategoryTree } from '../hooks/useCategories';
 import type { Category, CategoryTreeNode } from '../types/category.types';
 
 interface CategoryTreeViewProps {
+  // eslint-disable-next-line no-unused-vars
   onEdit?: (category: Category) => void;
+  // eslint-disable-next-line no-unused-vars
   onDelete?: (category: Category) => void;
 }
 
 interface TreeNodeProps {
   node: CategoryTreeNode;
   level: number;
+  // eslint-disable-next-line no-unused-vars
   onEdit?: (category: Category) => void;
+  // eslint-disable-next-line no-unused-vars
   onDelete?: (category: Category) => void;
 }
 

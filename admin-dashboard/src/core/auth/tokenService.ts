@@ -13,6 +13,7 @@ export class TokenService {
    */
   static setAccessToken(token: string): void {
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+    // eslint-disable-next-line no-console
     console.log('🔑 Access token saved');
   }
 
@@ -28,6 +29,7 @@ export class TokenService {
    */
   static setRefreshToken(token: string): void {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
+    // eslint-disable-next-line no-console
     console.log('🔄 Refresh token saved');
   }
 
@@ -45,6 +47,7 @@ export class TokenService {
   static isAuthenticated(): boolean {
     const token = this.getAccessToken();
     if (!token) {
+      // eslint-disable-next-line no-console
       console.log('❌ No access token found');
       return false;
     }
@@ -54,13 +57,16 @@ export class TokenService {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const now = Date.now() / 1000;
       if (payload.exp && payload.exp < now) {
+        // eslint-disable-next-line no-console
         console.log('❌ Token expired');
         this.clearTokens();
         return false;
       }
+      // eslint-disable-next-line no-console
       console.log('✅ Token is valid');
       return true;
-    } catch (error) {
+    } catch {
+      // eslint-disable-next-line no-console
       console.log('❌ Invalid token format');
       this.clearTokens();
       return false;

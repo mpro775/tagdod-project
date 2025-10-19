@@ -1,6 +1,9 @@
 export enum Currency {
+  // eslint-disable-next-line no-unused-vars
   USD = 'USD',
+  // eslint-disable-next-line no-unused-vars
   YER = 'YER', // الريال اليمني
+  // eslint-disable-next-line no-unused-vars
   SAR = 'SAR', // الريال السعودي
 }
 

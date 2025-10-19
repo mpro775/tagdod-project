@@ -1,7 +1,8 @@
 import {
   Controller,
   Get,
-  Put,
+  
+  Patch,
   Param,
   Body,
   Query,
@@ -16,6 +17,7 @@ import { AdminGuard } from '../../shared/guards/admin.guard';
 import { SupportService } from './support.service';
 import { UpdateSupportTicketDto } from './dto/update-ticket.dto';
 import { AddSupportMessageDto } from './dto/add-message.dto';
+import { CreateCannedResponseDto, UpdateCannedResponseDto } from './dto/canned-response.dto';
 import { SupportStatus, SupportPriority, SupportCategory } from './schemas/support-ticket.schema';
 
 @ApiTags('support-admin')
@@ -52,7 +54,7 @@ export class AdminSupportController {
     return { data: ticket };
   }
 
-  @Put('tickets/:id')
+  @Patch('tickets/:id')
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   async updateTicket(
     @Param('id') ticketId: string,
@@ -93,5 +95,71 @@ export class AdminSupportController {
   async getStats() {
     const stats = await this.supportService.getTicketStats();
     return { data: stats };
+  }
+
+  @Get('sla/breached')
+  async getBreachedSLATickets() {
+    const tickets = await this.supportService.getBreachedSLATickets();
+    return { data: tickets };
+  }
+
+  @Post('sla/:id/check')
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
+  async checkSLAStatus(@Param('id') ticketId: string) {
+    const isBreached = await this.supportService.checkSLAStatus(ticketId);
+    return { data: { ticketId, slaBreached: isBreached } };
+  }
+
+  // Canned Responses endpoints
+  @Post('canned-responses')
+  async createCannedResponse(@Body() dto: CreateCannedResponseDto) {
+    const response = await this.supportService.createCannedResponse(dto);
+    return { data: response };
+  }
+
+  @Get('canned-responses')
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'category', required: false, enum: SupportCategory })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  async getCannedResponses(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Query('category') category?: SupportCategory,
+    @Query('search') search?: string,
+  ) {
+    const result = await this.supportService.getCannedResponses(category, search, page, limit);
+    return { data: result };
+  }
+
+  @Get('canned-responses/:id')
+  @ApiParam({ name: 'id', description: 'Canned Response ID' })
+  async getCannedResponse(@Param('id') id: string) {
+    const response = await this.supportService.getCannedResponse(id);
+    return { data: response };
+  }
+
+  @Patch('canned-responses/:id')
+  @ApiParam({ name: 'id', description: 'Canned Response ID' })
+  async updateCannedResponse(
+    @Param('id') id: string,
+    @Body() dto: UpdateCannedResponseDto,
+  ) {
+    const response = await this.supportService.updateCannedResponse(id, dto);
+    return { data: response };
+  }
+
+  @Post('canned-responses/:id/use')
+  @ApiParam({ name: 'id', description: 'Canned Response ID' })
+  async useCannedResponse(@Param('id') id: string) {
+    const response = await this.supportService.useCannedResponse(id);
+    return { data: response };
+  }
+
+  @Get('canned-responses/shortcut/:shortcut')
+  @ApiParam({ name: 'shortcut', description: 'Canned Response Shortcut' })
+  async getCannedResponseByShortcut(@Param('shortcut') shortcut: string) {
+    const response = await this.supportService.getCannedResponseByShortcut(shortcut);
+    return { data: response };
   }
 }

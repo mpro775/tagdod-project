@@ -83,6 +83,7 @@ export const useSalesAnalytics = () => {
         const response = await apiClient.get('/analytics/advanced/sales');
         return response.data.data;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.warn('Failed to fetch sales analytics, using fallback data:', error);
         // Return empty object to allow component to handle gracefully
         return null;

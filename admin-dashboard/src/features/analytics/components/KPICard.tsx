@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Chip, LinearProgress } from '@mui/material';
+import { Card, CardContent, Typography, Box, LinearProgress } from '@mui/material';
 import { TrendingUp, TrendingDown, TrendingFlat } from '@mui/icons-material';
 
 interface KPICardProps {

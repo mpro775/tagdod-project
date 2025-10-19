@@ -24,12 +24,7 @@ import {
   FilterList,
   ExpandMore,
   ExpandLess,
-  Clear,
   Search,
-  DateRange,
-  Category,
-  AttachMoney,
-  TrendingUp,
   Refresh,
   Save,
   BookmarkBorder,
@@ -53,6 +48,7 @@ export interface FilterValues {
 interface AdvancedFiltersProps {
   filters: FilterOption[];
   values: FilterValues;
+  // eslint-disable-next-line no-unused-vars
   onChange: (values: FilterValues) => void;
   onApply?: () => void;
   onReset?: () => void;
@@ -61,7 +57,9 @@ interface AdvancedFiltersProps {
   defaultExpanded?: boolean;
   showSaveFilters?: boolean;
   savedFilters?: Array<{ id: string; name: string; values: FilterValues }>;
+  // eslint-disable-next-line no-unused-vars
   onSaveFilter?: (name: string, values: FilterValues) => void;
+  // eslint-disable-next-line no-unused-vars
   onLoadFilter?: (filter: { id: string; name: string; values: FilterValues }) => void;
 }
 
@@ -80,7 +78,6 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   onLoadFilter,
 }) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newFilterName, setNewFilterName] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
@@ -90,9 +87,9 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
     // Track active filters
     if (value && (Array.isArray(value) ? value.length > 0 : true)) {
-      setActiveFilters(prev => [...new Set([...prev, key])]);
+      setActiveFilters((prev) => [...new Set([...prev, key])]);
     } else {
-      setActiveFilters(prev => prev.filter(f => f !== key));
+      setActiveFilters((prev) => prev.filter((f) => f !== key));
     }
   };
 
@@ -102,7 +99,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
   const handleResetFilters = () => {
     const resetValues: FilterValues = {};
-    filters.forEach(filter => {
+    filters.forEach((filter) => {
       switch (filter.type) {
         case 'multiselect':
           resetValues[filter.key] = [];
@@ -123,7 +120,6 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     if (newFilterName && onSaveFilter) {
       onSaveFilter(newFilterName, values);
       setNewFilterName('');
-      setShowSaveDialog(false);
     }
   };
 
@@ -174,16 +170,17 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             size="small"
             options={filter.options || []}
             getOptionLabel={(option) => option.label}
-            value={filter.options?.filter(opt => (currentValue as string[])?.includes(opt.value)) || []}
-            onChange={(event, newValue) => {
-              handleFilterChange(filter.key, newValue.map(item => item.value));
+            value={
+              filter.options?.filter((opt) => (currentValue as string[])?.includes(opt.value)) || []
+            }
+            onChange={(_, newValue) => {
+              handleFilterChange(
+                filter.key,
+                newValue.map((item) => item.value)
+              );
             }}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                label={filter.label}
-                placeholder="اختر متعدد"
-              />
+              <TextField {...params} label={filter.label} placeholder="اختر متعدد" />
             )}
             renderTags={(value, getTagProps) =>
               value.map((option, index) => (
@@ -219,10 +216,12 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               type="date"
               label="من"
               value={(currentValue as { start: string; end: string })?.start || ''}
-              onChange={(e) => handleFilterChange(filter.key, {
-                ...currentValue as { start: string; end: string },
-                start: e.target.value,
-              })}
+              onChange={(e) =>
+                handleFilterChange(filter.key, {
+                  ...(currentValue as { start: string; end: string }),
+                  start: e.target.value,
+                })
+              }
               InputLabelProps={{ shrink: true }}
               sx={{ flex: 1 }}
             />
@@ -231,10 +230,12 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               type="date"
               label="إلى"
               value={(currentValue as { start: string; end: string })?.end || ''}
-              onChange={(e) => handleFilterChange(filter.key, {
-                ...currentValue as { start: string; end: string },
-                end: e.target.value,
-              })}
+              onChange={(e) =>
+                handleFilterChange(filter.key, {
+                  ...(currentValue as { start: string; end: string }),
+                  end: e.target.value,
+                })
+              }
               InputLabelProps={{ shrink: true }}
               sx={{ flex: 1 }}
             />
@@ -259,11 +260,11 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         return (
           <Box>
             <Typography variant="body2" gutterBottom>
-              {filter.label}: {currentValue || filter.min}
+              {filter.label}: {typeof currentValue === 'number' ? currentValue : filter.min}
             </Typography>
             <Slider
-              value={currentValue as number || filter.min || 0}
-              onChange={(e, value) => handleFilterChange(filter.key, value)}
+              value={(currentValue as number) || filter.min || 0}
+              onChange={(_, value) => handleFilterChange(filter.key, value)}
               min={filter.min}
               max={filter.max}
               step={filter.step}
@@ -280,7 +281,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <FormControlLabel
             control={
               <Switch
-                checked={currentValue as boolean || false}
+                checked={(currentValue as boolean) || false}
                 onChange={(e) => handleFilterChange(filter.key, e.target.checked)}
               />
             }
@@ -302,22 +303,14 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <FilterList />
             <Typography variant="h6">{title}</Typography>
             {activeFilters.length > 0 && (
-              <Chip
-                label={`${activeFilters.length} فلتر نشط`}
-                size="small"
-                color="primary"
-              />
+              <Chip label={`${activeFilters.length} فلتر نشط`} size="small" color="primary" />
             )}
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
             {showSaveFilters && (
               <>
-                <Button
-                  size="small"
-                  startIcon={<Save />}
-                  onClick={() => setShowSaveDialog(true)}
-                >
+                <Button size="small" startIcon={<Save />}>
                   حفظ الفلاتر
                 </Button>
                 {savedFilters.length > 0 && (
@@ -327,7 +320,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                       value=""
                       label="الفلاتر المحفوظة"
                       onChange={(e) => {
-                        const filter = savedFilters.find(f => f.id === e.target.value);
+                        const filter = savedFilters.find((f) => f.id === e.target.value);
                         if (filter && onLoadFilter) {
                           onLoadFilter(filter);
                           onChange(filter.values);
@@ -361,16 +354,20 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {activeFilters.map((filterKey) => {
-                const filter = filters.find(f => f.key === filterKey);
+                const filter = filters.find((f) => f.key === filterKey);
                 const value = values[filterKey];
 
                 return (
                   <Chip
                     key={filterKey}
                     label={`${filter?.label}: ${
-                      Array.isArray(value) ? value.join(', ') :
-                      filter?.type === 'boolean' ? (value ? 'نعم' : 'لا') :
-                      value
+                      Array.isArray(value)
+                        ? value.join(', ')
+                        : filter?.type === 'boolean'
+                        ? value
+                          ? 'نعم'
+                          : 'لا'
+                        : value
                     }`}
                     size="small"
                     onDelete={() => handleFilterChange(filterKey, '')}
@@ -394,7 +391,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         <Collapse in={expanded}>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {filters.map((filter) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={filter.key}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={filter.key}>
                 {renderFilter(filter)}
               </Grid>
             ))}
@@ -404,19 +401,12 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
           {/* Actions */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Button
-              variant="outlined"
-              startIcon={<Refresh />}
-              onClick={handleResetFilters}
-            >
+            <Button variant="outlined" startIcon={<Refresh />} onClick={handleResetFilters}>
               إعادة تعيين
             </Button>
 
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                onClick={() => onApply?.()}
-              >
+              <Button variant="outlined" onClick={() => onApply?.()}>
                 تطبيق الفلاتر
               </Button>
               <Button

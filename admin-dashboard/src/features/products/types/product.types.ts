@@ -2,9 +2,13 @@ import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
 // Product Status - متطابق مع الباك إند
 export enum ProductStatus {
+  // eslint-disable-next-line no-unused-vars
   DRAFT = 'draft',
+  // eslint-disable-next-line no-unused-vars
   ACTIVE = 'active',
+  // eslint-disable-next-line no-unused-vars
   OUT_OF_STOCK = 'out_of_stock',
+  // eslint-disable-next-line no-unused-vars
   DISCONTINUED = 'discontinued',
 }
 
@@ -87,19 +91,18 @@ export interface Variant extends BaseEntity {
   // السمات
   attributeValues: VariantAttribute[];
 
-  // التسعير
+  // التسعير (محفوظ بالدولار في الباك إند)
   price: number;
   compareAtPrice?: number;
   costPrice?: number;
 
   // المخزون
   stock: number;
+  minStock: number;
   trackInventory: boolean;
   allowBackorder: boolean;
-  lowStockThreshold: number;
 
   // الصور
-  image?: string;
   imageId?: string;
 
   // الوزن والأبعاد
@@ -117,6 +120,7 @@ export interface Variant extends BaseEntity {
 
   // Soft Delete
   deletedAt?: Date | null;
+  deletedBy?: string;
 }
 
 // DTOs - متطابقة تماماً مع Backend
@@ -140,6 +144,7 @@ export interface CreateProductDto {
   status?: ProductStatus;
   isFeatured?: boolean;
   isNew?: boolean;
+  isBestseller?: boolean;
   order?: number;
 }
 
@@ -193,6 +198,7 @@ export interface UpdateVariantDto {
   sku?: string;
   price?: number;
   compareAtPrice?: number;
+  costPrice?: number;
   stock?: number;
   isActive?: boolean;
   imageId?: string;

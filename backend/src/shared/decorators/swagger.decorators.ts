@@ -1,14 +1,12 @@
 import { applyDecorators } from '@nestjs/common';
 import { 
   ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
+  ApiCreatedResponse,
   ApiQuery, 
   ApiBody,
   ApiBearerAuth,
   ApiTags,
   ApiOkResponse,
-  ApiCreatedResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
@@ -18,7 +16,7 @@ import {
 
 // ==================== Common Response Decorators ====================
 
-export function ApiSuccessResponse(description: string, schema?: any) {
+export function ApiSuccessResponse(description: string, schema?: unknown) {
   return applyDecorators(
     ApiOkResponse({
       description,
@@ -34,7 +32,7 @@ export function ApiSuccessResponse(description: string, schema?: any) {
   );
 }
 
-export function ApiCreatedResponse(description: string, schema?: any) {
+export function ApiCreatedResponseDecorator(description: string, schema?: unknown) {
   return applyDecorators(
     ApiCreatedResponse({
       description,
@@ -392,6 +390,7 @@ export function ApiFileUpload() {
 export function ApiController(tag: string, description?: string) {
   return applyDecorators(
     ApiTags(tag),
+    ...(description ? [ApiOperation({ summary: tag, description })] : []),
     ApiErrorResponses()
   );
 }
@@ -428,7 +427,7 @@ export function ApiPostOperation(summary: string, description?: string) {
       summary, 
       description: description || `Create ${summary.toLowerCase()}` 
     }),
-    ApiCreatedResponse(`${summary} created successfully`)
+    ApiCreatedResponseDecorator(`${summary} created successfully`)
   );
 }
 

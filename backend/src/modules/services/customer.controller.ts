@@ -4,15 +4,18 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ServicesService } from './services.service';
 import { AcceptOfferDto, CreateServiceRequestDto, RateServiceDto } from './dto/requests.dto';
+import { ServicesPermissionGuard, ServicePermission } from './guards/services-permission.guard';
+import { RequireServicePermission } from './decorators/service-permission.decorator';
 
 @ApiTags('services-customer')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
-@Controller('services/requests')
+@UseGuards(JwtAuthGuard, ServicesPermissionGuard)
+@Controller('services/customer')
 export class CustomerServicesController {
   constructor(private svc: ServicesService) {}
 
   @Post()
+  @RequireServicePermission(ServicePermission.CUSTOMER)
   async create(@Req() req: Request, @Body() dto: CreateServiceRequestDto) {
     const data = await this.svc.createRequest(req.user!.sub, dto);
     return { data };

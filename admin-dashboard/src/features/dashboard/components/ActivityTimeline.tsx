@@ -7,7 +7,6 @@ import {
   Avatar,
   alpha,
   useTheme,
-  Chip
 } from '@mui/material';
 import { 
   ShoppingCart, 
@@ -34,6 +33,7 @@ interface ActivityTimelineProps {
 
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ 
   recentOrders,
+  // eslint-disable-next-line no-unused-vars
   isLoading 
 }) => {
   const theme = useTheme();

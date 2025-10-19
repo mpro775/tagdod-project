@@ -5,6 +5,7 @@ import { AdminSupportController } from './admin.controller';
 import { SupportService } from './support.service';
 import { SupportTicket, SupportTicketSchema } from './schemas/support-ticket.schema';
 import { SupportMessage, SupportMessageSchema } from './schemas/support-message.schema';
+import { CannedResponse, CannedResponseSchema } from './schemas/canned-response.schema';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { AuthModule } from '../auth/auth.module';
     MongooseModule.forFeature([
       { name: SupportTicket.name, schema: SupportTicketSchema },
       { name: SupportMessage.name, schema: SupportMessageSchema },
+      { name: CannedResponse.name, schema: CannedResponseSchema },
     ]),
     AuthModule,
   ],

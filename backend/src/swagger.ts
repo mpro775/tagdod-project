@@ -1,12 +1,31 @@
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule, OpenAPIObject } from '@nestjs/swagger';
 import { INestApplication } from '@nestjs/common';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import * as fs from 'fs';
+import * as yaml from 'js-yaml';
 
+interface PostmanRequest {
+  name: string;
+  request: {
+    method: string;
+    header: Array<{ key: string; value: string; type: string }>;
+    url: { raw: string; host: string[]; path: string[] };
+    description: string;
+  };
+}
+
+interface PostmanItem {
+  name: string;
+  item: PostmanRequest[];
+  description: string;
+}
 export function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('Tagadod API')
-    .setDescription('Complete e-commerce platform for solar products with advanced analytics and multi-language support')
+    .setDescription(
+      'Complete e-commerce platform for solar products with advanced analytics and multi-language support',
+    )
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -17,7 +36,7 @@ export function setupSwagger(app: INestApplication) {
         description: 'Enter JWT token',
         in: 'header',
       },
-      'JWT-auth'
+      'JWT-auth',
     )
     .addTag('auth', 'Authentication and authorization endpoints')
     .addTag('users', 'User management and profiles')
@@ -67,8 +86,7 @@ export function setupSwagger(app: INestApplication) {
   // Export OpenAPI specification
   try {
     const outputPath = join(process.cwd(), 'docs', 'api');
-    const fs = require('fs');
-    
+
     // Create directory if it doesn't exist
     if (!fs.existsSync(outputPath)) {
       fs.mkdirSync(outputPath, { recursive: true });
@@ -80,13 +98,15 @@ export function setupSwagger(app: INestApplication) {
     console.log(`📄 OpenAPI JSON exported to: ${jsonPath}`);
 
     // Export as YAML
-    const yaml = require('js-yaml');
     const yamlPath = join(outputPath, 'openapi.yaml');
-    writeFileSync(yamlPath, yaml.dump(document, { 
-      indent: 2,
-      lineWidth: 120,
-      noRefs: true 
-    }));
+    writeFileSync(
+      yamlPath,
+      yaml.dump(document, {
+        indent: 2,
+        lineWidth: 120,
+        noRefs: true,
+      }),
+    );
     console.log(`📄 OpenAPI YAML exported to: ${yamlPath}`);
 
     // Export Postman Collection
@@ -95,7 +115,7 @@ export function setupSwagger(app: INestApplication) {
         name: 'Tagadod API',
         description: 'Complete e-commerce platform for solar products',
         version: '1.0.0',
-        schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
+        schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
       },
       auth: {
         type: 'bearer',
@@ -103,71 +123,70 @@ export function setupSwagger(app: INestApplication) {
           {
             key: 'token',
             value: '{{jwt_token}}',
-            type: 'string'
-          }
-        ]
+            type: 'string',
+          },
+        ],
       },
       variable: [
         {
           key: 'base_url',
           value: 'http://localhost:3000/api/v1',
-          type: 'string'
+          type: 'string',
         },
         {
           key: 'jwt_token',
           value: '',
-          type: 'string'
-        }
+          type: 'string',
+        },
       ],
-      item: generatePostmanItems(document)
+      item: generatePostmanItems(document),
     };
 
     const postmanPath = join(outputPath, 'postman-collection.json');
     writeFileSync(postmanPath, JSON.stringify(postmanCollection, null, 2));
     console.log(`📄 Postman Collection exported to: ${postmanPath}`);
-
   } catch (error) {
-    console.warn('⚠️  Could not export OpenAPI specification:', error.message);
+    console.warn('⚠️  Could not export OpenAPI specification:', (error as Error).message);
   }
 
   return document;
 }
 
 // Helper function to generate Postman collection items
-function generatePostmanItems(document: any): any[] {
-  const items: any[] = [];
+function generatePostmanItems(document: OpenAPIObject): PostmanItem[] {
+  const items: PostmanItem[] = [];
   const paths = document.paths || {};
 
   // Group endpoints by tags
-  const groupedEndpoints: { [key: string]: any[] } = {};
+  const groupedEndpoints: { [key: string]: PostmanRequest[] } = {};
 
-  Object.entries(paths).forEach(([path, methods]: [string, any]) => {
-    Object.entries(methods).forEach(([method, details]: [string, any]) => {
-      const tags = details.tags || ['General'];
+  Object.entries(paths).forEach(([path, pathItem]) => {
+    Object.entries(pathItem).forEach(([method, operation]) => {
+      const tags = operation.tags || ['General'];
       const tag = tags[0];
-      
+
       if (!groupedEndpoints[tag]) {
         groupedEndpoints[tag] = [];
       }
 
       groupedEndpoints[tag].push({
-        name: details.summary || `${method.toUpperCase()} ${path}`,
+        name: operation.summary || `${method.toUpperCase()} ${path}`,
         request: {
           method: method.toUpperCase(),
           header: [
             {
               key: 'Content-Type',
               value: 'application/json',
-              type: 'text'
-            }
+              type: 'text',
+            },
           ],
           url: {
             raw: '{{base_url}}' + path,
             host: ['{{base_url}}'],
-            path: path.split('/').filter(Boolean)
+            path: path.split('/').filter(Boolean),
           },
-          description: details.description || ''
-        }
+          description: operation.description || '',
+        },
       });
     });
   });
@@ -177,7 +196,7 @@ function generatePostmanItems(document: any): any[] {
     items.push({
       name: tag,
       item: endpoints,
-      description: `Endpoints for ${tag} functionality`
+      description: `Endpoints for ${tag} functionality`,
     });
   });
 

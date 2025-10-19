@@ -28,6 +28,8 @@ export class BrandsService {
       slug,
       isActive: dto.isActive ?? true,
       sortOrder: dto.sortOrder ?? 0,
+      description: dto.description ?? '',
+      descriptionEn: dto.descriptionEn ?? '',
     });
 
     return await brand.save();
@@ -37,17 +39,26 @@ export class BrandsService {
    * Get all brands with filters and pagination
    */
   async listBrands(dto: ListBrandsDto) {
-    const { page = 1, limit = 20, search, isActive, sortBy = 'sortOrder', sortOrder = 'asc' } = dto;
+    const { page = 1, limit = 20, search, isActive, sortBy = 'sortOrder', sortOrder = 'asc', language = 'ar' } = dto;
 
     const skip = (page - 1) * limit;
     const query: Record<string, unknown> = {};
 
     // Search filter
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-      ];
+      if (language === 'en') {
+        query.$or = [
+          { nameEn: { $regex: search, $options: 'i' } },
+          { descriptionEn: { $regex: search, $options: 'i' } },
+        ];
+      } else {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { nameEn: { $regex: search, $options: 'i' } },
+          { descriptionEn: { $regex: search, $options: 'i' } },
+        ];
+      }
     }
 
     // Status filter
@@ -117,6 +128,14 @@ export class BrandsService {
         throw new AppException('Brand with this name already exists', '400');
       }
       brand.slug = newSlug;
+    }
+
+    // Handle description fields with default values
+    if (dto.description !== undefined) {
+      brand.description = dto.description;
+    }
+    if (dto.descriptionEn !== undefined) {
+      brand.descriptionEn = dto.descriptionEn;
     }
 
     // Update fields

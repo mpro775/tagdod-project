@@ -15,7 +15,8 @@ import {
 } from './schemas/report-schedule.schema';
 import { AnalyticsQueryDto, DashboardDataDto, PerformanceMetricsDto } from './dto/analytics.dto';
 import { User, UserDocument } from '../users/schemas/user.schema';
-import { Product, ProductDocument } from '../catalog/schemas/product.schema';
+import { Product, ProductDocument } from '../products/schemas/product.schema';
+import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { Order, OrderDocument } from '../checkout/schemas/order.schema';
 import { ServiceRequest, ServiceRequestDocument } from '../services/schemas/service-request.schema';
 import { SupportTicket, SupportTicketDocument } from '../support/schemas/support-ticket.schema';
@@ -37,6 +38,7 @@ export class AnalyticsService {
     @InjectModel(ReportSchedule.name) private reportScheduleModel: Model<ReportScheduleDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(ServiceRequest.name) private serviceModel: Model<ServiceRequestDocument>,
     @InjectModel(SupportTicket.name) private supportModel: Model<SupportTicketDocument>,
@@ -246,15 +248,15 @@ export class AnalyticsService {
    */
   private async calculateProductAnalytics(startDate: Date, endDate: Date) {
     const [totalProducts, activeProducts, featuredProducts, newProducts] = await Promise.all([
-      this.productModel.countDocuments({}),
-      this.productModel.countDocuments({ status: 'Active' }),
-      this.productModel.countDocuments({ isFeatured: true }),
-      this.productModel.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
+      this.productModel.countDocuments({ deletedAt: null }),
+      this.productModel.countDocuments({ status: 'active', deletedAt: null }),
+      this.productModel.countDocuments({ isFeatured: true, deletedAt: null }),
+      this.productModel.countDocuments({ createdAt: { $gte: startDate, $lte: endDate }, deletedAt: null }),
     ]);
 
     // Products by category
     const byCategory = await this.productModel.aggregate([
-      { $match: { status: 'Active' } },
+      { $match: { status: 'active', deletedAt: null } },
       { $group: { _id: '$categoryId', count: { $sum: 1 } } },
     ]);
 
@@ -265,25 +267,78 @@ export class AnalyticsService {
 
     // Average rating
     const ratingResult = await this.productModel.aggregate([
-      { $match: { adminRating: { $gt: 0 } } },
-      { $group: { _id: null, avgRating: { $avg: '$adminRating' }, count: { $sum: 1 } } },
+      { $match: { averageRating: { $gt: 0 }, deletedAt: null } },
+      { $group: { _id: null, avgRating: { $avg: '$averageRating' }, count: { $sum: 1 } } },
     ]);
 
     const averageRating = ratingResult[0]?.avgRating || 0;
 
     // Top rated products
     const topRated = await this.productModel
-      .find({ adminRating: { $gt: 0 } })
-      .sort({ adminRating: -1 })
+      .find({ averageRating: { $gt: 0 }, deletedAt: null })
+      .sort({ averageRating: -1 })
       .limit(10)
-      .select('name adminRating')
+      .select('name averageRating')
       .lean();
 
-    // Low stock alerts - will be populated when inventory system is integrated
-    const lowStock: Array<{ productId: string; name: string; stock: number }> = [];
+    // Low stock alerts - البحث في Variants
+    const lowStockVariants = await this.variantModel.aggregate([
+      {
+        $match: {
+          trackInventory: true,
+          deletedAt: null,
+          isActive: true,
+          $expr: { $lte: ['$stock', '$minStock'] }
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'productId',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+      {
+        $unwind: '$product'
+      },
+      {
+        $project: {
+          productId: '$productId',
+          name: '$product.name',
+          stock: '$stock'
+        }
+      }
+    ]);
 
-    // Inventory value - will be calculated when inventory system is integrated
-    const inventoryValue = 0;
+    const lowStock = lowStockVariants.map(v => ({
+      productId: v.productId.toString(),
+      name: v.name,
+      stock: v.stock
+    }));
+
+    // Inventory value - حساب من Variants
+    const inventoryResult = await this.variantModel.aggregate([
+      {
+        $match: {
+          trackInventory: true,
+          deletedAt: null,
+          isActive: true
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalValue: {
+            $sum: {
+              $multiply: ['$stock', '$basePriceUSD']
+            }
+          }
+        }
+      }
+    ]);
+
+    const inventoryValue = inventoryResult[0]?.totalValue || 0;
 
     return {
       total: totalProducts,
@@ -292,7 +347,7 @@ export class AnalyticsService {
       new: newProducts,
       byCategory: categoryMap,
       averageRating,
-      topRated: topRated.map(p => ({ productId: p._id, name: p.name, rating: p.adminRating, sales: 0 })),
+      topRated: topRated.map(p => ({ productId: p._id, name: p.name, rating: p.averageRating, sales: 0 })),
       lowStock,
       inventoryValue,
     };
@@ -641,6 +696,24 @@ export class AnalyticsService {
         { filename: 'installation-guide.pdf', downloads: 350, size: 3000000 },
       ],
     };
+  }
+
+  /**
+   * Get performance metrics
+   */
+  async getPerformanceMetrics() {
+    const snapshot = await this.generateAnalyticsSnapshot();
+    return snapshot.performance;
+  }
+
+  /**
+   * Refresh analytics data
+   */
+  async refreshAnalytics() {
+    const now = new Date();
+    await this.generateAnalyticsSnapshot(now, PeriodType.DAILY);
+    await this.generateAnalyticsSnapshot(now, PeriodType.WEEKLY);
+    await this.generateAnalyticsSnapshot(now, PeriodType.MONTHLY);
   }
 
   /**

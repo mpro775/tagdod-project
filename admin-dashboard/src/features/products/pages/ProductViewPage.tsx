@@ -8,7 +8,6 @@ import {
   Grid,
   Chip,
   Divider,
-  Avatar,
   Card,
   CardContent,
   CardMedia,
@@ -25,11 +24,9 @@ import {
   Star,
   Visibility,
   ShoppingCart,
-  Share,
 } from '@mui/icons-material';
 import { useProduct } from '../hooks/useProducts';
 import { formatCurrency, formatDate } from '@/shared/utils/formatters';
-import type { Product } from '../types/product.types';
 
 export const ProductViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

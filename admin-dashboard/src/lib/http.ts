@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import toast from 'react-hot-toast';
 import { STORAGE_KEYS } from '@/config/constants';
 
 // Create axios instance with environment configuration
@@ -17,6 +18,7 @@ http.interceptors.request.use(
     const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      // eslint-disable-next-line no-console
       console.log('🔑 Adding token to request:', config.url);
     }
 
@@ -47,7 +49,7 @@ http.interceptors.response.use(
     const response = error.response;
 
     // Extract error message
-    const err = response?.data?.error ?? { 
+    const err = (response?.data as any)?.error ?? { 
       message: error.message || 'حدث خطأ غير متوقع' 
     };
 
@@ -85,17 +87,21 @@ http.interceptors.response.use(
 
     // Handle 403 Forbidden
     if (error.response?.status === 403) {
+      // eslint-disable-next-line no-console
       console.error('❌ Access forbidden:', err.message);
-      // TODO: Show unauthorized access toast
+      toast.error('ليس لديك صلاحية للوصول إلى هذا المورد');
     }
 
     // Handle 500+ Server Errors
     if (error.response?.status && error.response.status >= 500) {
+      // eslint-disable-next-line no-console
       console.error('❌ Server error:', err.message);
-      // TODO: Show server error toast
+      toast.error('حدث خطأ في الخادم، يرجى المحاولة مرة أخرى');
     }
 
-    // TODO: اعرض Toast موحّد هنا
+    // Show unified error toast for other errors
+    toast.error(err.message || 'حدث خطأ غير متوقع');
+    // eslint-disable-next-line no-console
     console.error('❌ HTTP Error:', err);
     
     return Promise.reject(err);

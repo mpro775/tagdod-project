@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/Card';
-import { Button } from '../../../shared/components/ui/Button';
+import { Card, CardContent, CardHeader, Typography } from '@mui/material';
+import { Button } from '@mui/material';
 import { CartFilters as CartFiltersType, CartStatus } from '../types/cart.types';
-import { formatCartStatus } from '../api/cartApi';
 
 interface CartFiltersProps {
   filters: CartFiltersType;
+  // eslint-disable-next-line no-unused-vars
   onFiltersChange: (filters: CartFiltersType) => void;
   onApplyFilters: () => void;
   onResetFilters: () => void;
@@ -48,16 +48,17 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>تصفية السلال</CardTitle>
+        <Typography variant="h6">تصفية السلال</Typography>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-2">
               حالة السلة
             </label>
             <select
+              id="status-filter"
               value={localFilters.status || ''}
               onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -73,10 +74,14 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
 
           {/* User ID Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="user-id-filter"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               معرف المستخدم
             </label>
             <input
+              id="user-id-filter"
               type="text"
               value={localFilters.userId || ''}
               onChange={(e) => handleFilterChange('userId', e.target.value || undefined)}
@@ -87,10 +92,14 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
 
           {/* Date From Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="date-from-filter"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               من تاريخ
             </label>
             <input
+              id="date-from-filter"
               type="date"
               value={localFilters.dateFrom || ''}
               onChange={(e) => handleFilterChange('dateFrom', e.target.value || undefined)}
@@ -100,10 +109,14 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
 
           {/* Date To Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="date-to-filter"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               إلى تاريخ
             </label>
             <input
+              id="date-to-filter"
               type="date"
               value={localFilters.dateTo || ''}
               onChange={(e) => handleFilterChange('dateTo', e.target.value || undefined)}
@@ -114,11 +127,7 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-3 mt-6">
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            disabled={loading}
-          >
+          <Button onClick={handleReset} variant="outlined" disabled={loading}>
             إعادة تعيين
           </Button>
           <Button

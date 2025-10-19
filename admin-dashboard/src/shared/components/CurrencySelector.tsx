@@ -32,13 +32,14 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({
   return (
     <div className={`currency-selector ${className}`}>
       {showLabel && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="currency-select" className="block text-sm font-medium text-gray-700 mb-1">
           العملة
         </label>
       )}
       
       <div className="relative">
         <select
+          id="currency-select"
           value={selectedCurrency}
           onChange={(e) => changeCurrency(e.target.value as Currency)}
           className={`

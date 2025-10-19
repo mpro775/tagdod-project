@@ -55,9 +55,10 @@ export class UsersAdminController {
     const skip = (page - 1) * limit;
     const query: FilterQuery<User> = {};
 
-    // فلترة المحذوفين
+    // فلترة المحذوفين - إصلاح منطق الفلترة
     if (!includeDeleted) {
       query.deletedAt = null;
+      query.status = { $ne: UserStatus.DELETED };
     }
 
     // البحث
@@ -79,9 +80,13 @@ export class UsersAdminController {
       query.roles = role;
     }
 
-    // فلترة الأدمن
+    // فلترة الأدمن (استخدام الأدوار بدلاً من isAdmin)
     if (isAdmin !== undefined) {
-      query.isAdmin = isAdmin;
+      if (isAdmin) {
+        query.roles = { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      } else {
+        query.roles = { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      }
     }
 
     // الترتيب
@@ -227,7 +232,6 @@ export class UsersAdminController {
     if (dto.roles !== undefined) user.roles = dto.roles;
     if (dto.permissions !== undefined) user.permissions = dto.permissions;
     if (dto.status !== undefined) user.status = dto.status;
-    if (dto.isAdmin !== undefined) user.isAdmin = dto.isAdmin;
 
     // تحديث كلمة المرور
     if (dto.password) {
@@ -355,10 +359,10 @@ export class UsersAdminController {
       throw new AppException('CANNOT_DELETE_SUPER_ADMIN', 'لا يمكن حذف Super Admin', null, 403);
     }
 
-    // Soft delete
+    // Soft delete - إصلاح منطق الحذف الناعم
     user.deletedAt = new Date();
     user.deletedBy = req.user.sub;
-    user.status = UserStatus.SUSPENDED;
+    user.status = UserStatus.DELETED; // استخدام الحالة الجديدة
 
     await user.save();
 
@@ -379,7 +383,7 @@ export class UsersAdminController {
       throw new AppException('USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
     }
 
-    if (!user.deletedAt) {
+    if (!user.deletedAt && user.status !== UserStatus.DELETED) {
       throw new AppException('USER_NOT_DELETED', 'المستخدم غير محذوف', null, 400);
     }
 
@@ -426,11 +430,29 @@ export class UsersAdminController {
   @Get('stats/summary')
   async getUserStats() {
     const [total, active, suspended, deleted, admins, engineers, wholesale] = await Promise.all([
-      this.userModel.countDocuments({ deletedAt: null }),
-      this.userModel.countDocuments({ status: UserStatus.ACTIVE, deletedAt: null }),
-      this.userModel.countDocuments({ status: UserStatus.SUSPENDED, deletedAt: null }),
-      this.userModel.countDocuments({ deletedAt: { $ne: null } }),
-      this.userModel.countDocuments({ isAdmin: true, deletedAt: null }),
+      this.userModel.countDocuments({ 
+        deletedAt: null,
+        status: { $ne: UserStatus.DELETED }
+      }),
+      this.userModel.countDocuments({ 
+        status: UserStatus.ACTIVE, 
+        deletedAt: null 
+      }),
+      this.userModel.countDocuments({ 
+        status: UserStatus.SUSPENDED, 
+        deletedAt: null 
+      }),
+      this.userModel.countDocuments({ 
+        $or: [
+          { deletedAt: { $ne: null } },
+          { status: UserStatus.DELETED }
+        ]
+      }),
+      this.userModel.countDocuments({ 
+        roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] }, 
+        deletedAt: null,
+        status: { $ne: UserStatus.DELETED }
+      }),
       this.capsModel.countDocuments({ engineer_capable: true }),
       this.capsModel.countDocuments({ wholesale_capable: true }),
     ]);

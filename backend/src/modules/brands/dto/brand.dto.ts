@@ -18,6 +18,12 @@ export class CreateBrandDto {
   @MaxLength(100)
   name!: string;
 
+  @ApiProperty({ example: 'Apple', description: 'Brand name in English' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  nameEn!: string;
+
   @ApiProperty({ example: 'https://example.com/apple-logo.png', description: 'Brand image URL' })
   @IsString()
   image!: string;
@@ -27,6 +33,12 @@ export class CreateBrandDto {
   @IsString()
   @MaxLength(500)
   description?: string;
+
+  @ApiProperty({ example: 'Leading technology company', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  descriptionEn?: string;
 
   @ApiProperty({ example: true, required: false })
   @IsOptional()
@@ -53,6 +65,13 @@ export class UpdateBrandDto {
   @MaxLength(100)
   name?: string;
 
+  @ApiProperty({ example: 'Apple', required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  nameEn?: string;
+
   @ApiProperty({ example: 'https://example.com/apple-logo.png', required: false })
   @IsOptional()
   @IsString()
@@ -63,6 +82,12 @@ export class UpdateBrandDto {
   @IsString()
   @MaxLength(500)
   description?: string;
+
+  @ApiProperty({ example: 'Leading technology company', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  descriptionEn?: string;
 
   @ApiProperty({ example: true, required: false })
   @IsOptional()
@@ -98,6 +123,11 @@ export class ListBrandsDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiProperty({ example: 'en', enum: ['ar', 'en'], required: false })
+  @IsOptional()
+  @IsIn(['ar', 'en'])
+  language?: 'ar' | 'en';
 
   @ApiProperty({ example: true, required: false })
   @IsOptional()

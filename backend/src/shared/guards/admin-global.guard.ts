@@ -2,6 +2,7 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from '../../modules/auth/jwt-auth.guard';
 import { AdminGuard } from './admin.guard';
+import { TokensService } from '../../modules/auth/tokens.service';
 
 /**
  * Global Admin Guard that applies to all /api/v1/admin/* routes
@@ -9,10 +10,15 @@ import { AdminGuard } from './admin.guard';
  */
 @Injectable()
 export class AdminGlobalGuard implements CanActivate {
-  private jwtGuard = new JwtAuthGuard(null as any); // Will be injected properly by DI
+  private jwtGuard: JwtAuthGuard;
   private adminGuard = new AdminGuard();
 
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private tokensService: TokensService,
+  ) {
+    this.jwtGuard = new JwtAuthGuard(this.tokensService);
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

@@ -17,8 +17,9 @@ import {
   MarketingReportQueryDto,
   RealTimeMetricsDto,
 } from '../dto/advanced-analytics.dto';
-import { Order, OrderDocument, OrderStatus } from '../../checkout/schemas/order.schema.new';
+import { Order, OrderDocument, OrderStatus } from '../../checkout/schemas/order.schema';
 import { Product, ProductDocument } from '../../products/schemas/product.schema';
+import { Variant, VariantDocument } from '../../products/schemas/variant.schema';
 import { Cart, CartDocument } from '../../cart/schemas/cart.schema';
 import { User, UserDocument } from '../../users/schemas/user.schema';
 import { Coupon, CouponDocument } from '../../marketing/schemas/coupon.schema';
@@ -256,6 +257,7 @@ export class AdvancedReportsService {
     @InjectModel(AdvancedReport.name) private reportModel: Model<AdvancedReportDocument>,
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
     @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
@@ -284,7 +286,7 @@ export class AdvancedReportsService {
         title: dto.title,
         titleEn: dto.titleEn,
         description: dto.description,
-        descriptionEn: dto.description, // TODO: Add separate English description
+        descriptionEn: dto.descriptionEn,
         category: dto.category,
         priority: dto.priority || 'medium',
         startDate,
@@ -530,10 +532,7 @@ export class AdvancedReportsService {
           isActive: true, 
           deletedAt: null 
         }),
-        this.productModel.countDocuments({ 
-          status: 'out_of_stock', 
-          deletedAt: null 
-        }),
+        this.getOutOfStockCount(),
         this.getTopPerformingProducts(startDate, endDate, query.limit || 10),
         this.getUnderPerformingProducts(startDate, endDate, query.limit || 10),
       ]);
@@ -650,7 +649,7 @@ export class AdvancedReportsService {
           _id: null,
           grossRevenue: { $sum: '$total' },
           totalDiscounts: { $sum: '$totalDiscount' },
-          totalRefunds: { $sum: { $cond: ['$isRefunded', '$refundAmount', 0] } },
+          totalRefunds: { $sum: { $cond: ['$returnInfo.isReturned', '$returnInfo.returnAmount', 0] } },
           totalShipping: { $sum: '$shippingCost' },
           totalTax: { $sum: '$tax' },
         },
@@ -776,7 +775,7 @@ export class AdvancedReportsService {
     const completedOrders = orders.filter(
       (o) => o.status === OrderStatus.COMPLETED || o.status === OrderStatus.DELIVERED,
     );
-    const returnedOrders = orders.filter((o) => o.isRefunded);
+    const returnedOrders = orders.filter((o) => o.returnInfo.isReturned);
 
     return {
       orderFulfillment: {
@@ -792,7 +791,7 @@ export class AdvancedReportsService {
         totalReturns: returnedOrders.length,
         returnRate: orders.length > 0 ? (returnedOrders.length / orders.length) * 100 : 0,
         topReturnReasons: this.getTopReturnReasons(returnedOrders),
-        returnsByProduct: [], // TODO: Implement detailed return tracking
+        returnsByProduct: this.getReturnsByProduct(returnedOrders),
       },
       supportMetrics: await this.getSupportMetrics(startDate, endDate),
       inventoryMetrics: {
@@ -832,7 +831,7 @@ export class AdvancedReportsService {
     return {
       totalProducts: products.length,
       activeProducts: products.filter((p) => p.status === 'active').length,
-      outOfStock: products.filter((p) => p.status === 'out_of_stock').length,
+      outOfStock: await this.getOutOfStockCount(),
       lowStock: await this.getLowStockCount(),
       topPerformers: [],
       underPerformers: [],
@@ -908,12 +907,12 @@ export class AdvancedReportsService {
       activeCarts,
       abandonedCarts,
       abandonmentRate,
-      recoveredCarts: 0, // TODO: Implement cart recovery tracking
-      recoveryRate: 0,
+      recoveredCarts: await this.getRecoveredCartsCount(startDate, endDate),
+      recoveryRate: await this.getCartRecoveryRate(startDate, endDate),
       averageCartValue: stats.avgValue,
       averageCartItems: stats.avgItems,
       conversionRate,
-      checkoutDropoffRate: 0, // TODO: Implement checkout funnel tracking
+      checkoutDropoffRate: await this.getCheckoutDropoffRate(startDate, endDate),
       abandonedCartValue: stats.totalAbandoned,
       topAbandonedProducts: await this.getTopAbandonedProducts(
         startDate,
@@ -1021,16 +1020,57 @@ export class AdvancedReportsService {
     // Generate summary based on analytics data
     let totalRecords = 0;
     let totalValue = 0;
+    let growth = 0;
 
     const sales = analytics as Partial<AnalyticsByCategory>;
     if (sales.salesAnalytics) {
       totalRecords = sales.salesAnalytics.totalOrders;
       totalValue = sales.salesAnalytics.totalRevenue;
+      
+      // حساب النمو للمبيعات بناءً على متوسط قيمة الطلب
+      if (sales.salesAnalytics.averageOrderValue) {
+        // استخدام متوسط قيمة الطلب كمؤشر للنمو
+        growth = Math.min(sales.salesAnalytics.averageOrderValue / 100, 100); // تحويل إلى نسبة مئوية
+      }
     } else if ((analytics as Partial<AnalyticsByCategory>).customerAnalytics) {
       const cust = (analytics as Partial<AnalyticsByCategory>).customerAnalytics;
       if (cust) {
         totalRecords = cust.totalCustomers;
         totalValue = cust.averageLifetimeValue * totalRecords;
+        
+        // حساب النمو للعملاء
+        if (cust.newVsReturning) {
+          // نسبة العملاء الجدد كنمو
+          growth = cust.newVsReturning.newPercentage;
+        }
+      }
+    } else if ((analytics as Partial<AnalyticsByCategory>).productAnalytics) {
+      const prod = (analytics as Partial<AnalyticsByCategory>).productAnalytics;
+      if (prod) {
+        totalRecords = prod.totalProducts;
+        totalValue = prod.inventoryValue || 0;
+        
+        // حساب النمو للمنتجات بناءً على الأداء
+        if (prod.topPerformers && prod.underPerformers) {
+          const performersCount = prod.topPerformers.length;
+          const underPerformersCount = prod.underPerformers.length;
+          const totalPerformingProducts = performersCount + underPerformersCount;
+          
+          if (totalPerformingProducts > 0) {
+            growth = (performersCount / totalPerformingProducts) * 100;
+          }
+        }
+      }
+    } else if ((analytics as Partial<AnalyticsByCategory>).financialAnalytics) {
+      const fin = (analytics as Partial<AnalyticsByCategory>).financialAnalytics;
+      if (fin) {
+        totalRecords = 1; // تقرير مالي واحد
+        totalValue = fin.netRevenue || fin.grossRevenue || 0;
+        
+        // حساب النمو المالي
+        if (fin.grossMargin !== undefined) {
+          growth = fin.grossMargin;
+        }
       }
     }
 
@@ -1038,7 +1078,7 @@ export class AdvancedReportsService {
       totalRecords,
       totalValue,
       currency: 'YER',
-      growth: 0, // TODO: Calculate growth
+      growth,
     };
   }
 
@@ -1382,13 +1422,57 @@ export class AdvancedReportsService {
       .limit(limit)
       .lean();
 
+    // Get last sold dates for each product from orders
+    const productIds = allProducts.map(p => p._id?.toString()).filter(Boolean) as string[];
+    const lastSoldDates = await this.getLastSoldDatesForProducts(productIds);
+
     return allProducts.map((p) => ({
       productId: p._id?.toString() || '',
       name: p.name,
       views: p.viewsCount,
       sales: p.salesCount,
-      lastSold: undefined, // TODO: Get from orders
+      lastSold: lastSoldDates.get(p._id?.toString()),
     }));
+  }
+
+  private async getLastSoldDatesForProducts(productIds: string[]): Promise<Map<string, Date | undefined>> {
+    const lastSoldMap = new Map<string, Date | undefined>();
+
+    // Get the most recent order date for each product
+    const lastSoldResults = await this.orderModel.aggregate([
+      {
+        $match: {
+          'items.productId': { $in: productIds },
+          status: { $in: ['completed', 'delivered'] }
+        }
+      },
+      {
+        $unwind: '$items'
+      },
+      {
+        $match: {
+          'items.productId': { $in: productIds }
+        }
+      },
+      {
+        $group: {
+          _id: '$items.productId',
+          lastSold: { $max: '$createdAt' }
+        }
+      }
+    ]);
+
+    // Initialize map with undefined for all products
+    productIds.forEach(id => {
+      lastSoldMap.set(id.toString(), undefined);
+    });
+
+    // Set actual last sold dates
+    lastSoldResults.forEach(result => {
+      lastSoldMap.set(result._id.toString(), result.lastSold);
+    });
+
+    return lastSoldMap;
   }
 
   private async getCategoryBreakdown(
@@ -1722,7 +1806,7 @@ export class AdvancedReportsService {
           inflow: { $sum: '$total' },
           outflow: {
             $sum: {
-              $add: ['$totalDiscount', { $cond: ['$isRefunded', '$refundAmount', 0] }],
+              $add: ['$totalDiscount', { $cond: ['$returnInfo.isReturned', '$returnInfo.returnAmount', 0] }],
             },
           },
         },
@@ -1841,7 +1925,7 @@ export class AdvancedReportsService {
     const reasonCounts: Record<string, number> = {};
 
     returnedOrders.forEach((order) => {
-      const reason = order.refundReason || 'Not specified';
+      const reason = order.returnInfo?.returnReason || 'Not specified';
       reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
     });
 
@@ -1854,6 +1938,102 @@ export class AdvancedReportsService {
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
+  }
+
+  private getReturnsByProduct(returnedOrders: OrderDocument[]): Array<{
+    productId: string;
+    name: string;
+    returns: number;
+    rate: number;
+  }> {
+    const productReturnCounts: Record<string, { name: string; returns: number; totalSold: number }> = {};
+
+    // حساب الإرجاعات لكل منتج
+    returnedOrders.forEach((order) => {
+      order.items.forEach((item) => {
+        if (item.isReturned && item.returnQty > 0) {
+          const productId = item.productId.toString();
+          const productName = item.snapshot?.name || 'Unknown Product';
+          
+          if (!productReturnCounts[productId]) {
+            productReturnCounts[productId] = {
+              name: productName,
+              returns: 0,
+              totalSold: 0,
+            };
+          }
+          
+          productReturnCounts[productId].returns += item.returnQty;
+        }
+      });
+    });
+
+    // حساب إجمالي المبيعات لكل منتج (من جميع الطلبات)
+    returnedOrders.forEach((order) => {
+      order.items.forEach((item) => {
+        const productId = item.productId.toString();
+        if (productReturnCounts[productId]) {
+          productReturnCounts[productId].totalSold += item.qty;
+        }
+      });
+    });
+
+    // حساب معدل الإرجاع وإرجاع النتائج
+    return Object.entries(productReturnCounts)
+      .map(([productId, data]) => ({
+        productId,
+        name: data.name,
+        returns: data.returns,
+        rate: data.totalSold > 0 ? (data.returns / data.totalSold) * 100 : 0,
+      }))
+      .sort((a, b) => b.returns - a.returns)
+      .slice(0, 10); // أفضل 10 منتجات مرتجعة
+  }
+
+  private async getRecoveredCartsCount(startDate: Date, endDate: Date): Promise<number> {
+    // حساب السلال التي تم استردادها (تحويلها من abandoned إلى converted)
+    return await this.cartModel.countDocuments({
+      status: 'converted',
+      convertedAt: { $gte: startDate, $lte: endDate },
+      isAbandoned: true, // كانت متروكة سابقاً
+    });
+  }
+
+  private async getCartRecoveryRate(startDate: Date, endDate: Date): Promise<number> {
+    // حساب معدل الاسترداد = (السلال المستردة / السلال المتروكة) × 100
+    const totalAbandoned = await this.cartModel.countDocuments({
+      isAbandoned: true,
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+
+    const recoveredCarts = await this.getRecoveredCartsCount(startDate, endDate);
+
+    return totalAbandoned > 0 ? (recoveredCarts / totalAbandoned) * 100 : 0;
+  }
+
+  private async getCheckoutDropoffRate(startDate: Date, endDate: Date): Promise<number> {
+    // حساب معدل الانسحاب من checkout = (السلال التي بدأت checkout - الطلبات المكتملة) / السلال التي بدأت checkout × 100
+    
+    // السلال التي بدأت عملية الدفع (تحتوي على عناصر وتم تحديثها مؤخراً)
+    const cartsThatStartedCheckout = await this.cartModel.countDocuments({
+      'items.0': { $exists: true }, // تحتوي على عناصر
+      lastActivityAt: { $gte: startDate, $lte: endDate },
+      status: { $in: ['active', 'abandoned'] }, // لم تكتمل بعد
+    });
+
+    // ملاحظة: نحتاج فقط السلال المحولة، وليس الطلبات المكتملة مباشرة
+
+    // السلال المحولة إلى طلبات
+    const convertedCarts = await this.cartModel.countDocuments({
+      status: 'converted',
+      convertedAt: { $gte: startDate, $lte: endDate },
+    });
+
+    const totalCheckoutAttempts = cartsThatStartedCheckout + convertedCarts;
+    const successfulCheckouts = convertedCarts;
+
+    return totalCheckoutAttempts > 0 ? 
+      ((totalCheckoutAttempts - successfulCheckouts) / totalCheckoutAttempts) * 100 : 0;
   }
 
   private async getTopAbandonedProducts(
@@ -1965,9 +2145,20 @@ export class AdvancedReportsService {
    * Get count of products with low stock
    */
   private async getLowStockCount(): Promise<number> {
-    return await this.productModel.countDocuments({
-      trackStock: true,
+    return await this.variantModel.countDocuments({
+      trackInventory: true,
       $expr: { $lt: ['$stock', '$minStock'] },
+      deletedAt: null
+    });
+  }
+
+  /**
+   * Get count of products that are out of stock
+   */
+  private async getOutOfStockCount(): Promise<number> {
+    return await this.variantModel.countDocuments({
+      trackInventory: true,
+      stock: 0,
       deletedAt: null
     });
   }
@@ -1976,20 +2167,21 @@ export class AdvancedReportsService {
    * Get total inventory value
    */
   private async getInventoryValue(): Promise<number> {
-    const result = await this.productModel.aggregate([
-      { 
-        $match: { 
-          trackStock: true, 
-          deletedAt: null 
-        } 
+    const result = await this.variantModel.aggregate([
+      {
+        $match: {
+          trackInventory: true,
+          deletedAt: null,
+          isActive: true
+        }
       },
       {
         $group: {
           _id: null,
-          totalValue: { 
-            $sum: { 
-              $multiply: ['$stock', 100] // Assuming average price of 100
-            } 
+          totalValue: {
+            $sum: {
+              $multiply: ['$stock', '$basePriceUSD']
+            }
           }
         }
       }

@@ -13,8 +13,6 @@ import {
   Grid,
   Card,
   CardContent,
-  Divider,
-  Chip
 } from '@mui/material';
 import { Save, Cancel } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -64,6 +62,7 @@ const CreatePriceRulePage: React.FC = () => {
       await createPriceRule.mutateAsync(formData);
       navigate('/admin/marketing/price-rules');
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error creating price rule:', error);
     }
   };

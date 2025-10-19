@@ -48,9 +48,13 @@ export interface PricingSummary {
 }
 
 export enum CartStatus {
+  // eslint-disable-next-line no-unused-vars
   ACTIVE = 'active',
+  // eslint-disable-next-line no-unused-vars
   ABANDONED = 'abandoned',
+  // eslint-disable-next-line no-unused-vars
   CONVERTED = 'converted',
+  // eslint-disable-next-line no-unused-vars
   EXPIRED = 'expired',
 }
 

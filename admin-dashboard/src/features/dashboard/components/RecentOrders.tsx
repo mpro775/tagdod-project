@@ -11,7 +11,7 @@ import {
   alpha,
   useTheme
 } from '@mui/material';
-import { Visibility, MoreVert } from '@mui/icons-material';
+import { Visibility } from '@mui/icons-material';
 
 interface Order {
   id: string;

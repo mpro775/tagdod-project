@@ -170,18 +170,22 @@ const ResponsiveListDemoPage: React.FC = () => {
   };
 
   const handleEdit = (item: any) => {
+    // eslint-disable-next-line no-console
     console.log('Edit:', item);
   };
 
   const handleDelete = (item: any) => {
+    // eslint-disable-next-line no-console
     console.log('Delete:', item);
   };
 
   const handleView = (item: any) => {
+    // eslint-disable-next-line no-console
     console.log('View:', item);
   };
 
   const handleToggleStatus = (item: any) => {
+    // eslint-disable-next-line no-console
     console.log('Toggle status:', item);
   };
 

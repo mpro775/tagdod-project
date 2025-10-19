@@ -236,7 +236,6 @@ export const colorContrast = {
 export const rtlUtils = {
   // Get appropriate margin/padding direction
   getDirectionalProperty: (property: string, direction: 'ltr' | 'rtl') => {
-    const isRTL = direction === 'rtl';
     const directionalMap: Record<string, { ltr: string; rtl: string }> = {
       marginLeft: { ltr: 'marginLeft', rtl: 'marginRight' },
       marginRight: { ltr: 'marginRight', rtl: 'marginLeft' },
@@ -270,7 +269,7 @@ export const formAccessibility = {
   },
 
   // Create accessible label association
-  createLabelAssociation: (inputId: string, labelText: string) => {
+  createLabelAssociation: (inputId: string) => {
     return {
       inputProps: {
         id: inputId,
@@ -284,7 +283,7 @@ export const formAccessibility = {
   },
 
   // Create error message association
-  createErrorMessageAssociation: (inputId: string, errorMessage: string) => {
+  createErrorMessageAssociation: (inputId: string) => {
     return {
       inputProps: {
         'aria-invalid': 'true',
@@ -293,7 +292,7 @@ export const formAccessibility = {
       errorProps: {
         id: `${inputId}-error`,
         role: 'alert',
-        'aria-live': 'polite',
+        'aria-live': 'polite' as const,
       },
     };
   },

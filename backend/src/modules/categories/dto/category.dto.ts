@@ -21,19 +21,7 @@ export class CreateCategoryDto {
   
   @IsOptional() 
   @IsString() 
-  image?: string;
-  
-  @IsOptional() 
-  @IsString() 
   imageId?: string; // من مستودع الصور
-  
-  @IsOptional() 
-  @IsString() 
-  icon?: string;
-  
-  @IsOptional() 
-  @IsString() 
-  iconId?: string; // من مستودع الصور
   
   @IsOptional() 
   @IsString() 
@@ -59,10 +47,6 @@ export class CreateCategoryDto {
   
   @IsOptional() 
   @IsBoolean() 
-  showInMenu?: boolean = true;
-  
-  @IsOptional() 
-  @IsBoolean() 
   isFeatured?: boolean = false;
 }
 
@@ -85,19 +69,7 @@ export class UpdateCategoryDto {
   
   @IsOptional() 
   @IsString() 
-  image?: string;
-  
-  @IsOptional() 
-  @IsString() 
   imageId?: string;
-  
-  @IsOptional() 
-  @IsString() 
-  icon?: string;
-  
-  @IsOptional() 
-  @IsString() 
-  iconId?: string;
   
   @IsOptional() 
   @IsString() 
@@ -120,10 +92,6 @@ export class UpdateCategoryDto {
   @IsOptional() 
   @IsBoolean() 
   isActive?: boolean;
-  
-  @IsOptional() 
-  @IsBoolean() 
-  showInMenu?: boolean;
   
   @IsOptional() 
   @IsBoolean() 

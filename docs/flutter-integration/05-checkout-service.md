@@ -45,28 +45,49 @@
   "data": {
     "items": [
       {
+        "itemId": "item_001",
         "variantId": "var_789",
-        "productName": {
-          "ar": "لوح شمسي 550 واط",
-          "en": "Solar Panel 550W"
-        },
         "qty": 2,
-        "unitPrice": 135000,
+        "unit": {
+          "base": 150000,
+          "final": 135000,
+          "currency": "YER",
+          "appliedRule": {
+            "type": "percentage",
+            "value": 10,
+            "name": "خصم العميل المميز"
+          }
+        },
         "lineTotal": 270000
       }
     ],
-    "pricing": {
-      "subtotal": 1120000,
-      "shipping": 50000,
-      "tax": 0,
-      "discount": 0,
-      "total": 1170000,
-      "currency": "YER"
-    },
-    "paymentMethods": ["CASH_ON_DELIVERY", "CREDIT_CARD"],
-    "needsAddress": true
+    "subtotal": 1120000,
+    "shipping": 50000,
+    "tax": 0,
+    "discount": 150000,
+    "total": 1020000,
+    "currency": "YER",
+    "deliveryOptions": [
+      {
+        "id": "standard",
+        "name": "التوصيل العادي",
+        "cost": 50000,
+        "estimatedDays": "3-5 أيام"
+      },
+      {
+        "id": "express",
+        "name": "التوصيل السريع",
+        "cost": 100000,
+        "estimatedDays": "1-2 أيام"
+      }
+    ],
+    "meta": {
+      "wholesaleDiscountPercent": 10,
+      "wholesaleDiscountAmount": 150000,
+      "appliedCoupons": ["SUMMER20"],
+      "availableCoupons": ["WELCOME10", "FIRSTORDER"]
+    }
   },
-  "meta": null,
   "requestId": "req_checkout_001"
 }
 ```
@@ -146,49 +167,93 @@ Future<CheckoutPreview> previewCheckout({
 {
   "success": true,
   "data": {
-    "order": {
-      "_id": "order_123",
-      "orderNumber": "ORD-2025-001234",
-      "userId": "user_456",
-      "status": "PENDING",
-      "items": [
-        {
-          "variantId": "var_789",
-          "productName": {
-            "ar": "لوح شمسي 550 واط",
-            "en": "Solar Panel 550W"
-          },
-          "qty": 2,
-          "unitPrice": 135000,
-          "lineTotal": 270000
+    "orderId": "order_123",
+    "orderNumber": "ORD-2025-001234",
+    "status": "pending",
+    "totalAmount": 1020000,
+    "currency": "YER",
+    "paymentUrl": null,
+    "estimatedDelivery": "2025-10-20T00:00:00.000Z",
+    "items": [
+      {
+        "productId": "prod_123",
+        "variantId": "var_789",
+        "qty": 2,
+        "basePrice": 150000,
+        "discount": 15000,
+        "finalPrice": 135000,
+        "lineTotal": 270000,
+        "currency": "YER",
+        "appliedPromotionId": "promo_123",
+        "snapshot": {
+          "name": "لوح شمسي 550 واط",
+          "sku": "SP-550-001",
+          "slug": "solar-panel-550w",
+          "image": "https://cdn.example.com/products/solar-panel.jpg",
+          "brandName": "SolarTech",
+          "categoryName": "الألواح الشمسية",
+          "attributes": {
+            "color": "أسود",
+            "size": "2m x 1m"
+          }
         }
-      ],
-      "pricing": {
-        "subtotal": 1120000,
-        "shipping": 50000,
-        "tax": 0,
-        "discount": 0,
-        "total": 1170000,
-        "currency": "YER"
+      }
+    ],
+    "deliveryAddress": {
+      "addressId": "addr_123",
+      "recipientName": "أحمد محمد",
+      "recipientPhone": "777123456",
+      "line1": "شارع الزبيري",
+      "line2": "عمارة 10 - الطابق الثالث",
+      "city": "صنعاء",
+      "region": "الحصبة",
+      "country": "اليمن",
+      "coords": {
+        "lat": 15.3694,
+        "lng": 44.1910
       },
-      "paymentMethod": "CASH_ON_DELIVERY",
-      "paymentStatus": "PENDING",
-      "deliveryAddress": {
-        "fullName": "أحمد محمد",
-        "phone": "777123456",
-        "city": "صنعاء",
-        "district": "الحصبة",
-        "street": "شارع الزبيري",
-        "building": "عمارة 10",
-        "floor": "الطابق الثالث",
-        "notes": "بجانب مسجد الرحمن"
-      },
-      "createdAt": "2025-10-15T12:00:00.000Z",
-      "updatedAt": "2025-10-15T12:00:00.000Z"
+      "notes": "بجانب مسجد الرحمن"
     },
-    "paymentIntent": null
+    "pricing": {
+      "subtotal": 1120000,
+      "itemsDiscount": 150000,
+      "appliedCouponCode": "SUMMER20",
+      "couponDiscount": 50000,
+      "couponDetails": {
+        "code": "SUMMER20",
+        "title": "خصم الصيف",
+        "type": "percentage"
+      },
+      "shippingCost": 50000,
+      "tax": 0,
+      "totalDiscount": 200000,
+      "total": 1020000,
+      "currency": "YER"
+    },
+    "paymentMethod": "COD",
+    "paymentProvider": null,
+    "paymentStatus": "pending",
+    "shippingMethod": "standard",
+    "customerNotes": "يرجى التوصيل في المساء",
+    "statusHistory": [
+      {
+        "status": "pending",
+        "changedAt": "2025-10-15T12:00:00.000Z",
+        "changedBy": "user_456",
+        "changedByRole": "customer",
+        "notes": "تم إنشاء الطلب"
+      }
+    ],
+    "metadata": {
+      "cartId": "cart_123",
+      "source": "mobile",
+      "rating": null,
+      "review": null,
+      "ratedAt": null
+    },
+    "createdAt": "2025-10-15T12:00:00.000Z",
+    "updatedAt": "2025-10-15T12:00:00.000Z"
   },
-  "meta": null,
   "requestId": "req_checkout_002"
 }
 ```
@@ -488,15 +553,25 @@ Future<bool> cancelOrder(String orderId) async {
 ```dart
 class CheckoutPreview {
   final List<CheckoutItem> items;
-  final OrderPricing pricing;
-  final List<String> paymentMethods;
-  final bool needsAddress;
+  final double subtotal;
+  final double shipping;
+  final double tax;
+  final double discount;
+  final double total;
+  final String currency;
+  final List<DeliveryOption> deliveryOptions;
+  final CheckoutMeta meta;
 
   CheckoutPreview({
     required this.items,
-    required this.pricing,
-    required this.paymentMethods,
-    required this.needsAddress,
+    required this.subtotal,
+    required this.shipping,
+    required this.tax,
+    required this.discount,
+    required this.total,
+    required this.currency,
+    required this.deliveryOptions,
+    required this.meta,
   });
 
   factory CheckoutPreview.fromJson(Map<String, dynamic> json) {
@@ -504,35 +579,137 @@ class CheckoutPreview {
       items: (json['items'] as List)
           .map((item) => CheckoutItem.fromJson(item))
           .toList(),
-      pricing: OrderPricing.fromJson(json['pricing']),
-      paymentMethods: List<String>.from(json['paymentMethods'] ?? []),
-      needsAddress: json['needsAddress'] ?? true,
+      subtotal: (json['subtotal'] ?? 0).toDouble(),
+      shipping: (json['shipping'] ?? 0).toDouble(),
+      tax: (json['tax'] ?? 0).toDouble(),
+      discount: (json['discount'] ?? 0).toDouble(),
+      total: (json['total'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'YER',
+      deliveryOptions: (json['deliveryOptions'] as List?)
+          ?.map((option) => DeliveryOption.fromJson(option))
+          .toList() ?? [],
+      meta: CheckoutMeta.fromJson(json['meta'] ?? {}),
     );
   }
 }
 
 class CheckoutItem {
+  final String itemId;
   final String variantId;
-  final LocalizedString productName;
   final int qty;
-  final double unitPrice;
+  final CheckoutUnit unit;
   final double lineTotal;
 
   CheckoutItem({
+    required this.itemId,
     required this.variantId,
-    required this.productName,
     required this.qty,
-    required this.unitPrice,
+    required this.unit,
     required this.lineTotal,
   });
 
   factory CheckoutItem.fromJson(Map<String, dynamic> json) {
     return CheckoutItem(
+      itemId: json['itemId'],
       variantId: json['variantId'],
-      productName: LocalizedString.fromJson(json['productName']),
       qty: json['qty'],
-      unitPrice: (json['unitPrice'] ?? 0).toDouble(),
+      unit: CheckoutUnit.fromJson(json['unit']),
       lineTotal: (json['lineTotal'] ?? 0).toDouble(),
+    );
+  }
+}
+
+class CheckoutUnit {
+  final double base;
+  final double final;
+  final String currency;
+  final CheckoutAppliedRule? appliedRule;
+
+  CheckoutUnit({
+    required this.base,
+    required this.final,
+    required this.currency,
+    this.appliedRule,
+  });
+
+  factory CheckoutUnit.fromJson(Map<String, dynamic> json) {
+    return CheckoutUnit(
+      base: (json['base'] ?? 0).toDouble(),
+      final: (json['final'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'YER',
+      appliedRule: json['appliedRule'] != null 
+          ? CheckoutAppliedRule.fromJson(json['appliedRule'])
+          : null,
+    );
+  }
+
+  bool get hasDiscount => final < base;
+  double get discountAmount => base - final;
+  double get discountPercent => hasDiscount ? (discountAmount / base * 100) : 0;
+}
+
+class CheckoutAppliedRule {
+  final String type;
+  final double value;
+  final String name;
+
+  CheckoutAppliedRule({
+    required this.type,
+    required this.value,
+    required this.name,
+  });
+
+  factory CheckoutAppliedRule.fromJson(Map<String, dynamic> json) {
+    return CheckoutAppliedRule(
+      type: json['type'] ?? '',
+      value: (json['value'] ?? 0).toDouble(),
+      name: json['name'] ?? '',
+    );
+  }
+}
+
+class DeliveryOption {
+  final String id;
+  final String name;
+  final double cost;
+  final String estimatedDays;
+
+  DeliveryOption({
+    required this.id,
+    required this.name,
+    required this.cost,
+    required this.estimatedDays,
+  });
+
+  factory DeliveryOption.fromJson(Map<String, dynamic> json) {
+    return DeliveryOption(
+      id: json['id'],
+      name: json['name'],
+      cost: (json['cost'] ?? 0).toDouble(),
+      estimatedDays: json['estimatedDays'],
+    );
+  }
+}
+
+class CheckoutMeta {
+  final double wholesaleDiscountPercent;
+  final double wholesaleDiscountAmount;
+  final List<String> appliedCoupons;
+  final List<String> availableCoupons;
+
+  CheckoutMeta({
+    required this.wholesaleDiscountPercent,
+    required this.wholesaleDiscountAmount,
+    required this.appliedCoupons,
+    required this.availableCoupons,
+  });
+
+  factory CheckoutMeta.fromJson(Map<String, dynamic> json) {
+    return CheckoutMeta(
+      wholesaleDiscountPercent: (json['wholesaleDiscountPercent'] ?? 0).toDouble(),
+      wholesaleDiscountAmount: (json['wholesaleDiscountAmount'] ?? 0).toDouble(),
+      appliedCoupons: List<String>.from(json['appliedCoupons'] ?? []),
+      availableCoupons: List<String>.from(json['availableCoupons'] ?? []),
     );
   }
 }
@@ -570,18 +747,75 @@ class OrderPricing {
 }
 
 class OrderConfirmation {
-  final OrderDetails order;
-  final dynamic paymentIntent;
+  final String orderId;
+  final String orderNumber;
+  final String status;
+  final double totalAmount;
+  final String currency;
+  final String? paymentUrl;
+  final DateTime? estimatedDelivery;
+  final List<OrderItem> items;
+  final DeliveryAddress deliveryAddress;
+  final OrderPricing pricing;
+  final String paymentMethod;
+  final String? paymentProvider;
+  final String paymentStatus;
+  final String? shippingMethod;
+  final String? customerNotes;
+  final List<OrderStatusHistory> statusHistory;
+  final OrderMetadata metadata;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   OrderConfirmation({
-    required this.order,
-    this.paymentIntent,
+    required this.orderId,
+    required this.orderNumber,
+    required this.status,
+    required this.totalAmount,
+    required this.currency,
+    this.paymentUrl,
+    this.estimatedDelivery,
+    required this.items,
+    required this.deliveryAddress,
+    required this.pricing,
+    required this.paymentMethod,
+    this.paymentProvider,
+    required this.paymentStatus,
+    this.shippingMethod,
+    this.customerNotes,
+    required this.statusHistory,
+    required this.metadata,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory OrderConfirmation.fromJson(Map<String, dynamic> json) {
     return OrderConfirmation(
-      order: OrderDetails.fromJson(json['order']),
-      paymentIntent: json['paymentIntent'],
+      orderId: json['orderId'],
+      orderNumber: json['orderNumber'],
+      status: json['status'],
+      totalAmount: (json['totalAmount'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'YER',
+      paymentUrl: json['paymentUrl'],
+      estimatedDelivery: json['estimatedDelivery'] != null 
+          ? DateTime.parse(json['estimatedDelivery'])
+          : null,
+      items: (json['items'] as List?)
+          ?.map((item) => OrderItem.fromJson(item))
+          .toList() ?? [],
+      deliveryAddress: DeliveryAddress.fromJson(json['deliveryAddress']),
+      pricing: OrderPricing.fromJson(json['pricing']),
+      paymentMethod: json['paymentMethod'],
+      paymentProvider: json['paymentProvider'],
+      paymentStatus: json['paymentStatus'],
+      shippingMethod: json['shippingMethod'],
+      customerNotes: json['customerNotes'],
+      statusHistory: (json['statusHistory'] as List?)
+          ?.map((item) => OrderStatusHistory.fromJson(item))
+          .toList() ?? [],
+      metadata: OrderMetadata.fromJson(json['metadata'] ?? {}),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
 }
@@ -701,99 +935,200 @@ class OrderDetails {
 }
 
 class OrderItem {
+  final String productId;
   final String variantId;
-  final LocalizedString productName;
-  final String productImage;
-  final String sku;
   final int qty;
-  final double unitPrice;
+  final double basePrice;
+  final double discount;
+  final double finalPrice;
   final double lineTotal;
+  final String currency;
+  final String? appliedPromotionId;
+  final OrderItemSnapshot snapshot;
 
   OrderItem({
+    required this.productId,
     required this.variantId,
-    required this.productName,
-    required this.productImage,
-    required this.sku,
     required this.qty,
-    required this.unitPrice,
+    required this.basePrice,
+    required this.discount,
+    required this.finalPrice,
     required this.lineTotal,
+    required this.currency,
+    this.appliedPromotionId,
+    required this.snapshot,
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
+      productId: json['productId'],
       variantId: json['variantId'],
-      productName: LocalizedString.fromJson(json['productName']),
-      productImage: json['productImage'] ?? '',
-      sku: json['sku'] ?? '',
       qty: json['qty'],
-      unitPrice: (json['unitPrice'] ?? 0).toDouble(),
+      basePrice: (json['basePrice'] ?? 0).toDouble(),
+      discount: (json['discount'] ?? 0).toDouble(),
+      finalPrice: (json['finalPrice'] ?? 0).toDouble(),
       lineTotal: (json['lineTotal'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'YER',
+      appliedPromotionId: json['appliedPromotionId'],
+      snapshot: OrderItemSnapshot.fromJson(json['snapshot']),
+    );
+  }
+
+  bool get hasDiscount => discount > 0;
+  double get discountPercent => hasDiscount ? (discount / basePrice * 100) : 0;
+}
+
+class OrderItemSnapshot {
+  final String name;
+  final String? sku;
+  final String slug;
+  final String? image;
+  final String? brandName;
+  final String? categoryName;
+  final Map<String, String> attributes;
+
+  OrderItemSnapshot({
+    required this.name,
+    this.sku,
+    required this.slug,
+    this.image,
+    this.brandName,
+    this.categoryName,
+    required this.attributes,
+  });
+
+  factory OrderItemSnapshot.fromJson(Map<String, dynamic> json) {
+    return OrderItemSnapshot(
+      name: json['name'] ?? '',
+      sku: json['sku'],
+      slug: json['slug'] ?? '',
+      image: json['image'],
+      brandName: json['brandName'],
+      categoryName: json['categoryName'],
+      attributes: Map<String, String>.from(json['attributes'] ?? {}),
     );
   }
 }
 
 class DeliveryAddress {
-  final String fullName;
-  final String phone;
+  final String addressId;
+  final String recipientName;
+  final String recipientPhone;
+  final String line1;
+  final String? line2;
   final String city;
-  final String district;
-  final String street;
-  final String? building;
-  final String? floor;
+  final String? region;
+  final String country;
+  final DeliveryCoords? coords;
   final String? notes;
 
   DeliveryAddress({
-    required this.fullName,
-    required this.phone,
+    required this.addressId,
+    required this.recipientName,
+    required this.recipientPhone,
+    required this.line1,
+    this.line2,
     required this.city,
-    required this.district,
-    required this.street,
-    this.building,
-    this.floor,
+    this.region,
+    required this.country,
+    this.coords,
     this.notes,
   });
 
   factory DeliveryAddress.fromJson(Map<String, dynamic> json) {
     return DeliveryAddress(
-      fullName: json['fullName'],
-      phone: json['phone'],
+      addressId: json['addressId'],
+      recipientName: json['recipientName'],
+      recipientPhone: json['recipientPhone'],
+      line1: json['line1'],
+      line2: json['line2'],
       city: json['city'],
-      district: json['district'],
-      street: json['street'],
-      building: json['building'],
-      floor: json['floor'],
+      region: json['region'],
+      country: json['country'],
+      coords: json['coords'] != null 
+          ? DeliveryCoords.fromJson(json['coords'])
+          : null,
       notes: json['notes'],
     );
   }
 
   String get fullAddress {
     final parts = [
+      line1,
+      if (line2 != null) line2,
       city,
-      district,
-      street,
-      if (building != null) building,
-      if (floor != null) floor,
+      if (region != null) region,
+      country,
     ];
     return parts.join(', ');
   }
 }
 
-class OrderTimeline {
-  final String status;
-  final DateTime timestamp;
-  final String? note;
+class DeliveryCoords {
+  final double lat;
+  final double lng;
 
-  OrderTimeline({
-    required this.status,
-    required this.timestamp,
-    this.note,
+  DeliveryCoords({
+    required this.lat,
+    required this.lng,
   });
 
-  factory OrderTimeline.fromJson(Map<String, dynamic> json) {
-    return OrderTimeline(
+  factory DeliveryCoords.fromJson(Map<String, dynamic> json) {
+    return DeliveryCoords(
+      lat: (json['lat'] ?? 0).toDouble(),
+      lng: (json['lng'] ?? 0).toDouble(),
+    );
+  }
+}
+
+class OrderStatusHistory {
+  final String status;
+  final DateTime changedAt;
+  final String? changedBy;
+  final String? changedByRole;
+  final String? notes;
+
+  OrderStatusHistory({
+    required this.status,
+    required this.changedAt,
+    this.changedBy,
+    this.changedByRole,
+    this.notes,
+  });
+
+  factory OrderStatusHistory.fromJson(Map<String, dynamic> json) {
+    return OrderStatusHistory(
       status: json['status'],
-      timestamp: DateTime.parse(json['timestamp']),
-      note: json['note'],
+      changedAt: DateTime.parse(json['changedAt']),
+      changedBy: json['changedBy'],
+      changedByRole: json['changedByRole'],
+      notes: json['notes'],
+    );
+  }
+}
+
+class OrderMetadata {
+  final String? cartId;
+  final String? source;
+  final int? rating;
+  final String? review;
+  final String? ratedAt;
+
+  OrderMetadata({
+    this.cartId,
+    this.source,
+    this.rating,
+    this.review,
+    this.ratedAt,
+  });
+
+  factory OrderMetadata.fromJson(Map<String, dynamic> json) {
+    return OrderMetadata(
+      cartId: json['cartId'],
+      source: json['source'],
+      rating: json['rating'],
+      review: json['review'],
+      ratedAt: json['ratedAt'],
     );
   }
 }
@@ -804,24 +1139,49 @@ class OrderTimeline {
 ## 📝 ملاحظات مهمة
 
 1. **حالات الطلب:**
-   - `PENDING`: قيد الانتظار (يمكن الإلغاء)
-   - `PROCESSING`: جاري التحضير
-   - `SHIPPED`: تم الشحن
-   - `DELIVERED`: تم التوصيل
-   - `COMPLETED`: مكتمل
-   - `CANCELLED`: ملغي
+   - `pending`: قيد الانتظار (يمكن الإلغاء)
+   - `confirmed`: مؤكد
+   - `processing`: جاري التحضير
+   - `ready_to_ship`: جاهز للشحن
+   - `shipped`: تم الشحن
+   - `out_for_delivery`: في الطريق للتوصيل
+   - `delivered`: تم التوصيل
+   - `completed`: مكتمل
+   - `cancelled`: ملغي
+   - `refunded`: مسترد
+   - `returned`: مرتجع
+   - `payment_failed`: فشل الدفع
 
-2. **طرق الدفع:**
-   - `CASH_ON_DELIVERY`: الدفع عند الاستلام
-   - `CREDIT_CARD`: بطاقة ائتمان
-   - يمكن إضافة طرق أخرى حسب Integration
+2. **حالات الدفع:**
+   - `pending`: في الانتظار
+   - `paid`: مدفوع
+   - `failed`: فشل
+   - `refunded`: مسترد
 
-3. **الإلغاء:**
-   - يمكن إلغاء الطلب فقط في حالة `PENDING`
-   - بعد `PROCESSING` يجب التواصل مع الدعم
+3. **طرق الدفع:**
+   - `COD`: الدفع عند الاستلام
+   - `ONLINE`: الدفع الإلكتروني
+   - يمكن إضافة مزودي دفع مختلفين
 
-4. **العنوان:**
+4. **الخصومات:**
+   - `itemsDiscount`: خصم على المنتجات
+   - `couponDiscount`: خصم الكوبون
+   - `totalDiscount`: إجمالي الخصم
+   - `appliedCouponCode`: الكوبون المطبق
+
+5. **تتبع الطلب:**
+   - `statusHistory`: تاريخ تغيير الحالات
+   - `trackingNumber`: رقم التتبع
+   - `trackingUrl`: رابط التتبع
+   - `estimatedDeliveryDate`: تاريخ التوصيل المتوقع
+
+6. **الإلغاء:**
+   - يمكن إلغاء الطلب فقط في حالة `pending`
+   - بعد `processing` يجب التواصل مع الدعم
+
+7. **العنوان:**
    - عنوان التوصيل مطلوب قبل تأكيد الطلب
+   - يتضمن إحداثيات GPS للتوصيل الدقيق
    - تأكد من أن المستخدم لديه عنوان نشط
 
 ---

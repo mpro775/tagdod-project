@@ -15,6 +15,10 @@ import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { UserRole } from '../schemas/user.schema';
 import { UserAnalyticsService } from '../services/user-analytics.service';
+import { UserScoringService } from '../services/user-scoring.service';
+import { UserBehaviorService } from '../services/user-behavior.service';
+import { UserCacheService } from '../services/user-cache.service';
+import { UserErrorService } from '../services/user-error.service';
 import {
   GetCustomerRankingsDto,
   UserDetailedStatsDto,
@@ -22,6 +26,7 @@ import {
   OverallUserAnalyticsDto,
   UserStatsFilterDto,
   PaginatedUserStatsDto,
+  ScoringConfigDto,
 } from '../dto/user-analytics.dto';
 
 @ApiTags('user-analytics')
@@ -30,7 +35,13 @@ import {
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/user-analytics')
 export class UserAnalyticsController {
-  constructor(private readonly userAnalyticsService: UserAnalyticsService) {}
+  constructor(
+    private readonly userAnalyticsService: UserAnalyticsService,
+    private readonly userScoringService: UserScoringService,
+    private readonly userBehaviorService: UserBehaviorService,
+    private readonly userCacheService: UserCacheService,
+    private readonly userErrorService: UserErrorService,
+  ) {}
 
   // ==================== تفاصيل مستخدم واحد ====================
 
@@ -49,10 +60,10 @@ export class UserAnalyticsController {
     try {
       return await this.userAnalyticsService.getUserDetailedStats(userId);
     } catch (error) {
-      throw new HttpException(
-        `خطأ في جلب بيانات المستخدم: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw this.userErrorService.handleAnalyticsError(error, {
+        userId,
+        operation: 'getUserDetailedStats',
+      });
     }
   }
 
@@ -72,10 +83,10 @@ export class UserAnalyticsController {
     try {
       return await this.userAnalyticsService.getCustomerRankings(dto.limit || 50);
     } catch (error) {
-      throw new HttpException(
-        `خطأ في جلب ترتيب العملاء: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw this.userErrorService.handleAnalyticsError(error, {
+        operation: 'getCustomerRankings',
+        additionalInfo: { limit: dto.limit },
+      });
     }
   }
 
@@ -95,10 +106,9 @@ export class UserAnalyticsController {
     try {
       return await this.userAnalyticsService.getOverallUserAnalytics();
     } catch (error) {
-      throw new HttpException(
-        `خطأ في جلب الإحصائيات العامة: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw this.userErrorService.handleAnalyticsError(error, {
+        operation: 'getOverallAnalytics',
+      });
     }
   }
 
@@ -241,6 +251,132 @@ export class UserAnalyticsController {
     } catch (error) {
       throw new HttpException(
         `خطأ في جلب التنبيهات: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  // ==================== إدارة إعدادات التقييم ====================
+
+  @Get('scoring/config')
+  @ApiOperation({
+    summary: 'الحصول على إعدادات التقييم الحالية',
+    description: 'يعرض الإعدادات المستخدمة في حساب نقاط المستخدمين',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم جلب إعدادات التقييم بنجاح',
+  })
+  async getScoringConfig() {
+    try {
+      return {
+        data: this.userScoringService.getConfig(),
+      };
+    } catch (error) {
+      throw new HttpException(
+        `خطأ في جلب إعدادات التقييم: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post('scoring/config')
+  @ApiOperation({
+    summary: 'تحديث إعدادات التقييم',
+    description: 'تحديث الإعدادات المستخدمة في حساب نقاط المستخدمين',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تحديث إعدادات التقييم بنجاح',
+  })
+  async updateScoringConfig(@Body() config: ScoringConfigDto) {
+    try {
+      this.userScoringService.updateConfig(config);
+      return {
+        data: {
+          message: 'تم تحديث إعدادات التقييم بنجاح',
+          config: this.userScoringService.getConfig(),
+        },
+      };
+    } catch (error) {
+      throw new HttpException(
+        `خطأ في تحديث إعدادات التقييم: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  // ==================== إدارة التخزين المؤقت ====================
+
+  @Get('cache/stats')
+  @ApiOperation({
+    summary: 'الحصول على إحصائيات التخزين المؤقت',
+    description: 'يعرض إحصائيات نظام التخزين المؤقت',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم جلب إحصائيات التخزين المؤقت بنجاح',
+  })
+  async getCacheStats() {
+    try {
+      return {
+        data: this.userCacheService.getStats(),
+      };
+    } catch (error) {
+      throw new HttpException(
+        `خطأ في جلب إحصائيات التخزين المؤقت: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post('cache/clear')
+  @ApiOperation({
+    summary: 'مسح جميع البيانات من التخزين المؤقت',
+    description: 'مسح جميع البيانات المخزنة مؤقتاً',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم مسح التخزين المؤقت بنجاح',
+  })
+  async clearCache() {
+    try {
+      this.userCacheService.clear();
+      return {
+        data: {
+          message: 'تم مسح التخزين المؤقت بنجاح',
+        },
+      };
+    } catch (error) {
+      throw new HttpException(
+        `خطأ في مسح التخزين المؤقت: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Delete('cache/user/:userId')
+  @ApiOperation({
+    summary: 'مسح بيانات مستخدم من التخزين المؤقت',
+    description: 'مسح جميع البيانات المخزنة مؤقتاً لمستخدم معين',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم مسح بيانات المستخدم من التخزين المؤقت بنجاح',
+  })
+  async clearUserCache(@Param('userId') userId: string) {
+    try {
+      const cacheKey = this.userCacheService.createUserKey(userId, 'detailed-stats');
+      this.userCacheService.delete(cacheKey);
+      
+      return {
+        data: {
+          message: `تم مسح بيانات المستخدم ${userId} من التخزين المؤقت بنجاح`,
+        },
+      };
+    } catch (error) {
+      throw new HttpException(
+        `خطأ في مسح بيانات المستخدم من التخزين المؤقت: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`,
         HttpStatus.BAD_REQUEST,
       );
     }

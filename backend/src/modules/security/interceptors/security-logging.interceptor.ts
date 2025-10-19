@@ -9,6 +9,7 @@ import { Observable, tap } from 'rxjs';
 import { Request, Response } from 'express';
 import { format } from 'date-fns';
 import { ConfigService } from '@nestjs/config';
+import { ClientIPService } from '../services/client-ip.service';
 
 @Injectable()
 export class SecurityLoggingInterceptor implements NestInterceptor {
@@ -21,7 +22,10 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
     'set-cookie',
   ];
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly clientIPService: ClientIPService,
+  ) {
     this.isDevelopment = this.configService.get<string>('NODE_ENV', 'development') === 'development';
     
     if (this.isDevelopment) {
@@ -104,7 +108,7 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
       method: request.method,
       path: request.path,
       query: request.query,
-      ip: this.getClientIP(request),
+      ip: this.clientIPService.getClientIP(request),
       userAgent: userAgent.substring(0, 200), // Truncate long user agents
       referer: referer.substring(0, 200),
       headers,
@@ -148,19 +152,6 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
     return sanitized;
   }
 
-  private getClientIP(request: Request): string {
-    const forwarded = request.get('x-forwarded-for');
-    if (forwarded) {
-      return forwarded.split(',')[0].trim();
-    }
-
-    const realIP = request.get('x-real-ip');
-    if (realIP) {
-      return realIP;
-    }
-
-    return request.connection.remoteAddress || request.socket.remoteAddress || 'unknown';
-  }
 
   private calculateResponseSize(data: unknown): number {
     try {

@@ -27,7 +27,19 @@ export class ServiceRequest {
   @Prop({ type: { type: String, enum: ['Point'], default: 'Point' } })
   location!: { type: 'Point'; coordinates: [number, number] }; // [lng, lat]
 
-  @Prop({ default: 'OPEN', index: true })
+  @Prop({
+    default: 'OPEN',
+    enum: [
+      'OPEN',
+      'OFFERS_COLLECTING',
+      'ASSIGNED',
+      'IN_PROGRESS',
+      'COMPLETED',
+      'RATED',
+      'CANCELLED',
+    ],
+    index: true,
+  })
   status!:
     | 'OPEN'
     | 'OFFERS_COLLECTING'

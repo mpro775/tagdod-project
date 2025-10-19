@@ -22,7 +22,6 @@ import {
   TrendingUp
 } from '@mui/icons-material';
 import { useNotificationStats } from '../hooks/useNotifications';
-import { formatDate } from '@/shared/utils/formatters';
 
 export const NotificationsAnalyticsPage: React.FC = () => {
   const { data: stats, isLoading, error } = useNotificationStats();

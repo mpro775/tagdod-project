@@ -33,7 +33,6 @@ export class FavoritesGuestController {
       productId: dto.productId,
       variantId: dto.variantId,
       note: dto.note,
-      tags: dto.tags,
     });
     return { data: favorite };
   }

@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SupportService } from './support.service';
 import { CreateSupportTicketDto } from './dto/create-ticket.dto';
 import { AddSupportMessageDto } from './dto/add-message.dto';
+import { RateTicketDto } from './dto/rate-ticket.dto';
 
 @ApiTags('support-customer')
 @ApiBearerAuth()
@@ -33,7 +34,7 @@ export class CustomerSupportController {
     return { data: ticket };
   }
 
-  @Get()
+  @Get('my')
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getMyTickets(
@@ -93,5 +94,17 @@ export class CustomerSupportController {
     const userId = req.user!.sub;
     await this.supportService.archiveTicket(ticketId, userId, false);
     return { message: 'Ticket archived successfully' };
+  }
+
+  @Post(':id/rate')
+  @ApiParam({ name: 'id', description: 'Ticket ID' })
+  async rateTicket(
+    @Req() req: Request,
+    @Param('id') ticketId: string,
+    @Body() dto: RateTicketDto,
+  ) {
+    const userId = req.user!.sub;
+    const ticket = await this.supportService.rateTicket(ticketId, userId, dto);
+    return { data: ticket };
   }
 }

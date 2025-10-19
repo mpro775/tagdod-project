@@ -12,9 +12,9 @@ const MarketingDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   
   // Fetch data
-  const { data: priceRules = [], isLoading: priceRulesLoading } = usePriceRules();
-  const { data: coupons = [], isLoading: couponsLoading } = useCoupons();
-  const { data: banners = [], isLoading: bannersLoading } = useBanners();
+  const { data: priceRules = [] } = usePriceRules();
+  const { data: coupons = [] } = useCoupons();
+  const { data: banners = [] } = useBanners();
   const { data: activeBanners = [] } = useActiveBanners();
 
   const stats = [

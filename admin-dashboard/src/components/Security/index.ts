@@ -1,1 +1,2 @@
-export { Turnstile, useTurnstile } from './Turnstile';
+export { Turnstile } from './Turnstile';
+export { useTurnstile } from './useTurnstile';

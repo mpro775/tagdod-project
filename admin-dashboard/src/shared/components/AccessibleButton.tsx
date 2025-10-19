@@ -3,7 +3,7 @@ import { Button, ButtonProps, CircularProgress, Box } from '@mui/material';
 import { useAccessibility } from '@/shared/hooks/useAccessibility';
 import { useRTL } from '@/shared/hooks/useRTL';
 
-interface AccessibleButtonProps extends Omit<ButtonProps, 'children'> {
+interface AccessibleButtonProps extends Omit<ButtonProps, 'children' | 'variant'> {
   children: React.ReactNode;
   loading?: boolean;
   loadingText?: string;
@@ -14,7 +14,9 @@ interface AccessibleButtonProps extends Omit<ButtonProps, 'children'> {
   disabled?: boolean;
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
+  // eslint-disable-next-line no-unused-vars
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  // eslint-disable-next-line no-unused-vars
   onKeyDown?: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
 }
 
@@ -38,10 +40,10 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
     ref
   ) => {
     const { useButtonAccessibility, useLoadingAccessibility } = useAccessibility();
-    const { isRTL, getRTLClassName } = useRTL();
+    const { getRTLClassName } = useRTL();
 
     // Get accessibility props based on variant
-    const { getButtonProps } = useButtonAccessibility(variant, size);
+    const { getButtonProps } = useButtonAccessibility();
     const { getLoadingProps } = useLoadingAccessibility(loading, loadingText);
 
     // Handle click with accessibility
@@ -85,24 +87,13 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
       return variant === 'secondary' ? 'outlined' : 'contained';
     };
 
-    // Get size props
-    const getSizeProps = () => {
-      switch (size) {
-        case 'small':
-          return { size: 'small' as const };
-        case 'large':
-          return { size: 'large' as const };
-        default:
-          return { size: 'medium' as const };
-      }
-    };
 
     const buttonProps = getButtonProps();
     const loadingProps = getLoadingProps();
 
     return (
       <Button
-        ref={ref}
+        ref={ref as any}
         variant={getButtonVariant()}
         color={getButtonColor()}
         disabled={disabled || loading}

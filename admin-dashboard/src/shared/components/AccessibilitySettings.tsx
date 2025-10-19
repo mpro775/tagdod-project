@@ -20,14 +20,13 @@ import {
   Palette as PaletteIcon,
 } from '@mui/icons-material';
 import { useThemeStore } from '@/store/themeStore';
-import { useRTL } from '@/shared/hooks/useRTL';
 import { useAccessibility } from '@/shared/hooks/useAccessibility';
 
 interface AccessibilitySettingsProps {
   onClose?: () => void;
 }
 
-export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({ onClose }) => {
+export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = () => {
   const {
     mode,
     direction,
@@ -40,7 +39,6 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({ on
     setReducedMotion,
   } = useThemeStore();
 
-  const { isRTL, toggleRTL } = useRTL();
   const { useHighContrastMode, useReducedMotion } = useAccessibility();
 
   // Detect system preferences

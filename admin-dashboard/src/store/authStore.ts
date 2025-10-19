@@ -17,10 +17,14 @@ interface AuthState {
   isAuthenticated: boolean;
 
   // Actions
+  // eslint-disable-next-line no-unused-vars
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
+  // eslint-disable-next-line no-unused-vars
   updateUser: (user: User) => void;
+  // eslint-disable-next-line no-unused-vars
   hasRole: (roles: string | string[]) => boolean;
+  // eslint-disable-next-line no-unused-vars
   hasPermission: (permission: string) => boolean;
   initialize: () => void;
 }
@@ -30,12 +34,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
 
   login: (user, accessToken, refreshToken) => {
-    console.log('🔐 Logging in user:', user.phone);
     TokenService.setAccessToken(accessToken);
     TokenService.setRefreshToken(refreshToken);
     localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
     set({ user, isAuthenticated: true });
-    console.log('✅ Login successful');
   },
 
   logout: () => {
@@ -68,20 +70,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);
       const isAuthenticated = TokenService.isAuthenticated();
 
-      console.log('🔍 Initializing auth store...');
-      console.log('📱 User data exists:', !!userDataStr);
-      console.log('🔑 Token exists:', isAuthenticated);
-
       if (userDataStr && isAuthenticated) {
         const user = JSON.parse(userDataStr);
-        console.log('✅ User authenticated:', user.phone);
         set({ user, isAuthenticated: true });
       } else {
-        console.log('❌ No valid auth data found');
         set({ user: null, isAuthenticated: false });
       }
     } catch (error) {
-      console.error('❌ Failed to initialize auth store:', error);
+      // eslint-disable-next-line no-console
+      console.error('Failed to initialize auth store:', error);
       get().logout();
     }
   },

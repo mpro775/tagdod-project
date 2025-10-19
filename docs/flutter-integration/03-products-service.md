@@ -51,31 +51,36 @@ GET /products?page=1&limit=20&categoryId=64abc123&search=solar
   "data": [
     {
       "_id": "64prod123",
-      "name": {
-        "ar": "لوح شمسي 550 واط",
-        "en": "Solar Panel 550W"
-      },
-      "description": {
-        "ar": "لوح شمسي عالي الكفاءة",
-        "en": "High efficiency solar panel"
-      },
+      "nameAr": "لوح شمسي 550 واط",
+      "nameEn": "Solar Panel 550W",
+      "descriptionAr": "لوح شمسي عالي الكفاءة",
+      "descriptionEn": "High efficiency solar panel",
       "slug": "solar-panel-550w",
-      "categoryId": "64cat123",
+      "categoryId": {
+        "_id": "64cat123",
+        "nameAr": "الألواح الشمسية",
+        "nameEn": "Solar Panels"
+      },
       "brandId": "64brand123",
       "sku": "SP-550-001",
       "status": "ACTIVE",
       "isFeatured": true,
       "isNew": false,
-      "images": [
+      "mainImageId": {
+        "_id": "64img123",
+        "url": "https://cdn.example.com/products/solar-panel-1.jpg",
+        "alt": "Solar Panel Front"
+      },
+      "imageIds": [
         {
+          "_id": "64img123",
           "url": "https://cdn.example.com/products/solar-panel-1.jpg",
-          "alt": "Solar Panel Front",
-          "isPrimary": true
+          "alt": "Solar Panel Front"
         },
         {
+          "_id": "64img124",
           "url": "https://cdn.example.com/products/solar-panel-2.jpg",
-          "alt": "Solar Panel Back",
-          "isPrimary": false
+          "alt": "Solar Panel Back"
         }
       ],
       "specifications": {
@@ -84,16 +89,22 @@ GET /products?page=1&limit=20&categoryId=64abc123&search=solar
         "warranty": "25 years"
       },
       "tags": ["solar", "renewable", "energy"],
-      "views": 1250,
+      "viewsCount": 1250,
+      "variantsCount": 3,
+      "salesCount": 45,
+      "reviewsCount": 12,
+      "averageRating": 4.5,
       "createdAt": "2025-01-15T10:00:00.000Z",
       "updatedAt": "2025-01-20T14:30:00.000Z"
     }
   ],
   "meta": {
-    "total": 150,
     "page": 1,
     "limit": 20,
-    "totalPages": 8
+    "total": 150,
+    "totalPages": 8,
+    "hasNextPage": true,
+    "hasPrevPage": false
   },
   "requestId": "req_prod_001"
 }
@@ -178,31 +189,66 @@ GET /products/64prod123
 {
   "success": true,
   "data": {
-    "_id": "64prod123",
-    "name": {
-      "ar": "لوح شمسي 550 واط",
-      "en": "Solar Panel 550W"
-    },
-    "description": {
-      "ar": "لوح شمسي عالي الكفاءة مع ضمان 25 سنة",
-      "en": "High efficiency solar panel with 25 years warranty"
-    },
-    "longDescription": {
-      "ar": "وصف تفصيلي طويل...",
-      "en": "Long detailed description..."
-    },
-    "slug": "solar-panel-550w",
-    "categoryId": "64cat123",
-    "brandId": "64brand123",
-    "sku": "SP-550-001",
-    "status": "ACTIVE",
-    "isFeatured": true,
-    "isNew": false,
-    "images": [
-      {
+    "product": {
+      "_id": "64prod123",
+      "nameAr": "لوح شمسي 550 واط",
+      "nameEn": "Solar Panel 550W",
+      "descriptionAr": "لوح شمسي عالي الكفاءة مع ضمان 25 سنة",
+      "descriptionEn": "High efficiency solar panel with 25 years warranty",
+      "slug": "solar-panel-550w",
+      "categoryId": {
+        "_id": "64cat123",
+        "nameAr": "الألواح الشمسية",
+        "nameEn": "Solar Panels"
+      },
+      "brandId": "64brand123",
+      "sku": "SP-550-001",
+      "status": "ACTIVE",
+      "isFeatured": true,
+      "isNew": false,
+      "mainImageId": {
+        "_id": "64img123",
         "url": "https://cdn.example.com/products/solar-panel-1.jpg",
-        "alt": "Solar Panel Front",
-        "isPrimary": true
+        "alt": "Solar Panel Front"
+      },
+      "imageIds": [
+        {
+          "_id": "64img123",
+          "url": "https://cdn.example.com/products/solar-panel-1.jpg",
+          "alt": "Solar Panel Front"
+        }
+      ],
+      "specifications": {
+        "power": "550W",
+        "efficiency": "21%",
+        "warranty": "25 years",
+        "weight": "28kg"
+      },
+      "tags": ["solar", "renewable", "energy"],
+      "viewsCount": 1250,
+      "variantsCount": 3,
+      "salesCount": 45,
+      "reviewsCount": 12,
+      "averageRating": 4.5,
+      "createdAt": "2025-01-15T10:00:00.000Z",
+      "updatedAt": "2025-01-20T14:30:00.000Z"
+    },
+    "attributes": [
+      {
+        "_id": "64attr123",
+        "nameAr": "اللون",
+        "nameEn": "Color",
+        "type": "select",
+        "values": [
+          {
+            "valueAr": "أسود",
+            "valueEn": "Black"
+          },
+          {
+            "valueAr": "أزرق",
+            "valueEn": "Blue"
+          }
+        ]
       }
     ],
     "variants": [
@@ -210,6 +256,8 @@ GET /products/64prod123
         "_id": "64var123",
         "productId": "64prod123",
         "sku": "SP-550-001-BLK",
+        "nameAr": "لوح شمسي 550 واط - أسود",
+        "nameEn": "Solar Panel 550W - Black",
         "attributes": {
           "color": "أسود",
           "size": "2m x 1m"
@@ -227,26 +275,15 @@ GET /products/64prod123
           "available": 45
         },
         "isDefault": true,
-        "isActive": true
+        "isActive": true,
+        "imageId": {
+          "_id": "64img125",
+          "url": "https://cdn.example.com/products/solar-panel-black.jpg",
+          "alt": "Black Solar Panel"
+        }
       }
-    ],
-    "specifications": {
-      "power": "550W",
-      "efficiency": "21%",
-      "warranty": "25 years",
-      "weight": "28kg"
-    },
-    "tags": ["solar", "renewable", "energy"],
-    "seo": {
-      "title": "لوح شمسي 550 واط - أفضل الأسعار",
-      "description": "لوح شمسي عالي الكفاءة...",
-      "keywords": ["solar", "panel", "550w"]
-    },
-    "views": 1250,
-    "createdAt": "2025-01-15T10:00:00.000Z",
-    "updatedAt": "2025-01-20T14:30:00.000Z"
+    ]
   },
-  "meta": null,
   "requestId": "req_prod_002"
 }
 ```
@@ -414,42 +451,47 @@ Future<List<Product>> getNewProducts() async {
 ### ملف: `lib/models/product/product_models.dart`
 
 ```dart
-class LocalizedString {
-  final String ar;
-  final String? en;
+class Category {
+  final String id;
+  final String nameAr;
+  final String nameEn;
 
-  LocalizedString({required this.ar, this.en});
+  Category({
+    required this.id,
+    required this.nameAr,
+    required this.nameEn,
+  });
 
-  factory LocalizedString.fromJson(Map<String, dynamic> json) {
-    return LocalizedString(
-      ar: json['ar'] ?? '',
-      en: json['en'],
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      id: json['_id'],
+      nameAr: json['nameAr'] ?? '',
+      nameEn: json['nameEn'] ?? '',
     );
   }
 
-  // الحصول على النص حسب اللغة الحالية
-  String get(String locale) {
-    if (locale == 'en' && en != null) return en!;
-    return ar;
+  String getName(String locale) {
+    if (locale == 'en') return nameEn;
+    return nameAr;
   }
 }
 
 class ProductImage {
+  final String id;
   final String url;
   final String? alt;
-  final bool isPrimary;
 
   ProductImage({
+    required this.id,
     required this.url,
     this.alt,
-    required this.isPrimary,
   });
 
   factory ProductImage.fromJson(Map<String, dynamic> json) {
     return ProductImage(
+      id: json['_id'],
       url: json['url'],
       alt: json['alt'],
-      isPrimary: json['isPrimary'] ?? false,
     );
   }
 }
@@ -458,21 +500,27 @@ class ProductVariant {
   final String id;
   final String productId;
   final String sku;
+  final String nameAr;
+  final String nameEn;
   final Map<String, dynamic> attributes;
   final List<VariantPricing> pricing;
   final VariantInventory inventory;
   final bool isDefault;
   final bool isActive;
+  final ProductImage? image;
 
   ProductVariant({
     required this.id,
     required this.productId,
     required this.sku,
+    required this.nameAr,
+    required this.nameEn,
     required this.attributes,
     required this.pricing,
     required this.inventory,
     required this.isDefault,
     required this.isActive,
+    this.image,
   });
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
@@ -480,6 +528,8 @@ class ProductVariant {
       id: json['_id'],
       productId: json['productId'],
       sku: json['sku'],
+      nameAr: json['nameAr'] ?? '',
+      nameEn: json['nameEn'] ?? '',
       attributes: json['attributes'] ?? {},
       pricing: (json['pricing'] as List)
           .map((e) => VariantPricing.fromJson(e))
@@ -487,7 +537,15 @@ class ProductVariant {
       inventory: VariantInventory.fromJson(json['inventory']),
       isDefault: json['isDefault'] ?? false,
       isActive: json['isActive'] ?? true,
+      image: json['imageId'] != null 
+          ? ProductImage.fromJson(json['imageId'])
+          : null,
     );
+  }
+
+  String getName(String locale) {
+    if (locale == 'en') return nameEn;
+    return nameAr;
   }
 
   // الحصول على السعر لعملة معينة
@@ -554,41 +612,53 @@ class VariantInventory {
 
 class Product {
   final String id;
-  final LocalizedString name;
-  final LocalizedString description;
-  final LocalizedString? longDescription;
+  final String nameAr;
+  final String nameEn;
+  final String descriptionAr;
+  final String descriptionEn;
   final String slug;
-  final String categoryId;
+  final Category category;
   final String? brandId;
   final String sku;
   final String status;
   final bool isFeatured;
   final bool isNew;
+  final ProductImage? mainImage;
   final List<ProductImage> images;
   final List<ProductVariant>? variants;
   final Map<String, dynamic> specifications;
   final List<String> tags;
-  final int views;
+  final int viewsCount;
+  final int variantsCount;
+  final int salesCount;
+  final int reviewsCount;
+  final double averageRating;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   Product({
     required this.id,
-    required this.name,
-    required this.description,
-    this.longDescription,
+    required this.nameAr,
+    required this.nameEn,
+    required this.descriptionAr,
+    required this.descriptionEn,
     required this.slug,
-    required this.categoryId,
+    required this.category,
     this.brandId,
     required this.sku,
     required this.status,
     required this.isFeatured,
     required this.isNew,
+    this.mainImage,
     required this.images,
     this.variants,
     required this.specifications,
     required this.tags,
-    required this.views,
+    required this.viewsCount,
+    required this.variantsCount,
+    required this.salesCount,
+    required this.reviewsCount,
+    required this.averageRating,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -596,19 +666,21 @@ class Product {
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['_id'],
-      name: LocalizedString.fromJson(json['name']),
-      description: LocalizedString.fromJson(json['description']),
-      longDescription: json['longDescription'] != null
-          ? LocalizedString.fromJson(json['longDescription'])
-          : null,
+      nameAr: json['nameAr'] ?? '',
+      nameEn: json['nameEn'] ?? '',
+      descriptionAr: json['descriptionAr'] ?? '',
+      descriptionEn: json['descriptionEn'] ?? '',
       slug: json['slug'],
-      categoryId: json['categoryId'],
+      category: Category.fromJson(json['categoryId']),
       brandId: json['brandId'],
       sku: json['sku'],
       status: json['status'],
       isFeatured: json['isFeatured'] ?? false,
       isNew: json['isNew'] ?? false,
-      images: (json['images'] as List?)
+      mainImage: json['mainImageId'] != null 
+          ? ProductImage.fromJson(json['mainImageId'])
+          : null,
+      images: (json['imageIds'] as List?)
               ?.map((e) => ProductImage.fromJson(e))
               .toList() ??
           [],
@@ -619,20 +691,28 @@ class Product {
           : null,
       specifications: json['specifications'] ?? {},
       tags: List<String>.from(json['tags'] ?? []),
-      views: json['views'] ?? 0,
+      viewsCount: json['viewsCount'] ?? 0,
+      variantsCount: json['variantsCount'] ?? 0,
+      salesCount: json['salesCount'] ?? 0,
+      reviewsCount: json['reviewsCount'] ?? 0,
+      averageRating: (json['averageRating'] ?? 0).toDouble(),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
 
-  // الحصول على الصورة الرئيسية
-  ProductImage? get primaryImage {
-    try {
-      return images.firstWhere((img) => img.isPrimary);
-    } catch (e) {
-      return images.isNotEmpty ? images.first : null;
-    }
+  String getName(String locale) {
+    if (locale == 'en') return nameEn;
+    return nameAr;
   }
+
+  String getDescription(String locale) {
+    if (locale == 'en') return descriptionEn;
+    return descriptionAr;
+  }
+
+  // الحصول على الصورة الرئيسية
+  ProductImage? get primaryImage => mainImage ?? (images.isNotEmpty ? images.first : null);
 
   // الحصول على الـ variant الافتراضي
   ProductVariant? get defaultVariant {
@@ -679,12 +759,16 @@ class PaginationMeta {
   final int page;
   final int limit;
   final int totalPages;
+  final bool hasNextPage;
+  final bool hasPrevPage;
 
   PaginationMeta({
     required this.total,
     required this.page,
     required this.limit,
     required this.totalPages,
+    required this.hasNextPage,
+    required this.hasPrevPage,
   });
 
   factory PaginationMeta.fromJson(Map<String, dynamic> json) {
@@ -693,10 +777,12 @@ class PaginationMeta {
       page: json['page'],
       limit: json['limit'],
       totalPages: json['totalPages'],
+      hasNextPage: json['hasNextPage'] ?? false,
+      hasPrevPage: json['hasPrevPage'] ?? false,
     );
   }
 
-  bool get hasMore => page < totalPages;
+  bool get hasMore => hasNextPage;
   int get nextPage => page + 1;
 }
 ```
@@ -707,11 +793,12 @@ class PaginationMeta {
 
 1. **اللغات:**
    - جميع النصوص متوفرة بالعربي والإنجليزي
-   - استخدم `LocalizedString.get(locale)` للحصول على النص المناسب
+   - استخدم `getName(locale)` و `getDescription(locale)` للحصول على النص المناسب
 
 2. **الصور:**
-   - `isPrimary` يحدد الصورة الرئيسية
-   - استخدم `primaryImage` getter للحصول عليها بسهولة
+   - `mainImage`: الصورة الرئيسية للمنتج
+   - `images`: قائمة بجميع صور المنتج
+   - استخدم `primaryImage` getter للحصول على الصورة الرئيسية
 
 3. **Variants:**
    - كل منتج له variants مختلفة (ألوان، أحجام، إلخ)
@@ -729,7 +816,14 @@ class PaginationMeta {
    - `available`: المتوفر للطلب
    - استخدم `inStock` للتحقق من التوفر
 
-6. **Cache:**
+6. **الإحصائيات:**
+   - `viewsCount`: عدد المشاهدات
+   - `variantsCount`: عدد المتغيرات
+   - `salesCount`: عدد المبيعات
+   - `reviewsCount`: عدد التقييمات
+   - `averageRating`: متوسط التقييم
+
+7. **Cache:**
    - جميع الـ endpoints مع cache من جهة السيرفر
    - يمكنك إضافة cache في التطبيق أيضاً
 

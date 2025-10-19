@@ -46,13 +46,20 @@ support/
 - `POST /support/tickets/:id/messages` - إضافة رسالة
 - `GET /support/tickets/:id/messages` - جلب الرسائل
 - `POST /support/tickets/:id/rate` - تقييم
-- `DELETE /support/tickets/:id/archive` - أرشفة
+- `PUT /support/tickets/:id/archive` - أرشفة
 
-### للأدمن (8+):
+### للأدمن (15+):
 - `GET /admin/support/tickets` - جميع التذاكر
 - `PATCH /admin/support/tickets/:id` - تحديث
 - `GET /admin/support/stats` - إحصائيات
-- `POST /admin/support/canned-responses` - ردود جاهزة
+- `GET /admin/support/sla/breached` - تذاكر متجاوزة للـ SLA
+- `POST /admin/support/sla/:id/check` - فحص حالة SLA
+- `POST /admin/support/canned-responses` - إنشاء رد جاهز
+- `GET /admin/support/canned-responses` - جلب الردود الجاهزة
+- `GET /admin/support/canned-responses/:id` - رد جاهز محدد
+- `PATCH /admin/support/canned-responses/:id` - تحديث رد جاهز
+- `POST /admin/support/canned-responses/:id/use` - استخدام رد جاهز
+- `GET /admin/support/canned-responses/shortcut/:shortcut` - رد بالاختصار
 - وأكثر...
 
 ---
@@ -71,6 +78,8 @@ Priority → SLA:
 ### التقييمات:
 ```typescript
 1-5 نجوم + feedback نصي
+- يمكن التقييم فقط للتذاكر المحلولة أو المغلقة
+- لا يمكن التقييم أكثر من مرة
 ```
 
 ### Categories:
@@ -81,6 +90,20 @@ technical, billing, products, services, account, other
 ### Status:
 ```typescript
 open, in_progress, waiting_for_user, resolved, closed
+```
+
+### SLA Tracking:
+```typescript
+- تتبع تلقائي لأوقات الاستجابة
+- إشعارات عند تجاوز SLA
+- إحصائيات شاملة للأداء
+```
+
+### Canned Responses:
+```typescript
+- ردود جاهزة قابلة للبحث
+- اختصارات سريعة
+- تتبع عدد مرات الاستخدام
 ```
 
 ---
@@ -105,6 +128,21 @@ POST /support/tickets/:id/rate
   "rating": 5,
   "feedback": "ممتاز!"
 }
+```
+
+### استخدام رد جاهز:
+```http
+GET /admin/support/canned-responses/shortcut/welcome
+```
+
+### فحص SLA:
+```http
+POST /admin/support/sla/:id/check
+```
+
+### جلب التذاكر المتجاوزة للـ SLA:
+```http
+GET /admin/support/sla/breached
 ```
 
 ---

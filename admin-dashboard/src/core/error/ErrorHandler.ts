@@ -1,6 +1,7 @@
 import { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
 import { ApiErrorResponse } from '@/shared/types/common.types';
+import * as Sentry from '@sentry/react';
 
 export class ErrorHandler {
   /**
@@ -73,10 +74,59 @@ export class ErrorHandler {
    */
   static logError(error: unknown, context?: string): void {
     if (import.meta.env.MODE === 'development') {
+      // eslint-disable-next-line no-console
       console.error(`[Error${context ? ` - ${context}` : ''}]:`, error);
     }
 
-    // TODO: Send to error tracking service (Sentry, etc.)
+    // Send to error tracking service (Sentry)
+    Sentry.withScope((scope) => {
+      if (context) {
+        scope.setTag('context', context);
+      }
+
+      // Add additional context based on error type
+      if (error instanceof AxiosError) {
+        scope.setTag('error_type', 'api_error');
+        scope.setLevel('error');
+
+        if (error.response) {
+          scope.setContext('api_response', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            url: error.config?.url,
+            method: error.config?.method,
+          });
+        } else if (error.request) {
+          scope.setTag('error_type', 'network_error');
+          scope.setLevel('warning');
+        }
+      } else {
+        scope.setTag('error_type', 'application_error');
+        scope.setLevel('error');
+      }
+
+      // Add user context if available
+      try {
+        // Get user data from localStorage (as stored by authStore)
+        const userData = localStorage.getItem('user_data');
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user && user._id) {
+            scope.setUser({
+              id: user._id,
+              email: user.email,
+              username: user.firstName && user.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : user.firstName || user.email
+            });
+          }
+        }
+      } catch {
+        // Silently ignore user context errors
+      }
+
+      Sentry.captureException(error);
+    });
   }
 }
 

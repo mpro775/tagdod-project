@@ -26,7 +26,7 @@ type OtpFormData = z.infer<typeof otpSchema>;
 
 interface OtpInputStepProps {
   phone: string;
-  onSubmit: (code: string) => void;
+  onSubmit: (code: string) => void; // eslint-disable-line no-unused-vars
   onResend: () => void;
   onBack: () => void;
   isLoading?: boolean;
@@ -129,7 +129,7 @@ export const OtpInputStep: React.FC<OtpInputStepProps> = ({
           ),
         }}
         sx={{ mb: 2, fontFamily: 'Cairo' }}
-        autoFocus
+        // autoFocus
         dir="ltr"
         inputProps={{ maxLength: 6 }}
         disabled={isLoading}

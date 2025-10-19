@@ -64,20 +64,30 @@ export const UserFormPage: React.FC = () => {
 
   // Debug: Log user data when it changes
   useEffect(() => {
+    // eslint-disable-next-line no-console
     console.log('🔄 User data changed:', user);
+    // eslint-disable-next-line no-console
     console.log('🔄 Is loading:', isLoading);
+    // eslint-disable-next-line no-console
     console.log('🔄 Is edit mode:', isEditMode);
   }, [user, isLoading, isEditMode]);
 
   // Load user data in edit mode
   useEffect(() => {
     if (isEditMode && user) {
+      // eslint-disable-next-line no-console
       console.log('🔍 Loading user data:', user);
+      // eslint-disable-next-line no-console
       console.log('📱 Phone:', user.phone);
+      // eslint-disable-next-line no-console
       console.log('👤 First Name:', user.firstName);
+      // eslint-disable-next-line no-console
       console.log('👤 Last Name:', user.lastName);
+      // eslint-disable-next-line no-console
       console.log('🔑 Roles:', user.roles);
+      // eslint-disable-next-line no-console
       console.log('📊 Status:', user.status);
+      // eslint-disable-next-line no-console
       console.log('💼 Capabilities:', user.capabilities);
       
       const formData = {
@@ -92,6 +102,7 @@ export const UserFormPage: React.FC = () => {
         wholesaleDiscountPercent: user.capabilities?.wholesale_discount_percent?.toString() || undefined,
       };
       
+      // eslint-disable-next-line no-console
       console.log('📝 Form data to reset:', formData);
       methods.reset(formData);
     }
@@ -99,6 +110,7 @@ export const UserFormPage: React.FC = () => {
 
   // Submit
   const onSubmit = (data: UserFormData) => {
+    // eslint-disable-next-line no-console
     console.log('📤 User form data before submit:', data);
     
     const userData: Record<string, any> = {
@@ -127,6 +139,7 @@ export const UserFormPage: React.FC = () => {
       }
     }
 
+    // eslint-disable-next-line no-console
     console.log('📤 User data to send:', userData);
 
     if (isEditMode) {

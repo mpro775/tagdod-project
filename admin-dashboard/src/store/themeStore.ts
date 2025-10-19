@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { STORAGE_KEYS, DEFAULT_THEME, SUPPORTED_LANGUAGES } from '@/config/constants';
+import { STORAGE_KEYS, DEFAULT_THEME } from '@/config/constants';
 
 interface ThemeState {
   mode: 'light' | 'dark';
@@ -10,11 +10,16 @@ interface ThemeState {
 
   // Actions
   toggleMode: () => void;
+  // eslint-disable-next-line no-unused-vars
   setMode: (mode: 'light' | 'dark') => void;
+  // eslint-disable-next-line no-unused-vars
   setDirection: (direction: 'ltr' | 'rtl') => void;
+  // eslint-disable-next-line no-unused-vars
   setLanguage: (language: 'ar' | 'en') => void;
   toggleDirection: () => void;
+  // eslint-disable-next-line no-unused-vars
   setHighContrast: (enabled: boolean) => void;
+  // eslint-disable-next-line no-unused-vars
   setReducedMotion: (enabled: boolean) => void;
   initialize: () => void;
 }
@@ -32,18 +37,18 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     set({ mode: newMode });
   },
 
-  setMode: (mode) => {
+  setMode: (mode: 'light' | 'dark') => {
     localStorage.setItem(STORAGE_KEYS.THEME, mode);
     set({ mode });
   },
 
-  setDirection: (direction) => {
+  setDirection: (direction: 'ltr' | 'rtl') => {
     set({ direction });
     document.dir = direction;
     document.documentElement.setAttribute('dir', direction);
   },
 
-  setLanguage: (language) => {
+  setLanguage: (language: 'ar' | 'en') => {
     localStorage.setItem(STORAGE_KEYS.LANGUAGE, language);
     const direction = language === 'ar' ? 'rtl' : 'ltr';
     set({ language, direction });
@@ -56,14 +61,14 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     const currentDirection = get().direction;
     const newDirection = currentDirection === 'rtl' ? 'ltr' : 'rtl';
     const newLanguage = newDirection === 'rtl' ? 'ar' : 'en';
-    
+
     get().setLanguage(newLanguage);
   },
 
-  setHighContrast: (enabled) => {
+  setHighContrast: (enabled: boolean) => {
     localStorage.setItem('highContrast', enabled.toString());
     set({ highContrast: enabled });
-    
+
     if (enabled) {
       document.documentElement.classList.add('high-contrast');
     } else {
@@ -71,10 +76,10 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     }
   },
 
-  setReducedMotion: (enabled) => {
+  setReducedMotion: (enabled: boolean) => {
     localStorage.setItem('reducedMotion', enabled.toString());
     set({ reducedMotion: enabled });
-    
+
     if (enabled) {
       document.documentElement.classList.add('reduced-motion');
     } else {
@@ -94,18 +99,18 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 
     const language = savedLanguage || 'ar';
     const direction = language === 'ar' ? 'rtl' : 'ltr';
-    
-    set({ 
-      language, 
-      direction, 
+
+    set({
+      language,
+      direction,
       highContrast: savedHighContrast,
-      reducedMotion: savedReducedMotion 
+      reducedMotion: savedReducedMotion,
     });
-    
+
     document.dir = direction;
     document.documentElement.setAttribute('dir', direction);
     document.documentElement.setAttribute('lang', language);
-    
+
     // Apply accessibility classes
     if (savedHighContrast) {
       document.documentElement.classList.add('high-contrast');

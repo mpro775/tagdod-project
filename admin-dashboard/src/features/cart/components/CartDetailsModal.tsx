@@ -8,8 +8,8 @@ interface CartDetailsModalProps {
   cart: Cart | null;
   isOpen: boolean;
   onClose: () => void;
-  onSendReminder?: (cartId: string) => void;
-  onConvertToOrder?: (cartId: string) => void;
+  onSendReminder?: (cartId: string) => void; // eslint-disable-line no-unused-vars
+  onConvertToOrder?: (cartId: string) => void; // eslint-disable-line no-unused-vars
 }
 
 export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({

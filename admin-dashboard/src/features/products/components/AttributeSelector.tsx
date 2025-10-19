@@ -16,6 +16,7 @@ import { useProductFormData } from '../hooks/useProductData';
 
 interface AttributeSelectorProps {
   value: string[];
+  // eslint-disable-next-line no-unused-vars
   onChange: (attributes: string[]) => void;
   error?: boolean;
   helperText?: string;

@@ -1,12 +1,19 @@
 import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
 export enum ServiceStatus {
+  // eslint-disable-next-line no-unused-vars
   OPEN = 'OPEN',
+  // eslint-disable-next-line no-unused-vars
   OFFERS_COLLECTING = 'OFFERS_COLLECTING',
+  // eslint-disable-next-line no-unused-vars
   ASSIGNED = 'ASSIGNED',
+  // eslint-disable-next-line no-unused-vars
   IN_PROGRESS = 'IN_PROGRESS',
+  // eslint-disable-next-line no-unused-vars
   COMPLETED = 'COMPLETED',
+  // eslint-disable-next-line no-unused-vars
   RATED = 'RATED',
+  // eslint-disable-next-line no-unused-vars
   CANCELLED = 'CANCELLED',
 }
 
@@ -89,6 +96,22 @@ export interface ListOffersParams extends ListParams {
   status?: string;
   requestId?: string;
   engineerId?: string;
+  search?: string;
+}
+
+export interface OffersStatistics {
+  totalOffers: number;
+  acceptedOffers: number;
+  pendingOffers: number;
+  totalValue: number;
+  averageOffer: number;
+}
+
+export interface EngineersOverviewStatistics {
+  totalEngineers: number;
+  averageRating: number;
+  averageCompletionRate: number;
+  totalRevenue: number;
 }
 
 // === إحصائيات ===

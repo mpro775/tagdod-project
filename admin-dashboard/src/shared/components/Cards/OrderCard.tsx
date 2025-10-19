@@ -24,14 +24,18 @@ import {
   LocalShipping,
   AccessTime,
 } from '@mui/icons-material';
-import { Order } from '@/features/orders/types/order.types';
+import { Order, OrderStatus, PaymentStatus } from '@/features/orders/types/order.types';
 import { STATUS_COLORS } from '@/config/constants';
 
 interface OrderCardProps {
   order: Order;
+  // eslint-disable-next-line no-unused-vars
   onEdit?: (order: Order) => void;
+  // eslint-disable-next-line no-unused-vars
   onDelete?: (order: Order) => void;
+  // eslint-disable-next-line no-unused-vars
   onView?: (order: Order) => void;
+  // eslint-disable-next-line no-unused-vars
   onUpdateStatus?: (order: Order) => void;
   showActions?: boolean;
 }
@@ -55,6 +59,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     setAnchorEl(null);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleAction = (action: (order: Order) => void) => {
     action(order);
     handleMenuClose();
@@ -67,8 +72,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     }).format(price);
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ar-SA', {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('ar-SA', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -81,15 +87,23 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'default';
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: OrderStatus | string) => {
     const statusMap: Record<string, string> = {
-      pending: 'في الانتظار',
+      draft: 'مسودة',
+      pending_payment: 'في انتظار الدفع',
       confirmed: 'مؤكد',
+      payment_failed: 'فشل الدفع',
       processing: 'قيد المعالجة',
+      ready_to_ship: 'جاهز للشحن',
       shipped: 'تم الشحن',
+      out_for_delivery: 'خارج للتسليم',
       delivered: 'تم التسليم',
+      completed: 'مكتمل',
+      on_hold: 'معلق',
       cancelled: 'ملغي',
       refunded: 'مسترد',
+      partially_refunded: 'مسترد جزئياً',
+      returned: 'مرتجع',
     };
     return statusMap[status] || status;
   };
@@ -135,7 +149,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Person sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary">
-              {order.customer?.name || order.customer?.email || 'عميل غير معروف'}
+              المستخدم: {order.userId}
             </Typography>
           </Box>
 
@@ -153,11 +167,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             </Typography>
           </Box>
 
-          {order.shippingAddress && (
+          {order.deliveryAddress && (
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <LocalShipping sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
               <Typography variant="body2" color="text.secondary" noWrap>
-                {order.shippingAddress.city}, {order.shippingAddress.country}
+                {order.deliveryAddress.city}, {order.deliveryAddress.country}
               </Typography>
             </Box>
           )}
@@ -176,8 +190,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           
           {order.paymentStatus && (
             <Chip
-              label={order.paymentStatus === 'paid' ? 'مدفوع' : 'غير مدفوع'}
-              color={order.paymentStatus === 'paid' ? 'success' : 'warning'}
+              label={order.paymentStatus === PaymentStatus.PAID ? 'مدفوع' : 
+                     order.paymentStatus === PaymentStatus.PENDING ? 'في انتظار الدفع' :
+                     order.paymentStatus === PaymentStatus.FAILED ? 'فشل الدفع' :
+                     order.paymentStatus === PaymentStatus.REFUNDED ? 'مسترد' : 'غير محدد'}
+              color={order.paymentStatus === PaymentStatus.PAID ? 'success' : 
+                     order.paymentStatus === PaymentStatus.PENDING ? 'warning' :
+                     order.paymentStatus === PaymentStatus.FAILED ? 'error' : 'default'}
               size="small"
               variant="outlined"
             />
@@ -193,10 +212,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             {order.items.slice(0, 2).map((item, index) => (
               <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                 <Typography variant="body2" noWrap sx={{ flex: 1, mr: 1 }}>
-                  {item.product?.name || 'منتج غير معروف'}
+                  {item.snapshot?.name || 'منتج غير معروف'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  x{item.quantity}
+                  x{item.qty}
                 </Typography>
               </Box>
             ))}
@@ -217,10 +236,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             </Typography>
           </Box>
           
-          {order.isUrgent && (
+          {order.status === OrderStatus.ON_HOLD && (
             <Chip
-              label="عاجل"
-              color="error"
+              label="معلق"
+              color="warning"
               size="small"
             />
           )}

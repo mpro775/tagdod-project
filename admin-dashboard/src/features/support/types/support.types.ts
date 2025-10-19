@@ -2,26 +2,41 @@ import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
 // Support Enums - متطابق 100% مع Backend
 export enum SupportCategory {
+  // eslint-disable-next-line no-unused-vars
   TECHNICAL = 'technical',
+  // eslint-disable-next-line no-unused-vars
   BILLING = 'billing',
+  // eslint-disable-next-line no-unused-vars
   PRODUCTS = 'products',
+  // eslint-disable-next-line no-unused-vars
   SERVICES = 'services',
+  // eslint-disable-next-line no-unused-vars
   ACCOUNT = 'account',
+  // eslint-disable-next-line no-unused-vars
   OTHER = 'other',
 }
 
 export enum SupportPriority {
+  // eslint-disable-next-line no-unused-vars
   LOW = 'low',
+  // eslint-disable-next-line no-unused-vars
   MEDIUM = 'medium',
+  // eslint-disable-next-line no-unused-vars
   HIGH = 'high',
+  // eslint-disable-next-line no-unused-vars
   URGENT = 'urgent',
 }
 
 export enum SupportStatus {
+  // eslint-disable-next-line no-unused-vars
   OPEN = 'open',
+  // eslint-disable-next-line no-unused-vars
   IN_PROGRESS = 'in_progress',
+  // eslint-disable-next-line no-unused-vars
   WAITING_FOR_USER = 'waiting_for_user',
+  // eslint-disable-next-line no-unused-vars
   RESOLVED = 'resolved',
+  // eslint-disable-next-line no-unused-vars
   CLOSED = 'closed',
 }
 
@@ -67,6 +82,15 @@ export interface SupportMessage extends BaseEntity {
 }
 
 // DTOs
+export interface CreateSupportTicketDto {
+  title: string;
+  description: string;
+  category?: SupportCategory;
+  priority?: SupportPriority;
+  attachments?: string[];
+  metadata?: Record<string, unknown>;
+}
+
 export interface UpdateSupportTicketDto {
   title?: string;
   description?: string;

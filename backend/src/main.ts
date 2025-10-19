@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
-import compression from 'compression';
+import * as compression from 'compression';
 import { AppModule } from './app.module';
 import { setupSwagger } from './swagger';
 
@@ -43,14 +43,36 @@ async function bootstrap() {
   });
 
   // Setup Swagger documentation
-  setupSwagger(app);
+  try {
+    console.log('\n📝 Setting up Swagger documentation...');
+    setupSwagger(app);
+    console.log('✅ Swagger documentation setup completed\n');
+  } catch (error) {
+    logger.warn('Failed to setup Swagger documentation:', error instanceof Error ? error.message : 'Unknown error');
+  }
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
-
-  logger.log(`🚀 Application is running on: http://localhost:${port}`);
-  logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
-  logger.log(`🔍 Analytics Dashboard: http://localhost:${port}/api/analytics/dashboard`);
+  
+  try {
+    console.log(`🔌 Starting server on port ${port}...`);
+    console.log(`📍 Attempting to bind to: 0.0.0.0:${port}`);
+    console.log('⏳ This may take a few seconds...\n');
+    
+    await app.listen(port, '0.0.0.0');
+    
+    console.log('\n✅ Server started successfully!');
+    logger.log(`🚀 Application is running on: http://localhost:${port}`);
+    logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+    logger.log(`🔍 Analytics Dashboard: http://localhost:${port}/api/analytics/dashboard`);
+  } catch (error) {
+    logger.error(`❌ Failed to start server on port ${port}:`, error instanceof Error ? error.message : 'Unknown error');
+    logger.error('Error details:', error instanceof Error ? error.stack : error);
+    logger.error('⚠️ Port might be already in use. Try stopping other processes or change the PORT in .env file');
+    process.exit(1);
+  }
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('Fatal error during bootstrap:', error);
+  process.exit(1);
+});

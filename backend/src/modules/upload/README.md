@@ -112,6 +112,63 @@ GET /upload/file/uploads/my-file.jpg
 }
 ```
 
+### تنظيف الملفات المحذوفة (Super Admin فقط)
+
+```http
+POST /admin/media/cleanup/deleted
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "deletedCount": 15,
+    "errors": []
+  },
+  "message": "تم تنظيف 15 ملف محذوف"
+}
+```
+
+### تنظيف الملفات المكررة (Super Admin فقط)
+
+```http
+POST /admin/media/cleanup/duplicates
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "removedCount": 8,
+    "errors": []
+  },
+  "message": "تم إزالة 8 ملف مكرر"
+}
+```
+
+### تنظيف الملفات غير المستخدمة (Super Admin فقط)
+
+```http
+POST /admin/media/cleanup/unused?days=90
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "removedCount": 25,
+    "errors": []
+  },
+  "message": "تم إزالة 25 ملف غير مستخدم"
+}
+```
+
 ## قيود الملفات
 
 - **الحجم الأقصى**: 10MB لكل ملف
@@ -161,6 +218,18 @@ const response = await fetch('/upload/file', {
 2. **الملفات تُحفظ بأسماء فريدة** لتجنب التعارض
 3. **استخدم CDN لتحسين الأداء** في الإنتاج
 4. **احرص على نسخ API Key بأمان** ولا تشاركه في الكود
+5. **تم إضافة آليات تنظيف متقدمة** للملفات غير المستخدمة والمكررة
+6. **تحسين إدارة الأخطاء وتسجيل العمليات** لسهولة الصيانة
+
+## تحسينات النظام
+
+### ✅ إصلاحات تمت:
+- **إصلاح عدم الاتساق في أسماء الملفات** بين التخزين وقاعدة البيانات
+- **توحيد معالجة الأخطاء** بين جميع الخدمات
+- **إزالة التكرار في التحقق** من صحة الملفات
+- **تحسين إدارة URLs** مع fallback للـ CDN
+- **تحسين الأمان** مع تسجيل العمليات الحساسة
+- **إضافة آليات تنظيف** للبيانات والملفات غير المستخدمة
 
 ## استكشاف الأخطاء
 

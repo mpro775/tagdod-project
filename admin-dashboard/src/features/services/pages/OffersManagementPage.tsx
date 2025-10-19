@@ -24,14 +24,13 @@ import {
 } from '@mui/material';
 import {
   RequestQuote,
-  Engineering,
-  Person,
+
   LocationOn,
   AttachMoney,
   Search,
   FilterList,
 } from '@mui/icons-material';
-import { useOffers } from '../hooks/useServices';
+import { useOffers, useOffersStatistics } from '../hooks/useServices';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 
 const statusColors = {
@@ -54,7 +53,11 @@ export const OffersManagementPage: React.FC = () => {
     search: '',
   });
 
-  const { data: offers = [], isLoading } = useOffers(filters);
+  const { data: offersData, isLoading: isOffersLoading } = useOffers(filters);
+  const { data: statistics, isLoading: isStatisticsLoading } = useOffersStatistics();
+
+  const offers = offersData?.data || [];
+  const isLoading = isOffersLoading || isStatisticsLoading;
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -74,16 +77,12 @@ export const OffersManagementPage: React.FC = () => {
     );
   }
 
-  // إحصائيات سريعة
-  const totalOffers = offers.length;
-  const acceptedOffers = offers.filter(o => o.status === 'ACCEPTED').length;
-  const pendingOffers = offers.filter(o => o.status === 'OFFERED').length;
-  const totalValue = offers
-    .filter(o => o.status === 'ACCEPTED')
-    .reduce((sum, o) => sum + o.amount, 0);
-  const averageOffer = totalOffers > 0 
-    ? offers.reduce((sum, o) => sum + o.amount, 0) / totalOffers 
-    : 0;
+  // إحصائيات من الباك ايند
+  const totalOffers = statistics?.totalOffers || 0;
+  const acceptedOffers = statistics?.acceptedOffers || 0;
+  const pendingOffers = statistics?.pendingOffers || 0;
+  const totalValue = statistics?.totalValue || 0;
+  const averageOffer = statistics?.averageOffer || 0;
 
   return (
     <Box>
@@ -95,7 +94,7 @@ export const OffersManagementPage: React.FC = () => {
 
       {/* إحصائيات سريعة */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid  size={{ xs: 12, sm: 6, md: 2.4 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -115,7 +114,7 @@ export const OffersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid  size={{ xs: 12, sm: 6, md: 2.4 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -135,7 +134,7 @@ export const OffersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid  size={{ xs: 12, sm: 6, md: 2.4 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -155,7 +154,7 @@ export const OffersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid  size={{ xs: 12, sm: 6, md: 2.4 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -174,6 +173,26 @@ export const OffersManagementPage: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
+
+        <Grid  size={{ xs: 12, sm: 6, md: 2.4 }}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography color="textSecondary" gutterBottom variant="body2">
+                    متوسط قيمة العرض
+                  </Typography>
+                  <Typography variant="h4" color="secondary.main">
+                    {formatCurrency(averageOffer)}
+                  </Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                  <AttachMoney />
+                </Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
 
       {/* الفلاتر */}
@@ -183,7 +202,7 @@ export const OffersManagementPage: React.FC = () => {
             فلاتر البحث
           </Typography>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid  size={{ xs: 12, sm: 6, md: 4 }}>
               <TextField
                 fullWidth
                 label="البحث"
@@ -195,7 +214,7 @@ export const OffersManagementPage: React.FC = () => {
               />
             </Grid>
             
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid  size={{ xs: 12, sm: 6, md: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>حالة العرض</InputLabel>
                 <Select
@@ -213,7 +232,7 @@ export const OffersManagementPage: React.FC = () => {
               </FormControl>
             </Grid>
             
-            <Grid item xs={12} sm={6} md={4}>
+              <Grid  size={{ xs: 12, sm: 6, md: 4 }}>
               <Button
                 variant="contained"
                 startIcon={<FilterList />}

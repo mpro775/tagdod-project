@@ -1,6 +1,10 @@
-import { Injectable, NestMiddleware, BadRequestException } from '@nestjs/common';
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request, Response } from 'express';
+import { RedisCacheService, CachedResponse } from '../cache/redis-cache.service';
 
-const cache = new Map<string, any>(); // استبدله بـ Redis في الإنتاج
+interface RequestWithIdempotency extends Request {
+  idempotencyKey?: string;
+}
 
 /**
  * Idempotency Middleware
@@ -10,27 +14,46 @@ const cache = new Map<string, any>(); // استبدله بـ Redis في الإن
  * 
  * Usage: Send requests with header: "Idempotency-Key: unique-key-here"
  * 
- * Note: Currently uses in-memory cache. In production, replace with Redis.
+ * Note: Uses Redis cache for distributed idempotency across multiple instances.
  */
 @Injectable()
 export class IdempotencyMiddleware implements NestMiddleware {
-  async use(req: any, res: any, next: () => void) {
+  constructor(private readonly redisCacheService: RedisCacheService) {}
+
+  async use(req: RequestWithIdempotency, res: Response, next: () => void) {
     // Apply only to POST requests
     if (req.method !== 'POST') return next();
     
-    const key = req.header('Idempotency-Key');
+    const headerValue = req.header('Idempotency-Key');
+    const key = Array.isArray(headerValue) ? headerValue[0] : headerValue;
     if (!key) return next();
     
     // Check if we already have a response for this key
-    if (cache.has(key)) {
-      const cachedResponse = cache.get(key);
-      return res.status(200).json(cachedResponse);
+    const cachedResponse = await this.redisCacheService.get<CachedResponse>(key);
+    if (cachedResponse) {
+      return res.status(cachedResponse.status).json(cachedResponse.body);
     }
     
     // Intercept the response to cache it
     const originalJson = res.json.bind(res);
-    res.json = (body: any) => {
-      cache.set(key, body);
+    const originalStatus = res.status.bind(res);
+    let responseStatus = 200;
+    
+    res.status = (code: number) => {
+      responseStatus = code;
+      return originalStatus(code);
+    };
+    
+    res.json = (body: unknown) => {
+      const cachedResponse: CachedResponse = {
+        status: responseStatus,
+        body,
+        timestamp: Date.now()
+      };
+      // Cache asynchronously without blocking the response
+      this.redisCacheService.set(key, cachedResponse).catch((error) => {
+        console.error('Failed to cache idempotency response:', error);
+      });
       return originalJson(body);
     };
     

@@ -1,12 +1,14 @@
-import { Injectable, Optional, Inject } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { ServiceRequest } from './schemas/service-request.schema';
 import { EngineerOffer } from './schemas/engineer-offer.schema';
 import { Address } from '../addresses/schemas/address.schema';
-import { NOTIFICATIONS_PORT, NotificationsPort } from '../notifications/notifications.port';
+import { NotificationService } from '../notifications/services/notification.service';
+import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
 import { CreateServiceRequestDto } from './dto/requests.dto';
 import { CreateOfferDto, UpdateOfferDto } from './dto/offers.dto';
+import { DistanceService } from './services/distance.service';
 
 @Injectable()
 export class ServicesService {
@@ -15,8 +17,30 @@ export class ServicesService {
     @InjectModel(EngineerOffer.name) private offers: Model<EngineerOffer>,
     @InjectModel(Address.name) private addresses: Model<Address>,
     @InjectConnection() private conn: Connection,
-    @Optional() @Inject(NOTIFICATIONS_PORT) private notifier?: NotificationsPort,
+    private distanceService: DistanceService,
+    @Optional() private notificationService?: NotificationService,
   ) {}
+
+  // Helper method for safe notification sending
+  private async safeNotify(userId: string, type: NotificationType, title: string, message: string, data?: Record<string, unknown>) {
+    try {
+      if (this.notificationService) {
+        await this.notificationService.createNotification({
+          recipientId: userId,
+          type,
+          title,
+          message,
+          messageEn: message, // Using same message for English
+          data,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.MEDIUM,
+        });
+      }
+    } catch (error) {
+      console.warn(`Notification failed for user ${userId}:`, error);
+      // Don't throw error - notifications are not critical for core functionality
+    }
+  }
 
   // ---- Customer flows
   async createRequest(userId: string, dto: CreateServiceRequestDto) {
@@ -40,7 +64,13 @@ export class ServicesService {
       engineerId: null,
     });
 
-    await this.notifier?.emit(userId, 'SERVICE_REQUEST_OPENED', { requestId: String(doc._id) });
+    await this.safeNotify(
+      userId,
+      NotificationType.SERVICE_REQUEST_OPENED,
+      'تم استلام طلب خدمة',
+      `تم إنشاء طلب خدمة جديد: ${String(doc._id)}`,
+      { requestId: String(doc._id) }
+    );
     return doc;
   }
 
@@ -62,7 +92,13 @@ export class ServicesService {
         { requestId: r._id, status: 'OFFERED' },
         { $set: { status: 'REJECTED' } },
       );
-      await this.notifier?.emit(userId, 'SERVICE_REQUEST_CANCELLED', { requestId: String(r._id) });
+      await this.safeNotify(
+        userId,
+        NotificationType.SERVICE_REQUEST_CANCELLED,
+        'تم إلغاء طلب الخدمة',
+        `تم إلغاء الطلب ${String(r._id)}`,
+        { requestId: String(r._id) }
+      );
       return { ok: true };
     }
     return { error: 'CANNOT_CANCEL' };
@@ -88,9 +124,13 @@ export class ServicesService {
       { $set: { status: 'REJECTED' } },
     );
 
-    await this.notifier?.emit(String(offer.engineerId), 'OFFER_ACCEPTED', {
-      requestId: String(r._id),
-    });
+    await this.safeNotify(
+      String(offer.engineerId),
+      NotificationType.OFFER_ACCEPTED,
+      'تم قبول عرضك',
+      `تم قبول عرضك للطلب ${String(r._id)}`,
+      { requestId: String(r._id) }
+    );
     return { ok: true };
   }
 
@@ -101,7 +141,13 @@ export class ServicesService {
     r.rating = { score, comment, at: new Date() };
     r.status = 'RATED';
     await r.save();
-    await this.notifier?.emit(userId, 'SERVICE_RATED', { requestId: String(r._id), score });
+    await this.safeNotify(
+      userId,
+      NotificationType.SERVICE_RATED,
+      'تم تقييم الخدمة',
+      `تم تقييم الخدمة بنتيجة ${score} نجوم`,
+      { requestId: String(r._id), score }
+    );
     return { ok: true };
   }
 
@@ -141,17 +187,7 @@ export class ServicesService {
 
   // Helper: حساب المسافة بين نقطتين (Haversine formula)
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371; // نصف قطر الأرض بالكيلومتر
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLng = ((lng2 - lng1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+    return this.distanceService.calculateDistance(lat1, lng1, lat2, lng2);
   }
 
   async offer(engineerUserId: string, dto: CreateOfferDto) {
@@ -182,7 +218,13 @@ export class ServicesService {
       },
       { upsert: true, new: true },
     );
-    await this.notifier?.emit(String(r.userId), 'NEW_ENGINEER_OFFER', { requestId: String(r._id) });
+    await this.safeNotify(
+      String(r.userId),
+      NotificationType.NEW_ENGINEER_OFFER,
+      'عرض جديد من مهندس',
+      `تم تقديم عرض جديد للطلب ${String(r._id)}`,
+      { requestId: String(r._id) }
+    );
     return doc;
   }
 
@@ -203,7 +245,13 @@ export class ServicesService {
     if (r.status !== 'ASSIGNED') return { error: 'INVALID_STATUS' };
     r.status = 'IN_PROGRESS';
     await r.save();
-    await this.notifier?.emit(String(r.userId), 'SERVICE_STARTED', { requestId: String(r._id) });
+    await this.safeNotify(
+      String(r.userId),
+      NotificationType.SERVICE_STARTED,
+      'تم بدء الخدمة',
+      `تم بدء تنفيذ الخدمة للطلب ${String(r._id)}`,
+      { requestId: String(r._id) }
+    );
     return { ok: true };
   }
 
@@ -214,7 +262,13 @@ export class ServicesService {
     if (r.status !== 'IN_PROGRESS') return { error: 'INVALID_STATUS' };
     r.status = 'COMPLETED';
     await r.save();
-    await this.notifier?.emit(String(r.userId), 'SERVICE_COMPLETED', { requestId: String(r._id) });
+    await this.safeNotify(
+      String(r.userId),
+      NotificationType.SERVICE_COMPLETED,
+      'تم إنجاز الخدمة',
+      `تم إنجاز الخدمة للطلب ${String(r._id)}`,
+      { requestId: String(r._id) }
+    );
     return { ok: true };
   }
 
@@ -314,28 +368,23 @@ export class ServicesService {
     const r = await this.requests.findById(id);
     if (!r) return { error: 'NOT_FOUND' };
 
-    const validStatuses = [
-      'OPEN',
-      'OFFERS_COLLECTING',
-      'ASSIGNED',
-      'IN_PROGRESS',
-      'COMPLETED',
-      'CANCELLED',
-    ];
+    const validStatuses = ['OPEN', 'OFFERS_COLLECTING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'RATED', 'CANCELLED'];
     if (!validStatuses.includes(status)) return { error: 'INVALID_STATUS' };
 
-    r.status = status as 'OPEN' | 'OFFERS_COLLECTING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+    r.status = status as 'OPEN' | 'OFFERS_COLLECTING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RATED' | 'CANCELLED';
     if (note) {
       r.adminNotes = r.adminNotes || [];
       r.adminNotes.push({ note, at: new Date() });
     }
     await r.save();
 
-    await this.notifier?.emit(String(r.userId), 'SERVICE_STATUS_UPDATED', {
-      requestId: String(r._id),
-      status,
-      note,
-    });
+    await this.safeNotify(
+      String(r.userId),
+      NotificationType.SERVICE_REQUEST_OPENED, // Using available type
+      'تم تحديث حالة الخدمة',
+      `تم تحديث حالة الخدمة إلى ${status}`,
+      { requestId: String(r._id), status, note }
+    );
 
     return { ok: true };
   }
@@ -357,10 +406,13 @@ export class ServicesService {
       { $set: { status: 'REJECTED' } },
     );
 
-    await this.notifier?.emit(String(r.userId), 'SERVICE_CANCELLED_BY_ADMIN', {
-      requestId: String(r._id),
-      reason,
-    });
+    await this.safeNotify(
+      String(r.userId),
+      NotificationType.SERVICE_REQUEST_CANCELLED,
+      'تم إلغاء الخدمة من قبل الإدارة',
+      `تم إلغاء الخدمة من قبل الإدارة: ${reason || 'لا يوجد سبب محدد'}`,
+      { requestId: String(r._id), reason }
+    );
 
     return { ok: true };
   }
@@ -380,10 +432,13 @@ export class ServicesService {
 
     await this.offers.updateMany({ requestId: r._id }, { $set: { status: 'REJECTED' } });
 
-    await this.notifier?.emit(String(r.userId), 'ENGINEER_ASSIGNED_BY_ADMIN', {
-      requestId: String(r._id),
-      engineerId,
-    });
+    await this.safeNotify(
+      String(r.userId),
+      NotificationType.OFFER_ACCEPTED,
+      'تم تعيين مهندس من قبل الإدارة',
+      `تم تعيين مهندس للخدمة من قبل الإدارة`,
+      { requestId: String(r._id), engineerId }
+    );
 
     return { ok: true };
   }
@@ -789,6 +844,153 @@ export class ServicesService {
       this.offers
         .find(q)
         .populate('requestId', 'title type status createdAt')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.offers.countDocuments(q),
+    ]);
+
+    return { items, meta: { page, limit, total } };
+  }
+
+  // === إحصائيات المهندسين ===
+  async getEngineersOverviewStatistics() {
+    const [
+      totalEngineers,
+      averageRating,
+      averageCompletionRate,
+      totalRevenue,
+    ] = await Promise.all([
+      // إجمالي عدد المهندسين الذين لديهم طلبات
+      this.requests.distinct('engineerId').then((ids) => ids.filter((id) => id !== null).length),
+
+      // متوسط التقييم
+      this.requests
+        .aggregate([
+          { $match: { 'rating.score': { $exists: true } } },
+          { $group: { _id: null, avgRating: { $avg: '$rating.score' } } },
+        ])
+        .then((result) => result[0]?.avgRating || 0),
+
+      // متوسط معدل الإنجاز
+      this.requests
+        .aggregate([
+          { $match: { engineerId: { $exists: true, $ne: null } } },
+          {
+            $group: {
+              _id: '$engineerId',
+              totalRequests: { $sum: 1 },
+              completedRequests: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              avgCompletionRate: {
+                $avg: {
+                  $multiply: [
+                    { $divide: ['$completedRequests', '$totalRequests'] },
+                    100
+                  ]
+                }
+              }
+            }
+          }
+        ])
+        .then((result) => result[0]?.avgCompletionRate || 0),
+
+      // إجمالي الإيرادات
+      this.requests
+        .aggregate([
+          { $match: { status: 'COMPLETED', acceptedOffer: { $exists: true } } },
+          { $group: { _id: null, total: { $sum: '$acceptedOffer.amount' } } },
+        ])
+        .then((result) => result[0]?.total || 0),
+    ]);
+
+    return {
+      totalEngineers,
+      averageRating: Math.round(averageRating * 10) / 10,
+      averageCompletionRate: Math.round(averageCompletionRate * 10) / 10,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+    };
+  }
+
+  // === إحصائيات العروض ===
+  async getOffersStatistics(filters?: { dateFrom?: Date; dateTo?: Date }) {
+    const q: Record<string, unknown> = {};
+
+    if (filters?.dateFrom || filters?.dateTo) {
+      q.createdAt = {};
+      if (filters.dateFrom) q.createdAt.$gte = filters.dateFrom;
+      if (filters.dateTo) q.createdAt.$lte = filters.dateTo;
+    }
+
+    const [
+      totalOffers,
+      acceptedOffers,
+      pendingOffers,
+      totalValue,
+      averageOffer,
+    ] = await Promise.all([
+      this.offers.countDocuments(q),
+      this.offers.countDocuments({ ...q, status: 'ACCEPTED' }),
+      this.offers.countDocuments({ ...q, status: 'OFFERED' }),
+      this.offers
+        .aggregate([
+          { $match: { ...q, status: 'ACCEPTED' } },
+          { $group: { _id: null, total: { $sum: '$amount' } } },
+        ])
+        .then((result) => result[0]?.total || 0),
+      this.offers
+        .aggregate([
+          { $match: q },
+          { $group: { _id: null, average: { $avg: '$amount' } } },
+        ])
+        .then((result) => result[0]?.average || 0),
+    ]);
+
+    return {
+      totalOffers,
+      acceptedOffers,
+      pendingOffers,
+      totalValue: Math.round(totalValue * 100) / 100, // Round to 2 decimal places
+      averageOffer: Math.round(averageOffer * 100) / 100,
+    };
+  }
+
+  // === إدارة العروض (للأدمن) ===
+  async getOffersManagementList(params: {
+    status?: string;
+    requestId?: string;
+    engineerId?: string;
+    search?: string;
+    page: number;
+    limit: number;
+  }) {
+    const { status, requestId, engineerId, search, page, limit } = params;
+    const q: Record<string, unknown> = {};
+
+    if (status) q.status = status;
+    if (requestId) q.requestId = new Types.ObjectId(requestId);
+    if (engineerId) q.engineerId = new Types.ObjectId(engineerId);
+
+    // إضافة البحث
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      q.$or = [
+        { note: searchRegex },
+        { amount: isNaN(Number(search)) ? undefined : Number(search) },
+      ].filter(Boolean);
+    }
+
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.offers
+        .find(q)
+        .populate('requestId', 'title type status createdAt userId addressId')
+        .populate('engineerId', 'firstName lastName phone jobTitle')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

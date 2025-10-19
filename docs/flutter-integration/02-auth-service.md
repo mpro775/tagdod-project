@@ -13,8 +13,9 @@
 5. [إعادة تعيين كلمة المرور](#5-إعادة-تعيين-كلمة-المرور)
 6. [الحصول على بيانات المستخدم](#6-الحصول-على-بيانات-المستخدم)
 7. [تحديث بيانات المستخدم](#7-تحديث-بيانات-المستخدم)
-8. [حذف الحساب](#8-حذف-الحساب)
-9. [Models في Flutter](#models-في-flutter)
+8. [تحديث العملة المفضلة](#8-تحديث-العملة-المفضلة)
+9. [حذف الحساب](#9-حذف-الحساب)
+10. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -51,7 +52,6 @@
     "sent": true,
     "devCode": "123456"
   },
-  "meta": null,
   "requestId": "req_123"
 }
 ```
@@ -156,10 +156,10 @@ Future<Map<String, dynamic>> sendOtp({
     },
     "me": {
       "id": "64a1b2c3d4e5f6789",
-      "phone": "777123456"
+      "phone": "777123456",
+      "preferredCurrency": "USD"
     }
   },
-  "meta": null,
   "requestId": "req_456"
 }
 ```
@@ -207,13 +207,19 @@ class AuthTokens {
 class AuthUser {
   final String id;
   final String phone;
+  final String preferredCurrency;
 
-  AuthUser({required this.id, required this.phone});
+  AuthUser({
+    required this.id, 
+    required this.phone,
+    required this.preferredCurrency,
+  });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
       id: json['id'],
       phone: json['phone'],
+      preferredCurrency: json['preferredCurrency'] ?? 'USD',
     );
   }
 }
@@ -305,7 +311,6 @@ Future<void> _saveTokens(AuthTokens tokens) async {
   "data": {
     "updated": true
   },
-  "meta": null,
   "requestId": "req_789"
 }
 ```
@@ -357,7 +362,6 @@ Future<bool> setPassword(String password) async {
     "sent": true,
     "devCode": "123456"
   },
-  "meta": null,
   "requestId": "req_101"
 }
 ```
@@ -429,7 +433,6 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
   "data": {
     "updated": true
   },
-  "meta": null,
   "requestId": "req_202"
 }
 ```
@@ -498,7 +501,6 @@ Future<bool> resetPassword({
       "wholesale_discount_percent": 0
     }
   },
-  "meta": null,
   "requestId": "req_303"
 }
 ```
@@ -637,7 +639,6 @@ Future<UserProfile> getMe() async {
   "data": {
     "updated": true
   },
-  "meta": null,
   "requestId": "req_404"
 }
 ```
@@ -670,7 +671,62 @@ Future<bool> updateMe({
 
 ---
 
-## 8. حذف الحساب
+## 8. تحديث العملة المفضلة
+
+يحدث العملة المفضلة للمستخدم.
+
+### معلومات الطلب
+
+- **Method:** `PATCH`
+- **Endpoint:** `/auth/preferred-currency`
+- **Auth Required:** ✅ نعم (Bearer Token)
+
+### Request Body
+
+```json
+{
+  "currency": "USD"
+}
+```
+
+| الحقل | النوع | مطلوب | الوصف |
+|------|------|-------|-------|
+| `currency` | `string` | ✅ نعم | رمز العملة (مثل USD, EUR, SAR) |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "updated": true,
+    "preferredCurrency": "USD"
+  },
+  "requestId": "req_606"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<bool> updatePreferredCurrency(String currency) async {
+  final response = await _dio.patch(
+    '/auth/preferred-currency',
+    data: {'currency': currency},
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (data) => data as Map<String, dynamic>,
+  );
+
+  return apiResponse.isSuccess && apiResponse.data!['updated'] == true;
+}
+```
+
+---
+
+## 9. حذف الحساب
 
 يحذف حساب المستخدم نهائياً.
 
@@ -688,7 +744,6 @@ Future<bool> updateMe({
   "data": {
     "deleted": true
   },
-  "meta": null,
   "requestId": "req_505"
 }
 ```
@@ -853,13 +908,19 @@ class LoginResponse {
 class AuthUser {
   final String id;
   final String phone;
+  final String preferredCurrency;
 
-  AuthUser({required this.id, required this.phone});
+  AuthUser({
+    required this.id, 
+    required this.phone,
+    required this.preferredCurrency,
+  });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
       id: json['id'],
       phone: json['phone'],
+      preferredCurrency: json['preferredCurrency'] ?? 'USD',
     );
   }
 }
@@ -871,7 +932,7 @@ class AuthUser {
 
 1. **التوكنات:**
    - Access Token صالح لمدة 15 دقيقة
-   - Refresh Token صالح لمدة 7 أيام
+   - Refresh Token صالح لمدة 30 يوم (تم تحديثه من 7 أيام)
    - احفظهما في `SharedPreferences` أو `FlutterSecureStorage`
 
 2. **OTP في التطوير:**
@@ -886,6 +947,12 @@ class AuthUser {
    - `customer_capable`: زبون عادي (افتراضي)
    - `engineer_capable`: مهندس (يحتاج موافقة الأدمن)
    - `wholesale_capable`: تاجر جملة (يحتاج موافقة الأدمن)
+
+5. **العملة المفضلة:**
+   - كل مستخدم لديه عملة مفضلة (افتراضي: USD)
+   - يمكن تحديثها عبر endpoint `/auth/preferred-currency`
+   - يتم إرجاعها في استجابة تسجيل الدخول
+
 
 ---
 
