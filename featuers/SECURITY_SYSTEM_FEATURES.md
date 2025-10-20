@@ -108,20 +108,12 @@
 - **Command Injection**: كشف محاولات تنفيذ الأوامر غير المصرحة
 
 #### 2. **أنماط الكشف المتقدمة**
-```javascript
-// أمثلة على أنماط الكشف
-const sqlPatterns = [
-  /(\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b)/i,
-  /('|(\\x27)|(\\x2D\\x2D)|(\\\\x)|(\\x23)|(\\x27)|(\\x3B)|(\\x2F\\x2A)|(\\x2A\\x2F))/i
-];
-
-const xssPatterns = [
-  /<script[^>]*>.*?<\/script>/gi,
-  /javascript:/gi,
-  /vbscript:/gi,
-  /onload\s*=/gi
-];
-```
+- أنماط متخصصة لكشف هجمات SQL Injection تشمل كلمات مفتاحية ضارة
+- أنماط للكشف عن رموز وأحرف خاصة تستخدم في الهجمات
+- أنماط شاملة لكشف هجمات Cross-Site Scripting
+- أنماط للكشف عن محاولات التنفيذ الضار للكود
+- أنماط للكشف عن محاولات التحميل الضار للمحتوى
+- أنماط للكشف عن استخدام خصائص HTML ضارة
 
 ## قسم إدارة الهوية والوصول
 
