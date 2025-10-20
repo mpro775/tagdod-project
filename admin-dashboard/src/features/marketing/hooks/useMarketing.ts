@@ -163,11 +163,27 @@ export const useToggleCouponStatus = () => {
   });
 };
 
-export const useCouponAnalytics = (id: string) => {
+export const useCouponAnalytics = (id?: string, period?: number) => {
+  // If id is provided, get individual coupon analytics
+  if (id) {
+    return useQuery({
+      queryKey: [MARKETING_KEY, 'coupons', id, 'analytics'],
+      queryFn: () => marketingApi.getCouponAnalytics(id),
+      enabled: !!id,
+    });
+  }
+
+  // If no id, get general coupon analytics
   return useQuery({
-    queryKey: [MARKETING_KEY, 'coupons', id, 'analytics'],
-    queryFn: () => marketingApi.getCouponAnalytics(id),
-    enabled: !!id,
+    queryKey: [MARKETING_KEY, 'coupons', 'analytics', period || 30],
+    queryFn: () => marketingApi.getCouponsAnalytics(period || 30),
+  });
+};
+
+export const useCouponStatistics = (period?: number) => {
+  return useQuery({
+    queryKey: [MARKETING_KEY, 'coupons', 'statistics', period || 30],
+    queryFn: () => marketingApi.getCouponsStatistics(period || 30),
   });
 };
 
@@ -187,10 +203,12 @@ export const useValidateCoupon = () => {
   });
 };
 
-export const usePublicCoupons = () => {
+export const usePublicCoupons = (params?: { page?: number; limit?: number }) => {
+  const { page = 1, limit = 20 } = params || {};
+
   return useQuery({
-    queryKey: [MARKETING_KEY, 'coupons', 'public'],
-    queryFn: () => marketingApi.getPublicCoupons(),
+    queryKey: [MARKETING_KEY, 'coupons', 'public', page, limit],
+    queryFn: () => marketingApi.getPublicCoupons(page, limit),
   });
 };
 

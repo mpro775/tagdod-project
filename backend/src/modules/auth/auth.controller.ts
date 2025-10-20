@@ -9,7 +9,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import bcrypt from 'bcrypt';
+import { hash, compare } from 'bcrypt';
 import { OtpService } from './otp.service';
 import { TokensService } from './tokens.service';
 import { SendOtpDto } from './dto/send-otp.dto';
@@ -188,10 +188,15 @@ export class AuthController {
       }
     }
 
+    // حساب صلاحية الأدمن من الأدوار
+    const isAdminUser =
+      Array.isArray(user.roles) &&
+      (user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.SUPER_ADMIN));
+
     const payload = {
       sub: String(user._id),
       phone: user.phone,
-      isAdmin: user.isAdmin,
+      isAdmin: isAdminUser,
       roles: user.roles || [],
       permissions: user.permissions || [],
       preferredCurrency: user.preferredCurrency || 'USD',
@@ -212,8 +217,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('set-password')
   async setPassword(@Req() req: { user: { sub: string } }, @Body() dto: SetPasswordDto) {
-    const hash = await bcrypt.hash(dto.password, 10);
-    await this.userModel.updateOne({ _id: req.user.sub }, { $set: { passwordHash: hash } });
+    const hashedPassword = await hash(dto.password, 10);
+    await this.userModel.updateOne({ _id: req.user.sub }, { $set: { passwordHash: hashedPassword } });
     return { updated: true };
   }
 
@@ -252,8 +257,8 @@ export class AuthController {
     if (!ok) throw new AppException('AUTH_INVALID_OTP', 'رمز التحقق غير صالح', null, 401);
     const user = await this.userModel.findOne({ phone: dto.phone });
     if (!user) throw new AppException('AUTH_USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
-    const hash = await bcrypt.hash(dto.newPassword, 10);
-    await this.userModel.updateOne({ _id: user._id }, { $set: { passwordHash: hash } });
+    const hashedPassword = await hash(dto.newPassword, 10);
+    await this.userModel.updateOne({ _id: user._id }, { $set: { passwordHash: hashedPassword } });
     return { updated: true };
   }
 
@@ -294,8 +299,14 @@ export class AuthController {
   })
   @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT token' })
   async me(@Req() req: { user: { sub: string } }) {
-    const user = await this.userModel.findById(req.user.sub).lean();
+    const user = await this.userModel.findById(req.user.sub);
     const caps = await this.capsModel.findOne({ userId: req.user.sub }).lean();
+
+    // حساب صلاحية الأدمن من الأدوار
+    const isAdminUser =
+      Array.isArray(user!.roles) &&
+      (user!.roles.includes(UserRole.ADMIN) || user!.roles.includes(UserRole.SUPER_ADMIN));
+
     return {
       user: {
         id: user!._id,
@@ -304,7 +315,7 @@ export class AuthController {
         lastName: user!.lastName,
         gender: user!.gender,
         jobTitle: user!.jobTitle,
-        isAdmin: user!.isAdmin,
+        isAdmin: isAdminUser,
       },
       capabilities: caps,
     };
@@ -418,8 +429,7 @@ export class AuthController {
       lastName: 'Admin',
       gender: 'male' as const,
       jobTitle: 'System Administrator',
-      passwordHash: await bcrypt.hash('Admin123!@#', 10),
-      isAdmin: true,
+      passwordHash: await hash('Admin123!@#', 10),
       roles: [UserRole.SUPER_ADMIN],
       permissions: [
         'users.create',
@@ -456,8 +466,6 @@ export class AuthController {
       wholesale_capable: true,
       wholesale_status: 'approved',
       wholesale_discount_percent: 0,
-      admin_capable: true,
-      admin_status: 'approved',
     };
 
     await this.capsModel.create(adminCapabilities);
@@ -498,13 +506,18 @@ export class AuthController {
       throw new AppException('AUTH_NO_PASSWORD', 'كلمة المرور غير محددة', null, 400);
     }
 
-    const isPasswordValid = await bcrypt.compare(body.password, user.passwordHash);
+    const isPasswordValid = await compare(body.password, user.passwordHash);
     if (!isPasswordValid) {
       throw new AppException('AUTH_INVALID_PASSWORD', 'كلمة المرور غير صحيحة', null, 401);
     }
 
-    // التحقق من أن المستخدم admin أو super admin
-    if (!user.isAdmin && !user.roles?.includes(UserRole.SUPER_ADMIN)) {
+    // حساب صلاحية الأدمن من الأدوار
+    const isAdminUser =
+      Array.isArray(user.roles) &&
+      (user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.SUPER_ADMIN));
+
+    // التحقق من الصلاحية
+    if (!isAdminUser) {
       throw new AppException(
         'AUTH_NOT_ADMIN',
         'هذا الحساب غير مصرح له بالدخول للوحة التحكم',
@@ -516,7 +529,7 @@ export class AuthController {
     const payload = {
       sub: String(user._id),
       phone: user.phone,
-      isAdmin: user.isAdmin,
+      isAdmin: isAdminUser,
       roles: user.roles || [],
       permissions: user.permissions || [],
     };
@@ -530,8 +543,8 @@ export class AuthController {
         phone: user.phone,
         firstName: user.firstName,
         lastName: user.lastName,
-        roles: user.roles,
-        isAdmin: user.isAdmin,
+        roles: user.roles || [],
+        isAdmin: isAdminUser,
       },
     };
   }

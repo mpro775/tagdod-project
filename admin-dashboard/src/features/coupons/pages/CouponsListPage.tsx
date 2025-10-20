@@ -9,6 +9,10 @@ import { BulkGenerateDialog } from '../components/BulkGenerateDialog';
 import { formatDate } from '@/shared/utils/formatters';
 import type { Coupon } from '@/features/marketing/api/marketingApi';
 
+// Type definitions for coupon types
+type CouponType = 'percentage' | 'fixed_amount' | 'free_shipping' | 'buy_x_get_y';
+type CouponStatus = 'active' | 'inactive' | 'expired' | 'exhausted';
+
 const couponTypeLabels: Record<CouponType, string> = {
   percentage: 'نسبة مئوية',
   fixed_amount: 'مبلغ ثابت',

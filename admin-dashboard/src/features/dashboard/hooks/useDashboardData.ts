@@ -55,7 +55,7 @@ export const useProductsCount = () => {
   return useQuery({
     queryKey: ['products-count'],
     queryFn: async () => {
-      const response = await apiClient.get('/products/count');
+      const response = await apiClient.get('/products/stats/count');
       return response.data.data;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes

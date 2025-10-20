@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Product, ProductDocument } from '../schemas/product.schema';
+import { Variant, VariantDocument } from '../schemas/variant.schema';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
 
@@ -11,6 +12,7 @@ export class StockAlertService {
 
   constructor(
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
     private notificationService: NotificationService,
   ) {}
 
@@ -19,17 +21,18 @@ export class StockAlertService {
    */
   async checkLowStockAlerts(): Promise<void> {
     try {
-      const lowStockProducts = await this.productModel.find({
-        trackStock: true,
+      const lowStockVariants = await this.variantModel.find({
+        trackInventory: true,
         $expr: { $lt: ['$stock', '$minStock'] },
+        isActive: true,
         deletedAt: null
-      }).select('_id name stock minStock categoryId');
+      }).select('_id productId sku stock minStock').populate('productId', 'name nameEn');
 
-      if (lowStockProducts.length > 0) {
-        this.logger.warn(`Found ${lowStockProducts.length} products with low stock`);
-        
-        for (const product of lowStockProducts) {
-          await this.sendLowStockAlert(product);
+      if (lowStockVariants.length > 0) {
+        this.logger.warn(`Found ${lowStockVariants.length} variants with low stock`);
+
+        for (const variant of lowStockVariants) {
+          await this.sendLowStockAlert(variant);
         }
       }
     } catch (error) {
@@ -40,40 +43,41 @@ export class StockAlertService {
   /**
    * Send low stock alert for a specific product
    */
-  async sendLowStockAlert(product: ProductDocument): Promise<void> {
+  async sendLowStockAlert(variant: VariantDocument): Promise<void> {
     try {
+      const product = variant.productId as any; // Populated product
       const alert = {
         type: 'LOW_STOCK',
-        productId: product._id.toString(),
-        productName: product.name,
-        currentStock: product.stock,
-        minStock: product.minStock,
-        categoryId: product.categoryId,
+        variantId: variant._id.toString(),
+        productId: variant.productId.toString(),
+        productName: product?.name || 'Unknown Product',
+        productNameEn: product?.nameEn || 'Unknown Product',
+        sku: variant.sku,
+        currentStock: variant.stock,
+        minStock: variant.minStock,
         timestamp: new Date(),
-        message: `منتج "${product.name}" يحتوي على مخزون منخفض: ${product.stock} (الحد الأدنى: ${product.minStock})`,
-        messageEn: `Product "${product.name}" has low stock: ${product.stock} (minimum: ${product.minStock})`
+        message: `متغير "${variant.sku || variant._id}" للمنتج "${product?.name || 'غير محدد'}" يحتوي على مخزون منخفض: ${variant.stock} (الحد الأدنى: ${variant.minStock})`,
+        messageEn: `Variant "${variant.sku || variant._id}" for product "${product?.nameEn || 'Unknown'}" has low stock: ${variant.stock} (minimum: ${variant.minStock})`
       };
 
       // Log the alert
       this.logger.warn(`LOW STOCK ALERT: ${alert.message}`);
 
-      // Here you can add more notification methods:
-      // - Send email to admin
-      // - Send SMS notification
-      // - Create notification in admin dashboard
-      // - Send to webhook endpoint
-      
       await this.createNotificationRecord(alert as {
         type: 'LOW_STOCK' | 'OUT_OF_STOCK';
+        variantId: string;
         productId: string;
         productName: string;
+        productNameEn: string;
+        sku?: string;
         currentStock?: number;
         minStock?: number;
+        timestamp: Date;
         message: string;
         messageEn: string;
       });
     } catch (error) {
-      this.logger.error(`Failed to send low stock alert for product ${product._id}:`, error);
+      this.logger.error(`Failed to send low stock alert for variant ${variant._id}:`, error);
     }
   }
 
@@ -82,17 +86,18 @@ export class StockAlertService {
    */
   async checkOutOfStockAlerts(): Promise<void> {
     try {
-      const outOfStockProducts = await this.productModel.find({
-        trackStock: true,
+      const outOfStockVariants = await this.variantModel.find({
+        trackInventory: true,
         stock: 0,
+        isActive: true,
         deletedAt: null
-      }).select('_id name categoryId');
+      }).select('_id productId sku').populate('productId', 'name nameEn');
 
-      if (outOfStockProducts.length > 0) {
-        this.logger.warn(`Found ${outOfStockProducts.length} out of stock products`);
-        
-        for (const product of outOfStockProducts) {
-          await this.sendOutOfStockAlert(product);
+      if (outOfStockVariants.length > 0) {
+        this.logger.warn(`Found ${outOfStockVariants.length} out of stock variants`);
+
+        for (const variant of outOfStockVariants) {
+          await this.sendOutOfStockAlert(variant);
         }
       }
     } catch (error) {
@@ -103,30 +108,37 @@ export class StockAlertService {
   /**
    * Send out of stock alert
    */
-  async sendOutOfStockAlert(product: ProductDocument): Promise<void> {
+  async sendOutOfStockAlert(variant: VariantDocument): Promise<void> {
     try {
+      const product = variant.productId as any; // Populated product
       const alert = {
         type: 'OUT_OF_STOCK',
-        productId: product._id.toString(),
-        productName: product.name,
-        categoryId: product.categoryId,
+        variantId: variant._id.toString(),
+        productId: variant.productId.toString(),
+        productName: product?.name || 'Unknown Product',
+        productNameEn: product?.nameEn || 'Unknown Product',
+        sku: variant.sku,
         timestamp: new Date(),
-        message: `منتج "${product.name}" نفد من المخزون`,
-        messageEn: `Product "${product.name}" is out of stock`
+        message: `متغير "${variant.sku || variant._id}" للمنتج "${product?.name || 'غير محدد'}" نفد من المخزون`,
+        messageEn: `Variant "${variant.sku || variant._id}" for product "${product?.nameEn || 'Unknown'}" is out of stock`
       };
 
       this.logger.error(`OUT OF STOCK ALERT: ${alert.message}`);
       await this.createNotificationRecord(alert as {
         type: 'LOW_STOCK' | 'OUT_OF_STOCK';
+        variantId: string;
         productId: string;
         productName: string;
-        categoryId: string;
+        productNameEn: string;
+        sku?: string;
+        currentStock?: number;
+        minStock?: number;
         timestamp: Date;
         message: string;
         messageEn: string;
       });
     } catch (error) {
-      this.logger.error(`Failed to send out of stock alert for product ${product._id}:`, error);
+      this.logger.error(`Failed to send out of stock alert for variant ${variant._id}:`, error);
     }
   }
 
@@ -135,10 +147,14 @@ export class StockAlertService {
    */
   private async createNotificationRecord(alert: {
     type: 'LOW_STOCK' | 'OUT_OF_STOCK';
+    variantId: string;
     productId: string;
     productName: string;
+    productNameEn: string;
+    sku?: string;
     currentStock?: number;
     minStock?: number;
+    timestamp: Date;
     message: string;
     messageEn: string;
   }): Promise<void> {
@@ -151,14 +167,19 @@ export class StockAlertService {
         channel: NotificationChannel.DASHBOARD,
         priority: NotificationPriority.HIGH,
         data: {
+          variantId: alert.variantId,
           productId: alert.productId,
+          productName: alert.productName,
+          productNameEn: alert.productNameEn,
+          sku: alert.sku,
           currentStock: alert.currentStock,
           minStock: alert.minStock,
+          timestamp: alert.timestamp,
         },
         isSystemGenerated: true,
       });
-      
-      this.logger.log(`Stock alert notification created: ${alert.type} for product ${alert.productId}`);
+
+      this.logger.log(`Stock alert notification created: ${alert.type} for variant ${alert.variantId} (product ${alert.productId})`);
     } catch (error) {
       this.logger.error(`Failed to create stock alert notification:`, error);
     }
@@ -170,43 +191,58 @@ export class StockAlertService {
   async getLowStockSummary(): Promise<{
     lowStockCount: number;
     outOfStockCount: number;
-    lowStockProducts: Array<{
+    lowStockVariants: Array<{
+      variantId: string;
       productId: string;
-      name: string;
+      productName: string;
+      productNameEn: string;
+      sku?: string;
       currentStock: number;
       minStock: number;
     }>;
-    outOfStockProducts: Array<{
+    outOfStockVariants: Array<{
+      variantId: string;
       productId: string;
-      name: string;
+      productName: string;
+      productNameEn: string;
+      sku?: string;
     }>;
   }> {
-    const [lowStockProducts, outOfStockProducts] = await Promise.all([
-      this.productModel.find({
-        trackStock: true,
+    const [lowStockVariants, outOfStockVariants] = await Promise.all([
+      this.variantModel.find({
+        trackInventory: true,
         $expr: { $lt: ['$stock', '$minStock'] },
+        isActive: true,
         deletedAt: null
-      }).select('_id name stock minStock').lean(),
-      
-      this.productModel.find({
-        trackStock: true,
+      }).select('_id productId sku stock minStock').populate('productId', 'name nameEn').lean(),
+
+      this.variantModel.find({
+        trackInventory: true,
         stock: 0,
+        isActive: true,
         deletedAt: null
-      }).select('_id name').lean()
+      }).select('_id productId sku').populate('productId', 'name nameEn').lean()
     ]);
 
     return {
-      lowStockCount: lowStockProducts.length,
-      outOfStockCount: outOfStockProducts.length,
-      lowStockProducts: lowStockProducts.map(p => ({
-        productId: p._id.toString(),
-        name: p.name,
-        currentStock: p.stock,
-        minStock: p.minStock
+      lowStockCount: lowStockVariants.length,
+      outOfStockCount: outOfStockVariants.length,
+      lowStockVariants: lowStockVariants.map(v => ({
+        variantId: v._id.toString(),
+        productId: v.productId.toString(),
+        productName: (v.productId as any).name,
+        productNameEn: (v.productId as any).nameEn,
+        sku: v.sku,
+        currentStock: v.stock,
+        minStock: v.minStock
       })),
-      outOfStockProducts: outOfStockProducts.map(p => ({
-        productId: p._id.toString(),
-        name: p.name
+
+      outOfStockVariants: outOfStockVariants.map(v => ({
+        variantId: v._id.toString(),
+        productId: v.productId.toString(),
+        productName: (v.productId as any).name,
+        productNameEn: (v.productId as any).nameEn,
+        sku: v.sku
       }))
     };
   }

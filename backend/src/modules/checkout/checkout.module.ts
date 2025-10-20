@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
 // Schemas
@@ -17,6 +17,11 @@ import { WebhookController } from './controllers/webhook.controller';
 
 // External Services
 import { CartModule } from '../cart/cart.module';
+import { MarketingModule } from '../marketing/marketing.module';
+import { AuthModule } from '../auth/auth.module';
+import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
+import { FavoritesModule } from '../favorites/favorites.module';
+import { ProductsModule } from '../products/products.module';
 
 /**
  * Module موحد للطلبات والدفع - نظام احترافي شامل
@@ -30,6 +35,11 @@ import { CartModule } from '../cart/cart.module';
       { name: InventoryLedger.name, schema: InventoryLedgerSchema },
     ]),
     CartModule,
+    MarketingModule,
+    forwardRef(() => AuthModule),
+    forwardRef(() => NotificationsCompleteModule),
+    forwardRef(() => FavoritesModule),
+    forwardRef(() => ProductsModule),
   ],
   controllers: [
     OrderController,

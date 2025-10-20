@@ -532,32 +532,6 @@
           }
         },
         {
-          "name": "GET /api/v1/favorites/by-tags",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/favorites/by-tags",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "favorites",
-                "by-tags"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
           "name": "POST /api/v1/favorites/sync",
           "request": {
             "method": "POST",
@@ -873,7 +847,7 @@
       "name": "admin-products",
       "item": [
         {
-          "name": "POST /api/v1/admin/products",
+          "name": "Create new product",
           "request": {
             "method": "POST",
             "header": [
@@ -899,7 +873,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/products",
+          "name": "List products with filters",
           "request": {
             "method": "GET",
             "header": [
@@ -925,7 +899,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/products/{id}",
+          "name": "Get product by ID",
           "request": {
             "method": "GET",
             "header": [
@@ -952,7 +926,7 @@
           }
         },
         {
-          "name": "PATCH /api/v1/admin/products/{id}",
+          "name": "Update product",
           "request": {
             "method": "PATCH",
             "header": [
@@ -979,7 +953,7 @@
           }
         },
         {
-          "name": "DELETE /api/v1/admin/products/{id}",
+          "name": "Delete product (soft delete)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1006,7 +980,7 @@
           }
         },
         {
-          "name": "POST /api/v1/admin/products/{id}/restore",
+          "name": "Restore deleted product",
           "request": {
             "method": "POST",
             "header": [
@@ -1034,35 +1008,7 @@
           }
         },
         {
-          "name": "POST /api/v1/admin/products/{id}/update-stats",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/products/{id}/update-stats",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "products",
-                "{id}",
-                "update-stats"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "GET /api/v1/admin/products/stats/summary",
+          "name": "Get products statistics",
           "request": {
             "method": "GET",
             "header": [
@@ -1090,7 +1036,7 @@
           }
         },
         {
-          "name": "POST /api/v1/admin/products/{productId}/variants",
+          "name": "Create variant for product",
           "request": {
             "method": "POST",
             "header": [
@@ -1118,7 +1064,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/products/{productId}/variants",
+          "name": "Get variants for product",
           "request": {
             "method": "GET",
             "header": [
@@ -1146,7 +1092,35 @@
           }
         },
         {
-          "name": "PATCH /api/v1/admin/products/variants/{id}",
+          "name": "Get variant by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/variants/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "variants",
+                "{id}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update variant",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1174,7 +1148,7 @@
           }
         },
         {
-          "name": "DELETE /api/v1/admin/products/variants/{id}",
+          "name": "Delete variant (soft delete)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1202,7 +1176,92 @@
           }
         },
         {
-          "name": "POST /api/v1/admin/products/{productId}/variants/generate",
+          "name": "Get variant price in specific currency",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/variants/{id}/price",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "variants",
+                "{id}",
+                "price"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get all variant prices for product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/{id}/prices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "{id}",
+                "prices"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get product price range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/{id}/price-range",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "{id}",
+                "price-range"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update variant stock",
           "request": {
             "method": "POST",
             "header": [
@@ -1213,7 +1272,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/products/{productId}/variants/generate",
+              "raw": "{{base_url}}/api/v1/admin/products/variants/{id}/stock",
               "host": [
                 "{{base_url}}"
               ],
@@ -1222,9 +1281,122 @@
                 "v1",
                 "admin",
                 "products",
-                "{productId}",
                 "variants",
-                "generate"
+                "{id}",
+                "stock"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Check variant availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/variants/{id}/availability",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "variants",
+                "{id}",
+                "availability"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get low stock variants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/inventory/low-stock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "inventory",
+                "low-stock"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get out of stock variants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/inventory/out-of-stock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "inventory",
+                "out-of-stock"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get inventory summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/inventory/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "inventory",
+                "summary"
               ]
             },
             "description": ""
@@ -1234,10 +1406,10 @@
       "description": "Endpoints for admin-products functionality"
     },
     {
-      "name": "catalog-public",
+      "name": "products",
       "item": [
         {
-          "name": "GET /api/v1/products",
+          "name": "Get products list",
           "request": {
             "method": "GET",
             "header": [
@@ -1258,65 +1430,7 @@
                 "products"
               ]
             },
-            "description": ""
-          }
-        },
-        {
-          "name": "GET /api/v1/products/detail",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/products/detail",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "products",
-                "detail"
-              ]
-            },
-            "description": ""
-          }
-        }
-      ],
-      "description": "Endpoints for catalog-public functionality"
-    },
-    {
-      "name": "products",
-      "item": [
-        {
-          "name": "GET /api/v1/products/count",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/products/count",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "products",
-                "count"
-              ]
-            },
-            "description": ""
+            "description": "Retrieves a paginated list of products with optional filtering"
           }
         },
         {
@@ -1346,7 +1460,34 @@
           }
         },
         {
-          "name": "GET /api/v1/products/featured/list",
+          "name": "Get product by slug",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/slug/{slug}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "slug",
+                "{slug}"
+              ]
+            },
+            "description": "Retrieves product information using URL slug"
+          }
+        },
+        {
+          "name": "Get featured products",
           "request": {
             "method": "GET",
             "header": [
@@ -1373,7 +1514,7 @@
           }
         },
         {
-          "name": "GET /api/v1/products/new/list",
+          "name": "Get new products",
           "request": {
             "method": "GET",
             "header": [
@@ -1398,6 +1539,143 @@
             },
             "description": ""
           }
+        },
+        {
+          "name": "Get product variants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/{id}/variants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "{id}",
+                "variants"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get variant price",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/variants/{id}/price",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "variants",
+                "{id}",
+                "price"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Check variant availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/variants/{id}/availability",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "variants",
+                "{id}",
+                "availability"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get product price range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/{id}/price-range",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "{id}",
+                "price-range"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get products count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/stats/count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "stats",
+                "count"
+              ]
+            },
+            "description": ""
+          }
         }
       ],
       "description": "Endpoints for products functionality"
@@ -1406,7 +1684,7 @@
       "name": "admin-attributes",
       "item": [
         {
-          "name": "POST /api/v1/admin/attributes",
+          "name": "إنشاء سمة جديدة",
           "request": {
             "method": "POST",
             "header": [
@@ -1428,11 +1706,11 @@
                 "attributes"
               ]
             },
-            "description": ""
+            "description": "إنشاء سمة جديدة في النظام. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "GET /api/v1/admin/attributes",
+          "name": "الحصول على قائمة السمات",
           "request": {
             "method": "GET",
             "header": [
@@ -1454,11 +1732,11 @@
                 "attributes"
               ]
             },
-            "description": ""
+            "description": "الحصول على قائمة بجميع السمات مع إمكانية التصفية والبحث."
           }
         },
         {
-          "name": "GET /api/v1/admin/attributes/{id}",
+          "name": "الحصول على سمة واحدة",
           "request": {
             "method": "GET",
             "header": [
@@ -1481,11 +1759,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "الحصول على تفاصيل سمة محددة مع قيمها."
           }
         },
         {
-          "name": "PATCH /api/v1/admin/attributes/{id}",
+          "name": "تحديث سمة",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1508,11 +1786,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث بيانات سمة موجودة."
           }
         },
         {
-          "name": "DELETE /api/v1/admin/attributes/{id}",
+          "name": "حذف سمة",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1535,11 +1813,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "حذف سمة (حذف منطقي - Soft Delete). لا يمكن حذف السمات المستخدمة في المنتجات."
           }
         },
         {
-          "name": "POST /api/v1/admin/attributes/{id}/restore",
+          "name": "استعادة سمة محذوفة",
           "request": {
             "method": "POST",
             "header": [
@@ -1563,11 +1841,11 @@
                 "restore"
               ]
             },
-            "description": ""
+            "description": "استعادة سمة تم حذفها مسبقاً (حذف منطقي)."
           }
         },
         {
-          "name": "POST /api/v1/admin/attributes/{attributeId}/values",
+          "name": "إضافة قيمة جديدة للسمة",
           "request": {
             "method": "POST",
             "header": [
@@ -1591,11 +1869,11 @@
                 "values"
               ]
             },
-            "description": ""
+            "description": "إضافة قيمة جديدة إلى سمة موجودة."
           }
         },
         {
-          "name": "GET /api/v1/admin/attributes/{attributeId}/values",
+          "name": "الحصول على قيم السمة",
           "request": {
             "method": "GET",
             "header": [
@@ -1619,11 +1897,11 @@
                 "values"
               ]
             },
-            "description": ""
+            "description": "الحصول على جميع قيم سمة محددة."
           }
         },
         {
-          "name": "PATCH /api/v1/admin/attributes/values/{id}",
+          "name": "تحديث قيمة السمة",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1647,11 +1925,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث بيانات قيمة سمة موجودة."
           }
         },
         {
-          "name": "DELETE /api/v1/admin/attributes/values/{id}",
+          "name": "حذف قيمة السمة",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1675,11 +1953,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "حذف قيمة سمة (حذف منطقي). لا يمكن حذف القيم المستخدمة في المنتجات."
           }
         },
         {
-          "name": "GET /api/v1/admin/attributes/stats/summary",
+          "name": "إحصائيات السمات",
           "request": {
             "method": "GET",
             "header": [
@@ -1703,7 +1981,7 @@
                 "summary"
               ]
             },
-            "description": ""
+            "description": "الحصول على إحصائيات شاملة عن السمات في النظام."
           }
         }
       ],
@@ -1713,7 +1991,7 @@
       "name": "attributes-public",
       "item": [
         {
-          "name": "GET /api/v1/attributes",
+          "name": "الحصول على قائمة السمات النشطة",
           "request": {
             "method": "GET",
             "header": [
@@ -1734,11 +2012,11 @@
                 "attributes"
               ]
             },
-            "description": ""
+            "description": "يُرجع قائمة بجميع السمات النشطة المتاحة في النظام. النتائج مخزنة مؤقتاً لمدة 30 دقيقة."
           }
         },
         {
-          "name": "GET /api/v1/attributes/filterable",
+          "name": "الحصول على السمات القابلة للفلترة",
           "request": {
             "method": "GET",
             "header": [
@@ -1760,11 +2038,11 @@
                 "filterable"
               ]
             },
-            "description": ""
+            "description": "يُرجع قائمة بالسمات النشطة والقابلة للفلترة مع جميع قيمها. مفيد لبناء واجهات الفلترة في المتاجر الإلكترونية."
           }
         },
         {
-          "name": "GET /api/v1/attributes/{id}",
+          "name": "الحصول على سمة واحدة مع قيمها",
           "request": {
             "method": "GET",
             "header": [
@@ -1786,7 +2064,7 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "يُرجع تفاصيل سمة محددة مع جميع قيمها المتاحة. مفيد لعرض تفاصيل سمة معينة."
           }
         }
       ],
@@ -1796,7 +2074,7 @@
       "name": "admin-categories",
       "item": [
         {
-          "name": "POST /api/v1/admin/categories",
+          "name": "إنشاء فئة جديدة",
           "request": {
             "method": "POST",
             "header": [
@@ -1818,11 +2096,11 @@
                 "categories"
               ]
             },
-            "description": ""
+            "description": "إنشاء فئة جديدة في النظام. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "GET /api/v1/admin/categories",
+          "name": "الحصول على قائمة الفئات",
           "request": {
             "method": "GET",
             "header": [
@@ -1844,11 +2122,11 @@
                 "categories"
               ]
             },
-            "description": ""
+            "description": "الحصول على قائمة بجميع الفئات مع إمكانية التصفية والبحث. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "GET /api/v1/admin/categories/tree",
+          "name": "الحصول على شجرة الفئات الكاملة",
           "request": {
             "method": "GET",
             "header": [
@@ -1871,11 +2149,11 @@
                 "tree"
               ]
             },
-            "description": ""
+            "description": "الحصول على شجرة الفئات الكاملة مع جميع المستويات والعلاقات الهرمية. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "GET /api/v1/admin/categories/{id}",
+          "name": "الحصول على فئة واحدة",
           "request": {
             "method": "GET",
             "header": [
@@ -1898,11 +2176,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "الحصول على تفاصيل فئة محددة مع جميع المعلومات والإحصائيات. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "PATCH /api/v1/admin/categories/{id}",
+          "name": "تحديث فئة",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1925,11 +2203,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث بيانات فئة موجودة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "DELETE /api/v1/admin/categories/{id}",
+          "name": "حذف فئة (حذف منطقي)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1952,11 +2230,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "حذف فئة من النظام (حذف منطقي - Soft Delete). يمكن استعادتها لاحقاً. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "POST /api/v1/admin/categories/{id}/restore",
+          "name": "استعادة فئة محذوفة",
           "request": {
             "method": "POST",
             "header": [
@@ -1980,11 +2258,11 @@
                 "restore"
               ]
             },
-            "description": ""
+            "description": "استعادة فئة تم حذفها مسبقاً (حذف منطقي). يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "DELETE /api/v1/admin/categories/{id}/permanent",
+          "name": "حذف نهائي للفئة",
           "request": {
             "method": "DELETE",
             "header": [
@@ -2008,11 +2286,11 @@
                 "permanent"
               ]
             },
-            "description": ""
+            "description": "حذف فئة نهائياً من النظام. لا يمكن استعادتها. يتطلب صلاحيات Super Admin فقط."
           }
         },
         {
-          "name": "POST /api/v1/admin/categories/{id}/update-stats",
+          "name": "تحديث إحصائيات الفئة",
           "request": {
             "method": "POST",
             "header": [
@@ -2036,11 +2314,11 @@
                 "update-stats"
               ]
             },
-            "description": ""
+            "description": "تحديث عدد المنتجات والإحصائيات الأخرى للفئة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "GET /api/v1/admin/categories/stats/summary",
+          "name": "إحصائيات الفئات العامة",
           "request": {
             "method": "GET",
             "header": [
@@ -2064,7 +2342,7 @@
                 "summary"
               ]
             },
-            "description": ""
+            "description": "الحصول على إحصائيات شاملة عن الفئات في النظام. يتطلب صلاحيات إدارية."
           }
         }
       ],
@@ -2074,7 +2352,7 @@
       "name": "categories-public",
       "item": [
         {
-          "name": "GET /api/v1/categories",
+          "name": "الحصول على قائمة الفئات النشطة",
           "request": {
             "method": "GET",
             "header": [
@@ -2095,11 +2373,11 @@
                 "categories"
               ]
             },
-            "description": ""
+            "description": "الحصول على قائمة بجميع الفئات النشطة مع إمكانية التصفية حسب الفئة الأب أو الفئات المميزة. النتائج مخزنة مؤقتاً لمدة 30 دقيقة."
           }
         },
         {
-          "name": "GET /api/v1/categories/tree",
+          "name": "الحصول على شجرة الفئات الكاملة",
           "request": {
             "method": "GET",
             "header": [
@@ -2121,11 +2399,11 @@
                 "tree"
               ]
             },
-            "description": ""
+            "description": "الحصول على شجرة الفئات الكاملة مع جميع المستويات والعلاقات الهرمية. النتائج مخزنة مؤقتاً لمدة ساعة واحدة."
           }
         },
         {
-          "name": "GET /api/v1/categories/{id}",
+          "name": "الحصول على فئة واحدة",
           "request": {
             "method": "GET",
             "header": [
@@ -2147,11 +2425,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "الحصول على تفاصيل فئة محددة مع جميع المعلومات المتاحة للجمهور. النتائج مخزنة مؤقتاً لمدة 30 دقيقة."
           }
         },
         {
-          "name": "GET /api/v1/categories/featured/list",
+          "name": "الحصول على الفئات المميزة",
           "request": {
             "method": "GET",
             "header": [
@@ -2174,17 +2452,42 @@
                 "list"
               ]
             },
-            "description": ""
+            "description": "الحصول على قائمة بالفئات المميزة النشطة فقط. النتائج مخزنة مؤقتاً لمدة 30 دقيقة."
           }
         }
       ],
       "description": "Endpoints for categories-public functionality"
     },
     {
-      "name": "notifications",
+      "name": "General",
       "item": [
         {
-          "name": "Send notification to multiple channels",
+          "name": "GET /api/v1/exchange-rates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exchange-rates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "exchange-rates"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/exchange-rates/convert",
           "request": {
             "method": "POST",
             "header": [
@@ -2195,22 +2498,100 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/send",
+              "raw": "{{base_url}}/api/v1/exchange-rates/convert",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "notifications",
-                "send"
+                "exchange-rates",
+                "convert"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Send notification using template",
+          "name": "GET /api/v1/exchange-rates/usd-to-yer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exchange-rates/usd-to-yer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "exchange-rates",
+                "usd-to-yer"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/exchange-rates/usd-to-sar",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/exchange-rates/usd-to-sar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "exchange-rates",
+                "usd-to-sar"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/admin/exchange-rates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/exchange-rates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "exchange-rates"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/admin/exchange-rates/update",
           "request": {
             "method": "POST",
             "header": [
@@ -2221,76 +2602,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/template/{templateId}/send",
+              "raw": "{{base_url}}/api/v1/admin/exchange-rates/update",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "notifications",
-                "template",
-                "{templateId}",
-                "send"
+                "admin",
+                "exchange-rates",
+                "update"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Get notification history",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/history",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "history"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get notification statistics",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/statistics",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "statistics"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Create notification template",
+          "name": "POST /api/v1/admin/exchange-rates/convert",
           "request": {
             "method": "POST",
             "header": [
@@ -2301,22 +2629,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/templates",
+              "raw": "{{base_url}}/api/v1/admin/exchange-rates/convert",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "notifications",
-                "templates"
+                "admin",
+                "exchange-rates",
+                "convert"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Get notification templates",
+          "name": "GET /api/v1/admin/exchange-rates/usd-to-yer",
           "request": {
             "method": "GET",
             "header": [
@@ -2327,78 +2656,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/templates",
+              "raw": "{{base_url}}/api/v1/admin/exchange-rates/usd-to-yer",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "notifications",
-                "templates"
+                "admin",
+                "exchange-rates",
+                "usd-to-yer"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Subscribe user to topic",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/subscribe/{userId}/{topic}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "subscribe",
-                "{userId}",
-                "{topic}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Unsubscribe user from topic",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/unsubscribe/{userId}/{topic}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "unsubscribe",
-                "{userId}",
-                "{topic}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Test FCM configuration",
+          "name": "GET /api/v1/admin/exchange-rates/usd-to-sar",
           "request": {
             "method": "GET",
             "header": [
@@ -2409,23 +2683,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/test/fcm",
+              "raw": "{{base_url}}/api/v1/admin/exchange-rates/usd-to-sar",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "notifications",
-                "test",
-                "fcm"
+                "admin",
+                "exchange-rates",
+                "usd-to-sar"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Test SMS configuration",
+          "name": "GET /api/v1/health",
           "request": {
             "method": "GET",
             "header": [
@@ -2436,23 +2710,21 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/test/sms",
+              "raw": "{{base_url}}/api/v1/health",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "notifications",
-                "test",
-                "sms"
+                "health"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Test email configuration",
+          "name": "GET /api/v1/health/simple",
           "request": {
             "method": "GET",
             "header": [
@@ -2463,29 +2735,80 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/test/email",
+              "raw": "{{base_url}}/api/v1/health/simple",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "notifications",
-                "test",
-                "email"
+                "health",
+                "simple"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/health/ready",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health/ready",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health",
+                "ready"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/health/live",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health/live",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health",
+                "live"
               ]
             },
             "description": ""
           }
         }
       ],
-      "description": "Endpoints for notifications functionality"
+      "description": "Endpoints for General functionality"
     },
     {
-      "name": "notifications-admin",
+      "name": "notifications",
       "item": [
         {
-          "name": "List notifications with filters",
+          "name": "Get user notifications",
           "request": {
             "method": "GET",
             "header": [
@@ -2496,14 +2819,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications",
+              "raw": "{{base_url}}/api/v1/notifications",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "notifications"
               ]
             },
@@ -2511,7 +2833,33 @@
           }
         },
         {
-          "name": "Create a new notification",
+          "name": "Get unread notifications count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/unread-count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "unread-count"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Mark notifications as read",
           "request": {
             "method": "POST",
             "header": [
@@ -2522,22 +2870,48 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications",
+              "raw": "{{base_url}}/api/v1/notifications/mark-read",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
-                "notifications"
+                "notifications",
+                "mark-read"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Get available notification templates",
+          "name": "Mark all notifications as read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/mark-all-read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "mark-all-read"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get user notification statistics",
           "request": {
             "method": "GET",
             "header": [
@@ -2548,23 +2922,22 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications/templates",
+              "raw": "{{base_url}}/api/v1/notifications/stats",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "notifications",
-                "templates"
+                "stats"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Get notification by ID",
+          "name": "Admin: List all notifications",
           "request": {
             "method": "GET",
             "header": [
@@ -2575,15 +2948,69 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications/{id}",
+              "raw": "{{base_url}}/api/v1/notifications/admin/list",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "notifications",
+                "admin",
+                "list"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Admin: Create notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "create"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Admin: Get notification by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
                 "{id}"
               ]
             },
@@ -2591,7 +3018,7 @@
           }
         },
         {
-          "name": "Update notification",
+          "name": "Admin: Update notification",
           "request": {
             "method": "PUT",
             "header": [
@@ -2602,15 +3029,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications/{id}",
+              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "notifications",
+                "admin",
                 "{id}"
               ]
             },
@@ -2618,7 +3045,7 @@
           }
         },
         {
-          "name": "Delete notification",
+          "name": "Admin: Delete notification",
           "request": {
             "method": "DELETE",
             "header": [
@@ -2629,15 +3056,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications/{id}",
+              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "notifications",
+                "admin",
                 "{id}"
               ]
             },
@@ -2645,7 +3072,7 @@
           }
         },
         {
-          "name": "Send notification",
+          "name": "Admin: Send bulk notifications",
           "request": {
             "method": "POST",
             "header": [
@@ -2656,24 +3083,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications/{id}/send",
+              "raw": "{{base_url}}/api/v1/notifications/admin/bulk-send",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "notifications",
-                "{id}",
-                "send"
+                "admin",
+                "bulk-send"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Get notification statistics",
+          "name": "Admin: Get notification statistics",
           "request": {
             "method": "GET",
             "header": [
@@ -2684,24 +3110,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications/stats/overview",
+              "raw": "{{base_url}}/api/v1/notifications/admin/stats",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "notifications",
-                "stats",
-                "overview"
+                "admin",
+                "stats"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Send bulk notifications",
+          "name": "Admin: Cleanup old notifications",
           "request": {
             "method": "POST",
             "header": [
@@ -2712,51 +3137,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications/bulk/send",
+              "raw": "{{base_url}}/api/v1/notifications/admin/cleanup",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "notifications",
-                "bulk",
-                "send"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Test notification (send to specific user)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/notifications/test",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
                 "admin",
-                "notifications",
-                "test"
+                "cleanup"
               ]
             },
             "description": ""
           }
         }
       ],
-      "description": "Endpoints for notifications-admin functionality"
+      "description": "Endpoints for notifications functionality"
     },
     {
       "name": "user-analytics",
@@ -2953,43 +3350,11 @@
             },
             "description": "قائمة العملاء المعرضين لخطر فقدانهم"
           }
-        }
-      ],
-      "description": "Endpoints for user-analytics functionality"
-    },
-    {
-      "name": "checkout",
-      "item": [
-        {
-          "name": "Preview checkout",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/checkout/preview",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "checkout",
-                "preview"
-              ]
-            },
-            "description": "Preview order details, pricing, and delivery options before confirmation"
-          }
         },
         {
-          "name": "Confirm checkout",
+          "name": "الحصول على إعدادات التقييم الحالية",
           "request": {
-            "method": "POST",
+            "method": "GET",
             "header": [
               {
                 "key": "Content-Type",
@@ -2998,59 +3363,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/checkout/confirm",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "checkout",
-                "confirm"
-              ]
-            },
-            "description": "Confirm and process the checkout with payment and delivery details"
-          }
-        },
-        {
-          "name": "POST /api/v1/payments/webhook",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/payments/webhook",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "payments",
-                "webhook"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "POST /api/v1/admin/orders/{id}/status",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/orders/{id}/status",
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/scoring/config",
               "host": [
                 "{{base_url}}"
               ],
@@ -3058,22 +3371,189 @@
                 "api",
                 "v1",
                 "admin",
-                "orders",
-                "{id}",
-                "status"
+                "user-analytics",
+                "scoring",
+                "config"
               ]
             },
-            "description": ""
+            "description": "يعرض الإعدادات المستخدمة في حساب نقاط المستخدمين"
+          }
+        },
+        {
+          "name": "تحديث إعدادات التقييم",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/scoring/config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "user-analytics",
+                "scoring",
+                "config"
+              ]
+            },
+            "description": "تحديث الإعدادات المستخدمة في حساب نقاط المستخدمين"
+          }
+        },
+        {
+          "name": "الحصول على إحصائيات التخزين المؤقت",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/cache/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "user-analytics",
+                "cache",
+                "stats"
+              ]
+            },
+            "description": "يعرض إحصائيات نظام التخزين المؤقت"
+          }
+        },
+        {
+          "name": "مسح جميع البيانات من التخزين المؤقت",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/cache/clear",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "user-analytics",
+                "cache",
+                "clear"
+              ]
+            },
+            "description": "مسح جميع البيانات المخزنة مؤقتاً"
+          }
+        },
+        {
+          "name": "مسح بيانات مستخدم من التخزين المؤقت",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/cache/user/{userId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "user-analytics",
+                "cache",
+                "user",
+                "{userId}"
+              ]
+            },
+            "description": "مسح جميع البيانات المخزنة مؤقتاً لمستخدم معين"
           }
         }
       ],
-      "description": "Endpoints for checkout functionality"
+      "description": "Endpoints for user-analytics functionality"
     },
     {
       "name": "orders",
       "item": [
         {
-          "name": "Get user orders",
+          "name": "معاينة الطلب",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/checkout/preview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "checkout",
+                "preview"
+              ]
+            },
+            "description": "معاينة تفاصيل الطلب والأسعار قبل التأكيد"
+          }
+        },
+        {
+          "name": "تأكيد الطلب",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/checkout/confirm",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "checkout",
+                "confirm"
+              ]
+            },
+            "description": "تأكيد الطلب وإنشاؤه في النظام"
+          }
+        },
+        {
+          "name": "الحصول على طلبات المستخدم",
           "request": {
             "method": "GET",
             "header": [
@@ -3094,90 +3574,11 @@
                 "orders"
               ]
             },
-            "description": ""
+            "description": "قائمة بجميع طلبات المستخدم مع إمكانية الفلترة والترقيم"
           }
         },
         {
-          "name": "Get order details",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/orders/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "orders",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Cancel order",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/orders/{id}/cancel",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "orders",
-                "{id}",
-                "cancel"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Create order from cart",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/orders/create",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "orders",
-                "create"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get recent orders",
+          "name": "الطلبات الأخيرة",
           "request": {
             "method": "GET",
             "header": [
@@ -3199,11 +3600,37 @@
                 "recent"
               ]
             },
-            "description": ""
+            "description": "الحصول على أحدث الطلبات للمستخدم"
           }
         },
         {
-          "name": "Track order",
+          "name": "تفاصيل الطلب",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{id}"
+              ]
+            },
+            "description": "الحصول على تفاصيل طلب محدد"
+          }
+        },
+        {
+          "name": "تتبع الطلب",
           "request": {
             "method": "GET",
             "header": [
@@ -3226,11 +3653,38 @@
                 "track"
               ]
             },
-            "description": ""
+            "description": "الحصول على معلومات تتبع الطلب والخط الزمني"
           }
         },
         {
-          "name": "Rate order",
+          "name": "إلغاء الطلب",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/{id}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{id}",
+                "cancel"
+              ]
+            },
+            "description": "إلغاء طلب محدد من قبل العميل"
+          }
+        },
+        {
+          "name": "تقييم الطلب",
           "request": {
             "method": "POST",
             "header": [
@@ -3253,11 +3707,38 @@
                 "rate"
               ]
             },
-            "description": ""
+            "description": "تقييم طلب محدد بعد التسليم"
           }
         },
         {
-          "name": "Get user order statistics",
+          "name": "إضافة ملاحظات للطلب",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/{id}/notes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{id}",
+                "notes"
+              ]
+            },
+            "description": "إضافة ملاحظات شخصية للطلب"
+          }
+        },
+        {
+          "name": "إحصائيات الطلبات",
           "request": {
             "method": "GET",
             "header": [
@@ -3280,7 +3761,7 @@
                 "summary"
               ]
             },
-            "description": ""
+            "description": "الحصول على إحصائيات طلبات المستخدم"
           }
         }
       ],
@@ -3290,7 +3771,7 @@
       "name": "admin-orders",
       "item": [
         {
-          "name": "Get all orders (Admin)",
+          "name": "جميع الطلبات (للإدارة)",
           "request": {
             "method": "GET",
             "header": [
@@ -3312,11 +3793,38 @@
                 "orders"
               ]
             },
-            "description": ""
+            "description": "الحصول على جميع الطلبات مع إمكانية الفلترة والبحث"
           }
         },
         {
-          "name": "Update order status",
+          "name": "تفاصيل الطلب (للإدارة)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "{id}"
+              ]
+            },
+            "description": "الحصول على تفاصيل طلب محدد مع جميع المعلومات"
+          }
+        },
+        {
+          "name": "تحديث حالة الطلب",
           "request": {
             "method": "PATCH",
             "header": [
@@ -3340,38 +3848,11 @@
                 "status"
               ]
             },
-            "description": ""
+            "description": "تحديث حالة طلب محدد من قبل الإدارة"
           }
         },
         {
-          "name": "Get order details (Admin)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/orders/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "orders",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Ship order",
+          "name": "شحن الطلب",
           "request": {
             "method": "POST",
             "header": [
@@ -3395,11 +3876,11 @@
                 "ship"
               ]
             },
-            "description": ""
+            "description": "تحديث معلومات الشحن للطلب"
           }
         },
         {
-          "name": "Process refund",
+          "name": "معالجة الاسترداد",
           "request": {
             "method": "POST",
             "header": [
@@ -3423,11 +3904,11 @@
                 "refund"
               ]
             },
-            "description": ""
+            "description": "معالجة استرداد مبلغ الطلب"
           }
         },
         {
-          "name": "Add admin notes",
+          "name": "إضافة ملاحظات إدارية",
           "request": {
             "method": "POST",
             "header": [
@@ -3451,11 +3932,39 @@
                 "notes"
               ]
             },
-            "description": ""
+            "description": "إضافة ملاحظات إدارية للطلب"
           }
         },
         {
-          "name": "Get admin analytics",
+          "name": "تحديث حالة عدة طلبات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/bulk/update-status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "bulk",
+                "update-status"
+              ]
+            },
+            "description": "تحديث حالة عدة طلبات في عملية واحدة"
+          }
+        },
+        {
+          "name": "التحليلات الإدارية",
           "request": {
             "method": "GET",
             "header": [
@@ -3479,11 +3988,207 @@
                 "summary"
               ]
             },
-            "description": ""
+            "description": "الحصول على تحليلات شاملة للطلبات"
+          }
+        },
+        {
+          "name": "تحليل الإيرادات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/analytics/revenue",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "analytics",
+                "revenue"
+              ]
+            },
+            "description": "تحليل مفصل للإيرادات والأرباح"
+          }
+        },
+        {
+          "name": "تحليل الأداء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/analytics/performance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "analytics",
+                "performance"
+              ]
+            },
+            "description": "تحليل أداء النظام والطلبات"
+          }
+        },
+        {
+          "name": "تقرير الطلبات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/reports/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "reports",
+                "orders"
+              ]
+            },
+            "description": "تقرير مفصل للطلبات"
+          }
+        },
+        {
+          "name": "التقرير المالي",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/reports/financial",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "reports",
+                "financial"
+              ]
+            },
+            "description": "تقرير مالي مفصل للطلبات"
           }
         }
       ],
       "description": "Endpoints for admin-orders functionality"
+    },
+    {
+      "name": "webhooks",
+      "item": [
+        {
+          "name": "Webhook الدفع",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/webhooks/payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "webhooks",
+                "payment"
+              ]
+            },
+            "description": "معالجة إشعارات الدفع من مزودي الخدمة"
+          }
+        },
+        {
+          "name": "Webhook الشحن",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/webhooks/shipping",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "webhooks",
+                "shipping"
+              ]
+            },
+            "description": "معالجة إشعارات الشحن من شركات النقل"
+          }
+        },
+        {
+          "name": "Webhook المخزون",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/webhooks/inventory",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "webhooks",
+                "inventory"
+              ]
+            },
+            "description": "معالجة إشعارات تغيير المخزون"
+          }
+        }
+      ],
+      "description": "Endpoints for webhooks functionality"
     },
     {
       "name": "cart",
@@ -3540,7 +4245,7 @@
           }
         },
         {
-          "name": "PATCH /api/v1/cart/items/{itemId}",
+          "name": "تحديث كمية عنصر في السلة",
           "request": {
             "method": "PATCH",
             "header": [
@@ -3563,11 +4268,11 @@
                 "{itemId}"
               ]
             },
-            "description": ""
+            "description": "تحديث كمية عنصر محدد في سلة التسوق للمستخدم."
           }
         },
         {
-          "name": "DELETE /api/v1/cart/items/{itemId}",
+          "name": "إزالة عنصر من السلة",
           "request": {
             "method": "DELETE",
             "header": [
@@ -3590,11 +4295,11 @@
                 "{itemId}"
               ]
             },
-            "description": ""
+            "description": "إزالة عنصر محدد من سلة التسوق للمستخدم."
           }
         },
         {
-          "name": "POST /api/v1/cart/merge",
+          "name": "دمج سلة الأجهزة مع سلة المستخدم",
           "request": {
             "method": "POST",
             "header": [
@@ -3616,11 +4321,11 @@
                 "merge"
               ]
             },
-            "description": ""
+            "description": "دمج سلة التسوق المحفوظة على الجهاز مع سلة المستخدم المسجل دخوله."
           }
         },
         {
-          "name": "POST /api/v1/cart/preview",
+          "name": "معاينة السلة",
           "request": {
             "method": "POST",
             "header": [
@@ -3642,7 +4347,85 @@
                 "preview"
               ]
             },
-            "description": ""
+            "description": "معاينة السلة مع حساب التكاليف والضرائب لعملة محددة."
+          }
+        },
+        {
+          "name": "تحديث إعدادات السلة",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cart/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cart",
+                "settings"
+              ]
+            },
+            "description": "تحديث إعدادات السلة مثل العملة المفضلة وغيرها."
+          }
+        },
+        {
+          "name": "تطبيق كوبون خصم",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cart/coupon",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cart",
+                "coupon"
+              ]
+            },
+            "description": "تطبيق كوبون خصم على السلة."
+          }
+        },
+        {
+          "name": "إزالة كوبون الخصم",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cart/coupon",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cart",
+                "coupon"
+              ]
+            },
+            "description": "إزالة الكوبون المطبق من السلة."
           }
         }
       ],
@@ -3652,7 +4435,7 @@
       "name": "cart-guest",
       "item": [
         {
-          "name": "GET /api/v1/cart/guest",
+          "name": "الحصول على سلة الزائر",
           "request": {
             "method": "GET",
             "header": [
@@ -3674,11 +4457,11 @@
                 "guest"
               ]
             },
-            "description": ""
+            "description": "الحصول على سلة التسوق للزائر غير المسجل باستخدام معرف الجهاز. لا يتطلب مصادقة."
           }
         },
         {
-          "name": "POST /api/v1/cart/guest/items",
+          "name": "إضافة عنصر إلى سلة الزائر",
           "request": {
             "method": "POST",
             "header": [
@@ -3701,11 +4484,11 @@
                 "items"
               ]
             },
-            "description": ""
+            "description": "إضافة منتج إلى سلة التسوق للزائر غير المسجل. لا يتطلب مصادقة."
           }
         },
         {
-          "name": "PATCH /api/v1/cart/guest/items/{itemId}",
+          "name": "تحديث كمية عنصر في سلة الزائر",
           "request": {
             "method": "PATCH",
             "header": [
@@ -3729,11 +4512,11 @@
                 "{itemId}"
               ]
             },
-            "description": ""
+            "description": "تحديث كمية عنصر محدد في سلة التسوق للزائر غير المسجل."
           }
         },
         {
-          "name": "DELETE /api/v1/cart/guest/items/{itemId}",
+          "name": "إزالة عنصر من سلة الزائر",
           "request": {
             "method": "DELETE",
             "header": [
@@ -3757,11 +4540,11 @@
                 "{itemId}"
               ]
             },
-            "description": ""
+            "description": "إزالة عنصر محدد من سلة التسوق للزائر غير المسجل."
           }
         },
         {
-          "name": "POST /api/v1/cart/guest/clear",
+          "name": "مسح سلة الزائر",
           "request": {
             "method": "POST",
             "header": [
@@ -3784,11 +4567,11 @@
                 "clear"
               ]
             },
-            "description": ""
+            "description": "مسح جميع العناصر من سلة التسوق للزائر غير المسجل."
           }
         },
         {
-          "name": "POST /api/v1/cart/guest/preview",
+          "name": "معاينة سلة الزائر",
           "request": {
             "method": "POST",
             "header": [
@@ -3811,7 +4594,7 @@
                 "preview"
               ]
             },
-            "description": ""
+            "description": "معاينة سلة التسوق للزائر مع حساب التكاليف والضرائب لعملة محددة."
           }
         }
       ],
@@ -3821,7 +4604,7 @@
       "name": "admin-carts",
       "item": [
         {
-          "name": "Get abandoned carts",
+          "name": "الحصول على السلات المهجورة",
           "request": {
             "method": "GET",
             "header": [
@@ -3844,11 +4627,11 @@
                 "abandoned"
               ]
             },
-            "description": ""
+            "description": "الحصول على قائمة السلات التي تم التخلي عنها لفترة محددة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Send abandonment reminders to all abandoned carts",
+          "name": "إرسال تذكيرات لجميع السلات المهجورة",
           "request": {
             "method": "POST",
             "header": [
@@ -3871,11 +4654,11 @@
                 "send-reminders"
               ]
             },
-            "description": ""
+            "description": "إرسال رسائل تذكير عبر البريد الإلكتروني لجميع السلات المهجورة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Send abandonment reminder for specific cart",
+          "name": "إرسال تذكير لسلة محددة",
           "request": {
             "method": "POST",
             "header": [
@@ -3899,11 +4682,11 @@
                 "send-reminder"
               ]
             },
-            "description": ""
+            "description": "إرسال رسالة تذكير عبر البريد الإلكتروني لسلة مهجورة محددة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Get comprehensive cart analytics",
+          "name": "الحصول على تحليلات شاملة للسلات",
           "request": {
             "method": "GET",
             "header": [
@@ -3926,11 +4709,11 @@
                 "analytics"
               ]
             },
-            "description": ""
+            "description": "الحصول على تحليلات مفصلة عن السلات لفترة محددة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Get cart statistics overview",
+          "name": "الحصول على إحصائيات السلات",
           "request": {
             "method": "GET",
             "header": [
@@ -3953,11 +4736,11 @@
                 "statistics"
               ]
             },
-            "description": ""
+            "description": "الحصول على نظرة عامة على إحصائيات السلات. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Get cart conversion rates",
+          "name": "الحصول على معدلات التحويل",
           "request": {
             "method": "GET",
             "header": [
@@ -3980,11 +4763,11 @@
                 "conversion-rates"
               ]
             },
-            "description": ""
+            "description": "الحصول على معدلات تحويل السلات لفترة محددة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Get all carts with pagination and filters",
+          "name": "الحصول على جميع السلات مع الترقيم والتصفية",
           "request": {
             "method": "GET",
             "header": [
@@ -4007,11 +4790,11 @@
                 "all"
               ]
             },
-            "description": ""
+            "description": "الحصول على قائمة بجميع السلات مع إمكانية الترقيم والتصفية. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Get cart details by ID",
+          "name": "الحصول على تفاصيل السلة بواسطة المعرف",
           "request": {
             "method": "GET",
             "header": [
@@ -4034,11 +4817,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "الحصول على تفاصيل سلة محددة باستخدام المعرف. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Manually convert cart to order",
+          "name": "تحويل السلة يدوياً إلى طلب",
           "request": {
             "method": "POST",
             "header": [
@@ -4062,11 +4845,11 @@
                 "convert-to-order"
               ]
             },
-            "description": ""
+            "description": "تحويل سلة محددة إلى طلب يدوياً. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Get cart recovery campaign analytics",
+          "name": "تحليلات حملات استرداد السلات",
           "request": {
             "method": "GET",
             "header": [
@@ -4089,11 +4872,11 @@
                 "recovery-campaigns"
               ]
             },
-            "description": ""
+            "description": "الحصول على تحليلات حملات استرداد السلات المهجورة لفترة محددة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Get customer behavior analytics",
+          "name": "تحليلات سلوك العملاء",
           "request": {
             "method": "GET",
             "header": [
@@ -4116,11 +4899,11 @@
                 "customer-behavior"
               ]
             },
-            "description": ""
+            "description": "الحصول على تحليلات سلوك العملاء في السلات لفترة محددة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Get revenue impact analysis",
+          "name": "تحليل تأثير الإيرادات",
           "request": {
             "method": "GET",
             "header": [
@@ -4143,11 +4926,11 @@
                 "revenue-impact"
               ]
             },
-            "description": ""
+            "description": "الحصول على تحليل تأثير السلات المهجورة على الإيرادات لفترة محددة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Perform bulk actions on carts",
+          "name": "تنفيذ إجراءات جماعية على السلات",
           "request": {
             "method": "POST",
             "header": [
@@ -4170,278 +4953,11 @@
                 "bulk-actions"
               ]
             },
-            "description": ""
+            "description": "تنفيذ إجراءات جماعية على مجموعة من السلات مثل الحذف أو التحديث. يتطلب صلاحيات إدارية."
           }
         }
       ],
       "description": "Endpoints for admin-carts functionality"
-    },
-    {
-      "name": "addresses",
-      "item": [
-        {
-          "name": "Get all user addresses",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Create new address",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get active addresses only",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/active",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "active"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get default address",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/default",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "default"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get address by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Update address",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Delete address (soft delete)",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Set address as default",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}/set-default",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}",
-                "set-default"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Restore deleted address",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}/restore",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}",
-                "restore"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Validate address ownership",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/validate/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "validate",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        }
-      ],
-      "description": "Endpoints for addresses functionality"
     },
     {
       "name": "marketing-admin",
@@ -5120,7 +5636,7 @@
           }
         },
         {
-          "name": "GET /api/v1/support/tickets",
+          "name": "GET /api/v1/support/tickets/my",
           "request": {
             "method": "GET",
             "header": [
@@ -5131,7 +5647,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/support/tickets",
+              "raw": "{{base_url}}/api/v1/support/tickets/my",
               "host": [
                 "{{base_url}}"
               ],
@@ -5139,7 +5655,8 @@
                 "api",
                 "v1",
                 "support",
-                "tickets"
+                "tickets",
+                "my"
               ]
             },
             "description": ""
@@ -5255,6 +5772,34 @@
             },
             "description": ""
           }
+        },
+        {
+          "name": "POST /api/v1/support/tickets/{id}/rate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/support/tickets/{id}/rate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "support",
+                "tickets",
+                "{id}",
+                "rate"
+              ]
+            },
+            "description": ""
+          }
         }
       ],
       "description": "Endpoints for support-customer functionality"
@@ -5318,9 +5863,9 @@
           }
         },
         {
-          "name": "PUT /api/v1/admin/support/tickets/{id}",
+          "name": "PATCH /api/v1/admin/support/tickets/{id}",
           "request": {
-            "method": "PUT",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Content-Type",
@@ -5425,6 +5970,231 @@
                 "admin",
                 "support",
                 "stats"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/admin/support/sla/breached",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/sla/breached",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "sla",
+                "breached"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/admin/support/sla/{id}/check",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/sla/{id}/check",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "sla",
+                "{id}",
+                "check"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/admin/support/canned-responses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/canned-responses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "canned-responses"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/admin/support/canned-responses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/canned-responses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "canned-responses"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/admin/support/canned-responses/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/canned-responses/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "canned-responses",
+                "{id}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/admin/support/canned-responses/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/canned-responses/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "canned-responses",
+                "{id}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/admin/support/canned-responses/{id}/use",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/canned-responses/{id}/use",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "canned-responses",
+                "{id}",
+                "use"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/admin/support/canned-responses/shortcut/{shortcut}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/canned-responses/shortcut/{shortcut}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "canned-responses",
+                "shortcut",
+                "{shortcut}"
               ]
             },
             "description": ""
@@ -6422,7 +7192,7 @@
       "name": "services-customer",
       "item": [
         {
-          "name": "POST /api/v1/services/requests",
+          "name": "POST /api/v1/services/customer",
           "request": {
             "method": "POST",
             "header": [
@@ -6433,7 +7203,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests",
+              "raw": "{{base_url}}/api/v1/services/customer",
               "host": [
                 "{{base_url}}"
               ],
@@ -6441,14 +7211,14 @@
                 "api",
                 "v1",
                 "services",
-                "requests"
+                "customer"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "GET /api/v1/services/requests/my",
+          "name": "GET /api/v1/services/customer/my",
           "request": {
             "method": "GET",
             "header": [
@@ -6459,7 +7229,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests/my",
+              "raw": "{{base_url}}/api/v1/services/customer/my",
               "host": [
                 "{{base_url}}"
               ],
@@ -6467,7 +7237,7 @@
                 "api",
                 "v1",
                 "services",
-                "requests",
+                "customer",
                 "my"
               ]
             },
@@ -6475,7 +7245,7 @@
           }
         },
         {
-          "name": "GET /api/v1/services/requests/{id}",
+          "name": "GET /api/v1/services/customer/{id}",
           "request": {
             "method": "GET",
             "header": [
@@ -6486,7 +7256,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests/{id}",
+              "raw": "{{base_url}}/api/v1/services/customer/{id}",
               "host": [
                 "{{base_url}}"
               ],
@@ -6494,7 +7264,7 @@
                 "api",
                 "v1",
                 "services",
-                "requests",
+                "customer",
                 "{id}"
               ]
             },
@@ -6502,7 +7272,7 @@
           }
         },
         {
-          "name": "POST /api/v1/services/requests/{id}/cancel",
+          "name": "POST /api/v1/services/customer/{id}/cancel",
           "request": {
             "method": "POST",
             "header": [
@@ -6513,7 +7283,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests/{id}/cancel",
+              "raw": "{{base_url}}/api/v1/services/customer/{id}/cancel",
               "host": [
                 "{{base_url}}"
               ],
@@ -6521,7 +7291,7 @@
                 "api",
                 "v1",
                 "services",
-                "requests",
+                "customer",
                 "{id}",
                 "cancel"
               ]
@@ -6530,7 +7300,7 @@
           }
         },
         {
-          "name": "POST /api/v1/services/requests/{id}/accept-offer",
+          "name": "POST /api/v1/services/customer/{id}/accept-offer",
           "request": {
             "method": "POST",
             "header": [
@@ -6541,7 +7311,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests/{id}/accept-offer",
+              "raw": "{{base_url}}/api/v1/services/customer/{id}/accept-offer",
               "host": [
                 "{{base_url}}"
               ],
@@ -6549,7 +7319,7 @@
                 "api",
                 "v1",
                 "services",
-                "requests",
+                "customer",
                 "{id}",
                 "accept-offer"
               ]
@@ -6558,7 +7328,7 @@
           }
         },
         {
-          "name": "POST /api/v1/services/requests/{id}/rate",
+          "name": "POST /api/v1/services/customer/{id}/rate",
           "request": {
             "method": "POST",
             "header": [
@@ -6569,7 +7339,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests/{id}/rate",
+              "raw": "{{base_url}}/api/v1/services/customer/{id}/rate",
               "host": [
                 "{{base_url}}"
               ],
@@ -6577,7 +7347,7 @@
                 "api",
                 "v1",
                 "services",
-                "requests",
+                "customer",
                 "{id}",
                 "rate"
               ]
@@ -6586,7 +7356,7 @@
           }
         },
         {
-          "name": "GET /api/v1/services/requests/{id}/offers",
+          "name": "GET /api/v1/services/customer/{id}/offers",
           "request": {
             "method": "GET",
             "header": [
@@ -6597,7 +7367,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests/{id}/offers",
+              "raw": "{{base_url}}/api/v1/services/customer/{id}/offers",
               "host": [
                 "{{base_url}}"
               ],
@@ -6605,7 +7375,7 @@
                 "api",
                 "v1",
                 "services",
-                "requests",
+                "customer",
                 "{id}",
                 "offers"
               ]
@@ -6620,7 +7390,7 @@
       "name": "services-engineer",
       "item": [
         {
-          "name": "GET /api/v1/services/requests/nearby",
+          "name": "GET /api/v1/services/engineer/requests/nearby",
           "request": {
             "method": "GET",
             "header": [
@@ -6631,7 +7401,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests/nearby",
+              "raw": "{{base_url}}/api/v1/services/engineer/requests/nearby",
               "host": [
                 "{{base_url}}"
               ],
@@ -6639,6 +7409,7 @@
                 "api",
                 "v1",
                 "services",
+                "engineer",
                 "requests",
                 "nearby"
               ]
@@ -6647,7 +7418,7 @@
           }
         },
         {
-          "name": "POST /api/v1/services/offers",
+          "name": "POST /api/v1/services/engineer/offers",
           "request": {
             "method": "POST",
             "header": [
@@ -6658,7 +7429,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/offers",
+              "raw": "{{base_url}}/api/v1/services/engineer/offers",
               "host": [
                 "{{base_url}}"
               ],
@@ -6666,6 +7437,7 @@
                 "api",
                 "v1",
                 "services",
+                "engineer",
                 "offers"
               ]
             },
@@ -6673,7 +7445,7 @@
           }
         },
         {
-          "name": "PATCH /api/v1/services/offers/{id}",
+          "name": "PATCH /api/v1/services/engineer/offers/{id}",
           "request": {
             "method": "PATCH",
             "header": [
@@ -6684,7 +7456,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/offers/{id}",
+              "raw": "{{base_url}}/api/v1/services/engineer/offers/{id}",
               "host": [
                 "{{base_url}}"
               ],
@@ -6692,6 +7464,7 @@
                 "api",
                 "v1",
                 "services",
+                "engineer",
                 "offers",
                 "{id}"
               ]
@@ -6700,7 +7473,7 @@
           }
         },
         {
-          "name": "POST /api/v1/services/requests/{id}/start",
+          "name": "POST /api/v1/services/engineer/requests/{id}/start",
           "request": {
             "method": "POST",
             "header": [
@@ -6711,7 +7484,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests/{id}/start",
+              "raw": "{{base_url}}/api/v1/services/engineer/requests/{id}/start",
               "host": [
                 "{{base_url}}"
               ],
@@ -6719,6 +7492,7 @@
                 "api",
                 "v1",
                 "services",
+                "engineer",
                 "requests",
                 "{id}",
                 "start"
@@ -6728,7 +7502,7 @@
           }
         },
         {
-          "name": "POST /api/v1/services/requests/{id}/complete",
+          "name": "POST /api/v1/services/engineer/requests/{id}/complete",
           "request": {
             "method": "POST",
             "header": [
@@ -6739,7 +7513,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/requests/{id}/complete",
+              "raw": "{{base_url}}/api/v1/services/engineer/requests/{id}/complete",
               "host": [
                 "{{base_url}}"
               ],
@@ -6747,6 +7521,7 @@
                 "api",
                 "v1",
                 "services",
+                "engineer",
                 "requests",
                 "{id}",
                 "complete"
@@ -6756,7 +7531,7 @@
           }
         },
         {
-          "name": "GET /api/v1/services/offers/my",
+          "name": "GET /api/v1/services/engineer/offers/my",
           "request": {
             "method": "GET",
             "header": [
@@ -6767,7 +7542,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/services/offers/my",
+              "raw": "{{base_url}}/api/v1/services/engineer/offers/my",
               "host": [
                 "{{base_url}}"
               ],
@@ -6775,6 +7550,7 @@
                 "api",
                 "v1",
                 "services",
+                "engineer",
                 "offers",
                 "my"
               ]
@@ -6789,7 +7565,7 @@
       "name": "services-admin",
       "item": [
         {
-          "name": "GET /api/v1/admin/services/requests",
+          "name": "GET /api/v1/services/admin/requests",
           "request": {
             "method": "GET",
             "header": [
@@ -6800,15 +7576,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/requests",
+              "raw": "{{base_url}}/api/v1/services/admin/requests",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "requests"
               ]
             },
@@ -6816,7 +7592,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/requests/{id}",
+          "name": "GET /api/v1/services/admin/requests/{id}",
           "request": {
             "method": "GET",
             "header": [
@@ -6827,15 +7603,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/requests/{id}",
+              "raw": "{{base_url}}/api/v1/services/admin/requests/{id}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "requests",
                 "{id}"
               ]
@@ -6844,7 +7620,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/requests/{id}/offers",
+          "name": "GET /api/v1/services/admin/requests/{id}/offers",
           "request": {
             "method": "GET",
             "header": [
@@ -6855,15 +7631,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/requests/{id}/offers",
+              "raw": "{{base_url}}/api/v1/services/admin/requests/{id}/offers",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "requests",
                 "{id}",
                 "offers"
@@ -6873,7 +7649,7 @@
           }
         },
         {
-          "name": "PATCH /api/v1/admin/services/requests/{id}/status",
+          "name": "PATCH /api/v1/services/admin/requests/{id}/status",
           "request": {
             "method": "PATCH",
             "header": [
@@ -6884,15 +7660,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/requests/{id}/status",
+              "raw": "{{base_url}}/api/v1/services/admin/requests/{id}/status",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "requests",
                 "{id}",
                 "status"
@@ -6902,7 +7678,7 @@
           }
         },
         {
-          "name": "POST /api/v1/admin/services/requests/{id}/cancel",
+          "name": "POST /api/v1/services/admin/requests/{id}/cancel",
           "request": {
             "method": "POST",
             "header": [
@@ -6913,15 +7689,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/requests/{id}/cancel",
+              "raw": "{{base_url}}/api/v1/services/admin/requests/{id}/cancel",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "requests",
                 "{id}",
                 "cancel"
@@ -6931,7 +7707,7 @@
           }
         },
         {
-          "name": "POST /api/v1/admin/services/requests/{id}/assign-engineer",
+          "name": "POST /api/v1/services/admin/requests/{id}/assign-engineer",
           "request": {
             "method": "POST",
             "header": [
@@ -6942,15 +7718,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/requests/{id}/assign-engineer",
+              "raw": "{{base_url}}/api/v1/services/admin/requests/{id}/assign-engineer",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "requests",
                 "{id}",
                 "assign-engineer"
@@ -6960,7 +7736,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/statistics/overview",
+          "name": "GET /api/v1/services/admin/statistics/overview",
           "request": {
             "method": "GET",
             "header": [
@@ -6971,15 +7747,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/statistics/overview",
+              "raw": "{{base_url}}/api/v1/services/admin/statistics/overview",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "statistics",
                 "overview"
               ]
@@ -6988,7 +7764,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/statistics/requests",
+          "name": "GET /api/v1/services/admin/statistics/requests",
           "request": {
             "method": "GET",
             "header": [
@@ -6999,15 +7775,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/statistics/requests",
+              "raw": "{{base_url}}/api/v1/services/admin/statistics/requests",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "statistics",
                 "requests"
               ]
@@ -7016,7 +7792,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/statistics/engineers",
+          "name": "GET /api/v1/services/admin/statistics/engineers",
           "request": {
             "method": "GET",
             "header": [
@@ -7027,15 +7803,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/statistics/engineers",
+              "raw": "{{base_url}}/api/v1/services/admin/statistics/engineers",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "statistics",
                 "engineers"
               ]
@@ -7044,7 +7820,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/statistics/services-types",
+          "name": "GET /api/v1/services/admin/statistics/services-types",
           "request": {
             "method": "GET",
             "header": [
@@ -7055,15 +7831,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/statistics/services-types",
+              "raw": "{{base_url}}/api/v1/services/admin/statistics/services-types",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "statistics",
                 "services-types"
               ]
@@ -7072,7 +7848,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/statistics/revenue",
+          "name": "GET /api/v1/services/admin/statistics/revenue",
           "request": {
             "method": "GET",
             "header": [
@@ -7083,15 +7859,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/statistics/revenue",
+              "raw": "{{base_url}}/api/v1/services/admin/statistics/revenue",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "statistics",
                 "revenue"
               ]
@@ -7100,7 +7876,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/engineers",
+          "name": "GET /api/v1/services/admin/engineers",
           "request": {
             "method": "GET",
             "header": [
@@ -7111,15 +7887,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/engineers",
+              "raw": "{{base_url}}/api/v1/services/admin/engineers",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "engineers"
               ]
             },
@@ -7127,7 +7903,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/engineers/{id}/statistics",
+          "name": "GET /api/v1/services/admin/engineers/{id}/statistics",
           "request": {
             "method": "GET",
             "header": [
@@ -7138,15 +7914,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/engineers/{id}/statistics",
+              "raw": "{{base_url}}/api/v1/services/admin/engineers/{id}/statistics",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "engineers",
                 "{id}",
                 "statistics"
@@ -7156,7 +7932,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/engineers/{id}/offers",
+          "name": "GET /api/v1/services/admin/engineers/{id}/offers",
           "request": {
             "method": "GET",
             "header": [
@@ -7167,15 +7943,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/engineers/{id}/offers",
+              "raw": "{{base_url}}/api/v1/services/admin/engineers/{id}/offers",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
                 "engineers",
                 "{id}",
                 "offers"
@@ -7185,7 +7961,7 @@
           }
         },
         {
-          "name": "GET /api/v1/admin/services/offers",
+          "name": "احصل على إحصائيات عامة للمهندسين",
           "request": {
             "method": "GET",
             "header": [
@@ -7196,15 +7972,72 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/services/offers",
+              "raw": "{{base_url}}/api/v1/services/admin/engineers/statistics/overview",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
                 "services",
+                "admin",
+                "engineers",
+                "statistics",
+                "overview"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "احصل على إحصائيات العروض",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/admin/offers/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "admin",
+                "offers",
+                "statistics"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "احصل على قائمة العروض للإدارة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/admin/offers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "admin",
                 "offers"
               ]
             },
@@ -7215,178 +8048,10 @@
       "description": "Endpoints for services-admin functionality"
     },
     {
-      "name": "catalog-admin",
+      "name": "addresses",
       "item": [
         {
-          "name": "POST /api/v1/admin/catalog/products",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/catalog/products",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "catalog",
-                "products"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "PATCH /api/v1/admin/catalog/products/{id}",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/catalog/products/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "catalog",
-                "products",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "POST /api/v1/admin/catalog/variants",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/catalog/variants",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "catalog",
-                "variants"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "PATCH /api/v1/admin/catalog/variants/{id}",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/catalog/variants/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "catalog",
-                "variants",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "POST /api/v1/admin/catalog/variant-prices",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/catalog/variant-prices",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "catalog",
-                "variant-prices"
-              ]
-            },
-            "description": ""
-          }
-        }
-      ],
-      "description": "Endpoints for catalog-admin functionality"
-    },
-    {
-      "name": "exchange-rates",
-      "item": [
-        {
-          "name": "Create new exchange rate",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "exchange-rates"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get all exchange rates",
+          "name": "Get all user addresses",
           "request": {
             "method": "GET",
             "header": [
@@ -7397,23 +8062,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates",
+              "raw": "{{base_url}}/api/v1/addresses",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "exchange-rates"
+                "addresses"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Update exchange rate",
+          "name": "Create new address",
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -7422,23 +8087,21 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates/{fromCurrency}/{toCurrency}",
+              "raw": "{{base_url}}/api/v1/addresses",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "exchange-rates",
-                "{fromCurrency}",
-                "{toCurrency}"
+                "addresses"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Get exchange rate",
+          "name": "Get active addresses only",
           "request": {
             "method": "GET",
             "header": [
@@ -7449,23 +8112,100 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates/{fromCurrency}/{toCurrency}",
+              "raw": "{{base_url}}/api/v1/addresses/active",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "exchange-rates",
-                "{fromCurrency}",
-                "{toCurrency}"
+                "addresses",
+                "active"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Deactivate exchange rate",
+          "name": "Get default address",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/default",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "default"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get address by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "{id}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update address",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "{id}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Delete address (soft delete)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -7476,23 +8216,22 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates/{fromCurrency}/{toCurrency}",
+              "raw": "{{base_url}}/api/v1/addresses/{id}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "exchange-rates",
-                "{fromCurrency}",
-                "{toCurrency}"
+                "addresses",
+                "{id}"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Convert currency",
+          "name": "Set address as default",
           "request": {
             "method": "POST",
             "header": [
@@ -7503,22 +8242,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates/convert",
+              "raw": "{{base_url}}/api/v1/addresses/{id}/set-default",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "exchange-rates",
-                "convert"
+                "addresses",
+                "{id}",
+                "set-default"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "Bulk update exchange rates",
+          "name": "Restore deleted address",
           "request": {
             "method": "POST",
             "header": [
@@ -7529,261 +8269,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates/bulk-update",
+              "raw": "{{base_url}}/api/v1/addresses/{id}/restore",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "exchange-rates",
-                "bulk-update"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get exchange rate history",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates/history",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "exchange-rates",
-                "history"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get exchange rate statistics",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates/statistics",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "exchange-rates",
-                "statistics"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get supported currencies",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/exchange-rates/currencies/supported",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "exchange-rates",
-                "currencies",
-                "supported"
-              ]
-            },
-            "description": ""
-          }
-        }
-      ],
-      "description": "Endpoints for exchange-rates functionality"
-    },
-    {
-      "name": "admin-exchange-rates",
-      "item": [
-        {
-          "name": "Get exchange rates dashboard data",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/exchange-rates/dashboard",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "exchange-rates",
-                "dashboard"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Import exchange rates from CSV/JSON",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/exchange-rates/import",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "exchange-rates",
-                "import"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Export exchange rates to CSV/JSON",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/exchange-rates/export",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "exchange-rates",
-                "export"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get exchange rates analytics",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/exchange-rates/analytics",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "exchange-rates",
-                "analytics"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Create backup of exchange rates",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/exchange-rates/backup",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "exchange-rates",
-                "backup"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Restore exchange rates from backup",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/exchange-rates/restore",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "exchange-rates",
+                "addresses",
+                "{id}",
                 "restore"
               ]
             },
@@ -7791,7 +8285,7 @@
           }
         },
         {
-          "name": "Check exchange rates system health",
+          "name": "Validate address ownership",
           "request": {
             "method": "GET",
             "header": [
@@ -7802,23 +8296,23 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/admin/exchange-rates/health",
+              "raw": "{{base_url}}/api/v1/addresses/validate/{id}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "admin",
-                "exchange-rates",
-                "health"
+                "addresses",
+                "validate",
+                "{id}"
               ]
             },
             "description": ""
           }
         }
       ],
-      "description": "Endpoints for admin-exchange-rates functionality"
+      "description": "Endpoints for addresses functionality"
     },
     {
       "name": "search",
@@ -7933,7 +8427,7 @@
       "name": "admin-brands",
       "item": [
         {
-          "name": "Create a new brand",
+          "name": "إنشاء علامة تجارية جديدة",
           "request": {
             "method": "POST",
             "header": [
@@ -7955,11 +8449,11 @@
                 "brands"
               ]
             },
-            "description": ""
+            "description": "إنشاء علامة تجارية جديدة في النظام. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "List all brands with filters and pagination",
+          "name": "الحصول على قائمة العلامات التجارية",
           "request": {
             "method": "GET",
             "header": [
@@ -7981,11 +8475,11 @@
                 "brands"
               ]
             },
-            "description": ""
+            "description": "الحصول على قائمة بجميع العلامات التجارية مع إمكانية التصفية والترقيم. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Get brand by ID",
+          "name": "الحصول على علامة تجارية بواسطة المعرف",
           "request": {
             "method": "GET",
             "header": [
@@ -8008,11 +8502,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "الحصول على تفاصيل علامة تجارية محددة باستخدام المعرف (ObjectId). يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Update brand",
+          "name": "تحديث علامة تجارية",
           "request": {
             "method": "PATCH",
             "header": [
@@ -8035,11 +8529,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث بيانات علامة تجارية موجودة. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Delete brand",
+          "name": "حذف علامة تجارية",
           "request": {
             "method": "DELETE",
             "header": [
@@ -8062,11 +8556,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "حذف علامة تجارية من النظام. يتطلب صلاحيات إدارية."
           }
         },
         {
-          "name": "Toggle brand active status",
+          "name": "تبديل حالة العلامة التجارية",
           "request": {
             "method": "PATCH",
             "header": [
@@ -8090,7 +8584,7 @@
                 "toggle-status"
               ]
             },
-            "description": ""
+            "description": "تفعيل أو إلغاء تفعيل علامة تجارية. يتطلب صلاحيات إدارية."
           }
         }
       ],
@@ -8100,7 +8594,7 @@
       "name": "brands",
       "item": [
         {
-          "name": "Get all active brands (Public endpoint - no auth required)",
+          "name": "الحصول على قائمة العلامات التجارية النشطة",
           "request": {
             "method": "GET",
             "header": [
@@ -8121,11 +8615,11 @@
                 "brands"
               ]
             },
-            "description": ""
+            "description": "يُرجع قائمة بجميع العلامات التجارية النشطة مع إمكانية التصفية والترقيم. هذا endpoint عام ولا يتطلب مصادقة."
           }
         },
         {
-          "name": "Get brand by slug (Public endpoint)",
+          "name": "الحصول على علامة تجارية بواسطة الـ slug",
           "request": {
             "method": "GET",
             "header": [
@@ -8148,11 +8642,11 @@
                 "{slug}"
               ]
             },
-            "description": ""
+            "description": "يُرجع تفاصيل علامة تجارية محددة باستخدام الـ slug. هذا endpoint عام ولا يتطلب مصادقة."
           }
         },
         {
-          "name": "Get brand by ID (Public endpoint)",
+          "name": "الحصول على علامة تجارية بواسطة المعرف",
           "request": {
             "method": "GET",
             "header": [
@@ -8174,7 +8668,7 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "يُرجع تفاصيل علامة تجارية محددة باستخدام المعرف (ObjectId). هذا endpoint عام ولا يتطلب مصادقة."
           }
         }
       ],
@@ -8538,17 +9032,11 @@
             },
             "description": ""
           }
-        }
-      ],
-      "description": "Endpoints for admin-media functionality"
-    },
-    {
-      "name": "General",
-      "item": [
+        },
         {
-          "name": "GET /api/v1/health",
+          "name": "POST /api/v1/admin/media/cleanup/deleted",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -8557,23 +9045,26 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/health",
+              "raw": "{{base_url}}/api/v1/admin/media/cleanup/deleted",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "health"
+                "admin",
+                "media",
+                "cleanup",
+                "deleted"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "GET /api/v1/health/simple",
+          "name": "POST /api/v1/admin/media/cleanup/duplicates",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -8582,24 +9073,26 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/health/simple",
+              "raw": "{{base_url}}/api/v1/admin/media/cleanup/duplicates",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "health",
-                "simple"
+                "admin",
+                "media",
+                "cleanup",
+                "duplicates"
               ]
             },
             "description": ""
           }
         },
         {
-          "name": "GET /api/v1/health/ready",
+          "name": "POST /api/v1/admin/media/cleanup/unused",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -8608,48 +9101,24 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/health/ready",
+              "raw": "{{base_url}}/api/v1/admin/media/cleanup/unused",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "health",
-                "ready"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "GET /api/v1/health/live",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/health/live",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "health",
-                "live"
+                "admin",
+                "media",
+                "cleanup",
+                "unused"
               ]
             },
             "description": ""
           }
         }
       ],
-      "description": "Endpoints for General functionality"
+      "description": "Endpoints for admin-media functionality"
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
   UnifiedNotification,
@@ -31,11 +31,13 @@ import {
   SmsNotificationAdapter,
   NotificationAdapterFactory,
   MockNotificationAdapter,
-  ErrorHandlingNotificationAdapter,
 } from './adapters/notification.adapters';
 
 // Ports
 import {} from './ports/notification.ports';
+
+// Auth
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import {} from './ports/notification.ports';
       { name: DeviceToken.name, schema: DeviceTokenSchema },
       { name: NotificationLog.name, schema: NotificationLogSchema },
     ]),
+    forwardRef(() => AuthModule),
   ],
   controllers: [UnifiedNotificationController],
   providers: [
@@ -61,7 +64,6 @@ import {} from './ports/notification.ports';
     SmsNotificationAdapter,
     NotificationAdapterFactory,
     MockNotificationAdapter,
-    ErrorHandlingNotificationAdapter,
 
     // Port Providers
     {

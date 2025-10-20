@@ -150,7 +150,7 @@ export class MediaController {
   // ==================== تنظيف الملفات المكررة ====================
   @Post('cleanup/duplicates')
   async cleanupDuplicateFiles(
-    @Req() req: { user: { sub: string; roles?: string[] } }
+    @Req() req: { user: { sub: string; roles?: UserRole[] } }
   ) {
     // Check if user is SUPER_ADMIN
     if (!req.user.roles?.includes(UserRole.SUPER_ADMIN)) {
@@ -172,8 +172,8 @@ export class MediaController {
   // ==================== تنظيف الملفات غير المستخدمة ====================
   @Post('cleanup/unused')
   async cleanupUnusedFiles(
+    @Req() req: { user: { sub: string; roles?: UserRole[] } },
     @Query('days') days?: number,
-    @Req() req: { user: { sub: string; roles?: string[] } }
   ) {
     // Check if user is SUPER_ADMIN
     if (!req.user.roles?.includes(UserRole.SUPER_ADMIN)) {

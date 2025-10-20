@@ -234,7 +234,7 @@ export class PricingService {
       { $set: priceData }
     );
 
-    return this.variantModel.findById(variantId);
+    return this.variantModel.findById(variantId) as Promise<Variant>;
   }
 
   async bulkUpdatePrices(
@@ -256,7 +256,7 @@ export class PricingService {
         );
         updated++;
       } catch (error) {
-        errors.push(`Failed to update variant ${update.variantId}: ${error.message}`);
+        errors.push(`Failed to update variant ${update.variantId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 

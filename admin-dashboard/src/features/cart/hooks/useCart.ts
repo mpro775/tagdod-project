@@ -176,3 +176,87 @@ export const useConvertCartToOrder = () => {
     },
   });
 };
+
+// === Abandoned Carts Hooks ===
+
+export const useAbandonedCarts = (hours: number = 24, limit: number = 50) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: [ADMIN_CART_KEY, 'abandoned', hours, limit],
+    queryFn: () => cartApi.getAbandonedCarts(hours, limit),
+  });
+
+  return {
+    abandonedCarts: data?.carts || [],
+    stats: data?.stats || {
+      total: 0,
+      totalValue: 0,
+      averageValue: 0,
+      potentialRevenue: 0,
+    },
+    loading: isLoading,
+    error: error?.message || null,
+  };
+};
+
+// === Cart Analytics Hooks ===
+
+export const useCartAnalytics = (days: number = 30) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: [ADMIN_CART_KEY, 'analytics', days],
+    queryFn: () => cartApi.getCartAnalytics(days),
+  });
+
+  return {
+    analytics: data || {
+      totalCarts: 0,
+      activeCarts: 0,
+      abandonedCarts: 0,
+      completedCarts: 0,
+      totalValue: 0,
+      averageCartValue: 0,
+      conversionRate: 0,
+      trends: [],
+    },
+    loading: isLoading,
+    error: error?.message || null,
+  };
+};
+
+export const useCartStatistics = (days: number = 30) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: [ADMIN_CART_KEY, 'statistics', days],
+    queryFn: () => cartApi.getCartStatistics(days),
+  });
+
+  return {
+    statistics: data || {
+      totalCarts: 0,
+      totalItems: 0,
+      totalRevenue: 0,
+      averageOrderValue: 0,
+      topProducts: [],
+      cartConversionFunnel: [],
+    },
+    loading: isLoading,
+    error: error?.message || null,
+  };
+};
+
+export const useConversionRates = (days: number = 30) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: [ADMIN_CART_KEY, 'conversion-rates', days],
+    queryFn: () => cartApi.getConversionRates(days),
+  });
+
+  return {
+    conversionRates: data || {
+      overall: 0,
+      bySource: [],
+      byDevice: [],
+      byTime: [],
+      trends: [],
+    },
+    loading: isLoading,
+    error: error?.message || null,
+  };
+};
