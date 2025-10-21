@@ -114,8 +114,8 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
       headers,
       bodySize: request.headers['content-length'] || 0,
       requestId: request.headers['x-request-id'] || 'unknown',
-      userId: request.user?.sub || 'anonymous',
-      deviceFingerprint: request.deviceFingerprint || 'unknown',
+      userId: (request as any).user?.sub || 'anonymous',
+      deviceFingerprint: (request as any).deviceFingerprint || 'unknown',
     };
   }
 

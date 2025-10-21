@@ -1,6 +1,11 @@
 import { Controller, Get, Param, Post, Query, UseGuards, Patch, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../../shared/guards/roles.guard';
+import { Roles } from '../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
+import { UserRole } from '../users/schemas/user.schema';
+import { AdminPermission } from '../../shared/constants/permissions';
 import { ServicesService } from './services.service';
 import { ServicesPermissionGuard, ServicePermission } from './guards/services-permission.guard';
 import { RequireServicePermission } from './decorators/service-permission.decorator';
@@ -8,11 +13,13 @@ import { OffersStatisticsDto, OffersManagementResponseDto, EngineersOverviewStat
 
 @ApiTags('services-admin')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, ServicesPermissionGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ServicesPermissionGuard)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.ENGINEER)
 @Controller('services/admin')
 export class AdminServicesController {
   constructor(private svc: ServicesService) {}
 
+  @RequirePermissions(AdminPermission.SERVICES_READ, AdminPermission.ADMIN_ACCESS)
   @Get('requests')
   @RequireServicePermission(ServicePermission.ADMIN)
   async list(

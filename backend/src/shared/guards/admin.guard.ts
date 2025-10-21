@@ -19,9 +19,7 @@ export class AdminGuard implements CanActivate {
       );
     }
 
-    // TEMPORARY: Allow access for testing purposes
-    // TODO: Remove this after creating proper admin user
-    console.warn('⚠️ AdminGuard: Allowing access for testing - REMOVE THIS IN PRODUCTION');
-    return true;
+    // Deny access if no valid admin credentials found
+    return false;
   }
 }

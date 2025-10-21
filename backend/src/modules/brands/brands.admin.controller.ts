@@ -25,7 +25,9 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
 import { UserRole } from '../users/schemas/user.schema';
+import { AdminPermission } from '../../shared/constants/permissions';
 import { BrandsService } from './brands.service';
 import { CreateBrandDto, UpdateBrandDto, ListBrandsDto } from './dto/brand.dto';
 
@@ -37,6 +39,7 @@ import { CreateBrandDto, UpdateBrandDto, ListBrandsDto } from './dto/brand.dto';
 export class BrandsAdminController {
   constructor(private readonly brandsService: BrandsService) {}
 
+  @RequirePermissions(AdminPermission.BRANDS_CREATE, AdminPermission.ADMIN_ACCESS)
   @Post()
   @ApiOperation({
     summary: 'إنشاء علامة تجارية جديدة',

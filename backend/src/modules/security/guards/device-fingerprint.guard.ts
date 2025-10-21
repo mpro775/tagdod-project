@@ -41,7 +41,7 @@ export class DeviceFingerprintGuard implements CanActivate {
 
     // Generate device fingerprint for monitoring
     const fingerprint = this.generateDeviceFingerprint(request);
-    request.deviceFingerprint = fingerprint;
+    (request as any).deviceFingerprint = fingerprint;
 
     // Log device information for security monitoring
     if (Math.random() < 0.001) { // Log 0.1% of requests

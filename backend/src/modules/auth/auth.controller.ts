@@ -24,6 +24,7 @@ import { User, UserRole, UserStatus } from '../users/schemas/user.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
 import { AppException } from '../../shared/exceptions/app.exception';
 import { FavoritesService } from '../favorites/favorites.service';
 
@@ -346,6 +347,7 @@ export class AuthController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, AdminGuard)
+  @RequirePermissions('capabilities.read', 'admin.access')
   @Get('admin/pending')
   async pending() {
     const list = await this.capsModel
@@ -357,6 +359,7 @@ export class AuthController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, AdminGuard)
+  @RequirePermissions('capabilities.update', 'admin.access')
   @Post('admin/approve')
   async approve(
     @Body()
@@ -407,6 +410,11 @@ export class AuthController {
   // ==================== إنشاء الادمن الرئيسي (للاستخدام الأولي فقط) ====================
   @Post('create-super-admin')
   async createSuperAdmin(@Body() body: { secretKey: string }) {
+    // منع الوصول في بيئة الإنتاج لأسباب أمنية
+    if (process.env.NODE_ENV === 'production') {
+      throw new AppException('NOT_ALLOWED', 'هذا الـ endpoint غير متاح في الإنتاج', null, 403);
+    }
+
     // التحقق من المفتاح السري (يجب أن يكون في متغيرات البيئة)
     const expectedSecret = process.env.SUPER_ADMIN_SECRET || 'TAGADODO_SUPER_ADMIN_2024';
     if (body.secretKey !== expectedSecret) {
@@ -489,6 +497,7 @@ export class AuthController {
   }
 
   // ==================== تسجيل دخول السوبر أدمن (للاستخدام في مرحلة التطوير) ====================
+  @RequirePermissions('admin.access') // مطلوب في التطوير لكن يتم التحقق منه في الكود
   @Post('dev-login')
   async devLogin(@Body() body: { phone: string; password: string }) {
     // هذا الـ endpoint مخصص للتطوير فقط

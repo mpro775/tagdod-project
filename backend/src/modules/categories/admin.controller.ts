@@ -27,7 +27,9 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
 import { UserRole } from '../users/schemas/user.schema';
+import { AdminPermission } from '../../shared/constants/permissions';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto, UpdateCategoryDto, ListCategoriesDto } from './dto/category.dto';
 import { Category } from './schemas/category.schema';
@@ -41,6 +43,7 @@ export class CategoriesAdminController {
   constructor(private categoriesService: CategoriesService) {}
 
   // ==================== إنشاء فئة ====================
+  @RequirePermissions(AdminPermission.CATEGORIES_CREATE, AdminPermission.ADMIN_ACCESS)
   @Post()
   @ApiOperation({
     summary: 'إنشاء فئة جديدة',

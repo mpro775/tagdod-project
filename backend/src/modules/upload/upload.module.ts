@@ -9,6 +9,7 @@ import { Media, MediaSchema } from './schemas/media.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
 
+import { SharedModule } from '../../shared/shared.module';
 @Module({
   imports: [
     // Configure Multer for file uploads - basic limits only, validation in service
@@ -24,6 +25,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: User.name, schema: UserSchema },
     ]),
     AuthModule,
+    SharedModule,
   ],
   controllers: [UploadController, MediaController],
   providers: [UploadService, MediaService],

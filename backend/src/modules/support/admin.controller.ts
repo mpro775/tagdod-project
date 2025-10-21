@@ -11,8 +11,12 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
-import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../../shared/guards/roles.guard';
+import { Roles } from '../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
+import { UserRole } from '../users/schemas/user.schema';
+import { AdminPermission } from '../../shared/constants/permissions';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { SupportService } from './support.service';
 import { UpdateSupportTicketDto } from './dto/update-ticket.dto';
@@ -20,13 +24,30 @@ import { AddSupportMessageDto } from './dto/add-message.dto';
 import { CreateCannedResponseDto, UpdateCannedResponseDto } from './dto/canned-response.dto';
 import { SupportStatus, SupportPriority, SupportCategory } from './schemas/support-ticket.schema';
 
+// JWT Payload interface
+interface JwtUser {
+  sub: string;
+  phone: string;
+  isAdmin: boolean;
+  roles?: string[];
+  permissions?: string[];
+  preferredCurrency?: string;
+}
+
+// Request with JWT user
+interface RequestWithUser {
+  user: JwtUser;
+}
+
 @ApiTags('support-admin')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, AdminGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, AdminGuard)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/support')
 export class AdminSupportController {
   constructor(private readonly supportService: SupportService) {}
 
+  @RequirePermissions(AdminPermission.SUPPORT_READ, AdminPermission.ADMIN_ACCESS)
   @Get('tickets')
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -59,7 +80,7 @@ export class AdminSupportController {
   async updateTicket(
     @Param('id') ticketId: string,
     @Body() dto: UpdateSupportTicketDto,
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
   ) {
     const adminId = req.user!.sub;
     const ticket = await this.supportService.updateTicket(ticketId, dto, adminId);
@@ -82,7 +103,7 @@ export class AdminSupportController {
   @Post('tickets/:id/messages')
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   async addMessage(
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
     @Param('id') ticketId: string,
     @Body() dto: AddSupportMessageDto,
   ) {

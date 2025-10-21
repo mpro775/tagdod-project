@@ -43,6 +43,7 @@ export interface LoginResponse {
       firstName?: string;
       lastName?: string;
       roles?: string[];
+      permissions?: string[];
       isAdmin?: boolean;
     };
   };
@@ -58,6 +59,8 @@ export interface UserProfile {
     lastName?: string;
     gender?: string;
     jobTitle?: string;
+    roles?: string[];
+    permissions?: string[];
     isAdmin: boolean;
   };
   capabilities?: {
@@ -67,5 +70,7 @@ export interface UserProfile {
     wholesale_capable?: boolean;
     wholesale_status?: string;
     wholesale_discount_percent?: number;
+    admin_capable?: boolean;
+    admin_status?: string;
   };
 }

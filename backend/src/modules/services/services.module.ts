@@ -13,7 +13,7 @@ import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabi
 import { EngineerGuard } from '../../shared/guards/engineer.guard';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
-
+import { SharedModule } from '../../shared/shared.module';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -24,6 +24,7 @@ import { NotificationsCompleteModule } from '../notifications/notifications-comp
     ]),
     AuthModule,
     NotificationsCompleteModule,
+    SharedModule,
   ],
   controllers: [CustomerServicesController, EngineerServicesController, AdminServicesController],
   providers: [ServicesService, DistanceService, ServicesPermissionGuard, EngineerGuard],

@@ -5,17 +5,24 @@ import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto } from './d
 import { CreateCouponDto, UpdateCouponDto, ListCouponsDto, ValidateCouponDto } from './dto/coupon.dto';
 import { CreateBannerDto, UpdateBannerDto, ListBannersDto } from './dto/banner.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../../shared/guards/roles.guard';
+import { Roles } from '../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
+import { UserRole } from '../users/schemas/user.schema';
+import { AdminPermission } from '../../shared/constants/permissions';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 
 @ApiTags('marketing-admin')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, AdminGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, AdminGuard)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/marketing')
 export class MarketingAdminController {
   constructor(private svc: MarketingService) {}
 
   // ==================== PRICE RULES ====================
 
+  @RequirePermissions(AdminPermission.MARKETING_CREATE, AdminPermission.ADMIN_ACCESS)
   @Post('price-rules')
   async createPriceRule(@Body() dto: CreatePriceRuleDto) {
     const rule = await this.svc.createPriceRule(dto);

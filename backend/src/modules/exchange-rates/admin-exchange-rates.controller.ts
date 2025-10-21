@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
 import { ExchangeRatesService } from './exchange-rates.service';
+import { AdminPermission } from '../../shared/constants/permissions';
 import { UpdateExchangeRateDto, ConvertCurrencyDto } from './dto/exchange-rate.dto';
 import { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -28,6 +30,7 @@ export class AdminExchangeRatesController {
   /**
    * الحصول على أسعار الصرف الحالية
    */
+  @RequirePermissions(AdminPermission.EXCHANGE_RATES_READ, AdminPermission.ADMIN_ACCESS)
   @Get()
   async getCurrentRates() {
     return this.exchangeRatesService.getCurrentRates();

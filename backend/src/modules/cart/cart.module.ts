@@ -10,6 +10,7 @@ import { GuestCartController } from './guest-cart.controller';
 import { AuthModule } from '../auth/auth.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AdminCartController } from './admin-cart.controller';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AdminCartController } from './admin-cart.controller';
       { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => AuthModule),
+    SharedModule,
   ],
   controllers: [CartController, GuestCartController, AdminCartController],
   providers: [CartService],

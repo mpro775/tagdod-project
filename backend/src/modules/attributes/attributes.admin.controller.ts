@@ -26,7 +26,9 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
 import { UserRole } from '../users/schemas/user.schema';
+import { AdminPermission } from '../../shared/constants/permissions';
 import { AttributesService } from './attributes.service';
 import { CreateAttributeDto, UpdateAttributeDto, CreateAttributeValueDto, UpdateAttributeValueDto } from './dto/attribute.dto';
 import { Attribute } from './schemas/attribute.schema';
@@ -42,6 +44,7 @@ export class AttributesAdminController {
 
   // ==================== Attributes ====================
 
+  @RequirePermissions(AdminPermission.ATTRIBUTES_CREATE, AdminPermission.ADMIN_ACCESS)
   @Post()
   @ApiOperation({
     summary: 'إنشاء سمة جديدة',

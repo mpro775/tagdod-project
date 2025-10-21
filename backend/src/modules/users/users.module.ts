@@ -15,6 +15,7 @@ import { CheckoutModule } from '../checkout/checkout.module';
 import { FavoritesModule } from '../favorites/favorites.module';
 import { SupportModule } from '../support/support.module';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AuthModule } from '../auth/auth.module';
     forwardRef(() => CheckoutModule),
     forwardRef(() => FavoritesModule),
     forwardRef(() => SupportModule),
+    SharedModule,
   ],
   controllers: [UserAnalyticsController],
   providers: [UserAnalyticsService, UserScoringService, UserBehaviorService, UserCacheService, UserErrorService, UserQueryService],

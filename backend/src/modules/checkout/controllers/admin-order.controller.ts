@@ -20,7 +20,9 @@ import {
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { UserRole } from '../../users/schemas/user.schema';
+import { AdminPermission } from '../../../shared/constants/permissions';
 import { Request as ExpressRequest } from 'express';
 import { OrderService } from '../services/order.service';
 import {
@@ -51,8 +53,9 @@ export class AdminOrderController {
 
   // ===== Order Management =====
 
+  @RequirePermissions(AdminPermission.ORDERS_READ, AdminPermission.ADMIN_ACCESS)
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'جميع الطلبات (للإدارة)',
     description: 'الحصول على جميع الطلبات مع إمكانية الفلترة والبحث'
   })

@@ -27,7 +27,11 @@
     "docs:serve": "npm run start:dev",
     "db:migrate": "ts-node scripts/migrate.ts",
     "db:seed": "ts-node scripts/seed.ts",
-    "db:migrate-isadmin": "ts-node scripts/migrate-remove-isadmin.ts"
+    "db:migrate-isadmin": "ts-node scripts/migrate-remove-isadmin.ts",
+    "migrate:capabilities": "ts-node scripts/run-migration.ts",
+    "migrate:cleanup": "ts-node scripts/cleanup-capabilities.ts",
+    "migration:full": "npm run migrate:capabilities && echo 'Migration completed. Run npm run migrate:cleanup to remove old data.'",
+    "update:super-admin": "ts-node scripts/update-super-admin-permissions.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

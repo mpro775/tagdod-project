@@ -7,6 +7,7 @@ import { FavoritesService } from './favorites.service';
 import { Favorite, FavoriteSchema } from './schemas/favorite.schema';
 import { ProductsModule } from '../products/products.module';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from '../auth/auth.module';
     ]),
     ProductsModule, // للوصول إلى Products & Variants
     forwardRef(() => AuthModule),
+    SharedModule,
   ],
   controllers: [
     FavoritesUserController,

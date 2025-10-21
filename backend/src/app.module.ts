@@ -26,12 +26,14 @@ import { BrandsModule } from './modules/brands/brands.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
 import { ExchangeRatesModule } from './modules/exchange-rates/exchange-rates.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { AuditModule } from './modules/audit/audit.module';
 
 // Health module
 // import { HealthModule } from './health/health.module';
 
 // Shared modules
 import { CacheModule } from './shared/cache/cache.module';
+import { SharedModule } from './shared/shared.module';
 
 // Middleware
 import { ActivityTrackingMiddleware } from './shared/middleware/activity-tracking.middleware';
@@ -92,12 +94,14 @@ import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-enve
     AttributesModule,
     ExchangeRatesModule,
     UploadModule,
+    AuditModule,
 
     // Health module
     HealthModule,
 
     // Shared modules
     CacheModule,
+    SharedModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },

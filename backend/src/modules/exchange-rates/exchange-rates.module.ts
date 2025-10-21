@@ -5,6 +5,7 @@ import { ExchangeRatesService } from './exchange-rates.service';
 import { ExchangeRatesController } from './exchange-rates.controller';
 import { AdminExchangeRatesController } from './admin-exchange-rates.controller';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: ExchangeRate.name, schema: ExchangeRateSchema },
     ]),
     forwardRef(() => AuthModule),
+    SharedModule,
   ],
   controllers: [
     ExchangeRatesController,

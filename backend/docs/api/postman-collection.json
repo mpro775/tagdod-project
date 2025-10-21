@@ -9119,6 +9119,120 @@
         }
       ],
       "description": "Endpoints for admin-media functionality"
+    },
+    {
+      "name": "audit",
+      "item": [
+        {
+          "name": "Get audit logs with filtering",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/audit/logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "audit",
+                "logs"
+              ]
+            },
+            "description": "Retrieve audit logs with various filtering options"
+          }
+        },
+        {
+          "name": "Get audit statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/audit/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "audit",
+                "stats"
+              ]
+            },
+            "description": "Get statistics about audit logs"
+          }
+        },
+        {
+          "name": "Get available audit actions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/audit/actions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "audit",
+                "actions"
+              ]
+            },
+            "description": "Get list of all available audit actions"
+          }
+        },
+        {
+          "name": "Get available audit resources",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/audit/resources",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "audit",
+                "resources"
+              ]
+            },
+            "description": "Get list of all available audit resources"
+          }
+        }
+      ],
+      "description": "Endpoints for audit functionality"
     }
   ]
 }

@@ -8,6 +8,7 @@ import { CacheModule } from '../../shared/cache/cache.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { Media, MediaSchema } from '../upload/schemas/media.schema';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from '../auth/auth.module';
     ]),
     CacheModule,
     forwardRef(() => AuthModule),
+    SharedModule,
   ],
   controllers: [CategoriesAdminController, CategoriesPublicController],
   providers: [CategoriesService],

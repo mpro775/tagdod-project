@@ -6,6 +6,7 @@ import { BrandsAdminController } from './brands.admin.controller';
 import { BrandsPublicController } from './brands.public.controller';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => AuthModule),
+    SharedModule,
   ],
   controllers: [BrandsAdminController, BrandsPublicController],
   providers: [BrandsService],

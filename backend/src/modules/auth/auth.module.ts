@@ -7,7 +7,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabilities.schema';
 import { FavoritesModule } from '../favorites/favorites.module';
-
+import { SharedModule } from '../../shared/shared.module';
 @Module({
   imports: [
     forwardRef(() => FavoritesModule),
@@ -15,6 +15,7 @@ import { FavoritesModule } from '../favorites/favorites.module';
       { name: User.name, schema: UserSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
+    SharedModule,
   ],
   controllers: [AuthController],
   providers: [OtpService, TokensService, JwtAuthGuard],

@@ -38,6 +38,8 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '@/store/authStore';
+import { filterMenuByPermissions } from '@/shared/constants/permissions';
 
 interface MenuItem {
   id: string;
@@ -59,6 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   const location = useLocation();
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   // Menu items
   const menuItems: MenuItem[] = [
     {
@@ -279,6 +282,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     },
   ];
 
+  // Filter menu items based on user permissions
+  const userPermissions = user?.permissions || [];
+  const filteredMenuItems = React.useMemo(() => {
+    return filterMenuByPermissions(menuItems, userPermissions);
+  }, [userPermissions]);
+
   // Toggle expand
   const handleToggleExpand = (id: string) => {
     setExpandedItems((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
@@ -360,7 +369,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
 
       {/* Menu Items */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 1 }}>
-        <List>{menuItems.map((item) => renderMenuItem(item))}</List>
+        <List>{filteredMenuItems.map((item) => renderMenuItem(item))}</List>
       </Box>
 
       <Divider />

@@ -4,6 +4,21 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../../modules/users/schemas/user.schema';
 
+// JWT Payload interface
+interface JwtUser {
+  sub: string;
+  phone: string;
+  isAdmin: boolean;
+  roles?: string[];
+  permissions?: string[];
+  preferredCurrency?: string;
+}
+
+// Request with JWT user
+interface RequestWithUser {
+  user?: JwtUser;
+}
+
 @Injectable()
 export class ActivityTrackingMiddleware implements NestMiddleware {
   private readonly logger = new Logger(ActivityTrackingMiddleware.name);
@@ -12,11 +27,11 @@ export class ActivityTrackingMiddleware implements NestMiddleware {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
-  async use(req: Request, res: Response, next: NextFunction) {
+  async use(req: RequestWithUser, res: Response, next: NextFunction) {
     try {
       // Only track activity for authenticated users
-      if (req.user?.userId) {
-        await this.updateUserActivity(req.user.userId);
+      if (req.user?.sub) {
+        await this.updateUserActivity(req.user.sub);
       }
     } catch (error) {
       // Don't block the request if activity tracking fails

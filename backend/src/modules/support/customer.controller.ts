@@ -10,12 +10,26 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
-import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SupportService } from './support.service';
 import { CreateSupportTicketDto } from './dto/create-ticket.dto';
 import { AddSupportMessageDto } from './dto/add-message.dto';
 import { RateTicketDto } from './dto/rate-ticket.dto';
+
+// JWT Payload interface
+interface JwtUser {
+  sub: string;
+  phone: string;
+  isAdmin: boolean;
+  roles?: string[];
+  permissions?: string[];
+  preferredCurrency?: string;
+}
+
+// Request with JWT user
+interface RequestWithUser {
+  user: JwtUser;
+}
 
 @ApiTags('support-customer')
 @ApiBearerAuth()
@@ -26,7 +40,7 @@ export class CustomerSupportController {
 
   @Post()
   async createTicket(
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
     @Body() dto: CreateSupportTicketDto,
   ) {
     const userId = req.user!.sub;
@@ -38,7 +52,7 @@ export class CustomerSupportController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getMyTickets(
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ) {
@@ -50,7 +64,7 @@ export class CustomerSupportController {
   @Get(':id')
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   async getTicket(
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
     @Param('id') ticketId: string,
   ) {
     const userId = req.user!.sub;
@@ -63,7 +77,7 @@ export class CustomerSupportController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getTicketMessages(
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
     @Param('id') ticketId: string,
     @Query('page') page = 1,
     @Query('limit') limit = 50,
@@ -76,7 +90,7 @@ export class CustomerSupportController {
   @Post(':id/messages')
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   async addMessage(
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
     @Param('id') ticketId: string,
     @Body() dto: AddSupportMessageDto,
   ) {
@@ -88,7 +102,7 @@ export class CustomerSupportController {
   @Put(':id/archive')
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   async archiveTicket(
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
     @Param('id') ticketId: string,
   ) {
     const userId = req.user!.sub;
@@ -99,7 +113,7 @@ export class CustomerSupportController {
   @Post(':id/rate')
   @ApiParam({ name: 'id', description: 'Ticket ID' })
   async rateTicket(
-    @Req() req: Request,
+    @Req() req: RequestWithUser,
     @Param('id') ticketId: string,
     @Body() dto: RateTicketDto,
   ) {

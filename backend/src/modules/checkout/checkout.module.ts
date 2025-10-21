@@ -22,6 +22,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { FavoritesModule } from '../favorites/favorites.module';
 import { ProductsModule } from '../products/products.module';
+import { SharedModule } from '../../shared/shared.module';
 
 /**
  * Module موحد للطلبات والدفع - نظام احترافي شامل
@@ -40,6 +41,7 @@ import { ProductsModule } from '../products/products.module';
     forwardRef(() => NotificationsCompleteModule),
     forwardRef(() => FavoritesModule),
     forwardRef(() => ProductsModule),
+    SharedModule,
   ],
   controllers: [
     OrderController,

@@ -14830,6 +14830,90 @@
         ]
       }
     },
+    "/api/v1/admin/audit/logs": {
+      "get": {
+        "operationId": "getAuditLogs",
+        "summary": "Get audit logs with filtering",
+        "description": "Retrieve audit logs with various filtering options",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Audit logs retrieved successfully"
+          }
+        },
+        "tags": [
+          "audit"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/audit/stats": {
+      "get": {
+        "operationId": "getAuditStats",
+        "summary": "Get audit statistics",
+        "description": "Get statistics about audit logs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "audit"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/audit/actions": {
+      "get": {
+        "operationId": "getAuditActions",
+        "summary": "Get available audit actions",
+        "description": "Get list of all available audit actions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "audit"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/audit/resources": {
+      "get": {
+        "operationId": "getAuditResources",
+        "summary": "Get available audit resources",
+        "description": "Get list of all available audit resources",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "audit"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",

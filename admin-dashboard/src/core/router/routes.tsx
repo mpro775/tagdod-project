@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
-import { ProtectedRoute } from './ProtectedRoute';
+import { RouteGuard } from '@/shared/components/RouteGuard';
 import { MainLayout } from '@/shared/components/Layout/MainLayout';
 
 // Lazy load pages
@@ -25,6 +25,11 @@ const UsersListPage = lazy(() =>
 const UserFormPage = lazy(() =>
   import('@/features/users/pages/UserFormPage').then((m) => ({
     default: m.UserFormPage,
+  }))
+);
+const CreateAdminPage = lazy(() =>
+  import('@/features/users/pages/CreateAdminPage').then((m) => ({
+    default: m.CreateAdminPage,
   }))
 );
 const ProductsListPage = lazy(() =>
@@ -242,9 +247,9 @@ export const routes: RouteObject[] = [
   {
     path: '/',
     element: (
-      <ProtectedRoute>
+      <RouteGuard>
         <MainLayout />
-      </ProtectedRoute>
+      </RouteGuard>
     ),
     children: [
       {
@@ -267,6 +272,10 @@ export const routes: RouteObject[] = [
       {
         path: 'users/:id',
         element: <UserFormPage />,
+      },
+      {
+        path: 'users/create-admin',
+        element: <CreateAdminPage />,
       },
       // Products routes
       {

@@ -2,15 +2,17 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
-import { UserRole, User } from '../../modules/users/schemas/user.schema';
+import { UserRole, User, UserStatus } from '../../modules/users/schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { PermissionService } from '../services/permission.service';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     @InjectModel(User.name) private userModel: Model<User>,
+    private permissionService: PermissionService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -38,40 +40,36 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-    // Fetch full user data from database
+    // Check if user is deleted or suspended
     const fullUser = await this.userModel.findById(user.sub).lean();
-
     if (!fullUser) {
       return false;
     }
 
-    // Check if user is deleted or suspended
-    if (fullUser.deletedAt || fullUser.status === 'suspended') {
+    if (fullUser.deletedAt || fullUser.status === UserStatus.SUSPENDED) {
       return false;
     }
 
     // Super admin has access to everything
-    if (fullUser.roles?.includes(UserRole.SUPER_ADMIN) || user.roles?.includes(UserRole.SUPER_ADMIN)) {
+    if (await this.permissionService.isSuperAdmin(user.sub)) {
       return true;
     }
 
-    // Check roles
+    // Check roles using PermissionService
     if (requiredRoles) {
-      const hasRole = requiredRoles.some((role) => 
-        fullUser.roles?.includes(role) || user.roles?.includes(role)
-      );
+      const hasRole = await this.permissionService.hasAnyRole(user.sub, requiredRoles);
       if (!hasRole) {
         return false;
       }
     }
 
-    // Check permissions
+    // Check permissions using PermissionService
     if (requiredPermissions) {
-      const hasPermission = requiredPermissions.every((permission) =>
-        fullUser.permissions?.includes(permission) || user.permissions?.includes(permission),
-      );
-      if (!hasPermission) {
-        return false;
+      for (const permission of requiredPermissions) {
+        const hasPermission = await this.permissionService.hasPermission(user.sub, permission);
+        if (!hasPermission) {
+          return false;
+        }
       }
     }
 

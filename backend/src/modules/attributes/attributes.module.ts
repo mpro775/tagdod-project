@@ -8,6 +8,7 @@ import { AttributeValue, AttributeValueSchema } from './schemas/attribute-value.
 import { AttributeGroup, AttributeGroupSchema } from './schemas/attribute-group.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => AuthModule),
+    SharedModule,
   ],
   controllers: [AttributesAdminController, AttributesPublicController],
   providers: [AttributesService],

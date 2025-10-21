@@ -1,4 +1,3 @@
-import React from 'react';
 import { useSimpleCurrency } from '../hooks/useSimpleCurrency';
 import { Currency } from '../hooks/useSimpleCurrency';
 

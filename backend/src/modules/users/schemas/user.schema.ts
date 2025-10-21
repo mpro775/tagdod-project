@@ -24,6 +24,13 @@ export enum UserRole {
   ENGINEER = 'engineer',
 }
 
+export enum CapabilityStatus {
+  NONE = 'none',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 @Schema({ timestamps: true })
 export class User {
   @Prop({ required: true, unique: true })
@@ -38,6 +45,19 @@ export class User {
   // نظام الصلاحيات الموحد
   @Prop({ type: [String], default: ['user'] }) roles!: UserRole[]; // الأدوار
   @Prop({ type: [String], default: [] }) permissions!: string[]; // الصلاحيات المخصصة
+
+  // Capabilities - توحيد مع النظام القديم
+  @Prop({ default: true }) customer_capable!: boolean;
+  @Prop({ default: false }) engineer_capable!: boolean;
+  @Prop({ type: String, enum: Object.values(CapabilityStatus), default: CapabilityStatus.NONE })
+  engineer_status!: CapabilityStatus;
+  @Prop({ default: false }) wholesale_capable!: boolean;
+  @Prop({ type: String, enum: Object.values(CapabilityStatus), default: CapabilityStatus.NONE })
+  wholesale_status!: CapabilityStatus;
+  @Prop({ default: 0, min: 0, max: 100 }) wholesale_discount_percent!: number;
+  @Prop({ default: false }) admin_capable!: boolean;
+  @Prop({ type: String, enum: Object.values(CapabilityStatus), default: CapabilityStatus.NONE })
+  admin_status!: CapabilityStatus;
 
   // حالة الحساب
   @Prop({ type: String, enum: Object.values(UserStatus), default: UserStatus.ACTIVE })
@@ -85,6 +105,80 @@ export class User {
 
   isDeleted(): boolean {
     return this.deletedAt !== null || this.status === UserStatus.DELETED;
+  }
+
+  // Capabilities helper methods
+  isCustomer(): boolean {
+    return this.customer_capable === true;
+  }
+
+  isEngineer(): boolean {
+    return this.engineer_capable === true && this.engineer_status === CapabilityStatus.APPROVED;
+  }
+
+  isEngineerPending(): boolean {
+    return this.engineer_status === CapabilityStatus.PENDING;
+  }
+
+  isWholesale(): boolean {
+    return this.wholesale_capable === true && this.wholesale_status === CapabilityStatus.APPROVED;
+  }
+
+  isWholesalePending(): boolean {
+    return this.wholesale_status === CapabilityStatus.PENDING;
+  }
+
+  isAdminCapability(): boolean {
+    return this.admin_capable === true && this.admin_status === CapabilityStatus.APPROVED;
+  }
+
+  isAdminPending(): boolean {
+    return this.admin_status === CapabilityStatus.PENDING;
+  }
+
+  // Update capability status
+  approveEngineer(): void {
+    this.engineer_capable = true;
+    this.engineer_status = CapabilityStatus.APPROVED;
+    if (!this.roles.includes(UserRole.ENGINEER)) {
+      this.roles.push(UserRole.ENGINEER);
+    }
+  }
+
+  rejectEngineer(): void {
+    this.engineer_capable = false;
+    this.engineer_status = CapabilityStatus.REJECTED;
+    this.roles = this.roles.filter(role => role !== UserRole.ENGINEER);
+  }
+
+  approveWholesale(discountPercent: number = 0): void {
+    this.wholesale_capable = true;
+    this.wholesale_status = CapabilityStatus.APPROVED;
+    this.wholesale_discount_percent = discountPercent;
+    if (!this.roles.includes(UserRole.MERCHANT)) {
+      this.roles.push(UserRole.MERCHANT);
+    }
+  }
+
+  rejectWholesale(): void {
+    this.wholesale_capable = false;
+    this.wholesale_status = CapabilityStatus.REJECTED;
+    this.wholesale_discount_percent = 0;
+    this.roles = this.roles.filter(role => role !== UserRole.MERCHANT);
+  }
+
+  approveAdmin(): void {
+    this.admin_capable = true;
+    this.admin_status = CapabilityStatus.APPROVED;
+    if (!this.roles.includes(UserRole.ADMIN)) {
+      this.roles.push(UserRole.ADMIN);
+    }
+  }
+
+  rejectAdmin(): void {
+    this.admin_capable = false;
+    this.admin_status = CapabilityStatus.REJECTED;
+    this.roles = this.roles.filter(role => role !== UserRole.ADMIN);
   }
 }
 export const UserSchema = SchemaFactory.createForClass(User);

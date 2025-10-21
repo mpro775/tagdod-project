@@ -17,10 +17,13 @@ import bcrypt from 'bcrypt';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { User, UserRole, UserStatus } from '../schemas/user.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
 import { AppException } from '../../../shared/exceptions/app.exception';
+import { AdminPermission, PERMISSION_GROUPS } from '../../../shared/constants/permissions';
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
+import { CreateAdminDto, CreateRoleBasedAdminDto } from './dto/create-admin.dto';
 import { UpdateUserAdminDto } from './dto/update-user-admin.dto';
 import { ListUsersDto } from './dto/list-users.dto';
 import { SuspendUserDto } from './dto/suspend-user.dto';
@@ -37,6 +40,7 @@ export class UsersAdminController {
   ) {}
 
   // ==================== قائمة المستخدمين مع Pagination ====================
+  @RequirePermissions('users.read', 'admin.access')
   @Get()
   async listUsers(@Query() dto: ListUsersDto) {
     const {
@@ -122,6 +126,7 @@ export class UsersAdminController {
   }
 
   // ==================== عرض مستخدم واحد ====================
+  @RequirePermissions('users.read', 'admin.access')
   @Get(':id')
   async getUser(@Param('id') id: string) {
     const user = await this.userModel.findById(id).select('-passwordHash').lean();
@@ -139,7 +144,124 @@ export class UsersAdminController {
     };
   }
 
-  // ==================== إنشاء مستخدم جديد ====================
+  // ==================== إنشاء أدمن مع صلاحيات مخصصة ====================
+  @RequirePermissions('users.create', 'super_admin.access')
+  @Post('create-admin')
+  async createAdmin(@Body() dto: CreateAdminDto) {
+    // التحقق من عدم وجود المستخدم
+    const existingUser = await this.userModel.findOne({ phone: dto.phone });
+    if (existingUser) {
+      throw new AppException('USER_ALREADY_EXISTS', 'رقم الهاتف مستخدم بالفعل', null, 400);
+    }
+
+    // إنشاء كلمة مرور مؤقتة إذا لم يتم تحديدها
+    let passwordHash: string | undefined;
+    if (dto.temporaryPassword) {
+      passwordHash = await bcrypt.hash(dto.temporaryPassword, 10);
+    }
+
+    // إنشاء المستخدم
+    const user = await this.userModel.create({
+      phone: dto.phone,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      gender: dto.gender,
+      roles: dto.roles,
+      permissions: dto.permissions,
+      passwordHash,
+      status: dto.activateImmediately ? UserStatus.ACTIVE : UserStatus.PENDING,
+    });
+
+    // إنشاء Capabilities
+    const capsData: Partial<Capabilities> = {
+      userId: user._id.toString(),
+      customer_capable: true,
+    };
+
+    // إضافة capabilities حسب الأدوار
+    if (dto.roles.includes(UserRole.ADMIN) || dto.roles.includes(UserRole.SUPER_ADMIN)) {
+      capsData.admin_capable = true;
+      capsData.admin_status = 'approved';
+    }
+
+    await this.capsModel.create(capsData);
+
+    return {
+      data: {
+        id: user._id,
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: user.roles,
+        permissions: user.permissions,
+        status: user.status,
+        temporaryPassword: dto.temporaryPassword ? dto.temporaryPassword : undefined,
+        loginUrl: dto.temporaryPassword ? `/admin/login` : undefined,
+      },
+      message: 'تم إنشاء الأدمن بنجاح. تأكد من مشاركة معلومات تسجيل الدخول معه بشكل آمن.',
+    };
+  }
+
+  // ==================== إنشاء أدمن بناءً على الدور ====================
+  @RequirePermissions('users.create', 'super_admin.access')
+  @Post('create-role-admin')
+  async createRoleBasedAdmin(@Body() dto: CreateRoleBasedAdminDto) {
+    // تحديد الأدوار والصلاحيات بناءً على النوع
+    let roles: UserRole[] = [UserRole.ADMIN];
+    let permissions: AdminPermission[] = [];
+
+    switch (dto.adminType) {
+      case 'full_admin':
+        roles = [UserRole.ADMIN, UserRole.SUPER_ADMIN];
+        permissions = PERMISSION_GROUPS.FULL_ADMIN;
+        break;
+      case 'product_manager':
+        permissions = [...PERMISSION_GROUPS.PRODUCT_MANAGER];
+        break;
+      case 'sales_manager':
+        permissions = [...PERMISSION_GROUPS.SALES_MANAGER];
+        break;
+      case 'support_manager':
+        permissions = [...PERMISSION_GROUPS.SUPPORT_MANAGER];
+        break;
+      case 'marketing_manager':
+        permissions = [...PERMISSION_GROUPS.MARKETING_MANAGER];
+        break;
+      case 'content_manager':
+        permissions = [...PERMISSION_GROUPS.CONTENT_MANAGER];
+        break;
+      case 'view_only':
+        permissions = [...PERMISSION_GROUPS.VIEW_ONLY_ADMIN];
+        break;
+      default:
+        throw new AppException('INVALID_ADMIN_TYPE', 'نوع الأدمن غير صحيح', null, 400);
+    }
+
+    // إضافة الصلاحيات الإضافية إذا تم تحديدها
+    if (dto.additionalPermissions) {
+      permissions = [...permissions, ...dto.additionalPermissions];
+      // إزالة التكرارات
+      permissions = [...new Set(permissions)];
+    }
+
+    // إنشاء الأدمن باستخدام الصلاحيات المحددة
+    const adminDto: CreateAdminDto = {
+      phone: dto.phone,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      gender: dto.gender,
+      roles,
+      permissions,
+      temporaryPassword: `Temp${Math.random().toString(36).substr(2, 8)}!`,
+      activateImmediately: true,
+      description: dto.description,
+    };
+
+    return await this.createAdmin(adminDto);
+  }
+
+  // ==================== إنشاء مستخدم عادي ====================
+  @RequirePermissions('users.create', 'admin.access')
   @Post()
   async createUser(@Body() dto: CreateUserAdminDto) {
     // التحقق من عدم وجود المستخدم
@@ -204,6 +326,7 @@ export class UsersAdminController {
   }
 
   // ==================== تحديث مستخدم ====================
+  @RequirePermissions('users.update', 'admin.access')
   @Patch(':id')
   async updateUser(
     @Param('id') id: string,
@@ -287,6 +410,7 @@ export class UsersAdminController {
   }
 
   // ==================== إيقاف مستخدم ====================
+  @RequirePermissions('users.update', 'admin.access')
   @Post(':id/suspend')
   async suspendUser(
     @Param('id') id: string,
@@ -319,6 +443,7 @@ export class UsersAdminController {
   }
 
   // ==================== تفعيل مستخدم ====================
+  @RequirePermissions('users.update', 'admin.access')
   @Post(':id/activate')
   async activateUser(@Param('id') id: string) {
     const user = await this.userModel.findById(id);
@@ -343,6 +468,7 @@ export class UsersAdminController {
   }
 
   // ==================== Soft Delete مستخدم ====================
+  @RequirePermissions('users.delete', 'admin.access')
   @Delete(':id')
   async deleteUser(@Param('id') id: string, @Req() req: { user: { sub: string } }) {
     const user = await this.userModel.findById(id);
@@ -376,6 +502,7 @@ export class UsersAdminController {
   }
 
   // ==================== استعادة مستخدم محذوف ====================
+  @RequirePermissions('users.update', 'admin.access')
   @Post(':id/restore')
   async restoreUser(@Param('id') id: string) {
     const user = await this.userModel.findById(id);
@@ -402,8 +529,9 @@ export class UsersAdminController {
   }
 
   // ==================== حذف نهائي (Hard Delete) ====================
-  @Delete(':id/permanent')
+  @RequirePermissions('users.delete', 'super_admin.access')
   @Roles(UserRole.SUPER_ADMIN) // فقط Super Admin
+  @Delete(':id/permanent')
   async permanentDelete(@Param('id') id: string) {
     const user = await this.userModel.findById(id);
     if (!user) {
@@ -427,6 +555,7 @@ export class UsersAdminController {
   }
 
   // ==================== إحصائيات المستخدمين ====================
+  @RequirePermissions('analytics.read', 'admin.access')
   @Get('stats/summary')
   async getUserStats() {
     const [total, active, suspended, deleted, admins, engineers, wholesale] = await Promise.all([

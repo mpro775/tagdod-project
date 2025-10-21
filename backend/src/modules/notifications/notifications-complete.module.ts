@@ -38,7 +38,7 @@ import {} from './ports/notification.ports';
 
 // Auth
 import { AuthModule } from '../auth/auth.module';
-
+import { SharedModule } from '../../shared/shared.module';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -49,6 +49,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: NotificationLog.name, schema: NotificationLogSchema },
     ]),
     forwardRef(() => AuthModule),
+    SharedModule,
   ],
   controllers: [UnifiedNotificationController],
   providers: [

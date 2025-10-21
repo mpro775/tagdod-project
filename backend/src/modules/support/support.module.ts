@@ -7,7 +7,8 @@ import { SupportTicket, SupportTicketSchema } from './schemas/support-ticket.sch
 import { SupportMessage, SupportMessageSchema } from './schemas/support-message.schema';
 import { CannedResponse, CannedResponseSchema } from './schemas/canned-response.schema';
 import { AuthModule } from '../auth/auth.module';
-
+import { SharedModule } from '../../shared/shared.module';
+  
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -16,6 +17,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: CannedResponse.name, schema: CannedResponseSchema },
     ]),
     AuthModule,
+    SharedModule,
   ],
   controllers: [CustomerSupportController, AdminSupportController],
   providers: [SupportService],

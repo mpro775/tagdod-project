@@ -15,7 +15,9 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
 import { UserRole } from '../users/schemas/user.schema';
+import { AdminPermission } from '../../shared/constants/permissions';
 import { CartService } from './cart.service';
 
 @ApiTags('admin-carts')
@@ -26,6 +28,7 @@ import { CartService } from './cart.service';
 export class AdminCartController {
   constructor(private readonly cartService: CartService) {}
 
+  @RequirePermissions(AdminPermission.CARTS_READ, AdminPermission.ADMIN_ACCESS)
   @Get('abandoned')
   @ApiOperation({
     summary: 'الحصول على السلات المهجورة',
@@ -104,6 +107,7 @@ export class AdminCartController {
     };
   }
 
+  @RequirePermissions(AdminPermission.CARTS_SEND_REMINDERS, AdminPermission.ADMIN_ACCESS)
   @Post('send-reminders')
   @ApiOperation({
     summary: 'إرسال تذكيرات لجميع السلات المهجورة',
@@ -183,6 +187,7 @@ export class AdminCartController {
     };
   }
 
+  @RequirePermissions(AdminPermission.ANALYTICS_READ, AdminPermission.ADMIN_ACCESS)
   @Get('analytics')
   @ApiOperation({
     summary: 'الحصول على تحليلات شاملة للسلات',

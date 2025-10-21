@@ -4,6 +4,7 @@ import { MarketingService } from './marketing.service';
 import { MarketingAdminController } from './admin.controller';
 import { MarketingPublicController } from './public.controller';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../../shared/shared.module';
 
 // Schemas
 import { PriceRule, PriceRuleSchema } from './schemas/price-rule.schema';
@@ -20,6 +21,7 @@ import { Variant, VariantSchema } from '../products/schemas/variant.schema';
       { name: Variant.name, schema: VariantSchema },
     ]),
     AuthModule,
+    SharedModule,
   ],
   controllers: [MarketingAdminController, MarketingPublicController],
   providers: [MarketingService],

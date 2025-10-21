@@ -12,7 +12,7 @@ import { StockAlertService } from '../products/services/stock-alert.service';
 import { ActivityTrackingMiddleware } from '../../shared/middleware/activity-tracking.middleware';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { AuthModule } from '../auth/auth.module';
-
+import { SharedModule } from '../../shared/shared.module';  
 // Schemas
 import { AnalyticsSnapshot, AnalyticsSnapshotSchema } from './schemas/analytics-snapshot.schema';
 import { ReportSchedule, ReportScheduleSchema } from './schemas/report-schedule.schema';
@@ -48,6 +48,7 @@ import { CacheService } from '../../shared/cache/cache.service';
       { name: Cart.name, schema: CartSchema },
       { name: Coupon.name, schema: CouponSchema },
     ]),
+    SharedModule,
   ],
   controllers: [
     AnalyticsController,

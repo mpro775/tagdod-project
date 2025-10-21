@@ -16,6 +16,7 @@ import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { NotificationsCompleteModule } from '../notifications/notifications-comp
     ExchangeRatesModule,
     NotificationsCompleteModule,
     forwardRef(() => AuthModule),
+    SharedModule,
   ],
   controllers: [
     ProductsController,
