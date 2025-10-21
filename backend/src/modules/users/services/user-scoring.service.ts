@@ -41,7 +41,7 @@ export interface UserScore {
 
 @Injectable()
 export class UserScoringService {
-  private readonly config: ScoringConfig = {
+  private config: ScoringConfig = {
     loyalty: {
       orderWeight: 10,
       completedOrderWeight: 15,

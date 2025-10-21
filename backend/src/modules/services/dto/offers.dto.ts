@@ -64,7 +64,7 @@ export class OfferManagementDto {
 }
 
 export class OffersManagementResponseDto {
-  data!: OfferManagementDto[];
+  data!: any[];
   meta!: {
     page: number;
     limit: number;

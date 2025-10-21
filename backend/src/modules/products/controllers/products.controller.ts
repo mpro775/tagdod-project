@@ -201,7 +201,7 @@ export class ProductsController {
     const result = await this.inventoryService.updateStock(
       variantId, 
       body.quantity, 
-      body.operation, 
+      body.operation === 'set' ? undefined : body.operation as 'add' | 'subtract', 
       body.reason
     );
     return { data: result };

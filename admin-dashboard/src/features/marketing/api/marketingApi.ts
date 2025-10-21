@@ -413,6 +413,16 @@ export const marketingApi = {
     return response.data;
   },
 
+  getCouponsAnalytics: async (period: number = 30) => {
+    const response = await apiClient.get(`/admin/marketing/coupons/analytics?period=${period}`);
+    return response.data.data;
+  },
+
+  getCouponsStatistics: async (period: number = 30) => {
+    const response = await apiClient.get(`/admin/marketing/coupons/statistics?period=${period}`);
+    return response.data.data;
+  },
+
   validateCoupon: async (data: ValidateCouponDto): Promise<any> => {
     const response = await apiClient.post<{ data: any }>(
       '/admin/marketing/coupons/validate',
@@ -421,9 +431,9 @@ export const marketingApi = {
     return response.data.data;
   },
 
-  getPublicCoupons: async () => {
+  getPublicCoupons: async (page: number = 1, limit: number = 20) => {
     const response = await apiClient.get<{ data: any[] }>(
-      '/marketing/coupons/public'
+      `/marketing/coupons/public?page=${page}&limit=${limit}`
     );
     return response.data;
   },

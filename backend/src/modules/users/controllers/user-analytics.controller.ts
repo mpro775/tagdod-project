@@ -8,6 +8,7 @@ import {
   Body,
   HttpException,
   HttpStatus,
+  Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -15,7 +16,7 @@ import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { UserRole } from '../schemas/user.schema';
 import { UserAnalyticsService } from '../services/user-analytics.service';
-import { UserScoringService } from '../services/user-scoring.service';
+import { ScoringConfig, UserScoringService } from '../services/user-scoring.service';
 import { UserBehaviorService } from '../services/user-behavior.service';
 import { UserCacheService } from '../services/user-cache.service';
 import { UserErrorService } from '../services/user-error.service';
@@ -60,7 +61,7 @@ export class UserAnalyticsController {
     try {
       return await this.userAnalyticsService.getUserDetailedStats(userId);
     } catch (error) {
-      throw this.userErrorService.handleAnalyticsError(error, {
+      throw this.userErrorService.handleAnalyticsError(error as Error, {
         userId,
         operation: 'getUserDetailedStats',
       });
@@ -83,7 +84,7 @@ export class UserAnalyticsController {
     try {
       return await this.userAnalyticsService.getCustomerRankings(dto.limit || 50);
     } catch (error) {
-      throw this.userErrorService.handleAnalyticsError(error, {
+      throw this.userErrorService.handleAnalyticsError(error as Error, {
         operation: 'getCustomerRankings',
         additionalInfo: { limit: dto.limit },
       });
@@ -106,7 +107,7 @@ export class UserAnalyticsController {
     try {
       return await this.userAnalyticsService.getOverallUserAnalytics();
     } catch (error) {
-      throw this.userErrorService.handleAnalyticsError(error, {
+      throw this.userErrorService.handleAnalyticsError(error as Error, {
         operation: 'getOverallAnalytics',
       });
     }
@@ -289,7 +290,7 @@ export class UserAnalyticsController {
     status: 200,
     description: 'تم تحديث إعدادات التقييم بنجاح',
   })
-  async updateScoringConfig(@Body() config: ScoringConfigDto) {
+  async updateScoringConfig(@Body() config: Partial<ScoringConfig>) {
     try {
       this.userScoringService.updateConfig(config);
       return {
@@ -368,7 +369,7 @@ export class UserAnalyticsController {
     try {
       const cacheKey = this.userCacheService.createUserKey(userId, 'detailed-stats');
       this.userCacheService.delete(cacheKey);
-      
+
       return {
         data: {
           message: `تم مسح بيانات المستخدم ${userId} من التخزين المؤقت بنجاح`,

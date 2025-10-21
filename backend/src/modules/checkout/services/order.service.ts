@@ -268,7 +268,12 @@ export class OrderService {
     } = query;
 
     const skip = (page - 1) * limit;
-    const filter: Record<string, unknown> = { userId: new Types.ObjectId(userId) };
+    const filter: Record<string, unknown> = {};
+
+    // Only filter by userId if it's provided (for customer queries)
+    if (userId) {
+      filter.userId = new Types.ObjectId(userId);
+    }
 
     if (status) filter.status = status;
     if (paymentStatus) filter.paymentStatus = paymentStatus;

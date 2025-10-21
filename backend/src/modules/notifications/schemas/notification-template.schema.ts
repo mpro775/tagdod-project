@@ -14,6 +14,8 @@ export class NotificationTemplate {
   @Prop({ required: true })
   message!: string;
 
+  @Prop({ required: true })
+  messageEn!: string;
   @Prop()
   template?: string;
 
@@ -47,7 +49,7 @@ export class NotificationTemplate {
     description?: string;
   }>;
 
-  @Prop()
+  @Prop({ type: Object })
   exampleData?: Record<string, unknown>;
 
   @Prop({ default: 0 })

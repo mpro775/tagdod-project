@@ -18,6 +18,6 @@ import { FavoritesModule } from '../favorites/favorites.module';
   ],
   controllers: [AuthController],
   providers: [OtpService, TokensService, JwtAuthGuard],
-  exports: [TokensService, JwtAuthGuard],
+  exports: [TokensService, JwtAuthGuard, MongooseModule],
 })
 export class AuthModule {}

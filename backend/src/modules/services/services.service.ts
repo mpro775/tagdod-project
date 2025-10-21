@@ -922,9 +922,9 @@ export class ServicesService {
     const q: Record<string, unknown> = {};
 
     if (filters?.dateFrom || filters?.dateTo) {
-      q.createdAt = {};
-      if (filters.dateFrom) q.createdAt.$gte = filters.dateFrom;
-      if (filters.dateTo) q.createdAt.$lte = filters.dateTo;
+      q.createdAt = {} as Record<string, Date>;
+      if (filters.dateFrom) (q.createdAt as Record<string, Date>).$gte = filters.dateFrom;
+      if (filters.dateTo) (q.createdAt as Record<string, Date>).$lte = filters.dateTo;
     }
 
     const [

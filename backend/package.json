@@ -26,7 +26,8 @@
     "docs:openapi": "npm run build && node -e \"require('./dist/main.js').setupSwagger && console.log('OpenAPI exported to docs/api/') || console.log('Run: npm run docs:generate')\"",
     "docs:serve": "npm run start:dev",
     "db:migrate": "ts-node scripts/migrate.ts",
-    "db:seed": "ts-node scripts/seed.ts"
+    "db:seed": "ts-node scripts/seed.ts",
+    "db:migrate-isadmin": "ts-node scripts/migrate-remove-isadmin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

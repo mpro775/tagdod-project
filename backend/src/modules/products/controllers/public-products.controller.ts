@@ -6,6 +6,7 @@ import {
   ApiQuery,
   ApiOkResponse,
   ApiNotFoundResponse,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { ProductService } from '../services/product.service';
 import { VariantService } from '../services/variant.service';
@@ -170,10 +171,7 @@ export class PublicProductsController {
   })
   @ApiNotFoundResponse({ description: 'Product not found' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getProduct(
-    @Param('id') id: string,
-    @Query('currency') currency?: string
-  ) {
+  async getProduct(@Param('id') id: string, @Query('currency') currency?: string) {
     const product = await this.productService.findById(id);
     const variants = await this.variantService.findByProductId(id);
 
@@ -184,21 +182,21 @@ export class PublicProductsController {
     let variantsWithPrices = variants;
     if (currency && currency !== 'USD') {
       const prices = await this.pricingService.getProductPrices(id, currency);
-      variantsWithPrices = variants.map(variant => {
-        const price = prices.find(p => p.variantId === variant._id.toString());
+      variantsWithPrices = variants.map((variant) => {
+        const price = prices.find((p) => p.variantId === (variant as any)._id.toString());
         return {
           ...variant,
-          ...price
+          ...price,
         };
       });
     }
 
-    return { 
-      data: { 
-        product, 
+    return {
+      data: {
+        product,
         variants: variantsWithPrices,
-        currency: currency || 'USD'
-      } 
+        currency: currency || 'USD',
+      },
     };
   }
 
@@ -209,35 +207,35 @@ export class PublicProductsController {
   })
   @ApiParam({ name: 'slug', description: 'Product slug', example: 'solar-panel-300w' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getProductBySlug(
-    @Param('slug') slug: string,
-    @Query('currency') currency?: string
-  ) {
+  async getProductBySlug(@Param('slug') slug: string, @Query('currency') currency?: string) {
     const product = await this.productService.findBySlug(slug);
-    const variants = await this.variantService.findByProductId(product._id.toString());
+    const variants = await this.variantService.findByProductId((product as any)._id.toString());
 
     // زيادة المشاهدات
-    await this.productService.incrementViews(product._id.toString());
+    await this.productService.incrementViews((product as any)._id.toString());
 
     // جلب الأسعار إذا تم تحديد عملة
     let variantsWithPrices = variants;
     if (currency && currency !== 'USD') {
-      const prices = await this.pricingService.getProductPrices(product._id.toString(), currency);
-      variantsWithPrices = variants.map(variant => {
-        const price = prices.find(p => p.variantId === variant._id.toString());
+      const prices = await this.pricingService.getProductPrices(
+        (product as any)._id.toString(),
+        currency,
+      );
+      variantsWithPrices = variants.map((variant) => {
+        const price = prices.find((p) => p.variantId === (variant as any)._id.toString());
         return {
           ...variant,
-          ...price
+          ...price,
         };
       });
     }
 
-    return { 
-      data: { 
-        product, 
+    return {
+      data: {
+        product,
         variants: variantsWithPrices,
-        currency: currency || 'USD'
-      } 
+        currency: currency || 'USD',
+      },
     };
   }
 
@@ -273,28 +271,25 @@ export class PublicProductsController {
   @ApiOperation({ summary: 'Get product variants' })
   @ApiResponse({ status: 200, description: 'Variants retrieved successfully' })
   @CacheResponse({ ttl: 300 }) // 5 minutes
-  async getVariants(
-    @Param('id') productId: string,
-    @Query('currency') currency?: string
-  ) {
+  async getVariants(@Param('id') productId: string, @Query('currency') currency?: string) {
     const variants = await this.variantService.findByProductId(productId);
 
     // جلب الأسعار إذا تم تحديد عملة
     let variantsWithPrices = variants;
     if (currency && currency !== 'USD') {
       const prices = await this.pricingService.getProductPrices(productId, currency);
-      variantsWithPrices = variants.map(variant => {
-        const price = prices.find(p => p.variantId === variant._id.toString());
+      variantsWithPrices = variants.map((variant) => {
+        const price = prices.find((p) => p.variantId === (variant as any)._id.toString());
         return {
           ...variant,
-          ...price
+          ...price,
         };
       });
     }
 
-    return { 
+    return {
       data: variantsWithPrices,
-      currency: currency || 'USD'
+      currency: currency || 'USD',
     };
   }
 
@@ -302,10 +297,7 @@ export class PublicProductsController {
   @ApiOperation({ summary: 'Get variant price' })
   @ApiResponse({ status: 200, description: 'Price retrieved successfully' })
   @CacheResponse({ ttl: 300 }) // 5 minutes
-  async getVariantPrice(
-    @Param('id') variantId: string,
-    @Query('currency') currency?: string
-  ) {
+  async getVariantPrice(@Param('id') variantId: string, @Query('currency') currency?: string) {
     const price = await this.pricingService.getVariantPrice(variantId, currency);
     return { data: price };
   }
@@ -315,7 +307,7 @@ export class PublicProductsController {
   @ApiResponse({ status: 200, description: 'Availability checked successfully' })
   async checkVariantAvailability(
     @Param('id') variantId: string,
-    @Query('quantity') quantity: number
+    @Query('quantity') quantity: number,
   ) {
     const result = await this.inventoryService.checkAvailability(variantId, quantity);
     return { data: result };
@@ -327,10 +319,7 @@ export class PublicProductsController {
   @ApiOperation({ summary: 'Get product price range' })
   @ApiResponse({ status: 200, description: 'Price range retrieved successfully' })
   @CacheResponse({ ttl: 300 }) // 5 minutes
-  async getPriceRange(
-    @Param('id') productId: string,
-    @Query('currency') currency?: string
-  ) {
+  async getPriceRange(@Param('id') productId: string, @Query('currency') currency?: string) {
     const range = await this.pricingService.getProductPriceRange(productId, currency);
     return { data: range };
   }

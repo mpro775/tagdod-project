@@ -18,7 +18,7 @@ import { ServicesModule } from './modules/services/services.module';
 import { MarketingModule } from './modules/marketing/marketing.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
-import { NotificationsModule } from './modules/notifications/notifications-complete.module';
+import { NotificationsCompleteModule } from './modules/notifications/notifications-complete.module';
 import { SearchModule } from './modules/search/search.module';
 import { SecurityModule } from './modules/security/security.module';
 import { CategoriesModule } from './modules/categories/categories.module';
@@ -84,7 +84,7 @@ import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-enve
     MarketingModule,
     AddressesModule,
     FavoritesModule,
-    NotificationsModule,
+    NotificationsCompleteModule,
     SearchModule,
     SecurityModule,
     CategoriesModule,
