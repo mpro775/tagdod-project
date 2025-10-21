@@ -1,0 +1,89 @@
+{
+  "invoice": {
+    "number": "INV-2025-001",
+    "date": "2025-10-21",
+    "client": "فريق تطوير منصة خدمات الطاقة الشمسية",
+    "currency": "USD",
+    "development_period": "6 أشهر",
+    "hourly_rate": 0,
+    "note": "جميع الساعات والأسعار محددة بصفر - سيتم العمل على هذه المميزات لاحقاً"
+  },
+  "categories": [
+    {
+      "name": "Core Features",
+      "name_ar": "المميزات الأساسية",
+      "total_hours": 0,
+      "total_cost": 0,
+      "features": [
+        {"name": "نظام المصادقة والأمان", "description": "OTP، JWT، إدارة الصلاحيات، تشفير متقدم", "hours": 0, "cost": 0},
+        {"name": "إدارة المستخدمين", "description": "النقاط، التقييم، شرائح العملاء، التحليلات السلوكية", "hours": 0, "cost": 0},
+        {"name": "إدارة المنتجات", "description": "هيكل المنتجات، المتغيرات، المخزون، التسعير بالدولار", "hours": 0, "cost": 0},
+        {"name": "سلة التسوق", "description": "إدارة ذكية، مزامنة متعددة الأجهزة، تتبع متروكة", "hours": 0, "cost": 0},
+        {"name": "نظام الدفع والفواتير", "description": "بوابات متعددة، فواتير ذكية، قابلية التوسع", "hours": 0, "cost": 0},
+        {"name": "الدفع والإنهاء", "description": "حفظ الطلبات، إدارة الشحن، تكامل بوابات الدفع", "hours": 0, "cost": 0}
+      ]
+    },
+    {
+      "name": "Search & Discovery",
+      "name_ar": "مميزات البحث والتصفح",
+      "total_hours": 0,
+      "total_cost": 0,
+      "features": [
+        {"name": "البحث المتقدم", "description": "بحث شامل، فلترة متقدمة، ترتيب ذكي", "hours": 0, "cost": 0},
+        {"name": "العلامات التجارية", "description": "إدارة شاملة، بيانات متعددة اللغات", "hours": 0, "cost": 0},
+        {"name": "الفئات والتصنيف", "description": "هيكل هرمي، سمات مخصصة", "hours": 0, "cost": 0},
+        {"name": "السمات والخصائص", "description": "نظام سمات مرن، JSON-based", "hours": 0, "cost": 0}
+      ]
+    },
+    {
+      "name": "E-commerce",
+      "name_ar": "مميزات التجارة الإلكترونية",
+      "total_hours": 0,
+      "total_cost": 0,
+      "features": [
+        {"name": "المفضلة", "description": "مزامنة متعددة الأجهزة، دعم الضيوف", "hours": 0, "cost": 0},
+        {"name": "أسعار الصرف", "description": "تحديث يومي، عرض متعدد العملات", "hours": 0, "cost": 0},
+        {"name": "العناوين", "description": "إدارة شاملة، تكامل مع الخرائط", "hours": 0, "cost": 0},
+        {"name": "الرفع والوسائط", "description": "تكامل Bunny.net، إدارة مجلدات ذكية", "hours": 0, "cost": 0}
+      ]
+    },
+    {
+      "name": "Services",
+      "name_ar": "مميزات الخدمات",
+      "total_hours": 0,
+      "total_cost": 0,
+      "features": [
+        {"name": "نظام الخدمات", "description": "طلبات الخدمات، عروض تنافسية، تتبع الموقع", "hours": 0, "cost": 0},
+        {"name": "دعم العملاء", "description": "تذاكر، ردود جاهزة، مرفقات، تقييمات", "hours": 0, "cost": 0},
+        {"name": "الإشعارات", "description": "بريد إلكتروني، SMS، إشعارات التطبيق", "hours": 0, "cost": 0}
+      ]
+    },
+    {
+      "name": "Analytics & Admin",
+      "name_ar": "مميزات التحليلات والإدارة",
+      "total_hours": 0,
+      "total_cost": 0,
+      "features": [
+        {"name": "التحليلات", "description": "تقارير شاملة، تحليلات الأداء، تنبؤات", "hours": 0, "cost": 0},
+        {"name": "التسويق والعروض", "description": "قواعد التسعير، كوبونات، لافتات إعلانية", "hours": 0, "cost": 0},
+        {"name": "الأمان والحماية", "description": "تشفير، حماية من الهجمات، GDPR", "hours": 0, "cost": 0},
+        {"name": "مراقبة الصحة", "description": "فحوصات شاملة، مراقبة الخدمات الخارجية", "hours": 0, "cost": 0}
+      ]
+    }
+  ],
+  "summary": {
+    "total_hours": 0,
+    "total_cost": 0,
+    "payment_terms": {
+      "deposit": "20% (0 دولار)",
+      "milestone": "40% عند منتصف المشروع (0 دولار)",
+      "final": "40% عند التسليم (0 دولار)"
+    },
+    "timeline": {
+      "phase1": "المميزات الأساسية (2 أشهر)",
+      "phase2": "البحث والتجارة (1.5 شهر)",
+      "phase3": "الخدمات والتحليلات (2.5 شهر)",
+      "testing": "الاختبار والتسليم (1 شهر)"
+    }
+  }
+}
