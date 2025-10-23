@@ -29,6 +29,27 @@ import {
   FormControlLabel,
   InputAdornment,
   Pagination,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  Fab,
+  Toolbar,
+  AppBar,
+  Tabs,
+  Tab,
+  Chip,
+  Stack,
+  Card,
+  CardContent,
+  CardHeader,
+  CardActions,
+  Collapse,
+  IconButton as MuiIconButton,
 } from '@mui/material';
 import {
   CloudUpload,
@@ -45,8 +66,26 @@ import {
   Visibility,
   VisibilityOff,
   Analytics,
+  Clean,
+  Storage,
+  Warning,
+  CheckCircle,
+  Refresh,
+  Download,
+  Upload,
+  Settings,
 } from '@mui/icons-material';
-import { useMedia, useDeleteMedia, useRestoreMedia, useMediaStats, useUpdateMedia } from '../hooks/useMedia';
+import { 
+  useMedia, 
+  useDeleteMedia, 
+  useRestoreMedia, 
+  useMediaStats, 
+  useUpdateMedia,
+  useCleanupDeletedFiles,
+  useCleanupDuplicateFiles,
+  useCleanupUnusedFiles,
+  useBulkMediaOperation,
+} from '../hooks/useMedia';
 import { MediaUploader } from '../components/MediaUploader';
 import { MediaListItem } from '../components/MediaListItem';
 import { formatFileSize } from '@/shared/utils/formatters';
@@ -65,6 +104,11 @@ export const MediaLibraryPage: React.FC = () => {
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
+  const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(null);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   const { data, isLoading, refetch } = useMedia({
     page: currentPage,
@@ -78,6 +122,10 @@ export const MediaLibraryPage: React.FC = () => {
   const { mutate: deleteMedia } = useDeleteMedia();
   const { mutate: restoreMedia } = useRestoreMedia();
   const { mutate: updateMedia } = useUpdateMedia();
+  const { mutate: cleanupDeleted } = useCleanupDeletedFiles();
+  const { mutate: cleanupDuplicates } = useCleanupDuplicateFiles();
+  const { mutate: cleanupUnused } = useCleanupUnusedFiles();
+  const { mutate: bulkOperation } = useBulkMediaOperation();
   const { data: stats } = useMediaStats();
   
   // Provide default stats to prevent undefined errors
@@ -133,6 +181,56 @@ export const MediaLibraryPage: React.FC = () => {
     setCurrentPage(1);
   };
 
+  const handleBulkSelect = (mediaId: string) => {
+    setSelectedMediaIds(prev => 
+      prev.includes(mediaId) 
+        ? prev.filter(id => id !== mediaId)
+        : [...prev, mediaId]
+    );
+  };
+
+  const handleBulkSelectAll = () => {
+    if (selectedMediaIds.length === (data?.data?.length || 0)) {
+      setSelectedMediaIds([]);
+    } else {
+      setSelectedMediaIds(data?.data?.map(media => media._id) || []);
+    }
+  };
+
+  const handleBulkOperation = (operation: 'delete' | 'restore' | 'togglePublic' | 'changeCategory') => {
+    if (selectedMediaIds.length === 0) return;
+
+    bulkOperation({
+      mediaIds: selectedMediaIds,
+      operation,
+    }, {
+      onSuccess: () => {
+        setSelectedMediaIds([]);
+        setShowBulkActions(false);
+        refetch();
+      },
+    });
+  };
+
+  const handleCleanupOperation = (operation: 'deleted' | 'duplicates' | 'unused') => {
+    switch (operation) {
+      case 'deleted':
+        cleanupDeleted();
+        break;
+      case 'duplicates':
+        cleanupDuplicates();
+        break;
+      case 'unused':
+        cleanupUnused(90); // 90 days threshold
+        break;
+    }
+    setCleanupDialogOpen(false);
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
   return (
     <Box>
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -152,6 +250,20 @@ export const MediaLibraryPage: React.FC = () => {
               onClick={() => setStatsDialogOpen(true)}
             >
               الإحصائيات
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Clean />}
+              onClick={() => setCleanupDialogOpen(true)}
+            >
+              تنظيف
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Refresh />}
+              onClick={() => refetch()}
+            >
+              تحديث
             </Button>
             <Button
               variant="contained"
@@ -233,7 +345,7 @@ export const MediaLibraryPage: React.FC = () => {
 
         {/* Controls */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Button
               variant="outlined"
               size="small"
@@ -242,6 +354,24 @@ export const MediaLibraryPage: React.FC = () => {
             >
               مسح الفلاتر
             </Button>
+            {selectedMediaIds.length > 0 && (
+              <Chip
+                label={`${selectedMediaIds.length} مختار`}
+                color="primary"
+                onDelete={() => setSelectedMediaIds([])}
+              />
+            )}
+            {selectedMediaIds.length > 0 && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Delete />}
+                onClick={() => handleBulkOperation('delete')}
+                color="error"
+              >
+                حذف المحدد
+              </Button>
+            )}
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Tooltip title="عرض شبكي">
@@ -262,6 +392,11 @@ export const MediaLibraryPage: React.FC = () => {
                 <ViewList />
               </IconButton>
             </Tooltip>
+            <Tooltip title="تحديث">
+              <IconButton size="small" onClick={() => refetch()}>
+                <Refresh />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
 
@@ -271,7 +406,7 @@ export const MediaLibraryPage: React.FC = () => {
         {/* Gallery Grid */}
         {!isLoading && viewMode === 'grid' && (
           <Grid container spacing={2}>
-            {data?.data?.map((media) => (
+            {(Array.isArray(data?.data) ? data.data : [])?.map((media) => (
               <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={media._id}>
                 <Card sx={{ opacity: media.deletedAt ? 0.6 : 1 }}>
                   <CardMedia
@@ -392,7 +527,7 @@ export const MediaLibraryPage: React.FC = () => {
         {/* List View */}
         {!isLoading && viewMode === 'list' && (
           <Box>
-            {data?.data?.map((media) => (
+            {(Array.isArray(data?.data) ? data.data : [])?.map((media) => (
               <MediaListItem
                 key={media._id}
                 media={media}
@@ -410,7 +545,7 @@ export const MediaLibraryPage: React.FC = () => {
         )}
 
         {/* Empty State */}
-        {!isLoading && (!data?.data || data.data.length === 0) && (
+        {!isLoading && (!data?.data || !Array.isArray(data.data) || data.data.length === 0) && (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Folder sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -627,6 +762,90 @@ export const MediaLibraryPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setStatsDialogOpen(false)}>إغلاق</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Cleanup Dialog */}
+      <Dialog open={cleanupDialogOpen} onClose={() => setCleanupDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>عمليات التنظيف</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            اختر نوع التنظيف المطلوب. هذه العمليات لا يمكن التراجع عنها.
+          </Typography>
+          
+          <Stack spacing={2}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Delete color="error" />
+                  <Box>
+                    <Typography variant="h6">تنظيف الملفات المحذوفة</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      حذف الملفات المحذوفة نهائياً من التخزين
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+              <CardActions>
+                <Button 
+                  color="error" 
+                  onClick={() => handleCleanupOperation('deleted')}
+                  startIcon={<Delete />}
+                >
+                  تنظيف المحذوفة
+                </Button>
+              </CardActions>
+            </Card>
+
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Warning color="warning" />
+                  <Box>
+                    <Typography variant="h6">تنظيف الملفات المكررة</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      إزالة الملفات المكررة والاحتفاظ بنسخة واحدة فقط
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+              <CardActions>
+                <Button 
+                  color="warning" 
+                  onClick={() => handleCleanupOperation('duplicates')}
+                  startIcon={<Warning />}
+                >
+                  تنظيف المكررة
+                </Button>
+              </CardActions>
+            </Card>
+
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Storage color="info" />
+                  <Box>
+                    <Typography variant="h6">تنظيف الملفات غير المستخدمة</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      حذف الملفات التي لم تُستخدم منذ 90 يوم
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+              <CardActions>
+                <Button 
+                  color="info" 
+                  onClick={() => handleCleanupOperation('unused')}
+                  startIcon={<Storage />}
+                >
+                  تنظيف غير المستخدمة
+                </Button>
+              </CardActions>
+            </Card>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCleanupDialogOpen(false)}>إلغاء</Button>
         </DialogActions>
       </Dialog>
     </Box>

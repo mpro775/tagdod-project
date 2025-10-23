@@ -9,6 +9,7 @@ import type {
   CreateVariantDto,
   UpdateVariantDto,
   GenerateVariantsDto,
+  StockUpdateRequest,
 } from '../types/product.types';
 
 // Query Keys
@@ -174,5 +175,85 @@ export const useProductVariants = (productId: string) => {
     queryKey: [PRODUCTS_KEY, productId, 'variants'],
     queryFn: () => productsApi.listVariants(productId),
     enabled: !!productId,
+  });
+};
+
+// ==================== Pricing Management ====================
+
+// Get variant price
+export const useVariantPrice = (variantId: string, currency?: string) => {
+  return useQuery({
+    queryKey: [PRODUCTS_KEY, 'variants', variantId, 'price', currency],
+    queryFn: () => productsApi.getVariantPrice(variantId, currency),
+    enabled: !!variantId,
+  });
+};
+
+// Get product prices
+export const useProductPrices = (productId: string, currency?: string) => {
+  return useQuery({
+    queryKey: [PRODUCTS_KEY, productId, 'prices', currency],
+    queryFn: () => productsApi.getProductPrices(productId, currency),
+    enabled: !!productId,
+  });
+};
+
+// Get price range
+export const useProductPriceRange = (productId: string, currency?: string) => {
+  return useQuery({
+    queryKey: [PRODUCTS_KEY, productId, 'price-range', currency],
+    queryFn: () => productsApi.getPriceRange(productId, currency),
+    enabled: !!productId,
+  });
+};
+
+// ==================== Inventory Management ====================
+
+// Update stock
+export const useUpdateStock = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ variantId, data }: { variantId: string; data: StockUpdateRequest }) =>
+      productsApi.updateStock(variantId, data),
+    onSuccess: (_, variables) => {
+      toast.success('تم تحديث المخزون بنجاح');
+      queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY] });
+      queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, 'inventory'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Check availability
+export const useCheckAvailability = (variantId: string, quantity: number) => {
+  return useQuery({
+    queryKey: [PRODUCTS_KEY, 'variants', variantId, 'availability', quantity],
+    queryFn: () => productsApi.checkAvailability(variantId, quantity),
+    enabled: !!variantId && quantity > 0,
+  });
+};
+
+// Get low stock variants
+export const useLowStockVariants = (threshold?: number) => {
+  return useQuery({
+    queryKey: [PRODUCTS_KEY, 'inventory', 'low-stock', threshold],
+    queryFn: () => productsApi.getLowStock(threshold),
+  });
+};
+
+// Get out of stock variants
+export const useOutOfStockVariants = () => {
+  return useQuery({
+    queryKey: [PRODUCTS_KEY, 'inventory', 'out-of-stock'],
+    queryFn: () => productsApi.getOutOfStock(),
+  });
+};
+
+// Get inventory summary
+export const useInventorySummary = () => {
+  return useQuery({
+    queryKey: [PRODUCTS_KEY, 'inventory', 'summary'],
+    queryFn: () => productsApi.getInventorySummary(),
   });
 };

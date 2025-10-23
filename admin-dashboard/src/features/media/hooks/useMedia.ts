@@ -2,7 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { mediaApi } from '../api/mediaApi';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
 import toast from 'react-hot-toast';
-import type { ListMediaParams, UploadMediaDto, UpdateMediaDto } from '../types/media.types';
+import type { 
+  ListMediaParams, 
+  UploadMediaDto, 
+  UpdateMediaDto, 
+  MediaUsageUpdate, 
+  BulkMediaOperation,
+  CleanupResponse 
+} from '../types/media.types';
 
 const MEDIA_KEY = 'media';
 
@@ -108,5 +115,67 @@ export const useMediaStats = () => {
       averageSize: 0,
       recentlyAdded: [],
     },
+  });
+};
+
+// Update media usage
+export const useUpdateMediaUsage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: MediaUsageUpdate) => mediaApi.updateUsage(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MEDIA_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Bulk operations
+export const useBulkMediaOperation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: BulkMediaOperation) => mediaApi.bulkOperation(data),
+    onSuccess: (result) => {
+      toast.success(`تم تنفيذ العملية على ${result.affected} ملف`);
+      queryClient.invalidateQueries({ queryKey: [MEDIA_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Cleanup operations (Super Admin only)
+export const useCleanupDeletedFiles = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => mediaApi.cleanupDeleted(),
+    onSuccess: (result: CleanupResponse) => {
+      toast.success(result.message);
+      queryClient.invalidateQueries({ queryKey: [MEDIA_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useCleanupDuplicateFiles = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => mediaApi.cleanupDuplicates(),
+    onSuccess: (result: CleanupResponse) => {
+      toast.success(result.message);
+      queryClient.invalidateQueries({ queryKey: [MEDIA_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useCleanupUnusedFiles = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (days?: number) => mediaApi.cleanupUnused(days),
+    onSuccess: (result: CleanupResponse) => {
+      toast.success(result.message);
+      queryClient.invalidateQueries({ queryKey: [MEDIA_KEY] });
+    },
+    onError: ErrorHandler.showError,
   });
 };

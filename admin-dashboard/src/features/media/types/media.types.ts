@@ -98,3 +98,52 @@ export interface UploadResponse {
   };
   message: string;
 }
+
+// Cleanup Operations (Super Admin only)
+export interface CleanupResponse {
+  success: boolean;
+  data: {
+    deletedCount?: number;
+    removedCount?: number;
+    errors: string[];
+  };
+  message: string;
+}
+
+// Media Usage Tracking
+export interface MediaUsageUpdate {
+  mediaId: string;
+  usedInId: string;
+  action: 'increment' | 'decrement';
+}
+
+// Enhanced Media with User Info
+export interface MediaWithUser extends Media {
+  uploadedByUser?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+  };
+}
+
+// Media Filter Options
+export interface MediaFilterOptions {
+  search?: string;
+  category?: MediaCategory;
+  type?: MediaType;
+  isPublic?: boolean;
+  includeDeleted?: boolean;
+  sortBy?: 'createdAt' | 'name' | 'size' | 'usageCount';
+  sortOrder?: 'asc' | 'desc';
+}
+
+// Media Bulk Operations
+export interface BulkMediaOperation {
+  mediaIds: string[];
+  operation: 'delete' | 'restore' | 'togglePublic' | 'changeCategory';
+  data?: {
+    category?: MediaCategory;
+    isPublic?: boolean;
+  };
+}

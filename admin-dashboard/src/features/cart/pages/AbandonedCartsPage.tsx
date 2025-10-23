@@ -1,240 +1,385 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/Card';
-import { Button } from '../../../shared/components/ui/Button';
-import { CartTable } from '../components/CartTable';
-import { CartDetailsModal } from '../components/CartDetailsModal';
-import { useAbandonedCarts } from '../hooks/useCart';
-import { toast } from 'react-hot-toast';
-import { formatCurrency } from '../api/cartApi';
+import {
+  Box,
+  Typography,
+  Button,
+  Alert,
+  CircularProgress,
+  Fab,
+  Card,
+  CardContent,
+  Grid,
+} from '@mui/material';
+import { Refresh, Send, Email, TrendingDown, MonetizationOn, Schedule } from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
+import { CartFilters, Cart } from '../types/cart.types';
+import {
+  useAbandonedCarts,
+  useCartFilters,
+  useCartSelection,
+  useSendAllReminders,
+} from '../hooks/useCart';
+import { CartFilters as CartFiltersComponent, CartTable, CartDetailsModal } from '../components';
+import { SendReminderDialog } from './SendReminderDialog';
+import { ConvertToOrderDialog } from './ConvertToOrderDialog';
 
 export const AbandonedCartsPage: React.FC = () => {
-  const [selectedCartId, setSelectedCartId] = useState<string | null>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [hours, setHours] = useState(24);
-  const [limit, setLimit] = useState(50);
+  const { enqueueSnackbar } = useSnackbar();
 
-  const {
-    abandonedCarts,
-    loading,
-    error,
-    stats,
-    sendReminder,
-    sendAllReminders,
-    fetchAbandonedCarts,
-  } = useAbandonedCarts(hours, limit);
+  // State management
+  const [selectedCart, setSelectedCart] = useState<Cart | null>(null);
+  const [showCartDetails, setShowCartDetails] = useState(false);
+  const [showReminderDialog, setShowReminderDialog] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [page, setPage] = useState(0);
+  const [limit, setLimit] = useState(25);
 
-  const handleViewCart = (cartId: string) => {
-    setSelectedCartId(cartId);
-    setIsDetailsModalOpen(true);
+  // Custom hooks
+  const { filters, updateFilters, clearFilters } = useCartFilters({
+    page,
+    limit,
+    isAbandoned: true,
+    sortBy: 'lastActivityAt',
+    sortOrder: 'desc',
+  });
+
+  const { selectedCarts, selectCart, selectAll, deselectAll } = useCartSelection();
+
+  const { data: cartData, isLoading, error, refetch } = useAbandonedCarts(filters);
+
+  const sendAllRemindersMutation = useSendAllReminders();
+
+  // Event handlers
+  const handleFiltersChange = (newFilters: CartFilters) => {
+    updateFilters(newFilters);
+    setPage(0);
   };
 
-  const handleCloseDetailsModal = () => {
-    setIsDetailsModalOpen(false);
-    setSelectedCartId(null);
+  const handleSearch = () => {
+    refetch();
   };
 
-  const handleSendReminder = async (cartId: string) => {
-    const success = await sendReminder(cartId);
-    if (success) {
-      toast.success('تم إرسال التذكير بنجاح');
-    } else {
-      toast.error('فشل في إرسال التذكير');
+  const handleClearFilters = () => {
+    clearFilters();
+    setPage(0);
+  };
+
+  const handleViewCart = (cart: Cart) => {
+    setSelectedCart(cart);
+    setShowCartDetails(true);
+  };
+
+  const handleConvertToOrder = (cart: Cart) => {
+    setSelectedCart(cart);
+    setShowConvertDialog(true);
+  };
+
+  const handleSendReminder = (cart: Cart) => {
+    setSelectedCart(cart);
+    setShowReminderDialog(true);
+  };
+
+  const handleDeleteCart = (cart: Cart) => {
+    if (window.confirm(`هل أنت متأكد من حذف السلة ${cart._id}؟`)) {
+      // Implement delete functionality
+      enqueueSnackbar('تم حذف السلة بنجاح', { variant: 'success' });
     }
   };
 
-  const handleSendAllReminders = async () => {
-    const success = await sendAllReminders();
-    if (success) {
-      toast.success(`تم إرسال ${stats.count} تذكير بنجاح`);
+  const handleSelectCart = (cartId: string) => {
+    selectCart(cartId);
+  };
+
+  const handleSelectAll = (cartIds: string[]) => {
+    if (cartIds.length === 0) {
+      deselectAll();
     } else {
-      toast.error('فشل في إرسال التذكيرات');
+      selectAll(cartIds);
     }
   };
 
-  const handleHoursChange = (newHours: number) => {
-    setHours(newHours);
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    updateFilters({ ...filters, page: newPage });
   };
 
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit);
+    setPage(0);
+    updateFilters({ ...filters, page: 0, limit: newLimit });
   };
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center text-red-600">
-              <p className="text-lg font-medium">خطأ في تحميل السلال المتروكة</p>
-              <p className="text-sm mt-2">{error}</p>
-              <Button
-                onClick={fetchAbandonedCarts}
-                className="mt-4"
-              >
-                إعادة المحاولة
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleSendAllReminders = () => {
+    sendAllRemindersMutation.mutate();
+  };
+
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  // Data preparation
+  const carts = cartData?.data?.carts || [];
+  const total = cartData?.meta?.total || 0;
+
+  // Calculate statistics
+  const totalAbandonedValue = carts.reduce(
+    (sum: number, cart: Cart) => sum + (cart.pricingSummary?.total || 0),
+    0
+  );
+  const averageAbandonedValue = carts.length > 0 ? totalAbandonedValue / carts.length : 0;
+  const cartsWithNoEmails = carts.filter(
+    (cart: Cart) => (cart.abandonmentEmailsSent || 0) === 0
+  ).length;
+  const cartsWithEmails = carts.filter(
+    (cart: Cart) => (cart.abandonmentEmailsSent || 0) > 0
+  ).length;
 
   return (
-    <div className="p-6 space-y-6">
+    <Box sx={{ p: 3 }}>
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">السلال المتروكة</h1>
-          <p className="text-gray-600 mt-1">
-            متابعة وإدارة السلال التي تم هجرها من قبل العملاء
-          </p>
-        </div>
-        <Button
-          onClick={fetchAbandonedCarts}
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {loading ? 'جاري التحديث...' : 'تحديث'}
-        </Button>
-      </div>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+          السلات المتروكة
+        </Typography>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            تحديث
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Send />}
+            onClick={handleSendAllReminders}
+            disabled={isLoading || sendAllRemindersMutation.isPending}
+          >
+            إرسال جميع التذكيرات
+          </Button>
+        </Box>
+      </Box>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-600">
-              السلال المتروكة
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {stats.count.toLocaleString('ar-SA')}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              من أصل {stats.totalCarts} سلة إجمالية
-            </p>
-          </CardContent>
-        </Card>
+      {/* Error Alert */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error.message}
+        </Alert>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-600">
-              القيمة المفقودة
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(stats.totalValue)}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              إجمالي قيمة السلال المتروكة
-            </p>
-          </CardContent>
-        </Card>
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="h4" component="div" color="warning.main">
+                    {total.toLocaleString('ar-YE')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    إجمالي السلات المتروكة
+                  </Typography>
+                </Box>
+                <TrendingDown color="warning" sx={{ fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-600">
-              معدل الهجر
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {stats.totalCarts > 0 ? ((stats.count / stats.totalCarts) * 100).toFixed(1) : 0}%
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              نسبة السلال المتروكة
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="h4" component="div" color="error.main">
+                    {totalAbandonedValue.toLocaleString('ar-YE')} ر.ي
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    إجمالي القيمة المتروكة
+                  </Typography>
+                </Box>
+                <MonetizationOn color="error" sx={{ fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="h4" component="div" color="info.main">
+                    {averageAbandonedValue.toLocaleString('ar-YE')} ر.ي
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    متوسط قيمة السلة المتروكة
+                  </Typography>
+                </Box>
+                <MonetizationOn color="info" sx={{ fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="h4" component="div" color="primary.main">
+                    {cartsWithEmails}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    سلات تم إرسال تذكيرات لها
+                  </Typography>
+                </Box>
+                <Email color="primary" sx={{ fontSize: 40 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Quick Actions */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            إجراءات سريعة
+          </Typography>
+          <Box display="flex" gap={2} flexWrap="wrap">
+            <Button
+              variant="outlined"
+              startIcon={<Email />}
+              onClick={() => {
+                // Send reminders to carts with no emails
+                const cartsToRemind = carts.filter(
+                  (cart) => (cart.abandonmentEmailsSent || 0) === 0
+                );
+                if (cartsToRemind.length === 0) {
+                  enqueueSnackbar('جميع السلات المتروكة تم إرسال تذكيرات لها', { variant: 'info' });
+                } else {
+                  enqueueSnackbar(`سيتم إرسال تذكيرات لـ ${cartsToRemind.length} سلة`, {
+                    variant: 'info',
+                  });
+                  // Implement bulk reminder sending
+                }
+              }}
+              disabled={cartsWithNoEmails === 0}
+            >
+              إرسال تذكيرات للسلات الجديدة ({cartsWithNoEmails})
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={<Schedule />}
+              onClick={() => {
+                // Show carts that need follow-up
+                const followUpCarts = carts.filter((cart) => {
+                  const emailsSent = cart.abandonmentEmailsSent || 0;
+                  return emailsSent > 0 && emailsSent < 3;
+                });
+                enqueueSnackbar(`هناك ${followUpCarts.length} سلة تحتاج متابعة`, {
+                  variant: 'info',
+                });
+              }}
+            >
+              عرض السلات التي تحتاج متابعة
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>تصفية السلال المتروكة</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="hours-select" className="block text-sm font-medium text-gray-700 mb-2">
-                عدد الساعات غير النشطة
-              </label>
-              <select
-                id="hours-select"
-                value={hours}
-                onChange={(e) => handleHoursChange(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={1}>ساعة واحدة</option>
-                <option value={6}>6 ساعات</option>
-                <option value={12}>12 ساعة</option>
-                <option value={24}>24 ساعة</option>
-                <option value={48}>48 ساعة</option>
-                <option value={72}>72 ساعة</option>
-                <option value={168}>أسبوع</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="limit-select" className="block text-sm font-medium text-gray-700 mb-2">
-                عدد السلال المعروضة
-              </label>
-              <select
-                id="limit-select"
-                value={limit}
-                onChange={(e) => handleLimitChange(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-                <option value={200}>200</option>
-              </select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Actions */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              {stats.count > 0 && (
-                <span>
-                  تم العثور على {stats.count} سلة متروكة خلال آخر {hours} ساعة
-                </span>
-              )}
-            </div>
-            <div className="flex space-x-3">
-              <Button
-                onClick={handleSendAllReminders}
-                disabled={loading || stats.count === 0}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
-                إرسال تذكيرات لجميع السلال
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <CartFiltersComponent
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+        isLoading={isLoading}
+      />
 
       {/* Cart Table */}
       <CartTable
-        carts={abandonedCarts}
-        loading={loading}
+        carts={carts}
+        isLoading={isLoading}
+        selectedCarts={selectedCarts}
+        onSelectCart={handleSelectCart}
+        onSelectAll={handleSelectAll}
         onViewCart={handleViewCart}
+        onConvertToOrder={handleConvertToOrder}
         onSendReminder={handleSendReminder}
+        onDeleteCart={handleDeleteCart}
+        page={page}
+        limit={limit}
+        total={total}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
+        error={error?.message}
       />
 
-      {/* Cart Details Modal */}
+      {/* Loading Overlay */}
+      {isLoading && (
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bgcolor="rgba(0,0,0,0.1)"
+          zIndex={9999}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
+      {/* Modals */}
       <CartDetailsModal
-        cart={abandonedCarts.find(cart => cart._id === selectedCartId) || null}
-        isOpen={isDetailsModalOpen}
-        onClose={handleCloseDetailsModal}
+        cart={selectedCart}
+        open={showCartDetails}
+        onClose={() => setShowCartDetails(false)}
+        onConvertToOrder={handleConvertToOrder}
         onSendReminder={handleSendReminder}
+        isLoading={false}
       />
-    </div>
+
+      <SendReminderDialog
+        cart={selectedCart}
+        open={showReminderDialog}
+        onClose={() => setShowReminderDialog(false)}
+        onSuccess={() => {
+          setShowReminderDialog(false);
+          refetch();
+        }}
+      />
+
+      <ConvertToOrderDialog
+        cart={selectedCart}
+        open={showConvertDialog}
+        onClose={() => setShowConvertDialog(false)}
+        onSuccess={() => {
+          setShowConvertDialog(false);
+          refetch();
+        }}
+      />
+
+      {/* Floating Action Button */}
+      <Fab
+        color="primary"
+        aria-label="refresh"
+        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        onClick={handleRefresh}
+        disabled={isLoading}
+      >
+        <Refresh />
+      </Fab>
+    </Box>
   );
 };
+
+export default AbandonedCartsPage;

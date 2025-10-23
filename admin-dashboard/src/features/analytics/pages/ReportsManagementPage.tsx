@@ -1,600 +1,669 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
   Button,
+  IconButton,
+  Tooltip,
   Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  TextField,
-  Grid,
-  Typography,
+  Switch,
+  FormControlLabel,
   Alert,
-  Snackbar,
-  IconButton,
-  Tooltip,
-
+  Skeleton,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Divider,
+  Paper,
+  Tabs,
+  Tab,
+  Badge,
+  Avatar,
+  LinearProgress,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
-  Add,
-  Delete,
-  Edit,
-  Archive,
-  Visibility,
-  Refresh,
-  Print,
-  FileDownload,
+  Add as AddIcon,
+  Download as DownloadIcon,
+  Visibility as VisibilityIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Archive as ArchiveIcon,
+  Unarchive as UnarchiveIcon,
+  Schedule as ScheduleIcon,
+  Assessment as AssessmentIcon,
+  PictureAsPdf as PictureAsPdfIcon,
+  TableChart as TableChartIcon,
+  Description as DescriptionIcon,
+  FileDownload as FileDownloadIcon,
+  FilterList as FilterListIcon,
+  Search as SearchIcon,
+  Sort as SortIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { analyticsApi } from '../api/analyticsApi';
-import {
-  AdvancedReport,
-  ReportCategory,
-  ReportType,
-  ReportFormat,
-  PeriodType,
-  ListReportsParams,
-} from '../types/analytics.types';
-import { GridRenderCellParams, GridSortModel } from '@mui/x-data-grid';
+import { 
+  useAdvancedReports,
+  useGenerateAdvancedReport,
+  useExportReport,
+  useDeleteReport,
+  useArchiveReport,
+} from '../hooks/useAnalytics';
+import { ReportCategory, ReportFormat, ReportType } from '../types/analytics.types';
+import { DataExportDialog } from '../components/DataExportDialog';
 
-interface CreateReportFormData {
-  title: string;
-  description: string;
-  category: ReportCategory;
-  reportType: ReportType;
-  period: PeriodType;
-  startDate: string;
-  endDate: string;
-  includeCharts: boolean;
-  includeRawData: boolean;
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`reports-tabpanel-${index}`}
+      aria-labelledby={`reports-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
 }
 
 export const ReportsManagementPage: React.FC = () => {
-  const queryClient = useQueryClient();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState<ReportCategory | 'all'>('all');
+  const [sortBy, setSortBy] = useState<'date' | 'title' | 'category'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // State for dialogs
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<AdvancedReport | null>(null);
+  const {
+    data: reportsData,
+    isLoading,
+    error,
+    refetch,
+  } = useAdvancedReports({
+    page: 1,
+    limit: 50,
+    search: searchTerm,
+    category: filterCategory !== 'all' ? filterCategory : undefined,
+  });
 
-  // State for filters and pagination
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
-  const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'generatedAt', sort: 'desc' }]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<ReportCategory | ''>('');
+  const generateReport = useGenerateAdvancedReport();
+  const exportReport = useExportReport();
+  const deleteReport = useDeleteReport();
+  const archiveReport = useArchiveReport();
 
-  // State for create report form
-  const [formData, setFormData] = useState<CreateReportFormData>({
+  const [reportForm, setReportForm] = useState({
     title: '',
     description: '',
     category: ReportCategory.SALES,
-    reportType: ReportType.MONTHLY_REPORT,
-    period: PeriodType.MONTHLY,
-    startDate: '',
-    endDate: '',
+    format: ReportFormat.PDF,
     includeCharts: true,
     includeRawData: false,
   });
 
-  // Fetch reports
-  const { data: reportsData, isLoading, refetch } = useQuery({
-    queryKey: ['advanced-reports', paginationModel, sortModel, searchQuery, categoryFilter],
-    queryFn: async () => {
-      const params: ListReportsParams = {
-        page: paginationModel.page + 1,
-        limit: paginationModel.pageSize,
-      };
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setSelectedTab(newValue);
+  };
 
-      if (searchQuery) params.search = searchQuery;
-      if (categoryFilter) params.category = categoryFilter;
-
-      const response = await analyticsApi.listAdvancedReports(params);
-      return {
-        reports: response.data,
-        total: response.meta?.total || 0,
-      };
-    },
-  });
-
-  // Create report mutation
-  const createReportMutation = useMutation({
-    mutationFn: (data: CreateReportFormData) => {
-      return analyticsApi.generateAdvancedReport({
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        reportType: data.reportType,
-        period: data.period,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        includeCharts: data.includeCharts,
-        includeRawData: data.includeRawData,
+  const handleCreateReport = async () => {
+    try {
+      await generateReport.mutateAsync({
+        title: reportForm.title,
+        description: reportForm.description,
+        category: reportForm.category,
+        format: reportForm.format,
+        includeCharts: reportForm.includeCharts,
+        includeRawData: reportForm.includeRawData,
       });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['advanced-reports'] });
-      setCreateDialogOpen(false);
-      setFormData({
+      setShowCreateDialog(false);
+      setReportForm({
         title: '',
         description: '',
         category: ReportCategory.SALES,
-        reportType: ReportType.MONTHLY_REPORT,
-        period: PeriodType.MONTHLY,
-        startDate: '',
-        endDate: '',
+        format: ReportFormat.PDF,
         includeCharts: true,
         includeRawData: false,
       });
-    },
-  });
-
-  // Delete report mutation
-  const deleteReportMutation = useMutation({
-    mutationFn: (reportId: string) => analyticsApi.deleteReport(reportId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['advanced-reports'] });
-      setDeleteDialogOpen(false);
-      setSelectedReport(null);
-    },
-  });
-
-  // Export report mutation
-  const exportReportMutation = useMutation({
-    mutationFn: ({ reportId, format }: { reportId: string; format: ReportFormat }) =>
-      analyticsApi.exportReport(reportId, { format }),
-  });
-
-  // Handle create report form submission
-  const handleCreateReport = () => {
-    createReportMutation.mutate(formData);
-  };
-
-  // Handle delete report
-  const handleDeleteReport = () => {
-    if (selectedReport) {
-      deleteReportMutation.mutate(selectedReport.reportId);
-    }
-  };
-
-  // Handle export report
-  const handleExportReport = useCallback((report: AdvancedReport, format: ReportFormat) => {
-    exportReportMutation.mutate(
-      { reportId: report.reportId, format },
-      {
-        onSuccess: (response) => {
-          // Handle file download
-          if (response.data?.fileUrl) {
-            window.open(response.data.fileUrl, '_blank');
-          }
-        },
-      }
-    );
-  }, [exportReportMutation]);
-
-  // Handle archive report
-  const handleArchiveReport = useCallback(async (report: AdvancedReport) => {
-    try {
-      await analyticsApi.archiveReport(report.reportId);
-      queryClient.invalidateQueries({ queryKey: ['advanced-reports'] });
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to archive report:', error);
+      console.error('Error creating report:', error);
     }
-  }, [queryClient]);
+  };
 
-  // DataTable columns
-  const columns = useMemo(() => [
-    {
-      field: 'reportId',
-      headerName: 'معرف التقرير',
-      width: 150,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" fontFamily="monospace">
-          {params.value}
-        </Typography>
-      ),
-    },
-    {
-      field: 'title',
-      headerName: 'عنوان التقرير',
-      width: 200,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" fontWeight="medium">
-          {params.value}
-        </Typography>
-      ),
-    },
-    {
-      field: 'category',
-      headerName: 'الفئة',
-      width: 120,
-      renderCell: (params: GridRenderCellParams) => {
-        const categoryLabels = {
-          [ReportCategory.SALES]: 'المبيعات',
-          [ReportCategory.PRODUCTS]: 'المنتجات',
-          [ReportCategory.CUSTOMERS]: 'العملاء',
-          [ReportCategory.INVENTORY]: 'المخزون',
-          [ReportCategory.FINANCIAL]: 'المالية',
-          [ReportCategory.MARKETING]: 'التسويق',
-        };
-        return (
-          <Chip
-            label={categoryLabels[params.value as ReportCategory] || params.value}
-            size="small"
-            variant="outlined"
-          />
-        );
-      },
-    },
-    {
-      field: 'period',
-      headerName: 'الفترة',
-      width: 100,
-      renderCell: (params: GridRenderCellParams) => {
-        const periodLabels = {
-          [PeriodType.DAILY]: 'يومي',
-          [PeriodType.WEEKLY]: 'أسبوعي',
-          [PeriodType.MONTHLY]: 'شهري',
-          [PeriodType.QUARTERLY]: 'ربع سنوي',
-          [PeriodType.YEARLY]: 'سنوي',
-        };
-        return (
-          <Typography variant="body2">
-            {periodLabels[params.value as PeriodType] || params.value}
-          </Typography>
-        );
-      },
-    },
-    {
-      field: 'generatedAt',
-      headerName: 'تاريخ الإنشاء',
-      width: 150,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2">
-          {new Date(params.value).toLocaleDateString('ar-SA')}
-        </Typography>
-      ),
-    },
-    {
-      field: 'generatedBy',
-      headerName: 'أنشأه',
-      width: 120,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2">
-          {params.value}
-        </Typography>
-      ),
-    },
-    {
-      field: 'isArchived',
-      headerName: 'الحالة',
-      width: 100,
-      renderCell: (params: GridRenderCellParams) => (
-        <Chip
-          label={params.value ? 'مؤرشف' : 'نشط'}
-          color={params.value ? 'default' : 'success'}
-          size="small"
-        />
-      ),
-    },
-    {
-      field: 'actions',
-      headerName: 'الإجراءات',
-      width: 200,
-      sortable: false,
-      renderCell: (params: GridRenderCellParams) => (
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <Tooltip title="عرض التقرير">
-            <IconButton size="small" color="primary">
-              <Visibility fontSize="small" />
-            </IconButton>
-          </Tooltip>
+  const handleExportReport = async (reportId: string, format: ReportFormat) => {
+    try {
+      await exportReport.mutateAsync({
+        reportId,
+        data: { format, includeCharts: true, includeRawData: false },
+      });
+    } catch (error) {
+      console.error('Error exporting report:', error);
+    }
+  };
 
-          <Tooltip title="تعديل">
-            <IconButton size="small" color="secondary">
-              <Edit fontSize="small" />
-            </IconButton>
-          </Tooltip>
+  const handleDeleteReport = async (reportId: string) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا التقرير؟')) {
+      try {
+        await deleteReport.mutateAsync(reportId);
+      } catch (error) {
+        console.error('Error deleting report:', error);
+      }
+    }
+  };
 
-          <Tooltip title="تصدير PDF">
-            <IconButton
-              size="small"
-              color="info"
-              onClick={() => handleExportReport(params.row, ReportFormat.PDF)}
-            >
-              <Print fontSize="small" />
-            </IconButton>
-          </Tooltip>
+  const handleArchiveReport = async (reportId: string) => {
+    try {
+      await archiveReport.mutateAsync(reportId);
+    } catch (error) {
+      console.error('Error archiving report:', error);
+    }
+  };
 
-          <Tooltip title="تصدير Excel">
-            <IconButton
-              size="small"
-              color="success"
-              onClick={() => handleExportReport(params.row, ReportFormat.EXCEL)}
-            >
-              <FileDownload fontSize="small" />
-            </IconButton>
-          </Tooltip>
+  const getFormatIcon = (format: string) => {
+    switch (format) {
+      case 'pdf':
+        return <PictureAsPdfIcon />;
+      case 'excel':
+        return <TableChartIcon />;
+      case 'csv':
+        return <TableChartIcon />;
+      case 'json':
+        return <DescriptionIcon />;
+      default:
+        return <FileDownloadIcon />;
+    }
+  };
 
-          {!params.row.isArchived && (
-            <Tooltip title="أرشفة">
-              <IconButton
-                size="small"
-                color="warning"
-                onClick={() => handleArchiveReport(params.row)}
-              >
-                <Archive fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
+  const getCategoryColor = (category: ReportCategory) => {
+    switch (category) {
+      case ReportCategory.SALES:
+        return 'primary';
+      case ReportCategory.PRODUCTS:
+        return 'secondary';
+      case ReportCategory.CUSTOMERS:
+        return 'success';
+      case ReportCategory.INVENTORY:
+        return 'warning';
+      case ReportCategory.FINANCIAL:
+        return 'error';
+      case ReportCategory.MARKETING:
+        return 'info';
+      default:
+        return 'default';
+    }
+  };
 
-          <Tooltip title="حذف">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => {
-                setSelectedReport(params.row);
-                setDeleteDialogOpen(true);
-              }}
-            >
-              <Delete fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      ),
-    },
-  ], [handleArchiveReport, handleExportReport]);
+  const tabs = [
+    { label: 'جميع التقارير', value: 0 },
+    { label: 'المبيعات', value: 1, category: ReportCategory.SALES },
+    { label: 'المنتجات', value: 2, category: ReportCategory.PRODUCTS },
+    { label: 'العملاء', value: 3, category: ReportCategory.CUSTOMERS },
+    { label: 'المخزون', value: 4, category: ReportCategory.INVENTORY },
+    { label: 'المالية', value: 5, category: ReportCategory.FINANCIAL },
+    { label: 'التسويق', value: 6, category: ReportCategory.MARKETING },
+  ];
+
+  const filteredReports = reportsData?.data?.filter((report) => {
+    const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         report.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = filterCategory === 'all' || report.category === filterCategory;
+    return matchesSearch && matchesCategory;
+  }) || [];
+
+  const sortedReports = [...filteredReports].sort((a, b) => {
+    let comparison = 0;
+    switch (sortBy) {
+      case 'date':
+        comparison = new Date(a.generatedAt).getTime() - new Date(b.generatedAt).getTime();
+        break;
+      case 'title':
+        comparison = a.title.localeCompare(b.title);
+        break;
+      case 'category':
+        comparison = a.category.localeCompare(b.category);
+        break;
+    }
+    return sortOrder === 'asc' ? comparison : -comparison;
+  });
+
+  if (error) {
+    return (
+      <Alert severity="error">
+        حدث خطأ في تحميل التقارير. يرجى المحاولة مرة أخرى.
+      </Alert>
+    );
+  }
 
   return (
     <Box sx={{ width: '100%' }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Paper
+        elevation={1}
+        sx={{
+          p: 2,
+          mb: 3,
+          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          color: 'white',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
           <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
+            <Typography variant="h4" component="h1" gutterBottom>
               إدارة التقارير
             </Typography>
-            <Typography variant="body1" color="text.secondary">
-              إنشاء وإدارة وحذف التقارير التحليلية المتقدمة
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              إنشاء وإدارة التقارير التحليلية المتقدمة
             </Typography>
           </Box>
-
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<Refresh />}
-              onClick={() => refetch()}
-            >
-              تحديث
-            </Button>
+          
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Button
               variant="contained"
-              startIcon={<Add />}
-              onClick={() => setCreateDialogOpen(true)}
+              startIcon={<AddIcon />}
+              onClick={() => setShowCreateDialog(true)}
+              sx={{ 
+                backgroundColor: 'white',
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                },
+              }}
             >
-              إنشاء تقرير جديد
+              تقرير جديد
             </Button>
+            
+            <Button
+              variant="outlined"
+              startIcon={<FileDownloadIcon />}
+              onClick={() => setShowExportDialog(true)}
+              sx={{ 
+                color: 'white',
+                borderColor: 'white',
+                '&:hover': {
+                  borderColor: 'rgba(255, 255, 255, 0.8)',
+                },
+              }}
+            >
+              تصدير البيانات
+            </Button>
+            
+            <Tooltip title="تحديث">
+              <IconButton
+                onClick={() => refetch()}
+                sx={{ color: 'white' }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
+      </Paper>
 
-        {/* Filters */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>الفئة</InputLabel>
-            <Select
-              value={categoryFilter}
-              label="الفئة"
-              onChange={(e) => setCategoryFilter(e.target.value as ReportCategory | '')}
+      {/* Filters */}
+      <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              placeholder="البحث في التقارير..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+              }}
+            />
+          </Grid>
+          
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>الفئة</InputLabel>
+              <Select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value as any)}
+              >
+                <MenuItem value="all">جميع الفئات</MenuItem>
+                {Object.values(ReportCategory).map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>ترتيب حسب</InputLabel>
+              <Select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+              >
+                <MenuItem value="date">التاريخ</MenuItem>
+                <MenuItem value="title">العنوان</MenuItem>
+                <MenuItem value="category">الفئة</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} md={2}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<SortIcon />}
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
             >
-              <MenuItem value="">جميع الفئات</MenuItem>
-              <MenuItem value={ReportCategory.SALES}>المبيعات</MenuItem>
-              <MenuItem value={ReportCategory.PRODUCTS}>المنتجات</MenuItem>
-              <MenuItem value={ReportCategory.CUSTOMERS}>العملاء</MenuItem>
-              <MenuItem value={ReportCategory.INVENTORY}>المخزون</MenuItem>
-              <MenuItem value={ReportCategory.FINANCIAL}>المالية</MenuItem>
-              <MenuItem value={ReportCategory.MARKETING}>التسويق</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-      </Box>
+              {sortOrder === 'asc' ? 'تصاعدي' : 'تنازلي'}
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
 
-      {/* Reports Table */}
-      <DataTable
-        columns={columns}
-        rows={reportsData?.reports || []}
-        loading={isLoading}
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        rowCount={reportsData?.total || 0}
-        sortModel={sortModel}
-        onSortModelChange={setSortModel}
-        selectable={true}
-        title="قائمة التقارير"
-        searchPlaceholder="البحث في التقارير..."
-        onSearch={setSearchQuery}
-        onAdd={() => setCreateDialogOpen(true)}
-        addButtonText="إنشاء تقرير جديد"
-        height={600}
-      />
+      {/* Tabs */}
+      <Paper elevation={1} sx={{ mb: 3 }}>
+        <Tabs
+          value={selectedTab}
+          onChange={handleTabChange}
+          variant={isMobile ? 'scrollable' : 'standard'}
+          scrollButtons="auto"
+        >
+          {tabs.map((tab) => (
+            <Tab
+              key={tab.value}
+              label={tab.label}
+              sx={{ minWidth: isMobile ? 120 : 160 }}
+            />
+          ))}
+        </Tabs>
+      </Paper>
+
+      {/* Tab Panels */}
+      <TabPanel value={selectedTab} index={0}>
+        {/* All Reports */}
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    جميع التقارير ({sortedReports.length})
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Chip
+                      icon={<AssessmentIcon />}
+                      label={`إجمالي: ${reportsData?.data?.length || 0}`}
+                      color="primary"
+                      variant="outlined"
+                    />
+                    <Chip
+                      icon={<ArchiveIcon />}
+                      label={`مؤرشف: ${sortedReports.filter(r => r.isArchived).length}`}
+                      color="secondary"
+                      variant="outlined"
+                    />
+                  </Box>
+                </Box>
+                
+                {isLoading ? (
+                  <Box>
+                    {[...Array(5)].map((_, index) => (
+                      <Skeleton key={index} variant="rectangular" height={100} sx={{ mb: 1 }} />
+                    ))}
+                  </Box>
+                ) : (
+                  <List>
+                    {sortedReports.map((report) => (
+                      <ListItem key={report.reportId} divider>
+                        <Avatar sx={{ mr: 2, bgcolor: theme.palette.primary.main }}>
+                          {getFormatIcon(report.fileUrls?.[0]?.split('.').pop() || 'pdf')}
+                        </Avatar>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="h6">{report.title}</Typography>
+                              {report.isArchived && (
+                                <Chip label="مؤرشف" size="small" color="secondary" />
+                              )}
+                            </Box>
+                          }
+                          secondary={
+                            <Box>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                {report.description}
+                              </Typography>
+                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                <Chip
+                                  label={report.category}
+                                  size="small"
+                                  color={getCategoryColor(report.category) as any}
+                                  variant="outlined"
+                                />
+                                <Chip
+                                  label={new Date(report.generatedAt).toLocaleDateString('ar-SA')}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                                <Chip
+                                  label={`بواسطة: ${report.generatedBy}`}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              </Box>
+                            </Box>
+                          }
+                        />
+                        <ListItemSecondaryAction>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Tooltip title="عرض">
+                              <IconButton size="small">
+                                <VisibilityIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="تحرير">
+                              <IconButton size="small">
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="تصدير PDF">
+                              <IconButton 
+                                size="small"
+                                onClick={() => handleExportReport(report.reportId, ReportFormat.PDF)}
+                              >
+                                <DownloadIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={report.isArchived ? "إلغاء الأرشفة" : "أرشفة"}>
+                              <IconButton 
+                                size="small"
+                                onClick={() => handleArchiveReport(report.reportId)}
+                              >
+                                {report.isArchived ? <UnarchiveIcon /> : <ArchiveIcon />}
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="حذف">
+                              <IconButton 
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeleteReport(report.reportId)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </TabPanel>
+
+      {/* Category-specific tabs */}
+      {tabs.slice(1).map((tab, index) => (
+        <TabPanel key={tab.value} value={selectedTab} index={tab.value}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    تقارير {tab.label}
+                  </Typography>
+                  <List>
+                    {sortedReports
+                      .filter(report => report.category === tab.category)
+                      .map((report) => (
+                        <ListItem key={report.reportId} divider>
+                          <ListItemText
+                            primary={report.title}
+                            secondary={report.description}
+                          />
+                          <ListItemSecondaryAction>
+                            <IconButton size="small">
+                              <VisibilityIcon />
+                            </IconButton>
+                            <IconButton size="small">
+                              <DownloadIcon />
+                            </IconButton>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      ))}
+                  </List>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </TabPanel>
+      ))}
 
       {/* Create Report Dialog */}
-      <Dialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
+      <Dialog 
+        open={showCreateDialog} 
+        onClose={() => setShowCreateDialog(false)}
         maxWidth="md"
         fullWidth
       >
         <DialogTitle>إنشاء تقرير جديد</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid  size={{xs: 12, md: 6}}>
-              <TextField
-                fullWidth
-                label="عنوان التقرير"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-              />
-            </Grid>
-            <Grid size={{xs: 12, md: 6}}>
-              <FormControl fullWidth required>
-                <InputLabel>الفئة</InputLabel>
-                <Select
-                  value={formData.category}
-                  label="الفئة"
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as ReportCategory })}
-                >
-                  <MenuItem value={ReportCategory.SALES}>المبيعات</MenuItem>
-                  <MenuItem value={ReportCategory.PRODUCTS}>المنتجات</MenuItem>
-                  <MenuItem value={ReportCategory.CUSTOMERS}>العملاء</MenuItem>
-                  <MenuItem value={ReportCategory.INVENTORY}>المخزون</MenuItem>
-                  <MenuItem value={ReportCategory.FINANCIAL}>المالية</MenuItem>
-                  <MenuItem value={ReportCategory.MARKETING}>التسويق</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{xs: 12, md: 6}}>
-              <FormControl fullWidth required>
-                <InputLabel>نوع التقرير</InputLabel>
-                <Select
-                  value={formData.reportType}
-                  label="نوع التقرير"
-                  onChange={(e) => setFormData({ ...formData, reportType: e.target.value as ReportType })}
-                >
-                  <MenuItem value={ReportType.DAILY_REPORT}>تقرير يومي</MenuItem>
-                  <MenuItem value={ReportType.WEEKLY_REPORT}>تقرير أسبوعي</MenuItem>
-                  <MenuItem value={ReportType.MONTHLY_REPORT}>تقرير شهري</MenuItem>
-                  <MenuItem value={ReportType.QUARTERLY_REPORT}>تقرير ربع سنوي</MenuItem>
-                  <MenuItem value={ReportType.YEARLY_REPORT}>تقرير سنوي</MenuItem>
-                  <MenuItem value={ReportType.CUSTOM_REPORT}>تقرير مخصص</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{xs: 12, md: 6}}>
-              <FormControl fullWidth required>
-                <InputLabel>الفترة</InputLabel>
-                <Select
-                  value={formData.period}
-                  label="الفترة"
-                  onChange={(e) => setFormData({ ...formData, period: e.target.value as PeriodType })}
-                >
-                  <MenuItem value={PeriodType.DAILY}>يومي</MenuItem>
-                  <MenuItem value={PeriodType.WEEKLY}>أسبوعي</MenuItem>
-                  <MenuItem value={PeriodType.MONTHLY}>شهري</MenuItem>
-                  <MenuItem value={PeriodType.QUARTERLY}>ربع سنوي</MenuItem>
-                  <MenuItem value={PeriodType.YEARLY}>سنوي</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{xs: 12, md: 6}}>
-              <TextField
-                fullWidth
-                label="تاريخ البداية"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid size={{xs: 12, md: 6}}>
-              <TextField
-                fullWidth
-                label="تاريخ النهاية"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid size={{xs: 12}}>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="وصف التقرير"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </Grid>
-          </Grid>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="عنوان التقرير"
+              value={reportForm.title}
+              onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })}
+              fullWidth
+              required
+            />
+            
+            <TextField
+              label="وصف التقرير"
+              value={reportForm.description}
+              onChange={(e) => setReportForm({ ...reportForm, description: e.target.value })}
+              fullWidth
+              multiline
+              rows={3}
+            />
+            
+            <FormControl fullWidth>
+              <InputLabel>فئة التقرير</InputLabel>
+              <Select
+                value={reportForm.category}
+                onChange={(e) => setReportForm({ ...reportForm, category: e.target.value as ReportCategory })}
+              >
+                {Object.values(ReportCategory).map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            <FormControl fullWidth>
+              <InputLabel>تنسيق التقرير</InputLabel>
+              <Select
+                value={reportForm.format}
+                onChange={(e) => setReportForm({ ...reportForm, format: e.target.value as ReportFormat })}
+              >
+                {Object.values(ReportFormat).map((format) => (
+                  <MenuItem key={format} value={format}>
+                    {format.toUpperCase()}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={reportForm.includeCharts}
+                  onChange={(e) => setReportForm({ ...reportForm, includeCharts: e.target.checked })}
+                />
+              }
+              label="تضمين الرسوم البيانية"
+            />
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={reportForm.includeRawData}
+                  onChange={(e) => setReportForm({ ...reportForm, includeRawData: e.target.checked })}
+                />
+              }
+              label="تضمين البيانات الأولية"
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>إلغاء</Button>
-          <Button
+          <Button onClick={() => setShowCreateDialog(false)}>
+            إلغاء
+          </Button>
+          <Button 
             onClick={handleCreateReport}
             variant="contained"
-            disabled={!formData.title || !formData.startDate || !formData.endDate}
+            disabled={!reportForm.title || generateReport.isPending}
           >
-            إنشاء التقرير
+            {generateReport.isPending ? 'جاري الإنشاء...' : 'إنشاء التقرير'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-      >
-        <DialogTitle>تأكيد الحذف</DialogTitle>
-        <DialogContent>
-          <Typography>
-            هل أنت متأكد من حذف التقرير "{selectedReport?.title}"؟
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            هذا الإجراء لا يمكن التراجع عنه.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button>
-          <Button
-            onClick={handleDeleteReport}
-            color="error"
-            variant="contained"
-          >
-            حذف
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Success/Error Messages */}
-      <Snackbar
-        open={createReportMutation.isSuccess}
-        autoHideDuration={6000}
-        onClose={() => createReportMutation.reset()}
-      >
-        <Alert severity="success">
-          تم إنشاء التقرير بنجاح!
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={deleteReportMutation.isSuccess}
-        autoHideDuration={6000}
-        onClose={() => deleteReportMutation.reset()}
-      >
-        <Alert severity="success">
-          تم حذف التقرير بنجاح!
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!createReportMutation.error || !!deleteReportMutation.error}
-        autoHideDuration={6000}
-        onClose={() => {
-          createReportMutation.reset();
-          deleteReportMutation.reset();
-        }}
-      >
-        <Alert severity="error">
-          حدث خطأ أثناء العملية. يرجى المحاولة مرة أخرى.
-        </Alert>
-      </Snackbar>
+      {/* Export Dialog */}
+      <DataExportDialog
+        open={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+      />
     </Box>
   );
 };

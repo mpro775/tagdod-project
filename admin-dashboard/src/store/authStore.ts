@@ -14,7 +14,7 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  isAuthenticated: boolean;
+  isAuthenticated: boolean | null; // null = loading, false = not authenticated, true = authenticated
 
   // Actions
   // eslint-disable-next-line no-unused-vars
@@ -31,7 +31,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  isAuthenticated: false,
+  isAuthenticated: null, // Start as null to indicate loading state
 
   login: (user, accessToken, refreshToken) => {
     TokenService.setAccessToken(accessToken);
@@ -61,18 +61,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   hasPermission: (permission) => {
     const { user } = get();
-    if (!user || !user.permissions) return false;
-    return user.permissions.includes(permission);
+    return user && user.permissions ? user.permissions.includes(permission) : false;
   },
 
-  initialize: () => {
+  initialize: async () => {
     try {
       const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);
       const isAuthenticated = TokenService.isAuthenticated();
 
       if (userDataStr && isAuthenticated) {
         const user = JSON.parse(userDataStr);
-        set({ user, isAuthenticated: true });
+
+        // Always try to get fresh user data from server first
+        try {
+          const { authApi } = await import('@/features/auth/api/authApi');
+          const profileResponse = await authApi.getProfile();
+
+          // Update user data with fresh data from server
+          const updatedUser = {
+            ...user,
+            roles: profileResponse.data?.user?.roles || [],
+            permissions: profileResponse.data?.user?.permissions || [],
+          };
+
+          localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));
+          set({ user: updatedUser, isAuthenticated: true });
+        } catch (profileError) {
+          // If API call fails, try to use cached data if it has roles/permissions
+          if (user.roles && user.roles.length > 0 && user.permissions && user.permissions.length > 0) {
+            set({ user, isAuthenticated: true });
+          } else {
+            // Cached data is incomplete, logout user
+            get().logout();
+          }
+        }
       } else {
         set({ user: null, isAuthenticated: false });
       }

@@ -22,6 +22,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Skeleton,
+  Alert,
+  Stack,
+  Tooltip,
 } from '@mui/material';
 import {
   Engineering,
@@ -30,6 +34,12 @@ import {
   Visibility,
   Phone,
   Email,
+  Refresh,
+  Download,
+  CheckCircle,
+  Cancel,
+  Edit,
+  Block,
 } from '@mui/icons-material';
 import { useEngineers, useEngineersOverviewStatistics } from '../hooks/useServices';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
@@ -39,11 +49,13 @@ export const EngineersManagementPage: React.FC = () => {
   const [selectedEngineer, setSelectedEngineer] = useState<any>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
-  const { data: engineersData, isLoading: isEngineersLoading } = useEngineers({ search: searchTerm });
-  const { data: engineersStats, isLoading: isStatsLoading } = useEngineersOverviewStatistics();
+  const { data: engineersData, isLoading: isEngineersLoading, error: engineersError } = useEngineers({ search: searchTerm });
+  const { data: engineersStats, isLoading: isStatsLoading, error: statsError } = useEngineersOverviewStatistics();
 
-  const engineers = engineersData?.data || [];
+  const engineers = engineersData || [];
+  const stats = engineersStats || {};
   const isLoading = isEngineersLoading || isStatsLoading;
+  const hasError = engineersError || statsError;
 
   const handleViewDetails = (engineer: any) => {
     setSelectedEngineer(engineer);
@@ -65,10 +77,50 @@ export const EngineersManagementPage: React.FC = () => {
   if (isLoading) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          إدارة المهندسين
-        </Typography>
-        <LinearProgress />
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4">
+            إدارة المهندسين
+          </Typography>
+          <Skeleton variant="rectangular" width={120} height={36} />
+        </Box>
+        
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+              <Card>
+                <CardContent>
+                  <Skeleton variant="text" width="60%" />
+                  <Skeleton variant="text" width="40%" />
+                  <Skeleton variant="rectangular" height={40} sx={{ mt: 2 }} />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+        
+        <Card>
+          <CardContent>
+            <Skeleton variant="rectangular" height={400} />
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4">
+            إدارة المهندسين
+          </Typography>
+          <Button variant="outlined" startIcon={<Refresh />}>
+            إعادة المحاولة
+          </Button>
+        </Box>
+        <Alert severity="error">
+          فشل في تحميل البيانات: {engineersError?.message || statsError?.message}
+        </Alert>
       </Box>
     );
   }
@@ -76,22 +128,36 @@ export const EngineersManagementPage: React.FC = () => {
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">
-          إدارة المهندسين
-        </Typography>
-        <TextField
-          label="البحث عن مهندس"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: <Engineering sx={{ mr: 1, color: 'text.secondary' }} />,
-          }}
-        />
+        <Box>
+          <Typography variant="h4" gutterBottom>
+            إدارة المهندسين
+          </Typography>
+          <Typography variant="body1" color="textSecondary">
+            إدارة وتتبع أداء المهندسين في النظام
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1}>
+          <TextField
+            label="البحث عن مهندس"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <Engineering sx={{ mr: 1, color: 'text.secondary' }} />,
+            }}
+            size="small"
+          />
+          <Button variant="outlined" startIcon={<Refresh />} size="small">
+            تحديث
+          </Button>
+          <Button variant="contained" startIcon={<Download />} size="small">
+            تصدير
+          </Button>
+        </Stack>
       </Box>
 
       <Grid container spacing={3}>
         {/* إحصائيات سريعة */}
-        <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -100,7 +166,7 @@ export const EngineersManagementPage: React.FC = () => {
                     إجمالي المهندسين
                   </Typography>
                   <Typography variant="h4">
-                    {formatNumber(engineersStats?.totalEngineers || 0)}
+                    {formatNumber((stats as any).totalEngineers || 0)}
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'primary.main' }}>
@@ -111,7 +177,7 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -120,7 +186,7 @@ export const EngineersManagementPage: React.FC = () => {
                     متوسط التقييم
                   </Typography>
                   <Typography variant="h4">
-                    {engineersStats?.averageRating?.toFixed(1) || '0.0'}
+                    {(stats as any).averageRating?.toFixed(1) || '0.0'}
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'warning.main' }}>
@@ -131,7 +197,7 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -140,7 +206,7 @@ export const EngineersManagementPage: React.FC = () => {
                     متوسط معدل الإنجاز
                   </Typography>
                   <Typography variant="h4">
-                    {engineersStats?.averageCompletionRate?.toFixed(1) || '0.0'}%
+                    {(stats as any).averageCompletionRate?.toFixed(1) || '0.0'}%
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'success.main' }}>
@@ -151,7 +217,7 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid  size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -160,7 +226,7 @@ export const EngineersManagementPage: React.FC = () => {
                     إجمالي الإيرادات
                   </Typography>
                   <Typography variant="h4">
-                    {formatCurrency(engineersStats?.totalRevenue || 0)}
+                    {formatCurrency((stats as any).totalRevenue || 0)}
                   </Typography>
                 </Box>
                 <Avatar sx={{ bgcolor: 'info.main' }}>
@@ -175,9 +241,26 @@ export const EngineersManagementPage: React.FC = () => {
       {/* جدول المهندسين */}
       <Card sx={{ mt: 3 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom>
-            قائمة المهندسين
-          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Box display="flex" alignItems="center">
+              <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+                <Engineering />
+              </Avatar>
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  قائمة المهندسين
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  {(engineers as any[]).length} مهندس مسجل
+                </Typography>
+              </Box>
+            </Box>
+            <Chip 
+              label={`${(engineers as any[]).filter((e: any) => e.isActive).length} نشط`} 
+              color="success" 
+              size="small" 
+            />
+          </Box>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
@@ -187,11 +270,12 @@ export const EngineersManagementPage: React.FC = () => {
                   <TableCell>معدل الإنجاز</TableCell>
                   <TableCell>التقييم</TableCell>
                   <TableCell>الإيرادات</TableCell>
+                  <TableCell>الحالة</TableCell>
                   <TableCell>الإجراءات</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {engineers.map((engineer) => (
+                {(engineers as any[]).map((engineer: any) => (
                   <TableRow key={engineer.engineerId}>
                     <TableCell>
                       <Box display="flex" alignItems="center">
@@ -205,6 +289,14 @@ export const EngineersManagementPage: React.FC = () => {
                           <Typography variant="caption" color="textSecondary">
                             {engineer.engineerPhone}
                           </Typography>
+                          <Box display="flex" alignItems="center" mt={0.5}>
+                            <Chip 
+                              label={engineer.specialization || 'عام'} 
+                              size="small" 
+                              color="info" 
+                              variant="outlined"
+                            />
+                          </Box>
                         </Box>
                       </Box>
                     </TableCell>
@@ -258,13 +350,44 @@ export const EngineersManagementPage: React.FC = () => {
                     </TableCell>
                     
                     <TableCell>
-                      <IconButton
+                      <Chip
+                        label={engineer.isActive ? 'نشط' : 'غير نشط'}
+                        color={engineer.isActive ? 'success' : 'default'}
                         size="small"
-                        onClick={() => handleViewDetails(engineer)}
-                        color="primary"
-                      >
-                        <Visibility />
-                      </IconButton>
+                        icon={engineer.isActive ? <CheckCircle /> : <Cancel />}
+                      />
+                    </TableCell>
+                    
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        <Tooltip title="عرض التفاصيل">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleViewDetails(engineer)}
+                            color="primary"
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="تعديل">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditEngineer(engineer)}
+                            color="info"
+                          >
+                            <Edit />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="تغيير الحالة">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleToggleStatus(engineer)}
+                            color={engineer.isActive ? 'warning' : 'success'}
+                          >
+                            {engineer.isActive ? <Block /> : <CheckCircle />}
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -404,4 +527,15 @@ export const EngineersManagementPage: React.FC = () => {
       </Dialog>
     </Box>
   );
+};
+
+// Helper functions
+const handleEditEngineer = (engineer: any) => {
+  // TODO: Implement engineer edit
+  console.log('Edit engineer:', engineer);
+};
+
+const handleToggleStatus = (engineer: any) => {
+  // TODO: Implement toggle engineer status
+  console.log('Toggle engineer status:', engineer);
 };

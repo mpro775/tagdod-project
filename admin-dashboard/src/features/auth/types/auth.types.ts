@@ -59,8 +59,8 @@ export interface UserProfile {
     lastName?: string;
     gender?: string;
     jobTitle?: string;
-    roles?: string[];
-    permissions?: string[];
+    roles: string[];
+    permissions: string[];
     isAdmin: boolean;
   };
   capabilities?: {

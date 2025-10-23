@@ -1,91 +1,128 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
-  Paper,
   Typography,
   Button,
+  Card,
+  CardContent,
   Grid,
-  Chip,
-  IconButton,
-  Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  IconButton,
+  Tooltip,
   Alert,
   CircularProgress,
+  Divider,
 } from '@mui/material';
 import {
+  ArrowBack,
   Add,
   Edit,
   Delete,
-  ArrowBack,
-  AutoFixHigh,
+  Save,
+  Cancel,
+  Inventory,
+  AttachMoney,
 } from '@mui/icons-material';
-import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useProduct, useAddVariant, useUpdateVariant, useDeleteVariant, useGenerateVariants } from '../hooks/useProducts';
-import { formatCurrency } from '@/shared/utils/formatters';
-import type { Variant, VariantAttribute } from '../types/product.types';
-import { AttributeValueSelector } from '../components/AttributeValueSelector';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  useProduct,
+  useProductVariants,
+  useAddVariant,
+  useUpdateVariant,
+  useDeleteVariant,
+} from '../hooks/useProducts';
+import { VariantCard } from '../components/VariantCard';
+import { StockManager } from '../components/StockManager';
+import { PricingManager } from '../components/PricingManager';
+import { FormInput } from '@/shared/components/Form/FormInput';
+import type { Variant, CreateVariantDto, UpdateVariantDto } from '../types/product.types';
 
-interface VariantFormData {
-  _id?: string;
-  sku?: string;
-  price: number;
-  compareAtPrice?: number;
-  costPrice?: number;
-  stock: number;
-  isActive: boolean;
-  imageId?: string;
-  attributeValues: VariantAttribute[];
-}
+// Validation Schema for Variant
+const variantSchema = z.object({
+  sku: z.string().optional(),
+  price: z.number().min(0, 'السعر يجب أن يكون أكبر من أو يساوي صفر'),
+  compareAtPrice: z.number().min(0).optional(),
+  costPrice: z.number().min(0).optional(),
+  stock: z.number().min(0, 'الكمية يجب أن تكون أكبر من أو يساوي صفر'),
+  minStock: z.number().min(0).optional(),
+  trackInventory: z.boolean().optional(),
+  allowBackorder: z.boolean().optional(),
+  weight: z.number().min(0).optional(),
+});
+
+type VariantFormData = z.infer<typeof variantSchema>;
 
 export const ProductVariantsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [variantFormOpen, setVariantFormOpen] = useState(false);
-  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
-  const [editingVariant, setEditingVariant] = useState<VariantFormData | null>(null);
+  const [variantDialogOpen, setVariantDialogOpen] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  // API Hooks
-  const { data: productData, isLoading, refetch } = useProduct(id!);
-  const { mutate: addVariant, isPending: isAdding } = useAddVariant();
-  const { mutate: updateVariant, isPending: isUpdating } = useUpdateVariant();
-  const { mutate: deleteVariant } = useDeleteVariant();
-  const { mutate: generateVariants, isPending: isGenerating } = useGenerateVariants();
-
-  const product = productData;
-  const variants = productData?.variants || [];
-
-  // Actions
-  const handleAddVariant = () => {
-    setEditingVariant({
+  // Form
+  const methods = useForm<VariantFormData>({
+    resolver: zodResolver(variantSchema),
+    defaultValues: {
+      sku: '',
       price: 0,
       stock: 0,
-      isActive: true,
-      attributeValues: [],
+      minStock: 0,
+      trackInventory: true,
+      allowBackorder: false,
+    },
+  });
+
+  // API
+  const { data: product, isLoading: loadingProduct } = useProduct(id!);
+  const { data: variants, isLoading: loadingVariants, refetch } = useProductVariants(id!);
+  const { mutate: addVariant, isPending: addingVariant } = useAddVariant();
+  const { mutate: updateVariant, isPending: updatingVariant } = useUpdateVariant();
+  const { mutate: deleteVariant, isPending: deletingVariant } = useDeleteVariant();
+
+  const handleAddVariant = () => {
+    setIsEditMode(false);
+    methods.reset({
+      sku: '',
+      price: 0,
+      stock: 0,
+      minStock: 0,
+      trackInventory: true,
+      allowBackorder: false,
     });
-    setVariantFormOpen(true);
+    setVariantDialogOpen(true);
   };
 
   const handleEditVariant = (variant: Variant) => {
-    setEditingVariant({
-      _id: variant._id,
-      sku: variant.sku,
+    setIsEditMode(true);
+    setSelectedVariant(variant);
+    methods.reset({
+      sku: variant.sku || '',
       price: variant.price,
-      compareAtPrice: variant.compareAtPrice,
-      costPrice: variant.costPrice,
+      compareAtPrice: variant.compareAtPrice || 0,
+      costPrice: variant.costPrice || 0,
       stock: variant.stock,
-      isActive: variant.isActive,
-      imageId: variant.imageId,
-      attributeValues: variant.attributeValues || [],
+      minStock: variant.minStock,
+      trackInventory: variant.trackInventory,
+      allowBackorder: variant.allowBackorder,
+      weight: variant.weight || 0,
     });
-    setVariantFormOpen(true);
+    setVariantDialogOpen(true);
   };
 
   const handleDeleteVariant = (variant: Variant) => {
-    if (window.confirm(`هل أنت متأكد من حذف هذا المتغير؟`)) {
+    if (window.confirm(`هل أنت متأكد من حذف المتغير "${variant.sku || variant._id}"؟`)) {
       deleteVariant(
         { productId: id!, variantId: variant._id },
         {
@@ -95,166 +132,56 @@ export const ProductVariantsPage: React.FC = () => {
     }
   };
 
-  const handleGenerateVariants = () => {
-    setGenerateDialogOpen(true);
-  };
+  const onSubmit = (data: VariantFormData) => {
+    if (isEditMode && selectedVariant) {
+      const updateData: UpdateVariantDto = {
+        sku: data.sku,
+        price: data.price,
+        compareAtPrice: data.compareAtPrice,
+        costPrice: data.costPrice,
+        stock: data.stock,
+        isActive: selectedVariant.isActive,
+      };
 
-  const handleSubmitVariant = (formData: VariantFormData) => {
-    if (editingVariant?._id) {
-      // Update existing variant
       updateVariant(
-        {
-          productId: id!,
-          variantId: editingVariant._id,
-          data: {
-            sku: formData.sku,
-            price: formData.price,
-            compareAtPrice: formData.compareAtPrice,
-            costPrice: formData.costPrice,
-            stock: formData.stock,
-            isActive: formData.isActive,
-            imageId: formData.imageId,
-          },
-        },
+        { productId: id!, variantId: selectedVariant._id, data: updateData },
         {
           onSuccess: () => {
-            setVariantFormOpen(false);
-            setEditingVariant(null);
             refetch();
+            setVariantDialogOpen(false);
+            setSelectedVariant(null);
           },
         }
       );
     } else {
-      // Create new variant
-      addVariant(
-        {
-          productId: id!,
-          sku: formData.sku,
-          attributeValues: formData.attributeValues,
-          price: formData.price,
-          compareAtPrice: formData.compareAtPrice,
-          costPrice: formData.costPrice,
-          stock: formData.stock,
-          trackInventory: true,
-          imageId: formData.imageId,
+      const createData: CreateVariantDto = {
+        productId: id!,
+        sku: data.sku,
+        attributeValues: [], // This would be handled by attribute selection
+        price: data.price,
+        compareAtPrice: data.compareAtPrice,
+        costPrice: data.costPrice,
+        stock: data.stock,
+        trackInventory: data.trackInventory,
+        weight: data.weight,
+      };
+
+      addVariant(createData, {
+        onSuccess: () => {
+          refetch();
+          setVariantDialogOpen(false);
         },
-        {
-          onSuccess: () => {
-            setVariantFormOpen(false);
-            setEditingVariant(null);
-            refetch();
-          },
-        }
-      );
+      });
     }
   };
 
-  const handleGenerateSubmit = (_defaultPrice: number, _defaultStock: number) => {
-    generateVariants(
-      {
-        productId: id!,
-        data: {
-          defaultPrice: _defaultPrice,
-          defaultStock: _defaultStock,
-          overwriteExisting: false,
-        },
-      },
-      {
-        onSuccess: () => {
-          setGenerateDialogOpen(false);
-          refetch();
-        },
-      }
-    );
+  const handleCloseDialog = () => {
+    setVariantDialogOpen(false);
+    setSelectedVariant(null);
+    methods.reset();
   };
 
-  // Table columns
-  const columns = [
-    {
-      field: 'sku',
-      headerName: 'SKU',
-      width: 120,
-      renderCell: (params: any) => params.value || '-',
-    },
-    {
-      field: 'attributes',
-      headerName: 'السمات',
-      width: 200,
-      renderCell: (params: any) => (
-        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-          {params.row.attributeValues?.map((attr: any, index: number) => (
-            <Chip
-              key={index}
-              label={`${attr.name}: ${attr.value}`}
-              size="small"
-              variant="outlined"
-            />
-          ))}
-        </Box>
-      ),
-    },
-    {
-      field: 'price',
-      headerName: 'السعر',
-      width: 120,
-      renderCell: (params: any) => formatCurrency(params.value),
-    },
-    {
-      field: 'compareAtPrice',
-      headerName: 'سعر المقارنة',
-      width: 130,
-      renderCell: (params: any) => 
-        params.value ? formatCurrency(params.value) : '-',
-    },
-    {
-      field: 'stock',
-      headerName: 'المخزون',
-      width: 100,
-      align: 'center' as const,
-    },
-    {
-      field: 'isActive',
-      headerName: 'الحالة',
-      width: 100,
-      renderCell: (params: any) => (
-        <Chip
-          label={params.value ? 'نشط' : 'غير نشط'}
-          color={params.value ? 'success' : 'default'}
-          size="small"
-        />
-      ),
-    },
-    {
-      field: 'actions',
-      headerName: 'الإجراءات',
-      width: 150,
-      sortable: false,
-      renderCell: (params: any) => (
-        <Box display="flex" gap={0.5}>
-          <Tooltip title="تعديل">
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={() => handleEditVariant(params.row)}
-            >
-              <Edit fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="حذف">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => handleDeleteVariant(params.row)}
-            >
-              <Delete fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      ),
-    },
-  ];
-
-  if (isLoading) {
+  if (loadingProduct) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
         <CircularProgress />
@@ -262,51 +189,46 @@ export const ProductVariantsPage: React.FC = () => {
     );
   }
 
-  if (!product) {
-    return (
-      <Alert severity="error">
-        المنتج غير موجود
-      </Alert>
-    );
-  }
-
   return (
     <Box>
       {/* Header */}
       <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <IconButton onClick={() => navigate('/products')}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h4" fontWeight="bold">
-          متغيرات المنتج: {product.name}
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(`/products/${id}`)}
+        >
+          العودة للمنتج
+        </Button>
+        <Typography variant="h4" component="h1">
+          إدارة متغيرات المنتج
         </Typography>
       </Box>
 
       {/* Product Info */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography variant="h6" gutterBottom>
-              معلومات المنتج
+      {product && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h5" gutterBottom>
+              {product.name}
             </Typography>
-            <Typography><strong>الاسم:</strong> {product.name}</Typography>
-            <Typography><strong>الاسم بالإنجليزية:</strong> {product.nameEn}</Typography>
-            <Typography><strong>الفئة:</strong> {product.category?.name || '-'}</Typography>
-            <Typography><strong>العلامة التجارية:</strong> {product.brand?.name || '-'}</Typography>
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography variant="h6" gutterBottom>
-              إحصائيات
+            <Typography variant="body1" color="text.secondary">
+              {product.nameEn}
             </Typography>
-            <Typography><strong>عدد المتغيرات:</strong> {variants.length}</Typography>
-            <Typography><strong>المشاهدات:</strong> {product.viewsCount}</Typography>
-            <Typography><strong>المبيعات:</strong> {product.salesCount}</Typography>
-          </Grid>
-        </Grid>
-      </Paper>
+            <Box display="flex" gap={1} mt={1}>
+              <Chip label={product.status} color="primary" size="small" />
+              {product.isFeatured && <Chip label="مميز" color="warning" size="small" />}
+              {product.isNew && <Chip label="جديد" color="success" size="small" />}
+            </Box>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Actions */}
-      <Box display="flex" gap={2} mb={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h6">
+          المتغيرات ({variants?.length || 0})
+        </Typography>
         <Button
           variant="contained"
           startIcon={<Add />}
@@ -314,334 +236,139 @@ export const ProductVariantsPage: React.FC = () => {
         >
           إضافة متغير
         </Button>
-        <Button
-          variant="outlined"
-          startIcon={<AutoFixHigh />}
-          onClick={handleGenerateVariants}
-          disabled={!product.attributes?.length}
-        >
-          توليد متغيرات تلقائياً
-        </Button>
       </Box>
 
-      {/* Variants Table */}
-      <Paper>
-        <DataTable
-          columns={columns}
-          rows={variants}
-          loading={isLoading}
-          height="calc(100vh - 400px)"
-          paginationModel={{ page: 0, pageSize: 10 }}
-          onPaginationModelChange={() => {}}
-          rowCount={variants.length}
-        />
-      </Paper>
+      {/* Variants Grid */}
+      {loadingVariants ? (
+        <Box display="flex" justifyContent="center" p={4}>
+          <CircularProgress />
+        </Box>
+      ) : variants && variants.length > 0 ? (
+        <Grid container spacing={3}>
+          {variants.map((variant) => (
+            <Grid item xs={12} sm={6} md={4} key={variant._id}>
+              <VariantCard
+                variant={variant}
+                onEdit={handleEditVariant}
+                onDelete={handleDeleteVariant}
+                showActions={true}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Alert severity="info">
+          لا توجد متغيرات لهذا المنتج. قم بإضافة متغير جديد للبدء.
+        </Alert>
+      )}
 
       {/* Variant Form Dialog */}
-      <VariantFormDialog
-        open={variantFormOpen}
-        onClose={() => {
-          setVariantFormOpen(false);
-          setEditingVariant(null);
-        }}
-        onSubmit={handleSubmitVariant}
-        variant={editingVariant}
-        isSubmitting={isAdding || isUpdating}
-        productId={id!}
-      />
+      <Dialog
+        open={variantDialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {isEditMode ? 'تعديل المتغير' : 'إضافة متغير جديد'}
+        </DialogTitle>
+        <DialogContent>
+          <FormProvider {...methods}>
+            <form onSubmit={methods.handleSubmit(onSubmit)}>
+              <Box display="flex" flexDirection="column" gap={2} pt={1}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <FormInput
+                      name="sku"
+                      label="رقم المنتج (SKU)"
+                      helperText="اختياري - سيتم توليد رقم تلقائي إذا لم يتم تحديده"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormInput
+                      name="price"
+                      label="السعر الأساسي *"
+                      type="number"
+                      helperText="بالدولار الأمريكي"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormInput
+                      name="compareAtPrice"
+                      label="السعر الأصلي"
+                      type="number"
+                      helperText="للعرض قبل الخصم"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormInput
+                      name="costPrice"
+                      label="سعر التكلفة"
+                      type="number"
+                      helperText="لحساب الربحية"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormInput
+                      name="stock"
+                      label="الكمية في المخزون *"
+                      type="number"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormInput
+                      name="minStock"
+                      label="الحد الأدنى للمخزون"
+                      type="number"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormInput
+                      name="weight"
+                      label="الوزن (كجم)"
+                      type="number"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormInput
+                      name="trackInventory"
+                      label="تتبع المخزون"
+                      type="checkbox"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormInput
+                      name="allowBackorder"
+                      label="السماح بالطلب المسبق"
+                      type="checkbox"
+                    />
+                  </Grid>
+                </Grid>
 
-      {/* Generate Variants Dialog */}
-      <GenerateVariantsDialog
-        open={generateDialogOpen}
-        onClose={() => setGenerateDialogOpen(false)}
-        onSubmit={handleGenerateSubmit}
-        isSubmitting={isGenerating}
-      />
+                <Alert severity="info">
+                  <Typography variant="body2">
+                    <strong>ملاحظة:</strong> السمات والمتغيرات ستكون متاحة في إصدارات لاحقة.
+                    حالياً يمكنك إضافة متغير أساسي للمنتج.
+                  </Typography>
+                </Alert>
+              </Box>
+            </form>
+          </FormProvider>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} startIcon={<Cancel />}>
+            إلغاء
+          </Button>
+          <Button
+            onClick={methods.handleSubmit(onSubmit)}
+            variant="contained"
+            startIcon={addingVariant || updatingVariant ? <CircularProgress size={20} /> : <Save />}
+            disabled={addingVariant || updatingVariant}
+          >
+            {isEditMode ? 'تحديث' : 'إضافة'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
-  );
-};
-
-// Variant Form Dialog Component
-interface VariantFormDialogProps {
-  open: boolean;
-  onClose: () => void;
-  // eslint-disable-next-line no-unused-vars
-  onSubmit: (formData: VariantFormData) => void;
-  variant?: VariantFormData | null;
-  isSubmitting: boolean;
-  productId: string;
-}
-
-const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
-  open,
-  onClose,
-  onSubmit,
-  variant,
-  isSubmitting,
-  productId,
-}) => {
-  const { data: productData } = useProduct(productId);
-  const [formData, setFormData] = useState<VariantFormData>({
-    price: 0,
-    stock: 0,
-    isActive: true,
-    attributeValues: [],
-  });
-
-  React.useEffect(() => {
-    if (variant) {
-      setFormData(variant);
-    } else {
-      setFormData({
-        price: 0,
-        stock: 0,
-        isActive: true,
-        attributeValues: [],
-      });
-    }
-  }, [variant]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        {variant?._id ? 'تعديل المتغير' : 'إضافة متغير جديد'}
-      </DialogTitle>
-      <form onSubmit={handleSubmit}>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                SKU
-              </Typography>
-              <input
-                type="text"
-                value={formData.sku || ''}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                }}
-                placeholder="رقم المنتج الفريد"
-              />
-            </Grid>
-            
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                السعر *
-              </Typography>
-              <input
-                type="number"
-                required
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                }}
-                min="0"
-                step="0.01"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                سعر المقارنة
-              </Typography>
-              <input
-                type="number"
-                value={formData.compareAtPrice || ''}
-                onChange={(e) => setFormData({ ...formData, compareAtPrice: Number(e.target.value) || undefined })}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                }}
-                min="0"
-                step="0.01"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                سعر التكلفة
-              </Typography>
-              <input
-                type="number"
-                value={formData.costPrice || ''}
-                onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) || undefined })}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                }}
-                min="0"
-                step="0.01"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                المخزون *
-              </Typography>
-              <input
-                type="number"
-                required
-                value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                }}
-                min="0"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                الحالة
-              </Typography>
-              <select
-                value={formData.isActive ? 'active' : 'inactive'}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'active' })}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                }}
-              >
-                <option value="active">نشط</option>
-                <option value="inactive">غير نشط</option>
-              </select>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <AttributeValueSelector
-                value={formData.attributeValues}
-                onChange={(attributeValues) => setFormData({ ...formData, attributeValues })}
-                productAttributes={productData?.attributes || []}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} disabled={isSubmitting}>
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
-          >
-            {variant?._id ? 'تحديث' : 'إضافة'}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
-  );
-};
-
-// Generate Variants Dialog Component
-interface GenerateVariantsDialogProps {
-  open: boolean;
-  onClose: () => void;
-  // eslint-disable-next-line no-unused-vars
-  onSubmit: (defaultPrice: number, defaultStock: number) => void;
-  isSubmitting: boolean;
-}
-
-const GenerateVariantsDialog: React.FC<GenerateVariantsDialogProps> = ({
-  open,
-  onClose,
-  onSubmit,
-  isSubmitting,
-}) => {
-  const [defaultPrice, setDefaultPrice] = useState(0);
-  const [defaultStock, setDefaultStock] = useState(0);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(defaultPrice, defaultStock);
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>توليد متغيرات تلقائياً</DialogTitle>
-      <form onSubmit={handleSubmit}>
-        <DialogContent>
-          <Alert severity="info" sx={{ mb: 2 }}>
-            سيتم إنشاء جميع التركيبات الممكنة من السمات المحددة للمنتج
-          </Alert>
-          
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                السعر الافتراضي *
-              </Typography>
-              <input
-                type="number"
-                required
-                value={defaultPrice}
-                onChange={(e) => setDefaultPrice(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                }}
-                min="0"
-                step="0.01"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 6 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                المخزون الافتراضي *
-              </Typography>
-              <input
-                type="number"
-                required
-                value={defaultStock}
-                onChange={(e) => setDefaultStock(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                }}
-                min="0"
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} disabled={isSubmitting}>
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
-          >
-            توليد المتغيرات
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
   );
 };

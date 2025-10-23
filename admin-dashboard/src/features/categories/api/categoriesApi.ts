@@ -5,7 +5,6 @@ import type {
   ListCategoriesParams,
   CreateCategoryDto,
   UpdateCategoryDto,
-  ReorderCategoriesDto,
   CategoryStats,
 } from '../types/category.types';
 import type { ApiResponse } from '@/shared/types/common.types';
@@ -20,7 +19,7 @@ export const categoriesApi = {
   },
 
   /**
-   * List categories
+   * List categories with filtering and search
    */
   list: async (params: ListCategoriesParams): Promise<Category[]> => {
     const response = await apiClient.get<ApiResponse<Category[]>>('/admin/categories', {
@@ -30,7 +29,7 @@ export const categoriesApi = {
   },
 
   /**
-   * Get category tree
+   * Get category tree (hierarchical structure)
    */
   getTree: async (): Promise<CategoryTreeNode[]> => {
     const response = await apiClient.get<ApiResponse<CategoryTreeNode[]>>('/admin/categories/tree');
@@ -38,7 +37,7 @@ export const categoriesApi = {
   },
 
   /**
-   * Get category by ID
+   * Get category by ID with full details
    */
   getById: async (id: string): Promise<Category> => {
     const response = await apiClient.get<ApiResponse<Category>>(`/admin/categories/${id}`);
@@ -56,30 +55,52 @@ export const categoriesApi = {
   /**
    * Delete category (soft delete)
    */
-  delete: async (id: string): Promise<void> => {
-    await apiClient.delete(`/admin/categories/${id}`);
+  delete: async (id: string): Promise<{ deleted: boolean; deletedAt: Date }> => {
+    const response = await apiClient.delete<ApiResponse<{ deleted: boolean; deletedAt: Date }>>(
+      `/admin/categories/${id}`
+    );
+    return response.data.data;
   },
 
   /**
    * Restore deleted category
    */
-  restore: async (id: string): Promise<Category> => {
-    const response = await apiClient.post<ApiResponse<Category>>(`/admin/categories/${id}/restore`);
+  restore: async (id: string): Promise<{ restored: boolean }> => {
+    const response = await apiClient.post<ApiResponse<{ restored: boolean }>>(
+      `/admin/categories/${id}/restore`
+    );
     return response.data.data;
   },
 
   /**
-   * Reorder categories
+   * Permanent delete category (Super Admin only)
    */
-  reorder: async (data: ReorderCategoriesDto): Promise<void> => {
-    await apiClient.post('/admin/categories/reorder', data);
+  permanentDelete: async (id: string): Promise<{ deleted: boolean; message: string }> => {
+    const response = await apiClient.delete<ApiResponse<{ deleted: boolean; message: string }>>(
+      `/admin/categories/${id}/permanent`
+    );
+    return response.data.data;
   },
 
   /**
-   * Get category statistics
+   * Update category statistics
+   */
+  updateStats: async (
+    id: string
+  ): Promise<{ updated: boolean; productCount: number; updatedAt: Date }> => {
+    const response = await apiClient.post<
+      ApiResponse<{ updated: boolean; productCount: number; updatedAt: Date }>
+    >(`/admin/categories/${id}/update-stats`);
+    return response.data.data;
+  },
+
+  /**
+   * Get category statistics summary
    */
   getStats: async (): Promise<CategoryStats> => {
-    const response = await apiClient.get<ApiResponse<CategoryStats>>('/admin/categories/stats');
+    const response = await apiClient.get<ApiResponse<CategoryStats>>(
+      '/admin/categories/stats/summary'
+    );
     return response.data.data;
   },
 };

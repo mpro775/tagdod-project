@@ -1,212 +1,286 @@
-import React, { useState } from 'react';
-import { Currency } from '../../../shared/types/currency.types';
+import React, { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Grid,
+  Alert,
+  CircularProgress,
+  Divider,
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
+  FormHelperText,
+} from '@mui/material';
+import { Save, AttachMoney, TrendingUp } from '@mui/icons-material';
+import { UpdateExchangeRatesRequest } from '../api/exchangeRatesApi';
 
 interface ExchangeRateFormProps {
-  onSuccess?: () => void;
-  onCancel?: () => void;
   initialData?: {
-    fromCurrency?: Currency;
-    toCurrency?: Currency;
-    rate?: number;
-    effectiveDate?: string;
-    expiryDate?: string;
+    usdToYer: number;
+    usdToSar: number;
     notes?: string;
   };
+  onSave: (data: UpdateExchangeRatesRequest) => Promise<void>;
+  onCancel?: () => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
 export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
-  onSuccess,
-  onCancel,
   initialData,
+  onSave,
+  onCancel,
+  loading = false,
+  error,
 }) => {
   const [formData, setFormData] = useState({
-    fromCurrency: initialData?.fromCurrency || Currency.USD,
-    toCurrency: initialData?.toCurrency || Currency.YER,
-    rate: initialData?.rate || 0,
-    effectiveDate: initialData?.effectiveDate || '',
-    expiryDate: initialData?.expiryDate || '',
+    usdToYer: initialData?.usdToYer || 250,
+    usdToSar: initialData?.usdToSar || 3.75,
     notes: initialData?.notes || '',
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{
+    usdToYer?: string;
+    usdToSar?: string;
+  }>({});
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (formData.fromCurrency === formData.toCurrency) {
-      setError('العملة المصدر والعملة الهدف يجب أن تكونا مختلفتين');
-      return;
+  const [touched, setTouched] = useState<{
+    usdToYer: boolean;
+    usdToSar: boolean;
+  }>({
+    usdToYer: false,
+    usdToSar: false,
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        usdToYer: initialData.usdToYer,
+        usdToSar: initialData.usdToSar,
+        notes: initialData.notes || '',
+      });
+    }
+  }, [initialData]);
+
+  const validateField = (field: keyof typeof formData, value: number | string) => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+
+    if (field === 'usdToYer' || field === 'usdToSar') {
+      if (isNaN(numValue) || numValue <= 0) {
+        return 'يجب أن يكون السعر أكبر من صفر';
+      }
+      if (numValue > 10000) {
+        return 'السعر كبير جداً';
+      }
     }
 
-    if (formData.rate <= 0) {
-      setError('السعر يجب أن يكون أكبر من صفر');
+    return '';
+  };
+
+  const handleInputChange =
+    (field: keyof typeof formData) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+
+      // Validate field
+      const error = validateField(field, value);
+      setErrors((prev) => ({
+        ...prev,
+        [field]: error,
+      }));
+
+      // Mark as touched
+      if (field === 'usdToYer' || field === 'usdToSar') {
+        setTouched((prev) => ({
+          ...prev,
+          [field]: true,
+        }));
+      }
+    };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    // Validate all fields
+    const newErrors = {
+      usdToYer: validateField('usdToYer', formData.usdToYer),
+      usdToSar: validateField('usdToSar', formData.usdToSar),
+    };
+
+    setErrors(newErrors);
+    setTouched({ usdToYer: true, usdToSar: true });
+
+    // Check if there are any errors
+    if (Object.values(newErrors).some((error) => error !== '')) {
       return;
     }
 
     try {
-      setIsSubmitting(true);
-      setError(null);
-
-      const response = await fetch('/api/exchange-rates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fromCurrency: formData.fromCurrency,
-          toCurrency: formData.toCurrency,
-          rate: formData.rate,
-          effectiveDate: formData.effectiveDate || undefined,
-          expiryDate: formData.expiryDate || undefined,
-          notes: formData.notes || undefined,
-        }),
+      await onSave({
+        usdToYer: parseFloat(formData.usdToYer.toString()),
+        usdToSar: parseFloat(formData.usdToSar.toString()),
+        notes: formData.notes || undefined,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create exchange rate');
-      }
-
-      onSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsSubmitting(false);
+      // Error is handled by parent component
     }
   };
 
-  const handleChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  const isFormValid =
+    Object.values(errors).every((error) => error === '') &&
+    Object.values(touched).every((touched) => touched);
 
   return (
-    <div className="exchange-rate-form">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="from-currency" className="block text-sm font-medium text-gray-700 mb-1">
-              العملة المصدر
-            </label>
-            <select
-              id="from-currency"
-              value={formData.fromCurrency}
-              onChange={(e) => handleChange('fromCurrency', e.target.value as Currency)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            >
-              <option value={Currency.USD}>USD - دولار أمريكي</option>
-              <option value={Currency.YER}>YER - ريال يمني</option>
-              <option value={Currency.SAR}>SAR - ريال سعودي</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="to-currency" className="block text-sm font-medium text-gray-700 mb-1">
-              العملة الهدف
-            </label>
-            <select
-              id="to-currency"
-              value={formData.toCurrency}
-              onChange={(e) => handleChange('toCurrency', e.target.value as Currency)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            >
-              <option value={Currency.USD}>USD - دولار أمريكي</option>
-              <option value={Currency.YER}>YER - ريال يمني</option>
-              <option value={Currency.SAR}>SAR - ريال سعودي</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="rate-input" className="block text-sm font-medium text-gray-700 mb-1">
-            السعر
-          </label>
-          <input
-            id="rate-input"
-            type="number"
-            step="0.0001"
-            min="0"
-            value={formData.rate}
-            onChange={(e) => handleChange('rate', parseFloat(e.target.value) || 0)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="مثال: 250.5"
-            required
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            كم وحدة من العملة الهدف تساوي 1 وحدة من العملة المصدر
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="effective-date" className="block text-sm font-medium text-gray-700 mb-1">
-              تاريخ البداية (اختياري)
-            </label>
-            <input
-              id="effective-date"
-              type="date"
-              value={formData.effectiveDate}
-              onChange={(e) => handleChange('effectiveDate', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="expiry-date" className="block text-sm font-medium text-gray-700 mb-1">
-              تاريخ النهاية (اختياري)
-            </label>
-            <input
-              id="expiry-date"
-              type="date"
-              value={formData.expiryDate}
-              onChange={(e) => handleChange('expiryDate', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="notes-textarea" className="block text-sm font-medium text-gray-700 mb-1">
-            ملاحظات (اختياري)
-          </label>
-          <textarea
-            id="notes-textarea"
-            value={formData.notes}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            rows={3}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="ملاحظات إضافية حول سعر الصرف..."
-          />
-        </div>
-
+    <Card>
+      <CardHeader
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TrendingUp color="primary" />
+            <Typography variant="h6" component="div">
+              تحديث أسعار الصرف
+            </Typography>
+          </Box>
+        }
+        subheader="قم بتحديث أسعار الصرف للعملات المدعومة"
+      />
+      <CardContent>
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
-            <div className="text-red-800 text-sm">{error}</div>
-          </div>
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
         )}
 
-        <div className="flex justify-end space-x-3 pt-4">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            {/* USD to YER */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <FormControl
+                fullWidth
+                error={touched.usdToYer && !!errors.usdToYer}
+                variant="outlined"
+              >
+                <InputLabel htmlFor="usdToYer">الدولار الأمريكي إلى الريال اليمني</InputLabel>
+                <OutlinedInput
+                  id="usdToYer"
+                  type="number"
+                  value={formData.usdToYer}
+                  onChange={handleInputChange('usdToYer')}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <AttachMoney />
+                    </InputAdornment>
+                  }
+                  endAdornment={
+                    <InputAdornment position="end">
+                      <Typography variant="body2" color="text.secondary">
+                        ر.ي
+                      </Typography>
+                    </InputAdornment>
+                  }
+                  inputProps={{
+                    step: '0.01',
+                    min: '0.01',
+                    max: '10000',
+                  }}
+                  label="الدولار الأمريكي إلى الريال اليمني"
+                />
+                {touched.usdToYer && errors.usdToYer && (
+                  <FormHelperText>{errors.usdToYer}</FormHelperText>
+                )}
+                <FormHelperText>1 دولار = {formData.usdToYer} ريال يمني</FormHelperText>
+              </FormControl>
+            </Grid>
+
+            {/* USD to SAR */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <FormControl
+                fullWidth
+                error={touched.usdToSar && !!errors.usdToSar}
+                variant="outlined"
+              >
+                <InputLabel htmlFor="usdToSar">الدولار الأمريكي إلى الريال السعودي</InputLabel>
+                <OutlinedInput
+                  id="usdToSar"
+                  type="number"
+                  value={formData.usdToSar}
+                  onChange={handleInputChange('usdToSar')}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <AttachMoney />
+                    </InputAdornment>
+                  }
+                  endAdornment={
+                    <InputAdornment position="end">
+                      <Typography variant="body2" color="text.secondary">
+                        ر.س
+                      </Typography>
+                    </InputAdornment>
+                  }
+                  inputProps={{
+                    step: '0.01',
+                    min: '0.01',
+                    max: '10000',
+                  }}
+                  label="الدولار الأمريكي إلى الريال السعودي"
+                />
+                {touched.usdToSar && errors.usdToSar && (
+                  <FormHelperText>{errors.usdToSar}</FormHelperText>
+                )}
+                <FormHelperText>1 دولار = {formData.usdToSar} ريال سعودي</FormHelperText>
+              </FormControl>
+            </Grid>
+
+            {/* Notes */}
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="ملاحظات (اختياري)"
+                value={formData.notes}
+                onChange={handleInputChange('notes')}
+                placeholder="أضف ملاحظات حول تحديث أسعار الصرف..."
+                variant="outlined"
+              />
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            {onCancel && (
+              <Button
+                variant="outlined"
+                onClick={onCancel}
+                disabled={loading}
+                sx={{ minWidth: 120 }}
+              >
+                إلغاء
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading || !isFormValid}
+              startIcon={loading ? <CircularProgress size={20} /> : <Save />}
+              sx={{ minWidth: 120 }}
             >
-              إلغاء
-            </button>
-          )}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'جاري الحفظ...' : 'حفظ'}
-          </button>
-        </div>
-      </form>
-    </div>
+              {loading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+            </Button>
+          </Box>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -7,6 +7,10 @@ import type {
   UpdateOrderStatusDto,
   ShipOrderDto,
   RefundOrderDto,
+  CancelOrderDto,
+  AddOrderNotesDto,
+  BulkOrderUpdateDto,
+  OrderAnalyticsParams,
 } from '../types/order.types';
 
 const ORDERS_KEY = 'orders';
@@ -56,19 +60,6 @@ export const useShipOrder = () => {
   });
 };
 
-// Confirm delivery
-export const useConfirmDelivery = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => ordersApi.confirmDelivery(id),
-    onSuccess: () => {
-      toast.success('تم تأكيد التسليم بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
-    },
-    onError: ErrorHandler.showError,
-  });
-};
-
 // Refund order
 export const useRefundOrder = () => {
   const queryClient = useQueryClient();
@@ -86,7 +77,7 @@ export const useRefundOrder = () => {
 export const useCancelOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) => ordersApi.cancel(id, reason),
+    mutationFn: ({ id, data }: { id: string; data: CancelOrderDto }) => ordersApi.cancel(id, data),
     onSuccess: () => {
       toast.success('تم إلغاء الطلب بنجاح');
       queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
@@ -95,20 +86,85 @@ export const useCancelOrder = () => {
   });
 };
 
-// Update notes
-export const useUpdateOrderNotes = () => {
+// Add order notes
+export const useAddOrderNotes = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      id,
-      notes,
-    }: {
-      id: string;
-      notes: { adminNotes?: string; internalNotes?: string };
-    }) => ordersApi.updateNotes(id, notes),
+    mutationFn: ({ id, data }: { id: string; data: AddOrderNotesDto }) => ordersApi.addNotes(id, data),
     onSuccess: () => {
-      toast.success('تم تحديث الملاحظات بنجاح');
+      toast.success('تم إضافة الملاحظات بنجاح');
       queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Bulk update orders status
+export const useBulkUpdateOrderStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: BulkOrderUpdateDto) => ordersApi.bulkUpdateStatus(data),
+    onSuccess: (data) => {
+      const successCount = data.data.results.length;
+      const errorCount = data.data.errors.length;
+      toast.success(`تم تحديث ${successCount} طلب بنجاح${errorCount > 0 ? `، فشل ${errorCount} طلب` : ''}`);
+      queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Get order analytics
+export const useOrderAnalytics = (params: OrderAnalyticsParams) => {
+  return useQuery({
+    queryKey: [ORDERS_KEY, 'analytics', params],
+    queryFn: () => ordersApi.getAnalytics(params),
+  });
+};
+
+// Get revenue analytics
+export const useRevenueAnalytics = (fromDate?: string, toDate?: string) => {
+  return useQuery({
+    queryKey: [ORDERS_KEY, 'revenue-analytics', fromDate, toDate],
+    queryFn: () => ordersApi.getRevenueAnalytics(fromDate, toDate),
+  });
+};
+
+// Get performance analytics
+export const usePerformanceAnalytics = () => {
+  return useQuery({
+    queryKey: [ORDERS_KEY, 'performance-analytics'],
+    queryFn: () => ordersApi.getPerformanceAnalytics(),
+  });
+};
+
+// Get order tracking
+export const useOrderTracking = (id: string) => {
+  return useQuery({
+    queryKey: [ORDERS_KEY, 'tracking', id],
+    queryFn: () => ordersApi.getTracking(id),
+    enabled: !!id,
+  });
+};
+
+// Generate orders report
+export const useGenerateOrdersReport = () => {
+  return useMutation({
+    mutationFn: ({ params, format }: { params: ListOrdersParams; format?: 'json' | 'pdf' | 'excel' }) =>
+      ordersApi.generateOrdersReport(params, format),
+    onSuccess: () => {
+      toast.success('تم إنشاء التقرير بنجاح');
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Generate financial report
+export const useGenerateFinancialReport = () => {
+  return useMutation({
+    mutationFn: () => ordersApi.generateFinancialReport(),
+    onSuccess: () => {
+      toast.success('تم إنشاء التقرير المالي بنجاح');
     },
     onError: ErrorHandler.showError,
   });

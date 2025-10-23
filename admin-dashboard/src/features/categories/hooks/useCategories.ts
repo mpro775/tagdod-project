@@ -6,21 +6,20 @@ import type {
   ListCategoriesParams,
   CreateCategoryDto,
   UpdateCategoryDto,
-  ReorderCategoriesDto,
 } from '../types/category.types';
 
 // Query Keys
 const CATEGORIES_KEY = 'categories';
 
-// List categories
+// List categories with filtering and search
 export const useCategories = (params: ListCategoriesParams = {}) => {
   return useQuery({
-    queryKey: [CATEGORIES_KEY, params],
+    queryKey: [CATEGORIES_KEY, 'list', params],
     queryFn: () => categoriesApi.list(params),
   });
 };
 
-// Get category tree
+// Get category tree (hierarchical structure)
 export const useCategoryTree = () => {
   return useQuery({
     queryKey: [CATEGORIES_KEY, 'tree'],
@@ -28,10 +27,10 @@ export const useCategoryTree = () => {
   });
 };
 
-// Get single category
+// Get single category with full details
 export const useCategory = (id: string) => {
   return useQuery({
-    queryKey: [CATEGORIES_KEY, id],
+    queryKey: [CATEGORIES_KEY, 'single', id],
     queryFn: () => categoriesApi.getById(id),
     enabled: !!id,
   });
@@ -60,14 +59,14 @@ export const useUpdateCategory = () => {
       categoriesApi.update(id, data),
     onSuccess: (_, variables) => {
       toast.success('تم تحديث الفئة بنجاح');
-      queryClient.invalidateQueries({ queryKey: [CATEGORIES_KEY, variables.id] });
+      queryClient.invalidateQueries({ queryKey: [CATEGORIES_KEY, 'single', variables.id] });
       queryClient.invalidateQueries({ queryKey: [CATEGORIES_KEY] });
     },
     onError: ErrorHandler.showError,
   });
 };
 
-// Delete category
+// Delete category (soft delete)
 export const useDeleteCategory = () => {
   const queryClient = useQueryClient();
 
@@ -81,7 +80,7 @@ export const useDeleteCategory = () => {
   });
 };
 
-// Restore category
+// Restore deleted category
 export const useRestoreCategory = () => {
   const queryClient = useQueryClient();
 
@@ -95,21 +94,35 @@ export const useRestoreCategory = () => {
   });
 };
 
-// Reorder categories
-export const useReorderCategories = () => {
+// Permanent delete category (Super Admin only)
+export const usePermanentDeleteCategory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: ReorderCategoriesDto) => categoriesApi.reorder(data),
+    mutationFn: (id: string) => categoriesApi.permanentDelete(id),
     onSuccess: () => {
-      toast.success('تم تحديث الترتيب بنجاح');
+      toast.success('تم حذف الفئة نهائياً');
       queryClient.invalidateQueries({ queryKey: [CATEGORIES_KEY] });
     },
     onError: ErrorHandler.showError,
   });
 };
 
-// Get category stats
+// Update category statistics
+export const useUpdateCategoryStats = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => categoriesApi.updateStats(id),
+    onSuccess: () => {
+      toast.success('تم تحديث إحصائيات الفئة');
+      queryClient.invalidateQueries({ queryKey: [CATEGORIES_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Get category statistics summary
 export const useCategoryStats = () => {
   return useQuery({
     queryKey: [CATEGORIES_KEY, 'stats'],

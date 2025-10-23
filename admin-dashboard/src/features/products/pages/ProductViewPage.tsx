@@ -1,59 +1,77 @@
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Button,
+  Card,
+  CardContent,
   Grid,
   Chip,
   Divider,
-  Card,
-  CardContent,
-  CardMedia,
+  Tabs,
+  Tab,
   Alert,
   CircularProgress,
   IconButton,
-  Tabs,
-  Tab,
+  Tooltip,
 } from '@mui/material';
 import {
   ArrowBack,
   Edit,
   Inventory,
-  Star,
+  AttachMoney,
   Visibility,
-  ShoppingCart,
+  Star,
+  NewReleases,
+  Archive,
+  Unarchive,
 } from '@mui/icons-material';
-import { useProduct } from '../hooks/useProducts';
-import { formatCurrency, formatDate } from '@/shared/utils/formatters';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useProduct, useProductVariants } from '../hooks/useProducts';
+import { formatDate } from '@/shared/utils/formatters';
+import { VariantCard } from '../components/VariantCard';
+import { StockManager } from '../components/StockManager';
+import { PricingManager } from '../components/PricingManager';
+import type { Variant } from '../types/product.types';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`product-tabpanel-${index}`}
+      aria-labelledby={`product-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 export const ProductViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = React.useState(0);
+  const [activeTab, setActiveTab] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
 
-  const { data: productData, isLoading } = useProduct(id!);
+  const { data: product, isLoading: loadingProduct } = useProduct(id!);
+  const { data: variants, isLoading: loadingVariants } = useProductVariants(id!);
 
-  const product = productData?.product;
-  const variants = productData?.variants || [];
-  const attributes = productData?.attributes || [];
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (!product) {
-    return (
-      <Alert severity="error">
-        المنتج غير موجود
-      </Alert>
-    );
-  }
+  const handleVariantClick = (variant: Variant) => {
+    setSelectedVariant(variant);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -61,10 +79,8 @@ export const ProductViewPage: React.FC = () => {
         return 'success';
       case 'draft':
         return 'default';
-      case 'out_of_stock':
+      case 'archived':
         return 'warning';
-      case 'discontinued':
-        return 'error';
       default:
         return 'default';
     }
@@ -76,432 +92,317 @@ export const ProductViewPage: React.FC = () => {
         return 'نشط';
       case 'draft':
         return 'مسودة';
-      case 'out_of_stock':
-        return 'نفذ';
-      case 'discontinued':
-        return 'متوقف';
+      case 'archived':
+        return 'مؤرشف';
       default:
         return status;
     }
   };
 
+  if (loadingProduct) {
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!product) {
+    return (
+      <Box>
+        <Alert severity="error">
+          المنتج غير موجود أو تم حذفه
+        </Alert>
+      </Box>
+    );
+  }
+
   return (
     <Box>
       {/* Header */}
       <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <IconButton onClick={() => navigate('/products')}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h4" fontWeight="bold">
-          {product.name}
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/products')}
+        >
+          العودة للمنتجات
+        </Button>
+        <Typography variant="h4" component="h1">
+          عرض المنتج
         </Typography>
-        <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+        <Box ml="auto" display="flex" gap={1}>
           <Button
-            variant="outlined"
+            variant="contained"
             startIcon={<Edit />}
-            onClick={() => navigate(`/products/${product._id}`)}
+            onClick={() => navigate(`/products/${id}/edit`)}
           >
             تعديل
           </Button>
           <Button
-            variant="contained"
+            variant="outlined"
             startIcon={<Inventory />}
-            onClick={() => navigate(`/products/${product._id}/variants`)}
+            onClick={() => navigate(`/products/${id}/variants`)}
           >
-            المتغيرات
+            إدارة المتغيرات
           </Button>
         </Box>
       </Box>
 
-      {/* Main Content */}
-      <Grid container spacing={3}>
-        {/* Product Images */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              صور المنتج
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              {product.mainImage && (
-                <Card sx={{ maxWidth: 200 }}>
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={product.mainImage}
-                    alt={product.name}
-                    sx={{ objectFit: 'cover' }}
-                  />
-                  <CardContent>
-                    <Typography variant="caption" color="primary">
-                      الصورة الرئيسية
-                    </Typography>
-                  </CardContent>
-                </Card>
-              )}
-              {product.images?.map((image, index) => (
-                <Card key={index} sx={{ maxWidth: 150 }}>
-                  <CardMedia
-                    component="img"
-                    height="150"
-                    image={image}
-                    alt={`${product.name} - ${index + 1}`}
-                    sx={{ objectFit: 'cover' }}
-                  />
-                </Card>
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
+      {/* Product Info Card */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Grid container spacing={3}>
+            {/* Product Image */}
+            <Grid item xs={12} md={4}>
+              <Box
+                component="img"
+                src={product.mainImageId || '/placeholder-product.png'}
+                alt={product.name}
+                sx={{
+                  width: '100%',
+                  height: 300,
+                  objectFit: 'cover',
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              />
+            </Grid>
 
-        {/* Product Info */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              معلومات المنتج
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  الاسم بالعربية
-                </Typography>
-                <Typography variant="body1">{product.name}</Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  الاسم بالإنجليزية
-                </Typography>
-                <Typography variant="body1">{product.nameEn}</Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  الحالة
-                </Typography>
+            {/* Product Details */}
+            <Grid item xs={12} md={8}>
+              <Typography variant="h4" gutterBottom>
+                {product.name}
+              </Typography>
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                {product.nameEn}
+              </Typography>
+
+              {/* Status and Badges */}
+              <Box display="flex" gap={1} mb={2}>
                 <Chip
                   label={getStatusLabel(product.status)}
                   color={getStatusColor(product.status) as any}
-                  size="small"
+                  variant="outlined"
                 />
-              </Grid>
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  رقم المنتج
-                </Typography>
-                <Typography variant="body1">{product.sku || '-'}</Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  الفئة
-                </Typography>
-                <Typography variant="body1">
-                  {product.category?.name || '-'}
-                </Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  العلامة التجارية
-                </Typography>
-                <Typography variant="body1">
-                  {product.brand?.name || '-'}
-                </Typography>
-              </Grid>
-            </Grid>
-
-            {/* Badges */}
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                الشارات
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 {product.isFeatured && (
                   <Chip
-                    icon={<Star />}
                     label="مميز"
                     color="warning"
+                    icon={<Star />}
                     variant="outlined"
-                    size="small"
                   />
                 )}
                 {product.isNew && (
                   <Chip
                     label="جديد"
-                    color="info"
-                    variant="outlined"
-                    size="small"
-                  />
-                )}
-                {product.isBestseller && (
-                  <Chip
-                    label="الأكثر مبيعاً"
                     color="success"
+                    icon={<NewReleases />}
                     variant="outlined"
-                    size="small"
                   />
                 )}
               </Box>
-            </Box>
-          </Paper>
-        </Grid>
 
-        {/* Tabs for Additional Info */}
-        <Grid item xs={12}>
-          <Paper>
-            <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-              <Tab label="الوصف" />
-              <Tab label="المتغيرات" />
-              <Tab label="السمات" />
-              <Tab label="SEO" />
-              <Tab label="الإحصائيات" />
-            </Tabs>
+              <Divider sx={{ my: 2 }} />
 
-            <Box sx={{ p: 3 }}>
-              {/* Description Tab */}
-              {activeTab === 0 && (
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="h6" gutterBottom>
-                      الوصف بالعربية
-                    </Typography>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {product.description}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="h6" gutterBottom>
-                      الوصف بالإنجليزية
-                    </Typography>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {product.descriptionEn}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              )}
-
-              {/* Variants Tab */}
-              {activeTab === 1 && (
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    متغيرات المنتج ({variants.length})
+              {/* Basic Info */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    رقم المنتج (SKU)
                   </Typography>
-                  {variants.length > 0 ? (
-                    <Grid container spacing={2}>
-                      {variants.map((variant) => (
-                        <Grid item xs={12} md={6} lg={4} key={variant._id}>
-                          <Card>
-                            <CardContent>
-                              <Typography variant="subtitle1" gutterBottom>
-                                {variant.sku || 'بدون SKU'}
-                              </Typography>
-                              <Box sx={{ mb: 1 }}>
-                                {variant.attributeValues?.map((attr, index) => (
-                                  <Chip
-                                    key={index}
-                                    label={`${attr.name}: ${attr.value}`}
-                                    size="small"
-                                    sx={{ mr: 0.5, mb: 0.5 }}
-                                  />
-                                ))}
-                              </Box>
-                              <Typography variant="h6" color="primary">
-                                {formatCurrency(variant.price)}
-                              </Typography>
-                              {variant.compareAtPrice && (
-                                <Typography
-                                  variant="body2"
-                                  color="text.secondary"
-                                  sx={{ textDecoration: 'line-through' }}
-                                >
-                                  {formatCurrency(variant.compareAtPrice)}
-                                </Typography>
-                              )}
-                              <Typography variant="body2">
-                                المخزون: {variant.stock}
-                              </Typography>
-                              <Chip
-                                label={variant.isActive ? 'نشط' : 'غير نشط'}
-                                color={variant.isActive ? 'success' : 'default'}
-                                size="small"
-                                sx={{ mt: 1 }}
-                              />
-                            </CardContent>
-                          </Card>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  ) : (
-                    <Alert severity="info">
-                      لا توجد متغيرات لهذا المنتج
-                    </Alert>
-                  )}
-                </Box>
-              )}
-
-              {/* Attributes Tab */}
-              {activeTab === 2 && (
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    سمات المنتج ({attributes.length})
+                  <Typography variant="body1">
+                    {product.sku || 'غير محدد'}
                   </Typography>
-                  {attributes.length > 0 ? (
-                    <Grid container spacing={2}>
-                      {attributes.map((attr) => (
-                        <Grid item xs={12} md={6} key={attr._id}>
-                          <Card>
-                            <CardContent>
-                              <Typography variant="subtitle1" gutterBottom>
-                                {attr.name}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {attr.nameEn}
-                              </Typography>
-                              <Box sx={{ mt: 1 }}>
-                                {attr.values?.map((value) => (
-                                  <Chip
-                                    key={value._id}
-                                    label={value.value}
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{ mr: 0.5, mb: 0.5 }}
-                                  />
-                                ))}
-                              </Box>
-                            </CardContent>
-                          </Card>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  ) : (
-                    <Alert severity="info">
-                      لا توجد سمات مرتبطة بهذا المنتج
-                    </Alert>
-                  )}
-                </Box>
-              )}
-
-              {/* SEO Tab */}
-              {activeTab === 3 && (
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      عنوان الصفحة (Meta Title)
-                    </Typography>
-                    <Typography variant="body1">
-                      {product.metaTitle || 'غير محدد'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      وصف الصفحة (Meta Description)
-                    </Typography>
-                    <Typography variant="body1">
-                      {product.metaDescription || 'غير محدد'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      الكلمات المفتاحية
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {product.metaKeywords?.map((keyword, index) => (
-                        <Chip
-                          key={index}
-                          label={keyword}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )) || (
-                        <Typography variant="body2" color="text.secondary">
-                          لا توجد كلمات مفتاحية
-                        </Typography>
-                      )}
-                    </Box>
-                  </Grid>
                 </Grid>
-              )}
-
-              {/* Statistics Tab */}
-              {activeTab === 4 && (
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={3}>
-                    <Card>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Visibility color="primary" />
-                          <Box>
-                            <Typography variant="h4">{product.viewsCount}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              المشاهدات
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <Card>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <ShoppingCart color="success" />
-                          <Box>
-                            <Typography variant="h4">{product.salesCount}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              المبيعات
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <Card>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Inventory color="info" />
-                          <Box>
-                            <Typography variant="h4">{product.variantsCount}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              المتغيرات
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <Card>
-                      <CardContent>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Star color="warning" />
-                          <Box>
-                            <Typography variant="h4">{product.averageRating.toFixed(1)}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              التقييم ({product.reviewsCount})
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="subtitle2" color="text.secondary">
-                      تاريخ الإنشاء
-                    </Typography>
-                    <Typography variant="body1">
-                      {formatDate(product.createdAt)}
-                    </Typography>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1 }}>
-                      آخر تحديث
-                    </Typography>
-                    <Typography variant="body1">
-                      {formatDate(product.updatedAt)}
-                    </Typography>
-                  </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    الفئة
+                  </Typography>
+                  <Typography variant="body1">
+                    {product.category?.name || 'غير محدد'}
+                  </Typography>
                 </Grid>
-              )}
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    العلامة التجارية
+                  </Typography>
+                  <Typography variant="body1">
+                    {product.brand?.name || 'غير محدد'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    عدد المتغيرات
+                  </Typography>
+                  <Typography variant="body1">
+                    {product.variantsCount || 0}
+                  </Typography>
+                </Grid>
+              </Grid>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Statistics */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    عدد المشاهدات
+                  </Typography>
+                  <Typography variant="h6" color="primary">
+                    {product.viewsCount || 0}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    عدد المبيعات
+                  </Typography>
+                  <Typography variant="h6" color="success.main">
+                    {product.salesCount || 0}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    عدد التقييمات
+                  </Typography>
+                  <Typography variant="h6">
+                    {product.reviewsCount || 0}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    متوسط التقييم
+                  </Typography>
+                  <Typography variant="h6">
+                    {product.averageRating ? product.averageRating.toFixed(1) : '0.0'}
+                  </Typography>
+                </Grid>
+              </Grid>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Dates */}
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    تاريخ الإنشاء
+                  </Typography>
+                  <Typography variant="body1">
+                    {formatDate(product.createdAt)}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    آخر تحديث
+                  </Typography>
+                  <Typography variant="body1">
+                    {formatDate(product.updatedAt)}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* Tabs */}
+      <Card>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={activeTab} onChange={handleTabChange}>
+            <Tab label={`الوصف`} />
+            <Tab label={`المتغيرات (${variants?.length || 0})`} />
+            <Tab label={`SEO`} />
+          </Tabs>
+        </Box>
+
+        <TabPanel value={activeTab} index={0}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" gutterBottom>
+                الوصف بالعربية
+              </Typography>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                {product.description}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" gutterBottom>
+                English Description
+              </Typography>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                {product.descriptionEn}
+              </Typography>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={1}>
+          {loadingVariants ? (
+            <Box display="flex" justifyContent="center" p={4}>
+              <CircularProgress />
             </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+          ) : variants && variants.length > 0 ? (
+            <Grid container spacing={3}>
+              {variants.map((variant) => (
+                <Grid item xs={12} sm={6} md={4} key={variant._id}>
+                  <VariantCard
+                    variant={variant}
+                    onView={handleVariantClick}
+                    showActions={false}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Alert severity="info">
+              لا توجد متغيرات لهذا المنتج
+            </Alert>
+          )}
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={2}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                معلومات SEO
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary">
+                عنوان الصفحة (Meta Title)
+              </Typography>
+              <Typography variant="body1">
+                {product.metaTitle || 'غير محدد'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary">
+                وصف الصفحة (Meta Description)
+              </Typography>
+              <Typography variant="body1">
+                {product.metaDescription || 'غير محدد'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary">
+                الكلمات المفتاحية
+              </Typography>
+              <Box display="flex" gap={1} flexWrap="wrap">
+                {product.metaKeywords && product.metaKeywords.length > 0 ? (
+                  product.metaKeywords.map((keyword, index) => (
+                    <Chip key={index} label={keyword} size="small" />
+                  ))
+                ) : (
+                  <Typography variant="body1" color="text.secondary">
+                    لا توجد كلمات مفتاحية
+                  </Typography>
+                )}
+              </Box>
+            </Grid>
+          </Grid>
+        </TabPanel>
+      </Card>
     </Box>
   );
 };

@@ -9,6 +9,8 @@ import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
 import { useUser, useCreateUser, useUpdateUser } from '../hooks/useUsers';
 import { UserRole, UserStatus } from '../types/user.types';
+import { UserRoleManager } from '../components/UserRoleManager';
+import { UserCapabilitiesManager } from '../components/UserCapabilitiesManager';
 import '../styles/responsive-users.css';
 
 // Validation Schema
@@ -24,6 +26,8 @@ const userSchema = z.object({
   password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل').optional().or(z.literal('')),
   role: z.nativeEnum(UserRole),
   status: z.nativeEnum(UserStatus),
+  roles: z.array(z.nativeEnum(UserRole)).min(1, 'يجب تحديد دور واحد على الأقل'),
+  permissions: z.array(z.string()).optional(),
   wholesaleDiscountPercent: z.union([
     z.string().transform((val) => {
       if (!val || val === '') return undefined;
@@ -53,6 +57,8 @@ export const UserFormPage: React.FC = () => {
       password: '',
       role: UserRole.USER,
       status: UserStatus.ACTIVE,
+      roles: [UserRole.USER],
+      permissions: [],
       wholesaleDiscountPercent: undefined,
     },
   });
@@ -99,6 +105,8 @@ export const UserFormPage: React.FC = () => {
         password: '', // لا نحمل كلمة المرور في وضع التعديل
         role: user.roles?.[0] || UserRole.USER, // نأخذ الدور الأول فقط
         status: user.status || UserStatus.ACTIVE,
+        roles: user.roles || [UserRole.USER],
+        permissions: user.permissions || [],
         wholesaleDiscountPercent: user.capabilities?.wholesale_discount_percent?.toString() || undefined,
       };
       
@@ -119,7 +127,8 @@ export const UserFormPage: React.FC = () => {
       gender: data.gender || undefined,
       jobTitle: data.jobTitle || undefined,
       password: data.password || undefined,
-      roles: [data.role], // نرسل الدور كمصفوفة كما يتوقع الـ backend
+      roles: data.roles, // نرسل الأدوار كمصفوفة كما يتوقع الـ backend
+      permissions: data.permissions || [],
       status: data.status,
     };
 
@@ -129,9 +138,10 @@ export const UserFormPage: React.FC = () => {
     }
 
     // ربط القدرات حسب نوع المستخدم
-    if (data.role === UserRole.ENGINEER) {
+    const primaryRole = data.roles[0];
+    if (primaryRole === UserRole.ENGINEER) {
       userData.capabilityRequest = 'engineer';
-    } else if (data.role === UserRole.MERCHANT) {
+    } else if (primaryRole === UserRole.MERCHANT) {
       userData.capabilityRequest = 'wholesale';
       if (data.wholesaleDiscountPercent !== undefined) {
         // Already transformed to number by zod
@@ -201,7 +211,7 @@ export const UserFormPage: React.FC = () => {
               <Grid size={{ xs: 12, sm: 6 }}>
                 <FormSelect
                   name="role"
-                  label="الدور *"
+                  label="الدور الرئيسي *"
                   options={[
                     { value: UserRole.USER, label: 'مستخدم' },
                     { value: UserRole.ENGINEER, label: 'مهندس' },
@@ -221,6 +231,27 @@ export const UserFormPage: React.FC = () => {
                     { value: UserStatus.PENDING, label: 'قيد الانتظار' },
                     { value: UserStatus.SUSPENDED, label: 'معلق' },
                   ]}
+                />
+              </Grid>
+
+              {/* إدارة الأدوار والصلاحيات */}
+              <Grid size={{ xs: 12 }}>
+                <UserRoleManager
+                  roles={methods.watch('roles') || []}
+                  permissions={methods.watch('permissions') || []}
+                  onRolesChange={(roles) => methods.setValue('roles', roles)}
+                  onPermissionsChange={(permissions) => methods.setValue('permissions', permissions)}
+                />
+              </Grid>
+
+              {/* إدارة القدرات */}
+              <Grid size={{ xs: 12 }}>
+                <UserCapabilitiesManager
+                  role={methods.watch('role') || UserRole.USER}
+                  capabilities={user?.capabilities}
+                  onCapabilitiesChange={(capabilities) => {
+                    // يمكن إضافة منطق لتحديث القدرات هنا
+                  }}
                 />
               </Grid>
 
@@ -268,7 +299,7 @@ export const UserFormPage: React.FC = () => {
               </Grid>
 
               {/* المسمى الوظيفي يظهر فقط للمهندس */}
-              {methods.watch('role') === UserRole.ENGINEER && (
+              {(methods.watch('role') === UserRole.ENGINEER || methods.watch('roles')?.includes(UserRole.ENGINEER)) && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <FormInput name="jobTitle" label="المسمى الوظيفي" placeholder="مهندس كهربائي، ميكانيكي، إلخ..." />
                 </Grid>
@@ -286,7 +317,7 @@ export const UserFormPage: React.FC = () => {
               )}
 
               {/* نسبة الخصم للتاجر */}
-              {methods.watch('role') === UserRole.MERCHANT && (
+              {(methods.watch('role') === UserRole.MERCHANT || methods.watch('roles')?.includes(UserRole.MERCHANT)) && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <FormInput
                     name="wholesaleDiscountPercent"

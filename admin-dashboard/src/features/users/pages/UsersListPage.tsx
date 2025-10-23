@@ -17,16 +17,19 @@ import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { ResponsiveListWrapper } from '@/shared/components/ResponsiveList';
-import { UserCard } from '@/shared/components/Cards';
 import {
   useUsers,
   useDeleteUser,
   useSuspendUser,
   useActivateUser,
   useRestoreUser,
+  useUserStats,
 } from '../hooks/useUsers';
 import { formatDate } from '@/shared/utils/formatters';
 import type { User, UserStatus } from '../types/user.types';
+import { UserStatsCards } from '../components/UserStatsCards';
+import { UsersFilter } from '../components/UsersFilter';
+import { UserCard } from '../components/UserCard';
 import '../styles/responsive-users.css';
 
 export const UsersListPage: React.FC = () => {
@@ -37,9 +40,15 @@ export const UsersListPage: React.FC = () => {
     page: 0,
     pageSize: 20,
   });
-  const [search, setSearch] = useState('');
   const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'createdAt', sort: 'desc' }]);
   const [screenSize, setScreenSize] = useState(window.innerWidth);
+  const [filters, setFilters] = useState({
+    search: '',
+    status: undefined as UserStatus | undefined,
+    role: undefined as any,
+    isAdmin: undefined as boolean | undefined,
+    includeDeleted: false,
+  });
   
   // Dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -63,11 +72,16 @@ export const UsersListPage: React.FC = () => {
   const { data, isLoading, refetch } = useUsers({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
-    search,
+    search: filters.search,
+    status: filters.status,
+    role: filters.role,
+    isAdmin: filters.isAdmin,
+    includeDeleted: filters.includeDeleted,
     sortBy: sortModel[0]?.field || 'createdAt',
     sortOrder: sortModel[0]?.sort || 'desc',
   });
 
+  const { data: stats, isLoading: statsLoading } = useUserStats();
   const { mutate: deleteUser } = useDeleteUser();
   const { mutate: suspendUser } = useSuspendUser();
   const { mutate: activateUser } = useActivateUser();
@@ -132,6 +146,18 @@ export const UsersListPage: React.FC = () => {
     restoreUser(user._id, {
       onSuccess: () => refetch(),
     });
+  };
+
+
+  const handleClearFilters = () => {
+    setFilters({
+      search: '',
+      status: undefined,
+      role: undefined,
+      isAdmin: undefined,
+      includeDeleted: false,
+    });
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
   };
 
   // Columns
@@ -205,6 +231,7 @@ export const UsersListPage: React.FC = () => {
           active: { label: 'نشط', color: 'success' },
           suspended: { label: 'معلق', color: 'error' },
           pending: { label: 'قيد الانتظار', color: 'warning' },
+          deleted: { label: 'محذوف', color: 'default' },
         };
         const status = statusMap[params.row.status as UserStatus];
         return (
@@ -353,6 +380,31 @@ export const UsersListPage: React.FC = () => {
 
   return (
     <Box>
+      {/* إحصائيات المستخدمين */}
+      {stats && <UserStatsCards stats={stats} loading={statsLoading} />}
+      
+      {/* فلاتر البحث */}
+      <UsersFilter
+        filters={{
+          search: filters.search,
+          status: filters.status,
+          role: filters.role,
+          isAdmin: filters.isAdmin,
+          includeDeleted: filters.includeDeleted,
+        }}
+        onFiltersChange={(newFilters) => {
+          setFilters({
+            search: newFilters.search,
+            status: newFilters.status,
+            role: newFilters.role,
+            isAdmin: newFilters.isAdmin,
+            includeDeleted: newFilters.includeDeleted || false,
+          });
+          setPaginationModel(prev => ({ ...prev, page: 0 }));
+        }}
+        onClearFilters={handleClearFilters}
+      />
+
       <Box sx={{ mb: 2 }}>
         <DataTable
           title="إدارة المستخدمين"
@@ -361,11 +413,12 @@ export const UsersListPage: React.FC = () => {
           loading={isLoading}
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
-          rowCount={data?.meta?.total || 0}
           sortModel={sortModel}
           onSortModelChange={setSortModel}
           searchPlaceholder="البحث في المستخدمين..."
-          onSearch={setSearch}
+          onSearch={(search) => {
+            setFilters(prev => ({ ...prev, search }));
+          }}
           onAdd={() => navigate('/users/new')}
           addButtonText="إضافة مستخدم"
           getRowId={(row: any) => row._id}

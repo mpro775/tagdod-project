@@ -142,6 +142,11 @@ const BannerFormPage = lazy(() =>
     default: m.BannerFormPage,
   }))
 );
+const BannerAnalyticsPage = lazy(() =>
+  import('@/features/banners/pages/BannerAnalyticsPage').then((m) => ({
+    default: m.BannerAnalyticsPage,
+  }))
+);
 const PromotionsListPage = lazy(() =>
   import('@/features/promotions/pages/PromotionsListPage').then((m) => ({
     default: m.PromotionsListPage,
@@ -393,6 +398,10 @@ export const routes: RouteObject[] = [
       {
         path: 'banners/:id',
         element: <BannerFormPage />,
+      },
+      {
+        path: 'banners/analytics',
+        element: <BannerAnalyticsPage />,
       },
       // Promotions routes
       {

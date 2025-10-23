@@ -344,8 +344,7 @@ export const ProductFormPage: React.FC = () => {
                   options={[
                     { value: ProductStatus.DRAFT, label: 'مسودة' },
                     { value: ProductStatus.ACTIVE, label: 'نشط' },
-                    { value: ProductStatus.OUT_OF_STOCK, label: 'نفذ' },
-                    { value: ProductStatus.DISCONTINUED, label: 'متوقف' },
+                    { value: ProductStatus.ARCHIVED, label: 'مؤرشف' },
                   ]}
                 />
               </Grid>

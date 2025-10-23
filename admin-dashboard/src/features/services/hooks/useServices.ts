@@ -9,6 +9,7 @@ import type {
   ServiceTypesStatisticsParams,
   RevenueStatisticsParams,
 } from '../types/service.types';
+import toast from 'react-hot-toast';
 
 const SERVICES_KEY = 'services';
 
@@ -21,6 +22,12 @@ export const useServices = (params: ListServicesParams = {}) => {
       data: data.data,
       meta: data.meta,
     }),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب قائمة الخدمات');
+    },
   });
 };
 
@@ -29,6 +36,12 @@ export const useService = (id: string) => {
     queryKey: [SERVICES_KEY, 'detail', id],
     queryFn: () => servicesApi.getById(id),
     enabled: !!id,
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب تفاصيل الخدمة');
+    },
   });
 };
 
@@ -37,6 +50,12 @@ export const useServiceOffers = (id: string) => {
     queryKey: [SERVICES_KEY, 'offers', id],
     queryFn: () => servicesApi.getOffers(id),
     enabled: !!id,
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب عروض الخدمة');
+    },
   });
 };
 
@@ -48,6 +67,10 @@ export const useUpdateServiceStatus = () => {
       servicesApi.updateStatus(id, status, note),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [SERVICES_KEY] });
+      toast.success('تم تحديث حالة الخدمة بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في تحديث حالة الخدمة');
     },
   });
 };
@@ -60,6 +83,10 @@ export const useCancelService = () => {
       servicesApi.cancel(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [SERVICES_KEY] });
+      toast.success('تم إلغاء الخدمة بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في إلغاء الخدمة');
     },
   });
 };
@@ -72,6 +99,10 @@ export const useAssignEngineer = () => {
       servicesApi.assignEngineer(id, engineerId, note),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [SERVICES_KEY] });
+      toast.success('تم تعيين المهندس بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في تعيين المهندس');
     },
   });
 };
@@ -81,6 +112,12 @@ export const useOverviewStatistics = () => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'statistics', 'overview'],
     queryFn: () => servicesApi.getOverviewStatistics(),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب الإحصائيات العامة');
+    },
   });
 };
 
@@ -88,6 +125,12 @@ export const useRequestsStatistics = (params: RequestsStatisticsParams) => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'statistics', 'requests', params],
     queryFn: () => servicesApi.getRequestsStatistics(params),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب إحصائيات الطلبات');
+    },
   });
 };
 
@@ -95,6 +138,12 @@ export const useEngineersStatistics = (params: EngineersStatisticsParams) => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'statistics', 'engineers', params],
     queryFn: () => servicesApi.getEngineersStatistics(params),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب إحصائيات المهندسين');
+    },
   });
 };
 
@@ -102,6 +151,12 @@ export const useServiceTypesStatistics = (params: ServiceTypesStatisticsParams) 
   return useQuery({
     queryKey: [SERVICES_KEY, 'statistics', 'service-types', params],
     queryFn: () => servicesApi.getServiceTypesStatistics(params),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب إحصائيات أنواع الخدمات');
+    },
   });
 };
 
@@ -109,6 +164,12 @@ export const useRevenueStatistics = (params: RevenueStatisticsParams) => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'statistics', 'revenue', params],
     queryFn: () => servicesApi.getRevenueStatistics(params),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب إحصائيات الإيرادات');
+    },
   });
 };
 
@@ -117,6 +178,12 @@ export const useEngineersOverviewStatistics = () => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'engineers-overview-stats'],
     queryFn: () => servicesApi.getEngineersOverviewStatistics(),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 10 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب إحصائيات المهندسين');
+    },
   });
 };
 
@@ -128,6 +195,12 @@ export const useEngineers = (params: ListEngineersParams = {}) => {
       data: data.data,
       meta: data.meta,
     }),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب قائمة المهندسين');
+    },
   });
 };
 
@@ -136,6 +209,12 @@ export const useEngineerStatistics = (id: string) => {
     queryKey: [SERVICES_KEY, 'engineer', 'statistics', id],
     queryFn: () => servicesApi.getEngineerStatistics(id),
     enabled: !!id,
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب إحصائيات المهندس');
+    },
   });
 };
 
@@ -151,6 +230,12 @@ export const useEngineerOffers = (
       data: data.data,
       meta: data.meta,
     }),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 2 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب عروض المهندس');
+    },
   });
 };
 
@@ -159,6 +244,12 @@ export const useOffersStatistics = (params?: { dateFrom?: string; dateTo?: strin
   return useQuery({
     queryKey: [SERVICES_KEY, 'offers-statistics', params],
     queryFn: () => servicesApi.getOffersStatistics(params),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب إحصائيات العروض');
+    },
   });
 };
 
@@ -170,5 +261,11 @@ export const useOffers = (params: ListOffersParams = {}) => {
       data: data.data,
       meta: data.meta,
     }),
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    onError: (error: any) => {
+      toast.error(error.message || 'فشل في جلب قائمة العروض');
+    },
   });
 };

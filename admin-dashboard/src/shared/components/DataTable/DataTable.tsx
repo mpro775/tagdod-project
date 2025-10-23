@@ -18,7 +18,6 @@ export interface DataTableProps {
   paginationModel: GridPaginationModel;
   // eslint-disable-next-line no-unused-vars
   onPaginationModelChange: (model: GridPaginationModel) => void;
-  rowCount: number;
 
   // Sorting
   sortModel?: GridSortModel;
@@ -56,7 +55,6 @@ export const DataTable: React.FC<DataTableProps> = ({
   loading = false,
   paginationModel,
   onPaginationModelChange,
-  rowCount,
   sortModel,
   onSortModelChange,
   selectable = false,
@@ -158,7 +156,6 @@ export const DataTable: React.FC<DataTableProps> = ({
         paginationMode="client"
         paginationModel={paginationModel}
         onPaginationModelChange={onPaginationModelChange}
-        rowCount={rowCount}
         pageSizeOptions={[5, 10, 20, 50]}
         // Sorting
         sortingMode="client"

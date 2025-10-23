@@ -1,36 +1,31 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Paper, Typography, Grid, Button, CircularProgress, FormControlLabel, Switch } from '@mui/material';
-import { Save, ArrowBack, Image } from '@mui/icons-material';
-import { useForm } from 'react-hook-form';
+import {
+  Box,
+  Paper,
+  Typography,
+  Grid,
+  Button,
+  CircularProgress,
+  FormControlLabel,
+  Switch,
+  TextField,
+} from '@mui/material';
+import { Save, ArrowBack } from '@mui/icons-material';
+import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
-import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
-import { useCreateBanner, useUpdateBanner, useBanner } from '@/features/marketing/hooks/useMarketing';
-import type { CreateBannerDto, UpdateBannerDto } from '@/features/marketing/api/marketingApi';
+import { useCreateBanner, useUpdateBanner, useBanner } from '../hooks/useBanners';
+import {
+  BANNER_LOCATION_OPTIONS,
+  BANNER_PROMOTION_TYPE_OPTIONS,
+  BannerPromotionType,
+} from '../types/banner.types';
+import type { CreateBannerDto, UpdateBannerDto } from '../types/banner.types';
 
 type BannerFormData = CreateBannerDto | UpdateBannerDto;
 
-const locationOptions = [
-  { value: 'home_top', label: 'أعلى الصفحة الرئيسية' },
-  { value: 'home_middle', label: 'وسط الصفحة الرئيسية' },
-  { value: 'home_bottom', label: 'أسفل الصفحة الرئيسية' },
-  { value: 'category_top', label: 'أعلى صفحة الفئة' },
-  { value: 'product_page', label: 'صفحة المنتج' },
-  { value: 'cart_page', label: 'صفحة سلة المشتريات' },
-  { value: 'checkout_page', label: 'صفحة الدفع' },
-  { value: 'sidebar', label: 'الشريط الجانبي' },
-  { value: 'footer', label: 'أسفل الصفحة' },
-];
-
-const promotionTypeOptions = [
-  { value: 'discount', label: 'خصم' },
-  { value: 'free_shipping', label: 'شحن مجاني' },
-  { value: 'new_arrival', label: 'منتج جديد' },
-  { value: 'sale', label: 'تخفيض' },
-  { value: 'seasonal', label: 'موسمي' },
-  { value: 'brand_promotion', label: 'ترويج العلامة التجارية' },
-];
+// Using the imported options from types
 
 export const BannerFormPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,15 +39,22 @@ export const BannerFormPage: React.FC = () => {
   const { mutate: createBanner, isPending: creating } = useCreateBanner();
   const { mutate: updateBanner, isPending: updating } = useUpdateBanner();
 
-  const { control, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<BannerFormData>({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<BannerFormData>({
     defaultValues: {
       title: '',
       description: '',
       imageUrl: '',
       linkUrl: '',
       altText: '',
-      location: 'home_top',
-      promotionType: 'discount',
+      location: BANNER_LOCATION_OPTIONS[0].value,
+      promotionType: BannerPromotionType.DISCOUNT,
       isActive: true,
       sortOrder: 0,
       startDate: '',
@@ -103,7 +105,7 @@ export const BannerFormPage: React.FC = () => {
         }
       );
     } else {
-      createBanner(data, {
+      createBanner(data as CreateBannerDto, {
         onSuccess: () => {
           toast.success('تم إنشاء البانر بنجاح');
           navigate('/admin/banners');
@@ -142,85 +144,110 @@ export const BannerFormPage: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={3}>
             {/* Basic Information */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 المعلومات الأساسية
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={8}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Controller
                 name="title"
-                control={control}
-                label="عنوان البانر"
-                rules={{ required: 'عنوان البانر مطلوب' }}
-                error={!!errors.title}
-                helperText={errors.title?.message}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="عنوان البانر"
+                    error={!!errors.title}
+                    helperText={errors.title?.message}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={4}>
-              <FormSelect
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Controller
                 name="location"
-                control={control}
-                label="موقع العرض"
-                options={locationOptions}
-                rules={{ required: 'موقع العرض مطلوب' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="موقع العرض"
+                    error={!!errors.location}
+                    helperText={errors.location?.message}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12}>
-              <FormInput
+            <Grid size={{ xs: 12 }}>
+              <Controller
                 name="description"
                 control={control}
-                label="وصف البانر"
-                multiline
-                rows={3}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    multiline
+                    rows={3}
+                    fullWidth
+                    label="وصف البانر"
+                
+                />
+              )}
               />
             </Grid>
 
             {/* Image and Link */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 الصورة والرابط
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="imageUrl"
                 control={control}
-                label="رابط الصورة"
                 rules={{
                   required: 'رابط الصورة مطلوب',
                   pattern: {
                     value: /^https?:\/\/.+/,
-                    message: 'يجب أن يكون رابط صورة صحيح'
-                  }
+                    message: 'يجب أن يكون رابط صورة صحيح',
+                  },
                 }}
-                error={!!errors.imageUrl}
-                helperText={errors.imageUrl?.message}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="رابط الصورة"
+                    error={!!error}
+                    helperText={error?.message || "رابط الصورة مطلوب"}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="linkUrl"
                 control={control}
-                label="رابط التوجيه"
-                rules={{
-                  pattern: {
-                    value: /^https?:\/\/.+/,
-                    message: 'يجب أن يكون رابط صحيح'
-                  }
-                }}
-                helperText="اتركه فارغاً إذا لم يكن هناك رابط"
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="رابط التوجيه"
+                    error={!!error}
+                    helperText={error?.message || "اتركه فارغاً إذا لم يكن هناك رابط"}
+                  />
+                )}
               />
             </Grid>
 
             {imageUrl && (
-              <Grid item xs={12}>
-                <Box sx={{ textAlign: 'center', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+              <Grid size={{ xs: 12 }}>
+                <Box
+                  sx={{ textAlign: 'center', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}
+                >
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     معاينة الصورة:
                   </Typography>
@@ -233,7 +260,7 @@ export const BannerFormPage: React.FC = () => {
                       maxHeight: 200,
                       objectFit: 'contain',
                       borderRadius: 1,
-                      boxShadow: 1
+                      boxShadow: 1,
                     }}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
@@ -243,58 +270,76 @@ export const BannerFormPage: React.FC = () => {
               </Grid>
             )}
 
-            <Grid item xs={12}>
-              <FormInput
+            <Grid size={{ xs: 12 }}>
+              <Controller
                 name="altText"
                 control={control}
-                label="نص بديل للصورة"
-                helperText="مهم لإمكانية الوصول"
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="نص بديل للصورة"
+                    type="text"
+                    InputProps={{ inputProps: { min: 0 } }}
+                  />
+                )}
               />
             </Grid>
 
             {/* Settings */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 الإعدادات
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormSelect
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="promotionType"
                 control={control}
-                label="نوع الترويج"
-                options={promotionTypeOptions}
+                render={({ field }) => (
+                  <FormSelect
+                    {...field}
+                    label="نوع الترويج"
+                    options={BANNER_PROMOTION_TYPE_OPTIONS}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="sortOrder"
                 control={control}
-                label="ترتيب العرض"
-                type="number"
-                rules={{
-                  min: { value: 0, message: 'يجب أن يكون الترتيب أكبر من أو يساوي 0' },
-                }}
-                helperText="رقم أقل = أولوية أعلى"
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="ترتيب العرض"
+                    type="number"
+                    InputProps={{ inputProps: { min: 0 } }}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="displayDuration"
                 control={control}
-                label="مدة العرض (مللي ثانية)"
-                type="number"
-                rules={{
-                  min: { value: 1000, message: 'يجب أن تكون المدة على الأقل 1000 مللي ثانية' },
-                }}
-                helperText="مدة عرض البانر في الشرائح المتحركة"
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="مدة العرض (مللي ثانية)"
+                    type="number"
+                    InputProps={{ inputProps: { min: 1000 } }}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
                 <FormControlLabel
                   control={
@@ -309,34 +354,46 @@ export const BannerFormPage: React.FC = () => {
             </Grid>
 
             {/* Date Range */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 نطاق التاريخ
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="startDate"
                 control={control}
-                label="تاريخ البداية"
-                type="date"
-                InputLabelProps={{ shrink: true }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="تاريخ البداية"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="endDate"
                 control={control}
-                label="تاريخ النهاية"
-                type="date"
-                InputLabelProps={{ shrink: true }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="تاريخ النهاية"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
               />
             </Grid>
 
             {/* Submit Button */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Box display="flex" gap={2} justifyContent="flex-end">
                 <Button
                   variant="outlined"

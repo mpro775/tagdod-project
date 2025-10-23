@@ -125,3 +125,12 @@ export const useDeleteAttributeValue = () => {
     onError: ErrorHandler.showError,
   });
 };
+
+// ==================== Statistics ====================
+
+export const useAttributeStats = () => {
+  return useQuery({
+    queryKey: [ATTRIBUTES_KEY, 'stats'],
+    queryFn: () => attributesApi.getStats(),
+  });
+};

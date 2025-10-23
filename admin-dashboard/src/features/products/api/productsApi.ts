@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client';
+import { sanitizePaginationParams } from '@/shared/utils/formatters';
 import type {
   Product,
   Variant,
@@ -9,6 +10,11 @@ import type {
   UpdateVariantDto,
   GenerateVariantsDto,
   ProductStats,
+  PriceInfo,
+  InventorySummary,
+  StockUpdateRequest,
+  BulkUpdateStockDto,
+  StockAlertDto,
 } from '../types/product.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
@@ -27,7 +33,7 @@ export const productsApi = {
    * List products
    */
   list: async (params: ListProductsParams): Promise<PaginatedResponse<Product>> => {
-    const response = await apiClient.get('/admin/products', { params });
+    const response = await apiClient.get('/admin/products', { params: sanitizePaginationParams(params) });
     return response.data;
   },
 
@@ -141,6 +147,96 @@ export const productsApi = {
   listVariants: async (productId: string): Promise<Variant[]> => {
     const response = await apiClient.get<ApiResponse<Variant[]>>(
       `/admin/products/${productId}/variants`
+    );
+    return response.data.data;
+  },
+
+  // ==================== Pricing Management ====================
+
+  /**
+   * Get variant price in specific currency
+   */
+  getVariantPrice: async (variantId: string, currency?: string): Promise<PriceInfo> => {
+    const response = await apiClient.get<ApiResponse<PriceInfo>>(
+      `/admin/products/variants/${variantId}/price`,
+      { params: { currency } }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Get all variant prices for product
+   */
+  getProductPrices: async (productId: string, currency?: string): Promise<PriceInfo[]> => {
+    const response = await apiClient.get<ApiResponse<PriceInfo[]>>(
+      `/admin/products/${productId}/prices`,
+      { params: { currency } }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Get product price range
+   */
+  getPriceRange: async (productId: string, currency?: string): Promise<{ min: number; max: number }> => {
+    const response = await apiClient.get<ApiResponse<{ min: number; max: number }>>(
+      `/admin/products/${productId}/price-range`,
+      { params: { currency } }
+    );
+    return response.data.data;
+  },
+
+  // ==================== Inventory Management ====================
+
+  /**
+   * Update variant stock
+   */
+  updateStock: async (variantId: string, data: StockUpdateRequest): Promise<Variant> => {
+    const response = await apiClient.post<ApiResponse<Variant>>(
+      `/admin/products/variants/${variantId}/stock`,
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Check variant availability
+   */
+  checkAvailability: async (variantId: string, quantity: number): Promise<{ available: boolean; availableQuantity: number }> => {
+    const response = await apiClient.get<ApiResponse<{ available: boolean; availableQuantity: number }>>(
+      `/admin/products/variants/${variantId}/availability`,
+      { params: { quantity } }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Get low stock variants
+   */
+  getLowStock: async (threshold?: number): Promise<Variant[]> => {
+    const response = await apiClient.get<ApiResponse<Variant[]>>(
+      '/admin/products/inventory/low-stock',
+      { params: { threshold } }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Get out of stock variants
+   */
+  getOutOfStock: async (): Promise<Variant[]> => {
+    const response = await apiClient.get<ApiResponse<Variant[]>>(
+      '/admin/products/inventory/out-of-stock'
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Get inventory summary
+   */
+  getInventorySummary: async (): Promise<InventorySummary> => {
+    const response = await apiClient.get<ApiResponse<InventorySummary>>(
+      '/admin/products/inventory/summary'
     );
     return response.data.data;
   },

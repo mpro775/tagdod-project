@@ -17,6 +17,16 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Skeleton,
+  Alert,
+  Snackbar,
+  Tooltip,
+  Paper,
+  Divider,
+  Avatar,
+  Stack,
+  Badge,
+  LinearProgress,
 } from '@mui/material';
 import toast from 'react-hot-toast';
 import {
@@ -27,6 +37,13 @@ import {
   Cancel,
   PersonAdd,
   Refresh,
+  Assignment,
+  Engineering,
+  AttachMoney,
+  Schedule,
+  CheckCircle,
+  Error,
+  Warning,
 } from '@mui/icons-material';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -60,6 +77,16 @@ const statusLabels: Record<ServiceStatus, string> = {
   CANCELLED: 'ملغي',
 };
 
+const statusIcons: Record<ServiceStatus, React.ReactNode> = {
+  OPEN: <Warning />,
+  OFFERS_COLLECTING: <Assignment />,
+  ASSIGNED: <Engineering />,
+  IN_PROGRESS: <Schedule />,
+  COMPLETED: <CheckCircle />,
+  RATED: <CheckCircle />,
+  CANCELLED: <Error />,
+};
+
 export const ServicesListPage: React.FC = () => {
   const [filters, setFilters] = useState({
     status: undefined as ServiceStatus | undefined,
@@ -78,14 +105,23 @@ export const ServicesListPage: React.FC = () => {
     reason: '',
     engineerId: '',
   });
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('success');
 
-  const { data: servicesData, isLoading, refetch } = useServices(filters);
+  const { data: servicesData, isLoading, error, refetch } = useServices(filters);
   const services = servicesData?.data || [];
   const meta = servicesData?.meta;
 
   const updateStatusMutation = useUpdateServiceStatus();
   const cancelServiceMutation = useCancelService();
   const assignEngineerMutation = useAssignEngineer();
+
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters((prev) => ({
@@ -116,10 +152,9 @@ export const ServicesListPage: React.FC = () => {
           note: dialogData.note,
         });
         setDialogOpen(false);
-        refetch();
-        toast.success('تم تحديث حالة الطلب بنجاح');
-      } catch {
-        toast.error('فشل في تحديث حالة الطلب');
+        showSnackbar('تم تحديث حالة الطلب بنجاح', 'success');
+      } catch (error: any) {
+        showSnackbar(error.message || 'فشل في تحديث حالة الطلب', 'error');
       }
     }
   };
@@ -132,10 +167,9 @@ export const ServicesListPage: React.FC = () => {
           reason: dialogData.reason,
         });
         setDialogOpen(false);
-        refetch();
-        toast.success('تم إلغاء الطلب بنجاح');
-      } catch {
-        toast.error('فشل في إلغاء الطلب');
+        showSnackbar('تم إلغاء الطلب بنجاح', 'success');
+      } catch (error: any) {
+        showSnackbar(error.message || 'فشل في إلغاء الطلب', 'error');
       }
     }
   };
@@ -149,10 +183,9 @@ export const ServicesListPage: React.FC = () => {
           note: dialogData.note,
         });
         setDialogOpen(false);
-        refetch();
-        toast.success('تم تعيين المهندس بنجاح');
-      } catch {
-        toast.error('فشل في تعيين المهندس');
+        showSnackbar('تم تعيين المهندس بنجاح', 'success');
+      } catch (error: any) {
+        showSnackbar(error.message || 'فشل في تعيين المهندس', 'error');
       }
     }
   };
@@ -177,13 +210,18 @@ export const ServicesListPage: React.FC = () => {
       headerName: 'عنوان الطلب',
       width: 250,
       renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" fontWeight="medium">
-            {params.value}
-          </Typography>
-          <Typography variant="caption" color="textSecondary">
-            {params.row.type}
-          </Typography>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+            <Assignment />
+          </Avatar>
+          <Box>
+            <Typography variant="body2" fontWeight="medium">
+              {params.value}
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              {params.row.type}
+            </Typography>
+          </Box>
         </Box>
       ),
     },
@@ -192,13 +230,18 @@ export const ServicesListPage: React.FC = () => {
       headerName: 'العميل',
       width: 200,
       renderCell: (params) => (
-        <Box>
-          <Typography variant="body2">
-            {params.value?.firstName} {params.value?.lastName}
-          </Typography>
-          <Typography variant="caption" color="textSecondary">
-            {params.value?.phone}
-          </Typography>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Avatar sx={{ bgcolor: 'info.main', width: 32, height: 32 }}>
+            {params.value?.firstName?.charAt(0) || '?'}
+          </Avatar>
+          <Box>
+            <Typography variant="body2" fontWeight="medium">
+              {params.value?.firstName} {params.value?.lastName}
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              {params.value?.phone}
+            </Typography>
+          </Box>
         </Box>
       ),
     },
@@ -208,18 +251,28 @@ export const ServicesListPage: React.FC = () => {
       width: 200,
       renderCell: (params) =>
         params.value ? (
-          <Box>
-            <Typography variant="body2">
-              {params.value.firstName} {params.value.lastName}
-            </Typography>
-            <Typography variant="caption" color="textSecondary">
-              {params.value.phone}
-            </Typography>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Avatar sx={{ bgcolor: 'success.main', width: 32, height: 32 }}>
+              <Engineering />
+            </Avatar>
+            <Box>
+              <Typography variant="body2" fontWeight="medium">
+                {params.value.firstName} {params.value.lastName}
+              </Typography>
+              <Typography variant="caption" color="textSecondary">
+                {params.value.phone}
+              </Typography>
+            </Box>
           </Box>
         ) : (
-          <Typography variant="body2" color="textSecondary">
-            غير مُعيَّن
-          </Typography>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Avatar sx={{ bgcolor: 'grey.300', width: 32, height: 32 }}>
+              <Engineering />
+            </Avatar>
+            <Typography variant="body2" color="textSecondary">
+              غير مُعيَّن
+            </Typography>
+          </Box>
         ),
     },
     {
@@ -228,9 +281,12 @@ export const ServicesListPage: React.FC = () => {
       width: 120,
       renderCell: (params) =>
         params.value ? (
-          <Typography variant="body2" fontWeight="medium" color="success.main">
-            {formatCurrency(params.value.amount)}
-          </Typography>
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <AttachMoney sx={{ color: 'success.main', fontSize: '1rem' }} />
+            <Typography variant="body2" fontWeight="medium" color="success.main">
+              {formatCurrency(params.value.amount)}
+            </Typography>
+          </Box>
         ) : (
           <Typography variant="body2" color="textSecondary">
             -
@@ -243,9 +299,11 @@ export const ServicesListPage: React.FC = () => {
       width: 140,
       renderCell: (params) => (
         <Chip
+          icon={statusIcons[params.value as ServiceStatus]}
           label={statusLabels[params.value as ServiceStatus] || params.value}
           color={statusColors[params.value as ServiceStatus]}
           size="small"
+          variant="outlined"
         />
       ),
     },
@@ -260,38 +318,97 @@ export const ServicesListPage: React.FC = () => {
       headerName: 'الإجراءات',
       width: 200,
       renderCell: (params) => (
-        <Box display="flex" gap={1}>
-          <IconButton size="small" onClick={() => handleAction('view', params.row)} color="primary">
-            <Visibility />
-          </IconButton>
-          <IconButton size="small" onClick={() => handleAction('edit', params.row)} color="info">
-            <Edit />
-          </IconButton>
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="عرض التفاصيل">
+            <IconButton size="small" onClick={() => handleAction('view', params.row)} color="primary">
+              <Visibility />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="تعديل الحالة">
+            <IconButton size="small" onClick={() => handleAction('edit', params.row)} color="info">
+              <Edit />
+            </IconButton>
+          </Tooltip>
           {params.row.status !== 'COMPLETED' && params.row.status !== 'CANCELLED' && (
             <>
-              <IconButton
-                size="small"
-                onClick={() => handleAction('assign', params.row)}
-                color="success"
-              >
-                <PersonAdd />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => handleAction('cancel', params.row)}
-                color="error"
-              >
-                <Cancel />
-              </IconButton>
+              <Tooltip title="تعيين مهندس">
+                <IconButton
+                  size="small"
+                  onClick={() => handleAction('assign', params.row)}
+                  color="success"
+                >
+                  <PersonAdd />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="إلغاء الطلب">
+                <IconButton
+                  size="small"
+                  onClick={() => handleAction('cancel', params.row)}
+                  color="error"
+                >
+                  <Cancel />
+                </IconButton>
+              </Tooltip>
             </>
           )}
-        </Box>
+        </Stack>
       ),
     },
   ];
 
+  // Loading skeleton
+  if (isLoading) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          إدارة الخدمات
+        </Typography>
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Skeleton variant="text" width="30%" height={40} />
+            <Box sx={{ mt: 2 }}>
+              <Grid container spacing={2}>
+                {[1, 2, 3, 4].map((i) => (
+                  <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Skeleton variant="rectangular" height={56} />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <Skeleton variant="rectangular" height={400} />
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          إدارة الخدمات
+        </Typography>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          فشل في تحميل البيانات: {error.message}
+        </Alert>
+        <Button variant="contained" startIcon={<Refresh />} onClick={() => refetch()}>
+          إعادة المحاولة
+        </Button>
+      </Box>
+    );
+  }
+
   return (
     <Box>
+      <Typography variant="h4" gutterBottom>
+        إدارة الخدمات
+      </Typography>
+      
       {/* الفلاتر */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
@@ -339,7 +456,7 @@ export const ServicesListPage: React.FC = () => {
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <Box display="flex" gap={1}>
+              <Stack direction="row" spacing={1}>
                 <Button
                   variant="contained"
                   startIcon={<FilterList />}
@@ -364,7 +481,7 @@ export const ServicesListPage: React.FC = () => {
                 >
                   إعادة تعيين
                 </Button>
-              </Box>
+              </Stack>
             </Grid>
           </Grid>
         </CardContent>
@@ -381,6 +498,7 @@ export const ServicesListPage: React.FC = () => {
           setFilters((prev) => ({ ...prev, page: model.page + 1 }));
         }}
         rowCount={meta?.total || 0}
+        getRowId={(row) => row._id}
         height="calc(100vh - 300px)"
       />
 
@@ -599,6 +717,22 @@ export const ServicesListPage: React.FC = () => {
           )}
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

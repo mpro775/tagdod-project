@@ -1,15 +1,13 @@
 import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
-// Product Status - متطابق مع الباك إند
+// Product Status - متطابق تماماً مع الباك إند
 export enum ProductStatus {
   // eslint-disable-next-line no-unused-vars
-  DRAFT = 'draft',
+  DRAFT = 'draft',           // مسودة
   // eslint-disable-next-line no-unused-vars
-  ACTIVE = 'active',
+  ACTIVE = 'active',         // نشط
   // eslint-disable-next-line no-unused-vars
-  OUT_OF_STOCK = 'out_of_stock',
-  // eslint-disable-next-line no-unused-vars
-  DISCONTINUED = 'discontinued',
+  ARCHIVED = 'archived',     // مؤرشف
 }
 
 // Variant Attribute
@@ -22,48 +20,45 @@ export interface VariantAttribute {
 
 // Product Interface - متطابق تماماً مع Backend
 export interface Product extends BaseEntity {
-  // المعلومات الأساسية
-  name: string;
-  nameEn: string;
+  // المعلومات الأساسية (ثنائي اللغة)
+  name: string; // الاسم بالعربية
+  nameEn: string; // الاسم بالإنجليزية
   slug: string;
-  description: string;
-  descriptionEn: string;
+  description: string; // الوصف بالعربية
+  descriptionEn: string; // الوصف بالإنجليزية
 
   // التصنيف
   categoryId: string;
   brandId?: string;
   sku?: string;
 
-  // الصور
-  mainImage?: string;
-  mainImageId?: string;
-  imageIds: string[];
-  images: string[];
+  // الصور (مبسط)
+  mainImageId?: string; // الصورة الرئيسية
+  imageIds: string[]; // صور إضافية
 
   // السمات
-  attributes: string[];
+  attributes: string[]; // السمات التي يستخدمها هذا المنتج
+
+  // الحالة (مبسط)
+  status: ProductStatus;
+  isActive: boolean;
+  isFeatured: boolean; // منتج مميز
+  isNew: boolean; // منتج جديد
+
+  // الإحصائيات
+  viewsCount: number; // عدد المشاهدات
+  salesCount: number; // عدد المبيعات
+  variantsCount: number; // عدد الـ variants
+  reviewsCount: number; // عدد التقييمات
+  averageRating: number; // متوسط التقييم
 
   // SEO
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string[];
 
-  // الحالة والعرض
-  status: ProductStatus;
-  isActive: boolean;
-  isFeatured: boolean;
-  isNew: boolean;
-  isBestseller: boolean;
-
   // الترتيب
   order: number;
-
-  // الإحصائيات
-  viewsCount: number;
-  salesCount: number;
-  variantsCount: number;
-  reviewsCount: number;
-  averageRating: number;
 
   // Soft Delete
   deletedAt?: Date | null;
@@ -107,9 +102,6 @@ export interface Variant extends BaseEntity {
 
   // الوزن والأبعاد
   weight?: number;
-  length?: number;
-  width?: number;
-  height?: number;
 
   // الحالة
   isActive: boolean;
@@ -126,33 +118,42 @@ export interface Variant extends BaseEntity {
 // DTOs - متطابقة تماماً مع Backend
 
 export interface CreateProductDto {
-  name: string;
-  nameEn: string;
-  description: string;
-  descriptionEn: string;
+  name: string; // الاسم بالعربية
+  nameEn: string; // الاسم بالإنجليزية
+  description: string; // الوصف بالعربية
+  descriptionEn: string; // الوصف بالإنجليزية
   categoryId: string;
+  
   brandId?: string;
   sku?: string;
   mainImage?: string;
   mainImageId?: string;
   imageIds?: string[];
   images?: string[];
-  attributes?: string[];
+  attributes?: string[]; // Attribute IDs
+  
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string[];
+  
   status?: ProductStatus;
   isFeatured?: boolean;
   isNew?: boolean;
-  isBestseller?: boolean;
   order?: number;
+  
+  // حقول المخزون
+  stock?: number;
+  minStock?: number;
+  maxStock?: number;
+  trackStock?: boolean;
+  allowBackorder?: boolean;
 }
 
 export interface UpdateProductDto {
-  name?: string;
-  nameEn?: string;
-  description?: string;
-  descriptionEn?: string;
+  name?: string; // الاسم بالعربية
+  nameEn?: string; // الاسم بالإنجليزية
+  description?: string; // الوصف بالعربية
+  descriptionEn?: string; // الوصف بالإنجليزية
   categoryId?: string;
   brandId?: string;
   sku?: string;
@@ -161,15 +162,23 @@ export interface UpdateProductDto {
   imageIds?: string[];
   images?: string[];
   attributes?: string[];
+  
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string[];
+  
   status?: ProductStatus;
   isActive?: boolean;
   isFeatured?: boolean;
   isNew?: boolean;
-  isBestseller?: boolean;
   order?: number;
+  
+  // حقول المخزون
+  stock?: number;
+  minStock?: number;
+  maxStock?: number;
+  trackStock?: boolean;
+  allowBackorder?: boolean;
 }
 
 export interface ListProductsParams extends ListParams {
@@ -179,6 +188,13 @@ export interface ListProductsParams extends ListParams {
   isFeatured?: boolean;
   isNew?: boolean;
   includeDeleted?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  
+  // فلاتر المخزون
+  lowStock?: boolean;
+  outOfStock?: boolean;
+  trackStock?: boolean;
 }
 
 export interface CreateVariantDto {
@@ -215,10 +231,45 @@ export interface ProductStats {
   total: number;
   active: number;
   draft: number;
-  outOfStock: number;
-  discontinued: number;
+  archived: number;
   featured: number;
   new: number;
-  bestseller: number;
+}
+
+// Pricing and Inventory Types
+export interface PriceInfo {
+  variantId: string;
+  currency: string;
+  price: number;
+  formatted: string;
+}
+
+export interface InventorySummary {
+  totalVariants: number;
+  inStock: number;
+  lowStock: number;
+  outOfStock: number;
+  totalValue: number;
+}
+
+export interface StockUpdateRequest {
+  quantity: number;
+  operation: 'add' | 'subtract' | 'set';
+  reason?: string;
+}
+
+// Bulk Operations
+export interface BulkUpdateStockDto {
+  updates: Array<{
+    productId: string;
+    stock: number;
+    reason?: string;
+  }>;
+}
+
+export interface StockAlertDto {
+  minStockThreshold?: number;
+  includeOutOfStock?: boolean;
+  includeLowStock?: boolean;
 }
 

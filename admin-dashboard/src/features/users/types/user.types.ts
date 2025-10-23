@@ -22,17 +22,45 @@ export enum UserStatus {
   SUSPENDED = 'suspended',
   // eslint-disable-next-line no-unused-vars
   PENDING = 'pending',
+  // eslint-disable-next-line no-unused-vars
+  DELETED = 'deleted',
 }
 
-// User Capabilities
+// Capability Status - متطابق مع الباك إند
+export enum CapabilityStatus {
+  // eslint-disable-next-line no-unused-vars
+  NONE = 'none',
+  // eslint-disable-next-line no-unused-vars
+  PENDING = 'pending',
+  // eslint-disable-next-line no-unused-vars
+  APPROVED = 'approved',
+  // eslint-disable-next-line no-unused-vars
+  REJECTED = 'rejected',
+}
+
+// Currency - متطابق مع الباك إند
+export enum Currency {
+  // eslint-disable-next-line no-unused-vars
+  USD = 'USD',
+  // eslint-disable-next-line no-unused-vars
+  SAR = 'SAR',
+  // eslint-disable-next-line no-unused-vars
+  AED = 'AED',
+  // eslint-disable-next-line no-unused-vars
+  EUR = 'EUR',
+}
+
+// User Capabilities - متطابق مع الباك إند
 export interface UserCapabilities {
   userId: string;
   customer_capable: boolean;
   engineer_capable: boolean;
-  engineer_status?: 'pending' | 'approved' | 'rejected';
+  engineer_status: CapabilityStatus;
   wholesale_capable: boolean;
-  wholesale_status?: 'pending' | 'approved' | 'rejected';
-  wholesale_discount_percent?: number;
+  wholesale_status: CapabilityStatus;
+  wholesale_discount_percent: number;
+  admin_capable: boolean;
+  admin_status: CapabilityStatus;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,12 +74,17 @@ export interface User extends BaseEntity {
   jobTitle?: string;
 
   // Roles & Permissions
-  isAdmin: boolean;
   roles: UserRole[];
   permissions: string[];
 
   // Status
   status: UserStatus;
+
+  // Currency
+  preferredCurrency: Currency;
+
+  // Activity tracking
+  lastActivityAt: Date;
 
   // Soft Delete
   deletedAt?: Date | null;
@@ -89,7 +122,6 @@ export interface UpdateUserDto {
   roles?: UserRole[];
   permissions?: string[];
   status?: UserStatus;
-  isAdmin?: boolean;
   capabilityRequest?: 'engineer' | 'wholesale';
   wholesaleDiscountPercent?: number;
 }

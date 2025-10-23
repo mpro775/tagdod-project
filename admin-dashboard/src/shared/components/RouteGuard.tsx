@@ -33,7 +33,7 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   }
 
   // Not authenticated
-  if (!isAuthenticated) {
+  if (isAuthenticated === false) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

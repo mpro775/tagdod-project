@@ -1,393 +1,524 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
-  Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
+  Card,
+  CardContent,
+  Chip,
+  IconButton,
+  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  TextField,
+  Button,
+  Grid,
+  Typography,
+  Stack,
+  Paper,
+  Divider,
+  Alert,
+  Skeleton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Avatar,
+  Collapse,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
+import {
+  Visibility,
+  FilterList,
+  Download,
+  Refresh,
+  Search,
+  Clear,
+  Assignment,
+  TrendingUp,
+  LocalShipping,
+  CheckCircle,
+  Cancel,
+  ExpandMore,
+  ExpandLess,
+  Menu,
+  Close,
+} from '@mui/icons-material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useNavigate } from 'react-router-dom';
-import { ResponsiveListWrapper } from '@/shared/components/ResponsiveList';
-import { OrderCard } from '@/shared/components/Cards';
-import { useOrders, useUpdateOrderStatus, useCancelOrder } from '../hooks/useOrders';
-import { formatDate } from '@/shared/utils/formatters';
-import type { Order } from '../types/order.types';
-import { OrderStatus } from '../types/order.types';
+import { useOrders, useOrderStats, useBulkUpdateOrderStatus } from '../hooks/useOrders';
+import { formatDate, formatCurrency } from '@/shared/utils/formatters';
+import { OrderStatusChip } from '../components/OrderStatusChip';
+import type {
+  Order,
+  OrderStatus,
+  PaymentStatus,
+  PaymentMethod,
+  ListOrdersParams,
+} from '../types/order.types';
+import { ar } from 'date-fns/locale';
 
-export const OrdersListPageResponsive: React.FC = () => {
-  const navigate = useNavigate();
-
-  // State
-  const [paginationModel] = useState<GridPaginationModel>({
-    page: 0,
-    pageSize: 20,
-  });
-
-  const [search] = useState('');
-  const [sortModel] = useState<GridSortModel>([
-    { field: 'createdAt', sort: 'desc' }
-  ]);
-
-  // API
-  const { data, isLoading, error } = useOrders({
-    page: paginationModel.page + 1,
-    limit: paginationModel.pageSize,
-    search,
-    sortBy: sortModel[0]?.field || 'createdAt',
-    sortOrder: sortModel[0]?.sort || 'desc',
-  });
-
-  // Mutations
-  const updateOrderStatusMutation = useUpdateOrderStatus();
-  const cancelOrderMutation = useCancelOrder();
-
-  // Dialog state
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    order: Order | null;
-    action: 'cancel' | 'update_status' | null;
-  }>({
-    open: false,
-    order: null,
-    action: null,
-  });
-
-  // Status update form state
-  const [statusUpdateData, setStatusUpdateData] = useState<{
-    status: OrderStatus;
-    notes: string;
-  }>({
-    status: OrderStatus.PENDING_PAYMENT,
-    notes: '',
-  });
-
-  // Actions
-  const handleEdit = (order: Order) => {
-    navigate(`/orders/${order._id}`);
-  };
-
-  const handleView = (order: Order) => {
-    navigate(`/orders/${order._id}`);
-  };
-
-  const handleDelete = (order: Order) => {
-    setConfirmDialog({
-      open: true,
-      order,
-      action: 'cancel',
-    });
-  };
-
-  const handleUpdateStatus = (order: Order) => {
-    setStatusUpdateData({
-      status: order.status,
-      notes: '',
-    });
-    setConfirmDialog({
-      open: true,
-      order,
-      action: 'update_status',
-    });
-  };
-
-  const handleConfirmAction = async () => {
-    if (!confirmDialog.order || !confirmDialog.action) return;
-
-    const { order, action } = confirmDialog;
-
-    if (action === 'cancel') {
-      await cancelOrderMutation.mutateAsync({
-        id: order._id,
-        reason: 'تم إلغاء الطلب من قبل الإدارة',
-      });
-    } else if (action === 'update_status') {
-      await updateOrderStatusMutation.mutateAsync({
-        id: order._id,
-        data: statusUpdateData,
-      });
-    }
-
-    handleCloseDialog();
-  };
-
-  const handleCloseDialog = () => {
-    setConfirmDialog({
-      open: false,
-      order: null,
-      action: null,
-    });
-    setStatusUpdateData({
-      status: OrderStatus.PENDING_PAYMENT,
-      notes: '',
-    });
-  };
-
-  // Columns for DataGrid
-  const columns: GridColDef[] = [
-    {
-      field: 'orderNumber',
-      headerName: 'رقم الطلب',
-      minWidth: 120,
-      flex: 0.8,
-      renderCell: (params) => (
-        <Box sx={{ fontWeight: 'medium', fontFamily: 'monospace' }}>
-          #{params.row.orderNumber}
-        </Box>
-      ),
-    },
-    {
-      field: 'customer',
-      headerName: 'العميل',
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params) => (
-        <Box>
-          <Box sx={{ fontWeight: 'medium' }}>
-            {params.row.customer?.name || 'غير محدد'}
-          </Box>
-          <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-            {params.row.customer?.email}
-          </Box>
-        </Box>
-      ),
-    },
-    {
-      field: 'total',
-      headerName: 'المجموع',
-      minWidth: 100,
-      flex: 0.7,
-      renderCell: (params) => (
-        <Box sx={{ fontWeight: 'medium', color: 'primary.main' }}>
-          {new Intl.NumberFormat('ar-SA', {
-            style: 'currency',
-            currency: 'SAR',
-          }).format(params.row.total)}
-        </Box>
-      ),
-    },
-    {
-      field: 'status',
-      headerName: 'الحالة',
-      minWidth: 120,
-      flex: 0.8,
-      renderCell: (params) => {
-        const statusMap: Record<string, { label: string; color: any }> = {
-          pending: { label: 'في الانتظار', color: 'warning' },
-          confirmed: { label: 'مؤكد', color: 'info' },
-          processing: { label: 'قيد المعالجة', color: 'primary' },
-          shipped: { label: 'تم الشحن', color: 'info' },
-          delivered: { label: 'تم التسليم', color: 'success' },
-          cancelled: { label: 'ملغي', color: 'error' },
-          refunded: { label: 'مسترد', color: 'default' },
-        };
-        const status = statusMap[params.row.status] || { label: 'غير محدد', color: 'default' };
-        return (
-          <Box sx={{ 
-            px: 1, 
-            py: 0.5, 
-            borderRadius: 1, 
-            bgcolor: `${status.color}.light`,
-            color: `${status.color}.main`,
-            fontSize: '0.75rem',
-            fontWeight: 'medium'
-          }}>
-            {status.label}
-          </Box>
-        );
-      },
-    },
-    {
-      field: 'paymentStatus',
-      headerName: 'حالة الدفع',
-      minWidth: 100,
-      flex: 0.7,
-      renderCell: (params) => {
-        const paymentStatus = params.row.paymentStatus;
-        const color = paymentStatus === 'paid' ? 'success' : 'warning';
-        const label = paymentStatus === 'paid' ? 'مدفوع' : 'غير مدفوع';
-        return (
-          <Box sx={{ 
-            px: 1, 
-            py: 0.5, 
-            borderRadius: 1, 
-            bgcolor: `${color}.light`,
-            color: `${color}.main`,
-            fontSize: '0.75rem',
-            fontWeight: 'medium'
-          }}>
-            {label}
-          </Box>
-        );
-      },
-    },
-    {
-      field: 'items',
-      headerName: 'العناصر',
-      minWidth: 80,
-      flex: 0.6,
-      renderCell: (params) => (
-        <Box sx={{ textAlign: 'center', fontWeight: 'medium' }}>
-          {params.row.items?.length || 0}
-        </Box>
-      ),
-    },
-    {
-      field: 'createdAt',
-      headerName: 'تاريخ الطلب',
-      minWidth: 120,
-      flex: 0.8,
-      valueFormatter: (value) => formatDate(value as Date),
-    },
-  ];
-
-  return (
-    <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        إدارة الطلبات
-      </Typography>
-
-      <ResponsiveListWrapper
-        data={data?.data || []}
-        loading={isLoading}
-        error={error}
-        columns={columns}
-        CardComponent={OrderCard}
-        getRowId={(order) => order._id}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onView={handleView}
-        onUpdateStatus={handleUpdateStatus}
-        showActions={true}
-        cardBreakpoint="md"
-        emptyMessage="لا يوجد طلبات"
-        emptyDescription="لم يتم العثور على أي طلبات في النظام"
-        errorMessage="حدث خطأ أثناء تحميل الطلبات"
-        pagination={true}
-        pageSize={20}
-        pageSizeOptions={[10, 20, 50, 100]}
-        cardContainerProps={{
-          sx: { 
-            px: { xs: 2, sm: 3 },
-            py: 1
-          }
-        }}
-        gridProps={{
-          sx: { 
-            height: 'calc(100vh - 200px)',
-            '& .MuiDataGrid-root': {
-              border: 'none',
-            },
-            '& .MuiDataGrid-cell': {
-              borderBottom: '1px solid #f0f0f0',
-            },
-          }
-        }}
-      />
-
-      {/* Cancel Order Dialog */}
-      <Dialog
-        open={confirmDialog.open && confirmDialog.action === 'cancel'}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          تأكيد إلغاء الطلب
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            هل أنت متأكد من إلغاء الطلب "{confirmDialog.order?.orderNumber}"؟
-            لا يمكن التراجع عن هذا الإجراء وسيتم إشعار العميل.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="inherit">
-            إلغاء
-          </Button>
-          <Button
-            onClick={handleConfirmAction}
-            color="error"
-            variant="contained"
-            disabled={cancelOrderMutation.isPending}
-          >
-            {cancelOrderMutation.isPending ? 'جاري الإلغاء...' : 'إلغاء الطلب'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Update Status Dialog */}
-      <Dialog
-        open={confirmDialog.open && confirmDialog.action === 'update_status'}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          تحديث حالة الطلب
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            تحديث حالة الطلب "{confirmDialog.order?.orderNumber}"
-          </DialogContentText>
-
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>الحالة الجديدة</InputLabel>
-            <Select
-              value={statusUpdateData.status}
-              label="الحالة الجديدة"
-              onChange={(e) => setStatusUpdateData(prev => ({
-                ...prev,
-                status: e.target.value as OrderStatus
-              }))}
-            >
-              <MenuItem value={OrderStatus.PENDING_PAYMENT}>في انتظار الدفع</MenuItem>
-              <MenuItem value={OrderStatus.CONFIRMED}>مؤكد</MenuItem>
-              <MenuItem value={OrderStatus.PROCESSING}>قيد المعالجة</MenuItem>
-              <MenuItem value={OrderStatus.SHIPPED}>تم الشحن</MenuItem>
-              <MenuItem value={OrderStatus.DELIVERED}>تم التسليم</MenuItem>
-              <MenuItem value={OrderStatus.CANCELLED}>ملغي</MenuItem>
-              <MenuItem value={OrderStatus.ON_HOLD}>متوقف مؤقتاً</MenuItem>
-            </Select>
-          </FormControl>
-
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label="ملاحظات (اختياري)"
-            placeholder="أدخل ملاحظات حول تحديث الحالة..."
-            value={statusUpdateData.notes}
-            onChange={(e) => setStatusUpdateData(prev => ({
-              ...prev,
-              notes: e.target.value
-            }))}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="inherit">
-            إلغاء
-          </Button>
-          <Button
-            onClick={handleConfirmAction}
-            color="primary"
-            variant="contained"
-            disabled={updateOrderStatusMutation.isPending}
-          >
-            {updateOrderStatusMutation.isPending ? 'جاري التحديث...' : 'تحديث الحالة'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
-  );
+const paymentStatusLabels: Record<PaymentStatus, string> = {
+  pending: 'معلق',
+  authorized: 'مصرح',
+  paid: 'مدفوع',
+  failed: 'فشل',
+  refunded: 'مسترد',
+  partially_refunded: 'مسترد جزئياً',
+  cancelled: 'ملغي',
 };
 
-export default OrdersListPageResponsive;
+const paymentMethodLabels: Record<PaymentMethod, string> = {
+  COD: 'عند الاستلام',
+  ONLINE: 'أونلاين',
+  WALLET: 'محفظة',
+  BANK_TRANSFER: 'تحويل بنكي',
+};
+
+export const OrdersListPageResponsive: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate();
+
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [filters, setFilters] = useState<ListOrdersParams>({
+    page: 1,
+    limit: 20,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+  });
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+  const { data, isLoading, error, refetch } = useOrders(filters);
+  const { data: stats } = useOrderStats();
+  const bulkUpdateMutation = useBulkUpdateOrderStatus();
+
+  // Update filters when pagination changes
+  React.useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      page: paginationModel.page + 1,
+      limit: paginationModel.pageSize,
+    }));
+  }, [paginationModel]);
+
+  const handleFilterChange = (key: keyof ListOrdersParams, value: any) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      page: 1, // Reset to first page when filtering
+    }));
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      page: 1,
+      limit: 20,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    });
+    setPaginationModel({ page: 0, pageSize: 20 });
+  };
+
+  const handleBulkStatusUpdate = async (status: OrderStatus) => {
+    if (selectedOrders.length === 0) return;
+
+    try {
+      await bulkUpdateMutation.mutateAsync({
+        orderIds: selectedOrders,
+        status,
+        notes: `تم تحديث ${selectedOrders.length} طلب إلى حالة ${status}`,
+      });
+      setSelectedOrders([]);
+    } catch (error) {
+      console.error('Bulk update failed:', error);
+    }
+  };
+
+  const statsCards = useMemo(() => {
+    if (!stats) return null;
+
+    const statsData = [
+      {
+        title: 'إجمالي الطلبات',
+        value: stats.total,
+        icon: <Assignment color="primary" />,
+        color: 'primary',
+      },
+      {
+        title: 'طلبات قيد التجهيز',
+        value: stats.processing,
+        icon: <TrendingUp color="warning" />,
+        color: 'warning',
+      },
+      {
+        title: 'طلبات تم شحنها',
+        value: stats.shipped,
+        icon: <LocalShipping color="info" />,
+        color: 'info',
+      },
+      {
+        title: 'طلبات مكتملة',
+        value: stats.delivered,
+        icon: <CheckCircle color="success" />,
+        color: 'success',
+      },
+      {
+        title: 'طلبات ملغية',
+        value: stats.cancelled,
+        icon: <Cancel color="error" />,
+        color: 'error',
+      },
+    ];
+
+    return statsData;
+  }, [stats]);
+
+  const renderFilters = () => (
+    <Box sx={{ p: 2 }}>
+      <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <FilterList />
+        فلاتر البحث
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12 }}>
+          <TextField
+            fullWidth
+            label="البحث"
+            placeholder="رقم الطلب أو اسم العميل"
+            value={filters.search || ''}
+            onChange={(e) => handleFilterChange('search', e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+            }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <FormControl fullWidth>
+            <InputLabel>حالة الطلب</InputLabel>
+            <Select
+              value={filters.status || ''}
+              onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
+              label="حالة الطلب"
+            >
+              <MenuItem value="">الكل</MenuItem>
+              <MenuItem value="pending_payment">انتظار الدفع</MenuItem>
+              <MenuItem value="confirmed">مؤكد</MenuItem>
+              <MenuItem value="processing">قيد التجهيز</MenuItem>
+              <MenuItem value="shipped">تم الشحن</MenuItem>
+              <MenuItem value="delivered">تم التسليم</MenuItem>
+              <MenuItem value="cancelled">ملغي</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <FormControl fullWidth>
+            <InputLabel>حالة الدفع</InputLabel>
+            <Select
+              value={filters.paymentStatus || ''}
+              onChange={(e) => handleFilterChange('paymentStatus', e.target.value || undefined)}
+              label="حالة الدفع"
+            >
+              <MenuItem value="">الكل</MenuItem>
+              <MenuItem value="pending">معلق</MenuItem>
+              <MenuItem value="paid">مدفوع</MenuItem>
+              <MenuItem value="failed">فشل</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid size={{ xs: 12 }}>
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" startIcon={<Clear />} onClick={handleClearFilters} fullWidth>
+              مسح الفلاتر
+            </Button>
+          </Stack>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+
+  const renderOrderCard = (order: Order) => (
+    <Card key={order._id} sx={{ mb: 2 }}>
+      <CardContent>
+        <Box
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}
+        >
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+              #{order.orderNumber}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {order.deliveryAddress?.recipientName || 'غير محدد'}
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'right' }}>
+            <OrderStatusChip status={order.status} size="small" />
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 1 }}>
+              {formatCurrency(order.total, order.currency)}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="text.secondary">
+              المنتجات: {order.items?.length || 0}
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="text.secondary">
+              {paymentMethodLabels[order.paymentMethod] || order.paymentMethod}
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Chip
+              label={paymentStatusLabels[order.paymentStatus]}
+              color={order.paymentStatus === 'paid' ? 'success' : 'warning'}
+              size="small"
+            />
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="text.secondary">
+              {formatDate(order.createdAt)}
+            </Typography>
+          </Grid>
+        </Grid>
+
+        <Divider sx={{ my: 2 }} />
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Button
+            variant="outlined"
+            startIcon={<Visibility />}
+            onClick={() => navigate(`/orders/${order._id}`)}
+            size="small"
+          >
+            عرض التفاصيل
+          </Button>
+
+          <IconButton
+            onClick={() => setExpandedOrder(expandedOrder === order._id ? null : order._id)}
+            size="small"
+          >
+            {expandedOrder === order._id ? <ExpandLess /> : <ExpandMore />}
+          </IconButton>
+        </Box>
+
+        <Collapse in={expandedOrder === order._id}>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              منتجات الطلب:
+            </Typography>
+            <List dense>
+              {order.items?.slice(0, 3).map((item, index) => (
+                <ListItem key={index} sx={{ px: 0 }}>
+                  <ListItemIcon>
+                    <Avatar src={item.snapshot.image} sx={{ width: 32, height: 32 }}>
+                      {item.snapshot.name.charAt(0)}
+                    </Avatar>
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.snapshot.name}
+                    secondary={`${item.qty} × ${formatCurrency(item.finalPrice, order.currency)}`}
+                  />
+                </ListItem>
+              ))}
+              {order.items && order.items.length > 3 && (
+                <ListItem sx={{ px: 0 }}>
+                  <ListItemText secondary={`و ${order.items.length - 3} منتج آخر...`} />
+                </ListItem>
+              )}
+            </List>
+          </Box>
+        </Collapse>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ar}>
+      <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+        {/* Header */}
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ fontWeight: 'bold', fontSize: { xs: '1.5rem', md: '2rem' } }}
+          >
+            إدارة الطلبات
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            {isMobile && (
+              <Button
+                variant="outlined"
+                startIcon={<Menu />}
+                onClick={() => setMobileFiltersOpen(true)}
+              >
+                فلاتر
+              </Button>
+            )}
+            <Button
+              variant="outlined"
+              startIcon={<Refresh />}
+              onClick={() => refetch()}
+              disabled={isLoading}
+            >
+              تحديث
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Download />}
+              onClick={() => {
+                // TODO: Implement export functionality
+                console.log('Export orders');
+              }}
+            >
+              تصدير
+            </Button>
+          </Stack>
+        </Box>
+
+        {/* Stats Cards */}
+        {statsCards && (
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {statsCards.map((stat, index) => (
+              <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index}>
+                <Card component="div">
+                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                    <Box sx={{ color: `${stat.color}.main`, mb: 1 }}>{stat.icon}</Box>
+                    <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+                      {stat.value}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {stat.title}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {/* Desktop Filters */}
+        {!isMobile && <Paper sx={{ p: 3, mb: 3 }}>{renderFilters()}</Paper>}
+
+        {/* Mobile Filters Drawer */}
+        <Drawer
+          anchor="right"
+          open={mobileFiltersOpen}
+          onClose={() => setMobileFiltersOpen(false)}
+          sx={{ '& .MuiDrawer-paper': { width: '80%', maxWidth: 400 } }}
+        >
+          <Box
+            sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <Typography variant="h6">فلاتر البحث</Typography>
+            <IconButton onClick={() => setMobileFiltersOpen(false)}>
+              <Close />
+            </IconButton>
+          </Box>
+          <Divider />
+          {renderFilters()}
+        </Drawer>
+
+        {/* Bulk Actions */}
+        {selectedOrders.length > 0 && (
+          <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
+            <Typography variant="subtitle1" sx={{ mb: 2 }}>
+              تم تحديد {selectedOrders.length} طلب
+            </Typography>
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={() => handleBulkStatusUpdate('processing' as OrderStatus)}
+                disabled={bulkUpdateMutation.isPending}
+              >
+                وضع في التجهيز
+              </Button>
+              <Button
+                variant="contained"
+                color="info"
+                size="small"
+                onClick={() => handleBulkStatusUpdate('shipped' as OrderStatus)}
+                disabled={bulkUpdateMutation.isPending}
+              >
+                وضع في الشحن
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                onClick={() => handleBulkStatusUpdate('cancelled' as OrderStatus)}
+                disabled={bulkUpdateMutation.isPending}
+              >
+                إلغاء
+              </Button>
+            </Stack>
+          </Paper>
+        )}
+
+        {/* Error Alert */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            حدث خطأ في تحميل الطلبات. يرجى المحاولة مرة أخرى.
+          </Alert>
+        )}
+
+        {/* Orders List */}
+        <Card>
+          <CardContent>
+            {isLoading ? (
+              <Box>
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Skeleton key={index} variant="rectangular" height={120} sx={{ mb: 2 }} />
+                ))}
+              </Box>
+            ) : (
+              <Box>
+                {data?.data?.map(renderOrderCard)}
+
+                {/* Pagination */}
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      variant="outlined"
+                      disabled={paginationModel.page === 0}
+                      onClick={() =>
+                        setPaginationModel((prev) => ({ ...prev, page: prev.page - 1 }))
+                      }
+                    >
+                      السابق
+                    </Button>
+                    <Button variant="outlined" disabled>
+                      {paginationModel.page + 1} من{' '}
+                      {Math.ceil((data?.meta?.total || 0) / paginationModel.pageSize)}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      disabled={
+                        paginationModel.page >=
+                        Math.ceil((data?.meta?.total || 0) / paginationModel.pageSize) - 1
+                      }
+                      onClick={() =>
+                        setPaginationModel((prev) => ({ ...prev, page: prev.page + 1 }))
+                      }
+                    >
+                      التالي
+                    </Button>
+                  </Stack>
+                </Box>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </Box>
+    </LocalizationProvider>
+  );
+};

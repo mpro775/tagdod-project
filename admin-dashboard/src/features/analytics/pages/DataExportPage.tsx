@@ -1,399 +1,592 @@
 import React, { useState } from 'react';
 import {
   Box,
+  Grid,
   Card,
   CardContent,
   Typography,
-  Grid,
+  Button,
+  Paper,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   TextField,
-  Button,
+  FormControlLabel,
+  Switch,
   Alert,
-  Snackbar,
-  LinearProgress,
   Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
- 
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Divider,
+  LinearProgress,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
-  GetApp,
-  FileDownload,
-  PictureAsPdf,
-  Description,
-  TableChart,
-  Code,
-  ExpandMore,
-  CheckCircle,
-  Analytics,
-  Inventory,
-  People,
-  AttachMoney,
-  ShoppingCart,
+  Download as DownloadIcon,
+  FileDownload as FileDownloadIcon,
+  TableChart as TableChartIcon,
+  PictureAsPdf as PictureAsPdfIcon,
+  Description as DescriptionIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Info as InfoIcon,
+  Schedule as ScheduleIcon,
+  Assessment as AssessmentIcon,
+  TrendingUp as TrendingUpIcon,
+  People as PeopleIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Inventory as InventoryIcon,
+  AccountBalance as AccountBalanceIcon,
+  Campaign as CampaignIcon,
 } from '@mui/icons-material';
-import { useMutation } from '@tanstack/react-query';
-import { analyticsApi } from '../api/analyticsApi';
+import { 
+  useExportSalesData,
+  useExportProductsData,
+  useExportCustomersData,
+  useExportData,
+} from '../hooks/useAnalytics';
 import { ReportFormat, PeriodType, ReportCategory } from '../types/analytics.types';
 
-interface ExportConfig {
-  dataType: string;
-  format: ReportFormat;
-  period: PeriodType;
-  startDate: string;
-  endDate: string;
-  includeCharts: boolean;
-  includeRawData: boolean;
-  category?: ReportCategory;
-}
-
-const dataTypes = [
-  {
-    id: 'dashboard',
-    name: 'لوحة التحكم',
-    description: 'البيانات العامة والنظرة الشاملة',
-    icon: <Analytics />,
-    availableFormats: [ReportFormat.PDF, ReportFormat.EXCEL, ReportFormat.CSV, ReportFormat.JSON],
-  },
-  {
-    id: 'sales',
-    name: 'المبيعات',
-    description: 'بيانات المبيعات والإيرادات',
-    icon: <AttachMoney />,
-    availableFormats: [ReportFormat.PDF, ReportFormat.EXCEL, ReportFormat.CSV, ReportFormat.JSON],
-  },
-  {
-    id: 'products',
-    name: 'المنتجات',
-    description: 'أداء المنتجات والمخزون',
-    icon: <Inventory />,
-    availableFormats: [ReportFormat.PDF, ReportFormat.EXCEL, ReportFormat.CSV, ReportFormat.JSON],
-  },
-  {
-    id: 'customers',
-    name: 'العملاء',
-    description: 'بيانات العملاء والقطاعات',
-    icon: <People />,
-    availableFormats: [ReportFormat.PDF, ReportFormat.EXCEL, ReportFormat.CSV, ReportFormat.JSON],
-  },
-  {
-    id: 'orders',
-    name: 'الطلبات',
-    description: 'تفاصيل الطلبات والمعاملات',
-    icon: <ShoppingCart />,
-    availableFormats: [ReportFormat.EXCEL, ReportFormat.CSV, ReportFormat.JSON],
-  },
-  {
-    id: 'financial',
-    name: 'التقارير المالية',
-    description: 'البيانات المالية والأرباح',
-    icon: <AttachMoney />,
-    availableFormats: [ReportFormat.PDF, ReportFormat.EXCEL, ReportFormat.CSV, ReportFormat.JSON],
-  },
-];
-
-const formatLabels = {
-  [ReportFormat.PDF]: 'PDF',
-  [ReportFormat.EXCEL]: 'Excel',
-  [ReportFormat.CSV]: 'CSV',
-  [ReportFormat.JSON]: 'JSON',
-};
-
-const formatIcons = {
-  [ReportFormat.PDF]: <PictureAsPdf />,
-  [ReportFormat.EXCEL]: <TableChart />,
-  [ReportFormat.CSV]: <Description />,
-  [ReportFormat.JSON]: <Code />,
-};
-
 export const DataExportPage: React.FC = () => {
-  const [exportConfig, setExportConfig] = useState<ExportConfig>({
-    dataType: 'dashboard',
-    format: ReportFormat.PDF,
-    period: PeriodType.MONTHLY,
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+  const [activeStep, setActiveStep] = useState(0);
+  const [exportType, setExportType] = useState<'sales' | 'products' | 'customers' | 'custom'>('sales');
+  const [format, setFormat] = useState<ReportFormat>(ReportFormat.EXCEL);
+  const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: '',
+  });
+  const [filters, setFilters] = useState({
     includeCharts: true,
     includeRawData: false,
+    groupBy: '',
+    category: '',
+    status: '',
   });
+  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'completed' | 'error'>('idle');
+  const [exportResult, setExportResult] = useState<any>(null);
 
-  const [expandedPanel, setExpandedPanel] = useState<string | false>('export-panel');
+  const exportSalesData = useExportSalesData();
+  const exportProductsData = useExportProductsData();
+  const exportCustomersData = useExportCustomersData();
+  const exportData = useExportData();
 
-  // Export mutation
-  const exportMutation = useMutation({
-    mutationFn: async (config: ExportConfig) => {
-      if (config.dataType === 'dashboard') {
-        return analyticsApi.exportData(config.format, config.dataType, config.period);
-      } else if (config.dataType === 'sales') {
-        return analyticsApi.exportSalesData(config.format, config.startDate, config.endDate);
-      } else if (config.dataType === 'products') {
-        return analyticsApi.exportProductsData(config.format, config.startDate, config.endDate);
-      } else if (config.dataType === 'customers') {
-        return analyticsApi.exportCustomersData(config.format, config.startDate, config.endDate);
-      } else if (config.dataType === 'financial') {
-        return analyticsApi.getFinancialReport({ startDate: config.startDate, endDate: config.endDate });
+  const steps = [
+    'اختيار نوع البيانات',
+    'تحديد التنسيق والفترة',
+    'إعداد الفلاتر',
+    'تصدير البيانات',
+  ];
+
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  const handleReset = () => {
+    setActiveStep(0);
+    setExportType('sales');
+    setFormat(ReportFormat.EXCEL);
+    setDateRange({ startDate: '', endDate: '' });
+    setFilters({
+      includeCharts: true,
+      includeRawData: false,
+      groupBy: '',
+      category: '',
+      status: '',
+    });
+    setExportStatus('idle');
+    setExportResult(null);
+  };
+
+  const handleExport = async () => {
+    setExportStatus('exporting');
+    
+    try {
+      let result;
+      
+      switch (exportType) {
+        case 'sales':
+          result = await exportSalesData.mutateAsync({
+            format: format.toString(),
+            startDate: dateRange.startDate,
+            endDate: dateRange.endDate,
+          });
+          break;
+        case 'products':
+          result = await exportProductsData.mutateAsync({
+            format: format.toString(),
+            startDate: dateRange.startDate,
+            endDate: dateRange.endDate,
+          });
+          break;
+        case 'customers':
+          result = await exportCustomersData.mutateAsync({
+            format: format.toString(),
+            startDate: dateRange.startDate,
+            endDate: dateRange.endDate,
+          });
+          break;
+        case 'custom':
+          result = await exportData.mutateAsync({
+            format: format.toString(),
+            type: 'custom',
+            period: PeriodType.MONTHLY,
+          });
+          break;
+        default:
+          throw new Error('نوع التصدير غير مدعوم');
       }
-      throw new Error('نوع البيانات غير مدعوم');
-    },
-    onSuccess: (response) => {
-      // Handle file download
-      if (response.data?.fileUrl) {
-        window.open(response.data.fileUrl, '_blank');
-      }
-    },
-  });
-
-  const handleExport = () => {
-    exportMutation.mutate(exportConfig);
+      
+      setExportResult(result);
+      setExportStatus('completed');
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportStatus('error');
+    }
   };
 
-  const handleConfigChange = (field: keyof ExportConfig, value: unknown) => {
-    setExportConfig(prev => ({ ...prev, [field]: value }));
+  const getFormatIcon = (format: ReportFormat) => {
+    switch (format) {
+      case ReportFormat.PDF:
+        return <PictureAsPdfIcon />;
+      case ReportFormat.EXCEL:
+        return <TableChartIcon />;
+      case ReportFormat.CSV:
+        return <TableChartIcon />;
+      case ReportFormat.JSON:
+        return <DescriptionIcon />;
+      default:
+        return <FileDownloadIcon />;
+    }
   };
 
-  const getCurrentDataType = () => {
-    return dataTypes.find(type => type.id === exportConfig.dataType) || dataTypes[0];
+  const getFormatLabel = (format: ReportFormat) => {
+    switch (format) {
+      case ReportFormat.PDF:
+        return 'PDF';
+      case ReportFormat.EXCEL:
+        return 'Excel';
+      case ReportFormat.CSV:
+        return 'CSV';
+      case ReportFormat.JSON:
+        return 'JSON';
+      default:
+        return format;
+    }
   };
 
-  const isExportDisabled = () => {
-    if (!exportConfig.startDate || !exportConfig.endDate) return true;
-    return exportMutation.isPending;
+  const getExportTypeIcon = (type: string) => {
+    switch (type) {
+      case 'sales':
+        return <TrendingUpIcon />;
+      case 'products':
+        return <ShoppingCartIcon />;
+      case 'customers':
+        return <PeopleIcon />;
+      case 'custom':
+        return <AssessmentIcon />;
+      default:
+        return <FileDownloadIcon />;
+    }
+  };
+
+  const getExportTypeLabel = (type: string) => {
+    switch (type) {
+      case 'sales':
+        return 'بيانات المبيعات';
+      case 'products':
+        return 'بيانات المنتجات';
+      case 'customers':
+        return 'بيانات العملاء';
+      case 'custom':
+        return 'بيانات مخصصة';
+      default:
+        return type;
+    }
+  };
+
+  const getExportTypeDescription = (type: string) => {
+    switch (type) {
+      case 'sales':
+        return 'تصدير بيانات المبيعات والإيرادات والطلبات';
+      case 'products':
+        return 'تصدير بيانات المنتجات والمخزون والأداء';
+      case 'customers':
+        return 'تصدير بيانات العملاء والمستخدمين والتفاعلات';
+      case 'custom':
+        return 'تصدير بيانات مخصصة حسب المعايير المحددة';
+      default:
+        return '';
+    }
   };
 
   return (
     <Box sx={{ width: '100%' }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          تصدير البيانات
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          تصدير البيانات التحليلية بصيغ مختلفة (PDF, Excel, CSV, JSON)
-        </Typography>
-      </Box>
+      <Paper
+        elevation={1}
+        sx={{
+          p: 2,
+          mb: 3,
+          background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
+          color: 'white',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              تصدير البيانات
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              تصدير البيانات التحليلية بصيغ مختلفة
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Chip
+              icon={<DownloadIcon />}
+              label="تصدير متقدم"
+              variant="outlined"
+              sx={{ color: 'white', borderColor: 'white' }}
+            />
+          </Box>
+        </Box>
+      </Paper>
 
-      {/* Export Configuration */}
+      {/* Export Wizard */}
       <Card>
         <CardContent>
-          <Accordion
-            expanded={expandedPanel === 'export-panel'}
-            onChange={(_, isExpanded) => setExpandedPanel(isExpanded ? 'export-panel' : false)}
-          >
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <GetApp />
-                <Typography variant="h6">إعدادات التصدير</Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={3}>
-                {/* Data Type Selection */}
-                <Grid size={{xs: 12, md: 6}}>
-                  <FormControl fullWidth>
-                    <InputLabel>نوع البيانات</InputLabel>
-                    <Select
-                      value={exportConfig.dataType}
-                      label="نوع البيانات"
-                      onChange={(e) => handleConfigChange('dataType', e.target.value)}
-                    >
-                      {dataTypes.map((type) => (
-                        <MenuItem key={type.id} value={type.id}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {type.icon}
-                            <Box>
-                              <Typography variant="body2" fontWeight="medium">
-                                {type.name}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {type.description}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                {/* Format Selection */}
-                <Grid size={{xs: 12, md: 6}}>
-                  <FormControl fullWidth>
-                    <InputLabel>صيغة الملف</InputLabel>
-                    <Select
-                      value={exportConfig.format}
-                      label="صيغة الملف"
-                      onChange={(e) => handleConfigChange('format', e.target.value)}
-                    >
-                      {getCurrentDataType().availableFormats.map((format) => (
-                        <MenuItem key={format} value={format}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {formatIcons[format]}
-                            <Typography variant="body2">
-                              {formatLabels[format]}
-                            </Typography>
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                {/* Period Selection */}
-                <Grid size={{xs: 12, md: 6}}>
-                  <FormControl fullWidth>
-                    <InputLabel>الفترة الزمنية</InputLabel>
-                    <Select
-                      value={exportConfig.period}
-                      label="الفترة الزمنية"
-                      onChange={(e) => handleConfigChange('period', e.target.value)}
-                    >
-                      <MenuItem value={PeriodType.DAILY}>يومي</MenuItem>
-                      <MenuItem value={PeriodType.WEEKLY}>أسبوعي</MenuItem>
-                      <MenuItem value={PeriodType.MONTHLY}>شهري</MenuItem>
-                      <MenuItem value={PeriodType.QUARTERLY}>ربع سنوي</MenuItem>
-                      <MenuItem value={PeriodType.YEARLY}>سنوي</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                {/* Date Range (for custom periods) */}
-                <Grid size={{xs: 12, md: 3}}>
-                  <TextField
-                    fullWidth
-                    label="تاريخ البداية"
-                    type="date"
-                    value={exportConfig.startDate}
-                    onChange={(e) => handleConfigChange('startDate', e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-                <Grid size={{xs: 12, md: 3}}>
-                  <TextField
-                    fullWidth
-                    label="تاريخ النهاية"
-                    type="date"
-                    value={exportConfig.endDate}
-                    onChange={(e) => handleConfigChange('endDate', e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-
-                {/* Export Options */}
-                <Grid size={{xs: 12}}>
-                  <Typography variant="h6" gutterBottom>
-                    خيارات التصدير
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <Chip
-                      label="تضمين الرسوم البيانية"
-                      color={exportConfig.includeCharts ? 'primary' : 'default'}
-                      onClick={() => handleConfigChange('includeCharts', !exportConfig.includeCharts)}
-                      icon={<CheckCircle />}
-                      variant={exportConfig.includeCharts ? 'filled' : 'outlined'}
-                    />
-                    <Chip
-                      label="تضمين البيانات الأولية"
-                      color={exportConfig.includeRawData ? 'primary' : 'default'}
-                      onClick={() => handleConfigChange('includeRawData', !exportConfig.includeRawData)}
-                      icon={<CheckCircle />}
-                      variant={exportConfig.includeRawData ? 'filled' : 'outlined'}
-                    />
-                  </Box>
-                </Grid>
-
-                {/* Export Button */}
-                <Grid size={{xs: 12}}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={exportMutation.isPending ? <LinearProgress /> : <FileDownload />}
-                    onClick={handleExport}
-                    disabled={isExportDisabled()}
-                    fullWidth
-                  >
-                    {exportMutation.isPending ? 'جاري التصدير...' : 'تصدير البيانات'}
-                  </Button>
-                </Grid>
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
-        </CardContent>
-      </Card>
-
-      {/* Data Types Information */}
-      <Card sx={{ mt: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            أنواع البيانات المتاحة للتصدير
+          <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+            معالج تصدير البيانات
           </Typography>
-          <Grid container spacing={2}>
-            {dataTypes.map((type) => (
-              <Grid size={{xs: 12, sm: 6, md: 4}} key={type.id}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      {type.icon}
-                      <Typography variant="h6" fontSize="1rem">
-                        {type.name}
+          
+          <Stepper activeStep={activeStep} orientation={isMobile ? 'vertical' : 'horizontal'}>
+            {steps.map((label, index) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+                <StepContent>
+                  {/* Step 1: Data Type Selection */}
+                  {index === 0 && (
+                    <Box>
+                      <Typography variant="h6" gutterBottom>
+                        اختر نوع البيانات التي تريد تصديرها
                       </Typography>
+                      
+                      <Grid container spacing={2} sx={{ mb: 3 }}>
+                        {[
+                          { value: 'sales', label: 'بيانات المبيعات', description: 'تصدير بيانات المبيعات والإيرادات والطلبات' },
+                          { value: 'products', label: 'بيانات المنتجات', description: 'تصدير بيانات المنتجات والمخزون والأداء' },
+                          { value: 'customers', label: 'بيانات العملاء', description: 'تصدير بيانات العملاء والمستخدمين والتفاعلات' },
+                          { value: 'custom', label: 'بيانات مخصصة', description: 'تصدير بيانات مخصصة حسب المعايير المحددة' },
+                        ].map((option) => (
+                          <Grid item xs={12} sm={6} md={3} key={option.value}>
+                            <Card
+                              sx={{
+                                cursor: 'pointer',
+                                border: exportType === option.value ? `2px solid ${theme.palette.primary.main}` : '1px solid #e0e0e0',
+                                '&:hover': {
+                                  boxShadow: theme.shadows[4],
+                                },
+                              }}
+                              onClick={() => setExportType(option.value as any)}
+                            >
+                              <CardContent sx={{ textAlign: 'center' }}>
+                                {getExportTypeIcon(option.value)}
+                                <Typography variant="h6" sx={{ mt: 1 }}>
+                                  {option.label}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {option.description}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        ))}
+                      </Grid>
+                      
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        <Typography variant="body2">
+                          اختر نوع البيانات التي تريد تصديرها. يمكنك تصدير بيانات المبيعات، المنتجات، العملاء، أو بيانات مخصصة.
+                        </Typography>
+                      </Alert>
+                      
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button onClick={handleNext} variant="contained">
+                          التالي
+                        </Button>
+                        <Button onClick={handleReset}>
+                          إعادة تعيين
+                        </Button>
+                      </Box>
                     </Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {type.description}
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      {type.availableFormats.map((format) => (
-                        <Chip
-                          key={format}
-                          label={formatLabels[format]}
-                          size="small"
-                          variant="outlined"
-                          icon={formatIcons[format]}
-                        />
-                      ))}
+                  )}
+
+                  {/* Step 2: Format and Date Range */}
+                  {index === 1 && (
+                    <Box>
+                      <Typography variant="h6" gutterBottom>
+                        حدد تنسيق الملف والفترة الزمنية
+                      </Typography>
+                      
+                      <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={12} md={6}>
+                          <FormControl fullWidth>
+                            <InputLabel>تنسيق الملف</InputLabel>
+                            <Select
+                              value={format}
+                              onChange={(e) => setFormat(e.target.value as ReportFormat)}
+                            >
+                              {Object.values(ReportFormat).map((formatOption) => (
+                                <MenuItem key={formatOption} value={formatOption}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    {getFormatIcon(formatOption)}
+                                    {getFormatLabel(formatOption)}
+                                  </Box>
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="تاريخ البداية"
+                            type="date"
+                            value={dateRange.startDate}
+                            onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                            InputLabelProps={{ shrink: true }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="تاريخ النهاية"
+                            type="date"
+                            value={dateRange.endDate}
+                            onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                            InputLabelProps={{ shrink: true }}
+                          />
+                        </Grid>
+                      </Grid>
+                      
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button onClick={handleNext} variant="contained">
+                          التالي
+                        </Button>
+                        <Button onClick={handleBack}>
+                          السابق
+                        </Button>
+                      </Box>
                     </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
+                  )}
+
+                  {/* Step 3: Filters */}
+                  {index === 2 && (
+                    <Box>
+                      <Typography variant="h6" gutterBottom>
+                        إعداد الفلاتر والخيارات
+                      </Typography>
+                      
+                      <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={12} md={6}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={filters.includeCharts}
+                                onChange={(e) => setFilters({ ...filters, includeCharts: e.target.checked })}
+                              />
+                            }
+                            label="تضمين الرسوم البيانية"
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={filters.includeRawData}
+                                onChange={(e) => setFilters({ ...filters, includeRawData: e.target.checked })}
+                              />
+                            }
+                            label="تضمين البيانات الأولية"
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="تجميع البيانات"
+                            value={filters.groupBy}
+                            onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
+                            placeholder="مثال: يومي، أسبوعي، شهري"
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="فلترة حسب الفئة"
+                            value={filters.category}
+                            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                            placeholder="مثال: الطاقة الشمسية، الإضاءة"
+                          />
+                        </Grid>
+                      </Grid>
+                      
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button onClick={handleNext} variant="contained">
+                          التالي
+                        </Button>
+                        <Button onClick={handleBack}>
+                          السابق
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Step 4: Export */}
+                  {index === 3 && (
+                    <Box>
+                      <Typography variant="h6" gutterBottom>
+                        تصدير البيانات
+                      </Typography>
+                      
+                      {/* Export Summary */}
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="h6" gutterBottom>
+                          ملخص التصدير
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                          <Chip
+                            icon={getExportTypeIcon(exportType)}
+                            label={getExportTypeLabel(exportType)}
+                            color="primary"
+                            variant="outlined"
+                          />
+                          <Chip
+                            icon={getFormatIcon(format)}
+                            label={getFormatLabel(format)}
+                            color="secondary"
+                            variant="outlined"
+                          />
+                          {dateRange.startDate && (
+                            <Chip
+                              label={`من ${dateRange.startDate}`}
+                              variant="outlined"
+                            />
+                          )}
+                          {dateRange.endDate && (
+                            <Chip
+                              label={`إلى ${dateRange.endDate}`}
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                        
+                        <List dense>
+                          <ListItem>
+                            <ListItemIcon>
+                              {filters.includeCharts ? <CheckCircleIcon color="success" /> : <ErrorIcon color="error" />}
+                            </ListItemIcon>
+                            <ListItemText
+                              primary="الرسوم البيانية"
+                              secondary={filters.includeCharts ? 'مضمنة' : 'غير مضمونة'}
+                            />
+                          </ListItem>
+                          <ListItem>
+                            <ListItemIcon>
+                              {filters.includeRawData ? <CheckCircleIcon color="success" /> : <ErrorIcon color="error" />}
+                            </ListItemIcon>
+                            <ListItemText
+                              primary="البيانات الأولية"
+                              secondary={filters.includeRawData ? 'مضمنة' : 'غير مضمونة'}
+                            />
+                          </ListItem>
+                        </List>
+                      </Box>
+
+                      {/* Export Status */}
+                      {exportStatus === 'exporting' && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" gutterBottom>
+                            جاري تصدير البيانات...
+                          </Typography>
+                          <LinearProgress />
+                        </Box>
+                      )}
+
+                      {exportStatus === 'completed' && exportResult && (
+                        <Alert severity="success" sx={{ mb: 2 }}>
+                          <Typography variant="body2">
+                            تم تصدير البيانات بنجاح! يمكنك تحميل الملف من الرابط أدناه.
+                          </Typography>
+                          {exportResult.data?.fileUrl && (
+                            <Button
+                              variant="contained"
+                              startIcon={<DownloadIcon />}
+                              onClick={() => window.open(exportResult.data.fileUrl, '_blank')}
+                              sx={{ mt: 1 }}
+                            >
+                              تحميل الملف
+                            </Button>
+                          )}
+                        </Alert>
+                      )}
+
+                      {exportStatus === 'error' && (
+                        <Alert severity="error" sx={{ mb: 2 }}>
+                          حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.
+                        </Alert>
+                      )}
+
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          onClick={handleExport}
+                          variant="contained"
+                          disabled={exportStatus === 'exporting'}
+                          startIcon={<DownloadIcon />}
+                        >
+                          {exportStatus === 'exporting' ? 'جاري التصدير...' : 'بدء التصدير'}
+                        </Button>
+                        <Button onClick={handleBack} disabled={exportStatus === 'exporting'}>
+                          السابق
+                        </Button>
+                        <Button onClick={handleReset}>
+                          إعادة تعيين
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
+                </StepContent>
+              </Step>
             ))}
-          </Grid>
+          </Stepper>
         </CardContent>
       </Card>
-
-      {/* Export History */}
-      <Card sx={{ mt: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            سجل التصدير
-          </Typography>
-          <Alert severity="info">
-            سجل عمليات التصدير سيظهر هنا قريباً
-          </Alert>
-        </CardContent>
-      </Card>
-
-      {/* Success/Error Messages */}
-      <Snackbar
-        open={exportMutation.isSuccess}
-        autoHideDuration={6000}
-        onClose={() => exportMutation.reset()}
-      >
-        <Alert severity="success">
-          تم تصدير البيانات بنجاح!
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!exportMutation.error}
-        autoHideDuration={6000}
-        onClose={() => exportMutation.reset()}
-      >
-        <Alert severity="error">
-          حدث خطأ أثناء التصدير. يرجى المحاولة مرة أخرى.
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

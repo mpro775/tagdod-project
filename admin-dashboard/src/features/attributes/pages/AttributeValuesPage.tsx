@@ -1,4 +1,4 @@
-import  { useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -6,55 +6,132 @@ import {
   Typography,
   Button,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Grid,
   Chip,
-  CircularProgress,
+  Card,
+  CardContent,
+  Stack,
+  Alert,
+  Skeleton,
+  Snackbar,
+  Tooltip,
 } from '@mui/material';
-import { ArrowBack, Add, Delete } from '@mui/icons-material';
+import {
+  ArrowBack,
+  Add,
+  Delete,
+  Edit,
+  ColorLens,
+  Image,
+  CheckCircle,
+  TrendingUp,
+} from '@mui/icons-material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import {
   useAttribute,
   useAttributeValues,
   useCreateAttributeValue,
   useDeleteAttributeValue,
+  useUpdateAttributeValue,
 } from '../hooks/useAttributes';
-import type { AttributeValue, CreateAttributeValueDto } from '../types/attribute.types';
+import AttributeValueDialog from '../components/AttributeValueDialog';
+import type { AttributeValue, AttributeValueFormData } from '../types/attribute.types';
 
 export const AttributeValuesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<CreateAttributeValueDto>({
-    value: '',
-    valueEn: '',
-    hexCode: '',
-    order: 0,
-    isActive: true,
+  const [editingValue, setEditingValue] = useState<AttributeValue | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info',
   });
 
   const { data: attribute, isLoading: loadingAttr } = useAttribute(id!);
   const { data: values = [], isLoading: loadingValues, refetch } = useAttributeValues(id!);
   const { mutate: createValue, isPending: isCreating } = useCreateAttributeValue();
+  const { mutate: updateValue, isPending: isUpdating } = useUpdateAttributeValue();
   const { mutate: deleteValue } = useDeleteAttributeValue();
 
-  const handleSave = () => {
-    if (!id || !formData.value) return;
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+    setSnackbar({ open: true, message, severity });
+  };
 
-    createValue(
-      { attributeId: id, data: formData },
-      {
-        onSuccess: () => {
-          setDialogOpen(false);
-          setFormData({ value: '', valueEn: '', hexCode: '', order: 0, isActive: true });
-          refetch();
-        },
-      }
-    );
+  const handleSave = (data: AttributeValueFormData) => {
+    if (!id) return;
+
+    if (editingValue) {
+      // Update existing value
+      updateValue(
+        { id: editingValue._id, data },
+        {
+          onSuccess: () => {
+            setDialogOpen(false);
+            setEditingValue(null);
+            showSnackbar('تم تحديث القيمة بنجاح', 'success');
+            refetch();
+          },
+          onError: (error) => {
+            showSnackbar(
+              `فشل في تحديث القيمة: ${
+                error instanceof Error ? error.message : 'حدث خطأ غير معروف'
+              }`,
+              'error'
+            );
+          },
+        }
+      );
+    } else {
+      // Create new value
+      createValue(
+        { attributeId: id, data },
+        {
+          onSuccess: () => {
+            setDialogOpen(false);
+            showSnackbar('تم إضافة القيمة بنجاح', 'success');
+            refetch();
+          },
+          onError: (error) => {
+            showSnackbar(
+              `فشل في إضافة القيمة: ${
+                error instanceof Error ? error.message : 'حدث خطأ غير معروف'
+              }`,
+              'error'
+            );
+          },
+        }
+      );
+    }
+  };
+
+  const handleEdit = (value: AttributeValue) => {
+    setEditingValue(value);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (valueId: string, valueName: string) => {
+    deleteValue(valueId, {
+      onSuccess: () => {
+        showSnackbar(`تم حذف القيمة "${valueName}" بنجاح`, 'success');
+        refetch();
+      },
+      onError: (error) => {
+        showSnackbar(
+          `فشل في حذف القيمة: ${error instanceof Error ? error.message : 'حدث خطأ غير معروف'}`,
+          'error'
+        );
+      },
+    });
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingValue(null);
   };
 
   const columns: GridColDef[] = [
@@ -77,9 +154,7 @@ export const AttributeValuesPage: React.FC = () => {
           )}
           <Box>
             <Box sx={{ fontWeight: 'medium' }}>{params.row.value}</Box>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-              {params.row.valueEn}
-            </Box>
+            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{params.row.valueEn}</Box>
           </Box>
         </Box>
       ),
@@ -89,9 +164,7 @@ export const AttributeValuesPage: React.FC = () => {
       headerName: 'كود اللون',
       width: 120,
       renderCell: (params) =>
-        params.row.hexCode ? (
-          <Chip label={params.row.hexCode} size="small" />
-        ) : null,
+        params.row.hexCode ? <Chip label={params.row.hexCode} size="small" /> : null,
     },
     {
       field: 'order',
@@ -119,23 +192,30 @@ export const AttributeValuesPage: React.FC = () => {
     {
       field: 'actions',
       headerName: 'الإجراءات',
-      width: 120,
+      width: 150,
       sortable: false,
       renderCell: (params) => {
         const value = params.row as AttributeValue;
         return (
           <Box display="flex" gap={0.5}>
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => {
-                if (window.confirm(`هل تريد حذف القيمة "${value.value}"؟`)) {
-                  deleteValue(value._id, { onSuccess: () => refetch() });
-                }
-              }}
-            >
-              <Delete fontSize="small" />
-            </IconButton>
+            <Tooltip title="تعديل">
+              <IconButton size="small" color="primary" onClick={() => handleEdit(value)}>
+                <Edit fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="حذف">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => {
+                  if (window.confirm(`هل تريد حذف القيمة "${value.value}"؟`)) {
+                    handleDelete(value._id, value.value);
+                  }
+                }}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
         );
       },
@@ -144,33 +224,101 @@ export const AttributeValuesPage: React.FC = () => {
 
   if (loadingAttr) {
     return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
+      <Box sx={{ p: 3 }}>
+        <Skeleton variant="rectangular" height={200} sx={{ mb: 3 }} />
+        <Skeleton variant="rectangular" height={400} />
       </Box>
     );
   }
 
   return (
-    <Box>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-          <IconButton onClick={() => navigate('/attributes')}>
-            <ArrowBack />
-          </IconButton>
-          <Box>
-            <Typography variant="h5" fontWeight="bold">
-              إدارة قيم السمة: {attribute?.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {attribute?.nameEn}
-            </Typography>
-          </Box>
-          <Box sx={{ flex: 1 }} />
-          <Button variant="contained" startIcon={<Add />} onClick={() => setDialogOpen(true)}>
-            إضافة قيمة
-          </Button>
+    <Box sx={{ p: 3 }}>
+      {/* Header Section */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
+        <IconButton onClick={() => navigate('/attributes')} size="large">
+          <ArrowBack />
+        </IconButton>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            إدارة قيم السمة: {attribute?.name}
+          </Typography>
+          <Typography variant="body1" color="text.secondary" gutterBottom>
+            {attribute?.nameEn}
+          </Typography>
+          <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+            <Chip label={`النوع: ${attribute?.type}`} color="primary" size="small" />
+            <Chip label={`القيم: ${values.length}`} color="info" size="small" />
+            {attribute?.isFilterable && <Chip label="قابل للفلترة" color="success" size="small" />}
+          </Stack>
         </Box>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => setDialogOpen(true)}
+          size="large"
+        >
+          إضافة قيمة جديدة
+        </Button>
+      </Box>
 
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <TrendingUp color="primary" sx={{ mr: 1 }} />
+                <Typography variant="h6">إجمالي القيم</Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold" color="primary">
+                {values.length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <CheckCircle color="success" sx={{ mr: 1 }} />
+                <Typography variant="h6">القيم النشطة</Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold" color="success.main">
+                {values.filter((v) => v.isActive).length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <ColorLens color="info" sx={{ mr: 1 }} />
+                <Typography variant="h6">مع ألوان</Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold" color="info.main">
+                {values.filter((v) => v.hexCode).length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Image color="warning" sx={{ mr: 1 }} />
+                <Typography variant="h6">مع صور</Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold" color="warning.main">
+                {values.filter((v) => v.imageUrl).length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Data Table */}
+      <Paper sx={{ height: 'calc(100vh - 400px)' }}>
         <DataGrid
           rows={values}
           columns={columns}
@@ -180,64 +328,35 @@ export const AttributeValuesPage: React.FC = () => {
           initialState={{
             pagination: { paginationModel: { pageSize: 25 } },
           }}
-          sx={{ height: 'calc(100vh - 300px)' }}
+          sx={{ height: '100%' }}
         />
       </Paper>
 
-      {/* Add Value Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>إضافة قيمة جديدة</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="القيمة (عربي) *"
-                value={formData.value}
-                onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Value (English)"
-                value={formData.valueEn}
-                onChange={(e) => setFormData({ ...formData, valueEn: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="كود اللون (Hex Code)"
-                placeholder="#FF0000"
-                value={formData.hexCode}
-                onChange={(e) => setFormData({ ...formData, hexCode: e.target.value })}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                type="number"
-                label="الترتيب"
-                value={formData.order}
-                onChange={(e) => setFormData({ ...formData, order: Number(e.target.value) })}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>إلغاء</Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={!formData.value || isCreating}
-            startIcon={isCreating ? <CircularProgress size={20} /> : <Add />}
-          >
-            إضافة
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Value Dialog */}
+      <AttributeValueDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        onSave={handleSave}
+        editingValue={editingValue}
+        isLoading={isCreating || isUpdating}
+        attributeType={attribute?.type}
+      />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
-

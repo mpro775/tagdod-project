@@ -1,169 +1,204 @@
 import React, { useState } from 'react';
-import { Box, Chip, IconButton, Tooltip, Button, Typography } from '@mui/material';
-import { Visibility, Analytics } from '@mui/icons-material';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Grid, 
+  Skeleton,
+  Alert,
+  Stack,
+  Chip,
+  Paper,
+  Divider,
+} from '@mui/material';
+import { 
+  Analytics, 
+  Warning, 
+  Refresh,
+  Support,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { GridColDef } from '@mui/x-data-grid';
-import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useSupportTickets } from '../hooks/useSupport';
-import { formatDate } from '@/shared/utils/formatters';
-import type { SupportTicket, SupportStatus, SupportPriority, SupportCategory } from '../types/support.types';
-
-const statusLabels: Record<SupportStatus, string> = {
-  open: 'مفتوحة',
-  in_progress: 'قيد المعالجة',
-  waiting_for_user: 'انتظار العميل',
-  resolved: 'محلولة',
-  closed: 'مغلقة',
-};
-
-const statusColors: Record<SupportStatus, 'default' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success'> = {
-  open: 'error',
-  in_progress: 'primary',
-  waiting_for_user: 'warning',
-  resolved: 'success',
-  closed: 'default',
-};
-
-const priorityLabels: Record<SupportPriority, string> = {
-  low: 'منخفضة',
-  medium: 'متوسطة',
-  high: 'عالية',
-  urgent: 'عاجلة',
-};
-
-const categoryLabels: Record<SupportCategory, string> = {
-  technical: 'تقني',
-  billing: 'فواتير',
-  products: 'منتجات',
-  services: 'خدمات',
-  account: 'حساب',
-  other: 'أخرى',
-};
+import { 
+  SupportTicketCard, 
+  SupportTicketFilters, 
+  SLAAlerter,
+} from '../components';
+import { 
+  useSupportTickets, 
+  useBreachedSLATickets,
+} from '../hooks/useSupport';
+import type { 
+  SupportTicket, 
+  SupportTicketFilters as SupportTicketFiltersType,
+} from '../types/support.types';
 
 export const SupportTicketsListPage: React.FC = () => {
   const navigate = useNavigate();
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [filters, setFilters] = useState<SupportTicketFiltersType>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
 
-  const { data, isLoading } = useSupportTickets({
-    page: paginationModel.page + 1,
-    limit: paginationModel.pageSize,
+  const { data, isLoading, error, refetch } = useSupportTickets({
+    ...filters,
+    page: currentPage,
+    limit: pageSize,
   });
 
-  const columns: GridColDef[] = [
-    {
-      field: 'title',
-      headerName: 'العنوان',
-      width: 250,
-    },
-    {
-      field: 'category',
-      headerName: 'الفئة',
-      width: 120,
-      renderCell: (params) => (
-        <Chip
-          label={categoryLabels[params.row.category as SupportCategory]}
-          size="small"
-          variant="outlined"
-        />
-      ),
-    },
-    {
-      field: 'priority',
-      headerName: 'الأولوية',
-      width: 120,
-      renderCell: (params) => {
-        const priority = params.row.priority as SupportPriority;
-        return (
-          <Chip
-            label={priorityLabels[priority]}
-            size="small"
-            color={priority === 'urgent' ? 'error' : priority === 'high' ? 'warning' : 'default'}
-          />
-        );
-      },
-    },
-    {
-      field: 'status',
-      headerName: 'الحالة',
-      width: 140,
-      renderCell: (params) => (
-        <Chip
-          label={statusLabels[params.row.status as SupportStatus]}
-          color={statusColors[params.row.status as SupportStatus]}
-          size="small"
-        />
-      ),
-    },
-    {
-      field: 'createdAt',
-      headerName: 'تاريخ الإنشاء',
-      width: 140,
-      valueFormatter: (value) => formatDate(value as Date),
-    },
-    {
-      field: 'slaBreached',
-      headerName: 'SLA',
-      width: 100,
-      renderCell: (params) =>
-        params.row.slaBreached ? (
-          <Chip label="متأخر" color="error" size="small" />
-        ) : (
-          <Chip label="ضمن الوقت" color="success" size="small" />
-        ),
-    },
-    {
-      field: 'actions',
-      headerName: 'الإجراءات',
-      width: 100,
-      sortable: false,
-      renderCell: (params) => {
-        const ticket = params.row as SupportTicket;
-        return (
-          <Tooltip title="عرض التفاصيل">
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/support/${ticket._id}`);
-              }}
-            >
-              <Visibility fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        );
-      },
-    },
-  ];
+  const { data: breachedSLA, refetch: refetchSLA } = useBreachedSLATickets();
+
+  const handleFiltersChange = (newFilters: SupportTicketFiltersType) => {
+    setFilters(newFilters);
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setFilters({});
+    setCurrentPage(1);
+  };
+
+  const handleRefresh = () => {
+    refetch();
+    refetchSLA();
+  };
+
+  const handleTicketClick = (ticket: SupportTicket) => {
+    navigate(`/support/${ticket._id}`);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const renderSkeletons = () => (
+    <Grid container spacing={3}>
+      {[...Array(6)].map((_, index) => (
+        <Grid item xs={12} sm={6} md={4} key={index}>
+          <Skeleton variant="rectangular" height={200} />
+        </Grid>
+      ))}
+    </Grid>
+  );
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      {/* Header */}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" fontWeight="bold">
           إدارة تذاكر الدعم
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Analytics />}
-          onClick={() => navigate('/support/stats')}
-        >
-          عرض الإحصائيات
-        </Button>
-      </Box>
-      <DataTable
-        title="إدارة تذاكر الدعم"
-        columns={columns}
-        rows={data?.data || []}
-        loading={isLoading}
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        rowCount={data?.meta?.total || 0}
-        onRowClick={(params) => {
-          const row = params.row as SupportTicket;
-          navigate(`/support/${row._id}`);
-        }}
-        height="calc(100vh - 200px)"
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="outlined"
+            startIcon={<Analytics />}
+            onClick={() => navigate('/support/stats')}
+          >
+            عرض الإحصائيات
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            تحديث
+          </Button>
+        </Stack>
+      </Stack>
+
+      {/* SLA Alerts */}
+      {breachedSLA?.data && breachedSLA.data.tickets.length > 0 && (
+        <Box mb={3}>
+          <SLAAlerter
+            tickets={breachedSLA.data.tickets}
+            onRefresh={refetchSLA}
+            onTicketClick={handleTicketClick}
+          />
+        </Box>
+      )}
+
+      {/* Filters */}
+      <SupportTicketFilters
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onReset={handleResetFilters}
+        onRefresh={handleRefresh}
+        isLoading={isLoading}
       />
+
+      {/* Results Summary */}
+      {data?.data && (
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="body1">
+              عرض {data.data.length} من أصل {data.meta?.total || 0} تذكرة
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              {Object.entries(filters).map(([key, value]) => (
+                value && (
+                  <Chip
+                    key={key}
+                    label={`${key}: ${value}`}
+                    size="small"
+                    variant="outlined"
+                  />
+                )
+              ))}
+            </Stack>
+          </Stack>
+        </Paper>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          حدث خطأ في تحميل التذاكر. يرجى المحاولة مرة أخرى.
+        </Alert>
+      )}
+
+      {/* Tickets Grid */}
+      {isLoading ? (
+        renderSkeletons()
+      ) : data?.data && data.data.length > 0 ? (
+        <Grid container spacing={3}>
+          {data.data.map((ticket) => (
+            <Grid item xs={12} sm={6} md={4} key={ticket._id}>
+              <SupportTicketCard
+                ticket={ticket}
+                onClick={handleTicketClick}
+                showUser={true}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <Support sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            لا توجد تذاكر
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            لم يتم العثور على أي تذاكر تطابق المعايير المحددة
+          </Typography>
+        </Paper>
+      )}
+
+      {/* Pagination */}
+      {data?.meta && data.meta.total > pageSize && (
+        <Box mt={3} display="flex" justifyContent="center">
+          <Stack direction="row" spacing={1}>
+            {Array.from({ length: Math.ceil(data.meta.total / pageSize) }, (_, i) => (
+              <Button
+                key={i + 1}
+                variant={currentPage === i + 1 ? 'contained' : 'outlined'}
+                onClick={() => handlePageChange(i + 1)}
+                size="small"
+              >
+                {i + 1}
+              </Button>
+            ))}
+          </Stack>
+        </Box>
+      )}
     </Box>
   );
 };

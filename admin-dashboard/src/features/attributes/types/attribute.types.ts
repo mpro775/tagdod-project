@@ -136,3 +136,61 @@ export interface ListAttributesParams extends ListParams {
   includeDeleted?: boolean;
 }
 
+// ==================== Backend Response Types ====================
+
+export interface BackendResponse<T> {
+  success: true;
+  data: T;
+  message: string;
+  timestamp: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface AttributeStats {
+  total: number;
+  active: number;
+  filterable: number;
+  byType: {
+    select: number;
+    multiselect: number;
+    text: number;
+    number: number;
+    boolean: number;
+  };
+}
+
+// ==================== Form Types ====================
+
+export interface AttributeFormData {
+  name: string;
+  nameEn: string;
+  type: AttributeType;
+  description?: string;
+  order?: number;
+  isActive?: boolean;
+  isFilterable?: boolean;
+  isRequired?: boolean;
+  showInFilters?: boolean;
+  groupId?: string | null;
+}
+
+export interface AttributeValueFormData {
+  value: string;
+  valueEn?: string;
+  hexCode?: string;
+  imageUrl?: string;
+  imageId?: string;
+  description?: string;
+  order?: number;
+  isActive?: boolean;
+}
+

@@ -16,6 +16,8 @@ import { FavoritesModule } from '../favorites/favorites.module';
 import { SupportModule } from '../support/support.module';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
+import { UsersAdminModule } from './admin/users.admin.module';
+import { CapabilitiesModule } from '../capabilities/capabilities.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { SharedModule } from '../../shared/shared.module';
     forwardRef(() => FavoritesModule),
     forwardRef(() => SupportModule),
     SharedModule,
+    UsersAdminModule,
+    CapabilitiesModule,
   ],
   controllers: [UserAnalyticsController],
   providers: [UserAnalyticsService, UserScoringService, UserBehaviorService, UserCacheService, UserErrorService, UserQueryService],

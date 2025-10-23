@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client';
+import { sanitizePaginationParams } from '@/shared/utils/formatters';
 import type {
   User,
   ListUsersParams,
@@ -14,35 +15,35 @@ export const usersApi = {
    * Get list of users
    */
   list: async (params: ListUsersParams): Promise<PaginatedResponse<User>> => {
-    const { data } = await apiClient.get('/admin/users', { params });
-    return data;
+    const { data } = await apiClient.get('/admin/users', { params: sanitizePaginationParams(params) });
+    return {
+      data: data.data,
+      meta: data.meta
+    };
   },
 
   /**
    * Get user by ID
    */
   getById: async (id: string): Promise<User> => {
-    const { data } = await apiClient.get<ApiResponse<User>>(`/admin/users/${id}`);
-    // Some backend responses are nested like: { data: { data: User } }
-    // Unwrap safely to return the actual user object
-    // @ts-expect-error runtime shape may be nested
-    return (data as any)?.data?.data ?? data.data;
+    const { data } = await apiClient.get<ApiResponse<{ data: User }>>(`/admin/users/${id}`);
+    return data.data.data;
   },
 
   /**
    * Create new user
    */
   create: async (userData: CreateUserDto): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>('/admin/users', userData);
-    return data.data;
+    const { data } = await apiClient.post<ApiResponse<{ data: User }>>('/admin/users', userData);
+    return data.data.data;
   },
 
   /**
    * Update user
    */
   update: async (id: string, userData: UpdateUserDto): Promise<User> => {
-    const { data } = await apiClient.patch<ApiResponse<User>>(`/admin/users/${id}`, userData);
-    return data.data;
+    const { data } = await apiClient.patch<ApiResponse<{ data: User }>>(`/admin/users/${id}`, userData);
+    return data.data.data;
   },
 
   /**
@@ -56,27 +57,27 @@ export const usersApi = {
    * Suspend user
    */
   suspend: async (id: string, suspendData?: SuspendUserDto): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(
+    const { data } = await apiClient.post<ApiResponse<{ data: User }>>(
       `/admin/users/${id}/suspend`,
       suspendData
     );
-    return data.data;
+    return data.data.data;
   },
 
   /**
    * Activate user
    */
   activate: async (id: string): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(`/admin/users/${id}/activate`);
-    return data.data;
+    const { data } = await apiClient.post<ApiResponse<{ data: User }>>(`/admin/users/${id}/activate`);
+    return data.data.data;
   },
 
   /**
    * Restore deleted user
    */
   restore: async (id: string): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(`/admin/users/${id}/restore`);
-    return data.data;
+    const { data } = await apiClient.post<ApiResponse<{ data: User }>>(`/admin/users/${id}/restore`);
+    return data.data.data;
   },
 
   /**
@@ -90,48 +91,7 @@ export const usersApi = {
    * Get user statistics
    */
   getStats: async (): Promise<UserStats> => {
-    const { data } = await apiClient.get<ApiResponse<UserStats>>('/admin/users/stats/summary');
-    return data.data;
-  },
-
-  /**
-   * Assign role to user
-   */
-  assignRole: async (id: string, role: string): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(`/admin/users/${id}/assign-role`, {
-      role,
-    });
-    return data.data;
-  },
-
-  /**
-   * Remove role from user
-   */
-  removeRole: async (id: string, role: string): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(`/admin/users/${id}/remove-role`, {
-      role,
-    });
-    return data.data;
-  },
-
-  /**
-   * Add permission to user
-   */
-  addPermission: async (id: string, permission: string): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(`/admin/users/${id}/add-permission`, {
-      permission,
-    });
-    return data.data;
-  },
-
-  /**
-   * Remove permission from user
-   */
-  removePermission: async (id: string, permission: string): Promise<User> => {
-    const { data } = await apiClient.post<ApiResponse<User>>(
-      `/admin/users/${id}/remove-permission`,
-      { permission }
-    );
-    return data.data;
+    const { data } = await apiClient.get<ApiResponse<{ data: UserStats }>>('/admin/users/stats/summary');
+    return data.data.data;
   },
 };

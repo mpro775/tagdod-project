@@ -1,6 +1,6 @@
 import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
-// Category Interface - متطابق تماماً مع Backend
+// Category Interface - متطابق تماماً مع Backend Schema
 export interface Category extends BaseEntity {
   // Tree Structure
   parentId: string | null;
@@ -9,28 +9,22 @@ export interface Category extends BaseEntity {
   name: string; // Arabic
   nameEn: string; // English
   slug: string;
-  path: string; // e.g. /electronics/phones
-  depth: number;
 
-  // Description
+  // Description (Bilingual)
   description?: string; // Arabic
   descriptionEn?: string; // English
 
   // Images
-  image?: string;
-  imageId?: string;
-  icon?: string;
-  iconId?: string;
+  imageId?: string; // Reference to Media collection
 
   // SEO
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string[];
 
-  // Display
+  // Display & Order
   order: number;
   isActive: boolean;
-  showInMenu: boolean;
   isFeatured: boolean;
 
   // Statistics
@@ -59,16 +53,12 @@ export interface CreateCategoryDto {
   nameEn: string;
   description?: string;
   descriptionEn?: string;
-  image?: string;
   imageId?: string;
-  icon?: string;
-  iconId?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string[];
   order?: number;
   isActive?: boolean;
-  showInMenu?: boolean;
   isFeatured?: boolean;
 }
 
@@ -77,36 +67,30 @@ export interface UpdateCategoryDto {
   nameEn?: string;
   description?: string;
   descriptionEn?: string;
-  image?: string;
   imageId?: string;
-  icon?: string;
-  iconId?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string[];
   order?: number;
   isActive?: boolean;
-  showInMenu?: boolean;
   isFeatured?: boolean;
 }
 
 export interface ListCategoriesParams extends ListParams {
+  search?: string;
   parentId?: string | null;
   isActive?: boolean;
   isFeatured?: boolean;
   includeDeleted?: boolean;
 }
 
-export interface ReorderCategoriesDto {
-  categories: Array<{ id: string; order: number }>;
-}
-
-// Category Statistics
+// Category Statistics - متطابق مع Backend Response
 export interface CategoryStats {
-  total: number;
-  active: number;
-  inactive: number;
-  featured: number;
-  topLevel: number; // Categories with no parent
-  withProducts: number;
+  totalCategories: number;
+  activeCategories: number;
+  featuredCategories: number;
+  deletedCategories: number;
+  totalProducts: number;
+  categoriesWithProducts: number;
+  averageProductsPerCategory: number;
 }

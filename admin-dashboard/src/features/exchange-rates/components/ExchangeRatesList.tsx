@@ -1,155 +1,275 @@
-import React, { useState, useEffect } from 'react';
-import { ExchangeRate } from '../../../shared/types/currency.types';
+import React from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button,
+  Box,
+  Chip,
+  Alert,
+  Skeleton,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
+import {
+  Refresh,
+  TrendingUp,
+  TrendingDown,
+  Schedule,
+  AttachMoney,
+} from '@mui/icons-material';
+import { ExchangeRatesData } from '../api/exchangeRatesApi';
 
 interface ExchangeRatesListProps {
-  className?: string;
+  rates: ExchangeRatesData | null;
+  loading: boolean;
+  error: string | null;
+  onRefresh?: () => void;
 }
 
 export const ExchangeRatesList: React.FC<ExchangeRatesListProps> = ({
-  className = '',
+  rates,
+  loading,
+  error,
+  onRefresh,
 }) => {
-  const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'غير محدد';
+    return new Date(dateString).toLocaleString('ar-SA', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
-  useEffect(() => {
-    loadExchangeRates();
-  }, []);
+  const formatRate = (rate: number) => {
+    return new Intl.NumberFormat('ar-SA', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4,
+    }).format(rate);
+  };
 
-  const loadExchangeRates = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const response = await fetch('/api/exchange-rates');
-      if (!response.ok) {
-        throw new Error('Failed to load exchange rates');
-      }
-      
-      const data = await response.json();
-      setExchangeRates(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsLoading(false);
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'YER': return 'ر.ي';
+      case 'SAR': return 'ر.س';
+      case 'USD': return '$';
+      default: return currency;
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ar-SA');
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className={`exchange-rates-list ${className}`}>
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader
+          title={<Skeleton variant="text" width="40%" />}
+          action={<Skeleton variant="circular" width={40} height={40} />}
+        />
+        <CardContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[1, 2].map((item) => (
+              <Skeleton key={item} variant="rectangular" height={60} />
+            ))}
+          </Box>
+        </CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className={`exchange-rates-list ${className}`}>
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="text-red-800">
-            خطأ في تحميل أسعار الصرف: {error}
-          </div>
-          <button
-            onClick={loadExchangeRates}
-            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+      <Card>
+        <CardContent>
+          <Alert 
+            severity="error" 
+            action={
+              onRefresh && (
+                <Button color="inherit" size="small" onClick={onRefresh}>
+                  إعادة المحاولة
+                </Button>
+              )
+            }
           >
-            إعادة المحاولة
-          </button>
-        </div>
-      </div>
+            خطأ في تحميل أسعار الصرف: {error}
+          </Alert>
+        </CardContent>
+      </Card>
     );
   }
 
-  return (
-    <div className={`exchange-rates-list ${className}`}>
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              أسعار الصرف
-            </h3>
-            <button
-              onClick={loadExchangeRates}
-              className="text-sm text-blue-600 hover:text-blue-800"
-            >
-              تحديث
-            </button>
-          </div>
+  if (!rates) {
+    return (
+      <Card>
+        <CardContent>
+          <Alert severity="info">
+            لا توجد بيانات أسعار صرف متاحة
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
-          {exchangeRates.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              لا توجد أسعار صرف متاحة
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      من
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      إلى
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      السعر
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      الحالة
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      تاريخ البداية
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      تاريخ النهاية
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {exchangeRates.map((rate) => (
-                    <tr key={rate.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+  const exchangeRatesData = [
+    {
+      id: 'usd-yer',
+      fromCurrency: 'USD',
+      toCurrency: 'YER',
+      rate: rates.usdToYer,
+      isActive: true,
+      lastUpdated: rates.lastUpdatedAt,
+    },
+    {
+      id: 'usd-sar',
+      fromCurrency: 'USD',
+      toCurrency: 'SAR',
+      rate: rates.usdToSar,
+      isActive: true,
+      lastUpdated: rates.lastUpdatedAt,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AttachMoney color="primary" />
+            <Typography variant="h6" component="div">
+              قائمة أسعار الصرف
+            </Typography>
+          </Box>
+        }
+        subheader="عرض جميع أسعار الصرف المتاحة"
+        action={
+          onRefresh && (
+            <Tooltip title="تحديث البيانات">
+              <IconButton onClick={onRefresh} color="primary">
+                <Refresh />
+              </IconButton>
+            </Tooltip>
+          )
+        }
+      />
+      <CardContent>
+        <TableContainer component={Paper} variant="outlined">
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                  العملة المصدر
+                </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                  العملة الهدف
+                </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                  السعر
+                </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                  الحالة
+                </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                  آخر تحديث
+                </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                  الإجراءات
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {exchangeRatesData.map((rate) => (
+                <TableRow 
+                  key={rate.id}
+                  hover
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TrendingUp color="primary" />
+                      <Typography variant="body2" fontWeight={500}>
                         {rate.fromCurrency}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TrendingDown color="secondary" />
+                      <Typography variant="body2" fontWeight={500}>
                         {rate.toCurrency}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {rate.rate.toFixed(4)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            rate.isActive
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {rate.isActive ? 'نشط' : 'غير نشط'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {rate.effectiveDate ? formatDate(rate.effectiveDate) : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {rate.expiryDate ? formatDate(rate.expiryDate) : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography variant="body2" fontWeight={600}>
+                      {formatRate(rate.rate)} {getCurrencySymbol(rate.toCurrency)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      1 {rate.fromCurrency} = {formatRate(rate.rate)} {rate.toCurrency}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Chip
+                      label={rate.isActive ? 'نشط' : 'غير نشط'}
+                      color={rate.isActive ? 'success' : 'error'}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Schedule sx={{ fontSize: 16, color: 'text.secondary' }} />
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDate(rate.lastUpdated)}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Tooltip title="عرض التفاصيل">
+                      <IconButton size="small" color="primary">
+                        <AttachMoney />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Summary Cards */}
+        <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Card variant="outlined" sx={{ flex: 1, minWidth: 200 }}>
+            <CardContent sx={{ textAlign: 'center', py: 2 }}>
+              <Typography variant="h6" color="primary" fontWeight={600}>
+                {formatRate(rates.usdToYer)} ر.ي
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                1 دولار = {formatRate(rates.usdToYer)} ريال يمني
+              </Typography>
+            </CardContent>
+          </Card>
+          <Card variant="outlined" sx={{ flex: 1, minWidth: 200 }}>
+            <CardContent sx={{ textAlign: 'center', py: 2 }}>
+              <Typography variant="h6" color="secondary" fontWeight={600}>
+                {formatRate(rates.usdToSar)} ر.س
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                1 دولار = {formatRate(rates.usdToSar)} ريال سعودي
+              </Typography>
+            </CardContent>
+          </Card>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

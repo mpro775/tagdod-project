@@ -60,7 +60,7 @@ export const authApi = {
    * الحصول على بيانات المستخدم الحالي
    */
   getProfile: async () => {
-    const response = await apiClient.get<UserProfile>('/auth/me');
+    const response = await apiClient.get<{ success: boolean; data: UserProfile; requestId: string }>('/auth/me');
     return response.data;
   },
 

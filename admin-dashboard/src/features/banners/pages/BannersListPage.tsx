@@ -1,116 +1,230 @@
-import React from 'react';
-import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
-import { Edit, Delete, ToggleOn, ToggleOff } from '@mui/icons-material';
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+} from '@mui/material';
+import { Add, Analytics, Campaign } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { GridColDef } from '@mui/x-data-grid';
-import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useBanners, useDeleteBanner, useToggleBannerStatus } from '@/features/marketing/hooks/useMarketing';
-import type { Banner } from '@/features/marketing/api/marketingApi';
+import { toast } from 'react-hot-toast';
+import { BannerStatsCards } from '../components/BannerStatsCards';
+import { BannerFilters } from '../components/BannerFilters';
+import { BannerTable } from '../components/BannerTable';
+import { BannerDialog } from '../components/BannerDialog';
+import {
+  useBanners,
+  useDeleteBanner,
+  useToggleBannerStatus,
+  useCreateBanner,
+  useUpdateBanner,
+} from '../hooks/useBanners';
+import type {
+  Banner,
+  CreateBannerDto,
+  UpdateBannerDto,
+  ListBannersDto,
+} from '../types/banner.types';
 
 export const BannersListPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data: banners = [], isLoading, refetch } = useBanners({});
-  const { mutate: deleteBanner } = useDeleteBanner();
+
+  // State management
+  const [filters, setFilters] = useState<ListBannersDto>({
+    page: 1,
+    limit: 20,
+    sortBy: 'sortOrder',
+    sortOrder: 'asc',
+  });
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<Banner | undefined>();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [bannerToDelete, setBannerToDelete] = useState<Banner | undefined>();
+
+  // API hooks
+  const { data: bannersData, isLoading, refetch } = useBanners(filters);
+  const { mutate: createBanner, isPending: creating } = useCreateBanner();
+  const { mutate: updateBanner, isPending: updating } = useUpdateBanner();
+  const { mutate: deleteBanner, isPending: deleting } = useDeleteBanner();
   const { mutate: toggleStatus } = useToggleBannerStatus();
 
-  const columns: GridColDef[] = [
-    {
-      field: 'title',
-      headerName: 'العنوان',
-      width: 250,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box
-            component="img"
-            src={params.row.image}
-            sx={{ width: 50, height: 30, objectFit: 'cover', borderRadius: 1 }}
-          />
-          <Typography variant="body2">{params.row.title}</Typography>
-        </Box>
-      ),
-    },
-    { field: 'location', headerName: 'الموقع', width: 150 },
-    { field: 'type', headerName: 'النوع', width: 100 },
-    { field: 'clickCount', headerName: 'النقرات', width: 100, align: 'center' },
-    { field: 'viewCount', headerName: 'المشاهدات', width: 100, align: 'center' },
-    {
-      field: 'isActive',
-      headerName: 'الحالة',
-      width: 100,
-      renderCell: (params) => (
-        <Chip
-          label={params.row.isActive ? 'نشط' : 'غير نشط'}
-          color={params.row.isActive ? 'success' : 'default'}
-          size="small"
-        />
-      ),
-    },
-    {
-      field: 'actions',
-      headerName: 'الإجراءات',
-      width: 150,
-      sortable: false,
-      renderCell: (params) => {
-        const banner = params.row as Banner;
-        return (
-          <Box display="flex" gap={0.5}>
-            <Tooltip title="تعديل">
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/banners/${banner._id}`);
-                }}
-              >
-                <Edit fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={banner.isActive ? 'تعطيل' : 'تفعيل'}>
-              <IconButton
-                size="small"
-                color={banner.isActive ? 'warning' : 'success'}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleStatus(banner._id, { onSuccess: () => refetch() });
-                }}
-              >
-                {banner.isActive ? <ToggleOff fontSize="small" /> : <ToggleOn fontSize="small" />}
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="حذف">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(`هل تريد حذف "${banner.title}"؟`))
-                    deleteBanner(banner._id, { onSuccess: () => refetch() });
-                }}
-              >
-                <Delete fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        );
+  const banners = bannersData?.banners || [];
+  const pagination = bannersData?.pagination;
+
+  // Event handlers
+  const handleFiltersChange = (newFilters: ListBannersDto) => {
+    setFilters(newFilters);
+    setPaginationModel({ page: 0, pageSize: newFilters.limit || 20 });
+  };
+
+  const handleResetFilters = () => {
+    const resetFilters: ListBannersDto = {
+      page: 1,
+      limit: 20,
+      sortBy: 'sortOrder',
+      sortOrder: 'asc',
+    };
+    setFilters(resetFilters);
+    setPaginationModel({ page: 0, pageSize: 20 });
+  };
+
+  const handlePaginationModelChange = (model: { page: number; pageSize: number }) => {
+    setPaginationModel(model);
+    setFilters((prev) => ({
+      ...prev,
+      page: model.page + 1,
+      limit: model.pageSize,
+    }));
+  };
+
+  const handleAddBanner = () => {
+    setEditingBanner(undefined);
+    setDialogOpen(true);
+  };
+
+  const handleEditBanner = (banner: Banner) => {
+    setEditingBanner(banner);
+    setDialogOpen(true);
+  };
+
+  const handleDeleteBanner = (banner: Banner) => {
+    setBannerToDelete(banner);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleToggleStatus = (banner: Banner) => {
+    toggleStatus(banner._id, {
+      onSuccess: () => {
+        refetch();
+        toast.success(banner.isActive ? 'تم تعطيل البانر' : 'تم تفعيل البانر');
       },
-    },
-  ];
+    });
+  };
+
+  const handleSaveBanner = (data: CreateBannerDto | UpdateBannerDto) => {
+    if (editingBanner) {
+      updateBanner(
+        { id: editingBanner._id, data: data as UpdateBannerDto },
+        {
+          onSuccess: () => {
+            setDialogOpen(false);
+            setEditingBanner(undefined);
+            refetch();
+          },
+        }
+      );
+    } else {
+      createBanner(data as CreateBannerDto, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          refetch();
+        },
+      });
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (bannerToDelete) {
+      deleteBanner(bannerToDelete._id, {
+        onSuccess: () => {
+          setDeleteConfirmOpen(false);
+          setBannerToDelete(undefined);
+          refetch();
+        },
+      });
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setBannerToDelete(undefined);
+  };
+
+  const handleViewAnalytics = () => {
+    navigate('/admin/banners/analytics');
+  };
 
   return (
     <Box>
-      <DataTable
-        title="إدارة البانرات"
-        columns={columns}
-        rows={banners}
-        loading={isLoading}
-        paginationModel={{ page: 0, pageSize: 20 }}
-        onPaginationModelChange={() => {}}
-        rowCount={banners.length}
-        onAdd={() => navigate('/banners/new')}
-        addButtonText="إضافة بانر"
-        height="calc(100vh - 200px)"
+      {/* Header */}
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Campaign fontSize="large" color="primary" />
+          <Typography variant="h4" component="h1">
+            إدارة البانرات
+          </Typography>
+        </Box>
+        <Box display="flex" gap={2}>
+          <Button variant="outlined" startIcon={<Analytics />} onClick={handleViewAnalytics}>
+            الإحصائيات
+          </Button>
+          <Button variant="contained" startIcon={<Add />} onClick={handleAddBanner}>
+            إضافة بانر
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Statistics Cards */}
+      <BannerStatsCards />
+
+      {/* Filters */}
+      <BannerFilters
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onReset={handleResetFilters}
+        isLoading={isLoading}
       />
+
+      {/* Banners Table */}
+      <BannerTable
+        banners={banners}
+        isLoading={isLoading}
+        onEdit={handleEditBanner}
+        onDelete={handleDeleteBanner}
+        onToggleStatus={handleToggleStatus}
+        paginationModel={paginationModel}
+        onPaginationModelChange={handlePaginationModelChange}
+        rowCount={pagination?.total || 0}
+      />
+
+      {/* Banner Dialog */}
+      <BannerDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        banner={editingBanner}
+        onSave={handleSaveBanner}
+        isLoading={creating || updating}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onClose={handleCancelDelete} maxWidth="sm" fullWidth>
+        <DialogTitle>تأكيد الحذف</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            هل أنت متأكد من حذف البانر "{bannerToDelete?.title}"؟
+            <br />
+            <strong>هذا الإجراء لا يمكن التراجع عنه.</strong>
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} disabled={deleting}>
+            إلغاء
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+          >
+            {deleting ? 'جاري الحذف...' : 'حذف'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

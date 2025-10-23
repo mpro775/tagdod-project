@@ -40,7 +40,16 @@ export enum SupportStatus {
   CLOSED = 'closed',
 }
 
-// Support Ticket Interface
+export enum MessageType {
+  // eslint-disable-next-line no-unused-vars
+  USER_MESSAGE = 'user_message',
+  // eslint-disable-next-line no-unused-vars
+  ADMIN_REPLY = 'admin_reply',
+  // eslint-disable-next-line no-unused-vars
+  SYSTEM_MESSAGE = 'system_message',
+}
+
+// Support Ticket Interface - متطابق 100% مع Backend Schema
 export interface SupportTicket extends BaseEntity {
   userId: string;
   title: string;
@@ -71,17 +80,30 @@ export interface SupportTicket extends BaseEntity {
   metadata?: Record<string, unknown>;
 }
 
-// Support Message Interface
+// Support Message Interface - متطابق 100% مع Backend Schema
 export interface SupportMessage extends BaseEntity {
   ticketId: string;
-  userId: string;
-  message: string;
-  isAdminReply: boolean;
-  attachments?: string[];
-  isInternal?: boolean;
+  senderId: string;
+  messageType: MessageType;
+  content: string;
+  attachments: string[];
+  isInternal: boolean;
+  metadata?: Record<string, unknown>;
 }
 
-// DTOs
+// Canned Response Interface - متطابق 100% مع Backend Schema
+export interface CannedResponse extends BaseEntity {
+  title: string;
+  content: string;
+  contentEn: string;
+  category?: SupportCategory;
+  tags: string[];
+  isActive: boolean;
+  usageCount: number;
+  shortcut?: string;
+}
+
+// DTOs - متطابقة 100% مع Backend DTOs
 export interface CreateSupportTicketDto {
   title: string;
   description: string;
@@ -92,19 +114,39 @@ export interface CreateSupportTicketDto {
 }
 
 export interface UpdateSupportTicketDto {
-  title?: string;
-  description?: string;
-  category?: SupportCategory;
-  priority?: SupportPriority;
   status?: SupportStatus;
+  priority?: SupportPriority;
+  category?: SupportCategory;
   assignedTo?: string;
-  tags?: string[];
+  resolvedAt?: Date;
+  closedAt?: Date;
+  firstResponseAt?: Date;
 }
 
 export interface AddSupportMessageDto {
-  message: string;
+  content: string;
   attachments?: string[];
   isInternal?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CreateCannedResponseDto {
+  title: string;
+  content: string;
+  contentEn: string;
+  category?: SupportCategory;
+  tags?: string[];
+  shortcut?: string;
+}
+
+export interface UpdateCannedResponseDto {
+  title?: string;
+  content?: string;
+  contentEn?: string;
+  category?: SupportCategory;
+  tags?: string[];
+  shortcut?: string;
+  isActive?: boolean;
 }
 
 export interface ListTicketsParams extends ListParams {
@@ -114,7 +156,12 @@ export interface ListTicketsParams extends ListParams {
   assignedTo?: string;
 }
 
-// Support Stats
+export interface ListCannedResponsesParams extends ListParams {
+  category?: SupportCategory;
+  search?: string;
+}
+
+// Support Stats - متطابق مع Backend Response
 export interface SupportStats {
   total: number;
   open: number;
@@ -126,5 +173,18 @@ export interface SupportStats {
   slaBreached: number;
   byCategory: Record<SupportCategory, number>;
   byPriority: Record<SupportPriority, number>;
+}
+
+// SLA Status Response
+export interface SLAStatusResponse {
+  ticketId: string;
+  slaBreached: boolean;
+}
+
+// Breached SLA Tickets Response
+export interface BreachedSLATicketsResponse {
+  tickets: SupportTicket[];
+  totalBreached: number;
+  criticalCount: number;
 }
 

@@ -195,10 +195,29 @@ export const useCouponUsageHistory = (id: string) => {
   });
 };
 
+export const useCouponPerformance = (period?: number) => {
+  return useQuery({
+    queryKey: [MARKETING_KEY, 'coupons', 'performance', period || 30],
+    queryFn: () => marketingApi.getCouponsAnalytics(period || 30),
+  });
+};
+
 export const useValidateCoupon = () => {
   return useMutation({
     mutationFn: (data: ValidateCouponDto) => 
       marketingApi.validateCoupon(data),
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useValidateCouponCode = () => {
+  return useMutation({
+    mutationFn: ({ code, userId, orderAmount, productIds }: {
+      code: string;
+      userId?: string;
+      orderAmount?: number;
+      productIds?: string[];
+    }) => marketingApi.validateCouponCode(code, userId, orderAmount, productIds),
     onError: ErrorHandler.showError,
   });
 };
@@ -224,6 +243,30 @@ export const useCouponByCode = (code: string) => {
     queryKey: [MARKETING_KEY, 'coupons', 'code', code],
     queryFn: () => marketingApi.getCouponByCode(code),
     enabled: !!code,
+  });
+};
+
+export const useBulkGenerateCoupons = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      prefix: string;
+      count: number;
+      length: number;
+      type: string;
+      discountValue: number;
+      validUntil: string;
+      name?: string;
+      description?: string;
+      minimumOrderAmount?: number;
+      usageLimit?: number;
+      usageLimitPerUser?: number;
+    }) => marketingApi.bulkGenerateCoupons(data),
+    onSuccess: () => {
+      toast.success('تم إنشاء الكوبونات بنجاح');
+      queryClient.invalidateQueries({ queryKey: [MARKETING_KEY, 'coupons'] });
+    },
+    onError: ErrorHandler.showError,
   });
 };
 

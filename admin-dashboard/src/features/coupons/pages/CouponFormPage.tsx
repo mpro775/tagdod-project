@@ -1,17 +1,32 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Paper, Typography, Grid, Button, CircularProgress } from '@mui/material';
-import { Save, ArrowBack } from '@mui/icons-material';
-import { useForm } from 'react-hook-form';
+import {
+  Box,
+  Paper,
+  Typography,
+  Grid,
+  Button,
+  CircularProgress,
+  Card,
+  CardContent,
+  Chip,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
+} from '@mui/material';
+import { Save, ArrowBack, Preview } from '@mui/icons-material';
+import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
-import { FormInput } from '@/shared/components/Form/FormInput';
-import { FormSelect } from '@/shared/components/Form/FormSelect';
-import { useCreateCoupon, useUpdateCoupon, useCoupon } from '@/features/marketing/hooks/useMarketing';
+import {
+  useCreateCoupon,
+  useUpdateCoupon,
+  useCoupon,
+} from '@/features/marketing/hooks/useMarketing';
 import type { CreateCouponDto, UpdateCouponDto } from '@/features/marketing/api/marketingApi';
 
-// Type definitions for coupon types
-type CouponType = 'percentage' | 'fixed_amount' | 'free_shipping' | 'buy_x_get_y';
-type CouponStatus = 'active' | 'inactive' | 'expired' | 'exhausted';
 
 type CouponFormData = CreateCouponDto | UpdateCouponDto;
 
@@ -41,21 +56,35 @@ const appliesToOptions = [
   { value: 'minimum_order_amount', label: 'حد أدنى للطلب' },
 ];
 
+// Helper function to generate random coupon code
+const generateCouponCode = (prefix: string = 'COUPON', length: number = 8): string => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = prefix + '-';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 export const CouponFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
+  const [showPreview, setShowPreview] = useState(false);
 
-  const { data: coupon, isLoading: loadingCoupon } = useCoupon(id!, {
-    enabled: isEditing,
-  });
+  const { data: coupon, isLoading: loadingCoupon } = useCoupon(id!);
 
   const { mutate: createCoupon, isPending: creating } = useCreateCoupon();
   const { mutate: updateCoupon, isPending: updating } = useUpdateCoupon();
 
-  const { control, handleSubmit, watch, reset, formState: { errors } } = useForm<CouponFormData>({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    reset,
+  } = useForm<CouponFormData>({
     defaultValues: {
-      code: '',
+      code: generateCouponCode(),
       name: '',
       description: '',
       type: 'percentage',
@@ -78,7 +107,6 @@ export const CouponFormPage: React.FC = () => {
   });
 
   const couponType = watch('type');
-  const appliesTo = watch('appliesTo');
 
   useEffect(() => {
     if (coupon && isEditing) {
@@ -95,7 +123,9 @@ export const CouponFormPage: React.FC = () => {
         usageLimit: coupon.usageLimit,
         usageLimitPerUser: coupon.usageLimitPerUser,
         validFrom: coupon.validFrom ? new Date(coupon.validFrom).toISOString().split('T')[0] : '',
-        validUntil: coupon.validUntil ? new Date(coupon.validUntil).toISOString().split('T')[0] : '',
+        validUntil: coupon.validUntil
+          ? new Date(coupon.validUntil).toISOString().split('T')[0]
+          : '',
         appliesTo: coupon.appliesTo,
         applicableProductIds: coupon.applicableProductIds,
         applicableCategoryIds: coupon.applicableCategoryIds,
@@ -108,6 +138,11 @@ export const CouponFormPage: React.FC = () => {
       });
     }
   }, [coupon, isEditing, reset]);
+
+
+  const handlePreviewToggle = () => {
+    setShowPreview(!showPreview);
+  };
 
   const onSubmit = (data: CouponFormData) => {
     if (isEditing) {
@@ -124,7 +159,7 @@ export const CouponFormPage: React.FC = () => {
         }
       );
     } else {
-      createCoupon(data, {
+      createCoupon(data as CreateCouponDto, {
         onSuccess: () => {
           toast.success('تم إنشاء الكوبون بنجاح');
           navigate('/admin/coupons');
@@ -146,92 +181,150 @@ export const CouponFormPage: React.FC = () => {
 
   return (
     <Box p={3}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/admin/coupons')}
+            variant="outlined"
+          >
+            العودة
+          </Button>
+          <Typography variant="h4" component="h1">
+            {isEditing ? 'تعديل الكوبون' : 'إنشاء كوبون جديد'}
+          </Typography>
+        </Box>
         <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate('/admin/coupons')}
+          startIcon={<Preview />}
+          onClick={handlePreviewToggle}
           variant="outlined"
+          color="info"
         >
-          العودة
+          {showPreview ? 'إخفاء المعاينة' : 'معاينة الكوبون'}
         </Button>
-        <Typography variant="h4" component="h1">
-          {isEditing ? 'تعديل الكوبون' : 'إنشاء كوبون جديد'}
-        </Typography>
       </Box>
 
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={3}>
             {/* Basic Information */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 المعلومات الأساسية
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="code"
                 control={control}
-                label="كود الكوبون"
-                rules={{ required: 'كود الكوبون مطلوب' }}
-                error={!!errors.code}
-                helperText={errors.code?.message}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="كود الكوبون"
+                    error={!!error}
+                    helperText={error?.message}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="name"
                 control={control}
-                label="اسم الكوبون"
-                rules={{ required: 'اسم الكوبون مطلوب' }}
-                error={!!errors.name}
-                helperText={errors.name?.message}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="اسم الكوبون"
+                    error={!!error}
+                    helperText={error?.message}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12}>
-              <FormInput
+            <Grid size={{ xs: 12 }}>
+              <Controller
                 name="description"
                 control={control}
-                label="وصف الكوبون"
-                multiline
-                rows={3}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="وصف الكوبون"
+                    multiline
+                    rows={3}
+                    error={!!error}
+                    helperText={error?.message}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormSelect
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="type"
                 control={control}
-                label="نوع الكوبون"
-                options={couponTypeOptions}
                 rules={{ required: 'نوع الكوبون مطلوب' }}
+                render={({ field, fieldState: { error } }) => (
+                  <FormControl fullWidth error={!!error}>
+                    <InputLabel>نوع الكوبون</InputLabel>
+                    <Select {...field} label="نوع الكوبون">
+                      {couponTypeOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {error && <FormHelperText>{error.message}</FormHelperText>}
+                  </FormControl>
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormSelect
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="status"
                 control={control}
-                label="الحالة"
-                options={couponStatusOptions}
+                render={({ field, fieldState: { error } }) => (
+                  <FormControl fullWidth error={!!error}>
+                    <InputLabel>الحالة</InputLabel>
+                    <Select {...field} label="الحالة">
+                      {couponStatusOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {error && <FormHelperText>{error.message}</FormHelperText>}
+                  </FormControl>
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormSelect
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="visibility"
                 control={control}
-                label="الظهور"
-                options={visibilityOptions}
+                render={({ field, fieldState: { error } }) => (
+                  <FormControl fullWidth error={!!error}>
+                    <InputLabel>الظهور</InputLabel>
+                    <Select {...field} label="الظهور">
+                      {visibilityOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {error && <FormHelperText>{error.message}</FormHelperText>}
+                  </FormControl>
+                )}
               />
             </Grid>
 
             {/* Discount Configuration */}
             {(couponType === 'percentage' || couponType === 'fixed_amount') && (
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="h6" gutterBottom>
                   إعدادات الخصم
                 </Typography>
@@ -239,64 +332,88 @@ export const CouponFormPage: React.FC = () => {
             )}
 
             {couponType === 'percentage' && (
-              <Grid item xs={12} md={6}>
-                <FormInput
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
                   name="discountValue"
                   control={control}
-                  label="نسبة الخصم (%)"
-                  type="number"
                   rules={{
                     required: 'نسبة الخصم مطلوبة',
                     min: { value: 0, message: 'يجب أن تكون النسبة أكبر من أو تساوي 0' },
                     max: { value: 100, message: 'يجب أن تكون النسبة أقل من أو تساوي 100' },
                   }}
-                  error={!!errors.discountValue}
-                  helperText={errors.discountValue?.message}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      label="نسبة الخصم (%)"
+                      type="number"
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
                 />
               </Grid>
             )}
 
             {couponType === 'fixed_amount' && (
-              <Grid item xs={12} md={6}>
-                <FormInput
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
                   name="discountValue"
                   control={control}
-                  label="مبلغ الخصم"
-                  type="number"
                   rules={{
                     required: 'مبلغ الخصم مطلوب',
                     min: { value: 0, message: 'يجب أن يكون المبلغ أكبر من أو يساوي 0' },
                   }}
-                  error={!!errors.discountValue}
-                  helperText={errors.discountValue?.message}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      label="مبلغ الخصم"
+                      type="number"
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
                 />
               </Grid>
             )}
 
             {(couponType === 'percentage' || couponType === 'fixed_amount') && (
               <>
-                <Grid item xs={12} md={6}>
-                  <FormInput
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Controller
                     name="minimumOrderAmount"
                     control={control}
-                    label="الحد الأدنى للطلب"
-                    type="number"
                     rules={{
                       min: { value: 0, message: 'يجب أن يكون المبلغ أكبر من أو يساوي 0' },
                     }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="الحد الأدنى للطلب"
+                        type="number"
+                        error={!!error}
+                        helperText={error?.message}
+                      />
+                    )}
                   />
                 </Grid>
 
                 {couponType === 'percentage' && (
-                  <Grid item xs={12} md={6}>
-                    <FormInput
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Controller
                       name="maximumDiscountAmount"
                       control={control}
-                      label="الحد الأقصى للخصم"
-                      type="number"
                       rules={{
                         min: { value: 0, message: 'يجب أن يكون المبلغ أكبر من أو يساوي 0' },
                       }}
+                      render={({ field, fieldState: { error } }) => (
+                        <TextField
+                          {...field}
+                          label="الحد الأقصى للخصم"
+                          type="number"
+                          error={!!error}
+                          helperText={error?.message}
+                        />
+                      )}
                     />
                   </Grid>
                 )}
@@ -306,126 +423,171 @@ export const CouponFormPage: React.FC = () => {
             {/* Buy X Get Y Configuration */}
             {couponType === 'buy_x_get_y' && (
               <>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="h6" gutterBottom>
                     إعدادات اشتر X احصل على Y
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
-                  <FormInput
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Controller
                     name="buyXQuantity"
                     control={control}
-                    label="كمية الشراء (X)"
-                    type="number"
                     rules={{
                       required: 'كمية الشراء مطلوبة',
                       min: { value: 1, message: 'يجب أن تكون الكمية أكبر من 0' },
                     }}
-                    error={!!errors.buyXQuantity}
-                    helperText={errors.buyXQuantity?.message}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="كمية الشراء (X)"
+                        type="number"
+                        error={!!error}
+                        helperText={error?.message}
+                      />
+                    )}
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
-                  <FormInput
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Controller
                     name="getYQuantity"
                     control={control}
-                    label="كمية الهدية (Y)"
-                    type="number"
                     rules={{
                       required: 'كمية الهدية مطلوبة',
                       min: { value: 1, message: 'يجب أن تكون الكمية أكبر من 0' },
                     }}
-                    error={!!errors.getYQuantity}
-                    helperText={errors.getYQuantity?.message}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label="كمية الهدية (Y)"
+                        type="number"
+                        error={!!error}
+                        helperText={error?.message}
+                      />
+                    )}
                   />
                 </Grid>
               </>
             )}
 
             {/* Usage Limits */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 حدود الاستخدام
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="usageLimit"
                 control={control}
-                label="الحد الأقصى للاستخدام"
-                type="number"
                 rules={{
                   min: { value: 0, message: 'يجب أن يكون العدد أكبر من أو يساوي 0' },
                 }}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="الحد الأقصى للاستخدام"
+                    type="number"
+                    error={!!error}
+                    helperText={error?.message}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="usageLimitPerUser"
                 control={control}
-                label="الحد الأقصى لكل مستخدم"
-                type="number"
                 rules={{
                   min: { value: 0, message: 'يجب أن يكون العدد أكبر من أو يساوي 0' },
                 }}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="الحد الأقصى لكل مستخدم"
+                    type="number"
+                    error={!!error}
+                    helperText={error?.message}
+                  />
+                )}
               />
             </Grid>
 
             {/* Validity Period */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 فترة الصلاحية
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="validFrom"
                 control={control}
-                label="تاريخ البداية"
-                type="date"
                 rules={{ required: 'تاريخ البداية مطلوب' }}
-                error={!!errors.validFrom}
-                helperText={errors.validFrom?.message}
-                InputLabelProps={{ shrink: true }}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="تاريخ البداية"
+                    type="date"
+                    error={!!error}
+                    helperText={error?.message}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormInput
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="validUntil"
                 control={control}
-                label="تاريخ النهاية"
-                type="date"
                 rules={{ required: 'تاريخ النهاية مطلوب' }}
-                error={!!errors.validUntil}
-                helperText={errors.validUntil?.message}
-                InputLabelProps={{ shrink: true }}
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    label="تاريخ النهاية"
+                    type="date"
+                    error={!!error}
+                    helperText={error?.message}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
               />
             </Grid>
 
             {/* Applicability */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
                 تطبيق الكوبون
               </Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormSelect
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
                 name="appliesTo"
                 control={control}
-                label="ينطبق على"
-                options={appliesToOptions}
+                render={({ field, fieldState: { error } }) => (
+                  <FormControl fullWidth error={!!error}>
+                    <InputLabel>ينطبق على</InputLabel>
+                    <Select {...field} label="ينطبق على">
+                      {appliesToOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {error && <FormHelperText>{error.message}</FormHelperText>}
+                  </FormControl>
+                )}
               />
             </Grid>
 
             {/* Submit Button */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Box display="flex" gap={2} justifyContent="flex-end">
                 <Button
                   variant="outlined"
@@ -447,6 +609,103 @@ export const CouponFormPage: React.FC = () => {
           </Grid>
         </form>
       </Paper>
+
+      {/* Coupon Preview */}
+      {showPreview && (
+        <Paper sx={{ p: 3, mt: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            معاينة الكوبون
+          </Typography>
+          <Card variant="outlined">
+            <CardContent>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    كود الكوبون
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+                    {watch('code')}
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    اسم الكوبون
+                  </Typography>
+                  <Typography variant="body1">{watch('name') || 'غير محدد'}</Typography>
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    الوصف
+                  </Typography>
+                  <Typography variant="body2">{watch('description') || 'لا يوجد وصف'}</Typography>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    النوع
+                  </Typography>
+                  <Chip
+                    label={couponTypeOptions.find((opt) => opt.value === watch('type'))?.label}
+                    color="primary"
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    الحالة
+                  </Typography>
+                  <Chip
+                    label={couponStatusOptions.find((opt) => opt.value === watch('status'))?.label}
+                    color={watch('status') === 'active' ? 'success' : 'default'}
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    الرؤية
+                  </Typography>
+                  <Chip
+                    label={
+                      visibilityOptions.find((opt) => opt.value === watch('visibility'))?.label
+                    }
+                    variant="outlined"
+                    size="small"
+                  />
+                </Grid>
+                {watch('type') === 'percentage' && (
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      نسبة الخصم
+                    </Typography>
+                    <Typography variant="h6" color="primary">
+                      {watch('discountValue')}%
+                    </Typography>
+                  </Grid>
+                )}
+                {watch('type') === 'fixed_amount' && (
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      مبلغ الخصم
+                    </Typography>
+                    <Typography variant="h6" color="primary">
+                      {watch('discountValue')} ريال
+                    </Typography>
+                  </Grid>
+                )}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    فترة الصلاحية
+                  </Typography>
+                  <Typography variant="body2">
+                    {watch('validFrom') && watch('validUntil')
+                      ? `${watch('validFrom')} - ${watch('validUntil')}`
+                      : 'غير محدد'}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Paper>
+      )}
     </Box>
   );
 };

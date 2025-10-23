@@ -390,57 +390,72 @@ export class NotificationService {
     readRate: number;
     deliveryRate: number;
   }> {
-    const baseFilter = userId ? { recipientId: new Types.ObjectId(userId) } : {};
+    try {
+      const baseFilter = userId ? { recipientId: new Types.ObjectId(userId) } : {};
 
-    const [total, byType, byStatus, byChannel, byCategory, unreadCount, readCount, deliveredCount] =
-      await Promise.all([
-        this.notificationModel.countDocuments(baseFilter),
-        this.notificationModel.aggregate([
-          { $match: baseFilter },
-          { $group: { _id: '$type', count: { $sum: 1 } } },
-          { $project: { type: '$_id', count: 1, _id: 0 } },
-        ]),
-        this.notificationModel.aggregate([
-          { $match: baseFilter },
-          { $group: { _id: '$status', count: { $sum: 1 } } },
-          { $project: { status: '$_id', count: 1, _id: 0 } },
-        ]),
-        this.notificationModel.aggregate([
-          { $match: baseFilter },
-          { $group: { _id: '$channel', count: { $sum: 1 } } },
-          { $project: { channel: '$_id', count: 1, _id: 0 } },
-        ]),
-        this.notificationModel.aggregate([
-          { $match: baseFilter },
-          { $group: { _id: '$category', count: { $sum: 1 } } },
-          { $project: { category: '$_id', count: 1, _id: 0 } },
-        ]),
-        this.notificationModel.countDocuments({
-          ...baseFilter,
-          status: { $ne: NotificationStatus.READ },
-        }),
-        this.notificationModel.countDocuments({
-          ...baseFilter,
-          status: NotificationStatus.READ,
-        }),
-        this.notificationModel.countDocuments({
-          ...baseFilter,
-          status: NotificationStatus.DELIVERED,
-        }),
-      ]);
+      const [total, byType, byStatus, byChannel, byCategory, unreadCount, readCount, deliveredCount] =
+        await Promise.all([
+          this.notificationModel.countDocuments(baseFilter),
+          this.notificationModel.aggregate([
+            { $match: baseFilter },
+            { $group: { _id: '$type', count: { $sum: 1 } } },
+            { $project: { type: '$_id', count: 1, _id: 0 } },
+          ]).catch(() => []),
+          this.notificationModel.aggregate([
+            { $match: baseFilter },
+            { $group: { _id: '$status', count: { $sum: 1 } } },
+            { $project: { status: '$_id', count: 1, _id: 0 } },
+          ]).catch(() => []),
+          this.notificationModel.aggregate([
+            { $match: baseFilter },
+            { $group: { _id: '$channel', count: { $sum: 1 } } },
+            { $project: { channel: '$_id', count: 1, _id: 0 } },
+          ]).catch(() => []),
+          this.notificationModel.aggregate([
+            { $match: baseFilter },
+            { $group: { _id: '$category', count: { $sum: 1 } } },
+            { $project: { category: '$_id', count: 1, _id: 0 } },
+          ]).catch(() => []),
+          this.notificationModel.countDocuments({
+            ...baseFilter,
+            status: { $ne: NotificationStatus.READ },
+          }).catch(() => 0),
+          this.notificationModel.countDocuments({
+            ...baseFilter,
+            status: NotificationStatus.READ,
+          }).catch(() => 0),
+          this.notificationModel.countDocuments({
+            ...baseFilter,
+            status: NotificationStatus.DELIVERED,
+          }).catch(() => 0),
+        ]);
 
-    const readRate = total > 0 ? (readCount / total) * 100 : 0;
-    const deliveryRate = total > 0 ? (deliveredCount / total) * 100 : 0;
+      const readRate = total > 0 ? (readCount / total) * 100 : 0;
+      const deliveryRate = total > 0 ? (deliveredCount / total) * 100 : 0;
 
-    return {
-      total,
-      byType: byType.reduce((acc, item) => ({ ...acc, [item.type]: item.count }), {}),
-      byStatus: byStatus.reduce((acc, item) => ({ ...acc, [item.status]: item.count }), {}),
-      byChannel: byChannel.reduce((acc, item) => ({ ...acc, [item.channel]: item.count }), {}),
-      byCategory: byCategory.reduce((acc, item) => ({ ...acc, [item.category]: item.count }), {}),
-      unreadCount,
-      readRate: Math.round(readRate * 100) / 100,
-      deliveryRate: Math.round(deliveryRate * 100) / 100,
-    };
+      return {
+        total,
+        byType: byType.reduce((acc, item) => ({ ...acc, [item.type]: item.count }), {}),
+        byStatus: byStatus.reduce((acc, item) => ({ ...acc, [item.status]: item.count }), {}),
+        byChannel: byChannel.reduce((acc, item) => ({ ...acc, [item.channel]: item.count }), {}),
+        byCategory: byCategory.reduce((acc, item) => ({ ...acc, [item.category]: item.count }), {}),
+        unreadCount,
+        readRate: Math.round(readRate * 100) / 100,
+        deliveryRate: Math.round(deliveryRate * 100) / 100,
+      };
+    } catch (error) {
+      this.logger.error('Error getting notification stats:', error);
+      // Return default stats in case of error
+      return {
+        total: 0,
+        byType: {},
+        byStatus: {},
+        byChannel: {},
+        byCategory: {},
+        unreadCount: 0,
+        readRate: 0,
+        deliveryRate: 0,
+      };
+    }
   }
 }

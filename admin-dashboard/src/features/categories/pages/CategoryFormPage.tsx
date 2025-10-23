@@ -9,14 +9,24 @@ import {
   Typography,
   Button,
   Grid,
-  Divider,
-  CircularProgress,
-  Tabs,
-  Tab,
+    CircularProgress,
   FormControlLabel,
   Switch,
+  Alert,
+  Card,
+  CardContent,
+  Stepper,
+  Step,
+  StepLabel,
+  Chip,
+  IconButton,
+  Skeleton,
 } from '@mui/material';
-import { Save, Cancel } from '@mui/icons-material';
+import { 
+  Save, 
+  Cancel, 
+  ArrowBack, 
+} from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
 import { ImageField } from '@/features/media';
@@ -35,19 +45,12 @@ const categorySchema = z.object({
   nameEn: z.string().min(2, 'الاسم بالإنجليزية يجب أن يكون حرفين على الأقل'),
   description: z.string().optional(),
   descriptionEn: z.string().optional(),
-  image: z.string().optional(),
-  icon: z.string().optional(),
+  imageId: z.string().optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
-  order: z.union([
-    z.string().transform((val) => {
-      const num = parseInt(val, 10);
-      return isNaN(num) ? 0 : num;
-    }),
-    z.number(),
-  ]).optional(),
+  metaKeywords: z.array(z.string()).optional(),
+  order: z.number().optional(),
   isActive: z.boolean().optional(),
-  showInMenu: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
 });
 
@@ -58,8 +61,8 @@ export const CategoryFormPage: React.FC = () => {
   const navigate = useNavigate();
   const isEditMode = id !== 'new' && !!id;
 
-  const [activeTab, setActiveTab] = React.useState(0);
   const [selectedImage, setSelectedImage] = React.useState<any>(null);
+  const [activeStep, setActiveStep] = React.useState(0);
 
   // Form
   const methods = useForm<CategoryFormData>({
@@ -70,9 +73,12 @@ export const CategoryFormPage: React.FC = () => {
       nameEn: '',
       description: '',
       descriptionEn: '',
-      order: '0',
+      imageId: '',
+      metaTitle: '',
+      metaDescription: '',
+      metaKeywords: [],
+      order: 0,
       isActive: true,
-      showInMenu: true,
       isFeatured: false,
     },
   });
@@ -80,7 +86,7 @@ export const CategoryFormPage: React.FC = () => {
   // API
   const { data: category, isLoading } = useCategory(id!);
   const { data: categoriesResponse = [] } = useCategories({}); // For parent selector
-  const categories = Array.isArray(categoriesResponse) ? categoriesResponse : (categoriesResponse?.data || []);
+  const categories = Array.isArray(categoriesResponse) ? categoriesResponse : [];
   const { mutate: createCategory, isPending: isCreating } = useCreateCategory();
   const { mutate: updateCategory, isPending: isUpdating } = useUpdateCategory();
 
@@ -93,46 +99,38 @@ export const CategoryFormPage: React.FC = () => {
         nameEn: category.nameEn,
         description: category.description,
         descriptionEn: category.descriptionEn,
-        image: category.image,
-        icon: category.icon,
+        imageId: category.imageId,
         metaTitle: category.metaTitle,
         metaDescription: category.metaDescription,
-        order: category.order?.toString() || '0',
+        metaKeywords: category.metaKeywords || [],
+        order: category.order || 0,
         isActive: category.isActive,
-        showInMenu: category.showInMenu,
         isFeatured: category.isFeatured,
       });
       
       // Set image if exists
-      if (category.image) {
-        setSelectedImage({ url: category.image, name: 'صورة الفئة' });
+      if (category.imageId) {
+        setSelectedImage({ id: category.imageId, name: 'صورة الفئة' });
       }
     }
   }, [category, isEditMode, methods]);
 
   // Submit
   const onSubmit = (data: CategoryFormData) => {
-    // eslint-disable-next-line no-console
-    console.log('📤 Form data before submit:', data);
-    
     const categoryData: CreateCategoryDto = {
       parentId: data.parentId || null,
       name: data.name,
       nameEn: data.nameEn,
       description: data.description || undefined,
       descriptionEn: data.descriptionEn || undefined,
-      image: selectedImage?.url || data.image || undefined,
-      icon: data.icon || undefined,
+      imageId: selectedImage?.id || data.imageId || undefined,
       metaTitle: data.metaTitle || undefined,
       metaDescription: data.metaDescription || undefined,
+      metaKeywords: data.metaKeywords || undefined,
       order: data.order, // Already transformed by zod
       isActive: data.isActive,
-      showInMenu: data.showInMenu,
       isFeatured: data.isFeatured,
     };
-
-    // eslint-disable-next-line no-console
-    console.log('📤 Category data to send:', categoryData);
 
     if (isEditMode) {
       updateCategory(
@@ -152,58 +150,75 @@ export const CategoryFormPage: React.FC = () => {
     }
   };
 
+  const steps = [
+    'المعلومات الأساسية',
+    'الصور والوسائط',
+    'تحسين محركات البحث',
+    'الإعدادات',
+  ];
+
+  const handleNext = () => {
+    setActiveStep((prevStep) => prevStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevStep) => prevStep - 1);
+  };
+
   if (isEditMode && isLoading) {
     return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
+      <Box>
+        <Skeleton variant="rectangular" height={60} sx={{ mb: 2 }} />
+        <Skeleton variant="rectangular" height={400} />
       </Box>
     );
   }
 
   return (
     <Box>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" fontWeight="bold" gutterBottom>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <IconButton onClick={() => navigate('/categories')} sx={{ mr: 2 }}>
+          <ArrowBack />
+        </IconButton>
+        <Typography variant="h4" fontWeight="bold">
           {isEditMode ? 'تعديل الفئة' : 'إضافة فئة جديدة'}
         </Typography>
+        {isEditMode && category && (
+          <Chip
+            label={category.isActive ? 'نشط' : 'غير نشط'}
+            color={category.isActive ? 'success' : 'default'}
+            sx={{ ml: 2 }}
+          />
+        )}
+      </Box>
 
-        <Divider sx={{ my: 3 }} />
+      {/* Stepper */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Stepper activeStep={activeStep} alternativeLabel>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </CardContent>
+      </Card>
 
-        {/* Tabs for Languages */}
-        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 3 }}>
-          <Tab label="العربية 🇸🇦" />
-          <Tab label="English 🇬🇧" />
-        </Tabs>
-
-        <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)}>
-            <Grid container spacing={3}>
-              {/* Arabic Fields */}
-              {activeTab === 0 && (
-                <>
-                  <Grid size={{ xs: 12 }}>
-                    <Typography variant="h6" gutterBottom>
-                      المعلومات بالعربية
-                    </Typography>
-                  </Grid>
-
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit)}>
+          <Paper sx={{ p: 3 }}>
+            {/* Step 1: Basic Information */}
+            {activeStep === 0 && (
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                  المعلومات الأساسية
+                </Typography>
+                
+                <Grid container spacing={3}>
                   <Grid size={{ xs: 12 }}>
                     <FormInput name="name" label="اسم الفئة (عربي) *" />
-                  </Grid>
-
-                  <Grid size={{ xs: 12 }}>
-                    <FormInput name="description" label="وصف الفئة (عربي)" multiline rows={3} />
-                  </Grid>
-                </>
-              )}
-
-              {/* English Fields */}
-              {activeTab === 1 && (
-                <>
-                  <Grid size={{ xs: 12 }}>
-                    <Typography variant="h6" gutterBottom>
-                      English Information
-                    </Typography>
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
@@ -211,149 +226,173 @@ export const CategoryFormPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
+                    <FormInput name="description" label="وصف الفئة (عربي)" multiline rows={3} />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
+                    <FormInput name="descriptionEn" label="Category Description (English)" multiline rows={3} />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormSelect
+                      name="parentId"
+                      label="الفئة الأب (اختياري)"
+                      options={[
+                        { value: '', label: 'لا يوجد (فئة رئيسية)' },
+                        ...categories
+                          .filter((c: any) => !isEditMode || c._id !== id)
+                          .map((c: any) => ({
+                            value: c._id,
+                            label: `${c.name} (${c.nameEn})`,
+                          })),
+                      ]}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormInput name="order" label="الترتيب" type="number" placeholder="0" />
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+
+            {/* Step 2: Images and Media */}
+            {activeStep === 1 && (
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                  الصور والوسائط
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12 }}>
+                    <ImageField
+                      label="صورة الفئة"
+                      value={selectedImage}
+                      onChange={(media: any) => {
+                        setSelectedImage(media);
+                        methods.setValue('imageId', media?.id || '');
+                      }}
+                      category="category"
+                      helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+
+            {/* Step 3: SEO */}
+            {activeStep === 2 && (
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                  تحسين محركات البحث (SEO)
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12 }}>
+                    <FormInput name="metaTitle" label="عنوان الصفحة (Meta Title)" />
+                  </Grid>
+
+                  <Grid size={{ xs: 12 }}>
                     <FormInput
-                      name="descriptionEn"
-                      label="Category Description (English)"
+                      name="metaDescription"
+                      label="وصف الصفحة (Meta Description)"
                       multiline
                       rows={3}
                     />
                   </Grid>
-                </>
-              )}
 
-              {/* Common Fields */}
-              <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  معلومات عامة
-                </Typography>
-              </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      <Typography variant="body2">
+                        هذه المعلومات تساعد في تحسين ظهور الفئة في محركات البحث
+                      </Typography>
+                    </Alert>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
 
-              <Grid size={{ xs: 12, md: 6 }}>
-                <FormSelect
-                  name="parentId"
-                  label="الفئة الأب (اختياري)"
-                  options={[
-                    { value: '', label: 'لا يوجد (فئة رئيسية)' },
-                    ...categories
-                      .filter((c) => !isEditMode || c._id !== id)
-                      .map((c) => ({
-                        value: c._id,
-                        label: `${c.name} (${c.nameEn})`,
-                      })),
-                  ]}
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 6 }}>
-                <FormInput name="order" label="الترتيب" type="number" placeholder="0" />
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 6 }}>
-                <FormInput name="icon" label="الأيقونة (Emoji)" placeholder="🛍️" />
-              </Grid>
-
-              <Grid size={{ xs: 12 }}>
-                <ImageField
-                  label="صورة الفئة"
-                  value={selectedImage}
-                  onChange={(media) => {
-                    setSelectedImage(media);
-                    methods.setValue('image', media?.url || '');
-                  }}
-                  category="category"
-                  helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
-                />
-              </Grid>
-
-              {/* SEO */}
-              <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  تحسين محركات البحث (SEO)
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12 }}>
-                <FormInput name="metaTitle" label="عنوان الصفحة (Meta Title)" />
-              </Grid>
-
-              <Grid size={{ xs: 12 }}>
-                <FormInput
-                  name="metaDescription"
-                  label="وصف الصفحة (Meta Description)"
-                  multiline
-                  rows={2}
-                />
-              </Grid>
-
-              {/* Settings */}
-              <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
+            {/* Step 4: Settings */}
+            {activeStep === 3 && (
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
                   الإعدادات
                 </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        {...methods.register('isActive')}
-                        defaultChecked={methods.getValues('isActive')}
+                
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            {...methods.register('isActive')}
+                            defaultChecked={methods.getValues('isActive')}
+                          />
+                        }
+                        label="نشط"
                       />
-                    }
-                    label="نشط"
-                  />
 
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        {...methods.register('showInMenu')}
-                        defaultChecked={methods.getValues('showInMenu')}
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            {...methods.register('isFeatured')}
+                            defaultChecked={methods.getValues('isFeatured')}
+                          />
+                        }
+                        label="فئة مميزة"
                       />
-                    }
-                    label="عرض في القائمة الرئيسية"
-                  />
+                    </Box>
+                  </Grid>
 
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        {...methods.register('isFeatured')}
-                        defaultChecked={methods.getValues('isFeatured')}
-                      />
-                    }
-                    label="فئة مميزة"
-                  />
-                </Box>
-              </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Alert severity="warning">
+                      <Typography variant="body2">
+                        الفئات غير النشطة لن تظهر للعملاء في الموقع
+                      </Typography>
+                    </Alert>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
 
-              {/* Actions */}
-              <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 2 }} />
-                <Box display="flex" gap={2}>
+            {/* Navigation Buttons */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+              <Box>
+                {activeStep > 0 && (
+                  <Button onClick={handleBack} startIcon={<ArrowBack />}>
+                    السابق
+                  </Button>
+                )}
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Cancel />}
+                  onClick={() => navigate('/categories')}
+                >
+                  إلغاء
+                </Button>
+
+                {activeStep < steps.length - 1 ? (
+                  <Button variant="contained" onClick={handleNext}>
+                    التالي
+                  </Button>
+                ) : (
                   <Button
                     type="submit"
                     variant="contained"
                     startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
                   >
-                    حفظ
+                    {isEditMode ? 'تحديث' : 'إنشاء'}
                   </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Cancel />}
-                    onClick={() => navigate('/categories')}
-                  >
-                    إلغاء
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
-          </form>
-        </FormProvider>
-      </Paper>
+                )}
+              </Box>
+            </Box>
+          </Paper>
+        </form>
+      </FormProvider>
     </Box>
   );
 };

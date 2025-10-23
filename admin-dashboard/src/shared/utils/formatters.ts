@@ -86,3 +86,21 @@ export const formatFileSize = (bytes: number): string => {
 
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 };
+
+/**
+ * Sanitize pagination parameters to ensure they are numbers
+ */
+export const sanitizePaginationParams = (params: Record<string, any>): Record<string, any> => {
+  const sanitized = { ...params };
+
+  // Ensure page and limit are numbers
+  if (sanitized.page !== undefined) {
+    sanitized.page = sanitized.page ? Number(sanitized.page) : 1;
+  }
+
+  if (sanitized.limit !== undefined) {
+    sanitized.limit = sanitized.limit ? Number(sanitized.limit) : 20;
+  }
+
+  return sanitized;
+};

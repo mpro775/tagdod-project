@@ -1,160 +1,316 @@
 import React, { useState } from 'react';
-import { CartFilters } from '../components/CartFilters';
-import { CartTable } from '../components/CartTable';
-import { CartDetailsModal } from '../components/CartDetailsModal';
 import {
-  useCartList,
-  useCartDetails,
-  useSendCartReminder,
-  useConvertCartToOrder,
-} from '../hooks/useCart';
-import { CartFilters as CartFiltersType } from '../types/cart.types';
-import { Card, CardContent, Button } from '@mui/material';
+  Box,
+  Typography,
+  Button,
+  Alert,
+  CircularProgress,
+  Fab,
+} from '@mui/material';
+import {
+  Refresh,
+  Delete,
+} from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
+import { CartFilters, Cart, BulkActionRequest } from '../types/cart.types';
+import { useCartList, useCartFilters, useCartSelection, useBulkActions } from '../hooks/useCart';
+import { CartStatsCards, CartFilters as CartFiltersComponent, CartTable, CartDetailsModal } from '../components';
+import { ConvertToOrderDialog } from './ConvertToOrderDialog';
+import { SendReminderDialog } from './SendReminderDialog';
 
 export const CartManagementPage: React.FC = () => {
-  const [filters, setFilters] = useState<CartFiltersType>({});
-  const [selectedCartId, setSelectedCartId] = useState<string | null>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
+  
+  // State management
+  const [selectedCart, setSelectedCart] = useState<Cart | null>(null);
+  const [showCartDetails, setShowCartDetails] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [showReminderDialog, setShowReminderDialog] = useState(false);
+  const [page, setPage] = useState(0);
+  const [limit, setLimit] = useState(25);
 
-  const { carts, loading, error, pagination, fetchCarts, refetch } = useCartList(filters);
+  // Custom hooks
+  const { filters, updateFilters, clearFilters } = useCartFilters({
+    page,
+    limit,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+  });
 
-  const { cart: selectedCart } = useCartDetails(selectedCartId || '');
+  const {
+    selectedCarts,
+    selectCart,
+    selectAll,
+    deselectAll,
+  } = useCartSelection();
 
-  const sendReminderMutation = useSendCartReminder();
-  const convertToOrderMutation = useConvertCartToOrder();
+  const {
+    data: cartData,
+    isLoading,
+    error,
+    refetch,
+  } = useCartList(filters);
 
-  const handleFiltersChange = (newFilters: CartFiltersType) => {
-    setFilters(newFilters);
+  const bulkActionsMutation = useBulkActions();
+
+  // Event handlers
+  const handleFiltersChange = (newFilters: CartFilters) => {
+    updateFilters(newFilters);
+    setPage(0); // Reset to first page when filters change
   };
 
-  const handleApplyFilters = () => {
-    fetchCarts(1, pagination.limit);
+  const handleSearch = () => {
+    refetch();
   };
 
-  const handleResetFilters = () => {
-    setFilters({});
-    fetchCarts(1, pagination.limit);
+  const handleClearFilters = () => {
+    clearFilters();
+    setPage(0);
   };
 
-  const handleViewCart = (cartId: string) => {
-    setSelectedCartId(cartId);
-    setIsDetailsModalOpen(true);
+  const handleViewCart = (cart: Cart) => {
+    setSelectedCart(cart);
+    setShowCartDetails(true);
   };
 
-  const handleCloseDetailsModal = () => {
-    setIsDetailsModalOpen(false);
-    setSelectedCartId(null);
+  const handleConvertToOrder = (cart: Cart) => {
+    setSelectedCart(cart);
+    setShowConvertDialog(true);
   };
 
-  const handleSendReminder = (cartId: string) => {
-    sendReminderMutation.mutate(cartId);
+  const handleSendReminder = (cart: Cart) => {
+    setSelectedCart(cart);
+    setShowReminderDialog(true);
   };
 
-  const handleConvertToOrder = (cartId: string) => {
-    convertToOrderMutation.mutate(cartId);
+  const handleDeleteCart = (cart: Cart) => {
+    if (window.confirm(`هل أنت متأكد من حذف السلة ${cart._id}؟`)) {
+      const bulkRequest: BulkActionRequest = {
+        action: 'delete',
+        cartIds: [cart._id],
+      };
+      bulkActionsMutation.mutate(bulkRequest);
+    }
   };
 
-  const handlePageChange = (page: number) => {
-    fetchCarts(page, pagination.limit);
+  const handleSelectCart = (cartId: string) => {
+    selectCart(cartId);
   };
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center text-red-600">
-              <p className="text-lg font-medium">خطأ في تحميل السلال</p>
-              <p className="text-sm mt-2">{error}</p>
-              <Button onClick={() => refetch()} className="mt-4">
-                إعادة المحاولة
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleSelectAll = (cartIds: string[]) => {
+    if (cartIds.length === 0) {
+      deselectAll();
+    } else {
+      selectAll(cartIds);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    updateFilters({ ...filters, page: newPage });
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setPage(0);
+    updateFilters({ ...filters, page: 0, limit: newLimit });
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedCarts.length === 0) {
+      enqueueSnackbar('يرجى اختيار سلة واحدة على الأقل', { variant: 'warning' });
+      return;
+    }
+
+    if (window.confirm(`هل أنت متأكد من حذف ${selectedCarts.length} سلة؟`)) {
+      const bulkRequest: BulkActionRequest = {
+        action: 'delete',
+        cartIds: selectedCarts,
+      };
+      bulkActionsMutation.mutate(bulkRequest);
+    }
+  };
+
+  const handleBulkClear = () => {
+    if (selectedCarts.length === 0) {
+      enqueueSnackbar('يرجى اختيار سلة واحدة على الأقل', { variant: 'warning' });
+      return;
+    }
+
+    if (window.confirm(`هل أنت متأكد من مسح محتوى ${selectedCarts.length} سلة؟`)) {
+      const bulkRequest: BulkActionRequest = {
+        action: 'clear',
+        cartIds: selectedCarts,
+      };
+      bulkActionsMutation.mutate(bulkRequest);
+    }
+  };
+
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  // Data preparation
+  const carts = cartData?.data?.carts || [];
+  const total = cartData?.meta?.total || 0;
 
   return (
-    <div className="p-6 space-y-6">
+    <Box sx={{ p: 3 }}>
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">إدارة السلال</h1>
-          <p className="text-gray-600 mt-1">إدارة وعرض جميع سلال التسوق في النظام</p>
-        </div>
-        <Button
-          onClick={() => refetch()}
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {loading ? 'جاري التحديث...' : 'تحديث'}
-        </Button>
-      </div>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+          إدارة السلات
+        </Typography>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            تحديث
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Error Alert */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error.message}
+        </Alert>
+      )}
+
+      {/* Statistics Cards */}
+      <CartStatsCards
+        statistics={undefined} // Will be fetched separately
+        analytics={undefined} // Will be fetched separately
+        isLoading={isLoading}
+        onRefresh={handleRefresh}
+      />
 
       {/* Filters */}
-      <CartFilters
+      <CartFiltersComponent
         filters={filters}
         onFiltersChange={handleFiltersChange}
-        onApplyFilters={handleApplyFilters}
-        onResetFilters={handleResetFilters}
-        loading={loading}
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+        isLoading={isLoading}
       />
+
+      {/* Bulk Actions */}
+      {selectedCarts.length > 0 && (
+        <Box display="flex" alignItems="center" gap={2} mb={2} p={2} bgcolor="primary.light" borderRadius={1}>
+          <Typography variant="body2" color="primary.contrastText">
+            {selectedCarts.length} سلة محددة
+          </Typography>
+          <Button
+            size="small"
+            variant="contained"
+            color="error"
+            startIcon={<Delete />}
+            onClick={handleBulkDelete}
+            disabled={bulkActionsMutation.isPending}
+          >
+            حذف
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="error"
+            onClick={handleBulkClear}
+            disabled={bulkActionsMutation.isPending}
+          >
+            مسح المحتوى
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={deselectAll}
+          >
+            إلغاء التحديد
+          </Button>
+        </Box>
+      )}
 
       {/* Cart Table */}
       <CartTable
         carts={carts}
-        loading={loading}
+        isLoading={isLoading}
+        selectedCarts={selectedCarts}
+        onSelectCart={handleSelectCart}
+        onSelectAll={(cartIds: string[]) => handleSelectAll(cartIds)}
         onViewCart={handleViewCart}
-        onSendReminder={handleSendReminder}
         onConvertToOrder={handleConvertToOrder}
+        onSendReminder={handleSendReminder}
+        onDeleteCart={handleDeleteCart}
+        page={page}
+        limit={limit}
+        total={total}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
+        error={error?.message}
       />
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600">
-                عرض {(pagination.page - 1) * pagination.limit + 1} إلى{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} من{' '}
-                {pagination.total} سلة
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1 || loading}
-                >
-                  السابق
-                </Button>
-                <span className="px-3 py-1 text-sm font-medium">
-                  صفحة {pagination.page} من {pagination.pages}
-                </span>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.pages || loading}
-                >
-                  التالي
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Loading Overlay */}
+      {isLoading && (
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bgcolor="rgba(0,0,0,0.1)"
+          zIndex={9999}
+        >
+          <CircularProgress />
+        </Box>
       )}
 
-      {/* Cart Details Modal */}
+      {/* Modals */}
       <CartDetailsModal
-        cart={selectedCart || null}
-        isOpen={isDetailsModalOpen}
-        onClose={handleCloseDetailsModal}
-        onSendReminder={handleSendReminder}
+        cart={selectedCart}
+        open={showCartDetails}
+        onClose={() => setShowCartDetails(false)}
         onConvertToOrder={handleConvertToOrder}
+        onSendReminder={handleSendReminder}
+        isLoading={false}
       />
-    </div>
+
+      <ConvertToOrderDialog
+        cart={selectedCart}
+        open={showConvertDialog}
+        onClose={() => setShowConvertDialog(false)}
+        onSuccess={() => {
+          setShowConvertDialog(false);
+          refetch();
+        }}
+      />
+
+      <SendReminderDialog
+        cart={selectedCart}
+        open={showReminderDialog}
+        onClose={() => setShowReminderDialog(false)}
+        onSuccess={() => {
+          setShowReminderDialog(false);
+          refetch();
+        }}
+      />
+
+      {/* Floating Action Button */}
+      <Fab
+        color="primary"
+        aria-label="refresh"
+        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        onClick={handleRefresh}
+        disabled={isLoading}
+      >
+        <Refresh />
+      </Fab>
+    </Box>
   );
 };
+
+export default CartManagementPage;

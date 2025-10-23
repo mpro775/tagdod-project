@@ -5,7 +5,7 @@ export class TokensService {
   private jwtSecret = process.env.JWT_SECRET as string;
   private refreshSecret = process.env.REFRESH_SECRET as string;
   signAccess(payload: { sub: string; phone: string; isAdmin: boolean; roles?: string[]; permissions?: string[] }) {
-    return jwt.sign(payload, this.jwtSecret, { expiresIn: '15m' });
+    return jwt.sign(payload, this.jwtSecret, { expiresIn: '8h' }); // Increased from 15m to 8 hours
   }
   signRefresh(payload: { sub: string; phone: string; isAdmin: boolean; roles?: string[]; permissions?: string[] }) {
     return jwt.sign(payload, this.refreshSecret, { expiresIn: '30d' });

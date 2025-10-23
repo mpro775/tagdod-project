@@ -4,6 +4,7 @@ import { UsersAdminController } from './users.admin.controller';
 import { User, UserSchema } from '../schemas/user.schema';
 import { Capabilities, CapabilitiesSchema } from '../../capabilities/schemas/capabilities.schema';
 import { AuthModule } from '../../auth/auth.module';
+import { SharedModule } from '../../../shared/shared.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AuthModule } from '../../auth/auth.module';
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
     AuthModule,
+    SharedModule,
   ],
   controllers: [UsersAdminController],
   providers: [],

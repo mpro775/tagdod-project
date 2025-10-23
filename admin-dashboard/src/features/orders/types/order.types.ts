@@ -51,6 +51,17 @@ export enum PaymentStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum PaymentMethod {
+  // eslint-disable-next-line no-unused-vars
+  COD = 'COD',
+  // eslint-disable-next-line no-unused-vars
+  ONLINE = 'ONLINE',
+  // eslint-disable-next-line no-unused-vars
+  WALLET = 'WALLET',
+  // eslint-disable-next-line no-unused-vars
+  BANK_TRANSFER = 'BANK_TRANSFER',
+}
+
 export enum ShippingMethod {
   // eslint-disable-next-line no-unused-vars
   STANDARD = 'standard',
@@ -92,6 +103,58 @@ export interface OrderItem {
   returnedAt?: Date;
 }
 
+// Status History Entry
+export interface StatusHistoryEntry {
+  status: OrderStatus;
+  changedAt: Date;
+  changedBy: string;
+  changedByRole: 'customer' | 'admin' | 'system';
+  notes?: string;
+}
+
+// Delivery Address
+export interface DeliveryAddress {
+  addressId: string;
+  recipientName: string;
+  recipientPhone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  region?: string;
+  country: string;
+  postalCode?: string;
+  coords?: { lat: number; lng: number };
+  notes?: string;
+}
+
+// Coupon Details
+export interface CouponDetails {
+  code: string;
+  title: string;
+  type: string;
+  discountPercentage?: number;
+  discountAmount?: number;
+}
+
+// Return Info
+export interface ReturnInfo {
+  isRefunded: boolean;
+  refundAmount: number;
+  refundReason?: string;
+  refundedAt?: Date;
+  refundedBy?: string;
+  isReturned: boolean;
+  returnReason?: string;
+  returnedAt?: Date;
+}
+
+// Rating Info
+export interface RatingInfo {
+  rating?: number;
+  review?: string;
+  ratedAt?: Date;
+}
+
 // Order Interface - متطابق مع Backend
 export interface Order extends BaseEntity {
   orderNumber: string;
@@ -104,28 +167,10 @@ export interface Order extends BaseEntity {
   paymentStatus: PaymentStatus;
 
   // Status History
-  statusHistory: Array<{
-    status: OrderStatus;
-    changedAt: Date;
-    changedBy: string;
-    changedByRole: 'customer' | 'admin' | 'system';
-    notes?: string;
-  }>;
+  statusHistory: StatusHistoryEntry[];
 
   // Delivery Address
-  deliveryAddress: {
-    addressId: string;
-    recipientName: string;
-    recipientPhone: string;
-    line1: string;
-    line2?: string;
-    city: string;
-    region?: string;
-    country: string;
-    postalCode?: string;
-    coords?: { lat: number; lng: number };
-    notes?: string;
-  };
+  deliveryAddress: DeliveryAddress;
 
   // Items
   items: OrderItem[];
@@ -136,13 +181,7 @@ export interface Order extends BaseEntity {
   itemsDiscount: number;
   appliedCouponCode?: string;
   couponDiscount: number;
-  couponDetails?: {
-    code: string;
-    title: string;
-    type: string;
-    discountPercentage?: number;
-    discountAmount?: number;
-  };
+  couponDetails?: CouponDetails;
   autoAppliedCoupons?: Array<{
     code: string;
     discount: number;
@@ -156,7 +195,7 @@ export interface Order extends BaseEntity {
   total: number;
 
   // Payment
-  paymentMethod: 'COD' | 'ONLINE' | 'WALLET' | 'BANK_TRANSFER';
+  paymentMethod: PaymentMethod;
   paymentProvider?: string;
   paymentIntentId?: string;
   paymentTransactionId?: string;
@@ -172,14 +211,7 @@ export interface Order extends BaseEntity {
   deliveredAt?: Date;
 
   // Return & Refund
-  isRefunded: boolean;
-  refundAmount: number;
-  refundReason?: string;
-  refundedAt?: Date;
-  refundedBy?: string;
-  isReturned: boolean;
-  returnReason?: string;
-  returnedAt?: Date;
+  returnInfo: ReturnInfo;
 
   // Notes
   customerNotes?: string;
@@ -192,9 +224,20 @@ export interface Order extends BaseEntity {
   receiptUrl?: string;
 
   // Rating
-  rating?: number;
-  review?: string;
-  ratedAt?: Date;
+  ratingInfo: RatingInfo;
+
+  // Metadata
+  metadata?: {
+    cartId?: string;
+    campaign?: string;
+    referrer?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    deviceInfo?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  };
 
   // Important Dates
   confirmedAt?: Date;
@@ -216,24 +259,49 @@ export interface ShipOrderDto {
   shippingCompany: string;
   trackingNumber: string;
   trackingUrl?: string;
-  estimatedDeliveryDate?: Date;
+  estimatedDeliveryDate?: string;
+  notes?: string;
 }
 
 export interface RefundOrderDto {
+  amount: number;
   reason: string;
-  amount?: number;
+  items?: Array<{
+    variantId: string;
+    qty: number;
+  }>;
+}
+
+export interface CancelOrderDto {
+  reason: string;
+}
+
+export interface AddOrderNotesDto {
+  notes: string;
+  type?: 'customer' | 'admin' | 'internal';
+}
+
+export interface BulkOrderUpdateDto {
+  orderIds: string[];
+  status: OrderStatus;
+  notes?: string;
 }
 
 export interface ListOrdersParams extends ListParams {
   status?: OrderStatus;
   paymentStatus?: PaymentStatus;
-  paymentMethod?: string;
-  startDate?: string;
-  endDate?: string;
-  minTotal?: number;
-  maxTotal?: number;
-  userId?: string;
-  city?: string;
+  paymentMethod?: PaymentMethod;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface OrderAnalyticsParams {
+  days?: number;
+  groupBy?: 'day' | 'week' | 'month';
+  status?: OrderStatus;
 }
 
 // Order Statistics
@@ -247,4 +315,68 @@ export interface OrderStats {
   refunded: number;
   totalRevenue: number;
   averageOrderValue: number;
+}
+
+// Order Analytics
+export interface OrderAnalytics {
+  period: string;
+  totalOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  ordersByStatus: Array<{
+    status: OrderStatus;
+    count: number;
+  }>;
+  recentOrders: Order[];
+  revenueByDay: Array<{
+    date: string;
+    revenue: number;
+    orders: number;
+  }>;
+}
+
+// Order Tracking
+export interface OrderTracking {
+  orderNumber: string;
+  currentStatus: OrderStatus;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  estimatedDelivery?: Date;
+  actualDelivery?: Date;
+  timeline: Array<{
+    status: OrderStatus;
+    title: string;
+    icon: string;
+    completed: boolean;
+    timestamp?: Date;
+    notes?: string;
+  }>;
+}
+
+// Revenue Analytics
+export interface RevenueAnalytics {
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  revenueByPeriod: Array<{
+    period: string;
+    revenue: number;
+    orders: number;
+  }>;
+  topProducts: Array<{
+    productId: string;
+    productName: string;
+    revenue: number;
+    orders: number;
+  }>;
+}
+
+// Performance Analytics
+export interface PerformanceAnalytics {
+  averageProcessingTime: number;
+  averageShippingTime: number;
+  averageDeliveryTime: number;
+  cancellationRate: number;
+  refundRate: number;
+  customerSatisfactionScore: number;
 }

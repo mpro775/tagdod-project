@@ -10208,6 +10208,341 @@
         ]
       }
     },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "listUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "get": {
+        "operationId": "getUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/create-admin": {
+      "post": {
+        "operationId": "createAdmin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/create-role-admin": {
+      "post": {
+        "operationId": "createRoleBasedAdmin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleBasedAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/suspend": {
+      "post": {
+        "operationId": "suspendUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/activate": {
+      "post": {
+        "operationId": "activateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/restore": {
+      "post": {
+        "operationId": "restoreUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/permanent": {
+      "delete": {
+        "operationId": "permanentDelete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/stats/summary": {
+      "get": {
+        "operationId": "getUserStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "admin-users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/analytics/dashboard": {
       "get": {
         "operationId": "getDashboard",
@@ -17007,6 +17342,324 @@
         "properties": {}
       },
       "UpdateCannedResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateAdminDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "رقم هاتف الأدمن",
+            "example": "+966501234567"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "الاسم الأول",
+            "example": "أحمد"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "الاسم الأخير",
+            "example": "محمد"
+          },
+          "gender": {
+            "type": "string",
+            "description": "الجنس",
+            "enum": [
+              "male",
+              "female",
+              "other"
+            ],
+            "example": "male"
+          },
+          "roles": {
+            "type": "array",
+            "description": "الأدوار الممنوحة للأدمن",
+            "example": [
+              "admin"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "user",
+                "admin",
+                "super_admin",
+                "merchant",
+                "engineer"
+              ]
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "description": "الصلاحيات المخصصة للأدمن",
+            "example": [
+              "users.read",
+              "products.read",
+              "orders.read",
+              "admin.access"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "users.read",
+                "users.create",
+                "users.update",
+                "users.delete",
+                "users.suspend",
+                "users.activate",
+                "users.restore",
+                "roles.read",
+                "roles.create",
+                "roles.update",
+                "roles.delete",
+                "roles.assign",
+                "roles.revoke",
+                "products.read",
+                "products.create",
+                "products.update",
+                "products.delete",
+                "products.publish",
+                "products.unpublish",
+                "categories.read",
+                "categories.create",
+                "categories.update",
+                "categories.delete",
+                "brands.read",
+                "brands.create",
+                "brands.update",
+                "brands.delete",
+                "attributes.read",
+                "attributes.create",
+                "attributes.update",
+                "attributes.delete",
+                "orders.read",
+                "orders.update",
+                "orders.cancel",
+                "orders.refund",
+                "orders.status_update",
+                "carts.read",
+                "carts.update",
+                "carts.delete",
+                "carts.convert_to_order",
+                "carts.send_reminders",
+                "carts.bulk_actions",
+                "services.read",
+                "services.update",
+                "services.cancel",
+                "services.assign",
+                "support.read",
+                "support.update",
+                "support.assign",
+                "support.close",
+                "marketing.read",
+                "marketing.create",
+                "marketing.update",
+                "marketing.delete",
+                "marketing.publish",
+                "marketing.analyze",
+                "analytics.read",
+                "analytics.export",
+                "reports.generate",
+                "reports.schedule",
+                "settings.read",
+                "settings.update",
+                "system.maintenance",
+                "system.backup",
+                "system.logs",
+                "admin.access",
+                "super_admin.access",
+                "capabilities.read",
+                "capabilities.update",
+                "capabilities.approve",
+                "capabilities.reject",
+                "exchange_rates.read",
+                "exchange_rates.update",
+                "exchange_rates.manual_update",
+                "favorites.read",
+                "favorites.manage",
+                "upload.manage",
+                "upload.delete"
+              ]
+            }
+          },
+          "temporaryPassword": {
+            "type": "string",
+            "description": "كلمة مرور مؤقتة (سيتم تغييرها عند أول تسجيل دخول)",
+            "example": "TempPass123!"
+          },
+          "activateImmediately": {
+            "type": "boolean",
+            "description": "تفعيل الحساب فوراً",
+            "example": true,
+            "default": true
+          },
+          "description": {
+            "type": "string",
+            "description": "وصف الدور والمسؤوليات",
+            "example": "أدمن المنتجات والمبيعات"
+          }
+        },
+        "required": [
+          "phone",
+          "firstName",
+          "roles",
+          "permissions"
+        ]
+      },
+      "CreateRoleBasedAdminDto": {
+        "type": "object",
+        "properties": {
+          "adminType": {
+            "type": "string",
+            "description": "نوع الأدمن المطلوب",
+            "enum": [
+              "full_admin",
+              "product_manager",
+              "sales_manager",
+              "support_manager",
+              "marketing_manager",
+              "content_manager",
+              "view_only"
+            ],
+            "example": "product_manager"
+          },
+          "phone": {
+            "type": "string",
+            "description": "رقم هاتف الأدمن",
+            "example": "+966501234567"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "الاسم الأول",
+            "example": "أحمد"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "الاسم الأخير",
+            "example": "محمد"
+          },
+          "gender": {
+            "type": "string",
+            "description": "الجنس",
+            "enum": [
+              "male",
+              "female",
+              "other"
+            ],
+            "example": "male"
+          },
+          "additionalPermissions": {
+            "type": "array",
+            "description": "صلاحيات إضافية للدور المحدد",
+            "example": [
+              "system.logs"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "users.read",
+                "users.create",
+                "users.update",
+                "users.delete",
+                "users.suspend",
+                "users.activate",
+                "users.restore",
+                "roles.read",
+                "roles.create",
+                "roles.update",
+                "roles.delete",
+                "roles.assign",
+                "roles.revoke",
+                "products.read",
+                "products.create",
+                "products.update",
+                "products.delete",
+                "products.publish",
+                "products.unpublish",
+                "categories.read",
+                "categories.create",
+                "categories.update",
+                "categories.delete",
+                "brands.read",
+                "brands.create",
+                "brands.update",
+                "brands.delete",
+                "attributes.read",
+                "attributes.create",
+                "attributes.update",
+                "attributes.delete",
+                "orders.read",
+                "orders.update",
+                "orders.cancel",
+                "orders.refund",
+                "orders.status_update",
+                "carts.read",
+                "carts.update",
+                "carts.delete",
+                "carts.convert_to_order",
+                "carts.send_reminders",
+                "carts.bulk_actions",
+                "services.read",
+                "services.update",
+                "services.cancel",
+                "services.assign",
+                "support.read",
+                "support.update",
+                "support.assign",
+                "support.close",
+                "marketing.read",
+                "marketing.create",
+                "marketing.update",
+                "marketing.delete",
+                "marketing.publish",
+                "marketing.analyze",
+                "analytics.read",
+                "analytics.export",
+                "reports.generate",
+                "reports.schedule",
+                "settings.read",
+                "settings.update",
+                "system.maintenance",
+                "system.backup",
+                "system.logs",
+                "admin.access",
+                "super_admin.access",
+                "capabilities.read",
+                "capabilities.update",
+                "capabilities.approve",
+                "capabilities.reject",
+                "exchange_rates.read",
+                "exchange_rates.update",
+                "exchange_rates.manual_update",
+                "favorites.read",
+                "favorites.manage",
+                "upload.manage",
+                "upload.delete"
+              ]
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "وصف الدور والمسؤوليات",
+            "example": "أدمن المنتجات مع صلاحيات النظام"
+          }
+        },
+        "required": [
+          "adminType",
+          "phone",
+          "firstName"
+        ]
+      },
+      "CreateUserAdminDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateUserAdminDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SuspendUserDto": {
         "type": "object",
         "properties": {}
       },

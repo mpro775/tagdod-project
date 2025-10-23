@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/Card';
+import { Card, CardContent, CardHeader, Typography } from '@mui/material';
 import { formatCurrency } from '../api/cartApi';
 
 interface CartStatsCardProps {
@@ -44,9 +44,9 @@ export const CartStatsCard: React.FC<CartStatsCardProps> = ({
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">
+        <Typography className="text-sm font-medium text-gray-600">
           {title}
-        </CardTitle>
+        </Typography>
         {icon && (
           <div className={`p-2 rounded-full ${colorClass}`}>
             {icon}

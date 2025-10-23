@@ -104,6 +104,10 @@ export interface Coupon {
   totalRedemptions: number;
   totalDiscountGiven: number;
   totalRevenue: number;
+  deletedAt?: Date;
+  deletedBy?: string;
+  createdBy?: string;
+  lastModifiedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -396,7 +400,8 @@ export const marketingApi = {
 
   toggleCouponStatus: async (id: string): Promise<Coupon> => {
     const response = await apiClient.patch<{ data: Coupon }>(
-      `/admin/marketing/coupons/${id}/toggle-status`
+      `/admin/marketing/coupons/${id}`,
+      { status: 'toggle' }
     );
     return response.data.data;
   },
@@ -451,6 +456,57 @@ export const marketingApi = {
       `/marketing/coupons/code/${code}`
     );
     return response.data;
+  },
+
+  bulkGenerateCoupons: async (data: {
+    prefix: string;
+    count: number;
+    length: number;
+    type: string;
+    discountValue: number;
+    validUntil: string;
+    name?: string;
+    description?: string;
+    minimumOrderAmount?: number;
+    usageLimit?: number;
+    usageLimitPerUser?: number;
+  }) => {
+    const response = await apiClient.post<{ data: { success: boolean; generated: number; coupons: Coupon[] } }>(
+      '/admin/marketing/coupons/bulk-generate',
+      data
+    );
+    return response.data.data;
+  },
+
+  getCouponsAnalytics: async (period: number = 30) => {
+    const response = await apiClient.get<{ data: any }>(
+      `/admin/marketing/coupons/analytics?period=${period}`
+    );
+    return response.data.data;
+  },
+
+  getCouponsStatistics: async (period: number = 30) => {
+    const response = await apiClient.get<{ data: any }>(
+      `/admin/marketing/coupons/statistics?period=${period}`
+    );
+    return response.data.data;
+  },
+
+  validateCouponCode: async (code: string, userId?: string, orderAmount?: number, productIds?: string[]) => {
+    const response = await apiClient.get<{ data: any }>(
+      '/marketing/coupons/validate',
+      {
+        params: { code, userId, orderAmount, productIds }
+      }
+    );
+    return response.data.data;
+  },
+
+  getCouponUsageHistory: async (id: string) => {
+    const response = await apiClient.get<{ data: any }>(
+      `/admin/marketing/coupons/${id}/usage-history`
+    );
+    return response.data.data;
   },
 
   // ==================== BANNERS ====================

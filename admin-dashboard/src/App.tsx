@@ -23,7 +23,10 @@ const queryClient = new QueryClient({
 const App: React.FC = () => {
   // Initialize auth store
   useEffect(() => {
-    useAuthStore.getState().initialize();
+    const initializeAuth = async () => {
+      await useAuthStore.getState().initialize();
+    };
+    initializeAuth();
   }, []);
 
   // Initialize analytics, tracking, and error monitoring

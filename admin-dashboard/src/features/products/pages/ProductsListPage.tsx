@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
-import { Box, Chip, IconButton, Tooltip } from '@mui/material';
-import { Edit, Delete, Restore, Visibility, Star, NewReleases, Inventory } from '@mui/icons-material';
+import { Box, Chip, IconButton, Tooltip, Button, Menu, MenuItem, Alert } from '@mui/material';
+import { 
+  Edit, 
+  Delete, 
+  Restore, 
+  Visibility, 
+  Star, 
+  NewReleases, 
+  Inventory,
+  FilterList,
+  MoreVert,
+  Archive,
+  Unarchive,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -19,6 +31,9 @@ export const ProductsListPage: React.FC = () => {
   });
   const [search, setSearch] = useState('');
   const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'createdAt', sort: 'desc' }]);
+  const [statusFilter, setStatusFilter] = useState<ProductStatus | 'all'>('all');
+  const [featuredFilter, setFeaturedFilter] = useState<boolean | 'all'>('all');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   // API
   const { data, isLoading, refetch } = useProducts({
@@ -27,6 +42,8 @@ export const ProductsListPage: React.FC = () => {
     search,
     sortBy: sortModel[0]?.field || 'createdAt',
     sortOrder: sortModel[0]?.sort || 'desc',
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    isFeatured: featuredFilter !== 'all' ? featuredFilter : undefined,
   });
 
   const { mutate: deleteProduct } = useDeleteProduct();
@@ -47,6 +64,23 @@ export const ProductsListPage: React.FC = () => {
         onSuccess: () => refetch(),
       });
     }
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleFilterChange = (filterType: 'status' | 'featured', value: any) => {
+    if (filterType === 'status') {
+      setStatusFilter(value);
+    } else {
+      setFeaturedFilter(value);
+    }
+    handleMenuClose();
   };
 
   // Columns
@@ -111,8 +145,7 @@ export const ProductsListPage: React.FC = () => {
         > = {
           active: { label: 'نشط', color: 'success' },
           draft: { label: 'مسودة', color: 'default' },
-          out_of_stock: { label: 'نفذ', color: 'warning' },
-          discontinued: { label: 'متوقف', color: 'error' },
+          archived: { label: 'مؤرشف', color: 'warning' },
         };
         const status = statusMap[params.row.status as ProductStatus];
         return <Chip label={status.label} color={status.color} size="small" />;
@@ -239,9 +272,59 @@ export const ProductsListPage: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <CurrencySelector size="sm" />
+      {/* Header with filters */}
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box display="flex" gap={2} alignItems="center">
+          <Button
+            variant="outlined"
+            startIcon={<FilterList />}
+            onClick={handleMenuOpen}
+          >
+            الفلاتر
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Inventory />}
+            onClick={() => navigate('/products/inventory')}
+          >
+            إدارة المخزون
+          </Button>
+        </Box>
+        <Box display="flex" gap={1}>
+          <CurrencySelector size="sm" />
+          <Button
+            variant="contained"
+            onClick={() => navigate('/products/new')}
+          >
+            إضافة منتج
+          </Button>
+        </Box>
       </Box>
+
+      {/* Active filters */}
+      {(statusFilter !== 'all' || featuredFilter !== 'all') && (
+        <Box mb={2}>
+          <Alert severity="info">
+            الفلاتر النشطة:
+            {statusFilter !== 'all' && (
+              <Chip
+                label={`الحالة: ${statusFilter === 'active' ? 'نشط' : statusFilter === 'draft' ? 'مسودة' : 'مؤرشف'}`}
+                size="small"
+                onDelete={() => setStatusFilter('all')}
+                sx={{ ml: 1 }}
+              />
+            )}
+            {featuredFilter !== 'all' && (
+              <Chip
+                label={`مميز: ${featuredFilter ? 'نعم' : 'لا'}`}
+                size="small"
+                onDelete={() => setFeaturedFilter('all')}
+                sx={{ ml: 1 }}
+              />
+            )}
+          </Alert>
+        </Box>
+      )}
       
       <DataTable
         title="إدارة المنتجات"
@@ -254,14 +337,39 @@ export const ProductsListPage: React.FC = () => {
         onSortModelChange={setSortModel}
         searchPlaceholder="البحث في المنتجات..."
         onSearch={setSearch}
-        onAdd={() => navigate('/products/new')}
-        addButtonText="إضافة منتج"
+        getRowId={(row) => row._id}
         onRowClick={(params) => {
           const row = params.row as Product;
           navigate(`/products/${row._id}`);
         }}
         height="calc(100vh - 200px)"
       />
+
+      {/* Filter Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={() => handleFilterChange('status', 'all')}>
+          جميع الحالات
+        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ACTIVE)}>
+          نشط
+        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.DRAFT)}>
+          مسودة
+        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ARCHIVED)}>
+          مؤرشف
+        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('featured', true)}>
+          منتجات مميزة
+        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('featured', false)}>
+          منتجات عادية
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };

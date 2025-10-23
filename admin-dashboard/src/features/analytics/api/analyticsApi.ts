@@ -16,6 +16,9 @@ import type {
   ExportReportDto,
   ListReportsParams,
   PeriodType,
+  ReportType,
+  ReportFormat,
+  ReportCategory,
 } from '../types/analytics.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
@@ -25,27 +28,27 @@ export const analyticsApi = {
   /**
    * Get dashboard data
    */
-  getDashboard: async (params: AnalyticsQueryDto = {}): Promise<DashboardData> => {
+  getDashboard: async (params: AnalyticsQueryDto = {}): Promise<ApiResponse<DashboardData>> => {
     const response = await apiClient.get<ApiResponse<DashboardData>>(
       '/analytics/dashboard',
       { params }
     );
-    return response.data.data;
+    return response.data;
   },
 
   /**
    * Get overview metrics
    */
-  getOverview: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get('/analytics/overview', { params });
+  getOverview: async (params: AnalyticsQueryDto = {}): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>('/analytics/overview', { params });
     return response.data;
   },
 
   /**
    * Get KPIs
    */
-  getKPIs: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get('/analytics/kpis', { params });
+  getKPIs: async (params: AnalyticsQueryDto = {}): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>('/analytics/kpis', { params });
     return response.data;
   },
 
@@ -54,40 +57,40 @@ export const analyticsApi = {
   /**
    * Get revenue analytics
    */
-  getRevenueAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get('/analytics/revenue', { params });
+  getRevenueAnalytics: async (params: AnalyticsQueryDto = {}): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>('/analytics/revenue', { params });
     return response.data;
   },
 
   /**
    * Get user analytics
    */
-  getUserAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get('/analytics/users', { params });
+  getUserAnalytics: async (params: AnalyticsQueryDto = {}): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>('/analytics/users', { params });
     return response.data;
   },
 
   /**
    * Get product analytics
    */
-  getProductAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get('/analytics/products', { params });
+  getProductAnalytics: async (params: AnalyticsQueryDto = {}): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>('/analytics/products', { params });
     return response.data;
   },
 
   /**
    * Get service analytics
    */
-  getServiceAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get('/analytics/services', { params });
+  getServiceAnalytics: async (params: AnalyticsQueryDto = {}): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>('/analytics/services', { params });
     return response.data;
   },
 
   /**
    * Get support analytics
    */
-  getSupportAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get('/analytics/support', { params });
+  getSupportAnalytics: async (params: AnalyticsQueryDto = {}): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>('/analytics/support', { params });
     return response.data;
   },
 
@@ -96,18 +99,18 @@ export const analyticsApi = {
   /**
    * Get performance metrics
    */
-  getPerformanceMetrics: async (): Promise<PerformanceMetrics> => {
+  getPerformanceMetrics: async (): Promise<ApiResponse<PerformanceMetrics>> => {
     const response = await apiClient.get<ApiResponse<PerformanceMetrics>>(
       '/analytics/performance'
     );
-    return response.data.data;
+    return response.data;
   },
 
   /**
    * Refresh analytics
    */
-  refreshAnalytics: async () => {
-    const response = await apiClient.post('/analytics/refresh');
+  refreshAnalytics: async (): Promise<ApiResponse<any>> => {
+    const response = await apiClient.post<ApiResponse<any>>('/analytics/refresh');
     return response.data;
   },
 
@@ -116,24 +119,24 @@ export const analyticsApi = {
   /**
    * Generate report
    */
-  generateReport: async (data: ReportGenerationDto) => {
-    const response = await apiClient.post('/analytics/reports/generate', data);
+  generateReport: async (data: ReportGenerationDto): Promise<ApiResponse<any>> => {
+    const response = await apiClient.post<ApiResponse<any>>('/analytics/reports/generate', data);
     return response.data;
   },
 
   /**
    * Get report by ID
    */
-  getReport: async (id: string) => {
-    const response = await apiClient.get(`/analytics/reports/${id}`);
+  getReport: async (id: string): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get<ApiResponse<any>>(`/analytics/reports/${id}`);
     return response.data;
   },
 
   /**
    * Schedule report
    */
-  scheduleReport: async (data: any) => {
-    const response = await apiClient.post('/analytics/reports/schedule', data);
+  scheduleReport: async (data: any): Promise<ApiResponse<any>> => {
+    const response = await apiClient.post<ApiResponse<any>>('/analytics/reports/schedule', data);
     return response.data;
   },
 

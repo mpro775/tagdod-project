@@ -316,6 +316,8 @@ export class AuthController {
         lastName: user!.lastName,
         gender: user!.gender,
         jobTitle: user!.jobTitle,
+        roles: user!.roles || [],
+        permissions: user!.permissions || [],
         isAdmin: isAdminUser,
       },
       capabilities: caps,

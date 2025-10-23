@@ -1,253 +1,388 @@
 import React from 'react';
-import { Modal } from '../../../shared/components/ui/Modal';
-import { Button } from '../../../shared/components/ui/Button';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  Box,
+  Grid,
+  Chip,
+  Avatar,
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Skeleton,
+  Alert,
+} from '@mui/material';
+import {
+  Close,
+  Person,
+  DeviceUnknown,
+  ShoppingCart,
+  Email,
+  ShoppingCartCheckout,
+} from '@mui/icons-material';
 import { Cart, CartStatus } from '../types/cart.types';
-import { formatCurrency, formatDate, formatCartStatus } from '../api/cartApi';
+import {
+  formatCurrency,
+  formatDate,
+  formatRelativeTime,
+  getStatusColor,
+  formatCartStatus,
+} from '../api/cartApi';
 
 interface CartDetailsModalProps {
   cart: Cart | null;
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
-  onSendReminder?: (cartId: string) => void; // eslint-disable-line no-unused-vars
-  onConvertToOrder?: (cartId: string) => void; // eslint-disable-line no-unused-vars
+  onConvertToOrder: (cart: Cart) => void;
+  onSendReminder: (cart: Cart) => void;
+  isLoading?: boolean;
 }
 
 export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
   cart,
-  isOpen,
+  open,
   onClose,
-  onSendReminder,
   onConvertToOrder,
+  onSendReminder,
+  isLoading = false,
 }) => {
-  if (!cart) return null;
-
-  const getStatusBadge = (status: CartStatus) => {
-    const { label, color } = formatCartStatus(status);
-    const colorClasses = {
-      green: 'bg-green-100 text-green-800',
-      red: 'bg-red-100 text-red-800',
-      blue: 'bg-blue-100 text-blue-800',
-      gray: 'bg-gray-100 text-gray-800',
-    };
-    
-    return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium ${colorClasses[color]}`}>
-        {label}
-      </span>
-    );
-  };
-
-  const getUserInfo = () => {
-    if (cart.user) {
-      return (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium text-gray-900 mb-2">معلومات المستخدم</h4>
-          <div className="space-y-1">
-            <div><span className="font-medium">الاسم:</span> {cart.user.name}</div>
-            <div><span className="font-medium">البريد الإلكتروني:</span> {cart.user.email}</div>
-            {cart.user.phone && (
-              <div><span className="font-medium">الهاتف:</span> {cart.user.phone}</div>
-            )}
-          </div>
-        </div>
-      );
-    }
-    
-    if (cart.userId) {
-      return (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium text-gray-900 mb-2">معلومات المستخدم</h4>
-          <div><span className="font-medium">معرف المستخدم:</span> {cart.userId}</div>
-        </div>
-      );
-    }
-    
-    if (cart.deviceId) {
-      return (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium text-gray-900 mb-2">معلومات الضيف</h4>
-          <div><span className="font-medium">معرف الجهاز:</span> {cart.deviceId}</div>
-        </div>
-      );
-    }
-    
+  if (!cart && !isLoading) {
     return null;
+  }
+
+  const getCartTotal = () => {
+    return cart?.pricingSummary?.total || 0;
   };
 
-  const getPricingSummary = () => {
-    if (!cart.pricingSummary) return null;
-
-    const { subtotal, total, itemsCount, currency, wholesaleDiscountAmount } = cart.pricingSummary;
-
-    return (
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h4 className="font-medium text-gray-900 mb-3">ملخص التسعير</h4>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span>عدد العناصر:</span>
-            <span className="font-medium">{itemsCount}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>المجموع الفرعي:</span>
-            <span className="font-medium">{formatCurrency(subtotal, currency)}</span>
-          </div>
-          {wholesaleDiscountAmount && wholesaleDiscountAmount > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>خصم التاجر:</span>
-              <span className="font-medium">-{formatCurrency(wholesaleDiscountAmount, currency)}</span>
-            </div>
-          )}
-          <div className="flex justify-between border-t pt-2">
-            <span className="font-medium">الإجمالي:</span>
-            <span className="font-bold text-lg">{formatCurrency(total, currency)}</span>
-          </div>
-        </div>
-      </div>
-    );
+  const getCartItemsCount = () => {
+    return cart?.items?.length || 0;
   };
 
-  const getAbandonmentInfo = () => {
-    if (cart.status !== CartStatus.ABANDONED && !cart.isAbandoned) return null;
-
-    return (
-      <div className="bg-red-50 p-4 rounded-lg">
-        <h4 className="font-medium text-gray-900 mb-3">معلومات الهجر</h4>
-        <div className="space-y-2">
-          {cart.lastActivityAt && (
-            <div className="flex justify-between">
-              <span>آخر نشاط:</span>
-              <span className="font-medium">{formatDate(cart.lastActivityAt)}</span>
-            </div>
-          )}
-          {cart.abandonmentEmailsSent && (
-            <div className="flex justify-between">
-              <span>التذكيرات المرسلة:</span>
-              <span className="font-medium">{cart.abandonmentEmailsSent}</span>
-            </div>
-          )}
-          {cart.lastAbandonmentEmailAt && (
-            <div className="flex justify-between">
-              <span>آخر تذكير:</span>
-              <span className="font-medium">{formatDate(cart.lastAbandonmentEmailAt)}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+  const getUserDisplayName = () => {
+    if (cart?.user) {
+      return cart.user.name || cart.user.email || 'مستخدم غير معروف';
+    }
+    return cart?.deviceId ? `جهاز ${cart.deviceId.slice(-8)}` : 'ضيف';
   };
 
-  const getConversionInfo = () => {
-    if (cart.status !== CartStatus.CONVERTED) return null;
+  const getUserContact = () => {
+    if (cart?.user) {
+      return cart.user.email || cart.user.phone || 'لا يوجد';
+    }
+    return 'غير متاح';
+  };
 
-    return (
-      <div className="bg-green-50 p-4 rounded-lg">
-        <h4 className="font-medium text-gray-900 mb-3">معلومات التحويل</h4>
-        <div className="space-y-2">
-          {cart.convertedToOrderId && (
-            <div className="flex justify-between">
-              <span>معرف الطلب:</span>
-              <span className="font-medium font-mono">{cart.convertedToOrderId}</span>
-            </div>
-          )}
-          {cart.convertedAt && (
-            <div className="flex justify-between">
-              <span>تاريخ التحويل:</span>
-              <span className="font-medium">{formatDate(cart.convertedAt)}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+  const getLastActivity = () => {
+    if (cart?.lastActivityAt) {
+      return formatRelativeTime(cart.lastActivityAt);
+    }
+    return formatRelativeTime(cart?.updatedAt || new Date());
+  };
+
+  const canSendReminder = cart?.isAbandoned || cart?.status === CartStatus.ABANDONED;
+  const canConvert = cart?.status === CartStatus.ACTIVE && getCartItemsCount() > 0;
+
+  const handleConvertToOrder = () => {
+    if (cart) {
+      onConvertToOrder(cart);
+    }
+  };
+
+  const handleSendReminder = () => {
+    if (cart) {
+      onSendReminder(cart);
+    }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">تفاصيل السلة</h2>
-          <div className="flex items-center space-x-3">
-            {getStatusBadge(cart.status)}
-            <span className="text-sm text-gray-500 font-mono">
-              {cart._id}
-            </span>
-          </div>
-        </div>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          minHeight: '60vh',
+        },
+      }}
+    >
+      <DialogTitle>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Box display="flex" alignItems="center" gap={1}>
+            <ShoppingCart />
+            <Typography variant="h6">تفاصيل السلة</Typography>
+          </Box>
+          <IconButton onClick={onClose} size="small">
+            <Close />
+          </IconButton>
+        </Box>
+      </DialogTitle>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* User Info */}
-          {getUserInfo()}
+      <DialogContent dividers>
+        {isLoading ? (
+          <Box>
+            <Skeleton variant="rectangular" height={200} />
+            <Box mt={2}>
+              <Skeleton variant="text" height={32} />
+              <Skeleton variant="text" height={24} />
+              <Skeleton variant="text" height={24} />
+            </Box>
+          </Box>
+        ) : !cart ? (
+          <Alert severity="error">لا يمكن تحميل تفاصيل السلة</Alert>
+        ) : (
+          <Grid container spacing={3}>
+            {/* Cart Overview */}
+            <Grid size={{ xs: 12 }}>
+              <Paper sx={{ p: 2, mb: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  نظرة عامة على السلة
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Chip
+                        label={formatCartStatus(cart.status)}
+                        size="small"
+                        sx={{
+                          backgroundColor: `${getStatusColor(cart.status)}20`,
+                          color: getStatusColor(cart.status),
+                          border: `1px solid ${getStatusColor(cart.status)}40`,
+                        }}
+                      />
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      عدد المنتجات
+                    </Typography>
+                    <Typography variant="h6">{getCartItemsCount()}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      القيمة الإجمالية
+                    </Typography>
+                    <Typography variant="h6" color="primary">
+                      {formatCurrency(getCartTotal(), cart.currency)}
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      آخر نشاط
+                    </Typography>
+                    <Typography variant="body2">{getLastActivity()}</Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
 
-          {/* Pricing Summary */}
-          {getPricingSummary()}
-        </div>
+            {/* User Information */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  معلومات المستخدم
+                </Typography>
+                <Box display="flex" alignItems="center" gap={2} mb={2}>
+                  {cart.user ? (
+                    <Avatar sx={{ width: 48, height: 48 }}>
+                      <Person />
+                    </Avatar>
+                  ) : (
+                    <Avatar sx={{ width: 48, height: 48 }}>
+                      <DeviceUnknown />
+                    </Avatar>
+                  )}
+                  <Box>
+                    <Typography variant="h6">{getUserDisplayName()}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {getUserContact()}
+                    </Typography>
+                  </Box>
+                </Box>
 
-        {/* Abandonment Info */}
-        {getAbandonmentInfo()}
+                <Divider sx={{ my: 2 }} />
 
-        {/* Conversion Info */}
-        {getConversionInfo()}
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      نوع الحساب
+                    </Typography>
+                    <Typography variant="body2">{cart.accountType || 'تجزئة'}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      العملة
+                    </Typography>
+                    <Typography variant="body2">{cart.currency}</Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
 
-        {/* Cart Items */}
-        <div className="mt-6">
-          <h4 className="font-medium text-gray-900 mb-3">عناصر السلة</h4>
-          <div className="bg-gray-50 rounded-lg p-4">
-            {cart.items && cart.items.length > 0 ? (
-              <div className="space-y-3">
-                {cart.items.map((item, index) => (
-                  <div key={item._id || index} className="flex justify-between items-center p-3 bg-white rounded border">
-                    <div className="flex-1">
-                      <div className="font-medium">
-                        {item.variant?.name || `معرف المتغير: ${item.variantId}`}
-                      </div>
-                      {item.variant?.product && (
-                        <div className="text-sm text-gray-500">
-                          المنتج: {item.variant.product.name}
-                        </div>
-                      )}
-                      <div className="text-sm text-gray-500">
-                        أضيف في: {formatDate(item.addedAt)}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-medium text-lg">{item.qty}</div>
-                      <div className="text-sm text-gray-500">كمية</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-gray-500 py-8">
-                لا توجد عناصر في السلة
-              </div>
+            {/* Cart Details */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  تفاصيل السلة
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      تاريخ الإنشاء
+                    </Typography>
+                    <Typography variant="body2">{formatDate(cart.createdAt)}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      آخر تحديث
+                    </Typography>
+                    <Typography variant="body2">{formatDate(cart.updatedAt)}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      حالة الهجر
+                    </Typography>
+                    <Typography variant="body2">
+                      {cart.isAbandoned ? 'متروكة' : 'غير متروكة'}
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      الإيميلات المرسلة
+                    </Typography>
+                    <Typography variant="body2">{cart.abandonmentEmailsSent || 0}</Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Cart Items */}
+            {cart.items && cart.items.length > 0 && (
+              <Grid size={{ xs: 12 }}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom>
+                    منتجات السلة ({cart.items.length})
+                  </Typography>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>المنتج</TableCell>
+                          <TableCell>الكمية</TableCell>
+                          <TableCell>السعر</TableCell>
+                          <TableCell>الإجمالي</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {cart.items.map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <Box>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {item.productSnapshot?.name || 'منتج غير معروف'}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {item.productSnapshot?.brandName || 'علامة تجارية غير معروفة'}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>{item.qty}</TableCell>
+                            <TableCell>
+                              {formatCurrency(item.pricing?.finalPrice || 0, cart.currency)}
+                            </TableCell>
+                            <TableCell>
+                              {formatCurrency(
+                                (item.pricing?.finalPrice || 0) * item.qty,
+                                cart.currency
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Paper>
+              </Grid>
             )}
-          </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
-          <Button variant="outline" onClick={onClose}>
-            إغلاق
+            {/* Pricing Summary */}
+            {cart.pricingSummary && (
+              <Grid size={{ xs: 12 }}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom>
+                    ملخص التسعير
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 6 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        المجموع الفرعي
+                      </Typography>
+                      <Typography variant="body2">
+                        {formatCurrency(cart.pricingSummary.subtotal, cart.currency)}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 6 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        خصم الترويج
+                      </Typography>
+                      <Typography variant="body2">
+                        {formatCurrency(cart.pricingSummary.promotionDiscount, cart.currency)}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 6 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        خصم الكوبون
+                      </Typography>
+                      <Typography variant="body2">
+                        {formatCurrency(cart.pricingSummary.couponDiscount, cart.currency)}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 6 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        الإجمالي النهائي
+                      </Typography>
+                      <Typography variant="h6" color="primary">
+                        {formatCurrency(cart.pricingSummary.total, cart.currency)}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+            )}
+          </Grid>
+        )}
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={onClose}>إغلاق</Button>
+        {cart && canSendReminder && (
+          <Button variant="outlined" startIcon={<Email />} onClick={handleSendReminder}>
+            إرسال تذكير
           </Button>
-          
-          {cart.status === CartStatus.ABANDONED && onSendReminder && (
-            <Button
-              className="bg-orange-600 hover:bg-orange-700"
-              onClick={() => onSendReminder(cart._id)}
-            >
-              إرسال تذكير
-            </Button>
-          )}
-          
-          {cart.status === CartStatus.ACTIVE && onConvertToOrder && (
-            <Button
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => onConvertToOrder(cart._id)}
-            >
-              تحويل إلى طلب
-            </Button>
-          )}
-        </div>
-      </div>
-    </Modal>
+        )}
+        {cart && canConvert && (
+          <Button
+            variant="contained"
+            startIcon={<ShoppingCartCheckout />}
+            onClick={handleConvertToOrder}
+          >
+            تحويل إلى طلب
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
   );
 };
+
+export default CartDetailsModal;
