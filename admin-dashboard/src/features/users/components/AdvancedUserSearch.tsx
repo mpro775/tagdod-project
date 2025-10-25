@@ -17,8 +17,6 @@ import {
   AccordionDetails,
   FormControlLabel,
   Switch,
-  DatePicker,
-  Autocomplete,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -90,7 +88,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
   const [expanded, setExpanded] = useState(false);
 
   const handleFilterChange = (key: keyof AdvancedSearchFilters, value: any) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       [key]: value,
     }));
@@ -117,7 +115,12 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
     if (filters.isAdmin !== undefined) count++;
     if (filters.includeDeleted) count++;
     if (filters.dateRange?.start || filters.dateRange?.end) count++;
-    if (filters.capabilities?.engineer || filters.capabilities?.wholesale || filters.capabilities?.admin) count++;
+    if (
+      filters.capabilities?.engineer ||
+      filters.capabilities?.wholesale ||
+      filters.capabilities?.admin
+    )
+      count++;
     return count;
   };
 
@@ -143,7 +146,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
 
         {/* البحث الأساسي */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item xs={12} md={6}>
+          <Grid component="div" size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="البحث في المستخدمين"
@@ -155,7 +158,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
               }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid component="div" size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
               <InputLabel>ترتيب حسب</InputLabel>
               <Select
@@ -171,7 +174,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid component="div" size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
               <InputLabel>اتجاه الترتيب</InputLabel>
               <Select
@@ -196,7 +199,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
           <AccordionDetails>
             <Grid container spacing={2}>
               {/* الحالة والدور */}
-              <Grid item xs={12} md={4}>
+              <Grid component="div" size={{ xs: 12, md: 4 }}>
                 <FormControl fullWidth>
                   <InputLabel>الحالة</InputLabel>
                   <Select
@@ -213,7 +216,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid component="div" size={{ xs: 12, md: 4 }}>
                 <FormControl fullWidth>
                   <InputLabel>الدور</InputLabel>
                   <Select
@@ -230,13 +233,13 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid component="div" size={{ xs: 12, md: 4 }}>
                 <FormControl fullWidth>
                   <InputLabel>نوع المستخدم</InputLabel>
                   <Select
                     value={filters.isAdmin === undefined ? '' : filters.isAdmin ? 'admin' : 'user'}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      const value = e.target.value as '' | 'admin' | 'user';
                       handleFilterChange('isAdmin', value === '' ? undefined : value === 'admin');
                     }}
                     label="نوع المستخدم"
@@ -249,7 +252,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
               </Grid>
 
               {/* القدرات */}
-              <Grid item xs={12}>
+              <Grid component="div" size={{ xs: 12 }}>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
                   القدرات
                 </Typography>
@@ -258,10 +261,12 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                     control={
                       <Switch
                         checked={filters.capabilities?.engineer || false}
-                        onChange={(e) => handleFilterChange('capabilities', {
-                          ...filters.capabilities,
-                          engineer: e.target.checked,
-                        })}
+                        onChange={(e) =>
+                          handleFilterChange('capabilities', {
+                            ...filters.capabilities,
+                            engineer: e.target.checked,
+                          })
+                        }
                       />
                     }
                     label="مهندسين"
@@ -270,10 +275,12 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                     control={
                       <Switch
                         checked={filters.capabilities?.wholesale || false}
-                        onChange={(e) => handleFilterChange('capabilities', {
-                          ...filters.capabilities,
-                          wholesale: e.target.checked,
-                        })}
+                        onChange={(e) =>
+                          handleFilterChange('capabilities', {
+                            ...filters.capabilities,
+                            wholesale: e.target.checked,
+                          })
+                        }
                       />
                     }
                     label="تجار"
@@ -282,10 +289,12 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                     control={
                       <Switch
                         checked={filters.capabilities?.admin || false}
-                        onChange={(e) => handleFilterChange('capabilities', {
-                          ...filters.capabilities,
-                          admin: e.target.checked,
-                        })}
+                        onChange={(e) =>
+                          handleFilterChange('capabilities', {
+                            ...filters.capabilities,
+                            admin: e.target.checked,
+                          })
+                        }
                       />
                     }
                     label="مديرين"
@@ -294,7 +303,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
               </Grid>
 
               {/* خيارات إضافية */}
-              <Grid item xs={12}>
+              <Grid component="div" size={{ xs: 12 }}>
                 <FormControlLabel
                   control={
                     <Switch

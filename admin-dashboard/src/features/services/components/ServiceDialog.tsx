@@ -13,19 +13,16 @@ import {
   Avatar,
   Chip,
   Stack,
-  Divider,
 } from '@mui/material';
 import {
   Engineering,
   Assignment,
   LocationOn,
-  Phone,
   Email,
   Schedule,
   AttachMoney,
   Star,
   CheckCircle,
-  Cancel,
   Block,
 } from '@mui/icons-material';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
@@ -60,9 +57,7 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
                 <Assignment />
               </Avatar>
               <Box>
-                <Typography variant="h6">
-                  {service.title}
-                </Typography>
+                <Typography variant="h6">{service.title}</Typography>
                 <Typography variant="body2" color="textSecondary">
                   {service.type}
                 </Typography>
@@ -72,9 +67,7 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
               <Typography variant="body2" color="textSecondary" gutterBottom>
                 الوصف:
               </Typography>
-              <Typography variant="body2">
-                {service.description}
-              </Typography>
+              <Typography variant="body2">{service.description}</Typography>
             </Box>
           </CardContent>
         </Card>
@@ -154,9 +147,7 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
                 {service.engineerName?.charAt(0) || '?'}
               </Avatar>
               <Box>
-                <Typography variant="h6">
-                  {service.engineerName}
-                </Typography>
+                <Typography variant="h6">{service.engineerName}</Typography>
                 <Typography variant="body2" color="textSecondary">
                   {service.engineerPhone}
                 </Typography>
@@ -185,9 +176,7 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
                 <Star />
               </Avatar>
               <Box>
-                <Typography variant="h6">
-                  {service.averageRating?.toFixed(1) || '0.0'}
-                </Typography>
+                <Typography variant="h6">{service.averageRating?.toFixed(1) || '0.0'}</Typography>
                 <Typography variant="body2" color="textSecondary">
                   متوسط التقييم
                 </Typography>
@@ -220,11 +209,7 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
                 icon={service.isActive ? <CheckCircle /> : <Block />}
               />
               {service.specialization && (
-                <Chip
-                  label={service.specialization}
-                  color="info"
-                  variant="outlined"
-                />
+                <Chip label={service.specialization} color="info" variant="outlined" />
               )}
             </Stack>
           </CardContent>
@@ -246,9 +231,7 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
                 <AttachMoney />
               </Avatar>
               <Box>
-                <Typography variant="h6">
-                  {formatCurrency(service.amount)}
-                </Typography>
+                <Typography variant="h6">{formatCurrency(service.amount)}</Typography>
                 <Typography variant="body2" color="textSecondary">
                   قيمة العرض
                 </Typography>
@@ -259,9 +242,7 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
                 <Typography variant="body2" color="textSecondary" gutterBottom>
                   ملاحظات:
                 </Typography>
-                <Typography variant="body2">
-                  {service.note}
-                </Typography>
+                <Typography variant="body2">{service.note}</Typography>
               </Box>
             )}
           </CardContent>
@@ -302,9 +283,7 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
                 <Assignment />
               </Avatar>
               <Box>
-                <Typography variant="h6">
-                  {service.request?.title}
-                </Typography>
+                <Typography variant="h6">{service.request?.title}</Typography>
                 <Typography variant="body2" color="textSecondary">
                   {service.request?.type}
                 </Typography>
@@ -343,16 +322,10 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {title}
-      </DialogTitle>
-      <DialogContent>
-        {renderContent()}
-      </DialogContent>
+      <DialogTitle>{title}</DialogTitle>
+      <DialogContent>{renderContent()}</DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>
-          إغلاق
-        </Button>
+        <Button onClick={onClose}>إغلاق</Button>
       </DialogActions>
     </Dialog>
   );

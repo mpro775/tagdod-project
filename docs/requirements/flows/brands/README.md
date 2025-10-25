@@ -62,9 +62,10 @@
 
 ## API Endpoints المتاحة
 
-### للعملاء (2 endpoints)
-- **GET /brands** - قائمة الماركات
-- **GET /brands/:id** - تفاصيل ماركة واحدة
+### للعملاء (3 endpoints)
+- **GET /brands** - قائمة الماركات النشطة
+- **GET /brands/:id** - تفاصيل ماركة واحدة بالمعرف
+- **GET /brands/slug/:slug** - تفاصيل ماركة واحدة بالـ slug
 
 ### للأدمن (6 endpoints)
 - **POST /admin/brands** - إنشاء ماركة جديدة
@@ -79,8 +80,10 @@
 ### إنشاء الماركة
 - `CreateBrandDto`: إنشاء ماركة جديدة
   - `name`: الاسم بالعربية (required, 2-100 حرف)
+  - `nameEn`: الاسم بالإنجليزية (required, 2-100 حرف)
   - `image`: رابط الصورة (required)
   - `description`: الوصف بالعربية (optional, max 500 حرف)
+  - `descriptionEn`: الوصف بالإنجليزية (optional, max 500 حرف)
   - `isActive`: نشطة (optional, default true)
   - `sortOrder`: ترتيب العرض (optional, default 0)
   - `metadata`: البيانات الوصفية (optional)

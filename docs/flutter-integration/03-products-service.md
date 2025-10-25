@@ -2,6 +2,8 @@
 
 خدمة المنتجات توفر endpoints لعرض وتصفح المنتجات.
 
+> ✅ **تم التحقق من صحة هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/products`
+
 ---
 
 ## 📋 جدول المحتويات
@@ -177,10 +179,16 @@ Future<PaginatedProducts> getProducts(ProductsFilter filter) async {
 - **Auth Required:** ❌ لا
 - **Cache:** ✅ نعم (10 دقائق)
 
+### Query Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `currency` | `string` | ❌ | رمز العملة (USD, YER, SAR) للحصول على الأسعار المحولة |
+
 ### مثال الطلب
 
 ```
-GET /products/64prod123
+GET /products/64prod123?currency=YER
 ```
 
 ### Response - نجاح
@@ -233,24 +241,6 @@ GET /products/64prod123
       "createdAt": "2025-01-15T10:00:00.000Z",
       "updatedAt": "2025-01-20T14:30:00.000Z"
     },
-    "attributes": [
-      {
-        "_id": "64attr123",
-        "nameAr": "اللون",
-        "nameEn": "Color",
-        "type": "select",
-        "values": [
-          {
-            "valueAr": "أسود",
-            "valueEn": "Black"
-          },
-          {
-            "valueAr": "أزرق",
-            "valueEn": "Blue"
-          }
-        ]
-      }
-    ],
     "variants": [
       {
         "_id": "64var123",
@@ -259,8 +249,8 @@ GET /products/64prod123
         "nameAr": "لوح شمسي 550 واط - أسود",
         "nameEn": "Solar Panel 550W - Black",
         "attributes": {
-          "color": "أسود",
-          "size": "2m x 1m"
+          "Color": "أسود",
+          "Size": "2m x 1m"
         },
         "pricing": [
           {
@@ -308,8 +298,11 @@ GET /products/64prod123
 ### كود Flutter
 
 ```dart
-Future<Product> getProduct(String id) async {
-  final response = await _dio.get('/products/$id');
+Future<ProductDetails> getProduct(String id, {String currency = 'USD'}) async {
+  final response = await _dio.get(
+    '/products/$id',
+    queryParameters: {'currency': currency},
+  );
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
@@ -317,9 +310,31 @@ Future<Product> getProduct(String id) async {
   );
 
   if (apiResponse.isSuccess) {
-    return Product.fromJson(apiResponse.data!['data']);
+    return ProductDetails.fromJson(apiResponse.data!);
   } else {
     throw ApiException(apiResponse.error!);
+  }
+}
+
+class ProductDetails {
+  final Product product;
+  final List<ProductVariant> variants;
+  final String currency;
+
+  ProductDetails({
+    required this.product,
+    required this.variants,
+    required this.currency,
+  });
+
+  factory ProductDetails.fromJson(Map<String, dynamic> json) {
+    return ProductDetails(
+      product: Product.fromJson(json['product']),
+      variants: (json['variants'] as List)
+          .map((v) => ProductVariant.fromJson(v))
+          .toList(),
+      currency: json['currency'] ?? 'USD',
+    );
   }
 }
 ```
@@ -826,6 +841,30 @@ class PaginationMeta {
 7. **Cache:**
    - جميع الـ endpoints مع cache من جهة السيرفر
    - يمكنك إضافة cache في التطبيق أيضاً
+
+8. **Endpoints إضافية متوفرة:**
+   - `GET /products/slug/:slug` - البحث بالـ slug (URL friendly)
+   - `GET /products/:id/variants` - جلب variants منتج معين
+   - `GET /products/variants/:id/price?currency=YER` - سعر variant محدد
+   - `GET /products/variants/:id/availability?quantity=5` - التحقق من التوفر
+   - `GET /products/:id/price-range?currency=YER` - نطاق الأسعار
+
+---
+
+## 📝 ملاحظات التحديث
+
+> ✅ **تم تحديث هذه الوثيقة** لتطابق الكود الفعلي
+
+### التحديثات المضافة:
+1. ✅ إضافة `currency` parameter في GET /products/:id
+2. ✅ إزالة `attributes` من response (موجودة في variants)
+3. ✅ إضافة `ProductDetails` class للـ Flutter
+4. ✅ إضافة ملاحظة عن endpoints إضافية
+5. ✅ تحديث أمثلة الكود
+
+### الملفات المرجعية:
+- **Controller:** `backend/src/modules/products/controllers/public-products.controller.ts`
+- **Service:** `backend/src/modules/products/services/product.service.ts`
 
 ---
 

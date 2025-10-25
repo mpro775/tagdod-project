@@ -1,36 +1,14 @@
 import React from 'react';
+
+import { Table, TableBody, TableCell, TableHead, TableRow, Badge, Button } from '@mui/material';
+
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/shared/components/ui/table';
-import { Badge } from '@/shared/components/ui/badge';
-import { Button } from '@/shared/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/shared/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/shared/components/ui/dialog';
-import {
-  MoreHorizontal,
-  Eye,
-  AlertTriangle,
-  Clock,
-  User,
-  Shield,
-  ExternalLink,
-} from 'lucide-react';
+  Visibility as Eye,
+  Warning as AlertTriangle,
+  AccessTime as Clock,
+  Person as User,
+  Security as Shield,
+} from '@mui/icons-material';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
@@ -55,11 +33,11 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return 'destructive';
+        return 'error';
       case 'high':
-        return 'secondary';
+        return 'warning';
       case 'medium':
-        return 'outline';
+        return 'info';
       case 'low':
         return 'default';
       default:
@@ -125,7 +103,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
   return (
     <div className="rounded-md border">
       <Table>
-        <TableHeader>
+        <TableHead>
           <TableRow>
             <TableHead>الوقت</TableHead>
             <TableHead>المستخدم</TableHead>
@@ -135,7 +113,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
             <TableHead>الحساسية</TableHead>
             <TableHead>الإجراءات</TableHead>
           </TableRow>
-        </TableHeader>
+        </TableHead>
         <TableBody>
           {logs.map((log) => (
             <TableRow key={log._id} className="hover:bg-muted/50">
@@ -145,14 +123,12 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                   <span className="text-sm">{formatTimestamp(log.timestamp)}</span>
                 </div>
               </TableCell>
-              
+
               <TableCell>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
-                      {log.user?.name || 'مستخدم غير معروف'}
-                    </span>
+                    <span className="font-medium">{log.user?.name || 'مستخدم غير معروف'}</span>
                   </div>
                   {log.performedByUser && log.performedByUser._id !== log.user?._id && (
                     <div className="text-xs text-muted-foreground">
@@ -164,10 +140,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
 
               <TableCell>
                 <div className="space-y-1">
-                  <Badge
-                    variant="outline"
-                    className={`${getActionColor(log.action)} border-0`}
-                  >
+                  <Badge variant="standard" className={`${getActionColor(log.action)} border-0`}>
                     {AUDIT_ACTION_LABELS[log.action]}
                   </Badge>
                   <div className="text-xs text-muted-foreground">
@@ -178,9 +151,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
 
               <TableCell>
                 <div className="space-y-1">
-                  <span className="text-sm font-medium">
-                    {AUDIT_RESOURCE_LABELS[log.resource]}
-                  </span>
+                  <span className="text-sm font-medium">{AUDIT_RESOURCE_LABELS[log.resource]}</span>
                   {log.resourceId && (
                     <div className="text-xs text-muted-foreground">
                       ID: {truncateText(log.resourceId, 20)}
@@ -214,15 +185,14 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
               <TableCell>
                 <div className="space-y-1">
                   {log.isSensitive && (
-                    <Badge variant="destructive" className="text-xs">
+                    <Badge variant="standard" className="text-xs">
                       <AlertTriangle className="h-3 w-3 mr-1" />
                       حساس
                     </Badge>
                   )}
                   <Badge
-                    variant={getSeverityColor(
-                      AUDIT_ACTION_SEVERITY[log.action]
-                    )}
+                    color={getSeverityColor(AUDIT_ACTION_SEVERITY[log.action])}
+                    variant="standard"
                     className="text-xs"
                   >
                     {AUDIT_ACTION_SEVERITY[log.action] === 'critical'
@@ -237,25 +207,14 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
               </TableCell>
 
               <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onViewDetails(log)}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      عرض التفاصيل
-                    </DropdownMenuItem>
-                    {log.ipAddress && (
-                      <DropdownMenuItem>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        IP: {log.ipAddress}
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => onViewDetails(log)}
+                  startIcon={<Eye />}
+                >
+                  عرض التفاصيل
+                </Button>
               </TableCell>
             </TableRow>
           ))}

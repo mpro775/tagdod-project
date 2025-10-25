@@ -1,128 +1,22 @@
-%% Advanced Inventory Management: Reservation, Commitment, Ledger, Auto-expiry
+%% Inventory Adjustments Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Inventory Operation] --> B{Operation Type?}
-  B -->|Reserve| C[Reserve Inventory]
-  B -->|Commit| D[Commit Reservation]
-  B -->|Cancel| E[Cancel Reservation]
-  B -->|Return| F[Return Inventory]
-  B -->|Adjust| G[Manual Adjustment]
-  
-  %% Reserve Inventory Flow
-  C --> C1[Start Database Transaction]
-  C1 --> C2[Check inventory exists]
-  C2 --> C3{Inventory exists?}
-  C3 -->|No| C4[Create inventory record]
-  C3 -->|Yes| C5[Get current inventory]
-  C4 --> C6[Set default values]
-  C5 --> C7[Calculate available stock]
-  C6 --> C7
-  C7 --> C8[Available = on_hand - reserved - safety_stock]
-  C8 --> C9{Available >= requested?}
-  C9 -->|No| C10[Throw inventory shortage error]
-  C9 -->|Yes| C11[Increase reserved quantity]
-  C11 --> C12[Create reservation record]
-  C12 --> C13[Set expiration time]
-  C13 --> C14[Set status to ACTIVE]
-  C14 --> C15[Save with session]
-  C15 --> C16[Commit transaction]
-  C16 --> C17[Return success]
-  C10 --> C18[Rollback transaction]
-  C18 --> C19[End - Insufficient Stock]
-  
-  %% Commit Reservation Flow
-  D --> D1[Start Database Transaction]
-  D1 --> D2[Find active reservations]
-  D2 --> D3[Update reservation status to COMMITTED]
-  D3 --> D4[Decrease on_hand quantity]
-  D4 --> D5[Decrease reserved quantity]
-  D5 --> D6[Create ledger entry]
-  D6 --> D7[Set reason to ORDER_CONFIRMED_OUT]
-  D7 --> D8[Set change to negative quantity]
-  D8 --> D9[Set refId to orderId]
-  D9 --> D10[Save all changes with session]
-  D10 --> D11[Commit transaction]
-  D11 --> D12[Return success]
-  
-  %% Cancel Reservation Flow
-  E --> E1[Start Database Transaction]
-  E1 --> E2[Find reservation by ID]
-  E2 --> E3{Reservation exists?}
-  E3 -->|No| E4[Return not found error]
-  E3 -->|Yes| E5[Update status to CANCELLED]
-  E5 --> E6[Decrease reserved quantity]
-  E6 --> E7[Create ledger entry]
-  E7 --> E8[Set reason to ORDER_CANCELLED_RELEASE]
-  E8 --> E9[Set change to positive quantity]
-  E9 --> E10[Save all changes with session]
-  E10 --> E11[Commit transaction]
-  E11 --> E12[Return success]
-  E4 --> E13[End - Not Found]
-  
-  %% Return Inventory Flow
-  F --> F1[Start Database Transaction]
-  F1 --> F2[Increase on_hand quantity]
-  F2 --> F3[Create ledger entry]
-  F3 --> F4[Set reason to PRODUCT_RETURN]
-  F4 --> F5[Set change to positive quantity]
-  F5 --> F6[Set refId to return reference]
-  F6 --> F7[Save all changes with session]
-  F7 --> F8[Commit transaction]
-  F8 --> F9[Return success]
-  
-  %% Manual Adjustment Flow
-  G --> G1[Start Database Transaction]
-  G1 --> G2[Validate adjustment data]
-  G2 --> G3{Valid adjustment?}
-  G3 -->|No| G4[Return validation error]
-  G3 -->|Yes| G5[Update on_hand quantity]
-  G5 --> G6[Create ledger entry]
-  G6 --> G7[Set reason to MANUAL_ADJUSTMENT]
-  G7 --> G8[Set change to adjustment amount]
-  G8 --> G9[Set refId to adjustment reference]
-  G9 --> G10[Save all changes with session]
-  G10 --> G11[Commit transaction]
-  G11 --> G12[Return success]
-  G4 --> G13[End - Invalid Adjustment]
-  
-  %% Auto-expiry Process
-  H[Auto-expiry Process] --> H1[Find expired reservations]
-  H1 --> H2[TTL index triggers deletion]
-  H2 --> H3[Update inventory records]
-  H3 --> H4[Decrease reserved quantity]
-  H4 --> H5[Create ledger entry]
-  H5 --> H6[Set reason to RESERVATION_EXPIRED]
-  H6 --> H7[Set change to positive quantity]
-  H7 --> H8[Save changes]
-  H8 --> H9[End - Auto-expired]
-  
-  %% Inventory Validation
-  I[Inventory Validation] --> I1[Get inventory record]
-  I1 --> I2[Calculate available stock]
-  I2 --> I3[Check against requested quantity]
-  I3 --> I4{Sufficient stock?}
-  I4 -->|Yes| I5[Allow operation]
-  I4 -->|No| I6[Block operation]
-  I5 --> I7[End - Valid]
-  I6 --> I8[End - Insufficient]
-  
-  %% Ledger Query
-  J[Ledger Query] --> J1[Filter by variantId]
-  J1 --> J2[Filter by date range]
-  J2 --> J3[Filter by reason]
-  J3 --> J4[Sort by timestamp]
-  J4 --> J5[Return ledger entries]
-  
-  %% End points
-  C17 --> Z[End]
-  C19 --> Z
-  D12 --> Z
-  E12 --> Z
-  E13 --> Z
-  F9 --> Z
-  G12 --> Z
-  G13 --> Z
-  H9 --> Z
-  I7 --> Z
-  I8 --> Z
-  J5 --> Z
+  A[تعديل المخزون] --> B{نوع التعديل?}
+  B -->|تحديث مخزون يدوي| C[تحديث مخزون متغير]
+  B -->|عرض تقارير| D[عرض تقارير المخزون]
+
+  %% Manual Stock Update
+  C --> C1[استلام معرف المتغير وكمية جديدة]
+  C1 --> C2[التحقق من صحة البيانات]
+  C2 --> C3{البيانات صحيحة?}
+  C3 -->|لا| C4[إرجاع خطأ التحقق]
+  C3 -->|نعم| C5[تحديث حقل stock في Variant]
+  C5 --> C6[حفظ التغييرات]
+  C6 --> C7[إرجاع نجاح التحديث]
+
+  %% Inventory Reports
+  D --> D1{نوع التقرير?}
+  D1 -->|مخزون منخفض| D2[البحث عن المتغيرات ذات stock < minStock]
+  D1 -->|مخزون منتهي| D3[البحث عن المتغيرات ذات stock = 0]
+  D2 --> D4[إرجاع قائمة المتغيرات]
+  D3 --> D4

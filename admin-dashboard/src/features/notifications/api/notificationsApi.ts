@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client';
+import type { ApiResponse } from '@/shared/types/common.types';
 import type {
   Notification,
   ListNotificationsParams,
@@ -13,14 +14,6 @@ import type {
   UpdateTemplateDto,
   MarkAsReadDto,
 } from '../types/notification.types';
-
-// Standard response format
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  meta?: any;
-  message?: string;
-}
 
 export const notificationsApi = {
   // ===== Admin Notifications =====

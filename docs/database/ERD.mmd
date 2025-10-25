@@ -43,9 +43,16 @@ erDiagram
     string gender
     string jobTitle
     string passwordHash
-    boolean isAdmin
     string[] roles
     string[] permissions
+    boolean customer_capable
+    boolean engineer_capable
+    string engineer_status
+    boolean wholesale_capable
+    string wholesale_status
+    number wholesale_discount_percent
+    boolean admin_capable
+    string admin_status
     string status
     string preferredCurrency
     date lastActivityAt
@@ -112,24 +119,19 @@ erDiagram
     string name
     string nameEn
     string slug "unique"
-    string path
     string description
     string descriptionEn
-    string image
     ObjectId imageId FK "Media"
-    string icon
-    ObjectId iconId FK "Media"
     string metaTitle
     string metaDescription
     string[] metaKeywords
     number order
     boolean isActive
-    boolean showInMenu
     boolean isFeatured
     number productsCount
     number childrenCount
     date deletedAt
-    string deletedBy
+    ObjectId deletedBy FK "User"
     date createdAt
     date updatedAt
   }
@@ -188,16 +190,30 @@ erDiagram
   Product {
     ObjectId categoryId FK
     string name
+    string nameEn
     string slug "unique"
     string description
-    string brandId
-    number adminRating
-    string[] tags
+    string descriptionEn
+    ObjectId brandId FK "Brand"
+    boolean isActive
     boolean isFeatured
     boolean isNew
+    boolean isBestseller
     string status
-    object[] images
-    object[] specs
+    ObjectId mainImageId FK "Media"
+    ObjectId[] imageIds FK "Media"
+    ObjectId[] attributes FK "Attribute"
+    number viewsCount
+    number salesCount
+    number variantsCount
+    number reviewsCount
+    number averageRating
+    string metaTitle
+    string metaDescription
+    string[] metaKeywords
+    number order
+    date deletedAt
+    ObjectId deletedBy FK "User"
     date createdAt
     date updatedAt
   }
@@ -206,14 +222,13 @@ erDiagram
     ObjectId productId FK
     string sku
     object attributeValues "[{attributeId,valueId,name?,value?}]"
-    number price
-    number compareAtPrice
-    number costPrice
+    number basePriceUSD
+    number compareAtPriceUSD
+    number costPriceUSD
     number stock
+    number minStock
     boolean trackInventory
     boolean allowBackorder
-    number lowStockThreshold
-    string image
     ObjectId imageId FK "Media"
     number weight
     number length
@@ -223,6 +238,7 @@ erDiagram
     boolean isAvailable
     number salesCount
     date deletedAt
+    ObjectId deletedBy FK "User"
     date createdAt
     date updatedAt
   }
@@ -328,7 +344,6 @@ erDiagram
     ObjectId productId FK "Product"
     ObjectId variantId FK "Variant"
     string note
-    string[] tags
     number viewsCount
     date lastViewedAt
     boolean isSynced

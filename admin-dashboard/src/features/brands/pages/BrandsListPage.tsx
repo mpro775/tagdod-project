@@ -3,7 +3,7 @@ import { Box, Chip, IconButton, Tooltip, Typography, Alert } from '@mui/material
 import { Edit, Delete, ToggleOn, ToggleOff, Visibility, VisibilityOff } from '@mui/icons-material';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { BrandStatsCards } from '../components/BrandStatsCards';
+// import { BrandStatsCards } from '../components/BrandStatsCards'; // معطل مؤقتاً
 import { BrandFilters } from '../components/BrandFilters';
 import { BrandFormDialog } from '../components/BrandFormDialog';
 import { BrandDeleteDialog } from '../components/BrandDeleteDialog';
@@ -257,8 +257,8 @@ export const BrandsListPage: React.FC = () => {
 
   return (
     <Box>
-      {/* إحصائيات العلامات التجارية */}
-      <BrandStatsCards />
+      {/* إحصائيات العلامات التجارية - معطلة مؤقتاً حتى تطوير API */}
+      {/* <BrandStatsCards /> */}
 
       {/* فلاتر البحث */}
       <BrandFilters

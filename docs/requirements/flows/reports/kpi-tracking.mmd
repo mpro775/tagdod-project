@@ -1,264 +1,76 @@
-%% KPI Tracking and Performance Metrics Flow
+%% KPI Tracking Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[KPI Tracking System] --> B[KPI Categories]
-  
-  %% KPI Categories
-  B --> C[Revenue KPIs]
-  B --> D[Customer KPIs]
-  B --> E[Product KPIs]
-  B --> F[Service KPIs]
-  B --> G[System KPIs]
-  
-  %% Revenue KPIs
-  C --> C1[Total Revenue]
-  C --> C2[Revenue Growth]
-  C --> C3[Average Order Value]
-  C --> C4[Conversion Rate]
-  C --> C5[Customer Lifetime Value]
-  
-  %% Total Revenue
-  C1 --> C1A[Calculate Total Revenue]
-  C1A --> C1B[Compare with Previous Period]
-  C1B --> C1C[Calculate Growth Rate]
-  C1C --> C1D[Set Revenue Targets]
-  
-  %% Revenue Growth
-  C2 --> C2A[Calculate Growth Percentage]
-  C2A --> C2B[Compare with Industry Standards]
-  C2B --> C2C[Identify Growth Drivers]
-  C2C --> C2D[Set Growth Targets]
-  
-  %% Average Order Value
-  C3 --> C3A[Calculate AOV]
-  C3A --> C3B[Compare with Previous Period]
-  C3B --> C3C[Identify AOV Trends]
-  C3C --> C3D[Set AOV Targets]
-  
-  %% Conversion Rate
-  C4 --> C4A[Calculate Conversion Rate]
-  C4A --> C4B[Compare with Benchmarks]
-  C4B --> C4C[Identify Conversion Barriers]
-  C4C --> C4D[Set Conversion Targets]
-  
-  %% Customer Lifetime Value
-  C5 --> C5A[Calculate CLV]
-  C5A --> C5B[Segment by Customer Type]
-  C5B --> C5C[Identify High-Value Customers]
-  C5C --> C5D[Set CLV Targets]
-  
+  A[تتبع مؤشرات الأداء] --> B{نوع المؤشر?}
+  B -->|مبيعات| C[KPI المبيعات]
+  B -->|عملاء| D[KPI العملاء]
+  B -->|منتجات| E[KPI المنتجات]
+  B -->|خدمات| F[KPI الخدمات]
+  B -->|دعم| G[KPI الدعم]
+
+  %% Sales KPIs
+  C --> C1[إجمالي الإيرادات]
+  C1 --> C2[عدد الطلبات]
+  C2 --> C3[متوسط قيمة الطلب]
+  C3 --> C4[نمو المبيعات]
+
   %% Customer KPIs
-  D --> D1[Total Customers]
-  D --> D2[New Customer Acquisition]
-  D --> D3[Customer Retention Rate]
-  D --> D4[Customer Satisfaction]
-  D --> D5[Customer Acquisition Cost]
-  
-  %% Total Customers
-  D1 --> D1A[Count Active Customers]
-  D1A --> D1B[Count Inactive Customers]
-  D1B --> D1C[Calculate Customer Growth]
-  D1C --> D1D[Set Customer Targets]
-  
-  %% New Customer Acquisition
-  D2 --> D2A[Count New Customers]
-  D2A --> D2B[Calculate Acquisition Rate]
-  D2B --> D2C[Identify Acquisition Channels]
-  D2C --> D2D[Set Acquisition Targets]
-  
-  %% Customer Retention Rate
-  D3 --> D3A[Calculate Retention Rate]
-  D3A --> D3B[Compare with Industry Standards]
-  D3B --> D3C[Identify Retention Factors]
-  D3C --> D3D[Set Retention Targets]
-  
-  %% Customer Satisfaction
-  D4 --> D4A[Collect Satisfaction Data]
-  D4A --> D4B[Calculate Satisfaction Score]
-  D4B --> D4C[Compare with Previous Period]
-  D4C --> D4D[Set Satisfaction Targets]
-  
-  %% Customer Acquisition Cost
-  D5 --> D5A[Calculate CAC]
-  D5A --> D5B[Compare with CLV]
-  D5B --> D5C[Calculate CAC/CLV Ratio]
-  D5C --> D5D[Set CAC Targets]
-  
+  D --> D1[إجمالي المستخدمين]
+  D1 --> D2[المستخدمون النشطون]
+  D2 --> D3[المستخدمون الجدد]
+  D3 --> D4[توزيع حسب الأدوار]
+
   %% Product KPIs
-  E --> E1[Product Performance]
-  E --> E2[Inventory Turnover]
-  E --> E3[Product Rating]
-  E --> E4[Product Return Rate]
-  E --> E5[Product Profitability]
-  
-  %% Product Performance
-  E1 --> E1A[Track Product Sales]
-  E1A --> E1B[Calculate Product Metrics]
-  E1B --> E1C[Compare Product Performance]
-  E1C --> E1D[Set Product Targets]
-  
-  %% Inventory Turnover
-  E2 --> E2A[Calculate Turnover Rate]
-  E2A --> E2B[Identify Slow-Moving Products]
-  E2B --> E2C[Optimize Inventory Levels]
-  E2C --> E2D[Set Turnover Targets]
-  
-  %% Product Rating
-  E3 --> E3A[Collect Product Ratings]
-  E3A --> E3B[Calculate Average Rating]
-  E3B --> E3C[Identify Rating Trends]
-  E3C --> E3D[Set Rating Targets]
-  
-  %% Product Return Rate
-  E4 --> E4A[Calculate Return Rate]
-  E4A --> E4B[Identify Return Reasons]
-  E4B --> E4C[Improve Product Quality]
-  E4C --> E4D[Set Return Rate Targets]
-  
-  %% Product Profitability
-  E5 --> E5A[Calculate Product Profit]
-  E5A --> E5B[Compare Product Margins]
-  E5B --> E5C[Identify Profitable Products]
-  E5C --> E5D[Set Profitability Targets]
-  
+  E --> E1[إجمالي المنتجات]
+  E1 --> E2[المنتجات الأكثر مبيعاً]
+  E2 --> E3[متوسط التقييمات]
+  E3 --> E4[إحصائيات المخزون]
+
   %% Service KPIs
-  F --> F1[Service Request Volume]
-  F --> F2[Service Completion Rate]
-  F --> F3[Average Response Time]
-  F --> F4[Service Satisfaction]
-  F --> F5[Service Efficiency]
-  
-  %% Service Request Volume
-  F1 --> F1A[Count Service Requests]
-  F1A --> F1B[Analyze Request Trends]
-  F1B --> F1C[Identify Peak Periods]
-  F1C --> F1D[Set Volume Targets]
-  
-  %% Service Completion Rate
-  F2 --> F2A[Calculate Completion Rate]
-  F2A --> F2B[Compare with SLA]
-  F2B --> F2C[Identify Completion Barriers]
-  F2C --> F2D[Set Completion Targets]
-  
-  %% Average Response Time
-  F3 --> F3A[Calculate Response Time]
-  F3A --> F3B[Compare with SLA]
-  F3B --> F3C[Identify Response Bottlenecks]
-  F3C --> F3D[Set Response Time Targets]
-  
-  %% Service Satisfaction
-  F4 --> F4A[Collect Service Ratings]
-  F4A --> F4B[Calculate Satisfaction Score]
-  F4B --> F4C[Compare with Previous Period]
-  F4C --> F4D[Set Satisfaction Targets]
-  
-  %% Service Efficiency
-  F5 --> F5A[Calculate Efficiency Metrics]
-  F5A --> F5B[Compare with Benchmarks]
-  F5B --> F5C[Identify Efficiency Improvements]
-  F5C --> F5D[Set Efficiency Targets]
-  
-  %% System KPIs
-  G --> G1[System Uptime]
-  G --> G2[Response Time]
-  G --> G3[Error Rate]
-  G --> G4[Active Users]
-  G --> G5[System Performance]
-  
-  %% System Uptime
-  G1 --> G1A[Monitor System Availability]
-  G1A --> G1B[Calculate Uptime Percentage]
-  G1B --> G1C[Compare with SLA]
-  G1C --> G1D[Set Uptime Targets]
-  
-  %% Response Time
-  G2 --> G2A[Measure API Response Time]
-  G2A --> G2B[Calculate Average Response Time]
-  G2B --> G2C[Identify Slow Endpoints]
-  G2C --> G2D[Set Response Time Targets]
-  
-  %% Error Rate
-  G3 --> G3A[Count System Errors]
-  G3A --> G3B[Calculate Error Rate]
-  G3B --> G3C[Identify Error Patterns]
-  G3C --> G3D[Set Error Rate Targets]
-  
-  %% Active Users
-  G4 --> G4A[Count Active Users]
-  G4A --> G4B[Calculate User Engagement]
-  G4B --> G4C[Identify User Patterns]
-  G4C --> G4D[Set User Targets]
-  
-  %% System Performance
-  G5 --> G5A[Monitor CPU Usage]
-  G5 --> G5B[Monitor Memory Usage]
-  G5 --> G5C[Monitor Database Performance]
-  G5 --> G5D[Monitor Network Performance]
-  
-  %% Performance Monitoring
-  G5A --> G5E[Set Performance Thresholds]
-  G5B --> G5E
-  G5C --> G5E
-  G5D --> G5E
-  G5E --> G5F[Generate Performance Alerts]
-  
-  %% KPI Analysis and Reporting
-  H[KPI Analysis] --> H1[Calculate KPI Values]
-  H1 --> H2[Compare with Targets]
-  H2 --> H3[Identify Performance Gaps]
-  H3 --> H4[Generate Performance Reports]
-  
-  %% KPI Calculation
-  H1 --> H1A[Revenue KPI Calculation]
-  H1 --> H1B[Customer KPI Calculation]
-  H1 --> H1C[Product KPI Calculation]
-  H1 --> H1D[Service KPI Calculation]
-  H1 --> H1E[System KPI Calculation]
-  
-  %% Target Comparison
-  H2 --> H2A[Compare Revenue KPIs]
-  H2 --> H2B[Compare Customer KPIs]
-  H2 --> H2C[Compare Product KPIs]
-  H2 --> H2D[Compare Service KPIs]
-  H2 --> H2E[Compare System KPIs]
-  
-  %% Performance Gap Analysis
-  H3 --> H3A[Identify Revenue Gaps]
-  H3 --> H3B[Identify Customer Gaps]
-  H3 --> H3C[Identify Product Gaps]
-  H3 --> H3D[Identify Service Gaps]
-  H3 --> H3E[Identify System Gaps]
-  
-  %% Performance Reporting
-  H4 --> H4A[Generate KPI Dashboard]
-  H4 --> H4B[Create Performance Summary]
-  H4 --> H4C[Generate Trend Analysis]
-  H4 --> H4D[Create Action Recommendations]
-  
+  F --> F1[إجمالي طلبات الخدمة]
+  F1 --> F2[طلبات مكتملة]
+  F2 --> F3[طلبات معلقة]
+  F3 --> F4[توزيع حسب الحالة]
+
+  %% Support KPIs
+  G --> G1[إجمالي التذاكر]
+  G1 --> G2[تذاكر مفتوحة]
+  G2 --> G3[متوسط وقت الاستجابة]
+  G3 --> G4[رضا العملاء]
+
+  %% Data Collection
+  H[جمع البيانات] --> H1[استعلام قاعدة البيانات]
+  H1 --> H2[فلترة حسب الفترة الزمنية]
+  H2 --> H3[حساب المجاميع والمتوسطات]
+  H3 --> H4[مقارنة مع الفترة السابقة]
+
+  %% Calculation Methods
+  I[طرق الحساب] --> I1[Aggregation Queries]
+  I1 --> I2[MongoDB Pipeline]
+  I2 --> I3[Date Range Filtering]
+  I3 --> I4[Percentage Calculations]
+
+  %% Trending Analysis
+  J[تحليل الاتجاهات] --> J1[مقارنة مع الفترة السابقة]
+  J1 --> J2[حساب نسبة النمو]
+  J2 --> J3[تحديد الاتجاهات الصاعدة والهابطة]
+  J3 --> J4[إنشاء تنبيهات للتغييرات المهمة]
+
+  %% Visualization
+  K[العرض المرئي] --> K1[Charts and Graphs]
+  K1 --> K2[KPIs Cards]
+  K2 --> K3[Trend Lines]
+  K3 --> K4[Comparison Bars]
+
+  %% Real-time Updates
+  L[التحديثات في الوقت الفعلي] --> L1[WebSocket Connections]
+  L1 --> L2[Live Data Updates]
+  L2 --> L3[Dashboard Refresh]
+  L3 --> L4[Push Notifications]
+
   %% End points
-  C1D --> Z[End]
-  C2D --> Z
-  C3D --> Z
-  C4D --> Z
-  C5D --> Z
-  D1D --> Z
-  D2D --> Z
-  D3D --> Z
-  D4D --> Z
-  D5D --> Z
-  E1D --> Z
-  E2D --> Z
-  E3D --> Z
-  E4D --> Z
-  E5D --> Z
-  F1D --> Z
-  F2D --> Z
-  F3D --> Z
-  F4D --> Z
-  F5D --> Z
-  G1D --> Z
-  G2D --> Z
-  G3D --> Z
-  G4D --> Z
-  G5F --> Z
-  H4D --> Z
+  C4 --> M[نهاية - مؤشرات المبيعات]
+  D4 --> M
+  E4 --> M
+  F4 --> M
+  G4 --> M

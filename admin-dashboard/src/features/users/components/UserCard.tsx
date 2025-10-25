@@ -65,7 +65,10 @@ const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.ENGINEER]: 'مهندس',
 };
 
-const ROLE_COLORS: Record<UserRole, 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'> = {
+const ROLE_COLORS: Record<
+  UserRole,
+  'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'
+> = {
   [UserRole.USER]: 'default',
   [UserRole.ADMIN]: 'warning',
   [UserRole.SUPER_ADMIN]: 'error',
@@ -128,9 +131,7 @@ export const UserCard: React.FC<UserCardProps> = ({
               </Typography>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {STATUS_ICONS[user.status]}
-          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>{STATUS_ICONS[user.status]}</Box>
         </Box>
 
         {/* Status and Role */}
@@ -164,20 +165,21 @@ export const UserCard: React.FC<UserCardProps> = ({
         {/* Additional Info */}
         <Grid container spacing={1} sx={{ mb: 2 }}>
           {user.jobTitle && (
-            <Grid item xs={12}>
+            <Grid component="div" size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary">
                 <strong>الوظيفة:</strong> {user.jobTitle}
               </Typography>
             </Grid>
           )}
-          {user.capabilities?.wholesale_discount_percent && user.capabilities.wholesale_discount_percent > 0 && (
-            <Grid item xs={12}>
-              <Typography variant="body2" color="text.secondary">
-                <strong>خصم الجملة:</strong> {user.capabilities.wholesale_discount_percent}%
-              </Typography>
-            </Grid>
-          )}
-          <Grid item xs={12}>
+          {user.capabilities?.wholesale_discount_percent &&
+            user.capabilities.wholesale_discount_percent > 0 && (
+              <Grid component="div" size={{ xs: 12 }}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>خصم الجملة:</strong> {user.capabilities.wholesale_discount_percent}%
+                </Typography>
+              </Grid>
+            )}
+          <Grid component="div" size={{ xs: 12 }}>
             <Typography variant="body2" color="text.secondary">
               <strong>تاريخ الإنشاء:</strong> {formatDate(user.createdAt)}
             </Typography>
@@ -193,11 +195,7 @@ export const UserCard: React.FC<UserCardProps> = ({
               {isDeleted ? (
                 onRestore && (
                   <Tooltip title="استعادة">
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => onRestore(user)}
-                    >
+                    <IconButton size="small" color="primary" onClick={() => onRestore(user)}>
                       <RestoreIcon />
                     </IconButton>
                   </Tooltip>
@@ -205,27 +203,19 @@ export const UserCard: React.FC<UserCardProps> = ({
               ) : (
                 <>
                   <Tooltip title="تعديل">
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => onEdit(user)}
-                    >
+                    <IconButton size="small" color="primary" onClick={() => onEdit(user)}>
                       <EditIcon />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="حذف">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => onDelete(user)}
-                    >
+                    <IconButton size="small" color="error" onClick={() => onDelete(user)}>
                       <DeleteIcon />
                     </IconButton>
                   </Tooltip>
                 </>
               )}
             </Box>
-            
+
             {onStatusToggle && !isDeleted && (
               <Chip
                 label={user.status === UserStatus.ACTIVE ? 'نشط' : 'موقوف'}

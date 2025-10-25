@@ -21,7 +21,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Grid
+  Grid,
 } from '@mui/material';
 import { Add, Edit, Delete, Visibility, ToggleOn, ToggleOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -34,10 +34,13 @@ const PriceRulesListPage: React.FC = () => {
   const [selectedRule, setSelectedRule] = useState<any>(null);
   const [filters, setFilters] = useState({
     search: '',
-    active: ''
+    active: '',
   });
 
-  const { data: priceRules = [] } = usePriceRules(filters);
+  const { data: priceRules = [] } = usePriceRules({
+    search: filters.search,
+    active: filters.active === 'true',
+  });
   const deletePriceRule = useDeletePriceRule();
   const togglePriceRule = useTogglePriceRule();
 
@@ -53,8 +56,11 @@ const PriceRulesListPage: React.FC = () => {
     await togglePriceRule.mutateAsync(rule._id);
   };
 
-  const filteredRules = priceRules.filter(rule => {
-    if (filters.search && !rule.metadata?.title?.toLowerCase().includes(filters.search.toLowerCase())) {
+  const filteredRules = priceRules.filter((rule) => {
+    if (
+      filters.search &&
+      !rule.metadata?.title?.toLowerCase().includes(filters.search.toLowerCase())
+    ) {
       return false;
     }
     if (filters.active && rule.active.toString() !== filters.active) {
@@ -79,7 +85,7 @@ const PriceRulesListPage: React.FC = () => {
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <TextField
               fullWidth
               label="البحث"
@@ -88,7 +94,7 @@ const PriceRulesListPage: React.FC = () => {
               size="small"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <FormControl fullWidth size="small">
               <InputLabel>الحالة</InputLabel>
               <Select
@@ -142,17 +148,11 @@ const PriceRulesListPage: React.FC = () => {
                     size="small"
                   />
                 </TableCell>
-                <TableCell>
-                  {format(new Date(rule.startAt), 'dd/MM/yyyy')}
-                </TableCell>
-                <TableCell>
-                  {format(new Date(rule.endAt), 'dd/MM/yyyy')}
-                </TableCell>
+                <TableCell>{format(new Date(rule.startAt), 'dd/MM/yyyy')}</TableCell>
+                <TableCell>{format(new Date(rule.endAt), 'dd/MM/yyyy')}</TableCell>
                 <TableCell>
                   <Box>
-                    <Typography variant="body2">
-                      المشاهدات: {rule.stats?.views || 0}
-                    </Typography>
+                    <Typography variant="body2">المشاهدات: {rule.stats?.views || 0}</Typography>
                     <Typography variant="body2">
                       التطبيقات: {rule.stats?.appliedCount || 0}
                     </Typography>
@@ -207,9 +207,9 @@ const PriceRulesListPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button>
-          <Button 
-            onClick={handleDelete} 
-            color="error" 
+          <Button
+            onClick={handleDelete}
+            color="error"
             variant="contained"
             disabled={deletePriceRule.isPending}
           >

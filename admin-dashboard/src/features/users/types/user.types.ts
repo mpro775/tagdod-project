@@ -145,5 +145,6 @@ export interface UserStats {
   deleted: number;
   admins: number;
   engineers: number;
-  wholesale: number;
+  merchants: number;
+  users: number;
 }

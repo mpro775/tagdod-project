@@ -15,22 +15,11 @@ import {
   Select,
   MenuItem,
   Chip,
-  IconButton,
-  Tooltip,
   Alert,
   CircularProgress,
   Divider,
 } from '@mui/material';
-import {
-  Inventory,
-  Edit,
-  Add,
-  Remove,
-  Save,
-  Cancel,
-  Warning,
-  CheckCircle,
-} from '@mui/icons-material';
+import { Inventory, Edit, Save, Cancel, Warning, CheckCircle } from '@mui/icons-material';
 import { useUpdateStock, useCheckAvailability } from '../hooks/useProducts';
 import type { Variant, StockUpdateRequest } from '../types/product.types';
 
@@ -39,10 +28,7 @@ interface StockManagerProps {
   onStockUpdate?: (variant: Variant) => void;
 }
 
-export const StockManager: React.FC<StockManagerProps> = ({
-  variant,
-  onStockUpdate,
-}) => {
+export const StockManager: React.FC<StockManagerProps> = ({ variant, onStockUpdate }) => {
   const [open, setOpen] = useState(false);
   const [quantity, setQuantity] = useState('');
   const [operation, setOperation] = useState<'add' | 'subtract' | 'set'>('set');
@@ -171,12 +157,7 @@ export const StockManager: React.FC<StockManagerProps> = ({
           </Box>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<Edit />}
-          onClick={() => setOpen(true)}
-          fullWidth
-        >
+        <Button variant="contained" startIcon={<Edit />} onClick={() => setOpen(true)} fullWidth>
           تحديث المخزون
         </Button>
       </CardContent>
@@ -231,9 +212,7 @@ export const StockManager: React.FC<StockManagerProps> = ({
 
             {quantity && !isNaN(Number(quantity)) && (
               <Alert severity="info">
-                {operation === 'set' && (
-                  <>المخزون الجديد سيكون: {Number(quantity)} وحدة</>
-                )}
+                {operation === 'set' && <>المخزون الجديد سيكون: {Number(quantity)} وحدة</>}
                 {operation === 'add' && (
                   <>المخزون الجديد سيكون: {variant.stock + Number(quantity)} وحدة</>
                 )}

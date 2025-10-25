@@ -3,7 +3,7 @@ import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { ServiceRequest } from './schemas/service-request.schema';
 import { EngineerOffer } from './schemas/engineer-offer.schema';
-import { Address } from '../addresses/schemas/address.schema';
+import { AddressesService } from '../addresses/addresses.service';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
 import { CreateServiceRequestDto } from './dto/requests.dto';
@@ -15,9 +15,9 @@ export class ServicesService {
   constructor(
     @InjectModel(ServiceRequest.name) private requests: Model<ServiceRequest>,
     @InjectModel(EngineerOffer.name) private offers: Model<EngineerOffer>,
-    @InjectModel(Address.name) private addresses: Model<Address>,
     @InjectConnection() private conn: Connection,
     private distanceService: DistanceService,
+    private addressesService: AddressesService,
     @Optional() private notificationService?: NotificationService,
   ) {}
 
@@ -44,8 +44,14 @@ export class ServicesService {
 
   // ---- Customer flows
   async createRequest(userId: string, dto: CreateServiceRequestDto) {
-    const addr = await this.addresses.findOne({ _id: dto.addressId, userId }).lean();
-    if (!addr) throw new Error('ADDRESS_NOT_FOUND');
+    // التحقق من ملكية العنوان
+    const isValid = await this.addressesService.validateAddressOwnership(dto.addressId, userId);
+    if (!isValid) {
+      throw new Error('ADDRESS_NOT_FOUND');
+    }
+
+    // جلب تفاصيل العنوان
+    const addr = await this.addressesService.getAddressById(dto.addressId);
 
     const location = addr.coords
       ? { type: 'Point', coordinates: [addr.coords.lng, addr.coords.lat] as [number, number] }
@@ -71,6 +77,10 @@ export class ServicesService {
       `تم إنشاء طلب خدمة جديد: ${String(doc._id)}`,
       { requestId: String(doc._id) }
     );
+
+    // تحديث استخدام العنوان
+    await this.addressesService.markAsUsed(dto.addressId, userId);
+
     return doc;
   }
 

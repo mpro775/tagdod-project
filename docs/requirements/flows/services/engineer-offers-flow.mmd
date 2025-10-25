@@ -1,421 +1,65 @@
 %% Engineer Offers Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Engineer Offers System] --> B{Action Type?}
-  B -->|Submit Offer| C[Submit New Offer]
-  B -->|View Offers| D[View My Offers]
-  B -->|Update Offer| E[Update Existing Offer]
-  B -->|Cancel Offer| F[Cancel Offer]
-  B -->|Track Performance| G[Track Offer Performance]
-  
-  %% Submit New Offer
-  C --> C1[Find Service Request]
-  C1 --> C2[Check Request Eligibility]
-  C2 --> C3[Calculate Offer Details]
-  C3 --> C4[Submit Offer]
-  C4 --> C5[Notify Customer]
-  C5 --> C6[Track Offer Status]
-  
-  %% Find Service Request
-  C1 --> C1A[Search nearby requests]
-  C1A --> C1B[Filter by service type]
-  C1B --> C1C[Filter by distance]
-  C1C --> C1D[Check request status]
-  C1D --> C1E[Select suitable request]
-  
-  %% Nearby Search
-  C1A --> C1A1[Get engineer location]
-  C1A1 --> C1A2[Set search radius]
-  C1A2 --> C1A3[Query database]
-  C1A3 --> C1A4[Calculate distances]
-  C1A4 --> C1A5[Sort by distance]
-  C1A5 --> C1A6[Return results]
-  
-  %% Service Type Filter
-  C1B --> C1B1[Match engineer skills]
-  C1B1 --> C1B2[Check service category]
-  C1B2 --> C1B3[Verify expertise level]
-  C1B3 --> C1B4[Filter matching requests]
-  
-  %% Distance Filter
-  C1C --> C1C1[Set maximum distance]
-  C1C1 --> C1C2[Calculate travel time]
-  C1C2 --> C1C3[Consider travel cost]
-  C1C3 --> C1C4[Filter by distance]
-  
-  %% Request Status Check
-  C1D --> C1D1[Check if request is OPEN]
-  C1D1 --> C1D2[Check if collecting offers]
-  C1D2 --> C1D3[Verify request validity]
-  C1D3 --> C1D4[Ensure request is active]
-  
-  %% Check Request Eligibility
-  C2 --> C2A[Verify engineer availability]
-  C2A --> C2B[Check request requirements]
-  C2B --> C2C[Validate engineer skills]
-  C2C --> C2D[Check previous offers]
-  C2D --> C2E[Confirm eligibility]
-  
-  %% Engineer Availability
-  C2A --> C2A1[Check current workload]
-  C2A1 --> C2A2[Check schedule conflicts]
-  C2A2 --> C2A3[Verify availability window]
-  C2A3 --> C2A4[Confirm availability]
-  
-  %% Request Requirements
-  C2B --> C2B1[Check service complexity]
-  C2B1 --> C2B2[Verify required tools]
-  C2B2 --> C2B3[Check material requirements]
-  C2B3 --> C2B4[Assess time requirements]
-  
-  %% Engineer Skills Validation
-  C2C --> C2C1[Check skill certifications]
-  C2C1 --> C2C2[Verify experience level]
-  C2C2 --> C2C3[Check specialization match]
-  C2C3 --> C2C4[Validate competency]
-  
-  %% Previous Offers Check
-  C2D --> C2D1[Check existing offers]
-  C2D1 --> C2D2[Verify offer uniqueness]
-  C2D2 --> C2D3[Check offer limits]
-  C2D3 --> C2D4[Ensure no conflicts]
-  
-  %% Calculate Offer Details
-  C3 --> C3A[Calculate Base Price]
-  C3A --> C3B[Add Travel Costs]
-  C3B --> C3C[Add Material Costs]
-  C3C --> C3D[Calculate Labor Costs]
-  C3D --> C3E[Add Profit Margin]
-  C3E --> C3F[Calculate Total Price]
-  C3F --> C3G[Add Offer Note]
-  C3G --> C3H[Calculate Distance]
-  
-  %% Base Price Calculation
-  C3A --> C3A1[Assess service complexity]
-  C3A1 --> C3A2[Estimate time required]
-  C3A2 --> C3A3[Check market rates]
-  C3A3 --> C3A4[Set base hourly rate]
-  C3A4 --> C3A5[Calculate base price]
-  
-  %% Travel Costs
-  C3B --> C3B1[Calculate distance]
-  C3B1 --> C3B2[Estimate travel time]
-  C3B2 --> C3B3[Calculate fuel costs]
-  C3B3 --> C3B4[Add travel allowance]
-  C3B4 --> C3B5[Calculate travel total]
-  
-  %% Material Costs
-  C3C --> C3C1[Identify required materials]
-  C3C1 --> C3C2[Check material prices]
-  C3C2 --> C3C3[Add material markup]
-  C3C3 --> C3C4[Calculate material total]
-  
-  %% Labor Costs
-  C3D --> C3D1[Estimate work hours]
-  C3D1 --> C3D2[Set hourly rate]
-  C3D2 --> C3D3[Calculate labor total]
-  C3D3 --> C3D4[Add overtime if needed]
-  
-  %% Profit Margin
-  C3E --> C3E1[Set profit percentage]
-  C3E1 --> C3E2[Calculate profit amount]
-  C3E2 --> C3E3[Add to total cost]
-  C3E3 --> C3E4[Finalize profit margin]
-  
-  %% Total Price Calculation
-  C3F --> C3F1[Sum all cost components]
-  C3F1 --> C3F2[Apply any discounts]
-  C3F2 --> C3F3[Round to nearest currency]
-  C3F3 --> C3F4[Validate final price]
-  
-  %% Offer Note
-  C3G --> C3G1[Add service description]
-  C3G1 --> C3G2[Include availability]
-  C3G2 --> C3G3[Add special conditions]
-  C3G3 --> C3G4[Include contact info]
-  
-  %% Distance Calculation
-  C3H --> C3H1[Get request coordinates]
-  C3H1 --> C3H2[Get engineer coordinates]
-  C3H2 --> C3H3[Apply Haversine formula]
-  C3H3 --> C3H4[Calculate distance in km]
-  C3H4 --> C3H5[Store distance value]
-  
-  %% Submit Offer
-  C4 --> C4A[Create offer record]
-  C4A --> C4B[Set offer status]
-  C4B --> C4C[Store offer data]
-  C4C --> C4D[Update request status]
-  C4D --> C4E[Generate offer ID]
-  C4E --> C4F[Offer submitted]
-  
-  %% Offer Record Creation
-  C4A --> C4A1[Set request ID]
-  C4A1 --> C4A2[Set engineer ID]
-  C4A2 --> C4A3[Set offer amount]
-  C4A3 --> C4A4[Set offer note]
-  C4A4 --> C4A5[Set distance]
-  C4A5 --> C4A6[Set status to OFFERED]
-  
-  %% Notify Customer
-  C5 --> C5A[Get customer contact]
-  C5A --> C5B[Prepare notification]
-  C5B --> C5C[Send notification]
-  C5C --> C5D[Log notification]
-  C5D --> C5E[Customer notified]
-  
-  %% Track Offer Status
-  C6 --> C6A[Monitor offer status]
-  C6A --> C6B[Update performance metrics]
-  C6B --> C6C[Track response time]
-  C6C --> C6D[Update statistics]
-  C6D --> C6E[Offer tracked]
-  
-  %% View My Offers
-  D --> D1[Load Engineer Offers]
-  D1 --> D2[Filter Offers]
-  D2 --> D3[Sort Offers]
-  D3 --> D4[Display Offer List]
-  D4 --> D5[Show Offer Details]
-  
-  %% Load Engineer Offers
-  D1 --> D1A[Query offers by engineer]
-  D1A --> D1B[Load offer data]
-  D1B --> D1C[Load request details]
-  D1C --> D1D[Load customer info]
-  D1D --> D1E[Prepare offer list]
-  
-  %% Filter Offers
-  D2 --> D2A[Filter by status]
-  D2A --> D2B[Filter by date range]
-  D2B --> D2C[Filter by service type]
-  D2C --> D2D[Filter by amount range]
-  D2D --> D2E[Apply filters]
-  
-  %% Offer Status Filter
-  D2A --> D2A1[OFFERED - Waiting for response]
-  D2A1 --> D2A2[ACCEPTED - Offer accepted]
-  D2A2 --> D2A3[REJECTED - Offer rejected]
-  D2A3 --> D2A4[CANCELLED - Offer cancelled]
-  
-  %% Sort Offers
-  D3 --> D3A[Sort by date]
-  D3A --> D3B[Sort by amount]
-  D3B --> D3C[Sort by distance]
-  D3C --> D3D[Sort by status]
-  D3D --> D3E[Apply sorting]
-  
-  %% Display Offer List
-  D4 --> D4A[Show offer summary]
-  D4A --> D4B[Show offer status]
-  D4B --> D4C[Show quick actions]
-  D4C --> D4D[Show offer metrics]
-  D4D --> D4E[Display offer list]
-  
-  %% Show Offer Details
-  D5 --> D5A[Load full offer data]
-  D5A --> D5B[Show request details]
-  D5B --> D5C[Show customer info]
-  D5C --> D5D[Show offer breakdown]
-  D5D --> D5E[Show offer history]
-  D5E --> D5F[Display offer details]
-  
-  %% Update Existing Offer
-  E --> E1[Select Offer to Update]
-  E1 --> E2[Check Update Eligibility]
-  E2 --> E3[Modify Offer Details]
-  E3 --> E4[Save Updated Offer]
-  E4 --> E5[Notify Stakeholders]
-  E5 --> E6[Track Update]
-  
-  %% Select Offer to Update
-  E1 --> E1A[Browse engineer offers]
-  E1A --> E1B[Filter updatable offers]
-  E1B --> E1C[Select target offer]
-  E1C --> E1D[Load offer data]
-  E1D --> E1E[Prepare for update]
-  
-  %% Check Update Eligibility
-  E2 --> E2A[Check offer status]
-  E2A --> E2B[Check time limits]
-  E2B --> E2C[Check request status]
-  E2C --> E2D[Verify update permissions]
-  E2D --> E2E[Allow update]
-  
-  %% Update Eligibility Checks
-  E2A --> E2A1[Ensure status is OFFERED]
-  E2A1 --> E2A2[Check if not accepted]
-  E2A2 --> E2A3[Verify not rejected]
-  E2A3 --> E2A4[Confirm updatable]
-  
-  %% Time Limits Check
-  E2B --> E2B1[Check offer age]
-  E2B1 --> E2B2[Check request deadline]
-  E2B2 --> E2B3[Verify time window]
-  E2B3 --> E2B4[Allow time-based update]
-  
-  %% Request Status Check
-  E2C --> E2C1[Check if request is active]
-  E2C1 --> E2C2[Verify not assigned]
-  E2C2 --> E2C3[Check not completed]
-  E2C3 --> E2C4[Allow status-based update]
-  
-  %% Modify Offer Details
-  E3 --> E3A[Update Offer Amount]
-  E3A --> E3B[Update Offer Note]
-  E3B --> E3C[Update Availability]
-  E3C --> E3D[Update Special Conditions]
-  E3D --> E3E[Recalculate Totals]
-  E3E --> E3F[Validate Changes]
-  
-  %% Update Offer Amount
-  E3A --> E3A1[Modify base price]
-  E3A1 --> E3A2[Adjust travel costs]
-  E3A2 --> E3A3[Update material costs]
-  E3A3 --> E3A4[Modify labor costs]
-  E3A4 --> E3A5[Recalculate total]
-  
-  %% Update Offer Note
-  E3B --> E3B1[Edit service description]
-  E3B1 --> E3B2[Update availability info]
-  E3B2 --> E3B3[Modify special conditions]
-  E3B3 --> E3B4[Update contact details]
-  
-  %% Save Updated Offer
-  E4 --> E4A[Validate updated data]
-  E4A --> E4B[Update offer record]
-  E4B --> E4C[Update timestamps]
-  E4C --> E4D[Log update history]
-  E4D --> E4E[Save changes]
-  
-  %% Notify Stakeholders
-  E5 --> E5A[Notify customer of changes]
-  E5A --> E5B[Update request status]
-  E5B --> E5C[Log notification]
-  E5C --> E5D[Track notification delivery]
-  E5D --> E5E[Stakeholders notified]
-  
-  %% Track Update
-  E6 --> E6A[Log update event]
-  E6A --> E6B[Update performance metrics]
-  E6B --> E6C[Track update frequency]
-  E6C --> E6D[Update statistics]
-  E6D --> E6E[Update tracked]
-  
-  %% Cancel Offer
-  F --> F1[Select Offer to Cancel]
-  F1 --> F2[Check Cancellation Eligibility]
-  F2 --> F3[Confirm Cancellation]
-  F3 --> F4[Update Offer Status]
-  F4 --> F5[Notify Stakeholders]
-  F5 --> F6[Track Cancellation]
-  
-  %% Select Offer to Cancel
-  F1 --> F1A[Browse engineer offers]
-  F1A --> F1B[Filter cancellable offers]
-  F1B --> F1C[Select target offer]
-  F1C --> F1D[Load offer data]
-  F1D --> F1E[Prepare for cancellation]
-  
-  %% Check Cancellation Eligibility
-  F2 --> F2A[Check offer status]
-  F2A --> F2B[Check request status]
-  F2B --> F2C[Check time limits]
-  F2C --> F2D[Verify cancellation permissions]
-  F2D --> F2E[Allow cancellation]
-  
-  %% Cancellation Eligibility
-  F2A --> F2A1[Ensure status is OFFERED]
-  F2A1 --> F2A2[Check if not accepted]
-  F2A2 --> F2A3[Verify not rejected]
-  F2A3 --> F2A4[Confirm cancellable]
-  
-  %% Request Status Check
-  F2B --> F2B1[Check if request is active]
-  F2B1 --> F2B2[Verify not assigned]
-  F2B2 --> F2B3[Check not completed]
-  F2B3 --> F2B4[Allow cancellation]
-  
-  %% Time Limits Check
-  F2C --> F2C1[Check offer age]
-  F2C1 --> F2C2[Check request deadline]
-  F2C2 --> F2C3[Verify cancellation window]
-  F2C3 --> F2C4[Allow time-based cancellation]
-  
-  %% Confirm Cancellation
-  F3 --> F3A[Show cancellation warning]
-  F3A --> F3B[Request confirmation]
-  F3B --> F3C[Add cancellation reason]
-  F3C --> F3D[Confirm cancellation]
-  F3D --> F3E[Cancellation confirmed]
-  
-  %% Update Offer Status
-  F4 --> F4A[Set status to CANCELLED]
-  F4A --> F4B[Update cancellation timestamp]
-  F4B --> F4C[Add cancellation reason]
-  F4C --> F4D[Log cancellation event]
-  F4D --> F4E[Save changes]
-  
-  %% Notify Stakeholders
-  F5 --> F5A[Notify customer of cancellation]
-  F5A --> F5B[Update request status if needed]
-  F5B --> F5C[Log notification]
-  F5C --> F5D[Track notification delivery]
-  F5D --> F5E[Stakeholders notified]
-  
-  %% Track Cancellation
-  F6 --> F6A[Log cancellation event]
-  F6A --> F6B[Update performance metrics]
-  F6B --> F6C[Track cancellation reasons]
-  F6C --> F6D[Update statistics]
-  F6D --> F6E[Cancellation tracked]
-  
-  %% Track Offer Performance
-  G --> G1[Monitor Offer Metrics]
-  G1 --> G2[Analyze Performance]
-  G2 --> G3[Generate Reports]
-  G3 --> G4[Optimize Strategy]
-  G4 --> G5[Track Improvements]
-  
-  %% Monitor Offer Metrics
-  G1 --> G1A[Track offer submission rate]
-  G1A --> G1B[Track acceptance rate]
-  G1B --> G1C[Track rejection rate]
-  G1C --> G1D[Track response time]
-  G1D --> G1E[Track distance impact]
-  G1E --> G1F[Track price competitiveness]
-  
-  %% Analyze Performance
-  G2 --> G2A[Calculate success rate]
-  G2A --> G2B[Analyze acceptance patterns]
-  G2B --> G2C[Identify success factors]
-  G2C --> G2D[Find improvement areas]
-  G2D --> G2E[Generate insights]
-  
-  %% Generate Reports
-  G3 --> G3A[Create performance report]
-  G3A --> G3B[Generate trend analysis]
-  G3B --> G3C[Create competitor analysis]
-  G3C --> G3D[Generate recommendations]
-  G3D --> G3E[Export reports]
-  
-  %% Optimize Strategy
-  G4 --> G4A[Adjust pricing strategy]
-  G4A --> G4B[Optimize offer timing]
-  G4B --> G4C[Improve offer quality]
-  G4C --> G4D[Enhance communication]
-  G4D --> G4E[Implement improvements]
-  
-  %% Track Improvements
-  G5 --> G5A[Monitor improvement impact]
-  G5A --> G5B[Track performance changes]
-  G5B --> G5C[Measure success metrics]
-  G5C --> G5D[Update optimization strategy]
-  G5D --> G5E[Continuous improvement]
-  
+  A[البحث عن طلبات قريبة] --> B[GET /services/requests/nearby]
+  B --> B1[استلام إحداثيات المهندس]
+  B1 --> B2[البحث في نطاق معين]
+  B2 --> B3[فلترة حسب الحالة OPEN]
+  B3 --> B4[ترتيب حسب المسافة]
+
+  B4 --> C[عرض النتائج]
+  C --> C1[قائمة الطلبات القريبة]
+  C1 --> C2[معلومات كل طلب]
+  C2 --> C3[المسافة المحسوبة]
+
+  C3 --> D{المهندس مهتم؟}
+  D -->|نعم| E[تقديم عرض]
+  D -->|لا| F[البحث مرة أخرى]
+
+  E --> E1[POST /services/offers]
+  E1 --> E2[requestId: معرف الطلب]
+  E2 --> E3[engineerId: معرف المهندس]
+  E3 --> E4[amount: مبلغ العرض]
+  E4 --> E5[note: ملاحظات العرض]
+  E5 --> E6[distanceKm: المسافة المحسوبة]
+
+  E6 --> G[إنشاء عرض في قاعدة البيانات]
+  G --> G1[status: OFFERED]
+  G1 --> G2[فهرس فريد: requestId + engineerId]
+
+  G2 --> H[تغيير حالة الطلب]
+  H --> H1[إذا كان أول عرض: OPEN → OFFERS_COLLECTING]
+
+  H1 --> I[انتظار رد العميل]
+  I --> I1[العرض مقبول - ACCEPTED]
+  I1 --> I2[العرض مرفوض - REJECTED]
+  I2 --> I3[العرض ملغي - CANCELLED]
+
+  I1 --> J[إذا تم القبول]
+  J --> J1[تحديث العرض: status = ACCEPTED]
+  J1 --> J2[تحديث الطلب: acceptedOffer]
+  J2 --> J3[تحديث الطلب: engineerId]
+  J3 --> J4[تحديث الطلب: status = ASSIGNED]
+
+  I2 --> K[إذا تم الرفض]
+  K --> K1[تحديث العرض: status = REJECTED]
+
+  I3 --> L[إلغاء العرض]
+  L --> L1[تحديث العرض: status = CANCELLED]
+
+  %% Engineer Actions
+  M[إجراءات المهندس] --> M1[GET /services/requests/nearby - البحث القريب]
+  M1 --> M2[POST /services/offers - تقديم عرض]
+  M2 --> M3[GET /services/offers/my - عروضي]
+  M3 --> M4[POST /services/requests/:id/start - بدء العمل]
+  M4 --> M5[POST /services/requests/:id/complete - إكمال العمل]
+
+  %% Admin Actions
+  N[إجراءات الإدارة] --> N1[GET /admin/services/requests/:id/offers - عروض الطلب]
+  N1 --> N2[GET /admin/services/engineers/:id/offers - عروض المهندس]
+  N2 --> N3[GET /admin/services/engineers - قائمة المهندسين]
+
   %% End points
-  C6E --> Z[Engineer Offers Process Complete]
-  D5F --> Z
-  E6E --> Z
-  F6E --> Z
-  G5E --> Z
+  J4 --> O[نهاية - عرض مقبول]
+  K1 --> O
+  L1 --> O

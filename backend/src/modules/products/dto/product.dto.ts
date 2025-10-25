@@ -23,6 +23,7 @@ export class CreateProductDto {
   @IsOptional() @IsEnum(ProductStatus) status?: ProductStatus;
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsBoolean() isNew?: boolean;
+  @IsOptional() @IsBoolean() isBestseller?: boolean;
   @IsOptional() @IsNumber() @Min(0) order?: number;
   
   // حقول المخزون

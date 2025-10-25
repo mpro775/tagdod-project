@@ -1,4 +1,5 @@
 import { apiClient } from '../../../core/api/client';
+import type { ApiResponse } from '@/shared/types/common.types';
 
 export interface AddToCartRequest {
   variantId: string;
@@ -37,7 +38,6 @@ export interface Cart {
 }
 
 export interface AddToCartResponse {
-  success: boolean;
   message: string;
   cart: Cart;
 }
@@ -45,8 +45,8 @@ export interface AddToCartResponse {
 export const publicCartApi = {
   // Add item to cart
   addToCart: async (data: AddToCartRequest): Promise<AddToCartResponse> => {
-    const response = await apiClient.post('/cart/items', data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<AddToCartResponse>>('/cart/items', data);
+    return response.data.data;
   },
 
   // Get current user's cart
@@ -57,20 +57,20 @@ export const publicCartApi = {
 
   // Update cart item quantity
   updateCartItem: async (data: UpdateCartItemRequest): Promise<AddToCartResponse> => {
-    const response = await apiClient.patch('/cart/items', data);
-    return response.data;
+    const response = await apiClient.patch<ApiResponse<AddToCartResponse>>('/cart/items', data);
+    return response.data.data;
   },
 
   // Remove item from cart
   removeFromCart: async (itemId: string): Promise<AddToCartResponse> => {
-    const response = await apiClient.delete(`/cart/items/${itemId}`);
-    return response.data;
+    const response = await apiClient.delete<ApiResponse<AddToCartResponse>>(`/cart/items/${itemId}`);
+    return response.data.data;
   },
 
   // Clear entire cart
-  clearCart: async (): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.delete('/cart/clear');
-    return response.data;
+  clearCart: async (): Promise<{ message: string }> => {
+    const response = await apiClient.delete<ApiResponse<{ message: string }>>('/cart/clear');
+    return response.data.data;
   },
 
   // Get cart item count

@@ -1,19 +1,15 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Badge } from '@/shared/components/ui/badge';
+import { Card, CardContent, CardHeader, Typography, Badge } from '@mui/material';
 import {
   Shield,
-  AlertTriangle,
-  Users,
+  Warning as AlertTriangle,
   Key,
-  Crown,
-  CheckCircle,
-  XCircle,
-  Activity,
+  AdminPanelSettings as CrownIcon,
+  CheckCircle as CheckCircleIcon,
   Lock,
-  Database,
+  Dataset as DatabaseIcon,
   Settings,
-} from 'lucide-react';
+} from '@mui/icons-material';
 import { AuditStats } from '../types/audit.types';
 
 interface AuditStatsCardsProps {
@@ -21,10 +17,7 @@ interface AuditStatsCardsProps {
   isLoading: boolean;
 }
 
-export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({
-  stats,
-  isLoading,
-}) => {
+export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({ stats, isLoading }) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -58,7 +51,7 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({
     {
       title: 'إجمالي السجلات',
       value: stats.totalLogs,
-      icon: Database,
+      icon: DatabaseIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       description: 'جميع سجلات التدقيق',
@@ -82,7 +75,7 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({
     {
       title: 'تغييرات الأدوار',
       value: stats.roleChanges,
-      icon: Crown,
+      icon: CrownIcon,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       description: 'تعديلات على الأدوار',
@@ -90,7 +83,7 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({
     {
       title: 'قرارات القدرات',
       value: stats.capabilityDecisions,
-      icon: CheckCircle,
+      icon: CheckCircleIcon,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       description: 'موافقات ورفض القدرات',
@@ -129,9 +122,9 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({
         return (
           <Card key={index} className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <Typography variant="body2" className="text-sm font-medium text-muted-foreground">
                 {stat.title}
-              </CardTitle>
+              </Typography>
               <div className={`p-2 rounded-full ${stat.bgColor}`}>
                 <Icon className={`h-4 w-4 ${stat.color}`} />
               </div>
@@ -141,26 +134,15 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({
                 {stat.value.toLocaleString()}
                 {stat.suffix}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stat.description}
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
               {stat.title === 'نسبة الحساسية' && (
                 <div className="mt-2">
                   <Badge
-                    variant={
-                      stat.value > 20
-                        ? 'destructive'
-                        : stat.value > 10
-                        ? 'secondary'
-                        : 'default'
-                    }
+                    variant="standard"
+                    color={stat.value > 20 ? 'error' : stat.value > 10 ? 'warning' : 'info'}
                     className="text-xs"
                   >
-                    {stat.value > 20
-                      ? 'عالي'
-                      : stat.value > 10
-                      ? 'متوسط'
-                      : 'منخفض'}
+                    {stat.value > 20 ? 'عالي' : stat.value > 10 ? 'متوسط' : 'منخفض'}
                   </Badge>
                 </div>
               )}

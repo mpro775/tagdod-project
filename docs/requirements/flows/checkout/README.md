@@ -27,7 +27,7 @@
 - **التوقيع:** التحقق من صحة Webhooks بالتوقيع
 
 ### 4. إدارة الطلبات (Order Management)
-- **حالات الطلب:** 11 حالة مختلفة (PENDING, CONFIRMED, PROCESSING, etc.)
+- **حالات الطلب:** 15 حالة مختلفة مع State Machine متقدم (DRAFT, PENDING_PAYMENT, CONFIRMED, etc.)
 - **تتبع التغييرات:** سجل كامل لتغييرات الحالة
 - **الإلغاء:** إلغاء الطلبات مع إرجاع المخزون
 - **الاسترداد:** نظام استرداد متقدم مع أسباب
@@ -68,22 +68,31 @@
 ### إدارة الطلبات (للمستخدمين)
 - **GET /orders** - قائمة طلبات المستخدم
 - **GET /orders/:id** - تفاصيل طلب محدد
+- **GET /orders/:id/tracking** - تتبع الطلب
 - **POST /orders/:id/cancel** - إلغاء الطلب
 - **POST /orders/:id/rate** - تقييم الطلب
+- **POST /orders/:id/notes** - إضافة ملاحظات للطلب
 
 ### إدارة الطلبات (للمديرين)
 - **GET /admin/orders** - قائمة جميع الطلبات
-- **POST /admin/orders/:id/status** - تحديث حالة الطلب
+- **GET /admin/orders/:id** - تفاصيل طلب محدد
+- **PATCH /admin/orders/:id/status** - تحديث حالة الطلب
 - **POST /admin/orders/:id/ship** - شحن الطلب
 - **POST /admin/orders/:id/refund** - استرداد الطلب
+- **POST /admin/orders/:id/notes** - إضافة ملاحظات للطلب
+- **POST /admin/orders/bulk-update** - تحديث طلبات متعددة
+- **GET /admin/orders/analytics** - إحصائيات الطلبات
 
 ## هيكل البيانات
 
 ### حقول الطلب الأساسية
 - `orderNumber`: رقم الطلب الفريد (string)
 - `userId`: معرف المستخدم (ObjectId)
-- `status`: حالة الطلب (enum - 11 حالة)
-- `paymentStatus`: حالة الدفع (enum - 4 حالات)
+- `accountType`: نوع الحساب (retail/wholesale/engineer)
+- `source`: مصدر الطلب (web/mobile/app)
+- `status`: حالة الطلب (enum - 15 حالة مع State Machine)
+- `paymentStatus`: حالة الدفع (enum - 7 حالات)
+- `statusHistory`: سجل تغييرات الحالة (array)
 - `currency`: العملة (string)
 - `total`: المجموع النهائي (number)
 
@@ -117,8 +126,15 @@
 - `itemsDiscount`: خصم العناصر (number)
 - `appliedCouponCode`: الكوبون المطبق (string)
 - `couponDiscount`: خصم الكوبون (number)
+- `couponDetails`: تفاصيل الكوبون (object)
+- `autoAppliedCoupons`: كوبونات مطبقة تلقائياً (array)
+- `autoDiscountsTotal`: إجمالي الخصومات التلقائية (number)
 - `shippingCost`: تكلفة الشحن (number)
+- `shippingDiscount`: خصم الشحن (number)
+- `shippingMethod`: طريقة الشحن (enum)
+- `shippingCompany`: شركة الشحن (string)
 - `tax`: الضريبة (number)
+- `taxRate`: نسبة الضريبة (number)
 - `totalDiscount`: إجمالي الخصم (number)
 
 ### حقول الدفع
@@ -135,10 +151,12 @@
 - `deliveredAt`: تاريخ التسليم الفعلي (Date)
 
 ### حقول الإلغاء والاسترداد
-- `isRefunded`: هل تم الاسترداد (boolean)
-- `refundAmount`: مبلغ الاسترداد (number)
-- `refundReason`: سبب الاسترداد (string)
-- `refundedAt`: تاريخ الاسترداد (Date)
+- `returnInfo`: معلومات الإرجاع (object)
+  - `isReturned`: هل تم الإرجاع (boolean)
+  - `returnAmount`: مبلغ الإرجاع (number)
+  - `returnReason`: سبب الإرجاع (string)
+  - `returnedAt`: تاريخ الإرجاع (Date)
+  - `returnItems`: عناصر الإرجاع (array)
 - `cancelledAt`: تاريخ الإلغاء (Date)
 - `cancellationReason`: سبب الإلغاء (string)
 
@@ -146,38 +164,58 @@
 - `statusHistory`: سجل تغييرات الحالة (array)
 - `metadata`: بيانات إضافية (object)
 - `customerNotes`: ملاحظات العميل (string)
-- `adminNotes`: ملاحظات المدير (string)
+- `adminNotes`: ملاحظات الأدمن (string)
+- `internalNotes`: ملاحظات داخلية (string)
+
+### حقول الفواتير
+- `invoiceNumber`: رقم الفاتورة (string)
+- `invoiceUrl`: رابط الفاتورة (string)
+- `receiptUrl`: رابط الإيصال (string)
+
+### حقول التقييم
+- `ratingInfo`: معلومات التقييم (object)
+  - `rating`: التقييم (1-5)
+  - `review`: المراجعة (string)
+  - `ratedAt`: تاريخ التقييم (Date)
 
 ## حالات الطلب المتاحة
 
 ### حالات الطلب (OrderStatus)
-1. **PENDING** - في الانتظار
-2. **CONFIRMED** - مؤكد
-3. **PROCESSING** - قيد المعالجة
-4. **READY_TO_SHIP** - جاهز للشحن
-5. **SHIPPED** - تم الشحن
-6. **OUT_FOR_DELIVERY** - في الطريق للتسليم
-7. **DELIVERED** - تم التسليم
-8. **COMPLETED** - مكتمل
-9. **CANCELLED** - ملغي
-10. **REFUNDED** - مسترد
-11. **RETURNED** - مرتجع
-12. **PAYMENT_FAILED** - فشل الدفع
+1. **DRAFT** - مسودة
+2. **PENDING_PAYMENT** - انتظار الدفع
+3. **CONFIRMED** - مؤكد
+4. **PAYMENT_FAILED** - فشل الدفع
+5. **PROCESSING** - قيد المعالجة
+6. **READY_TO_SHIP** - جاهز للشحن
+7. **SHIPPED** - تم الشحن
+8. **OUT_FOR_DELIVERY** - في الطريق للتسليم
+9. **DELIVERED** - تم التسليم
+10. **COMPLETED** - مكتمل
+11. **ON_HOLD** - معلق
+12. **CANCELLED** - ملغي
+13. **REFUNDED** - مسترد
+14. **PARTIALLY_REFUNDED** - مسترد جزئياً
+15. **RETURNED** - مرتجع
 
 ### حالات الدفع (PaymentStatus)
 1. **PENDING** - في الانتظار
-2. **PAID** - مدفوع
-3. **FAILED** - فشل
-4. **REFUNDED** - مسترد
+2. **AUTHORIZED** - مصرح
+3. **PAID** - مدفوع
+4. **FAILED** - فشل
+5. **REFUNDED** - مسترد
+6. **PARTIALLY_REFUNDED** - مسترد جزئياً
+7. **CANCELLED** - ملغي
 
 ## نقاط مهمة
-- **معاينة شاملة:** معاينة الطلب قبل التأكيد
-- **معاملات آمنة:** استخدام Database Transactions
-- **تتبع شامل:** سجل كامل لتغييرات الحالة
-- **مخزون ذكي:** حجز المخزون أثناء الدفع
-- **عملات متعددة:** دعم USD, YER, SAR
-- **خصومات متقدمة:** خصومات التاجر والمهندس
-- **Webhooks آمنة:** التحقق من صحة Webhooks
-- **تقييمات:** نظام تقييم ومراجعات
-- **إشعارات:** إشعارات شاملة للمستخدمين
-- **فهرسة محسنة:** indexes محسنة للأداء السريع
+- **State Machine متقدم:** 15 حالة طلب مع تحكم دقيق في التغييرات
+- **نظام الدفع المرن:** 4 طرق دفع مع 7 حالات دفع مختلفة
+- **نظام الشحن المتكامل:** 4 طرق شحن مع تتبع شامل
+- **نظام الكوبونات المتقدم:** كوبونات يدوية وتلقائية مع تفاصيل كاملة
+- **نظام الإرجاع والاسترداد:** إدارة متكاملة للإرجاع مع تتبع العناصر
+- **نظام التقييم:** تقييم ومراجعات للطلبات
+- **تتبع شامل للتغييرات:** Status History مع تتبع الأدوار والأسباب
+- **نظام الفواتير:** إنشاء وإدارة الفواتير والإيصالات
+- **Metadata المتقدم:** تتبع مصدر الطلب والحملات التسويقية
+- **ملاحظات متعددة المستويات:** ملاحظات العميل والأدمن والداخلية
+- **Order Items مع Snapshots:** حفظ حالة المنتجات وقت الطلب
+- **Delivery Address مع Validation:** عناوين تسليم مع تحقق شامل

@@ -1,7 +1,7 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../../modules/users/schemas/user.schema';
 
 // JWT Payload interface
@@ -43,8 +43,14 @@ export class ActivityTrackingMiddleware implements NestMiddleware {
 
   private async updateUserActivity(userId: string): Promise<void> {
     try {
+      // Validate if userId is a valid ObjectId format
+      if (!Types.ObjectId.isValid(userId)) {
+        this.logger.warn(`Invalid userId format: ${userId}`);
+        return;
+      }
+
       await this.userModel.updateOne(
-        { _id: userId },
+        { _id: new Types.ObjectId(userId) },
         { 
           $set: { 
             lastActivityAt: new Date() 

@@ -22,44 +22,58 @@ export const supportApi = {
   /**
    * Create new support ticket
    */
-  createTicket: async (data: CreateSupportTicketDto): Promise<ApiResponse<SupportTicket>> => {
+  createTicket: async (data: CreateSupportTicketDto): Promise<SupportTicket> => {
     const response = await apiClient.post<ApiResponse<SupportTicket>>(
       '/support/tickets',
       data
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * List all tickets (Admin only)
    */
-  getTickets: async (params: ListTicketsParams): Promise<ApiResponse<PaginatedResponse<SupportTicket>>> => {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<SupportTicket>>>(
+  getTickets: async (params: ListTicketsParams): Promise<PaginatedResponse<SupportTicket>> => {
+    const response = await apiClient.get<ApiResponse<{
+      tickets: SupportTicket[];
+      total: number;
+      limit: number;
+      skip: number;
+      hasMore: boolean;
+    }>>(
       '/admin/support/tickets',
       { params }
     );
-    return response.data;
+    return {
+      data: response.data.data.tickets,
+      meta: {
+        page: Math.floor(response.data.data.skip / response.data.data.limit) + 1,
+        limit: response.data.data.limit,
+        total: response.data.data.total,
+        totalPages: Math.ceil(response.data.data.total / response.data.data.limit),
+      },
+    };
   },
 
   /**
    * Get ticket by ID (Admin only)
    */
-  getTicketById: async (id: string): Promise<ApiResponse<SupportTicket>> => {
+  getTicketById: async (id: string): Promise<SupportTicket> => {
     const response = await apiClient.get<ApiResponse<SupportTicket>>(
       `/admin/support/tickets/${id}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * Update ticket (Admin only)
    */
-  updateTicket: async (id: string, data: UpdateSupportTicketDto): Promise<ApiResponse<SupportTicket>> => {
+  updateTicket: async (id: string, data: UpdateSupportTicketDto): Promise<SupportTicket> => {
     const response = await apiClient.patch<ApiResponse<SupportTicket>>(
       `/admin/support/tickets/${id}`,
       data
     );
-    return response.data;
+    return response.data.data;
   },
 
   // ==================== Support Messages ====================
@@ -71,12 +85,26 @@ export const supportApi = {
     ticketId: string, 
     page = 1, 
     limit = 50
-  ): Promise<ApiResponse<PaginatedResponse<SupportMessage>>> => {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<SupportMessage>>>(
+  ): Promise<PaginatedResponse<SupportMessage>> => {
+    const response = await apiClient.get<ApiResponse<{
+      messages: SupportMessage[];
+      total: number;
+      limit: number;
+      skip: number;
+      hasMore: boolean;
+    }>>(
       `/admin/support/tickets/${ticketId}/messages`,
       { params: { page, limit } }
     );
-    return response.data;
+    return {
+      data: response.data.data.messages,
+      meta: {
+        page: Math.floor(response.data.data.skip / response.data.data.limit) + 1,
+        limit: response.data.data.limit,
+        total: response.data.data.total,
+        totalPages: Math.ceil(response.data.data.total / response.data.data.limit),
+      },
+    };
   },
 
   /**
@@ -85,12 +113,12 @@ export const supportApi = {
   addMessageToTicket: async (
     ticketId: string, 
     data: AddSupportMessageDto
-  ): Promise<ApiResponse<SupportMessage>> => {
+  ): Promise<SupportMessage> => {
     const response = await apiClient.post<ApiResponse<SupportMessage>>(
       `/admin/support/tickets/${ticketId}/messages`,
       data
     );
-    return response.data;
+    return response.data.data;
   },
 
   // ==================== Support Statistics ====================
@@ -98,9 +126,9 @@ export const supportApi = {
   /**
    * Get support statistics (Admin only)
    */
-  getSupportStats: async (): Promise<ApiResponse<SupportStats>> => {
+  getSupportStats: async (): Promise<SupportStats> => {
     const response = await apiClient.get<ApiResponse<SupportStats>>('/admin/support/stats');
-    return response.data;
+    return response.data.data;
   },
 
   // ==================== SLA Management ====================
@@ -108,21 +136,21 @@ export const supportApi = {
   /**
    * Get tickets with breached SLA (Admin only)
    */
-  getBreachedSLATickets: async (): Promise<ApiResponse<BreachedSLATicketsResponse>> => {
+  getBreachedSLATickets: async (): Promise<BreachedSLATicketsResponse> => {
     const response = await apiClient.get<ApiResponse<BreachedSLATicketsResponse>>(
       '/admin/support/sla/breached'
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * Check SLA status for a specific ticket (Admin only)
    */
-  checkSLAStatus: async (ticketId: string): Promise<ApiResponse<SLAStatusResponse>> => {
+  checkSLAStatus: async (ticketId: string): Promise<SLAStatusResponse> => {
     const response = await apiClient.post<ApiResponse<SLAStatusResponse>>(
       `/admin/support/sla/${ticketId}/check`
     );
-    return response.data;
+    return response.data.data;
   },
 
   // ==================== Canned Responses ====================
@@ -130,12 +158,12 @@ export const supportApi = {
   /**
    * Create canned response (Admin only)
    */
-  createCannedResponse: async (data: CreateCannedResponseDto): Promise<ApiResponse<CannedResponse>> => {
+  createCannedResponse: async (data: CreateCannedResponseDto): Promise<CannedResponse> => {
     const response = await apiClient.post<ApiResponse<CannedResponse>>(
       '/admin/support/canned-responses',
       data
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -143,22 +171,36 @@ export const supportApi = {
    */
   getCannedResponses: async (
     params: ListCannedResponsesParams
-  ): Promise<ApiResponse<PaginatedResponse<CannedResponse>>> => {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<CannedResponse>>>(
+  ): Promise<PaginatedResponse<CannedResponse>> => {
+    const response = await apiClient.get<ApiResponse<{
+      responses: CannedResponse[];
+      total: number;
+      limit: number;
+      skip: number;
+      hasMore: boolean;
+    }>>(
       '/admin/support/canned-responses',
       { params }
     );
-    return response.data;
+    return {
+      data: response.data.data.responses,
+      meta: {
+        page: Math.floor(response.data.data.skip / response.data.data.limit) + 1,
+        limit: response.data.data.limit,
+        total: response.data.data.total,
+        totalPages: Math.ceil(response.data.data.total / response.data.data.limit),
+      },
+    };
   },
 
   /**
    * Get canned response by ID (Admin only)
    */
-  getCannedResponseById: async (id: string): Promise<ApiResponse<CannedResponse>> => {
+  getCannedResponseById: async (id: string): Promise<CannedResponse> => {
     const response = await apiClient.get<ApiResponse<CannedResponse>>(
       `/admin/support/canned-responses/${id}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -167,32 +209,32 @@ export const supportApi = {
   updateCannedResponse: async (
     id: string, 
     data: UpdateCannedResponseDto
-  ): Promise<ApiResponse<CannedResponse>> => {
+  ): Promise<CannedResponse> => {
     const response = await apiClient.patch<ApiResponse<CannedResponse>>(
       `/admin/support/canned-responses/${id}`,
       data
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * Use canned response (increment usage count) (Admin only)
    */
-  useCannedResponse: async (id: string): Promise<ApiResponse<CannedResponse>> => {
+  useCannedResponse: async (id: string): Promise<CannedResponse> => {
     const response = await apiClient.post<ApiResponse<CannedResponse>>(
       `/admin/support/canned-responses/${id}/use`
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * Get canned response by shortcut (Admin only)
    */
-  getCannedResponseByShortcut: async (shortcut: string): Promise<ApiResponse<CannedResponse>> => {
+  getCannedResponseByShortcut: async (shortcut: string): Promise<CannedResponse> => {
     const response = await apiClient.get<ApiResponse<CannedResponse>>(
       `/admin/support/canned-responses/shortcut/${shortcut}`
     );
-    return response.data;
+    return response.data.data;
   },
 };
 

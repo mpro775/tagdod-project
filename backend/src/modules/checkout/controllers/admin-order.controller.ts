@@ -39,7 +39,7 @@ import {
 /**
  * Controller للطلبات - للإدارة
  */
-@ApiTags('admin-orders')
+@ApiTags('إدارة-الطلبات')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -62,14 +62,13 @@ export class AdminOrderController {
   @ApiResponse({ status: 200, description: 'تم الحصول على الطلبات بنجاح' })
   async getAllOrders(
     @Query() query: ListOrdersDto
-  ): Promise<OrderResponseDto> {
+  ) {
     const result = await this.orderService.getAllOrders(query);
 
     return {
-      success: true,
-      message: 'تم الحصول على الطلبات بنجاح',
-      data: result.orders,
-      pagination: result.pagination
+      orders: result.orders,
+      pagination: result.pagination,
+      message: 'تم الحصول على الطلبات بنجاح'
     };
   }
 
@@ -83,13 +82,12 @@ export class AdminOrderController {
   @ApiResponse({ status: 404, description: 'الطلب غير موجود' })
   async getOrderDetails(
     @Param('id') orderId: string
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.getOrderDetails(orderId);
 
     return {
-      success: true,
-      message: 'تم الحصول على تفاصيل الطلب',
-      data: order
+      order,
+      message: 'تم الحصول على تفاصيل الطلب'
     };
   }
 
@@ -105,7 +103,7 @@ export class AdminOrderController {
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: UpdateOrderStatusDto
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.adminUpdateOrderStatus(
       orderId,
       dto,
@@ -113,9 +111,8 @@ export class AdminOrderController {
     );
 
     return {
-      success: true,
-      message: `تم تحديث حالة الطلب إلى ${dto.status}`,
-      data: order
+      order,
+      message: `تم تحديث حالة الطلب إلى ${dto.status}`
     };
   }
 
@@ -131,7 +128,7 @@ export class AdminOrderController {
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: ShipOrderDto
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.shipOrder(
       orderId,
       dto,
@@ -139,14 +136,11 @@ export class AdminOrderController {
     );
 
     return {
-      success: true,
-      message: 'تم شحن الطلب بنجاح',
-      data: {
-        orderNumber: order.orderNumber,
-        trackingNumber: order.trackingNumber,
-        trackingUrl: order.trackingUrl,
-        estimatedDelivery: order.estimatedDeliveryDate
-      }
+      orderNumber: order.orderNumber,
+      trackingNumber: order.trackingNumber,
+      trackingUrl: order.trackingUrl,
+      estimatedDelivery: order.estimatedDeliveryDate,
+      message: 'تم شحن الطلب بنجاح'
     };
   }
 
@@ -162,7 +156,7 @@ export class AdminOrderController {
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: RefundOrderDto
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.processRefund(
       orderId,
       dto,
@@ -170,14 +164,11 @@ export class AdminOrderController {
     );
 
     return {
-      success: true,
-      message: `تم استرداد ${dto.amount} بنجاح`,
-      data: {
-        orderNumber: order.orderNumber,
-        refundAmount: order.returnInfo.returnAmount,
-        refundReason: order.returnInfo.returnReason,
-        refundedAt: order.returnInfo.returnedAt
-      }
+      orderNumber: order.orderNumber,
+      refundAmount: order.returnInfo.returnAmount,
+      refundReason: order.returnInfo.returnReason,
+      refundedAt: order.returnInfo.returnedAt,
+      message: `تم استرداد ${dto.amount} بنجاح`
     };
   }
 
@@ -192,7 +183,7 @@ export class AdminOrderController {
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: AddOrderNotesDto
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.addOrderNotes(
       orderId,
       { ...dto, type: 'admin' },
@@ -201,9 +192,8 @@ export class AdminOrderController {
     );
 
     return {
-      success: true,
-      message: 'تم إضافة الملاحظات الإدارية',
-      data: order
+      order,
+      message: 'تم إضافة الملاحظات الإدارية'
     };
   }
 
@@ -219,7 +209,7 @@ export class AdminOrderController {
   async bulkUpdateStatus(
     @Req() req: ExpressRequest,
     @Body() dto: BulkOrderUpdateDto
-  ): Promise<OrderResponseDto> {
+  ) {
     const results = [];
     const errors = [];
 
@@ -237,9 +227,27 @@ export class AdminOrderController {
     }
 
     return {
-      success: errors.length === 0,
-      message: `تم تحديث ${results.length} طلب، فشل ${errors.length} طلب`,
-      data: { results, errors }
+      results,
+      errors,
+      message: `تم تحديث ${results.length} طلب، فشل ${errors.length} طلب`
+    };
+  }
+
+  // ===== Statistics =====
+
+  @RequirePermissions(AdminPermission.ORDERS_READ, AdminPermission.ADMIN_ACCESS)
+  @Get('stats')
+  @ApiOperation({
+    summary: 'إحصائيات الطلبات الأساسية',
+    description: 'الحصول على إحصائيات أساسية للطلبات'
+  })
+  @ApiResponse({ status: 200, description: 'تم الحصول على الإحصائيات' })
+  async getOrderStats() {
+    const stats = await this.orderService.getStats();
+
+    return {
+      stats,
+      message: 'تم الحصول على إحصائيات الطلبات'
     };
   }
 
@@ -256,13 +264,12 @@ export class AdminOrderController {
   @ApiResponse({ status: 200, description: 'تم الحصول على التحليلات' })
   async getAnalytics(
     @Query() query: OrderAnalyticsDto
-  ): Promise<OrderResponseDto> {
+  ) {
     const analytics = await this.orderService.getAdminAnalytics(query);
 
     return {
-      success: true,
-      message: 'تم الحصول على التحليلات',
-      data: analytics
+      analytics,
+      message: 'تم الحصول على التحليلات'
     };
   }
 
@@ -277,7 +284,7 @@ export class AdminOrderController {
   async getRevenueAnalytics(
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string
-  ): Promise<OrderResponseDto> {
+  ) {
     // تطبيق تحليل الإيرادات المفصل
     const analytics = await this.orderService.getRevenueAnalytics({
       fromDate: fromDate ? new Date(fromDate) : undefined,
@@ -285,9 +292,8 @@ export class AdminOrderController {
     });
 
     return {
-      success: true,
-      message: 'تم الحصول على تحليل الإيرادات',
-      data: analytics
+      analytics,
+      message: 'تم الحصول على تحليل الإيرادات'
     };
   }
 
@@ -297,14 +303,13 @@ export class AdminOrderController {
     description: 'تحليل أداء النظام والطلبات'
   })
   @ApiResponse({ status: 200, description: 'تم الحصول على تحليل الأداء' })
-  async getPerformanceAnalytics(): Promise<OrderResponseDto> {
+  async getPerformanceAnalytics() {
     // تطبيق تحليل الأداء
     const analytics = await this.orderService.getPerformanceAnalytics();
 
     return {
-      success: true,
-      message: 'تم الحصول على تحليل الأداء',
-      data: analytics
+      analytics,
+      message: 'تم الحصول على تحليل الأداء'
     };
   }
 
@@ -320,16 +325,15 @@ export class AdminOrderController {
   async generateOrdersReport(
     @Query() query: ListOrdersDto,
     @Query('format') format: string = 'json'
-  ): Promise<OrderResponseDto> {
+  ) {
     const result = await this.orderService.getAllOrders(query);
 
     if (format === 'pdf') {
       // إنشاء PDF
       const pdfUrl = await this.orderService.generateOrdersPDF(result.orders);
       return {
-        success: true,
-        message: 'تم إنشاء تقرير PDF',
-        data: { url: pdfUrl }
+        url: pdfUrl,
+        message: 'تم إنشاء تقرير PDF'
       };
     }
 
@@ -337,16 +341,14 @@ export class AdminOrderController {
       // إنشاء Excel
       const excelUrl = await this.orderService.generateOrdersExcel(result.orders);
       return {
-        success: true,
-        message: 'تم إنشاء ملف Excel',
-        data: { url: excelUrl }
+        url: excelUrl,
+        message: 'تم إنشاء ملف Excel'
       };
     }
 
     return {
-      success: true,
-      message: 'تم إنشاء التقرير',
-      data: result
+      result,
+      message: 'تم إنشاء التقرير'
     };
   }
 
@@ -356,14 +358,13 @@ export class AdminOrderController {
     description: 'تقرير مالي مفصل للطلبات'
   })
   @ApiResponse({ status: 200, description: 'تم إنشاء التقرير المالي' })
-  async generateFinancialReport(): Promise<OrderResponseDto> {
+  async generateFinancialReport() {
     // تطبيق التقرير المالي
     const report = await this.orderService.generateFinancialReport();
 
     return {
-      success: true,
-      message: 'تم إنشاء التقرير المالي',
-      data: report
+      report,
+      message: 'تم إنشاء التقرير المالي'
     };
   }
 }

@@ -138,7 +138,7 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
                 <MenuItem value="null">
                   <em>الفئات الرئيسية فقط</em>
                 </MenuItem>
-                {categories.map((category) => (
+                {Array.isArray(categories) && categories.map((category) => (
                   <MenuItem key={category._id} value={category._id}>
                     {category.name} ({category.nameEn})
                   </MenuItem>

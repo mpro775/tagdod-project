@@ -1,208 +1,59 @@
-%% Coupons Management System
+%% Coupons Management Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Coupons Management] --> B{Action Type?}
-  B -->|Create Coupon| C[Create New Coupon]
-  B -->|Update Coupon| D[Update Existing Coupon]
-  B -->|Validate Coupon| E[Validate Coupon Code]
-  B -->|List Coupons| F[List Coupons]
-  B -->|Delete Coupon| G[Delete Coupon]
-  B -->|Apply Coupon| H[Apply Coupon to Order]
-  
+  A[إدارة الكوبونات] --> B{نوع العملية?}
+  B -->|إنشاء كوبون| C[إنشاء كوبون]
+  B -->|تحديث كوبون| D[تحديث كوبون]
+  B -->|حذف كوبون| E[حذف كوبون]
+  B -->|عرض الكوبونات| F[عرض الكوبونات]
+  B -->|التحقق من كوبون| G[التحقق من كوبون]
+
   %% Create Coupon
-  C --> C1[Define Coupon Basic Info]
-  C1 --> C2[Set Coupon Type]
-  C2 --> C3[Configure Discount]
-  C3 --> C4[Set Usage Limits]
-  C4 --> C5[Define Validity Period]
-  C5 --> C6[Set Product Restrictions]
-  C6 --> C7[Set User Restrictions]
-  C7 --> C8[Validate Coupon Data]
-  C8 --> C9[Save Coupon]
-  C9 --> C10[Initialize Statistics]
-  
-  %% Coupon Basic Info
-  C1 --> C1A[Coupon code]
-  C1A --> C1B[Coupon name]
-  C1B --> C1C[Coupon description]
-  C1C --> C1D[Visibility setting]
-  C1D --> C1E[Status setting]
-  
-  %% Coupon Types
-  C2 --> C2A[Percentage discount]
-  C2A --> C2B[Fixed amount discount]
-  C2B --> C2C[Free shipping]
-  C2C --> C2D[Buy X Get Y]
-  C2D --> C2E[Special offers]
-  
-  %% Discount Configuration
-  C3 --> C3A[Discount value]
-  C3A --> C3B[Minimum order amount]
-  C3B --> C3C[Maximum discount amount]
-  C3C --> C3D[Currency restrictions]
-  C3D --> C3E[Discount calculation]
-  
-  %% Usage Limits
-  C4 --> C4A[Total usage limit]
-  C4A --> C4B[Per user limit]
-  C4B --> C4C[Daily usage limit]
-  C4C --> C4D[Usage tracking]
-  C4D --> C4E[Limit validation]
-  
-  %% Validity Period
-  C5 --> C5A[Start date]
-  C5A --> C5B[End date]
-  C5B --> C5C[Time zone handling]
-  C5C --> C5D[Expiration check]
-  C5D --> C5E[Validity validation]
-  
-  %% Product Restrictions
-  C6 --> C6A[All products]
-  C6A --> C6B[Specific products]
-  C6B --> C6C[Product categories]
-  C6C --> C6D[Product brands]
-  C6D --> C6E[Minimum order amount]
-  
-  %% User Restrictions
-  C7 --> C7A[All users]
-  C7A --> C7B[Specific users]
-  C7B --> C7C[User groups]
-  C7C --> C7D[Excluded users]
-  C7D --> C7E[User validation]
-  
+  C --> C1[استلام بيانات الكوبون]
+  C1 --> C2[التحقق من صحة البيانات]
+  C2 --> C3[التحقق من فرادة الكود]
+  C3 --> C4[إنشاء كائن الكوبون]
+  C4 --> C5[حفظ في قاعدة البيانات]
+  C5 --> C6[إرجاع الكوبون المنشأ]
+
   %% Update Coupon
-  D --> D1[Load Existing Coupon]
-  D1 --> D2[Update Basic Info]
-  D2 --> D3[Update Discount Settings]
-  D3 --> D4[Update Usage Limits]
-  D4 --> D5[Update Restrictions]
-  D5 --> D6[Validate Changes]
-  D6 --> D7[Save Updated Coupon]
-  D7 --> D8[Update Statistics]
-  
+  D --> D1[استلام معرف الكوبون وبيانات التحديث]
+  D1 --> D2[البحث عن الكوبون]
+  D2 --> D3{الكوبون موجود?}
+  D3 -->|لا| D4[إرجاع خطأ]
+  D3 -->|نعم| D5[تحديث البيانات]
+  D5 --> D6[حفظ التغييرات]
+  D6 --> D7[إرجاع الكوبون المحدث]
+  D4 --> D8[نهاية - غير موجود]
+
+  %% Delete Coupon
+  E --> E1[استلام معرف الكوبون]
+  E1 --> E2[البحث عن الكوبون]
+  E2 --> E3{الكوبون موجود?}
+  E3 -->|لا| E4[إرجاع خطأ]
+  E3 -->|نعم| E5[Soft Delete للكوبون]
+  E5 --> E6[إرجاع نجاح الحذف]
+  E4 --> E7[نهاية - غير موجود]
+
+  %% List Coupons
+  F --> F1[استلام معايير البحث]
+  F1 --> F2[البحث في قاعدة البيانات]
+  F2 --> F3[فلترة حسب الحالة والتواريخ]
+  F3 --> F4[إرجاع قائمة الكوبونات]
+
   %% Validate Coupon
-  E --> E1[Check Coupon Exists]
-  E1 --> E2[Validate Coupon Status]
-  E2 --> E3[Check Validity Period]
-  E3 --> E4[Verify Usage Limits]
-  E4 --> E5[Check Product Eligibility]
-  E5 --> E6[Check User Eligibility]
-  E6 --> E7[Calculate Discount]
-  E7 --> E8[Return Validation Result]
-  
-  %% Coupon Status Check
-  E2 --> E2A[Active status]
-  E2A --> E2B[Inactive status]
-  E2B --> E2C[Expired status]
-  E2C --> E2D[Exhausted status]
-  E2D --> E2E[Status validation]
-  
-  %% Usage Limit Check
-  E4 --> E4A[Check total usage]
-  E4A --> E4B[Check per user usage]
-  E4B --> E4C[Check daily usage]
-  E4C --> E4D[Validate limits]
-  E4D --> E4E[Update usage count]
-  
-  %% Product Eligibility
-  E5 --> E5A[Check product restrictions]
-  E5A --> E5B[Validate category match]
-  E5B --> E5C[Validate brand match]
-  E5C --> E5D[Check minimum order]
-  E5D --> E5E[Apply product rules]
-  
-  %% User Eligibility
-  E6 --> E6A[Check user restrictions]
-  E6A --> E6B[Validate user groups]
-  E6B --> E6C[Check excluded users]
-  E6C --> E6D[Validate user status]
-  E6D --> E6E[Apply user rules]
-  
-  %% Apply Coupon to Order
-  H --> H1[Validate Coupon Code]
-  H1 --> H2[Check Order Eligibility]
-  H2 --> H3[Calculate Discount Amount]
-  H3 --> H4[Apply Discount to Order]
-  H4 --> H5[Update Coupon Usage]
-  H5 --> H6[Track Statistics]
-  H6 --> H7[Return Applied Coupon]
-  
-  %% Order Eligibility
-  H2 --> H2A[Check minimum order amount]
-  H2A --> H2B[Validate product restrictions]
-  H2B --> H2C[Check user eligibility]
-  H2C --> H2D[Validate order status]
-  H2D --> H2E[Apply eligibility rules]
-  
-  %% Discount Calculation
-  H3 --> H3A[Calculate percentage discount]
-  H3A --> H3B[Calculate fixed amount discount]
-  H3B --> H3C[Apply maximum discount limit]
-  H3C --> H3D[Calculate final discount]
-  H3D --> H3E[Validate discount amount]
-  
-  %% Coupon Analytics
-  I[Coupon Analytics] --> J[Track Redemptions]
-  J --> K[Monitor Usage Patterns]
-  K --> L[Calculate Revenue Impact]
-  L --> M[Generate Performance Reports]
-  M --> N[Optimize Coupon Strategy]
-  
-  %% Redemption Tracking
-  J --> J1[Track total redemptions]
-  J1 --> J2[Monitor per-user usage]
-  J2 --> J3[Track daily usage]
-  J3 --> J4[Monitor conversion rates]
-  J4 --> J5[Track revenue impact]
-  
-  %% Performance Monitoring
-  K --> K1[Usage frequency analysis]
-  K1 --> K2[Peak usage times]
-  K2 --> K3[User behavior patterns]
-  K3 --> K4[Product preference analysis]
-  K4 --> K5[Geographic usage patterns]
-  
-  %% Revenue Impact
-  L --> L1[Calculate total discount given]
-  L1 --> L2[Track revenue generated]
-  L2 --> L3[Calculate ROI]
-  L3 --> L4[Monitor profit margins]
-  L4 --> L5[Analyze cost effectiveness]
-  
-  %% Coupon Lifecycle
-  O[Coupon Lifecycle] --> P[Creation Phase]
-  P --> Q[Active Phase]
-  Q --> R[Expiration Phase]
-  R --> S[Analysis Phase]
-  S --> T[Optimization Phase]
-  
-  %% Creation Phase
-  P --> P1[Define coupon parameters]
-  P1 --> P2[Set targeting rules]
-  P2 --> P3[Configure usage limits]
-  P3 --> P4[Test coupon functionality]
-  P4 --> P5[Launch coupon campaign]
-  
-  %% Active Phase
-  Q --> Q1[Monitor usage patterns]
-  Q1 --> Q2[Track performance metrics]
-  Q2 --> Q3[Adjust targeting if needed]
-  Q3 --> Q4[Optimize discount values]
-  Q4 --> Q5[Manage usage limits]
-  
-  %% Expiration Phase
-  R --> R1[Monitor expiration dates]
-  R1 --> R2[Send expiration notifications]
-  R2 --> R3[Handle last-minute usage]
-  R3 --> R4[Archive expired coupons]
-  R4 --> R5[Prepare performance reports]
-  
-  %% End points
-  C10 --> U[Coupon Created Successfully]
-  D8 --> U
-  E8 --> U
-  F --> U
-  G --> U
-  H7 --> U
-  N --> U
-  T --> U
+  G --> G1[استلام كود الكوبون والسلة]
+  G1 --> G2[البحث عن الكوبون بالكود]
+  G2 --> G3{الكوبون موجود?}
+  G3 -->|لا| G4[إرجاع خطأ - غير موجود]
+  G3 -->|نعم| G5[فحص الحالة]
+  G5 --> G6{نشط وصالح التاريخ?}
+  G6 -->|لا| G7[إرجاع خطأ - غير صالح]
+  G6 -->|نعم| G8[فحص حدود الاستخدام]
+  G8 --> G9{لم يتجاوز الحدود?}
+  G9 -->|لا| G10[إرجاع خطأ - مستنفد]
+  G9 -->|نعم| G11[فحص الاستهداف]
+  G11 --> G12{ينطبق على السلة?}
+  G12 -->|لا| G13[إرجاع خطأ - غير قابل للتطبيق]
+  G12 -->|نعم| G14[حساب قيمة الخصم]
+  G14 --> G15[إرجاع الخصم الصالح]

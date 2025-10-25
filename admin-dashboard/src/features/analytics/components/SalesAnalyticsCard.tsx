@@ -18,7 +18,20 @@ import {
   AttachMoney as AttachMoneyIcon,
   Assessment as AssessmentIcon,
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+} from 'recharts';
 import { SalesAnalytics } from '../types/analytics.types';
 
 interface SalesAnalyticsCardProps {
@@ -35,11 +48,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
   const theme = useTheme();
 
   if (error) {
-    return (
-      <Alert severity="error">
-        حدث خطأ في تحميل بيانات المبيعات
-      </Alert>
-    );
+    return <Alert severity="error">حدث خطأ في تحميل بيانات المبيعات</Alert>;
   }
 
   if (isLoading) {
@@ -50,10 +59,10 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
             تحليلات المبيعات
           </Typography>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Skeleton variant="rectangular" height={200} />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Skeleton variant="rectangular" height={200} />
             </Grid>
           </Grid>
@@ -88,17 +97,12 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
           <Typography variant="h5" component="h2">
             تحليلات المبيعات
           </Typography>
-          <Chip
-            icon={<AssessmentIcon />}
-            label="تحليل شامل"
-            color="primary"
-            variant="outlined"
-          />
+          <Chip icon={<AssessmentIcon />} label="تحليل شامل" color="primary" variant="outlined" />
         </Box>
 
         {/* Key Metrics */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -125,7 +129,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -152,7 +156,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -179,7 +183,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -210,7 +214,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
         {/* Charts */}
         <Grid container spacing={3}>
           {/* Sales Trend Chart */}
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
                 اتجاهات المبيعات
@@ -218,29 +222,29 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={data?.salesByDate || []}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tickFormatter={(value) => new Date(value).toLocaleDateString('ar-SA')}
                   />
                   <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: number, name: string) => [
                       name === 'revenue' ? formatCurrency(value) : formatNumber(value),
-                      name === 'revenue' ? 'الإيرادات' : 'الطلبات'
+                      name === 'revenue' ? 'الإيرادات' : 'الطلبات',
                     ]}
                     labelFormatter={(value) => new Date(value).toLocaleDateString('ar-SA')}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke={theme.palette.primary.main} 
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke={theme.palette.primary.main}
                     strokeWidth={3}
                     dot={{ fill: theme.palette.primary.main, strokeWidth: 2, r: 4 }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="orders" 
-                    stroke={theme.palette.secondary.main} 
+                  <Line
+                    type="monotone"
+                    dataKey="orders"
+                    stroke={theme.palette.secondary.main}
                     strokeWidth={3}
                     dot={{ fill: theme.palette.secondary.main, strokeWidth: 2, r: 4 }}
                   />
@@ -250,7 +254,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
           </Grid>
 
           {/* Sales by Category */}
-          <Grid item xs={12} lg={4}>
+          <Grid size={{ xs: 12, lg: 4 }}>
             <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
                 المبيعات حسب الفئة
@@ -267,7 +271,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
                     fill="#8884d8"
                     dataKey="revenue"
                   >
-                    {(data?.salesByCategory || []).map((entry, index) => (
+                    {(data?.salesByCategory || []).map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -278,7 +282,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
           </Grid>
 
           {/* Payment Methods */}
-          <Grid item xs={12} lg={6}>
+          <Grid size={{ xs: 12, lg: 6 }}>
             <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
                 طرق الدفع
@@ -296,7 +300,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
           </Grid>
 
           {/* Top Products */}
-          <Grid item xs={12} lg={6}>
+          <Grid size={{ xs: 12, lg: 6 }}>
             <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
                 أفضل المنتجات
@@ -304,7 +308,14 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
               <Box sx={{ maxHeight: 250, overflowY: 'auto' }}>
                 {(data?.topProducts || []).map((product, index) => (
                   <Box key={index} sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 1,
+                      }}
+                    >
                       <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                         {product.product}
                       </Typography>
@@ -312,12 +323,20 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
                         {formatCurrency(product.revenue)}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 0.5,
+                      }}
+                    >
                       <Typography variant="caption" color="text.secondary">
                         المبيعات: {formatNumber(product.sales)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {Math.round((product.sales / (data?.totalOrders || 1)) * 100)}% من إجمالي المبيعات
+                        {Math.round((product.sales / (data?.totalOrders || 1)) * 100)}% من إجمالي
+                        المبيعات
                       </Typography>
                     </Box>
                     <LinearProgress

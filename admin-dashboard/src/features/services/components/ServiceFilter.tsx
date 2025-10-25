@@ -16,17 +16,7 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
-import {
-  Search,
-  FilterList,
-  Clear,
-  Refresh,
-  Download,
-  DateRange,
-  LocationOn,
-  Person,
-  Assignment,
-} from '@mui/icons-material';
+import { Search, FilterList, Clear, Refresh, Download } from '@mui/icons-material';
 
 interface ServiceFilterProps {
   filters: any;
@@ -193,7 +183,7 @@ export const ServiceFilter: React.FC<ServiceFilterProps> = ({
   };
 
   const filterFields = getFilterFields();
-  const activeFiltersCount = Object.values(filters).filter(value => value !== '').length;
+  const activeFiltersCount = Object.values(filters).filter((value) => value !== '').length;
 
   return (
     <Card>
@@ -201,9 +191,7 @@ export const ServiceFilter: React.FC<ServiceFilterProps> = ({
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Box display="flex" alignItems="center">
             <FilterList sx={{ mr: 1, color: 'text.secondary' }} />
-            <Typography variant="h6">
-              فلاتر البحث
-            </Typography>
+            <Typography variant="h6">فلاتر البحث</Typography>
             {activeFiltersCount > 0 && (
               <Chip
                 label={`${activeFiltersCount} فلتر نشط`}
@@ -263,7 +251,7 @@ export const ServiceFilter: React.FC<ServiceFilterProps> = ({
               )}
             </Grid>
           ))}
-          
+
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Stack direction="row" spacing={1}>
               <Button
@@ -296,8 +284,8 @@ export const ServiceFilter: React.FC<ServiceFilterProps> = ({
             <Stack direction="row" spacing={1} flexWrap="wrap">
               {Object.entries(filters).map(([key, value]) => {
                 if (!value) return null;
-                const field = filterFields.find(f => f.key === key);
-                const option = field?.options?.find(o => o.value === value);
+                const field = filterFields.find((f) => f.key === key);
+                const option = field?.options?.find((o) => o.value === value);
                 return (
                   <Chip
                     key={key}

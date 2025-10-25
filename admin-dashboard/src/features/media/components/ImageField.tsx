@@ -11,20 +11,15 @@ import {
   Alert,
   Paper,
   Chip,
-  Skeleton,
-  LinearProgress,
+
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Grid,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Divider,
-  Badge,
+  CardContent,
+ 
 } from '@mui/material';
 import {
   CloudUpload,
@@ -42,6 +37,7 @@ import {
 import { MediaPicker } from './MediaPicker';
 import { MediaUploader } from './MediaUploader';
 import type { Media } from '../types/media.types';
+import { MediaType, MediaCategory } from '../types/media.types';
 
 interface ImageFieldProps {
   label?: string;
@@ -51,11 +47,10 @@ interface ImageFieldProps {
   required?: boolean;
   error?: boolean;
   helperText?: string;
-  category?: 'product' | 'category' | 'brand' | 'banner' | 'other';
+  category?: MediaCategory;
   disabled?: boolean;
   multiple?: boolean;
   maxSelections?: number;
-  showPreview?: boolean;
   showDetails?: boolean;
   size?: 'small' | 'medium' | 'large';
   variant?: 'card' | 'compact' | 'minimal';
@@ -68,11 +63,10 @@ export const ImageField: React.FC<ImageFieldProps> = ({
   required = false,
   error = false,
   helperText,
-  category = 'other',
+  category = MediaCategory.OTHER,
   disabled = false,
   multiple = false,
   maxSelections = 1,
-  showPreview = true,
   showDetails = true,
   size = 'medium',
   variant = 'card',
@@ -83,8 +77,13 @@ export const ImageField: React.FC<ImageFieldProps> = ({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // تحويل value إلى Media object
+  // تحويل value إلى Media object أو استخدام selectedMedia
   const currentMedia = useMemo(() => {
+    // إذا كان هناك صورة مختارة، استخدمها
+    if (selectedMedia && !Array.isArray(selectedMedia)) {
+      return selectedMedia;
+    }
+    
     if (!value) return null;
     
     if (typeof value === 'string') {
@@ -92,8 +91,8 @@ export const ImageField: React.FC<ImageFieldProps> = ({
         url: value,
         name: 'صورة محملة',
         _id: 'temp',
-        category: category as any,
-        type: 'image' as const,
+        category: category,
+        type: MediaType.IMAGE,
         size: 0,
         mimeType: 'image/jpeg',
         isPublic: true,
@@ -102,7 +101,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
     }
     
     return value as Media;
-  }, [value, category]);
+  }, [value, category, selectedMedia]);
 
   const handleSelectMedia = useCallback((media: Media | Media[]) => {
     setSelectedMedia(media);
@@ -110,10 +109,14 @@ export const ImageField: React.FC<ImageFieldProps> = ({
     setPickerOpen(false);
   }, [onChange]);
 
-  const handleUploadSuccess = useCallback(() => {
+  const handleUploadSuccess = useCallback((uploadedMedia?: Media) => {
+    if (uploadedMedia) {
+      setSelectedMedia(uploadedMedia);
+      onChange(uploadedMedia);
+    }
     setUploaderOpen(false);
-    // يمكن إضافة منطق لجلب آخر ملف مرفوع هنا
-  }, []);
+    setIsLoading(false);
+  }, [onChange]);
 
   const handleRemoveImage = useCallback(() => {
     setSelectedMedia(null);
@@ -204,7 +207,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
           onSelect={handleSelectMedia}
           category={category}
           title={`اختيار صورة - ${label}`}
-          acceptTypes={['image']}
+          acceptTypes={[MediaType.IMAGE]}
           showFilters={false}
           showUpload={false}
         />
@@ -307,10 +310,13 @@ export const ImageField: React.FC<ImageFieldProps> = ({
                 variant="contained"
                 size="small"
                 startIcon={<CloudUpload />}
-                onClick={() => setUploaderOpen(true)}
-                disabled={disabled}
+                onClick={() => {
+                  setUploaderOpen(true);
+                  setIsLoading(true);
+                }}
+                disabled={disabled || isLoading}
               >
-                رفع
+                {isLoading ? 'جاري...' : 'رفع'}
               </Button>
             </Box>
           </Box>
@@ -328,14 +334,14 @@ export const ImageField: React.FC<ImageFieldProps> = ({
           onSelect={handleSelectMedia}
           category={category}
           title={`اختيار صورة - ${label}`}
-          acceptTypes={['image']}
+          acceptTypes={[MediaType.IMAGE]}
         />
 
         <MediaUploader
           open={uploaderOpen}
           onClose={() => setUploaderOpen(false)}
           onSuccess={handleUploadSuccess}
-          defaultCategory={category as any}
+          defaultCategory={category}
         />
       </Box>
     );
@@ -460,10 +466,13 @@ export const ImageField: React.FC<ImageFieldProps> = ({
               variant="contained"
               size="small"
               startIcon={<CloudUpload />}
-              onClick={() => setUploaderOpen(true)}
-              disabled={disabled}
+              onClick={() => {
+                setUploaderOpen(true);
+                setIsLoading(true);
+              }}
+              disabled={disabled || isLoading}
             >
-              رفع صورة جديدة
+              {isLoading ? 'جاري الرفع...' : 'رفع صورة جديدة'}
             </Button>
           </Box>
         </Box>
@@ -482,7 +491,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
         onSelect={handleSelectMedia}
         category={category}
         title={`اختيار صورة - ${label}`}
-        acceptTypes={['image']}
+        acceptTypes={[MediaType.IMAGE]}
         multiple={multiple}
         maxSelections={maxSelections}
       />
@@ -492,7 +501,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
         open={uploaderOpen}
         onClose={() => setUploaderOpen(false)}
         onSuccess={handleUploadSuccess}
-        defaultCategory={category as any}
+        defaultCategory={category}
       />
 
       {/* Details Dialog */}

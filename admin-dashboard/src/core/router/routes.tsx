@@ -12,6 +12,11 @@ const ForgotPasswordPage = lazy(() =>
     default: m.ForgotPasswordPage,
   }))
 );
+const UnauthorizedPage = lazy(() =>
+  import('@/features/auth/pages/UnauthorizedPage').then((m) => ({
+    default: m.default,
+  }))
+);
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/pages/DashboardPage').then((m) => ({
     default: m.DashboardPage,
@@ -77,6 +82,16 @@ const AttributeValuesPage = lazy(() =>
     default: m.AttributeValuesPage,
   }))
 );
+const AuditLogsPage = lazy(() =>
+  import('@/features/audit/pages/AuditLogsPage').then((m) => ({
+    default: m.AuditLogsPage,
+  }))
+);
+const AuditAnalyticsPage = lazy(() =>
+  import('@/features/audit/pages/AuditAnalyticsPage').then((m) => ({
+    default: m.AuditAnalyticsPage,
+  }))
+);
 const OrdersListPage = lazy(() =>
   import('@/features/orders/pages/OrdersListPage').then((m) => ({
     default: m.OrdersListPage,
@@ -122,14 +137,24 @@ const CouponAnalyticsPage = lazy(() =>
     default: m.CouponAnalyticsPage,
   }))
 );
-const PublicCouponsPage = lazy(() =>
-  import('@/features/coupons/pages/PublicCouponsPage').then((m) => ({
-    default: m.PublicCouponsPage,
-  }))
-);
 const MediaLibraryPage = lazy(() =>
   import('@/features/media/pages/MediaLibraryPage').then((m) => ({
     default: m.MediaLibraryPage,
+  }))
+);
+const MarketingDashboardPage = lazy(() =>
+  import('@/features/marketing/pages/MarketingDashboardPage').then((m) => ({
+    default: m.default,
+  }))
+);
+const PriceRulesListPage = lazy(() =>
+  import('@/features/marketing/pages/PriceRulesListPage').then((m) => ({
+    default: m.default,
+  }))
+);
+const CreatePriceRulePage = lazy(() =>
+  import('@/features/marketing/pages/CreatePriceRulePage').then((m) => ({
+    default: m.default,
   }))
 );
 const BannersListPage = lazy(() =>
@@ -145,11 +170,6 @@ const BannerFormPage = lazy(() =>
 const BannerAnalyticsPage = lazy(() =>
   import('@/features/banners/pages/BannerAnalyticsPage').then((m) => ({
     default: m.BannerAnalyticsPage,
-  }))
-);
-const PromotionsListPage = lazy(() =>
-  import('@/features/promotions/pages/PromotionsListPage').then((m) => ({
-    default: m.PromotionsListPage,
   }))
 );
 const SupportTicketsListPage = lazy(() =>
@@ -222,15 +242,14 @@ const CartAnalyticsPage = lazy(() =>
     default: m.CartAnalyticsPage,
   }))
 );
-const UnauthorizedPage = lazy(() => import('@/features/auth/pages/UnauthorizedPage').then((m) => ({ default: m.UnauthorizedPage })));
 const NotFoundPage = lazy(() => import('@/features/auth/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const ExchangeRatesPage = lazy(() => import('@/features/exchange-rates/pages/ExchangeRatesPage').then((m) => ({ default: m.default })));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage').then((m) => ({ default: m.default })));
-const DemoPage = lazy(() => import('@/features/demo/pages/DemoPage').then((m) => ({ default: m.default })));
-const ResponsiveListDemoPage = lazy(() => import('@/features/demo/pages/ResponsiveListDemoPage').then((m) => ({ default: m.default })));
 
 export const routes: RouteObject[] = [
-  // Public routes
+  // ===========================================
+  // PUBLIC ROUTES - Accessible without authentication
+  // ===========================================
   {
     path: '/login',
     element: <LoginPage />,
@@ -243,12 +262,10 @@ export const routes: RouteObject[] = [
     path: '/unauthorized',
     element: <UnauthorizedPage />,
   },
-  {
-    path: '/coupons/public',
-    element: <PublicCouponsPage />,
-  },
 
-  // Protected routes
+  // ===========================================
+  // PROTECTED ROUTES - Require authentication and permissions
+  // ===========================================
   {
     path: '/',
     element: (
@@ -257,6 +274,7 @@ export const routes: RouteObject[] = [
       </RouteGuard>
     ),
     children: [
+      // Dashboard Routes
       {
         index: true,
         element: <DashboardPage />,
@@ -265,7 +283,9 @@ export const routes: RouteObject[] = [
         path: 'dashboard',
         element: <DashboardPage />,
       },
-      // Users routes
+      // ===========================================
+      // USER MANAGEMENT
+      // ===========================================
       {
         path: 'users',
         element: <UsersListPage />,
@@ -282,7 +302,12 @@ export const routes: RouteObject[] = [
         path: 'users/create-admin',
         element: <CreateAdminPage />,
       },
-      // Products routes
+
+      // ===========================================
+      // CATALOG MANAGEMENT
+      // ===========================================
+
+      // Products
       {
         path: 'products',
         element: <ProductsListPage />,
@@ -295,7 +320,8 @@ export const routes: RouteObject[] = [
         path: 'products/:id',
         element: <ProductFormPage />,
       },
-      // Categories routes
+
+      // Categories
       {
         path: 'categories',
         element: <CategoriesListPage />,
@@ -308,7 +334,7 @@ export const routes: RouteObject[] = [
         path: 'categories/:id',
         element: <CategoryFormPage />,
       },
-      // Brands routes
+      // Brands
       {
         path: 'brands',
         element: <BrandsListPage />,
@@ -321,7 +347,8 @@ export const routes: RouteObject[] = [
         path: 'brands/:id',
         element: <BrandFormPage />,
       },
-      // Attributes routes
+
+      // Attributes
       {
         path: 'attributes',
         element: <AttributesListPage />,
@@ -338,7 +365,12 @@ export const routes: RouteObject[] = [
         path: 'attributes/:id/values',
         element: <AttributeValuesPage />,
       },
-      // Orders routes
+
+      // ===========================================
+      // SALES & ORDERS
+      // ===========================================
+
+      // Orders
       {
         path: 'orders',
         element: <OrdersListPage />,
@@ -347,7 +379,10 @@ export const routes: RouteObject[] = [
         path: 'orders/:id',
         element: <OrderDetailsPage />,
       },
-      // Analytics routes
+
+      // ===========================================
+      // ANALYTICS & REPORTS
+      // ===========================================
       {
         path: 'analytics',
         element: <AnalyticsDashboardPage />,
@@ -364,7 +399,32 @@ export const routes: RouteObject[] = [
         path: 'analytics/reports',
         element: <ReportsManagementPage />,
       },
-      // Coupons routes
+
+      // ===========================================
+      // MARKETING & PROMOTIONS
+      // ===========================================
+
+      // Marketing Dashboard
+      {
+        path: 'marketing',
+        element: <MarketingDashboardPage />,
+      },
+
+      // Price Rules
+      {
+        path: 'marketing/price-rules',
+        element: <PriceRulesListPage />,
+      },
+      {
+        path: 'marketing/price-rules/new',
+        element: <CreatePriceRulePage />,
+      },
+      {
+        path: 'marketing/price-rules/:id',
+        element: <CreatePriceRulePage />,
+      },
+
+      // Coupons
       {
         path: 'coupons',
         element: <CouponsListPage />,
@@ -386,7 +446,24 @@ export const routes: RouteObject[] = [
         path: 'media',
         element: <MediaLibraryPage />,
       },
-      // Banners routes
+      // Marketing routes
+      {
+        path: 'marketing',
+        element: <MarketingDashboardPage />,
+      },
+      {
+        path: 'marketing/price-rules',
+        element: <PriceRulesListPage />,
+      },
+      {
+        path: 'marketing/price-rules/new',
+        element: <CreatePriceRulePage />,
+      },
+      {
+        path: 'marketing/price-rules/:id',
+        element: <CreatePriceRulePage />,
+      },
+      // Banners
       {
         path: 'banners',
         element: <BannersListPage />,
@@ -403,38 +480,10 @@ export const routes: RouteObject[] = [
         path: 'banners/analytics',
         element: <BannerAnalyticsPage />,
       },
-      // Promotions routes
-      {
-        path: 'promotions',
-        element: <PromotionsListPage />,
-      },
-      // Support routes
-      {
-        path: 'support',
-        element: <SupportTicketsListPage />,
-      },
-      {
-        path: 'support/:id',
-        element: <SupportTicketDetailsPage />,
-      },
-      {
-        path: 'support/stats',
-        element: <SupportStatsPage />,
-      },
-      // Notifications routes
-      {
-        path: 'notifications',
-        element: <NotificationsListPage />,
-      },
-      {
-        path: 'notifications/analytics',
-        element: <NotificationsAnalyticsPage />,
-      },
-      {
-        path: 'notifications/templates',
-        element: <NotificationTemplatesPage />,
-      },
-      // Services routes
+
+      // ===========================================
+      // SERVICES MANAGEMENT
+      // ===========================================
       {
         path: 'services',
         element: <ServicesOverviewPage />,
@@ -455,7 +504,42 @@ export const routes: RouteObject[] = [
         path: 'services/analytics',
         element: <ServicesAnalyticsPage />,
       },
-      // Cart routes
+
+      // ===========================================
+      // SUPPORT & COMMUNICATION
+      // ===========================================
+
+      // Support Tickets
+      {
+        path: 'support',
+        element: <SupportTicketsListPage />,
+      },
+      {
+        path: 'support/:id',
+        element: <SupportTicketDetailsPage />,
+      },
+      {
+        path: 'support/stats',
+        element: <SupportStatsPage />,
+      },
+
+      // Notifications
+      {
+        path: 'notifications',
+        element: <NotificationsListPage />,
+      },
+      {
+        path: 'notifications/analytics',
+        element: <NotificationsAnalyticsPage />,
+      },
+      {
+        path: 'notifications/templates',
+        element: <NotificationTemplatesPage />,
+      },
+
+      // ===========================================
+      // CART MANAGEMENT
+      // ===========================================
       {
         path: 'carts',
         element: <CartManagementPage />,
@@ -468,29 +552,48 @@ export const routes: RouteObject[] = [
         path: 'carts/analytics',
         element: <CartAnalyticsPage />,
       },
-      // Exchange rates routes
+
+      // ===========================================
+      // AUDIT & SECURITY
+      // ===========================================
+      {
+        path: 'audit',
+        element: <AuditLogsPage />,
+      },
+      {
+        path: 'audit/analytics',
+        element: <AuditAnalyticsPage />,
+      },
+
+      // ===========================================
+      // MEDIA MANAGEMENT
+      // ===========================================
+      {
+        path: 'media',
+        element: <MediaLibraryPage />,
+      },
+
+      // ===========================================
+      // SYSTEM CONFIGURATION
+      // ===========================================
+
+      // Exchange Rates
       {
         path: 'exchange-rates',
         element: <ExchangeRatesPage />,
       },
-      // Settings routes
+
+      // Settings
       {
         path: 'settings',
         element: <SettingsPage />,
       },
-      // Demo routes
-      {
-        path: 'demo',
-        element: <DemoPage />,
-      },
-      {
-        path: 'demo/responsive-lists',
-        element: <ResponsiveListDemoPage />,
-      },
     ],
   },
 
-  // 404
+  // ===========================================
+  // ERROR ROUTES
+  // ===========================================
   {
     path: '*',
     element: <NotFoundPage />,

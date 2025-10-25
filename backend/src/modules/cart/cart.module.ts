@@ -10,6 +10,7 @@ import { GuestCartController } from './guest-cart.controller';
 import { AuthModule } from '../auth/auth.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AdminCartController } from './admin-cart.controller';
+import { CartCronService } from './cart.cron';
 import { SharedModule } from '../../shared/shared.module';
 
 @Module({
@@ -24,7 +25,7 @@ import { SharedModule } from '../../shared/shared.module';
     SharedModule,
   ],
   controllers: [CartController, GuestCartController, AdminCartController],
-  providers: [CartService],
+  providers: [CartService, CartCronService],
   exports: [MongooseModule, CartService],
 })
 export class CartModule {}

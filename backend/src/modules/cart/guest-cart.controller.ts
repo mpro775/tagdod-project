@@ -12,7 +12,7 @@ import {
 import { CartService } from './cart.service';
 import { GuestAddItemDto, GuestPreviewDto, GuestUpdateItemDto, DeviceDto } from './dto/cart.dto';
 
-@ApiTags('cart-guest')
+@ApiTags('سلة-الزوار')
 @Controller('cart/guest')
 export class GuestCartController {
   constructor(private svc: CartService) {}

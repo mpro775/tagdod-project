@@ -1,8 +1,6 @@
-import axios from 'axios';
 import {
   Cart,
   CartFilters,
-  ApiResponse,
   CartAnalytics,
   CartStatistics,
   ConversionRates,
@@ -14,18 +12,11 @@ import {
   ConvertToOrderRequest,
   SendReminderRequest,
 } from '../types/cart.types';
+import apiClient from '@/core/api/client';
+import type { ApiResponse } from '@/shared/types/common.types';
 
 // API Base Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: `${API_BASE_URL}/admin/carts`,
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
@@ -57,144 +48,103 @@ apiClient.interceptors.response.use(
 // Cart Management API
 export const cartApi = {
   // Get all carts with filters
-  async getAllCarts(filters: CartFilters = {}): Promise<ApiResponse<{ carts: Cart[]; meta: any }>> {
-    try {
-      const response = await apiClient.get('/all', { params: filters });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch carts');
+  async getAllCarts(filters: CartFilters = {}): Promise<{ carts: Cart[]; pagination: any }> {
+    // Convert 0-based page to 1-based page for backend compatibility
+    const params = {
+      ...filters,
+      page: filters.page !== undefined ? filters.page + 1 : undefined,
+    };
+    const response = await apiClient.get<ApiResponse<{ carts: Cart[]; pagination: any }>>('/admin/carts/all', { params });
+
+    // Convert pagination back to 0-based for frontend
+    const result = response.data.data;
+    if (result.pagination) {
+      result.pagination = {
+        ...result.pagination,
+        page: result.pagination.page - 1,
+      };
     }
+
+    return result;
   },
 
   // Get cart by ID
-  async getCartById(cartId: string): Promise<ApiResponse<Cart>> {
-    try {
-      const response = await apiClient.get(`/${cartId}`);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch cart details');
-    }
+  async getCartById(cartId: string): Promise<Cart> {
+    const response = await apiClient.get<ApiResponse<Cart>>(`/admin/carts/${cartId}`);
+    return response.data.data;
   },
 
   // Convert cart to order
   async convertCartToOrder(
     request: ConvertToOrderRequest
-  ): Promise<ApiResponse<{ orderId: string; cart: Cart }>> {
-    try {
-      const response = await apiClient.post(`/${request.cartId}/convert-to-order`, request);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to convert cart to order');
-    }
+  ): Promise<{ orderId: string; cartId: string; status: string; message: string }> {
+    const response = await apiClient.post<ApiResponse<{ orderId: string; cartId: string; status: string; message: string }>>(`/admin/carts/${request.cartId}/convert-to-order`, request);
+    return response.data.data;
   },
 
   // Get abandoned carts
   async getAbandonedCarts(
     filters: CartFilters = {}
-  ): Promise<ApiResponse<{ carts: Cart[]; meta: any }>> {
-    try {
-      const response = await apiClient.get('/abandoned', { params: filters });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch abandoned carts');
-    }
+  ): Promise<{ carts: Cart[]; count: number; totalCarts: number; totalValue: number }> {
+    const response = await apiClient.get<ApiResponse<{ carts: Cart[]; count: number; totalCarts: number; totalValue: number }>>('/admin/carts/abandoned', { params: filters });
+    return response.data.data;
   },
 
   // Send reminder to specific cart
   async sendCartReminder(
     request: SendReminderRequest
-  ): Promise<ApiResponse<{ success: boolean; message: string }>> {
-    try {
-      const response = await apiClient.post(`/${request.cartId}/send-reminder`, request);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to send cart reminder');
-    }
+  ) {
+    const response = await apiClient.post<ApiResponse<any>>(`/admin/carts/${request.cartId}/send-reminder`, request);
+    return response.data.data;
   },
 
   // Send reminders to all abandoned carts
-  async sendAllReminders(): Promise<ApiResponse<{ processed: number; sent: number }>> {
-    try {
-      const response = await apiClient.post('/send-reminders');
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to send reminders');
-    }
+  async sendAllReminders() {
+    const response = await apiClient.post<ApiResponse<any>>('/admin/carts/send-reminders');
+    return response.data.data;
   },
 
   // Analytics API
-  async getCartAnalytics(period: string = '30'): Promise<ApiResponse<CartAnalytics>> {
-    try {
-      const response = await apiClient.get('/analytics', { params: { period } });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch cart analytics');
-    }
+  async getCartAnalytics(period: string = '30'): Promise<CartAnalytics> {
+    const response = await apiClient.get<ApiResponse<CartAnalytics>>('/admin/carts/analytics', { params: { period } });
+    return response.data.data;
   },
 
-  async getCartStatistics(): Promise<ApiResponse<CartStatistics>> {
-    try {
-      const response = await apiClient.get('/statistics');
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch cart statistics');
-    }
+  async getCartStatistics(): Promise<CartStatistics> {
+    const response = await apiClient.get<ApiResponse<CartStatistics>>('/admin/carts/statistics');
+    return response.data.data;
   },
 
-  async getConversionRates(period: string = '30'): Promise<ApiResponse<ConversionRates>> {
-    try {
-      const response = await apiClient.get('/conversion-rates', { params: { period } });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch conversion rates');
-    }
+  async getConversionRates(period: string = '30'): Promise<ConversionRates> {
+    const response = await apiClient.get<ApiResponse<ConversionRates>>('/admin/carts/conversion-rates', { params: { period } });
+    return response.data.data;
   },
 
   async getRecoveryCampaignAnalytics(
     period: string = '30'
-  ): Promise<ApiResponse<RecoveryCampaignAnalytics>> {
-    try {
-      const response = await apiClient.get('/recovery-campaigns', { params: { period } });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(
-        error.response?.data?.message || 'Failed to fetch recovery campaign analytics'
-      );
-    }
+  ): Promise<RecoveryCampaignAnalytics> {
+    const response = await apiClient.get<ApiResponse<RecoveryCampaignAnalytics>>('/admin/carts/recovery-campaigns', { params: { period } });
+    return response.data.data;
   },
 
   async getCustomerBehaviorAnalytics(
     period: string = '30'
-  ): Promise<ApiResponse<CustomerBehaviorAnalytics>> {
-    try {
-      const response = await apiClient.get('/customer-behavior', { params: { period } });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(
-        error.response?.data?.message || 'Failed to fetch customer behavior analytics'
-      );
-    }
+  ): Promise<CustomerBehaviorAnalytics> {
+    const response = await apiClient.get<ApiResponse<CustomerBehaviorAnalytics>>('/admin/carts/customer-behavior', { params: { period } });
+    return response.data.data;
   },
 
   async getRevenueImpactAnalytics(
     period: string = '30'
-  ): Promise<ApiResponse<RevenueImpactAnalytics>> {
-    try {
-      const response = await apiClient.get('/revenue-impact', { params: { period } });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch revenue impact analytics');
-    }
+  ): Promise<RevenueImpactAnalytics> {
+    const response = await apiClient.get<ApiResponse<RevenueImpactAnalytics>>('/admin/carts/revenue-impact', { params: { period } });
+    return response.data.data;
   },
 
   // Bulk actions
-  async performBulkActions(request: BulkActionRequest): Promise<ApiResponse<BulkActionResponse>> {
-    try {
-      const response = await apiClient.post('/bulk-actions', request);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to perform bulk actions');
-    }
+  async performBulkActions(request: BulkActionRequest): Promise<BulkActionResponse> {
+    const response = await apiClient.post<ApiResponse<BulkActionResponse>>('/admin/carts/bulk-actions', request);
+    return response.data.data;
   },
 };
 

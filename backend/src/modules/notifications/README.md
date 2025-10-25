@@ -29,26 +29,23 @@
 
 #### Admin Endpoints
 ```
-GET    /admin/notifications              # قائمة الإشعارات مع فلترة
-GET    /admin/notifications/templates    # قوالب الإشعارات المتاحة
-POST   /admin/notifications              # إنشاء إشعار جديد
-GET    /admin/notifications/:id          # تفاصيل إشعار محدد
-PUT    /admin/notifications/:id          # تحديث إشعار
-DELETE /admin/notifications/:id          # حذف إشعار
-POST   /admin/notifications/:id/send     # إرسال إشعار محدد
-POST   /admin/notifications/bulk/send    # إرسال مجمع
-GET    /admin/notifications/stats/overview # إحصائيات الإشعارات
-POST   /admin/notifications/test         # اختبار إشعار
+GET    /notifications/admin/list         # قائمة الإشعارات مع فلترة
+POST   /notifications/admin/create       # إنشاء إشعار جديد
+GET    /notifications/admin/:id          # تفاصيل إشعار محدد
+PUT    /notifications/admin/:id          # تحديث إشعار
+DELETE /notifications/admin/:id          # حذف إشعار
+POST   /notifications/admin/bulk-send    # إرسال مجمع
+GET    /notifications/admin/stats        # إحصائيات الإشعارات
+POST   /notifications/admin/cleanup      # تنظيف الإشعارات القديمة
 ```
 
 #### User Endpoints
 ```
 GET    /notifications                    # قائمة إشعارات المستخدم
 GET    /notifications/unread-count       # عدد الإشعارات غير المقروءة
-POST   /notifications/read               # تحديد إشعارات كمقروءة
-POST   /notifications/read-all           # تحديد جميع الإشعارات كمقروءة
-POST   /devices/register                 # تسجيل جهاز للإشعارات الدفع
-DELETE /devices/:id                      # إلغاء تسجيل جهاز
+POST   /notifications/mark-read          # تحديد إشعارات كمقروءة
+POST   /notifications/mark-all-read      # تحديد جميع الإشعارات كمقروءة
+GET    /notifications/stats              # إحصائيات المستخدم
 ```
 
 ### Frontend Pages
@@ -92,6 +89,8 @@ DELETE /devices/:id                      # إلغاء تسجيل جهاز
 ### المنتجات
 - `PRODUCT_BACK_IN_STOCK`: توفر المنتج
 - `PRODUCT_PRICE_DROP`: انخفاض السعر
+- `LOW_STOCK`: مخزون قليل
+- `OUT_OF_STOCK`: نفد المخزون
 
 ### العروض الترويجية
 - `PROMOTION_STARTED`: بدء عرض جديد
@@ -110,11 +109,16 @@ DELETE /devices/:id                      # إلغاء تسجيل جهاز
 ### النظام
 - `SYSTEM_MAINTENANCE`: صيانة النظام
 - `NEW_FEATURE`: ميزة جديدة
+- `SYSTEM_ALERT`: تنبيه نظام
 
 ### التسويق
 - `WELCOME_NEW_USER`: ترحيب بالمستخدم الجديد
 - `BIRTHDAY_GREETING`: تهنئة بعيد الميلاد
 - `CART_ABANDONMENT`: تذكير بسلة التسوق
+
+### الدفع
+- `PAYMENT_FAILED`: فشل الدفع
+- `PAYMENT_SUCCESS`: نجاح الدفع
 
 ## الاستخدام
 
@@ -327,3 +331,10 @@ export class OrdersService {
     return order;
   }
 }
+
+---
+
+**Version:** 1.0.1
+**Status:** ✅ Production Ready
+
+**ملاحظة:** تم تحديث README ليعكس المسارات الفعلية وإضافة القوالب المفقودة.

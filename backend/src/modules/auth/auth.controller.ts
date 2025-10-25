@@ -28,7 +28,7 @@ import { RequirePermissions } from '../../shared/decorators/permissions.decorato
 import { AppException } from '../../shared/exceptions/app.exception';
 import { FavoritesService } from '../favorites/favorites.service';
 
-@ApiTags('auth')
+@ApiTags('المصادقة')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
@@ -43,12 +43,12 @@ export class AuthController {
 
   @Post('send-otp')
   @ApiOperation({
-    summary: 'Send OTP to phone number',
-    description: 'Sends a one-time password (OTP) to the specified phone number for authentication',
+    summary: 'إرسال رمز OTP إلى رقم الهاتف',
+    description: 'يرسل كلمة مرور لمرة واحدة (OTP) إلى رقم الهاتف المحدد للمصادقة',
   })
   @ApiBody({ type: SendOtpDto })
   @ApiCreatedResponse({
-    description: 'OTP sent successfully',
+    description: 'تم إرسال رمز OTP بنجاح',
     schema: {
       type: 'object',
       properties: {
@@ -62,12 +62,12 @@ export class AuthController {
     },
   })
   @ApiBadRequestResponse({
-    description: 'Invalid phone number or context',
+    description: 'رقم الهاتف أو السياق غير صحيح',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'string', example: 'Invalid phone number format' },
+        message: { type: 'string', example: 'صيغة رقم الهاتف غير صحيحة' },
         error: { type: 'string', example: 'Bad Request' },
       },
     },
@@ -82,12 +82,12 @@ export class AuthController {
 
   @Post('verify-otp')
   @ApiOperation({
-    summary: 'Verify OTP and complete registration/login',
-    description: 'Verifies the OTP code and completes user registration or login process',
+    summary: 'التحقق من رمز OTP وإتمام التسجيل/الدخول',
+    description: 'يتحقق من رمز OTP ويتم عملية تسجيل المستخدم أو دخوله',
   })
   @ApiBody({ type: VerifyOtpDto })
   @ApiCreatedResponse({
-    description: 'OTP verified successfully and user authenticated',
+    description: 'تم التحقق من رمز OTP بنجاح ومصادقة المستخدم',
     schema: {
       type: 'object',
       properties: {
@@ -110,7 +110,7 @@ export class AuthController {
     },
   })
   @ApiUnauthorizedResponse({
-    description: 'Invalid OTP code',
+    description: 'رمز OTP غير صحيح',
     schema: {
       type: 'object',
       properties: {
@@ -121,7 +121,7 @@ export class AuthController {
     },
   })
   @ApiBadRequestResponse({
-    description: 'Missing required fields for engineer registration',
+    description: 'الحقول المطلوبة مفقودة لتسجيل المهندس',
     schema: {
       type: 'object',
       properties: {
@@ -267,11 +267,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   @ApiOperation({
-    summary: 'Get current user profile',
-    description: 'Retrieves the current authenticated user profile and capabilities',
+    summary: 'الحصول على ملف المستخدم الحالي',
+    description: 'يسترد ملف المستخدم المصادق عليه الحالي وقدراته',
   })
   @ApiOkResponse({
-    description: 'User profile retrieved successfully',
+    description: 'تم استرداد ملف المستخدم بنجاح',
     schema: {
       type: 'object',
       properties: {
@@ -481,7 +481,6 @@ export class AuthController {
     await this.capsModel.create(adminCapabilities);
 
     return {
-      success: true,
       message: 'تم إنشاء الادمن الرئيسي بنجاح',
       admin: {
         id: superAdmin._id,

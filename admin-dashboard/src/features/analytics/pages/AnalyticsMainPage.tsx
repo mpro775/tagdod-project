@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Button,
   Tabs,
   Tab,
   Paper,
@@ -54,54 +53,39 @@ function TabPanel(props: TabPanelProps) {
 export const AnalyticsMainPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const [selectedTab, setSelectedTab] = useState(0);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
   };
 
   const tabs = [
-    { 
-      label: 'لوحة التحليلات', 
-      icon: <DashboardIcon />, 
+    {
+      label: 'لوحة التحليلات',
+      icon: <DashboardIcon />,
       value: 0,
-      description: 'نظرة عامة على المؤشرات الرئيسية والأداء'
+      description: 'نظرة عامة على المؤشرات الرئيسية والأداء',
     },
-    { 
-      label: 'التحليلات المتقدمة', 
-      icon: <AnalyticsIcon />, 
+    {
+      label: 'التحليلات المتقدمة',
+      icon: <AnalyticsIcon />,
       value: 1,
-      description: 'تحليلات متخصصة وتقارير مفصلة'
+      description: 'تحليلات متخصصة وتقارير مفصلة',
     },
-    { 
-      label: 'إدارة التقارير', 
-      icon: <AssessmentIcon />, 
+    {
+      label: 'إدارة التقارير',
+      icon: <AssessmentIcon />,
       value: 2,
-      description: 'إنشاء وإدارة التقارير التحليلية'
+      description: 'إنشاء وإدارة التقارير التحليلية',
     },
-    { 
-      label: 'تصدير البيانات', 
-      icon: <FileDownloadIcon />, 
+    {
+      label: 'تصدير البيانات',
+      icon: <FileDownloadIcon />,
       value: 3,
-      description: 'تصدير البيانات بصيغ مختلفة'
+      description: 'تصدير البيانات بصيغ مختلفة',
     },
   ];
-
-  const getTabContent = () => {
-    switch (selectedTab) {
-      case 0:
-        return <AnalyticsDashboard />;
-      case 1:
-        return <AdvancedAnalyticsDashboard />;
-      case 2:
-        return <ReportsManagementPage />;
-      case 3:
-        return <DataExportPage />;
-      default:
-        return <AnalyticsDashboard />;
-    }
-  };
 
   return (
     <AnalyticsErrorBoundary>
@@ -133,7 +117,7 @@ export const AnalyticsMainPage: React.FC = () => {
                 تحليلات شاملة ومؤشرات أداء متقدمة لإدارة أفضل
               </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <Typography variant="body2" sx={{ opacity: 0.8 }}>
                 آخر تحديث: {new Date().toLocaleString('ar-SA')}
@@ -144,11 +128,13 @@ export const AnalyticsMainPage: React.FC = () => {
 
         {/* Quick Stats */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ 
-              background: `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}05)`,
-              border: `1px solid ${theme.palette.success.main}20`,
-            }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}05)`,
+                border: `1px solid ${theme.palette.success.main}20`,
+              }}
+            >
               <CardContent sx={{ textAlign: 'center' }}>
                 <TrendingUpIcon sx={{ fontSize: 40, color: theme.palette.success.main, mb: 1 }} />
                 <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
@@ -161,11 +147,13 @@ export const AnalyticsMainPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ 
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}05)`,
-              border: `1px solid ${theme.palette.primary.main}20`,
-            }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}05)`,
+                border: `1px solid ${theme.palette.primary.main}20`,
+              }}
+            >
               <CardContent sx={{ textAlign: 'center' }}>
                 <PeopleIcon sx={{ fontSize: 40, color: theme.palette.primary.main, mb: 1 }} />
                 <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
@@ -178,13 +166,17 @@ export const AnalyticsMainPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ 
-              background: `linear-gradient(135deg, ${theme.palette.secondary.main}15, ${theme.palette.secondary.main}05)`,
-              border: `1px solid ${theme.palette.secondary.main}20`,
-            }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.secondary.main}15, ${theme.palette.secondary.main}05)`,
+                border: `1px solid ${theme.palette.secondary.main}20`,
+              }}
+            >
               <CardContent sx={{ textAlign: 'center' }}>
-                <ShoppingCartIcon sx={{ fontSize: 40, color: theme.palette.secondary.main, mb: 1 }} />
+                <ShoppingCartIcon
+                  sx={{ fontSize: 40, color: theme.palette.secondary.main, mb: 1 }}
+                />
                 <Typography variant="h4" color="secondary" sx={{ fontWeight: 'bold' }}>
                   890
                 </Typography>
@@ -195,11 +187,13 @@ export const AnalyticsMainPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ 
-              background: `linear-gradient(135deg, ${theme.palette.warning.main}15, ${theme.palette.warning.main}05)`,
-              border: `1px solid ${theme.palette.warning.main}20`,
-            }}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.warning.main}15, ${theme.palette.warning.main}05)`,
+                border: `1px solid ${theme.palette.warning.main}20`,
+              }}
+            >
               <CardContent sx={{ textAlign: 'center' }}>
                 <SupportIcon sx={{ fontSize: 40, color: theme.palette.warning.main, mb: 1 }} />
                 <Typography variant="h4" color="warning.main" sx={{ fontWeight: 'bold' }}>
@@ -242,7 +236,7 @@ export const AnalyticsMainPage: React.FC = () => {
                     </Box>
                   </Box>
                 }
-                sx={{ 
+                sx={{
                   minWidth: isMobile ? 200 : 250,
                   textAlign: 'left',
                   alignItems: 'flex-start',

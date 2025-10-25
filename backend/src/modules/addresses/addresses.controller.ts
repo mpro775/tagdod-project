@@ -40,7 +40,7 @@ interface RequestWithUser {
   user: JwtUser;
 }
 
-@ApiTags('addresses')
+@ApiTags('العناوين')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('addresses')
@@ -48,10 +48,10 @@ export class AddressesController {
   constructor(private readonly addressesService: AddressesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all user addresses' })
-  @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean, description: 'Include soft-deleted addresses' })
-  @ApiOkResponse({ description: 'Addresses fetched successfully' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'الحصول على جميع عناوين المستخدم' })
+  @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean, description: 'تضمين العناوين المحذوفة مؤقتاً' })
+  @ApiOkResponse({ description: 'تم جلب العناوين بنجاح' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async list(@Req() req: RequestWithUser, @Query('includeDeleted') includeDeleted?: string) {
     const addresses = await this.addressesService.list(
       req.user!.sub,
@@ -59,82 +59,72 @@ export class AddressesController {
     );
 
     return {
-      success: true,
-      data: addresses,
+      addresses,
       count: addresses.length,
     };
   }
 
   @Get('active')
-  @ApiOperation({ summary: 'Get active addresses only' })
-  @ApiOkResponse({ description: 'Active addresses fetched successfully' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'الحصول على العناوين النشطة فقط' })
+  @ApiOkResponse({ description: 'تم جلب العناوين النشطة بنجاح' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async getActive(@Req() req: RequestWithUser) {
     const addresses = await this.addressesService.getActiveAddresses(req.user!.sub);
 
     return {
-      success: true,
-      data: addresses,
+      addresses,
       count: addresses.length,
     };
   }
 
   @Get('default')
-  @ApiOperation({ summary: 'Get default address' })
-  @ApiOkResponse({ description: 'Default address fetched successfully (or null if none)' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'الحصول على العنوان الافتراضي' })
+  @ApiOkResponse({ description: 'تم جلب العنوان الافتراضي بنجاح (أو null إذا لم يكن موجوداً)' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async getDefault(@Req() req: RequestWithUser) {
     const address = await this.addressesService.getDefault(req.user!.sub);
 
     if (!address) {
       return {
-        success: false,
+        address: null,
         message: 'No addresses found. Please add an address first.',
-        data: null,
       };
     }
 
-    return {
-      success: true,
-      data: address,
-    };
+    return { address };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get address by ID' })
-  @ApiParam({ name: 'id', description: 'Address ID' })
-  @ApiOkResponse({ description: 'Address fetched successfully' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'الحصول على عنوان بالمعرف' })
+  @ApiParam({ name: 'id', description: 'معرف العنوان' })
+  @ApiOkResponse({ description: 'تم جلب العنوان بنجاح' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async getAddress(@Req() req: RequestWithUser, @Param('id') id: string) {
     const address = await this.addressesService.get(req.user!.sub, id);
 
-    return {
-      success: true,
-      data: address,
-    };
+    return { address };
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create new address' })
-  @ApiCreatedResponse({ description: 'Address created successfully' })
-  @ApiBadRequestResponse({ description: 'Validation error' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'إنشاء عنوان جديد' })
+  @ApiCreatedResponse({ description: 'تم إنشاء العنوان بنجاح' })
+  @ApiBadRequestResponse({ description: 'خطأ في التحقق من البيانات' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async create(@Req() req: RequestWithUser, @Body() dto: CreateAddressDto) {
     const address = await this.addressesService.create(req.user!.sub, dto);
 
     return {
-      success: true,
+      address,
       message: 'Address created successfully',
-      data: address,
     };
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update address' })
-  @ApiParam({ name: 'id', description: 'Address ID' })
-  @ApiOkResponse({ description: 'Address updated successfully' })
-  @ApiBadRequestResponse({ description: 'Validation error' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'تحديث العنوان' })
+  @ApiParam({ name: 'id', description: 'معرف العنوان' })
+  @ApiOkResponse({ description: 'تم تحديث العنوان بنجاح' })
+  @ApiBadRequestResponse({ description: 'خطأ في التحقق من البيانات' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async update(
     @Req() req: RequestWithUser,
     @Param('id') id: string,
@@ -143,71 +133,64 @@ export class AddressesController {
     const address = await this.addressesService.update(req.user!.sub, id, dto);
 
     return {
-      success: true,
+      address,
       message: 'Address updated successfully',
-      data: address,
     };
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete address (soft delete)' })
-  @ApiParam({ name: 'id', description: 'Address ID' })
-  @ApiOkResponse({ description: 'Address deleted successfully' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'حذف العنوان (حذف مؤقت)' })
+  @ApiParam({ name: 'id', description: 'معرف العنوان' })
+  @ApiOkResponse({ description: 'تم حذف العنوان بنجاح' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async remove(@Req() req: RequestWithUser, @Param('id') id: string) {
     const result = await this.addressesService.remove(req.user!.sub, id);
 
     return {
-      success: true,
+      result,
       message: 'Address deleted successfully',
-      data: result,
     };
   }
 
   @Post(':id/set-default')
-  @ApiOperation({ summary: 'Set address as default' })
-  @ApiParam({ name: 'id', description: 'Address ID' })
-  @ApiOkResponse({ description: 'Default address set successfully' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'تعيين العنوان كافتراضي' })
+  @ApiParam({ name: 'id', description: 'معرف العنوان' })
+  @ApiOkResponse({ description: 'تم تعيين العنوان الافتراضي بنجاح' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async setDefault(@Req() req: RequestWithUser, @Param('id') id: string) {
     const address = await this.addressesService.setDefault(req.user!.sub, id);
 
     return {
-      success: true,
+      address,
       message: 'Default address set successfully',
-      data: address,
     };
   }
 
   @Post(':id/restore')
-  @ApiOperation({ summary: 'Restore deleted address' })
-  @ApiParam({ name: 'id', description: 'Address ID' })
-  @ApiOkResponse({ description: 'Address restored successfully' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'استعادة العنوان المحذوف' })
+  @ApiParam({ name: 'id', description: 'معرف العنوان' })
+  @ApiOkResponse({ description: 'تم استعادة العنوان بنجاح' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async restore(@Req() req: RequestWithUser, @Param('id') id: string) {
     const address = await this.addressesService.restore(req.user!.sub, id);
 
     return {
-      success: true,
+      address,
       message: 'Address restored successfully',
-      data: address,
     };
   }
 
   @Get('validate/:id')
-  @ApiOperation({ summary: 'Validate address ownership' })
-  @ApiParam({ name: 'id', description: 'Address ID' })
-  @ApiOkResponse({ description: 'Ownership validation result' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiOperation({ summary: 'التحقق من ملكية العنوان' })
+  @ApiParam({ name: 'id', description: 'معرف العنوان' })
+  @ApiOkResponse({ description: 'نتيجة التحقق من الملكية' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح له' })
   async validateOwnership(@Req() req: RequestWithUser, @Param('id') id: string) {
     const isValid = await this.addressesService.validateAddressOwnership(
       id,
           req.user!.sub,
     );
 
-    return {
-      success: true,
-      data: { valid: isValid },
-    };
+    return { valid: isValid };
   }
 }

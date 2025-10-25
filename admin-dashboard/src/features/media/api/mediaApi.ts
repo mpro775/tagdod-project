@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client';
+import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 import type {
   Media,
   ListMediaParams,
@@ -11,7 +12,6 @@ import type {
   MediaWithUser,
   BulkMediaOperation,
 } from '../types/media.types';
-import type { PaginatedResponse } from '@/shared/types/common.types';
 
 export const mediaApi = {
   /**
@@ -30,19 +30,19 @@ export const mediaApi = {
     }
     if (data.isPublic !== undefined) formData.append('isPublic', String(data.isPublic));
 
-    const response = await apiClient.post<UploadResponse>('/admin/media/upload', formData, {
+    const response = await apiClient.post<ApiResponse<UploadResponse>>('/admin/media/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * List media with pagination
    */
   list: async (params: ListMediaParams): Promise<PaginatedResponse<Media>> => {
-    const response = await apiClient.get<{ data: PaginatedResponse<Media> }>('/admin/media', {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<Media>>>('/admin/media', {
       params,
     });
     return response.data.data;
@@ -52,7 +52,7 @@ export const mediaApi = {
    * Get media by ID
    */
   getById: async (id: string): Promise<Media> => {
-    const response = await apiClient.get<{ data: Media }>(`/admin/media/${id}`);
+    const response = await apiClient.get<ApiResponse<Media>>(`/admin/media/${id}`);
     return response.data.data;
   },
 
@@ -60,7 +60,7 @@ export const mediaApi = {
    * Update media
    */
   update: async (id: string, data: UpdateMediaDto): Promise<Media> => {
-    const response = await apiClient.patch<{ data: Media }>(`/admin/media/${id}`, data);
+    const response = await apiClient.patch<ApiResponse<Media>>(`/admin/media/${id}`, data);
     return response.data.data;
   },
 
@@ -75,7 +75,7 @@ export const mediaApi = {
    * Restore deleted media
    */
   restore: async (id: string): Promise<Media> => {
-    const response = await apiClient.post<{ data: Media }>(`/admin/media/${id}/restore`);
+    const response = await apiClient.post<ApiResponse<Media>>(`/admin/media/${id}/restore`);
     return response.data.data;
   },
 
@@ -90,7 +90,7 @@ export const mediaApi = {
    * Get media statistics
    */
   getStats: async (): Promise<MediaStats> => {
-    const response = await apiClient.get<{ data: MediaStats }>('/admin/media/stats/summary');
+    const response = await apiClient.get<ApiResponse<MediaStats>>('/admin/media/stats/summary');
     return response.data.data;
   },
 
@@ -105,7 +105,7 @@ export const mediaApi = {
    * Bulk operations on media
    */
   bulkOperation: async (data: BulkMediaOperation): Promise<{ success: boolean; affected: number }> => {
-    const response = await apiClient.post<{ data: { success: boolean; affected: number } }>('/admin/media/bulk', data);
+    const response = await apiClient.post<ApiResponse<{ success: boolean; affected: number }>>('/admin/media/bulk', data);
     return response.data.data;
   },
 
@@ -113,33 +113,33 @@ export const mediaApi = {
    * Cleanup deleted files (Super Admin only)
    */
   cleanupDeleted: async (): Promise<CleanupResponse> => {
-    const response = await apiClient.post<CleanupResponse>('/admin/media/cleanup/deleted');
-    return response.data;
+    const response = await apiClient.post<ApiResponse<CleanupResponse>>('/admin/media/cleanup/deleted');
+    return response.data.data;
   },
 
   /**
    * Cleanup duplicate files (Super Admin only)
    */
   cleanupDuplicates: async (): Promise<CleanupResponse> => {
-    const response = await apiClient.post<CleanupResponse>('/admin/media/cleanup/duplicates');
-    return response.data;
+    const response = await apiClient.post<ApiResponse<CleanupResponse>>('/admin/media/cleanup/duplicates');
+    return response.data.data;
   },
 
   /**
    * Cleanup unused files (Super Admin only)
    */
   cleanupUnused: async (days?: number): Promise<CleanupResponse> => {
-    const response = await apiClient.post<CleanupResponse>('/admin/media/cleanup/unused', null, {
+    const response = await apiClient.post<ApiResponse<CleanupResponse>>('/admin/media/cleanup/unused', null, {
       params: days ? { days } : {},
     });
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * Get media with user information
    */
   getMediaWithUser: async (id: string): Promise<MediaWithUser> => {
-    const response = await apiClient.get<{ data: MediaWithUser }>(`/admin/media/${id}/with-user`);
+    const response = await apiClient.get<ApiResponse<MediaWithUser>>(`/admin/media/${id}/with-user`);
     return response.data.data;
   },
 };

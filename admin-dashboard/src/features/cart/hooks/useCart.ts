@@ -36,7 +36,7 @@ export const useCartList = (filters: CartFilters = {}) => {
     queryKey: cartQueryKeys.list(filters),
     queryFn: async () => {
       const response = await cartApi.getAllCarts(filters);
-      return response.data;
+      return response; // getAllCarts already returns { carts, pagination }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -49,7 +49,7 @@ export const useCartDetails = (cartId: string, enabled: boolean = true) => {
     queryKey: cartQueryKeys.detail(cartId),
     queryFn: async () => {
       const response = await cartApi.getCartById(cartId);
-      return response.data;
+      return response; // getCartById already returns Cart
     },
     enabled: enabled && !!cartId,
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -62,7 +62,7 @@ export const useAbandonedCarts = (filters: CartFilters = {}) => {
     queryKey: cartQueryKeys.abandoned(filters),
     queryFn: async () => {
       const response = await cartApi.getAbandonedCarts(filters);
-      return response.data;
+      return response; // getAbandonedCarts already returns the data
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -74,7 +74,7 @@ export const useCartAnalytics = (period: string = '30') => {
     queryKey: cartQueryKeys.analytics(period),
     queryFn: async () => {
       const response = await cartApi.getCartAnalytics(period);
-      return response.data;
+      return response; // getCartAnalytics already returns the data
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -86,7 +86,7 @@ export const useCartStatistics = () => {
     queryKey: cartQueryKeys.statistics(),
     queryFn: async () => {
       const response = await cartApi.getCartStatistics();
-      return response.data;
+      return response; // getCartStatistics already returns the data
     },
     staleTime: 15 * 60 * 1000, // 15 minutes
   });
@@ -98,7 +98,7 @@ export const useConversionRates = (period: string = '30') => {
     queryKey: cartQueryKeys.conversionRates(period),
     queryFn: async () => {
       const response = await cartApi.getConversionRates(period);
-      return response.data;
+      return response; // getConversionRates already returns the data
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -110,7 +110,7 @@ export const useRecoveryCampaignAnalytics = (period: string = '30') => {
     queryKey: cartQueryKeys.recoveryCampaigns(period),
     queryFn: async () => {
       const response = await cartApi.getRecoveryCampaignAnalytics(period);
-      return response.data;
+      return response; // getRecoveryCampaignAnalytics already returns the data
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -122,7 +122,7 @@ export const useCustomerBehaviorAnalytics = (period: string = '30') => {
     queryKey: cartQueryKeys.customerBehavior(period),
     queryFn: async () => {
       const response = await cartApi.getCustomerBehaviorAnalytics(period);
-      return response.data;
+      return response; // getCustomerBehaviorAnalytics already returns the data
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -134,7 +134,7 @@ export const useRevenueImpactAnalytics = (period: string = '30') => {
     queryKey: cartQueryKeys.revenueImpact(period),
     queryFn: async () => {
       const response = await cartApi.getRevenueImpactAnalytics(period);
-      return response.data;
+      return response; // getRevenueImpactAnalytics already returns the data
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -150,7 +150,7 @@ export const useConvertCartToOrder = () => {
   return useMutation({
     mutationFn: async (request: ConvertToOrderRequest) => {
       const response = await cartApi.convertCartToOrder(request);
-      return response.data;
+      return response; // convertCartToOrder already returns the data
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.all });
@@ -171,7 +171,7 @@ export const useSendCartReminder = () => {
   return useMutation({
     mutationFn: async (request: SendReminderRequest) => {
       const response = await cartApi.sendCartReminder(request);
-      return response.data;
+      return response; // sendCartReminder already returns the data
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.detail(variables.cartId) });
@@ -192,11 +192,11 @@ export const useSendAllReminders = () => {
   return useMutation({
     mutationFn: async () => {
       const response = await cartApi.sendAllReminders();
-      return response.data;
+      return response; // sendAllReminders already returns the data
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.all });
-      enqueueSnackbar(`تم إرسال ${data?.data?.sent} تذكير بنجاح`, { variant: 'success' });
+      enqueueSnackbar(`تم إرسال ${data?.sent || 0} تذكير بنجاح`, { variant: 'success' });
     },
     onError: (error: any) => {
       enqueueSnackbar(error.message || 'فشل في إرسال التذكيرات', { variant: 'error' });
@@ -212,11 +212,11 @@ export const useBulkActions = () => {
   return useMutation({
     mutationFn: async (request: BulkActionRequest) => {
       const response = await cartApi.performBulkActions(request);
-      return response.data;
+      return response; // performBulkActions already returns the data
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.all });
-      enqueueSnackbar(`تم معالجة ${data?.data?.processed} سلة بنجاح`, { variant: 'success' });
+      enqueueSnackbar(`تم معالجة ${data?.processed || 0} سلة بنجاح`, { variant: 'success' });
     },
     onError: (error: any) => {
       enqueueSnackbar(error.message || 'فشل في تنفيذ الإجراءات الجماعية', { variant: 'error' });

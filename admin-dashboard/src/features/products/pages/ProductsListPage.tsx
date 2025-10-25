@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import { Box, Chip, IconButton, Tooltip, Button, Menu, MenuItem, Alert } from '@mui/material';
-import { 
-  Edit, 
-  Delete, 
-  Restore, 
-  Visibility, 
-  Star, 
-  NewReleases, 
+import {
+  Edit,
+  Delete,
+  Restore,
+  Visibility,
+  Star,
+  NewReleases,
   Inventory,
   FilterList,
-  MoreVert,
-  Archive,
-  Unarchive,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
@@ -19,7 +16,8 @@ import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useProducts, useDeleteProduct, useRestoreProduct } from '../hooks/useProducts';
 import { formatDate } from '@/shared/utils/formatters';
 import { CurrencySelector } from '@/shared/components/CurrencySelector';
-import type { Product, ProductStatus } from '../types/product.types';
+import type { Product } from '../types/product.types';
+import { ProductStatus } from '../types/product.types';
 
 export const ProductsListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -275,11 +273,7 @@ export const ProductsListPage: React.FC = () => {
       {/* Header with filters */}
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box display="flex" gap={2} alignItems="center">
-          <Button
-            variant="outlined"
-            startIcon={<FilterList />}
-            onClick={handleMenuOpen}
-          >
+          <Button variant="outlined" startIcon={<FilterList />} onClick={handleMenuOpen}>
             الفلاتر
           </Button>
           <Button
@@ -292,10 +286,7 @@ export const ProductsListPage: React.FC = () => {
         </Box>
         <Box display="flex" gap={1}>
           <CurrencySelector size="sm" />
-          <Button
-            variant="contained"
-            onClick={() => navigate('/products/new')}
-          >
+          <Button variant="contained" onClick={() => navigate('/products/new')}>
             إضافة منتج
           </Button>
         </Box>
@@ -308,7 +299,9 @@ export const ProductsListPage: React.FC = () => {
             الفلاتر النشطة:
             {statusFilter !== 'all' && (
               <Chip
-                label={`الحالة: ${statusFilter === 'active' ? 'نشط' : statusFilter === 'draft' ? 'مسودة' : 'مؤرشف'}`}
+                label={`الحالة: ${
+                  statusFilter === 'active' ? 'نشط' : statusFilter === 'draft' ? 'مسودة' : 'مؤرشف'
+                }`}
                 size="small"
                 onDelete={() => setStatusFilter('all')}
                 sx={{ ml: 1 }}
@@ -325,7 +318,7 @@ export const ProductsListPage: React.FC = () => {
           </Alert>
         </Box>
       )}
-      
+
       <DataTable
         title="إدارة المنتجات"
         columns={columns}
@@ -337,38 +330,23 @@ export const ProductsListPage: React.FC = () => {
         onSortModelChange={setSortModel}
         searchPlaceholder="البحث في المنتجات..."
         onSearch={setSearch}
-        getRowId={(row) => row._id}
+        getRowId={(row) => (row as Product)._id}
         onRowClick={(params) => {
-          const row = params.row as Product;
-          navigate(`/products/${row._id}`);
+          navigate(`/products/${(params.row as Product)._id}`);
         }}
         height="calc(100vh - 200px)"
       />
 
       {/* Filter Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={() => handleFilterChange('status', 'all')}>
-          جميع الحالات
-        </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ACTIVE)}>
-          نشط
-        </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.DRAFT)}>
-          مسودة
-        </MenuItem>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+        <MenuItem onClick={() => handleFilterChange('status', 'all')}>جميع الحالات</MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ACTIVE)}>نشط</MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.DRAFT)}>مسودة</MenuItem>
         <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ARCHIVED)}>
           مؤرشف
         </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('featured', true)}>
-          منتجات مميزة
-        </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('featured', false)}>
-          منتجات عادية
-        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('featured', true)}>منتجات مميزة</MenuItem>
+        <MenuItem onClick={() => handleFilterChange('featured', false)}>منتجات عادية</MenuItem>
       </Menu>
     </Box>
   );

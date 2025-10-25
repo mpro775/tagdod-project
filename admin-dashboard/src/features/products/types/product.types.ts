@@ -32,9 +32,11 @@ export interface Product extends BaseEntity {
   brandId?: string;
   sku?: string;
 
+  mainImage?: string;
   // الصور (مبسط)
   mainImageId?: string; // الصورة الرئيسية
   imageIds: string[]; // صور إضافية
+  images?: string[];
 
   // السمات
   attributes: string[]; // السمات التي يستخدمها هذا المنتج
@@ -44,6 +46,7 @@ export interface Product extends BaseEntity {
   isActive: boolean;
   isFeatured: boolean; // منتج مميز
   isNew: boolean; // منتج جديد
+  isBestseller: boolean; // الأكثر مبيعاً
 
   // الإحصائيات
   viewsCount: number; // عدد المشاهدات
@@ -139,6 +142,7 @@ export interface CreateProductDto {
   status?: ProductStatus;
   isFeatured?: boolean;
   isNew?: boolean;
+  isBestseller?: boolean;
   order?: number;
   
   // حقول المخزون
@@ -171,6 +175,7 @@ export interface UpdateProductDto {
   isActive?: boolean;
   isFeatured?: boolean;
   isNew?: boolean;
+  isBestseller?: boolean;
   order?: number;
   
   // حقول المخزون

@@ -71,6 +71,10 @@
 - **الوصف:** تحديث الملف الشخصي
 - **المدخلات:** `{ firstName?, lastName?, gender?, jobTitle? }`
 
+### PATCH /auth/preferred-currency (محمي)
+- **الوصف:** تحديث العملة المفضلة
+- **المدخلات:** `{ currency: 'USD'|'YER'|'SAR' }`
+
 ### DELETE /auth/me (محمي)
 - **الوصف:** حذف الحساب
 - **المنطق:** حذف ناعم للمستخدم وقدراته
@@ -81,6 +85,10 @@
 ### POST /auth/admin/approve (محمي، مدير)
 - **الوصف:** الموافقة/الرفض على طلبات القدرات
 - **المدخلات:** `{ userId, capability, approve, wholesaleDiscountPercent? }`
+
+### للتطوير والاختبار (3 endpoints - غير متاح في الإنتاج)
+- **POST /auth/create-super-admin** - إنشاء الادمن الرئيسي
+- **POST /auth/dev-login** - تسجيل دخول السوبر أدمن للتطوير
 
 ## هيكل البيانات
 
@@ -93,7 +101,6 @@
 
 ### حقول النظام
 - `passwordHash`: كلمة المرور المشفرة (bcrypt)
-- `isAdmin`: هل هو مدير (boolean)
 - `roles`: الأدوار (array) - user, admin, super_admin, merchant, engineer
 - `permissions`: الصلاحيات المخصصة (array)
 - `status`: حالة الحساب (active/suspended/pending)

@@ -1,46 +1,23 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
+import { Card, CardContent, CardHeader, Typography } from '@mui/material';
+import { Button } from '@mui/material';
+import { Select, MenuItem } from '@mui/material';
+
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select';
-import { Calendar } from '@/shared/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/shared/components/ui/popover';
-import {
-  BarChart3,
+  BarChart,
   TrendingUp,
-  Calendar as CalendarIcon,
+  CalendarMonth as CalendarIcon,
   Download,
-  RefreshCw,
+  Refresh as RefreshIcon,
   Shield,
-  AlertTriangle,
-  Activity,
-  Users,
-  Key,
-  Crown,
-} from 'lucide-react';
+  Warning as AlertTriangleIcon,
+  Work as ActivityIcon,
+} from '@mui/icons-material';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import {
-  AuditStatsCards,
-  AuditLogsTable,
-} from '../components';
-import {
-  useAuditStats,
-  useAuditLogs,
-  useAuditExport,
-} from '../hooks/useAudit';
-import { AuditLog } from '../types/audit.types';
+import { AuditStatsCards, AuditLogsTable } from '../components';
+import { useAuditStats, useAuditLogs, useAuditExport } from '../hooks/useAudit';
+import toast from 'react-hot-toast';
 
 export const AuditAnalyticsPage: React.FC = () => {
   const [dateRange, setDateRange] = useState<{
@@ -50,10 +27,11 @@ export const AuditAnalyticsPage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('week');
   const [showSensitiveOnly, setShowSensitiveOnly] = useState(false);
 
-  const { stats, isLoading: statsLoading, refetch: refetchStats } = useAuditStats(
-    dateRange.startDate,
-    dateRange.endDate
-  );
+  const {
+    stats,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+  } = useAuditStats(dateRange.startDate, dateRange.endDate);
 
   const { logs, isLoading: logsLoading } = useAuditLogs({
     isSensitive: showSensitiveOnly || undefined,
@@ -140,21 +118,15 @@ export const AuditAnalyticsPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">تحليلات التدقيق</h1>
-          <p className="text-muted-foreground">
-            إحصائيات وتحليلات شاملة لسجلات التدقيق
-          </p>
+          <p className="text-muted-foreground">إحصائيات وتحليلات شاملة لسجلات التدقيق</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
+          <Button variant="outlined" onClick={handleRefresh} className="flex items-center gap-2">
+            <RefreshIcon className="h-4 w-4" />
             تحديث
           </Button>
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={handleExport}
             disabled={isExporting}
             className="flex items-center gap-2"
@@ -169,61 +141,49 @@ export const AuditAnalyticsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <Typography variant="h6" className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
               الفترة الزمنية
-            </CardTitle>
+            </Typography>
           </CardHeader>
           <CardContent>
-            <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">اليوم</SelectItem>
-                <SelectItem value="week">آخر أسبوع</SelectItem>
-                <SelectItem value="month">آخر شهر</SelectItem>
-                <SelectItem value="quarter">آخر 3 أشهر</SelectItem>
-                <SelectItem value="year">آخر سنة</SelectItem>
-              </SelectContent>
+            <Select value={selectedPeriod} onChange={(e) => handlePeriodChange(e.target.value)}>
+              <MenuItem value="today">اليوم</MenuItem>
+              <MenuItem value="week">آخر أسبوع</MenuItem>
+              <MenuItem value="month">آخر شهر</MenuItem>
+              <MenuItem value="quarter">آخر 3 أشهر</MenuItem>
+              <MenuItem value="year">آخر سنة</MenuItem>
             </Select>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
+            <Typography variant="h6" className="flex items-center gap-2">
+              <AlertTriangleIcon className="h-5 w-5" />
               نوع السجلات
-            </CardTitle>
+            </Typography>
           </CardHeader>
           <CardContent>
             <Select
               value={showSensitiveOnly ? 'sensitive' : 'all'}
-              onValueChange={(value) => setShowSensitiveOnly(value === 'sensitive')}
+              onChange={(e) => setShowSensitiveOnly(e.target.value === 'sensitive')}
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع السجلات</SelectItem>
-                <SelectItem value="sensitive">العمليات الحساسة فقط</SelectItem>
-              </SelectContent>
+              <MenuItem value="all">جميع السجلات</MenuItem>
+              <MenuItem value="sensitive">العمليات الحساسة فقط</MenuItem>
             </Select>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
+            <Typography variant="h6" className="flex items-center gap-2">
+              <ActivityIcon className="h-5 w-5" />
               ملخص الفترة
-            </CardTitle>
+            </Typography>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-muted-foreground">
-              {getPeriodLabel(selectedPeriod)}
-            </div>
+            <div className="text-sm text-muted-foreground">{getPeriodLabel(selectedPeriod)}</div>
             {dateRange.startDate && dateRange.endDate && (
               <div className="text-xs text-muted-foreground mt-1">
                 {format(new Date(dateRange.startDate), 'dd/MM/yyyy', { locale: ar })} -{' '}
@@ -242,10 +202,10 @@ export const AuditAnalyticsPage: React.FC = () => {
         {/* Activity Overview */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+            <Typography variant="h6" className="flex items-center gap-2">
+              <BarChart className="h-5 w-5" />
               نظرة عامة على النشاط
-            </CardTitle>
+            </Typography>
           </CardHeader>
           <CardContent>
             {statsLoading ? (
@@ -284,7 +244,7 @@ export const AuditAnalyticsPage: React.FC = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Activity className="mx-auto h-12 w-12 text-muted-foreground" />
+                <ActivityIcon className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-2 text-sm font-semibold text-gray-900">لا توجد بيانات</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   لا توجد إحصائيات متاحة للفترة المحددة
@@ -297,10 +257,10 @@ export const AuditAnalyticsPage: React.FC = () => {
         {/* Security Overview */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <Typography variant="h6" className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
               نظرة عامة على الأمان
-            </CardTitle>
+            </Typography>
           </CardHeader>
           <CardContent>
             {statsLoading ? (
@@ -335,9 +295,10 @@ export const AuditAnalyticsPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">نسبة الحساسية</span>
                   <span className="text-2xl font-bold text-yellow-600">
-                    {stats.totalLogs > 0 
+                    {stats.totalLogs > 0
                       ? Math.round((stats.sensitiveLogs / stats.totalLogs) * 100)
-                      : 0}%
+                      : 0}
+                    %
                   </span>
                 </div>
               </div>
@@ -357,17 +318,13 @@ export const AuditAnalyticsPage: React.FC = () => {
       {/* Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <Typography variant="h6" className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
             النشاط الأخير
-          </CardTitle>
+          </Typography>
         </CardHeader>
         <CardContent>
-          <AuditLogsTable
-            logs={logs}
-            isLoading={logsLoading}
-            onViewDetails={() => {}}
-          />
+          <AuditLogsTable logs={logs} isLoading={logsLoading} onViewDetails={() => {}} />
         </CardContent>
       </Card>
     </div>

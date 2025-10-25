@@ -193,31 +193,16 @@ export class DeliveryAddress {
   addressId!: Types.ObjectId;
 
   @Prop({ required: true })
-  recipientName!: string;
-
-  @Prop({ required: true })
-  recipientPhone!: string;
+  label!: string;
 
   @Prop({ required: true })
   line1!: string;
 
-  @Prop()
-  line2?: string;
-
   @Prop({ required: true })
   city!: string;
 
-  @Prop()
-  region?: string;
-
-  @Prop({ required: true })
-  country!: string;
-
-  @Prop()
-  postalCode?: string;
-
-  @Prop({ type: Object })
-  coords?: { lat: number; lng: number };
+  @Prop({ type: Object, required: true })
+  coords!: { lat: number; lng: number };
 
   @Prop()
   notes?: string;

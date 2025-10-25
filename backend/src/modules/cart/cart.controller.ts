@@ -14,7 +14,7 @@ import { CartService } from './cart.service';
 import { AddItemDto, UpdateItemDto, DeviceDto, PreviewDto, UpdateCartSettingsDto, ApplyCouponDto } from './dto/cart.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@ApiTags('cart')
+@ApiTags('السلة')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('cart')
@@ -23,11 +23,11 @@ export class CartController {
 
   @Get()
   @ApiOperation({
-    summary: 'Get user cart',
-    description: 'Retrieves the current user shopping cart with all items',
+    summary: 'الحصول على سلة المستخدم',
+    description: 'يسترد سلة التسوق الحالية للمستخدم مع جميع العناصر',
   })
   @ApiOkResponse({
-    description: 'Cart retrieved successfully',
+    description: 'تم استرداد السلة بنجاح',
     schema: {
       type: 'object',
       properties: {
@@ -57,19 +57,19 @@ export class CartController {
       },
     },
   })
-  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT token' })
+  @ApiUnauthorizedResponse({ description: 'رمز JWT غير صحيح أو مفقود' })
   async get(@Req() req: { user: { sub: string } }) {
-    return { data: await this.svc.getUserCart(req.user.sub) };
+    return await this.svc.getUserCart(req.user.sub);
   }
 
   @Post('items')
   @ApiOperation({
-    summary: 'Add item to cart',
-    description: 'Adds a product variant to the user shopping cart',
+    summary: 'إضافة عنصر إلى السلة',
+    description: 'إضافة متغير منتج إلى سلة التسوق للمستخدم',
   })
   @ApiBody({ type: AddItemDto })
   @ApiOkResponse({
-    description: 'Item added to cart successfully',
+    description: 'تم إضافة العنصر إلى السلة بنجاح',
     schema: {
       type: 'object',
       properties: {
@@ -86,11 +86,11 @@ export class CartController {
       },
     },
   })
-  @ApiBadRequestResponse({ description: 'Invalid variant ID or quantity' })
-  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT token' })
+  @ApiBadRequestResponse({ description: 'معرف المتغير أو الكمية غير صحيحة' })
+  @ApiUnauthorizedResponse({ description: 'رمز JWT غير صحيح أو مفقود' })
   async add(@Req() req: { user: { sub: string } }, @Body() dto: AddItemDto) {
     const data = await this.svc.addUserItem(req.user.sub, dto.variantId, dto.qty);
-    return { data };
+    return data;
   }
 
   @Patch('items/:itemId')
@@ -131,7 +131,7 @@ export class CartController {
     @Body() dto: UpdateItemDto,
   ) {
     const data = await this.svc.updateUserItem(req.user.sub, itemId, dto.qty);
-    return { data };
+    return data;
   }
 
   @Delete('items/:itemId')
@@ -163,7 +163,7 @@ export class CartController {
   @ApiNotFoundResponse({ description: 'العنصر غير موجود في السلة' })
   async remove(@Req() req: { user: { sub: string } }, @Param('itemId') itemId: string) {
     const data = await this.svc.removeUserItem(req.user.sub, itemId);
-    return { data };
+    return data;
   }
 
   @Post('merge')
@@ -192,7 +192,7 @@ export class CartController {
   @ApiBadRequestResponse({ description: 'معرف الجهاز غير صحيح' })
   async merge(@Req() req: { user: { sub: string } }, @Body() body: DeviceDto) {
     const data = await this.svc.merge(body.deviceId, req.user.sub);
-    return { data };
+    return data;
   }
 
   @Post('preview')
@@ -222,7 +222,7 @@ export class CartController {
   })
   async preview(@Req() req: { user: { sub: string } }, @Body() dto: PreviewDto) {
     const data = await this.svc.previewUser(req.user.sub, dto.currency, 'any');
-    return { data };
+    return data;
   }
 
   @Patch('settings')
@@ -249,7 +249,7 @@ export class CartController {
   })
   async updateSettings(@Req() req: { user: { sub: string } }, @Body() dto: UpdateCartSettingsDto) {
     const data = await this.svc.updateCartSettings(req.user.sub, dto);
-    return { data };
+    return data;
   }
 
   @Post('coupon')
@@ -279,7 +279,7 @@ export class CartController {
   @ApiBadRequestResponse({ description: 'كود الكوبون غير صحيح أو منتهي الصلاحية' })
   async applyCoupon(@Req() req: { user: { sub: string } }, @Body() dto: ApplyCouponDto) {
     const data = await this.svc.applyCoupon(req.user.sub, dto.couponCode);
-    return { data };
+    return data;
   }
 
   @Delete('coupon')
@@ -306,6 +306,6 @@ export class CartController {
   @ApiNotFoundResponse({ description: 'لا يوجد كوبون مطبق على السلة' })
   async removeCoupon(@Req() req: { user: { sub: string } }) {
     const data = await this.svc.removeCoupon(req.user.sub);
-    return { data };
+    return data;
   }
 }

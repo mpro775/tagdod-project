@@ -1,183 +1,54 @@
-%% Advanced Inventory-Payment Integration Flow
+%% Inventory Payment Integration Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Payment Request] --> B{Payment Method?}
-  B -->|COD| C[COD Payment Flow]
-  B -->|ONLINE| D[Online Payment Flow]
-  
-  %% COD Payment Flow
-  C --> C1[Start Database Transaction]
-  C1 --> C2[Create Order PENDING]
-  C2 --> C3[Reserve Inventory Immediately]
-  C3 --> C4[Update Inventory on_hand]
-  C4 --> C5[Update Inventory reserved]
-  C5 --> C6[Create Inventory Ledger Entry]
-  C6 --> C7[Update Order Status CONFIRMED]
-  C7 --> C8[Commit Transaction]
-  C8 --> C9[Send Confirmation Notification]
-  C9 --> C10[Return Success Response]
-  
-  %% Online Payment Flow
-  D --> D1[Start Database Transaction]
-  D1 --> D2[Create Order PENDING]
-  D2 --> D3[Reserve Inventory with TTL]
-  D3 --> D4[Create Reservation Record]
-  D4 --> D5[Set Reservation Expiry]
-  D5 --> D6[Create Inventory Ledger Entry]
-  D6 --> D7[Generate Payment Intent]
-  D7 --> D8[Create HMAC Signature]
-  D8 --> D9[Save Payment Intent ID]
-  D9 --> D10[Commit Transaction]
-  D10 --> D11[Return Payment Intent]
-  D11 --> D12[Wait for Payment Confirmation]
-  
-  %% Webhook Processing
-  D12 --> E[Webhook Received]
-  E --> E1[Verify HMAC Signature]
-  E1 --> E2{Signature Valid?}
-  E2 -->|No| E3[Log Security Alert]
-  E3 --> E4[Return 401 Unauthorized]
-  E2 -->|Yes| E5[Start Database Transaction]
-  E5 --> E6[Load Order by Payment Intent ID]
-  E6 --> E7{Payment Status?}
-  
-  %% Payment Success
-  E7 -->|SUCCESS| F[Payment Success Flow]
-  F --> F1[Update Order Status CONFIRMED]
-  F1 --> F2[Commit Inventory Reservation]
-  F2 --> F3[Update Inventory on_hand]
-  F3 --> F4[Update Inventory reserved]
-  F4 --> F5[Create Confirmation Ledger Entry]
-  F5 --> F6[Send Success Notification]
-  F6 --> F7[Commit Transaction]
-  F7 --> F8[Return 200 OK]
-  
-  %% Payment Failure
-  E7 -->|FAILED| G[Payment Failure Flow]
-  G --> G1[Update Order Status PAYMENT_FAILED]
-  G1 --> G2[Release Inventory Reservation]
-  G2 --> G3[Update Inventory reserved]
-  G3 --> G4[Create Release Ledger Entry]
-  G4 --> G5[Send Failure Notification]
-  G5 --> G6[Commit Transaction]
-  G6 --> G7[Return 200 OK]
-  
-  %% Inventory Management
-  H[Inventory Management] --> H1{Operation Type?}
-  H1 -->|Reserve| H2[Reserve Stock]
-  H1 -->|Commit| H3[Commit Reservation]
-  H1 -->|Release| H4[Release Reservation]
-  H1 -->|Adjust| H5[Manual Adjustment]
-  
-  %% Reserve Stock
-  H2 --> H2A[Check Stock Availability]
-  H2A --> H2B{Stock Available?}
-  H2B -->|No| H2C[Return Insufficient Stock Error]
-  H2B -->|Yes| H2D[Calculate Available Stock]
-  H2D --> H2E[Update reserved quantity]
-  H2E --> H2F[Create Reservation Record]
-  H2F --> H2G[Set TTL for Reservation]
-  H2G --> H2H[Create Ledger Entry]
-  H2H --> H2I[Return Success]
-  
-  %% Commit Reservation
-  H3 --> H3A[Find Active Reservations]
-  H3A --> H3B[Update Reservation Status]
-  H3B --> H3C[Decrease on_hand quantity]
-  H3C --> H3D[Decrease reserved quantity]
-  H3D --> H3E[Create Confirmation Ledger Entry]
-  H3E --> H3F[Return Success]
-  
-  %% Release Reservation
-  H4 --> H4A[Find Active Reservations]
-  H4A --> H4B[Update Reservation Status]
-  H4B --> H4C[Increase reserved quantity]
-  H4C --> H4D[Create Release Ledger Entry]
-  H4D --> H4E[Return Success]
-  
-  %% Manual Adjustment
-  H5 --> H5A[Validate Adjustment Data]
-  H5A --> H5B{Valid?}
-  H5B -->|No| H5C[Return Validation Error]
-  H5B -->|Yes| H5D[Update on_hand quantity]
-  H5D --> H5E[Create Adjustment Ledger Entry]
-  H5E --> H5F[Return Success]
-  
-  %% Multi-currency Support
-  I[Multi-currency Support] --> I1{Currency Type?}
-  I1 -->|YER| I2[Yemeni Rial Processing]
-  I1 -->|SAR| I3[Saudi Riyal Processing]
-  I1 -->|USD| I4[US Dollar Processing]
-  
-  I2 --> I5[Convert to Base Currency]
-  I3 --> I5
-  I4 --> I5
-  I5 --> I6[Calculate Exchange Rate]
-  I6 --> I7[Apply Conversion]
-  I7 --> I8[Store in Original Currency]
-  I8 --> I9[Return Converted Amount]
-  
-  %% Database Transaction Management
-  J[Database Transaction Management] --> J1[Begin Transaction]
-  J1 --> J2[Execute Operations]
-  J2 --> J3{All Operations Success?}
-  J3 -->|Yes| J4[Commit Transaction]
-  J3 -->|No| J5[Rollback Transaction]
-  J5 --> J6[Handle Error]
-  J6 --> J7[Log Error Details]
-  J7 --> J8[Return Error Response]
-  
-  %% Notification System
-  K[Notification System] --> K1{Notification Type?}
-  K1 -->|Success| K2[Send Success Notification]
-  K1 -->|Failure| K3[Send Failure Notification]
-  K1 -->|Error| K4[Send Error Notification]
-  
-  K2 --> K5[Create Success Notification]
-  K3 --> K6[Create Failure Notification]
-  K4 --> K7[Create Error Notification]
-  
-  K5 --> K8[Set Notification Channel]
-  K6 --> K8
-  K7 --> K8
-  K8 --> K9[Send Notification]
-  K9 --> K10[Log Notification]
-  
-  %% Error Handling
-  L[Error Handling] --> L1{Error Type?}
-  L1 -->|Payment Error| L2[Handle Payment Error]
-  L1 -->|Inventory Error| L3[Handle Inventory Error]
-  L1 -->|Database Error| L4[Handle Database Error]
-  L1 -->|Network Error| L5[Handle Network Error]
-  
-  L2 --> L6[Log Payment Error]
-  L3 --> L7[Log Inventory Error]
-  L4 --> L8[Log Database Error]
-  L5 --> L9[Log Network Error]
-  
-  L6 --> L10[Update Order Status]
-  L7 --> L11[Release Inventory]
-  L8 --> L12[Rollback Transaction]
-  L9 --> L13[Retry Operation]
-  
-  L10 --> L14[Send Error Notification]
-  L11 --> L14
-  L12 --> L14
-  L13 --> L14
-  
-  %% End points
-  C10 --> Z[End]
-  E4 --> Z
-  F8 --> Z
-  G7 --> Z
-  H2C --> Z
-  H2I --> Z
-  H3F --> Z
-  H4E --> Z
-  H5C --> Z
-  H5F --> Z
-  I9 --> Z
-  J4 --> Z
-  J8 --> Z
-  K10 --> Z
-  L14 --> Z
+  A[تأكيد طلب] --> B{طريقة الدفع?}
+  B -->|COD| C[تأكيد فوري للطلب]
+  B -->|ONLINE| D[انتظار webhook الدفع]
+
+  C --> E[تحديث حالة الطلب إلى CONFIRMED]
+  D --> F[تحديث حالة الطلب إلى PENDING_PAYMENT]
+
+  E --> G[تحديث المخزون - تقليل الكميات]
+  F --> H[المخزون محجوز مؤقتاً]
+
+  G --> I[فحص مستويات المخزون]
+  H --> J[انتظار تأكيد الدفع]
+
+  I --> K{المخزون أقل من الحد الأدنى?}
+  K -->|نعم| L[إرسال إشعار مخزون منخفض]
+  K -->|لا| M[استمرار التشغيل العادي]
+
+  J --> N{استقبال webhook?}
+  N -->|نجح الدفع| O[تحديث حالة الطلب إلى CONFIRMED]
+  N -->|فشل الدفع| P[تحديث حالة الطلب إلى PAYMENT_FAILED]
+
+  O --> Q[تحديث المخزون - تقليل الكميات]
+  P --> R[المخزون لا يزال محجوزاً]
+
+  Q --> S[فحص مستويات المخزون]
+  R --> T[يمكن إرجاع المخزون لاحقاً]
+
+  S --> U{المخزون نفد?}
+  U -->|نعم| V[إرسال إشعار نفاد مخزون]
+  U -->|لا| W[استمرار التشغيل العادي]
+
+  L --> X[نهاية]
+  M --> X
+  V --> X
+  W --> X
+  T --> X
+
+  %% Inventory Update Process
+  Y[تحديث المخزون] --> Y1[لكل عنصر في الطلب]
+  Y1 --> Y2[تقليل stock بمقدار quantity]
+  Y2 --> Y3[حفظ التغيير في inventory ledger]
+
+  %% Inventory Notifications
+  Z[إشعارات المخزون] --> Z1[LOW_STOCK - مخزون منخفض]
+  Z1 --> Z2[OUT_OF_STOCK - نفاد المخزون]
+  Z2 --> Z3[PRODUCT_BACK_IN_STOCK - عودة المخزون]
+
+  %% Order Status Impact
+  AA[تأثير حالة الطلب] --> AA1[CONFIRMED - يقلل المخزون]
+  AA1 --> AA2[PAYMENT_FAILED - يحتفظ بالمخزون المحجوز]
+  AA2 --> AA3[CANCELLED - يعيد المخزون]

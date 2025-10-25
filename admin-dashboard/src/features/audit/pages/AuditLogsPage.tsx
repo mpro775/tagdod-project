@@ -1,29 +1,28 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select';
+  MenuItem,
+  Box,
+  Grid,
+} from '@mui/material';
 import {
-  Download,
-  RefreshCw,
-  Search,
-  Filter,
-  Shield,
-  AlertTriangle,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import {
-  AuditFilters,
-  AuditStatsCards,
-  AuditLogsTable,
-  AuditLogDetails,
-} from '../components';
+  Download as DownloadIcon,
+  Refresh as RefreshIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Security as ShieldIcon,
+  Warning as AlertTriangleIcon,
+} from '@mui/icons-material';
+import toast from 'react-hot-toast';
+import { AuditFilters, AuditStatsCards, AuditLogsTable, AuditLogDetails } from '../components';
 import {
   useAuditLogs,
   useAuditStats,
@@ -40,22 +39,13 @@ export const AuditLogsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [quickFilter, setQuickFilter] = useState<string>('');
 
-  const {
-    filters,
-    dateRange,
-    updateFilters,
-    updateDateRange,
-    clearFilters,
-    hasActiveFilters,
-  } = useAuditFilters();
+  const { filters, dateRange, updateFilters, updateDateRange, clearFilters, hasActiveFilters } =
+    useAuditFilters();
 
   const { logs, meta, isLoading, pagination, handlePageChange, handleLimitChange } =
     useAuditLogs(filters);
 
-  const { stats, isLoading: statsLoading } = useAuditStats(
-    dateRange.startDate,
-    dateRange.endDate
-  );
+  const { stats, isLoading: statsLoading } = useAuditStats(dateRange.startDate, dateRange.endDate);
 
   const { actions } = useAuditActions();
   const { resources } = useAuditResources();
@@ -119,35 +109,35 @@ export const AuditLogsPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">سجلات التدقيق</h1>
-          <p className="text-muted-foreground">
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+          <Typography variant="h3" fontWeight="bold">
+            سجلات التدقيق
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
             مراقبة وتتبع جميع العمليات في النظام
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={handleExport}
             disabled={isExporting}
-            className="flex items-center gap-2"
+            startIcon={<DownloadIcon />}
           >
-            <Download className="h-4 w-4" />
             {isExporting ? 'جاري التصدير...' : 'تصدير البيانات'}
           </Button>
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={() => window.location.reload()}
-            className="flex items-center gap-2"
+            startIcon={<RefreshIcon />}
           >
-            <RefreshCw className="h-4 w-4" />
             تحديث
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Statistics Cards */}
       <AuditStatsCards stats={stats} isLoading={statsLoading} />
@@ -155,124 +145,125 @@ export const AuditLogsPage: React.FC = () => {
       {/* Quick Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FilterIcon />
             فلاتر سريعة
-          </CardTitle>
+          </Typography>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             <Button
-              variant={quickFilter === 'sensitive' ? 'default' : 'outline'}
-              size="sm"
+              variant={quickFilter === 'sensitive' ? 'contained' : 'outlined'}
+              size="small"
               onClick={() => handleQuickFilter('sensitive')}
-              className="flex items-center gap-2"
+              startIcon={<AlertTriangleIcon />}
             >
-              <AlertTriangle className="h-4 w-4" />
               العمليات الحساسة
             </Button>
             <Button
-              variant={quickFilter === 'today' ? 'default' : 'outline'}
-              size="sm"
+              variant={quickFilter === 'today' ? 'contained' : 'outlined'}
+              size="small"
               onClick={() => handleQuickFilter('today')}
             >
               اليوم
             </Button>
             <Button
-              variant={quickFilter === 'week' ? 'default' : 'outline'}
-              size="sm"
+              variant={quickFilter === 'week' ? 'contained' : 'outlined'}
+              size="small"
               onClick={() => handleQuickFilter('week')}
             >
               آخر أسبوع
             </Button>
             <Button
-              variant={quickFilter === 'admin' ? 'default' : 'outline'}
-              size="sm"
+              variant={quickFilter === 'admin' ? 'contained' : 'outlined'}
+              size="small"
               onClick={() => handleQuickFilter('admin')}
             >
               الإجراءات الإدارية
             </Button>
             <Button
-              variant={quickFilter === 'auth' ? 'default' : 'outline'}
-              size="sm"
+              variant={quickFilter === 'auth' ? 'contained' : 'outlined'}
+              size="small"
               onClick={() => handleQuickFilter('auth')}
             >
               أحداث المصادقة
             </Button>
             <Button
-              variant={quickFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
+              variant={quickFilter === 'all' ? 'contained' : 'outlined'}
+              size="small"
               onClick={() => handleQuickFilter('all')}
             >
               عرض الكل
             </Button>
-          </div>
+          </Box>
         </CardContent>
       </Card>
 
       {/* Search and Filters */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <Grid container spacing={3}>
         {/* Search */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              البحث
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Input
-              placeholder="البحث في السجلات..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
-          </CardContent>
-        </Card>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Card>
+            <CardHeader>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SearchIcon />
+                البحث
+              </Typography>
+            </CardHeader>
+            <CardContent>
+              <TextField
+                placeholder="البحث في السجلات..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                fullWidth
+              />
+            </CardContent>
+          </Card>
+        </Grid>
 
         {/* Results Count */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              النتائج
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {filteredLogs.length.toLocaleString()}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              من أصل {meta?.total.toLocaleString() || 0} سجل
-            </p>
-          </CardContent>
-        </Card>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Card>
+            <CardHeader>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ShieldIcon />
+                النتائج
+              </Typography>
+            </CardHeader>
+            <CardContent>
+              <Typography variant="h4" fontWeight="bold">
+                {filteredLogs.length.toLocaleString()}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                من أصل {meta?.total.toLocaleString() || 0} سجل
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
         {/* Pagination Controls */}
-        <Card>
-          <CardHeader>
-            <CardTitle>التحكم في الصفحات</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Select
-                value={pagination.limit.toString()}
-                onValueChange={(value) => handleLimitChange(parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="25">25 سجل</SelectItem>
-                  <SelectItem value="50">50 سجل</SelectItem>
-                  <SelectItem value="100">100 سجل</SelectItem>
-                  <SelectItem value="200">200 سجل</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Card>
+            <CardHeader>
+              <Typography variant="h6">التحكم في الصفحات</Typography>
+            </CardHeader>
+            <CardContent>
+              <FormControl fullWidth>
+                <InputLabel>عدد السجلات</InputLabel>
+                <Select
+                  value={pagination.limit.toString()}
+                  onChange={(e) => handleLimitChange(parseInt(e.target.value))}
+                >
+                  <MenuItem value="25">25 سجل</MenuItem>
+                  <MenuItem value="50">50 سجل</MenuItem>
+                  <MenuItem value="100">100 سجل</MenuItem>
+                  <MenuItem value="200">200 سجل</MenuItem>
+                </Select>
+              </FormControl>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       {/* Advanced Filters */}
       <AuditFilters
@@ -287,7 +278,7 @@ export const AuditLogsPage: React.FC = () => {
       {/* Audit Logs Table */}
       <Card>
         <CardHeader>
-          <CardTitle>سجلات التدقيق</CardTitle>
+          <Typography variant="h6">سجلات التدقيق</Typography>
         </CardHeader>
         <CardContent>
           <AuditLogsTable
@@ -301,45 +292,40 @@ export const AuditLogsPage: React.FC = () => {
       {/* Pagination */}
       {meta && meta.total > 0 && (
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                عرض {((pagination.page - 1) * pagination.limit) + 1} إلى{' '}
-                {Math.min(pagination.page * pagination.limit, meta.total)} من{' '}
-                {meta.total} سجل
-              </div>
-              <div className="flex items-center gap-2">
+          <CardContent sx={{ pt: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="body2" color="text.secondary">
+                عرض {(pagination.page - 1) * pagination.limit + 1} إلى{' '}
+                {Math.min(pagination.page * pagination.limit, meta.total)} من {meta.total} سجل
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="outlined"
+                  size="small"
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page <= 1}
                 >
                   السابق
                 </Button>
-                <span className="text-sm">
+                <Typography variant="body2">
                   صفحة {pagination.page} من {Math.ceil(meta.total / pagination.limit)}
-                </span>
+                </Typography>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="outlined"
+                  size="small"
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={!meta.hasMore}
                 >
                   التالي
                 </Button>
-              </div>
-            </div>
+              </Box>
+            </Box>
           </CardContent>
         </Card>
       )}
 
       {/* Log Details Dialog */}
-      <AuditLogDetails
-        log={selectedLog}
-        isOpen={showDetails}
-        onClose={handleCloseDetails}
-      />
-    </div>
+      <AuditLogDetails log={selectedLog} isOpen={showDetails} onClose={handleCloseDetails} />
+    </Box>
   );
 };

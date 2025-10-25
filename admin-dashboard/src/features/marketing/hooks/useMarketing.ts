@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { marketingApi } from '../api/marketingApi';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
 import toast from 'react-hot-toast';
-import type { 
+import type {
   CreatePriceRuleDto,
   UpdatePriceRuleDto,
   CreateCouponDto,
@@ -13,7 +13,7 @@ import type {
   ListCouponsParams,
   ListBannersParams,
   ValidateCouponDto,
-  PricingQueryDto
+  PricingQueryDto,
 } from '../api/marketingApi';
 
 const MARKETING_KEY = 'marketing';
@@ -50,7 +50,7 @@ export const useCreatePriceRule = () => {
 export const useUpdatePriceRule = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdatePriceRuleDto }) => 
+    mutationFn: ({ id, data }: { id: string; data: UpdatePriceRuleDto }) =>
       marketingApi.updatePriceRule(id, data),
     onSuccess: () => {
       toast.success('تم تحديث قاعدة السعر بنجاح');
@@ -129,7 +129,7 @@ export const useCreateCoupon = () => {
 export const useUpdateCoupon = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateCouponDto }) => 
+    mutationFn: ({ id, data }: { id: string; data: UpdateCouponDto }) =>
       marketingApi.updateCoupon(id, data),
     onSuccess: () => {
       toast.success('تم تحديث الكوبون بنجاح');
@@ -204,15 +204,19 @@ export const useCouponPerformance = (period?: number) => {
 
 export const useValidateCoupon = () => {
   return useMutation({
-    mutationFn: (data: ValidateCouponDto) => 
-      marketingApi.validateCoupon(data),
+    mutationFn: (data: ValidateCouponDto) => marketingApi.validateCoupon(data),
     onError: ErrorHandler.showError,
   });
 };
 
 export const useValidateCouponCode = () => {
   return useMutation({
-    mutationFn: ({ code, userId, orderAmount, productIds }: {
+    mutationFn: ({
+      code,
+      userId,
+      orderAmount,
+      productIds,
+    }: {
       code: string;
       userId?: string;
       orderAmount?: number;
@@ -302,7 +306,7 @@ export const useCreateBanner = () => {
 export const useUpdateBanner = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateBannerDto }) => 
+    mutationFn: ({ id, data }: { id: string; data: UpdateBannerDto }) =>
       marketingApi.updateBanner(id, data),
     onSuccess: () => {
       toast.success('تم تحديث البانر بنجاح');

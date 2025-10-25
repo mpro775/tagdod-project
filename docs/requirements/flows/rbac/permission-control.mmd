@@ -1,216 +1,56 @@
-%% Permission Control and Access Management
+%% Permission Control Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Permission Control System] --> B{Request Type?}
-  B -->|API Endpoint| C[API Permission Check]
-  B -->|Resource Access| D[Resource Permission Check]
-  B -->|Feature Access| E[Feature Permission Check]
-  B -->|Data Access| F[Data Permission Check]
-  
-  %% API Permission Check
-  C --> C1[Identify Endpoint]
-  C1 --> C2[Check Required Role]
-  C2 --> C3[Validate User Role]
-  C3 --> C4[Apply Role-Based Access]
-  C4 --> C5[Check Additional Permissions]
-  C5 --> C6[Grant or Deny Access]
-  
-  %% Endpoint Classification
-  C1 --> C1A[Public Endpoints]
-  C1A --> C1B[Customer Endpoints]
-  C1B --> C1C[Engineer Endpoints]
-  C1C --> C1D[Wholesale Endpoints]
-  C1D --> C1E[Admin Endpoints]
-  
-  %% Public Endpoints
-  C1A --> C1A1[Product catalog]
-  C1A1 --> C1A2[User registration]
-  C1A2 --> C1A3[Authentication]
-  C1A3 --> C1A4[Public information]
-  
-  %% Customer Endpoints
-  C1B --> C1B1[Order management]
-  C1B1 --> C1B2[Profile management]
-  C1B2 --> C1B3[Support tickets]
-  C1B3 --> C1B4[Product reviews]
-  
-  %% Engineer Endpoints
-  C1C --> C1C1[Service requests]
-  C1C1 --> C1C2[Job acceptance]
-  C1C2 --> C1C3[Service updates]
-  C1C3 --> C1C4[Engineer dashboard]
-  
-  %% Wholesale Endpoints
-  C1D --> C1D1[Wholesale pricing]
-  C1D1 --> C1D2[Bulk orders]
-  C1D2 --> C1D3[Volume discounts]
-  C1D3 --> C1D4[Wholesale catalog]
-  
-  %% Admin Endpoints
-  C1E --> C1E1[User management]
-  C1E1 --> C1E2[System configuration]
-  C1E2 --> C1E3[Analytics dashboard]
-  C1E3 --> C1E4[Security management]
-  
-  %% Resource Permission Check
-  D --> D1[Identify Resource Type]
-  D1 --> D2[Check Resource Ownership]
-  D2 --> D3[Validate Access Level]
-  D3 --> D4[Apply Resource Rules]
-  D4 --> D5[Grant or Deny Access]
-  
-  %% Resource Types
-  D1 --> D1A[User Resources]
-  D1A --> D1B[Order Resources]
-  D1B --> D1C[Product Resources]
-  D1C --> D1D[Service Resources]
-  D1D --> D1E[System Resources]
-  
-  %% User Resources
-  D1A --> D1A1[Own profile: Full access]
-  D1A1 --> D1A2[Other profiles: Limited access]
-  D1A2 --> D1A3[Admin: Full access to all]
-  
-  %% Order Resources
-  D1B --> D1B1[Own orders: Full access]
-  D1B1 --> D1B2[Customer orders: View only]
-  D1B2 --> D1B3[Admin: Full access to all]
-  
-  %% Product Resources
-  D1C --> D1C1[Public products: View access]
-  D1C1 --> D1C2[Admin products: Full access]
-  D1C2 --> D1C3[Wholesale products: Special pricing]
-  
-  %% Feature Permission Check
-  E --> E1[Identify Feature]
-  E1 --> E2[Check Feature Requirements]
-  E2 --> E3[Validate User Capabilities]
-  E3 --> E4[Apply Feature Rules]
-  E4 --> E5[Enable or Disable Feature]
-  
-  %% Feature Categories
-  E1 --> E1A[Customer Features]
-  E1A --> E1B[Engineer Features]
-  E1B --> E1C[Wholesale Features]
-  E1C --> E1D[Admin Features]
-  
-  %% Customer Features
-  E1A --> E1A1[Product browsing]
-  E1A1 --> E1A2[Shopping cart]
-  E1A2 --> E1A3[Order tracking]
-  E1A3 --> E1A4[Support tickets]
-  
-  %% Engineer Features
-  E1B --> E1B1[Service dashboard]
-  E1B1 --> E1B2[Job management]
-  E1B2 --> E1B3[Service updates]
-  E1B3 --> E1B4[Engineer analytics]
-  
-  %% Wholesale Features
-  E1C --> E1C1[Wholesale pricing]
-  E1C1 --> E1C2[Volume discounts]
-  E1C2 --> E1C3[Bulk ordering]
-  E1C3 --> E1C4[Wholesale reports]
-  
-  %% Admin Features
-  E1D --> E1D1[User management]
-  E1D1 --> E1D2[System configuration]
-  E1D2 --> E1D3[Analytics dashboard]
-  E1D3 --> E1D4[Security controls]
-  
-  %% Data Permission Check
-  F --> F1[Identify Data Type]
-  F1 --> F2[Check Data Sensitivity]
-  F2 --> F3[Validate Access Level]
-  F3 --> F4[Apply Data Rules]
-  F4 --> F5[Filter or Grant Access]
-  
-  %% Data Types
-  F1 --> F1A[Public Data]
-  F1A --> F1B[Personal Data]
-  F1B --> F1C[Business Data]
-  F1C --> F1D[Sensitive Data]
-  F1D --> F1E[System Data]
-  
-  %% Data Sensitivity Levels
-  F2 --> F2A[Level 1: Public]
-  F2A --> F2B[Level 2: Internal]
-  F2B --> F2C[Level 3: Confidential]
-  F2C --> F2D[Level 4: Restricted]
-  F2D --> F2E[Level 5: Top Secret]
-  
-  %% Permission Matrix
-  G[Permission Matrix] --> H[Role vs Resource Matrix]
-  H --> I[Customer Permissions]
-  I --> J[Engineer Permissions]
-  J --> K[Wholesale Permissions]
-  K --> L[Admin Permissions]
-  
-  %% Customer Permission Matrix
-  I --> I1[Products: Read]
-  I1 --> I2[Orders: Own only]
-  I2 --> I3[Profile: Full access]
-  I3 --> I4[Support: Create/Read own]
-  I4 --> I5[Reviews: Create/Read]
-  
-  %% Engineer Permission Matrix
-  J --> J1[Products: Read]
-  J1 --> J2[Orders: Read related]
-  J2 --> J3[Services: Full access]
-  J3 --> J4[Support: Read/Update]
-  J4 --> J5[Engineer Dashboard: Full]
-  
-  %% Wholesale Permission Matrix
-  K --> K1[Products: Read with wholesale pricing]
-  K1 --> K2[Orders: Create/Read wholesale]
-  K2 --> K3[Profile: Full access]
-  K3 --> K4[Support: Create/Read own]
-  K4 --> K5[Wholesale Dashboard: Full]
-  
-  %% Admin Permission Matrix
-  L --> L1[All Resources: Full access]
-  L1 --> L2[Users: Full management]
-  L2 --> L3[System: Full configuration]
-  L3 --> L4[Analytics: Full access]
-  L4 --> L5[Security: Full control]
-  
-  %% Dynamic Permission Evaluation
-  M[Dynamic Permission Evaluation] --> N[Context-Aware Permissions]
-  N --> O[Time-Based Permissions]
-  O --> P[Location-Based Permissions]
-  P --> Q[Resource-State Permissions]
-  Q --> R[User-State Permissions]
-  
-  %% Context-Aware Permissions
-  N --> N1[Business hours access]
-  N1 --> N2[Location-based restrictions]
-  N2 --> N3[Device-based access]
-  N3 --> N4[Network-based restrictions]
-  
-  %% Time-Based Permissions
-  O --> O1[Working hours only]
-  O1 --> O2[Time-limited access]
-  O2 --> O3[Session timeouts]
-  O3 --> O4[Maintenance windows]
-  
-  %% Permission Caching
-  S[Permission Caching] --> T[Cache Permission Results]
-  T --> U[Invalidate on Changes]
-  U --> V[Update Cache]
-  V --> W[Performance Optimization]
-  
-  %% Permission Logging
-  X[Permission Logging] --> Y[Log Access Attempts]
-  Y --> Z[Log Permission Changes]
-  Z --> AA[Log Security Events]
-  AA --> BB[Generate Audit Reports]
-  
+  A[طلب API محمي] --> B[فحص JWT Token]
+  B --> C{Token موجود?}
+  C -->|لا| D[إرجاع 401 Unauthorized]
+
+  C -->|نعم| E[التحقق من صحة Token]
+  E --> F{Token صحيح?}
+  F -->|لا| D
+
+  F -->|نعم| G[استخراج بيانات المستخدم]
+  G --> H[تحميل بيانات المستخدم من DB]
+  H --> I{المستخدم موجود?}
+  I -->|لا| D
+
+  I -->|نعم| J{حالة المستخدم ACTIVE?}
+  J -->|لا| K[إرجاع 403 Forbidden]
+
+  J -->|نعم| L[فحص الأدوار والصلاحيات]
+  L --> M{له دور مطلوب?}
+  M -->|نعم| N[السماح بالوصول]
+  M -->|لا| O{له صلاحية مطلوبة?}
+  O -->|نعم| N
+  O -->|لا| P{دور SUPER_ADMIN?}
+  P -->|نعم| N
+  P -->|لا| K
+
+  N --> Q[تنفيذ الطلب]
+  Q --> R[إرجاع النتيجة]
+
+  %% Guards Implementation
+  S[JwtAuthGuard] --> S1[استخراج Token من Header]
+  S1 --> S2[التحقق من صحة التوقيع]
+  S2 --> S3[التحقق من انتهاء الصلاحية]
+
+  %% Role Checks
+  T[فحص الأدوار] --> T1[isAdmin() - ADMIN or SUPER_ADMIN]
+  T1 --> T2[isSuperAdmin() - SUPER_ADMIN only]
+  T2 --> T3[hasRole(role) - فحص دور محدد]
+  T3 --> T4[hasAnyRole(roles) - فحص أي من الأدوار]
+
+  %% Permission Checks
+  U[فحص الصلاحيات] --> U1[hasPermission(permission)]
+  U1 --> U2[فحص في مصفوفة permissions]
+
+  %% Route Guards Examples
+  V[أمثلة على الحماية] --> V1[@UseGuards(JwtAuthGuard)]
+  V1 --> V2[للمستخدمين المسجلين فقط]
+  V2 --> V3[فحص دور في Controller]
+  V3 --> V4[if (!user.isAdmin()) throw Forbidden]
+
   %% End points
-  C6 --> CC[Access Granted/Denied]
-  D5 --> CC
-  E5 --> CC
-  F5 --> CC
-  L5 --> CC
-  R --> CC
-  W --> CC
-  BB --> CC
+  R --> W[نهاية - نجاح]
+  D --> W
+  K --> W

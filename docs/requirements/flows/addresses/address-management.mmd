@@ -9,7 +9,6 @@ flowchart TD
   B -->|Restore| G[Select deleted address to restore]
   B -->|Get Active| H[Get active addresses only]
   B -->|Validate Ownership| I[Check address ownership]
-  B -->|Mark as Used| J[Mark address as used]
   
   %% Add New Address Flow
   C --> K[Validate address format]
@@ -67,11 +66,6 @@ flowchart TD
   QQ --> RR{Ownership valid?}
   RR -->|Yes| SS[Return true]
   RR -->|No| TT[Return false]
-  
-  %% Mark as Used Flow
-  J --> UU[Update lastUsedAt timestamp]
-  UU --> VV[Increment usageCount]
-  VV --> W
   
   %% End points
   W --> WW[End]

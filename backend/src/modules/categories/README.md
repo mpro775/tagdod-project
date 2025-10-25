@@ -23,11 +23,11 @@ Module منفصل تماماً لإدارة الفئات مع دعم كامل ل
 ```
 categories/
 ├─ schemas/
-│   └─ category.schema.ts    // Schema محسّن (22 حقل + 6 indexes)
+│   └─ category.schema.ts    // Schema محسّن (17 حقل + 6 indexes)
 ├─ dto/
 │   └─ category.dto.ts       // 3 DTOs كاملة مع validation
-├─ categories.service.ts     // Service شامل (502 سطر، 25+ method)
-├─ admin.controller.ts       // Admin endpoints (8 endpoints)
+├─ categories.service.ts     // Service شامل (~500 سطر، 12+ method)
+├─ admin.controller.ts       // Admin endpoints (9 endpoints)
 ├─ public.controller.ts      // Public endpoints (4 endpoints)
 ├─ categories.module.ts      // Module definition
 └─ README.md                 // هذا الملف
@@ -37,7 +37,7 @@ categories/
 
 ## Endpoints - مطبقة فعلياً ✅
 
-### Admin Endpoints (8 endpoints):
+### Admin Endpoints (9 endpoints):
 - ✅ `POST   /admin/categories` - إنشاء فئة جديدة
 - ✅ `GET    /admin/categories` - قائمة الفئات مع فلترة
 - ✅ `GET    /admin/categories/tree` - شجرة الفئات الكاملة
@@ -323,7 +323,9 @@ const stats = await this.categoriesService.getStats();
 
 ---
 
-**Status:** ✅ Complete - مكتمل التنفيذ 100%  
-**Version:** 2.0.0  
+**Status:** ✅ Complete - مكتمل التنفيذ 100%
+**Version:** 2.0.1
 **Last Updated:** 2024-01-15
+
+**ملاحظة:** تم تحديث الأرقام لتعكس الواقع الصحيح - 9 admin endpoints، 17 حقول في Schema، ~500 سطر في Service.
 

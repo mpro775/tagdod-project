@@ -1,5 +1,8 @@
 # 🎨 خدمة البنرات (Banners Service)
 
+> ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
+> 📅 **آخر تحديث**: أكتوبر 2025
+
 خدمة البنرات توفر endpoints لعرض البنرات الإعلانية مع دعم التتبع والإحصائيات.
 
 ---
@@ -124,6 +127,7 @@ Future<List<Banner>> getActiveBanners({String? location}) async {
 ```json
 {
   "success": true,
+  "viewed": true,
   "requestId": "req_banner_002"
 }
 ```
@@ -136,11 +140,11 @@ Future<bool> trackBannerView(String bannerId) async {
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => (json as Map<String, dynamic>),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!['success'] ?? false;
+    return apiResponse.data!['viewed'] ?? false;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -165,6 +169,7 @@ Future<bool> trackBannerView(String bannerId) async {
 ```json
 {
   "success": true,
+  "clicked": true,
   "requestId": "req_banner_003"
 }
 ```
@@ -177,11 +182,11 @@ Future<bool> trackBannerClick(String bannerId) async {
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => (json as Map<String, dynamic>),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!['success'] ?? false;
+    return apiResponse.data!['clicked'] ?? false;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -196,24 +201,68 @@ Future<bool> trackBannerClick(String bannerId) async {
 
 ```dart
 enum BannerLocation {
-  homeTop,
-  homeMiddle,
-  homeBottom,
-  categoryTop,
-  productPage,
-  cartPage,
-  checkoutPage,
+  home_top,
+  home_middle,
+  home_bottom,
+  category_top,
+  product_page,
+  cart_page,
+  checkout_page,
   sidebar,
   footer,
 }
 
+extension BannerLocationExtension on BannerLocation {
+  String get value {
+    switch (this) {
+      case BannerLocation.home_top: return 'home_top';
+      case BannerLocation.home_middle: return 'home_middle';
+      case BannerLocation.home_bottom: return 'home_bottom';
+      case BannerLocation.category_top: return 'category_top';
+      case BannerLocation.product_page: return 'product_page';
+      case BannerLocation.cart_page: return 'cart_page';
+      case BannerLocation.checkout_page: return 'checkout_page';
+      case BannerLocation.sidebar: return 'sidebar';
+      case BannerLocation.footer: return 'footer';
+    }
+  }
+
+  static BannerLocation fromString(String value) {
+    return BannerLocation.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => BannerLocation.home_top,
+    );
+  }
+}
+
 enum BannerPromotionType {
   discount,
-  freeShipping,
-  newArrival,
+  free_shipping,
+  new_arrival,
   sale,
   seasonal,
-  brandPromotion,
+  brand_promotion,
+}
+
+extension BannerPromotionTypeExtension on BannerPromotionType {
+  String get value {
+    switch (this) {
+      case BannerPromotionType.discount: return 'discount';
+      case BannerPromotionType.free_shipping: return 'free_shipping';
+      case BannerPromotionType.new_arrival: return 'new_arrival';
+      case BannerPromotionType.sale: return 'sale';
+      case BannerPromotionType.seasonal: return 'seasonal';
+      case BannerPromotionType.brand_promotion: return 'brand_promotion';
+    }
+  }
+
+  static BannerPromotionType? fromString(String? value) {
+    if (value == null) return null;
+    return BannerPromotionType.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => BannerPromotionType.sale,
+    );
+  }
 }
 
 class Banner {
@@ -275,16 +324,8 @@ class Banner {
       imageUrl: json['imageUrl'] ?? '',
       linkUrl: json['linkUrl'],
       altText: json['altText'],
-      location: BannerLocation.values.firstWhere(
-        (e) => e.name == json['location'],
-        orElse: () => BannerLocation.homeTop,
-      ),
-      promotionType: json['promotionType'] != null
-          ? BannerPromotionType.values.firstWhere(
-              (e) => e.name == json['promotionType'],
-              orElse: () => BannerPromotionType.sale,
-            )
-          : null,
+      location: BannerLocationExtension.fromString(json['location']),
+      promotionType: BannerPromotionTypeExtension.fromString(json['promotionType']),
       isActive: json['isActive'] ?? true,
       sortOrder: json['sortOrder'] ?? 0,
       startDate: json['startDate'] != null
@@ -406,6 +447,21 @@ class Banner {
     - اعرض البنرات عالية الأداء أولاً
     - استخدم الاستهداف لتحسين التحويل
     - تتبع الإحصائيات لتحسين الحملات
+
+---
+
+## 🔄 Notes on Update
+
+**التغييرات الرئيسية:**
+1. ✅ تم تصحيح view/click responses - تضمين `viewed: true` و `clicked: true`
+2. ✅ تم تحديث Enums - استخدام underscore في القيم (home_top بدلاً من homeTop) لمطابقة Backend
+3. ✅ تم إضافة Extensions لـ Enums - للتحويل من/إلى String بشكل صحيح
+4. ✅ تم تصحيح fromJson - استخدام Extensions بدلاً من `.name`
+
+**ملفات Backend المرجعية:**
+- `backend/src/modules/marketing/public.controller.ts` - جميع endpoints
+- `backend/src/modules/marketing/marketing.service.ts` - المنطق وgetActiveBanners
+- `backend/src/modules/marketing/schemas/banner.schema.ts` - Banner Schema و Enums
 
 ---
 

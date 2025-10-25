@@ -1,259 +1,58 @@
-%% Report Scheduling and Automation Flow
+%% Report Scheduling Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Report Scheduling System] --> B[Scheduling Types]
-  
-  %% Scheduling Types
-  B --> C[Manual Scheduling]
-  B --> D[Automatic Scheduling]
-  B --> E[Event-based Scheduling]
-  B --> F[Conditional Scheduling]
-  
-  %% Manual Scheduling
-  C --> C1[One-time Reports]
-  C --> C2[Recurring Reports]
-  C --> C3[Custom Reports]
-  C --> C4[Ad-hoc Reports]
-  
-  %% One-time Reports
-  C1 --> C1A[Set Report Parameters]
-  C1A --> C1B[Set Delivery Time]
-  C1B --> C1C[Set Recipients]
-  C1C --> C1D[Generate Report]
-  
-  %% Recurring Reports
-  C2 --> C2A[Set Recurrence Pattern]
-  C2A --> C2B[Set Report Frequency]
-  C2B --> C2C[Set Delivery Schedule]
-  C2C --> C2D[Activate Schedule]
-  
-  %% Custom Reports
-  C3 --> C3A[Define Report Structure]
-  C3A --> C3B[Set Data Sources]
-  C3B --> C3C[Configure Formatting]
-  C3C --> C3D[Save Report Template]
-  
-  %% Ad-hoc Reports
-  C4 --> C4A[Quick Report Generation]
-  C4A --> C4B[Immediate Delivery]
-  C4B --> C4C[No Scheduling Required]
-  C4C --> C4D[Direct Download]
-  
-  %% Automatic Scheduling
-  D --> D1[Daily Reports]
-  D --> D2[Weekly Reports]
-  D --> D3[Monthly Reports]
-  D --> D4[Quarterly Reports]
-  D --> D5[Annual Reports]
-  
-  %% Daily Reports
-  D1 --> D1A[Set Daily Schedule]
-  D1A --> D1B[Configure Report Content]
-  D1B --> D1C[Set Delivery Time]
-  D1C --> D1D[Activate Daily Schedule]
-  
-  %% Weekly Reports
-  D2 --> D2A[Set Weekly Schedule]
-  D2A --> D2B[Configure Report Content]
-  D2B --> D2C[Set Delivery Day]
-  D2C --> D2D[Activate Weekly Schedule]
-  
-  %% Monthly Reports
-  D3 --> D3A[Set Monthly Schedule]
-  D3A --> D3B[Configure Report Content]
-  D3B --> D3C[Set Delivery Date]
-  D3C --> D3D[Activate Monthly Schedule]
-  
-  %% Quarterly Reports
-  D4 --> D4A[Set Quarterly Schedule]
-  D4A --> D4B[Configure Report Content]
-  D4B --> D4C[Set Delivery Quarter]
-  D4C --> D4D[Activate Quarterly Schedule]
-  
-  %% Annual Reports
-  D5 --> D5A[Set Annual Schedule]
-  D5A --> D5B[Configure Report Content]
-  D5B --> D5C[Set Delivery Month]
-  D5C --> D5D[Activate Annual Schedule]
-  
-  %% Event-based Scheduling
-  E --> E1[Threshold-based Reports]
-  E --> E2[Performance-based Reports]
-  E --> E3[Error-based Reports]
-  E --> E4[User-action Reports]
-  
-  %% Threshold-based Reports
-  E1 --> E1A[Set Threshold Values]
-  E1A --> E1B[Configure Alert Conditions]
-  E1B --> E1C[Set Report Triggers]
-  E1C --> E1D[Activate Threshold Monitoring]
-  
-  %% Performance-based Reports
-  E2 --> E2A[Set Performance Metrics]
-  E2A --> E2B[Configure Performance Thresholds]
-  E2B --> E2C[Set Report Triggers]
-  E2C --> E2D[Activate Performance Monitoring]
-  
-  %% Error-based Reports
-  E3 --> E3A[Set Error Thresholds]
-  E3A --> E3B[Configure Error Conditions]
-  E3B --> E3C[Set Report Triggers]
-  E3C --> E3D[Activate Error Monitoring]
-  
-  %% User-action Reports
-  E4 --> E4A[Set User Action Triggers]
-  E4A --> E4B[Configure Action Conditions]
-  E4B --> E4C[Set Report Triggers]
-  E4C --> E4D[Activate User Monitoring]
-  
-  %% Conditional Scheduling
-  F --> F1[Data-driven Scheduling]
-  F --> F2[Time-based Scheduling]
-  F --> F3[Resource-based Scheduling]
-  F --> F4[Priority-based Scheduling]
-  
-  %% Data-driven Scheduling
-  F1 --> F1A[Monitor Data Changes]
-  F1A --> F1B[Set Data Conditions]
-  F1B --> F1C[Configure Report Triggers]
-  F1C --> F1D[Activate Data Monitoring]
-  
-  %% Time-based Scheduling
-  F2 --> F2A[Set Time Conditions]
-  F2A --> F2B[Configure Time Triggers]
-  F2B --> F2C[Set Report Schedule]
-  F2C --> F2D[Activate Time Monitoring]
-  
-  %% Resource-based Scheduling
-  F3 --> F3A[Monitor Resource Usage]
-  F3A --> F3B[Set Resource Thresholds]
-  F3B --> F3C[Configure Report Triggers]
-  F3C --> F3D[Activate Resource Monitoring]
-  
-  %% Priority-based Scheduling
-  F4 --> F4A[Set Priority Levels]
-  F4A --> F4B[Configure Priority Rules]
-  F4B --> F4C[Set Report Triggers]
-  F4C --> F4D[Activate Priority Monitoring]
-  
-  %% Report Generation Process
-  G[Report Generation] --> G1[Trigger Report Generation]
-  G1 --> G2[Collect Data]
-  G2 --> G3[Process Data]
-  G3 --> G4[Generate Report]
-  G4 --> G5[Format Report]
-  G5 --> G6[Deliver Report]
-  
-  %% Trigger Report Generation
-  G1 --> G1A[Check Schedule Conditions]
-  G1A --> G1B[Validate Report Parameters]
-  G1B --> G1C[Initialize Report Generation]
-  G1C --> G1D[Start Generation Process]
-  
-  %% Collect Data
-  G2 --> G2A[Query Database]
-  G2A --> G2B[Collect External Data]
-  G2B --> G2C[Validate Data Quality]
-  G2C --> G2D[Prepare Data for Processing]
-  
-  %% Process Data
-  G3 --> G3A[Apply Data Filters]
-  G3A --> G3B[Calculate Metrics]
-  G3B --> G3C[Generate Insights]
-  G3C --> G3D[Prepare Data for Report]
-  
-  %% Generate Report
-  G4 --> G4A[Create Report Structure]
-  G4A --> G4B[Add Data to Report]
-  G4B --> G4C[Generate Charts and Graphs]
-  G4C --> G4D[Apply Report Formatting]
-  
-  %% Format Report
-  G5 --> G5A[Apply Report Template]
-  G5A --> G5B[Add Branding and Styling]
-  G5B --> G5C[Generate Final Report]
-  G5C --> G5D[Validate Report Quality]
-  
-  %% Deliver Report
-  G6 --> G6A[Send via Email]
-  G6 --> G6B[Upload to Cloud Storage]
-  G6 --> G6C[Provide Download Link]
-  G6 --> G6D[Send via API]
-  
-  %% Email Delivery
-  G6A --> G6A1[Prepare Email Template]
-  G6A1 --> G6A2[Attach Report Files]
-  G6A2 --> G6A3[Send to Recipients]
-  G6A3 --> G6A4[Track Delivery Status]
-  
-  %% Cloud Storage
-  G6B --> G6B1[Upload to Storage]
-  G6B1 --> G6B2[Generate Access URL]
-  G6B2 --> G6B3[Set Access Permissions]
-  G6B3 --> G6B4[Notify Recipients]
-  
-  %% Download Link
-  G6C --> G6C1[Generate Secure Link]
-  G6C1 --> G6C2[Set Link Expiration]
-  G6C2 --> G6C3[Send Link to Recipients]
-  G6C3 --> G6C4[Track Link Usage]
-  
-  %% API Delivery
-  G6D --> G6D1[Format API Response]
-  G6D1 --> G6D2[Include Report Metadata]
-  G6D2 --> G6D3[Return Report Data]
-  G6D3 --> G6D4[Log API Usage]
-  
-  %% Schedule Management
-  H[Schedule Management] --> H1[Create Schedule]
-  H1 --> H2[Update Schedule]
-  H2 --> H3[Delete Schedule]
-  H3 --> H4[Monitor Schedule]
-  
-  %% Create Schedule
-  H1 --> H1A[Define Schedule Parameters]
-  H1A --> H1B[Set Report Configuration]
-  H1B --> H1C[Configure Delivery Options]
-  H1C --> H1D[Save Schedule]
-  
-  %% Update Schedule
-  H2 --> H2A[Modify Schedule Parameters]
-  H2A --> H2B[Update Report Configuration]
-  H2B --> H2C[Change Delivery Options]
-  H2C --> H2D[Save Updated Schedule]
-  
-  %% Delete Schedule
-  H3 --> H3A[Select Schedule to Delete]
-  H3A --> H3B[Confirm Deletion]
-  H3B --> H3C[Remove Schedule]
-  H3C --> H3D[Clean Up Resources]
-  
-  %% Monitor Schedule
-  H4 --> H4A[Check Schedule Status]
-  H4A --> H4B[Monitor Execution]
-  H4B --> H4C[Track Performance]
-  H4C --> H4D[Generate Schedule Reports]
-  
+  A[جدولة تقرير] --> B[تحديد نوع التقرير]
+  B --> B1[Sales Report, User Analytics, etc.]
+  B1 --> C[تحديد الجدولة]
+  C --> C1[frequency: daily/weekly/monthly]
+  C1 --> C2[time: وقت التنفيذ]
+  C2 --> C3[recipients: قائمة المستلمين]
+
+  C3 --> D[تحديد الفلاتر]
+  D --> D1[dateRange: نطاق التاريخ]
+  D1 --> D2[filters: فلاتر إضافية]
+  D2 --> D3[format: JSON/PDF/Excel/CSV]
+
+  D3 --> E[حفظ في قاعدة البيانات]
+  E --> E1[إنشاء سجل ReportSchedule]
+  E1 --> E2[معرف فريد للجدولة]
+  E2 --> E3[حالة ACTIVE]
+
+  E3 --> F[تسجيل المهمة المجدولة]
+  F --> F1[إضافة لـ Cron Job]
+  F1 --> F2[تحديد التكرار والوقت]
+
+  F2 --> G[تنفيذ المهام المجدولة]
+  G --> G1[فحص المهام المستحقة]
+  G1 --> G2[تنفيذ التقرير]
+  G2 --> G3[توليد الملف]
+  G3 --> G4[إرسال للمستلمين]
+
+  G4 --> H[تحديث حالة المهمة]
+  H --> H1[lastExecutedAt: وقت آخر تنفيذ]
+  H1 --> H2[nextExecutionAt: وقت التنفيذ التالي]
+  H2 --> H3[executionCount: عدد مرات التنفيذ]
+
+  %% Error Handling
+  I[معالجة الأخطاء] --> I1[فشل في توليد التقرير]
+  I1 --> I2[تسجيل الخطأ]
+  I2 --> I3[إشعار المسؤولين]
+  I3 --> I4[إعادة المحاولة حسب الإعدادات]
+
+  %% Management
+  J[إدارة الجدولة] --> J1[عرض التقارير المجدولة]
+  J1 --> J2[تعديل الإعدادات]
+  J2 --> J3[إيقاف/تفعيل الجدولة]
+  J3 --> J4[حذف الجدولة]
+
+  %% Recipients
+  K[إدارة المستلمين] --> K1[إضافة/حذف المستلمين]
+  K1 --> K2[تحقق صحة عناوين البريد]
+  K2 --> K3[إرسال اختباري]
+
   %% End points
-  C1D --> Z[End]
-  C2D --> Z
-  C3D --> Z
-  C4D --> Z
-  D1D --> Z
-  D2D --> Z
-  D3D --> Z
-  D4D --> Z
-  D5D --> Z
-  E1D --> Z
-  E2D --> Z
-  E3D --> Z
-  E4D --> Z
-  F1D --> Z
-  F2D --> Z
-  F3D --> Z
-  F4D --> Z
-  G6A4 --> Z
-  G6B4 --> Z
-  G6C4 --> Z
-  G6D4 --> Z
-  H4D --> Z
+  F2 --> L[نهاية - مجدول بنجاح]
+  H3 --> L
+  I4 --> L
+  J4 --> L
+  K3 --> L

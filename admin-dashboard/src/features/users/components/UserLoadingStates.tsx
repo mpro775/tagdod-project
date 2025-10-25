@@ -8,7 +8,6 @@ import {
   Card,
   CardContent,
   Grid,
-  Avatar,
 } from '@mui/material';
 
 interface UserLoadingStatesProps {
@@ -16,10 +15,7 @@ interface UserLoadingStatesProps {
   count?: number;
 }
 
-export const UserLoadingStates: React.FC<UserLoadingStatesProps> = ({
-  type,
-  count = 1,
-}) => {
+export const UserLoadingStates: React.FC<UserLoadingStatesProps> = ({ type, count = 1 }) => {
   switch (type) {
     case 'list':
       return (
@@ -51,7 +47,7 @@ export const UserLoadingStates: React.FC<UserLoadingStatesProps> = ({
           <Skeleton variant="text" width="40%" height={32} sx={{ mb: 3 }} />
           <Grid container spacing={2}>
             {Array.from({ length: 6 }).map((_, index) => (
-              <Grid item xs={12} sm={6} key={index}>
+              <Grid component="div" size={{ xs: 12, sm: 6 }} key={index}>
                 <Skeleton variant="text" width="30%" height={20} sx={{ mb: 1 }} />
                 <Skeleton variant="rounded" width="100%" height={56} />
               </Grid>
@@ -89,7 +85,7 @@ export const UserLoadingStates: React.FC<UserLoadingStatesProps> = ({
       return (
         <Grid container spacing={2}>
           {Array.from({ length: 7 }).map((_, index) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={index}>
               <Card>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>

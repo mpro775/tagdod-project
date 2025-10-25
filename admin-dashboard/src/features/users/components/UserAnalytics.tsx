@@ -9,26 +9,16 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Button,
-  Chip,
   LinearProgress,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
   Avatar,
-  Divider,
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   People as PeopleIcon,
   PersonAdd as PersonAddIcon,
-  PersonRemove as PersonRemoveIcon,
   AdminPanelSettings as AdminIcon,
   Engineering as EngineeringIcon,
-  Store as StoreIcon,
-  DateRange as DateRangeIcon,
 } from '@mui/icons-material';
 import { UserStats } from '../types/user.types';
 
@@ -69,11 +59,7 @@ const PERIOD_OPTIONS = [
   { value: '1y', label: 'آخر سنة' },
 ];
 
-export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
-  stats,
-  loading = false,
-  onDateRangeChange,
-}) => {
+export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ stats, onDateRangeChange }) => {
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
 
   // Mock analytics data - in real app, this would come from API
@@ -90,7 +76,11 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
     growthRate: 15.5, // 15.5% growth
     retentionRate: 87.3, // 87.3% retention
     topRoles: [
-      { role: 'مستخدم', count: stats.total - stats.admins - stats.engineers - stats.wholesale, percentage: 65 },
+      {
+        role: 'مستخدم',
+        count: stats.total - stats.admins - stats.engineers - stats.wholesale,
+        percentage: 65,
+      },
       { role: 'مهندس', count: stats.engineers, percentage: 20 },
       { role: 'تاجر', count: stats.wholesale, percentage: 10 },
       { role: 'مدير', count: stats.admins, percentage: 5 },
@@ -110,11 +100,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
   };
 
   const getGrowthIcon = (rate: number) => {
-    return rate >= 0 ? (
-      <TrendingUpIcon color="success" />
-    ) : (
-      <TrendingDownIcon color="error" />
-    );
+    return rate >= 0 ? <TrendingUpIcon color="success" /> : <TrendingDownIcon color="error" />;
   };
 
   const getGrowthColor = (rate: number) => {
@@ -125,7 +111,9 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
     <Box>
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}
+          >
             <Typography variant="h6" fontWeight="bold">
               تحليلات المستخدمين
             </Typography>
@@ -147,7 +135,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
 
           {/* Key Metrics */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -173,7 +161,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -195,7 +183,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -216,7 +204,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
               <Card variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -246,7 +234,7 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({
               </Typography>
               <Grid container spacing={2}>
                 {analyticsData.topRoles.map((role, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }} key={index}>
                     <Box sx={{ mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <Avatar sx={{ width: 24, height: 24, mr: 1, bgcolor: 'primary.main' }}>

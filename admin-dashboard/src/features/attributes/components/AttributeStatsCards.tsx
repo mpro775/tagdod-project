@@ -19,7 +19,7 @@ interface AttributeStatsCardsProps {
 
 const StatCard: React.FC<{
   title: string;
-  value: number;
+  value: number | undefined;
   icon: React.ReactNode;
   color: 'primary' | 'success' | 'info' | 'warning' | 'error';
   subtitle?: string;
@@ -33,7 +33,7 @@ const StatCard: React.FC<{
         </Typography>
       </Box>
       <Typography variant="h3" fontWeight="bold" color={`${color}.main`} gutterBottom>
-        {value.toLocaleString()}
+        {value ? value.toLocaleString() : '0'}
       </Typography>
       {subtitle && (
         <Typography variant="body2" color="text.secondary">
@@ -44,53 +44,72 @@ const StatCard: React.FC<{
   </Card>
 );
 
-const TypeStatsCard: React.FC<{ stats: AttributeStats }> = ({ stats }) => (
-  <Card sx={{ height: '100%' }}>
-    <CardContent>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Category color="primary" sx={{ mr: 1 }} />
-        <Typography variant="h6">التوزيع حسب النوع</Typography>
-      </Box>
-      <Stack spacing={1}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SelectAll fontSize="small" color="primary" />
-            <Typography variant="body2">اختيار واحد</Typography>
+const TypeStatsCard: React.FC<{ stats: AttributeStats }> = ({ stats }) => {
+  // Safety check for byType property
+  if (!stats.byType) {
+    return (
+      <Card sx={{ height: '100%' }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Category color="primary" sx={{ mr: 1 }} />
+            <Typography variant="h6">التوزيع حسب النوع</Typography>
           </Box>
-          <Chip label={stats.byType.select} color="primary" size="small" />
+          <Typography variant="body2" color="text.secondary">
+            لا توجد بيانات متاحة
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card sx={{ height: '100%' }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Category color="primary" sx={{ mr: 1 }} />
+          <Typography variant="h6">التوزيع حسب النوع</Typography>
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SelectAll fontSize="small" color="secondary" />
-            <Typography variant="body2">اختيار متعدد</Typography>
+        <Stack spacing={1}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SelectAll fontSize="small" color="primary" />
+              <Typography variant="body2">اختيار واحد</Typography>
+            </Box>
+            <Chip label={stats.byType.select || 0} color="primary" size="small" />
           </Box>
-          <Chip label={stats.byType.multiselect} color="secondary" size="small" />
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TextFields fontSize="small" color="info" />
-            <Typography variant="body2">نص</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SelectAll fontSize="small" color="secondary" />
+              <Typography variant="body2">اختيار متعدد</Typography>
+            </Box>
+            <Chip label={stats.byType.multiselect || 0} color="secondary" size="small" />
           </Box>
-          <Chip label={stats.byType.text} color="info" size="small" />
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Numbers fontSize="small" color="warning" />
-            <Typography variant="body2">رقم</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TextFields fontSize="small" color="info" />
+              <Typography variant="body2">نص</Typography>
+            </Box>
+            <Chip label={stats.byType.text || 0} color="info" size="small" />
           </Box>
-          <Chip label={stats.byType.number} color="warning" size="small" />
-        </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ToggleOn fontSize="small" color="success" />
-            <Typography variant="body2">نعم/لا</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Numbers fontSize="small" color="warning" />
+              <Typography variant="body2">رقم</Typography>
+            </Box>
+            <Chip label={stats.byType.number || 0} color="warning" size="small" />
           </Box>
-          <Chip label={stats.byType.boolean} color="success" size="small" />
-        </Box>
-      </Stack>
-    </CardContent>
-  </Card>
-);
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ToggleOn fontSize="small" color="success" />
+              <Typography variant="body2">نعم/لا</Typography>
+            </Box>
+            <Chip label={stats.byType.boolean || 0} color="success" size="small" />
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const AttributeStatsCards: React.FC<AttributeStatsCardsProps> = ({
   stats,

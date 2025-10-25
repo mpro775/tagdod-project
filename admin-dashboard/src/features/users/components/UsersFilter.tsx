@@ -12,8 +12,7 @@ import {
   Button,
   Chip,
   Grid,
-  IconButton,
-  Tooltip,
+
 } from '@mui/material';
 import {
   FilterList as FilterIcon,
@@ -104,7 +103,7 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
 
         <Grid container spacing={2}>
           {/* البحث */}
-          <Grid item xs={12} md={4}>
+          <Grid component="div" size={{ xs: 12, md: 4 }}>
             <TextField
               fullWidth
               label="البحث في المستخدمين"
@@ -118,7 +117,7 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
           </Grid>
 
           {/* الحالة */}
-          <Grid item xs={12} md={2}>
+          <Grid component="div" size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth>
               <InputLabel>الحالة</InputLabel>
               <Select
@@ -137,7 +136,7 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
           </Grid>
 
           {/* الدور */}
-          <Grid item xs={12} md={2}>
+          <Grid component="div" size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth>
               <InputLabel>الدور</InputLabel>
               <Select
@@ -156,13 +155,13 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
           </Grid>
 
           {/* نوع المستخدم */}
-          <Grid item xs={12} md={2}>
+          <Grid component="div" size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth>
               <InputLabel>نوع المستخدم</InputLabel>
               <Select
                 value={filters.isAdmin === undefined ? '' : filters.isAdmin ? 'admin' : 'user'}
                 onChange={(e) => {
-                  const value = e.target.value;
+                  const value = e.target.value as '' | 'admin' | 'user';
                   if (value === '') {
                     handleFilterChange('isAdmin', undefined);
                   } else {
@@ -179,7 +178,7 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
           </Grid>
 
           {/* الإجراءات */}
-          <Grid item xs={12} md={2}>
+          <Grid component="div" size={{ xs: 12, md: 2 }}>
             <Box sx={{ display: 'flex', gap: 1, height: '100%', alignItems: 'center' }}>
               <Button
                 variant="outlined"

@@ -12,14 +12,8 @@ import {
   Stack,
   Paper,
   Typography,
-  IconButton,
 } from '@mui/material';
-import {
-  Search,
-  FilterList,
-  Clear,
-  Refresh,
-} from '@mui/icons-material';
+import { Search, Clear, Refresh } from '@mui/icons-material';
 import { SupportStatus, SupportPriority, SupportCategory } from '../types/support.types';
 
 export interface SupportTicketFilters {
@@ -138,7 +132,7 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
       </Stack>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} md={4}>
+        <Grid component="div" size={{ xs: 12, md: 4 }}>
           <TextField
             fullWidth
             label="البحث في التذاكر"
@@ -151,7 +145,7 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
           />
         </Grid>
 
-        <Grid item xs={12} md={2}>
+        <Grid component="div" size={{ xs: 12, md: 2 }}>
           <FormControl fullWidth>
             <InputLabel>الحالة</InputLabel>
             <Select
@@ -171,7 +165,7 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
           </FormControl>
         </Grid>
 
-        <Grid item xs={12} md={2}>
+        <Grid component="div" size={{ xs: 12, md: 2 }}>
           <FormControl fullWidth>
             <InputLabel>الأولوية</InputLabel>
             <Select
@@ -191,7 +185,7 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
           </FormControl>
         </Grid>
 
-        <Grid item xs={12} md={2}>
+        <Grid component="div" size={{ xs: 12, md: 2 }}>
           <FormControl fullWidth>
             <InputLabel>الفئة</InputLabel>
             <Select
@@ -211,7 +205,7 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
           </FormControl>
         </Grid>
 
-        <Grid item xs={12} md={2}>
+        <Grid component="div" size={{ xs: 12, md: 2 }}>
           <TextField
             fullWidth
             label="المسؤول"

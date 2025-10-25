@@ -20,7 +20,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 
 const SettingsPage: React.FC = () => {
-  const { theme, toggleTheme, language, setLanguage } = useThemeStore();
+  const { mode, toggleMode, language, setLanguage } = useThemeStore();
   const { user } = useAuthStore();
   const [enableAnalytics, setEnableAnalytics] = useState(true);
   const [enableNotifications, setEnableNotifications] = useState(true);
@@ -30,7 +30,7 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleThemeToggle = () => {
-    toggleTheme();
+    toggleMode();
   };
 
   const handleAnalyticsToggle = () => {
@@ -61,7 +61,7 @@ const SettingsPage: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* User Profile Settings */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -75,7 +75,7 @@ const SettingsPage: React.FC = () => {
                   الاسم
                 </Typography>
                 <Typography variant="body1">
-                  {user?.name || 'غير محدد'}
+                  {user?.firstName} {user?.lastName}
                 </Typography>
               </Box>
 
@@ -108,7 +108,7 @@ const SettingsPage: React.FC = () => {
         </Grid>
 
         {/* Appearance Settings */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -132,18 +132,18 @@ const SettingsPage: React.FC = () => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={theme === 'dark'}
+                    checked={mode === 'dark'}
                     onChange={handleThemeToggle}
                   />
                 }
-                label={theme === 'dark' ? 'الوضع المظلم' : 'الوضع الفاتح'}
+                label={mode === 'dark' ? 'الوضع المظلم' : 'الوضع الفاتح'}
               />
             </CardContent>
           </Card>
         </Grid>
 
         {/* Preferences */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -177,7 +177,7 @@ const SettingsPage: React.FC = () => {
         </Grid>
 
         {/* Environment Info */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -203,7 +203,7 @@ const SettingsPage: React.FC = () => {
         </Grid>
 
         {/* Actions */}
-        <Grid item xs={12}>
+        <Grid component="div" size={{ xs: 12 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>

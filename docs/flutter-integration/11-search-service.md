@@ -1,5 +1,8 @@
 # 🔍 خدمة البحث (Search Service)
 
+> ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
+> 📅 **آخر تحديث**: أكتوبر 2025
+
 خدمة البحث توفر endpoints للبحث الشامل والمتقدم مع دعم الفلترة والترتيب.
 
 ---
@@ -51,12 +54,47 @@
         "descriptionEn": "High efficiency solar panel",
         "thumbnail": "https://cdn.example.com/products/solar-panel.jpg",
         "metadata": {
-          "price": 150000,
+          "type": "product",
           "category": "ألواح شمسية",
-          "brand": "Longi"
+          "brand": "Longi",
+          "priceRange": {
+            "min": 150000,
+            "max": 180000
+          },
+          "rating": 4.5,
+          "reviewsCount": 120,
+          "isFeatured": true,
+          "isNew": false,
+          "tags": ["solar", "renewable"]
         },
-        "relevanceScore": 0.95,
+        "relevanceScore": 95,
         "createdAt": "2025-01-01T00:00:00.000Z"
+      },
+      {
+        "type": "category",
+        "id": "64cat123",
+        "title": "ألواح شمسية",
+        "titleEn": "Solar Panels",
+        "description": "فئة الألواح الشمسية",
+        "thumbnail": "https://cdn.example.com/categories/solar.jpg",
+        "metadata": {
+          "type": "category",
+          "productsCount": 45,
+          "depth": 1
+        },
+        "relevanceScore": 50
+      },
+      {
+        "type": "brand",
+        "id": "64brand123",
+        "title": "Longi",
+        "titleEn": "Longi",
+        "description": "شركة رائدة في الألواح الشمسية",
+        "thumbnail": "https://cdn.example.com/brands/longi.jpg",
+        "metadata": {
+          "type": "brand"
+        },
+        "relevanceScore": 25
       }
     ],
     "total": 45,
@@ -85,13 +123,13 @@ Future<SearchResult> universalSearch({
     'limit': limit,
   });
 
-  final apiResponse = ApiResponse<SearchResult>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => SearchResult.fromJson(json),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return SearchResult.fromJson(apiResponse.data!['data']);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -229,13 +267,13 @@ Future<ProductSearchResult> advancedProductSearch({
     'limit': limit,
   });
 
-  final apiResponse = ApiResponse<ProductSearchResult>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => ProductSearchResult.fromJson(json),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return ProductSearchResult.fromJson(apiResponse.data!['data']);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -269,30 +307,22 @@ Future<ProductSearchResult> advancedProductSearch({
 {
   "success": true,
   "data": [
-    {
-      "text": "لوح شمسي",
-      "type": "product",
-      "matches": 45
-    },
-    {
-      "text": "بطارية شمسية",
-      "type": "product",
-      "matches": 28
-    },
-    {
-      "text": "ألواح شمسية",
-      "type": "category",
-      "matches": 15
-    }
+    "لوح شمسي 550W",
+    "لوح شمسي 300W",
+    "لوح شمسي كريستال",
+    "ألواح شمسية",
+    "بطارية شمسية"
   ],
   "requestId": "req_search_003"
 }
 ```
 
+**ملاحظة:** الـ response يعيد مجرد array of strings (أسماء الاقتراحات فقط)، وليس objects.
+
 ### كود Flutter
 
 ```dart
-Future<List<SearchSuggestion>> getSearchSuggestions({
+Future<List<String>> getSearchSuggestions({
   required String query,
   String lang = 'ar',
   int limit = 10,
@@ -303,15 +333,13 @@ Future<List<SearchSuggestion>> getSearchSuggestions({
     'limit': limit,
   });
 
-  final apiResponse = ApiResponse<List<SearchSuggestion>>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => (json as List)
-        .map((item) => SearchSuggestion.fromJson(item))
-        .toList(),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return List<String>.from(apiResponse.data!['data']);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -344,25 +372,25 @@ Future<List<SearchSuggestion>> getSearchSuggestions({
 {
   "success": true,
   "data": [
-    {
-      "text": "لوح شمسي",
-      "type": "product",
-      "matches": 45
-    },
-    {
-      "text": "بطارية شمسية",
-      "type": "product",
-      "matches": 28
-    }
+    "لوح شمسي 550W",
+    "لوح شمسي 300W",
+    "لوح شمسي كريستال",
+    "ألواح شمسية",
+    "بطارية شمسية",
+    "بطارية ليثيوم",
+    "بطارية جل",
+    "محول كهربائي"
   ],
   "requestId": "req_search_004"
 }
 ```
 
+**ملاحظة:** الـ autocomplete يعيد نفس البنية مثل suggestions، لكن limit افتراضي = 8.
+
 ### كود Flutter
 
 ```dart
-Future<List<SearchSuggestion>> autocomplete({
+Future<List<String>> autocomplete({
   required String query,
   String lang = 'ar',
 }) async {
@@ -371,15 +399,13 @@ Future<List<SearchSuggestion>> autocomplete({
     'lang': lang,
   });
 
-  final apiResponse = ApiResponse<List<SearchSuggestion>>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => (json as List)
-        .map((item) => SearchSuggestion.fromJson(item))
-        .toList(),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return List<String>.from(apiResponse.data!['data']);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -442,7 +468,6 @@ class SearchResultItem {
     this.titleEn,
     this.description,
     this.descriptionEn,
-    this.descriptionEn,
     this.thumbnail,
     required this.metadata,
     this.relevanceScore,
@@ -481,11 +506,22 @@ class SearchResultItem {
   bool get isBrand => type == 'brand';
   bool get hasThumbnail => thumbnail != null && thumbnail!.isNotEmpty;
   bool get hasMetadata => metadata.isNotEmpty;
-  double? get price => metadata['price']?.toDouble();
+  
+  // Product metadata
+  Map<String, dynamic>? get priceRange => metadata['priceRange'];
   String? get category => metadata['category']?.toString();
   String? get brand => metadata['brand']?.toString();
   double? get rating => metadata['rating']?.toDouble();
   int? get reviewsCount => metadata['reviewsCount']?.toInt();
+  bool? get isFeatured => metadata['isFeatured'];
+  bool? get isNew => metadata['isNew'];
+  List<String>? get tags => metadata['tags'] != null 
+      ? List<String>.from(metadata['tags']) 
+      : null;
+  
+  // Category metadata
+  int? get productsCount => metadata['productsCount']?.toInt();
+  int? get depth => metadata['depth']?.toInt();
 }
 
 class ProductSearchResult {
@@ -555,7 +591,7 @@ class SearchFacet {
   bool get isPrice => field == 'price';
   bool get isRating => field == 'rating';
   bool get isStatus => field == 'status';
-  bool get isTag => field == 'tag';
+  bool get isTag => field == 'tags';
 }
 
 class SearchFacetValue {
@@ -598,33 +634,6 @@ class SearchPriceRange {
   bool get hasRange => min < max;
   double get midPoint => (min + max) / 2;
 }
-
-class SearchSuggestion {
-  final String text;
-  final String type;
-  final int matches;
-
-  SearchSuggestion({
-    required this.text,
-    required this.type,
-    required this.matches,
-  });
-
-  factory SearchSuggestion.fromJson(Map<String, dynamic> json) {
-    return SearchSuggestion(
-      text: json['text'] ?? '',
-      type: json['type'] ?? '',
-      matches: json['matches'] ?? 0,
-    );
-  }
-
-  bool get isProduct => type == 'product';
-  bool get isCategory => type == 'category';
-  bool get isBrand => type == 'brand';
-  bool get hasMatches => matches > 0;
-  bool get isPopular => matches > 10;
-  bool get isTrending => matches > 50;
-}
 ```
 
 ---
@@ -659,10 +668,10 @@ class SearchSuggestion {
    - `relevanceScore`: ترتيب حسب الصلة
 
 5. **الاقتراحات:**
-   - `getSearchSuggestions()`: اقتراحات البحث
-   - `autocomplete()`: اقتراحات مختصرة
-   - `matches`: عدد النتائج لكل اقتراح
-   - `type`: نوع الاقتراح (product, category, brand)
+   - `getSearchSuggestions()`: اقتراحات البحث (limit = 10)
+   - `autocomplete()`: اقتراحات مختصرة (limit = 8)
+   - **يعيدون strings فقط**: أسماء المنتجات والفئات
+   - الاقتراحات من المنتجات والفئات النشطة
 
 6. **Faceted Search:**
    - `facets`: الفلاتر المتاحة
@@ -718,7 +727,7 @@ class SearchSuggestion {
     - `SearchResultItem`: عنصر النتيجة
     - `SearchFacet`: الفلاتر المتاحة
     - `SearchPriceRange`: نطاق الأسعار
-    - `SearchSuggestion`: اقتراحات البحث
+    - Suggestions: مجرد `List<String>`
 
 14. **الوظائف المساعدة:**
     - `getTitle(locale)`: الحصول على العنوان حسب اللغة
@@ -726,15 +735,39 @@ class SearchSuggestion {
     - `isProduct`/`isCategory`/`isBrand`: تمييز نوع النتيجة
     - `hasThumbnail`: التحقق من وجود صورة
     - `hasMetadata`: التحقق من وجود بيانات وصفية
-    - `price`/`category`/`brand`/`rating`/`reviewsCount`: معلومات إضافية
+    - `priceRange`/`category`/`brand`/`rating`/`reviewsCount`/`isFeatured`/`isNew`/`tags`: معلومات المنتج
+    - `productsCount`/`depth`: معلومات الفئة
 
 15. **التحسينات:**
     - استخدم `hasNextPage` و `hasPrevPage` للتنقل
     - استخدم `isFirstPage` و `isLastPage` للتحقق
     - استخدم `hasFacets` للفلترة
     - استخدم `hasPriceRange` لنطاق الأسعار
-    - استخدم `hasMatches` لعدد النتائج
-    - استخدم `isPopular` و `isTrending` للاقتراحات
+    - استخدم `relevanceScore` للترتيب حسب الصلة
+    - cache الاقتراحات محلياً لتحسين الأداء
+
+---
+
+## 🔄 Notes on Update
+
+**التغييرات الرئيسية:**
+1. ✅ تصحيح Universal Search response - `{ data: { results: [...], total, page, totalPages } }`
+2. ✅ تصحيح Advanced Product Search response - `{ data: { results, total, page, totalPages, facets?, priceRange? } }`
+3. ✅ **تغيير جذري**: Suggestions و Autocomplete يعيدون `{ data: [strings] }` وليس objects
+4. ✅ تحديث `SearchResultItem` - إزالة `descriptionEn` المكررة وإضافة metadata helpers
+5. ✅ تحديث `SearchFacet` - `isTag` للـ tags field
+6. ✅ إزالة `SearchSuggestion` model - لم يعد مطلوباً
+
+**ملاحظات مهمة:**
+- `relevanceScore` هو number (ليس 0-1، بل score فعلي قد يكون 0-100+)
+- `metadata` مختلف حسب النوع (product, category, brand)
+- Suggestions/Autocomplete يعيدون strings فقط (أسماء المنتجات والفئات)
+- `includeFacets` يجب تمريره كـ `true` للحصول على facets و priceRange
+
+**ملفات Backend المرجعية:**
+- `backend/src/modules/search/search.controller.ts` - جميع endpoints
+- `backend/src/modules/search/search.service.ts` - منطق البحث والـ relevance scoring
+- `backend/src/modules/search/dto/search.dto.ts` - DTOs
 
 ---
 

@@ -1,5 +1,8 @@
 # 🏷️ خدمة العلامات التجارية (Brands Service)
 
+> ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
+> 📅 **آخر تحديث**: أكتوبر 2025
+
 خدمة العلامات التجارية توفر endpoints لعرض العلامات التجارية مع دعم البحث والفلترة.
 
 ---
@@ -39,7 +42,7 @@
 ```json
 {
   "success": true,
-  "data": [
+  "brands": [
     {
       "_id": "64brand123",
       "name": "Longi Solar",
@@ -87,13 +90,13 @@ Future<PaginatedBrands> getBrands({
     'sortOrder': sortOrder,
   });
 
-  final apiResponse = ApiResponse<PaginatedBrands>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => PaginatedBrands.fromJson(json),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return PaginatedBrands.fromJson(apiResponse.data!);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -118,27 +121,33 @@ Future<PaginatedBrands> getBrands({
 ```json
 {
   "success": true,
-  "data": {
-    "_id": "64brand123",
-    "name": "Longi Solar",
-    "nameEn": "Longi Solar",
-    "slug": "longi-solar",
-    "image": "https://cdn.example.com/brands/longi-logo.png",
-    "description": "شركة رائدة في الطاقة الشمسية",
-    "descriptionEn": "Leading solar company",
-    "isActive": true,
-    "sortOrder": 1,
-    "metadata": {
-      "website": "https://www.longi.com",
-      "country": "China",
-      "founded": "2000"
-    },
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-01-15T10:00:00.000Z"
+  "_id": "64brand123",
+  "name": "Longi Solar",
+  "nameEn": "Longi Solar",
+  "slug": "longi-solar",
+  "image": "https://cdn.example.com/brands/longi-logo.png",
+  "description": "شركة رائدة في الطاقة الشمسية",
+  "descriptionEn": "Leading solar company",
+  "isActive": true,
+  "sortOrder": 1,
+  "metadata": {
+    "website": "https://www.longi.com",
+    "country": "China",
+    "founded": "2000"
   },
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-15T10:00:00.000Z",
   "requestId": "req_brand_002"
 }
 ```
+
+**ملاحظة:** الـ response يعيد الـ brand object مباشرة (بدون `data` wrapper)، مع `success` و `requestId` كحقول إضافية.
+
+### Errors
+
+| Code | HTTP Status | الوصف |
+|------|-------------|-------|
+| `Brand not found` | 404 | العلامة التجارية غير موجودة |
 
 ### كود Flutter
 
@@ -146,13 +155,13 @@ Future<PaginatedBrands> getBrands({
 Future<Brand> getBrandBySlug(String slug) async {
   final response = await _dio.get('/brands/slug/$slug');
 
-  final apiResponse = ApiResponse<Brand>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => Brand.fromJson((json as Map<String, dynamic>)['data']),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return Brand.fromJson(apiResponse.data!);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -177,27 +186,33 @@ Future<Brand> getBrandBySlug(String slug) async {
 ```json
 {
   "success": true,
-  "data": {
-    "_id": "64brand123",
-    "name": "Longi Solar",
-    "nameEn": "Longi Solar",
-    "slug": "longi-solar",
-    "image": "https://cdn.example.com/brands/longi-logo.png",
-    "description": "شركة رائدة في الطاقة الشمسية",
-    "descriptionEn": "Leading solar company",
-    "isActive": true,
-    "sortOrder": 1,
-    "metadata": {
-      "website": "https://www.longi.com",
-      "country": "China",
-      "founded": "2000"
-    },
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-01-15T10:00:00.000Z"
+  "_id": "64brand123",
+  "name": "Longi Solar",
+  "nameEn": "Longi Solar",
+  "slug": "longi-solar",
+  "image": "https://cdn.example.com/brands/longi-logo.png",
+  "description": "شركة رائدة في الطاقة الشمسية",
+  "descriptionEn": "Leading solar company",
+  "isActive": true,
+  "sortOrder": 1,
+  "metadata": {
+    "website": "https://www.longi.com",
+    "country": "China",
+    "founded": "2000"
   },
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-15T10:00:00.000Z",
   "requestId": "req_brand_003"
 }
 ```
+
+**ملاحظة:** الـ response يعيد الـ brand object مباشرة (بدون `data` wrapper)، مع `success` و `requestId` كحقول إضافية.
+
+### Errors
+
+| Code | HTTP Status | الوصف |
+|------|-------------|-------|
+| `Brand not found` | 404 | العلامة التجارية غير موجودة |
 
 ### كود Flutter
 
@@ -205,13 +220,13 @@ Future<Brand> getBrandBySlug(String slug) async {
 Future<Brand> getBrandById(String id) async {
   final response = await _dio.get('/brands/$id');
 
-  final apiResponse = ApiResponse<Brand>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => Brand.fromJson((json as Map<String, dynamic>)['data']),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return Brand.fromJson(apiResponse.data!);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -299,7 +314,7 @@ class PaginatedBrands {
 
   factory PaginatedBrands.fromJson(Map<String, dynamic> json) {
     return PaginatedBrands(
-      brands: ((json['data'] as List)
+      brands: ((json['brands'] as List)
           .map((item) => Brand.fromJson(item))
           .toList()),
       pagination: PaginationMeta.fromJson(json['pagination']),
@@ -395,6 +410,27 @@ class PaginationMeta {
     - استخدم `search` للبحث السريع
     - استخدم `metadata` لمعلومات إضافية
     - استخدم `PaginatedBrands` للصفحات الكبيرة
+
+---
+
+## 🔄 Notes on Update
+
+**التغييرات الرئيسية:**
+1. ✅ تم تصحيح الـ list response - `{ brands: [...], pagination: {...} }` بدلاً من `{ data: [...] }`
+2. ✅ تم تصحيح الـ single brand responses - الـ brand object مباشرة بدون `data` wrapper
+3. ✅ تم تحديث `PaginatedBrands.fromJson` - `json['brands']` بدلاً من `json['data']`
+4. ✅ تم تحديث جميع أكواد Flutter - استخدام `Map<String, dynamic>` للـ parsing الصحيح
+5. ✅ تم إضافة error codes الفعلية (`Brand not found`)
+
+**ملاحظات مهمة:**
+- `image` يحتوي على رابط الصورة مباشرة (ليس `logoUrl`)
+- `metadata` هو Object يحتوي على بيانات إضافية (website, country, founded)
+- `description` و `descriptionEn` قد يكونان empty strings بشكل افتراضي
+
+**ملفات Backend المرجعية:**
+- `backend/src/modules/brands/brands.public.controller.ts` - جميع endpoints
+- `backend/src/modules/brands/brands.service.ts` - المنطق والـ queries
+- `backend/src/modules/brands/schemas/brand.schema.ts` - Brand Schema
 
 ---
 

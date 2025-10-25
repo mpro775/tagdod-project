@@ -21,14 +21,9 @@ import {
   Alert,
   Snackbar,
   Tooltip,
-  Paper,
-  Divider,
   Avatar,
   Stack,
-  Badge,
-  LinearProgress,
 } from '@mui/material';
-import toast from 'react-hot-toast';
 import {
   Search,
   FilterList,
@@ -107,17 +102,21 @@ export const ServicesListPage: React.FC = () => {
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    'success' | 'error' | 'warning' | 'info'
+  >('success');
 
   const { data: servicesData, isLoading, error, refetch } = useServices(filters);
   const services = servicesData?.data || [];
-  const meta = servicesData?.meta;
 
   const updateStatusMutation = useUpdateServiceStatus();
   const cancelServiceMutation = useCancelService();
   const assignEngineerMutation = useAssignEngineer();
 
-  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+  const showSnackbar = (
+    message: string,
+    severity: 'success' | 'error' | 'warning' | 'info' = 'success'
+  ) => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
     setSnackbarOpen(true);
@@ -299,7 +298,7 @@ export const ServicesListPage: React.FC = () => {
       width: 140,
       renderCell: (params) => (
         <Chip
-          icon={statusIcons[params.value as ServiceStatus]}
+          icon={statusIcons[params.value as ServiceStatus] as React.ReactElement}
           label={statusLabels[params.value as ServiceStatus] || params.value}
           color={statusColors[params.value as ServiceStatus]}
           size="small"
@@ -320,7 +319,11 @@ export const ServicesListPage: React.FC = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5}>
           <Tooltip title="عرض التفاصيل">
-            <IconButton size="small" onClick={() => handleAction('view', params.row)} color="primary">
+            <IconButton
+              size="small"
+              onClick={() => handleAction('view', params.row)}
+              color="primary"
+            >
               <Visibility />
             </IconButton>
           </Tooltip>
@@ -408,7 +411,7 @@ export const ServicesListPage: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         إدارة الخدمات
       </Typography>
-      
+
       {/* الفلاتر */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
@@ -497,8 +500,7 @@ export const ServicesListPage: React.FC = () => {
         onPaginationModelChange={(model) => {
           setFilters((prev) => ({ ...prev, page: model.page + 1 }));
         }}
-        rowCount={meta?.total || 0}
-        getRowId={(row) => row._id}
+        getRowId={(row) => (row as any)._id}
         height="calc(100vh - 300px)"
       />
 

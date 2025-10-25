@@ -13,7 +13,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import { Add, Delete, Edit } from '@mui/icons-material';
-import { ImageField } from '@/features/media';
+import { ImageField, MediaCategory } from '@/features/media';
 
 interface MediaItem {
   _id?: string;
@@ -198,7 +198,7 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
                 : undefined
             }
             onChange={handleImageSelect}
-            category="product"
+            category={MediaCategory.PRODUCT}
             helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
           />
         </DialogContent>

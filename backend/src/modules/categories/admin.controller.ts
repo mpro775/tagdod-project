@@ -34,7 +34,7 @@ import { CategoriesService } from './categories.service';
 import { CreateCategoryDto, UpdateCategoryDto, ListCategoriesDto } from './dto/category.dto';
 import { Category } from './schemas/category.schema';
 
-@ApiTags('admin-categories')
+@ApiTags('إدارة-الفئات')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -109,7 +109,7 @@ export class CategoriesAdminController {
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async createCategory(@Body() dto: CreateCategoryDto) {
     const category = await this.categoriesService.createCategory(dto as Partial<Category>);
-    return { data: category };
+    return category;
   }
 
   // ==================== قائمة الفئات ====================
@@ -181,7 +181,7 @@ export class CategoriesAdminController {
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async listCategories(@Query() dto: ListCategoriesDto) {
     const categories = await this.categoriesService.listCategories(dto);
-    return { data: categories };
+    return categories;
   }
 
   // ==================== شجرة الفئات الكاملة ====================
@@ -233,7 +233,7 @@ export class CategoriesAdminController {
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getCategoryTree() {
     const tree = await this.categoriesService.getCategoryTree();
-    return { data: tree };
+    return tree;
   }
 
   // ==================== عرض فئة واحدة ====================
@@ -287,7 +287,7 @@ export class CategoriesAdminController {
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getCategory(@Param('id') id: string) {
     const category = await this.categoriesService.getCategory(id);
-    return { data: category };
+      return category;
   }
 
   // ==================== تحديث فئة ====================
@@ -337,7 +337,7 @@ export class CategoriesAdminController {
     @Body() dto: UpdateCategoryDto
   ) {
     const category = await this.categoriesService.updateCategory(id, dto as Partial<Category>);
-    return { data: category };
+    return category;
   }
 
   // ==================== حذف فئة (Soft Delete) ====================
@@ -376,7 +376,7 @@ export class CategoriesAdminController {
     @Req() req: { user: { sub: string } }
   ) {
     const category = await this.categoriesService.deleteCategory(id, req.user.sub);
-    return { data: { deleted: true, deletedAt: category.deletedAt } };
+    return { deleted: true, deletedAt: category.deletedAt };
   }
 
   // ==================== استعادة فئة محذوفة ====================
@@ -410,7 +410,7 @@ export class CategoriesAdminController {
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async restoreCategory(@Param('id') id: string) {
     await this.categoriesService.restoreCategory(id);
-    return { data: { restored: true } };
+    return { restored: true };
   }
 
   // ==================== حذف نهائي ====================
@@ -446,7 +446,7 @@ export class CategoriesAdminController {
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات Super Admin فقط' })
   async permanentDeleteCategory(@Param('id') id: string) {
     const result = await this.categoriesService.permanentDeleteCategory(id);
-    return { data: result };
+    return result;
   }
 
   // ==================== تحديث الإحصائيات ====================
@@ -482,7 +482,7 @@ export class CategoriesAdminController {
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async updateCategoryStats(@Param('id') id: string) {
     const result = await this.categoriesService.updateCategoryStats(id);
-    return { data: result };
+    return  result;
   }
 
   // ==================== إحصائيات عامة ====================

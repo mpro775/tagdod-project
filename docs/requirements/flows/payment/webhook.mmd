@@ -1,117 +1,53 @@
-%% Advanced Payment System with COD, Online Payment, and Webhook Handling
+%% Payment Webhook Processing Flow
 %% View at https://mermaid.live
-sequenceDiagram
-  participant User as User
-  participant API as Backend API
-  participant DB as Database
-  participant INV as InventoryService
-  participant LED as InventoryLedger
-  participant NOTI as NotificationService
-  participant Pay as PaymentProvider
+flowchart TD
+  A[استقبال Webhook من Payment Provider] --> B[استخراج البيانات من الطلب]
+  B --> C{التحقق من التوقيع?}
+  C -->|توقيع غير صحيح| D[إرجاع خطأ 401 - توقيع غير صحيح]
 
-  %% COD Payment Flow
-  Note over User, Pay: COD (Cash on Delivery) Payment Flow
-  User->>API: POST /checkout/confirm (method: COD)
-  API->>API: Start Database Transaction
-  API->>DB: Create Order (PENDING)
-  API->>INV: Reserve Inventory
-  API->>LED: Create Ledger Entry
-  API->>DB: Update Order Status (CONFIRMED)
-  API->>INV: Commit Inventory Reservation
-  API->>LED: Create Confirmation Entry
-  API->>NOTI: Send Order Confirmation
-  API->>User: Return Order Details
-  Note over API: COD Payment Confirmed Immediately
+  C -->|توقيع صحيح| E[البحث عن الطلب بـ paymentIntentId]
+  E --> F{وجد الطلب?}
+  F -->|لا| G[إرجاع خطأ - طلب غير موجود]
 
-  %% Online Payment Flow
-  Note over User, Pay: Online Payment Flow
-  User->>API: POST /checkout/confirm (method: ONLINE)
-  API->>API: Start Database Transaction
-  API->>DB: Create Order (PENDING)
-  API->>INV: Reserve Inventory (TTL)
-  API->>LED: Create Reservation Entry
-  API->>API: Generate Payment Intent
-  API->>API: Create HMAC Signature
-  API->>DB: Save Payment Intent ID
-  API->>User: Return Payment Intent + Signature
-  User->>Pay: Redirect to Payment Provider
-  Pay->>Pay: Process Payment
-  Pay->>API: POST /payments/webhook (SUCCESS/FAILED)
-  
-  %% Webhook Processing
-  Note over Pay, API: Webhook Processing
-  API->>API: Verify HMAC Signature
-  alt Signature Valid
-    API->>API: Start Database Transaction
-    API->>DB: Load Order by Payment Intent ID
-    alt Payment Status == SUCCESS
-      API->>DB: Update Order Status (CONFIRMED)
-      API->>INV: Commit Inventory Reservation
-      API->>LED: Create Confirmation Entry
-      API->>NOTI: Send Success Notification
-      API->>Pay: Return 200 OK
-    else Payment Status == FAILED
-      API->>DB: Update Order Status (PAYMENT_FAILED)
-      API->>INV: Release Inventory Reservation
-      API->>LED: Create Release Entry
-      API->>NOTI: Send Failure Notification
-      API->>Pay: Return 200 OK
-    end
-  else Signature Invalid
-    API->>API: Log Security Alert
-    API->>Pay: Return 401 Unauthorized
-  end
+  F -->|نعم| H{حالة الدفع في Webhook?}
+  H -->|SUCCESS| I[تحديث حالة الدفع إلى PAID]
+  H -->|FAILED| J[تحديث حالة الدفع إلى FAILED]
 
-  %% Multi-currency Support
-  Note over User, API: Multi-currency Support
-  User->>API: POST /checkout/preview (currency: YER/SAR/USD)
-  API->>API: Convert Currency
-  API->>API: Calculate Exchange Rate
-  API->>User: Return Converted Amounts
+  I --> K[تحديث حالة الطلب إلى CONFIRMED]
+  K --> L[تحديث confirmedAt إلى الآن]
+  L --> M[إرسال إشعار تأكيد الطلب]
 
-  %% Inventory Management
-  Note over INV, LED: Advanced Inventory Management
-  INV->>INV: Check Stock Availability
-  INV->>INV: Calculate Available Stock
-  INV->>INV: Reserve Stock (TTL)
-  INV->>LED: Log Reservation
-  alt Payment Success
-    INV->>INV: Commit Reservation
-    INV->>LED: Log Confirmation
-  else Payment Failed
-    INV->>INV: Release Reservation
-    INV->>LED: Log Release
-  end
+  J --> N[تحديث حالة الطلب إلى PAYMENT_FAILED]
+  N --> O[إرسال إشعار فشل الدفع]
 
-  %% Database Transactions
-  Note over API, DB: Database Transaction Management
-  API->>DB: Begin Transaction
-  API->>DB: Execute Operations
-  alt All Operations Success
-    API->>DB: Commit Transaction
-  else Any Operation Failed
-    API->>DB: Rollback Transaction
-    API->>API: Handle Error
-  end
+  M --> P[تحديث المخزون - تقليل الكميات]
+  O --> Q[لا تغيير في المخزون - الكميات محجوزة]
 
-  %% Notification System
-  Note over NOTI, User: Notification System
-  NOTI->>NOTI: Create Notification
-  NOTI->>NOTI: Set Notification Type
-  NOTI->>NOTI: Set Notification Channel
-  NOTI->>User: Send Notification (Email/SMS/Push)
-  NOTI->>DB: Log Notification
+  P --> R[إرسال إشعارات مخزون إذا لزم الأمر]
+  Q --> R
 
-  %% Error Handling
-  Note over API, Pay: Error Handling
-  alt Payment Provider Error
-    API->>API: Log Error
-    API->>API: Update Order Status (PAYMENT_FAILED)
-    API->>INV: Release Inventory
-    API->>NOTI: Send Error Notification
-  else Database Error
-    API->>API: Rollback Transaction
-    API->>API: Log Database Error
-    API->>INV: Release All Reservations
-    API->>User: Return Error Response
-  end
+  R --> S[حفظ تفاصيل Webhook في السجل]
+  S --> T[إرجاع استجابة نجاح 200]
+
+  %% Error Cases
+  D --> U[نهاية - خطأ]
+  G --> U
+
+  T --> V[نهاية - نجاح]
+
+  %% Webhook Data Structure
+  W[بيانات Webhook المتوقعة] --> W1[intentId: معرف نية الدفع]
+  W1 --> W2[status: SUCCESS أو FAILED]
+  W2 --> W3[amount: المبلغ المدفوع]
+  W3 --> W4[signature: توقيع HMAC]
+
+  %% Signature Verification
+  X[التحقق من التوقيع] --> X1[استخراج signature من headers]
+  X1 --> X2[إنشاء HMAC من البيانات]
+  X2 --> X3[مقارنة التوقيعين]
+
+  X3 -->|متطابق| Y[التوقيع صحيح]
+  X3 -->|غير متطابق| Z[التوقيع غير صحيح]
+
+  Y --> C
+  Z --> D

@@ -20,7 +20,7 @@ import { UserRole } from '../users/schemas/user.schema';
 import { AdminPermission } from '../../shared/constants/permissions';
 import { CartService } from './cart.service';
 
-@ApiTags('admin-carts')
+@ApiTags('إدارة-السلات')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -99,8 +99,7 @@ export class AdminCartController {
     );
 
     return {
-      success: true,
-      data: limitedCarts,
+      carts: limitedCarts,
       count: limitedCarts.length,
       totalCarts: carts.length,
       totalValue,
@@ -139,9 +138,8 @@ export class AdminCartController {
     const result = await this.cartService.processAbandonedCarts();
 
     return {
-      success: true,
+      ...result,
       message: `Sent ${result.emailsSent} reminder emails`,
-      data: result,
     };
   }
 
@@ -181,9 +179,8 @@ export class AdminCartController {
     const result = await this.cartService.sendAbandonmentReminder(cartId);
 
     return {
-      success: true,
+      ...result,
       message: 'Reminder sent successfully',
-      data: result,
     };
   }
 
@@ -223,11 +220,7 @@ export class AdminCartController {
   @ApiUnauthorizedResponse({ description: 'غير مصرح - مطلوب تسجيل دخول' })
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getAnalytics(@Query('period') period: string = '30') {
-    const analytics = await this.cartService.getCartAnalytics(parseInt(period));
-    return {
-      success: true,
-      data: analytics,
-    };
+    return await this.cartService.getCartAnalytics(parseInt(period));
   }
 
   @Get('statistics')
@@ -258,11 +251,7 @@ export class AdminCartController {
   @ApiUnauthorizedResponse({ description: 'غير مصرح - مطلوب تسجيل دخول' })
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getStatistics() {
-    const stats = await this.cartService.getCartStatistics();
-    return {
-      success: true,
-      data: stats,
-    };
+    return await this.cartService.getCartStatistics();
   }
 
   @Get('conversion-rates')
@@ -298,13 +287,10 @@ export class AdminCartController {
   @ApiUnauthorizedResponse({ description: 'غير مصرح - مطلوب تسجيل دخول' })
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getConversionRates(@Query('period') period: string = '30') {
-    const rates = await this.cartService.getConversionRates(parseInt(period));
-    return {
-      success: true,
-      data: rates,
-    };
+    return await this.cartService.getConversionRates(parseInt(period));
   }
 
+  @RequirePermissions(AdminPermission.CARTS_READ, AdminPermission.ADMIN_ACCESS)
   @Get('all')
   @ApiOperation({
     summary: 'الحصول على جميع السلات مع الترقيم والتصفية',
@@ -396,13 +382,7 @@ export class AdminCartController {
       dateTo: dateTo ? new Date(dateTo) : undefined,
     };
 
-    const result = await this.cartService.getAllCarts(parseInt(page), parseInt(limit), filters);
-
-    return {
-      success: true,
-      data: result.carts,
-      pagination: result.pagination,
-    };
+    return await this.cartService.getAllCarts(parseInt(page), parseInt(limit), filters);
   }
 
   @Get(':id')
@@ -441,11 +421,7 @@ export class AdminCartController {
   @ApiUnauthorizedResponse({ description: 'غير مصرح - مطلوب تسجيل دخول' })
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getCartById(@Param('id') cartId: string) {
-    const cart = await this.cartService.getCartById(cartId);
-    return {
-      success: true,
-      data: cart,
-    };
+    return await this.cartService.getCartById(cartId);
   }
 
   @Post(':id/convert-to-order')
@@ -484,9 +460,8 @@ export class AdminCartController {
   async convertToOrder(@Param('id') cartId: string) {
     const result = await this.cartService.convertToOrder(cartId);
     return {
-      success: true,
+      ...result,
       message: 'Cart converted to order successfully',
-      data: result,
     };
   }
 
@@ -524,11 +499,7 @@ export class AdminCartController {
   @ApiUnauthorizedResponse({ description: 'غير مصرح - مطلوب تسجيل دخول' })
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getRecoveryCampaigns(@Query('period') period: string = '30') {
-    const analytics = await this.cartService.getRecoveryCampaignAnalytics(parseInt(period));
-    return {
-      success: true,
-      data: analytics,
-    };
+    return await this.cartService.getRecoveryCampaignAnalytics(parseInt(period));
   }
 
   @Get('customer-behavior')
@@ -564,11 +535,7 @@ export class AdminCartController {
   @ApiUnauthorizedResponse({ description: 'غير مصرح - مطلوب تسجيل دخول' })
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getCustomerBehavior(@Query('period') period: string = '30') {
-    const analytics = await this.cartService.getCustomerBehaviorAnalytics(parseInt(period));
-    return {
-      success: true,
-      data: analytics,
-    };
+    return await this.cartService.getCustomerBehaviorAnalytics(parseInt(period));
   }
 
   @Get('revenue-impact')
@@ -604,11 +571,7 @@ export class AdminCartController {
   @ApiUnauthorizedResponse({ description: 'غير مصرح - مطلوب تسجيل دخول' })
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getRevenueImpact(@Query('period') period: string = '30') {
-    const analytics = await this.cartService.getRevenueImpactAnalytics(parseInt(period));
-    return {
-      success: true,
-      data: analytics,
-    };
+    return await this.cartService.getRevenueImpactAnalytics(parseInt(period));
   }
 
   @Post('bulk-actions')
@@ -662,9 +625,8 @@ export class AdminCartController {
   async performBulkActions(@Body() body: { action: string; cartIds: string[] }) {
     const result = await this.cartService.performBulkActions(body.action, body.cartIds);
     return {
-      success: true,
+      ...result,
       message: `Bulk action completed: ${result.processed} carts processed`,
-      data: result,
     };
   }
 }

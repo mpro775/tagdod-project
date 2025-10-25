@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client';
+import type { ApiResponse } from '@/shared/types/common.types';
 import {
   SendOtpDto,
   VerifyOtpDto,
@@ -14,54 +15,54 @@ export const authApi = {
    * إرسال OTP
    */
   sendOtp: async (data: SendOtpDto) => {
-    const response = await apiClient.post<{ sent: boolean; devCode?: string }>(
+    const response = await apiClient.post<ApiResponse<{ sent: boolean; devCode?: string }>>(
       '/auth/send-otp',
       data
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * تحقق من OTP وتسجيل دخول
    */
   verifyOtp: async (data: VerifyOtpDto) => {
-    const response = await apiClient.post<LoginResponse>('/auth/verify-otp', data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/verify-otp', data);
+    return response.data.data;
   },
 
   /**
    * نسيت كلمة المرور
    */
   forgotPassword: async (data: ForgotPasswordDto) => {
-    const response = await apiClient.post<{ sent: boolean; devCode?: string }>(
+    const response = await apiClient.post<ApiResponse<{ sent: boolean; devCode?: string }>>(
       '/auth/forgot-password',
       data
     );
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * إعادة تعيين كلمة المرور
    */
   resetPassword: async (data: ResetPasswordDto) => {
-    const response = await apiClient.post<{ updated: boolean }>('/auth/reset-password', data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<{ updated: boolean }>>('/auth/reset-password', data);
+    return response.data.data;
   },
 
   /**
    * تعيين كلمة المرور (بعد تسجيل الدخول)
    */
   setPassword: async (data: SetPasswordDto) => {
-    const response = await apiClient.post<{ updated: boolean }>('/auth/set-password', data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<{ updated: boolean }>>('/auth/set-password', data);
+    return response.data.data;
   },
 
   /**
    * الحصول على بيانات المستخدم الحالي
    */
   getProfile: async () => {
-    const response = await apiClient.get<{ success: boolean; data: UserProfile; requestId: string }>('/auth/me');
-    return response.data;
+    const response = await apiClient.get<ApiResponse<UserProfile>>('/auth/me');
+    return response.data.data;
   },
 
   /**
@@ -73,42 +74,41 @@ export const authApi = {
     gender?: string;
     jobTitle?: string;
   }) => {
-    const response = await apiClient.patch<{ updated: boolean }>('/auth/me', data);
-    return response.data;
+    const response = await apiClient.patch<ApiResponse<{ updated: boolean }>>('/auth/me', data);
+    return response.data.data;
   },
 
   /**
    * حذف الحساب
    */
   deleteAccount: async () => {
-    const response = await apiClient.delete<{ deleted: boolean }>('/auth/me');
-    return response.data;
+    const response = await apiClient.delete<ApiResponse<{ deleted: boolean }>>('/auth/me');
+    return response.data.data;
   },
 
   /**
    * تحديث الـ Refresh Token
    */
   refreshToken: async (refreshToken: string) => {
-    const response = await apiClient.post<{ accessToken: string }>('/auth/refresh', {
+    const response = await apiClient.post<ApiResponse<{ accessToken: string }>>('/auth/refresh', {
       refreshToken,
     });
-    return response.data;
+    return response.data.data;
   },
 
   /**
    * تسجيل دخول التطوير (للاستخدام في مرحلة التطوير فقط)
    */
   devLogin: async (data: { phone: string; password: string }) => {
-    const response = await apiClient.post<LoginResponse>('/auth/dev-login', data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/dev-login', data);
+    return response.data.data;
   },
 
   /**
    * إنشاء السوبر أدمن (للاستخدام الأولي فقط)
    */
   createSuperAdmin: async (secretKey: string) => {
-    const response = await apiClient.post<{
-      success: boolean;
+    const response = await apiClient.post<ApiResponse<{
       message: string;
       admin: {
         id: string;
@@ -122,7 +122,7 @@ export const authApi = {
         phone: string;
         password: string;
       };
-    }>('/auth/create-super-admin', { secretKey });
-    return response.data;
+    }>>('/auth/create-super-admin', { secretKey });
+    return response.data.data;
   },
 };

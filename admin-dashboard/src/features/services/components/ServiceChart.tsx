@@ -16,16 +16,13 @@ import {
   TrendingDown,
   Assessment,
   Timeline,
-  AttachMoney,
-  Engineering,
-  RequestQuote,
-  Star,
+ 
 } from '@mui/icons-material';
 
 interface ServiceChartProps {
   title: string;
   data: any;
-  type: 'line' | 'bar' | 'pie' | 'progress' | 'stats';
+  type: 'line' | 'bar' | 'pie' | 'progress' | 'stats' | 'timeline';
   loading?: boolean;
   height?: number;
   color?: string;

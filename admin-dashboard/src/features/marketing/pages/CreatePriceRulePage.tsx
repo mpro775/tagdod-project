@@ -34,26 +34,26 @@ const CreatePriceRulePage: React.FC = () => {
       brandId: '',
       currency: 'SAR',
       minQty: 1,
-      accountType: ''
+      accountType: '',
     },
     effects: {
       percentOff: 0,
       amountOff: 0,
       specialPrice: 0,
       badge: '',
-      giftSku: ''
+      giftSku: '',
     },
     usageLimits: {
       maxUses: 0,
       maxUsesPerUser: 0,
-      currentUses: 0
+      currentUses: 0,
     },
     metadata: {
       title: '',
       description: '',
-      termsAndConditions: ''
+      termsAndConditions: '',
     },
-    couponCode: ''
+    couponCode: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,19 +68,19 @@ const CreatePriceRulePage: React.FC = () => {
   };
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleNestedChange = (parent: string, field: string, value: any) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [parent]: {
-        ...prev[parent as keyof typeof prev],
-        [field]: value
-      }
+        ...(prev[parent as keyof typeof prev] as Record<string, any>),
+        [field]: value,
+      },
     }));
   };
 
@@ -93,14 +93,14 @@ const CreatePriceRulePage: React.FC = () => {
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
           {/* Basic Information */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   المعلومات الأساسية
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="العنوان"
@@ -109,7 +109,7 @@ const CreatePriceRulePage: React.FC = () => {
                       required
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="الأولوية"
@@ -119,7 +119,7 @@ const CreatePriceRulePage: React.FC = () => {
                       required
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="تاريخ البداية"
@@ -130,7 +130,7 @@ const CreatePriceRulePage: React.FC = () => {
                       required
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="تاريخ النهاية"
@@ -141,17 +141,19 @@ const CreatePriceRulePage: React.FC = () => {
                       required
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
                       label="الوصف"
                       multiline
                       rows={3}
                       value={formData.metadata.description}
-                      onChange={(e) => handleNestedChange('metadata', 'description', e.target.value)}
+                      onChange={(e) =>
+                        handleNestedChange('metadata', 'description', e.target.value)
+                      }
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -168,38 +170,44 @@ const CreatePriceRulePage: React.FC = () => {
           </Grid>
 
           {/* Conditions */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   الشروط
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="معرف الفئة"
                       value={formData.conditions.categoryId}
-                      onChange={(e) => handleNestedChange('conditions', 'categoryId', e.target.value)}
+                      onChange={(e) =>
+                        handleNestedChange('conditions', 'categoryId', e.target.value)
+                      }
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="معرف المنتج"
                       value={formData.conditions.productId}
-                      onChange={(e) => handleNestedChange('conditions', 'productId', e.target.value)}
+                      onChange={(e) =>
+                        handleNestedChange('conditions', 'productId', e.target.value)
+                      }
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="معرف المتغير"
                       value={formData.conditions.variantId}
-                      onChange={(e) => handleNestedChange('conditions', 'variantId', e.target.value)}
+                      onChange={(e) =>
+                        handleNestedChange('conditions', 'variantId', e.target.value)
+                      }
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="معرف الماركة"
@@ -207,12 +215,14 @@ const CreatePriceRulePage: React.FC = () => {
                       onChange={(e) => handleNestedChange('conditions', 'brandId', e.target.value)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <FormControl fullWidth>
                       <InputLabel>العملة</InputLabel>
                       <Select
                         value={formData.conditions.currency}
-                        onChange={(e) => handleNestedChange('conditions', 'currency', e.target.value)}
+                        onChange={(e) =>
+                          handleNestedChange('conditions', 'currency', e.target.value)
+                        }
                         label="العملة"
                       >
                         <MenuItem value="SAR">ريال سعودي</MenuItem>
@@ -221,13 +231,15 @@ const CreatePriceRulePage: React.FC = () => {
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="الحد الأدنى للكمية"
                       type="number"
                       value={formData.conditions.minQty}
-                      onChange={(e) => handleNestedChange('conditions', 'minQty', parseInt(e.target.value))}
+                      onChange={(e) =>
+                        handleNestedChange('conditions', 'minQty', parseInt(e.target.value))
+                      }
                     />
                   </Grid>
                 </Grid>
@@ -236,41 +248,47 @@ const CreatePriceRulePage: React.FC = () => {
           </Grid>
 
           {/* Effects */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   التأثيرات
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="نسبة الخصم (%)"
                       type="number"
                       value={formData.effects.percentOff}
-                      onChange={(e) => handleNestedChange('effects', 'percentOff', parseFloat(e.target.value))}
+                      onChange={(e) =>
+                        handleNestedChange('effects', 'percentOff', parseFloat(e.target.value))
+                      }
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="مبلغ الخصم"
                       type="number"
                       value={formData.effects.amountOff}
-                      onChange={(e) => handleNestedChange('effects', 'amountOff', parseFloat(e.target.value))}
+                      onChange={(e) =>
+                        handleNestedChange('effects', 'amountOff', parseFloat(e.target.value))
+                      }
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="السعر الخاص"
                       type="number"
                       value={formData.effects.specialPrice}
-                      onChange={(e) => handleNestedChange('effects', 'specialPrice', parseFloat(e.target.value))}
+                      onChange={(e) =>
+                        handleNestedChange('effects', 'specialPrice', parseFloat(e.target.value))
+                      }
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="الشارة"
@@ -278,7 +296,7 @@ const CreatePriceRulePage: React.FC = () => {
                       onChange={(e) => handleNestedChange('effects', 'badge', e.target.value)}
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
                       label="رمز المنتج المجاني"
@@ -292,29 +310,37 @@ const CreatePriceRulePage: React.FC = () => {
           </Grid>
 
           {/* Usage Limits */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   حدود الاستخدام
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="الحد الأقصى للاستخدام"
                       type="number"
                       value={formData.usageLimits.maxUses}
-                      onChange={(e) => handleNestedChange('usageLimits', 'maxUses', parseInt(e.target.value))}
+                      onChange={(e) =>
+                        handleNestedChange('usageLimits', 'maxUses', parseInt(e.target.value))
+                      }
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="الحد الأقصى لكل مستخدم"
                       type="number"
                       value={formData.usageLimits.maxUsesPerUser}
-                      onChange={(e) => handleNestedChange('usageLimits', 'maxUsesPerUser', parseInt(e.target.value))}
+                      onChange={(e) =>
+                        handleNestedChange(
+                          'usageLimits',
+                          'maxUsesPerUser',
+                          parseInt(e.target.value)
+                        )
+                      }
                     />
                   </Grid>
                 </Grid>
@@ -323,7 +349,7 @@ const CreatePriceRulePage: React.FC = () => {
           </Grid>
 
           {/* Actions */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
               <Button
                 variant="outlined"

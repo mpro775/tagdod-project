@@ -11,7 +11,6 @@ import {
   Skeleton,
   useTheme,
   IconButton,
-  Tooltip,
   Badge,
 } from '@mui/material';
 import {
@@ -25,13 +24,12 @@ import {
   Speed as SpeedIcon,
   Memory as MemoryIcon,
   Storage as StorageIcon,
-  NetworkCheck as NetworkCheckIcon,
   Refresh as RefreshIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
   Error as ErrorIcon,
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { RealTimeMetrics } from '../types/analytics.types';
 
 interface RealTimeMetricsCardProps {
@@ -71,7 +69,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
           </Typography>
           <Grid container spacing={3}>
             {[...Array(6)].map((_, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
                 <Skeleton variant="rectangular" height={120} />
               </Grid>
             ))}
@@ -166,11 +164,9 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
               variant="outlined"
               size="small"
             />
-            <Tooltip title="تحديث البيانات">
-              <IconButton size="small">
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
+            <IconButton size="small" title="تحديث البيانات">
+              <RefreshIcon />
+            </IconButton>
           </Box>
         </Box>
 
@@ -191,7 +187,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
               </Typography>
             </Box>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Typography variant="body2" color="text.secondary">
                   وقت استجابة API
                 </Typography>
@@ -199,7 +195,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
                   {data?.systemHealth?.apiResponseTime || 0}ms
                 </Typography>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Typography variant="body2" color="text.secondary">
                   معدل الأخطاء
                 </Typography>
@@ -207,7 +203,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
                   {(data?.systemHealth?.errorRate || 0).toFixed(2)}%
                 </Typography>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Typography variant="body2" color="text.secondary">
                   وقت التشغيل
                 </Typography>
@@ -215,7 +211,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
                   {(data?.systemHealth?.uptime || 0).toFixed(1)}%
                 </Typography>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Typography variant="body2" color="text.secondary">
                   الاتصالات النشطة
                 </Typography>
@@ -229,7 +225,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
 
         {/* Key Metrics */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -256,7 +252,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -283,7 +279,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -310,7 +306,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -340,7 +336,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
 
         {/* Performance Metrics */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
                 استخدام الموارد
@@ -352,12 +348,12 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
                     <Typography variant="body2">الذاكرة</Typography>
                   </Box>
                   <Typography variant="body2" color="primary">
-                    {data?.systemHealth?.memoryUsage || 0}%
+                    {data?.memoryUsage || 0}%
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
-                  value={data?.systemHealth?.memoryUsage || 0}
+                  value={data?.memoryUsage || 0}
                   sx={{ height: 8, borderRadius: 4 }}
                 />
               </Box>
@@ -369,12 +365,12 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
                     <Typography variant="body2">المعالج</Typography>
                   </Box>
                   <Typography variant="body2" color="secondary">
-                    {data?.systemHealth?.cpuUsage || 0}%
+                    {data?.cpuUsage || 0}%
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
-                  value={data?.systemHealth?.cpuUsage || 0}
+                  value={data?.cpuUsage || 0}
                   color="secondary"
                   sx={{ height: 8, borderRadius: 4 }}
                 />
@@ -387,12 +383,12 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
                     <Typography variant="body2">التخزين</Typography>
                   </Box>
                   <Typography variant="body2" color="success.main">
-                    {data?.systemHealth?.diskUsage || 0}%
+                    {data?.diskUsage || 0}%
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
-                  value={data?.systemHealth?.diskUsage || 0}
+                  value={data?.diskUsage || 0}
                   color="success"
                   sx={{ height: 8, borderRadius: 4 }}
                 />
@@ -400,7 +396,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
                 النشاط الفوري
@@ -427,7 +423,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
 
         {/* Additional Metrics */}
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box sx={{ textAlign: 'center', p: 2 }}>
               <Badge badgeContent={data?.lowStockAlerts || 0} color="error">
                 <InventoryIcon sx={{ fontSize: 40, color: theme.palette.warning.main }} />
@@ -441,7 +437,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box sx={{ textAlign: 'center', p: 2 }}>
               <Badge badgeContent={data?.activeOrders || 0} color="primary">
                 <ShoppingCartIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />
@@ -455,7 +451,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box sx={{ textAlign: 'center', p: 2 }}>
               <Badge badgeContent={data?.todayNewCustomers || 0} color="success">
                 <PeopleIcon sx={{ fontSize: 40, color: theme.palette.success.main }} />
@@ -469,7 +465,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box sx={{ textAlign: 'center', p: 2 }}>
               <Badge badgeContent={data?.todayAbandonedCarts || 0} color="warning">
                 <ShoppingCartIcon sx={{ fontSize: 40, color: theme.palette.warning.main }} />

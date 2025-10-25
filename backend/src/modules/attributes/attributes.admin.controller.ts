@@ -34,7 +34,7 @@ import { CreateAttributeDto, UpdateAttributeDto, CreateAttributeValueDto, Update
 import { Attribute } from './schemas/attribute.schema';
 import { AttributeValue } from './schemas/attribute-value.schema';
 
-@ApiTags('admin-attributes')
+@ApiTags('إدارة-السمات')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -134,7 +134,7 @@ export class AttributesAdminController {
   })
   async createAttribute(@Body() dto: CreateAttributeDto) {
     const attribute = await this.attributesService.createAttribute(dto as Partial<Attribute>);
-    return { data: attribute };
+    return attribute;
   }
 
   @Get()
@@ -212,7 +212,7 @@ export class AttributesAdminController {
   })
   async listAttributes(@Query() query: Record<string, unknown>) {
     const attributes = await this.attributesService.listAttributes(query);
-    return { data: attributes };
+    return attributes;
   }
 
   @Get(':id')
@@ -272,7 +272,7 @@ export class AttributesAdminController {
   })
   async getAttribute(@Param('id') id: string) {
     const attribute = await this.attributesService.getAttribute(id);
-    return { data: attribute };
+    return attribute;
   }
 
   @Patch(':id')
@@ -301,7 +301,7 @@ export class AttributesAdminController {
     @Body() dto: UpdateAttributeDto
   ) {
     const attribute = await this.attributesService.updateAttribute(id, dto as Partial<Attribute>);
-    return { data: attribute };
+    return attribute;
   }
 
   @Delete(':id')
@@ -338,7 +338,7 @@ export class AttributesAdminController {
     @Req() req: { user: { sub: string } }
   ) {
     const attribute = await this.attributesService.deleteAttribute(id, req.user.sub);
-    return { data: { deleted: true, deletedAt: attribute.deletedAt } };
+    return { deleted: true, deletedAt: attribute.deletedAt };
   }
 
   @Post(':id/restore')
@@ -371,7 +371,7 @@ export class AttributesAdminController {
   })
   async restoreAttribute(@Param('id') id: string) {
     await this.attributesService.restoreAttribute(id);
-    return { data: { restored: true } };
+    return { restored: true };
   }
 
   // ==================== Attribute Values ====================
@@ -423,7 +423,7 @@ export class AttributesAdminController {
     @Body() dto: CreateAttributeValueDto
   ) {
     const value = await this.attributesService.createValue(attributeId, dto as Partial<AttributeValue>);
-    return { data: value };
+    return value;
   }
 
   @Get(':attributeId/values')
@@ -468,7 +468,7 @@ export class AttributesAdminController {
   })
   async listValues(@Param('attributeId') attributeId: string) {
     const values = await this.attributesService.listValues(attributeId);
-    return { data: values };
+    return values;
   }
 
   @Patch('values/:id')
@@ -497,7 +497,7 @@ export class AttributesAdminController {
     @Body() dto: UpdateAttributeValueDto
   ) {
     const value = await this.attributesService.updateValue(id, dto as Partial<AttributeValue>);
-    return { data: value };
+    return value;
   }
 
   @Delete('values/:id')
@@ -533,7 +533,7 @@ export class AttributesAdminController {
     @Req() req: { user: { sub: string } }
   ) {
     await this.attributesService.deleteValue(id, req.user.sub);
-    return { data: { deleted: true } };
+    return { deleted: true };
   }
 
   // ==================== Stats ====================

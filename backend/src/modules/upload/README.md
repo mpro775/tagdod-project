@@ -169,6 +169,120 @@ Authorization: Bearer <token>
 }
 ```
 
+## Media Management APIs (إدارة الوسائط)
+
+### إدارة الوسائط المتقدمة
+
+#### رفع ملف مع حفظ في قاعدة البيانات
+
+```http
+POST /admin/media/upload
+Content-Type: multipart/form-data
+Authorization: Bearer <token>
+
+# Body: form-data
+file: [binary file]
+name: صورة منتج رئيسية
+category: product
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "media_123",
+    "url": "https://cdn.bunny.net/uploads/uuid-filename.jpg",
+    "filename": "uuid-filename.jpg",
+    "storedFilename": "uploads/uuid-filename.jpg",
+    "name": "صورة منتج رئيسية",
+    "category": "product",
+    "type": "image",
+    "mimeType": "image/jpeg",
+    "size": 1024000,
+    "width": 1920,
+    "height": 1080
+  }
+}
+```
+
+#### قائمة الوسائط
+
+```http
+GET /admin/media?category=product&page=1&limit=20
+Authorization: Bearer <token>
+```
+
+#### تفاصيل وسيط محدد
+
+```http
+GET /admin/media/:id
+Authorization: Bearer <token>
+```
+
+#### تحديث وسيط
+
+```http
+PATCH /admin/media/:id
+Authorization: Bearer <token>
+
+{
+  "name": "اسم جديد للصورة",
+  "category": "banner"
+}
+```
+
+#### حذف وسيط (Soft Delete)
+
+```http
+DELETE /admin/media/:id
+Authorization: Bearer <token>
+```
+
+#### استعادة وسيط محذوف
+
+```http
+POST /admin/media/:id/restore
+Authorization: Bearer <token>
+```
+
+#### حذف نهائي (Super Admin)
+
+```http
+DELETE /admin/media/:id/permanent
+Authorization: Bearer <token>
+```
+
+#### إحصائيات الوسائط
+
+```http
+GET /admin/media/stats/summary
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "total": 1250,
+    "byCategory": {
+      "product": 850,
+      "banner": 150,
+      "category": 200,
+      "brand": 50
+    },
+    "byType": {
+      "image": 1200,
+      "video": 30,
+      "document": 20
+    },
+    "storageUsed": 524288000,
+    "deletedCount": 45
+  }
+}
+```
+
 ## قيود الملفات
 
 - **الحجم الأقصى**: 10MB لكل ملف
@@ -241,3 +355,19 @@ const response = await fetch('/upload/file', {
 
 ### خطأ: "File type not allowed"
 - تأكد من أن نوع الملف مدعوم (انظر قائمة الأنواع المسموحة)
+
+---
+
+## ✅ حالة النظام
+
+**نظام Upload Module مكتمل بالكامل ويعمل كما هو موثق:**
+- ✅ تكامل كامل مع Bunny.net Storage
+- ✅ رفع ملف واحد ومتعدد يعمل بكفاءة
+- ✅ نظام إدارة الوسائط المتقدم (Media Management)
+- ✅ آليات تنظيف متقدمة (محذوف، مكرر، غير مستخدم)
+- ✅ إحصائيات شاملة ومراقبة الأداء
+- ✅ أمان JWT وحماية شاملة
+- ✅ Schema محسن مع تصنيف وتتبع كامل
+- ✅ Soft Delete و Permanent Delete
+
+**النظام جاهز للإنتاج ويوفر إدارة ملفات احترافية!**

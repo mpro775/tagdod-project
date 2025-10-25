@@ -1,164 +1,87 @@
-%% Product Inventory Management
+%% Product Inventory Management Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Product Inventory Management] --> B{Inventory Action?}
-  B -->|Stock Adjustment| C[Stock Level Adjustment]
-  B -->|Reservation| D[Inventory Reservation]
-  B -->|Commitment| E[Inventory Commitment]
-  B -->|Return| F[Inventory Return]
-  B -->|Monitoring| G[Inventory Monitoring]
-  
-  %% Stock Level Adjustment
-  C --> C1[Select Product/Variant]
-  C1 --> C2[Enter Adjustment Details]
-  C2 --> C3[Validate Adjustment]
-  C3 --> C4[Update Stock Levels]
-  C4 --> C5[Create Ledger Entry]
-  C5 --> C6[Send Notification]
-  
-  %% Adjustment Details
-  C2 --> C2A[Adjustment type]
-  C2A --> C2B[Quantity change]
-  C2B --> C2C[Reason for adjustment]
-  C2C --> C2D[Reference number]
-  C2D --> C2E[Approval required]
-  
-  %% Adjustment Types
-  C2A --> C2A1[Stock received]
-  C2A1 --> C2A2[Damage/loss]
-  C2A2 --> C2A3[Audit adjustment]
-  C2A3 --> C2A4[Manual correction]
-  C2A4 --> C2A5[Return to stock]
-  
-  %% Stock Validation
-  C3 --> C3A[Check current stock]
-  C3A --> C3B[Validate adjustment amount]
-  C3B --> C3C[Check safety stock]
-  C3C --> C3D[Verify permissions]
-  C3D --> C3E[Approve adjustment]
-  
-  %% Inventory Reservation
-  D --> D1[Check Stock Availability]
-  D1 --> D2[Create Reservation]
-  D2 --> D3[Set Expiration Time]
-  D3 --> D4[Update Reserved Stock]
-  D4 --> D5[Monitor Reservation]
-  
+  A[إدارة مخزون المنتجات] --> B{نوع العملية?}
+  B -->|تحديث المخزون| C[تحديث كميات المخزون]
+  B -->|إعدادات المخزون| D[تخصيص إعدادات المخزون]
+  B -->|مراقبة المخزون| E[مراقبة حالة المخزون]
+  B -->|تنبيهات المخزون| F[إدارة تنبيهات المخزون]
+
+  %% Update Stock
+  C --> C1[تحديد التنويعة المراد تحديثها]
+  C1 --> C2[إدخال الكمية الجديدة]
+  C2 --> C3[تحديث stock في Variant schema]
+  C3 --> C4[تسجيل التغيير]
+
+  %% Inventory Settings
+  D --> D1[minStock: الحد الأدنى للمخزون]
+  D1 --> D2[trackInventory: تفعيل/إلغاء التتبع]
+  D2 --> D3[allowBackorder: السماح بالطلب المسبق]
+  D3 --> D4[حفظ الإعدادات]
+
+  %% Monitor Inventory
+  E --> E1[فحص المخزون الحالي]
+  E1 --> E2[مقارنة مع minStock]
+  E2 --> E3[تحديد حالة المخزون]
+  E3 --> E4[إرجاع تقرير المخزون]
+
+  %% Stock Alerts
+  F --> F1[المنتجات ذات المخزون المنخفض]
+  F1 --> F2[المنتجات التي نفد مخزونها]
+  F2 --> F3[إرسال إشعارات للإدارة]
+
+  %% Stock Status Logic
+  G[منطق حالة المخزون] --> G1{stock > minStock?}
+  G1 -->|نعم| G2[مخزون طبيعي]
+  G1 -->|لا| G3{stock > 0?}
+  G3 -->|نعم| G4[مخزون منخفض]
+  G3 -->|لا| G5[نفد المخزون]
+
+  %% Backorder Logic
+  H[منطق الطلب المسبق] --> H1{allowBackorder = true?}
+  H1 -->|نعم| H2[السماح بالطلب حتى لو نفد المخزون]
+  H1 -->|لا| H3[عدم السماح بالطلب عند نفاد المخزون]
+
   %% Availability Check
-  D1 --> D1A[Get current stock]
-  D1A --> D1B[Calculate available stock]
-  D1B --> D1C[Check safety stock]
-  D1C --> D1D[Verify sufficient stock]
-  D1D --> D1E[Reserve if available]
-  
-  %% Reservation Creation
-  D2 --> D2A[Generate reservation ID]
-  D2A --> D2B[Set reservation quantity]
-  D2B --> D2C[Link to order/cart]
-  D2C --> D2D[Set reservation status]
-  D2D --> D2E[Create reservation record]
-  
-  %% Reservation Monitoring
-  D5 --> D5A[Check expiration time]
-  D5A --> D5B[Monitor order status]
-  D5B --> D5C[Handle expired reservations]
-  D5C --> D5D[Update reservation status]
-  D5D --> D5E[Release reserved stock]
-  
-  %% Inventory Commitment
-  E --> E1[Validate Reservations]
-  E1 --> E2[Commit Stock]
-  E2 --> E3[Update Stock Levels]
-  E3 --> E4[Create Ledger Entries]
-  E4 --> E5[Update Reservation Status]
-  
-  %% Reservation Validation
-  E1 --> E1A[Check reservation exists]
-  E1A --> E1B[Verify reservation status]
-  E1B --> E1C[Check stock availability]
-  E1C --> E1D[Validate order status]
-  E1D --> E1E[Approve commitment]
-  
-  %% Stock Commitment
-  E2 --> E2A[Reduce on_hand stock]
-  E2A --> E2B[Reduce reserved stock]
-  E2B --> E2C[Update safety stock]
-  E2C --> E2D[Calculate new levels]
-  E2D --> E2E[Update inventory record]
-  
-  %% Inventory Return
-  F --> F1[Validate Return Eligibility]
-  F1 --> F2[Process Return]
-  F2 --> F3[Update Stock Levels]
-  F3 --> F4[Create Ledger Entry]
-  F4 --> F5[Update Product Status]
-  
-  %% Return Validation
-  F1 --> F1A[Check return policy]
-  F1A --> F1B[Verify return reason]
-  F1B --> F1C[Check return timeframe]
-  F1C --> F1D[Validate return quantity]
-  F1D --> F1E[Approve return]
-  
-  %% Return Processing
-  F2 --> F2A[Calculate return amount]
-  F2A --> F2B[Process refund]
-  F2B --> F2C[Update order status]
-  F2C --> F2D[Generate return label]
-  F2D --> F2E[Send return confirmation]
-  
-  %% Inventory Monitoring
-  G --> G1[Low Stock Alerts]
-  G1 --> G2[Stock Movement Reports]
-  G2 --> G3[Inventory Analytics]
-  G3 --> G4[Performance Monitoring]
-  
-  %% Low Stock Alerts
-  G1 --> G1A[Check stock levels]
-  G1A --> G1B[Compare to safety stock]
-  G1B --> G1C[Generate alerts]
-  G1C --> G1D[Send notifications]
-  G1D --> G1E[Update alert status]
-  
-  %% Stock Movement Reports
-  G2 --> G2A[Generate movement report]
-  G2A --> G2B[Filter by date range]
-  G2B --> G2C[Filter by product]
-  G2C --> G2D[Filter by movement type]
-  G2D --> G2E[Export report data]
-  
-  %% Inventory Analytics
-  G3 --> G3A[Calculate turnover rate]
-  G3A --> G3B[Analyze demand patterns]
-  G3B --> G3C[Predict stock needs]
-  G3C --> G3D[Generate recommendations]
-  G3D --> G3E[Create analytics dashboard]
-  
-  %% Performance Monitoring
-  G4 --> G4A[Monitor query performance]
-  G4A --> G4B[Check index usage]
-  G4B --> G4C[Measure response times]
-  G4C --> G4D[Identify bottlenecks]
-  G4D --> G4E[Optimize performance]
-  
-  %% Inventory Integration
-  H[Inventory Integration] --> H1[Order Processing]
-  H1 --> H2[Checkout Integration]
-  H2 --> H3[Payment Integration]
-  H3 --> H4[Shipping Integration]
-  H4 --> H5[Return Integration]
-  
-  %% Order Processing Integration
-  H1 --> H1A[Reserve stock on order]
-  H1A --> H1B[Commit stock on payment]
-  H1B --> H1C[Release stock on cancellation]
-  H1C --> H1D[Update stock on shipping]
-  H1D --> H1E[Restore stock on return]
-  
+  I[فحص التوفر] --> I1{trackInventory = true?}
+  I1 -->|نعم| I2[فحص الكمية الفعلية]
+  I1 -->|لا| I3[دائماً متاح]
+  I2 --> I4{stock > 0?}
+  I4 -->|نعم| I5[متاح]
+  I4 -->|لا| I6{allowBackorder = true?}
+  I6 -->|نعم| I7[متاح للطلب المسبق]
+  I6 -->|لا| I8[غير متاح]
+
+  %% Integration with Orders
+  J[التكامل مع الطلبات] --> J1[تقليل المخزون عند تأكيد الطلب]
+  J1 --> J2[زيادة المخزون عند إلغاء الطلب]
+  J2 --> J3[مراقبة التغييرات]
+
+  %% Reporting
+  K[التقارير] --> K1[ملخص المخزون العام]
+  K1 --> K2[المنتجات ذات المخزون المنخفض]
+  K2 --> K3[المنتجات التي نفد مخزونها]
+  K3 --> K4[اتجاهات المخزون]
+
+  %% Bulk Operations
+  L[العمليات الجماعية] --> L1[تحديث مخزون منتجات متعددة]
+  L1 --> L2[ضبط إعدادات المخزون لفئة]
+  L2 --> L3[استيراد/تصدير بيانات المخزون]
+
   %% End points
-  C6 --> Z[Inventory Updated]
-  D5E --> Z
-  E5 --> Z
-  F5 --> Z
-  G4E --> Z
-  H5 --> Z
+  C4 --> M[نهاية - مخزون محدث]
+  D4 --> M
+  E4 --> M
+  F3 --> M
+  G2 --> M
+  G4 --> M
+  G5 --> M
+  H2 --> M
+  H3 --> M
+  I5 --> M
+  I7 --> M
+  I8 --> M
+  I3 --> M
+  J3 --> M
+  K4 --> M
+  L3 --> M

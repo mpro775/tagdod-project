@@ -10,7 +10,6 @@ import {
   Alert,
   Grid,
   Chip,
-  Divider,
 } from '@mui/material';
 import {
   Engineering as EngineeringIcon,
@@ -52,7 +51,10 @@ const CAPABILITY_STATUS_LABELS: Record<CapabilityStatus, string> = {
   [CapabilityStatus.REJECTED]: 'مرفوض',
 };
 
-const CAPABILITY_STATUS_COLORS: Record<CapabilityStatus, 'default' | 'warning' | 'success' | 'error'> = {
+const CAPABILITY_STATUS_COLORS: Record<
+  CapabilityStatus,
+  'default' | 'warning' | 'success' | 'error'
+> = {
   [CapabilityStatus.NONE]: 'default',
   [CapabilityStatus.PENDING]: 'warning',
   [CapabilityStatus.APPROVED]: 'success',
@@ -85,7 +87,7 @@ export const UserCapabilitiesManager: React.FC<UserCapabilitiesManagerProps> = (
   useEffect(() => {
     // تحديث القدرات بناءً على الدور
     const newCapabilities = { ...capabilitiesState };
-    
+
     switch (role) {
       case UserRole.USER:
         newCapabilities.customer_capable = true;
@@ -124,14 +126,14 @@ export const UserCapabilitiesManager: React.FC<UserCapabilitiesManagerProps> = (
         newCapabilities.admin_status = CapabilityStatus.APPROVED;
         break;
     }
-    
+
     setCapabilitiesState(newCapabilities);
     onCapabilitiesChange(newCapabilities);
   }, [role]);
 
   const handleCapabilityChange = (capability: string, value: boolean) => {
     const newCapabilities = { ...capabilitiesState, [capability]: value };
-    
+
     // تحديث الحالة بناءً على التغيير
     if (capability === 'engineer_capable' && value) {
       newCapabilities.engineer_status = CapabilityStatus.APPROVED;
@@ -140,7 +142,7 @@ export const UserCapabilitiesManager: React.FC<UserCapabilitiesManagerProps> = (
     } else if (capability === 'admin_capable' && value) {
       newCapabilities.admin_status = CapabilityStatus.APPROVED;
     }
-    
+
     setCapabilitiesState(newCapabilities);
     onCapabilitiesChange(newCapabilities);
   };
@@ -159,7 +161,7 @@ export const UserCapabilitiesManager: React.FC<UserCapabilitiesManagerProps> = (
 
       <Grid container spacing={2}>
         {/* قدرة العميل */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -186,7 +188,7 @@ export const UserCapabilitiesManager: React.FC<UserCapabilitiesManagerProps> = (
         </Grid>
 
         {/* قدرة المهندس */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -219,7 +221,7 @@ export const UserCapabilitiesManager: React.FC<UserCapabilitiesManagerProps> = (
         </Grid>
 
         {/* قدرة التاجر */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -263,7 +265,7 @@ export const UserCapabilitiesManager: React.FC<UserCapabilitiesManagerProps> = (
         </Grid>
 
         {/* قدرة الأدمن */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>

@@ -24,7 +24,6 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Divider,
   LinearProgress,
   useTheme,
   useMediaQuery,
@@ -37,30 +36,27 @@ import {
   Description as DescriptionIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
-  Info as InfoIcon,
-  Schedule as ScheduleIcon,
   Assessment as AssessmentIcon,
   TrendingUp as TrendingUpIcon,
   People as PeopleIcon,
   ShoppingCart as ShoppingCartIcon,
-  Inventory as InventoryIcon,
-  AccountBalance as AccountBalanceIcon,
-  Campaign as CampaignIcon,
 } from '@mui/icons-material';
-import { 
+import {
   useExportSalesData,
   useExportProductsData,
   useExportCustomersData,
   useExportData,
 } from '../hooks/useAnalytics';
-import { ReportFormat, PeriodType, ReportCategory } from '../types/analytics.types';
+import { ReportFormat, PeriodType } from '../types/analytics.types';
 
 export const DataExportPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const [activeStep, setActiveStep] = useState(0);
-  const [exportType, setExportType] = useState<'sales' | 'products' | 'customers' | 'custom'>('sales');
+  const [exportType, setExportType] = useState<'sales' | 'products' | 'customers' | 'custom'>(
+    'sales'
+  );
   const [format, setFormat] = useState<ReportFormat>(ReportFormat.EXCEL);
   const [dateRange, setDateRange] = useState({
     startDate: '',
@@ -73,7 +69,9 @@ export const DataExportPage: React.FC = () => {
     category: '',
     status: '',
   });
-  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'completed' | 'error'>('idle');
+  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'completed' | 'error'>(
+    'idle'
+  );
   const [exportResult, setExportResult] = useState<any>(null);
 
   const exportSalesData = useExportSalesData();
@@ -81,12 +79,7 @@ export const DataExportPage: React.FC = () => {
   const exportCustomersData = useExportCustomersData();
   const exportData = useExportData();
 
-  const steps = [
-    'اختيار نوع البيانات',
-    'تحديد التنسيق والفترة',
-    'إعداد الفلاتر',
-    'تصدير البيانات',
-  ];
+  const steps = ['اختيار نوع البيانات', 'تحديد التنسيق والفترة', 'إعداد الفلاتر', 'تصدير البيانات'];
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -114,10 +107,10 @@ export const DataExportPage: React.FC = () => {
 
   const handleExport = async () => {
     setExportStatus('exporting');
-    
+
     try {
       let result;
-      
+
       switch (exportType) {
         case 'sales':
           result = await exportSalesData.mutateAsync({
@@ -150,7 +143,7 @@ export const DataExportPage: React.FC = () => {
         default:
           throw new Error('نوع التصدير غير مدعوم');
       }
-      
+
       setExportResult(result);
       setExportStatus('completed');
     } catch (error) {
@@ -219,20 +212,7 @@ export const DataExportPage: React.FC = () => {
     }
   };
 
-  const getExportTypeDescription = (type: string) => {
-    switch (type) {
-      case 'sales':
-        return 'تصدير بيانات المبيعات والإيرادات والطلبات';
-      case 'products':
-        return 'تصدير بيانات المنتجات والمخزون والأداء';
-      case 'customers':
-        return 'تصدير بيانات العملاء والمستخدمين والتفاعلات';
-      case 'custom':
-        return 'تصدير بيانات مخصصة حسب المعايير المحددة';
-      default:
-        return '';
-    }
-  };
+ 
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -263,7 +243,7 @@ export const DataExportPage: React.FC = () => {
               تصدير البيانات التحليلية بصيغ مختلفة
             </Typography>
           </Box>
-          
+
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Chip
               icon={<DownloadIcon />}
@@ -281,7 +261,7 @@ export const DataExportPage: React.FC = () => {
           <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
             معالج تصدير البيانات
           </Typography>
-          
+
           <Stepper activeStep={activeStep} orientation={isMobile ? 'vertical' : 'horizontal'}>
             {steps.map((label, index) => (
               <Step key={label}>
@@ -293,19 +273,38 @@ export const DataExportPage: React.FC = () => {
                       <Typography variant="h6" gutterBottom>
                         اختر نوع البيانات التي تريد تصديرها
                       </Typography>
-                      
+
                       <Grid container spacing={2} sx={{ mb: 3 }}>
                         {[
-                          { value: 'sales', label: 'بيانات المبيعات', description: 'تصدير بيانات المبيعات والإيرادات والطلبات' },
-                          { value: 'products', label: 'بيانات المنتجات', description: 'تصدير بيانات المنتجات والمخزون والأداء' },
-                          { value: 'customers', label: 'بيانات العملاء', description: 'تصدير بيانات العملاء والمستخدمين والتفاعلات' },
-                          { value: 'custom', label: 'بيانات مخصصة', description: 'تصدير بيانات مخصصة حسب المعايير المحددة' },
+                          {
+                            value: 'sales',
+                            label: 'بيانات المبيعات',
+                            description: 'تصدير بيانات المبيعات والإيرادات والطلبات',
+                          },
+                          {
+                            value: 'products',
+                            label: 'بيانات المنتجات',
+                            description: 'تصدير بيانات المنتجات والمخزون والأداء',
+                          },
+                          {
+                            value: 'customers',
+                            label: 'بيانات العملاء',
+                            description: 'تصدير بيانات العملاء والمستخدمين والتفاعلات',
+                          },
+                          {
+                            value: 'custom',
+                            label: 'بيانات مخصصة',
+                            description: 'تصدير بيانات مخصصة حسب المعايير المحددة',
+                          },
                         ].map((option) => (
-                          <Grid item xs={12} sm={6} md={3} key={option.value}>
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={option.value}>
                             <Card
                               sx={{
                                 cursor: 'pointer',
-                                border: exportType === option.value ? `2px solid ${theme.palette.primary.main}` : '1px solid #e0e0e0',
+                                border:
+                                  exportType === option.value
+                                    ? `2px solid ${theme.palette.primary.main}`
+                                    : '1px solid #e0e0e0',
                                 '&:hover': {
                                   boxShadow: theme.shadows[4],
                                 },
@@ -325,20 +324,19 @@ export const DataExportPage: React.FC = () => {
                           </Grid>
                         ))}
                       </Grid>
-                      
+
                       <Alert severity="info" sx={{ mb: 2 }}>
                         <Typography variant="body2">
-                          اختر نوع البيانات التي تريد تصديرها. يمكنك تصدير بيانات المبيعات، المنتجات، العملاء، أو بيانات مخصصة.
+                          اختر نوع البيانات التي تريد تصديرها. يمكنك تصدير بيانات المبيعات،
+                          المنتجات، العملاء، أو بيانات مخصصة.
                         </Typography>
                       </Alert>
-                      
+
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button onClick={handleNext} variant="contained">
                           التالي
                         </Button>
-                        <Button onClick={handleReset}>
-                          إعادة تعيين
-                        </Button>
+                        <Button onClick={handleReset}>إعادة تعيين</Button>
                       </Box>
                     </Box>
                   )}
@@ -349,9 +347,9 @@ export const DataExportPage: React.FC = () => {
                       <Typography variant="h6" gutterBottom>
                         حدد تنسيق الملف والفترة الزمنية
                       </Typography>
-                      
+
                       <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <FormControl fullWidth>
                             <InputLabel>تنسيق الملف</InputLabel>
                             <Select
@@ -369,37 +367,39 @@ export const DataExportPage: React.FC = () => {
                             </Select>
                           </FormControl>
                         </Grid>
-                        
-                        <Grid item xs={12} md={6}>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <TextField
                             fullWidth
                             label="تاريخ البداية"
                             type="date"
                             value={dateRange.startDate}
-                            onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                            onChange={(e) =>
+                              setDateRange({ ...dateRange, startDate: e.target.value })
+                            }
                             InputLabelProps={{ shrink: true }}
                           />
                         </Grid>
-                        
-                        <Grid item xs={12} md={6}>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <TextField
                             fullWidth
                             label="تاريخ النهاية"
                             type="date"
                             value={dateRange.endDate}
-                            onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                            onChange={(e) =>
+                              setDateRange({ ...dateRange, endDate: e.target.value })
+                            }
                             InputLabelProps={{ shrink: true }}
                           />
                         </Grid>
                       </Grid>
-                      
+
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button onClick={handleNext} variant="contained">
                           التالي
                         </Button>
-                        <Button onClick={handleBack}>
-                          السابق
-                        </Button>
+                        <Button onClick={handleBack}>السابق</Button>
                       </Box>
                     </Box>
                   )}
@@ -410,33 +410,37 @@ export const DataExportPage: React.FC = () => {
                       <Typography variant="h6" gutterBottom>
                         إعداد الفلاتر والخيارات
                       </Typography>
-                      
+
                       <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <FormControlLabel
                             control={
                               <Switch
                                 checked={filters.includeCharts}
-                                onChange={(e) => setFilters({ ...filters, includeCharts: e.target.checked })}
+                                onChange={(e) =>
+                                  setFilters({ ...filters, includeCharts: e.target.checked })
+                                }
                               />
                             }
                             label="تضمين الرسوم البيانية"
                           />
                         </Grid>
-                        
-                        <Grid item xs={12} md={6}>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <FormControlLabel
                             control={
                               <Switch
                                 checked={filters.includeRawData}
-                                onChange={(e) => setFilters({ ...filters, includeRawData: e.target.checked })}
+                                onChange={(e) =>
+                                  setFilters({ ...filters, includeRawData: e.target.checked })
+                                }
                               />
                             }
                             label="تضمين البيانات الأولية"
                           />
                         </Grid>
-                        
-                        <Grid item xs={12} md={6}>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <TextField
                             fullWidth
                             label="تجميع البيانات"
@@ -445,8 +449,8 @@ export const DataExportPage: React.FC = () => {
                             placeholder="مثال: يومي، أسبوعي، شهري"
                           />
                         </Grid>
-                        
-                        <Grid item xs={12} md={6}>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
                           <TextField
                             fullWidth
                             label="فلترة حسب الفئة"
@@ -456,14 +460,12 @@ export const DataExportPage: React.FC = () => {
                           />
                         </Grid>
                       </Grid>
-                      
+
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button onClick={handleNext} variant="contained">
                           التالي
                         </Button>
-                        <Button onClick={handleBack}>
-                          السابق
-                        </Button>
+                        <Button onClick={handleBack}>السابق</Button>
                       </Box>
                     </Box>
                   )}
@@ -474,7 +476,7 @@ export const DataExportPage: React.FC = () => {
                       <Typography variant="h6" gutterBottom>
                         تصدير البيانات
                       </Typography>
-                      
+
                       {/* Export Summary */}
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="h6" gutterBottom>
@@ -494,23 +496,21 @@ export const DataExportPage: React.FC = () => {
                             variant="outlined"
                           />
                           {dateRange.startDate && (
-                            <Chip
-                              label={`من ${dateRange.startDate}`}
-                              variant="outlined"
-                            />
+                            <Chip label={`من ${dateRange.startDate}`} variant="outlined" />
                           )}
                           {dateRange.endDate && (
-                            <Chip
-                              label={`إلى ${dateRange.endDate}`}
-                              variant="outlined"
-                            />
+                            <Chip label={`إلى ${dateRange.endDate}`} variant="outlined" />
                           )}
                         </Box>
-                        
+
                         <List dense>
                           <ListItem>
                             <ListItemIcon>
-                              {filters.includeCharts ? <CheckCircleIcon color="success" /> : <ErrorIcon color="error" />}
+                              {filters.includeCharts ? (
+                                <CheckCircleIcon color="success" />
+                              ) : (
+                                <ErrorIcon color="error" />
+                              )}
                             </ListItemIcon>
                             <ListItemText
                               primary="الرسوم البيانية"
@@ -519,7 +519,11 @@ export const DataExportPage: React.FC = () => {
                           </ListItem>
                           <ListItem>
                             <ListItemIcon>
-                              {filters.includeRawData ? <CheckCircleIcon color="success" /> : <ErrorIcon color="error" />}
+                              {filters.includeRawData ? (
+                                <CheckCircleIcon color="success" />
+                              ) : (
+                                <ErrorIcon color="error" />
+                              )}
                             </ListItemIcon>
                             <ListItemText
                               primary="البيانات الأولية"
@@ -575,9 +579,7 @@ export const DataExportPage: React.FC = () => {
                         <Button onClick={handleBack} disabled={exportStatus === 'exporting'}>
                           السابق
                         </Button>
-                        <Button onClick={handleReset}>
-                          إعادة تعيين
-                        </Button>
+                        <Button onClick={handleReset}>إعادة تعيين</Button>
                       </Box>
                     </Box>
                   )}

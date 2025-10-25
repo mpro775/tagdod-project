@@ -25,9 +25,6 @@ export const useServices = (params: ListServicesParams = {}) => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب قائمة الخدمات');
-    },
   });
 };
 
@@ -39,9 +36,6 @@ export const useService = (id: string) => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب تفاصيل الخدمة');
-    },
   });
 };
 
@@ -53,9 +47,6 @@ export const useServiceOffers = (id: string) => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 2 * 60 * 1000, // 2 minutes
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب عروض الخدمة');
-    },
   });
 };
 
@@ -115,9 +106,6 @@ export const useOverviewStatistics = () => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 10 * 60 * 1000, // 10 minutes
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب الإحصائيات العامة');
-    },
   });
 };
 
@@ -128,9 +116,6 @@ export const useRequestsStatistics = (params: RequestsStatisticsParams) => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب إحصائيات الطلبات');
-    },
   });
 };
 
@@ -141,9 +126,6 @@ export const useEngineersStatistics = (params: EngineersStatisticsParams) => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب إحصائيات المهندسين');
-    },
   });
 };
 
@@ -154,9 +136,6 @@ export const useServiceTypesStatistics = (params: ServiceTypesStatisticsParams) 
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب إحصائيات أنواع الخدمات');
-    },
   });
 };
 
@@ -167,9 +146,6 @@ export const useRevenueStatistics = (params: RevenueStatisticsParams) => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب إحصائيات الإيرادات');
-    },
   });
 };
 
@@ -181,9 +157,6 @@ export const useEngineersOverviewStatistics = () => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 10 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب إحصائيات المهندسين');
-    },
   });
 };
 
@@ -198,9 +171,6 @@ export const useEngineers = (params: ListEngineersParams = {}) => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب قائمة المهندسين');
-    },
   });
 };
 
@@ -212,9 +182,6 @@ export const useEngineerStatistics = (id: string) => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب إحصائيات المهندس');
-    },
   });
 };
 
@@ -233,9 +200,6 @@ export const useEngineerOffers = (
     retry: 2,
     retryDelay: 1000,
     staleTime: 2 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب عروض المهندس');
-    },
   });
 };
 
@@ -247,9 +211,6 @@ export const useOffersStatistics = (params?: { dateFrom?: string; dateTo?: strin
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب إحصائيات العروض');
-    },
   });
 };
 
@@ -264,8 +225,5 @@ export const useOffers = (params: ListOffersParams = {}) => {
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    onError: (error: any) => {
-      toast.error(error.message || 'فشل في جلب قائمة العروض');
-    },
   });
 };

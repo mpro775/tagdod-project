@@ -12,14 +12,7 @@ import {
   Button,
   Grid,
 } from '@mui/material';
-import {
-  Edit,
-  Delete,
-  Visibility,
-  Inventory,
-  AttachMoney,
-  Image,
-} from '@mui/icons-material';
+import { Edit, Delete, Visibility, Inventory, AttachMoney, Image } from '@mui/icons-material';
 import { formatDate } from '@/shared/utils/formatters';
 import type { Variant } from '../types/product.types';
 
@@ -54,9 +47,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({
     if (!variant.attributeValues || variant.attributeValues.length === 0) {
       return 'بدون سمات';
     }
-    return variant.attributeValues
-      .map((attr) => `${attr.name}: ${attr.value}`)
-      .join(', ');
+    return variant.attributeValues.map((attr) => `${attr.name}: ${attr.value}`).join(', ');
   };
 
   return (
@@ -64,11 +55,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({
       <CardContent sx={{ flexGrow: 1 }}>
         {/* Header */}
         <Box display="flex" alignItems="center" gap={2} mb={2}>
-          <Avatar
-            src={variant.imageId}
-            sx={{ width: 56, height: 56 }}
-            variant="rounded"
-          >
+          <Avatar src={variant.imageId} sx={{ width: 56, height: 56 }} variant="rounded">
             <Image />
           </Avatar>
           <Box flexGrow={1}>
@@ -113,9 +100,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({
         <Box mb={2}>
           <Box display="flex" alignItems="center" gap={1} mb={1}>
             <Inventory color="primary" fontSize="small" />
-            <Typography variant="body1">
-              {variant.stock} وحدة
-            </Typography>
+            <Typography variant="body1">{variant.stock} وحدة</Typography>
           </Box>
           <Chip
             label={stockStatus.label}
@@ -130,15 +115,13 @@ export const VariantCard: React.FC<VariantCardProps> = ({
 
         {/* Additional Information */}
         <Grid container spacing={1} mb={2}>
-          <Grid item xs={6}>
+          <Grid size={{ xs: 6 }}>
             <Typography variant="caption" color="text.secondary">
               تتبع المخزون
             </Typography>
-            <Typography variant="body2">
-              {variant.trackInventory ? 'نعم' : 'لا'}
-            </Typography>
+            <Typography variant="body2">{variant.trackInventory ? 'نعم' : 'لا'}</Typography>
           </Grid>
-          <Grid item xs={6}>
+          <Grid size={{ xs: 6 }}>
             <Typography variant="caption" color="text.secondary">
               الطلب المسبق
             </Typography>
@@ -164,38 +147,22 @@ export const VariantCard: React.FC<VariantCardProps> = ({
         <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
           <Box>
             <Tooltip title="عرض التفاصيل">
-              <IconButton
-                size="small"
-                onClick={() => onView?.(variant)}
-                color="info"
-              >
+              <IconButton size="small" onClick={() => onView?.(variant)} color="info">
                 <Visibility fontSize="small" />
               </IconButton>
             </Tooltip>
             <Tooltip title="تعديل">
-              <IconButton
-                size="small"
-                onClick={() => onEdit?.(variant)}
-                color="primary"
-              >
+              <IconButton size="small" onClick={() => onEdit?.(variant)} color="primary">
                 <Edit fontSize="small" />
               </IconButton>
             </Tooltip>
             <Tooltip title="حذف">
-              <IconButton
-                size="small"
-                onClick={() => onDelete?.(variant)}
-                color="error"
-              >
+              <IconButton size="small" onClick={() => onDelete?.(variant)} color="error">
                 <Delete fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => onView?.(variant)}
-          >
+          <Button variant="outlined" size="small" onClick={() => onView?.(variant)}>
             عرض التفاصيل
           </Button>
         </CardActions>

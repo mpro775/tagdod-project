@@ -1,5 +1,8 @@
 # 🎫 خدمة الكوبونات (Coupons Service)
 
+> ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
+> 📅 **آخر تحديث**: أكتوبر 2025
+
 خدمة الكوبونات توفر endpoints للتحقق من كوبونات الخصم وتطبيقها مع دعم أنواع مختلفة من الخصومات.
 
 ---
@@ -31,61 +34,74 @@
 | `orderAmount` | `number` | ❌ | قيمة الطلب |
 | `productIds` | `string[]` | ❌ | معرفات المنتجات |
 
-### Response - نجاح
+### Response - نجاح (كوبون صالح)
 
 ```json
 {
   "success": true,
-  "data": {
-    "coupon": {
-      "_id": "64coupon123",
-      "code": "SUMMER2025",
-      "name": "خصم الصيف",
-      "description": "خصم 20% على جميع المنتجات",
-      "type": "percentage",
-      "discountValue": 20,
-      "minimumOrderAmount": 100000,
-      "maximumDiscountAmount": 500000,
-      "usageLimit": 1000,
-      "usageLimitPerUser": 1,
-      "usedCount": 45,
-      "validFrom": "2025-01-01T00:00:00.000Z",
-      "validUntil": "2025-12-31T23:59:59.000Z",
-      "appliesTo": "all_products",
-      "applicableProductIds": [],
-      "applicableCategoryIds": [],
-      "applicableBrandIds": [],
-      "applicableUserIds": [],
-      "excludedUserIds": [],
-      "totalRedemptions": 45,
-      "totalDiscountGiven": 900000,
-      "totalRevenue": 3600000,
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "updatedAt": "2025-01-15T10:00:00.000Z"
-    },
-    "calculatedDiscount": 200000,
-    "finalAmount": 800000,
-    "isValid": true,
-    "validationMessage": "الكوبون صالح"
+  "valid": true,
+  "coupon": {
+    "_id": "64coupon123",
+    "code": "SUMMER2025",
+    "name": "خصم الصيف",
+    "description": "خصم 20% على جميع المنتجات",
+    "type": "percentage",
+    "status": "active",
+    "visibility": "public",
+    "discountValue": 20,
+    "minimumOrderAmount": 100000,
+    "maximumDiscountAmount": 500000,
+    "usageLimit": 1000,
+    "usageLimitPerUser": 1,
+    "usedCount": 45,
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": "2025-12-31T23:59:59.000Z",
+    "appliesTo": "all_products",
+    "applicableProductIds": [],
+    "applicableCategoryIds": [],
+    "applicableBrandIds": [],
+    "applicableUserIds": [],
+    "excludedUserIds": [],
+    "buyXQuantity": null,
+    "getYQuantity": null,
+    "getYProductId": null,
+    "totalRedemptions": 45,
+    "totalDiscountGiven": 900000,
+    "totalRevenue": 3600000,
+    "deletedAt": null,
+    "deletedBy": null,
+    "createdBy": "64admin123",
+    "lastModifiedBy": null,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-15T10:00:00.000Z"
   },
   "requestId": "req_coupon_001"
 }
 ```
 
-### Response - خطأ
+### Response - خطأ (كوبون غير صالح)
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "COUPON_NOT_FOUND",
-    "message": "الكوبون غير موجود",
-    "details": null,
-    "fieldErrors": null
-  },
+  "success": true,
+  "valid": false,
+  "message": "Invalid coupon code",
   "requestId": "req_coupon_002"
 }
 ```
+
+**ملاحظة:** 
+- الـ response يعيد `{ valid: true/false, coupon?, message? }` مباشرة (بدون `data` wrapper)
+- إذا كان الكوبون صالح: `{ valid: true, coupon: {...} }`
+- إذا كان غير صالح: `{ valid: false, message: "..." }`
+
+### Errors
+
+| Message | الوصف |
+|---------|-------|
+| `Invalid coupon code` | الكوبون غير موجود |
+| `Coupon has expired` | الكوبون منتهي الصلاحية |
+| `Coupon usage limit exceeded` | تم استنفاد حد الاستخدام |
 
 ### كود Flutter
 
@@ -103,13 +119,13 @@ Future<CouponValidationResult> validateCoupon({
     if (productIds != null) 'productIds': productIds,
   });
 
-  final apiResponse = ApiResponse<CouponValidationResult>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => CouponValidationResult.fromJson(json),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return CouponValidationResult.fromJson(apiResponse.data!);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -125,9 +141,27 @@ Future<CouponValidationResult> validateCoupon({
 ```dart
 enum CouponType {
   percentage,
-  fixedAmount,
-  freeShipping,
-  buyXGetY,
+  fixed_amount,
+  free_shipping,
+  buy_x_get_y,
+}
+
+extension CouponTypeExtension on CouponType {
+  String get value {
+    switch (this) {
+      case CouponType.percentage: return 'percentage';
+      case CouponType.fixed_amount: return 'fixed_amount';
+      case CouponType.free_shipping: return 'free_shipping';
+      case CouponType.buy_x_get_y: return 'buy_x_get_y';
+    }
+  }
+
+  static CouponType fromString(String value) {
+    return CouponType.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => CouponType.percentage,
+    );
+  }
 }
 
 enum CouponStatus {
@@ -144,11 +178,30 @@ enum CouponVisibility {
 }
 
 enum DiscountAppliesTo {
-  allProducts,
-  specificProducts,
-  specificCategories,
-  specificBrands,
-  minimumOrderAmount,
+  all_products,
+  specific_products,
+  specific_categories,
+  specific_brands,
+  minimum_order_amount,
+}
+
+extension DiscountAppliesToExtension on DiscountAppliesTo {
+  String get value {
+    switch (this) {
+      case DiscountAppliesTo.all_products: return 'all_products';
+      case DiscountAppliesTo.specific_products: return 'specific_products';
+      case DiscountAppliesTo.specific_categories: return 'specific_categories';
+      case DiscountAppliesTo.specific_brands: return 'specific_brands';
+      case DiscountAppliesTo.minimum_order_amount: return 'minimum_order_amount';
+    }
+  }
+
+  static DiscountAppliesTo fromString(String value) {
+    return DiscountAppliesTo.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => DiscountAppliesTo.all_products,
+    );
+  }
 }
 
 class Coupon {
@@ -228,10 +281,7 @@ class Coupon {
       code: json['code'] ?? '',
       name: json['name'] ?? '',
       description: json['description'],
-      type: CouponType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => CouponType.percentage,
-      ),
+      type: CouponTypeExtension.fromString(json['type']),
       status: CouponStatus.values.firstWhere(
         (e) => e.name == json['status'],
         orElse: () => CouponStatus.active,
@@ -248,10 +298,7 @@ class Coupon {
       usedCount: json['usedCount'] ?? 0,
       validFrom: DateTime.parse(json['validFrom']),
       validUntil: DateTime.parse(json['validUntil']),
-      appliesTo: DiscountAppliesTo.values.firstWhere(
-        (e) => e.name == json['appliesTo'],
-        orElse: () => DiscountAppliesTo.allProducts,
-      ),
+      appliesTo: DiscountAppliesToExtension.fromString(json['appliesTo']),
       applicableProductIds: List<String>.from(json['applicableProductIds'] ?? []),
       applicableCategoryIds: List<String>.from(json['applicableCategoryIds'] ?? []),
       applicableBrandIds: List<String>.from(json['applicableBrandIds'] ?? []),
@@ -273,9 +320,9 @@ class Coupon {
   }
 
   bool get isPercentage => type == CouponType.percentage;
-  bool get isFixedAmount => type == CouponType.fixedAmount;
-  bool get isFreeShipping => type == CouponType.freeShipping;
-  bool get isBuyXGetY => type == CouponType.buyXGetY;
+  bool get isFixedAmount => type == CouponType.fixed_amount;
+  bool get isFreeShipping => type == CouponType.free_shipping;
+  bool get isBuyXGetY => type == CouponType.buy_x_get_y;
   
   bool get isActive {
     final now = DateTime.now();
@@ -310,45 +357,38 @@ class Coupon {
 }
 
 class CouponValidationResult {
-  final Coupon coupon;
-  final double calculatedDiscount;
-  final double finalAmount;
-  final bool isValid;
-  final String validationMessage;
+  final bool valid;
+  final Coupon? coupon;
+  final String? message;
 
   CouponValidationResult({
-    required this.coupon,
-    required this.calculatedDiscount,
-    required this.finalAmount,
-    required this.isValid,
-    required this.validationMessage,
+    required this.valid,
+    this.coupon,
+    this.message,
   });
 
   factory CouponValidationResult.fromJson(Map<String, dynamic> json) {
     return CouponValidationResult(
-      coupon: Coupon.fromJson(json['coupon']),
-      calculatedDiscount: (json['calculatedDiscount'] ?? 0).toDouble(),
-      finalAmount: (json['finalAmount'] ?? 0).toDouble(),
-      isValid: json['isValid'] ?? false,
-      validationMessage: json['validationMessage'] ?? '',
+      valid: json['valid'] ?? false,
+      coupon: json['coupon'] != null ? Coupon.fromJson(json['coupon']) : null,
+      message: json['message'],
     );
   }
 
-  bool get hasDiscount => calculatedDiscount > 0;
-  bool get isPercentageDiscount => coupon.isPercentage;
-  bool get isFixedDiscount => coupon.isFixedAmount;
-  bool get isFreeShippingDiscount => coupon.isFreeShipping;
-  bool get isBuyXGetYDiscount => coupon.isBuyXGetY;
-  double get discountPercentage => coupon.isPercentage && coupon.discountValue != null 
-      ? coupon.discountValue! 
-      : 0;
-  double get discountAmount => coupon.isFixedAmount && coupon.discountValue != null 
-      ? coupon.discountValue! 
-      : 0;
-  double get savings => calculatedDiscount;
-  double get finalPrice => finalAmount;
-  bool get isApplicable => isValid && hasDiscount;
-  bool get isNotApplicable => !isValid || !hasDiscount;
+  bool get isValid => valid;
+  bool get hasError => !valid && message != null;
+  String? get errorMessage => message;
+  
+  // Coupon helpers
+  bool get hasCoupon => coupon != null;
+  bool get isPercentageDiscount => coupon?.isPercentage ?? false;
+  bool get isFixedDiscount => coupon?.isFixedAmount ?? false;
+  bool get isFreeShippingDiscount => coupon?.isFreeShipping ?? false;
+  bool get isBuyXGetYDiscount => coupon?.isBuyXGetY ?? false;
+  
+  double? get discountValue => coupon?.discountValue;
+  double? get minimumOrderAmount => coupon?.minimumOrderAmount;
+  double? get maximumDiscountAmount => coupon?.maximumDiscountAmount;
 }
 ```
 
@@ -358,9 +398,9 @@ class CouponValidationResult {
 
 1. **أنواع الكوبونات:**
    - `percentage`: خصم بنسبة مئوية
-   - `fixedAmount`: خصم بمبلغ ثابت
-   - `freeShipping`: شحن مجاني
-   - `buyXGetY`: اشتر X واحصل على Y
+   - `fixed_amount`: خصم بمبلغ ثابت
+   - `free_shipping`: شحن مجاني
+   - `buy_x_get_y`: اشتر X واحصل على Y
 
 2. **حالات الكوبون:**
    - `active`: نشط
@@ -374,11 +414,11 @@ class CouponValidationResult {
    - `hidden`: مخفي
 
 4. **تطبيق الخصم:**
-   - `allProducts`: جميع المنتجات
-   - `specificProducts`: منتجات محددة
-   - `specificCategories`: فئات محددة
-   - `specificBrands`: براندات محددة
-   - `minimumOrderAmount`: حد أدنى للطلب
+   - `all_products`: جميع المنتجات
+   - `specific_products`: منتجات محددة
+   - `specific_categories`: فئات محددة
+   - `specific_brands`: براندات محددة
+   - `minimum_order_amount`: حد أدنى للطلب
 
 5. **القيود:**
    - `usageLimit`: حد الاستخدام الإجمالي
@@ -414,10 +454,9 @@ class CouponValidationResult {
 
 10. **التحقق من الصحة:**
     - `validateCoupon()`: للتحقق من صحة الكوبون
-    - `isValid`: صحة الكوبون
-    - `validationMessage`: رسالة التحقق
-    - `calculatedDiscount`: الخصم المحسوب
-    - `finalAmount`: المبلغ النهائي
+    - `valid`: صحة الكوبون (true/false)
+    - `coupon`: بيانات الكوبون (إذا كان صالح)
+    - `message`: رسالة الخطأ (إذا كان غير صالح)
 
 11. **الاستخدام:**
     - استخدم `isActive` للتحقق من النشاط
@@ -440,11 +479,11 @@ class CouponValidationResult {
     - استخدم `isBuyXGetY` للتحقق من اشتر X واحصل على Y
 
 14. **النتائج:**
-    - استخدم `hasDiscount` للتحقق من وجود خصم
-    - استخدم `isApplicable` للتحقق من إمكانية التطبيق
-    - استخدم `isNotApplicable` للتحقق من عدم إمكانية التطبيق
-    - استخدم `savings` للحصول على قيمة التوفير
-    - استخدم `finalPrice` للحصول على السعر النهائي
+    - استخدم `isValid` للتحقق من صحة الكوبون
+    - استخدم `hasError` للتحقق من وجود خطأ
+    - استخدم `errorMessage` للحصول على رسالة الخطأ
+    - استخدم `hasCoupon` للتحقق من وجود بيانات الكوبون
+    - استخدم `discountValue`/`minimumOrderAmount`/`maximumDiscountAmount` للحصول على معلومات الخصم
 
 15. **التحسين:**
     - استخدم `usagePercentage` لعرض نسبة الاستخدام
@@ -452,6 +491,29 @@ class CouponValidationResult {
     - استخدم `averageRevenue` لعرض متوسط الإيرادات
     - استخدم `hasStatistics` للتحقق من وجود إحصائيات
     - استخدم `hasDescription` للتحقق من وجود وصف
+
+---
+
+## 🔄 Notes on Update
+
+**التغييرات الرئيسية:**
+1. ✅ تصحيح Validate Response - `{ valid: true/false, coupon?, message? }` بدلاً من `{ data: { coupon, calculatedDiscount, finalAmount, ... } }`
+2. ✅ تحديث Enums - استخدام snake_case: `fixed_amount`, `free_shipping`, `buy_x_get_y`, `all_products`
+3. ✅ إضافة Extensions للـ Enums - للتحويل من/إلى String بشكل صحيح
+4. ✅ تبسيط `CouponValidationResult` - إزالة `calculatedDiscount`, `finalAmount`, `validationMessage`
+5. ✅ إضافة error messages الفعلية (Invalid coupon code, Coupon has expired, Coupon usage limit exceeded)
+
+**ملاحظات مهمة:**
+- الـ validation **لا يحسب** الخصم - فقط يتحقق من الصحة
+- الـ response يعيد الـ coupon object كامل إذا كان صالح
+- الـ response يعيد `message` فقط إذا كان غير صالح
+- حساب الخصم الفعلي يتم في `/orders/checkout/preview` endpoint
+
+**ملفات Backend المرجعية:**
+- `backend/src/modules/marketing/public.controller.ts` - validate endpoint
+- `backend/src/modules/marketing/marketing.service.ts` - validateCoupon logic
+- `backend/src/modules/marketing/schemas/coupon.schema.ts` - Coupon Schema و Enums
+- `backend/src/modules/marketing/dto/coupon.dto.ts` - ValidateCouponDto
 
 ---
 

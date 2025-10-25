@@ -1,167 +1,64 @@
-%% Capabilities Management System
+%% Capabilities Management Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Capabilities Management] --> B{Action Type?}
-  B -->|View Capabilities| C[View User Capabilities]
-  B -->|Update Capabilities| D[Update User Capabilities]
-  B -->|Approve Role| E[Approve Role Request]
-  B -->|Reject Role| F[Reject Role Request]
-  B -->|Set Discount| G[Set Wholesale Discount]
-  
-  %% View Capabilities
-  C --> C1[Get User ID]
-  C1 --> C2[Load Capabilities Record]
-  C2 --> C3[Check Customer Capability]
-  C3 --> C4[Check Engineer Capability]
-  C4 --> C5[Check Wholesale Capability]
-  C5 --> C6[Check Admin Capability]
-  C6 --> C7[Return Capabilities Status]
-  
-  %% Customer Capability Check
-  C3 --> C3A[Default: true]
-  C3A --> C3B[Can make purchases]
-  C3B --> C3C[Can create support tickets]
-  C3C --> C3D[Can rate products]
-  
-  %% Engineer Capability Check
-  C4 --> C4A[engineer_capable: boolean]
-  C4A --> C4B[engineer_status: string]
-  C4B --> C4C{Status?}
-  C4C -->|none| C4D[No engineer access]
-  C4C -->|pending| C4E[Awaiting approval]
-  C4C -->|approved| C4F[Full engineer access]
-  C4C -->|rejected| C4G[Access denied]
-  
-  %% Wholesale Capability Check
-  C5 --> C5A[wholesale_capable: boolean]
-  C5A --> C5B[wholesale_status: string]
-  C5B --> C5C[wholesale_discount_percent: number]
-  C5C --> C5D{Status?}
-  C5D -->|none| C5E[No wholesale access]
-  C5D -->|pending| C5F[Awaiting approval]
-  C5D -->|approved| C5G[Wholesale access with discount]
-  C5D -->|rejected| C5H[Access denied]
-  
-  %% Admin Capability Check
-  C6 --> C6A[admin_capable: boolean]
-  C6A --> C6B[admin_status: string]
-  C6B --> C6C{Status?}
-  C6C -->|none| C6D[No admin access]
-  C6C -->|pending| C6E[Awaiting approval]
-  C6C -->|approved| C6F[Full admin access]
-  C6C -->|rejected| C6G[Access denied]
-  
-  %% Update Capabilities
-  D --> D1[Validate Admin Permission]
-  D1 --> D2[Select Capability to Update]
-  D2 --> D3[Update Capability Value]
-  D3 --> D4[Update Status if Needed]
-  D4 --> D5[Save Changes]
-  D5 --> D6[Notify User]
-  D6 --> D7[Update Cache]
-  
-  %% Capability Updates
-  D2 --> D2A[Customer Capability]
-  D2A --> D2B[Engineer Capability]
-  D2B --> D2C[Wholesale Capability]
-  D2C --> D2D[Admin Capability]
-  
-  %% Status Updates
-  D4 --> D4A[Set to pending]
-  D4A --> D4B[Set to approved]
-  D4B --> D4C[Set to rejected]
-  D4C --> D4D[Set to none]
-  
-  %% Approve Role
-  E --> E1[Check Pending Requests]
-  E1 --> E2[Select Role to Approve]
-  E2 --> E3[Validate Approval Criteria]
-  E3 --> E4[Update Status to Approved]
-  E4 --> E5[Grant Role Permissions]
-  E5 --> E6[Send Approval Notification]
-  E6 --> E7[Update User Access]
-  
-  %% Approval Criteria
-  E3 --> E3A[Engineer: Check qualifications]
-  E3A --> E3B[Wholesale: Check business license]
-  E3B --> E3C[Admin: Check authorization level]
-  E3C --> E3D[Validate all requirements]
-  
-  %% Reject Role
-  F --> F1[Check Pending Requests]
-  F1 --> F2[Select Role to Reject]
-  F2 --> F3[Provide Rejection Reason]
-  F3 --> F4[Update Status to Rejected]
-  F4 --> F5[Remove Role Permissions]
-  F5 --> F6[Send Rejection Notification]
-  F6 --> F7[Log Rejection Reason]
-  
-  %% Set Wholesale Discount
-  G --> G1[Check Wholesale Approval]
-  G1 --> G2[Validate Discount Percentage]
-  G2 --> G3[Set Discount Range 0-100%]
-  G3 --> G4[Update Discount Value]
-  G4 --> G5[Apply to User Orders]
-  G5 --> G6[Notify User of Changes]
-  G6 --> G7[Update Pricing Cache]
-  
-  %% Discount Validation
-  G2 --> G2A[Check minimum discount]
-  G2A --> G2B[Check maximum discount]
-  G2B --> G2C[Validate business rules]
-  G2C --> G2D[Approve discount change]
-  
-  %% Capability Status Flow
-  H[Capability Status Flow] --> H1[Initial State: none]
-  H1 --> H2[User Requests Role]
-  H2 --> H3[Status: pending]
-  H3 --> H4{Admin Decision?}
-  H4 -->|Approve| H5[Status: approved]
-  H4 -->|Reject| H6[Status: rejected]
-  H5 --> H7[Grant Permissions]
-  H6 --> H8[Deny Access]
-  H7 --> H9[Active Role]
-  H8 --> H10[Inactive Role]
-  
-  %% Permission Matrix
-  I[Permission Matrix] --> I1[Customer Permissions]
-  I1 --> I2[Engineer Permissions]
-  I2 --> I3[Wholesale Permissions]
-  I3 --> I4[Admin Permissions]
-  
-  %% Customer Permissions
-  I1 --> I1A[View products]
-  I1A --> I1B[Create orders]
-  I1B --> I1C[Support tickets]
-  I1C --> I1D[Rate products]
-  I1D --> I1E[Manage profile]
-  
-  %% Engineer Permissions
-  I2 --> I2A[All customer permissions]
-  I2A --> I2B[View service requests]
-  I2B --> I2C[Accept service jobs]
-  I2C --> I2D[Update service status]
-  I2D --> I2E[Engineer dashboard]
-  
-  %% Wholesale Permissions
-  I3 --> I3A[All customer permissions]
-  I3A --> I3B[Wholesale pricing]
-  I3B --> I3C[Bulk order discounts]
-  I3C --> I3D[Wholesale catalog]
-  I3D --> I3E[Volume pricing]
-  
-  %% Admin Permissions
-  I4 --> I4A[All permissions]
-  I4A --> I4B[User management]
-  I4B --> I4C[System configuration]
-  I4C --> I4D[Analytics and reports]
-  I4D --> I4E[Security management]
-  
+  A[إدارة القدرات] --> B{نوع العملية?}
+  B -->|طلب قدرة| C[Request Capability]
+  B -->|مراجعة الطلبات| D[Review Requests]
+  B -->|الموافقة على الطلب| E[Approve Request]
+  B -->|رفض الطلب| F[Reject Request]
+
+  %% Request Capability
+  C --> C1[تحديد نوع القدرة]
+  C1 --> C2[Engineer/Wholesale/Admin]
+  C2 --> C3[إنشاء سجل في Capabilities]
+  C3 --> C4[تحديث الحالة إلى PENDING]
+  C4 --> C5[إشعار الإدارة]
+
+  %% Review Requests
+  D --> D1[عرض جميع الطلبات PENDING]
+  D1 --> D2[مراجعة بيانات المستخدم]
+  D2 --> D3[فحص المؤهلات]
+  D3 --> D4[قرار الموافقة أو الرفض]
+
+  %% Approve Request
+  E --> E1[تحديث الحالة إلى APPROVED]
+  E1 --> E2[تفعيل القدرة]
+  E2 --> E3[إضافة الدور المناسب]
+  E3 --> E4[إعداد الخصومات إذا لزم الأمر]
+  E4 --> E5[إشعار المستخدم]
+
+  %% Reject Request
+  F --> F1[تحديث الحالة إلى REJECTED]
+  F1 --> F2[إشعار المستخدم بالرفض]
+  F2 --> F3[إمكانية إعادة الطلب]
+
+  %% Capability Types
+  G[أنواع القدرات] --> H[Engineer Capability]
+  H --> H1[engineer_capable: boolean]
+  H1 --> H2[engineer_status: NONE/PENDING/APPROVED/REJECTED]
+
+  G --> I[Wholesale Capability]
+  I --> I1[wholesale_capable: boolean]
+  I1 --> I2[wholesale_status: NONE/PENDING/APPROVED/REJECTED]
+  I2 --> I3[wholesale_discount_percent: 0-100]
+
+  G --> J[Admin Capability]
+  J --> J1[admin_capable: boolean]
+  J1 --> J2[admin_status: NONE/PENDING/APPROVED/REJECTED]
+
+  %% Status Transitions
+  K[انتقالات الحالة] --> L[NONE → PENDING]
+  L --> M[PENDING → APPROVED]
+  M --> N[PENDING → REJECTED]
+  N --> O[APPROVED → REJECTED - إلغاء]
+
+  %% Role Mapping
+  P[ربط القدرات بالأدوار] --> Q[APPROVED Engineer → ENGINEER role]
+  Q --> R[APPROVED Wholesale → MERCHANT role]
+  R --> S[APPROVED Admin → ADMIN role]
+
   %% End points
-  C7 --> Z[Capabilities Retrieved]
-  D7 --> Z
-  E7 --> Z
-  F7 --> Z
-  G7 --> Z
-  H10 --> Z
-  I4E --> Z
+  C5 --> T[نهاية - طلب مرسل]
+  E5 --> T
+  F3 --> T
+  S --> T

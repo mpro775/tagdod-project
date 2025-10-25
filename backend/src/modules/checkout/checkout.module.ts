@@ -22,6 +22,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { FavoritesModule } from '../favorites/favorites.module';
 import { ProductsModule } from '../products/products.module';
+import { AddressesModule } from '../addresses/addresses.module';
 import { SharedModule } from '../../shared/shared.module';
 
 /**
@@ -41,6 +42,7 @@ import { SharedModule } from '../../shared/shared.module';
     forwardRef(() => NotificationsCompleteModule),
     forwardRef(() => FavoritesModule),
     forwardRef(() => ProductsModule),
+    AddressesModule,
     SharedModule,
   ],
   controllers: [

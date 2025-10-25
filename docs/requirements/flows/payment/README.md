@@ -2,173 +2,197 @@
 
 ## الملفات المتاحة
 - `webhook.mmd` - مخطط معالجة Webhook الدفع
+- `inventory-payment-integration.mmd` - مخطط تكامل المخزون مع الدفع
 
 ## شرح التدفقات
 
-### 1. نظام الدفع المتقدم (Advanced Payment System)
+### 1. نظام الدفع الأساسي (Basic Payment System)
 - **طرق الدفع:** COD (الدفع عند الاستلام) و ONLINE (الدفع الإلكتروني)
-- **العملات المتعددة:** دعم YER, SAR, USD مع تحويل تلقائي
-- **مقدمي الخدمة:** دعم مقدمي خدمات دفع متعددين
-- **الأمان:** تشفير جميع بيانات الدفع مع توقيع HMAC
-- **المعاملات:** معاملات قاعدة بيانات آمنة لضمان التكامل
+- **العملات:** دعم YER, SAR, USD
+- **الأمان:** توقيع HMAC للتحقق من الدفع الإلكتروني
+- **التتبع:** تتبع حالة الطلبات والمدفوعات
 
-### 2. نظام Payment Intent المتقدم (Advanced Payment Intent)
-- **إنشاء Intent:** إنشاء معرف فريد للدفع مع توقيع أمني
-- **التوقيع:** توقيع HMAC للتحقق من صحة الطلب
-- **المعرف:** حفظ paymentIntentId في الطلب مع معلومات إضافية
-- **الحالة:** تتبع حالة الدفع (PENDING, SUCCESS, FAILED)
-- **التحقق:** التحقق من صحة التوقيع قبل المعالجة
-
-### 3. نظام COD (Cash on Delivery) المتقدم
+### 2. دفع عند الاستلام (COD Payment)
 - **التأكيد الفوري:** تأكيد الطلب فوراً عند اختيار COD
-- **حجز المخزون:** حجز المخزون نهائياً مع تحديث قاعدة البيانات
 - **تحديث الحالة:** تحديث حالة الطلب إلى CONFIRMED
 - **الإشعارات:** إرسال إشعارات التأكيد للمستخدم
-- **المخزون:** تحديث المخزون مع تسجيل في ledger
+- **عدم الحاجة لـ webhook:** لا يحتاج لانتظار تأكيد خارجي
 
-### 4. نظام الدفع الإلكتروني المتقدم (Advanced Online Payment)
-- **إنشاء Intent:** إنشاء payment intent مع مقدم الخدمة
-- **التوجيه:** توجيه المستخدم لصفحة الدفع
-- **الانتظار:** انتظار تأكيد الدفع من مقدم الخدمة
-- **Webhook:** استقبال تأكيد الدفع عبر webhook
-- **التحقق:** التحقق من صحة التوقيع والبيانات
+### 3. الدفع الإلكتروني (Online Payment)
+- **إنشاء Intent:** إنشاء معرف دفع فريد مع توقيع أمني
+- **التوقيع:** توقيع HMAC للتحقق من صحة البيانات
+- **الإرجاع:** إرجاع payment intent للمستخدم
+- **انتظار Webhook:** انتظار تأكيد الدفع عبر webhook
 
-### 5. نظام Webhook المتقدم (Advanced Webhook System)
+### 4. معالجة Webhooks (Webhook Processing)
 - **الاستقبال:** استقبال webhooks من مقدمي الخدمة
-- **التحقق:** التحقق من توقيع الطلب باستخدام HMAC
-- **المعالجة:** معالجة أحداث الدفع المختلفة
-- **الأحداث المدعومة:**
-  - `SUCCESS`: نجح الدفع
-  - `FAILED`: فشل الدفع
-  - `REFUNDED`: تم الاسترداد
-- **الأمان:** التحقق من صحة التوقيع قبل المعالجة
+- **التحقق:** التحقق من توقيع الطلب
+- **المعالجة:** تحديث حالة الطلب حسب نتيجة الدفع
+- **الأحداث:** معالجة SUCCESS و FAILED
 
-### 6. نظام إدارة حالة الطلب المتقدم (Advanced Order Status Management)
-- **نجح الدفع:**
-  - تحديث حالة الطلب إلى CONFIRMED
-  - حجز المخزون نهائياً مع معاملة قاعدة بيانات
-  - تحديث المخزون مع تسجيل في ledger
-  - إرسال إشعارات التأكيد
-  - تحديث حالة الدفع إلى PAID
-- **فشل الدفع:**
-  - تحديث حالة الطلب إلى PAYMENT_FAILED
-  - إرجاع المخزون المحجوز
-  - تحديث المخزون مع تسجيل في ledger
-  - إرسال إشعار الفشل
-  - تحديث حالة الدفع إلى FAILED
+### 5. إدارة حالة الطلبات (Order Status Management)
+- **نجح الدفع:** تحديث حالة الطلب إلى CONFIRMED
+- **فشل الدفع:** تحديث حالة الطلب إلى PAYMENT_FAILED
+- **الإشعارات:** إرسال إشعارات للمستخدمين
+- **التتبع:** حفظ جميع تغييرات الحالة
 
-### 7. نظام إدارة المخزون المتقدم (Advanced Inventory Management)
-- **الحجز:** حجز المخزون عند إنشاء الطلب
-- **التأكيد:** تأكيد الحجز عند نجح الدفع
-- **الإرجاع:** إرجاع المخزون عند فشل الدفع
-- **Ledger:** تسجيل جميع التغييرات في inventory ledger
-- **المعاملات:** استخدام معاملات قاعدة بيانات لضمان التكامل
-
-### 8. نظام Multi-currency المتقدم (Advanced Multi-currency)
-- **العملات المدعومة:** YER, SAR, USD
-- **التحويل:** تحويل تلقائي للعملات حسب السعر الحالي
-- **التسعير:** عرض الأسعار بالعملة المفضلة للمستخدم
-- **الحساب:** حساب المبالغ بالعملة المختارة
-- **التخزين:** حفظ المبالغ بالعملة الأصلية
-
-### 9. نظام Database Transactions المتقدم (Advanced Database Transactions)
-- **المعاملات:** استخدام MongoDB transactions لضمان التكامل
-- **التراجع:** إمكانية التراجع عن جميع التغييرات عند الفشل
-- **التزامن:** ضمان التزامن في العمليات المتعددة
-- **الاسترداد:** استرداد تلقائي عند فشل المعاملات
-- **السجل:** تسجيل مفصل لجميع المعاملات
-
-### 10. نظام Reservation System المتقدم (Advanced Reservation System)
-- **الحجز المؤقت:** حجز المخزون لمدة محددة (TTL)
-- **الانتهاء:** انتهاء صلاحية الحجز تلقائياً
-- **التحديث:** تحديث حالة الحجز حسب حالة الدفع
-- **التحرير:** تحرير المخزون عند انتهاء الحجز
-- **التتبع:** تتبع جميع عمليات الحجز
+### 6. تكامل المخزون (Inventory Integration)
+- **تحديث المخزون:** تحديث كميات المخزون عند تأكيد الطلب
+- **التسجيل:** تسجيل تغييرات المخزون
+- **الإشعارات:** إشعارات للمنتجات التي نفد مخزونها
 
 ## هيكل البيانات
 
-### حقول الدفع الأساسية (Payment Fields)
-- `paymentIntentId`: معرف نية الدفع (string) - مطلوب
-- `paymentMethod`: طريقة الدفع (enum) - مطلوب
+### حقول الطلب الأساسية (Order Schema)
+- `orderNumber`: رقم الطلب الفريد (string) - مطلوب
+- `status`: حالة الطلب (enum: OrderStatus) - افتراضي DRAFT
+- `paymentMethod`: طريقة الدفع (enum: PaymentMethod) - مطلوب عند التأكيد
+- `paymentStatus`: حالة الدفع (enum: PaymentStatus) - افتراضي PENDING
+- `paymentIntentId`: معرف نية الدفع (string) - للدفع الإلكتروني
 - `paymentProvider`: مقدم خدمة الدفع (string) - اختياري
-- `paymentStatus`: حالة الدفع (enum) - مطلوب
-- `amount`: المبلغ (number) - مطلوب
 - `currency`: العملة (string) - مطلوب
+- `subtotal`: المجموع الفرعي (number) - مطلوب
+- `taxAmount`: مبلغ الضريبة (number) - مطلوب
+- `shippingAmount`: مبلغ الشحن (number) - مطلوب
+- `discountAmount`: مبلغ الخصم (number) - افتراضي 0
+- `totalAmount`: المجموع الإجمالي (number) - مطلوب
 
-### حقول التوقيع (Signature Fields)
-- `signature`: التوقيع الأمني (string) - مطلوب
-- `signingKey`: مفتاح التوقيع (string) - مطلوب
-- `payload`: البيانات الموقعة (string) - مطلوب
+### حقول العناصر (Order Items)
+- `productId`: معرف المنتج (ObjectId) - مطلوب
+- `variantId`: معرف المتغير (ObjectId) - مطلوب
+- `sku`: رمز المنتج (string) - اختياري
+- `name`: اسم المنتج (string) - مطلوب
+- `quantity`: الكمية (number) - مطلوب
+- `unitPrice`: سعر الوحدة (number) - مطلوب
+- `totalPrice`: السعر الإجمالي (number) - مطلوب
+- `imageUrl`: رابط الصورة (string) - اختياري
 
-### حقول Webhook (Webhook Fields)
+### حقول العناوين والشحن (Shipping Fields)
+- `shippingMethod`: طريقة الشحن (enum: ShippingMethod) - مطلوب
+- `deliveryAddressId`: معرف عنوان التسليم (ObjectId) - مطلوب
+- `billingAddressId`: معرف عنوان الفوترة (ObjectId) - اختياري
+
+### حقول التتبع والملاحظات (Tracking Fields)
+- `notes`: ملاحظات الطلب (string) - اختياري
+- `customerNotes`: ملاحظات العميل (string) - اختياري
+- `internalNotes`: ملاحظات داخلية (string) - اختياري
+- `trackingNumber`: رقم التتبع (string) - اختياري
+
+### حقول التوقيت (Timing Fields)
+- `createdAt`: تاريخ الإنشاء (Date) - تلقائي
+- `updatedAt`: تاريخ آخر تحديث (Date) - تلقائي
+- `confirmedAt`: تاريخ التأكيد (Date) - اختياري
+- `shippedAt`: تاريخ الشحن (Date) - اختياري
+- `deliveredAt`: تاريخ التسليم (Date) - اختياري
+
+### حقول Webhook (Webhook DTO)
 - `intentId`: معرف نية الدفع (string) - مطلوب
-- `status`: حالة الدفع (enum) - مطلوب
+- `status`: حالة الدفع (SUCCESS/FAILED) (string) - مطلوب
 - `amount`: المبلغ (number) - مطلوب
 - `signature`: التوقيع (string) - مطلوب
 
-### طرق الدفع المتاحة (Payment Methods)
-1. **COD** - الدفع عند الاستلام
-2. **ONLINE** - الدفع الإلكتروني
+### طرق الدفع المتاحة (PaymentMethod)
+- **COD** - الدفع عند الاستلام
+- **ONLINE** - الدفع الإلكتروني
+- **WALLET** - المحفظة
+- **BANK_TRANSFER** - التحويل البنكي
 
-### حالات الدفع المتاحة (Payment Status)
-1. **PENDING** - في الانتظار
-2. **PAID** - تم الدفع
-3. **FAILED** - فشل الدفع
-4. **REFUNDED** - تم الاسترداد
+### حالات الدفع المتاحة (PaymentStatus)
+- **PENDING** - في الانتظار
+- **AUTHORIZED** - مصرح به
+- **PAID** - تم الدفع
+- **FAILED** - فشل الدفع
+- **REFUNDED** - تم الاسترداد
+- **PARTIALLY_REFUNDED** - تم الاسترداد جزئياً
+- **CANCELLED** - ملغي
 
-### العملات المدعومة (Supported Currencies)
-1. **YER** - الريال اليمني
-2. **SAR** - الريال السعودي
-3. **USD** - الدولار الأمريكي
+### حالات الطلب المتاحة (OrderStatus)
+- **DRAFT** - مسودة
+- **PENDING_PAYMENT** - انتظار الدفع
+- **CONFIRMED** - مؤكد
+- **PAYMENT_FAILED** - فشل الدفع
+- **PROCESSING** - قيد المعالجة
+- **READY_TO_SHIP** - جاهز للشحن
+- **SHIPPED** - تم الشحن
+- **OUT_FOR_DELIVERY** - في الطريق للتسليم
+- **DELIVERED** - تم التسليم
+- **COMPLETED** - مكتمل
+- **ON_HOLD** - معلق
+- **CANCELLED** - ملغي
+- **REFUNDED** - مسترد
+- **PARTIALLY_REFUNDED** - مسترد جزئياً
+- **RETURNED** - مرتجع
 
 ## API Endpoints المتاحة
 
-### معالجة الدفع
+### معالجة الطلبات (Order Controller)
 - **POST /checkout/preview** - معاينة الطلب قبل التأكيد
-- **POST /checkout/confirm** - تأكيد الطلب وإنشاء نية الدفع
-- **POST /payments/webhook** - استقبال webhooks من مقدمي الخدمة
-
-### إدارة الطلبات
-- **GET /orders** - قائمة طلبات المستخدم
+- **POST /checkout/confirm** - تأكيد الطلب ومعالجة الدفع
+- **GET /orders** - قائمة طلبات المستخدم مع فلترة
+- **GET /orders/recent** - الطلبات الأخيرة للمستخدم
 - **GET /orders/:id** - تفاصيل طلب محدد
+- **GET /orders/:id/track** - تتبع حالة الطلب
 - **POST /orders/:id/cancel** - إلغاء طلب
+- **POST /orders/:id/rate** - تقييم الطلب بعد التسليم
+- **POST /orders/:id/notes** - إضافة ملاحظات للطلب
+- **GET /orders/stats/summary** - إحصائيات الطلبات
 
-### إدارة الإدارة
-- **GET /admin/orders** - قائمة جميع الطلبات
-- **POST /admin/orders/:id/status** - تحديث حالة الطلب
-- **POST /admin/orders/:id/ship** - شحن الطلب
-- **POST /admin/orders/:id/refund** - استرداد مبلغ
+### معالجة Webhooks (Webhook Controller)
+- **POST /webhooks/payment** - استقبال webhooks الدفع
+- **POST /webhooks/inventory** - تحديثات المخزون عبر webhook
 
 ## DTOs المتاحة
 
-### معاينة الطلب
+### معاينة الطلب (Checkout DTOs)
 - `CheckoutPreviewDto`: معاينة الطلب
-  - `currency`: العملة (required)
-  - `deliveryAddressId`: معرف عنوان التسليم (optional)
-
-### تأكيد الطلب
-- `CheckoutConfirmDto`: تأكيد الطلب
-  - `currency`: العملة (required)
-  - `paymentMethod`: طريقة الدفع (required)
-  - `paymentProvider`: مقدم خدمة الدفع (optional)
-  - `deliveryAddressId`: معرف عنوان التسليم (optional)
+  - `currency`: العملة (YER/SAR/USD) (required)
   - `couponCode`: كود الكوبون (optional)
 
-### Webhook
+### تأكيد الطلب (Checkout DTOs)
+- `CheckoutConfirmDto`: تأكيد الطلب
+  - `deliveryAddressId`: معرف عنوان التسليم (required)
+  - `currency`: العملة (required)
+  - `paymentMethod`: طريقة الدفع (COD/ONLINE/WALLET/BANK_TRANSFER) (required)
+  - `paymentProvider`: مقدم خدمة الدفع (optional)
+  - `billingAddressId`: معرف عنوان الفوترة (optional)
+  - `couponCode`: كود الكوبون (optional)
+  - `notes`: ملاحظات العميل (optional)
+
+### إدارة الطلبات (Order DTOs)
+- `ListOrdersDto`: قائمة الطلبات
+  - `page`: رقم الصفحة (optional)
+  - `limit`: عدد العناصر (optional)
+  - `status`: فلترة حسب الحالة (optional)
+  - `paymentStatus`: فلترة حسب حالة الدفع (optional)
+  - `search`: البحث في رقم الطلب (optional)
+  - `fromDate`: تاريخ البداية (optional)
+  - `toDate`: تاريخ النهاية (optional)
+
+- `CancelOrderDto`: إلغاء الطلب
+  - `reason`: سبب الإلغاء (optional)
+
+- `RateOrderDto`: تقييم الطلب
+  - `rating`: التقييم (1-5) (required)
+  - `comment`: التعليق (optional)
+
+- `AddOrderNotesDto`: إضافة ملاحظات
+  - `notes`: الملاحظات (required)
+
+### Webhook DTOs
 - `WebhookDto`: webhook الدفع
   - `intentId`: معرف نية الدفع (required)
-  - `status`: حالة الدفع (required)
+  - `status`: حالة الدفع (SUCCESS/FAILED) (required)
   - `amount`: المبلغ (required)
   - `signature`: التوقيع (required)
 
 ## نقاط مهمة
-- **أمان عالي:** تشفير جميع بيانات الدفع مع توقيع HMAC
-- **معاملات آمنة:** استخدام MongoDB transactions لضمان التكامل
-- **دعم متعدد العملات:** YER, SAR, USD مع تحويل تلقائي
-- **نظام COD:** دعم الدفع عند الاستلام مع تأكيد فوري
-- **نظام Online:** دعم الدفع الإلكتروني مع webhooks آمنة
-- **إدارة المخزون:** تكامل كامل مع نظام المخزون
-- **حجز ذكي:** نظام حجز المخزون مع TTL
-- **تتبع شامل:** تتبع جميع عمليات الدفع والمخزون
-- **إشعارات:** إشعارات تلقائية لجميع حالات الدفع
-- **استرداد:** دعم الاسترداد الجزئي والكامل
+- **نظام طلبات موحد:** إدارة شاملة لحالة الطلبات مع State Machine
+- **دعم طرق دفع متعددة:** COD، Online، Wallet، Bank Transfer
+- **توقيع أمني:** توقيع HMAC للتحقق من الدفع الإلكتروني
+- **تتبع حالة شامل:** 15 حالة مختلفة للطلبات مع انتقالات منطقية
+- **معالجة webhooks:** استقبال ومعالجة تأكيدات الدفع الإلكتروني
+- **تكامل المخزون:** تحديث تلقائي للمخزون عند تأكيد الطلبات
+- **إشعارات ذكية:** إشعارات تلقائية لجميع تغييرات حالة الطلب
+- **إدارة العملات:** دعم YER، SAR، USD مع حسابات دقيقة
+- **نظام تقييم:** تقييم الطلبات بعد التسليم
+- **تتبع شامل:** حفظ جميع التواريخ والملاحظات والتغييرات

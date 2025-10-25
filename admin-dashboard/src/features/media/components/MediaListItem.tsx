@@ -13,7 +13,6 @@ import {
   CardContent,
   CardActions,
   Badge,
-  LinearProgress,
   Skeleton,
 } from '@mui/material';
 import {
@@ -25,9 +24,6 @@ import {
   VisibilityOff,
   Download,
   Info,
-  MoreVert,
-  CheckCircle,
-  Error as ErrorIcon,
 } from '@mui/icons-material';
 import { formatFileSize } from '@/shared/utils/formatters';
 import type { Media } from '../types/media.types';
@@ -70,13 +66,6 @@ export const MediaListItem: React.FC<MediaListItemProps> = ({
     if (type.includes('pdf')) return '📄';
     if (type.includes('word')) return '📝';
     return '📁';
-  };
-
-  const getFileTypeColor = (type: string) => {
-    if (type.startsWith('image/')) return 'success';
-    if (type.startsWith('video/')) return 'primary';
-    if (type.includes('pdf')) return 'error';
-    return 'default';
   };
 
   if (isLoading) {

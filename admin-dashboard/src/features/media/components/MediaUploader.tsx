@@ -22,9 +22,6 @@ import {
   Card,
   CardMedia,
   CardContent,
-  IconButton,
-  Tooltip,
-  Divider,
   Skeleton,
 } from '@mui/material';
 import {
@@ -32,14 +29,11 @@ import {
   Image,
   VideoFile,
   Description,
-  Delete,
-  CheckCircle,
-  Error as ErrorIcon,
-  Info,
+  CheckCircle,  
 } from '@mui/icons-material';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useUploadMedia } from '../hooks/useMedia';
-import { MediaCategory, MediaType } from '../types/media.types';
+import { MediaCategory } from '../types/media.types';
 
 interface MediaUploaderProps {
   open: boolean;
@@ -68,11 +62,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
   const { mutate: upload, isPending } = useUploadMedia();
 
-  const steps = [
-    'اختيار الملف',
-    'إدخال البيانات',
-    'مراجعة الرفع',
-  ];
+
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -101,11 +91,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     return <Description />;
   };
 
-  const getFileType = (file: File): MediaType => {
-    if (file.type.startsWith('image/')) return MediaType.IMAGE;
-    if (file.type.startsWith('video/')) return MediaType.VIDEO;
-    return MediaType.DOCUMENT;
-  };
 
   const handleAddTag = useCallback(() => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -152,7 +137,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           }, 1000);
         },
         onError: (error) => {
-          setUploadError(error.message || 'حدث خطأ أثناء الرفع');
+          setUploadError((error as Error).message || 'حدث خطأ أثناء الرفع');
         },
       }
     );

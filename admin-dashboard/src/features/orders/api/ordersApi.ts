@@ -23,10 +23,24 @@ export const ordersApi = {
    * List orders with pagination and filters
    */
   list: async (params: ListOrdersParams): Promise<PaginatedResponse<Order>> => {
-    const response = await apiClient.get<PaginatedResponse<Order>>('/admin/orders', {
+    const response = await apiClient.get<ApiResponse<{
+      orders: Order[];
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    }>>('/admin/orders', {
       params: sanitizePaginationParams(params),
     });
-    return response.data;
+    return {
+      data: response.data.data.orders,
+      meta: {
+        page: response.data.data.page,
+        limit: response.data.data.limit,
+        total: response.data.data.total,
+        totalPages: response.data.data.totalPages,
+      },
+    };
   },
 
   /**
@@ -80,15 +94,12 @@ export const ordersApi = {
   /**
    * Bulk update orders status
    */
-  bulkUpdateStatus: async (data: BulkOrderUpdateDto): Promise<ApiResponse<{
-    results: Array<{ orderId: string; success: boolean; order: Order }>;
-    errors: Array<{ orderId: string; error: string }>;
-  }>> => {
+  bulkUpdateStatus: async (data: BulkOrderUpdateDto) => {
     const response = await apiClient.post<ApiResponse<{
       results: Array<{ orderId: string; success: boolean; order: Order }>;
       errors: Array<{ orderId: string; error: string }>;
     }>>('/admin/orders/bulk/update-status', data);
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -126,7 +137,7 @@ export const ordersApi = {
     const response = await apiClient.get<ApiResponse<any>>('/admin/orders/reports/orders', {
       params: { ...sanitizePaginationParams(params), format },
     });
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -134,7 +145,7 @@ export const ordersApi = {
    */
   generateFinancialReport: async () => {
     const response = await apiClient.get<ApiResponse<any>>('/admin/orders/reports/financial');
-    return response.data;
+    return response.data.data;
   },
 
   /**

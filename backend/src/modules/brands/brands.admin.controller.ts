@@ -31,7 +31,7 @@ import { AdminPermission } from '../../shared/constants/permissions';
 import { BrandsService } from './brands.service';
 import { CreateBrandDto, UpdateBrandDto, ListBrandsDto } from './dto/brand.dto';
 
-@ApiTags('admin-brands')
+@ApiTags('إدارة-العلامات-التجارية')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -106,9 +106,8 @@ export class BrandsAdminController {
   async createBrand(@Body() dto: CreateBrandDto) {
     const brand = await this.brandsService.createBrand(dto);
     return {
-      success: true,
+      brand,
       message: 'Brand created successfully',
-      data: brand,
     };
   }
 
@@ -148,8 +147,7 @@ export class BrandsAdminController {
   async listBrands(@Query() dto: ListBrandsDto) {
     const result = await this.brandsService.listBrands(dto);
     return {
-      success: true,
-      data: result.brands,
+      brands: result.brands,
       pagination: result.pagination,
     };
   }
@@ -173,10 +171,7 @@ export class BrandsAdminController {
   })
   async getBrand(@Param('id') id: string) {
     const brand = await this.brandsService.getBrandById(id);
-    return {
-      success: true,
-      data: brand,
-    };
+    return brand;
   }
 
   @Patch(':id')
@@ -227,9 +222,8 @@ export class BrandsAdminController {
   ) {
     const brand = await this.brandsService.updateBrand(id, dto);
     return {
-      success: true,
+      brand,
       message: 'Brand updated successfully',
-      data: brand,
     };
   }
 
@@ -260,7 +254,6 @@ export class BrandsAdminController {
   async deleteBrand(@Param('id') id: string) {
     await this.brandsService.deleteBrand(id);
     return {
-      success: true,
       message: 'Brand deleted successfully',
     };
   }
@@ -301,9 +294,8 @@ export class BrandsAdminController {
   async toggleBrandStatus(@Param('id') id: string) {
     const brand = await this.brandsService.toggleBrandStatus(id);
     return {
-      success: true,
+      brand,
       message: `Brand ${brand.isActive ? 'activated' : 'deactivated'} successfully`,
-      data: brand,
     };
   }
 }

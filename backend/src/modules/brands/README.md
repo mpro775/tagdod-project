@@ -238,29 +238,6 @@ Response:
 }
 ```
 
-### عرض الفئات المتاحة للمنتجات في براند معين
-
-```http
-GET /brands/:brandId/categories
-
-Response:
-{
-  "data": [
-    {
-      "_id": "...",
-      "name": "Smartphones",
-      "slug": "smartphones",
-      "path": "/electronics/smartphones"
-    },
-    {
-      "_id": "...",
-      "name": "Laptops",
-      "slug": "laptops",
-      "path": "/electronics/laptops"
-    }
-  ]
-}
-```
 
 ## Frontend/Mobile Integration / التكامل مع الواجهة الأمامية
 
@@ -273,13 +250,9 @@ const brand = await fetch(`/brands/${brandId}`);
 // 2. Get products for this brand
 const products = await fetch(`/products?brandId=${brandId}&page=1`);
 
-// 3. Get available categories for filtering
-const categories = await fetch(`/brands/${brandId}/categories`);
-
 // Now you can display:
 // - Brand info (name, image, description)
 // - List of products
-// - Categories for filtering
 ```
 
 ### سيناريو 2: فلترة المنتجات حسب البراند والفئة
@@ -322,6 +295,8 @@ brands.data.forEach(brand => {
 }
 ```
 
+**ملاحظة:** لا يوجد حقل `website` في Schema الحالي - يحتوي فقط على الحقول المذكورة أعلاه.
+
 ## المميزات المتقدمة المطبقة ✅
 
 ### 1. دعم اللغتين:
@@ -357,6 +332,7 @@ brands.data.forEach(brand => {
 4. ✅ **Public Access**: جميع الـ endpoints العامة لا تتطلب Authentication
 5. ✅ **Validation**: تحقق شامل من جميع المدخلات
 6. ✅ **Error Handling**: رسائل خطأ واضحة ومفيدة
+7. ⚠️ **Schema محدث**: لا يحتوي على حقل `website` - فقط الحقول الأساسية (name, nameEn, image, description, etc.)
 
 ## Examples / أمثلة
 
@@ -418,7 +394,9 @@ GET /brands/abc123/categories
 
 ---
 
-**Status:** ✅ Complete - مكتمل التنفيذ 100%  
-**Version:** 1.0.0  
+**Status:** ✅ Complete - مكتمل التنفيذ 100% (مع ملاحظة عدم وجود حقل website)
+**Version:** 1.0.0
 **Last Updated:** 2024-01-15
+
+**ملاحظة إضافية:** النظام لا يحتوي على حقل `website` في Schema الحالي، على عكس ما قد يُشار إليه في بعض الأمثلة القديمة.
 

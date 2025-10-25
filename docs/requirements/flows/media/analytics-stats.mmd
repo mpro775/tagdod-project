@@ -1,84 +1,44 @@
 %% Media Analytics & Statistics Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Analytics Request] --> B{Analytics Type?}
-  B -->|Library Stats| C[Media Library Statistics]
-  B -->|Usage Stats| D[Usage Statistics]
-  B -->|Storage Stats| E[Storage Statistics]
-  B -->|Category Stats| F[Category Statistics]
-  B -->|User Stats| G[User Upload Statistics]
-  
-  %% Media Library Statistics
-  C --> C1[Count total media files]
-  C1 --> C2[Count by category]
-  C2 --> C3[Count by type]
-  C3 --> C4[Count public vs private]
-  C4 --> C5[Count recently added]
-  C5 --> C6[Generate library overview]
-  
-  %% Usage Statistics
-  D --> D1[Get usage counts per media]
-  D1 --> D2[Calculate average usage]
-  D2 --> D3[Find most used media]
-  D3 --> D4[Track usage trends]
-  D4 --> D5[Generate usage report]
-  
-  %% Storage Statistics
-  E --> E1[Calculate total storage size]
-  E1 --> E2[Calculate average file size]
-  E2 --> E3[Group by file type]
-  E3 --> E4[Calculate storage by category]
-  E4 --> E5[Generate storage report]
-  
-  %% Category Statistics
-  F --> F1[Count media per category]
-  F1 --> F2[Calculate category distribution]
-  F2 --> F3[Find most popular categories]
-  F3 --> F4[Track category trends]
-  F4 --> F5[Generate category report]
-  
-  %% User Upload Statistics
-  G --> G1[Count uploads per user]
-  G1 --> G2[Calculate user activity]
-  G2 --> G3[Find most active users]
-  G3 --> G4[Track upload trends]
-  G4 --> G5[Generate user report]
-  
-  %% Duplicate Detection Analytics
-  H[Duplicate Detection] --> H1[Count duplicate files]
-  H1 --> H2[Calculate space saved]
-  H2 --> H3[Find most duplicated files]
-  H3 --> H4[Track duplicate patterns]
-  H4 --> H5[Generate duplicate report]
-  
-  %% Performance Analytics
-  I[Performance Analytics] --> I1[Measure upload times]
-  I1 --> I2[Track Bunny.net performance]
-  I2 --> I3[Monitor error rates]
-  I3 --> I4[Calculate success rates]
-  I4 --> I5[Generate performance report]
-  
-  %% Search Analytics
-  J[Search Analytics] --> J1[Track search queries]
-  J1 --> J2[Find popular search terms]
-  J2 --> J3[Calculate search success rates]
-  J3 --> J4[Track search patterns]
-  J4 --> J5[Generate search report]
-  
-  %% Cleanup Analytics
-  K[Cleanup Analytics] --> K1[Find unused media]
-  K1 --> K2[Calculate cleanup potential]
-  K2 --> K3[Track deletion patterns]
-  K3 --> K4[Monitor storage optimization]
-  K4 --> K5[Generate cleanup report]
-  
-  %% End points
-  C6 --> Z[End]
-  D5 --> Z
-  E5 --> Z
-  F5 --> Z
-  G5 --> Z
-  H5 --> Z
-  I5 --> Z
-  J5 --> Z
-  K5 --> Z
+  A[طلب إحصائيات الوسائط] --> B[استرجاع إجمالي عدد الملفات]
+  B --> C[استرجاع التوزيع حسب الفئة]
+  C --> D[استرجاع التوزيع حسب النوع]
+  D --> E[حساب إجمالي حجم الملفات]
+  E --> F[حساب متوسط حجم الملف]
+  F --> G[استرجاع آخر 5 ملفات تم رفعها]
+  G --> H[تنسيق النتائج]
+
+  %% Data Retrieval
+  B --> B1[استعلام MediaModel.countDocuments]
+  B1 --> B2[فلترة الملفات غير المحذوفة]
+
+  C --> C1[استعلام MongoDB aggregation]
+  C1 --> C2[تجميع حسب category]
+  C2 --> C3[حساب العد لكل فئة]
+
+  D --> D1[استعلام MongoDB aggregation]
+  D1 --> D2[تجميع حسب type]
+  D2 --> D3[حساب العد لكل نوع]
+
+  E --> E1[استعلام MongoDB aggregation]
+  E1 --> E2[تجميع وحساب المجموع لـ size]
+
+  F --> F1[قسمة إجمالي الحجم على العد الإجمالي]
+
+  G --> G1[استعلام MediaModel.find]
+  G1 --> G2[ترتيب حسب createdAt تنازلياً]
+  G2 --> G3[تقييد النتائج بـ 5]
+  G3 --> G4[اختيار الحقول المطلوبة]
+
+  %% Result Formatting
+  H --> H1[إنشاء كائن النتيجة]
+  H1 --> H2[إضافة total: العد الإجمالي]
+  H2 --> H3[إضافة byCategory: التوزيع حسب الفئة]
+  H3 --> H4[إضافة byType: التوزيع حسب النوع]
+  H4 --> H5[إضافة totalSize: الحجم الإجمالي بالبايت]
+  H5 --> H6[إضافة totalSizeMB: الحجم بالميجابايت]
+  H6 --> H7[إضافة averageSize: متوسط الحجم]
+  H7 --> H8[إضافة recentlyAdded: آخر 5 ملفات]
+
+  H8 --> Z[إرجاع الإحصائيات]

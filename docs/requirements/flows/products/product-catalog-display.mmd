@@ -1,168 +1,77 @@
-%% Product Catalog Display and Search
+%% Product Catalog Display Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Product Catalog Display] --> B{Display Context?}
-  B -->|Category View| C[Category Product Listing]
-  B -->|Search Results| D[Search Product Results]
-  B -->|Product Detail| E[Individual Product View]
-  B -->|Featured Products| F[Featured Product Display]
-  B -->|Related Products| G[Related Product Suggestions]
-  
-  %% Category Product Listing
-  C --> C1[Load Category Data]
-  C1 --> C2[Filter Products by Category]
-  C2 --> C3[Apply Category Filters]
-  C3 --> C4[Sort Products]
-  C4 --> C5[Paginate Results]
-  C5 --> C6[Display Product Grid]
-  
-  %% Category Data Loading
-  C1 --> C1A[Get category information]
-  C1A --> C1B[Load category hierarchy]
-  C1B --> C1C[Get category attributes]
-  C1C --> C1D[Load category filters]
-  C1D --> C1E[Get category SEO data]
-  
-  %% Product Filtering
-  C2 --> C2A[Filter by availability]
-  C2A --> C2B[Filter by price range]
-  C2B --> C2C[Filter by attributes]
-  C2C --> C2D[Filter by brand]
-  C2D --> C2E[Filter by rating]
-  
-  %% Category Filters
-  C3 --> C3A[Price range slider]
-  C3A --> C3B[Attribute checkboxes]
-  C3B --> C3C[Brand selection]
-  C3C --> C3D[Rating filter]
-  C3D --> C3E[Availability toggle]
-  
-  %% Product Sorting
-  C4 --> C4A[Sort by price]
-  C4A --> C4B[Sort by popularity]
-  C4B --> C4C[Sort by rating]
-  C4C --> C4D[Sort by date added]
-  C4D --> C4E[Sort by relevance]
-  
-  %% Search Results
-  D --> D1[Process Search Query]
-  D1 --> D2[Search Product Database]
-  D2 --> D3[Apply Search Filters]
-  D3 --> D4[Rank Search Results]
-  D4 --> D5[Display Search Results]
-  
-  %% Search Processing
-  D1 --> D1A[Parse search terms]
-  D1A --> D1B[Extract keywords]
-  D1B --> D1C[Handle synonyms]
-  D1C --> D1D[Process search filters]
-  D1D --> D1E[Validate search query]
-  
-  %% Database Search
-  D2 --> D2A[Search product names]
-  D2A --> D2B[Search descriptions]
-  D2B --> D2C[Search attributes]
-  D2C --> D2D[Search tags]
-  D2D --> D2E[Search categories]
-  
-  %% Search Ranking
-  D4 --> D4A[Relevance scoring]
-  D4A --> D4B[Popularity weighting]
-  D4B --> D4C[Rating influence]
-  D4C --> D4D[Price competitiveness]
-  D4D --> D4E[Availability bonus]
-  
-  %% Individual Product View
-  E --> E1[Load Product Details]
-  E1 --> E2[Load Product Variants]
-  E2 --> E3[Load Product Images]
-  E3 --> E4[Load Product Reviews]
-  E4 --> E5[Load Related Products]
-  E5 --> E6[Display Product Page]
-  
-  %% Product Details Loading
-  E1 --> E1A[Get product information]
-  E1A --> E1B[Load product attributes]
-  E1B --> E1C[Get pricing data]
-  E1C --> E1D[Load inventory status]
-  E1D --> E1E[Get SEO metadata]
-  
-  %% Product Variants
-  E2 --> E2A[Load all variants]
-  E2A --> E2B[Group by attributes]
-  E2B --> E2C[Show variant options]
-  E2C --> E2D[Handle variant selection]
-  E2D --> E2E[Update pricing display]
-  
-  %% Product Images
-  E3 --> E3A[Load main images]
-  E3A --> E3B[Load variant images]
-  E3B --> E3C[Create image gallery]
-  E3C --> E3D[Enable zoom functionality]
-  E3D --> E3E[Optimize image loading]
-  
-  %% Product Reviews
-  E4 --> E4A[Load customer reviews]
-  E4A --> E4B[Calculate average rating]
-  E4B --> E4C[Show rating distribution]
-  E4C --> E4D[Display review summaries]
-  E4D --> E4E[Enable review filtering]
-  
+  A[عرض كتالوج المنتجات] --> B{نوع العرض?}
+  B -->|قائمة عامة| C[عرض قائمة المنتجات]
+  B -->|تفاصيل منتج| D[عرض تفاصيل منتج محدد]
+  B -->|منتجات مميزة| E[عرض المنتجات المميزة]
+  B -->|منتجات جديدة| F[عرض المنتجات الجديدة]
+
+  %% Product List
+  C --> C1[استعلام المنتجات النشطة]
+  C1 --> C2[تطبيق الفلاتر والفرز]
+  C2 --> C3[تطبيق البحث النصي]
+  C3 --> C4[تقسيم النتائج لصفحات]
+  C4 --> C5[إرجاع قائمة المنتجات]
+
+  %% Product Details
+  D --> D1[البحث عن المنتج بالمعرف أو الـ slug]
+  D1 --> D2[التحقق من الحالة ACTIVE]
+  D2 --> D3[تحميل التنويعات النشطة]
+  D3 --> D4[تحميل الصور من مكتبة الوسائط]
+  D4 --> D5[حساب نطاق الأسعار]
+  D5 --> D6[إرجاع تفاصيل شاملة]
+
   %% Featured Products
-  F --> F1[Load Featured Products]
-  F1 --> F2[Apply Featured Criteria]
-  F2 --> F3[Sort by Priority]
-  F3 --> F4[Limit Display Count]
-  F4 --> F5[Display Featured Grid]
-  
-  %% Featured Criteria
-  F2 --> F2A[Admin selected products]
-  F2A --> F2B[High-rated products]
-  F2B --> F2C[New products]
-  F2C --> F2D[Best-selling products]
-  F2D --> F2E[Seasonal products]
-  
-  %% Related Products
-  G --> G1[Analyze Product Context]
-  G1 --> G2[Find Similar Products]
-  G2 --> G3[Apply Related Criteria]
-  G3 --> G4[Rank Related Products]
-  G4 --> G5[Display Related Grid]
-  
-  %% Related Product Criteria
-  G2 --> G2A[Same category products]
-  G2A --> G2B[Similar attributes]
-  G2B --> G2C[Complementary products]
-  G2C --> G2D[Frequently bought together]
-  G2D --> G2E[Customer behavior based]
-  
-  %% Product Display Optimization
-  H[Display Optimization] --> H1[Lazy Load Images]
-  H1 --> H2[Cache Product Data]
-  H2 --> H3[Optimize Database Queries]
-  H3 --> H4[Implement CDN]
-  H4 --> H5[Monitor Performance]
-  
-  %% Product Analytics
-  I[Product Analytics] --> I1[Track Product Views]
-  I1 --> I2[Monitor Search Queries]
-  I2 --> I3[Analyze Filter Usage]
-  I3 --> I4[Track Conversion Rates]
-  I4 --> I5[Generate Product Reports]
-  
-  %% SEO Optimization
-  J[SEO Optimization] --> J1[Generate Meta Tags]
-  J1 --> J2[Create Structured Data]
-  J2 --> J3[Optimize URLs]
-  J3 --> J4[Generate Sitemaps]
-  J4 --> J5[Monitor SEO Performance]
-  
+  E --> E1[فلترة المنتجات حيث isFeatured = true]
+  E1 --> E2[ترتيب حسب order ثم createdAt]
+  E2 --> E3[تقييد العدد المطلوب]
+  E3 --> E4[إرجاع قائمة المنتجات المميزة]
+
+  %% New Products
+  F --> F1[فلترة المنتجات حيث isNew = true]
+  F1 --> F2[ترتيب حسب createdAt تنازلياً]
+  F2 --> F3[تقييد العدد المطلوب]
+  F3 --> F4[إرجاع قائمة المنتجات الجديدة]
+
+  %% Filtering Options
+  G[خيارات الفلترة] --> G1[categoryId: فلترة حسب التصنيف]
+  G1 --> G2[brandId: فلترة حسب العلامة التجارية]
+  G2 --> G3[priceRange: فلترة حسب النطاق السعري]
+  G3 --> G4[status: فلترة حسب الحالة]
+
+  %% Search Options
+  H[خيارات البحث] --> H1[name: بحث في الاسم العربي]
+  H1 --> H2[nameEn: بحث في الاسم الإنجليزي]
+  H2 --> H3[description: بحث في الوصف العربي]
+  H3 --> H4[descriptionEn: بحث في الوصف الإنجليزي]
+
+  %% Sorting Options
+  I[خيارات الترتيب] --> I1[createdAt: حسب تاريخ الإنشاء]
+  I1 --> I2[price: حسب السعر]
+  I2 --> I3[salesCount: حسب عدد المبيعات]
+  I3 --> I4[viewsCount: حسب عدد المشاهدات]
+  I4 --> I5[order: حسب الترتيب المخصص]
+
+  %% Pagination
+  J[الصفحات] --> J1[page: رقم الصفحة]
+  J1 --> J2[limit: عدد العناصر لكل صفحة]
+  J2 --> J3[skip: حساب العناصر المراد تجاهلها]
+  J3 --> J4[total: إجمالي عدد النتائج]
+
+  %% Response Structure
+  K[هيكل الاستجابة] --> K1[products: مصفوفة المنتجات]
+  K1 --> K2[pagination: معلومات الصفحات]
+  K2 --> K3[filters: الفلاتر المتاحة]
+  K3 --> K4[totalCount: إجمالي العدد]
+
+  %% Performance Optimization
+  L[تحسين الأداء] --> L1[indexes محسنة للبحث]
+  L1 --> L2[تخزين مؤقت للاستعلامات الشائعة]
+  L2 --> L3[تحميل الصور عند الحاجة]
+
   %% End points
-  C6 --> Z[Catalog Display Complete]
-  D5 --> Z
-  E6 --> Z
-  F5 --> Z
-  G5 --> Z
-  H5 --> Z
-  I5 --> Z
-  J5 --> Z
+  C5 --> M[نهاية - قائمة المنتجات]
+  D6 --> M
+  E4 --> M
+  F4 --> M

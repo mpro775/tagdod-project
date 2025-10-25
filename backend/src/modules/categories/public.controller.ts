@@ -13,7 +13,7 @@ import {
   CacheResponse,
 } from '../../shared/interceptors/response-cache.interceptor';
 
-@ApiTags('categories-public')
+@ApiTags('الفئات-العامة')
 @Controller('categories')
 @UseInterceptors(ResponseCacheInterceptor)
 export class CategoriesPublicController {
@@ -80,7 +80,7 @@ export class CategoriesPublicController {
       isFeatured: featured,
     });
 
-    return { data };
+    return data;
   }
 
   // ==================== شجرة الفئات الكاملة ====================
@@ -135,7 +135,7 @@ export class CategoriesPublicController {
   @CacheResponse({ ttl: 3600 }) // 1 hour
   async getCategoryTree() {
     const data = await this.categoriesService.getCategoryTree();
-    return { data };
+    return data;
   }
 
   // ==================== عرض فئة واحدة مع التفاصيل ====================
@@ -201,7 +201,7 @@ export class CategoriesPublicController {
   @CacheResponse({ ttl: 1800 }) // 30 minutes
   async getCategory(@Param('id') id: string) {
     const data = await this.categoriesService.getCategory(id);
-    return { data };
+    return data;
   }
 
   // ==================== الفئات المميزة فقط ====================
@@ -245,6 +245,6 @@ export class CategoriesPublicController {
       isActive: true,
       isFeatured: true,
     });
-    return { data };
+    return data;
   }
 }

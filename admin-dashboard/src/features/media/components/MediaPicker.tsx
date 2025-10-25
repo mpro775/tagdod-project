@@ -26,15 +26,11 @@ import {
   Tab,
   IconButton,
   Tooltip,
-  Skeleton,
-  Alert,
-  Divider,
   List,
   ListItem,
   ListItemText,
   ListItemAvatar,
   ListItemSecondaryAction,
-  Checkbox,
   FormControlLabel,
   Switch,
 } from '@mui/material';
@@ -45,15 +41,10 @@ import {
   Image,
   VideoFile,
   Description,
-  FilterList,
   ViewModule,
   ViewList,
   Sort,
   Refresh,
-  Info,
-  Download,
-  Visibility,
-  VisibilityOff,
 } from '@mui/icons-material';
 import { useMedia } from '../hooks/useMedia';
 import { MediaUploader } from './MediaUploader';
@@ -109,24 +100,27 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
     sortOrder,
   });
 
-  const handleSelectMedia = useCallback((media: Media) => {
-    if (multiple) {
-      setSelectedMedia(prev => {
-        const exists = prev.find(m => m._id === media._id);
-        if (exists) {
-          return prev.filter(m => m._id !== media._id);
-        } else {
-          if (maxSelections && prev.length >= maxSelections) {
-            return prev;
+  const handleSelectMedia = useCallback(
+    (media: Media) => {
+      if (multiple) {
+        setSelectedMedia((prev) => {
+          const exists = prev.find((m) => m._id === media._id);
+          if (exists) {
+            return prev.filter((m) => m._id !== media._id);
+          } else {
+            if (maxSelections && prev.length >= maxSelections) {
+              return prev;
+            }
+            return [...prev, media];
           }
-          return [...prev, media];
-        }
-      });
-    } else {
-      onSelect(media);
-      onClose();
-    }
-  }, [multiple, maxSelections, onSelect, onClose]);
+        });
+      } else {
+        onSelect(media);
+        onClose();
+      }
+    },
+    [multiple, maxSelections, onSelect, onClose]
+  );
 
   const handleConfirmSelection = useCallback(() => {
     if (selectedMedia.length > 0) {
@@ -155,16 +149,19 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
     return <Description />;
   }, []);
 
-  const isSelected = useCallback((media: Media) => {
-    return selectedMedia.some(m => m._id === media._id);
-  }, [selectedMedia]);
+  const isSelected = useCallback(
+    (media: Media) => {
+      return selectedMedia.some((m) => m._id === media._id);
+    },
+    [selectedMedia]
+  );
 
   const filteredMedia = useMemo(() => {
     if (!data?.data) return [];
-    
-    return data.data.filter(media => {
+
+    return data.data.filter((media) => {
       if (acceptTypes.length > 0) {
-        return acceptTypes.some(type => type === media.type);
+        return acceptTypes.some((type) => type === media.type);
       }
       return true;
     });
@@ -174,14 +171,17 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
     setActiveTab(newValue);
   }, []);
 
-  const handleSortChange = useCallback((field: 'createdAt' | 'name' | 'size') => {
-    if (sortBy === field) {
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
-    }
-  }, [sortBy]);
+  const handleSortChange = useCallback(
+    (field: 'createdAt' | 'name' | 'size') => {
+      if (sortBy === field) {
+        setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortBy(field);
+        setSortOrder('desc');
+      }
+    },
+    [sortBy]
+  );
 
   return (
     <>
@@ -209,7 +209,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
             </Box>
           </Box>
         </DialogTitle>
-        
+
         <DialogContent sx={{ p: 0 }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={activeTab} onChange={handleTabChange}>
@@ -372,14 +372,12 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
 
                       {/* Status Indicators */}
                       <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}>
-                        {media.deletedAt && (
-                          <Chip label="محذوف" size="small" color="error" />
-                        )}
+                        {media.deletedAt && <Chip label="محذوف" size="small" color="error" />}
                         {media.usageCount > 0 && (
-                          <Chip 
-                            label={`${media.usageCount}`} 
-                            size="small" 
-                            color="info" 
+                          <Chip
+                            label={`${media.usageCount}`}
+                            size="small"
+                            color="info"
                             sx={{ ml: 0.5 }}
                           />
                         )}
@@ -423,9 +421,9 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                         )}
                         <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                           <Chip label={media.category} size="small" variant="outlined" />
-                          <Chip 
-                            label={media.isPublic ? 'عام' : 'خاص'} 
-                            size="small" 
+                          <Chip
+                            label={media.isPublic ? 'عام' : 'خاص'}
+                            size="small"
                             color={media.isPublic ? 'success' : 'warning'}
                             variant="outlined"
                           />
@@ -471,9 +469,9 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
                             <Chip label={media.category} size="small" variant="outlined" />
-                            <Chip 
-                              label={media.isPublic ? 'عام' : 'خاص'} 
-                              size="small" 
+                            <Chip
+                              label={media.isPublic ? 'عام' : 'خاص'}
+                              size="small"
                               color={media.isPublic ? 'success' : 'warning'}
                               variant="outlined"
                             />
@@ -482,9 +480,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                       }
                     />
                     <ListItemSecondaryAction>
-                      {isSelected(media) && (
-                        <Check color="primary" />
-                      )}
+                      {isSelected(media) && <Check color="primary" />}
                     </ListItemSecondaryAction>
                   </ListItem>
                 ))}
@@ -520,9 +516,9 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={onClose}>إلغاء</Button>
           {multiple && (
-            <Button 
-              variant="contained" 
-              disabled={selectedMedia.length === 0} 
+            <Button
+              variant="contained"
+              disabled={selectedMedia.length === 0}
               onClick={handleConfirmSelection}
             >
               اختيار ({selectedMedia.length})

@@ -20,28 +20,17 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  AlertTitle,
 } from '@mui/material';
-import { 
-  ArrowBack, 
-  Send, 
-  Warning, 
-  CheckCircle, 
-  Schedule,
-  Person,
-  AdminPanelSettings,
-  Refresh,
-} from '@mui/icons-material';
-import { 
-  useSupportTicket, 
-  useTicketMessages, 
-  useAddMessageToTicket, 
+import { ArrowBack, Send, Warning, Refresh } from '@mui/icons-material';
+import {
+  useSupportTicket,
+  useTicketMessages,
+  useAddMessageToTicket,
   useUpdateSupportTicket,
   useCheckSLAStatus,
 } from '../hooks/useSupport';
-import { 
-  SupportMessageBubble,
-  SupportTicketCard,
-} from '../components';
+import { SupportMessageBubble } from '../components';
 import { format } from 'date-fns';
 import { SupportStatus, SupportPriority, SupportCategory } from '../types/support.types';
 
@@ -73,7 +62,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
     if (status) updates.status = status as SupportStatus;
     if (priority) updates.priority = priority as SupportPriority;
     if (category) updates.category = category as SupportCategory;
-    
+
     if (Object.keys(updates).length > 0) {
       updateTicket({ id, data: updates });
       setStatus('');
@@ -144,10 +133,10 @@ export const SupportTicketDetailsPage: React.FC = () => {
       <Box>
         <Skeleton variant="rectangular" height={200} sx={{ mb: 3 }} />
         <Grid container spacing={3}>
-          <Grid item xs={12} lg={8}>
+          <Grid component="div" size={{ xs: 12, lg: 8 }}>
             <Skeleton variant="rectangular" height={400} />
           </Grid>
-          <Grid item xs={12} lg={4}>
+          <Grid component="div" size={{ xs: 12, lg: 4 }}>
             <Skeleton variant="rectangular" height={300} />
           </Grid>
         </Grid>
@@ -158,9 +147,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
   if (error || !ticket) {
     return (
       <Box>
-        <Alert severity="error">
-          حدث خطأ في تحميل التذكرة. يرجى المحاولة مرة أخرى.
-        </Alert>
+        <Alert severity="error">حدث خطأ في تحميل التذكرة. يرجى المحاولة مرة أخرى.</Alert>
       </Box>
     );
   }
@@ -175,29 +162,21 @@ export const SupportTicketDetailsPage: React.FC = () => {
           </IconButton>
           <Box sx={{ flex: 1 }}>
             <Typography variant="h5" fontWeight="bold">
-              {ticket.title}
+              {ticket.data.title}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {format(new Date(ticket.createdAt), 'dd/MM/yyyy HH:mm')}
+              {format(new Date(ticket.data.createdAt), 'dd/MM/yyyy HH:mm')}
             </Typography>
           </Box>
           <Stack direction="row" spacing={1}>
-            <Chip 
-              label={getStatusLabel(ticket.status)} 
-              color="primary" 
+            <Chip label={getStatusLabel(ticket.data.status)} color="primary" variant="outlined" />
+            <Chip
+              label={getPriorityLabel(ticket.data.priority)}
+              color={ticket.data.priority === SupportPriority.URGENT ? 'error' : 'default'}
               variant="outlined"
             />
-            <Chip 
-              label={getPriorityLabel(ticket.priority)} 
-              color={ticket.priority === SupportPriority.URGENT ? 'error' : 'default'}
-              variant="outlined"
-            />
-            {ticket.slaBreached && (
-              <Chip 
-                label="متجاوزة SLA" 
-                color="error" 
-                icon={<Warning />}
-              />
+            {ticket.data.slaBreached && (
+              <Chip label="متجاوزة SLA" color="error" icon={<Warning />} />
             )}
           </Stack>
         </Stack>
@@ -252,19 +231,15 @@ export const SupportTicketDetailsPage: React.FC = () => {
             </Select>
           </FormControl>
 
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             onClick={handleUpdateTicket}
             disabled={!status && !priority && !category}
           >
             تطبيق التغييرات
           </Button>
 
-          <Button 
-            variant="outlined" 
-            startIcon={<Refresh />}
-            onClick={handleCheckSLA}
-          >
+          <Button variant="outlined" startIcon={<Refresh />} onClick={handleCheckSLA}>
             فحص SLA
           </Button>
         </Stack>
@@ -272,14 +247,12 @@ export const SupportTicketDetailsPage: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Messages */}
-        <Grid item xs={12} lg={8}>
+        <Grid component="div" size={{ xs: 12, lg: 8 }}>
           <Paper sx={{ p: 3, height: 'calc(100vh - 400px)', overflow: 'auto' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">
-                المحادثة
-              </Typography>
+              <Typography variant="h6">المحادثة</Typography>
               <Typography variant="body2" color="text.secondary">
-                {messagesData?.data?.length || 0} رسالة
+                {messagesData?.data?.data?.length || 0} رسالة
               </Typography>
             </Stack>
             <Divider sx={{ mb: 2 }} />
@@ -292,9 +265,9 @@ export const SupportTicketDetailsPage: React.FC = () => {
                     <Skeleton key={index} variant="rectangular" height={80} />
                   ))}
                 </Stack>
-              ) : messagesData?.data && messagesData.data.length > 0 ? (
+              ) : messagesData?.data?.data && messagesData.data.data.length > 0 ? (
                 <Stack spacing={2}>
-                  {messagesData.data.map((msg) => (
+                  {messagesData.data.data.map((msg) => (
                     <SupportMessageBubble
                       key={msg._id}
                       message={msg}
@@ -342,7 +315,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
         </Grid>
 
         {/* Ticket Info */}
-        <Grid item xs={12} lg={4}>
+        <Grid component="div" size={{ xs: 12, lg: 4 }}>
           <Stack spacing={3}>
             {/* Ticket Details */}
             <Card>
@@ -358,7 +331,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
                       الفئة
                     </Typography>
                     <Typography variant="body2">
-                      {getCategoryLabel(ticket.category)}
+                      {getCategoryLabel(ticket.data.category)}
                     </Typography>
                   </Box>
 
@@ -366,9 +339,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
                     <Typography variant="caption" color="text.secondary">
                       الحالة
                     </Typography>
-                    <Typography variant="body2">
-                      {getStatusLabel(ticket.status)}
-                    </Typography>
+                    <Typography variant="body2">{getStatusLabel(ticket.data.status)}</Typography>
                   </Box>
 
                   <Box>
@@ -376,32 +347,30 @@ export const SupportTicketDetailsPage: React.FC = () => {
                       الأولوية
                     </Typography>
                     <Typography variant="body2">
-                      {getPriorityLabel(ticket.priority)}
+                      {getPriorityLabel(ticket.data.priority)}
                     </Typography>
                   </Box>
 
-                  {ticket.slaDueDate && (
+                  {ticket.data.slaDueDate && (
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         انتهاء SLA
                       </Typography>
                       <Typography variant="body2">
-                        {format(new Date(ticket.slaDueDate), 'dd/MM/yyyy HH:mm')}
+                        {format(new Date(ticket.data.slaDueDate), 'dd/MM/yyyy HH:mm')}
                       </Typography>
                     </Box>
                   )}
 
-                  {ticket.rating && (
+                  {ticket.data.rating && (
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         التقييم
                       </Typography>
-                      <Typography variant="body2">
-                        ⭐ {ticket.rating}/5
-                      </Typography>
-                      {ticket.feedback && (
+                      <Typography variant="body2">⭐ {ticket.data.rating}/5</Typography>
+                      {ticket.data.feedback && (
                         <Typography variant="caption" color="text.secondary">
-                          {ticket.feedback}
+                          {ticket.data.feedback}
                         </Typography>
                       )}
                     </Box>
@@ -411,7 +380,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
             </Card>
 
             {/* SLA Status */}
-            {ticket.slaBreached && (
+            {ticket.data.slaBreached && (
               <Alert severity="error" icon={<Warning />}>
                 <AlertTitle>تنبيه SLA</AlertTitle>
                 هذه التذكرة متجاوزة لوقت الاستجابة المتفق عليه
@@ -426,7 +395,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {ticket.description}
+                  {ticket.data.description}
                 </Typography>
               </CardContent>
             </Card>
@@ -436,4 +405,3 @@ export const SupportTicketDetailsPage: React.FC = () => {
     </Box>
   );
 };
-

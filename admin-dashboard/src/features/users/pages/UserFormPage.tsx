@@ -15,7 +15,8 @@ import '../styles/responsive-users.css';
 
 // Validation Schema
 const userSchema = z.object({
-  phone: z.string()
+  phone: z
+    .string()
     .min(9, 'رقم الهاتف يجب أن يكون 9 أرقام على الأقل')
     .max(10, 'رقم الهاتف يجب أن يكون 10 أرقام على الأكثر')
     .regex(/^[0-9]+$/, 'رقم الهاتف يجب أن يحتوي على أرقام فقط'),
@@ -23,19 +24,16 @@ const userSchema = z.object({
   lastName: z.string().optional().or(z.literal('')),
   gender: z.enum(['male', 'female', 'other']).optional().or(z.literal('')),
   jobTitle: z.string().optional().or(z.literal('')),
-  password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل').optional().or(z.literal('')),
+  password: z
+    .string()
+    .min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل')
+    .optional()
+    .or(z.literal('')),
   role: z.nativeEnum(UserRole),
   status: z.nativeEnum(UserStatus),
   roles: z.array(z.nativeEnum(UserRole)).min(1, 'يجب تحديد دور واحد على الأقل'),
   permissions: z.array(z.string()).optional(),
-  wholesaleDiscountPercent: z.union([
-    z.string().transform((val) => {
-      if (!val || val === '') return undefined;
-      const num = parseFloat(val);
-      return isNaN(num) ? undefined : num;
-    }),
-    z.number(),
-  ]).optional(),
+  wholesaleDiscountPercent: z.number().optional(),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -95,7 +93,7 @@ export const UserFormPage: React.FC = () => {
       console.log('📊 Status:', user.status);
       // eslint-disable-next-line no-console
       console.log('💼 Capabilities:', user.capabilities);
-      
+
       const formData = {
         phone: user.phone || '',
         firstName: user.firstName || '',
@@ -107,9 +105,9 @@ export const UserFormPage: React.FC = () => {
         status: user.status || UserStatus.ACTIVE,
         roles: user.roles || [UserRole.USER],
         permissions: user.permissions || [],
-        wholesaleDiscountPercent: user.capabilities?.wholesale_discount_percent?.toString() || undefined,
+        wholesaleDiscountPercent: user.capabilities?.wholesale_discount_percent || undefined,
       };
-      
+
       // eslint-disable-next-line no-console
       console.log('📝 Form data to reset:', formData);
       methods.reset(formData);
@@ -120,7 +118,7 @@ export const UserFormPage: React.FC = () => {
   const onSubmit = (data: UserFormData) => {
     // eslint-disable-next-line no-console
     console.log('📤 User form data before submit:', data);
-    
+
     const userData: Record<string, any> = {
       firstName: data.firstName || undefined,
       lastName: data.lastName || undefined,
@@ -162,11 +160,14 @@ export const UserFormPage: React.FC = () => {
         }
       );
     } else {
-      createUser(userData, {
-        onSuccess: () => {
-          navigate('/users');
-        },
-      });
+      createUser(
+        { ...userData, phone: userData.phone as string },
+        {
+          onSuccess: () => {
+            navigate('/users');
+          },
+        }
+      );
     }
   };
 
@@ -181,9 +182,9 @@ export const UserFormPage: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 1, sm: 2 } }}>
       <Paper sx={{ p: { xs: 2, sm: 3 } }}>
-        <Typography 
-          variant="h5" 
-          fontWeight="bold" 
+        <Typography
+          variant="h5"
+          fontWeight="bold"
           gutterBottom
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
@@ -197,11 +198,11 @@ export const UserFormPage: React.FC = () => {
             <Grid container spacing={{ xs: 2, sm: 3 }}>
               {/* الأدوار والصلاحيات - في الأعلى */}
               <Grid size={{ xs: 12 }}>
-                <Typography 
-                  variant="h6" 
-                  gutterBottom 
-                  sx={{ 
-                    fontSize: { xs: '1rem', sm: '1.25rem' }
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
                   }}
                 >
                   الأدوار والصلاحيات
@@ -240,7 +241,9 @@ export const UserFormPage: React.FC = () => {
                   roles={methods.watch('roles') || []}
                   permissions={methods.watch('permissions') || []}
                   onRolesChange={(roles) => methods.setValue('roles', roles)}
-                  onPermissionsChange={(permissions) => methods.setValue('permissions', permissions)}
+                  onPermissionsChange={(permissions) =>
+                    methods.setValue('permissions', permissions)
+                  }
                 />
               </Grid>
 
@@ -249,7 +252,7 @@ export const UserFormPage: React.FC = () => {
                 <UserCapabilitiesManager
                   role={methods.watch('role') || UserRole.USER}
                   capabilities={user?.capabilities}
-                  onCapabilitiesChange={(capabilities) => {
+                  onCapabilitiesChange={() => {
                     // يمكن إضافة منطق لتحديث القدرات هنا
                   }}
                 />
@@ -257,12 +260,12 @@ export const UserFormPage: React.FC = () => {
 
               {/* معلومات أساسية */}
               <Grid size={{ xs: 12 }}>
-                <Typography 
-                  variant="h6" 
+                <Typography
+                  variant="h6"
                   gutterBottom
-                  sx={{ 
+                  sx={{
                     mt: { xs: 1, sm: 2 },
-                    fontSize: { xs: '1rem', sm: '1.25rem' } 
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
                   }}
                 >
                   المعلومات الأساسية
@@ -299,9 +302,14 @@ export const UserFormPage: React.FC = () => {
               </Grid>
 
               {/* المسمى الوظيفي يظهر فقط للمهندس */}
-              {(methods.watch('role') === UserRole.ENGINEER || methods.watch('roles')?.includes(UserRole.ENGINEER)) && (
+              {(methods.watch('role') === UserRole.ENGINEER ||
+                methods.watch('roles')?.includes(UserRole.ENGINEER)) && (
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <FormInput name="jobTitle" label="المسمى الوظيفي" placeholder="مهندس كهربائي، ميكانيكي، إلخ..." />
+                  <FormInput
+                    name="jobTitle"
+                    label="المسمى الوظيفي"
+                    placeholder="مهندس كهربائي، ميكانيكي، إلخ..."
+                  />
                 </Grid>
               )}
 
@@ -317,7 +325,8 @@ export const UserFormPage: React.FC = () => {
               )}
 
               {/* نسبة الخصم للتاجر */}
-              {(methods.watch('role') === UserRole.MERCHANT || methods.watch('roles')?.includes(UserRole.MERCHANT)) && (
+              {(methods.watch('role') === UserRole.MERCHANT ||
+                methods.watch('roles')?.includes(UserRole.MERCHANT)) && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <FormInput
                     name="wholesaleDiscountPercent"
@@ -331,8 +340,8 @@ export const UserFormPage: React.FC = () => {
               {/* الأزرار */}
               <Grid size={{ xs: 12 }}>
                 <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
-                <Box 
-                  display="flex" 
+                <Box
+                  display="flex"
                   gap={2}
                   flexDirection={{ xs: 'column', sm: 'row' }}
                   alignItems={{ xs: 'stretch', sm: 'flex-start' }}
@@ -342,9 +351,9 @@ export const UserFormPage: React.FC = () => {
                     variant="contained"
                     startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
-                    sx={{ 
+                    sx={{
                       width: { xs: '100%', sm: 'auto' },
-                      minWidth: { xs: 'auto', sm: 120 }
+                      minWidth: { xs: 'auto', sm: 120 },
                     }}
                   >
                     حفظ
@@ -353,9 +362,9 @@ export const UserFormPage: React.FC = () => {
                     variant="outlined"
                     startIcon={<Cancel />}
                     onClick={() => navigate('/users')}
-                    sx={{ 
+                    sx={{
                       width: { xs: '100%', sm: 'auto' },
-                      minWidth: { xs: 'auto', sm: 120 }
+                      minWidth: { xs: 'auto', sm: 120 },
                     }}
                   >
                     إلغاء

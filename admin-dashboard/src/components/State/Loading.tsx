@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography, SxProps, Theme } from '@mui/material';
 import { LoadingProps } from './types';
 
 export const Loading: React.FC<LoadingProps> = ({
@@ -8,7 +8,7 @@ export const Loading: React.FC<LoadingProps> = ({
   fullScreen = false,
   sx = {},
 }) => {
-  const containerSx = fullScreen
+  const containerSx: SxProps<Theme> = fullScreen
     ? {
         display: 'flex',
         flexDirection: 'column',

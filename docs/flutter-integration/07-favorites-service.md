@@ -2,6 +2,8 @@
 
 خدمة المفضلات توفر endpoints لإدارة المنتجات المفضلة للمستخدم مع دعم المزامنة بين الأجهزة.
 
+> ✅ **تم التحقق وتحديث هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/favorites`
+
 ---
 
 ## 📋 جدول المحتويات
@@ -12,10 +14,9 @@
 4. [تحديث مفضلة](#4-تحديث-مفضلة)
 5. [حذف جميع المفضلات](#5-حذف-جميع-المفضلات)
 6. [عدد المفضلات](#6-عدد-المفضلات)
-7. [المفضلات حسب الوسوم](#7-المفضلات-حسب-الوسوم)
-8. [مزامنة المفضلات](#8-مزامنة-المفضلات)
-9. [زيادة عداد المشاهدات](#9-زيادة-عداد-المشاهدات)
-10. [Models في Flutter](#models-في-flutter)
+7. [مزامنة المفضلات](#7-مزامنة-المفضلات)
+8. [زيادة عداد المشاهدات](#8-زيادة-عداد-المشاهدات)
+9. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -39,57 +40,35 @@
     {
       "_id": "64fav123",
       "userId": "64user456",
-      "productId": "64prod789",
-      "variantId": "64var101",
+      "productId": {
+        "_id": "64prod789",
+        "nameAr": "لوح شمسي 550 واط",
+        "nameEn": "Solar Panel 550W",
+        "slug": "solar-panel-550w",
+        "mainImageId": {
+          "url": "https://cdn.example.com/products/solar-panel.jpg"
+        }
+      },
+      "variantId": {
+        "_id": "64var101",
+        "sku": "SP-550-BLK",
+        "basePriceUSD": 500,
+        "stock": 25
+      },
       "note": "للمشروع الجديد",
-      "tags": ["urgent", "compare"],
       "viewsCount": 5,
       "lastViewedAt": "2025-01-15T10:00:00.000Z",
       "isSynced": true,
       "syncedAt": "2025-01-15T09:30:00.000Z",
       "createdAt": "2025-01-15T09:00:00.000Z",
-      "updatedAt": "2025-01-15T10:00:00.000Z",
-      "product": {
-        "_id": "64prod789",
-        "name": "لوح شمسي 550 واط",
-        "nameEn": "Solar Panel 550W",
-        "slug": "solar-panel-550w",
-        "image": "https://cdn.example.com/products/solar-panel.jpg",
-        "imageId": "64img123",
-        "brand": {
-          "_id": "64brand123",
-          "name": "Jinko Solar",
-          "nameEn": "Jinko Solar"
-        },
-        "category": {
-          "_id": "64cat123",
-          "name": "ألواح شمسية",
-          "nameEn": "Solar Panels"
-        },
-        "variants": [
-          {
-            "_id": "64var101",
-            "attributes": {
-              "wattage": "550W",
-              "color": "أسود"
-            },
-            "pricing": {
-              "basePrice": 135000,
-              "finalPrice": 135000,
-              "currency": "YER"
-            },
-            "inventory": {
-              "stock": 25,
-              "isAvailable": true
-            }
-          }
-        ]
-      }
+      "updatedAt": "2025-01-15T10:00:00.000Z"
     }
   ],
   "requestId": "req_fav_001"
 }
 ```
+
+> **ملاحظة:** `productId` و `variantId` يتم populate تلقائياً مع بيانات المنتج والـ variant
 
 ### كود Flutter
 
@@ -131,8 +110,7 @@ Future<List<Favorite>> getFavorites() async {
 {
   "productId": "64prod789",
   "variantId": "64var101",
-  "note": "للمشروع الجديد",
-  "tags": ["urgent", "compare"]
+  "note": "للمشروع الجديد"
 }
 ```
 
@@ -147,7 +125,6 @@ Future<List<Favorite>> getFavorites() async {
     "productId": "64prod789",
     "variantId": "64var101",
     "note": "للمشروع الجديد",
-    "tags": ["urgent", "compare"],
     "viewsCount": 0,
     "isSynced": false,
     "createdAt": "2025-01-15T09:00:00.000Z",
@@ -164,13 +141,11 @@ Future<Favorite> addFavorite({
   required String productId,
   String? variantId,
   String? note,
-  List<String>? tags,
 }) async {
   final response = await _dio.post('/favorites', data: {
     'productId': productId,
     if (variantId != null) 'variantId': variantId,
     if (note != null) 'note': note,
-    if (tags != null) 'tags': tags,
   });
 
   final apiResponse = ApiResponse<Favorite>.fromJson(
@@ -214,8 +189,7 @@ Future<Favorite> addFavorite({
 {
   "success": true,
   "data": {
-    "deleted": true,
-    "favoriteId": "64fav123"
+    "deleted": true
   },
   "requestId": "req_fav_003"
 }
@@ -263,8 +237,7 @@ Future<bool> removeFavorite({
 
 ```json
 {
-  "note": "ملاحظات محدثة",
-  "tags": ["urgent", "compare", "wishlist"]
+  "note": "ملاحظات محدثة"
 }
 ```
 
@@ -279,7 +252,6 @@ Future<bool> removeFavorite({
     "productId": "64prod789",
     "variantId": "64var101",
     "note": "ملاحظات محدثة",
-    "tags": ["urgent", "compare", "wishlist"],
     "viewsCount": 5,
     "lastViewedAt": "2025-01-15T10:00:00.000Z",
     "isSynced": true,
@@ -297,11 +269,9 @@ Future<bool> removeFavorite({
 Future<Favorite> updateFavorite({
   required String favoriteId,
   String? note,
-  List<String>? tags,
 }) async {
   final response = await _dio.patch('/favorites/$favoriteId', data: {
     if (note != null) 'note': note,
-    if (tags != null) 'tags': tags,
   });
 
   final apiResponse = ApiResponse<Favorite>.fromJson(
@@ -336,8 +306,7 @@ Future<Favorite> updateFavorite({
 {
   "success": true,
   "data": {
-    "deletedCount": 15,
-    "message": "تم حذف جميع المفضلات بنجاح"
+    "cleared": 15
   },
   "requestId": "req_fav_005"
 }
@@ -355,7 +324,7 @@ Future<int> clearAllFavorites() async {
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!['deletedCount'] ?? 0;
+    return apiResponse.data!['cleared'] ?? 0;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -408,75 +377,7 @@ Future<int> getFavoritesCount() async {
 
 ---
 
-## 7. المفضلات حسب الوسوم
-
-يسترجع المفضلات حسب الوسوم المحددة.
-
-### معلومات الطلب
-
-- **Method:** `GET`
-- **Endpoint:** `/favorites/by-tags?tags=urgent,compare`
-- **Auth Required:** ✅ نعم
-- **Cache:** ❌ لا
-
-### Query Parameters
-
-| المعامل | النوع | مطلوب | الوصف |
-|---------|------|-------|-------|
-| `tags` | `string` | ✅ | الوسوم مفصولة بفاصلة |
-
-### Response - نجاح
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "_id": "64fav123",
-      "userId": "64user456",
-      "productId": "64prod789",
-      "variantId": "64var101",
-      "note": "للمشروع الجديد",
-      "tags": ["urgent", "compare"],
-      "viewsCount": 5,
-      "lastViewedAt": "2025-01-15T10:00:00.000Z",
-      "isSynced": true,
-      "syncedAt": "2025-01-15T09:30:00.000Z",
-      "createdAt": "2025-01-15T09:00:00.000Z",
-      "updatedAt": "2025-01-15T10:00:00.000Z"
-    }
-  ],
-  "requestId": "req_fav_007"
-}
-```
-
-### كود Flutter
-
-```dart
-Future<List<Favorite>> getFavoritesByTags(List<String> tags) async {
-  final response = await _dio.get(
-    '/favorites/by-tags',
-    queryParameters: {'tags': tags.join(',')},
-  );
-
-  final apiResponse = ApiResponse<List<Favorite>>.fromJson(
-    response.data,
-    (json) => ((json as Map<String, dynamic>)['data'] as List)
-        .map((item) => Favorite.fromJson(item))
-        .toList(),
-  );
-
-  if (apiResponse.isSuccess) {
-    return apiResponse.data!;
-  } else {
-    throw ApiException(apiResponse.error!);
-  }
-}
-```
-
----
-
-## 8. مزامنة المفضلات
+## 7. مزامنة المفضلات
 
 يمزامن المفضلات من الجهاز الضيف إلى المستخدم المسجل.
 
@@ -501,8 +402,9 @@ Future<List<Favorite>> getFavoritesByTags(List<String> tags) async {
 {
   "success": true,
   "data": {
-    "syncedCount": 8,
-    "message": "تم مزامنة 8 مفضلات بنجاح"
+    "synced": 8,
+    "skipped": 2,
+    "total": 10
   },
   "requestId": "req_fav_008"
 }
@@ -511,7 +413,7 @@ Future<List<Favorite>> getFavoritesByTags(List<String> tags) async {
 ### كود Flutter
 
 ```dart
-Future<int> syncFavorites(String deviceId) async {
+Future<SyncResult> syncFavorites(String deviceId) async {
   final response = await _dio.post('/favorites/sync', data: {
     'deviceId': deviceId,
   });
@@ -522,16 +424,36 @@ Future<int> syncFavorites(String deviceId) async {
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!['syncedCount'] ?? 0;
+    return SyncResult.fromJson(apiResponse.data!);
   } else {
     throw ApiException(apiResponse.error!);
+  }
+}
+
+class SyncResult {
+  final int synced;
+  final int skipped;
+  final int total;
+
+  SyncResult({
+    required this.synced,
+    required this.skipped,
+    required this.total,
+  });
+
+  factory SyncResult.fromJson(Map<String, dynamic> json) {
+    return SyncResult(
+      synced: json['synced'] ?? 0,
+      skipped: json['skipped'] ?? 0,
+      total: json['total'] ?? 0,
+    );
   }
 }
 ```
 
 ---
 
-## 9. زيادة عداد المشاهدات
+## 8. زيادة عداد المشاهدات
 
 يزيد عداد مشاهدات مفضلة محددة.
 
@@ -583,17 +505,15 @@ Future<bool> incrementView(String favoriteId) async {
 class Favorite {
   final String id;
   final String userId;
-  final String productId;
-  final String? variantId;
+  final dynamic productId; // يمكن أن يكون String أو Object (populated)
+  final dynamic variantId; // يمكن أن يكون String أو Object (populated)
   final String? note;
-  final List<String> tags;
   final int viewsCount;
   final DateTime? lastViewedAt;
   final bool isSynced;
   final DateTime? syncedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final FavoriteProduct? product;
 
   Favorite({
     required this.id,
@@ -601,24 +521,21 @@ class Favorite {
     required this.productId,
     this.variantId,
     this.note,
-    required this.tags,
     required this.viewsCount,
     this.lastViewedAt,
     required this.isSynced,
     this.syncedAt,
     required this.createdAt,
     required this.updatedAt,
-    this.product,
   });
 
   factory Favorite.fromJson(Map<String, dynamic> json) {
     return Favorite(
       id: json['_id'],
-      userId: json['userId'],
-      productId: json['productId'],
-      variantId: json['variantId'],
+      userId: json['userId'] is String ? json['userId'] : json['userId']?['_id'],
+      productId: json['productId'], // يمكن أن يكون populated
+      variantId: json['variantId'], // يمكن أن يكون populated
       note: json['note'],
-      tags: List<String>.from(json['tags'] ?? []),
       viewsCount: json['viewsCount'] ?? 0,
       lastViewedAt: json['lastViewedAt'] != null 
           ? DateTime.parse(json['lastViewedAt']) 
@@ -629,196 +546,45 @@ class Favorite {
           : null,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
-      product: json['product'] != null 
-          ? FavoriteProduct.fromJson(json['product']) 
-          : null,
     );
   }
 
+  // Helpers
   bool get hasNote => note != null && note!.isNotEmpty;
-  bool get hasTags => tags.isNotEmpty;
   bool get isRecentlyViewed => lastViewedAt != null && 
       DateTime.now().difference(lastViewedAt!).inDays < 7;
   bool get isFrequentlyViewed => viewsCount > 5;
-}
-
-class FavoriteProduct {
-  final String id;
-  final String name;
-  final String nameEn;
-  final String slug;
-  final String? image;
-  final String? imageId;
-  final FavoriteBrand? brand;
-  final FavoriteCategory? category;
-  final List<FavoriteVariant> variants;
-
-  FavoriteProduct({
-    required this.id,
-    required this.name,
-    required this.nameEn,
-    required this.slug,
-    this.image,
-    this.imageId,
-    this.brand,
-    this.category,
-    required this.variants,
-  });
-
-  factory FavoriteProduct.fromJson(Map<String, dynamic> json) {
-    return FavoriteProduct(
-      id: json['_id'],
-      name: json['name'] ?? '',
-      nameEn: json['nameEn'] ?? '',
-      slug: json['slug'],
-      image: json['image'],
-      imageId: json['imageId'],
-      brand: json['brand'] != null 
-          ? FavoriteBrand.fromJson(json['brand']) 
-          : null,
-      category: json['category'] != null 
-          ? FavoriteCategory.fromJson(json['category']) 
-          : null,
-      variants: json['variants'] != null
-          ? (json['variants'] as List)
-              .map((item) => FavoriteVariant.fromJson(item))
-              .toList()
-          : [],
-    );
+  
+  // الحصول على ID المنتج
+  String getProductId() {
+    return productId is String ? productId : productId['_id'];
   }
-
-  String getName(String locale) {
-    if (locale == 'en') return nameEn;
-    return name;
+  
+  // الحصول على ID الـ variant
+  String? getVariantId() {
+    if (variantId == null) return null;
+    return variantId is String ? variantId : variantId['_id'];
   }
-
-  FavoriteVariant? get defaultVariant => variants.isNotEmpty ? variants.first : null;
-  String? get primaryImage => image;
-}
-
-class FavoriteBrand {
-  final String id;
-  final String name;
-  final String nameEn;
-
-  FavoriteBrand({
-    required this.id,
-    required this.name,
-    required this.nameEn,
-  });
-
-  factory FavoriteBrand.fromJson(Map<String, dynamic> json) {
-    return FavoriteBrand(
-      id: json['_id'],
-      name: json['name'] ?? '',
-      nameEn: json['nameEn'] ?? '',
-    );
+  
+  // الحصول على اسم المنتج (إذا كان populated)
+  String? getProductName() {
+    if (productId is Map) {
+      return productId['nameAr'] ?? productId['name'];
+    }
+    return null;
   }
-
-  String getName(String locale) {
-    if (locale == 'en') return nameEn;
-    return name;
+  
+  // الحصول على صورة المنتج (إذا كان populated)
+  String? getProductImage() {
+    if (productId is Map && productId['mainImageId'] is Map) {
+      return productId['mainImageId']['url'];
+    }
+    return null;
   }
 }
 
-class FavoriteCategory {
-  final String id;
-  final String name;
-  final String nameEn;
-
-  FavoriteCategory({
-    required this.id,
-    required this.name,
-    required this.nameEn,
-  });
-
-  factory FavoriteCategory.fromJson(Map<String, dynamic> json) {
-    return FavoriteCategory(
-      id: json['_id'],
-      name: json['name'] ?? '',
-      nameEn: json['nameEn'] ?? '',
-    );
-  }
-
-  String getName(String locale) {
-    if (locale == 'en') return nameEn;
-    return name;
-  }
-}
-
-class FavoriteVariant {
-  final String id;
-  final Map<String, dynamic> attributes;
-  final FavoritePricing pricing;
-  final FavoriteInventory inventory;
-
-  FavoriteVariant({
-    required this.id,
-    required this.attributes,
-    required this.pricing,
-    required this.inventory,
-  });
-
-  factory FavoriteVariant.fromJson(Map<String, dynamic> json) {
-    return FavoriteVariant(
-      id: json['_id'],
-      attributes: Map<String, dynamic>.from(json['attributes'] ?? {}),
-      pricing: FavoritePricing.fromJson(json['pricing']),
-      inventory: FavoriteInventory.fromJson(json['inventory']),
-    );
-  }
-
-  String getAttributeValue(String key) {
-    return attributes[key]?.toString() ?? '';
-  }
-
-  bool get isAvailable => inventory.isAvailable;
-  bool get isInStock => inventory.stock > 0;
-}
-
-class FavoritePricing {
-  final double basePrice;
-  final double finalPrice;
-  final String currency;
-
-  FavoritePricing({
-    required this.basePrice,
-    required this.finalPrice,
-    required this.currency,
-  });
-
-  factory FavoritePricing.fromJson(Map<String, dynamic> json) {
-    return FavoritePricing(
-      basePrice: (json['basePrice'] ?? 0).toDouble(),
-      finalPrice: (json['finalPrice'] ?? 0).toDouble(),
-      currency: json['currency'] ?? 'YER',
-    );
-  }
-
-  bool get hasDiscount => finalPrice < basePrice;
-  double get discountAmount => basePrice - finalPrice;
-  double get discountPercent => hasDiscount ? (discountAmount / basePrice) * 100 : 0;
-}
-
-class FavoriteInventory {
-  final int stock;
-  final bool isAvailable;
-
-  FavoriteInventory({
-    required this.stock,
-    required this.isAvailable,
-  });
-
-  factory FavoriteInventory.fromJson(Map<String, dynamic> json) {
-    return FavoriteInventory(
-      stock: json['stock'] ?? 0,
-      isAvailable: json['isAvailable'] ?? false,
-    );
-  }
-
-  bool get isLowStock => stock > 0 && stock < 10;
-  bool get isOutOfStock => stock == 0;
-}
+// لا حاجة لـ models معقدة - productId و variantId سيكونان populated تلقائياً
+// يمكنك الوصول إلى البيانات مباشرة من المفضلة
 ```
 
 ---
@@ -827,44 +593,61 @@ class FavoriteInventory {
 
 1. **المفضلات المزدوجة:**
    - النظام يدعم المفضلات للمستخدمين المسجلين والزوار
-   - `userId` للمستخدمين المسجلين
-   - `deviceId` للزوار (Guest users)
+   - `userId` للمستخدمين المسجلين → `/favorites`
+   - `deviceId` للزوار → `/favorites/guest`
 
 2. **المزامنة:**
-   - استخدم `syncFavorites(deviceId)` لمزامنة مفضلات الزائر عند تسجيل الدخول
-   - `isSynced` يحدد ما إذا كانت المفضلة تمت مزامنتها
-   - `syncedAt` وقت المزامنة
+   - استخدم `POST /favorites/sync` لمزامنة مفضلات الزائر عند تسجيل الدخول
+   - يُرجع `{ synced, skipped, total }`
+   - `synced`: عدد المفضلات التي تمت مزامنتها
+   - `skipped`: عدد المفضلات التي تم تخطيها (موجودة مسبقاً)
 
-3. **الوسوم والملاحظات:**
-   - `tags`: لتنظيم المفضلات (مثل: ["urgent", "compare", "wishlist"])
-   - `note`: ملاحظات شخصية للمفضلة
-   - استخدم `getFavoritesByTags()` للفلترة حسب الوسوم
+3. **الملاحظات:**
+   - `note`: ملاحظات شخصية للمفضلة (اختياري)
+   - يمكن تحديث الملاحظة عبر `PATCH /favorites/:id`
 
 4. **إحصائيات المشاهدة:**
    - `viewsCount`: عدد مرات فتح المفضلة
    - `lastViewedAt`: آخر مرة تم عرضها
-   - استخدم `incrementView()` عند فتح المفضلة
+   - استخدم `POST /favorites/:id/view` لزيادة العداد
 
 5. **المنتجات:**
    - المفضلة مرتبطة بـ `productId` و `variantId` اختياري
-   - `product` يحتوي على معلومات المنتج المحفوظة
-   - استخدم `defaultVariant` للحصول على المتغير الافتراضي
+   - `product` يُرجع populated مع بيانات المنتج
+   - `variantId` يُرجع populated مع بيانات الـ variant
 
 6. **الأداء:**
-   - جميع الـ endpoints تتطلب مصادقة
+   - جميع الـ endpoints تتطلب مصادقة (ماعدا guest endpoints)
    - لا يوجد cache للمفضلات (بيانات شخصية)
-   - استخدم `getFavoritesCount()` لعرض العدد في UI
+   - استخدم `GET /favorites/count` لعرض العدد في UI بدون تحميل القائمة
 
-7. **إدارة المفضلات:**
-   - `clearAllFavorites()` لحذف جميع المفضلات
-   - `updateFavorite()` لتحديث الملاحظات والوسوم
-   - `removeFavorite()` لحذف مفضلة محددة
+7. **Soft Delete:**
+   - الحذف في المفضلات هو soft delete (deletedAt)
+   - لا يتم حذف البيانات نهائياً من DB
 
-8. **العرض في التطبيق:**
-   - اعرض `isRecentlyViewed` للمفضلات الحديثة
-   - اعرض `isFrequentlyViewed` للمفضلات الشائعة
-   - استخدم `hasNote` و `hasTags` لعرض المؤشرات
-   - اعرض `isLowStock` و `isOutOfStock` للتنبيهات
+8. **Guest Favorites Endpoints:**
+   - `GET /favorites/guest?deviceId=xxx`
+   - `POST /favorites/guest` (مع deviceId في body)
+   - `DELETE /favorites/guest` (مع deviceId في body)
+   - `DELETE /favorites/guest/clear?deviceId=xxx`
+   - `GET /favorites/guest/count?deviceId=xxx`
+
+---
+
+## 📝 ملاحظات التحديث
+
+> ⚠️ **تم تحديث هذه الوثيقة** - تم إزالة endpoints غير موجودة وتصحيح الـ responses
+
+### التغييرات الرئيسية:
+1. ✅ إزالة `/favorites/by-tags` (غير موجود في الكود)
+2. ✅ تصحيح `/favorites/clear/all` response من `deletedCount` إلى `cleared`
+3. ✅ تصحيح `/favorites/sync` response ليشمل `synced, skipped, total`
+4. ✅ إزالة `tags` من الـ schema (غير مستخدمة حالياً)
+5. ✅ إضافة ملاحظة عن guest favorites endpoints
+
+### الملفات المرجعية:
+- **Controller:** `backend/src/modules/favorites/favorites.user.controller.ts`
+- **Service:** `backend/src/modules/favorites/favorites.service.ts`
 
 ---
 

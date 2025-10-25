@@ -71,7 +71,7 @@ export const ColorButtons: React.FC = () => (
     >
       زر أساسي
     </Button>
-    
+
     <Button
       variant="outlined"
       sx={{
@@ -85,7 +85,7 @@ export const ColorButtons: React.FC = () => (
     >
       زر ثانوي
     </Button>
-    
+
     <Button
       variant="text"
       sx={{
@@ -123,14 +123,14 @@ export const ColorAppBar: React.FC = () => (
 // مثال على شبكة ألوان
 export const ColorPalette: React.FC = () => (
   <Grid container spacing={2}>
-    <Grid item xs={12}>
+    <Grid component="div" size={{ xs: 12 }}>
       <Typography variant="h4" gutterBottom>
         لوحة ألوان Tagadodo
       </Typography>
     </Grid>
-    
+
     {/* الألوان الأساسية */}
-    <Grid item xs={12} md={6}>
+    <Grid component="div" size={{ xs: 12, md: 6 }}>
       <Paper
         sx={{
           p: 2,
@@ -142,8 +142,8 @@ export const ColorPalette: React.FC = () => (
         <Typography variant="body2">{colors.primary.main}</Typography>
       </Paper>
     </Grid>
-    
-    <Grid item xs={12} md={6}>
+
+    <Grid component="div" size={{ xs: 12, md: 6 }}>
       <Paper
         sx={{
           p: 2,
@@ -155,9 +155,9 @@ export const ColorPalette: React.FC = () => (
         <Typography variant="body2">{colors.secondary.main}</Typography>
       </Paper>
     </Grid>
-    
+
     {/* الألوان المحايدة */}
-    <Grid item xs={12} md={4}>
+    <Grid component="div" size={{ xs: 12, md: 4 }}>
       <Paper
         sx={{
           p: 2,
@@ -169,8 +169,8 @@ export const ColorPalette: React.FC = () => (
         <Typography variant="body2">{colors.neutral.black}</Typography>
       </Paper>
     </Grid>
-    
-    <Grid item xs={12} md={4}>
+
+    <Grid component="div" size={{ xs: 12, md: 4 }}>
       <Paper
         sx={{
           p: 2,
@@ -182,8 +182,8 @@ export const ColorPalette: React.FC = () => (
         <Typography variant="body2">{colors.neutral.dark}</Typography>
       </Paper>
     </Grid>
-    
-    <Grid item xs={12} md={4}>
+
+    <Grid component="div" size={{ xs: 12, md: 4 }}>
       <Paper
         sx={{
           p: 2,
@@ -195,9 +195,9 @@ export const ColorPalette: React.FC = () => (
         <Typography variant="body2">{colors.neutral.light}</Typography>
       </Paper>
     </Grid>
-    
+
     {/* ألوان الحالة */}
-    <Grid item xs={12} md={3}>
+    <Grid component="div" size={{ xs: 12, md: 3 }}>
       <Paper
         sx={{
           p: 2,
@@ -209,8 +209,8 @@ export const ColorPalette: React.FC = () => (
         <Typography variant="body2">{colors.status.success}</Typography>
       </Paper>
     </Grid>
-    
-    <Grid item xs={12} md={3}>
+
+    <Grid component="div" size={{ xs: 12, md: 3 }}>
       <Paper
         sx={{
           p: 2,
@@ -222,8 +222,8 @@ export const ColorPalette: React.FC = () => (
         <Typography variant="body2">{colors.status.warning}</Typography>
       </Paper>
     </Grid>
-    
-    <Grid item xs={12} md={3}>
+
+    <Grid component="div" size={{ xs: 12, md: 3 }}>
       <Paper
         sx={{
           p: 2,
@@ -235,8 +235,8 @@ export const ColorPalette: React.FC = () => (
         <Typography variant="body2">{colors.status.error}</Typography>
       </Paper>
     </Grid>
-    
-    <Grid item xs={12} md={3}>
+
+    <Grid component="div" size={{ xs: 12, md: 3 }}>
       <Paper
         sx={{
           p: 2,
@@ -254,13 +254,13 @@ export const ColorPalette: React.FC = () => (
 // مثال على التدرجات
 export const GradientExamples: React.FC = () => (
   <Grid container spacing={2}>
-    <Grid item xs={12}>
+    <Grid component="div" size={{ xs: 12 }}>
       <Typography variant="h4" gutterBottom>
         أمثلة التدرجات
       </Typography>
     </Grid>
-    
-    <Grid item xs={12} md={4}>
+
+    <Grid component="div" size={{ xs: 12, md: 4 }}>
       <Paper
         sx={{
           p: 3,
@@ -272,8 +272,8 @@ export const GradientExamples: React.FC = () => (
         <Typography variant="h6">تدرج أساسي</Typography>
       </Paper>
     </Grid>
-    
-    <Grid item xs={12} md={4}>
+
+    <Grid component="div" size={{ xs: 12, md: 4 }}>
       <Paper
         sx={{
           p: 3,
@@ -285,8 +285,8 @@ export const GradientExamples: React.FC = () => (
         <Typography variant="h6">تدرج ثانوي</Typography>
       </Paper>
     </Grid>
-    
-    <Grid item xs={12} md={4}>
+
+    <Grid component="div" size={{ xs: 12, md: 4 }}>
       <Paper
         sx={{
           p: 3,
@@ -315,10 +315,10 @@ export const ColorShowcase: React.FC = () => (
           أمثلة المكونات
         </Typography>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid component="div" size={{ xs: 12, md: 6 }}>
             <ColorCard />
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid component="div" size={{ xs: 12, md: 6 }}>
             <ColorButtons />
           </Grid>
         </Grid>

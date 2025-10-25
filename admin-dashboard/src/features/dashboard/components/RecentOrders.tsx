@@ -15,15 +15,20 @@ import { Visibility } from '@mui/icons-material';
 
 interface Order {
   id: string;
+  _id?: string;
   orderNumber?: string;
   customer?: {
     name: string;
     avatar?: string;
   };
+  guestInfo?: {
+    name: string;
+  };
   total?: number;
   status: 'completed' | 'pending' | 'cancelled' | 'processing' | string;
-  items?: number;
+  items?: any[];
   date?: string;
+  createdAt?: string;
 }
 
 interface RecentOrdersProps {

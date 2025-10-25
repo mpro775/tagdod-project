@@ -22,10 +22,16 @@ import {
   Warning as WarningIcon,
   Error as ErrorIcon,
   Refresh as RefreshIcon,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from 'recharts';
 import { PerformanceMetrics } from '../types/analytics.types';
 
 interface PerformanceMetricsCardProps {
@@ -44,11 +50,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
   const theme = useTheme();
 
   if (error) {
-    return (
-      <Alert severity="error">
-        حدث خطأ في تحميل مقاييس الأداء
-      </Alert>
-    );
+    return <Alert severity="error">حدث خطأ في تحميل مقاييس الأداء</Alert>;
   }
 
   if (isLoading) {
@@ -60,7 +62,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
           </Typography>
           <Grid container spacing={2}>
             {[...Array(4)].map((_, index) => (
-              <Grid item xs={12} sm={6} key={index}>
+              <Grid size={{ xs: 12, sm: 6 }} key={index}>
                 <Skeleton variant="rectangular" height={100} />
               </Grid>
             ))}
@@ -82,15 +84,11 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
     return `${ms.toFixed(0)}ms`;
   };
 
-  const getPerformanceColor = (value: number, thresholds: { good: number; warning: number }) => {
-    if (value <= thresholds.good) return theme.palette.success.main;
-    if (value <= thresholds.warning) return theme.palette.warning.main;
-    return theme.palette.error.main;
-  };
-
   const getPerformanceIcon = (value: number, thresholds: { good: number; warning: number }) => {
-    if (value <= thresholds.good) return <CheckCircleIcon sx={{ color: theme.palette.success.main }} />;
-    if (value <= thresholds.warning) return <WarningIcon sx={{ color: theme.palette.warning.main }} />;
+    if (value <= thresholds.good)
+      return <CheckCircleIcon sx={{ color: theme.palette.success.main }} />;
+    if (value <= thresholds.warning)
+      return <WarningIcon sx={{ color: theme.palette.warning.main }} />;
     return <ErrorIcon sx={{ color: theme.palette.error.main }} />;
   };
 
@@ -121,12 +119,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
             مقاييس الأداء
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Chip
-              icon={<SpeedIcon />}
-              label="أداء النظام"
-              color="primary"
-              variant="outlined"
-            />
+            <Chip icon={<SpeedIcon />} label="أداء النظام" color="primary" variant="outlined" />
             {onRefresh && (
               <Tooltip title="تحديث البيانات">
                 <IconButton size="small" onClick={onRefresh}>
@@ -139,7 +132,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
 
         {/* Key Performance Metrics */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -160,14 +153,17 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getPerformanceIcon(data?.averageApiResponseTime || 0, { good: 200, warning: 500 })}
                 <Typography variant="body2" sx={{ ml: 1 }}>
-                  {data?.averageApiResponseTime && data.averageApiResponseTime <= 200 ? 'ممتاز' :
-                   data?.averageApiResponseTime && data.averageApiResponseTime <= 500 ? 'جيد' : 'يحتاج تحسين'}
+                  {data?.averageApiResponseTime && data.averageApiResponseTime <= 200
+                    ? 'ممتاز'
+                    : data?.averageApiResponseTime && data.averageApiResponseTime <= 500
+                    ? 'جيد'
+                    : 'يحتاج تحسين'}
                 </Typography>
               </Box>
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -188,14 +184,17 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getPerformanceIcon((data?.errorRate || 0) * 100, { good: 1, warning: 5 })}
                 <Typography variant="body2" sx={{ ml: 1 }}>
-                  {data?.errorRate && data.errorRate <= 0.01 ? 'ممتاز' :
-                   data?.errorRate && data.errorRate <= 0.05 ? 'جيد' : 'يحتاج تحسين'}
+                  {data?.errorRate && data.errorRate <= 0.01
+                    ? 'ممتاز'
+                    : data?.errorRate && data.errorRate <= 0.05
+                    ? 'جيد'
+                    : 'يحتاج تحسين'}
                 </Typography>
               </Box>
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -216,14 +215,17 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getPerformanceIcon(100 - (data?.uptime || 0), { good: 1, warning: 5 })}
                 <Typography variant="body2" sx={{ ml: 1 }}>
-                  {data?.uptime && data.uptime >= 99.9 ? 'ممتاز' :
-                   data?.uptime && data.uptime >= 99.0 ? 'جيد' : 'يحتاج تحسين'}
+                  {data?.uptime && data.uptime >= 99.9
+                    ? 'ممتاز'
+                    : data?.uptime && data.uptime >= 99.0
+                    ? 'جيد'
+                    : 'يحتاج تحسين'}
                 </Typography>
               </Box>
             </Box>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 p: 2,
@@ -244,8 +246,11 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getPerformanceIcon(data?.memoryUsage || 0, { good: 70, warning: 85 })}
                 <Typography variant="body2" sx={{ ml: 1 }}>
-                  {data?.memoryUsage && data.memoryUsage <= 70 ? 'ممتاز' :
-                   data?.memoryUsage && data.memoryUsage <= 85 ? 'جيد' : 'يحتاج تحسين'}
+                  {data?.memoryUsage && data.memoryUsage <= 70
+                    ? 'ممتاز'
+                    : data?.memoryUsage && data.memoryUsage <= 85
+                    ? 'جيد'
+                    : 'يحتاج تحسين'}
                 </Typography>
               </Box>
             </Box>
@@ -254,7 +259,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
 
         {/* Performance Charts */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
                 أداء النظام على مدار 24 ساعة
@@ -288,14 +293,21 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} lg={4}>
+          <Grid size={{ xs: 12, lg: 4 }}>
             <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
                 استخدام الموارد
               </Typography>
-              
+
               <Box sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1,
+                  }}
+                >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <MemoryIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
                     <Typography variant="body2">الذاكرة</Typography>
@@ -310,9 +322,16 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   sx={{ height: 8, borderRadius: 4 }}
                 />
               </Box>
-              
+
               <Box sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1,
+                  }}
+                >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <SpeedIcon sx={{ mr: 1, color: theme.palette.secondary.main }} />
                     <Typography variant="body2">المعالج</Typography>
@@ -328,9 +347,16 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   sx={{ height: 8, borderRadius: 4 }}
                 />
               </Box>
-              
+
               <Box sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1,
+                  }}
+                >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <StorageIcon sx={{ mr: 1, color: theme.palette.success.main }} />
                     <Typography variant="body2">التخزين</Typography>
@@ -357,7 +383,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
               إحصائيات قاعدة البيانات
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="primary">
                     {data.databaseStats.totalCollections}
@@ -367,7 +393,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="secondary">
                     {formatBytes(data.databaseStats.totalDocuments)}
@@ -377,7 +403,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="success.main">
                     {formatBytes(data.databaseStats.databaseSize)}
@@ -387,7 +413,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h4" color="warning.main">
                     {formatBytes(data.databaseStats.indexSize)}
@@ -410,7 +436,14 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
             <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
               {data.slowestEndpoints.map((endpoint, index) => (
                 <Box key={index} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      mb: 1,
+                    }}
+                  >
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                       {endpoint.method} {endpoint.endpoint}
                     </Typography>
@@ -418,7 +451,14 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                       {formatTime(endpoint.averageTime)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      mb: 0.5,
+                    }}
+                  >
                     <Typography variant="caption" color="text.secondary">
                       المكالمات: {endpoint.callCount}
                     </Typography>

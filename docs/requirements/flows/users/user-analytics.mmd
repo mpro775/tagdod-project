@@ -1,356 +1,64 @@
-%% User Analytics System
+%% User Analytics Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[User Analytics System] --> B{Analytics Type?}
-  B -->|User Statistics| C[User Statistics Analytics]
-  B -->|User Behavior| D[User Behavior Analytics]
-  B -->|User Segmentation| E[User Segmentation Analytics]
-  B -->|User Predictions| F[User Predictions Analytics]
-  B -->|User Reports| G[User Reports Analytics]
-  
-  %% User Statistics Analytics
-  C --> C1[Collect User Data]
-  C1 --> C2[Calculate User Metrics]
-  C2 --> C3[Analyze User Performance]
-  C3 --> C4[Generate User Rankings]
-  C4 --> C5[Track User Growth]
-  C5 --> C6[User Statistics Complete]
-  
-  %% Collect User Data
-  C1 --> C1A[Gather user information]
-  C1A --> C1B[Collect order data]
-  C1B --> C1C[Track user activity]
-  C1C --> C1D[Monitor user interactions]
-  C1D --> C1E[User data collected]
-  
-  %% User Information
-  C1A --> C1A1[Basic user details]
-  C1A1 --> C1A2[Registration information]
-  C1A2 --> C1A3[Profile information]
-  C1A3 --> C1A4[Contact information]
-  C1A4 --> C1A5[User info gathered]
-  
-  %% Order Data
-  C1B --> C1B1[Order history]
-  C1B1 --> C1B2[Order values]
-  C1B2 --> C1B3[Order frequency]
-  C1B3 --> C1B4[Order patterns]
-  C1B4 --> C1B5[Order data collected]
-  
-  %% User Activity
-  C1C --> C1C1[Login frequency]
-  C1C1 --> C1C2[Session duration]
-  C1C2 --> C1C3[Feature usage]
-  C1C3 --> C1C4[Page views]
-  C1C4 --> C1C5[Activity tracked]
-  
-  %% User Interactions
-  C1D --> C1D1[Search behavior]
-  C1D1 --> C1D2[Click patterns]
-  C1D2 --> C1D3[Navigation paths]
-  C1D3 --> C1D4[Engagement metrics]
-  C1D4 --> C1D5[Interactions monitored]
-  
-  %% Calculate User Metrics
-  C2 --> C2A[Calculate Loyalty Score]
-  C2A --> C2B[Calculate Value Score]
-  C2B --> C2C[Calculate Activity Score]
-  C2C --> C2D[Calculate Support Score]
-  C2D --> C2E[Calculate Total Score]
-  C2E --> C2F[Metrics calculated]
-  
-  %% Loyalty Score Calculation
-  C2A --> C2A1[Count total orders]
-  C2A1 --> C2A2[Count completed orders]
-  C2A2 --> C2A3[Apply loyalty formula]
-  C2A3 --> C2A4[Calculate loyalty score]
-  C2A4 --> C2A5[Loyalty score calculated]
-  
-  %% Value Score Calculation
-  C2B --> C2B1[Sum total spent]
-  C2B1 --> C2B2[Calculate average order value]
-  C2B2 --> C2B3[Apply value formula]
-  C2B3 --> C2B4[Calculate value score]
-  C2B4 --> C2B5[Value score calculated]
-  
-  %% Activity Score Calculation
-  C2C --> C2C1[Count login frequency]
-  C2C1 --> C2C2[Count feature usage]
-  C2C2 --> C2C3[Apply activity formula]
-  C2C3 --> C2C4[Calculate activity score]
-  C2C4 --> C2C5[Activity score calculated]
-  
-  %% Support Score Calculation
-  C2D --> C2D1[Count support tickets]
-  C2D1 --> C2D2[Track ticket resolution]
-  C2D2 --> C2D3[Apply support formula]
-  C2D3 --> C2D4[Calculate support score]
-  C2D4 --> C2D5[Support score calculated]
-  
-  %% Total Score Calculation
-  C2E --> C2E1[Weight loyalty score]
-  C2E1 --> C2E2[Weight value score]
-  C2E2 --> C2E3[Weight activity score]
-  C2E3 --> C2E4[Weight support score]
-  C2E4 --> C2E5[Calculate total score]
-  C2E5 --> C2E6[Total score calculated]
-  
-  %% Analyze User Performance
-  C3 --> C3A[Analyze Order Performance]
-  C3A --> C3B[Analyze Engagement Performance]
-  C3B --> C3C[Analyze Retention Performance]
-  C3C --> C3D[Analyze Revenue Performance]
-  C3D --> C3E[Performance analyzed]
-  
-  %% Order Performance Analysis
-  C3A --> C3A1[Analyze order frequency]
-  C3A1 --> C3A2[Analyze order values]
-  C3A2 --> C3A3[Analyze order patterns]
-  C3A3 --> C3A4[Identify order trends]
-  C3A4 --> C3A5[Order performance analyzed]
-  
-  %% Engagement Performance Analysis
-  C3B --> C3B1[Analyze login patterns]
-  C3B1 --> C3B2[Analyze feature usage]
-  C3B2 --> C3B3[Analyze session duration]
-  C3B3 --> C3B4[Identify engagement trends]
-  C3B4 --> C3B5[Engagement performance analyzed]
-  
-  %% Retention Performance Analysis
-  C3C --> C3C1[Analyze user retention]
-  C3C1 --> C3C2[Analyze churn patterns]
-  C3C2 --> C3C3[Analyze return behavior]
-  C3C3 --> C3C4[Identify retention trends]
-  C3C4 --> C3C5[Retention performance analyzed]
-  
-  %% Revenue Performance Analysis
-  C3D --> C3D1[Analyze revenue per user]
-  C3D1 --> C3D2[Analyze revenue growth]
-  C3D2 --> C3D3[Analyze revenue patterns]
-  C3D3 --> C3D4[Identify revenue trends]
-  C3D4 --> C3D5[Revenue performance analyzed]
-  
-  %% Generate User Rankings
-  C4 --> C4A[Sort Users by Score]
-  C4A --> C4B[Assign User Rankings]
-  C4B --> C4C[Create User Segments]
-  C4C --> C4D[Generate Ranking Reports]
-  C4D --> C4E[Rankings generated]
-  
-  %% Sort Users by Score
-  C4A --> C4A1[Sort by total score]
-  C4A1 --> C4A2[Sort by loyalty score]
-  C4A2 --> C4A3[Sort by value score]
-  C4A3 --> C4A4[Sort by activity score]
-  C4A4 --> C4A5[Users sorted]
-  
-  %% Assign User Rankings
-  C4B --> C4B1[Assign rank numbers]
-  C4B1 --> C4B2[Calculate percentile ranks]
-  C4B2 --> C4B3[Assign tier levels]
-  C4B3 --> C4B4[Rankings assigned]
-  
-  %% Create User Segments
-  C4C --> C4C1[VIP segment]
-  C4C1 --> C4C2[Premium segment]
-  C4C2 --> C4C3[Regular segment]
-  C4C3 --> C4C4[New segment]
-  C4C4 --> C4C5[Segments created]
-  
-  %% Track User Growth
-  C5 --> C5A[Track User Registration Growth]
-  C5A --> C5B[Track User Activity Growth]
-  C5B --> C5C[Track User Revenue Growth]
-  C5C --> C5D[Track User Engagement Growth]
-  C5D --> C5E[Growth tracked]
-  
-  %% User Registration Growth
-  C5A --> C5A1[Track daily registrations]
-  C5A1 --> C5A2[Track weekly registrations]
-  C5A2 --> C5A3[Track monthly registrations]
-  C5A3 --> C5A4[Analyze registration trends]
-  C5A4 --> C5A5[Registration growth tracked]
-  
-  %% User Activity Growth
-  C5B --> C5B1[Track daily active users]
-  C5B1 --> C5B2[Track weekly active users]
-  C5B2 --> C5B3[Track monthly active users]
-  C5B3 --> C5B4[Analyze activity trends]
-  C5B4 --> C5B5[Activity growth tracked]
-  
-  %% User Revenue Growth
-  C5C --> C5C1[Track daily revenue]
-  C5C1 --> C5C2[Track weekly revenue]
-  C5C2 --> C5C3[Track monthly revenue]
-  C5C3 --> C5C4[Analyze revenue trends]
-  C5C4 --> C5C5[Revenue growth tracked]
-  
-  %% User Engagement Growth
-  C5D --> C5D1[Track engagement metrics]
-  C5D1 --> C5D2[Track feature adoption]
-  C5D2 --> C5D3[Track user satisfaction]
-  C5D3 --> C5D4[Analyze engagement trends]
-  C5D4 --> C5D5[Engagement growth tracked]
-  
-  %% User Behavior Analytics
-  D --> D1[Track User Interactions]
-  D1 --> D2[Analyze User Patterns]
-  D2 --> D3[Identify User Preferences]
-  D3 --> D4[Predict User Behavior]
-  D4 --> D5[Optimize User Experience]
-  D5 --> D6[User Behavior Analyzed]
-  
-  %% Track User Interactions
-  D1 --> D1A[Track page views]
-  D1A --> D1B[Track click events]
-  D1B --> D1C[Track search queries]
-  D1C --> D1D[Track navigation paths]
-  D1D --> D1E[Interactions tracked]
-  
-  %% Analyze User Patterns
-  D2 --> D2A[Analyze usage patterns]
-  D2A --> D2B[Analyze session patterns]
-  D2B --> D2C[Analyze feature patterns]
-  D2C --> D2D[Analyze time patterns]
-  D2D --> D2E[Patterns analyzed]
-  
-  %% Identify User Preferences
-  D3 --> D3A[Identify content preferences]
-  D3A --> D3B[Identify feature preferences]
-  D3B --> D3C[Identify interaction preferences]
-  D3C --> D3D[Identify timing preferences]
-  D3D --> D3E[Preferences identified]
-  
-  %% Predict User Behavior
-  D4 --> D4A[Predict next actions]
-  D4A --> D4B[Predict engagement level]
-  D4B --> D4C[Predict churn risk]
-  D4C --> D4D[Predict value potential]
-  D4D --> D4E[Behavior predicted]
-  
-  %% Optimize User Experience
-  D5 --> D5A[Implement personalization]
-  D5A --> D5B[Optimize user interface]
-  D5B --> D5C[Improve user journey]
-  D5C --> D5D[Enhance user engagement]
-  D5D --> D5E[Experience optimized]
-  
-  %% User Segmentation Analytics
-  E --> E1[Define Segmentation Criteria]
-  E1 --> E2[Apply Segmentation Rules]
-  E2 --> E3[Analyze Segment Performance]
-  E3 --> E4[Optimize Segment Strategy]
-  E4 --> E5[User Segments Analyzed]
-  
-  %% Define Segmentation Criteria
-  E1 --> E1A[Define demographic criteria]
-  E1A --> E1B[Define behavioral criteria]
-  E1B --> E1C[Define value criteria]
-  E1C --> E1D[Define engagement criteria]
-  E1D --> E1E[Criteria defined]
-  
-  %% Apply Segmentation Rules
-  E2 --> E2A[Apply demographic rules]
-  E2A --> E2B[Apply behavioral rules]
-  E2B --> E2C[Apply value rules]
-  E2C --> E2D[Apply engagement rules]
-  E2D --> E2E[Rules applied]
-  
-  %% Analyze Segment Performance
-  E3 --> E3A[Analyze segment size]
-  E3A --> E3B[Analyze segment growth]
-  E3B --> E3C[Analyze segment value]
-  E3C --> E3D[Analyze segment engagement]
-  E3D --> E3E[Performance analyzed]
-  
-  %% Optimize Segment Strategy
-  E4 --> E4A[Optimize segment targeting]
-  E4A --> E4B[Optimize segment messaging]
-  E4B --> E4C[Optimize segment offers]
-  E4C --> E4D[Optimize segment experience]
-  E4D --> E4E[Strategy optimized]
-  
-  %% User Predictions Analytics
-  F --> F1[Collect Prediction Data]
-  F1 --> F2[Apply Prediction Models]
-  F2 --> F3[Generate Predictions]
-  F3 --> F4[Validate Predictions]
-  F4 --> F5[User Predictions Generated]
-  
-  %% Collect Prediction Data
-  F1 --> F1A[Collect historical data]
-  F1A --> F1B[Collect current data]
-  F1B --> F1C[Collect external data]
-  F1C --> F1D[Prepare prediction dataset]
-  F1D --> F1E[Data collected]
-  
-  %% Apply Prediction Models
-  F2 --> F2A[Apply churn prediction model]
-  F2A --> F2B[Apply value prediction model]
-  F2B --> F2C[Apply engagement prediction model]
-  F2C --> F2D[Apply behavior prediction model]
-  F2D --> F2E[Models applied]
-  
-  %% Generate Predictions
-  F3 --> F3A[Generate churn predictions]
-  F3A --> F3B[Generate value predictions]
-  F3B --> F3C[Generate engagement predictions]
-  F3C --> F3D[Generate behavior predictions]
-  F3D --> F3E[Predictions generated]
-  
-  %% Validate Predictions
-  F4 --> F4A[Validate prediction accuracy]
-  F4A --> F4B[Validate prediction reliability]
-  F4B --> F4C[Validate prediction consistency]
-  F4C --> F4D[Validate prediction usefulness]
-  F4D --> F4E[Predictions validated]
-  
-  %% User Reports Analytics
-  G --> G1[Choose Report Type]
-  G1 --> G2[Set Report Parameters]
-  G2 --> G3[Generate Report Data]
-  G3 --> G4[Format Report]
-  G4 --> G5[Export Report]
-  G5 --> G6[User Reports Generated]
-  
-  %% Choose Report Type
-  G1 --> G1A[User summary report]
-  G1A --> G1B[User behavior report]
-  G1B --> G1C[User segmentation report]
-  G1C --> G1D[User prediction report]
-  G1D --> G1E[Report type selected]
-  
-  %% Set Report Parameters
-  G2 --> G2A[Set date range]
-  G2A --> G2B[Set user filters]
-  G2B --> G2C[Set metric filters]
-  G2C --> G2D[Set output format]
-  G2D --> G2E[Parameters set]
-  
-  %% Generate Report Data
-  G3 --> G3A[Query user data]
-  G3A --> G3B[Calculate metrics]
-  G3B --> G3C[Aggregate data]
-  G3C --> G3D[Apply filters]
-  G3D --> G3E[Data generated]
-  
-  %% Format Report
-  G4 --> G4A[Create report structure]
-  G4A --> G4B[Add charts and graphs]
-  G4B --> G4C[Format data tables]
-  G4C --> G4D[Add summary sections]
-  G4D --> G4E[Report formatted]
-  
-  %% Export Report
-  G5 --> G5A[Choose export format]
-  G5A --> G5B[Generate export file]
-  G5B --> G5C[Validate export data]
-  G5C --> G5D[Create download link]
-  G5D --> G5E[Report exported]
-  
+  A[تحليلات المستخدمين] --> B[نظرة عامة]
+  A --> C[حسب الدور]
+  A --> D[حسب الحالة]
+  A --> E[ترتيب العملاء]
+  A --> F[إحصائيات مفصلة]
+
+  %% Overview
+  B --> B1[GET /admin/user-analytics/overview]
+  B1 --> B2[إحصائيات عامة]
+  B2 --> B3[عدد المستخدمين الإجمالي]
+  B3 --> B4[المستخدمون النشطون]
+  B4 --> B5[المستخدمون الجدد]
+
+  %% By Role
+  C --> C1[GET /admin/user-analytics/users-by-role]
+  C1 --> C2[توزيع حسب الأدوار]
+  C2 --> C3[USER, ENGINEER, MERCHANT, ADMIN, SUPER_ADMIN]
+  C3 --> C4[عدد المستخدمين لكل دور]
+
+  %% By Status
+  D --> D1[GET /admin/user-analytics/users-by-status]
+  D1 --> D2[توزيع حسب الحالة]
+  D2 --> D3[ACTIVE, SUSPENDED, PENDING, DELETED]
+  D3 --> D4[إحصائيات الحالة]
+
+  %% Customer Rankings
+  E --> E1[GET /admin/user-analytics/customer-rankings]
+  E1 --> E2[ترتيب العملاء]
+  E2 --> E3[حسب النقاط والأداء]
+  E3 --> E4[قائمة مرتبة]
+
+  %% Detailed Stats
+  F --> F1[GET /admin/user-analytics/user-stats]
+  F1 --> F2[فلاتر متقدمة]
+  F2 --> F3[role, status, dateRange]
+  F3 --> F4[إحصائيات مفصلة]
+  F4 --> F5[تصفح وترتيب]
+
+  F5 --> F6[إحصائيات فردية]
+  F6 --> F7[GET /admin/user-analytics/user/:id]
+  F7 --> F8[تفاصيل مستخدم محدد]
+  F8 --> F9[نشاط وأداء]
+
+  %% Scoring System
+  G[نظام النقاط] --> G1[GET /admin/user-analytics/scoring-config]
+  G1 --> G2[إعدادات النقاط]
+  G2 --> G3[معاملات الحساب]
+
+  G3 --> G4[PUT /admin/user-analytics/scoring-config]
+  G4 --> G5[تحديث الإعدادات]
+  G5 --> G6[تخصيص المعاملات]
+
+  %% User Scoring
+  H[حساب النقاط] --> H1[calculateUserScore]
+  H1 --> H2[عوامل متعددة]
+  H2 --> H3[orders, revenue, activity, support]
+  H3 --> H4[نقاط مرجحة]
+
   %% End points
-  C6 --> Z[User Analytics Complete]
-  D6 --> Z
-  E5 --> Z
-  F5 --> Z
-  G6 --> Z
+  F9 --> I[نهاية - تحليلات شاملة]
+  H4 --> I

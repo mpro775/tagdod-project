@@ -10,28 +10,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Chip,
-  IconButton,
-  Tooltip,
   Alert,
   CircularProgress,
-  Divider,
 } from '@mui/material';
-import {
-  ArrowBack,
-  Add,
-  Edit,
-  Delete,
-  Save,
-  Cancel,
-  Inventory,
-  AttachMoney,
-} from '@mui/icons-material';
+import { ArrowBack, Add, Save, Cancel } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,8 +27,6 @@ import {
   useDeleteVariant,
 } from '../hooks/useProducts';
 import { VariantCard } from '../components/VariantCard';
-import { StockManager } from '../components/StockManager';
-import { PricingManager } from '../components/PricingManager';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import type { Variant, CreateVariantDto, UpdateVariantDto } from '../types/product.types';
 
@@ -89,7 +70,7 @@ export const ProductVariantsPage: React.FC = () => {
   const { data: variants, isLoading: loadingVariants, refetch } = useProductVariants(id!);
   const { mutate: addVariant, isPending: addingVariant } = useAddVariant();
   const { mutate: updateVariant, isPending: updatingVariant } = useUpdateVariant();
-  const { mutate: deleteVariant, isPending: deletingVariant } = useDeleteVariant();
+  const { mutate: deleteVariant } = useDeleteVariant();
 
   const handleAddVariant = () => {
     setIsEditMode(false);
@@ -226,14 +207,8 @@ export const ProductVariantsPage: React.FC = () => {
 
       {/* Actions */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h6">
-          المتغيرات ({variants?.length || 0})
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={handleAddVariant}
-        >
+        <Typography variant="h6">المتغيرات ({variants?.length || 0})</Typography>
+        <Button variant="contained" startIcon={<Add />} onClick={handleAddVariant}>
           إضافة متغير
         </Button>
       </Box>
@@ -246,7 +221,7 @@ export const ProductVariantsPage: React.FC = () => {
       ) : variants && variants.length > 0 ? (
         <Grid container spacing={3}>
           {variants.map((variant) => (
-            <Grid item xs={12} sm={6} md={4} key={variant._id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={variant._id}>
               <VariantCard
                 variant={variant}
                 onEdit={handleEditVariant}
@@ -257,34 +232,25 @@ export const ProductVariantsPage: React.FC = () => {
           ))}
         </Grid>
       ) : (
-        <Alert severity="info">
-          لا توجد متغيرات لهذا المنتج. قم بإضافة متغير جديد للبدء.
-        </Alert>
+        <Alert severity="info">لا توجد متغيرات لهذا المنتج. قم بإضافة متغير جديد للبدء.</Alert>
       )}
 
       {/* Variant Form Dialog */}
-      <Dialog
-        open={variantDialogOpen}
-        onClose={handleCloseDialog}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          {isEditMode ? 'تعديل المتغير' : 'إضافة متغير جديد'}
-        </DialogTitle>
+      <Dialog open={variantDialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+        <DialogTitle>{isEditMode ? 'تعديل المتغير' : 'إضافة متغير جديد'}</DialogTitle>
         <DialogContent>
           <FormProvider {...methods}>
             <form onSubmit={methods.handleSubmit(onSubmit)}>
               <Box display="flex" flexDirection="column" gap={2} pt={1}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <FormInput
                       name="sku"
                       label="رقم المنتج (SKU)"
                       helperText="اختياري - سيتم توليد رقم تلقائي إذا لم يتم تحديده"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <FormInput
                       name="price"
                       label="السعر الأساسي *"
@@ -292,7 +258,7 @@ export const ProductVariantsPage: React.FC = () => {
                       helperText="بالدولار الأمريكي"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <FormInput
                       name="compareAtPrice"
                       label="السعر الأصلي"
@@ -300,7 +266,7 @@ export const ProductVariantsPage: React.FC = () => {
                       helperText="للعرض قبل الخصم"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <FormInput
                       name="costPrice"
                       label="سعر التكلفة"
@@ -308,47 +274,27 @@ export const ProductVariantsPage: React.FC = () => {
                       helperText="لحساب الربحية"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormInput
-                      name="stock"
-                      label="الكمية في المخزون *"
-                      type="number"
-                    />
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormInput name="stock" label="الكمية في المخزون *" type="number" />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormInput
-                      name="minStock"
-                      label="الحد الأدنى للمخزون"
-                      type="number"
-                    />
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormInput name="minStock" label="الحد الأدنى للمخزون" type="number" />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormInput
-                      name="weight"
-                      label="الوزن (كجم)"
-                      type="number"
-                    />
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormInput name="weight" label="الوزن (كجم)" type="number" />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormInput
-                      name="trackInventory"
-                      label="تتبع المخزون"
-                      type="checkbox"
-                    />
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormInput name="trackInventory" label="تتبع المخزون" type="checkbox" />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormInput
-                      name="allowBackorder"
-                      label="السماح بالطلب المسبق"
-                      type="checkbox"
-                    />
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <FormInput name="allowBackorder" label="السماح بالطلب المسبق" type="checkbox" />
                   </Grid>
                 </Grid>
 
                 <Alert severity="info">
                   <Typography variant="body2">
-                    <strong>ملاحظة:</strong> السمات والمتغيرات ستكون متاحة في إصدارات لاحقة.
-                    حالياً يمكنك إضافة متغير أساسي للمنتج.
+                    <strong>ملاحظة:</strong> السمات والمتغيرات ستكون متاحة في إصدارات لاحقة. حالياً
+                    يمكنك إضافة متغير أساسي للمنتج.
                   </Typography>
                 </Alert>
               </Box>

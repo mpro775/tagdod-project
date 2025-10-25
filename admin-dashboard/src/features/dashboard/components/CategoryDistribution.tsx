@@ -123,7 +123,7 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={chartData}
+                data={chartData as any}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -134,7 +134,7 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
                 dataKey="value"
                 paddingAngle={2}
               >
-                {chartData.map((entry, index) => (
+                {chartData.map((_, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

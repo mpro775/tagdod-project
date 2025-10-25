@@ -5,56 +5,60 @@
 
 #### User
 - **phone** (unique) - فهرس فريد لرقم الهاتف
-- **isAdmin** - فهرس للأدمن
 - **createdAt** (desc) - فهرس للتاريخ
 - **status** - فهرس للحالة
 - **deletedAt** - فهرس للحذف الناعم
 - **roles** - فهرس للأدوار
 - **lastActivityAt** (desc) - فهرس لآخر نشاط
-- **مركبة**: (phone, isAdmin) - فهرس مركب
 - **مركبة**: (status, deletedAt, createdAt) - فهرس مركب للأداء
 - **مركبة**: (status, lastActivityAt) - فهرس مركب للنشاط
+- **مركبة**: (roles, status) - فهرس مركب للأدوار والحالة
 
 #### Product
-- **نصي**: name, description, tags (full-text) - فهرس البحث النصي
+- **نصي**: name, description (full-text) - فهرس البحث النصي
 - **categoryId** - فهرس للفئة
+- **brandId** - فهرس للماركة
 - **slug** (unique) - فهرس فريد للرابط
 - **isFeatured** - فهرس للمنتجات المميزة
 - **isNew** - فهرس للمنتجات الجديدة
-- **adminRating** (desc) - فهرس للتقييم
-- **مركبة**: (categoryId, status) - فهرس مركب للفئة والحالة
-- **مركبة**: (isFeatured, isNew, adminRating) - فهرس مركب للعرض
+- **deletedAt** - فهرس للحذف الناعم
+- **createdAt** (desc) - فهرس للتاريخ
+- **salesCount** (desc) - فهرس لعدد المبيعات
+- **viewsCount** (desc) - فهرس لعدد المشاهدات
+- **مركبة**: (categoryId, status, isActive) - فهرس مركب للفئة والحالة
+- **مركبة**: (brandId, status) - فهرس مركب للماركة والحالة
+- **مركبة**: (status, isActive, order) - فهرس مركب للحالة والترتيب
+- **مركبة**: (isFeatured, status) - فهرس مركب للمميز والحالة
+- **مركبة**: (isNew, status) - فهرس مركب للجديد والحالة
 
 #### Variant
 - **productId** - فهرس للمنتج
 - **sku** (unique, sparse) - فهرس فريد نادر للـ SKU
-- **price** - فهرس للسعر
+- **basePriceUSD** - فهرس للسعر الأساسي
 - **stock** - فهرس للمخزون
 - **attributeValues.attributeId** - فهرس لسمات المنتج
 - **attributeValues.valueId** - فهرس لقيم السمات
 - **deletedAt** - فهرس للحذف الناعم
 - **مركبة**: (productId, isActive) - فهرس مركب للمنتج النشط
 - **مركبة**: (productId, deletedAt, isActive) - فهرس مركب للأداء
+- **مركبة**: (trackInventory, stock) - فهرس مركب لتتبع المخزون
 
 #### Category
 - **parentId** - فهرس للفئة الأب
-- **path** - فهرس للمسار
 - **slug** (unique) - فهرس فريد للرابط
 - **isActive** - فهرس للنشاط
-- **showInMenu** - فهرس للعرض في القائمة
 - **isFeatured** - فهرس للمميز
 - **deletedAt** - فهرس للحذف الناعم
-- **order** - فهرس للترتيب
 - **نصي**: name, description (full-text) - فهرس البحث النصي
 - **مركبة**: (parentId, order) - فهرس مركب للترتيب
-- **مركبة**: (isActive, showInMenu) - فهرس مركب للعرض
 - **مركبة**: (parentId, isActive, order) - فهرس مركب للأداء
 
 #### Brand
 - **slug** (unique) - فهرس فريد للرابط
 - **name** - فهرس للاسم
+- **nameEn** - فهرس للاسم الإنجليزي
 - **isActive** - فهرس للنشاط
-- **sortOrder** - فهرس للترتيب
+- **نصي**: name, nameEn, description, descriptionEn (full-text) - فهرس البحث النصي
 - **مركبة**: (isActive, sortOrder) - فهرس مركب للعرض
 
 #### Media

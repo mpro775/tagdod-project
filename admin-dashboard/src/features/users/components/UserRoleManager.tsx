@@ -14,18 +14,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Alert,
   Grid,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
-  Edit as EditIcon,
   Security as SecurityIcon,
 } from '@mui/icons-material';
-import { UserRole, UserStatus } from '../types/user.types';
+import { UserRole } from '../types/user.types';
 
 interface UserRoleManagerProps {
   roles: UserRole[];
@@ -43,7 +39,10 @@ const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.ENGINEER]: 'مهندس',
 };
 
-const ROLE_COLORS: Record<UserRole, 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'> = {
+const ROLE_COLORS: Record<
+  UserRole,
+  'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'
+> = {
   [UserRole.USER]: 'default',
   [UserRole.ADMIN]: 'warning',
   [UserRole.SUPER_ADMIN]: 'error',
@@ -97,19 +96,11 @@ const PERMISSION_GROUPS = {
   },
   analytics: {
     title: 'التحليلات والتقارير',
-    permissions: [
-      'analytics.read',
-      'reports.generate',
-      'analytics.export',
-    ],
+    permissions: ['analytics.read', 'reports.generate', 'analytics.export'],
   },
   support: {
     title: 'الدعم الفني',
-    permissions: [
-      'support.read',
-      'support.update',
-      'support.assign',
-    ],
+    permissions: ['support.read', 'support.update', 'support.assign'],
   },
   system: {
     title: 'النظام والإعدادات',
@@ -144,7 +135,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
   };
 
   const handleRemoveRole = (roleToRemove: UserRole) => {
-    onRolesChange(roles.filter(role => role !== roleToRemove));
+    onRolesChange(roles.filter((role) => role !== roleToRemove));
   };
 
   const handleAddPermission = () => {
@@ -156,19 +147,19 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
   };
 
   const handleRemovePermission = (permissionToRemove: string) => {
-    onPermissionsChange(permissions.filter(permission => permission !== permissionToRemove));
+    onPermissionsChange(permissions.filter((permission) => permission !== permissionToRemove));
   };
 
   const handlePermissionGroupToggle = (groupPermissions: string[]) => {
-    const hasAllPermissions = groupPermissions.every(perm => permissions.includes(perm));
-    
+    const hasAllPermissions = groupPermissions.every((perm) => permissions.includes(perm));
+
     if (hasAllPermissions) {
       // إزالة جميع صلاحيات المجموعة
-      onPermissionsChange(permissions.filter(perm => !groupPermissions.includes(perm)));
+      onPermissionsChange(permissions.filter((perm) => !groupPermissions.includes(perm)));
     } else {
       // إضافة جميع صلاحيات المجموعة
       const newPermissions = [...permissions];
-      groupPermissions.forEach(perm => {
+      groupPermissions.forEach((perm) => {
         if (!newPermissions.includes(perm)) {
           newPermissions.push(perm);
         }
@@ -188,7 +179,7 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
               الأدوار
             </Typography>
           </Box>
-          
+
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
             {roles.map((role) => (
               <Chip
@@ -228,26 +219,37 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
           {/* مجموعات الصلاحيات */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {Object.entries(PERMISSION_GROUPS).map(([groupKey, group]) => {
-              const hasAllPermissions = group.permissions.every(perm => permissions.includes(perm));
-              const hasSomePermissions = group.permissions.some(perm => permissions.includes(perm));
-              
+              const hasAllPermissions = group.permissions.every((perm) =>
+                permissions.includes(perm)
+              );
+              const hasSomePermissions = group.permissions.some((perm) =>
+                permissions.includes(perm)
+              );
+
               return (
-                <Grid item xs={12} sm={6} md={4} key={groupKey}>
-                  <Card 
-                    variant="outlined" 
-                    sx={{ 
+                <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={groupKey}>
+                  <Card
+                    variant="outlined"
+                    sx={{
                       cursor: disabled ? 'default' : 'pointer',
-                      borderColor: hasAllPermissions ? 'primary.main' : hasSomePermissions ? 'warning.main' : 'grey.300',
-                      '&:hover': disabled ? {} : { borderColor: 'primary.main' }
+                      borderColor: hasAllPermissions
+                        ? 'primary.main'
+                        : hasSomePermissions
+                        ? 'warning.main'
+                        : 'grey.300',
+                      '&:hover': disabled ? {} : { borderColor: 'primary.main' },
                     }}
-                    onClick={!disabled ? () => handlePermissionGroupToggle(group.permissions) : undefined}
+                    onClick={
+                      !disabled ? () => handlePermissionGroupToggle(group.permissions) : undefined
+                    }
                   >
                     <CardContent sx={{ p: 2 }}>
                       <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
                         {group.title}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {group.permissions.filter(perm => permissions.includes(perm)).length} / {group.permissions.length} صلاحية
+                        {group.permissions.filter((perm) => permissions.includes(perm)).length} /{' '}
+                        {group.permissions.length} صلاحية
                       </Typography>
                     </CardContent>
                   </Card>
@@ -285,7 +287,12 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
       </Card>
 
       {/* حوار إضافة دور */}
-      <Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={roleDialogOpen}
+        onClose={() => setRoleDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>إضافة دور جديد</DialogTitle>
         <DialogContent>
           <FormControl fullWidth sx={{ mt: 2 }}>
@@ -312,7 +319,12 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
       </Dialog>
 
       {/* حوار إضافة صلاحية */}
-      <Dialog open={permissionDialogOpen} onClose={() => setPermissionDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={permissionDialogOpen}
+        onClose={() => setPermissionDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>إضافة صلاحية مخصصة</DialogTitle>
         <DialogContent>
           <FormControl fullWidth sx={{ mt: 2 }}>
@@ -322,9 +334,13 @@ export const UserRoleManager: React.FC<UserRoleManagerProps> = ({
               onChange={(e) => setSelectedPermission(e.target.value)}
               label="اختر الصلاحية"
             >
-              {Object.values(PERMISSION_GROUPS).flatMap(group => 
-                group.permissions.map(permission => (
-                  <MenuItem key={permission} value={permission} disabled={permissions.includes(permission)}>
+              {Object.values(PERMISSION_GROUPS).flatMap((group) =>
+                group.permissions.map((permission) => (
+                  <MenuItem
+                    key={permission}
+                    value={permission}
+                    disabled={permissions.includes(permission)}
+                  >
                     {permission}
                   </MenuItem>
                 ))

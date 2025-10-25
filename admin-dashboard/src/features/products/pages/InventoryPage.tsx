@@ -79,7 +79,6 @@ export const InventoryPage: React.FC = () => {
                 <PricingManager
                   variant={selectedVariant}
                   productId={selectedVariant.productId}
-                  onPriceUpdate={handleStockUpdate}
                 />
               </Box>
             </Box>

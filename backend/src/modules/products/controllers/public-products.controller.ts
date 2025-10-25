@@ -18,7 +18,7 @@ import {
 } from '../../../shared/interceptors/response-cache.interceptor';
 import { ProductStatus } from '../schemas/product.schema';
 
-@ApiTags('products')
+@ApiTags('المنتجات')
 @Controller('products')
 @UseInterceptors(ResponseCacheInterceptor)
 export class PublicProductsController {
@@ -33,8 +33,8 @@ export class PublicProductsController {
 
   @Get()
   @ApiOperation({
-    summary: 'Get products list',
-    description: 'Retrieves a paginated list of products with optional filtering',
+    summary: 'الحصول على قائمة المنتجات',
+    description: 'استرداد قائمة منتجات مع التصفح والترقيم مع إمكانية التصفية الاختيارية',
   })
   @ApiQuery({
     name: 'page',
@@ -192,11 +192,9 @@ export class PublicProductsController {
     }
 
     return {
-      data: {
-        product,
-        variants: variantsWithPrices,
-        currency: currency || 'USD',
-      },
+      product,
+      variants: variantsWithPrices,
+      currency: currency || 'USD',
     };
   }
 
@@ -231,18 +229,16 @@ export class PublicProductsController {
     }
 
     return {
-      data: {
-        product,
-        variants: variantsWithPrices,
-        currency: currency || 'USD',
-      },
+      product,
+      variants: variantsWithPrices,
+      currency: currency || 'USD',
     };
   }
 
   // ==================== Featured & New Products ====================
 
   @Get('featured/list')
-  @ApiOperation({ summary: 'Get featured products' })
+  @ApiOperation({ summary: 'الحصول على المنتجات المميزة' })
   @ApiResponse({ status: 200, description: 'Featured products retrieved successfully' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
   async getFeatured() {
@@ -254,7 +250,7 @@ export class PublicProductsController {
   }
 
   @Get('new/list')
-  @ApiOperation({ summary: 'Get new products' })
+  @ApiOperation({ summary: 'الحصول على المنتجات الجديدة' })
   @ApiResponse({ status: 200, description: 'New products retrieved successfully' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
   async getNew() {
@@ -268,7 +264,7 @@ export class PublicProductsController {
   // ==================== Variants ====================
 
   @Get(':id/variants')
-  @ApiOperation({ summary: 'Get product variants' })
+  @ApiOperation({ summary: 'الحصول على متغيرات المنتج' })
   @ApiResponse({ status: 200, description: 'Variants retrieved successfully' })
   @CacheResponse({ ttl: 300 }) // 5 minutes
   async getVariants(@Param('id') productId: string, @Query('currency') currency?: string) {
@@ -294,44 +290,44 @@ export class PublicProductsController {
   }
 
   @Get('variants/:id/price')
-  @ApiOperation({ summary: 'Get variant price' })
+  @ApiOperation({ summary: 'الحصول على سعر المتغير' })
   @ApiResponse({ status: 200, description: 'Price retrieved successfully' })
   @CacheResponse({ ttl: 300 }) // 5 minutes
   async getVariantPrice(@Param('id') variantId: string, @Query('currency') currency?: string) {
     const price = await this.pricingService.getVariantPrice(variantId, currency);
-    return { data: price };
+    return price;
   }
 
   @Get('variants/:id/availability')
-  @ApiOperation({ summary: 'Check variant availability' })
+  @ApiOperation({ summary: 'التحقق من توفر المتغير' })
   @ApiResponse({ status: 200, description: 'Availability checked successfully' })
   async checkVariantAvailability(
     @Param('id') variantId: string,
     @Query('quantity') quantity: number,
   ) {
     const result = await this.inventoryService.checkAvailability(variantId, quantity);
-    return { data: result };
+    return result;
   }
 
   // ==================== Price Range ====================
 
   @Get(':id/price-range')
-  @ApiOperation({ summary: 'Get product price range' })
+  @ApiOperation({ summary: 'الحصول على نطاق أسعار المنتج' })
   @ApiResponse({ status: 200, description: 'Price range retrieved successfully' })
   @CacheResponse({ ttl: 300 }) // 5 minutes
   async getPriceRange(@Param('id') productId: string, @Query('currency') currency?: string) {
     const range = await this.pricingService.getProductPriceRange(productId, currency);
-    return { data: range };
+    return range;
   }
 
   // ==================== Statistics ====================
 
   @Get('stats/count')
-  @ApiOperation({ summary: 'Get products count' })
+  @ApiOperation({ summary: 'الحصول على عدد المنتجات' })
   @ApiResponse({ status: 200, description: 'Count retrieved successfully' })
   @CacheResponse({ ttl: 300 }) // 5 minutes
   async getProductsCount() {
     const stats = await this.productService.getStats();
-    return { data: { count: stats.data.total } };
+    return { count: stats.data.total };
   }
 }

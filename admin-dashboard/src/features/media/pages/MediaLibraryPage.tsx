@@ -3,17 +3,10 @@ import {
   Box,
   Paper,
   Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActions,
-  IconButton,
+ 
   Typography,
-  Chip,
-  Tooltip,
   Button,
-  Menu,
-  MenuItem,
+  
   TextField,
   FormControl,
   InputLabel,
@@ -31,25 +24,15 @@ import {
   Pagination,
   Menu,
   MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon,
-  Fab,
-  Toolbar,
-  AppBar,
-  Tabs,
-  Tab,
+
   Chip,
   Stack,
   Card,
   CardContent,
-  CardHeader,
   CardActions,
-  Collapse,
-  IconButton as MuiIconButton,
+  Tooltip,
+  IconButton,
+  CardMedia,
 } from '@mui/material';
 import {
   CloudUpload,
@@ -66,14 +49,11 @@ import {
   Visibility,
   VisibilityOff,
   Analytics,
-  Clean,
   Storage,
   Warning,
-  CheckCircle,
   Refresh,
-  Download,
-  Upload,
-  Settings,
+  CleanHands,
+
 } from '@mui/icons-material';
 import { 
   useMedia, 
@@ -106,9 +86,7 @@ export const MediaLibraryPage: React.FC = () => {
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
   const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
-  const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(null);
   const [showBulkActions, setShowBulkActions] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
 
   const { data, isLoading, refetch } = useMedia({
     page: currentPage,
@@ -227,9 +205,6 @@ export const MediaLibraryPage: React.FC = () => {
     setCleanupDialogOpen(false);
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
 
   return (
     <Box>
@@ -253,7 +228,7 @@ export const MediaLibraryPage: React.FC = () => {
             </Button>
             <Button
               variant="outlined"
-              startIcon={<Clean />}
+              startIcon={<CleanHands />}
               onClick={() => setCleanupDialogOpen(true)}
             >
               تنظيف
@@ -354,6 +329,22 @@ export const MediaLibraryPage: React.FC = () => {
             >
               مسح الفلاتر
             </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setShowBulkActions(!showBulkActions)}
+            >
+              {showBulkActions ? 'إخفاء التحديد المتعدد' : 'تحديد متعدد'}
+            </Button>
+            {showBulkActions && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleBulkSelectAll}
+              >
+                {selectedMediaIds.length === (data?.data?.length || 0) ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+              </Button>
+            )}
             {selectedMediaIds.length > 0 && (
               <Chip
                 label={`${selectedMediaIds.length} مختار`}
@@ -408,7 +399,15 @@ export const MediaLibraryPage: React.FC = () => {
           <Grid container spacing={2}>
             {(Array.isArray(data?.data) ? data.data : [])?.map((media) => (
               <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={media._id}>
-                <Card sx={{ opacity: media.deletedAt ? 0.6 : 1 }}>
+                <Card 
+                  sx={{ 
+                    opacity: media.deletedAt ? 0.6 : 1,
+                    border: showBulkActions && selectedMediaIds.includes(media._id) ? 2 : 0,
+                    borderColor: 'primary.main',
+                    cursor: showBulkActions ? 'pointer' : 'default'
+                  }}
+                  onClick={() => showBulkActions && handleBulkSelect(media._id)}
+                >
                   <CardMedia
                     component="img"
                     height="200"

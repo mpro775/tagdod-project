@@ -11,17 +11,8 @@ import {
   Tab,
   Alert,
   CircularProgress,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
-import {
-  Inventory,
-  Warning,
-  TrendingDown,
-  TrendingUp,
-  Refresh,
-  Visibility,
-} from '@mui/icons-material';
+import { Inventory, Warning, TrendingDown, TrendingUp, Refresh } from '@mui/icons-material';
 import {
   useInventorySummary,
   useLowStockVariants,
@@ -56,17 +47,27 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
-  onVariantClick,
-}) => {
+export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onVariantClick }) => {
   const [activeTab, setActiveTab] = useState(0);
-  const [lowStockThreshold, setLowStockThreshold] = useState(10);
+  const [lowStockThreshold] = useState(10);
 
-  const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useInventorySummary();
-  const { data: lowStockVariants, isLoading: loadingLowStock, refetch: refetchLowStock } = useLowStockVariants(lowStockThreshold);
-  const { data: outOfStockVariants, isLoading: loadingOutOfStock, refetch: refetchOutOfStock } = useOutOfStockVariants();
+  const {
+    data: summary,
+    isLoading: loadingSummary,
+    refetch: refetchSummary,
+  } = useInventorySummary();
+  const {
+    data: lowStockVariants,
+    isLoading: loadingLowStock,
+    refetch: refetchLowStock,
+  } = useLowStockVariants(lowStockThreshold);
+  const {
+    data: outOfStockVariants,
+    isLoading: loadingOutOfStock,
+    refetch: refetchOutOfStock,
+  } = useOutOfStockVariants();
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
@@ -91,18 +92,14 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
         <Typography variant="h4" component="h1">
           لوحة إدارة المخزون
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Refresh />}
-          onClick={handleRefresh}
-        >
+        <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh}>
           تحديث
         </Button>
       </Box>
 
       {/* Summary Cards */}
       <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
@@ -120,7 +117,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
@@ -138,7 +135,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
@@ -156,7 +153,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
@@ -184,7 +181,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
               <Chip
                 label={`${summary.totalValue.toLocaleString()} $`}
                 color="primary"
-                size="large"
+                size="medium"
               />
             </Box>
           </CardContent>
@@ -208,19 +205,13 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
           ) : lowStockVariants && lowStockVariants.length > 0 ? (
             <Grid container spacing={3}>
               {lowStockVariants.map((variant) => (
-                <Grid item xs={12} sm={6} md={4} key={variant._id}>
-                  <VariantCard
-                    variant={variant}
-                    onView={onVariantClick}
-                    showActions={false}
-                  />
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={variant._id}>
+                  <VariantCard variant={variant} onView={onVariantClick} showActions={false} />
                 </Grid>
               ))}
             </Grid>
           ) : (
-            <Alert severity="success">
-              لا توجد منتجات بمخزون منخفض حالياً
-            </Alert>
+            <Alert severity="success">لا توجد منتجات بمخزون منخفض حالياً</Alert>
           )}
         </TabPanel>
 
@@ -232,19 +223,13 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({
           ) : outOfStockVariants && outOfStockVariants.length > 0 ? (
             <Grid container spacing={3}>
               {outOfStockVariants.map((variant) => (
-                <Grid item xs={12} sm={6} md={4} key={variant._id}>
-                  <VariantCard
-                    variant={variant}
-                    onView={onVariantClick}
-                    showActions={false}
-                  />
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={variant._id}>
+                  <VariantCard variant={variant} onView={onVariantClick} showActions={false} />
                 </Grid>
               ))}
             </Grid>
           ) : (
-            <Alert severity="success">
-              جميع المنتجات متوفرة في المخزون
-            </Alert>
+            <Alert severity="success">جميع المنتجات متوفرة في المخزون</Alert>
           )}
         </TabPanel>
       </Card>

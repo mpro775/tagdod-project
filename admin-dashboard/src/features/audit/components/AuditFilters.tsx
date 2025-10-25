@@ -3,29 +3,26 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-} from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Label } from '@/shared/components/ui/label';
-import {
+  Typography,
+  TextField,
+  FormControl,
+  InputLabel,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select';
-import { Switch } from '@/shared/components/ui/switch';
-import { Calendar } from '@/shared/components/ui/calendar';
+  MenuItem,
+  Switch,
+  FormControlLabel,
+  Button,
+  Box,
+  Grid,
+} from '@mui/material';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/shared/components/ui/popover';
-import { CalendarIcon, Filter, X } from 'lucide-react';
-import { format } from 'date-fns';
+  FilterList as FilterIcon,
+  Clear as ClearIcon,
+} from '@mui/icons-material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ar } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 import {
   AuditLogFilters,
   AuditAction,
@@ -81,195 +78,160 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FilterIcon />
             فلاتر البحث
-          </CardTitle>
+          </Typography>
           {hasActiveFilters && (
             <Button
-              variant="outline"
-              size="sm"
+              variant="outlined"
+              size="small"
               onClick={onClearFilters}
-              className="flex items-center gap-2"
+              startIcon={<ClearIcon />}
             >
-              <X className="h-4 w-4" />
               مسح الفلاتر
             </Button>
           )}
-        </div>
+        </Box>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <CardContent>
+        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ar}>
+        <Grid container spacing={3}>
           {/* User ID Filter */}
-          <div className="space-y-2">
-            <Label htmlFor="userId">معرف المستخدم</Label>
-            <Input
-              id="userId"
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <TextField
+              fullWidth
+              label="معرف المستخدم"
               placeholder="أدخل معرف المستخدم"
               value={filters.userId || ''}
               onChange={(e) => onFiltersChange({ userId: e.target.value || undefined })}
             />
-          </div>
+          </Grid>
 
           {/* Performed By Filter */}
-          <div className="space-y-2">
-            <Label htmlFor="performedBy">قام بالعملية</Label>
-            <Input
-              id="performedBy"
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <TextField
+              fullWidth
+              label="قام بالعملية"
               placeholder="أدخل معرف المستخدم"
               value={filters.performedBy || ''}
               onChange={(e) => onFiltersChange({ performedBy: e.target.value || undefined })}
             />
-          </div>
+          </Grid>
 
           {/* Action Filter */}
-          <div className="space-y-2">
-            <Label htmlFor="action">نوع العملية</Label>
-            <Select
-              value={filters.action || ''}
-              onValueChange={(value) => onFiltersChange({ action: value as AuditAction || undefined })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="اختر نوع العملية" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">جميع العمليات</SelectItem>
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <FormControl fullWidth>
+              <InputLabel>نوع العملية</InputLabel>
+              <Select
+                value={filters.action || ''}
+                label="نوع العملية"
+                onChange={(e) => onFiltersChange({ action: e.target.value as AuditAction || undefined })}
+              >
+                <MenuItem value="">جميع العمليات</MenuItem>
                 {availableActions.map((action) => (
-                  <SelectItem key={action} value={action}>
+                  <MenuItem key={action} value={action}>
                     {AUDIT_ACTION_LABELS[action]}
-                  </SelectItem>
+                  </MenuItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
+              </Select>
+            </FormControl>
+          </Grid>
 
           {/* Resource Filter */}
-          <div className="space-y-2">
-            <Label htmlFor="resource">نوع المورد</Label>
-            <Select
-              value={filters.resource || ''}
-              onValueChange={(value) => onFiltersChange({ resource: value as AuditResource || undefined })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="اختر نوع المورد" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">جميع الموارد</SelectItem>
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <FormControl fullWidth>
+              <InputLabel>نوع المورد</InputLabel>
+              <Select
+                value={filters.resource || ''}
+                label="نوع المورد"
+                onChange={(e) => onFiltersChange({ resource: e.target.value as AuditResource || undefined })}
+              >
+                <MenuItem value="">جميع الموارد</MenuItem>
                 {availableResources.map((resource) => (
-                  <SelectItem key={resource} value={resource}>
+                  <MenuItem key={resource} value={resource}>
                     {AUDIT_RESOURCE_LABELS[resource]}
-                  </SelectItem>
+                  </MenuItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
+              </Select>
+            </FormControl>
+          </Grid>
 
           {/* Resource ID Filter */}
-          <div className="space-y-2">
-            <Label htmlFor="resourceId">معرف المورد</Label>
-            <Input
-              id="resourceId"
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <TextField
+              fullWidth
+              label="معرف المورد"
               placeholder="أدخل معرف المورد"
               value={filters.resourceId || ''}
               onChange={(e) => onFiltersChange({ resourceId: e.target.value || undefined })}
             />
-          </div>
+          </Grid>
 
           {/* Sensitive Filter */}
-          <div className="space-y-2">
-            <Label htmlFor="isSensitive">العمليات الحساسة فقط</Label>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isSensitive"
-                checked={filters.isSensitive || false}
-                onCheckedChange={(checked) => onFiltersChange({ isSensitive: checked || undefined })}
-              />
-              <Label htmlFor="isSensitive">عرض العمليات الحساسة فقط</Label>
-            </div>
-          </div>
-        </div>
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={filters.isSensitive || false}
+                  onChange={(e) => onFiltersChange({ isSensitive: e.target.checked || undefined })}
+                />
+              }
+              label="عرض العمليات الحساسة فقط"
+            />
+          </Grid>
+        </Grid>
 
         {/* Date Range Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Grid container spacing={3} sx={{ mt: 2 }}>
           {/* Start Date */}
-          <div className="space-y-2">
-            <Label>تاريخ البداية</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !startDate && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, 'PPP', { locale: ar }) : 'اختر التاريخ'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={(date) => handleDateChange('startDate', date)}
-                  initialFocus
-                />
-                {startDate && (
-                  <div className="p-2 border-t">
+          <Grid size={{ xs: 12, md: 6 }}>
+            <DatePicker
+              label="تاريخ البداية"
+              value={startDate}
+              onChange={(date) => handleDateChange('startDate', date || undefined)}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  helperText: startDate && (
                     <Button
-                      variant="outline"
-                      size="sm"
+                      size="small"
                       onClick={() => handleClearDate('startDate')}
-                      className="w-full"
+                      sx={{ mt: 1 }}
                     >
                       مسح التاريخ
                     </Button>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
-          </div>
+                  ),
+                },
+              }}
+            />
+          </Grid>
 
           {/* End Date */}
-          <div className="space-y-2">
-            <Label>تاريخ النهاية</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !endDate && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, 'PPP', { locale: ar }) : 'اختر التاريخ'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  onSelect={(date) => handleDateChange('endDate', date)}
-                  initialFocus
-                />
-                {endDate && (
-                  <div className="p-2 border-t">
+          <Grid size={{ xs: 12, md: 6 }}>
+            <DatePicker
+              label="تاريخ النهاية"
+              value={endDate}
+              onChange={(date) => handleDateChange('endDate', date || undefined)}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  helperText: endDate && (
                     <Button
-                      variant="outline"
-                      size="sm"
+                      size="small"
                       onClick={() => handleClearDate('endDate')}
-                      className="w-full"
+                      sx={{ mt: 1 }}
                     >
                       مسح التاريخ
                     </Button>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
+                  ),
+                },
+              }}
+            />
+          </Grid>
+        </Grid>
+        </LocalizationProvider>
       </CardContent>
     </Card>
   );

@@ -11,13 +11,7 @@ import {
   CardContent,
   Grid,
 } from '@mui/material';
-import {
-  Warning,
-  Error,
-  CheckCircle,
-  Schedule,
-  Refresh,
-} from '@mui/icons-material';
+import { Warning, Error, CheckCircle, Schedule, Refresh } from '@mui/icons-material';
 import { SupportTicket, SupportPriority } from '../types/support.types';
 import { format } from 'date-fns';
 
@@ -74,13 +68,9 @@ const getStatusLabel = (status: string): string => {
   }
 };
 
-export const SLAAlerter: React.FC<SLAAlerterProps> = ({
-  tickets,
-  onRefresh,
-  onTicketClick,
-}) => {
-  const criticalTickets = tickets.filter(ticket => ticket.priority === SupportPriority.URGENT);
-  const highPriorityTickets = tickets.filter(ticket => ticket.priority === SupportPriority.HIGH);
+export const SLAAlerter: React.FC<SLAAlerterProps> = ({ tickets, onRefresh, onTicketClick }) => {
+  const criticalTickets = tickets.filter((ticket) => ticket.priority === SupportPriority.URGENT);
+  const highPriorityTickets = tickets.filter((ticket) => ticket.priority === SupportPriority.HIGH);
   const totalBreached = tickets.length;
   const criticalCount = criticalTickets.length;
 
@@ -100,7 +90,7 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
   return (
     <Stack spacing={3}>
       {/* تنبيه عام */}
-      <Alert 
+      <Alert
         severity={criticalCount > 0 ? 'error' : 'warning'}
         icon={<Warning />}
         action={
@@ -112,9 +102,7 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
           )
         }
       >
-        <AlertTitle>
-          تنبيه: {totalBreached} تذكرة متجاوزة لوقت الاستجابة المتفق عليه
-        </AlertTitle>
+        <AlertTitle>تنبيه: {totalBreached} تذكرة متجاوزة لوقت الاستجابة المتفق عليه</AlertTitle>
         {criticalCount > 0 && (
           <Typography variant="body2" sx={{ mt: 1 }}>
             {criticalCount} تذكرة عاجلة تحتاج لاهتمام فوري!
@@ -124,7 +112,7 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
 
       {/* إحصائيات سريعة */}
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Stack direction="row" alignItems="center" spacing={1}>
@@ -140,7 +128,7 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Stack direction="row" alignItems="center" spacing={1}>
@@ -156,7 +144,7 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Stack direction="row" alignItems="center" spacing={1}>
@@ -172,13 +160,13 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Schedule color="info" />
                 <Typography variant="h6" color="info.main">
-                  {tickets.filter(t => t.status === 'open').length}
+                  {tickets.filter((t) => t.status === 'open').length}
                 </Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary">
@@ -195,7 +183,7 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
           <Typography variant="h6" gutterBottom>
             التذاكر المتجاوزة لوقت الاستجابة المتفق عليه
           </Typography>
-          
+
           <Stack spacing={2}>
             {tickets.slice(0, 10).map((ticket) => (
               <Box
@@ -206,9 +194,11 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
                   borderColor: getPriorityColor(ticket.priority) + '.main',
                   borderRadius: 1,
                   cursor: onTicketClick ? 'pointer' : 'default',
-                  '&:hover': onTicketClick ? {
-                    bgcolor: 'action.hover',
-                  } : {},
+                  '&:hover': onTicketClick
+                    ? {
+                        bgcolor: 'action.hover',
+                      }
+                    : {},
                 }}
                 onClick={() => onTicketClick?.(ticket)}
               >
@@ -218,32 +208,29 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
                       {ticket.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      {ticket.description.length > 100 
-                        ? ticket.description.substring(0, 100) + '...' 
-                        : ticket.description
-                      }
+                      {ticket.description.length > 100
+                        ? ticket.description.substring(0, 100) + '...'
+                        : ticket.description}
                     </Typography>
-                    
+
                     <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                       <Chip
                         label={getPriorityLabel(ticket.priority)}
                         color={getPriorityColor(ticket.priority)}
                         size="small"
                       />
-                      <Chip
-                        label={getStatusLabel(ticket.status)}
-                        size="small"
-                        variant="outlined"
-                      />
+                      <Chip label={getStatusLabel(ticket.status)} size="small" variant="outlined" />
                     </Stack>
                   </Box>
-                  
+
                   <Box sx={{ textAlign: 'right', minWidth: 120 }}>
                     <Typography variant="caption" color="text.secondary">
                       انتهاء SLA:
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
-                      {ticket.slaDueDate ? format(new Date(ticket.slaDueDate), 'dd/MM HH:mm') : 'غير محدد'}
+                      {ticket.slaDueDate
+                        ? format(new Date(ticket.slaDueDate), 'dd/MM HH:mm')
+                        : 'غير محدد'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       تم الإنشاء: {format(new Date(ticket.createdAt), 'dd/MM HH:mm')}
@@ -252,7 +239,7 @@ export const SLAAlerter: React.FC<SLAAlerterProps> = ({
                 </Stack>
               </Box>
             ))}
-            
+
             {tickets.length > 10 && (
               <Typography variant="body2" color="text.secondary" textAlign="center">
                 وعرض {tickets.length - 10} تذكرة أخرى...

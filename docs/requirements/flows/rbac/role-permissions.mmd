@@ -1,103 +1,59 @@
 %% RBAC System Overview
 %% View at https://mermaid.live
 flowchart TD
-  A[RBAC System Overview] --> B{System Component?}
-  B -->|Authentication| C[User Authentication Flow]
-  B -->|Authorization| D[Permission Control Flow]
-  B -->|Role Management| E[Role Assignment Flow]
-  B -->|Capabilities| F[Capabilities Management Flow]
-  B -->|Security| G[Security Measures Flow]
-  
-  %% Authentication Flow
-  C --> C1[User Login Request]
-  C1 --> C2[OTP Verification]
-  C2 --> C3[JWT Token Generation]
-  C3 --> C4[Token Validation]
-  C4 --> C5[User Session Creation]
-  
-  %% Authorization Flow
-  D --> D1[API Request with Token]
-  D1 --> D2[Token Validation]
-  D2 --> D3[Load User Capabilities]
-  D3 --> D4[Check Required Permission]
-  D4 --> D5[Validate Resource Access]
-  D5 --> D6[Grant or Deny Access]
-  
-  %% Role Management Flow
-  E --> E1[Role Assignment Request]
-  E1 --> E2[Validate Assignment Criteria]
-  E2 --> E3[Create Capability Record]
-  E3 --> E4[Set Role Status]
-  E4 --> E5[Grant Role Permissions]
-  E5 --> E6[Notify User]
-  
-  %% Capabilities Management Flow
-  F --> F1[View User Capabilities]
-  F1 --> F2[Update Capability Status]
-  F2 --> F3[Approve Role Requests]
-  F3 --> F4[Set Discount Percentages]
-  F4 --> F5[Monitor Role Usage]
-  
-  %% Security Measures Flow
-  G --> G1[Authentication Security]
-  G1 --> G2[Authorization Security]
-  G2 --> G3[Data Protection]
-  G3 --> G4[Network Security]
-  G4 --> G5[Audit and Monitoring]
-  
+  A[نظام RBAC] --> B{نوع المكون?}
+  B -->|المصادقة| C[Authentication System]
+  B -->|الأدوار| D[Roles & Permissions]
+  B -->|القدرات| E[Capabilities System]
+  B -->|الأمان| F[Security Measures]
+
+  %% Authentication System
+  C --> C1[OTP via SMS]
+  C1 --> C2[JWT Token Generation]
+  C2 --> C3[Token Validation]
+  C3 --> C4[User Session Management]
+
+  %% Roles & Permissions
+  D --> D1[User Roles Array]
+  D1 --> D2[Permissions Array]
+  D2 --> D3[Role-based Access]
+  D3 --> D4[Permission Checks]
+
+  %% Capabilities System
+  E --> E1[Capabilities Schema]
+  E1 --> E2[Status Management]
+  E2 --> E3[Approval Workflow]
+  E3 --> E4[Role Activation]
+
+  %% Security Measures
+  F --> F1[JWT Guards]
+  F1 --> F2[Data Encryption]
+  F2 --> F3[Audit Logging]
+  F3 --> F4[Access Control]
+
   %% User Roles
-  H[User Roles] --> I[Customer Role]
-  I --> J[Engineer Role]
-  J --> K[Wholesale Role]
-  K --> L[Admin Role]
-  
-  %% Customer Role
-  I --> I1[Basic customer permissions]
-  I1 --> I2[Product browsing]
-  I2 --> I3[Order management]
-  I3 --> I4[Support tickets]
-  I4 --> I5[Product reviews]
-  
-  %% Engineer Role
-  J --> J1[All customer permissions]
-  J1 --> J2[Service management]
-  J2 --> J3[Job acceptance]
-  J3 --> J4[Service updates]
-  J4 --> J5[Engineer dashboard]
-  
-  %% Wholesale Role
-  K --> K1[All customer permissions]
-  K1 --> K2[Wholesale pricing]
-  K2 --> K3[Bulk ordering]
-  K3 --> K4[Volume discounts]
-  K4 --> K5[Wholesale reports]
-  
-  %% Admin Role
-  L --> L1[All system permissions]
-  L1 --> L2[User management]
-  L2 --> L3[System configuration]
-  L3 --> L4[Analytics access]
-  L4 --> L5[Security control]
-  
-  %% Capability Statuses
-  M[Capability Statuses] --> N[none - No capability]
-  N --> O[pending - Awaiting approval]
-  O --> P[approved - Capability granted]
-  P --> Q[rejected - Capability denied]
-  
-  %% Security Features
-  R[Security Features] --> S[Multi-Factor Authentication]
-  S --> T[Role-Based Access Control]
-  T --> U[Data Encryption]
-  U --> V[Audit Logging]
-  V --> W[Threat Detection]
-  
+  G[الأدوار المتاحة] --> H[USER - مستخدم عادي]
+  H --> I[ADMIN - مدير]
+  I --> J[SUPER_ADMIN - مدير عام]
+  J --> K[MERCHANT - تاجر]
+  K --> L[ENGINEER - مهندس]
+
+  %% Capabilities Status
+  M[حالات القدرات] --> N[NONE - لا توجد]
+  N --> O[PENDING - في انتظار]
+  O --> P[APPROVED - معتمد]
+  P --> Q[REJECTED - مرفوض]
+
+  %% Permission Checks
+  R[فحص الصلاحيات] --> S{hasRole?}
+  S -->|نعم| T[Allow Access]
+  S -->|لا| U{hasPermission?}
+  U -->|نعم| T
+  U -->|لا| V[Deny Access]
+
   %% End points
-  C5 --> X[Authentication Complete]
-  D6 --> X
-  E6 --> X
-  F5 --> X
-  G5 --> X
-  L5 --> X
-  Q --> X
-  W --> X
+  T --> W[نهاية - الوصول مسموح]
+  V --> W
+  Q --> W
+  L --> W
+  F4 --> W

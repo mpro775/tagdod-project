@@ -151,8 +151,8 @@ export const CartManagementPage: React.FC = () => {
   };
 
   // Data preparation
-  const carts = cartData?.data?.carts || [];
-  const total = cartData?.meta?.total || 0;
+  const carts = cartData?.carts || [];
+  const total = cartData?.pagination?.total || 0;
 
   return (
     <Box sx={{ p: 3 }}>

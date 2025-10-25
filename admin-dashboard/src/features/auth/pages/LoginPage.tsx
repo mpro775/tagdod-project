@@ -44,11 +44,11 @@ export const LoginPage: React.FC = () => {
       // تسجيل الدخول
       login(
         {
-          _id: data.data.me.id,
-          phone: data.data.me.phone,
-          firstName: data.data.me.firstName || '',
-          roles: data.data.me.roles || ['super_admin'],
-          permissions: data.data.me.permissions || [
+          _id: data.me.id,
+          phone: data.me.phone,
+          firstName: data.me.firstName || '',
+          roles: data.me.roles || ['super_admin'],
+          permissions: data.me.permissions || [
             'users.create',
             'users.read', 
             'users.update',
@@ -57,19 +57,19 @@ export const LoginPage: React.FC = () => {
             'super_admin.access'
           ],
         },
-        data.data.tokens.access,
-        data.data.tokens.refresh
+        data.tokens.access,
+        data.tokens.refresh
       );
 
       // تحديث بيانات المستخدم مباشرة من الاستجابة
       useAuthStore.getState().updateUser({
-        _id: data.data.me.id,
-        phone: data.data.me.phone,
-        firstName: data.data.me.firstName || '',
-        lastName: data.data.me.lastName,
+        _id: data.me.id,
+        phone: data.me.phone,
+        firstName: data.me.firstName || '',
+        lastName: data.me.lastName,
         email: '', // مؤقت
-        roles: data.data.me.roles || ['super_admin'], // استخدام الأدوار من الاستجابة
-        permissions: data.data.me.permissions || [
+        roles: data.me.roles || ['super_admin'], // استخدام الأدوار من الاستجابة
+        permissions: data.me.permissions || [
           'users.create',
           'users.read', 
           'users.update',
@@ -131,24 +131,24 @@ export const LoginPage: React.FC = () => {
       // تسجيل الدخول
       login(
         {
-          _id: data.data.me.id,
-          phone: data.data.me.phone,
-          firstName: data.data.me.firstName || '',
-          roles: data.data.me.roles || [],
+          _id: data.me.id,
+          phone: data.me.phone,
+          firstName: data.me.firstName || '',
+          roles: data.me.roles || [],
         },
-        data.data.tokens.access,
-        data.data.tokens.refresh
+        data.tokens.access,
+        data.tokens.refresh
       );
 
       // تحديث بيانات المستخدم مباشرة من الاستجابة
       useAuthStore.getState().updateUser({
-        _id: data.data.me.id,
-        phone: data.data.me.phone,
-        firstName: data.data.me.firstName || '',
-        lastName: data.data.me.lastName,
+        _id: data.me.id,
+        phone: data.me.phone,
+        firstName: data.me.firstName || '',
+        lastName: data.me.lastName,
         email: '', // مؤقت
-        roles: data.data.me.roles || ['super_admin'], // استخدام الأدوار من الاستجابة أو افتراض super_admin
-        permissions: data.data.me.permissions || [
+        roles: data.me.roles || ['super_admin'], // استخدام الأدوار من الاستجابة أو افتراض super_admin
+        permissions: data.me.permissions || [
           'users.create',
           'users.read', 
           'users.update',

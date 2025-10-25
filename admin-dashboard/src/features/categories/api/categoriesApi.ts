@@ -98,9 +98,7 @@ export const categoriesApi = {
    * Get category statistics summary
    */
   getStats: async (): Promise<CategoryStats> => {
-    const response = await apiClient.get<ApiResponse<CategoryStats>>(
-      '/admin/categories/stats/summary'
-    );
+    const response = await apiClient.get<ApiResponse<CategoryStats>>('/admin/categories/stats/summary');
     return response.data.data;
   },
 };

@@ -5,8 +5,6 @@ import {
   CardContent,
   Skeleton,
   Grid,
-  Typography,
-  useTheme,
 } from '@mui/material';
 
 interface AnalyticsSkeletonProps {
@@ -18,7 +16,6 @@ export const AnalyticsSkeleton: React.FC<AnalyticsSkeletonProps> = ({
   variant = 'dashboard',
   count = 1,
 }) => {
-  const theme = useTheme();
 
   const renderDashboardSkeleton = () => (
     <Box>
@@ -30,7 +27,7 @@ export const AnalyticsSkeleton: React.FC<AnalyticsSkeletonProps> = ({
       {/* KPIs Skeleton */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[...Array(6)].map((_, index) => (
-          <Grid item xs={12} sm={6} md={4} lg={2} key={index}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={index}>
             <Card>
               <CardContent>
                 <Skeleton variant="text" width="60%" height={24} />
@@ -44,7 +41,7 @@ export const AnalyticsSkeleton: React.FC<AnalyticsSkeletonProps> = ({
 
       {/* Charts Skeleton */}
       <Grid container spacing={3}>
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <Card>
             <CardContent>
               <Skeleton variant="text" width="30%" height={24} sx={{ mb: 2 }} />
@@ -52,7 +49,7 @@ export const AnalyticsSkeleton: React.FC<AnalyticsSkeletonProps> = ({
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <Card>
             <CardContent>
               <Skeleton variant="text" width="40%" height={24} sx={{ mb: 2 }} />
@@ -92,7 +89,7 @@ export const AnalyticsSkeleton: React.FC<AnalyticsSkeletonProps> = ({
   const renderCardSkeleton = () => (
     <Grid container spacing={2}>
       {[...Array(count)].map((_, index) => (
-        <Grid item xs={12} sm={6} md={4} key={index}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
           <Card>
             <CardContent>
               <Skeleton variant="text" width="60%" height={24} />

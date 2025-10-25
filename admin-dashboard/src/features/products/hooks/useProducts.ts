@@ -216,7 +216,7 @@ export const useUpdateStock = () => {
   return useMutation({
     mutationFn: ({ variantId, data }: { variantId: string; data: StockUpdateRequest }) =>
       productsApi.updateStock(variantId, data),
-    onSuccess: (_, variables) => {
+    onSuccess: (_,) => {
       toast.success('تم تحديث المخزون بنجاح');
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY] });
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, 'inventory'] });

@@ -1,19 +1,28 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import {
-  Shield,
-  BarChart3,
-  FileText,
-  Settings,
-  AlertTriangle,
-  Activity,
-  Users,
-  Key,
-  Database,
-  Clock,
-} from 'lucide-react';
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Button,
+  Tabs,
+  Tab,
+  Box,
+  Grid,
+  Paper,
+} from '@mui/material';
+import {
+  Security as ShieldIcon,
+  BarChart as BarChartIcon,
+  Description as FileTextIcon,
+  Settings as SettingsIcon,
+  Warning as AlertTriangleIcon,
+  AutoAwesome as ActivityIcon,
+  People as UsersIcon,
+  VpnKey as KeyIcon,
+  Storage as DatabaseIcon,
+  AccessTime as ClockIcon,
+} from '@mui/icons-material';
 import { AuditLogsPage } from './AuditLogsPage';
 import { AuditAnalyticsPage } from './AuditAnalyticsPage';
 import { useAuditStats } from '../hooks/useAudit';
@@ -26,148 +35,165 @@ export const AuditMainPage: React.FC = () => {
     {
       title: 'إجمالي السجلات',
       value: stats?.totalLogs || 0,
-      icon: Database,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      icon: DatabaseIcon,
+      color: 'primary',
     },
     {
       title: 'العمليات الحساسة',
       value: stats?.sensitiveLogs || 0,
-      icon: AlertTriangle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
+      icon: AlertTriangleIcon,
+      color: 'error',
     },
     {
       title: 'الإجراءات الإدارية',
       value: stats?.adminActions || 0,
-      icon: Settings,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      icon: SettingsIcon,
+      color: 'secondary',
     },
     {
       title: 'أحداث المصادقة',
       value: stats?.authEvents || 0,
-      icon: Key,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      icon: KeyIcon,
+      color: 'success',
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">نظام التدقيق</h1>
-          <p className="text-muted-foreground">
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+          <Typography variant="h3" fontWeight="bold">
+            نظام التدقيق
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
             مراقبة وتتبع جميع العمليات في النظام
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            الإعدادات
-          </Button>
-        </div>
-      </div>
+          </Typography>
+        </Box>
+        <Button variant="outlined" size="small" startIcon={<SettingsIcon />}>
+          الإعدادات
+        </Button>
+      </Box>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Grid container spacing={2}>
         {quickStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={index} className="hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </CardTitle>
-                <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                  <Icon className={`h-4 w-4 ${stat.color}`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {isLoading ? '...' : stat.value.toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {stat.title === 'العمليات الحساسة' && stats?.totalLogs
-                    ? `${Math.round((stat.value / stats.totalLogs) * 100)}% من إجمالي العمليات`
-                    : 'آخر تحديث'}
-                </p>
-              </CardContent>
-            </Card>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={index}>
+              <Card sx={{ '&:hover': { boxShadow: 3 }, transition: 'box-shadow 0.3s' }}>
+                <CardHeader
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    pb: 1,
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    {stat.title}
+                  </Typography>
+                  <Paper sx={{ p: 1, borderRadius: '50%', bgcolor: `${stat.color}.light` }}>
+                    <Icon sx={{ color: `${stat.color}.main` }} />
+                  </Paper>
+                </CardHeader>
+                <CardContent>
+                  <Typography variant="h4" fontWeight="bold">
+                    {isLoading ? '...' : stat.value.toLocaleString()}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {stat.title === 'العمليات الحساسة' && stats?.totalLogs
+                      ? `${Math.round((stat.value / stats.totalLogs) * 100)}% من إجمالي العمليات`
+                      : 'آخر تحديث'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
           );
         })}
-      </div>
+      </Grid>
 
       {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="logs" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            سجلات التدقيق
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            التحليلات والإحصائيات
-          </TabsTrigger>
-        </TabsList>
+      <Box>
+        <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tab value="logs" icon={<FileTextIcon />} iconPosition="start" label="سجلات التدقيق" />
+            <Tab
+              value="analytics"
+              icon={<BarChartIcon />}
+              iconPosition="start"
+              label="التحليلات والإحصائيات"
+            />
+          </Box>
+        </Tabs>
 
-        <TabsContent value="logs" className="space-y-4">
-          <AuditLogsPage />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <AuditAnalyticsPage />
-        </TabsContent>
-      </Tabs>
+        <Box sx={{ mt: 3 }}>
+          {activeTab === 'logs' && <AuditLogsPage />}
+          {activeTab === 'analytics' && <AuditAnalyticsPage />}
+        </Box>
+      </Box>
 
       {/* System Status */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ShieldIcon />
             حالة نظام التدقيق
-          </CardTitle>
+          </Typography>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-green-100">
-                <Activity className="h-4 w-4 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">النظام نشط</p>
-                <p className="text-xs text-muted-foreground">جميع العمليات يتم تسجيلها</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-blue-100">
-                <Clock className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">آخر تحديث</p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date().toLocaleString('ar-SA')}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-purple-100">
-                <Users className="h-4 w-4 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">المستخدمون النشطون</p>
-                <p className="text-xs text-muted-foreground">
-                  {stats?.authEvents || 0} حدث مصادقة
-                </p>
-              </div>
-            </div>
-          </div>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Paper sx={{ p: 1, borderRadius: '50%', bgcolor: 'success.light' }}>
+                  <ActivityIcon sx={{ color: 'success.main' }} />
+                </Paper>
+                <Box>
+                  <Typography variant="body2" fontWeight="medium">
+                    النظام نشط
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    جميع العمليات يتم تسجيلها
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Paper sx={{ p: 1, borderRadius: '50%', bgcolor: 'primary.light' }}>
+                  <ClockIcon sx={{ color: 'primary.main' }} />
+                </Paper>
+                <Box>
+                  <Typography variant="body2" fontWeight="medium">
+                    آخر تحديث
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date().toLocaleString('ar-SA')}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Paper sx={{ p: 1, borderRadius: '50%', bgcolor: 'secondary.light' }}>
+                  <UsersIcon sx={{ color: 'secondary.main' }} />
+                </Paper>
+                <Box>
+                  <Typography variant="body2" fontWeight="medium">
+                    المستخدمون النشطون
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {stats?.authEvents || 0} حدث مصادقة
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
-    </div>
+    </Box>
   );
 };

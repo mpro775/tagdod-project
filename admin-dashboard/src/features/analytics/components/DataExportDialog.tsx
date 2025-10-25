@@ -20,14 +20,12 @@ import {
   StepContent,
   Alert,
   Chip,
-  Divider,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
-  IconButton,
-  Tooltip,
   LinearProgress,
+  Grid,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -37,9 +35,8 @@ import {
   Description as DescriptionIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
-  Info as InfoIcon,
 } from '@mui/icons-material';
-import { 
+import {
   useExportSalesData,
   useExportProductsData,
   useExportCustomersData,
@@ -52,12 +49,11 @@ interface DataExportDialogProps {
   onClose: () => void;
 }
 
-export const DataExportDialog: React.FC<DataExportDialogProps> = ({
-  open,
-  onClose,
-}) => {
+export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClose }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [exportType, setExportType] = useState<'sales' | 'products' | 'customers' | 'custom'>('sales');
+  const [exportType, setExportType] = useState<'sales' | 'products' | 'customers' | 'custom'>(
+    'sales'
+  );
   const [format, setFormat] = useState<ReportFormat>(ReportFormat.EXCEL);
   const [dateRange, setDateRange] = useState({
     startDate: '',
@@ -70,7 +66,9 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
     category: '',
     status: '',
   });
-  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'completed' | 'error'>('idle');
+  const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'completed' | 'error'>(
+    'idle'
+  );
   const [exportResult, setExportResult] = useState<any>(null);
 
   const exportSalesData = useExportSalesData();
@@ -78,12 +76,6 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
   const exportCustomersData = useExportCustomersData();
   const exportData = useExportData();
 
-  const steps = [
-    'اختيار نوع البيانات',
-    'تحديد التنسيق والفترة',
-    'إعداد الفلاتر',
-    'تصدير البيانات',
-  ];
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -111,10 +103,10 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
 
   const handleExport = async () => {
     setExportStatus('exporting');
-    
+
     try {
       let result;
-      
+
       switch (exportType) {
         case 'sales':
           result = await exportSalesData.mutateAsync({
@@ -147,7 +139,7 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
         default:
           throw new Error('نوع التصدير غير مدعوم');
       }
-      
+
       setExportResult(result);
       setExportStatus('completed');
     } catch (error) {
@@ -209,7 +201,7 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
           <Typography variant="h6">تصدير البيانات</Typography>
         </Box>
       </DialogTitle>
-      
+
       <DialogContent>
         <Stepper activeStep={activeStep} orientation="vertical">
           {/* Step 1: Data Type Selection */}
@@ -218,10 +210,7 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
             <StepContent>
               <FormControl fullWidth sx={{ mb: 2 }}>
                 <InputLabel>نوع البيانات</InputLabel>
-                <Select
-                  value={exportType}
-                  onChange={(e) => setExportType(e.target.value as any)}
-                >
+                <Select value={exportType} onChange={(e) => setExportType(e.target.value as any)}>
                   <MenuItem value="sales">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <TableChartIcon />
@@ -248,20 +237,19 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
                   </MenuItem>
                 </Select>
               </FormControl>
-              
+
               <Alert severity="info" sx={{ mb: 2 }}>
                 <Typography variant="body2">
-                  اختر نوع البيانات التي تريد تصديرها. يمكنك تصدير بيانات المبيعات، المنتجات، العملاء، أو بيانات مخصصة.
+                  اختر نوع البيانات التي تريد تصديرها. يمكنك تصدير بيانات المبيعات، المنتجات،
+                  العملاء، أو بيانات مخصصة.
                 </Typography>
               </Alert>
-              
+
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button onClick={handleNext} variant="contained">
                   التالي
                 </Button>
-                <Button onClick={onClose}>
-                  إلغاء
-                </Button>
+                <Button onClick={onClose}>إلغاء</Button>
               </Box>
             </StepContent>
           </Step>
@@ -271,7 +259,7 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
             <StepLabel>تحديد التنسيق والفترة</StepLabel>
             <StepContent>
               <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl fullWidth>
                     <InputLabel>تنسيق الملف</InputLabel>
                     <Select
@@ -289,8 +277,8 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
                     </Select>
                   </FormControl>
                 </Grid>
-                
-                <Grid item xs={12} md={6}>
+
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="تاريخ البداية"
@@ -300,8 +288,8 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
-                
-                <Grid item xs={12} md={6}>
+
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="تاريخ النهاية"
@@ -312,14 +300,12 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
                   />
                 </Grid>
               </Grid>
-              
+
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button onClick={handleNext} variant="contained">
                   التالي
                 </Button>
-                <Button onClick={handleBack}>
-                  السابق
-                </Button>
+                <Button onClick={handleBack}>السابق</Button>
               </Box>
             </StepContent>
           </Step>
@@ -329,31 +315,35 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
             <StepLabel>إعداد الفلاتر</StepLabel>
             <StepContent>
               <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
                         checked={filters.includeCharts}
-                        onChange={(e) => setFilters({ ...filters, includeCharts: e.target.checked })}
+                        onChange={(e) =>
+                          setFilters({ ...filters, includeCharts: e.target.checked })
+                        }
                       />
                     }
                     label="تضمين الرسوم البيانية"
                   />
                 </Grid>
-                
-                <Grid item xs={12} md={6}>
+
+                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
                         checked={filters.includeRawData}
-                        onChange={(e) => setFilters({ ...filters, includeRawData: e.target.checked })}
+                        onChange={(e) =>
+                          setFilters({ ...filters, includeRawData: e.target.checked })
+                        }
                       />
                     }
                     label="تضمين البيانات الأولية"
                   />
                 </Grid>
-                
-                <Grid item xs={12} md={6}>
+
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="تجميع البيانات"
@@ -362,8 +352,8 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
                     placeholder="مثال: يومي، أسبوعي، شهري"
                   />
                 </Grid>
-                
-                <Grid item xs={12} md={6}>
+
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
                     label="فلترة حسب الفئة"
@@ -373,14 +363,12 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
                   />
                 </Grid>
               </Grid>
-              
+
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button onClick={handleNext} variant="contained">
                   التالي
                 </Button>
-                <Button onClick={handleBack}>
-                  السابق
-                </Button>
+                <Button onClick={handleBack}>السابق</Button>
               </Box>
             </StepContent>
           </Step>
@@ -408,23 +396,21 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
                     variant="outlined"
                   />
                   {dateRange.startDate && (
-                    <Chip
-                      label={`من ${dateRange.startDate}`}
-                      variant="outlined"
-                    />
+                    <Chip label={`من ${dateRange.startDate}`} variant="outlined" />
                   )}
                   {dateRange.endDate && (
-                    <Chip
-                      label={`إلى ${dateRange.endDate}`}
-                      variant="outlined"
-                    />
+                    <Chip label={`إلى ${dateRange.endDate}`} variant="outlined" />
                   )}
                 </Box>
-                
+
                 <List dense>
                   <ListItem>
                     <ListItemIcon>
-                      {filters.includeCharts ? <CheckCircleIcon color="success" /> : <ErrorIcon color="error" />}
+                      {filters.includeCharts ? (
+                        <CheckCircleIcon color="success" />
+                      ) : (
+                        <ErrorIcon color="error" />
+                      )}
                     </ListItemIcon>
                     <ListItemText
                       primary="الرسوم البيانية"
@@ -433,7 +419,11 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
                   </ListItem>
                   <ListItem>
                     <ListItemIcon>
-                      {filters.includeRawData ? <CheckCircleIcon color="success" /> : <ErrorIcon color="error" />}
+                      {filters.includeRawData ? (
+                        <CheckCircleIcon color="success" />
+                      ) : (
+                        <ErrorIcon color="error" />
+                      )}
                     </ListItemIcon>
                     <ListItemText
                       primary="البيانات الأولية"
@@ -489,19 +479,15 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({
                 <Button onClick={handleBack} disabled={exportStatus === 'exporting'}>
                   السابق
                 </Button>
-                <Button onClick={handleReset}>
-                  إعادة تعيين
-                </Button>
+                <Button onClick={handleReset}>إعادة تعيين</Button>
               </Box>
             </StepContent>
           </Step>
         </Stepper>
       </DialogContent>
-      
+
       <DialogActions>
-        <Button onClick={onClose}>
-          إغلاق
-        </Button>
+        <Button onClick={onClose}>إغلاق</Button>
       </DialogActions>
     </Dialog>
   );

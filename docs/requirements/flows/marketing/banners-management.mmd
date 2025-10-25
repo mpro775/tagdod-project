@@ -1,253 +1,57 @@
-%% Banners Management System
+%% Banners Management Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Banners Management] --> B{Action Type?}
-  B -->|Create Banner| C[Create New Banner]
-  B -->|Update Banner| D[Update Existing Banner]
-  B -->|Display Banner| E[Display Active Banners]
-  B -->|Track Banner| F[Track Banner Interactions]
-  B -->|List Banners| G[List Banners]
-  B -->|Delete Banner| H[Delete Banner]
-  
+  A[إدارة البانرات] --> B{نوع العملية?}
+  B -->|إنشاء بانر| C[إنشاء بانر]
+  B -->|تحديث بانر| D[تحديث بانر]
+  B -->|حذف بانر| E[حذف بانر]
+  B -->|عرض البانرات| F[عرض البانرات]
+  B -->|تتبع المشاهدات| G[تتبع المشاهدات]
+
   %% Create Banner
-  C --> C1[Define Banner Content]
-  C1 --> C2[Set Banner Location]
-  C2 --> C3[Configure Display Settings]
-  C3 --> C4[Set Targeting Rules]
-  C4 --> C5[Configure Scheduling]
-  C5 --> C6[Set Analytics Settings]
-  C6 --> C7[Validate Banner Data]
-  C7 --> C8[Save Banner]
-  C8 --> C9[Initialize Statistics]
-  
-  %% Banner Content
-  C1 --> C1A[Banner title]
-  C1A --> C1B[Banner description]
-  C1B --> C1C[Image URL]
-  C1C --> C1D[Link URL]
-  C1D --> C1E[Alt text]
-  C1E --> C1F[Call-to-action text]
-  
-  %% Banner Locations
-  C2 --> C2A[Home page top]
-  C2A --> C2B[Home page middle]
-  C2B --> C2C[Home page bottom]
-  C2C --> C2D[Category page top]
-  C2D --> C2E[Product page]
-  C2E --> C2F[Cart page]
-  C2F --> C2G[Checkout page]
-  C2G --> C2H[Sidebar]
-  C2H --> C2I[Footer]
-  
-  %% Display Settings
-  C3 --> C3A[Active status]
-  C3A --> C3B[Sort order]
-  C3B --> C3C[Display duration]
-  C3C --> C3D[Image optimization]
-  C3D --> C3E[Responsive settings]
-  C3E --> C3F[Animation settings]
-  
-  %% Targeting Rules
-  C4 --> C4A[Target audiences]
-  C4A --> C4B[Target categories]
-  C4B --> C4C[Target products]
-  C4C --> C4D[Geographic targeting]
-  C4D --> C4E[Device targeting]
-  C4E --> C4F[Time-based targeting]
-  
-  %% Scheduling
-  C5 --> C5A[Start date]
-  C5A --> C5B[End date]
-  C5B --> C5C[Display frequency]
-  C5C --> C5D[Time zone handling]
-  C5D --> C5E[Recurring schedules]
-  C5E --> C5F[Priority scheduling]
-  
-  %% Analytics Settings
-  C6 --> C6A[View tracking]
-  C6A --> C6B[Click tracking]
-  C6B --> C6C[Conversion tracking]
-  C6C --> C6D[Performance metrics]
-  C6D --> C6E[Reporting settings]
-  C6E --> C6F[Goal tracking]
-  
+  C --> C1[استلام بيانات البانر]
+  C1 --> C2[التحقق من صحة البيانات]
+  C2 --> C3[إنشاء كائن البانر]
+  C3 --> C4[حفظ في قاعدة البيانات]
+  C4 --> C5[إرجاع البانر المنشأ]
+
   %% Update Banner
-  D --> D1[Load Existing Banner]
-  D1 --> D2[Update Content]
-  D2 --> D3[Update Display Settings]
-  D3 --> D4[Update Targeting]
-  D4 --> D5[Update Scheduling]
-  D5 --> D6[Validate Changes]
-  D6 --> D7[Save Updated Banner]
-  D7 --> D8[Update Statistics]
-  
-  %% Display Active Banners
-  E --> E1[Check Banner Status]
-  E1 --> E2[Validate Display Conditions]
-  E2 --> E3[Apply Targeting Rules]
-  E3 --> E4[Sort by Priority]
-  E4 --> E5[Filter by Location]
-  E5 --> E6[Return Banner List]
-  E6 --> E7[Track Banner View]
-  
-  %% Banner Status Check
-  E1 --> E1A[Check active status]
-  E1A --> E1B[Check scheduling]
-  E1B --> E1C[Check expiration]
-  E1C --> E1D[Validate display rules]
-  E1D --> E1E[Check targeting match]
-  
-  %% Display Conditions
-  E2 --> E2A[Time-based display]
-  E2A --> E2B[Location-based display]
-  E2B --> E2C[User-based display]
-  E2C --> E2D[Device-based display]
-  E2D --> E2E[Frequency-based display]
-  
-  %% Targeting Application
-  E3 --> E3A[Check audience targeting]
-  E3A --> E3B[Check category targeting]
-  E3B --> E3C[Check product targeting]
-  E3C --> E3D[Check geographic targeting]
-  E3D --> E3E[Apply targeting rules]
-  
-  %% Track Banner Interactions
-  F --> F1[Track Banner View]
-  F1 --> F2[Track Banner Click]
-  F2 --> F3[Track Conversion]
-  F3 --> F4[Update Statistics]
-  F4 --> F5[Generate Analytics]
-  F5 --> F6[Optimize Performance]
-  
-  %% View Tracking
-  F1 --> F1A[Increment view count]
-  F1A --> F1B[Record view timestamp]
-  F1B --> F1C[Track user session]
-  F1C --> F1D[Log view event]
-  F1D --> F1E[Update banner metrics]
-  
-  %% Click Tracking
-  F2 --> F2A[Increment click count]
-  F2A --> F2B[Record click timestamp]
-  F2B --> F2C[Track click source]
-  F2C --> F2D[Log click event]
-  F2D --> F2E[Update conversion funnel]
-  
-  %% Conversion Tracking
-  F3 --> F3A[Track conversion events]
-  F3A --> F3B[Calculate conversion rate]
-  F3B --> F3C[Track revenue attribution]
-  F3C --> F3D[Update ROI metrics]
-  F3D --> F3E[Generate performance report]
-  
-  %% Banner Performance Analytics
-  I[Banner Performance Analytics] --> J[View Analytics]
-  J --> K[Click Analytics]
-  K --> L[Conversion Analytics]
-  L --> M[Revenue Analytics]
-  M --> N[Performance Optimization]
-  
-  %% View Analytics
-  J --> J1[Total view count]
-  J1 --> J2[Unique view count]
-  J2 --> J3[View frequency]
-  J3 --> J4[View duration]
-  J4 --> J5[View distribution]
-  J5 --> J6[View trends]
-  
-  %% Click Analytics
-  K --> K1[Total click count]
-  K1 --> K2[Click-through rate]
-  K2 --> K3[Click distribution]
-  K3 --> K4[Click timing]
-  K4 --> K5[Click sources]
-  K5 --> K6[Click patterns]
-  
-  %% Conversion Analytics
-  L --> L1[Conversion count]
-  L1 --> L2[Conversion rate]
-  L2 --> L3[Conversion value]
-  L3 --> L4[Conversion attribution]
-  L4 --> L5[Conversion funnel]
-  L5 --> L6[Conversion optimization]
-  
-  %% Revenue Analytics
-  M --> M1[Revenue attribution]
-  M1 --> M2[ROI calculation]
-  M2 --> M3[Cost per acquisition]
-  M3 --> M4[Revenue per view]
-  M4 --> M5[Revenue per click]
-  M5 --> M6[Revenue optimization]
-  
-  %% Banner Campaign Management
-  O[Banner Campaign Management] --> P[Campaign Creation]
-  P --> Q[Campaign Execution]
-  Q --> R[Campaign Monitoring]
-  R --> S[Campaign Optimization]
-  S --> T[Campaign Analysis]
-  
-  %% Campaign Creation
-  P --> P1[Define campaign goals]
-  P1 --> P2[Set campaign budget]
-  P2 --> P3[Create banner assets]
-  P3 --> P4[Configure targeting]
-  P4 --> P5[Set campaign schedule]
-  P5 --> P6[Launch campaign]
-  
-  %% Campaign Execution
-  Q --> Q1[Display banners]
-  Q1 --> Q2[Track interactions]
-  Q2 --> Q3[Monitor performance]
-  Q3 --> Q4[Adjust targeting]
-  Q4 --> Q5[Optimize content]
-  Q5 --> Q6[Manage budget]
-  
-  %% Campaign Monitoring
-  R --> R1[Real-time monitoring]
-  R1 --> R2[Performance alerts]
-  R2 --> R3[Budget tracking]
-  R3 --> R4[Quality control]
-  R4 --> R5[Compliance checking]
-  R5 --> R6[Issue resolution]
-  
-  %% Banner A/B Testing
-  U[Banner A/B Testing] --> V[Test Setup]
-  V --> W[Test Execution]
-  W --> X[Test Monitoring]
-  X --> Y[Test Analysis]
-  Y --> Z[Test Optimization]
-  
-  %% Test Setup
-  V --> V1[Define test hypothesis]
-  V1 --> V2[Create test variants]
-  V2 --> V3[Set test parameters]
-  V3 --> V4[Configure traffic split]
-  V4 --> V5[Define success metrics]
-  V5 --> V6[Launch test]
-  
-  %% Test Execution
-  W --> W1[Display test variants]
-  W1 --> W2[Track test metrics]
-  W2 --> W3[Monitor test performance]
-  W3 --> W4[Ensure test integrity]
-  W4 --> W5[Collect test data]
-  W5 --> W6[Maintain test consistency]
-  
-  %% Test Analysis
-  Y --> Y1[Statistical analysis]
-  Y1 --> Y2[Performance comparison]
-  Y2 --> Y3[Significance testing]
-  Y3 --> Y4[Winner determination]
-  Y4 --> Y5[Insight generation]
-  Y5 --> Y6[Recommendation creation]
-  
-  %% End points
-  C9 --> AA[Banner Created Successfully]
-  D8 --> AA
-  E7 --> AA
-  F6 --> AA
-  G --> AA
-  H --> AA
-  N --> AA
-  T --> AA
-  Z --> AA
+  D --> D1[استلام معرف البانر وبيانات التحديث]
+  D1 --> D2[البحث عن البانر]
+  D2 --> D3{البانر موجود?}
+  D3 -->|لا| D4[إرجاع خطأ]
+  D3 -->|نعم| D5[تحديث البيانات]
+  D5 --> D6[حفظ التغييرات]
+  D6 --> D7[إرجاع البانر المحدث]
+  D4 --> D8[نهاية - غير موجود]
+
+  %% Delete Banner
+  E --> E1[استلام معرف البانر]
+  E1 --> E2[البحث عن البانر]
+  E2 --> E3{البانر موجود?}
+  E3 -->|لا| E4[إرجاع خطأ]
+  E3 -->|نعم| E5[Soft Delete للبانر]
+  E5 --> E6[إرجاع نجاح الحذف]
+  E4 --> E7[نهاية - غير موجود]
+
+  %% List Banners
+  F --> F1[استلام معايير البحث والموقع]
+  F1 --> F2[البحث في قاعدة البيانات]
+  F2 --> F3[فلترة حسب الموقع والنشاط]
+  F3 --> F4[ترتيب حسب sortOrder]
+  F4 --> F5[إرجاع قائمة البانرات]
+
+  %% Track Views
+  G --> G1[استلام معرف البانر ونوع الحدث]
+  G1 --> G2[البحث عن البانر]
+  G2 --> G3{البانر موجود?}
+  G3 -->|لا| G4[إرجاع خطأ]
+  G3 -->|نعم| G5{نوع الحدث?}
+  G5 -->|مشاهدة| G6[زيادة viewCount]
+  G5 -->|نقر| G7[زيادة clickCount]
+  G5 -->|تحويل| G8[زيادة conversionCount]
+  G6 --> G9[حفظ التغييرات]
+  G7 --> G9
+  G8 --> G9
+  G9 --> G10[إرجاع نجاح التتبع]
+  G4 --> G11[نهاية - غير موجود]

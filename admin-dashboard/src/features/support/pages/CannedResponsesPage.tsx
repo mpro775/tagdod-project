@@ -14,18 +14,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Chip,
-  Alert,
   Skeleton,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
   Add,
   Refresh,
   ArrowBack,
   Search,
-  FilterList,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -96,7 +91,7 @@ export const CannedResponsesPage: React.FC = () => {
   const handleSaveResponse = () => {
     const responseData = {
       ...formData,
-      category: formData.category || undefined,
+      category: formData.category ? (formData.category as SupportCategory) : undefined,
       tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
     };
 
@@ -151,7 +146,7 @@ export const CannedResponsesPage: React.FC = () => {
   const renderSkeletons = () => (
     <Grid container spacing={3}>
       {[...Array(6)].map((_, index) => (
-        <Grid item xs={12} sm={6} md={4} key={index}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={index}>
           <Skeleton variant="rectangular" height={200} />
         </Grid>
       ))}
@@ -220,10 +215,10 @@ export const CannedResponsesPage: React.FC = () => {
       </Box>
 
       {/* Results Summary */}
-      {responsesData?.data && (
+      {responsesData?.data?.data && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="body1">
-            عرض {responsesData.data.length} من أصل {responsesData.meta?.total || 0} رد جاهز
+            عرض {responsesData.data.data.length} من أصل {responsesData.data.meta?.total || 0} رد جاهز
           </Typography>
         </Box>
       )}
@@ -231,10 +226,10 @@ export const CannedResponsesPage: React.FC = () => {
       {/* Responses Grid */}
       {isLoading ? (
         renderSkeletons()
-      ) : responsesData?.data && responsesData.data.length > 0 ? (
+      ) : responsesData?.data?.data && responsesData.data.data.length > 0 ? (
         <Grid container spacing={3}>
-          {responsesData.data.map((response) => (
-            <Grid item xs={12} sm={6} md={4} key={response._id}>
+          {responsesData.data.data.map((response) => (
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={response._id}>
               <CannedResponseCard
                 response={response}
                 onEdit={handleEditResponse}

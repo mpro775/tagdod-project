@@ -15,17 +15,8 @@ import {
   Typography,
   Chip,
   Stack,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
-import {
-  Add,
-  Remove,
-  Save,
-  Cancel,
-  Edit,
-  Delete,
-} from '@mui/icons-material';
+import { Save, Cancel } from '@mui/icons-material';
 
 interface ServiceFormProps {
   open: boolean;
@@ -46,14 +37,14 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
   initialData = {},
   mode,
 }) => {
-  const [formData, setFormData] = useState(initialData);
+  const [formData, setFormData] = useState<any>(initialData);
   const [errors, setErrors] = useState<any>({});
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev: any) => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -263,9 +254,7 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">
-            {title}
-          </Typography>
+          <Typography variant="h6">{title}</Typography>
           <Stack direction="row" spacing={1}>
             <Chip
               label={mode === 'create' ? 'إنشاء جديد' : 'تعديل'}
@@ -275,18 +264,12 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
           </Stack>
         </Box>
       </DialogTitle>
-      <DialogContent>
-        {renderForm()}
-      </DialogContent>
+      <DialogContent>{renderForm()}</DialogContent>
       <DialogActions>
         <Button onClick={onClose} startIcon={<Cancel />}>
           إلغاء
         </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          startIcon={<Save />}
-        >
+        <Button onClick={handleSubmit} variant="contained" startIcon={<Save />}>
           {mode === 'create' ? 'إنشاء' : 'حفظ التغييرات'}
         </Button>
       </DialogActions>

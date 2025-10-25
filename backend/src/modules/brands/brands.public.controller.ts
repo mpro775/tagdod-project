@@ -15,7 +15,7 @@ import {
 import { BrandsService } from './brands.service';
 import { ListBrandsDto } from './dto/brand.dto';
 
-@ApiTags('brands')
+@ApiTags('العلامات-التجارية')
 @Controller('brands')
 export class BrandsPublicController {
   constructor(private readonly brandsService: BrandsService) {}
@@ -104,8 +104,7 @@ export class BrandsPublicController {
     });
     
     return {
-      success: true,
-      data: result.brands,
+      brands: result.brands,
       pagination: result.pagination,
     };
   }
@@ -158,10 +157,7 @@ export class BrandsPublicController {
   })
   async getBrandBySlug(@Param('slug') slug: string) {
     const brand = await this.brandsService.getBrandBySlug(slug);
-    return {
-      success: true,
-      data: brand,
-    };
+    return brand;
   }
 
   @Get(':id')
@@ -212,10 +208,7 @@ export class BrandsPublicController {
   })
   async getBrandById(@Param('id') id: string) {
     const brand = await this.brandsService.getBrandById(id);
-    return {
-      success: true,
-      data: brand,
-    };
+    return brand;
   }
 }
 

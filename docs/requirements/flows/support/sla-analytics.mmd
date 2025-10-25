@@ -1,143 +1,67 @@
-%% SLA Tracking and Analytics System Flow
+%% SLA Analytics Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[SLA Tracking System] --> B{Priority Level?}
-  B -->|URGENT| C[Set SLA: 1 hour]
-  B -->|HIGH| D[Set SLA: 4 hours]
-  B -->|MEDIUM| E[Set SLA: 24 hours]
-  B -->|LOW| F[Set SLA: 48 hours]
-  
-  %% SLA Setup
-  C --> G[Calculate SLA due date]
-  D --> G
-  E --> G
-  F --> G
-  G --> H[Set SLA countdown timer]
-  H --> I[Monitor SLA status]
-  
-  %% SLA Monitoring
-  I --> J{SLA Status?}
-  J -->|Within SLA| K[Continue normal processing]
-  J -->|Approaching SLA| L[Send warning notification]
-  J -->|SLA Breached| M[Mark as SLA breached]
-  
-  %% Warning System
-  L --> L1[Send warning to assigned agent]
-  L1 --> L2[Send warning to supervisor]
-  L2 --> L3[Update ticket priority]
-  L3 --> L4[Escalate if needed]
-  
-  %% SLA Breach Handling
-  M --> M1[Mark ticket as SLA breached]
-  M1 --> M2[Send breach notification]
-  M2 --> M3[Escalate to supervisor]
-  M3 --> M4[Update breach metrics]
-  M4 --> M5[Generate breach report]
-  
-  %% Analytics System
-  N[Analytics System] --> N1[Collect ticket data]
-  N1 --> N2[Calculate response times]
-  N2 --> N3[Calculate resolution times]
-  N3 --> N4[Calculate SLA performance]
-  N4 --> N5[Calculate customer satisfaction]
-  
-  %% Response Time Analytics
-  N2 --> O[Response Time Analytics]
-  O --> O1[Track first response time]
-  O1 --> O2[Calculate average response time]
-  O2 --> O3[Identify slow responders]
-  O3 --> O4[Generate response time reports]
-  
-  %% Resolution Time Analytics
-  N3 --> P[Resolution Time Analytics]
-  P --> P1[Track ticket resolution time]
-  P1 --> P2[Calculate average resolution time]
-  P2 --> P3[Identify resolution bottlenecks]
-  P3 --> P4[Generate resolution reports]
-  
-  %% SLA Performance Analytics
-  N4 --> Q[SLA Performance Analytics]
-  Q --> Q1[Track SLA compliance rate]
-  Q1 --> Q2[Calculate SLA breach rate]
-  Q2 --> Q3[Identify SLA trends]
-  Q3 --> Q4[Generate SLA reports]
-  
-  %% Customer Satisfaction Analytics
-  N5 --> R[Customer Satisfaction Analytics]
-  R --> R1[Track customer ratings]
-  R1 --> R2[Calculate satisfaction scores]
-  R2 --> R3[Analyze feedback sentiment]
-  R3 --> R4[Generate satisfaction reports]
-  
-  %% Performance Reports
-  S[Performance Reports] --> S1{Report Type?}
-  S1 -->|Agent Performance| S2[Agent Performance Report]
-  S1 -->|Team Performance| S3[Team Performance Report]
-  S1 -->|SLA Performance| S4[SLA Performance Report]
-  S1 -->|Customer Satisfaction| S5[Customer Satisfaction Report]
-  
-  %% Agent Performance Report
-  S2 --> S2A[Collect agent metrics]
-  S2A --> S2B[Calculate response times]
-  S2B --> S2C[Calculate resolution rates]
-  S2C --> S2D[Calculate customer ratings]
-  S2D --> S2E[Generate agent scorecard]
-  
-  %% Team Performance Report
-  S3 --> S3A[Collect team metrics]
-  S3A --> S3B[Calculate team averages]
-  S3B --> S3C[Compare team performance]
-  S3C --> S3D[Identify team strengths/weaknesses]
-  S3D --> S3E[Generate team report]
-  
-  %% SLA Performance Report
-  S4 --> S4A[Collect SLA metrics]
-  S4A --> S4B[Calculate compliance rates]
-  S4B --> S4C[Identify breach patterns]
-  S4C --> S4D[Recommend SLA improvements]
-  S4D --> S4E[Generate SLA report]
-  
-  %% Customer Satisfaction Report
-  S5 --> S5A[Collect satisfaction data]
-  S5A --> S5B[Calculate satisfaction scores]
-  S5B --> S5C[Analyze feedback trends]
-  S5C --> S5D[Identify improvement areas]
-  S5D --> S5E[Generate satisfaction report]
-  
-  %% Real-time Monitoring
-  T[Real-time Monitoring] --> T1[Monitor active tickets]
-  T1 --> T2[Track SLA countdowns]
-  T2 --> T3[Alert on SLA breaches]
-  T3 --> T4[Update dashboard metrics]
-  T4 --> T5[Send real-time notifications]
-  
-  %% Dashboard Metrics
-  U[Dashboard Metrics] --> U1[Active tickets count]
-  U1 --> U2[SLA compliance rate]
-  U2 --> U3[Average response time]
-  U3 --> U4[Average resolution time]
-  U4 --> U5[Customer satisfaction score]
-  U5 --> U6[Update dashboard display]
-  
-  %% Trend Analysis
-  V[Trend Analysis] --> V1[Analyze historical data]
-  V1 --> V2[Identify performance trends]
-  V2 --> V3[Predict future performance]
-  V3 --> V4[Recommend improvements]
-  V4 --> V5[Generate trend report]
-  
+  A[تحليلات SLA] --> B[تتبع أوقات الحل]
+  A --> C[التذاكر المتجاوزة]
+  A --> D[إحصائيات الأداء]
+
+  %% SLA Tracking
+  B --> B1[حساب slaDueDate]
+  B1 --> B1A[slaDueDate = createdAt + slaHours]
+  B1 --> B2[تتبع firstResponseAt]
+  B2 --> B2A[firstResponseAt - أول رد من الأدمن]
+  B2 --> B3[تتبع resolvedAt]
+  B3 --> B3A[resolvedAt - تاريخ الحل]
+  B3 --> B4[حساب slaBreached]
+  B4 --> B4A[slaBreached = resolvedAt > slaDueDate]
+
+  %% Breached Tickets
+  C --> C1[GET /admin/support/sla/breached]
+  C1 --> C2[فلترة التذاكر المتجاوزة]
+  C2 --> C3[slaBreached: true]
+  C3 --> C4[status: RESOLVED أو CLOSED]
+  C4 --> C5[عرض قائمة التذاكر المتجاوزة]
+
+  %% SLA Check
+  D --> D1[POST /admin/support/sla/:id/check]
+  D1 --> D2[فحص حالة SLA لتذكرة محددة]
+  D2 --> D3[مقارنة التواريخ الحالية]
+  D3 --> D4[تحديث slaBreached إذا لزم الأمر]
+  D4 --> D5[إرجاع حالة SLA]
+
+  %% Statistics Integration
+  E[تكامل مع الإحصائيات] --> E1[GET /admin/support/stats]
+  E1 --> E2[عدد التذاكر حسب SLA]
+  E2 --> E3[نسبة التجاوز]
+  E3 --> E4[متوسط وقت الحل]
+  E4 --> E5[معدل الالتزام بـ SLA]
+
+  %% Priority-based SLA
+  F[أوقات SLA حسب الأولوية] --> F1[URGENT: 4 ساعات]
+  F1 --> F2[HIGH: 12 ساعة]
+  F2 --> F3[MEDIUM: 24 ساعة]
+  F3 --> F4[LOW: 48 ساعة]
+
+  F4 --> G[حساب SLA التلقائي]
+  G --> G1[بناءً على priority]
+  G1 --> G2[تحديث slaHours]
+  G2 --> G3[حساب slaDueDate]
+
+  %% Alerts & Notifications
+  H[تنبيهات وإشعارات] --> H1[اقتراب انتهاء SLA]
+  H1 --> H2[تجاوز SLA]
+  H2 --> H3[إشعارات للأدمن]
+  H3 --> H4[تنبيهات فورية]
+
+  %% Performance Metrics
+  I[مقاييس الأداء] --> I1[SLA Compliance Rate]
+  I1 --> I1A[نسبة التذاكر المحلولة في الوقت]
+  I1 --> I2[Average Resolution Time]
+  I2 --> I2A[متوسط وقت الحل]
+  I2 --> I3[First Response Time]
+  I3 --> I3A[متوسط وقت الاستجابة الأولى]
+
   %% End points
-  K --> Z[End]
-  L4 --> Z
-  M5 --> Z
-  O4 --> Z
-  P4 --> Z
-  Q4 --> Z
-  R4 --> Z
-  S2E --> Z
-  S3E --> Z
-  S4E --> Z
-  S5E --> Z
-  T5 --> Z
-  U6 --> Z
-  V5 --> Z
+  C5 --> J[نهاية - عرض التذاكر المتجاوزة]
+  D5 --> J
+  I3A --> J

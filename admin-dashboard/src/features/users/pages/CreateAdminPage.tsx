@@ -38,7 +38,7 @@ const createAdminSchema = z.object({
   roles: z.array(z.string()).min(1, 'يجب اختيار دور واحد على الأقل'),
   permissions: z.array(z.string()).min(1, 'يجب اختيار صلاحية واحدة على الأقل'),
   temporaryPassword: z.string().optional(),
-  activateImmediately: z.boolean().default(true),
+  activateImmediately: z.boolean().optional(),
   description: z.string().optional(),
 });
 
@@ -71,7 +71,7 @@ export const CreateAdminPage: React.FC = () => {
   const canCreateSuperAdmin = hasPermission(PERMISSIONS.SUPER_ADMIN_ACCESS);
 
   // Permission categories for better organization
-  const permissionCategories = {
+  const permissionCategories: Record<string, { title: string; permissions: string[] }> = {
     users: {
       title: 'إدارة المستخدمين',
       permissions: [
@@ -149,8 +149,8 @@ export const CreateAdminPage: React.FC = () => {
   // Apply permission preset
   const applyPermissionPreset = (presetKey: keyof typeof PERMISSION_GROUPS) => {
     const presetPermissions = PERMISSION_GROUPS[presetKey];
-    setSelectedPermissions(presetPermissions);
-    setValue('permissions', presetPermissions);
+    setSelectedPermissions(Array.from(presetPermissions));
+    setValue('permissions', Array.from(presetPermissions));
   };
 
   const onSubmit = async (data: CreateAdminFormData) => {
@@ -199,14 +199,14 @@ export const CreateAdminPage: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={3}>
             {/* Basic Information */}
-            <Grid item xs={12}>
+            <Grid component="div" size={{ xs: 12 }}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     المعلومات الأساسية
                   </Typography>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
+                    <Grid component="div" size={{ xs: 12, md: 6 }}>
                       <FormInput
                         name="phone"
                         label="رقم الهاتف"
@@ -215,7 +215,7 @@ export const CreateAdminPage: React.FC = () => {
                         {...methods}
                       />
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid component="div" size={{ xs: 12, md: 6 }}>
                       <FormSelect
                         name="gender"
                         label="الجنس"
@@ -227,7 +227,7 @@ export const CreateAdminPage: React.FC = () => {
                         {...methods}
                       />
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid component="div" size={{ xs: 12, md: 6 }}>
                       <FormInput
                         name="firstName"
                         label="الاسم الأول"
@@ -235,7 +235,7 @@ export const CreateAdminPage: React.FC = () => {
                         {...methods}
                       />
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid component="div" size={{ xs: 12, md: 6 }}>
                       <FormInput
                         name="lastName"
                         label="الاسم الأخير"
@@ -248,7 +248,7 @@ export const CreateAdminPage: React.FC = () => {
             </Grid>
 
             {/* Roles */}
-            <Grid item xs={12}>
+            <Grid component="div" size={{ xs: 12 }}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -283,7 +283,7 @@ export const CreateAdminPage: React.FC = () => {
             </Grid>
 
             {/* Permission Presets */}
-            <Grid item xs={12}>
+            <Grid component="div" size={{ xs: 12 }}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -352,7 +352,7 @@ export const CreateAdminPage: React.FC = () => {
             </Grid>
 
             {/* Permissions */}
-            <Grid item xs={12}>
+            <Grid component="div" size={{ xs: 12 }}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
@@ -367,14 +367,15 @@ export const CreateAdminPage: React.FC = () => {
                       </Typography>
                       <FormCheckboxGroup
                         name={`permissions-${categoryKey}`}
+                        control={methods.control}
                         options={category.permissions.map(perm => ({
                           value: perm,
                           label: perm.split('.').pop()?.replace('_', ' ') || perm,
                         }))}
-                        value={selectedPermissions.filter(p => category.permissions.includes(p))}
+                        value={selectedPermissions.filter((p: string) => category.permissions.includes(p))}
                         onChange={(values) => {
                           const newPermissions = selectedPermissions.filter(
-                            p => !category.permissions.includes(p)
+                            (p: string) => !category.permissions.includes(p)
                           ).concat(values);
                           handlePermissionChange(newPermissions);
                         }}
@@ -386,14 +387,14 @@ export const CreateAdminPage: React.FC = () => {
             </Grid>
 
             {/* Additional Settings */}
-            <Grid item xs={12}>
+            <Grid component="div" size={{ xs: 12 }}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     إعدادات إضافية
                   </Typography>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
+                    <Grid component="div" size={{ xs: 12, md: 6 }}>
                       <FormInput
                         name="temporaryPassword"
                         label="كلمة مرور مؤقتة"
@@ -402,7 +403,7 @@ export const CreateAdminPage: React.FC = () => {
                         {...methods}
                       />
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid component="div" size={{ xs: 12, md: 6 }}>
                       <FormControlLabel
                         control={
                           <Switch
@@ -413,7 +414,7 @@ export const CreateAdminPage: React.FC = () => {
                         label="تفعيل الحساب فوراً"
                       />
                     </Grid>
-                    <Grid item xs={12}>
+                        <Grid component="div" size={{ xs: 12 }}>
                       <FormInput
                         name="description"
                         label="وصف الدور والمسؤوليات"
@@ -428,7 +429,7 @@ export const CreateAdminPage: React.FC = () => {
             </Grid>
 
             {/* Actions */}
-            <Grid item xs={12}>
+            <Grid component="div" size={{ xs: 12 }}>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                 <Button
                   variant="outlined"

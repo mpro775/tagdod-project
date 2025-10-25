@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Grid,
@@ -26,13 +26,10 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  Divider,
   Paper,
   Tabs,
   Tab,
-  Badge,
   Avatar,
-  LinearProgress,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -44,25 +41,23 @@ import {
   Delete as DeleteIcon,
   Archive as ArchiveIcon,
   Unarchive as UnarchiveIcon,
-  Schedule as ScheduleIcon,
   Assessment as AssessmentIcon,
   PictureAsPdf as PictureAsPdfIcon,
   TableChart as TableChartIcon,
   Description as DescriptionIcon,
   FileDownload as FileDownloadIcon,
-  FilterList as FilterListIcon,
   Search as SearchIcon,
   Sort as SortIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { 
+import {
   useAdvancedReports,
   useGenerateAdvancedReport,
   useExportReport,
   useDeleteReport,
   useArchiveReport,
 } from '../hooks/useAnalytics';
-import { ReportCategory, ReportFormat, ReportType } from '../types/analytics.types';
+import { ReportCategory, ReportFormat } from '../types/analytics.types';
 import { DataExportDialog } from '../components/DataExportDialog';
 
 interface TabPanelProps {
@@ -90,11 +85,10 @@ function TabPanel(props: TabPanelProps) {
 export const ReportsManagementPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const [selectedTab, setSelectedTab] = useState(0);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<ReportCategory | 'all'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'category'>('date');
@@ -126,7 +120,7 @@ export const ReportsManagementPage: React.FC = () => {
     includeRawData: false,
   });
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
   };
 
@@ -227,12 +221,14 @@ export const ReportsManagementPage: React.FC = () => {
     { label: 'التسويق', value: 6, category: ReportCategory.MARKETING },
   ];
 
-  const filteredReports = reportsData?.data?.filter((report) => {
-    const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         report.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || report.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  }) || [];
+  const filteredReports =
+    reportsData?.data?.filter((report) => {
+      const matchesSearch =
+        report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = filterCategory === 'all' || report.category === filterCategory;
+      return matchesSearch && matchesCategory;
+    }) || [];
 
   const sortedReports = [...filteredReports].sort((a, b) => {
     let comparison = 0;
@@ -251,11 +247,7 @@ export const ReportsManagementPage: React.FC = () => {
   });
 
   if (error) {
-    return (
-      <Alert severity="error">
-        حدث خطأ في تحميل التقارير. يرجى المحاولة مرة أخرى.
-      </Alert>
-    );
+    return <Alert severity="error">حدث خطأ في تحميل التقارير. يرجى المحاولة مرة أخرى.</Alert>;
   }
 
   return (
@@ -287,13 +279,13 @@ export const ReportsManagementPage: React.FC = () => {
               إنشاء وإدارة التقارير التحليلية المتقدمة
             </Typography>
           </Box>
-          
+
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setShowCreateDialog(true)}
-              sx={{ 
+              sx={{
                 backgroundColor: 'white',
                 color: theme.palette.primary.main,
                 '&:hover': {
@@ -303,12 +295,12 @@ export const ReportsManagementPage: React.FC = () => {
             >
               تقرير جديد
             </Button>
-            
+
             <Button
               variant="outlined"
               startIcon={<FileDownloadIcon />}
               onClick={() => setShowExportDialog(true)}
-              sx={{ 
+              sx={{
                 color: 'white',
                 borderColor: 'white',
                 '&:hover': {
@@ -318,12 +310,9 @@ export const ReportsManagementPage: React.FC = () => {
             >
               تصدير البيانات
             </Button>
-            
+
             <Tooltip title="تحديث">
-              <IconButton
-                onClick={() => refetch()}
-                sx={{ color: 'white' }}
-              >
+              <IconButton onClick={() => refetch()} sx={{ color: 'white' }}>
                 <RefreshIcon />
               </IconButton>
             </Tooltip>
@@ -334,7 +323,7 @@ export const ReportsManagementPage: React.FC = () => {
       {/* Filters */}
       <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               fullWidth
               placeholder="البحث في التقارير..."
@@ -345,8 +334,8 @@ export const ReportsManagementPage: React.FC = () => {
               }}
             />
           </Grid>
-          
-          <Grid item xs={12} md={3}>
+
+          <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
               <InputLabel>الفئة</InputLabel>
               <Select
@@ -362,22 +351,19 @@ export const ReportsManagementPage: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          
-          <Grid item xs={12} md={3}>
+
+          <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
               <InputLabel>ترتيب حسب</InputLabel>
-              <Select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-              >
+              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
                 <MenuItem value="date">التاريخ</MenuItem>
                 <MenuItem value="title">العنوان</MenuItem>
                 <MenuItem value="category">الفئة</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          
-          <Grid item xs={12} md={2}>
+
+          <Grid size={{ xs: 12, md: 2 }}>
             <Button
               fullWidth
               variant="outlined"
@@ -399,11 +385,7 @@ export const ReportsManagementPage: React.FC = () => {
           scrollButtons="auto"
         >
           {tabs.map((tab) => (
-            <Tab
-              key={tab.value}
-              label={tab.label}
-              sx={{ minWidth: isMobile ? 120 : 160 }}
-            />
+            <Tab key={tab.value} label={tab.label} sx={{ minWidth: isMobile ? 120 : 160 }} />
           ))}
         </Tabs>
       </Paper>
@@ -412,13 +394,18 @@ export const ReportsManagementPage: React.FC = () => {
       <TabPanel value={selectedTab} index={0}>
         {/* All Reports */}
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6">
-                    جميع التقارير ({sortedReports.length})
-                  </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="h6">جميع التقارير ({sortedReports.length})</Typography>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <Chip
                       icon={<AssessmentIcon />}
@@ -428,13 +415,13 @@ export const ReportsManagementPage: React.FC = () => {
                     />
                     <Chip
                       icon={<ArchiveIcon />}
-                      label={`مؤرشف: ${sortedReports.filter(r => r.isArchived).length}`}
+                      label={`مؤرشف: ${sortedReports.filter((r) => r.isArchived).length}`}
                       color="secondary"
                       variant="outlined"
                     />
                   </Box>
                 </Box>
-                
+
                 {isLoading ? (
                   <Box>
                     {[...Array(5)].map((_, index) => (
@@ -496,15 +483,17 @@ export const ReportsManagementPage: React.FC = () => {
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="تصدير PDF">
-                              <IconButton 
+                              <IconButton
                                 size="small"
-                                onClick={() => handleExportReport(report.reportId, ReportFormat.PDF)}
+                                onClick={() =>
+                                  handleExportReport(report.reportId, ReportFormat.PDF)
+                                }
                               >
                                 <DownloadIcon />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title={report.isArchived ? "إلغاء الأرشفة" : "أرشفة"}>
-                              <IconButton 
+                            <Tooltip title={report.isArchived ? 'إلغاء الأرشفة' : 'أرشفة'}>
+                              <IconButton
                                 size="small"
                                 onClick={() => handleArchiveReport(report.reportId)}
                               >
@@ -512,7 +501,7 @@ export const ReportsManagementPage: React.FC = () => {
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="حذف">
-                              <IconButton 
+                              <IconButton
                                 size="small"
                                 color="error"
                                 onClick={() => handleDeleteReport(report.reportId)}
@@ -533,10 +522,10 @@ export const ReportsManagementPage: React.FC = () => {
       </TabPanel>
 
       {/* Category-specific tabs */}
-      {tabs.slice(1).map((tab, index) => (
+      {tabs.slice(1).map((tab) => (
         <TabPanel key={tab.value} value={selectedTab} index={tab.value}>
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -544,13 +533,10 @@ export const ReportsManagementPage: React.FC = () => {
                   </Typography>
                   <List>
                     {sortedReports
-                      .filter(report => report.category === tab.category)
+                      .filter((report) => report.category === tab.category)
                       .map((report) => (
                         <ListItem key={report.reportId} divider>
-                          <ListItemText
-                            primary={report.title}
-                            secondary={report.description}
-                          />
+                          <ListItemText primary={report.title} secondary={report.description} />
                           <ListItemSecondaryAction>
                             <IconButton size="small">
                               <VisibilityIcon />
@@ -570,8 +556,8 @@ export const ReportsManagementPage: React.FC = () => {
       ))}
 
       {/* Create Report Dialog */}
-      <Dialog 
-        open={showCreateDialog} 
+      <Dialog
+        open={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
         maxWidth="md"
         fullWidth
@@ -586,7 +572,7 @@ export const ReportsManagementPage: React.FC = () => {
               fullWidth
               required
             />
-            
+
             <TextField
               label="وصف التقرير"
               value={reportForm.description}
@@ -595,12 +581,14 @@ export const ReportsManagementPage: React.FC = () => {
               multiline
               rows={3}
             />
-            
+
             <FormControl fullWidth>
               <InputLabel>فئة التقرير</InputLabel>
               <Select
                 value={reportForm.category}
-                onChange={(e) => setReportForm({ ...reportForm, category: e.target.value as ReportCategory })}
+                onChange={(e) =>
+                  setReportForm({ ...reportForm, category: e.target.value as ReportCategory })
+                }
               >
                 {Object.values(ReportCategory).map((category) => (
                   <MenuItem key={category} value={category}>
@@ -609,12 +597,14 @@ export const ReportsManagementPage: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
-            
+
             <FormControl fullWidth>
               <InputLabel>تنسيق التقرير</InputLabel>
               <Select
                 value={reportForm.format}
-                onChange={(e) => setReportForm({ ...reportForm, format: e.target.value as ReportFormat })}
+                onChange={(e) =>
+                  setReportForm({ ...reportForm, format: e.target.value as ReportFormat })
+                }
               >
                 {Object.values(ReportFormat).map((format) => (
                   <MenuItem key={format} value={format}>
@@ -623,22 +613,26 @@ export const ReportsManagementPage: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
-            
+
             <FormControlLabel
               control={
                 <Switch
                   checked={reportForm.includeCharts}
-                  onChange={(e) => setReportForm({ ...reportForm, includeCharts: e.target.checked })}
+                  onChange={(e) =>
+                    setReportForm({ ...reportForm, includeCharts: e.target.checked })
+                  }
                 />
               }
               label="تضمين الرسوم البيانية"
             />
-            
+
             <FormControlLabel
               control={
                 <Switch
                   checked={reportForm.includeRawData}
-                  onChange={(e) => setReportForm({ ...reportForm, includeRawData: e.target.checked })}
+                  onChange={(e) =>
+                    setReportForm({ ...reportForm, includeRawData: e.target.checked })
+                  }
                 />
               }
               label="تضمين البيانات الأولية"
@@ -646,10 +640,8 @@ export const ReportsManagementPage: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowCreateDialog(false)}>
-            إلغاء
-          </Button>
-          <Button 
+          <Button onClick={() => setShowCreateDialog(false)}>إلغاء</Button>
+          <Button
             onClick={handleCreateReport}
             variant="contained"
             disabled={!reportForm.title || generateReport.isPending}
@@ -660,10 +652,7 @@ export const ReportsManagementPage: React.FC = () => {
       </Dialog>
 
       {/* Export Dialog */}
-      <DataExportDialog
-        open={showExportDialog}
-        onClose={() => setShowExportDialog(false)}
-      />
+      <DataExportDialog open={showExportDialog} onClose={() => setShowExportDialog(false)} />
     </Box>
   );
 };

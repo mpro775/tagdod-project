@@ -16,7 +16,6 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Chip,
   Divider,
 } from '@mui/material';
 import {
@@ -24,11 +23,9 @@ import {
   Download as DownloadIcon,
   FileDownload as FileDownloadIcon,
   FileUpload as FileUploadIcon,
-  CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import { User } from '../types/user.types';
 
 interface ImportResult {
   success: boolean;

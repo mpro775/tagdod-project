@@ -1,197 +1,177 @@
 # تدفقات الدعم الفني (Support Flows)
 
 ## الملفات المتاحة
+
+### المخططات الرئيسية
 - `ticket-flow.mmd` - مخطط تدفق تذاكر الدعم
+- `sla-analytics.mmd` - مخطط تحليلات SLA
 
 ## شرح التدفقات
 
-### 1. نظام الدعم المتقدم (Advanced Support System)
-- **التذاكر:** إنشاء وإدارة تذاكر الدعم مع تصنيف متقدم
-- **الرسائل:** نظام رسائل فوري مع أنواع مختلفة
-- **SLA Tracking:** تتبع أوقات الاستجابة مع تنبيهات
-- **التقييمات:** نظام تقييم شامل مع feedback نصي
-- **الإحصائيات:** تحليلات شاملة للأداء
+### 1. نظام التذاكر (Ticket System)
+- **إنشاء التذاكر:** إنشاء تذاكر دعم جديدة مع الفئة والأولوية
+- **حالات التذاكر:** OPEN، IN_PROGRESS، WAITING_FOR_USER، RESOLVED، CLOSED
+- **إدارة التذاكر:** عرض، تحديث، أرشفة التذاكر
+- **تقييم التذاكر:** تقييم التذاكر المحلولة من 1-5 نجوم
 
-### 2. نظام إدارة التذاكر المتقدم (Advanced Ticket Management)
-- **إنشاء التذكرة:** مع تصنيف تلقائي وأولوية ذكية
-- **التعيين:** تعيين تلقائي للموظف المناسب
-- **التتبع:** تتبع شامل لحالة التذكرة
-- **الأرشفة:** نظام أرشفة متقدم للبحث السريع
-- **الوسوم:** نظام وسوم للتصنيف المتقدم
-
-### 3. نظام الرسائل المتقدم (Advanced Message System)
+### 2. نظام الرسائل (Message System)
 - **أنواع الرسائل:** رسائل المستخدم، ردود الأدمن، رسائل النظام
-- **المرفقات:** دعم رفع الملفات مع روابط آمنة
+- **المرفقات:** دعم رفع الملفات في الرسائل
 - **الرسائل الداخلية:** رسائل خاصة للأدمن فقط
-- **التوقيت:** تتبع أوقات الإرسال والقراءة
-- **المتابعة:** نظام متابعة ذكي للرسائل
+- **إدارة الرسائل:** إضافة وعرض الرسائل
 
-### 4. نظام SLA Tracking المتقدم (Advanced SLA Tracking)
-- **الأولوية:** 4 مستويات أولوية مع أوقات SLA مختلفة
-  - **URGENT:** 1 ساعة
-  - **HIGH:** 4 ساعات
-  - **MEDIUM:** 24 ساعة
-  - **LOW:** 48 ساعة
-- **التنبيهات:** تنبيهات تلقائية عند تجاوز SLA
-- **التقارير:** تقارير مفصلة عن أداء SLA
-- **التحسين:** اقتراحات لتحسين الأداء
+### 3. نظام SLA (SLA System)
+- **تتبع SLA:** تتبع أوقات الحل حسب الأولوية
+- **أوقات SLA:** ساعات مختلفة حسب الأولوية
+- **تجاوز SLA:** تتبع حالات تجاوز SLA
+- **إشعارات SLA:** تنبيهات عند اقتراب انتهاء SLA
 
-### 5. نظام Canned Responses المتقدم (Advanced Canned Responses)
-- **الردود الجاهزة:** مكتبة شاملة من الردود الشائعة
-- **التخصيص:** إمكانية تخصيص الردود حسب الحاجة
-- **التصنيف:** تصنيف الردود حسب نوع المشكلة
-- **الاستخدام:** توفير الوقت في الردود المتكررة
-- **الإحصائيات:** تتبع أكثر الردود استخداماً
+### 4. نظام الردود الجاهزة (Canned Responses)
+- **إدارة الردود:** إنشاء وإدارة ردود جاهزة
+- **التصنيف:** تصنيف الردود حسب الفئة
+- **الاختصارات:** اختصارات للوصول السريع
+- **تتبع الاستخدام:** عدد مرات استخدام كل رد
 
-### 6. نظام Rating & Feedback المتقدم (Advanced Rating System)
-- **التقييم:** نظام تقييم من 1-5 نجوم
-- **Feedback:** تعليقات نصية مفصلة من العملاء
-- **التتبع:** تتبع معدلات الرضا والتحسين
-- **التقارير:** تقارير شاملة عن جودة الخدمة
-- **التحليل:** تحليل نصي للتعليقات
-
-### 7. نظام Admin Management المتقدم (Advanced Admin Management)
-- **لوحة التحكم:** لوحة تحكم شاملة لإدارة التذاكر
-- **التعيين:** تعيين تلقائي ويدوي للموظفين
-- **التحديث:** تحديث حالة التذاكر والأولوية
-- **الإحصائيات:** إحصائيات مفصلة عن الأداء
-- **التقارير:** تقارير شاملة للفريق
-
-### 8. نظام Statistics & Analytics المتقدم (Advanced Analytics)
-- **معدلات الاستجابة:** تتبع أوقات الاستجابة الأولى
-- **معدلات الحل:** تتبع معدلات حل المشاكل
-- **رضا العملاء:** تتبع معدلات الرضا
-- **أداء الفريق:** تحليل أداء كل موظف
-- **الاتجاهات:** تحليل الاتجاهات والأنماط
-
-### 9. نظام Metadata & Tags المتقدم (Advanced Metadata System)
-- **البيانات الإضافية:** حفظ بيانات إضافية مثل orderId, productId
-- **الوسوم:** نظام وسوم للتصنيف المتقدم
-- **البحث:** بحث متقدم في التذاكر والرسائل
-- **التصفية:** تصفية متقدمة حسب الوسوم والبيانات
-- **التجميع:** تجميع التذاكر حسب المعايير
-
-### 10. نظام Archive System المتقدم (Advanced Archive System)
-- **الأرشفة:** أرشفة التذاكر المحلولة
-- **البحث:** بحث سريع في الأرشيف
-- **الاسترداد:** إمكانية استرداد التذاكر المؤرشفة
-- **التنظيف:** تنظيف تلقائي للبيانات القديمة
-- **النسخ الاحتياطي:** نسخ احتياطي آمن للبيانات
+### 5. نظام الإحصائيات (Statistics System)
+- **إحصائيات عامة:** عدد التذاكر حسب الحالة والفئة
+- **إحصائيات SLA:** التذاكر التي تجاوزت SLA
+- **إحصائيات الأداء:** أداء الفريق والأفراد
 
 ## هيكل البيانات
 
-### حقول التذكرة الأساسية (Ticket Fields)
-- `userId`: معرف المستخدم (ObjectId) - مطلوب
+### حقول تذكرة الدعم الأساسية (Support Ticket Schema)
+- `userId`: معرف العميل (ObjectId) - مطلوب، مفهرس
 - `title`: عنوان المشكلة (string) - مطلوب
 - `description`: وصف المشكلة (string) - مطلوب
-- `category`: فئة المشكلة (enum) - مطلوب
-- `priority`: أولوية المشكلة (enum) - مطلوب
-- `status`: حالة التذكرة (enum) - مطلوب
-
-### حقول التصنيف (Classification Fields)
-- `assignedTo`: معين إلى (ObjectId) - اختياري
+- `category`: فئة المشكلة (enum) - افتراضي OTHER، مفهرس
+- `priority`: أولوية المشكلة (enum) - افتراضي MEDIUM، مفهرس
+- `status`: حالة التذكرة (enum) - افتراضي OPEN، مفهرس
+- `assignedTo`: معين إلى (ObjectId) - اختياري، افتراضي null
 - `attachments`: المرفقات (array of strings) - افتراضي []
 - `tags`: الوسوم (array of strings) - افتراضي []
 - `isArchived`: مؤرشف (boolean) - افتراضي false
 
-### حقول التوقيت (Timing Fields)
-- `firstResponseAt`: أول رد (Date) - اختياري
+### حقول التوقيت والـ SLA (Timing & SLA Fields)
+- `firstResponseAt`: أول رد من الدعم (Date) - اختياري
 - `resolvedAt`: تاريخ الحل (Date) - اختياري
 - `closedAt`: تاريخ الإغلاق (Date) - اختياري
-
-### حقول SLA (SLA Fields)
 - `slaHours`: ساعات SLA (number) - افتراضي 24
 - `slaDueDate`: تاريخ انتهاء SLA (Date) - اختياري
 - `slaBreached`: تجاوز SLA (boolean) - افتراضي false
 
-### حقول التقييم (Rating Fields)
-- `rating`: التقييم (number) - اختياري (1-5)
+### حقول التقييم والملاحظات (Rating & Feedback Fields)
+- `rating`: التقييم (number, 1-5) - اختياري
 - `feedback`: التعليق (string) - اختياري
 - `feedbackAt`: تاريخ التقييم (Date) - اختياري
-
-### حقول إضافية (Additional Fields)
 - `metadata`: بيانات إضافية (object) - افتراضي {}
 
+### حقول رسالة الدعم (Support Message Schema)
+- `ticketId`: معرف التذكرة (ObjectId) - مطلوب، مفهرس
+- `senderId`: معرف المرسل (ObjectId) - مطلوب
+- `messageType`: نوع الرسالة (enum) - مطلوب، مفهرس
+- `content`: محتوى الرسالة (string) - مطلوب
+- `attachments`: المرفقات (array of strings) - افتراضي []
+- `isInternal`: رسالة داخلية (boolean) - افتراضي false
+- `metadata`: بيانات إضافية (object) - افتراضي {}
+
+### حقول الرد الجاهز (Canned Response Schema)
+- `title`: عنوان الرد (string) - مطلوب
+- `content`: محتوى الرد (string) - مطلوب
+- `contentEn`: محتوى بالإنجليزية (string) - مطلوب
+- `category`: فئة اختيارية (enum) - اختياري
+- `tags`: وسوم للبحث (array of strings) - افتراضي []
+- `isActive`: نشط (boolean) - افتراضي true
+- `usageCount`: عدد مرات الاستخدام (number) - افتراضي 0
+- `shortcut`: اختصار (string) - اختياري، فريد
+
 ### فئات الدعم المتاحة (Support Categories)
-1. **TECHNICAL** - فني
-2. **BILLING** - فواتير
-3. **PRODUCTS** - منتجات
-4. **SERVICES** - خدمات
-5. **ACCOUNT** - حساب
-6. **OTHER** - أخرى
+- **TECHNICAL** - فني
+- **BILLING** - فواتير
+- **PRODUCTS** - منتجات
+- **SERVICES** - خدمات
+- **ACCOUNT** - حساب
+- **OTHER** - أخرى
 
 ### أولويات الدعم المتاحة (Support Priorities)
-1. **LOW** - منخفضة
-2. **MEDIUM** - متوسطة
-3. **HIGH** - عالية
-4. **URGENT** - عاجلة
+- **LOW** - منخفضة
+- **MEDIUM** - متوسطة
+- **HIGH** - عالية
+- **URGENT** - عاجلة
 
 ### حالات التذاكر المتاحة (Support Status)
-1. **OPEN** - مفتوحة
-2. **IN_PROGRESS** - قيد المعالجة
-3. **WAITING_FOR_USER** - في انتظار المستخدم
-4. **RESOLVED** - محلولة
-5. **CLOSED** - مغلقة
+- **OPEN** - مفتوحة
+- **IN_PROGRESS** - قيد المعالجة
+- **WAITING_FOR_USER** - في انتظار المستخدم
+- **RESOLVED** - محلولة
+- **CLOSED** - مغلقة
+
+### أنواع الرسائل المتاحة (Message Types)
+- **USER_MESSAGE** - رسالة من المستخدم
+- **ADMIN_REPLY** - رد من الأدمن
+- **SYSTEM_MESSAGE** - رسالة نظام
+
+### فهارس الأداء (Performance Indexes)
+- فهارس مركبة للبحث حسب المستخدم والحالة والتاريخ
+- فهرس نصي للبحث في العنوان والوصف
+- فهارس للبحث حسب الفئة والأولوية والحالة
 
 ## API Endpoints المتاحة
 
-### للعملاء (7 endpoints)
-- **POST /support/tickets** - إنشاء تذكرة
-- **GET /support/tickets/my** - تذاكري
-- **GET /support/tickets/:id** - تفاصيل تذكرة
-- **POST /support/tickets/:id/messages** - إضافة رسالة
-- **GET /support/tickets/:id/messages** - جلب الرسائل
-- **POST /support/tickets/:id/rate** - تقييم التذكرة
-- **DELETE /support/tickets/:id/archive** - أرشفة التذكرة
+### APIs العملاء (Customer APIs - 7 endpoints)
+- **POST /support/tickets** - إنشاء تذكرة دعم جديدة
+- **GET /support/tickets/my** - عرض تذاكر العميل
+- **GET /support/tickets/:id** - تفاصيل تذكرة محددة
+- **GET /support/tickets/:id/messages** - جلب رسائل التذكرة
+- **POST /support/tickets/:id/messages** - إضافة رسالة جديدة
+- **PUT /support/tickets/:id/archive** - أرشفة التذكرة
+- **POST /support/tickets/:id/rate** - تقييم التذكرة المحلولة
 
-### للأدمن (8+ endpoints)
-- **GET /admin/support/tickets** - جميع التذاكر
-- **PATCH /admin/support/tickets/:id** - تحديث التذكرة
-- **GET /admin/support/stats** - إحصائيات الدعم
+### APIs الإدارة (Admin APIs - 9 endpoints)
+- **GET /admin/support/tickets** - عرض جميع التذاكر مع فلاتر
+- **GET /admin/support/tickets/:id** - تفاصيل تذكرة محددة
+- **PATCH /admin/support/tickets/:id** - تحديث التذكرة (الحالة، المعين إليه، إلخ)
+- **GET /admin/support/tickets/:id/messages** - رسائل التذكرة
+- **POST /admin/support/tickets/:id/messages** - إضافة رسالة من الأدمن
+- **GET /admin/support/stats** - إحصائيات الدعم العامة
+- **GET /admin/support/sla/breached** - التذاكر التي تجاوزت SLA
+- **POST /admin/support/sla/:id/check** - فحص حالة SLA لتذكرة
 - **POST /admin/support/canned-responses** - إدارة الردود الجاهزة
-- **GET /admin/support/analytics** - تحليلات شاملة
-- **POST /admin/support/assign** - تعيين التذاكر
-- **GET /admin/support/sla-reports** - تقارير SLA
-- **GET /admin/support/performance** - أداء الفريق
 
 ## DTOs المتاحة
 
-### إنشاء التذكرة
-- `CreateSupportTicketDto`: إنشاء تذكرة دعم
-  - `title`: عنوان المشكلة (required)
-  - `description`: وصف المشكلة (required)
-  - `category`: فئة المشكلة (optional)
-  - `priority`: أولوية المشكلة (optional)
-  - `attachments`: المرفقات (optional)
-  - `metadata`: بيانات إضافية (optional)
+### إنشاء التذكرة (CreateSupportTicketDto)
+- `title`: عنوان المشكلة (required, string)
+- `description`: وصف المشكلة (required, string)
+- `category`: فئة المشكلة (optional, enum)
+- `priority`: أولوية المشكلة (optional, enum)
+- `attachments`: المرفقات (optional, string[])
+- `metadata`: بيانات إضافية (optional, object)
 
-### إضافة الرسائل
-- `AddSupportMessageDto`: إضافة رسالة
-  - `content`: محتوى الرسالة (required)
-  - `attachments`: المرفقات (optional)
-  - `messageType`: نوع الرسالة (required)
-  - `isInternal`: رسالة داخلية (optional)
+### إضافة الرسائل (AddSupportMessageDto)
+- `content`: محتوى الرسالة (required, string)
+- `attachments`: المرفقات (optional, string[])
+- `messageType`: نوع الرسالة (optional, enum)
+- `isInternal`: رسالة داخلية (optional, boolean)
 
-### تقييم التذكرة
-- `RateSupportTicketDto`: تقييم التذكرة
-  - `rating`: التقييم (required) - 1-5
-  - `feedback`: التعليق (optional)
+### تقييم التذكرة (RateSupportTicketDto)
+- `rating`: التقييم (required, number 1-5)
+- `feedback`: التعليق (optional, string)
 
-### تحديث التذكرة
-- `UpdateSupportTicketDto`: تحديث التذكرة
-  - `status`: الحالة (optional)
-  - `priority`: الأولوية (optional)
-  - `assignedTo`: معين إلى (optional)
-  - `tags`: الوسوم (optional)
+### تحديث التذكرة (UpdateSupportTicketDto)
+- `status`: الحالة (optional, enum)
+- `priority`: الأولوية (optional, enum)
+- `assignedTo`: معين إلى (optional, ObjectId)
+- `tags`: الوسوم (optional, string[])
+- `slaHours`: ساعات SLA (optional, number)
 
 ## نقاط مهمة
-- **SLA Tracking متقدم:** تتبع أوقات الاستجابة مع تنبيهات تلقائية
-- **نظام رسائل فوري:** محادثة مباشرة بين العميل والدعم
-- **Canned Responses:** ردود جاهزة لتوفير الوقت
-- **تقييمات شاملة:** نظام تقييم 5 نجوم مع تعليقات
-- **إحصائيات متقدمة:** تحليلات شاملة للأداء والرضا
-- **أرشفة ذكية:** نظام أرشفة متقدم للبحث السريع
-- **وسوم وبيانات إضافية:** تصنيف متقدم للبحث والتصفية
-- **تكامل مع الإشعارات:** إشعارات تلقائية لجميع الأحداث
-- **لوحة تحكم شاملة:** إدارة متقدمة للتذاكر والفريق
-- **تقارير مفصلة:** تقارير شاملة عن الأداء والاتجاهات
+- **نظام تذاكر شامل:** إدارة كاملة لتذاكر الدعم مع حالات متعددة
+- **نظام رسائل متطور:** دعم أنواع مختلفة من الرسائل مع مرفقات
+- **تتبع SLA:** تتبع أوقات الحل وتجاوز SLA
+- **الردود الجاهزة:** نظام للردود الجاهزة مع اختصارات
+- **تقييمات العملاء:** نظام تقييم بسيط من 1-5 نجوم
+- **إحصائيات شاملة:** إحصائيات للتذاكر والأداء وSLA
+- **فهارس محسنة:** فهارس قاعدة البيانات للأداء المحسن
+- **أرشفة التذاكر:** إمكانية أرشفة التذاكر المحلولة
+- **بيانات إضافية:** دعم metadata لتخزين بيانات إضافية
+- **تصنيف متقدم:** تصنيف بالفئات والأولويات والوسوم

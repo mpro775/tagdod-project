@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client';
+import type { ApiResponse } from '@/shared/types/common.types';
 import type {
   Attribute,
   AttributeValue,
@@ -10,16 +11,6 @@ import type {
   AttributeStats,
 } from '../types/attribute.types';
 
-// Backend Response Format - متطابق مع الباك إند
-interface BackendResponse<T> {
-  success: true;
-  data: T;
-  message: string;
-  timestamp: string;
-}
-
-// Removed unused interface
-
 export const attributesApi = {
   // ==================== Attributes CRUD ====================
 
@@ -28,7 +19,7 @@ export const attributesApi = {
    * POST /admin/attributes
    */
   create: async (data: CreateAttributeDto): Promise<Attribute> => {
-    const response = await apiClient.post<BackendResponse<Attribute>>('/admin/attributes', data);
+    const response = await apiClient.post<ApiResponse<Attribute>>('/admin/attributes', data);
     return response.data.data;
   },
 
@@ -37,13 +28,10 @@ export const attributesApi = {
    * GET /admin/attributes
    */
   list: async (params: ListAttributesParams = {}): Promise<{ data: Attribute[]; meta?: any }> => {
-    const response = await apiClient.get<BackendResponse<Attribute[]>>('/admin/attributes', {
+    const response = await apiClient.get<ApiResponse<{ data: Attribute[]; meta?: any }>>('/admin/attributes', {
       params,
     });
-    return {
-      data: response.data.data,
-      meta: undefined // Backend doesn't return meta in this format
-    };
+    return response.data.data;
   },
 
   /**
@@ -51,7 +39,7 @@ export const attributesApi = {
    * GET /admin/attributes/:id
    */
   getById: async (id: string): Promise<Attribute> => {
-    const response = await apiClient.get<BackendResponse<Attribute>>(`/admin/attributes/${id}`);
+    const response = await apiClient.get<ApiResponse<Attribute>>(`/admin/attributes/${id}`);
     return response.data.data;
   },
 
@@ -60,7 +48,7 @@ export const attributesApi = {
    * PATCH /admin/attributes/:id
    */
   update: async (id: string, data: UpdateAttributeDto): Promise<Attribute> => {
-    const response = await apiClient.patch<BackendResponse<Attribute>>(`/admin/attributes/${id}`, data);
+    const response = await apiClient.patch<ApiResponse<Attribute>>(`/admin/attributes/${id}`, data);
     return response.data.data;
   },
 
@@ -69,7 +57,7 @@ export const attributesApi = {
    * DELETE /admin/attributes/:id
    */
   delete: async (id: string): Promise<{ deleted: boolean; deletedAt: Date }> => {
-    const response = await apiClient.delete<BackendResponse<{ deleted: boolean; deletedAt: Date }>>(`/admin/attributes/${id}`);
+    const response = await apiClient.delete<ApiResponse<{ deleted: boolean; deletedAt: Date }>>(`/admin/attributes/${id}`);
     return response.data.data;
   },
 
@@ -78,7 +66,7 @@ export const attributesApi = {
    * POST /admin/attributes/:id/restore
    */
   restore: async (id: string): Promise<{ restored: boolean }> => {
-    const response = await apiClient.post<BackendResponse<{ restored: boolean }>>(
+    const response = await apiClient.post<ApiResponse<{ restored: boolean }>>(
       `/admin/attributes/${id}/restore`
     );
     return response.data.data;
@@ -94,7 +82,7 @@ export const attributesApi = {
     attributeId: string,
     data: CreateAttributeValueDto
   ): Promise<AttributeValue> => {
-    const response = await apiClient.post<BackendResponse<AttributeValue>>(
+    const response = await apiClient.post<ApiResponse<AttributeValue>>(
       `/admin/attributes/${attributeId}/values`,
       data
     );
@@ -106,7 +94,7 @@ export const attributesApi = {
    * GET /admin/attributes/:attributeId/values
    */
   listValues: async (attributeId: string): Promise<AttributeValue[]> => {
-    const response = await apiClient.get<BackendResponse<AttributeValue[]>>(
+    const response = await apiClient.get<ApiResponse<AttributeValue[]>>(
       `/admin/attributes/${attributeId}/values`
     );
     return response.data.data;
@@ -117,7 +105,7 @@ export const attributesApi = {
    * PATCH /admin/attributes/values/:id
    */
   updateValue: async (id: string, data: UpdateAttributeValueDto): Promise<AttributeValue> => {
-    const response = await apiClient.patch<BackendResponse<AttributeValue>>(
+    const response = await apiClient.patch<ApiResponse<AttributeValue>>(
       `/admin/attributes/values/${id}`,
       data
     );
@@ -129,7 +117,7 @@ export const attributesApi = {
    * DELETE /admin/attributes/values/:id
    */
   deleteValue: async (id: string): Promise<{ deleted: boolean }> => {
-    const response = await apiClient.delete<BackendResponse<{ deleted: boolean }>>(`/admin/attributes/values/${id}`);
+    const response = await apiClient.delete<ApiResponse<{ deleted: boolean }>>(`/admin/attributes/values/${id}`);
     return response.data.data;
   },
 
@@ -140,7 +128,7 @@ export const attributesApi = {
    * GET /admin/attributes/stats/summary
    */
   getStats: async (): Promise<AttributeStats> => {
-    const response = await apiClient.get<BackendResponse<AttributeStats>>('/admin/attributes/stats/summary');
+    const response = await apiClient.get<ApiResponse<AttributeStats>>('/admin/attributes/stats/summary');
     return response.data.data;
   },
 };

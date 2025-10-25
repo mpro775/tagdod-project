@@ -10,12 +10,7 @@ import {
   Paper,
   useTheme,
 } from '@mui/material';
-import {
-  Error as ErrorIcon,
-  Refresh as RefreshIcon,
-  Home as HomeIcon,
-  Report as ReportIcon,
-} from '@mui/icons-material';
+import { Error as ErrorIcon, Refresh as RefreshIcon, Home as HomeIcon } from '@mui/icons-material';
 
 interface Props {
   children: ReactNode;
@@ -198,7 +193,7 @@ export const useAnalyticsErrorHandler = () => {
   const handleError = (error: Error, errorInfo: ErrorInfo) => {
     // Log error to external service
     console.error('Analytics Error:', error, errorInfo);
-    
+
     // You can add error reporting service here
     // Example: Sentry.captureException(error);
   };
@@ -207,9 +202,7 @@ export const useAnalyticsErrorHandler = () => {
 };
 
 // Higher-order component for analytics error handling
-export const withAnalyticsErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>
-) => {
+export const withAnalyticsErrorBoundary = <P extends object>(Component: React.ComponentType<P>) => {
   const WrappedComponent = (props: P) => {
     const { handleError } = useAnalyticsErrorHandler();
 
@@ -220,7 +213,9 @@ export const withAnalyticsErrorBoundary = <P extends object>(
     );
   };
 
-  WrappedComponent.displayName = `withAnalyticsErrorBoundary(${Component.displayName || Component.name})`;
+  WrappedComponent.displayName = `withAnalyticsErrorBoundary(${
+    Component.displayName || Component.name
+  })`;
 
   return WrappedComponent;
 };

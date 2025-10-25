@@ -1,5 +1,5 @@
 import { apiClient } from '@/core/api/client';
-import type { PaginatedResponse } from '@/shared/types/common.types';
+import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
 // Types
 export interface PriceRule {
@@ -303,7 +303,7 @@ export const marketingApi = {
   // ==================== PRICE RULES ====================
   
   createPriceRule: async (data: CreatePriceRuleDto): Promise<PriceRule> => {
-    const response = await apiClient.post<{ data: PriceRule }>(
+    const response = await apiClient.post<ApiResponse<PriceRule>>(
       '/admin/marketing/price-rules',
       data
     );
@@ -311,7 +311,7 @@ export const marketingApi = {
   },
 
   listPriceRules: async (params?: ListPriceRulesParams): Promise<PriceRule[]> => {
-    const response = await apiClient.get<{ data: PriceRule[] }>(
+    const response = await apiClient.get<ApiResponse<PriceRule[]>>(
       '/admin/marketing/price-rules',
       { params }
     );
@@ -319,14 +319,14 @@ export const marketingApi = {
   },
 
   getPriceRule: async (id: string): Promise<PriceRule> => {
-    const response = await apiClient.get<{ data: PriceRule }>(
+    const response = await apiClient.get<ApiResponse<PriceRule>>(
       `/admin/marketing/price-rules/${id}`
     );
     return response.data.data;
   },
 
   updatePriceRule: async (id: string, data: UpdatePriceRuleDto): Promise<PriceRule> => {
-    const response = await apiClient.patch<{ data: PriceRule }>(
+    const response = await apiClient.patch<ApiResponse<PriceRule>>(
       `/admin/marketing/price-rules/${id}`,
       data
     );
@@ -334,21 +334,21 @@ export const marketingApi = {
   },
 
   deletePriceRule: async (id: string): Promise<boolean> => {
-    const response = await apiClient.delete<{ data: boolean }>(
+    const response = await apiClient.delete<ApiResponse<{ deleted: boolean; deletedAt: Date }>>(
       `/admin/marketing/price-rules/${id}`
     );
-    return response.data.data;
+    return response.data.data.deleted;
   },
 
   togglePriceRule: async (id: string): Promise<PriceRule> => {
-    const response = await apiClient.post<{ data: PriceRule }>(
+    const response = await apiClient.post<ApiResponse<PriceRule>>(
       `/admin/marketing/price-rules/${id}/toggle`
     );
     return response.data.data;
   },
 
   previewPriceRule: async (data: PreviewPriceRuleDto): Promise<EffectivePriceResult | null> => {
-    const response = await apiClient.post<{ data: EffectivePriceResult | null }>(
+    const response = await apiClient.post<ApiResponse<EffectivePriceResult | null>>(
       '/admin/marketing/price-rules/preview',
       data
     );
@@ -358,7 +358,7 @@ export const marketingApi = {
   // ==================== COUPONS ====================
 
   createCoupon: async (data: CreateCouponDto): Promise<Coupon> => {
-    const response = await apiClient.post<{ data: Coupon }>(
+    const response = await apiClient.post<ApiResponse<Coupon>>(
       '/admin/marketing/coupons',
       data
     );
@@ -366,25 +366,25 @@ export const marketingApi = {
   },
 
   listCoupons: async (params?: ListCouponsParams): Promise<PaginatedResponse<Coupon>> => {
-    const response = await apiClient.get<{ data: Coupon[]; pagination: any }>(
+    const response = await apiClient.get<ApiResponse<{ data: Coupon[]; meta: any }>>(
       '/admin/marketing/coupons',
       { params }
     );
     return {
-      data: response.data.data,
-      meta: response.data.pagination,
+      data: response.data.data.data,
+      meta: response.data.data.meta,
     };
   },
 
   getCoupon: async (id: string): Promise<Coupon> => {
-    const response = await apiClient.get<{ data: Coupon }>(
+    const response = await apiClient.get<ApiResponse<Coupon>>(
       `/admin/marketing/coupons/${id}`
     );
     return response.data.data;
   },
 
   updateCoupon: async (id: string, data: UpdateCouponDto): Promise<Coupon> => {
-    const response = await apiClient.patch<{ data: Coupon }>(
+    const response = await apiClient.patch<ApiResponse<Coupon>>(
       `/admin/marketing/coupons/${id}`,
       data
     );
@@ -392,14 +392,14 @@ export const marketingApi = {
   },
 
   deleteCoupon: async (id: string): Promise<boolean> => {
-    const response = await apiClient.delete<{ data: boolean }>(
+    const response = await apiClient.delete<ApiResponse<{ deleted: boolean; deletedAt: Date }>>(
       `/admin/marketing/coupons/${id}`
     );
-    return response.data.data;
+    return response.data.data.deleted;
   },
 
   toggleCouponStatus: async (id: string): Promise<Coupon> => {
-    const response = await apiClient.patch<{ data: Coupon }>(
+    const response = await apiClient.patch<ApiResponse<Coupon>>(
       `/admin/marketing/coupons/${id}`,
       { status: 'toggle' }
     );
@@ -407,29 +407,29 @@ export const marketingApi = {
   },
 
   getCouponAnalytics: async (id: string): Promise<CouponAnalytics> => {
-    const response = await apiClient.get<{ data: CouponAnalytics }>(
+    const response = await apiClient.get<ApiResponse<CouponAnalytics>>(
       `/admin/marketing/coupons/${id}/analytics`
     );
     return response.data.data;
   },
 
   getCouponUsageHistory: async (id: string) => {
-    const response = await apiClient.get(`/admin/marketing/coupons/${id}/usage-history`);
-    return response.data;
+    const response = await apiClient.get<ApiResponse<any>>(`/admin/marketing/coupons/${id}/usage-history`);
+    return response.data.data;
   },
 
   getCouponsAnalytics: async (period: number = 30) => {
-    const response = await apiClient.get(`/admin/marketing/coupons/analytics?period=${period}`);
+    const response = await apiClient.get<ApiResponse<any>>(`/admin/marketing/coupons/analytics?period=${period}`);
     return response.data.data;
   },
 
   getCouponsStatistics: async (period: number = 30) => {
-    const response = await apiClient.get(`/admin/marketing/coupons/statistics?period=${period}`);
+    const response = await apiClient.get<ApiResponse<any>>(`/admin/marketing/coupons/statistics?period=${period}`);
     return response.data.data;
   },
 
   validateCoupon: async (data: ValidateCouponDto): Promise<any> => {
-    const response = await apiClient.post<{ data: any }>(
+    const response = await apiClient.post<ApiResponse<any>>(
       '/admin/marketing/coupons/validate',
       data
     );
@@ -437,25 +437,25 @@ export const marketingApi = {
   },
 
   getPublicCoupons: async (page: number = 1, limit: number = 20) => {
-    const response = await apiClient.get<{ data: any[] }>(
+    const response = await apiClient.get<ApiResponse<any[]>>(
       `/marketing/coupons/public?page=${page}&limit=${limit}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   getAutoApplyCoupons: async (userId?: string, accountType?: string) => {
-    const response = await apiClient.get<{ data: any[] }>(
+    const response = await apiClient.get<ApiResponse<any[]>>(
       '/marketing/coupons/auto-apply',
       { params: { userId, accountType } }
     );
-    return response.data;
+    return response.data.data;
   },
 
   getCouponByCode: async (code: string) => {
-    const response = await apiClient.get<{ data: any }>(
+    const response = await apiClient.get<ApiResponse<any>>(
       `/marketing/coupons/code/${code}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   bulkGenerateCoupons: async (data: {
@@ -471,29 +471,16 @@ export const marketingApi = {
     usageLimit?: number;
     usageLimitPerUser?: number;
   }) => {
-    const response = await apiClient.post<{ data: { success: boolean; generated: number; coupons: Coupon[] } }>(
+    const response = await apiClient.post<ApiResponse<{ success: boolean; generated: number; coupons: Coupon[] }>>(
       '/admin/marketing/coupons/bulk-generate',
       data
     );
     return response.data.data;
   },
 
-  getCouponsAnalytics: async (period: number = 30) => {
-    const response = await apiClient.get<{ data: any }>(
-      `/admin/marketing/coupons/analytics?period=${period}`
-    );
-    return response.data.data;
-  },
-
-  getCouponsStatistics: async (period: number = 30) => {
-    const response = await apiClient.get<{ data: any }>(
-      `/admin/marketing/coupons/statistics?period=${period}`
-    );
-    return response.data.data;
-  },
 
   validateCouponCode: async (code: string, userId?: string, orderAmount?: number, productIds?: string[]) => {
-    const response = await apiClient.get<{ data: any }>(
+    const response = await apiClient.get<ApiResponse<any>>(
       '/marketing/coupons/validate',
       {
         params: { code, userId, orderAmount, productIds }
@@ -502,17 +489,12 @@ export const marketingApi = {
     return response.data.data;
   },
 
-  getCouponUsageHistory: async (id: string) => {
-    const response = await apiClient.get<{ data: any }>(
-      `/admin/marketing/coupons/${id}/usage-history`
-    );
-    return response.data.data;
-  },
+ 
 
   // ==================== BANNERS ====================
 
   createBanner: async (data: CreateBannerDto): Promise<Banner> => {
-    const response = await apiClient.post<{ data: Banner }>(
+    const response = await apiClient.post<ApiResponse<Banner>>(
       '/admin/marketing/banners',
       data
     );
@@ -520,25 +502,25 @@ export const marketingApi = {
   },
 
   listBanners: async (params?: ListBannersParams): Promise<PaginatedResponse<Banner>> => {
-    const response = await apiClient.get<{ data: Banner[]; pagination: any }>(
+    const response = await apiClient.get<ApiResponse<{ data: Banner[]; meta: any }>>(
       '/admin/marketing/banners',
       { params }
     );
     return {
-      data: response.data.data,
-      meta: response.data.pagination,
+      data: response.data.data.data,
+      meta: response.data.data.meta,
     };
   },
 
   getBanner: async (id: string): Promise<Banner> => {
-    const response = await apiClient.get<{ data: Banner }>(
+    const response = await apiClient.get<ApiResponse<Banner>>(
       `/admin/marketing/banners/${id}`
     );
     return response.data.data;
   },
 
   updateBanner: async (id: string, data: UpdateBannerDto): Promise<Banner> => {
-    const response = await apiClient.patch<{ data: Banner }>(
+    const response = await apiClient.patch<ApiResponse<Banner>>(
       `/admin/marketing/banners/${id}`,
       data
     );
@@ -546,14 +528,14 @@ export const marketingApi = {
   },
 
   deleteBanner: async (id: string): Promise<boolean> => {
-    const response = await apiClient.delete<{ data: boolean }>(
+    const response = await apiClient.delete<ApiResponse<{ deleted: boolean; deletedAt: Date }>>(
       `/admin/marketing/banners/${id}`
     );
-    return response.data.data;
+    return response.data.data.deleted;
   },
 
   toggleBannerStatus: async (id: string): Promise<Banner> => {
-    const response = await apiClient.patch<{ data: Banner }>(
+    const response = await apiClient.patch<ApiResponse<Banner>>(
       `/admin/marketing/banners/${id}/toggle-status`
     );
     return response.data.data;
@@ -562,7 +544,7 @@ export const marketingApi = {
   // ==================== PUBLIC ENDPOINTS ====================
 
   getEffectivePrice: async (params: PricingQueryDto): Promise<EffectivePriceResult> => {
-    const response = await apiClient.get<{ data: EffectivePriceResult }>(
+    const response = await apiClient.get<ApiResponse<EffectivePriceResult>>(
       '/marketing/pricing/variant',
       { params }
     );
@@ -570,7 +552,7 @@ export const marketingApi = {
   },
 
   getActiveBanners: async (location?: string): Promise<Banner[]> => {
-    const response = await apiClient.get<{ data: Banner[] }>(
+    const response = await apiClient.get<ApiResponse<Banner[]>>(
       '/marketing/banners',
       { params: location ? { location } : {} }
     );

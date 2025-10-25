@@ -1,349 +1,61 @@
-%% Distance Calculation System
+%% Distance Calculation Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Distance Calculation System] --> B{Calculation Type?}
-  B -->|Haversine Formula| C[Haversine Distance Calculation]
-  B -->|Geospatial Query| D[Geospatial Database Query]
-  B -->|Route Calculation| E[Route Distance Calculation]
-  B -->|Bulk Calculation| F[Bulk Distance Calculation]
-  
-  %% Haversine Distance Calculation
-  C --> C1[Get Coordinates]
-  C1 --> C2[Apply Haversine Formula]
-  C2 --> C3[Calculate Distance]
-  C3 --> C4[Convert Units]
-  C4 --> C5[Return Distance]
-  
-  %% Get Coordinates
-  C1 --> C1A[Get source coordinates]
-  C1A --> C1B[Get destination coordinates]
-  C1B --> C1C[Validate coordinates]
-  C1C --> C1D[Convert to radians]
-  C1D --> C1E[Coordinates prepared]
-  
-  %% Coordinate Validation
-  C1C --> C1C1[Check latitude range]
-  C1C1 --> C1C2[Check longitude range]
-  C1C2 --> C1C3[Validate coordinate format]
-  C1C3 --> C1C4[Check for null values]
-  C1C4 --> C1C5[Coordinates valid]
-  
-  %% Convert to Radians
-  C1D --> C1D1[Convert latitude to radians]
-  C1D1 --> C1D2[Convert longitude to radians]
-  C1D2 --> C1D3[Calculate coordinate differences]
-  C1D3 --> C1D4[Radians calculated]
-  
-  %% Apply Haversine Formula
-  C2 --> C2A[Calculate latitude difference]
-  C2A --> C2B[Calculate longitude difference]
-  C2B --> C2C[Apply haversine formula]
-  C2C --> C2D[Calculate intermediate values]
-  C2D --> C2E[Apply arc tangent]
-  C2E --> C2F[Formula applied]
-  
-  %% Haversine Formula Steps
-  C2C --> C2C1[sin²(Δlat/2)]
-  C2C1 --> C2C2[cos(lat1) * cos(lat2)]
-  C2C2 --> C2C3[sin²(Δlng/2)]
-  C2C3 --> C2C4[a = sin²(Δlat/2) + cos(lat1) * cos(lat2) * sin²(Δlng/2)]
-  C2C4 --> C2C5[c = 2 * atan2(√a, √(1-a))]
-  C2C5 --> C2C6[d = R * c]
-  
-  %% Calculate Distance
-  C3 --> C3A[Apply Earth radius]
-  C3A --> C3B[Calculate final distance]
-  C3B --> C3C[Validate result]
-  C3C --> C3D[Distance calculated]
-  
-  %% Earth Radius Application
-  C3A --> C3A1[Use Earth radius constant]
-  C3A1 --> C3A2[Apply radius to formula result]
-  C3A2 --> C3A3[Calculate distance in meters]
-  C3A3 --> C3A4[Distance in meters]
-  
-  %% Convert Units
-  C4 --> C4A[Convert to kilometers]
-  C4A --> C4B[Convert to miles]
-  C4B --> C4C[Convert to feet]
-  C4C --> C4D[Units converted]
-  
-  %% Unit Conversion
-  C4A --> C4A1[Divide by 1000 for km]
-  C4A1 --> C4A2[Round to 2 decimal places]
-  C4A2 --> C4A3[Distance in kilometers]
-  
-  %% Return Distance
-  C5 --> C5A[Format distance result]
-  C5A --> C5B[Add unit information]
-  C5B --> C5C[Validate result range]
-  C5C --> C5D[Return formatted distance]
-  
-  %% Geospatial Database Query
-  D --> D1[Prepare Geospatial Query]
-  D1 --> D2[Execute Database Query]
-  D2 --> D3[Process Query Results]
-  D3 --> D4[Calculate Distances]
-  D4 --> D5[Return Distance Results]
-  
-  %% Prepare Geospatial Query
-  D1 --> D1A[Set query parameters]
-  D1A --> D1B[Define search radius]
-  D1B --> D1C[Set coordinate filters]
-  D1C --> D1D[Configure query options]
-  D1D --> D1E[Query prepared]
-  
-  %% Query Parameters
-  D1A --> D1A1[Set center coordinates]
-  D1A1 --> D1A2[Set maximum distance]
-  D1A2 --> D1A3[Set result limit]
-  D1A3 --> D1A4[Set sorting criteria]
-  D1A4 --> D1A5[Parameters set]
-  
-  %% Search Radius
-  D1B --> D1B1[Set radius in kilometers]
-  D1B1 --> D1B2[Convert to meters]
-  D1B2 --> D1B3[Apply radius filter]
-  D1B3 --> D1B4[Radius configured]
-  
-  %% Coordinate Filters
-  D1C --> D1C1[Set latitude bounds]
-  D1C1 --> D1C2[Set longitude bounds]
-  D1C2 --> D1C3[Apply coordinate filters]
-  D1C3 --> D1C4[Filters applied]
-  
-  %% Execute Database Query
-  D2 --> D2A[Execute 2dsphere query]
-  D2A --> D2B[Apply geospatial index]
-  D2B --> D2C[Filter by distance]
-  D2C --> D2D[Sort by distance]
-  D2D --> D2E[Limit results]
-  D2E --> D2F[Query executed]
-  
-  %% 2dsphere Query
-  D2A --> D2A1[Use $near operator]
-  D2A1 --> D2A2[Apply $maxDistance]
-  D2A2 --> D2A3[Use $geoWithin]
-  D2A3 --> D2A4[Apply spatial filters]
-  D2A4 --> D2A5[Geospatial query]
-  
-  %% Process Query Results
-  D3 --> D3A[Extract coordinate data]
-  D3A --> D3B[Calculate distances]
-  D3B --> D3C[Sort by distance]
-  D3C --> D3D[Filter results]
-  D3D --> D3E[Results processed]
-  
-  %% Extract Coordinate Data
-  D3A --> D3A1[Extract latitude values]
-  D3A1 --> D3A2[Extract longitude values]
-  D3A2 --> D3A3[Extract document IDs]
-  D3A3 --> D3A4[Extract metadata]
-  D3A4 --> D3A5[Data extracted]
-  
-  %% Calculate Distances
-  D4 --> D4A[Apply Haversine formula]
-  D4A --> D4B[Calculate for each result]
-  D4B --> D4C[Sort by distance]
-  D4C --> D4D[Add distance to results]
-  D4D --> D4E[Distances calculated]
-  
-  %% Return Distance Results
-  D5 --> D5A[Format results]
-  D5A --> D5B[Add distance information]
-  D5B --> D5C[Sort by distance]
-  D5C --> D5D[Return formatted results]
-  
-  %% Route Distance Calculation
-  E --> E1[Get Route Coordinates]
-  E1 --> E2[Calculate Route Distance]
-  E2 --> E3[Apply Route Factors]
-  E3 --> E4[Calculate Travel Time]
-  E4 --> E5[Return Route Information]
-  
-  %% Get Route Coordinates
-  E1 --> E1A[Get start coordinates]
-  E1A --> E1B[Get end coordinates]
-  E1B --> E1C[Get waypoint coordinates]
-  E1C --> E1D[Validate route coordinates]
-  E1D --> E1E[Coordinates prepared]
-  
-  %% Calculate Route Distance
-  E2 --> E2A[Calculate segment distances]
-  E2A --> E2B[Sum segment distances]
-  E2B --> E2C[Apply route corrections]
-  E2C --> E2D[Route distance calculated]
-  
-  %% Segment Distance Calculation
-  E2A --> E2A1[Calculate each segment]
-  E2A1 --> E2A2[Apply Haversine formula]
-  E2A2 --> E2A3[Sum segment distances]
-  E2A3 --> E2A4[Segment distances calculated]
-  
-  %% Apply Route Factors
-  E3 --> E3A[Apply road factor]
-  E3A --> E3B[Apply traffic factor]
-  E3B --> E3C[Apply terrain factor]
-  E3C --> E3D[Apply weather factor]
-  E3D --> E3E[Factors applied]
-  
-  %% Route Factors
-  E3A --> E3A1[Highway factor: 1.0]
-  E3A1 --> E3A2[City road factor: 1.2]
-  E3A2 --> E3A3[Rural road factor: 1.1]
-  E3A3 --> E3A4[Off-road factor: 1.5]
-  
-  %% Calculate Travel Time
-  E4 --> E4A[Set average speed]
-  E4A --> E4B[Calculate base time]
-  E4B --> E4C[Apply speed factors]
-  E4C --> E4D[Calculate final time]
-  E4D --> E4E[Travel time calculated]
-  
-  %% Speed Factors
-  E4A --> E4A1[Highway speed: 100 km/h]
-  E4A1 --> E4A2[City speed: 50 km/h]
-  E4A2 --> E4A3[Rural speed: 80 km/h]
-  E4A3 --> E4A4[Off-road speed: 30 km/h]
-  
-  %% Return Route Information
-  E5 --> E5A[Format route data]
-  E5A --> E5B[Add distance information]
-  E5B --> E5C[Add time information]
-  E5C --> E5D[Add route factors]
-  E5D --> E5E[Return route information]
-  
-  %% Bulk Distance Calculation
-  F --> F1[Prepare Bulk Data]
-  F1 --> F2[Process Bulk Calculation]
-  F2 --> F3[Optimize Performance]
-  F3 --> F4[Return Bulk Results]
-  
-  %% Prepare Bulk Data
-  F1 --> F1A[Load source coordinates]
-  F1A --> F1B[Load destination coordinates]
-  F1B --> F1C[Validate all coordinates]
-  F1C --> F1D[Prepare calculation matrix]
-  F1D --> F1E[Data prepared]
-  
-  %% Bulk Data Preparation
-  F1A --> F1A1[Load multiple source points]
-  F1A1 --> F1A2[Validate source coordinates]
-  F1A2 --> F1A3[Prepare source matrix]
-  F1A3 --> F1A4[Source data ready]
-  
-  %% Process Bulk Calculation
-  F2 --> F2A[Apply vectorized calculation]
-  F2A --> F2B[Process in batches]
-  F2B --> F2C[Parallel processing]
-  F2C --> F2D[Results aggregated]
-  F2D --> F2E[Calculation completed]
-  
-  %% Vectorized Calculation
-  F2A --> F2A1[Apply formula to all pairs]
-  F2A1 --> F2A2[Use matrix operations]
-  F2A2 --> F2A3[Optimize calculations]
-  F2A3 --> F2A4[Vectorized processing]
-  
-  %% Batch Processing
-  F2B --> F2B1[Divide into batches]
-  F2B1 --> F2B2[Process each batch]
-  F2B2 --> F2B3[Combine batch results]
-  F2B3 --> F2B4[Batches processed]
-  
-  %% Parallel Processing
-  F2C --> F2C1[Use multiple threads]
-  F2C1 --> F2C2[Distribute calculations]
-  F2C2 --> F2C3[Collect results]
-  F2C3 --> F2C4[Parallel processing]
-  
-  %% Optimize Performance
-  F3 --> F3A[Use efficient algorithms]
-  F3A --> F3B[Optimize memory usage]
-  F3B --> F3C[Cache calculations]
-  F3C --> F3D[Performance optimized]
-  
-  %% Efficient Algorithms
-  F3A --> F3A1[Use optimized Haversine]
-  F3A1 --> F3A2[Apply mathematical optimizations]
-  F3A2 --> F3A3[Use precomputed values]
-  F3A3 --> F3A4[Algorithms optimized]
-  
-  %% Memory Optimization
-  F3B --> F3B1[Use streaming processing]
-  F3B1 --> F3B2[Optimize data structures]
-  F3B2 --> F3B3[Minimize memory allocation]
-  F3B3 --> F3B4[Memory optimized]
-  
-  %% Cache Calculations
-  F3C --> F3C1[Cache coordinate conversions]
-  F3C1 --> F3C2[Cache intermediate results]
-  F3C2 --> F3C3[Use lookup tables]
-  F3C3 --> F3C4[Calculations cached]
-  
-  %% Return Bulk Results
-  F4 --> F4A[Format bulk results]
-  F4A --> F4B[Add metadata]
-  F4B --> F4C[Sort results]
-  F4C --> F4D[Return formatted results]
-  
-  %% Distance Calculation Validation
-  G[Distance Validation] --> H[Validate Input Coordinates]
-  H --> I[Validate Calculation Results]
-  I --> J[Handle Edge Cases]
-  J --> K[Return Validated Results]
-  
-  %% Validate Input Coordinates
-  H --> H1[Check coordinate ranges]
-  H1 --> H2[Validate coordinate format]
-  H2 --> H3[Check for null values]
-  H3 --> H4[Validate coordinate precision]
-  H4 --> H5[Coordinates validated]
-  
-  %% Coordinate Range Checks
-  H1 --> H1A[Latitude: -90 to 90]
-  H1A --> H1B[Longitude: -180 to 180]
-  H1B --> H1C[Check for extreme values]
-  H1C --> H1D[Ranges validated]
-  
-  %% Validate Calculation Results
-  I --> I1[Check result range]
-  I1 --> I2[Validate result units]
-  I2 --> I3[Check for NaN values]
-  I3 --> I4[Validate result precision]
-  I4 --> I5[Results validated]
-  
-  %% Result Range Validation
-  I1 --> I1A[Check for negative distances]
-  I1A --> I1B[Check for extremely large distances]
-  I1B --> I1C[Check for zero distances]
-  I1C --> I1D[Range validated]
-  
-  %% Handle Edge Cases
-  J --> J1[Handle identical coordinates]
-  J1 --> J2[Handle antipodal points]
-  J2 --> J3[Handle coordinate precision issues]
-  J3 --> J4[Handle calculation errors]
-  J4 --> J5[Edge cases handled]
-  
-  %% Identical Coordinates
-  J1 --> J1A[Check if coordinates are identical]
-  J1A --> J1B[Return zero distance]
-  J1B --> J1C[Identical coordinates handled]
-  
-  %% Antipodal Points
-  J2 --> J2A[Check for antipodal points]
-  J2A --> J2B[Return half Earth circumference]
-  J2B --> J2C[Antipodal points handled]
-  
-  %% Return Validated Results
-  K --> K1[Format validated results]
-  K1 --> K2[Add validation metadata]
-  K2 --> K3[Return final results]
-  
+  A[حساب المسافات] --> B[معادلة Haversine]
+  B --> B1[نقطة البداية: lat1, lng1]
+  B1 --> B2[نقطة النهاية: lat2, lng2]
+  B2 --> B3[تحويل إلى راديان]
+  B3 --> B4[حساب الفرق في الإحداثيات]
+  B4 --> B5[تطبيق المعادلة الرياضية]
+  B5 --> B6[حساب المسافة بالكيلومتر]
+
+  A --> C[البحث الجغرافي في MongoDB]
+  C --> C1[فهرس 2dsphere]
+  C1 --> C2[$near operator]
+  C2 --> C3[نطاق البحث بالكيلومتر]
+  C3 --> C4[فلترة النتائج]
+  C4 --> C5[ترتيب حسب المسافة]
+
+  %% Haversine Formula Details
+  D[تفاصيل معادلة Haversine] --> D1[R = نصف قطر الأرض = 6371 كم]
+  D1 --> D2[Δlat = lat2 - lat1]
+  D2 --> D3[Δlng = lng2 - lng1]
+  D3 --> D4[a = sin²(Δlat/2) + cos(lat1) * cos(lat2) * sin²(Δlng/2)]
+  D4 --> D5[c = 2 * atan2(sqrt(a), sqrt(1-a))]
+  D5 --> D6[distance = R * c]
+
+  %% MongoDB Geo Queries
+  E[استعلامات MongoDB الجغرافية] --> E1[ServiceRequestSchema.index location: 2dsphere]
+  E1 --> E2[db.service_requests.find]
+  E2 --> E3[$near: [lng, lat]]
+  E3 --> E4[$maxDistance: distance_in_meters]
+  E4 --> E5[limit: عدد النتائج]
+
+  %% Use Cases
+  F[حالات الاستخدام] --> F1[البحث عن طلبات قريبة]
+  F1 --> F2[GET /services/requests/nearby]
+  F2 --> F3[إحداثيات المهندس]
+  F3 --> F4[نطاق البحث]
+  F4 --> F5[إرجاع الطلبات المقربة]
+
+  F --> F6[حساب المسافة في العرض]
+  F6 --> F7[حفظ distanceKm في EngineerOffer]
+  F7 --> F8[عرض المسافة للمهندس]
+  F8 --> F9[ترتيب حسب المسافة]
+
+  %% Performance Optimization
+  G[تحسين الأداء] --> G1[فهرس 2dsphere فعال]
+  G1 --> G2[حساب المسافة في الاستعلام]
+  G2 --> G3[تخزين مؤقت للنتائج]
+  G3 --> G4[تحديد حدود البحث]
+
+  %% Error Handling
+  H[معالجة الأخطاء] --> H1[التحقق من صحة الإحداثيات]
+  H1 --> H2[معالجة الحالات الحدية]
+  H2 --> H3[إرجاع خطأ للإحداثيات غير صحيحة]
+  H3 --> H4[قيم افتراضية للمسافات الكبيرة]
+
   %% End points
-  C5D --> Z[Distance Calculation Complete]
-  D5D --> Z
-  E5E --> Z
-  F4D --> Z
-  K3 --> Z
+  B6 --> I[نهاية حساب المسافة]
+  C5 --> I
+  F9 --> I

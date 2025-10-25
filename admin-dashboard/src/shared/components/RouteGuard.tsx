@@ -11,10 +11,14 @@ interface RouteGuardProps {
 
 export const RouteGuard: React.FC<RouteGuardProps> = ({
   children,
-  fallbackPath = '/unauthorized',
 }) => {
   const location = useLocation();
-  const { isAuthenticated, user, hasRole, hasPermission } = useAuthStore();
+  const { isAuthenticated, user, hasPermission, initialize } = useAuthStore();
+
+  // Initialize auth on mount
+  React.useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   // Loading state
   if (isAuthenticated === null) {

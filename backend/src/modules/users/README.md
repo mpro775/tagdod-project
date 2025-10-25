@@ -128,6 +128,151 @@ Response: {
 }
 ```
 
+## User Management APIs (إدارة المستخدمين)
+
+### قائمة المستخدمين
+
+```http
+GET /admin/users?page=1&limit=20&status=active&role=user
+Authorization: Bearer <admin_token>
+```
+
+**Query Parameters:**
+- `page`: رقم الصفحة (افتراضي: 1)
+- `limit`: عدد النتائج (افتراضي: 20)
+- `status`: حالة المستخدم (active, suspended, pending, deleted)
+- `role`: الدور (user, admin, super_admin, merchant, engineer)
+- `search`: نص البحث (الاسم أو رقم الهاتف)
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "user_123",
+      "phone": "+966501234567",
+      "firstName": "أحمد",
+      "lastName": "محمد",
+      "status": "active",
+      "roles": ["user"],
+      "createdAt": "2023-10-01T10:00:00Z",
+      "lastLoginAt": "2024-01-15T14:30:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1250,
+    "totalPages": 63
+  }
+}
+```
+
+### تفاصيل مستخدم
+
+```http
+GET /admin/users/:id
+Authorization: Bearer <admin_token>
+```
+
+### إنشاء أدمن جديد
+
+```http
+POST /admin/users/create-admin
+Authorization: Bearer <super_admin_token>
+```
+
+```json
+{
+  "phone": "+966501234567",
+  "firstName": "أحمد",
+  "lastName": "الأدمن",
+  "password": "secure_password_123",
+  "roles": ["admin"],
+  "permissions": ["users.read", "users.write"]
+}
+```
+
+### إنشاء أدمن بدور محدد
+
+```http
+POST /admin/users/create-role-admin
+Authorization: Bearer <super_admin_token>
+```
+
+```json
+{
+  "phone": "+966501234567",
+  "firstName": "سارة",
+  "lastName": "المدير",
+  "password": "secure_password_123",
+  "role": "admin"
+}
+```
+
+### إنشاء مستخدم عادي
+
+```http
+POST /admin/users
+Authorization: Bearer <admin_token>
+```
+
+```json
+{
+  "phone": "+966501234567",
+  "firstName": "فاطمة",
+  "lastName": "علي",
+  "preferredCurrency": "SAR",
+  "roles": ["user"]
+}
+```
+
+### تحديث مستخدم
+
+```http
+PATCH /admin/users/:id
+Authorization: Bearer <admin_token>
+```
+
+```json
+{
+  "firstName": "فاطمة",
+  "lastName": "أحمد",
+  "preferredCurrency": "USD",
+  "status": "active"
+}
+```
+
+### تعليق مستخدم
+
+```http
+POST /admin/users/:id/suspend
+Authorization: Bearer <admin_token>
+```
+
+```json
+{
+  "reason": "انتهاك شروط الاستخدام",
+  "duration": 30 // أيام (اختياري)
+}
+```
+
+### تفعيل مستخدم
+
+```http
+POST /admin/users/:id/activate
+Authorization: Bearer <admin_token>
+```
+
+### حذف مستخدم
+
+```http
+DELETE /admin/users/:id
+Authorization: Bearer <admin_token>
+```
+
+**ملاحظة:** الحذف يكون Soft Delete ويمكن استعادة المستخدم لاحقاً.
+
 ## الخدمات (Services)
 
 ### UserAnalyticsService
@@ -290,6 +435,21 @@ function App() {
 2. تقديم Pull Request مع التغييرات
 3. التأكد من اتباع معايير الكود المحددة
 4. كتابة اختبارات للوظائف الجديدة
+
+## ✅ حالة النظام
+
+**نظام Users Module مكتمل بالكامل ويعمل كما هو موثق:**
+- ✅ **User Analytics**: تحليل شامل لسلوك المستخدمين وإحصائياتهم
+- ✅ **User Management**: إدارة كاملة للمستخدمين والأدمن
+- ✅ **User Scoring**: نظام نقاط متقدم لتقييم العملاء
+- ✅ **Customer Segmentation**: تصنيف العملاء وترتيبهم
+- ✅ **Churn Risk Analysis**: تحليل مخاطر فقدان العملاء
+- ✅ **Admin Controls**: تحكم شامل في المستخدمين والصلاحيات
+- ✅ **Role-Based Access**: نظام أدوار وصلاحيات متدرج
+- ✅ **Soft Delete**: إدارة آمنة لحذف المستخدمين
+- ✅ جميع APIs مطبقة وتعمل (18 endpoint إجمالي)
+
+**النظام جاهز للإنتاج ويوفر إدارة مستخدمين احترافية!**
 
 ## الترخيص
 

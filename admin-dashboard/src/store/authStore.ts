@@ -27,6 +27,7 @@ interface AuthState {
   // eslint-disable-next-line no-unused-vars
   hasPermission: (permission: string) => boolean;
   initialize: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -64,6 +65,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return user && user.permissions ? user.permissions.includes(permission) : false;
   },
 
+  refreshProfile: async () => {
+    try {
+      const { authApi } = await import('@/features/auth/api/authApi');
+      const profileResponse = await authApi.getProfile();
+      const currentUser = get().user;
+
+      if (currentUser) {
+        // Update user data with fresh data from server
+        const updatedUser = {
+          ...currentUser,
+          roles: profileResponse.user?.roles || currentUser.roles || [],
+          permissions: profileResponse.user?.permissions || currentUser.permissions || [],
+        };
+
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));
+        set({ user: updatedUser });
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to refresh user profile:', error);
+      throw error;
+    }
+  },
+
   initialize: async () => {
     try {
       const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);
@@ -80,8 +105,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           // Update user data with fresh data from server
           const updatedUser = {
             ...user,
-            roles: profileResponse.data?.user?.roles || [],
-            permissions: profileResponse.data?.user?.permissions || [],
+            roles: profileResponse.user?.roles || user.roles || [],
+            permissions: profileResponse.user?.permissions || user.permissions || [],
           };
 
           localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));

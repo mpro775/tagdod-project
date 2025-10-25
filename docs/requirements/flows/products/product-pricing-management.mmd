@@ -1,129 +1,67 @@
-%% Product Pricing and Currency Management
+%% Product Pricing Management Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Product Pricing Management] --> B{Pricing Action?}
-  B -->|Set Base Prices| C[Set Base Pricing]
-  B -->|Update Prices| D[Update Existing Prices]
-  B -->|Bulk Pricing| E[Bulk Price Updates]
-  B -->|Currency Conversion| F[Currency Management]
-  
-  %% Set Base Pricing
-  C --> C1[Select Product/Variant]
-  C1 --> C2[Set Base Price USD]
-  C2 --> C3[Calculate YER Price]
-  C3 --> C4[Calculate SAR Price]
-  C4 --> C5[Set Profit Margins]
-  C5 --> C6[Apply Discount Rules]
-  C6 --> C7[Save Pricing Data]
-  
-  %% Currency Conversion Process
-  C3 --> C3A[Get current exchange rate]
-  C3A --> C3B[Apply conversion formula]
-  C3B --> C3C[Round to currency precision]
-  C3C --> C3D[Validate price range]
-  
-  %% Profit Margin Calculation
-  C5 --> C5A[Set cost price]
-  C5A --> C5B[Calculate markup percentage]
-  C5B --> C5C[Apply margin rules]
-  C5C --> C5D[Validate minimum margin]
-  
-  %% Discount Rules Application
-  C6 --> C6A[Check merchant discounts]
-  C6A --> C6B[Check engineer discounts]
-  C6B --> C6C[Apply volume discounts]
-  C6C --> C6D[Calculate final price]
-  
-  %% Update Existing Prices
-  D --> D1[Load current prices]
-  D1 --> D2[Select price to update]
-  D2 --> D3[Enter new price]
-  D3 --> D4[Validate price change]
-  D4 --> D5[Update all currencies]
-  D5 --> D6[Log price change]
-  D6 --> D7[Notify stakeholders]
-  
-  %% Price Change Validation
-  D4 --> D4A[Check price increase limit]
-  D4A --> D4B[Validate against competitors]
-  D4B --> D4C[Check margin requirements]
-  D4C --> D4D[Approve price change]
-  
-  %% Bulk Price Updates
-  E --> E1[Select products/variants]
-  E1 --> E2[Choose update method]
-  E2 --> E3[Percentage increase]
-  E2 --> E4[Fixed amount increase]
-  E2 --> E5[New price override]
-  
-  %% Percentage Update
-  E3 --> E3A[Enter percentage]
-  E3A --> E3B[Calculate new prices]
-  E3B --> E3C[Preview changes]
-  E3C --> E3D[Confirm update]
-  
-  %% Fixed Amount Update
-  E4 --> E4A[Enter amount]
-  E4A --> E4B[Add to existing prices]
-  E4B --> E4C[Preview changes]
-  E4C --> E4D[Confirm update]
-  
-  %% Price Override
-  E5 --> E5A[Upload price file]
-  E5A --> E5B[Validate file format]
-  E5B --> E5C[Map product codes]
-  E5C --> E5D[Preview changes]
-  E5D --> E5E[Confirm update]
-  
-  %% Currency Management
-  F --> F1[Update Exchange Rates]
-  F1 --> F2[Get latest rates]
-  F2 --> F3[Update rate database]
-  F3 --> F4[Recalculate prices]
-  F4 --> F5[Notify price changes]
-  
-  %% Exchange Rate Update
-  F2 --> F2A[Connect to rate API]
-  F2A --> F2B[Fetch USD/YER rate]
-  F2B --> F2C[Fetch USD/SAR rate]
-  F2C --> F2D[Validate rate data]
-  F2D --> F2E[Store rates with timestamp]
-  
-  %% Price Recalculation
-  F4 --> F4A[Get all active products]
-  F4A --> F4B[For each product]
-  F4B --> F4C[Recalculate YER price]
-  F4C --> F4D[Recalculate SAR price]
-  F4D --> F4E[Update price records]
-  F4E --> F4F[Log price updates]
-  
-  %% Price History and Analytics
-  G[Price History] --> G1[Track price changes]
-  G1 --> G2[Generate price reports]
-  G2 --> G3[Analyze price trends]
-  G3 --> G4[Competitor price analysis]
-  G4 --> G5[Price optimization suggestions]
-  
+  A[إدارة أسعار المنتجات] --> B{نوع العملية?}
+  B -->|عرض الأسعار| C[عرض أسعار المنتج]
+  B -->|تحديث الأسعار| D[تحديث أسعار التنويعات]
+  B -->|عرض النطاق| E[عرض نطاق الأسعار]
+
+  %% Display Pricing
+  C --> C1[استرجاع جميع التنويعات]
+  C1 --> C2[عرض basePriceUSD لكل variant]
+  C2 --> C3[عرض compareAtPriceUSD إذا كان متوفراً]
+  C3 --> C4[عرض costPriceUSD للإدارة]
+
+  %% Update Pricing
+  D --> D1[تحديد التنويعة المراد تحديثها]
+  D1 --> D2[إدخال basePriceUSD الجديد]
+  D2 --> D3[إدخال compareAtPriceUSD الجديد - اختياري]
+  D3 --> D4[إدخال costPriceUSD الجديد - اختياري]
+  D4 --> D5[حفظ التغييرات]
+
+  %% Price Range
+  E --> E1[استرجاع جميع التنويعات النشطة]
+  E1 --> E2[استخراج basePriceUSD لكل variant]
+  E2 --> E3[العثور على السعر الأدنى]
+  E3 --> E4[العثور على السعر الأعلى]
+  E4 --> E5[إرجاع النطاق السعري]
+
+  %% Currency Conversion
+  F[تحويل العملات] --> F1[استلام السعر بالدولار]
+  F1 --> F2[قراءة سعر الصرف الحالي]
+  F2 --> F3[ضرب السعر بالمعدل]
+  F3 --> F4[إرجاع السعر بالعملة المطلوبة]
+
+  %% Price Display
+  G[عرض الأسعار للعملاء] --> G1[عرض basePriceUSD كسعر أساسي]
+  G1 --> G2[عرض compareAtPriceUSD كسعر قديم إذا كان أعلى]
+  G2 --> G3[حساب التوفير المئوي]
+  G3 --> G4[عرض "خصم X%" إذا كان هناك سعر مقارنة]
+
+  %% Cost Tracking
+  H[تتبع التكاليف] --> H1[costPriceUSD للحسابات المالية]
+  H1 --> H2[حساب الربحية]
+  H2 --> H3[تحليل الهوامش]
+
   %% Price Validation
-  H[Price Validation] --> H1[Check minimum price]
-  H1 --> H2[Check maximum price]
-  H2 --> H3[Validate currency consistency]
-  H3 --> H4[Check margin requirements]
-  H4 --> H5[Approve or reject changes]
-  
-  %% Notification System
-  I[Price Notifications] --> I1[Price increase alerts]
-  I1 --> I2[Currency change notifications]
-  I2 --> I3[Bulk update confirmations]
-  I3 --> I4[Stakeholder notifications]
-  
+  I[التحقق من صحة الأسعار] --> I1[basePriceUSD > 0]
+  I1 --> I2[compareAtPriceUSD > basePriceUSD إذا كان متوفراً]
+  I2 --> I3[costPriceUSD < basePriceUSD]
+  I3 --> I4[الأسعار منطقية]
+
+  %% Bulk Price Updates
+  J[تحديث الأسعار الجماعي] --> J1[تحديد منتجات متعددة]
+  J1 --> J2[تحديد نوع التغيير]
+  J2 --> J3[زيادة/تقليل بنسبة مئوية]
+  J3 --> J4[أو تحديد قيمة ثابتة]
+  J4 --> J5[تطبيق على جميع التنويعات المحددة]
+
   %% End points
-  C7 --> Z[Pricing Updated]
-  D7 --> Z
-  E3D --> Z
-  E4D --> Z
-  E5E --> Z
-  F5 --> Z
-  G5 --> Z
-  H5 --> Z
-  I4 --> Z
+  C4 --> K[نهاية - عرض الأسعار]
+  D5 --> K
+  E5 --> K
+  F4 --> K
+  G4 --> K
+  H3 --> K
+  I4 --> K
+  J5 --> K

@@ -13,7 +13,7 @@ import {
   CacheResponse,
 } from '../../shared/interceptors/response-cache.interceptor';
 
-@ApiTags('attributes-public')
+@ApiTags('السمات-العامة')
 @Controller('attributes')
 @UseInterceptors(ResponseCacheInterceptor)
 export class AttributesPublicController {
@@ -66,7 +66,7 @@ export class AttributesPublicController {
     const attributes = await this.attributesService.listAttributes({
       isActive: true,
     });
-    return { data: attributes };
+    return attributes;
   }
 
   // ==================== السمات القابلة للفلترة ====================
@@ -151,7 +151,7 @@ export class AttributesPublicController {
       }),
     );
 
-    return { data: attributesWithValues };
+    return attributesWithValues;
   }
 
   // ==================== عرض سمة واحدة مع قيمها ====================
@@ -243,6 +243,6 @@ export class AttributesPublicController {
   @CacheResponse({ ttl: 1800 }) // 30 minutes
   async getAttribute(@Param('id') id: string) {
     const attribute = await this.attributesService.getAttribute(id);
-    return { data: attribute };
+    return attribute;
   }
 }

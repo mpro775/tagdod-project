@@ -118,8 +118,8 @@ export const AbandonedCartsPage: React.FC = () => {
   };
 
   // Data preparation
-  const carts = cartData?.data?.carts || [];
-  const total = cartData?.meta?.total || 0;
+  const carts = cartData?.carts || [];
+  const total = cartData?.count || 0;
 
   // Calculate statistics
   const totalAbandonedValue = carts.reduce(

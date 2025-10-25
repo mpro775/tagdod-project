@@ -13,8 +13,6 @@ import type {
   PriceInfo,
   InventorySummary,
   StockUpdateRequest,
-  BulkUpdateStockDto,
-  StockAlertDto,
 } from '../types/product.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
@@ -25,7 +23,7 @@ export const productsApi = {
    * Create product
    */
   create: async (data: CreateProductDto): Promise<Product> => {
-    const response = await apiClient.post<ApiResponse<Product>>('/admin/products', data);
+    const response = await apiClient.post('/admin/products', data);
     return response.data.data;
   },
 
@@ -33,15 +31,31 @@ export const productsApi = {
    * List products
    */
   list: async (params: ListProductsParams): Promise<PaginatedResponse<Product>> => {
-    const response = await apiClient.get('/admin/products', { params: sanitizePaginationParams(params) });
-    return response.data;
+    const response = await apiClient.get<ApiResponse<{
+      products: Product[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>>('/admin/products', {
+      params: sanitizePaginationParams(params),
+    });
+    return {
+      data: response.data.data.products,
+      meta: {
+        page: response.data.data.page,
+        limit: response.data.data.limit,
+        total: response.data.data.total,
+        totalPages: response.data.data.totalPages,
+      },
+    };
   },
 
   /**
    * Get product by ID
    */
   getById: async (id: string): Promise<Product> => {
-    const response = await apiClient.get<ApiResponse<Product>>(`/admin/products/${id}`);
+    const response = await apiClient.get(`/admin/products/${id}`);
     return response.data.data;
   },
 
@@ -178,7 +192,10 @@ export const productsApi = {
   /**
    * Get product price range
    */
-  getPriceRange: async (productId: string, currency?: string): Promise<{ min: number; max: number }> => {
+  getPriceRange: async (
+    productId: string,
+    currency?: string
+  ): Promise<{ min: number; max: number }> => {
     const response = await apiClient.get<ApiResponse<{ min: number; max: number }>>(
       `/admin/products/${productId}/price-range`,
       { params: { currency } }
@@ -202,11 +219,13 @@ export const productsApi = {
   /**
    * Check variant availability
    */
-  checkAvailability: async (variantId: string, quantity: number): Promise<{ available: boolean; availableQuantity: number }> => {
-    const response = await apiClient.get<ApiResponse<{ available: boolean; availableQuantity: number }>>(
-      `/admin/products/variants/${variantId}/availability`,
-      { params: { quantity } }
-    );
+  checkAvailability: async (
+    variantId: string,
+    quantity: number
+  ): Promise<{ available: boolean; availableQuantity: number }> => {
+    const response = await apiClient.get<
+      ApiResponse<{ available: boolean; availableQuantity: number }>
+    >(`/admin/products/variants/${variantId}/availability`, { params: { quantity } });
     return response.data.data;
   },
 

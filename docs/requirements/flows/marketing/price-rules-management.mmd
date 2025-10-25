@@ -1,161 +1,40 @@
-%% Price Rules Management System
+%% Price Rules Management Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Price Rules Management] --> B{Action Type?}
-  B -->|Create Rule| C[Create Price Rule]
-  B -->|Update Rule| D[Update Price Rule]
-  B -->|Toggle Rule| E[Toggle Rule Status]
-  B -->|Delete Rule| F[Delete Price Rule]
-  B -->|Preview Rule| G[Preview Rule Effect]
-  B -->|List Rules| H[List Price Rules]
-  
+  A[إدارة قواعد الأسعار] --> B{نوع العملية?}
+  B -->|إنشاء قاعدة| C[إنشاء قاعدة تسعير]
+  B -->|تحديث قاعدة| D[تحديث قاعدة تسعير]
+  B -->|حذف قاعدة| E[حذف قاعدة تسعير]
+  B -->|عرض القواعد| F[عرض قواعد التسعير]
+
   %% Create Price Rule
-  C --> C1[Define Rule Conditions]
-  C1 --> C2[Set Rule Effects]
-  C2 --> C3[Configure Usage Limits]
-  C3 --> C4[Set Rule Metadata]
-  C4 --> C5[Validate Rule Data]
-  C5 --> C6[Save Price Rule]
-  C6 --> C7[Update Statistics]
-  
-  %% Rule Conditions
-  C1 --> C1A[Category-based rules]
-  C1A --> C1B[Product-specific rules]
-  C1B --> C1C[Variant-specific rules]
-  C1C --> C1D[Brand-based rules]
-  C1D --> C1E[Currency-based rules]
-  C1E --> C1F[Quantity-based rules]
-  C1F --> C1G[Account type rules]
-  
-  %% Rule Effects
-  C2 --> C2A[Percentage discount]
-  C2A --> C2B[Fixed amount discount]
-  C2B --> C2C[Special pricing]
-  C2C --> C2D[Product badges]
-  C2D --> C2E[Gift items]
-  
-  %% Usage Limits
-  C3 --> C3A[Maximum total uses]
-  C3A --> C3B[Maximum uses per user]
-  C3B --> C3C[Current usage tracking]
-  C3C --> C3D[Usage validation]
-  
-  %% Rule Metadata
-  C4 --> C4A[Rule title]
-  C4A --> C4B[Rule description]
-  C4B --> C4C[Terms and conditions]
-  C4C --> C4D[Priority level]
-  C4D --> C4E[Time constraints]
-  
+  C --> C1[استلام بيانات القاعدة]
+  C1 --> C2[التحقق من صحة البيانات]
+  C2 --> C3[إنشاء كائن القاعدة]
+  C3 --> C4[حفظ في قاعدة البيانات]
+  C4 --> C5[إرجاع القاعدة المنشأة]
+
   %% Update Price Rule
-  D --> D1[Load Existing Rule]
-  D1 --> D2[Update Rule Conditions]
-  D2 --> D3[Update Rule Effects]
-  D3 --> D4[Update Usage Limits]
-  D4 --> D5[Update Metadata]
-  D5 --> D6[Validate Changes]
-  D6 --> D7[Save Updated Rule]
-  D7 --> D8[Update Statistics]
-  
-  %% Toggle Rule Status
-  E --> E1[Load Rule Status]
-  E1 --> E2[Check Current Status]
-  E2 --> E3[Toggle Active State]
-  E3 --> E4[Update Rule Status]
-  E4 --> E5[Log Status Change]
-  E5 --> E6[Notify Stakeholders]
-  
+  D --> D1[استلام معرف القاعدة وبيانات التحديث]
+  D1 --> D2[البحث عن القاعدة]
+  D2 --> D3{القاعدة موجودة?}
+  D3 -->|لا| D4[إرجاع خطأ]
+  D3 -->|نعم| D5[تحديث البيانات]
+  D5 --> D6[حفظ التغييرات]
+  D6 --> D7[إرجاع القاعدة المحدثة]
+  D4 --> D8[نهاية - غير موجود]
+
   %% Delete Price Rule
-  F --> F1[Check Rule Usage]
-  F1 --> F2[Validate Deletion]
-  F2 --> F3[Remove Rule]
-  F3 --> F4[Clean Up References]
-  F4 --> F5[Archive Statistics]
-  F5 --> F6[Log Deletion]
-  
-  %% Preview Rule Effect
-  G --> G1[Load Rule Details]
-  G1 --> G2[Get Base Price]
-  G2 --> G3[Apply Rule Conditions]
-  G3 --> G4[Calculate Effective Price]
-  G4 --> G5[Show Price Comparison]
-  G5 --> G6[Display Savings]
-  G6 --> G7[Show Applied Effects]
-  
+  E --> E1[استلام معرف القاعدة]
+  E1 --> E2[البحث عن القاعدة]
+  E2 --> E3{القاعدة موجودة?}
+  E3 -->|لا| E4[إرجاع خطأ]
+  E3 -->|نعم| E5[Soft Delete للقاعدة]
+  E5 --> E6[إرجاع نجاح الحذف]
+  E4 --> E7[نهاية - غير موجود]
+
   %% List Price Rules
-  H --> H1[Apply Filters]
-  H1 --> H2[Sort by Priority]
-  H2 --> H3[Paginate Results]
-  H3 --> H4[Include Statistics]
-  H4 --> H5[Return Rule List]
-  
-  %% Rule Application Process
-  I[Rule Application Process] --> J[Check Rule Eligibility]
-  J --> K[Validate Conditions]
-  K --> L[Apply Rule Effects]
-  L --> M[Update Usage Count]
-  M --> N[Track Statistics]
-  N --> O[Return Effective Price]
-  
-  %% Rule Eligibility Check
-  J --> J1[Check rule active status]
-  J1 --> J2[Check time constraints]
-  J2 --> J3[Check usage limits]
-  J3 --> J4[Check condition matches]
-  J4 --> J5[Validate user eligibility]
-  
-  %% Condition Validation
-  K --> K1[Category match]
-  K1 --> K2[Product match]
-  K2 --> K3[Variant match]
-  K3 --> K4[Brand match]
-  K4 --> K5[Currency match]
-  K5 --> K6[Quantity match]
-  K6 --> K7[Account type match]
-  
-  %% Effect Application
-  L --> L1[Calculate percentage discount]
-  L1 --> L2[Apply fixed amount discount]
-  L2 --> L3[Set special price]
-  L3 --> L4[Add product badge]
-  L4 --> L5[Include gift item]
-  
-  %% Statistics Tracking
-  N --> N1[Increment view count]
-  N1 --> N2[Increment application count]
-  N2 --> N3[Update revenue tracking]
-  N3 --> N4[Update savings tracking]
-  N4 --> N5[Log application event]
-  
-  %% Rule Priority System
-  P[Rule Priority System] --> Q[Sort Rules by Priority]
-  Q --> R[Apply Highest Priority Rule]
-  R --> S[Skip Lower Priority Rules]
-  S --> T[Handle Rule Conflicts]
-  T --> U[Log Priority Decisions]
-  
-  %% Time-based Rules
-  V[Time-based Rules] --> W[Check Start Date]
-  W --> X[Check End Date]
-  X --> Y[Validate Current Time]
-  Y --> Z[Apply Time Constraints]
-  Z --> AA[Handle Expired Rules]
-  
-  %% Rule Analytics
-  BB[Rule Analytics] --> CC[Track Rule Performance]
-  CC --> DD[Calculate ROI]
-  DD --> EE[Monitor Usage Patterns]
-  EE --> FF[Generate Reports]
-  FF --> GG[Optimize Rule Settings]
-  
-  %% End points
-  C7 --> HH[Rule Created Successfully]
-  D8 --> HH
-  E6 --> HH
-  F6 --> HH
-  G7 --> HH
-  H5 --> HH
-  O --> HH
-  U --> HH
-  AA --> HH
-  GG --> HH
+  F --> F1[استلام معايير البحث]
+  F1 --> F2[البحث في قاعدة البيانات]
+  F2 --> F3[ترتيب حسب الأولوية]
+  F3 --> F4[إرجاع قائمة القواعد]

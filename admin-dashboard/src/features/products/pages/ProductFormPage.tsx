@@ -17,7 +17,7 @@ import {
 import { Save, Cancel } from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
-import { ImageField } from '@/features/media';
+import { ImageField, MediaCategory } from '@/features/media';
 import { useProduct, useCreateProduct, useUpdateProduct, useGenerateVariants } from '../hooks/useProducts';
 import { useProductFormData } from '../hooks/useProductData';
 import { AttributeSelector } from '../components/AttributeSelector';
@@ -75,6 +75,7 @@ export const ProductFormPage: React.FC = () => {
       status: ProductStatus.DRAFT,
       isFeatured: false,
       isNew: false,
+
     },
   });
 
@@ -294,7 +295,7 @@ export const ProductFormPage: React.FC = () => {
                     setSelectedImage(media);
                     methods.setValue('imageUrl', media?.url || '');
                   }}
-                  category="product"
+                  category={MediaCategory.PRODUCT}
                   helperText="الصورة الرئيسية التي ستظهر في قوائم المنتجات"
                 />
               </Grid>

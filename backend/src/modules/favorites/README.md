@@ -10,7 +10,7 @@
 - ✅ دعم الزوار (بدون حساب)
 - ✅ دعم المستخدمين المسجلين
 - ✅ مزامنة تلقائية عند التسجيل
-- ✅ معلومات إضافية (notes & tags)
+- ✅ معلومات إضافية (notes)
 - ✅ إحصائيات للأدمن
 
 ---
@@ -40,13 +40,12 @@ Favorite {
   deviceId?: string;      // للزوار
   productId: string;
   variantId?: string;
-  note?: string;
-  tags?: string[];
-  viewsCount: number;
+  note?: string;          // ملاحظة خاصة
+  viewsCount: number;     // عدد مرات العرض
   lastViewedAt?: Date;
-  isSynced: boolean;
+  isSynced: boolean;      // حالة المزامنة
   syncedAt?: Date;
-  deletedAt?: Date;
+  deletedAt?: Date;       // Soft Delete
 }
 ```
 
@@ -59,9 +58,9 @@ Favorite {
 - `POST /favorites` - إضافة
 - `DELETE /favorites` - إزالة
 - `PATCH /favorites/:id` - تحديث
+- `POST /favorites/:id/view` - تحديث عدد المشاهدات
 - `DELETE /favorites/clear/all` - حذف الكل
 - `GET /favorites/count` - العدد
-- `GET /favorites/by-tags` - بالوسوم
 - `POST /favorites/sync` - مزامنة يدوية
 
 ### Guest (5):
@@ -100,8 +99,7 @@ POST /favorites
 Authorization: Bearer <token>
 {
   "productId": "prod_001",
-  "note": "هدية",
-  "tags": ["هدايا"]
+  "note": "هدية لأحمد"
 }
 ```
 
@@ -121,18 +119,14 @@ POST /auth/verify-otp
 
 ## الميزات المتقدمة
 
-### 1. Notes & Tags:
+### 1. Notes:
 
 ```typescript
-// تنظيم المفضلات
+// تنظيم المفضلات بالملاحظات
 {
   "productId": "prod_001",
-  "note": "هدية عيد ميلاد أحمد",
-  "tags": ["هدايا", "ديسمبر", "أحمد"]
+  "note": "هدية عيد ميلاد أحمد"
 }
-
-// البحث بالوسوم
-GET /favorites/by-tags?tags=هدايا,أحمد
 ```
 
 ### 2. Soft Delete:
@@ -197,6 +191,8 @@ await favoritesService.syncGuestToUser(deviceId, userId);
 
 ---
 
-**Version:** 1.0.0  
+**Version:** 1.0.1
 **Status:** ✅ Production Ready
+
+**ملاحظة:** تم تصحيح README لتعكس الواقع الصحيح - إزالة references للـ tags وإضافة endpoint المفقود.
 

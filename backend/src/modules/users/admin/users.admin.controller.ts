@@ -10,7 +10,15 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBody
+} from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery, SortOrder } from 'mongoose';
 import bcrypt from 'bcrypt';
@@ -28,7 +36,7 @@ import { UpdateUserAdminDto } from './dto/update-user-admin.dto';
 import { ListUsersDto } from './dto/list-users.dto';
 import { SuspendUserDto } from './dto/suspend-user.dto';
 
-@ApiTags('admin-users')
+@ApiTags('إدارة-المستخدمين')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -42,6 +50,49 @@ export class UsersAdminController {
   // ==================== قائمة المستخدمين مع Pagination ====================
   @RequirePermissions('users.read', 'admin.access')
   @Get()
+  @ApiOperation({
+    summary: 'قائمة المستخدمين',
+    description: 'استرداد قائمة بجميع المستخدمين مع إمكانية التصفية والترقيم'
+  })
+  @ApiQuery({ type: ListUsersDto })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد قائمة المستخدمين بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'user123', description: 'معرف المستخدم' },
+              phone: { type: 'string', example: '+967771234567', description: 'رقم الهاتف' },
+              email: { type: 'string', example: 'user@example.com', description: 'البريد الإلكتروني' },
+              fullName: { type: 'string', example: 'أحمد محمد علي', description: 'الاسم الكامل' },
+              status: { type: 'string', example: 'active', description: 'حالة المستخدم' },
+              role: { type: 'string', example: 'customer', description: 'دور المستخدم' },
+              createdAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' },
+              lastLogin: { type: 'string', format: 'date-time', example: '2024-01-20T15:45:00Z' }
+            }
+          }
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 1500, description: 'إجمالي المستخدمين' },
+            page: { type: 'number', example: 1, description: 'الصفحة الحالية' },
+            limit: { type: 'number', example: 20, description: 'عدد المستخدمين في الصفحة' },
+            totalPages: { type: 'number', example: 75, description: 'إجمالي الصفحات' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'غير مصرح لك بالوصول إلى قائمة المستخدمين'
+  })
   async listUsers(@Query() dto: ListUsersDto) {
     const {
       page = 1,
@@ -113,15 +164,13 @@ export class UsersAdminController {
     }));
 
     return {
-      data: usersWithCaps,
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page < Math.ceil(total / limit),
-        hasPrevPage: page > 1,
-      },
+      users: usersWithCaps,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
     };
   }
 
@@ -137,10 +186,8 @@ export class UsersAdminController {
     const capabilities = await this.capsModel.findOne({ userId: id }).lean();
 
     return {
-      data: {
-        ...user,
-        capabilities,
-      },
+      ...user,
+      capabilities,
     };
   }
 
@@ -187,17 +234,15 @@ export class UsersAdminController {
     await this.capsModel.create(capsData);
 
     return {
-      data: {
-        id: user._id,
-        phone: user.phone,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: user.roles,
-        permissions: user.permissions,
-        status: user.status,
-        temporaryPassword: dto.temporaryPassword ? dto.temporaryPassword : undefined,
-        loginUrl: dto.temporaryPassword ? `/admin/login` : undefined,
-      },
+      id: user._id,
+      phone: user.phone,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles: user.roles,
+      permissions: user.permissions,
+      status: user.status,
+      temporaryPassword: dto.temporaryPassword ? dto.temporaryPassword : undefined,
+      loginUrl: dto.temporaryPassword ? `/admin/login` : undefined,
       message: 'تم إنشاء الأدمن بنجاح. تأكد من مشاركة معلومات تسجيل الدخول معه بشكل آمن.',
     };
   }
@@ -314,14 +359,12 @@ export class UsersAdminController {
     await this.capsModel.create(capsData);
 
     return {
-      data: {
-        id: user._id,
-        phone: user.phone,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: user.roles,
-        status: user.status,
-      },
+      id: user._id,
+      phone: user.phone,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles: user.roles,
+      status: user.status,
     };
   }
 
@@ -397,15 +440,13 @@ export class UsersAdminController {
     }
 
     return {
-      data: {
-        id: user._id,
-        phone: user.phone,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: user.roles,
-        status: user.status,
-        updated: true,
-      },
+      id: user._id,
+      phone: user.phone,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles: user.roles,
+      status: user.status,
+      updated: true,
     };
   }
 
@@ -434,11 +475,9 @@ export class UsersAdminController {
     await user.save();
 
     return {
-      data: {
-        id: user._id,
-        status: user.status,
-        suspended: true,
-      },
+      id: user._id,
+      status: user.status,
+      suspended: true,
     };
   }
 
@@ -459,11 +498,9 @@ export class UsersAdminController {
     await user.save();
 
     return {
-      data: {
-        id: user._id,
-        status: user.status,
-        activated: true,
-      },
+      id: user._id,
+      status: user.status,
+      activated: true,
     };
   }
 
@@ -493,11 +530,9 @@ export class UsersAdminController {
     await user.save();
 
     return {
-      data: {
-        id: user._id,
-        deleted: true,
-        deletedAt: user.deletedAt,
-      },
+      id: user._id,
+      deleted: true,
+      deletedAt: user.deletedAt,
     };
   }
 
@@ -521,10 +556,8 @@ export class UsersAdminController {
     await user.save();
 
     return {
-      data: {
-        id: user._id,
-        restored: true,
-      },
+      id: user._id,
+      restored: true,
     };
   }
 
@@ -547,10 +580,8 @@ export class UsersAdminController {
     await this.capsModel.deleteOne({ userId: id });
 
     return {
-      data: {
-        id,
-        permanentlyDeleted: true,
-      },
+      id,
+      permanentlyDeleted: true,
     };
   }
 
@@ -558,7 +589,7 @@ export class UsersAdminController {
   @RequirePermissions('analytics.read', 'admin.access')
   @Get('stats/summary')
   async getUserStats() {
-    const [total, active, suspended, deleted, admins, engineers, wholesale] = await Promise.all([
+    const [total, active, suspended, deleted, admins, engineers, merchants, regularUsers] = await Promise.all([
       this.userModel.countDocuments({ 
         deletedAt: null,
         status: { $ne: UserStatus.DELETED }
@@ -577,25 +608,50 @@ export class UsersAdminController {
           { status: UserStatus.DELETED }
         ]
       }),
+      // Admins: من لديه admin أو super_admin فقط
       this.userModel.countDocuments({ 
         roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] }, 
         deletedAt: null,
         status: { $ne: UserStatus.DELETED }
       }),
-      this.capsModel.countDocuments({ engineer_capable: true }),
-      this.capsModel.countDocuments({ wholesale_capable: true }),
+      // Engineers: من لديه engineer ولكن ليس admin أو super_admin
+      this.userModel.countDocuments({ 
+        $and: [
+          { roles: UserRole.ENGINEER },
+          { roles: { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] } }
+        ],
+        deletedAt: null,
+        status: { $ne: UserStatus.DELETED }
+      }),
+      // Merchants: من لديه merchant ولكن ليس admin أو super_admin
+      this.userModel.countDocuments({ 
+        $and: [
+          { roles: UserRole.MERCHANT },
+          { roles: { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] } }
+        ],
+        deletedAt: null,
+        status: { $ne: UserStatus.DELETED }
+      }),
+      // Regular Users: من لديه user فقط (ليس admin/super_admin/engineer/merchant)
+      this.userModel.countDocuments({ 
+        $and: [
+          { roles: UserRole.USER },
+          { roles: { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.ENGINEER, UserRole.MERCHANT] } }
+        ],
+        deletedAt: null,
+        status: { $ne: UserStatus.DELETED }
+      }),
     ]);
 
     return {
-      data: {
-        total,
-        active,
-        suspended,
-        deleted,
-        admins,
-        engineers,
-        wholesale,
-      },
+      total,
+      active,
+      suspended,
+      deleted,
+      admins,
+      engineers,
+      merchants,
+      users: regularUsers,
     };
   }
 }

@@ -1,349 +1,55 @@
 %% Service Request Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Service Request System] --> B{User Type?}
-  B -->|Customer| C[Customer Service Request Flow]
-  B -->|Engineer| D[Engineer Service Flow]
-  B -->|Admin| E[Admin Service Management]
-  
-  %% Customer Service Request Flow
-  C --> C1[Create Service Request]
-  C1 --> C2[View My Requests]
-  C2 --> C3[View Request Details]
-  C3 --> C4[View Request Offers]
-  C4 --> C5[Accept Offer]
-  C5 --> C6[Cancel Request]
-  C6 --> C7[Rate Service]
-  
-  %% Create Service Request
-  C1 --> C1A[Fill Request Details]
-  C1A --> C1B[Select Service Type]
-  C1B --> C1C[Add Description]
-  C1C --> C1D[Upload Images]
-  C1D --> C1E[Select Address]
-  C1E --> C1F[Set Schedule]
-  C1F --> C1G[Submit Request]
-  C1G --> C1H[Request Created]
-  
-  %% Request Details
-  C1A --> C1A1[Request title]
-  C1A1 --> C1A2[Service description]
-  C1A2 --> C1A3[Urgency level]
-  C1A3 --> C1A4[Special requirements]
-  C1A4 --> C1A5[Contact preferences]
-  
-  %% Service Types
-  C1B --> C1B1[Home maintenance]
-  C1B1 --> C1B2[Electrical work]
-  C1B2 --> C1B3[Plumbing]
-  C1B3 --> C1B4[Appliance repair]
-  C1B4 --> C1B5[Cleaning services]
-  C1B5 --> C1B6[Other services]
-  
-  %% Image Upload
-  C1D --> C1D1[Select image files]
-  C1D1 --> C1D2[Validate image format]
-  C1D2 --> C1D3[Compress images]
-  C1D3 --> C1D4[Upload to server]
-  C1D4 --> C1D5[Generate thumbnails]
-  C1D5 --> C1D6[Store image URLs]
-  
-  %% Address Selection
-  C1E --> C1E1[Load saved addresses]
-  C1E1 --> C1E2[Select existing address]
-  C1E2 --> C1E3[Add new address]
-  C1E3 --> C1E4[Validate address]
-  C1E4 --> C1E5[Get coordinates]
-  C1E5 --> C1E6[Store address reference]
-  
-  %% Schedule Setting
-  C1F --> C1F1[Select preferred date]
-  C1F1 --> C1F2[Select time slot]
-  C1F2 --> C1F3[Set flexibility]
-  C1F3 --> C1F4[Add special notes]
-  C1F4 --> C1F5[Validate schedule]
-  C1F5 --> C1F6[Store schedule data]
-  
-  %% View My Requests
-  C2 --> C2A[Load user requests]
-  C2A --> C2B[Filter by status]
-  C2B --> C2C[Sort by date]
-  C2C --> C2D[Display request list]
-  C2D --> C2E[Show request status]
-  C2E --> C2F[Show quick actions]
-  
-  %% Request Status Display
-  C2E --> C2E1[OPEN - Waiting for offers]
-  C2E1 --> C2E2[OFFERS_COLLECTING - Offers received]
-  C2E2 --> C2E3[ASSIGNED - Engineer assigned]
-  C2E3 --> C2E4[IN_PROGRESS - Work started]
-  C2E4 --> C2E5[COMPLETED - Work finished]
-  C2E5 --> C2E6[RATED - Service rated]
-  C2E6 --> C2E7[CANCELLED - Request cancelled]
-  
-  %% View Request Details
-  C3 --> C3A[Load request data]
-  C3A --> C3B[Load address details]
-  C3B --> C3C[Load engineer info]
-  C3C --> C3D[Load accepted offer]
-  C3D --> C3E[Load rating data]
-  C3E --> C3F[Display full details]
-  
-  %% View Request Offers
-  C4 --> C4A[Load all offers]
-  C4A --> C4B[Sort by distance]
-  C4B --> C4C[Sort by price]
-  C4C --> C4D[Filter by status]
-  C4D --> C4E[Display offer list]
-  C4E --> C4F[Show offer details]
-  
-  %% Offer Details
-  C4F --> C4F1[Engineer name]
-  C4F1 --> C4F2[Offer amount]
-  C4F2 --> C4F3[Distance from request]
-  C4F3 --> C4F4[Engineer rating]
-  C4F4 --> C4F5[Offer note]
-  C4F5 --> C4F6[Response time]
-  
-  %% Accept Offer
-  C5 --> C5A[Select offer to accept]
-  C5A --> C5B[Confirm acceptance]
-  C5B --> C5C[Update request status]
-  C5C --> C5D[Update offer status]
-  C5D --> C5E[Reject other offers]
-  C5E --> C5F[Notify engineer]
-  C5F --> C5G[Request assigned]
-  
-  %% Cancel Request
-  C6 --> C6A[Check cancellation eligibility]
-  C6A --> C6B[Confirm cancellation]
-  C6B --> C6C[Update request status]
-  C6C --> C6D[Reject all offers]
-  C6D --> C6E[Notify engineers]
-  C6E --> C6F[Request cancelled]
-  
-  %% Cancellation Eligibility
-  C6A --> C6A1[Check request status]
-  C6A1 --> C6A2[Check if work started]
-  C6A2 --> C6A3[Check cancellation policy]
-  C6A3 --> C6A4[Calculate cancellation fee]
-  C6A4 --> C6A5[Allow cancellation]
-  
-  %% Rate Service
-  C7 --> C7A[Check rating eligibility]
-  C7A --> C7B[Submit rating score]
-  C7B --> C7C[Add rating comment]
-  C7C --> C7D[Submit rating]
-  C7D --> C7E[Update request status]
-  C7E --> C7F[Update engineer rating]
-  C7F --> C7G[Service rated]
-  
-  %% Rating Eligibility
-  C7A --> C7A1[Check if service completed]
-  C7A1 --> C7A2[Check if already rated]
-  C7A2 --> C7A3[Check rating timeframe]
-  C7A3 --> C7A4[Allow rating]
-  
-  %% Engineer Service Flow
-  D --> D1[View Nearby Requests]
-  D1 --> D2[Submit Offer]
-  D2 --> D3[View My Offers]
-  D3 --> D4[Update Offer]
-  D4 --> D5[Start Service]
-  D5 --> D6[Complete Service]
-  
-  %% View Nearby Requests
-  D1 --> D1A[Get engineer location]
-  D1A --> D1B[Search nearby requests]
-  D1B --> D1C[Filter by service type]
-  D1C --> D1D[Filter by distance]
-  D1D --> D1E[Sort by distance]
-  D1E --> D1F[Display request list]
-  
-  %% Nearby Search
-  D1B --> D1B1[Set search radius]
-  D1B1 --> D1B2[Query database]
-  D1B2 --> D1B3[Calculate distances]
-  D1B3 --> D1B4[Filter by status]
-  D1B4 --> D1B5[Return results]
-  
-  %% Submit Offer
-  D2 --> D2A[Select request]
-  D2A --> D2B[Set offer amount]
-  D2B --> D2C[Add offer note]
-  D2C --> D2D[Calculate distance]
-  D2D --> D2E[Submit offer]
-  D2E --> D2F[Offer submitted]
-  
-  %% Offer Details
-  D2B --> D2B1[Set base price]
-  D2B1 --> D2B2[Add travel cost]
-  D2B2 --> D2B3[Add material cost]
-  D2B3 --> D2B4[Add labor cost]
-  D2B4 --> D2B5[Calculate total]
-  
-  %% Distance Calculation
-  D2D --> D2D1[Get request coordinates]
-  D2D1 --> D2D2[Get engineer coordinates]
-  D2D2 --> D2D3[Apply Haversine formula]
-  D2D3 --> D2D4[Calculate distance in km]
-  D2D4 --> D2D5[Store distance]
-  
-  %% View My Offers
-  D3 --> D3A[Load engineer offers]
-  D3A --> D3B[Filter by status]
-  D3B --> D3C[Sort by date]
-  D3C --> D3D[Display offer list]
-  D3D --> D3E[Show offer status]
-  D3E --> D3F[Show quick actions]
-  
-  %% Offer Status
-  D3E --> D3E1[OFFERED - Waiting for response]
-  D3E1 --> D3E2[ACCEPTED - Offer accepted]
-  D3E2 --> D3E3[REJECTED - Offer rejected]
-  D3E3 --> D3E4[CANCELLED - Offer cancelled]
-  
-  %% Update Offer
-  D4 --> D4A[Select offer to update]
-  D4A --> D4B[Check update eligibility]
-  D4B --> D4C[Update offer amount]
-  D4C --> D4D[Update offer note]
-  D4D --> D4E[Save changes]
-  D4E --> D4F[Offer updated]
-  
-  %% Update Eligibility
-  D4B --> D4B1[Check offer status]
-  D4B1 --> D4B2[Check time limit]
-  D4B2 --> D4B3[Check request status]
-  D4B3 --> D4B4[Allow update]
-  
-  %% Start Service
-  D5 --> D5A[Check service eligibility]
-  D5A --> D5B[Confirm service start]
-  D5B --> D5C[Update request status]
-  D5C --> D5D[Notify customer]
-  D5D --> D5E[Service started]
-  
-  %% Service Eligibility
-  D5A --> D5A1[Check if offer accepted]
-  D5A1 --> D5A2[Check request status]
-  D5A2 --> D5A3[Check engineer assignment]
-  D5A3 --> D5A4[Allow service start]
-  
-  %% Complete Service
-  D6 --> D6A[Check completion eligibility]
-  D6A --> D6B[Add completion notes]
-  D6B --> D6C[Upload completion photos]
-  D6C --> D6D[Update request status]
-  D6D --> D6E[Notify customer]
-  D6E --> D6F[Service completed]
-  
-  %% Completion Eligibility
-  D6A --> D6A1[Check if service started]
-  D6A1 --> D6A2[Check work progress]
-  D6A2 --> D6A3[Verify completion]
-  D6A3 --> D6A4[Allow completion]
-  
-  %% Admin Service Management
-  E --> E1[View All Requests]
-  E1 --> E2[Manage Request Status]
-  E2 --> E3[Assign Engineer]
-  E3 --> E4[Cancel Request]
-  E4 --> E5[View Statistics]
-  E5 --> E6[Generate Reports]
-  
-  %% View All Requests
-  E1 --> E1A[Load all requests]
-  E1A --> E1B[Apply filters]
-  E1B --> E1C[Sort results]
-  E1C --> E1D[Paginate results]
-  E1D --> E1E[Display request list]
-  
-  %% Request Filters
-  E1B --> E1B1[Filter by status]
-  E1B1 --> E1B2[Filter by service type]
-  E1B2 --> E1B3[Filter by engineer]
-  E1B3 --> E1B4[Filter by customer]
-  E1B4 --> E1B5[Filter by date range]
-  E1B5 --> E1B6[Search by text]
-  
-  %% Manage Request Status
-  E2 --> E2A[Select request]
-  E2A --> E2B[Choose new status]
-  E2B --> E2C[Add admin note]
-  E2C --> E2D[Update status]
-  E2D --> E2E[Notify stakeholders]
-  E2E --> E2F[Status updated]
-  
-  %% Assign Engineer
-  E3 --> E3A[Select request]
-  E3A --> E3B[Choose engineer]
-  E3B --> E3C[Set assignment details]
-  E3C --> E3D[Update request]
-  E3D --> E3E[Notify engineer]
-  E3E --> E3F[Engineer assigned]
-  
-  %% Assignment Details
-  E3C --> E3C1[Set assignment date]
-  E3C1 --> E3C2[Add special instructions]
-  E3C2 --> E3C3[Set priority level]
-  E3C3 --> E3C4[Add admin notes]
-  
-  %% Cancel Request
-  E4 --> E4A[Select request to cancel]
-  E4A --> E4B[Choose cancellation reason]
-  E4B --> E4C[Add admin note]
-  E4C --> E4D[Update request status]
-  E4D --> E4E[Notify stakeholders]
-  E4E --> E4F[Request cancelled]
-  
-  %% View Statistics
-  E5 --> E5A[Load overview statistics]
-  E5A --> E5B[Load request trends]
-  E5B --> E5C[Load engineer performance]
-  E5C --> E5D[Load service type analysis]
-  E5D --> E5E[Load revenue data]
-  E5E --> E5F[Display dashboard]
-  
-  %% Statistics Data
-  E5A --> E5A1[Total requests]
-  E5A1 --> E5A2[Completed requests]
-  E5A2 --> E5A3[Active engineers]
-  E5A3 --> E5A4[Average rating]
-  E5A4 --> E5A5[Total revenue]
-  
-  %% Generate Reports
-  E6 --> E6A[Choose report type]
-  E6A --> E6B[Set date range]
-  E6B --> E6C[Apply filters]
-  E6C --> E6D[Generate report]
-  E6D --> E6E[Export report]
-  E6E --> E6F[Report generated]
-  
-  %% Report Types
-  E6A --> E6A1[Request summary report]
-  E6A1 --> E6A2[Engineer performance report]
-  E6A2 --> E6A3[Revenue report]
-  E6A3 --> E6A4[Customer satisfaction report]
-  E6A4 --> E6A5[Service type analysis report]
-  
+  A[طلب خدمة جديد] --> B[استلام البيانات]
+  B --> B1[title: عنوان الطلب - مطلوب]
+  B1 --> B2[description: الوصف - اختياري]
+  B2 --> B3[images: الصور - اختياري]
+  B3 --> B4[addressId: معرف العنوان - اختياري]
+  B4 --> B5[location: الإحداثيات - مطلوب]
+  B5 --> B6[type: نوع الخدمة - اختياري]
+  B6 --> B7[scheduledAt: التاريخ المجدول - اختياري]
+
+  B7 --> C[إنشاء السجل في قاعدة البيانات]
+  C --> C1[status: OPEN]
+  C1 --> C2[engineerId: null]
+  C2 --> C3[acceptedOffer: null]
+  C3 --> C4[rating: null]
+  C4 --> C5[adminNotes: empty]
+
+  C5 --> D[تغيير الحالة]
+  D --> D1[OPEN → OFFERS_COLLECTING]
+  D1 --> D2[OFFERS_COLLECTING → ASSIGNED]
+  D2 --> D3[ASSIGNED → IN_PROGRESS]
+  D3 --> D4[IN_PROGRESS → COMPLETED]
+  D4 --> D5[COMPLETED → RATED]
+
+  D5 --> E[إلغاء الطلب]
+  E --> E1[CANCELLED من أي حالة]
+
+  %% Customer Actions
+  F[إجراءات العميل] --> F1[POST /services - إنشاء طلب]
+  F1 --> F2[GET /services/my - عرض طلباتي]
+  F2 --> F3[GET /services/:id - عرض تفاصيل]
+  F3 --> F4[POST /services/:id/cancel - إلغاء]
+  F4 --> F5[POST /services/:id/accept-offer - قبول عرض]
+  F5 --> F6[POST /services/:id/rate - تقييم]
+  F6 --> F7[GET /services/:id/offers - عرض العروض]
+
+  %% Admin Actions
+  G[إجراءات الإدارة] --> G1[GET /admin/services/requests - عرض الجميع]
+  G1 --> G2[GET /admin/services/requests/:id - تفاصيل]
+  G2 --> G3[GET /admin/services/requests/:id/offers - العروض]
+  G3 --> G4[POST /admin/services/requests/:id/cancel - إلغاء إداري]
+  G4 --> G5[POST /admin/services/requests/:id/assign-engineer - تعيين مهندس]
+
+  %% Status Transitions
+  H[انتقالات الحالات] --> H1[تلقائي: OPEN → OFFERS_COLLECTING]
+  H1 --> H2[يدوي: قبول عرض → ASSIGNED]
+  H2 --> H3[يدوي: بدء العمل → IN_PROGRESS]
+  H3 --> H4[يدوي: إكمال العمل → COMPLETED]
+  H4 --> H5[يدوي: التقييم → RATED]
+
   %% End points
-  C1H --> Z[Service Request Process Complete]
-  C2F --> Z
-  C3F --> Z
-  C4F --> Z
-  C5G --> Z
-  C6F --> Z
-  C7G --> Z
-  D1F --> Z
-  D2F --> Z
-  D3F --> Z
-  D4F --> Z
-  D5E --> Z
-  D6F --> Z
-  E1E --> Z
-  E2F --> Z
-  E3F --> Z
-  E4F --> Z
-  E5F --> Z
-  E6F --> Z
+  D5 --> I[نهاية - طلب مكتمل]
+  E1 --> I

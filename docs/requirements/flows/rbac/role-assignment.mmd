@@ -1,202 +1,74 @@
-%% Role Assignment and User Management
+%% Role Assignment Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Role Assignment System] --> B{Assignment Type?}
-  B -->|Assign Role| C[Assign User Role]
-  B -->|Remove Role| D[Remove User Role]
-  B -->|Update Role| E[Update User Role]
-  B -->|Bulk Assignment| F[Bulk Role Assignment]
-  B -->|Role Request| G[Process Role Request]
-  
-  %% Assign Role
-  C --> C1[Select User]
-  C1 --> C2[Select Role Type]
-  C2 --> C3[Validate Assignment Criteria]
-  C3 --> C4[Create Capability Record]
-  C4 --> C5[Set Initial Status]
-  C5 --> C6[Notify User]
-  C6 --> C7[Update System Cache]
-  
-  %% User Selection
-  C1 --> C1A[Search by phone/email]
-  C1A --> C1B[Browse user list]
-  C1B --> C1C[Filter by criteria]
-  C1C --> C1D[Select target user]
-  
-  %% Role Type Selection
-  C2 --> C2A[Customer Role]
-  C2A --> C2B[Engineer Role]
-  C2B --> C2C[Wholesale Role]
-  C2C --> C2D[Admin Role]
-  
-  %% Assignment Criteria Validation
-  C3 --> C3A[Check user eligibility]
-  C3A --> C3B[Verify business requirements]
-  C3B --> C3C[Check role conflicts]
-  C3C --> C3D[Validate permissions]
-  C3D --> C3E[Approve assignment]
-  
-  %% Engineer Assignment Criteria
-  C3A --> C3A1[Check qualifications]
-  C3A1 --> C3A2[Verify certifications]
-  C3A2 --> C3A3[Review experience]
-  C3A3 --> C3A4[Validate references]
-  
-  %% Wholesale Assignment Criteria
-  C3A --> C3A5[Check business license]
-  C3A5 --> C3A6[Verify tax registration]
-  C3A6 --> C3A7[Review business volume]
-  C3A7 --> C3A8[Validate credit history]
-  
-  %% Admin Assignment Criteria
-  C3A --> C3A9[Check authorization level]
-  C3A9 --> C3A10[Verify security clearance]
-  C3A10 --> C3A11[Review admin experience]
-  C3A11 --> C3A12[Validate management approval]
-  
-  %% Capability Record Creation
-  C4 --> C4A[Create new capabilities record]
-  C4A --> C4B[Set role-specific flags]
-  C4B --> C4C[Set initial status to pending]
-  C4C --> C4D[Configure role parameters]
-  C4D --> C4E[Save to database]
-  
-  %% Role-Specific Configuration
-  C4D --> C4D1[Engineer: Set engineer_capable=true]
-  C4D1 --> C4D2[Wholesale: Set wholesale_capable=true]
-  C4D2 --> C4D3[Wholesale: Set discount_percent]
-  C4D3 --> C4D4[Admin: Set admin_capable=true]
-  
-  %% Remove Role
-  D --> D1[Select User and Role]
-  D1 --> D2[Check Current Status]
-  D2 --> D3[Validate Removal Criteria]
-  D3 --> D4[Update Capability Status]
-  D4 --> D5[Revoke Permissions]
-  D5 --> D6[Notify User]
-  D6 --> D7[Update System Cache]
-  
-  %% Removal Criteria
-  D3 --> D3A[Check active dependencies]
-  D3A --> D3B[Verify removal authorization]
-  D3B --> D3C[Check business impact]
-  D3C --> D3D[Approve removal]
-  
-  %% Update Role
-  E --> E1[Select User and Role]
-  E1 --> E2[Load Current Configuration]
-  E2 --> E3[Modify Role Parameters]
-  E3 --> E4[Validate Changes]
-  E4 --> E5[Update Capability Record]
-  E5 --> E6[Apply Changes]
-  E6 --> E7[Notify User]
-  E7 --> E8[Update System Cache]
-  
-  %% Role Parameter Updates
-  E3 --> E3A[Update discount percentage]
-  E3A --> E3B[Change role status]
-  E3B --> E3C[Modify permissions]
-  E3C --> E3D[Update role scope]
-  
-  %% Bulk Role Assignment
-  F --> F1[Select Multiple Users]
-  F1 --> F2[Select Role Type]
-  F2 --> F3[Configure Role Parameters]
-  F3 --> F4[Validate All Assignments]
-  F4 --> F5[Process Assignments]
-  F5 --> F6[Handle Failures]
-  F6 --> F7[Generate Report]
-  F7 --> F8[Notify Users]
-  
-  %% Bulk Processing
-  F5 --> F5A[Create capability records]
-  F5A --> F5B[Set role parameters]
-  F5B --> F5C[Update user statuses]
-  F5C --> F5D[Send notifications]
-  
-  %% Role Request Processing
-  G --> G1[Receive Role Request]
-  G1 --> G2[Validate Request]
-  G2 --> G3[Check Request Requirements]
-  G3 --> G4[Route to Approver]
-  G4 --> G5[Process Approval/Rejection]
-  G5 --> G6[Update Role Status]
-  G6 --> G7[Notify Requester]
-  G7 --> G8[Log Decision]
-  
-  %% Role Request Types
-  G1 --> G1A[Engineer role request]
-  G1A --> G1B[Wholesale role request]
-  G1B --> G1C[Admin role request]
-  G1C --> G1D[Role upgrade request]
-  
-  %% Request Validation
-  G2 --> G2A[Check user eligibility]
-  G2A --> G2B[Verify documentation]
-  G2B --> G2C[Validate business case]
-  G2C --> G2D[Check approval workflow]
-  
-  %% Approval Workflow
-  G4 --> G4A[Route to direct manager]
-  G4A --> G4B[Route to department head]
-  G4B --> G4C[Route to admin team]
-  G4C --> G4D[Route to security team]
-  
-  %% Role Status Management
-  H[Role Status Management] --> I[Status Transitions]
-  I --> J[Pending Status]
-  J --> K[Approved Status]
-  K --> L[Rejected Status]
-  L --> M[Active Status]
-  M --> N[Inactive Status]
-  
-  %% Status Transition Rules
-  I --> I1[none → pending]
-  I1 --> I2[pending → approved]
-  I2 --> I3[pending → rejected]
-  I3 --> I4[approved → active]
-  I4 --> I5[active → inactive]
-  
+  A[تعيين الأدوار] --> B{نوع العملية?}
+  B -->|إنشاء مستخدم| C[Create User]
+  B -->|تحديث أدوار| D[Update Roles]
+  B -->|إدارة الحالة| E[Manage Status]
+  B -->|حذف مستخدم| F[Delete User]
+
+  %% Create User
+  C --> C1[إدخال بيانات المستخدم]
+  C1 --> C2[phone: رقم الهاتف - مطلوب]
+  C2 --> C3[firstName, lastName: الأسماء - اختياري]
+  C3 --> C4[roles: الأدوار - افتراضي ['user']]
+  C4 --> C5[permissions: الصلاحيات - اختياري]
+  C5 --> C6[حفظ في قاعدة البيانات]
+  C6 --> C7[إنشاء سجل في Capabilities]
+
+  %% Update Roles
+  D --> D1[تحديد المستخدم]
+  D1 --> D2[تحديث مصفوفة roles]
+  D2 --> D3[تحديث مصفوفة permissions]
+  D3 --> D4[حفظ التغييرات]
+  D4 --> D5[تحديث Capabilities إذا لزم الأمر]
+
+  %% Manage Status
+  E --> E1[تعليق الحساب]
+  E1 --> E2[status: SUSPENDED]
+  E2 --> E3[suspendedAt: التاريخ]
+  E3 --> E4[suspendedBy: معرف الإداري]
+  E4 --> E5[suspendedReason: السبب]
+
+  E --> E6[إلغاء التعليق]
+  E6 --> E7[status: ACTIVE]
+  E7 --> E8[مسح حقول التعليق]
+
+  %% Delete User
+  F --> F1[حذف ناعم]
+  F1 --> F2[deletedAt: التاريخ]
+  F2 --> F3[deletedBy: معرف الإداري]
+  F3 --> F4[status: DELETED]
+
+  %% User Status Transitions
+  G[انتقالات حالة المستخدم] --> H[ACTIVE ↔ SUSPENDED]
+  H --> I[ACTIVE → DELETED]
+  I --> J[PENDING → ACTIVE]
+  J --> K[DELETED - نهائي]
+
   %% Role Hierarchy
-  O[Role Hierarchy] --> P[Customer Base Role]
-  P --> Q[Engineer Extended Role]
-  Q --> R[Wholesale Extended Role]
-  R --> S[Admin Extended Role]
-  
-  %% Role Inheritance
-  P --> P1[Basic customer permissions]
-  P1 --> P2[Product browsing]
-  P2 --> P3[Order management]
-  P3 --> P4[Profile management]
-  
-  Q --> Q1[All customer permissions]
-  Q1 --> Q2[Service management]
-  Q2 --> Q3[Job acceptance]
-  Q3 --> Q4[Engineer dashboard]
-  
-  R --> R1[All customer permissions]
-  R1 --> R2[Wholesale pricing]
-  R2 --> R3[Bulk ordering]
-  R3 --> R4[Volume discounts]
-  
-  S --> S1[All permissions]
-  S1 --> S2[User management]
-  S2 --> S3[System configuration]
-  S3 --> S4[Security control]
-  
-  %% Role Monitoring
-  T[Role Monitoring] --> U[Track Role Usage]
-  U --> V[Monitor Permission Access]
-  V --> W[Generate Role Reports]
-  W --> X[Identify Anomalies]
-  X --> Y[Security Alerts]
-  
+  L[تسلسل الأدوار] --> M[USER - أساسي]
+  M --> N[ENGINEER - متخصص]
+  N --> O[MERCHANT - تجاري]
+  O --> P[ADMIN - إداري]
+  P --> Q[SUPER_ADMIN - عام]
+
+  %% Bulk Operations
+  R[العمليات الجماعية] --> R1[تحديث أدوار متعددة]
+  R1 --> R2[تعليق حسابات متعددة]
+  R2 --> R3[تصدير/استيراد بيانات المستخدمين]
+
+  %% Audit Logging
+  S[تسجيل العمليات] --> S1[تسجيل إنشاء المستخدمين]
+  S1 --> S2[تسجيل تغييرات الأدوار]
+  S2 --> S3[تسجيل تغييرات الحالة]
+  S3 --> S4[تسجيل عمليات الحذف]
+
   %% End points
-  C7 --> Z[Role Assignment Complete]
-  D7 --> Z
-  E8 --> Z
-  F8 --> Z
-  G8 --> Z
-  N --> Z
-  S4 --> Z
-  Y --> Z
+  C7 --> T[نهاية - مستخدم تم إنشاؤه]
+  D5 --> T
+  E5 --> T
+  E8 --> T
+  F4 --> T
+  R3 --> T
+  S4 --> T

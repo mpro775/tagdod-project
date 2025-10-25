@@ -46,9 +46,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const comparePrice = product.variants?.[0]?.prices?.[0]?.compareAtUSD;
 
   // حساب نطاق الأسعار إذا كان هناك عدة variants
-  const priceRange = product.variants?.length > 1 ? {
-    min: Math.min(...(product.variants.map(v => v.prices?.[0]?.basePriceUSD || 0))),
-    max: Math.max(...(product.variants.map(v => v.prices?.[0]?.basePriceUSD || 0)))
+  const priceRange = (product.variants?.length ?? 0) > 1 ? {
+    min: Math.min(...(product.variants!.map(v => v.prices?.[0]?.basePriceUSD || 0))),
+    max: Math.max(...(product.variants!.map(v => v.prices?.[0]?.basePriceUSD || 0)))
   } : null;
 
   const handleAddToCart = () => {
@@ -156,7 +156,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* زر إضافة للسلة */}
         <Box sx={{ display: 'flex', gap: 1 }}>
           <IconButton
-            variant="contained"
             color="primary"
             onClick={handleAddToCart}
             disabled={product.status !== 'active'}

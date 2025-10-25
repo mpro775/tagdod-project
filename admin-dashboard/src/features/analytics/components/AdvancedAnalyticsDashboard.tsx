@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Grid,
@@ -11,9 +11,7 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Alert,
   Skeleton,
-  Fade,
   useTheme,
   useMediaQuery,
   Button,
@@ -28,12 +26,10 @@ import {
   TextField,
   Switch,
   FormControlLabel,
-  Divider,
   List,
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  Badge,
 } from '@mui/material';
 import {
   Analytics as AnalyticsIcon,
@@ -41,7 +37,6 @@ import {
   TrendingUp as TrendingUpIcon,
   People as PeopleIcon,
   ShoppingCart as ShoppingCartIcon,
-  Support as SupportIcon,
   Inventory as InventoryIcon,
   AccountBalance as AccountBalanceIcon,
   Campaign as CampaignIcon,
@@ -50,7 +45,6 @@ import {
   Archive as ArchiveIcon,
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
-  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { 
   useSalesAnalytics,
@@ -58,7 +52,6 @@ import {
   useCustomerAnalytics,
   useInventoryReport,
   useFinancialReport,
-  useCartAnalytics,
   useMarketingReport,
   useRealTimeMetrics,
   useAdvancedReports,
@@ -67,13 +60,12 @@ import {
   useDeleteReport,
   useArchiveReport,
 } from '../hooks/useAnalytics';
-import { ReportCategory, ReportFormat, PeriodType } from '../types/analytics.types';
+import { ReportCategory, ReportFormat } from '../types/analytics.types';
 import { SalesAnalyticsCard } from './SalesAnalyticsCard';
 import { ProductPerformanceCard } from './ProductPerformanceCard';
 import { CustomerAnalyticsCard } from './CustomerAnalyticsCard';
 import { InventoryReportCard } from './InventoryReportCard';
 import { FinancialReportCard } from './FinancialReportCard';
-import { CartAnalyticsCard } from './CartAnalyticsCard';
 import { MarketingReportCard } from './MarketingReportCard';
 import { RealTimeMetricsCard } from './RealTimeMetricsCard';
 
@@ -110,7 +102,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const [selectedTab, setSelectedTab] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState<ReportCategory>(initialCategory);
+  const [selectedCategory] = useState<ReportCategory>(initialCategory);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportForm, setReportForm] = useState({
     title: '',
@@ -127,7 +119,6 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
   const customerAnalytics = useCustomerAnalytics();
   const inventoryReport = useInventoryReport();
   const financialReport = useFinancialReport();
-  const cartAnalytics = useCartAnalytics();
   const marketingReport = useMarketingReport();
   const realTimeMetrics = useRealTimeMetrics();
   const advancedReports = useAdvancedReports();
@@ -137,12 +128,8 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
   const deleteReport = useDeleteReport();
   const archiveReport = useArchiveReport();
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
-  };
-
-  const handleCategoryChange = (category: ReportCategory) => {
-    setSelectedCategory(category);
   };
 
   const handleGenerateReport = async () => {
@@ -294,9 +281,9 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
       <TabPanel value={selectedTab} index={0}>
         {/* Sales Analytics */}
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid size={{ xs: 12}}>
             <SalesAnalyticsCard 
-              data={salesAnalytics.data?.data}
+              data={salesAnalytics.data}
               isLoading={salesAnalytics.isLoading}
               error={salesAnalytics.error}
             />
@@ -307,9 +294,9 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
       <TabPanel value={selectedTab} index={1}>
         {/* Product Performance */}
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid size={{ xs: 12}}>
             <ProductPerformanceCard 
-              data={productPerformance.data?.data}
+              data={productPerformance.data}
               isLoading={productPerformance.isLoading}
               error={productPerformance.error}
             />
@@ -320,9 +307,9 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
       <TabPanel value={selectedTab} index={2}>
         {/* Customer Analytics */}
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid size={{ xs: 12}}>
             <CustomerAnalyticsCard 
-              data={customerAnalytics.data?.data}
+              data={customerAnalytics.data}
               isLoading={customerAnalytics.isLoading}
               error={customerAnalytics.error}
             />
@@ -333,9 +320,9 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
       <TabPanel value={selectedTab} index={3}>
         {/* Inventory Report */}
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid size={{ xs: 12}}>
             <InventoryReportCard 
-              data={inventoryReport.data?.data}
+              data={inventoryReport.data}
               isLoading={inventoryReport.isLoading}
               error={inventoryReport.error}
             />
@@ -346,9 +333,9 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
       <TabPanel value={selectedTab} index={4}>
         {/* Financial Report */}
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid size={{ xs: 12}}>
             <FinancialReportCard 
-              data={financialReport.data?.data}
+              data={financialReport.data}
               isLoading={financialReport.isLoading}
               error={financialReport.error}
             />
@@ -359,9 +346,9 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
       <TabPanel value={selectedTab} index={5}>
         {/* Marketing Report */}
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid size={{ xs: 12}}>
             <MarketingReportCard 
-              data={marketingReport.data?.data}
+              data={marketingReport.data}
               isLoading={marketingReport.isLoading}
               error={marketingReport.error}
             />
@@ -372,9 +359,9 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
       <TabPanel value={selectedTab} index={6}>
         {/* Real-time Metrics */}
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid size={{ xs: 12}}>
             <RealTimeMetricsCard 
-              data={realTimeMetrics.data?.data}
+              data={realTimeMetrics.data}
               isLoading={realTimeMetrics.isLoading}
               error={realTimeMetrics.error}
             />
@@ -385,7 +372,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
       <TabPanel value={selectedTab} index={7}>
         {/* Reports Management */}
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+        <Grid size={{ xs: 12}}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

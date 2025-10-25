@@ -2,6 +2,8 @@
 
 خدمة المصادقة توفر جميع endpoints المتعلقة بتسجيل الدخول، إدارة الحساب، والصلاحيات.
 
+> ✅ **تم التحقق من صحة هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/auth`
+
 ---
 
 ## 📋 جدول المحتويات
@@ -77,6 +79,8 @@
   "requestId": "req_123"
 }
 ```
+
+> **ملاحظة:** أخطاء الـ Validation قد تأتي من NestJS ValidationPipe مباشرة وقد يختلف شكلها قليلاً عن الهيكل الموحد.
 
 ### كود Flutter
 
@@ -181,11 +185,11 @@ Future<Map<String, dynamic>> sendOtp({
 
 ### أكواد الأخطاء
 
-| الكود | الوصف |
-|------|-------|
-| `AUTH_INVALID_OTP` | رمز OTP غير صحيح |
-| `AUTH_JOB_TITLE_REQUIRED` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس |
-| `VALIDATION_ERROR` | خطأ في البيانات المدخلة |
+| الكود | الوصف | HTTP Status |
+|------|-------|-------------|
+| `AUTH_INVALID_OTP` | رمز OTP غير صحيح | 401 |
+| `AUTH_JOB_TITLE_REQUIRED` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
+| `VALIDATION_ERROR` | خطأ في البيانات المدخلة | 400 |
 
 ### كود Flutter
 
@@ -488,6 +492,8 @@ Future<bool> resetPassword({
       "lastName": "محمد",
       "gender": "male",
       "jobTitle": "مهندس كهرباء",
+      "roles": ["customer"],
+      "permissions": [],
       "isAdmin": false
     },
     "capabilities": {
@@ -515,6 +521,8 @@ class User {
   final String? lastName;
   final String? gender;
   final String? jobTitle;
+  final List<String> roles;
+  final List<String> permissions;
   final bool isAdmin;
 
   User({
@@ -524,6 +532,8 @@ class User {
     this.lastName,
     this.gender,
     this.jobTitle,
+    this.roles = const [],
+    this.permissions = const [],
     required this.isAdmin,
   });
 
@@ -535,6 +545,12 @@ class User {
       lastName: json['lastName'],
       gender: json['gender'],
       jobTitle: json['jobTitle'],
+      roles: json['roles'] != null 
+          ? List<String>.from(json['roles']) 
+          : [],
+      permissions: json['permissions'] != null 
+          ? List<String>.from(json['permissions']) 
+          : [],
       isAdmin: json['isAdmin'] ?? false,
     );
   }
@@ -808,6 +824,8 @@ class User {
   final String? lastName;
   final String? gender;
   final String? jobTitle;
+  final List<String> roles;
+  final List<String> permissions;
   final bool isAdmin;
 
   User({
@@ -817,6 +835,8 @@ class User {
     this.lastName,
     this.gender,
     this.jobTitle,
+    this.roles = const [],
+    this.permissions = const [],
     required this.isAdmin,
   });
 
@@ -828,11 +848,20 @@ class User {
       lastName: json['lastName'],
       gender: json['gender'],
       jobTitle: json['jobTitle'],
+      roles: json['roles'] != null 
+          ? List<String>.from(json['roles']) 
+          : [],
+      permissions: json['permissions'] != null 
+          ? List<String>.from(json['permissions']) 
+          : [],
       isAdmin: json['isAdmin'] ?? false,
     );
   }
 
   String get fullName => '${firstName ?? ''} ${lastName ?? ''}'.trim();
+  
+  bool hasRole(String role) => roles.contains(role);
+  bool hasPermission(String permission) => permissions.contains(permission);
 }
 
 class Capabilities {
@@ -953,6 +982,24 @@ class AuthUser {
    - يمكن تحديثها عبر endpoint `/auth/preferred-currency`
    - يتم إرجاعها في استجابة تسجيل الدخول
 
+
+---
+
+## 📝 ملاحظات التحديث
+
+> ✅ **تم تحديث هذه الوثيقة** لتطابق الكود الفعلي
+
+### التحديثات المضافة:
+1. ✅ إضافة `roles` و `permissions` في User object
+2. ✅ تحديث Flutter Models لتتضمن roles و permissions
+3. ✅ إضافة helper methods: `hasRole()` و `hasPermission()`
+4. ✅ إضافة HTTP Status Codes للأخطاء
+5. ✅ توضيح ملاحظة عن VALIDATION_ERROR
+
+### الملفات المرجعية:
+- **Controller:** `backend/src/modules/auth/auth.controller.ts`
+- **DTOs:** `backend/src/modules/auth/dto/*.dto.ts`
+- **Models:** `backend/src/modules/users/schemas/user.schema.ts`
 
 ---
 

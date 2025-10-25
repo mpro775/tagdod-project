@@ -80,9 +80,11 @@
 - **POST /cart/guest/coupons/apply** - تطبيق كوبون لسلة الزائر
 
 ### للمديرين (محمي بـ Admin Guard)
-- **GET /cart/admin/abandoned** - الحصول على السلات المهجورة
-- **POST /cart/admin/abandoned/send-reminder** - إرسال تذكير للسلات المهجورة
-- **GET /cart/admin/analytics** - إحصائيات السلة
+- **GET /admin/carts/abandoned** - الحصول على السلات المهجورة
+- **POST /admin/carts/abandoned/send-reminder** - إرسال تذكير للسلات المهجورة
+- **GET /admin/carts/analytics** - إحصائيات السلة
+- **GET /admin/carts/:id** - تفاصيل سلة محددة
+- **DELETE /admin/carts/:id** - حذف سلة مهجورة
 
 ## هيكل البيانات
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserRole } from '../../modules/users/schemas/user.schema';
 import { AuditService } from './audit.service';
 
@@ -95,7 +95,7 @@ export class PermissionService {
 
       // Add permission
       await this.userModel.updateOne(
-        { _id: userId },
+        { _id: new Types.ObjectId(userId) },
         { $addToSet: { permissions: permission } }
       );
 
@@ -130,7 +130,7 @@ export class PermissionService {
 
       // Remove permission
       await this.userModel.updateOne(
-        { _id: userId },
+        { _id: new Types.ObjectId(userId) },
         { $pull: { permissions: permission } }
       );
 
@@ -217,7 +217,7 @@ export class PermissionService {
       }
 
       await this.userModel.updateOne(
-        { _id: userId },
+        { _id: new Types.ObjectId(userId) },
         { $addToSet: { roles: role } }
       );
 
@@ -250,7 +250,7 @@ export class PermissionService {
       if (!user) return false;
 
       await this.userModel.updateOne(
-        { _id: userId },
+        { _id: new Types.ObjectId(userId) },
         { $pull: { roles: role } }
       );
 

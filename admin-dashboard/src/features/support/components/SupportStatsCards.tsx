@@ -9,14 +9,7 @@ import {
   LinearProgress,
   Stack,
 } from '@mui/material';
-import {
-  Support,
-  TrendingUp,
-  Warning,
-  CheckCircle,
-  Schedule,
-  Person,
-} from '@mui/icons-material';
+import { Support, TrendingUp, Warning, CheckCircle, Schedule, Person } from '@mui/icons-material';
 import { SupportStats, SupportCategory, SupportPriority } from '../types/support.types';
 
 interface SupportStatsCardsProps {
@@ -76,7 +69,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
     return (
       <Grid container spacing={3}>
         {[...Array(6)].map((_, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={index}>
             <Card>
               <CardContent>
                 <LinearProgress />
@@ -95,7 +88,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
   return (
     <Grid container spacing={3}>
       {/* إجمالي التذاكر */}
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }}>
         <Card>
           <CardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -114,7 +107,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
       </Grid>
 
       {/* التذاكر المفتوحة */}
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }}>
         <Card>
           <CardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -133,7 +126,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
       </Grid>
 
       {/* التذاكر المحلولة */}
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }}>
         <Card>
           <CardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -161,7 +154,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
       </Grid>
 
       {/* متوسط وقت الاستجابة */}
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }}>
         <Card>
           <CardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -180,7 +173,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
       </Grid>
 
       {/* متوسط وقت الحل */}
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }}>
         <Card>
           <CardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -199,7 +192,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
       </Grid>
 
       {/* التذاكر المتجاوزة للـ SLA */}
-      <Grid item xs={12} sm={6} md={4}>
+      <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }}>
         <Card>
           <CardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -227,7 +220,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
       </Grid>
 
       {/* التوزيع حسب الفئة */}
-      <Grid item xs={12} md={6}>
+      <Grid component="div" size={{ xs: 12, md: 6 }}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -255,7 +248,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
       </Grid>
 
       {/* التوزيع حسب الأولوية */}
-      <Grid item xs={12} md={6}>
+      <Grid component="div" size={{ xs: 12, md: 6 }}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>

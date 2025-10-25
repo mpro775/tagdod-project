@@ -61,6 +61,9 @@ export class Product {
   @Prop({ default: false })
   isNew!: boolean; // منتج جديد
 
+  @Prop({ default: false })
+  isBestseller!: boolean; // الأكثر مبيعاً
+
   // الإحصائيات
   @Prop({ default: 0 })
   viewsCount!: number; // عدد المشاهدات

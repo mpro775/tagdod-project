@@ -80,7 +80,7 @@ export const SupportStatsPage: React.FC = () => {
     );
   }
 
-  if (!stats) {
+  if (!stats?.data) {
     return (
       <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
@@ -128,7 +128,7 @@ export const SupportStatsPage: React.FC = () => {
         </Stack>
       </Stack>
 
-      <SupportStatsCards stats={stats} isLoading={isLoading} />
+      <SupportStatsCards stats={stats.data} isLoading={isLoading} />
     </Box>
   );
 };

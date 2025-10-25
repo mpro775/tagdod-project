@@ -1,6 +1,9 @@
 # 📍 خدمة العناوين (Addresses Service)
 
-خدمة العناوين توفر endpoints لإدارة عناوين التوصيل مع دعم الإحداثيات والأنواع المختلفة.
+> ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
+> 📅 **آخر تحديث**: أكتوبر 2025
+
+خدمة العناوين توفر endpoints لإدارة عناوين التوصيل مع دعم الإحداثيات (**coords إجباري**).
 
 ---
 
@@ -42,20 +45,13 @@
 ```json
 {
   "success": true,
-  "data": [
+  "addresses": [
     {
       "_id": "64addr123",
       "userId": "64user456",
       "label": "المنزل",
-      "addressType": "home",
-      "recipientName": "أحمد محمد",
-      "recipientPhone": "773123456",
       "line1": "شارع الستين، بجوار مطعم السلطان",
-      "line2": "الدور الثالث، شقة 12",
       "city": "صنعاء",
-      "region": "حي السبعين",
-      "country": "Yemen",
-      "postalCode": "12345",
       "coords": {
         "lat": 15.3694,
         "lng": 44.1910
@@ -63,7 +59,6 @@
       "notes": "يرجى الاتصال عند الوصول",
       "isDefault": true,
       "isActive": true,
-      "placeId": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
       "lastUsedAt": "2025-01-15T10:00:00.000Z",
       "usageCount": 15,
       "createdAt": "2025-01-01T00:00:00.000Z",
@@ -86,15 +81,16 @@ Future<List<Address>> getAddresses({bool includeDeleted = false}) async {
     },
   );
 
-  final apiResponse = ApiResponse<List<Address>>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => ((json as Map<String, dynamic>)['data'] as List)
-        .map((item) => Address.fromJson(item))
-        .toList(),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    final addresses = (apiResponse.data!['addresses'] as List)
+        .map((item) => Address.fromJson(item))
+        .toList();
+    return addresses;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -119,20 +115,13 @@ Future<List<Address>> getAddresses({bool includeDeleted = false}) async {
 ```json
 {
   "success": true,
-  "data": [
+  "addresses": [
     {
       "_id": "64addr123",
       "userId": "64user456",
       "label": "المنزل",
-      "addressType": "home",
-      "recipientName": "أحمد محمد",
-      "recipientPhone": "773123456",
       "line1": "شارع الستين، بجوار مطعم السلطان",
-      "line2": "الدور الثالث، شقة 12",
       "city": "صنعاء",
-      "region": "حي السبعين",
-      "country": "Yemen",
-      "postalCode": "12345",
       "coords": {
         "lat": 15.3694,
         "lng": 44.1910
@@ -140,7 +129,6 @@ Future<List<Address>> getAddresses({bool includeDeleted = false}) async {
       "notes": "يرجى الاتصال عند الوصول",
       "isDefault": true,
       "isActive": true,
-      "placeId": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
       "lastUsedAt": "2025-01-15T10:00:00.000Z",
       "usageCount": 15,
       "createdAt": "2025-01-01T00:00:00.000Z",
@@ -158,15 +146,16 @@ Future<List<Address>> getAddresses({bool includeDeleted = false}) async {
 Future<List<Address>> getActiveAddresses() async {
   final response = await _dio.get('/addresses/active');
 
-  final apiResponse = ApiResponse<List<Address>>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => ((json as Map<String, dynamic>)['data'] as List)
-        .map((item) => Address.fromJson(item))
-        .toList(),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    final addresses = (apiResponse.data!['addresses'] as List)
+        .map((item) => Address.fromJson(item))
+        .toList();
+    return addresses;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -191,19 +180,12 @@ Future<List<Address>> getActiveAddresses() async {
 ```json
 {
   "success": true,
-  "data": {
+  "address": {
     "_id": "64addr123",
     "userId": "64user456",
     "label": "المنزل",
-    "addressType": "home",
-    "recipientName": "أحمد محمد",
-    "recipientPhone": "773123456",
     "line1": "شارع الستين، بجوار مطعم السلطان",
-    "line2": "الدور الثالث، شقة 12",
     "city": "صنعاء",
-    "region": "حي السبعين",
-    "country": "Yemen",
-    "postalCode": "12345",
     "coords": {
       "lat": 15.3694,
       "lng": 44.1910
@@ -211,7 +193,6 @@ Future<List<Address>> getActiveAddresses() async {
     "notes": "يرجى الاتصال عند الوصول",
     "isDefault": true,
     "isActive": true,
-    "placeId": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
     "lastUsedAt": "2025-01-15T10:00:00.000Z",
     "usageCount": 15,
     "createdAt": "2025-01-01T00:00:00.000Z",
@@ -225,9 +206,9 @@ Future<List<Address>> getActiveAddresses() async {
 
 ```json
 {
-  "success": false,
+  "success": true,
+  "address": null,
   "message": "No addresses found. Please add an address first.",
-  "data": null,
   "requestId": "req_addr_003"
 }
 ```
@@ -238,15 +219,14 @@ Future<List<Address>> getActiveAddresses() async {
 Future<Address?> getDefaultAddress() async {
   final response = await _dio.get('/addresses/default');
 
-  final apiResponse = ApiResponse<Address?>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => (json as Map<String, dynamic>)['data'] != null
-        ? Address.fromJson((json as Map<String, dynamic>)['data'])
-        : null,
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data;
+    final addressData = apiResponse.data!['address'];
+    return addressData != null ? Address.fromJson(addressData) : null;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -271,19 +251,12 @@ Future<Address?> getDefaultAddress() async {
 ```json
 {
   "success": true,
-  "data": {
+  "address": {
     "_id": "64addr123",
     "userId": "64user456",
     "label": "المنزل",
-    "addressType": "home",
-    "recipientName": "أحمد محمد",
-    "recipientPhone": "773123456",
     "line1": "شارع الستين، بجوار مطعم السلطان",
-    "line2": "الدور الثالث، شقة 12",
     "city": "صنعاء",
-    "region": "حي السبعين",
-    "country": "Yemen",
-    "postalCode": "12345",
     "coords": {
       "lat": 15.3694,
       "lng": 44.1910
@@ -291,7 +264,6 @@ Future<Address?> getDefaultAddress() async {
     "notes": "يرجى الاتصال عند الوصول",
     "isDefault": true,
     "isActive": true,
-    "placeId": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
     "lastUsedAt": "2025-01-15T10:00:00.000Z",
     "usageCount": 15,
     "createdAt": "2025-01-01T00:00:00.000Z",
@@ -307,13 +279,13 @@ Future<Address?> getDefaultAddress() async {
 Future<Address> getAddress(String id) async {
   final response = await _dio.get('/addresses/$id');
 
-  final apiResponse = ApiResponse<Address>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => Address.fromJson((json as Map<String, dynamic>)['data']),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return Address.fromJson(apiResponse.data!['address']);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -338,24 +310,21 @@ Future<Address> getAddress(String id) async {
 ```json
 {
   "label": "المنزل",
-  "addressType": "home",
-  "recipientName": "أحمد محمد",
-  "recipientPhone": "773123456",
   "line1": "شارع الستين، بجوار مطعم السلطان",
-  "line2": "الدور الثالث، شقة 12",
   "city": "صنعاء",
-  "region": "حي السبعين",
-  "country": "Yemen",
-  "postalCode": "12345",
   "coords": {
     "lat": 15.3694,
     "lng": 44.1910
   },
   "notes": "يرجى الاتصال عند الوصول",
-  "isDefault": true,
-  "placeId": "ChIJd8BlQ2BZwokRAFUEcm_qrcA"
+  "isDefault": true
 }
 ```
+
+**ملاحظة مهمة:**
+- `coords` إجباري (required)
+- `label`, `line1`, `city` إجبارية
+- `notes`, `isDefault` اختيارية
 
 ### Response - نجاح
 
@@ -363,19 +332,12 @@ Future<Address> getAddress(String id) async {
 {
   "success": true,
   "message": "Address created successfully",
-  "data": {
+  "address": {
     "_id": "64addr123",
     "userId": "64user456",
     "label": "المنزل",
-    "addressType": "home",
-    "recipientName": "أحمد محمد",
-    "recipientPhone": "773123456",
     "line1": "شارع الستين، بجوار مطعم السلطان",
-    "line2": "الدور الثالث، شقة 12",
     "city": "صنعاء",
-    "region": "حي السبعين",
-    "country": "Yemen",
-    "postalCode": "12345",
     "coords": {
       "lat": 15.3694,
       "lng": 44.1910
@@ -383,7 +345,6 @@ Future<Address> getAddress(String id) async {
     "notes": "يرجى الاتصال عند الوصول",
     "isDefault": true,
     "isActive": true,
-    "placeId": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
     "usageCount": 0,
     "createdAt": "2025-01-15T10:00:00.000Z",
     "updatedAt": "2025-01-15T10:00:00.000Z"
@@ -397,44 +358,28 @@ Future<Address> getAddress(String id) async {
 ```dart
 Future<Address> createAddress({
   required String label,
-  required String recipientName,
-  required String recipientPhone,
   required String line1,
   required String city,
-  String? addressType,
-  String? line2,
-  String? region,
-  String? country,
-  String? postalCode,
-  AddressCoords? coords,
+  required AddressCoords coords,
   String? notes,
   bool isDefault = false,
-  String? placeId,
 }) async {
   final response = await _dio.post('/addresses', data: {
     'label': label,
-    'addressType': addressType ?? 'home',
-    'recipientName': recipientName,
-    'recipientPhone': recipientPhone,
     'line1': line1,
-    if (line2 != null) 'line2': line2,
     'city': city,
-    if (region != null) 'region': region,
-    if (country != null) 'country': country,
-    if (postalCode != null) 'postalCode': postalCode,
-    if (coords != null) 'coords': coords.toJson(),
+    'coords': coords.toJson(),
     if (notes != null) 'notes': notes,
     'isDefault': isDefault,
-    if (placeId != null) 'placeId': placeId,
   });
 
-  final apiResponse = ApiResponse<Address>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => Address.fromJson((json as Map<String, dynamic>)['data']),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return Address.fromJson(apiResponse.data!['address']);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -459,16 +404,19 @@ Future<Address> createAddress({
 ```json
 {
   "label": "المنزل الجديد",
-  "recipientName": "أحمد محمد",
-  "recipientPhone": "773123456",
   "line1": "شارع الستين، بجوار مطعم السلطان",
-  "line2": "الدور الثالث، شقة 12",
   "city": "صنعاء",
-  "region": "حي السبعين",
+  "coords": {
+    "lat": 15.3694,
+    "lng": 44.1910
+  },
   "notes": "يرجى الاتصال عند الوصول",
-  "isDefault": true
+  "isDefault": true,
+  "isActive": true
 }
 ```
+
+**جميع الحقول اختيارية** - يمكنك إرسال الحقول التي تريد تحديثها فقط.
 
 ### Response - نجاح
 
@@ -476,19 +424,12 @@ Future<Address> createAddress({
 {
   "success": true,
   "message": "Address updated successfully",
-  "data": {
+  "address": {
     "_id": "64addr123",
     "userId": "64user456",
     "label": "المنزل الجديد",
-    "addressType": "home",
-    "recipientName": "أحمد محمد",
-    "recipientPhone": "773123456",
     "line1": "شارع الستين، بجوار مطعم السلطان",
-    "line2": "الدور الثالث، شقة 12",
     "city": "صنعاء",
-    "region": "حي السبعين",
-    "country": "Yemen",
-    "postalCode": "12345",
     "coords": {
       "lat": 15.3694,
       "lng": 44.1910
@@ -496,7 +437,6 @@ Future<Address> createAddress({
     "notes": "يرجى الاتصال عند الوصول",
     "isDefault": true,
     "isActive": true,
-    "placeId": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
     "lastUsedAt": "2025-01-15T10:00:00.000Z",
     "usageCount": 15,
     "createdAt": "2025-01-01T00:00:00.000Z",
@@ -512,47 +452,31 @@ Future<Address> createAddress({
 Future<Address> updateAddress({
   required String id,
   String? label,
-  String? addressType,
-  String? recipientName,
-  String? recipientPhone,
   String? line1,
-  String? line2,
   String? city,
-  String? region,
-  String? country,
-  String? postalCode,
   AddressCoords? coords,
   String? notes,
   bool? isDefault,
   bool? isActive,
-  String? placeId,
 }) async {
   final data = <String, dynamic>{};
   if (label != null) data['label'] = label;
-  if (addressType != null) data['addressType'] = addressType;
-  if (recipientName != null) data['recipientName'] = recipientName;
-  if (recipientPhone != null) data['recipientPhone'] = recipientPhone;
   if (line1 != null) data['line1'] = line1;
-  if (line2 != null) data['line2'] = line2;
   if (city != null) data['city'] = city;
-  if (region != null) data['region'] = region;
-  if (country != null) data['country'] = country;
-  if (postalCode != null) data['postalCode'] = postalCode;
   if (coords != null) data['coords'] = coords.toJson();
   if (notes != null) data['notes'] = notes;
   if (isDefault != null) data['isDefault'] = isDefault;
   if (isActive != null) data['isActive'] = isActive;
-  if (placeId != null) data['placeId'] = placeId;
 
   final response = await _dio.patch('/addresses/$id', data: data);
 
-  final apiResponse = ApiResponse<Address>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => Address.fromJson((json as Map<String, dynamic>)['data']),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return Address.fromJson(apiResponse.data!['address']);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -578,13 +502,19 @@ Future<Address> updateAddress({
 {
   "success": true,
   "message": "Address deleted successfully",
-  "data": {
-    "deleted": true,
-    "addressId": "64addr123"
+  "result": {
+    "deleted": true
   },
   "requestId": "req_addr_007"
 }
 ```
+
+### Errors
+
+| Code | HTTP Status | الوصف |
+|------|-------------|-------|
+| `Address not found` | 404 | العنوان غير موجود |
+| `Cannot delete your only address` | 400 | لا يمكن حذف العنوان الوحيد |
 
 ### كود Flutter
 
@@ -594,11 +524,11 @@ Future<bool> deleteAddress(String id) async {
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => (json as Map<String, dynamic>)['data'],
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!['deleted'] ?? false;
+    return apiResponse.data!['result']['deleted'] ?? false;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -624,19 +554,12 @@ Future<bool> deleteAddress(String id) async {
 {
   "success": true,
   "message": "Default address set successfully",
-  "data": {
+  "address": {
     "_id": "64addr123",
     "userId": "64user456",
     "label": "المنزل",
-    "addressType": "home",
-    "recipientName": "أحمد محمد",
-    "recipientPhone": "773123456",
     "line1": "شارع الستين، بجوار مطعم السلطان",
-    "line2": "الدور الثالث، شقة 12",
     "city": "صنعاء",
-    "region": "حي السبعين",
-    "country": "Yemen",
-    "postalCode": "12345",
     "coords": {
       "lat": 15.3694,
       "lng": 44.1910
@@ -644,7 +567,6 @@ Future<bool> deleteAddress(String id) async {
     "notes": "يرجى الاتصال عند الوصول",
     "isDefault": true,
     "isActive": true,
-    "placeId": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
     "lastUsedAt": "2025-01-15T10:00:00.000Z",
     "usageCount": 15,
     "createdAt": "2025-01-01T00:00:00.000Z",
@@ -660,13 +582,13 @@ Future<bool> deleteAddress(String id) async {
 Future<Address> setDefaultAddress(String id) async {
   final response = await _dio.post('/addresses/$id/set-default');
 
-  final apiResponse = ApiResponse<Address>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => Address.fromJson((json as Map<String, dynamic>)['data']),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return Address.fromJson(apiResponse.data!['address']);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -692,19 +614,12 @@ Future<Address> setDefaultAddress(String id) async {
 {
   "success": true,
   "message": "Address restored successfully",
-  "data": {
+  "address": {
     "_id": "64addr123",
     "userId": "64user456",
     "label": "المنزل",
-    "addressType": "home",
-    "recipientName": "أحمد محمد",
-    "recipientPhone": "773123456",
     "line1": "شارع الستين، بجوار مطعم السلطان",
-    "line2": "الدور الثالث، شقة 12",
     "city": "صنعاء",
-    "region": "حي السبعين",
-    "country": "Yemen",
-    "postalCode": "12345",
     "coords": {
       "lat": 15.3694,
       "lng": 44.1910
@@ -712,7 +627,6 @@ Future<Address> setDefaultAddress(String id) async {
     "notes": "يرجى الاتصال عند الوصول",
     "isDefault": false,
     "isActive": true,
-    "placeId": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
     "lastUsedAt": "2025-01-15T10:00:00.000Z",
     "usageCount": 15,
     "createdAt": "2025-01-01T00:00:00.000Z",
@@ -722,19 +636,26 @@ Future<Address> setDefaultAddress(String id) async {
 }
 ```
 
+### Errors
+
+| Code | HTTP Status | الوصف |
+|------|-------------|-------|
+| `Address not found` | 404 | العنوان غير موجود |
+| `Address is not deleted` | 400 | العنوان ليس محذوفاً |
+
 ### كود Flutter
 
 ```dart
 Future<Address> restoreAddress(String id) async {
   final response = await _dio.post('/addresses/$id/restore');
 
-  final apiResponse = ApiResponse<Address>.fromJson(
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => Address.fromJson((json as Map<String, dynamic>)['data']),
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return Address.fromJson(apiResponse.data!['address']);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -774,7 +695,7 @@ Future<bool> validateAddressOwnership(String id) async {
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
-    (json) => (json as Map<String, dynamic>)['data'],
+    (json) => json as Map<String, dynamic>,
   );
 
   if (apiResponse.isSuccess) {
@@ -792,30 +713,16 @@ Future<bool> validateAddressOwnership(String id) async {
 ### ملف: `lib/models/address/address_models.dart`
 
 ```dart
-enum AddressType {
-  home,
-  work,
-  other,
-}
-
 class Address {
   final String id;
   final String userId;
   final String label;
-  final AddressType addressType;
-  final String recipientName;
-  final String recipientPhone;
   final String line1;
-  final String? line2;
   final String city;
-  final String? region;
-  final String country;
-  final String? postalCode;
-  final AddressCoords? coords;
+  final AddressCoords coords;
   final String? notes;
   final bool isDefault;
   final bool isActive;
-  final String? placeId;
   final DateTime? lastUsedAt;
   final int usageCount;
   final DateTime createdAt;
@@ -825,20 +732,12 @@ class Address {
     required this.id,
     required this.userId,
     required this.label,
-    required this.addressType,
-    required this.recipientName,
-    required this.recipientPhone,
     required this.line1,
-    this.line2,
     required this.city,
-    this.region,
-    required this.country,
-    this.postalCode,
-    this.coords,
+    required this.coords,
     this.notes,
     required this.isDefault,
     required this.isActive,
-    this.placeId,
     this.lastUsedAt,
     required this.usageCount,
     required this.createdAt,
@@ -850,25 +749,12 @@ class Address {
       id: json['_id'],
       userId: json['userId'],
       label: json['label'] ?? '',
-      addressType: AddressType.values.firstWhere(
-        (e) => e.name == json['addressType'],
-        orElse: () => AddressType.home,
-      ),
-      recipientName: json['recipientName'] ?? '',
-      recipientPhone: json['recipientPhone'] ?? '',
       line1: json['line1'] ?? '',
-      line2: json['line2'],
       city: json['city'] ?? '',
-      region: json['region'],
-      country: json['country'] ?? 'Yemen',
-      postalCode: json['postalCode'],
-      coords: json['coords'] != null 
-          ? AddressCoords.fromJson(json['coords']) 
-          : null,
+      coords: AddressCoords.fromJson(json['coords']),
       notes: json['notes'],
       isDefault: json['isDefault'] ?? false,
       isActive: json['isActive'] ?? true,
-      placeId: json['placeId'],
       lastUsedAt: json['lastUsedAt'] != null 
           ? DateTime.parse(json['lastUsedAt']) 
           : null,
@@ -878,31 +764,13 @@ class Address {
     );
   }
 
-  String get fullAddress {
-    final parts = [
-      line1,
-      if (line2 != null) line2,
-      city,
-      if (region != null) region,
-      country,
-    ];
-    return parts.join(', ');
-  }
+  String get fullAddress => '$line1, $city';
+  String get shortAddress => city;
 
-  String get shortAddress {
-    final parts = [
-      line1,
-      city,
-    ];
-    return parts.join(', ');
-  }
-
-  bool get hasCoords => coords != null;
-  bool get hasPlaceId => placeId != null && placeId!.isNotEmpty;
+  bool get hasNotes => notes != null && notes!.isNotEmpty;
   bool get isRecentlyUsed => lastUsedAt != null && 
       DateTime.now().difference(lastUsedAt!).inDays < 7;
   bool get isFrequentlyUsed => usageCount > 10;
-  bool get hasNotes => notes != null && notes!.isNotEmpty;
 }
 
 class AddressCoords {
@@ -937,62 +805,72 @@ class AddressCoords {
 
 ## 📝 ملاحظات مهمة
 
-1. **أنواع العناوين:**
-   - `home`: المنزل
-   - `work`: المكتب
-   - `other`: أخرى
-   - استخدم `AddressType` enum للتحقق من النوع
+1. **هيكل العنوان (مبسط):**
+   - `label`: تسمية العنوان (مثل: "المنزل", "المكتب") - **إجباري**
+   - `line1`: العنوان الرئيسي (الشارع، رقم المبنى، التفاصيل) - **إجباري**
+   - `city`: المدينة - **إجباري**
+   - `coords`: الإحداثيات الجغرافية (lat, lng) - **إجباري**
+   - `notes`: ملاحظات/تعليمات التسليم - **اختياري**
 
-2. **هيكل العنوان:**
-   - `label`: تسمية العنوان (مثل: "المنزل", "المكتب")
-   - `line1`: العنوان الرئيسي (الشارع، رقم المبنى)
-   - `line2`: تفاصيل إضافية (رقم الشقة، الدور)
-   - `city`: المدينة
-   - `region`: المنطقة/الحي
-   - `country`: الدولة (افتراضي: Yemen)
+2. **الإحداثيات (coords) إجباري:**
+   - يجب إرسال `coords` مع كل عنوان جديد
+   - لا يمكن حفظ عنوان بدون إحداثيات
+   - استخدم Google Maps API أو خدمة مماثلة للحصول على الإحداثيات
 
-3. **الإحداثيات:**
-   - `coords`: الإحداثيات الجغرافية (lat, lng)
-   - `placeId`: Google Place ID للموقع
-   - استخدم `hasCoords` للتحقق من وجود الإحداثيات
-   - استخدم `hasPlaceId` للتحقق من وجود Place ID
-
-4. **المعلومات الشخصية:**
-   - `recipientName`: اسم المستلم
-   - `recipientPhone`: رقم هاتف المستلم
-   - `notes`: ملاحظات/تعليمات التسليم
-
-5. **الإحصائيات:**
+3. **الإحصائيات:**
    - `usageCount`: عدد مرات الاستخدام
    - `lastUsedAt`: آخر مرة استخدم فيها
    - `isRecentlyUsed`: استخدم مؤخراً (أقل من 7 أيام)
    - `isFrequentlyUsed`: مستخدم بكثرة (أكثر من 10 مرات)
 
-6. **الحالة:**
-   - `isDefault`: العنوان الافتراضي
+4. **الحالة:**
+   - `isDefault`: العنوان الافتراضي (أول عنوان يصبح افتراضي تلقائياً)
    - `isActive`: نشط أم لا
    - `hasNotes`: يحتوي على ملاحظات
 
-7. **العرض في التطبيق:**
-   - استخدم `fullAddress` للعنوان الكامل
-   - استخدم `shortAddress` للعنوان المختصر
-   - اعرض `isRecentlyUsed` للمستخدم مؤخراً
-   - اعرض `isFrequentlyUsed` للمستخدم بكثرة
-   - اعرض `hasNotes` للملاحظات
+5. **العرض في التطبيق:**
+   - استخدم `fullAddress` للعنوان الكامل (line1, city)
+   - استخدم `shortAddress` للعنوان المختصر (city فقط)
+   - اعرض `isRecentlyUsed` للعناوين المستخدمة مؤخراً
+   - اعرض `isFrequentlyUsed` للعناوين المستخدمة بكثرة
 
-8. **التحقق من الملكية:**
+6. **التحقق من الملكية:**
    - استخدم `validateAddressOwnership()` قبل التعديل
    - تأكد من أن العنوان يخص المستخدم
 
-9. **الحذف والاستعادة:**
+7. **الحذف والاستعادة:**
    - الحذف ناعم (soft delete)
+   - **لا يمكن حذف العنوان الوحيد** - يجب أن يكون لديك على الأقل عنوان واحد
    - يمكن استعادة العناوين المحذوفة
    - استخدم `includeDeleted: true` لعرض المحذوفة
 
-10. **الأداء:**
-    - جميع الـ endpoints تتطلب مصادقة
-    - لا يوجد cache للعناوين (بيانات شخصية)
-    - استخدم `getActiveAddresses()` للعناوين النشطة فقط
+8. **الأداء:**
+   - جميع الـ endpoints تتطلب مصادقة
+   - لا يوجد cache للعناوين (بيانات شخصية)
+   - استخدم `getActiveAddresses()` للعناوين النشطة فقط
+
+9. **⚠️ تغييرات مهمة عن الإصدار السابق:**
+   - **تم إزالة**: `addressType`, `recipientName`, `recipientPhone`, `line2`, `region`, `country`, `postalCode`, `placeId`
+   - **الآن إجباري**: `coords` (كان اختيارياً في السابق)
+   - **البنية مبسطة**: فقط الحقول الأساسية (label, line1, city, coords, notes)
+
+---
+
+## 🔄 Notes on Update
+
+**التغييرات الرئيسية:**
+1. ✅ تم تصحيح جميع الـ responses - النموذج الموحد: `{ success, address/addresses, count?, message?, requestId }`
+2. ✅ تم تبسيط نموذج `Address` - إزالة جميع الحقول غير الموجودة في Backend
+3. ✅ تم جعل `coords` إجباري في الـ create
+4. ✅ تم تصحيح الـ delete response (result بدلاً من data)
+5. ✅ تم إضافة error codes الفعلية (Cannot delete your only address, Address is not deleted)
+6. ✅ تم تحديث جميع أكواد Flutter لتعكس البنية الصحيحة
+
+**ملفات Backend المرجعية:**
+- `backend/src/modules/addresses/addresses.controller.ts` - جميع endpoints
+- `backend/src/modules/addresses/addresses.service.ts` - المنطق والـ validations
+- `backend/src/modules/addresses/dto/address.dto.ts` - CreateAddressDto, UpdateAddressDto
+- `backend/src/modules/addresses/schemas/address.schema.ts` - Address Schema
 
 ---
 

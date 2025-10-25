@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { User } from '../../users/schemas/user.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
@@ -17,6 +18,7 @@ import { Reservation } from '../schemas/reservation.schema';
 import { InventoryLedger } from '../schemas/inventory-ledger.schema';
 import { CartService } from '../../cart/cart.service';
 import { MarketingService } from '../../marketing/marketing.service';
+import { AddressesService } from '../../addresses/addresses.service';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -54,14 +56,34 @@ export class OrderService {
     @InjectModel(Inventory.name) private inventoryModel: Model<Inventory>,
     @InjectModel(Reservation.name) private reservationModel: Model<Reservation>,
     @InjectModel(InventoryLedger.name) private ledgerModel: Model<InventoryLedger>,
+    @InjectModel(User.name) private userModel: Model<User>,
     private cartService: CartService,
     private marketingService: MarketingService,
+    private addressesService: AddressesService,
   ) {}
 
   // ===== Helper Methods =====
 
   private hmac(payload: string): string {
     return crypto.createHmac('sha256', this.paymentSigningKey).update(payload).digest('hex');
+  }
+
+  private async getUsersMap(userIds: Types.ObjectId[]): Promise<Map<string, { name: string; phone: string }>> {
+    const users = await this.userModel.find(
+      { _id: { $in: userIds } },
+      { _id: 1, firstName: 1, lastName: 1, phone: 1 }
+    ).lean();
+
+    const usersMap = new Map<string, { name: string; phone: string }>();
+    users.forEach(user => {
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'غير محدد';
+      usersMap.set(user._id.toString(), {
+        name: fullName,
+        phone: user.phone || 'غير محدد'
+      });
+    });
+
+    return usersMap;
   }
 
   private generateOrderNumber(): string {
@@ -169,6 +191,15 @@ export class OrderService {
     dto: CreateOrderDto
   ): Promise<{ orderId: string; orderNumber: string; status: OrderStatus; payment?: { intentId: string; provider?: string; amount: number; signature: string } }> {
     try {
+      // التحقق من ملكية العنوان
+      const isValid = await this.addressesService.validateAddressOwnership(dto.deliveryAddressId, userId);
+      if (!isValid) {
+        throw new BadRequestException('Address not found or invalid');
+      }
+
+      // جلب تفاصيل العنوان
+      const address = await this.addressesService.getAddressById(dto.deliveryAddressId);
+
       // إعادة حساب من السلة
       const quote = await this.previewCheckout(userId, dto.currency, dto.couponCode) as { data: { total: number; subtotal: number; items: CartLine[] } };
       const total = quote.data.total;
@@ -180,8 +211,12 @@ export class OrderService {
         status: OrderStatus.PENDING_PAYMENT,
         paymentStatus: PaymentStatus.PENDING,
         deliveryAddress: {
-          addressId: new Types.ObjectId(dto.deliveryAddressId),
-          // تفاصيل العنوان يتم جلبها من خدمة العناوين باستخدام addressId
+          addressId: address._id,
+          label: address.label,
+          line1: address.line1,
+          city: address.city,
+          coords: address.coords,
+          notes: address.notes,
         },
         items: quote.data.items.map((item: CartLine) => ({
           productId: item.productId ? new Types.ObjectId(item.productId) : undefined,
@@ -229,6 +264,9 @@ export class OrderService {
           'تأكيد فوري للدفع عند الاستلام'
         );
       }
+
+      // تحديث استخدام العنوان
+      await this.addressesService.markAsUsed(dto.deliveryAddressId, userId);
 
       this.logger.log(`Order created: ${order.orderNumber}`);
 
@@ -763,8 +801,8 @@ export class OrderService {
         $group: {
           _id: null,
           totalOrders: { $sum: 1 },
-          completedOrders: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
-          cancelledOrders: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } },
+          completedOrders: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0] } },
+          cancelledOrders: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.CANCELLED] }, 1, 0] } },
           returnedOrders: { $sum: { $cond: ['$returnInfo.isReturned', 1, 0] } },
           avgProcessingTime: { $avg: { $subtract: ['$completedAt', '$createdAt'] } }
         }
@@ -814,7 +852,7 @@ export class OrderService {
           $group: {
             _id: null,
             totalOrders: { $sum: 1 },
-            completedOrders: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } }
+            completedOrders: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0] } }
           }
         }
       ]);
@@ -836,10 +874,14 @@ export class OrderService {
    */
   async generateOrdersPDF(orders: OrderDocument[]): Promise<string> {
     try {
+      // جلب بيانات المستخدمين
+      const userIds = orders.map(order => order.userId).filter(id => id);
+      const usersMap = await this.getUsersMap(userIds);
+
       // إحصائيات سريعة للتقرير
       const totalOrders = orders.length;
       const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
-      const completedOrders = orders.filter(order => order.status === 'completed').length;
+      const completedOrders = orders.filter(order => order.status === OrderStatus.COMPLETED).length;
       const completionRate = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
 
       // إنشاء محتوى HTML للتقرير
@@ -887,19 +929,21 @@ export class OrderService {
                 <th>التاريخ</th>
                 <th>الحالة</th>
                 <th>المجموع</th>
-                <th>العميل</th>
+                <th>اسم العميل</th>
               </tr>
             </thead>
             <tbody>
-              ${orders.slice(0, 50).map(order => `
+              ${orders.slice(0, 50).map(order => {
+                const userInfo = usersMap.get(order.userId.toString()) || { name: 'غير محدد', phone: 'غير محدد' };
+                return `
                 <tr>
                   <td>${order.orderNumber}</td>
                   <td>${order.createdAt?.toLocaleDateString('ar-SA')}</td>
                   <td>${order.status}</td>
                   <td>${order.total?.toLocaleString()} ريال</td>
-                  <td>${order.deliveryAddress?.recipientName || 'غير محدد'}</td>
+                  <td>${userInfo.name}</td>
                 </tr>
-              `).join('')}
+              `}).join('')}
             </tbody>
           </table>
           
@@ -960,20 +1004,28 @@ export class OrderService {
    */
   async generateOrdersExcel(orders: OrderDocument[]): Promise<string> {
     try {
+      // جلب بيانات المستخدمين
+      const userIds = orders.map(order => order.userId).filter(id => id);
+      const usersMap = await this.getUsersMap(userIds);
+
       // إنشاء البيانات للتقرير
-      const excelData = orders.map(order => ({
-        'رقم الطلب': order.orderNumber,
-        'تاريخ الطلب': order.createdAt?.toLocaleDateString('ar-SA'),
-        'الحالة': order.status,
-        'المجموع': order.total,
-        'العملة': order.currency,
-        'اسم العميل': order.deliveryAddress?.recipientName || 'غير محدد',
-        'رقم الهاتف': order.deliveryAddress?.recipientPhone || 'غير محدد',
-        'المدينة': order.deliveryAddress?.city || 'غير محدد',
-        'طريقة الدفع': order.paymentMethod,
-        'عدد المنتجات': order.items?.length || 0,
-        'التقييم': order.ratingInfo?.rating || 'غير مقيم'
-      }));
+      const excelData = orders.map(order => {
+        const userInfo = usersMap.get(order.userId.toString()) || { name: 'غير محدد', phone: 'غير محدد' };
+
+        return {
+          'رقم الطلب': order.orderNumber,
+          'تاريخ الطلب': order.createdAt?.toLocaleDateString('ar-SA'),
+          'الحالة': order.status,
+          'المجموع': order.total,
+          'العملة': order.currency,
+          'اسم العميل': userInfo.name,
+          'رقم الهاتف': userInfo.phone,
+          'المدينة': order.deliveryAddress?.city || 'غير محدد',
+          'طريقة الدفع': order.paymentMethod,
+          'عدد المنتجات': order.items?.length || 0,
+          'التقييم': order.ratingInfo?.rating || 'غير مقيم'
+        };
+      });
 
       // إنشاء مجلد التقارير إذا لم يكن موجوداً
       const reportsDir = path.join(process.cwd(), 'uploads', 'reports');
@@ -1055,5 +1107,91 @@ export class OrderService {
       totalDiscounts: result.totalDiscounts || 0,
       totalShipping: result.totalShipping || 0
     };
+  }
+
+  /**
+   * الحصول على إحصائيات الطلبات الأساسية (للإدارة)
+   */
+  async getStats(): Promise<{
+    total: number;
+    pending: number;
+    processing: number;
+    shipped: number;
+    delivered: number;
+    cancelled: number;
+    refunded: number;
+    totalRevenue: number;
+    averageOrderValue: number;
+  }> {
+    try {
+      // استخدام match أولاً للتأكد من وجود userId صالح
+      const stats = await this.orderModel.aggregate([
+        {
+          $match: {
+            userId: { $exists: true, $ne: null }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            pending: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.PENDING_PAYMENT] }, 1, 0] } },
+            processing: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.PROCESSING] }, 1, 0] } },
+            shipped: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.SHIPPED] }, 1, 0] } },
+            delivered: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.DELIVERED] }, 1, 0] } },
+            cancelled: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.CANCELLED] }, 1, 0] } },
+            refunded: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.REFUNDED] }, 1, 0] } },
+            totalRevenue: { $sum: { $cond: [{ $in: ['$status', [OrderStatus.DELIVERED, OrderStatus.COMPLETED]] }, '$total', 0] } },
+            orderValues: { $push: { $cond: [{ $in: ['$status', [OrderStatus.DELIVERED, OrderStatus.COMPLETED]] }, '$total', null] } }
+          }
+        }
+      ]);
+
+      const result = stats[0] || {
+        total: 0,
+        pending: 0,
+        processing: 0,
+        shipped: 0,
+        delivered: 0,
+        cancelled: 0,
+        refunded: 0,
+        totalRevenue: 0,
+        orderValues: []
+      };
+
+      // حساب متوسط قيمة الطلب
+      const validOrderValues = result.orderValues.filter((value: number | null) => value !== null);
+      const averageOrderValue = validOrderValues.length > 0
+        ? validOrderValues.reduce((sum: number, value: number) => sum + value, 0) / validOrderValues.length
+        : 0;
+
+      return {
+        total: result.total,
+        pending: result.pending,
+        processing: result.processing,
+        shipped: result.shipped,
+        delivered: result.delivered,
+        cancelled: result.cancelled,
+        refunded: result.refunded,
+        totalRevenue: result.totalRevenue,
+        averageOrderValue
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : '';
+      this.logger.error(`Error getting order stats: ${errorMessage}`, errorStack);
+      // في حالة حدوث خطأ، نعيد قيم افتراضية
+      return {
+        total: 0,
+        pending: 0,
+        processing: 0,
+        shipped: 0,
+        delivered: 0,
+        cancelled: 0,
+        refunded: 0,
+        totalRevenue: 0,
+        averageOrderValue: 0
+      };
+    }
   }
 }

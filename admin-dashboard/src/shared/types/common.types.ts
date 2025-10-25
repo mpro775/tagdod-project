@@ -16,7 +16,6 @@ export interface PaginationMeta {
 export interface ApiResponse<T> {
   success: true;
   data: T;
-  meta?: PaginationMeta;
   requestId: string;
 }
 

@@ -22,7 +22,7 @@ import {
 import { PeriodType } from './schemas/analytics-snapshot.schema';
 import { ReportType } from './schemas/report-schedule.schema';
 
-@ApiTags('analytics')
+@ApiTags('التحليلات')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, AdminGuard)
 @Controller('analytics')
@@ -31,125 +31,106 @@ export class AnalyticsController {
 
   @Get('dashboard')
   @ApiOperation({
-    summary: 'Get dashboard data',
-    description: 'Retrieve comprehensive dashboard analytics data with charts and KPIs'
+    summary: 'الحصول على بيانات لوحة التحكم',
+    description: 'استرداد بيانات تحليلات شاملة للوحة التحكم مع الرسوم البيانية ومؤشرات الأداء الرئيسية'
   })
-  @ApiQuery({ name: 'period', enum: PeriodType, required: false, description: 'Time period for analytics' })
-  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (ISO format)' })
-  @ApiQuery({ name: 'endDate', required: false, description: 'End date (ISO format)' })
-  @ApiQuery({ name: 'compareWithPrevious', required: false, type: Boolean, description: 'Compare with previous period' })
-  @ApiResponse({ status: 200, description: 'Dashboard data retrieved successfully', type: Object })
+  @ApiQuery({ name: 'period', enum: PeriodType, required: false, description: 'الفترة الزمنية للتحليلات' })
+  @ApiQuery({ name: 'startDate', required: false, description: 'تاريخ البداية (صيغة ISO)' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'تاريخ النهاية (صيغة ISO)' })
+  @ApiQuery({ name: 'compareWithPrevious', required: false, type: Boolean, description: 'المقارنة مع الفترة السابقة' })
+  @ApiResponse({ status: 200, description: 'تم استرداد بيانات لوحة التحكم بنجاح', type: Object })
   async getDashboard(@Query() query: AnalyticsQueryDto): Promise<DashboardDataDto> {
     return this.analyticsService.getDashboardData(query);
   }
 
   @Get('overview')
   @ApiOperation({
-    summary: 'Get overview metrics',
-    description: 'Retrieve key performance indicators and overview statistics'
+    summary: 'الحصول على مقاييس النظرة العامة',
+    description: 'استرداد مؤشرات الأداء الرئيسية وإحصائيات النظرة العامة'
   })
   @ApiQuery({ name: 'period', enum: PeriodType, required: false })
-  @ApiResponse({ status: 200, description: 'Overview metrics retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'تم استرداد مقاييس النظرة العامة بنجاح' })
   async getOverview(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return {
-      overview: dashboard.overview,
-      kpis: dashboard.kpis,
-      period: query.period || PeriodType.MONTHLY,
-    };
+    return dashboard.overview;
   }
 
   @Get('revenue')
   @ApiOperation({
-    summary: 'Get revenue analytics',
-    description: 'Detailed revenue analysis with trends and breakdowns'
+    summary: 'الحصول على تحليلات الإيرادات',
+    description: 'تحليل مفصل للإيرادات مع الاتجاهات والتفصيلات'
   })
   @ApiQuery({ name: 'period', enum: PeriodType, required: false })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
-  @ApiResponse({ status: 200, description: 'Revenue analytics retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'تم استرداد تحليلات الإيرادات بنجاح' })
   async getRevenueAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return {
-      data: dashboard.revenueCharts,
-      period: query.period || PeriodType.MONTHLY,
-    };
+    return dashboard.revenueCharts;
   }
 
   @Get('users')
   @ApiOperation({
-    summary: 'Get user analytics',
-    description: 'User registration trends, demographics, and engagement metrics'
+    summary: 'الحصول على تحليلات المستخدمين',
+    description: 'اتجاهات تسجيل المستخدمين والتركيبة السكانية ومقاييس التفاعل'
   })
   @ApiQuery({ name: 'period', enum: PeriodType, required: false })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
-  @ApiResponse({ status: 200, description: 'User analytics retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'تم استرداد تحليلات المستخدمين بنجاح' })
   async getUserAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return {
-      data: dashboard.userCharts,
-      period: query.period || PeriodType.MONTHLY,
-    };
+    return dashboard.userCharts;
   }
 
   @Get('products')
   @ApiOperation({
-    summary: 'Get product analytics',
-    description: 'Product performance, sales trends, and inventory analytics'
+    summary: 'الحصول على تحليلات المنتجات',
+    description: 'أداء المنتجات واتجاهات المبيعات وتحليلات المخزون'
   })
   @ApiQuery({ name: 'period', enum: PeriodType, required: false })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
-  @ApiResponse({ status: 200, description: 'Product analytics retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'تم استرداد تحليلات المنتجات بنجاح' })
   async getProductAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return {
-      data: dashboard.productCharts,
-      period: query.period || PeriodType.MONTHLY,
-    };
+    return dashboard.productCharts;
   }
 
   @Get('services')
   @ApiOperation({
-    summary: 'Get service analytics',
-    description: 'Service request trends, engineer performance, and completion metrics'
+    summary: 'الحصول على تحليلات الخدمات',
+    description: 'اتجاهات طلبات الخدمات وأداء المهندسين ومقاييس الإنجاز'
   })
   @ApiQuery({ name: 'period', enum: PeriodType, required: false })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
-  @ApiResponse({ status: 200, description: 'Service analytics retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'تم استرداد تحليلات الخدمات بنجاح' })
   async getServiceAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return {
-      data: dashboard.serviceCharts,
-      period: query.period || PeriodType.MONTHLY,
-    };
+    return dashboard.serviceCharts;
   }
 
   @Get('support')
   @ApiOperation({
-    summary: 'Get support analytics',
-    description: 'Support ticket trends, resolution times, and customer satisfaction'
+    summary: 'الحصول على تحليلات الدعم',
+    description: 'اتجاهات تذاكر الدعم وأوقات الحل ورضا العملاء'
   })
   @ApiQuery({ name: 'period', enum: PeriodType, required: false })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
-  @ApiResponse({ status: 200, description: 'Support analytics retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'تم استرداد تحليلات الدعم بنجاح' })
   async getSupportAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return {
-      data: dashboard.supportCharts,
-      period: query.period || PeriodType.MONTHLY,
-    };
+    return dashboard.supportCharts;
   }
 
   @Get('performance')
   @ApiOperation({
-    summary: 'Get system performance metrics',
-    description: 'API response times, error rates, uptime, and system health'
+    summary: 'الحصول على مقاييس أداء النظام',
+    description: 'أوقات استجابة API ومعدلات الأخطاء ووقت التشغيل وصحة النظام'
   })
-  @ApiResponse({ status: 200, description: 'Performance metrics retrieved successfully', type: PerformanceMetricsDto })
+  @ApiResponse({ status: 200, description: 'تم استرداد مقاييس الأداء بنجاح', type: PerformanceMetricsDto })
   async getPerformanceMetrics(): Promise<PerformanceMetricsDto> {
     // Get performance metrics from analytics service
     const metrics = await this.analyticsService.getPerformanceMetrics();
@@ -176,11 +157,11 @@ export class AnalyticsController {
 
   @Post('reports/generate')
   @ApiOperation({
-    summary: 'Generate custom report',
-    description: 'Generate a custom analytics report in specified formats'
+    summary: 'إنشاء تقرير مخصص',
+    description: 'إنشاء تقرير تحليلات مخصص بالصيغ المحددة'
   })
   @ApiBody({ type: ReportGenerationDto })
-  @ApiResponse({ status: 201, description: 'Report generated successfully', type: AnalyticsReportDto })
+  @ApiResponse({ status: 201, description: 'تم إنشاء التقرير بنجاح', type: AnalyticsReportDto })
   async generateReport(
     @Body() dto: ReportGenerationDto,
   ): Promise<AnalyticsReportDto> {
@@ -212,11 +193,11 @@ export class AnalyticsController {
 
   @Get('reports/:id')
   @ApiOperation({
-    summary: 'Get report by ID',
-    description: 'Retrieve a previously generated report'
+    summary: 'الحصول على تقرير بالمعرف',
+    description: 'استرداد تقرير تم إنشاؤه سابقاً'
   })
-  @ApiParam({ name: 'id', description: 'Report ID' })
-  @ApiResponse({ status: 200, description: 'Report retrieved successfully', type: AnalyticsReportDto })
+  @ApiParam({ name: 'id', description: 'معرف التقرير' })
+  @ApiResponse({ status: 200, description: 'تم استرداد التقرير بنجاح', type: AnalyticsReportDto })
   async getReport(@Param('id') id: string): Promise<AnalyticsReportDto> {
     // Mock implementation - would retrieve from database
     const dashboard = await this.analyticsService.getDashboardData();
@@ -234,45 +215,42 @@ export class AnalyticsController {
 
   @Post('reports/schedule')
   @ApiOperation({
-    summary: 'Schedule automated report',
-    description: 'Create a scheduled report that runs automatically'
+    summary: 'جدولة تقرير تلقائي',
+    description: 'إنشاء تقرير مجدول يعمل تلقائياً'
   })
   @ApiBody({ type: CreateReportScheduleDto })
-  @ApiResponse({ status: 201, description: 'Report schedule created successfully' })
+  @ApiResponse({ status: 201, description: 'تم إنشاء جدولة التقرير بنجاح' })
   async scheduleReport(
     @Body() dto: CreateReportScheduleDto, // eslint-disable-line @typescript-eslint/no-unused-vars
   ) {
     // Implementation would create a scheduled report
     return {
-      message: 'Report scheduled successfully',
       scheduleId: `schedule_${Date.now()}`,
+      message: 'Report scheduled successfully',
     };
   }
 
   @Get('kpis')
   @ApiOperation({
-    summary: 'Get KPI metrics',
-    description: 'Retrieve key performance indicators'
+    summary: 'الحصول على مقاييس KPI',
+    description: 'استرداد مؤشرات الأداء الرئيسية'
   })
   @ApiQuery({ name: 'period', enum: PeriodType, required: false })
-  @ApiResponse({ status: 200, description: 'KPIs retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'تم استرداد مؤشرات الأداء الرئيسية بنجاح' })
   async getKPIs(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return {
-      data: dashboard.kpis,
-      period: query.period || PeriodType.MONTHLY,
-    };
+    return dashboard.kpis;
   }
 
   @Get('trends/:metric')
   @ApiOperation({
-    summary: 'Get metric trends',
-    description: 'Retrieve trend data for specific metrics over time'
+    summary: 'الحصول على اتجاهات المقياس',
+    description: 'استرداد بيانات الاتجاهات لمقاييس محددة عبر الزمن'
   })
-  @ApiParam({ name: 'metric', description: 'Metric name (revenue, users, orders, etc.)' })
+  @ApiParam({ name: 'metric', description: 'اسم المقياس (الإيرادات، المستخدمين، الطلبات، إلخ)' })
   @ApiQuery({ name: 'period', enum: PeriodType, required: false })
-  @ApiQuery({ name: 'days', required: false, type: Number, description: 'Number of days to look back' })
-  @ApiResponse({ status: 200, description: 'Metric trends retrieved successfully' })
+  @ApiQuery({ name: 'days', required: false, type: Number, description: 'عدد الأيام للبحث للخلف' })
+  @ApiResponse({ status: 200, description: 'تم استرداد اتجاهات المقياس بنجاح' })
   async getMetricTrends(
     @Param('metric') metric: string,
     @Query('period') period?: PeriodType,
@@ -305,23 +283,19 @@ export class AnalyticsController {
       };
     });
 
-    return {
-      metric,
-      period: period || PeriodType.DAILY,
-      data: trends,
-    };
+    return trends;
   }
 
   @Get('comparison')
   @ApiOperation({
-    summary: 'Compare periods',
-    description: 'Compare analytics between two different periods'
+    summary: 'مقارنة الفترات',
+    description: 'مقارنة التحليلات بين فترتين مختلفتين'
   })
-  @ApiQuery({ name: 'currentStart', required: true, description: 'Current period start date' })
-  @ApiQuery({ name: 'currentEnd', required: true, description: 'Current period end date' })
-  @ApiQuery({ name: 'previousStart', required: true, description: 'Previous period start date' })
-  @ApiQuery({ name: 'previousEnd', required: true, description: 'Previous period end date' })
-  @ApiResponse({ status: 200, description: 'Period comparison retrieved successfully' })
+  @ApiQuery({ name: 'currentStart', required: true, description: 'تاريخ بداية الفترة الحالية' })
+  @ApiQuery({ name: 'currentEnd', required: true, description: 'تاريخ نهاية الفترة الحالية' })
+  @ApiQuery({ name: 'previousStart', required: true, description: 'تاريخ بداية الفترة السابقة' })
+  @ApiQuery({ name: 'previousEnd', required: true, description: 'تاريخ نهاية الفترة السابقة' })
+  @ApiResponse({ status: 200, description: 'تم استرداد مقارنة الفترات بنجاح' })
   async comparePeriods(
     @Query('currentStart') currentStart: string,
     @Query('currentEnd') currentEnd: string,
@@ -362,18 +336,18 @@ export class AnalyticsController {
       previousPeriod: `${previousStart} to ${previousEnd}`,
     };
 
-    return { data: comparison };
+    return comparison;
   }
 
   @Get('export/:format')
   @ApiOperation({
-    summary: 'Export analytics data',
-    description: 'Export analytics data in various formats'
+    summary: 'تصدير بيانات التحليلات',
+    description: 'تصدير بيانات التحليلات بصيغ مختلفة'
   })
-  @ApiParam({ name: 'format', enum: ['csv', 'json', 'xlsx'], description: 'Export format' })
-  @ApiQuery({ name: 'type', required: true, description: 'Data type to export (users, orders, revenue, etc.)' })
+  @ApiParam({ name: 'format', enum: ['csv', 'json', 'xlsx'], description: 'صيغة التصدير' })
+  @ApiQuery({ name: 'type', required: true, description: 'نوع البيانات المراد تصديرها (المستخدمين، الطلبات، الإيرادات، إلخ)' })
   @ApiQuery({ name: 'period', enum: PeriodType, required: false })
-  @ApiResponse({ status: 200, description: 'Export file URL returned' })
+  @ApiResponse({ status: 200, description: 'تم إرجاع رابط ملف التصدير' })
   async exportData(
     @Param('format') format: string,
     @Query('type') type: string,
@@ -383,27 +357,27 @@ export class AnalyticsController {
     const fileUrl = `https://cdn.example.com/exports/${type}_${Date.now()}.${format}`;
 
     return {
-      message: 'Export generated successfully',
       fileUrl,
       format,
       type,
       generatedAt: new Date(),
+      message: 'Export generated successfully',
     };
   }
 
   @Post('refresh')
   @ApiOperation({
-    summary: 'Refresh analytics data',
-    description: 'Force refresh of analytics snapshots and calculations'
+    summary: 'تحديث بيانات التحليلات',
+    description: 'إجبار تحديث لقطات التحليلات وحساباتها'
   })
-  @ApiResponse({ status: 200, description: 'Analytics data refreshed successfully' })
+  @ApiResponse({ status: 200, description: 'تم تحديث بيانات التحليلات بنجاح' })
   async refreshAnalytics() {
     // Trigger analytics recalculation
     await this.analyticsService.refreshAnalytics();
 
     return {
-      message: 'Analytics data refreshed successfully',
       refreshedAt: new Date(),
+      message: 'Analytics data refreshed successfully',
     };
   }
 }

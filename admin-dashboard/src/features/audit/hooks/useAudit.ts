@@ -1,15 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { auditApi } from '../api/auditApi';
-import {
-  AuditLog,
-  AuditLogsResponse,
-  AuditStatsResponse,
-  AuditLogFilters,
-  AuditAction,
-  AuditResource,
-} from '../types/audit.types';
+import { AuditLogFilters } from '../types/audit.types';
+import toast from 'react-hot-toast';
 
 // Query keys
 export const AUDIT_QUERY_KEYS = {
@@ -45,11 +38,11 @@ export const useAuditLogs = (filters: AuditLogFilters = {}) => {
   });
 
   const handlePageChange = useCallback((page: number) => {
-    setPagination(prev => ({ ...prev, page }));
+    setPagination((prev) => ({ ...prev, page }));
   }, []);
 
   const handleLimitChange = useCallback((limit: number) => {
-    setPagination(prev => ({ ...prev, limit, page: 1 }));
+    setPagination((prev) => ({ ...prev, limit, page: 1 }));
   }, []);
 
   return {
@@ -155,7 +148,7 @@ export const useAuditExport = () => {
     try {
       setIsExporting(true);
       const blob = await auditApi.exportAuditLogs(filters);
-      
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -165,11 +158,15 @@ export const useAuditExport = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
-      toast.success('تم تصدير سجلات التدقيق بنجاح');
+
+      toast.success('تم تصدير سجلات التدقيق بنجاح', {
+        duration: 3000,
+      });
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('فشل في تصدير سجلات التدقيق');
+      toast.error('فشل في تصدير سجلات التدقيق', {
+        duration: 3000,
+      });
     } finally {
       setIsExporting(false);
     }
@@ -190,12 +187,12 @@ export const useAuditFilters = () => {
   }>({});
 
   const updateFilters = useCallback((newFilters: Partial<AuditLogFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   }, []);
 
   const updateDateRange = useCallback((startDate?: string, endDate?: string) => {
     setDateRange({ startDate, endDate });
-    setFilters(prev => ({ ...prev, startDate, endDate }));
+    setFilters((prev) => ({ ...prev, startDate, endDate }));
   }, []);
 
   const clearFilters = useCallback(() => {

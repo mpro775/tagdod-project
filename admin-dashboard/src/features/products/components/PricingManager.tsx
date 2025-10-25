@@ -14,7 +14,6 @@ import {
   IconButton,
   Tooltip,
   Alert,
-  CircularProgress,
   Divider,
   Grid,
 } from '@mui/material';
@@ -27,32 +26,27 @@ import {
   TrendingDown,
   RemoveRedEye,
 } from '@mui/icons-material';
-import { useVariantPrice, useProductPrices, useProductPriceRange } from '../hooks/useProducts';
+import { useVariantPrice, useProductPriceRange } from '../hooks/useProducts';
 import { useSimpleCurrency } from '@/shared/hooks/useSimpleCurrency';
 import type { Variant } from '../types/product.types';
 
 interface PricingManagerProps {
   variant: Variant;
   productId?: string;
-  onPriceUpdate?: (variant: Variant) => void;
 }
 
 export const PricingManager: React.FC<PricingManagerProps> = ({
   variant,
   productId,
-  onPriceUpdate,
 }) => {
   const [open, setOpen] = useState(false);
   const [price, setPrice] = useState(variant.price.toString());
-  const [compareAtPrice, setCompareAtPrice] = useState(
-    variant.compareAtPrice?.toString() || ''
-  );
+  const [compareAtPrice, setCompareAtPrice] = useState(variant.compareAtPrice?.toString() || '');
   const [costPrice, setCostPrice] = useState(variant.costPrice?.toString() || '');
 
-  const { currency } = useSimpleCurrency();
-  const { data: priceInfo, isLoading: loadingPrice } = useVariantPrice(variant._id, currency);
-  const { data: productPrices } = useProductPrices(productId || '', currency);
-  const { data: priceRange } = useProductPriceRange(productId || '', currency);
+  const { selectedCurrency } = useSimpleCurrency();
+  const { data: priceInfo, isLoading: loadingPrice } = useVariantPrice(variant._id, selectedCurrency);
+  const { data: priceRange } = useProductPriceRange(productId || '', selectedCurrency);
 
   const handleUpdatePrice = () => {
     // This would typically call an API to update the price
@@ -156,12 +150,7 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
           </Box>
         )}
 
-        <Button
-          variant="contained"
-          startIcon={<Edit />}
-          onClick={() => setOpen(true)}
-          fullWidth
-        >
+        <Button variant="contained" startIcon={<Edit />} onClick={() => setOpen(true)} fullWidth>
           تحديث الأسعار
         </Button>
       </CardContent>
@@ -176,7 +165,7 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
             </Alert>
 
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="السعر الأساسي *"
@@ -188,7 +177,7 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="السعر الأصلي (للعرض)"
@@ -200,7 +189,7 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="سعر التكلفة"
@@ -217,12 +206,17 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
               <Alert severity="info">
                 {compareAtPrice && Number(compareAtPrice) > Number(price) && (
                   <Box>
-                    خصم: {Math.round(((Number(compareAtPrice) - Number(price)) / Number(compareAtPrice)) * 100)}%
+                    خصم:{' '}
+                    {Math.round(
+                      ((Number(compareAtPrice) - Number(price)) / Number(compareAtPrice)) * 100
+                    )}
+                    %
                   </Box>
                 )}
                 {costPrice && Number(costPrice) > 0 && (
                   <Box>
-                    هامش الربح: {Math.round(((Number(price) - Number(costPrice)) / Number(costPrice)) * 100)}%
+                    هامش الربح:{' '}
+                    {Math.round(((Number(price) - Number(costPrice)) / Number(costPrice)) * 100)}%
                   </Box>
                 )}
               </Alert>

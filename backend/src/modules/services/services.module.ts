@@ -13,6 +13,7 @@ import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabi
 import { EngineerGuard } from '../../shared/guards/engineer.guard';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
+import { AddressesModule } from '../addresses/addresses.module';
 import { SharedModule } from '../../shared/shared.module';
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SharedModule } from '../../shared/shared.module';
     ]),
     AuthModule,
     NotificationsCompleteModule,
+    AddressesModule,
     SharedModule,
   ],
   controllers: [CustomerServicesController, EngineerServicesController, AdminServicesController],

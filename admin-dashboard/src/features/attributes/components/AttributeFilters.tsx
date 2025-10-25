@@ -15,7 +15,7 @@ import {
   Stack,
 } from '@mui/material';
 import { Search, FilterList, Clear, ExpandMore, ExpandLess } from '@mui/icons-material';
-import type { AttributeType, ListAttributesParams } from '../types/attribute.types';
+import type { ListAttributesParams } from '../types/attribute.types';
 
 interface AttributeFiltersProps {
   onFiltersChange: (filters: ListAttributesParams) => void;

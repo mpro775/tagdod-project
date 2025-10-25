@@ -268,11 +268,16 @@ export interface RealTimeMetrics {
   todayAbandonedCarts: number;
   lowStockAlerts: number;
   pendingSupportTickets: number;
+  cpuUsage: number;
+  memoryUsage: number;
+  diskUsage: number;
+  activeConnections: number;
   systemHealth: {
     status: 'healthy' | 'warning' | 'critical';
     apiResponseTime: number;
     errorRate: number;
     uptime: number;
+    diskUsage: number;
   };
   lastUpdated: Date;
 }

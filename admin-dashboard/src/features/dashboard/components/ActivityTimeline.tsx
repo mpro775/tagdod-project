@@ -33,8 +33,7 @@ interface ActivityTimelineProps {
 
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ 
   recentOrders,
-  // eslint-disable-next-line no-unused-vars
-  isLoading 
+
 }) => {
   const theme = useTheme();
 

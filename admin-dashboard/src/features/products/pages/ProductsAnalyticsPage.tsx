@@ -24,9 +24,7 @@ import {
 import {
   ArrowBack,
   TrendingUp,
-  TrendingDown,
   Inventory,
-  AttachMoney,
   Star,
   NewReleases,
   Refresh,
@@ -39,8 +37,6 @@ import {
   useLowStockVariants,
   useOutOfStockVariants,
 } from '../hooks/useProducts';
-import { formatDate } from '@/shared/utils/formatters';
-import type { Variant } from '../types/product.types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -73,7 +69,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
   const { data: lowStockVariants } = useLowStockVariants();
   const { data: outOfStockVariants } = useOutOfStockVariants();
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
@@ -98,29 +94,17 @@ export const ProductsAnalyticsPage: React.FC = () => {
     <Box>
       {/* Header */}
       <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBack />}
-          onClick={() => navigate('/products')}
-        >
+        <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate('/products')}>
           العودة للمنتجات
         </Button>
         <Typography variant="h4" component="h1">
           إحصائيات المنتجات
         </Typography>
         <Box ml="auto" display="flex" gap={1}>
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-          >
+          <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh}>
             تحديث
           </Button>
-          <Button
-            variant="contained"
-            startIcon={<Download />}
-            onClick={handleExportData}
-          >
+          <Button variant="contained" startIcon={<Download />} onClick={handleExportData}>
             تصدير البيانات
           </Button>
         </Box>
@@ -128,7 +112,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
 
       {/* Overview Cards */}
       <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
@@ -146,7 +130,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
@@ -164,7 +148,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
@@ -182,7 +166,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={2}>
@@ -203,7 +187,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
 
       {/* Detailed Stats */}
       <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -236,7 +220,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -341,9 +325,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
               </Table>
             </TableContainer>
           ) : (
-            <Alert severity="success">
-              لا توجد منتجات بمخزون منخفض حالياً
-            </Alert>
+            <Alert severity="success">لا توجد منتجات بمخزون منخفض حالياً</Alert>
           )}
         </TabPanel>
 
@@ -387,9 +369,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
               </Table>
             </TableContainer>
           ) : (
-            <Alert severity="success">
-              جميع المنتجات متوفرة في المخزون
-            </Alert>
+            <Alert severity="success">جميع المنتجات متوفرة في المخزون</Alert>
           )}
         </TabPanel>
       </Card>

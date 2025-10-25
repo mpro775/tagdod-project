@@ -33,11 +33,11 @@ import {
   PieChart,
   ShowChart,
 } from '@mui/icons-material';
-import { 
-  useRequestsStatistics, 
-  useEngineersStatistics, 
-  useServiceTypesStatistics, 
-  useRevenueStatistics 
+import {
+  useRequestsStatistics,
+  useEngineersStatistics,
+  useServiceTypesStatistics,
+  useRevenueStatistics,
 } from '../hooks/useServices';
 
 interface TabPanelProps {
@@ -57,11 +57,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`analytics-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 }
@@ -74,7 +70,7 @@ const AnalyticsSkeleton: React.FC = () => (
     </Typography>
     <Grid container spacing={3}>
       {[1, 2, 3, 4].map((i) => (
-        <Grid key={i} item xs={12} sm={6} md={3}>
+        <Grid key={i} component="div" size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Skeleton variant="text" width="60%" />
@@ -96,24 +92,40 @@ export const ServicesAnalyticsPage: React.FC = () => {
     groupBy: 'day' as 'day' | 'week' | 'month',
   });
 
-  const { data: requestsStats, isLoading: requestsLoading, error: requestsError } = useRequestsStatistics({
+  const {
+    data: requestsStats,
+    isLoading: requestsLoading,
+    error: requestsError,
+  } = useRequestsStatistics({
     dateFrom: dateRange.dateFrom,
     dateTo: dateRange.dateTo,
     groupBy: dateRange.groupBy,
   });
 
-  const { data: engineersStats, isLoading: engineersLoading, error: engineersError } = useEngineersStatistics({
+  const {
+    data: engineersStats,
+    isLoading: engineersLoading,
+    error: engineersError,
+  } = useEngineersStatistics({
     dateFrom: dateRange.dateFrom,
     dateTo: dateRange.dateTo,
     limit: 10,
   });
 
-  const { data: serviceTypesStats, isLoading: serviceTypesLoading, error: serviceTypesError } = useServiceTypesStatistics({
+  const {
+    data: serviceTypesStats,
+    isLoading: serviceTypesLoading,
+    error: serviceTypesError,
+  } = useServiceTypesStatistics({
     dateFrom: dateRange.dateFrom,
     dateTo: dateRange.dateTo,
   });
 
-  const { data: revenueStats, isLoading: revenueLoading, error: revenueError } = useRevenueStatistics({
+  const {
+    data: revenueStats,
+    isLoading: revenueLoading,
+    error: revenueError,
+  } = useRevenueStatistics({
     dateFrom: dateRange.dateFrom,
     dateTo: dateRange.dateTo,
     groupBy: dateRange.groupBy,
@@ -124,7 +136,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
   };
 
   const handleDateRangeChange = (key: string, value: any) => {
-    setDateRange(prev => ({ ...prev, [key]: value }));
+    setDateRange((prev) => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -138,7 +150,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
             تحليلات شاملة لأداء النظام والخدمات
           </Typography>
         </Box>
-        
+
         <Stack direction="row" spacing={1}>
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>الفترة الزمنية</InputLabel>
@@ -152,20 +164,12 @@ export const ServicesAnalyticsPage: React.FC = () => {
               <MenuItem value="month">شهري</MenuItem>
             </Select>
           </FormControl>
-          
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            size="small"
-          >
+
+          <Button variant="outlined" startIcon={<Refresh />} size="small">
             تحديث
           </Button>
-          
-          <Button
-            variant="contained"
-            startIcon={<Download />}
-            size="small"
-          >
+
+          <Button variant="contained" startIcon={<Download />} size="small">
             تصدير التقرير
           </Button>
         </Stack>
@@ -174,9 +178,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
       {/* فلاتر التاريخ */}
       <Paper sx={{ mb: 3, p: 2 }}>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Typography variant="h6">
-            فلترة التاريخ
-          </Typography>
+          <Typography variant="h6">فلترة التاريخ</Typography>
           <Chip
             icon={<FilterList />}
             label="فلاتر نشطة"
@@ -186,7 +188,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
           />
         </Box>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth>
               <InputLabel>من تاريخ</InputLabel>
               <Select
@@ -201,8 +203,8 @@ export const ServicesAnalyticsPage: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
+
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth>
               <InputLabel>إلى تاريخ</InputLabel>
               <Select
@@ -215,8 +217,8 @@ export const ServicesAnalyticsPage: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
+
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth>
               <InputLabel>تجميع البيانات</InputLabel>
               <Select
@@ -230,14 +232,9 @@ export const ServicesAnalyticsPage: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Button
-              variant="contained"
-              startIcon={<FilterList />}
-              fullWidth
-              size="large"
-            >
+
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Button variant="contained" startIcon={<FilterList />} fullWidth size="large">
               تطبيق الفلاتر
             </Button>
           </Grid>
@@ -247,8 +244,8 @@ export const ServicesAnalyticsPage: React.FC = () => {
       {/* التبويبات */}
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs 
-            value={activeTab} 
+          <Tabs
+            value={activeTab}
             onChange={handleTabChange}
             variant="fullWidth"
             sx={{
@@ -257,38 +254,20 @@ export const ServicesAnalyticsPage: React.FC = () => {
                 textTransform: 'none',
                 fontSize: '0.9rem',
                 fontWeight: 500,
-              }
+              },
             }}
           >
-            <Tab 
-              icon={<Timeline />} 
-              label="اتجاهات الطلبات" 
-              iconPosition="start"
-            />
-            <Tab 
-              icon={<TrendingUp />} 
-              label="أداء المهندسين" 
-              iconPosition="start"
-            />
-            <Tab 
-              icon={<Assessment />} 
-              label="أنواع الخدمات" 
-              iconPosition="start"
-            />
-            <Tab 
-              icon={<TrendingDown />} 
-              label="الإيرادات" 
-              iconPosition="start"
-            />
+            <Tab icon={<Timeline />} label="اتجاهات الطلبات" iconPosition="start" />
+            <Tab icon={<TrendingUp />} label="أداء المهندسين" iconPosition="start" />
+            <Tab icon={<Assessment />} label="أنواع الخدمات" iconPosition="start" />
+            <Tab icon={<TrendingDown />} label="الإيرادات" iconPosition="start" />
           </Tabs>
         </Box>
 
         {/* اتجاهات الطلبات */}
         <TabPanel value={activeTab} index={0}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6">
-              اتجاهات الطلبات
-            </Typography>
+            <Typography variant="h6">اتجاهات الطلبات</Typography>
             <Chip
               icon={<BarChart />}
               label={`${Array.isArray(requestsStats) ? requestsStats.length : 0} فترة`}
@@ -296,17 +275,15 @@ export const ServicesAnalyticsPage: React.FC = () => {
               variant="outlined"
             />
           </Box>
-          
+
           {requestsLoading ? (
             <AnalyticsSkeleton />
           ) : requestsError ? (
-            <Alert severity="error">
-              فشل في تحميل بيانات الطلبات: {requestsError.message}
-            </Alert>
+            <Alert severity="error">فشل في تحميل بيانات الطلبات: {requestsError.message}</Alert>
           ) : (
             <Grid container spacing={3}>
               {(Array.isArray(requestsStats) ? requestsStats : [])?.map((stat, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
+                <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={index}>
                   <Card sx={{ height: '100%' }}>
                     <CardContent>
                       <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -317,18 +294,18 @@ export const ServicesAnalyticsPage: React.FC = () => {
                           <Timeline />
                         </Avatar>
                       </Box>
-                      
+
                       <Typography variant="h4" color="primary" sx={{ mb: 1 }}>
                         {stat.total}
                       </Typography>
                       <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
                         إجمالي الطلبات
                       </Typography>
-                      
+
                       <Divider sx={{ mb: 2 }} />
-                      
+
                       <Grid container spacing={2}>
-                        <Grid item xs={6}>
+                        <Grid component="div" size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h6" color="success.main">
                               {stat.completed}
@@ -338,7 +315,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid component="div" size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h6" color="error.main">
                               {stat.cancelled}
@@ -349,7 +326,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                           </Box>
                         </Grid>
                       </Grid>
-                      
+
                       <LinearProgress
                         variant="determinate"
                         value={(stat.completed / stat.total) * 100}
@@ -367,9 +344,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
         {/* أداء المهندسين */}
         <TabPanel value={activeTab} index={1}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6">
-              أفضل المهندسين
-            </Typography>
+            <Typography variant="h6">أفضل المهندسين</Typography>
             <Chip
               icon={<TrendingUp />}
               label={`${Array.isArray(engineersStats) ? engineersStats.length : 0} مهندس`}
@@ -377,17 +352,15 @@ export const ServicesAnalyticsPage: React.FC = () => {
               variant="outlined"
             />
           </Box>
-          
+
           {engineersLoading ? (
             <AnalyticsSkeleton />
           ) : engineersError ? (
-            <Alert severity="error">
-              فشل في تحميل بيانات المهندسين: {engineersError.message}
-            </Alert>
+            <Alert severity="error">فشل في تحميل بيانات المهندسين: {engineersError.message}</Alert>
           ) : (
             <Grid container spacing={3}>
               {(Array.isArray(engineersStats) ? engineersStats : [])?.map((engineer, index) => (
-                <Grid item xs={12} sm={6} md={4} key={engineer.engineerId}>
+                <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={engineer.engineerId}>
                   <Card sx={{ height: '100%', position: 'relative' }}>
                     {index < 3 && (
                       <Chip
@@ -411,9 +384,9 @@ export const ServicesAnalyticsPage: React.FC = () => {
                           </Typography>
                         </Box>
                       </Box>
-                      
+
                       <Grid container spacing={2} mt={1}>
-                        <Grid item xs={6}>
+                        <Grid component="div" size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="primary">
                               {engineer.totalRequests}
@@ -423,7 +396,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid component="div" size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="success.main">
                               {engineer.completionRate.toFixed(1)}%
@@ -433,7 +406,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid component="div" size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="warning.main">
                               {engineer.averageRating.toFixed(1)}
@@ -443,7 +416,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid component="div" size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="info.main">
                               {engineer.totalRevenue.toLocaleString()}
@@ -454,7 +427,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                           </Box>
                         </Grid>
                       </Grid>
-                      
+
                       <LinearProgress
                         variant="determinate"
                         value={engineer.completionRate}
@@ -472,9 +445,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
         {/* أنواع الخدمات */}
         <TabPanel value={activeTab} index={2}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6">
-              إحصائيات أنواع الخدمات
-            </Typography>
+            <Typography variant="h6">إحصائيات أنواع الخدمات</Typography>
             <Chip
               icon={<PieChart />}
               label={`${Array.isArray(serviceTypesStats) ? serviceTypesStats.length : 0} نوع`}
@@ -482,7 +453,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
               variant="outlined"
             />
           </Box>
-          
+
           {serviceTypesLoading ? (
             <AnalyticsSkeleton />
           ) : serviceTypesError ? (
@@ -491,61 +462,72 @@ export const ServicesAnalyticsPage: React.FC = () => {
             </Alert>
           ) : (
             <Grid container spacing={3}>
-              {(Array.isArray(serviceTypesStats) ? serviceTypesStats : [])?.map((serviceType, index) => (
-                <Grid item xs={12} sm={6} md={4} key={serviceType._id || index}>
-                  <Card sx={{ height: '100%' }}>
-                    <CardContent>
-                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                        <Typography variant="h6" color="info.main">
-                          {serviceType._id || 'غير محدد'}
+              {(Array.isArray(serviceTypesStats) ? serviceTypesStats : [])?.map(
+                (serviceType, index) => (
+                  <Grid
+                    component="div"
+                    size={{ xs: 12, sm: 6, md: 4 }}
+                    key={serviceType._id || index}
+                  >
+                    <Card sx={{ height: '100%' }}>
+                      <CardContent>
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          mb={2}
+                        >
+                          <Typography variant="h6" color="info.main">
+                            {serviceType._id || 'غير محدد'}
+                          </Typography>
+                          <Avatar sx={{ bgcolor: 'info.main' }}>
+                            <Assessment />
+                          </Avatar>
+                        </Box>
+
+                        <Typography variant="h4" color="primary" sx={{ mb: 1 }}>
+                          {serviceType.total}
                         </Typography>
-                        <Avatar sx={{ bgcolor: 'info.main' }}>
-                          <Assessment />
-                        </Avatar>
-                      </Box>
-                      
-                      <Typography variant="h4" color="primary" sx={{ mb: 1 }}>
-                        {serviceType.total}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                        إجمالي الطلبات
-                      </Typography>
-                      
-                      <Divider sx={{ mb: 2 }} />
-                      
-                      <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                          <Box textAlign="center">
-                            <Typography variant="h6" color="success.main">
-                              {serviceType.completed}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              مكتمل
-                            </Typography>
-                          </Box>
+                        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                          إجمالي الطلبات
+                        </Typography>
+
+                        <Divider sx={{ mb: 2 }} />
+
+                        <Grid container spacing={2}>
+                          <Grid component="div" size={{ xs: 6 }}>
+                            <Box textAlign="center">
+                              <Typography variant="h6" color="success.main">
+                                {serviceType.completed}
+                              </Typography>
+                              <Typography variant="caption" color="textSecondary">
+                                مكتمل
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid component="div" size={{ xs: 6 }}>
+                            <Box textAlign="center">
+                              <Typography variant="h6" color="info.main">
+                                {serviceType.averageRevenue?.toFixed(0) || 0}
+                              </Typography>
+                              <Typography variant="caption" color="textSecondary">
+                                متوسط السعر
+                              </Typography>
+                            </Box>
+                          </Grid>
                         </Grid>
-                        <Grid item xs={6}>
-                          <Box textAlign="center">
-                            <Typography variant="h6" color="info.main">
-                              {serviceType.averageRevenue?.toFixed(0) || 0}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              متوسط السعر
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      </Grid>
-                      
-                      <LinearProgress
-                        variant="determinate"
-                        value={(serviceType.completed / serviceType.total) * 100}
-                        color="info"
-                        sx={{ mt: 2, height: 6, borderRadius: 3 }}
-                      />
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+
+                        <LinearProgress
+                          variant="determinate"
+                          value={(serviceType.completed / serviceType.total) * 100}
+                          color="info"
+                          sx={{ mt: 2, height: 6, borderRadius: 3 }}
+                        />
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )
+              )}
             </Grid>
           )}
         </TabPanel>
@@ -553,9 +535,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
         {/* الإيرادات */}
         <TabPanel value={activeTab} index={3}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6">
-              اتجاهات الإيرادات
-            </Typography>
+            <Typography variant="h6">اتجاهات الإيرادات</Typography>
             <Chip
               icon={<ShowChart />}
               label={`${Array.isArray(revenueStats) ? revenueStats.length : 0} فترة`}
@@ -563,17 +543,15 @@ export const ServicesAnalyticsPage: React.FC = () => {
               variant="outlined"
             />
           </Box>
-          
+
           {revenueLoading ? (
             <AnalyticsSkeleton />
           ) : revenueError ? (
-            <Alert severity="error">
-              فشل في تحميل بيانات الإيرادات: {revenueError.message}
-            </Alert>
+            <Alert severity="error">فشل في تحميل بيانات الإيرادات: {revenueError.message}</Alert>
           ) : (
             <Grid container spacing={3}>
               {(Array.isArray(revenueStats) ? revenueStats : [])?.map((revenue, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
+                <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={index}>
                   <Card sx={{ height: '100%' }}>
                     <CardContent>
                       <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -584,18 +562,18 @@ export const ServicesAnalyticsPage: React.FC = () => {
                           <ShowChart />
                         </Avatar>
                       </Box>
-                      
+
                       <Typography variant="h4" color="success.main" sx={{ mb: 1 }}>
                         {revenue.totalRevenue.toLocaleString()}
                       </Typography>
                       <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
                         إجمالي الإيرادات
                       </Typography>
-                      
+
                       <Divider sx={{ mb: 2 }} />
-                      
+
                       <Grid container spacing={2}>
-                        <Grid item xs={6}>
+                        <Grid component="div" size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h6" color="primary">
                               {revenue.requestsCount}
@@ -605,7 +583,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid component="div" size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h6" color="info.main">
                               {revenue.averageRevenue?.toFixed(0) || 0}
@@ -616,7 +594,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                           </Box>
                         </Grid>
                       </Grid>
-                      
+
                       <LinearProgress
                         variant="determinate"
                         value={Math.min((revenue.totalRevenue / 100000) * 100, 100)}

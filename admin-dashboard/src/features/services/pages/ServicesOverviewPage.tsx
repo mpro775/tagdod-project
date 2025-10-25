@@ -14,7 +14,7 @@ import {
   Stack,
   Paper,
   Avatar,
-  Badge,
+ 
 } from '@mui/material';
 import {
   TrendingUp,
@@ -113,7 +113,7 @@ export const ServicesOverviewPage: React.FC = () => {
         
         <Grid container spacing={3} sx={{ mb: 3 }}>
           {[1, 2, 3, 4].map((i) => (
-            <Grid key={i} item xs={12} sm={6} md={3}>
+            <Grid key={i} component="div" size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="جاري التحميل..."
                 value=""
@@ -126,7 +126,7 @@ export const ServicesOverviewPage: React.FC = () => {
         </Grid>
         
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid component="div" size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Skeleton variant="text" width="40%" height={32} />
@@ -134,7 +134,7 @@ export const ServicesOverviewPage: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid component="div" size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Skeleton variant="text" width="40%" height={32} />
@@ -199,7 +199,7 @@ export const ServicesOverviewPage: React.FC = () => {
       
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* إحصائيات عامة */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title="إجمالي الطلبات"
             value={formatNumber(stats.totalRequests)}
@@ -210,7 +210,7 @@ export const ServicesOverviewPage: React.FC = () => {
           />
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title="إجمالي العروض"
             value={formatNumber(stats.totalOffers)}
@@ -221,7 +221,7 @@ export const ServicesOverviewPage: React.FC = () => {
           />
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title="المهندسين النشطين"
             value={formatNumber(stats.totalEngineers)}
@@ -232,7 +232,7 @@ export const ServicesOverviewPage: React.FC = () => {
           />
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title="إجمالي الإيرادات"
             value={formatCurrency(stats.totalRevenue)}
@@ -246,7 +246,7 @@ export const ServicesOverviewPage: React.FC = () => {
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* معدلات الإنجاز */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -282,7 +282,7 @@ export const ServicesOverviewPage: React.FC = () => {
         </Grid>
 
         {/* التقييم المتوسط */}
-        <Grid item xs={12} md={6}>
+        <Grid component="div" size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -325,7 +325,7 @@ export const ServicesOverviewPage: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* الطلبات حسب الفترة */}
-        <Grid item xs={12} md={4}>
+        <Grid component="div" size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -346,7 +346,7 @@ export const ServicesOverviewPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid component="div" size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -367,7 +367,7 @@ export const ServicesOverviewPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+          <Grid component="div" size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
@@ -400,7 +400,7 @@ export const ServicesOverviewPage: React.FC = () => {
         </Box>
         <Divider sx={{ mb: 2 }} />
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Box display="flex" alignItems="center" gap={1}>
               <CheckCircle color="success" />
               <Typography variant="body2" color="textSecondary">
@@ -411,7 +411,7 @@ export const ServicesOverviewPage: React.FC = () => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Box display="flex" alignItems="center" gap={1}>
               <Cancel color="error" />
               <Typography variant="body2" color="textSecondary">
@@ -422,7 +422,7 @@ export const ServicesOverviewPage: React.FC = () => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Box display="flex" alignItems="center" gap={1}>
               <Engineering color="primary" />
               <Typography variant="body2" color="textSecondary">
@@ -433,7 +433,7 @@ export const ServicesOverviewPage: React.FC = () => {
               </Typography>
             </Box>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Box display="flex" alignItems="center" gap={1}>
               <AttachMoney color="warning" />
               <Typography variant="body2" color="textSecondary">

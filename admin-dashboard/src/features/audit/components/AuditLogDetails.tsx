@@ -2,36 +2,35 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
-} from '@/shared/components/ui/dialog';
-import { Badge } from '@/shared/components/ui/badge';
-import { Separator } from '@/shared/components/ui/separator';
-import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-} from '@/shared/components/ui/card';
+  Typography,
+  Chip,
+  Box,
+  Grid,
+  Paper,
+  Alert,
+} from '@mui/material';
 import {
-  Clock,
-  User,
-  Shield,
-  AlertTriangle,
-  Key,
-  Database,
-  Monitor,
-  Globe,
-  FileText,
-  Activity,
-} from 'lucide-react';
+  AccessTime as ClockIcon,
+  Person as UserIcon,
+  Security as ShieldIcon,
+  Warning as AlertTriangleIcon,
+  VpnKey as KeyIcon,
+  Storage as DatabaseIcon,
+  Monitor as MonitorIcon,
+  Language as GlobeIcon,
+  Description as FileTextIcon,
+  Timeline as ActivityIcon,
+} from '@mui/icons-material';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
   AuditLog,
   AUDIT_ACTION_LABELS,
   AUDIT_RESOURCE_LABELS,
-  AUDIT_ACTION_COLORS,
   AUDIT_ACTION_SEVERITY,
 } from '../types/audit.types';
 
@@ -41,45 +40,8 @@ interface AuditLogDetailsProps {
   onClose: () => void;
 }
 
-export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({
-  log,
-  isOpen,
-  onClose,
-}) => {
+export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, onClose }) => {
   if (!log) return null;
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return 'destructive';
-      case 'high':
-        return 'secondary';
-      case 'medium':
-        return 'outline';
-      case 'low':
-        return 'default';
-      default:
-        return 'default';
-    }
-  };
-
-  const getActionColor = (action: string) => {
-    const color = AUDIT_ACTION_COLORS[action as keyof typeof AUDIT_ACTION_COLORS];
-    switch (color) {
-      case 'success':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'error':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'warning':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'info':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'primary':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
 
   const formatTimestamp = (timestamp: string) => {
     try {
@@ -99,92 +61,123 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            تفاصيل سجل التدقيق
-          </DialogTitle>
-        </DialogHeader>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        sx: { maxHeight: '90vh' },
+      }}
+    >
+      <DialogContent sx={{ overflow: 'auto' }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ShieldIcon />
+          تفاصيل سجل التدقيق
+        </DialogTitle>
 
-        <div className="space-y-6">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ActivityIcon />
                 المعلومات الأساسية
-              </CardTitle>
+              </Typography>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">الوقت:</span>
-                  </div>
-                  <p className="text-sm">{formatTimestamp(log.timestamp)}</p>
-                </div>
+            <CardContent>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <ClockIcon color="action" />
+                    <Typography variant="body2" fontWeight="medium">
+                      الوقت:
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2">{formatTimestamp(log.timestamp)}</Typography>
+                </Grid>
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Key className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">نوع العملية:</span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={`${getActionColor(log.action)} border`}
-                  >
-                    {AUDIT_ACTION_LABELS[log.action]}
-                  </Badge>
-                </div>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <KeyIcon color="action" />
+                    <Typography variant="body2" fontWeight="medium">
+                      نوع العملية:
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={AUDIT_ACTION_LABELS[log.action]}
+                    color="primary"
+                    variant="outlined"
+                  />
+                </Grid>
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Database className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">نوع المورد:</span>
-                  </div>
-                  <Badge variant="secondary">
-                    {AUDIT_RESOURCE_LABELS[log.resource]}
-                  </Badge>
-                </div>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <DatabaseIcon color="action" />
+                    <Typography variant="body2" fontWeight="medium">
+                      نوع المورد:
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={AUDIT_RESOURCE_LABELS[log.resource]}
+                    color="secondary"
+                    variant="outlined"
+                  />
+                </Grid>
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">مستوى الخطورة:</span>
-                  </div>
-                  <Badge
-                    variant={getSeverityColor(
-                      AUDIT_ACTION_SEVERITY[log.action]
-                    )}
-                  >
-                    {AUDIT_ACTION_SEVERITY[log.action] === 'critical'
-                      ? 'حرج'
-                      : AUDIT_ACTION_SEVERITY[log.action] === 'high'
-                      ? 'عالي'
-                      : AUDIT_ACTION_SEVERITY[log.action] === 'medium'
-                      ? 'متوسط'
-                      : 'منخفض'}
-                  </Badge>
-                </div>
-              </div>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <AlertTriangleIcon color="action" />
+                    <Typography variant="body2" fontWeight="medium">
+                      مستوى الخطورة:
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={
+                      AUDIT_ACTION_SEVERITY[log.action] === 'critical'
+                        ? 'حرج'
+                        : AUDIT_ACTION_SEVERITY[log.action] === 'high'
+                        ? 'عالي'
+                        : AUDIT_ACTION_SEVERITY[log.action] === 'medium'
+                        ? 'متوسط'
+                        : 'منخفض'
+                    }
+                    color={
+                      AUDIT_ACTION_SEVERITY[log.action] === 'critical'
+                        ? 'error'
+                        : AUDIT_ACTION_SEVERITY[log.action] === 'high'
+                        ? 'warning'
+                        : AUDIT_ACTION_SEVERITY[log.action] === 'medium'
+                        ? 'info'
+                        : 'default'
+                    }
+                    variant="filled"
+                  />
+                </Grid>
+              </Grid>
 
               {log.resourceId && (
-                <div className="space-y-2">
-                  <span className="text-sm font-medium">معرف المورد:</span>
-                  <p className="text-sm font-mono bg-muted p-2 rounded">
-                    {log.resourceId}
-                  </p>
-                </div>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                    معرف المورد:
+                  </Typography>
+                  <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
+                    <Typography variant="body2" fontFamily="monospace">
+                      {log.resourceId}
+                    </Typography>
+                  </Paper>
+                </Box>
               )}
 
               {log.reason && (
-                <div className="space-y-2">
-                  <span className="text-sm font-medium">السبب:</span>
-                  <p className="text-sm bg-muted p-2 rounded">{log.reason}</p>
-                </div>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                    السبب:
+                  </Typography>
+                  <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
+                    <Typography variant="body2">{log.reason}</Typography>
+                  </Paper>
+                </Box>
               )}
             </CardContent>
           </Card>
@@ -192,91 +185,107 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({
           {/* User Information */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-4 w-4" />
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <UserIcon />
                 معلومات المستخدم
-              </CardTitle>
+              </Typography>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <span className="text-sm font-medium">المستخدم المتأثر:</span>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">
+            <CardContent>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                    المستخدم المتأثر:
+                  </Typography>
+                  <Box>
+                    <Typography variant="body2" fontWeight="medium">
                       {log.user?.name || 'غير معروف'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
                       {log.user?.email}
-                    </p>
+                    </Typography>
                     {log.user?.phone && (
-                      <p className="text-xs text-muted-foreground">
+                      <Typography variant="caption" color="text.secondary" display="block">
                         {log.user.phone}
-                      </p>
+                      </Typography>
                     )}
-                  </div>
-                </div>
+                  </Box>
+                </Grid>
 
                 {log.performedByUser && (
-                  <div className="space-y-2">
-                    <span className="text-sm font-medium">من قام بالعملية:</span>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                      من قام بالعملية:
+                    </Typography>
+                    <Box>
+                      <Typography variant="body2" fontWeight="medium">
                         {log.performedByUser.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block">
                         {log.performedByUser.email}
-                      </p>
+                      </Typography>
                       {log.performedByUser.phone && (
-                        <p className="text-xs text-muted-foreground">
+                        <Typography variant="caption" color="text.secondary" display="block">
                           {log.performedByUser.phone}
-                        </p>
+                        </Typography>
                       )}
-                    </div>
-                  </div>
+                    </Box>
+                  </Grid>
                 )}
-              </div>
+              </Grid>
             </CardContent>
           </Card>
 
           {/* Technical Information */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Monitor className="h-4 w-4" />
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <MonitorIcon />
                 المعلومات التقنية
-              </CardTitle>
+              </Typography>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent>
+              <Grid container spacing={2}>
                 {log.ipAddress && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">عنوان IP:</span>
-                    </div>
-                    <p className="text-sm font-mono bg-muted p-2 rounded">
-                      {log.ipAddress}
-                    </p>
-                  </div>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <GlobeIcon color="action" />
+                      <Typography variant="body2" fontWeight="medium">
+                        عنوان IP:
+                      </Typography>
+                    </Box>
+                    <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
+                      <Typography variant="body2" fontFamily="monospace">
+                        {log.ipAddress}
+                      </Typography>
+                    </Paper>
+                  </Grid>
                 )}
 
                 {log.sessionId && (
-                  <div className="space-y-2">
-                    <span className="text-sm font-medium">معرف الجلسة:</span>
-                    <p className="text-sm font-mono bg-muted p-2 rounded">
-                      {log.sessionId}
-                    </p>
-                  </div>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                      معرف الجلسة:
+                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
+                      <Typography variant="body2" fontFamily="monospace">
+                        {log.sessionId}
+                      </Typography>
+                    </Paper>
+                  </Grid>
                 )}
-              </div>
+              </Grid>
 
               {log.userAgent && (
-                <div className="space-y-2">
-                  <span className="text-sm font-medium">متصفح المستخدم:</span>
-                  <p className="text-sm bg-muted p-2 rounded break-all">
-                    {log.userAgent}
-                  </p>
-                </div>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                    متصفح المستخدم:
+                  </Typography>
+                  <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
+                    <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+                      {log.userAgent}
+                    </Typography>
+                  </Paper>
+                </Box>
               )}
             </CardContent>
           </Card>
@@ -285,28 +294,36 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({
           {(log.oldValues || log.newValues) && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <FileTextIcon />
                   تغييرات البيانات
-                </CardTitle>
+                </Typography>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 {log.oldValues && (
-                  <div className="space-y-2">
-                    <span className="text-sm font-medium">القيم القديمة:</span>
-                    <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
-                      {formatJsonData(log.oldValues)}
-                    </pre>
-                  </div>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                      القيم القديمة:
+                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: 'grey.100', overflow: 'auto' }}>
+                      <Typography variant="caption" component="pre" fontFamily="monospace">
+                        {formatJsonData(log.oldValues)}
+                      </Typography>
+                    </Paper>
+                  </Box>
                 )}
 
                 {log.newValues && (
-                  <div className="space-y-2">
-                    <span className="text-sm font-medium">القيم الجديدة:</span>
-                    <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
-                      {formatJsonData(log.newValues)}
-                    </pre>
-                  </div>
+                  <Box>
+                    <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                      القيم الجديدة:
+                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: 'grey.100', overflow: 'auto' }}>
+                      <Typography variant="caption" component="pre" fontFamily="monospace">
+                        {formatJsonData(log.newValues)}
+                      </Typography>
+                    </Paper>
+                  </Box>
                 )}
               </CardContent>
             </Card>
@@ -316,34 +333,42 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({
           {log.metadata && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-4 w-4" />
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <DatabaseIcon />
                   البيانات الإضافية
-                </CardTitle>
+                </Typography>
               </CardHeader>
               <CardContent>
-                <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
-                  {formatJsonData(log.metadata)}
-                </pre>
+                <Paper sx={{ p: 2, bgcolor: 'grey.100', overflow: 'auto' }}>
+                  <Typography variant="caption" component="pre" fontFamily="monospace">
+                    {formatJsonData(log.metadata)}
+                  </Typography>
+                </Paper>
               </CardContent>
             </Card>
           )}
 
           {/* Sensitivity Warning */}
           {log.isSensitive && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 text-red-800">
-                  <AlertTriangle className="h-5 w-5" />
-                  <span className="font-medium">تحذير: عملية حساسة</span>
-                </div>
-                <p className="text-sm text-red-700 mt-2">
-                  هذه العملية تحتوي على معلومات حساسة وتتطلب مراجعة إضافية.
-                </p>
-              </CardContent>
-            </Card>
+            <Alert
+              severity="warning"
+              icon={<AlertTriangleIcon />}
+              sx={{
+                border: '1px solid',
+                borderColor: 'error.main',
+                bgcolor: 'error.light',
+                color: 'error.dark',
+              }}
+            >
+              <Typography variant="body2" fontWeight="medium">
+                تحذير: عملية حساسة
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                هذه العملية تحتوي على معلومات حساسة وتتطلب مراجعة إضافية.
+              </Typography>
+            </Alert>
           )}
-        </div>
+        </Box>
       </DialogContent>
     </Dialog>
   );

@@ -14,7 +14,7 @@ import {
   Error as ErrorIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import { User, UserRole, UserStatus } from '../types/user.types';
+import { User, UserRole } from '../types/user.types';
 
 interface ValidationRule {
   field: string;

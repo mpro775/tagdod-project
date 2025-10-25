@@ -30,7 +30,15 @@ interface RequestUser {
 interface AuthenticatedRequest extends ExpressRequest {
   user: RequestUser;
 }
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+  ApiBody
+} from '@nestjs/swagger';
 import { NotificationService } from '../services/notification.service';
 import { 
   CreateNotificationDto, 
@@ -47,7 +55,7 @@ import { Roles } from '../../../shared/decorators/roles.decorator';
 import { UserRole } from '../../users/schemas/user.schema';
 import { AdminGuard } from '../../../shared/guards/admin.guard';
 
-@ApiTags('notifications')
+@ApiTags('الإشعارات')
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -57,123 +65,234 @@ export class UnifiedNotificationController {
   // ===== User Endpoints =====
 
   @Get()
-  @ApiOperation({ summary: 'Get user notifications' })
-  @ApiResponse({ status: 200, description: 'Notifications retrieved successfully' })
+  @ApiOperation({
+    summary: 'الحصول على إشعارات المستخدم',
+    description: 'استرداد قائمة إشعارات المستخدم مع إمكانية التصفح والترقيم'
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'عدد الإشعارات في الصفحة',
+    example: 20
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'عدد الإشعارات التي تم تخطيها',
+    example: 0
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد الإشعارات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            notifications: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', example: 'notif123', description: 'معرف الإشعار' },
+                  title: { type: 'string', example: 'طلب جديد', description: 'عنوان الإشعار' },
+                  message: { type: 'string', example: 'لديك طلب جديد', description: 'محتوى الإشعار' },
+                  type: { type: 'string', example: 'order', description: 'نوع الإشعار' },
+                  isRead: { type: 'boolean', example: false, description: 'حالة القراءة' },
+                  createdAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' }
+                }
+              }
+            },
+            total: { type: 'number', example: 150, description: 'إجمالي عدد الإشعارات' }
+          }
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            page: { type: 'number', example: 1, description: 'رقم الصفحة الحالية' },
+            limit: { type: 'number', example: 20, description: 'عدد العناصر في الصفحة' },
+            total: { type: 'number', example: 150, description: 'إجمالي العناصر' },
+            totalPages: { type: 'number', example: 8, description: 'إجمالي الصفحات' },
+            hasNextPage: { type: 'boolean', example: true, description: 'هل يوجد صفحة تالية' },
+            hasPrevPage: { type: 'boolean', example: false, description: 'هل يوجد صفحة سابقة' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'غير مصرح لك بالوصول'
+  })
   async getUserNotifications(
     @Request() req: AuthenticatedRequest,
     @Query('limit') limit: number = 20,
     @Query('offset') offset: number = 0
-  ): Promise<NotificationListResponseDto> {
-    try {
-      const userId = req.user.id;
-      const result = await this.notificationService.getUserNotifications(userId, limit, offset);
-      
-      return {
-        success: true,
-        data: {
-          notifications: result.notifications,
-          total: result.total
-        },
-        meta: {
-          page: Math.floor(offset / limit) + 1,
-          limit,
-          total: result.total,
-          totalPages: Math.ceil(result.total / limit),
-          hasNextPage: offset + limit < result.total,
-          hasPrevPage: offset > 0
-        }
-      };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to retrieve notifications',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+  ) {
+    const userId = req.user.id;
+    const result = await this.notificationService.getUserNotifications(userId, limit, offset);
+    
+    return {
+      notifications: result.notifications,
+      total: result.total,
+      page: Math.floor(offset / limit) + 1,
+      limit,
+      totalPages: Math.ceil(result.total / limit),
+      hasNextPage: offset + limit < result.total,
+      hasPrevPage: offset > 0
+    };
   }
 
   @Get('unread-count')
-  @ApiOperation({ summary: 'Get unread notifications count' })
-  @ApiResponse({ status: 200, description: 'Unread count retrieved successfully' })
-  async getUnreadCount(@Request() req: AuthenticatedRequest): Promise<NotificationResponseDto> {
-    try {
-      const userId = req.user.id;
-      const count = await this.notificationService.getUnreadCount(userId);
-      
-      return {
-        success: true,
-        data: { unreadCount: count }
-      };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to retrieve unread count',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+  @ApiOperation({
+    summary: 'الحصول على عدد الإشعارات غير المقروءة',
+    description: 'استرداد عدد الإشعارات التي لم يقرأها المستخدم بعد'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد عدد الإشعارات غير المقروءة بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            count: { type: 'number', example: 5, description: 'عدد الإشعارات غير المقروءة' }
+          }
+        }
+      }
     }
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'غير مصرح لك بالوصول'
+  })
+  async getUnreadCount(@Request() req: AuthenticatedRequest) {
+    const userId = req.user.id;
+    const count = await this.notificationService.getUnreadCount(userId);
+    
+    return { unreadCount: count };
   }
 
   @Post('mark-read')
-  @ApiOperation({ summary: 'Mark notifications as read' })
-  @ApiResponse({ status: 200, description: 'Notifications marked as read successfully' })
+  @ApiOperation({
+    summary: 'تحديد الإشعارات كمقروءة',
+    description: 'تحديد إشعارات محددة كمقروءة'
+  })
+  @ApiBody({ type: MarkAsReadDto })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تحديد الإشعارات كمقروءة بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            markedCount: { type: 'number', example: 3, description: 'عدد الإشعارات المحددة كمقروءة' }
+          }
+        },
+        message: { type: 'string', example: '3 notifications marked as read', description: 'رسالة النتيجة' }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'غير مصرح لك بالوصول'
+  })
   async markAsRead(
     @Request() req: AuthenticatedRequest,
     @Body() dto: MarkAsReadDto
-  ): Promise<NotificationResponseDto> {
-    try {
-      const userId = req.user.id;
-      const count = await this.notificationService.markMultipleAsRead(dto, userId);
-      
-      return {
-        success: true,
-        data: { markedCount: count },
-        message: `${count} notifications marked as read`
-      };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to mark notifications as read',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+  ) {
+    const userId = req.user.id;
+    const count = await this.notificationService.markMultipleAsRead(dto, userId);
+    
+    return {
+      markedCount: count,
+      message: `${count} notifications marked as read`
+    };
   }
 
   @Post('mark-all-read')
-  @ApiOperation({ summary: 'Mark all notifications as read' })
-  @ApiResponse({ status: 200, description: 'All notifications marked as read successfully' })
-  async markAllAsRead(@Request() req: AuthenticatedRequest): Promise<NotificationResponseDto> {
-    try {
-      const userId = req.user.id;
-      const count = await this.notificationService.markAllAsRead(userId);
-      
-      return {
-        success: true,
-        data: { markedCount: count },
-        message: `${count} notifications marked as read`
-      };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to mark all notifications as read',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+  @ApiOperation({
+    summary: 'تحديد جميع الإشعارات كمقروءة',
+    description: 'تحديد جميع إشعارات المستخدم كمقروءة'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تحديد جميع الإشعارات كمقروءة بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            markedCount: { type: 'number', example: 15, description: 'عدد الإشعارات المحددة كمقروءة' }
+          }
+        },
+        message: { type: 'string', example: '15 notifications marked as read', description: 'رسالة النتيجة' }
+      }
     }
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'غير مصرح لك بالوصول'
+  })
+  async markAllAsRead(@Request() req: AuthenticatedRequest) {
+    const userId = req.user.id;
+    const count = await this.notificationService.markAllAsRead(userId);
+    
+    return {
+      markedCount: count,
+      message: `${count} notifications marked as read`
+    };
   }
 
   @Get('stats')
-  @ApiOperation({ summary: 'Get user notification statistics' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  async getUserStats(@Request() req: AuthenticatedRequest): Promise<NotificationStatsResponseDto> {
-    try {
-      const userId = req.user.id;
-      const stats = await this.notificationService.getNotificationStats(userId);
-      
-      return {
-        success: true,
-        data: stats
-      };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to retrieve statistics',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+  @ApiOperation({
+    summary: 'الحصول على إحصائيات إشعارات المستخدم',
+    description: 'استرداد إحصائيات مفصلة حول إشعارات المستخدم'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد الإحصائيات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 150, description: 'إجمالي الإشعارات' },
+            unread: { type: 'number', example: 5, description: 'الإشعارات غير المقروءة' },
+            read: { type: 'number', example: 145, description: 'الإشعارات المقروءة' },
+            byType: {
+              type: 'object',
+              properties: {
+                order: { type: 'number', example: 50, description: 'إشعارات الطلبات' },
+                system: { type: 'number', example: 30, description: 'إشعارات النظام' },
+                promotion: { type: 'number', example: 20, description: 'إشعارات العروض' }
+              }
+            }
+          }
+        }
+      }
     }
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'غير مصرح لك بالوصول'
+  })
+  async getUserStats(@Request() req: AuthenticatedRequest) {
+    const userId = req.user.id;
+    const stats = await this.notificationService.getNotificationStats(userId);
+    
+    return stats;
   }
 
   // ===== Admin Endpoints =====
@@ -181,216 +300,220 @@ export class UnifiedNotificationController {
   @Get('admin/list')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Admin: List all notifications' })
-  @ApiResponse({ status: 200, description: 'Notifications listed successfully' })
-  async adminListNotifications(@Query() query: ListNotificationsDto): Promise<NotificationListResponseDto> {
-    try {
-      const result = await this.notificationService.listNotifications(query);
-      
-      return {
-        success: true,
+  @ApiOperation({
+    summary: 'الإدارة: قائمة جميع الإشعارات',
+    description: 'استرداد قائمة بجميع الإشعارات في النظام (للإداريين فقط)'
+  })
+  @ApiQuery({ type: ListNotificationsDto })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد قائمة الإشعارات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
         data: {
-          notifications: result.notifications,
-          total: result.meta.total
+          type: 'object',
+          properties: {
+            notifications: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', example: 'notif123' },
+                  userId: { type: 'string', example: 'user456' },
+                  title: { type: 'string', example: 'طلب جديد' },
+                  message: { type: 'string', example: 'لديك طلب جديد' },
+                  type: { type: 'string', example: 'order' },
+                  isRead: { type: 'boolean', example: false }
+                }
+              }
+            },
+            total: { type: 'number', example: 500 }
+          }
         },
-        meta: result.meta
-      };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to list notifications',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+        meta: { type: 'object', description: 'بيانات الترقيم' }
+      }
     }
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'غير مصرح لك بالوصول إلى هذه البيانات'
+  })
+  async adminListNotifications(@Query() query: ListNotificationsDto) {
+    const result = await this.notificationService.listNotifications(query);
+    
+    return {
+      notifications: result.notifications,
+      total: result.meta.total,
+      meta: result.meta
+    };
   }
 
   @Post('admin/create')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Admin: Create notification' })
-  @ApiResponse({ status: 201, description: 'Notification created successfully' })
+  @ApiOperation({
+    summary: 'الإدارة: إنشاء إشعار',
+    description: 'إنشاء إشعار جديد للمستخدمين (للإداريين فقط)'
+  })
+  @ApiBody({ type: CreateNotificationDto })
+  @ApiResponse({
+    status: 201,
+    description: 'تم إنشاء الإشعار بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'notif123', description: 'معرف الإشعار الجديد' },
+            title: { type: 'string', example: 'إعلان مهم', description: 'عنوان الإشعار' },
+            message: { type: 'string', example: 'رسالة مهمة لجميع المستخدمين', description: 'محتوى الإشعار' },
+            type: { type: 'string', example: 'announcement', description: 'نوع الإشعار' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'بيانات غير صحيحة'
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'غير مصرح لك بإنشاء إشعارات'
+  })
   async adminCreateNotification(
     @Request() req: AuthenticatedRequest,
     @Body() dto: CreateNotificationDto
-  ): Promise<NotificationResponseDto> {
-    try {
-      const userId = req.user.id;
-      const notification = await this.notificationService.createNotification({
-        ...dto,
-        createdBy: userId
-      });
-      
-      return {
-        success: true,
-        data: notification,
-        message: 'Notification created successfully'
-      };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to create notification',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+  ) {
+    const userId = req.user.id;
+    const notification = await this.notificationService.createNotification({
+      ...dto,
+      createdBy: userId
+    });
+    
+    return {
+      notification,
+      message: 'Notification created successfully'
+    };
   }
 
   @Get('admin/:id')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Admin: Get notification by ID' })
+  @ApiOperation({
+    summary: 'الإدارة: الحصول على إشعار بالمعرف',
+    description: 'استرداد إشعار محدد بالمعرف (للإداريين فقط)'
+  })
   @ApiResponse({ status: 200, description: 'Notification retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Notification not found' })
-  async adminGetNotification(@Param('id') id: string): Promise<NotificationResponseDto> {
-    try {
-      const notification = await this.notificationService.getNotificationById(id);
-      
-      return {
-        success: true,
-        data: notification
-      };
-    } catch (error) {
-      if ((error as Error).message === 'NOTIFICATION_NOT_FOUND') {
-        throw new HttpException('Notification not found', HttpStatus.NOT_FOUND);
-      }
-      throw new HttpException(
-        'Failed to retrieve notification',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+  async adminGetNotification(@Param('id') id: string) {
+    const notification = await this.notificationService.getNotificationById(id);
+    
+    if (!notification) {
+      throw new HttpException('Notification not found', HttpStatus.NOT_FOUND);
     }
+    
+    return notification;
   }
 
   @Put('admin/:id')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Admin: Update notification' })
+  @ApiOperation({
+    summary: 'الإدارة: تحديث إشعار',
+    description: 'تحديث إشعار موجود (للإداريين فقط)'
+  })
   @ApiResponse({ status: 200, description: 'Notification updated successfully' })
   @ApiResponse({ status: 404, description: 'Notification not found' })
   async adminUpdateNotification(
     @Param('id') id: string,
     @Body() dto: UpdateNotificationDto
-  ): Promise<NotificationResponseDto> {
-    try {
-      const notification = await this.notificationService.updateNotification(id, dto);
-      
-      return {
-        success: true,
-        data: notification,
-        message: 'Notification updated successfully'
-      };
-    } catch (error) {
-      if ((error as Error).message === 'NOTIFICATION_NOT_FOUND') {
-        throw new HttpException('Notification not found', HttpStatus.NOT_FOUND);
-      }
-      throw new HttpException(
-        'Failed to update notification',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+  ) {
+    const notification = await this.notificationService.updateNotification(id, dto);
+    
+    if (!notification) {
+      throw new HttpException('Notification not found', HttpStatus.NOT_FOUND);
     }
+    
+    return {
+      notification,
+      message: 'Notification updated successfully'
+    };
   }
 
   @Delete('admin/:id')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Admin: Delete notification' })
+  @ApiOperation({
+    summary: 'الإدارة: حذف إشعار',
+    description: 'حذف إشعار من النظام (للإداريين فقط)'
+  })
   @ApiResponse({ status: 200, description: 'Notification deleted successfully' })
   @ApiResponse({ status: 404, description: 'Notification not found' })
-  async adminDeleteNotification(@Param('id') id: string): Promise<NotificationResponseDto> {
-    try {
-      const deleted = await this.notificationService.deleteNotification(id);
-      
-      if (!deleted) {
-        throw new HttpException('Notification not found', HttpStatus.NOT_FOUND);
-      }
-      
-      return {
-        success: true,
-        data: { deleted: true },
-        message: 'Notification deleted successfully'
-      };
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new HttpException(
-        'Failed to delete notification',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+  async adminDeleteNotification(@Param('id') id: string) {
+    const deleted = await this.notificationService.deleteNotification(id);
+    
+    if (!deleted) {
+      throw new HttpException('Notification not found', HttpStatus.NOT_FOUND);
     }
+    
+    return {
+      deleted: true,
+      message: 'Notification deleted successfully'
+    };
   }
 
   @Post('admin/bulk-send')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Admin: Send bulk notifications' })
+  @ApiOperation({
+    summary: 'الإدارة: إرسال إشعارات جماعية',
+    description: 'إرسال إشعارات إلى مجموعة من المستخدمين (للإداريين فقط)'
+  })
   @ApiResponse({ status: 200, description: 'Bulk notifications sent successfully' })
-  async adminBulkSend(@Body() dto: BulkSendNotificationDto): Promise<NotificationResponseDto> {
-    try {
-      const result = await this.notificationService.bulkSendNotifications(dto);
-      
-      return {
-        success: true,
-        data: result,
-        message: `Bulk send completed: ${result.sent} sent, ${result.failed} failed`
-      };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to send bulk notifications',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+  async adminBulkSend(@Body() dto: BulkSendNotificationDto) {
+    const result = await this.notificationService.bulkSendNotifications(dto);
+    
+    return {
+      result,
+      message: `Bulk send completed: ${result.sent} sent, ${result.failed} failed`
+    };
   }
 
   @Get('admin/stats')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Admin: Get notification statistics' })
+  @ApiOperation({
+    summary: 'الإدارة: الحصول على إحصائيات الإشعارات',
+    description: 'استرداد إحصائيات شاملة حول جميع الإشعارات في النظام (للإداريين فقط)'
+  })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  async adminGetStats(@Query('userId') userId?: string): Promise<NotificationStatsResponseDto> {
-    try {
-      const stats = await this.notificationService.getNotificationStats(userId);
-      
-      return {
-        success: true,
-        data: stats
-      };
-    } catch (error) {
-      console.error('Error in adminGetStats:', error);
-      // Return default stats instead of throwing error
-      return {
-        success: true,
-        data: {
-          total: 0,
-          byType: {},
-          byStatus: {},
-          byChannel: {},
-          byCategory: {},
-          unreadCount: 0,
-          readRate: 0,
-          deliveryRate: 0,
-        }
-      };
-    }
+  async adminGetStats(@Query('userId') userId?: string) {
+    const stats = await this.notificationService.getNotificationStats(userId);
+    
+    return stats;
   }
 
   @Post('admin/cleanup')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Admin: Cleanup old notifications' })
+  @ApiOperation({
+    summary: 'الإدارة: تنظيف الإشعارات القديمة',
+    description: 'حذف الإشعارات القديمة والغير مهمة من النظام (للإداريين فقط)'
+  })
   @ApiResponse({ status: 200, description: 'Cleanup completed successfully' })
   async adminCleanup(
     @Query('olderThanDays') olderThanDays: number = 30
-  ): Promise<NotificationResponseDto> {
-    try {
-      const deletedCount = await this.notificationService.deleteOldNotifications(olderThanDays);
-      
-      return {
-        success: true,
-        data: { deletedCount },
-        message: `${deletedCount} old notifications deleted`
-      };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to cleanup notifications',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
-    }
+  ) {
+    const deletedCount = await this.notificationService.deleteOldNotifications(olderThanDays);
+    
+    return {
+      deletedCount,
+      message: `${deletedCount} old notifications deleted`
+    };
   }
 }

@@ -1,121 +1,63 @@
-%% Advanced Support Ticket Flow with SLA Tracking and Analytics
+%% Support Ticket Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[Customer creates ticket] --> B[Select category and priority]
-  B --> C[Describe issue with details]
-  C --> D[Attach files if needed]
-  D --> E[Add metadata and tags]
-  E --> F[Submit ticket]
-  F --> G[System assigns to support agent]
-  G --> H[Set SLA based on priority]
-  H --> I{Agent available?}
-  I -->|No| J[Add to queue with priority]
-  I -->|Yes| K[Agent reviews ticket]
-  
-  %% SLA Tracking
-  J --> J1[Monitor SLA countdown]
-  J1 --> J2{SLA approaching?}
-  J2 -->|Yes| J3[Send SLA warning notification]
-  J2 -->|No| J4[Continue monitoring]
-  J3 --> J5[Escalate if needed]
-  J4 --> J1
-  
-  %% Agent Processing
-  K --> K1[Check SLA status]
-  K1 --> K2{SLA breached?}
-  K2 -->|Yes| K3[Mark as SLA breached]
-  K2 -->|No| K4[Process ticket normally]
-  K3 --> K5[Send escalation notification]
-  K4 --> K6[Agent responds with message]
-  
-  %% Message System
-  K6 --> L[Create support message]
-  L --> L1[Set message type]
-  L1 --> L2{Message type?}
-  L2 -->|User Message| L3[User message]
-  L2 -->|Admin Reply| L4[Admin reply]
-  L2 -->|System Message| L5[System message]
-  
-  L3 --> L6[Send to support team]
-  L4 --> L7[Send to customer]
-  L5 --> L8[Internal notification]
-  
-  %% Response Handling
-  L6 --> M[Support team reviews]
-  L7 --> N[Customer receives response]
-  L8 --> O[Internal processing]
-  
-  M --> M1[Use canned response?]
-  M1 -->|Yes| M2[Apply canned response]
-  M1 -->|No| M3[Write custom response]
-  M2 --> M4[Customize if needed]
-  M3 --> M5[Send response]
-  M4 --> M5
-  
-  %% Customer Satisfaction
-  N --> P{Customer satisfied?}
-  P -->|No| Q[Continue conversation]
-  P -->|Yes| R[Mark as resolved]
-  
-  Q --> Q1[Add follow-up message]
-  Q1 --> Q2[Update ticket status]
-  Q2 --> Q3[Notify support team]
-  Q3 --> K6
-  
-  %% Resolution Process
-  R --> R1[Update ticket status to RESOLVED]
-  R1 --> R2[Set resolved timestamp]
-  R2 --> R3[Calculate resolution time]
-  R3 --> R4[Update SLA metrics]
-  R4 --> R5[Send satisfaction survey]
-  
-  %% Rating System
-  R5 --> S[Customer rates service]
-  S --> S1{Rating provided?}
-  S1 -->|Yes| S2[Save rating and feedback]
-  S1 -->|No| S3[Send reminder]
-  S2 --> S4[Update customer satisfaction metrics]
-  S3 --> S5[Wait for response]
-  S5 --> S1
-  
-  %% Ticket Closure
-  S4 --> T[Close ticket]
-  T --> T1[Set closed timestamp]
-  T1 --> T2[Archive ticket]
-  T2 --> T3[Update analytics]
-  T3 --> T4[Send closure notification]
-  
-  %% Analytics and Reporting
-  U[Analytics System] --> U1[Track response times]
-  U1 --> U2[Track resolution times]
-  U2 --> U3[Track customer satisfaction]
-  U3 --> U4[Track SLA performance]
-  U4 --> U5[Generate performance reports]
-  
-  %% Admin Management
-  V[Admin Management] --> V1[View all tickets]
-  V1 --> V2[Filter by status/priority]
-  V2 --> V3[Assign tickets manually]
-  V3 --> V4[Update ticket properties]
-  V4 --> V5[Monitor team performance]
-  
-  %% Canned Responses
-  W[Canned Responses] --> W1[Create new response]
-  W1 --> W2[Set response category]
-  W2 --> W3[Add response content]
-  W3 --> W4[Save to library]
-  W4 --> W5[Make available to team]
-  
-  %% Archive System
-  X[Archive System] --> X1[Archive resolved tickets]
-  X1 --> X2[Search archived tickets]
-  X2 --> X3[Restore if needed]
-  X3 --> X4[Clean old archives]
-  
-  %% End points
-  T4 --> Z[End]
-  U5 --> Z
-  V5 --> Z
-  W5 --> Z
-  X4 --> Z
+  A[تذكرة دعم جديدة] --> B[استلام البيانات]
+  B --> B1[title, description - مطلوب]
+  B1 --> B2[category, priority - اختياري]
+  B2 --> B3[attachments, metadata - اختياري]
 
+  B3 --> C[إنشاء التذكرة في قاعدة البيانات]
+  C --> C1[status: OPEN]
+  C1 --> C2[userId: معرف العميل]
+  C2 --> C3[assignedTo: null]
+  C3 --> C4[slaHours: 24]
+  C4 --> C5[createdAt, updatedAt]
+
+  C5 --> D[تغيير الحالات]
+  D --> D1[OPEN → IN_PROGRESS]
+  D1 --> D2[IN_PROGRESS → WAITING_FOR_USER]
+  D2 --> D3[WAITING_FOR_USER → IN_PROGRESS]
+  D3 --> D4[IN_PROGRESS → RESOLVED]
+  D4 --> D5[RESOLVED → CLOSED]
+  D5 --> D6[RATED - إكمال اختياري]
+
+  D6 --> E[إضافة الرسائل]
+  E --> E1[USER_MESSAGE - من العميل]
+  E1 --> E2[ADMIN_REPLY - من الأدمن]
+  E2 --> E3[SYSTEM_MESSAGE - تلقائي]
+
+  E3 --> F[تتبع SLA]
+  F --> F1[firstResponseAt - أول رد]
+  F1 --> F2[slaDueDate - تاريخ انتهاء]
+  F2 --> F3[slaBreached - تجاوز SLA]
+
+  F3 --> G[تقييم التذكرة]
+  G --> G1[rating: 1-5]
+  G1 --> G2[feedback - اختياري]
+  G2 --> G3[feedbackAt - تاريخ التقييم]
+
+  G3 --> H[أرشفة التذكرة]
+  H --> H1[isArchived: true]
+  H1 --> H2[حفظ للبحث المستقبلي]
+
+  %% Customer Actions
+  I[إجراءات العميل] --> I1[POST /support/tickets - إنشاء]
+  I1 --> I2[GET /support/tickets/my - عرض]
+  I2 --> I3[GET /support/tickets/:id - تفاصيل]
+  I3 --> I4[POST /support/tickets/:id/messages - رسالة]
+  I4 --> I5[GET /support/tickets/:id/messages - قراءة]
+  I5 --> I6[PUT /support/tickets/:id/archive - أرشفة]
+  I6 --> I7[POST /support/tickets/:id/rate - تقييم]
+
+  %% Admin Actions
+  J[إجراءات الأدمن] --> J1[GET /admin/support/tickets - جميع]
+  J1 --> J2[GET /admin/support/tickets/:id - تفاصيل]
+  J2 --> J3[PATCH /admin/support/tickets/:id - تحديث]
+  J3 --> J4[POST /admin/support/tickets/:id/messages - رد]
+  J4 --> J5[GET /admin/support/stats - إحصائيات]
+  J5 --> J6[GET /admin/support/sla/breached - SLA]
+  J6 --> J7[POST /admin/support/sla/:id/check - فحص SLA]
+
+  %% End points
+  H2 --> K[نهاية - تذكرة مكتملة]
+  D6 --> K

@@ -8,7 +8,6 @@ import {
   Box,
   Stack,
   IconButton,
-  Tooltip,
   Menu,
   MenuItem,
   Avatar,
@@ -17,7 +16,6 @@ import {
   MoreVert,
   Edit,
   Delete,
-  Copy,
   Visibility,
   VisibilityOff,
   ContentCopy,
@@ -53,7 +51,9 @@ const getCategoryLabel = (category: SupportCategory): string => {
   }
 };
 
-const getCategoryColor = (category: SupportCategory): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+const getCategoryColor = (
+  category: SupportCategory
+): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
   switch (category) {
     case SupportCategory.TECHNICAL:
       return 'primary';
@@ -178,13 +178,7 @@ export const CannedResponseCard: React.FC<CannedResponseCardProps> = ({
           {response.tags.length > 0 && (
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {response.tags.slice(0, 3).map((tag, index) => (
-                <Chip
-                  key={index}
-                  label={tag}
-                  size="small"
-                  variant="outlined"
-                  color="secondary"
-                />
+                <Chip key={index} label={tag} size="small" variant="outlined" color="secondary" />
               ))}
               {response.tags.length > 3 && (
                 <Chip
@@ -235,7 +229,7 @@ export const CannedResponseCard: React.FC<CannedResponseCardProps> = ({
           <Edit sx={{ mr: 1 }} />
           تعديل
         </MenuItem>
-        <MenuItem 
+        <MenuItem
           onClick={() => handleAction(() => onDelete?.(response))}
           sx={{ color: 'error.main' }}
         >

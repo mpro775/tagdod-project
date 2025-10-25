@@ -1,12 +1,12 @@
-%% Advanced Favorites Management & Sync Flow
+%% Favorites Management & Sync Flow
 %% View at https://mermaid.live
 flowchart TD
-  A[User interacts with product] --> B{Action?}
-  B -->|Add to Favorites| C[Add to favorites]
-  B -->|Remove from Favorites| D[Remove from favorites]
-  B -->|Update Favorite| E[Update favorite]
-  B -->|User Logs In| F[Sync guest favorites]
-  B -->|View Favorite| G[Increment view count]
+  A[المستخدم يتفاعل مع المنتج] --> B{نوع الإجراء?}
+  B -->|إضافة للمفضلات| C[إضافة للمفضلات]
+  B -->|إزالة من المفضلات| D[إزالة من المفضلات]
+  B -->|تحديث مفضلة| E[تحديث مفضلة]
+  B -->|تسجيل الدخول| F[مزامنة مفضلات الزائر]
+  B -->|عرض مفضلة| G[زيادة عداد المشاهدات]
   
   %% Add to Favorites Flow
   C --> C1{User authenticated?}
@@ -16,10 +16,10 @@ flowchart TD
   C2 --> C4[Check for duplicates]
   C4 --> C5{Already exists?}
   C5 -->|Yes| C6[Update existing favorite]
-  C5 -->|No| C7[Create new favorite with note/tags]
-  C6 --> C8[Save with updated data]
+  C5 -->|No| C7[إنشاء مفضلة جديدة مع ملاحظة]
+  C6 --> C8[حفظ مع البيانات المحدثة]
   C7 --> C8
-  C8 --> C9[Return success response]
+  C8 --> C9[إرجاع رد نجاح]
   
   C3 --> C10[Check for duplicates by deviceId]
   C10 --> C11{Already exists?}
@@ -45,11 +45,11 @@ flowchart TD
   %% Update Favorite Flow
   E --> E1[Find favorite by ID]
   E1 --> E2{Favorite exists?}
-  E2 -->|Yes| E3[Update note and/or tags]
-  E2 -->|No| E4[Return not found error]
-  E3 --> E5[Save updated favorite]
-  E5 --> E6[Return updated favorite]
-  E4 --> E7[End - Not Found]
+  E2 -->|Yes| E3[تحديث الملاحظة]
+  E2 -->|No| E4[إرجاع خطأ غير موجود]
+  E3 --> E5[حفظ المفضلة المحدثة]
+  E5 --> E6[إرجاع المفضلة المحدثة]
+  E4 --> E7[نهاية - غير موجود]
   
   %% View Favorite Flow
   G --> G1[Find favorite by ID]
@@ -77,21 +77,10 @@ flowchart TD
   F13 --> F14[Set syncedAt timestamp]
   F14 --> F15[Return sync statistics]
   
-  %% Analytics and Statistics
-  H[Get Favorites Statistics] --> H1[Count user favorites]
-  H1 --> H2[Count guest favorites]
-  H2 --> H3[Count synced favorites]
-  H3 --> H4[Get most favorited products]
-  H4 --> H5[Get top tags usage]
-  H5 --> H6[Calculate total statistics]
-  H6 --> H7[Return comprehensive stats]
-  
-  %% Search by Tags
-  I[Search by Tags] --> I1[Get user ID]
-  I1 --> I2[Filter favorites by tags]
-  I2 --> I3[Populate product details]
-  I3 --> I4[Sort by creation date]
-  I4 --> I5[Return filtered results]
+  %% Count Favorites
+  H[الحصول على عدد المفضلات] --> H1[عد مفضلات المستخدم]
+  H1 --> H2[عد مفضلات الزائر]
+  H2 --> H3[إرجاع الأعداد]
   
   %% Clear All Favorites
   J[Clear All Favorites] --> J1{User authenticated?}
@@ -103,7 +92,7 @@ flowchart TD
   J5 --> J6
   
   %% End points
-  C9 --> Z[End]
+  C9 --> Z[نهاية]
   C15 --> Z
   D6 --> Z
   D9 --> Z
@@ -111,6 +100,5 @@ flowchart TD
   E7 --> Z
   G5 --> Z
   F15 --> Z
-  H7 --> Z
-  I5 --> Z
+  H3 --> Z
   J6 --> Z

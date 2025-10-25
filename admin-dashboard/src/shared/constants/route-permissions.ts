@@ -91,7 +91,7 @@ export const ROUTE_PERMISSIONS = {
 export const getRoutePermissions = (pathname: string): string[] => {
   // Direct match
   if (ROUTE_PERMISSIONS[pathname as keyof typeof ROUTE_PERMISSIONS]) {
-    return ROUTE_PERMISSIONS[pathname as keyof typeof ROUTE_PERMISSIONS];
+    return Array.from(ROUTE_PERMISSIONS[pathname as keyof typeof ROUTE_PERMISSIONS]);
   }
 
   // Pattern matching for dynamic routes (e.g., /users/:id)
@@ -104,7 +104,7 @@ export const getRoutePermissions = (pathname: string): string[] => {
 
       const regex = new RegExp(`^${regexPattern}$`);
       if (regex.test(pathname)) {
-        return permissions;
+        return Array.from(permissions);
       }
     }
   }

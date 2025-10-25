@@ -12,7 +12,7 @@ import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 
-@ApiTags('audit')
+@ApiTags('التدقيق')
 @ApiBearerAuth()
 @UseGuards(RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -22,12 +22,12 @@ export class AuditController {
 
   @Get('logs')
   @ApiOperation({
-    summary: 'Get audit logs with filtering',
-    description: 'Retrieve audit logs with various filtering options',
+    summary: 'الحصول على سجلات التدقيق مع التصفية',
+    description: 'استرداد سجلات التدقيق مع خيارات التصفية المتنوعة',
   })
   @ApiResponse({
     status: 200,
-    description: 'Audit logs retrieved successfully',
+    description: 'تم استرداد سجلات التدقيق بنجاح',
   })
   async getAuditLogs(
     @Query() query: {
@@ -62,7 +62,7 @@ export class AuditController {
     ]);
 
     return {
-      data: logs,
+      logs,
       meta: {
         total,
         limit: filters.limit,
@@ -74,8 +74,8 @@ export class AuditController {
 
   @Get('stats')
   @ApiOperation({
-    summary: 'Get audit statistics',
-    description: 'Get statistics about audit logs',
+    summary: 'الحصول على إحصائيات التدقيق',
+    description: 'الحصول على إحصائيات حول سجلات التدقيق',
   })
   async getAuditStats(
     @Query() query: {
@@ -126,41 +126,35 @@ export class AuditController {
     ]);
 
     return {
-      data: {
-        totalLogs,
-        sensitiveLogs,
-        permissionChanges,
-        roleChanges,
-        capabilityDecisions,
-        adminActions,
-        authEvents,
-        period: {
-          startDate: startDate?.toISOString(),
-          endDate: endDate?.toISOString(),
-        },
+      totalLogs,
+      sensitiveLogs,
+      permissionChanges,
+      roleChanges,
+      capabilityDecisions,
+      adminActions,
+      authEvents,
+      period: {
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString(),
       },
     };
   }
 
   @Get('actions')
   @ApiOperation({
-    summary: 'Get available audit actions',
-    description: 'Get list of all available audit actions',
+    summary: 'الحصول على إجراءات التدقيق المتاحة',
+    description: 'الحصول على قائمة بجميع إجراءات التدقيق المتاحة',
   })
   getAuditActions() {
-    return {
-      data: Object.values(AuditAction),
-    };
+    return Object.values(AuditAction);
   }
 
   @Get('resources')
   @ApiOperation({
-    summary: 'Get available audit resources',
-    description: 'Get list of all available audit resources',
+    summary: 'الحصول على موارد التدقيق المتاحة',
+    description: 'الحصول على قائمة بجميع موارد التدقيق المتاحة',
   })
   getAuditResources() {
-    return {
-      data: Object.values(AuditResource),
-    };
+    return Object.values(AuditResource);
   }
 }

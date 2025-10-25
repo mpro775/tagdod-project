@@ -29,10 +29,10 @@
   ],
   "item": [
     {
-      "name": "auth",
+      "name": "المصادقة",
       "item": [
         {
-          "name": "Send OTP to phone number",
+          "name": "إرسال رمز OTP إلى رقم الهاتف",
           "request": {
             "method": "POST",
             "header": [
@@ -54,11 +54,11 @@
                 "send-otp"
               ]
             },
-            "description": "Sends a one-time password (OTP) to the specified phone number for authentication"
+            "description": "يرسل كلمة مرور لمرة واحدة (OTP) إلى رقم الهاتف المحدد للمصادقة"
           }
         },
         {
-          "name": "Verify OTP and complete registration/login",
+          "name": "التحقق من رمز OTP وإتمام التسجيل/الدخول",
           "request": {
             "method": "POST",
             "header": [
@@ -80,7 +80,7 @@
                 "verify-otp"
               ]
             },
-            "description": "Verifies the OTP code and completes user registration or login process"
+            "description": "يتحقق من رمز OTP ويتم عملية تسجيل المستخدم أو دخوله"
           }
         },
         {
@@ -188,7 +188,7 @@
           }
         },
         {
-          "name": "Get current user profile",
+          "name": "الحصول على ملف المستخدم الحالي",
           "request": {
             "method": "GET",
             "header": [
@@ -210,7 +210,7 @@
                 "me"
               ]
             },
-            "description": "Retrieves the current authenticated user profile and capabilities"
+            "description": "يسترد ملف المستخدم المصادق عليه الحالي وقدراته"
           }
         },
         {
@@ -372,13 +372,13 @@
           }
         }
       ],
-      "description": "Endpoints for auth functionality"
+      "description": "Endpoints for المصادقة functionality"
     },
     {
-      "name": "favorites-user",
+      "name": "المفضلات-المستخدم",
       "item": [
         {
-          "name": "GET /api/v1/favorites",
+          "name": "الحصول على قائمة المفضلات",
           "request": {
             "method": "GET",
             "header": [
@@ -399,11 +399,11 @@
                 "favorites"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بجميع المنتجات المضافة للمفضلة من قبل المستخدم"
           }
         },
         {
-          "name": "POST /api/v1/favorites",
+          "name": "إضافة منتج للمفضلة",
           "request": {
             "method": "POST",
             "header": [
@@ -424,11 +424,11 @@
                 "favorites"
               ]
             },
-            "description": ""
+            "description": "إضافة منتج أو متغير منتج إلى قائمة المفضلات الخاصة بالمستخدم"
           }
         },
         {
-          "name": "DELETE /api/v1/favorites",
+          "name": "إزالة منتج من المفضلة",
           "request": {
             "method": "DELETE",
             "header": [
@@ -449,11 +449,11 @@
                 "favorites"
               ]
             },
-            "description": ""
+            "description": "إزالة منتج أو متغير منتج من قائمة المفضلات الخاصة بالمستخدم"
           }
         },
         {
-          "name": "PATCH /api/v1/favorites/{id}",
+          "name": "تحديث مفضلة",
           "request": {
             "method": "PATCH",
             "header": [
@@ -475,11 +475,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث ملاحظة أو تفاصيل عنصر في المفضلة"
           }
         },
         {
-          "name": "DELETE /api/v1/favorites/clear/all",
+          "name": "حذف جميع المفضلات",
           "request": {
             "method": "DELETE",
             "header": [
@@ -502,11 +502,11 @@
                 "all"
               ]
             },
-            "description": ""
+            "description": "حذف جميع المنتجات من قائمة المفضلات الخاصة بالمستخدم"
           }
         },
         {
-          "name": "GET /api/v1/favorites/count",
+          "name": "الحصول على عدد المفضلات",
           "request": {
             "method": "GET",
             "header": [
@@ -528,7 +528,7 @@
                 "count"
               ]
             },
-            "description": ""
+            "description": "استرداد عدد المنتجات في قائمة المفضلات الخاصة بالمستخدم"
           }
         },
         {
@@ -585,13 +585,13 @@
           }
         }
       ],
-      "description": "Endpoints for favorites-user functionality"
+      "description": "Endpoints for المفضلات-المستخدم functionality"
     },
     {
-      "name": "favorites-guest",
+      "name": "مفضلات-الزوار",
       "item": [
         {
-          "name": "GET /api/v1/favorites/guest",
+          "name": "الحصول على مفضلات الزائر",
           "request": {
             "method": "GET",
             "header": [
@@ -613,11 +613,11 @@
                 "guest"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة المفضلات للزائر غير المسجل باستخدام معرف الجهاز"
           }
         },
         {
-          "name": "POST /api/v1/favorites/guest",
+          "name": "إضافة منتج لمفضلات الزائر",
           "request": {
             "method": "POST",
             "header": [
@@ -639,11 +639,11 @@
                 "guest"
               ]
             },
-            "description": ""
+            "description": "إضافة منتج أو متغير منتج إلى قائمة المفضلات للزائر غير المسجل"
           }
         },
         {
-          "name": "DELETE /api/v1/favorites/guest",
+          "name": "إزالة منتج من مفضلات الزائر",
           "request": {
             "method": "DELETE",
             "header": [
@@ -665,11 +665,11 @@
                 "guest"
               ]
             },
-            "description": ""
+            "description": "إزالة منتج أو متغير منتج من قائمة المفضلات للزائر غير المسجل"
           }
         },
         {
-          "name": "DELETE /api/v1/favorites/guest/clear",
+          "name": "حذف جميع مفضلات الزائر",
           "request": {
             "method": "DELETE",
             "header": [
@@ -692,11 +692,11 @@
                 "clear"
               ]
             },
-            "description": ""
+            "description": "حذف جميع المنتجات من قائمة المفضلات للزائر غير المسجل"
           }
         },
         {
-          "name": "GET /api/v1/favorites/guest/count",
+          "name": "الحصول على عدد مفضلات الزائر",
           "request": {
             "method": "GET",
             "header": [
@@ -719,17 +719,17 @@
                 "count"
               ]
             },
-            "description": ""
+            "description": "استرداد عدد المنتجات في قائمة المفضلات للزائر غير المسجل"
           }
         }
       ],
-      "description": "Endpoints for favorites-guest functionality"
+      "description": "Endpoints for مفضلات-الزوار functionality"
     },
     {
-      "name": "favorites-admin",
+      "name": "إدارة-المفضلات",
       "item": [
         {
-          "name": "GET /api/v1/admin/favorites/stats",
+          "name": "الحصول على إحصائيات المفضلات",
           "request": {
             "method": "GET",
             "header": [
@@ -752,11 +752,11 @@
                 "stats"
               ]
             },
-            "description": ""
+            "description": "استرداد إحصائيات شاملة حول استخدام المفضلات في النظام"
           }
         },
         {
-          "name": "GET /api/v1/admin/favorites/most-favorited",
+          "name": "المنتجات الأكثر إضافة للمفضلة",
           "request": {
             "method": "GET",
             "header": [
@@ -779,11 +779,11 @@
                 "most-favorited"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بالمنتجات الأكثر إضافة للمفضلة مرتبة تنازلياً"
           }
         },
         {
-          "name": "GET /api/v1/admin/favorites/product/{productId}/count",
+          "name": "عدد المفضلات لمنتج معين",
           "request": {
             "method": "GET",
             "header": [
@@ -808,11 +808,11 @@
                 "count"
               ]
             },
-            "description": ""
+            "description": "استرداد عدد المرات التي تم فيها إضافة منتج محدد للمفضلة"
           }
         },
         {
-          "name": "GET /api/v1/admin/favorites/user/{userId}/count",
+          "name": "عدد المفضلات لمستخدم معين",
           "request": {
             "method": "GET",
             "header": [
@@ -837,17 +837,17 @@
                 "count"
               ]
             },
-            "description": ""
+            "description": "استرداد عدد المنتجات في قائمة المفضلات لمستخدم محدد"
           }
         }
       ],
-      "description": "Endpoints for favorites-admin functionality"
+      "description": "Endpoints for إدارة-المفضلات functionality"
     },
     {
-      "name": "admin-products",
+      "name": "إدارة-المنتجات",
       "item": [
         {
-          "name": "Create new product",
+          "name": "إنشاء منتج جديد",
           "request": {
             "method": "POST",
             "header": [
@@ -873,7 +873,7 @@
           }
         },
         {
-          "name": "List products with filters",
+          "name": "قائمة المنتجات مع التصفية",
           "request": {
             "method": "GET",
             "header": [
@@ -899,7 +899,7 @@
           }
         },
         {
-          "name": "Get product by ID",
+          "name": "الحصول على منتج بالمعرف",
           "request": {
             "method": "GET",
             "header": [
@@ -926,7 +926,7 @@
           }
         },
         {
-          "name": "Update product",
+          "name": "تحديث المنتج",
           "request": {
             "method": "PATCH",
             "header": [
@@ -953,7 +953,7 @@
           }
         },
         {
-          "name": "Delete product (soft delete)",
+          "name": "حذف المنتج (حذف مؤقت)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -980,7 +980,7 @@
           }
         },
         {
-          "name": "Restore deleted product",
+          "name": "استعادة المنتج المحذوف",
           "request": {
             "method": "POST",
             "header": [
@@ -1008,7 +1008,7 @@
           }
         },
         {
-          "name": "Get products statistics",
+          "name": "الحصول على إحصائيات المنتجات",
           "request": {
             "method": "GET",
             "header": [
@@ -1036,7 +1036,7 @@
           }
         },
         {
-          "name": "Create variant for product",
+          "name": "إنشاء متغير للمنتج",
           "request": {
             "method": "POST",
             "header": [
@@ -1064,7 +1064,7 @@
           }
         },
         {
-          "name": "Get variants for product",
+          "name": "الحصول على متغيرات المنتج",
           "request": {
             "method": "GET",
             "header": [
@@ -1092,7 +1092,7 @@
           }
         },
         {
-          "name": "Get variant by ID",
+          "name": "الحصول على متغير بالمعرف",
           "request": {
             "method": "GET",
             "header": [
@@ -1120,7 +1120,7 @@
           }
         },
         {
-          "name": "Update variant",
+          "name": "تحديث المتغير",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1148,7 +1148,7 @@
           }
         },
         {
-          "name": "Delete variant (soft delete)",
+          "name": "حذف المتغير (حذف مؤقت)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1176,7 +1176,7 @@
           }
         },
         {
-          "name": "Get variant price in specific currency",
+          "name": "الحصول على سعر المتغير بعملة محددة",
           "request": {
             "method": "GET",
             "header": [
@@ -1205,7 +1205,7 @@
           }
         },
         {
-          "name": "Get all variant prices for product",
+          "name": "الحصول على جميع أسعار متغيرات المنتج",
           "request": {
             "method": "GET",
             "header": [
@@ -1233,7 +1233,7 @@
           }
         },
         {
-          "name": "Get product price range",
+          "name": "الحصول على نطاق أسعار المنتج",
           "request": {
             "method": "GET",
             "header": [
@@ -1261,7 +1261,7 @@
           }
         },
         {
-          "name": "Update variant stock",
+          "name": "تحديث مخزون المتغير",
           "request": {
             "method": "POST",
             "header": [
@@ -1290,7 +1290,7 @@
           }
         },
         {
-          "name": "Check variant availability",
+          "name": "التحقق من توفر المتغير",
           "request": {
             "method": "GET",
             "header": [
@@ -1319,7 +1319,7 @@
           }
         },
         {
-          "name": "Get low stock variants",
+          "name": "الحصول على المتغيرات ذات المخزون المنخفض",
           "request": {
             "method": "GET",
             "header": [
@@ -1347,7 +1347,7 @@
           }
         },
         {
-          "name": "Get out of stock variants",
+          "name": "الحصول على المتغيرات غير المتوفرة",
           "request": {
             "method": "GET",
             "header": [
@@ -1375,7 +1375,7 @@
           }
         },
         {
-          "name": "Get inventory summary",
+          "name": "الحصول على ملخص المخزون",
           "request": {
             "method": "GET",
             "header": [
@@ -1403,13 +1403,13 @@
           }
         }
       ],
-      "description": "Endpoints for admin-products functionality"
+      "description": "Endpoints for إدارة-المنتجات functionality"
     },
     {
-      "name": "products",
+      "name": "المنتجات",
       "item": [
         {
-          "name": "Get products list",
+          "name": "الحصول على قائمة المنتجات",
           "request": {
             "method": "GET",
             "header": [
@@ -1430,7 +1430,7 @@
                 "products"
               ]
             },
-            "description": "Retrieves a paginated list of products with optional filtering"
+            "description": "استرداد قائمة منتجات مع التصفح والترقيم مع إمكانية التصفية الاختيارية"
           }
         },
         {
@@ -1487,7 +1487,7 @@
           }
         },
         {
-          "name": "Get featured products",
+          "name": "الحصول على المنتجات المميزة",
           "request": {
             "method": "GET",
             "header": [
@@ -1514,7 +1514,7 @@
           }
         },
         {
-          "name": "Get new products",
+          "name": "الحصول على المنتجات الجديدة",
           "request": {
             "method": "GET",
             "header": [
@@ -1541,7 +1541,7 @@
           }
         },
         {
-          "name": "Get product variants",
+          "name": "الحصول على متغيرات المنتج",
           "request": {
             "method": "GET",
             "header": [
@@ -1568,7 +1568,7 @@
           }
         },
         {
-          "name": "Get variant price",
+          "name": "الحصول على سعر المتغير",
           "request": {
             "method": "GET",
             "header": [
@@ -1596,7 +1596,7 @@
           }
         },
         {
-          "name": "Check variant availability",
+          "name": "التحقق من توفر المتغير",
           "request": {
             "method": "GET",
             "header": [
@@ -1624,7 +1624,7 @@
           }
         },
         {
-          "name": "Get product price range",
+          "name": "الحصول على نطاق أسعار المنتج",
           "request": {
             "method": "GET",
             "header": [
@@ -1651,7 +1651,7 @@
           }
         },
         {
-          "name": "Get products count",
+          "name": "الحصول على عدد المنتجات",
           "request": {
             "method": "GET",
             "header": [
@@ -1678,10 +1678,10 @@
           }
         }
       ],
-      "description": "Endpoints for products functionality"
+      "description": "Endpoints for المنتجات functionality"
     },
     {
-      "name": "admin-attributes",
+      "name": "إدارة-السمات",
       "item": [
         {
           "name": "إنشاء سمة جديدة",
@@ -1985,10 +1985,10 @@
           }
         }
       ],
-      "description": "Endpoints for admin-attributes functionality"
+      "description": "Endpoints for إدارة-السمات functionality"
     },
     {
-      "name": "attributes-public",
+      "name": "السمات-العامة",
       "item": [
         {
           "name": "الحصول على قائمة السمات النشطة",
@@ -2068,10 +2068,10 @@
           }
         }
       ],
-      "description": "Endpoints for attributes-public functionality"
+      "description": "Endpoints for السمات-العامة functionality"
     },
     {
-      "name": "admin-categories",
+      "name": "إدارة-الفئات",
       "item": [
         {
           "name": "إنشاء فئة جديدة",
@@ -2346,10 +2346,10 @@
           }
         }
       ],
-      "description": "Endpoints for admin-categories functionality"
+      "description": "Endpoints for إدارة-الفئات functionality"
     },
     {
-      "name": "categories-public",
+      "name": "الفئات-العامة",
       "item": [
         {
           "name": "الحصول على قائمة الفئات النشطة",
@@ -2456,13 +2456,13 @@
           }
         }
       ],
-      "description": "Endpoints for categories-public functionality"
+      "description": "Endpoints for الفئات-العامة functionality"
     },
     {
-      "name": "General",
+      "name": "أسعار-الصرف",
       "item": [
         {
-          "name": "GET /api/v1/exchange-rates",
+          "name": "الحصول على أسعار الصرف الحالية",
           "request": {
             "method": "GET",
             "header": [
@@ -2483,11 +2483,11 @@
                 "exchange-rates"
               ]
             },
-            "description": ""
+            "description": "استرداد أسعار صرف العملات الحالية (دولار أمريكي إلى ريال يمني وريال سعودي)"
           }
         },
         {
-          "name": "POST /api/v1/exchange-rates/convert",
+          "name": "تحويل العملة",
           "request": {
             "method": "POST",
             "header": [
@@ -2509,11 +2509,11 @@
                 "convert"
               ]
             },
-            "description": ""
+            "description": "تحويل مبلغ من عملة إلى أخرى باستخدام أسعار الصرف الحالية"
           }
         },
         {
-          "name": "GET /api/v1/exchange-rates/usd-to-yer",
+          "name": "الحصول على سعر الدولار مقابل الريال اليمني",
           "request": {
             "method": "GET",
             "header": [
@@ -2535,11 +2535,11 @@
                 "usd-to-yer"
               ]
             },
-            "description": ""
+            "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال اليمني الحالي"
           }
         },
         {
-          "name": "GET /api/v1/exchange-rates/usd-to-sar",
+          "name": "الحصول على سعر الدولار مقابل الريال السعودي",
           "request": {
             "method": "GET",
             "header": [
@@ -2561,11 +2561,17 @@
                 "usd-to-sar"
               ]
             },
-            "description": ""
+            "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال السعودي الحالي"
           }
-        },
+        }
+      ],
+      "description": "Endpoints for أسعار-الصرف functionality"
+    },
+    {
+      "name": "إدارة-أسعار-الصرف",
+      "item": [
         {
-          "name": "GET /api/v1/admin/exchange-rates",
+          "name": "الحصول على أسعار الصرف الحالية (إداري)",
           "request": {
             "method": "GET",
             "header": [
@@ -2587,11 +2593,11 @@
                 "exchange-rates"
               ]
             },
-            "description": ""
+            "description": "استرداد أسعار صرف العملات الحالية مع تفاصيل إضافية للإداريين"
           }
         },
         {
-          "name": "POST /api/v1/admin/exchange-rates/update",
+          "name": "تحديث أسعار الصرف",
           "request": {
             "method": "POST",
             "header": [
@@ -2614,11 +2620,11 @@
                 "update"
               ]
             },
-            "description": ""
+            "description": "تحديث أسعار صرف العملات الجديدة في النظام"
           }
         },
         {
-          "name": "POST /api/v1/admin/exchange-rates/convert",
+          "name": "تحويل العملة (إداري)",
           "request": {
             "method": "POST",
             "header": [
@@ -2641,11 +2647,11 @@
                 "convert"
               ]
             },
-            "description": ""
+            "description": "تحويل مبلغ من عملة إلى أخرى للاختبار والتحقق من أسعار الصرف"
           }
         },
         {
-          "name": "GET /api/v1/admin/exchange-rates/usd-to-yer",
+          "name": "الحصول على سعر الدولار مقابل الريال اليمني (إداري)",
           "request": {
             "method": "GET",
             "header": [
@@ -2668,11 +2674,11 @@
                 "usd-to-yer"
               ]
             },
-            "description": ""
+            "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال اليمني الحالي مع تفاصيل إضافية"
           }
         },
         {
-          "name": "GET /api/v1/admin/exchange-rates/usd-to-sar",
+          "name": "الحصول على سعر الدولار مقابل الريال السعودي (إداري)",
           "request": {
             "method": "GET",
             "header": [
@@ -2695,120 +2701,17 @@
                 "usd-to-sar"
               ]
             },
-            "description": ""
-          }
-        },
-        {
-          "name": "GET /api/v1/health",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/health",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "health"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "GET /api/v1/health/simple",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/health/simple",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "health",
-                "simple"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "GET /api/v1/health/ready",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/health/ready",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "health",
-                "ready"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "GET /api/v1/health/live",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/health/live",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "health",
-                "live"
-              ]
-            },
-            "description": ""
+            "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال السعودي الحالي مع تفاصيل إضافية"
           }
         }
       ],
-      "description": "Endpoints for General functionality"
+      "description": "Endpoints for إدارة-أسعار-الصرف functionality"
     },
     {
-      "name": "notifications",
+      "name": "الإشعارات",
       "item": [
         {
-          "name": "Get user notifications",
+          "name": "الحصول على إشعارات المستخدم",
           "request": {
             "method": "GET",
             "header": [
@@ -2829,11 +2732,11 @@
                 "notifications"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة إشعارات المستخدم مع إمكانية التصفح والترقيم"
           }
         },
         {
-          "name": "Get unread notifications count",
+          "name": "الحصول على عدد الإشعارات غير المقروءة",
           "request": {
             "method": "GET",
             "header": [
@@ -2855,11 +2758,11 @@
                 "unread-count"
               ]
             },
-            "description": ""
+            "description": "استرداد عدد الإشعارات التي لم يقرأها المستخدم بعد"
           }
         },
         {
-          "name": "Mark notifications as read",
+          "name": "تحديد الإشعارات كمقروءة",
           "request": {
             "method": "POST",
             "header": [
@@ -2881,11 +2784,11 @@
                 "mark-read"
               ]
             },
-            "description": ""
+            "description": "تحديد إشعارات محددة كمقروءة"
           }
         },
         {
-          "name": "Mark all notifications as read",
+          "name": "تحديد جميع الإشعارات كمقروءة",
           "request": {
             "method": "POST",
             "header": [
@@ -2907,11 +2810,11 @@
                 "mark-all-read"
               ]
             },
-            "description": ""
+            "description": "تحديد جميع إشعارات المستخدم كمقروءة"
           }
         },
         {
-          "name": "Get user notification statistics",
+          "name": "الحصول على إحصائيات إشعارات المستخدم",
           "request": {
             "method": "GET",
             "header": [
@@ -2933,11 +2836,11 @@
                 "stats"
               ]
             },
-            "description": ""
+            "description": "استرداد إحصائيات مفصلة حول إشعارات المستخدم"
           }
         },
         {
-          "name": "Admin: List all notifications",
+          "name": "الإدارة: قائمة جميع الإشعارات",
           "request": {
             "method": "GET",
             "header": [
@@ -2960,11 +2863,11 @@
                 "list"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بجميع الإشعارات في النظام (للإداريين فقط)"
           }
         },
         {
-          "name": "Admin: Create notification",
+          "name": "الإدارة: إنشاء إشعار",
           "request": {
             "method": "POST",
             "header": [
@@ -2987,11 +2890,11 @@
                 "create"
               ]
             },
-            "description": ""
+            "description": "إنشاء إشعار جديد للمستخدمين (للإداريين فقط)"
           }
         },
         {
-          "name": "Admin: Get notification by ID",
+          "name": "الإدارة: الحصول على إشعار بالمعرف",
           "request": {
             "method": "GET",
             "header": [
@@ -3014,11 +2917,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "استرداد إشعار محدد بالمعرف (للإداريين فقط)"
           }
         },
         {
-          "name": "Admin: Update notification",
+          "name": "الإدارة: تحديث إشعار",
           "request": {
             "method": "PUT",
             "header": [
@@ -3041,11 +2944,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث إشعار موجود (للإداريين فقط)"
           }
         },
         {
-          "name": "Admin: Delete notification",
+          "name": "الإدارة: حذف إشعار",
           "request": {
             "method": "DELETE",
             "header": [
@@ -3068,11 +2971,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "حذف إشعار من النظام (للإداريين فقط)"
           }
         },
         {
-          "name": "Admin: Send bulk notifications",
+          "name": "الإدارة: إرسال إشعارات جماعية",
           "request": {
             "method": "POST",
             "header": [
@@ -3095,11 +2998,11 @@
                 "bulk-send"
               ]
             },
-            "description": ""
+            "description": "إرسال إشعارات إلى مجموعة من المستخدمين (للإداريين فقط)"
           }
         },
         {
-          "name": "Admin: Get notification statistics",
+          "name": "الإدارة: الحصول على إحصائيات الإشعارات",
           "request": {
             "method": "GET",
             "header": [
@@ -3122,11 +3025,11 @@
                 "stats"
               ]
             },
-            "description": ""
+            "description": "استرداد إحصائيات شاملة حول جميع الإشعارات في النظام (للإداريين فقط)"
           }
         },
         {
-          "name": "Admin: Cleanup old notifications",
+          "name": "الإدارة: تنظيف الإشعارات القديمة",
           "request": {
             "method": "POST",
             "header": [
@@ -3149,17 +3052,17 @@
                 "cleanup"
               ]
             },
-            "description": ""
+            "description": "حذف الإشعارات القديمة والغير مهمة من النظام (للإداريين فقط)"
           }
         }
       ],
-      "description": "Endpoints for notifications functionality"
+      "description": "Endpoints for الإشعارات functionality"
     },
     {
-      "name": "user-analytics",
+      "name": "تحليلات-المستخدمين",
       "item": [
         {
-          "name": "الحصول على تفاصيل وإحصائيات مستخدم واحد",
+          "name": "تحليلات مستخدم مفصلة",
           "request": {
             "method": "GET",
             "header": [
@@ -3183,7 +3086,7 @@
                 "{userId}"
               ]
             },
-            "description": "يعرض جميع الإحصائيات والتفاصيل الشاملة لمستخدم معين"
+            "description": "استرداد تحليلات شاملة لمستخدم محدد تشمل السلوكيات والإحصائيات والتقييمات"
           }
         },
         {
@@ -3493,10 +3396,10 @@
           }
         }
       ],
-      "description": "Endpoints for user-analytics functionality"
+      "description": "Endpoints for تحليلات-المستخدمين functionality"
     },
     {
-      "name": "orders",
+      "name": "الطلبات",
       "item": [
         {
           "name": "معاينة الطلب",
@@ -3765,10 +3668,10 @@
           }
         }
       ],
-      "description": "Endpoints for orders functionality"
+      "description": "Endpoints for الطلبات functionality"
     },
     {
-      "name": "admin-orders",
+      "name": "إدارة-الطلبات",
       "item": [
         {
           "name": "جميع الطلبات (للإدارة)",
@@ -3964,6 +3867,33 @@
           }
         },
         {
+          "name": "إحصائيات الطلبات الأساسية",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "stats"
+              ]
+            },
+            "description": "الحصول على إحصائيات أساسية للطلبات"
+          }
+        },
+        {
           "name": "التحليلات الإدارية",
           "request": {
             "method": "GET",
@@ -4104,10 +4034,10 @@
           }
         }
       ],
-      "description": "Endpoints for admin-orders functionality"
+      "description": "Endpoints for إدارة-الطلبات functionality"
     },
     {
-      "name": "webhooks",
+      "name": "الخطافات",
       "item": [
         {
           "name": "Webhook الدفع",
@@ -4188,13 +4118,13 @@
           }
         }
       ],
-      "description": "Endpoints for webhooks functionality"
+      "description": "Endpoints for الخطافات functionality"
     },
     {
-      "name": "cart",
+      "name": "السلة",
       "item": [
         {
-          "name": "Get user cart",
+          "name": "الحصول على سلة المستخدم",
           "request": {
             "method": "GET",
             "header": [
@@ -4215,11 +4145,11 @@
                 "cart"
               ]
             },
-            "description": "Retrieves the current user shopping cart with all items"
+            "description": "يسترد سلة التسوق الحالية للمستخدم مع جميع العناصر"
           }
         },
         {
-          "name": "Add item to cart",
+          "name": "إضافة عنصر إلى السلة",
           "request": {
             "method": "POST",
             "header": [
@@ -4241,7 +4171,7 @@
                 "items"
               ]
             },
-            "description": "Adds a product variant to the user shopping cart"
+            "description": "إضافة متغير منتج إلى سلة التسوق للمستخدم"
           }
         },
         {
@@ -4429,10 +4359,10 @@
           }
         }
       ],
-      "description": "Endpoints for cart functionality"
+      "description": "Endpoints for السلة functionality"
     },
     {
-      "name": "cart-guest",
+      "name": "سلة-الزوار",
       "item": [
         {
           "name": "الحصول على سلة الزائر",
@@ -4598,10 +4528,10 @@
           }
         }
       ],
-      "description": "Endpoints for cart-guest functionality"
+      "description": "Endpoints for سلة-الزوار functionality"
     },
     {
-      "name": "admin-carts",
+      "name": "إدارة-السلات",
       "item": [
         {
           "name": "الحصول على السلات المهجورة",
@@ -4957,13 +4887,13 @@
           }
         }
       ],
-      "description": "Endpoints for admin-carts functionality"
+      "description": "Endpoints for إدارة-السلات functionality"
     },
     {
-      "name": "marketing-admin",
+      "name": "إدارة-التسويق",
       "item": [
         {
-          "name": "POST /api/v1/admin/marketing/price-rules",
+          "name": "إنشاء قاعدة تسعير",
           "request": {
             "method": "POST",
             "header": [
@@ -4986,11 +4916,11 @@
                 "price-rules"
               ]
             },
-            "description": ""
+            "description": "إنشاء قاعدة تسعير جديدة للتحكم في أسعار المنتجات"
           }
         },
         {
-          "name": "GET /api/v1/admin/marketing/price-rules",
+          "name": "قائمة قواعد التسعير",
           "request": {
             "method": "GET",
             "header": [
@@ -5013,11 +4943,11 @@
                 "price-rules"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بجميع قواعد التسعير المتاحة"
           }
         },
         {
-          "name": "GET /api/v1/admin/marketing/price-rules/{id}",
+          "name": "الحصول على قاعدة تسعير",
           "request": {
             "method": "GET",
             "header": [
@@ -5041,11 +4971,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "استرداد قاعدة تسعير محددة بالمعرف"
           }
         },
         {
-          "name": "PATCH /api/v1/admin/marketing/price-rules/{id}",
+          "name": "تحديث قاعدة تسعير",
           "request": {
             "method": "PATCH",
             "header": [
@@ -5069,11 +4999,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث قاعدة تسعير موجودة"
           }
         },
         {
-          "name": "DELETE /api/v1/admin/marketing/price-rules/{id}",
+          "name": "حذف قاعدة تسعير",
           "request": {
             "method": "DELETE",
             "header": [
@@ -5097,11 +5027,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "حذف قاعدة تسعير من النظام"
           }
         },
         {
-          "name": "POST /api/v1/admin/marketing/price-rules/{id}/toggle",
+          "name": "تبديل حالة قاعدة تسعير",
           "request": {
             "method": "POST",
             "header": [
@@ -5126,11 +5056,11 @@
                 "toggle"
               ]
             },
-            "description": ""
+            "description": "تفعيل أو إلغاء تفعيل قاعدة تسعير"
           }
         },
         {
-          "name": "POST /api/v1/admin/marketing/price-rules/preview",
+          "name": "معاينة قاعدة تسعير",
           "request": {
             "method": "POST",
             "header": [
@@ -5154,11 +5084,11 @@
                 "preview"
               ]
             },
-            "description": ""
+            "description": "معاينة تأثير قاعدة تسعير على منتج معين"
           }
         },
         {
-          "name": "POST /api/v1/admin/marketing/coupons",
+          "name": "إنشاء كوبون",
           "request": {
             "method": "POST",
             "header": [
@@ -5181,11 +5111,11 @@
                 "coupons"
               ]
             },
-            "description": ""
+            "description": "إنشاء كوبون خصم جديد"
           }
         },
         {
-          "name": "GET /api/v1/admin/marketing/coupons",
+          "name": "قائمة الكوبونات",
           "request": {
             "method": "GET",
             "header": [
@@ -5208,11 +5138,11 @@
                 "coupons"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة الكوبونات مع إمكانية التصفية"
           }
         },
         {
-          "name": "GET /api/v1/admin/marketing/coupons/{id}",
+          "name": "الحصول على كوبون",
           "request": {
             "method": "GET",
             "header": [
@@ -5236,11 +5166,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "استرداد كوبون محدد بالمعرف"
           }
         },
         {
-          "name": "PATCH /api/v1/admin/marketing/coupons/{id}",
+          "name": "تحديث كوبون",
           "request": {
             "method": "PATCH",
             "header": [
@@ -5264,11 +5194,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث كوبون موجود"
           }
         },
         {
-          "name": "DELETE /api/v1/admin/marketing/coupons/{id}",
+          "name": "حذف كوبون",
           "request": {
             "method": "DELETE",
             "header": [
@@ -5292,11 +5222,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "حذف كوبون من النظام"
           }
         },
         {
-          "name": "POST /api/v1/admin/marketing/coupons/validate",
+          "name": "التحقق من صحة كوبون",
           "request": {
             "method": "POST",
             "header": [
@@ -5320,11 +5250,11 @@
                 "validate"
               ]
             },
-            "description": ""
+            "description": "التحقق من صحة كوبون وإمكانية استخدامه"
           }
         },
         {
-          "name": "POST /api/v1/admin/marketing/banners",
+          "name": "إنشاء بانر",
           "request": {
             "method": "POST",
             "header": [
@@ -5347,11 +5277,11 @@
                 "banners"
               ]
             },
-            "description": ""
+            "description": "إنشاء بانر إعلاني جديد"
           }
         },
         {
-          "name": "GET /api/v1/admin/marketing/banners",
+          "name": "قائمة البانرات",
           "request": {
             "method": "GET",
             "header": [
@@ -5374,11 +5304,11 @@
                 "banners"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة البانرات الإعلانية"
           }
         },
         {
-          "name": "GET /api/v1/admin/marketing/banners/{id}",
+          "name": "الحصول على بانر",
           "request": {
             "method": "GET",
             "header": [
@@ -5402,11 +5332,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "استرداد بانر محدد بالمعرف"
           }
         },
         {
-          "name": "PATCH /api/v1/admin/marketing/banners/{id}",
+          "name": "تحديث بانر",
           "request": {
             "method": "PATCH",
             "header": [
@@ -5430,11 +5360,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث بانر موجود"
           }
         },
         {
-          "name": "DELETE /api/v1/admin/marketing/banners/{id}",
+          "name": "حذف بانر",
           "request": {
             "method": "DELETE",
             "header": [
@@ -5458,17 +5388,17 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "حذف بانر من النظام"
           }
         }
       ],
-      "description": "Endpoints for marketing-admin functionality"
+      "description": "Endpoints for إدارة-التسويق functionality"
     },
     {
-      "name": "marketing-public",
+      "name": "التسويق-العام",
       "item": [
         {
-          "name": "GET /api/v1/marketing/pricing/variant",
+          "name": "الحصول على سعر المتغير",
           "request": {
             "method": "GET",
             "header": [
@@ -5491,11 +5421,11 @@
                 "variant"
               ]
             },
-            "description": ""
+            "description": "استرداد السعر الفعال لمتغير منتج مع تطبيق قواعد التسعير"
           }
         },
         {
-          "name": "GET /api/v1/marketing/coupons/validate",
+          "name": "التحقق من صحة كوبون",
           "request": {
             "method": "GET",
             "header": [
@@ -5518,11 +5448,11 @@
                 "validate"
               ]
             },
-            "description": ""
+            "description": "التحقق من صحة كوبون الخصم وإمكانية استخدامه"
           }
         },
         {
-          "name": "GET /api/v1/marketing/banners",
+          "name": "الحصول على البانرات النشطة",
           "request": {
             "method": "GET",
             "header": [
@@ -5544,11 +5474,11 @@
                 "banners"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة البانرات الإعلانية النشطة حسب الموقع"
           }
         },
         {
-          "name": "GET /api/v1/marketing/banners/{id}/view",
+          "name": "تتبع مشاهدة البانر",
           "request": {
             "method": "GET",
             "header": [
@@ -5572,11 +5502,11 @@
                 "view"
               ]
             },
-            "description": ""
+            "description": "تسجيل مشاهدة لبانر معين (يستخدم للإحصائيات)"
           }
         },
         {
-          "name": "GET /api/v1/marketing/banners/{id}/click",
+          "name": "تتبع نقر البانر",
           "request": {
             "method": "GET",
             "header": [
@@ -5600,17 +5530,284 @@
                 "click"
               ]
             },
+            "description": "تسجيل نقرة لبانر معين (يستخدم للإحصائيات)"
+          }
+        }
+      ],
+      "description": "Endpoints for التسويق-العام functionality"
+    },
+    {
+      "name": "العناوين",
+      "item": [
+        {
+          "name": "الحصول على جميع عناوين المستخدم",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "إنشاء عنوان جديد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "الحصول على العناوين النشطة فقط",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/active",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "active"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "الحصول على العنوان الافتراضي",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/default",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "default"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "الحصول على عنوان بالمعرف",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "{id}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "تحديث العنوان",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "{id}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "حذف العنوان (حذف مؤقت)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "{id}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "تعيين العنوان كافتراضي",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/{id}/set-default",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "{id}",
+                "set-default"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "استعادة العنوان المحذوف",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/{id}/restore",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "{id}",
+                "restore"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "التحقق من ملكية العنوان",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/addresses/validate/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "addresses",
+                "validate",
+                "{id}"
+              ]
+            },
             "description": ""
           }
         }
       ],
-      "description": "Endpoints for marketing-public functionality"
+      "description": "Endpoints for العناوين functionality"
     },
     {
-      "name": "support-customer",
+      "name": "دعم-العملاء",
       "item": [
         {
-          "name": "POST /api/v1/support/tickets",
+          "name": "إنشاء تذكرة دعم جديدة",
           "request": {
             "method": "POST",
             "header": [
@@ -5632,11 +5829,11 @@
                 "tickets"
               ]
             },
-            "description": ""
+            "description": "إنشاء تذكرة دعم جديدة من قبل العميل"
           }
         },
         {
-          "name": "GET /api/v1/support/tickets/my",
+          "name": "تذاكري",
           "request": {
             "method": "GET",
             "header": [
@@ -5659,11 +5856,11 @@
                 "my"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بجميع تذاكر الدعم الخاصة بالعميل"
           }
         },
         {
-          "name": "GET /api/v1/support/tickets/{id}",
+          "name": "تفاصيل التذكرة",
           "request": {
             "method": "GET",
             "header": [
@@ -5686,11 +5883,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "استرداد تفاصيل كاملة لتذكرة دعم محددة"
           }
         },
         {
-          "name": "GET /api/v1/support/tickets/{id}/messages",
+          "name": "رسائل التذكرة",
           "request": {
             "method": "GET",
             "header": [
@@ -5714,11 +5911,11 @@
                 "messages"
               ]
             },
-            "description": ""
+            "description": "استرداد جميع رسائل تذكرة دعم محددة"
           }
         },
         {
-          "name": "POST /api/v1/support/tickets/{id}/messages",
+          "name": "إضافة رسالة للتذكرة",
           "request": {
             "method": "POST",
             "header": [
@@ -5742,11 +5939,11 @@
                 "messages"
               ]
             },
-            "description": ""
+            "description": "إضافة رسالة جديدة لتذكرة دعم من قبل العميل"
           }
         },
         {
-          "name": "PUT /api/v1/support/tickets/{id}/archive",
+          "name": "أرشفة التذكرة",
           "request": {
             "method": "PUT",
             "header": [
@@ -5770,11 +5967,11 @@
                 "archive"
               ]
             },
-            "description": ""
+            "description": "أرشفة تذكرة دعم من قبل العميل"
           }
         },
         {
-          "name": "POST /api/v1/support/tickets/{id}/rate",
+          "name": "تقييم التذكرة",
           "request": {
             "method": "POST",
             "header": [
@@ -5798,17 +5995,17 @@
                 "rate"
               ]
             },
-            "description": ""
+            "description": "تقييم خدمة الدعم المقدمة للتذكرة"
           }
         }
       ],
-      "description": "Endpoints for support-customer functionality"
+      "description": "Endpoints for دعم-العملاء functionality"
     },
     {
-      "name": "support-admin",
+      "name": "إدارة-الدعم",
       "item": [
         {
-          "name": "GET /api/v1/admin/support/tickets",
+          "name": "قائمة تذاكر الدعم",
           "request": {
             "method": "GET",
             "header": [
@@ -5831,11 +6028,11 @@
                 "tickets"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بجميع تذاكر الدعم مع إمكانية التصفية والترقيم"
           }
         },
         {
-          "name": "GET /api/v1/admin/support/tickets/{id}",
+          "name": "تفاصيل تذكرة الدعم",
           "request": {
             "method": "GET",
             "header": [
@@ -5859,11 +6056,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "استرداد تفاصيل كاملة لتذكرة دعم محددة"
           }
         },
         {
-          "name": "PATCH /api/v1/admin/support/tickets/{id}",
+          "name": "تحديث تذكرة الدعم",
           "request": {
             "method": "PATCH",
             "header": [
@@ -5887,11 +6084,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث حالة أو تفاصيل تذكرة دعم من قبل الإدارة"
           }
         },
         {
-          "name": "GET /api/v1/admin/support/tickets/{id}/messages",
+          "name": "رسائل تذكرة الدعم",
           "request": {
             "method": "GET",
             "header": [
@@ -5916,11 +6113,11 @@
                 "messages"
               ]
             },
-            "description": ""
+            "description": "استرداد جميع رسائل تذكرة دعم محددة"
           }
         },
         {
-          "name": "POST /api/v1/admin/support/tickets/{id}/messages",
+          "name": "إضافة رسالة لتذكرة الدعم",
           "request": {
             "method": "POST",
             "header": [
@@ -5945,11 +6142,11 @@
                 "messages"
               ]
             },
-            "description": ""
+            "description": "إضافة رسالة جديدة لتذكرة دعم من قبل الإدارة"
           }
         },
         {
-          "name": "GET /api/v1/admin/support/stats",
+          "name": "إحصائيات الدعم",
           "request": {
             "method": "GET",
             "header": [
@@ -5972,11 +6169,11 @@
                 "stats"
               ]
             },
-            "description": ""
+            "description": "استرداد إحصائيات شاملة حول تذاكر الدعم"
           }
         },
         {
-          "name": "GET /api/v1/admin/support/sla/breached",
+          "name": "التذاكر التي انتهكت SLA",
           "request": {
             "method": "GET",
             "header": [
@@ -6000,11 +6197,11 @@
                 "breached"
               ]
             },
-            "description": ""
+            "description": "استرداد التذاكر التي تجاوزت وقت الاستجابة أو الحل المحدد في اتفاقية مستوى الخدمة"
           }
         },
         {
-          "name": "POST /api/v1/admin/support/sla/{id}/check",
+          "name": "فحص حالة SLA للتذكرة",
           "request": {
             "method": "POST",
             "header": [
@@ -6029,7 +6226,7 @@
                 "check"
               ]
             },
-            "description": ""
+            "description": "فحص ما إذا كانت التذكرة قد انتهكت اتفاقية مستوى الخدمة"
           }
         },
         {
@@ -6201,13 +6398,13 @@
           }
         }
       ],
-      "description": "Endpoints for support-admin functionality"
+      "description": "Endpoints for إدارة-الدعم functionality"
     },
     {
-      "name": "admin-users",
+      "name": "إدارة-المستخدمين",
       "item": [
         {
-          "name": "GET /api/v1/admin/users",
+          "name": "قائمة المستخدمين",
           "request": {
             "method": "GET",
             "header": [
@@ -6229,7 +6426,7 @@
                 "users"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بجميع المستخدمين مع إمكانية التصفية والترقيم"
           }
         },
         {
@@ -6534,13 +6731,13 @@
           }
         }
       ],
-      "description": "Endpoints for admin-users functionality"
+      "description": "Endpoints for إدارة-المستخدمين functionality"
     },
     {
-      "name": "analytics",
+      "name": "التحليلات",
       "item": [
         {
-          "name": "Get dashboard data",
+          "name": "الحصول على بيانات لوحة التحكم",
           "request": {
             "method": "GET",
             "header": [
@@ -6562,11 +6759,11 @@
                 "dashboard"
               ]
             },
-            "description": "Retrieve comprehensive dashboard analytics data with charts and KPIs"
+            "description": "استرداد بيانات تحليلات شاملة للوحة التحكم مع الرسوم البيانية ومؤشرات الأداء الرئيسية"
           }
         },
         {
-          "name": "Get overview metrics",
+          "name": "الحصول على مقاييس النظرة العامة",
           "request": {
             "method": "GET",
             "header": [
@@ -6588,11 +6785,11 @@
                 "overview"
               ]
             },
-            "description": "Retrieve key performance indicators and overview statistics"
+            "description": "استرداد مؤشرات الأداء الرئيسية وإحصائيات النظرة العامة"
           }
         },
         {
-          "name": "Get revenue analytics",
+          "name": "الحصول على تحليلات الإيرادات",
           "request": {
             "method": "GET",
             "header": [
@@ -6614,11 +6811,11 @@
                 "revenue"
               ]
             },
-            "description": "Detailed revenue analysis with trends and breakdowns"
+            "description": "تحليل مفصل للإيرادات مع الاتجاهات والتفصيلات"
           }
         },
         {
-          "name": "Get user analytics",
+          "name": "الحصول على تحليلات المستخدمين",
           "request": {
             "method": "GET",
             "header": [
@@ -6640,11 +6837,11 @@
                 "users"
               ]
             },
-            "description": "User registration trends, demographics, and engagement metrics"
+            "description": "اتجاهات تسجيل المستخدمين والتركيبة السكانية ومقاييس التفاعل"
           }
         },
         {
-          "name": "Get product analytics",
+          "name": "الحصول على تحليلات المنتجات",
           "request": {
             "method": "GET",
             "header": [
@@ -6666,11 +6863,11 @@
                 "products"
               ]
             },
-            "description": "Product performance, sales trends, and inventory analytics"
+            "description": "أداء المنتجات واتجاهات المبيعات وتحليلات المخزون"
           }
         },
         {
-          "name": "Get service analytics",
+          "name": "الحصول على تحليلات الخدمات",
           "request": {
             "method": "GET",
             "header": [
@@ -6692,11 +6889,11 @@
                 "services"
               ]
             },
-            "description": "Service request trends, engineer performance, and completion metrics"
+            "description": "اتجاهات طلبات الخدمات وأداء المهندسين ومقاييس الإنجاز"
           }
         },
         {
-          "name": "Get support analytics",
+          "name": "الحصول على تحليلات الدعم",
           "request": {
             "method": "GET",
             "header": [
@@ -6718,11 +6915,11 @@
                 "support"
               ]
             },
-            "description": "Support ticket trends, resolution times, and customer satisfaction"
+            "description": "اتجاهات تذاكر الدعم وأوقات الحل ورضا العملاء"
           }
         },
         {
-          "name": "Get system performance metrics",
+          "name": "الحصول على مقاييس أداء النظام",
           "request": {
             "method": "GET",
             "header": [
@@ -6744,11 +6941,11 @@
                 "performance"
               ]
             },
-            "description": "API response times, error rates, uptime, and system health"
+            "description": "أوقات استجابة API ومعدلات الأخطاء ووقت التشغيل وصحة النظام"
           }
         },
         {
-          "name": "Generate custom report",
+          "name": "إنشاء تقرير مخصص",
           "request": {
             "method": "POST",
             "header": [
@@ -6771,11 +6968,11 @@
                 "generate"
               ]
             },
-            "description": "Generate a custom analytics report in specified formats"
+            "description": "إنشاء تقرير تحليلات مخصص بالصيغ المحددة"
           }
         },
         {
-          "name": "Get report by ID",
+          "name": "الحصول على تقرير بالمعرف",
           "request": {
             "method": "GET",
             "header": [
@@ -6798,11 +6995,11 @@
                 "{id}"
               ]
             },
-            "description": "Retrieve a previously generated report"
+            "description": "استرداد تقرير تم إنشاؤه سابقاً"
           }
         },
         {
-          "name": "Schedule automated report",
+          "name": "جدولة تقرير تلقائي",
           "request": {
             "method": "POST",
             "header": [
@@ -6825,11 +7022,11 @@
                 "schedule"
               ]
             },
-            "description": "Create a scheduled report that runs automatically"
+            "description": "إنشاء تقرير مجدول يعمل تلقائياً"
           }
         },
         {
-          "name": "Get KPI metrics",
+          "name": "الحصول على مقاييس KPI",
           "request": {
             "method": "GET",
             "header": [
@@ -6851,11 +7048,11 @@
                 "kpis"
               ]
             },
-            "description": "Retrieve key performance indicators"
+            "description": "استرداد مؤشرات الأداء الرئيسية"
           }
         },
         {
-          "name": "Get metric trends",
+          "name": "الحصول على اتجاهات المقياس",
           "request": {
             "method": "GET",
             "header": [
@@ -6878,11 +7075,11 @@
                 "{metric}"
               ]
             },
-            "description": "Retrieve trend data for specific metrics over time"
+            "description": "استرداد بيانات الاتجاهات لمقاييس محددة عبر الزمن"
           }
         },
         {
-          "name": "Compare periods",
+          "name": "مقارنة الفترات",
           "request": {
             "method": "GET",
             "header": [
@@ -6904,11 +7101,11 @@
                 "comparison"
               ]
             },
-            "description": "Compare analytics between two different periods"
+            "description": "مقارنة التحليلات بين فترتين مختلفتين"
           }
         },
         {
-          "name": "Export analytics data",
+          "name": "تصدير بيانات التحليلات",
           "request": {
             "method": "GET",
             "header": [
@@ -6931,11 +7128,11 @@
                 "{format}"
               ]
             },
-            "description": "Export analytics data in various formats"
+            "description": "تصدير بيانات التحليلات بصيغ مختلفة"
           }
         },
         {
-          "name": "Refresh analytics data",
+          "name": "تحديث بيانات التحليلات",
           "request": {
             "method": "POST",
             "header": [
@@ -6957,17 +7154,17 @@
                 "refresh"
               ]
             },
-            "description": "Force refresh of analytics snapshots and calculations"
+            "description": "إجبار تحديث لقطات التحليلات وحساباتها"
           }
         }
       ],
-      "description": "Endpoints for analytics functionality"
+      "description": "Endpoints for التحليلات functionality"
     },
     {
-      "name": "analytics/advanced",
+      "name": "التحليلات/متقدمة",
       "item": [
         {
-          "name": "Get sales analytics",
+          "name": "الحصول على تحليلات المبيعات",
           "request": {
             "method": "GET",
             "header": [
@@ -6994,7 +7191,7 @@
           }
         },
         {
-          "name": "Get product performance analytics",
+          "name": "الحصول على تحليلات أداء المنتجات",
           "request": {
             "method": "GET",
             "header": [
@@ -7022,7 +7219,7 @@
           }
         },
         {
-          "name": "Get customer analytics",
+          "name": "الحصول على تحليلات العملاء",
           "request": {
             "method": "GET",
             "header": [
@@ -7049,7 +7246,7 @@
           }
         },
         {
-          "name": "Get inventory report",
+          "name": "الحصول على تقرير المخزون",
           "request": {
             "method": "GET",
             "header": [
@@ -7076,7 +7273,7 @@
           }
         },
         {
-          "name": "Get financial report",
+          "name": "الحصول على التقرير المالي",
           "request": {
             "method": "GET",
             "header": [
@@ -7103,7 +7300,7 @@
           }
         },
         {
-          "name": "Get cart analytics",
+          "name": "الحصول على تحليلات عربة التسوق",
           "request": {
             "method": "GET",
             "header": [
@@ -7130,7 +7327,7 @@
           }
         },
         {
-          "name": "Get marketing report",
+          "name": "الحصول على التقرير التسويقي",
           "request": {
             "method": "GET",
             "header": [
@@ -7157,7 +7354,7 @@
           }
         },
         {
-          "name": "Get real-time metrics",
+          "name": "الحصول على مقاييس الوقت الفعلي",
           "request": {
             "method": "GET",
             "header": [
@@ -7184,7 +7381,7 @@
           }
         },
         {
-          "name": "Get quick stats",
+          "name": "الحصول على الإحصائيات السريعة",
           "request": {
             "method": "GET",
             "header": [
@@ -7211,7 +7408,7 @@
           }
         },
         {
-          "name": "Generate advanced report",
+          "name": "إنشاء تقرير متقدم",
           "request": {
             "method": "POST",
             "header": [
@@ -7239,7 +7436,7 @@
           }
         },
         {
-          "name": "List advanced reports",
+          "name": "قائمة التقارير المتقدمة",
           "request": {
             "method": "GET",
             "header": [
@@ -7266,7 +7463,7 @@
           }
         },
         {
-          "name": "Get advanced report by ID",
+          "name": "الحصول على التقرير المتقدم بالمعرف",
           "request": {
             "method": "GET",
             "header": [
@@ -7294,7 +7491,7 @@
           }
         },
         {
-          "name": "Delete report",
+          "name": "حذف التقرير",
           "request": {
             "method": "DELETE",
             "header": [
@@ -7322,7 +7519,7 @@
           }
         },
         {
-          "name": "Archive report",
+          "name": "أرشفة التقرير",
           "request": {
             "method": "POST",
             "header": [
@@ -7351,7 +7548,7 @@
           }
         },
         {
-          "name": "Export report",
+          "name": "تصدير التقرير",
           "request": {
             "method": "POST",
             "header": [
@@ -7380,7 +7577,7 @@
           }
         },
         {
-          "name": "Export sales data",
+          "name": "تصدير بيانات المبيعات",
           "request": {
             "method": "GET",
             "header": [
@@ -7408,7 +7605,7 @@
           }
         },
         {
-          "name": "Export products data",
+          "name": "تصدير بيانات المنتجات",
           "request": {
             "method": "GET",
             "header": [
@@ -7436,7 +7633,7 @@
           }
         },
         {
-          "name": "Export customers data",
+          "name": "تصدير بيانات العملاء",
           "request": {
             "method": "GET",
             "header": [
@@ -7464,7 +7661,7 @@
           }
         },
         {
-          "name": "Compare periods (advanced)",
+          "name": "مقارنة الفترات (متقدمة)",
           "request": {
             "method": "GET",
             "header": [
@@ -7491,7 +7688,7 @@
           }
         },
         {
-          "name": "Get metric trends (advanced)",
+          "name": "الحصول على اتجاهات المقياس (متقدمة)",
           "request": {
             "method": "GET",
             "header": [
@@ -7519,13 +7716,13 @@
           }
         }
       ],
-      "description": "Endpoints for analytics/advanced functionality"
+      "description": "Endpoints for التحليلات/متقدمة functionality"
     },
     {
-      "name": "services-customer",
+      "name": "خدمات-العملاء",
       "item": [
         {
-          "name": "POST /api/v1/services/customer",
+          "name": "إنشاء طلب خدمة جديد",
           "request": {
             "method": "POST",
             "header": [
@@ -7547,11 +7744,11 @@
                 "customer"
               ]
             },
-            "description": ""
+            "description": "إنشاء طلب خدمة جديد من قبل العميل"
           }
         },
         {
-          "name": "GET /api/v1/services/customer/my",
+          "name": "طلباتي",
           "request": {
             "method": "GET",
             "header": [
@@ -7574,11 +7771,11 @@
                 "my"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بجميع طلبات الخدمات الخاصة بالعميل"
           }
         },
         {
-          "name": "GET /api/v1/services/customer/{id}",
+          "name": "تفاصيل طلب خدمة",
           "request": {
             "method": "GET",
             "header": [
@@ -7601,11 +7798,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "استرداد تفاصيل كاملة لطلب خدمة محدد"
           }
         },
         {
-          "name": "POST /api/v1/services/customer/{id}/cancel",
+          "name": "إلغاء طلب خدمة",
           "request": {
             "method": "POST",
             "header": [
@@ -7629,11 +7826,11 @@
                 "cancel"
               ]
             },
-            "description": ""
+            "description": "إلغاء طلب خدمة من قبل العميل"
           }
         },
         {
-          "name": "POST /api/v1/services/customer/{id}/accept-offer",
+          "name": "قبول عرض فني",
           "request": {
             "method": "POST",
             "header": [
@@ -7657,11 +7854,11 @@
                 "accept-offer"
               ]
             },
-            "description": ""
+            "description": "قبول عرض مقدم من فني لطلب خدمة"
           }
         },
         {
-          "name": "POST /api/v1/services/customer/{id}/rate",
+          "name": "تقييم خدمة",
           "request": {
             "method": "POST",
             "header": [
@@ -7685,11 +7882,11 @@
                 "rate"
               ]
             },
-            "description": ""
+            "description": "تقييم خدمة منجزة وإضافة تعليق"
           }
         },
         {
-          "name": "GET /api/v1/services/customer/{id}/offers",
+          "name": "عروض طلب خدمة",
           "request": {
             "method": "GET",
             "header": [
@@ -7713,17 +7910,17 @@
                 "offers"
               ]
             },
-            "description": ""
+            "description": "استرداد جميع العروض المقدمة لطلب خدمة محدد"
           }
         }
       ],
-      "description": "Endpoints for services-customer functionality"
+      "description": "Endpoints for خدمات-العملاء functionality"
     },
     {
-      "name": "services-engineer",
+      "name": "خدمات-الفنيين",
       "item": [
         {
-          "name": "GET /api/v1/services/engineer/requests/nearby",
+          "name": "طلبات قريبة من الفني",
           "request": {
             "method": "GET",
             "header": [
@@ -7747,11 +7944,11 @@
                 "nearby"
               ]
             },
-            "description": ""
+            "description": "البحث عن طلبات الخدمات القريبة من موقع الفني الحالي"
           }
         },
         {
-          "name": "POST /api/v1/services/engineer/offers",
+          "name": "إرسال عرض للعميل",
           "request": {
             "method": "POST",
             "header": [
@@ -7774,11 +7971,11 @@
                 "offers"
               ]
             },
-            "description": ""
+            "description": "إرسال عرض سعر لعميل لطلب خدمة محدد"
           }
         },
         {
-          "name": "PATCH /api/v1/services/engineer/offers/{id}",
+          "name": "تحديث عرض",
           "request": {
             "method": "PATCH",
             "header": [
@@ -7802,11 +7999,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث عرض مقدم سابقاً للعميل"
           }
         },
         {
-          "name": "POST /api/v1/services/engineer/requests/{id}/start",
+          "name": "بدء العمل في طلب خدمة",
           "request": {
             "method": "POST",
             "header": [
@@ -7831,11 +8028,11 @@
                 "start"
               ]
             },
-            "description": ""
+            "description": "بدء العمل في طلب خدمة مكلف به الفني"
           }
         },
         {
-          "name": "POST /api/v1/services/engineer/requests/{id}/complete",
+          "name": "إكمال طلب خدمة",
           "request": {
             "method": "POST",
             "header": [
@@ -7860,11 +8057,11 @@
                 "complete"
               ]
             },
-            "description": ""
+            "description": "إكمال طلب خدمة منجز من قبل الفني"
           }
         },
         {
-          "name": "GET /api/v1/services/engineer/offers/my",
+          "name": "عروضي",
           "request": {
             "method": "GET",
             "header": [
@@ -7888,17 +8085,17 @@
                 "my"
               ]
             },
-            "description": ""
+            "description": "استرداد جميع العروض المقدمة من قبل الفني"
           }
         }
       ],
-      "description": "Endpoints for services-engineer functionality"
+      "description": "Endpoints for خدمات-الفنيين functionality"
     },
     {
-      "name": "services-admin",
+      "name": "إدارة-الخدمات",
       "item": [
         {
-          "name": "GET /api/v1/services/admin/requests",
+          "name": "قائمة طلبات الخدمات",
           "request": {
             "method": "GET",
             "header": [
@@ -7921,11 +8118,11 @@
                 "requests"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بجميع طلبات الخدمات مع إمكانية التصفية والترقيم"
           }
         },
         {
-          "name": "GET /api/v1/services/admin/requests/{id}",
+          "name": "الحصول على تفاصيل طلب خدمة",
           "request": {
             "method": "GET",
             "header": [
@@ -7949,11 +8146,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "استرداد تفاصيل كاملة لطلب خدمة محدد"
           }
         },
         {
-          "name": "GET /api/v1/services/admin/requests/{id}/offers",
+          "name": "الحصول على عروض طلب خدمة",
           "request": {
             "method": "GET",
             "header": [
@@ -7978,11 +8175,11 @@
                 "offers"
               ]
             },
-            "description": ""
+            "description": "استرداد جميع العروض المقدمة لطلب خدمة محدد"
           }
         },
         {
-          "name": "PATCH /api/v1/services/admin/requests/{id}/status",
+          "name": "تحديث حالة طلب خدمة",
           "request": {
             "method": "PATCH",
             "header": [
@@ -8007,7 +8204,7 @@
                 "status"
               ]
             },
-            "description": ""
+            "description": "تحديث حالة طلب خدمة من قبل الإدارة"
           }
         },
         {
@@ -8040,7 +8237,7 @@
           }
         },
         {
-          "name": "POST /api/v1/services/admin/requests/{id}/assign-engineer",
+          "name": "تعيين فني لطلب خدمة",
           "request": {
             "method": "POST",
             "header": [
@@ -8065,11 +8262,11 @@
                 "assign-engineer"
               ]
             },
-            "description": ""
+            "description": "تعيين فني محدد لطلب خدمة من قبل الإدارة"
           }
         },
         {
-          "name": "GET /api/v1/services/admin/statistics/overview",
+          "name": "إحصائيات عامة للخدمات",
           "request": {
             "method": "GET",
             "header": [
@@ -8093,11 +8290,11 @@
                 "overview"
               ]
             },
-            "description": ""
+            "description": "استرداد إحصائيات شاملة حول جميع الخدمات والطلبات"
           }
         },
         {
-          "name": "GET /api/v1/services/admin/statistics/requests",
+          "name": "إحصائيات الطلبات",
           "request": {
             "method": "GET",
             "header": [
@@ -8121,11 +8318,11 @@
                 "requests"
               ]
             },
-            "description": ""
+            "description": "استرداد إحصائيات مفصلة حول الطلبات حسب الفترة الزمنية"
           }
         },
         {
-          "name": "GET /api/v1/services/admin/statistics/engineers",
+          "name": "إحصائيات الفنيين",
           "request": {
             "method": "GET",
             "header": [
@@ -8149,11 +8346,11 @@
                 "engineers"
               ]
             },
-            "description": ""
+            "description": "استرداد إحصائيات أداء الفنيين خلال فترة زمنية محددة"
           }
         },
         {
-          "name": "GET /api/v1/services/admin/statistics/services-types",
+          "name": "إحصائيات أنواع الخدمات",
           "request": {
             "method": "GET",
             "header": [
@@ -8177,7 +8374,7 @@
                 "services-types"
               ]
             },
-            "description": ""
+            "description": "استرداد إحصائيات حول أنواع الخدمات المختلفة وتوزيع الطلبات عليها"
           }
         },
         {
@@ -8378,277 +8575,10 @@
           }
         }
       ],
-      "description": "Endpoints for services-admin functionality"
+      "description": "Endpoints for إدارة-الخدمات functionality"
     },
     {
-      "name": "addresses",
-      "item": [
-        {
-          "name": "Get all user addresses",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Create new address",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get active addresses only",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/active",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "active"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get default address",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/default",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "default"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Get address by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Update address",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Delete address (soft delete)",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Set address as default",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}/set-default",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}",
-                "set-default"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Restore deleted address",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/{id}/restore",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "{id}",
-                "restore"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "Validate address ownership",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/addresses/validate/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "addresses",
-                "validate",
-                "{id}"
-              ]
-            },
-            "description": ""
-          }
-        }
-      ],
-      "description": "Endpoints for addresses functionality"
-    },
-    {
-      "name": "search",
+      "name": "البحث",
       "item": [
         {
           "name": "بحث شامل في المنتجات، الفئات، والبراندات",
@@ -8672,7 +8602,7 @@
                 "search"
               ]
             },
-            "description": ""
+            "description": "البحث في جميع كيانات النظام (منتجات، فئات، علامات تجارية) باستخدام نص بحث واحد"
           }
         },
         {
@@ -8698,7 +8628,7 @@
                 "products"
               ]
             },
-            "description": ""
+            "description": "بحث متقدم في المنتجات مع فلاتر متعددة تشمل الفئات، العلامات التجارية، الأسعار، التصنيفات، والخصائص"
           }
         },
         {
@@ -8724,11 +8654,11 @@
                 "suggestions"
               ]
             },
-            "description": ""
+            "description": "استرداد اقتراحات البحث التلقائية أثناء كتابة المستخدم لنص البحث"
           }
         },
         {
-          "name": "Autocomplete",
+          "name": "الإكمال التلقائي للبحث",
           "request": {
             "method": "GET",
             "header": [
@@ -8750,14 +8680,14 @@
                 "autocomplete"
               ]
             },
-            "description": ""
+            "description": "نفس وظيفة الاقتراحات ولكن باسم بديل للتوافق مع APIs القديمة"
           }
         }
       ],
-      "description": "Endpoints for search functionality"
+      "description": "Endpoints for البحث functionality"
     },
     {
-      "name": "admin-brands",
+      "name": "إدارة-العلامات-التجارية",
       "item": [
         {
           "name": "إنشاء علامة تجارية جديدة",
@@ -8921,10 +8851,10 @@
           }
         }
       ],
-      "description": "Endpoints for admin-brands functionality"
+      "description": "Endpoints for إدارة-العلامات-التجارية functionality"
     },
     {
-      "name": "brands",
+      "name": "العلامات-التجارية",
       "item": [
         {
           "name": "الحصول على قائمة العلامات التجارية النشطة",
@@ -9005,13 +8935,13 @@
           }
         }
       ],
-      "description": "Endpoints for brands functionality"
+      "description": "Endpoints for العلامات-التجارية functionality"
     },
     {
-      "name": "upload",
+      "name": "رفع-الملفات",
       "item": [
         {
-          "name": "POST /api/v1/upload/file",
+          "name": "رفع ملف واحد",
           "request": {
             "method": "POST",
             "header": [
@@ -9033,11 +8963,11 @@
                 "file"
               ]
             },
-            "description": ""
+            "description": "رفع ملف واحد مع إمكانية تحديد المجلد والاسم المخصص"
           }
         },
         {
-          "name": "DELETE /api/v1/upload/file",
+          "name": "حذف ملف",
           "request": {
             "method": "DELETE",
             "header": [
@@ -9059,11 +8989,11 @@
                 "file"
               ]
             },
-            "description": ""
+            "description": "حذف ملف مرفوع من خلال مساره"
           }
         },
         {
-          "name": "POST /api/v1/upload/files",
+          "name": "رفع ملفات متعددة",
           "request": {
             "method": "POST",
             "header": [
@@ -9085,11 +9015,11 @@
                 "files"
               ]
             },
-            "description": ""
+            "description": "رفع عدة ملفات في وقت واحد (حتى 10 ملفات) مع إمكانية تحديد المجلد"
           }
         },
         {
-          "name": "GET /api/v1/upload/file/{filePath}",
+          "name": "معلومات الملف",
           "request": {
             "method": "GET",
             "header": [
@@ -9112,11 +9042,11 @@
                 "{filePath}"
               ]
             },
-            "description": ""
+            "description": "الحصول على معلومات مفصلة عن ملف مرفوع"
           }
         },
         {
-          "name": "GET /api/v1/upload/public/*",
+          "name": "عرض ملف عام",
           "request": {
             "method": "GET",
             "header": [
@@ -9139,17 +9069,17 @@
                 "*"
               ]
             },
-            "description": ""
+            "description": "عرض ملف مرفوع بشكل عام (يُستخدم للاختبار - في الإنتاج يُفضل استخدام CDN مباشرة)"
           }
         }
       ],
-      "description": "Endpoints for upload functionality"
+      "description": "Endpoints for رفع-الملفات functionality"
     },
     {
-      "name": "admin-media",
+      "name": "إدارة-الوسائط",
       "item": [
         {
-          "name": "POST /api/v1/admin/media/upload",
+          "name": "رفع وسائط إلى المكتبة",
           "request": {
             "method": "POST",
             "header": [
@@ -9172,11 +9102,11 @@
                 "upload"
               ]
             },
-            "description": ""
+            "description": "رفع ملف وسائط (صور، فيديوهات، مستندات) إلى مكتبة الوسائط مع إمكانية إضافة بيانات وصفية"
           }
         },
         {
-          "name": "GET /api/v1/admin/media",
+          "name": "قائمة الوسائط",
           "request": {
             "method": "GET",
             "header": [
@@ -9198,11 +9128,11 @@
                 "media"
               ]
             },
-            "description": ""
+            "description": "استرداد قائمة بجميع الوسائط في المكتبة مع إمكانية التصفية والترقيم"
           }
         },
         {
-          "name": "GET /api/v1/admin/media/{id}",
+          "name": "تفاصيل الوسائط",
           "request": {
             "method": "GET",
             "header": [
@@ -9225,11 +9155,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "استرداد تفاصيل وسائط محددة من المكتبة"
           }
         },
         {
-          "name": "PATCH /api/v1/admin/media/{id}",
+          "name": "تحديث الوسائط",
           "request": {
             "method": "PATCH",
             "header": [
@@ -9252,11 +9182,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "تحديث البيانات الوصفية لملف وسائط في المكتبة"
           }
         },
         {
-          "name": "DELETE /api/v1/admin/media/{id}",
+          "name": "حذف الوسائط",
           "request": {
             "method": "DELETE",
             "header": [
@@ -9279,11 +9209,11 @@
                 "{id}"
               ]
             },
-            "description": ""
+            "description": "حذف ملف وسائط من المكتبة (حذف مؤقت - يمكن الاستعادة)"
           }
         },
         {
-          "name": "POST /api/v1/admin/media/{id}/restore",
+          "name": "استعادة الوسائط",
           "request": {
             "method": "POST",
             "header": [
@@ -9307,11 +9237,11 @@
                 "restore"
               ]
             },
-            "description": ""
+            "description": "استعادة ملف وسائط محذوف مؤقتاً إلى المكتبة"
           }
         },
         {
-          "name": "DELETE /api/v1/admin/media/{id}/permanent",
+          "name": "حذف الوسائط نهائياً",
           "request": {
             "method": "DELETE",
             "header": [
@@ -9335,7 +9265,7 @@
                 "permanent"
               ]
             },
-            "description": ""
+            "description": "حذف ملف وسائط نهائياً من المكتبة والتخزين (متاح للمشرفين الفائقين فقط)"
           }
         },
         {
@@ -9451,13 +9381,13 @@
           }
         }
       ],
-      "description": "Endpoints for admin-media functionality"
+      "description": "Endpoints for إدارة-الوسائط functionality"
     },
     {
-      "name": "audit",
+      "name": "التدقيق",
       "item": [
         {
-          "name": "Get audit logs with filtering",
+          "name": "الحصول على سجلات التدقيق مع التصفية",
           "request": {
             "method": "GET",
             "header": [
@@ -9480,11 +9410,11 @@
                 "logs"
               ]
             },
-            "description": "Retrieve audit logs with various filtering options"
+            "description": "استرداد سجلات التدقيق مع خيارات التصفية المتنوعة"
           }
         },
         {
-          "name": "Get audit statistics",
+          "name": "الحصول على إحصائيات التدقيق",
           "request": {
             "method": "GET",
             "header": [
@@ -9507,11 +9437,11 @@
                 "stats"
               ]
             },
-            "description": "Get statistics about audit logs"
+            "description": "الحصول على إحصائيات حول سجلات التدقيق"
           }
         },
         {
-          "name": "Get available audit actions",
+          "name": "الحصول على إجراءات التدقيق المتاحة",
           "request": {
             "method": "GET",
             "header": [
@@ -9534,11 +9464,11 @@
                 "actions"
               ]
             },
-            "description": "Get list of all available audit actions"
+            "description": "الحصول على قائمة بجميع إجراءات التدقيق المتاحة"
           }
         },
         {
-          "name": "Get available audit resources",
+          "name": "الحصول على موارد التدقيق المتاحة",
           "request": {
             "method": "GET",
             "header": [
@@ -9561,11 +9491,120 @@
                 "resources"
               ]
             },
-            "description": "Get list of all available audit resources"
+            "description": "الحصول على قائمة بجميع موارد التدقيق المتاحة"
           }
         }
       ],
-      "description": "Endpoints for audit functionality"
+      "description": "Endpoints for التدقيق functionality"
+    },
+    {
+      "name": "General",
+      "item": [
+        {
+          "name": "GET /api/v1/health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/health/simple",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health/simple",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health",
+                "simple"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/health/ready",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health/ready",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health",
+                "ready"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/health/live",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health/live",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health",
+                "live"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ],
+      "description": "Endpoints for General functionality"
     }
   ]
 }

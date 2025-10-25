@@ -138,7 +138,7 @@ export function ResponsiveListWrapper<T extends Record<string, any>>({
   }
 
   // Empty state
-  if (!data || data.length === 0) {
+  if (!data || !Array.isArray(data) || data.length === 0) {
     return (
       <Empty
         message={emptyMessage}
@@ -152,9 +152,10 @@ export function ResponsiveListWrapper<T extends Record<string, any>>({
     return (
       <Box {...cardContainerProps}>
         {data.map((item, index) => {
+          const itemKey = getRowId ? getRowId(item) : index;
+          
           // Create props object based on the item type
           const cardProps: any = {
-            key: getRowId ? getRowId(item) : index,
             onEdit,
             onDelete,
             onView,
@@ -177,7 +178,7 @@ export function ResponsiveListWrapper<T extends Record<string, any>>({
             cardProps.order = item;
           }
 
-          return <CardComponent {...cardProps} />;
+          return <CardComponent key={itemKey} {...cardProps} />;
         })}
       </Box>
     );

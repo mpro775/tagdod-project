@@ -35,6 +35,7 @@ import {
   GetApp,
   Description,
   ViewModule,
+  Security,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -136,12 +137,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           icon: <Assessment />,
           path: '/carts/analytics',
         },
-        {
-          id: 'coupons',
-          label: t('navigation.coupons'),
-          icon: <LocalOffer />,
-          path: '/coupons',
-        },
       ],
     },
     {
@@ -150,19 +145,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       icon: <Campaign />,
       children: [
         {
+          id: 'marketing-dashboard',
+          label: t('navigation.marketingDashboard', 'لوحة التسويق'),
+          icon: <Dashboard />,
+          path: '/marketing',
+        },
+        {
+          id: 'price-rules',
+          label: t('navigation.priceRules', 'قواعد الأسعار'),
+          icon: <LocalOffer />,
+          path: '/marketing/price-rules',
+        },
+        {
           id: 'banners',
           label: t('navigation.banners', 'البنرات'),
           icon: <Campaign />,
           path: '/banners',
         },
         {
-          id: 'promotions',
-          label: t('navigation.promotions', 'العروض'),
+          id: 'coupons',
+          label: t('navigation.coupons', 'الكوبونات'),
           icon: <LocalOffer />,
-          path: '/promotions',
+          path: '/coupons',
         },
       ],
-      },
+    },
       {
         id: 'services',
         label: t('navigation.services', 'الخدمات'),
@@ -234,6 +241,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: t('navigation.analyticsReports', 'إدارة التقارير'),
             icon: <Description />,
             path: '/analytics/reports',
+          },
+        ],
+      },
+      {
+        id: 'audit',
+        label: t('navigation.audit', 'السجلات والتدقيق'),
+        icon: <Security />,
+        children: [
+          {
+            id: 'audit-logs',
+            label: t('navigation.auditLogs', 'سجلات التدقيق'),
+            icon: <Security />,
+            path: '/audit',
+          },
+          {
+            id: 'audit-analytics',
+            label: t('navigation.auditAnalytics', 'تحليلات التدقيق'),
+            icon: <Assessment />,
+            path: '/audit/analytics',
           },
         ],
       },

@@ -9,11 +9,9 @@ import {
   Stack,
   Chip,
   Paper,
-  Divider,
 } from '@mui/material';
 import { 
   Analytics, 
-  Warning, 
   Refresh,
   Support,
 } from '@mui/icons-material';
@@ -29,12 +27,12 @@ import {
 } from '../hooks/useSupport';
 import type { 
   SupportTicket, 
-  SupportTicketFilters as SupportTicketFiltersType,
+  ListTicketsParams,
 } from '../types/support.types';
 
 export const SupportTicketsListPage: React.FC = () => {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<SupportTicketFiltersType>({});
+  const [filters, setFilters] = useState<ListTicketsParams>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
 
@@ -46,7 +44,7 @@ export const SupportTicketsListPage: React.FC = () => {
 
   const { data: breachedSLA, refetch: refetchSLA } = useBreachedSLATickets();
 
-  const handleFiltersChange = (newFilters: SupportTicketFiltersType) => {
+  const handleFiltersChange = (newFilters: ListTicketsParams) => {
     setFilters(newFilters);
     setCurrentPage(1);
   };
@@ -72,7 +70,7 @@ export const SupportTicketsListPage: React.FC = () => {
   const renderSkeletons = () => (
     <Grid container spacing={3}>
       {[...Array(6)].map((_, index) => (
-        <Grid item xs={12} sm={6} md={4} key={index}>
+        <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={index}>
           <Skeleton variant="rectangular" height={200} />
         </Grid>
       ))}
@@ -130,19 +128,19 @@ export const SupportTicketsListPage: React.FC = () => {
         <Paper sx={{ p: 2, mb: 3 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="body1">
-              عرض {data.data.length} من أصل {data.meta?.total || 0} تذكرة
+              عرض {data.data.data.length} من أصل {data.data.meta?.total || 0} تذكرة
             </Typography>
             <Stack direction="row" spacing={1}>
-              {Object.entries(filters).map(([key, value]) => (
-                value && (
+              {Object.entries(filters as any)
+                .filter(([, value]) => value)
+                .map(([key, value]) => (
                   <Chip
                     key={key}
                     label={`${key}: ${value}`}
                     size="small"
                     variant="outlined"
                   />
-                )
-              ))}
+                ))}
             </Stack>
           </Stack>
         </Paper>
@@ -158,10 +156,10 @@ export const SupportTicketsListPage: React.FC = () => {
       {/* Tickets Grid */}
       {isLoading ? (
         renderSkeletons()
-      ) : data?.data && data.data.length > 0 ? (
+      ) : data?.data?.data && data.data.data.length > 0 ? (
         <Grid container spacing={3}>
-          {data.data.map((ticket) => (
-            <Grid item xs={12} sm={6} md={4} key={ticket._id}>
+          {data.data.data.map((ticket) => (
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={ticket._id}>
               <SupportTicketCard
                 ticket={ticket}
                 onClick={handleTicketClick}
@@ -183,10 +181,10 @@ export const SupportTicketsListPage: React.FC = () => {
       )}
 
       {/* Pagination */}
-      {data?.meta && data.meta.total > pageSize && (
+      {data?.data?.meta && data.data.meta.total > pageSize && (
         <Box mt={3} display="flex" justifyContent="center">
           <Stack direction="row" spacing={1}>
-            {Array.from({ length: Math.ceil(data.meta.total / pageSize) }, (_, i) => (
+            {Array.from({ length: Math.ceil(data.data.meta.total / pageSize) }, (_, i) => (
               <Button
                 key={i + 1}
                 variant={currentPage === i + 1 ? 'contained' : 'outlined'}

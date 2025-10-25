@@ -35,26 +35,19 @@ export abstract class BaseAnalyticsController {
   }
 
   /**
-   * Handle common error responses
+   * Log error and re-throw it
+   * The global exception filter will handle the response formatting
    */
-  protected handleError(error: Error, operation: string) {
+  protected handleError(error: Error, operation: string): never {
     this.logger.error(`Error in ${operation}:`, error);
-    return {
-      success: false,
-      error: error.message,
-      timestamp: new Date(),
-    };
+    throw error;
   }
 
   /**
-   * Format success response
+   * Return data directly without wrapping
+   * The ResponseEnvelopeInterceptor will handle the wrapping
    */
-  protected formatSuccessResponse(data: Record<string, unknown>, message?: string) {
-    return {
-      success: true,
-      data,
-      message: message || 'Operation completed successfully',
-      timestamp: new Date(),
-    };
+  protected formatSuccessResponse(data: Record<string, unknown>) {
+    return data;
   }
 }

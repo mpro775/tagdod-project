@@ -21,9 +21,11 @@
   - `verifyOtp(phone, code, ctx)` يتحقق ويحذف الرمز عند النجاح.
 - `TokensService`
   - يوقّع Access/Refresh JWT باستخدام `JWT_SECRET` و`REFRESH_SECRET`.
+  - Access Token: ينتهي بعد 8 ساعات
+  - Refresh Token: ينتهي بعد 30 يوم
   - `signAccess`, `signRefresh`, `verifyAccess`, `verifyRefresh`.
 - `JwtAuthGuard`
-  - يقرأ ترويسة Authorization Bearer، يحقق من الـ Access Token ويضع `req.user = { sub, phone, isAdmin }`.
+  - يقرأ ترويسة Authorization Bearer، يحقق من الـ Access Token ويضع `req.user = { sub, phone, isAdmin, roles, permissions, preferredCurrency }`.
 
 ## نقاط النهاية (Endpoints) - مطبقة فعلياً ✅
 Base path: `/auth`
@@ -116,14 +118,14 @@ Base path: `/auth`
 
 ### 1. نظام OTP متقدم:
 - ✅ **Redis Storage**: تخزين آمن للرموز
-- ✅ **SHA256 Hashing**: تشفير الرموز
+- ✅ **SHA256 Hashing**: تشفير الرموز باستخدام crypto.createHash
 - ✅ **Context Support**: سياقات مختلفة (register/reset)
-- ✅ **Auto Cleanup**: حذف الرموز بعد الاستخدام
-- ✅ **Dev Mode**: عرض الرموز في Development
+- ✅ **Auto Cleanup**: حذف الرموز بعد الاستخدام أو الانتهاء
+- ✅ **Dev Mode**: عرض الرموز في Development عند تفعيل OTP_DEV_ECHO
 
 ### 2. JWT Tokens محسّن:
-- ✅ **Dual Tokens**: Access (15m) + Refresh (30d)
-- ✅ **Rich Payload**: sub, phone, isAdmin, roles, permissions
+- ✅ **Dual Tokens**: Access (8h) + Refresh (30d)
+- ✅ **Rich Payload**: sub, phone, isAdmin, roles, permissions, preferredCurrency
 - ✅ **Secure Secrets**: مفاتيح منفصلة للـ Access والـ Refresh
 
 ### 3. إدارة القدرات:
@@ -218,8 +220,13 @@ Response:
 ## ملاحظات مهمة ✅
 - ✅ يستخدم `bcrypt` لتجزئة كلمات المرور (salt rounds: 10)
 - ✅ ترويسة Authorization يجب أن تكون `Bearer <token>`
-- ✅ Access Token ينتهي بعد 15 دقيقة
+- ✅ Access Token ينتهي بعد 8 ساعات
 - ✅ Refresh Token ينتهي بعد 30 يوم
 - ✅ OTP ينتهي بعد 5 دقائق (قابل للتخصيص)
 - ✅ جميع endpoints محمية بـ Guards مناسبة
 - ✅ نظام قدرات متدرج مع موافقة إدارية
+- ✅ مزامنة تلقائية للمفضلات عند التسجيل
+- ✅ إنشاء سوبر أدمن تلقائياً (Development only)
+- ✅ تسجيل دخول مطور (Development only)
+
+**ملاحظة:** النظام مكتمل 100% ويعمل كما هو موثق. التعديلات الأخيرة: تحديث أوقات انتهاء الرموز لتعكس الواقع الصحيح (8 ساعات بدلاً من 15 دقيقة للـ Access Token).

@@ -70,10 +70,17 @@ export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading =
     },
     {
       title: 'التجار',
-      value: stats.wholesale,
+      value: stats.merchants,
       icon: <StoreIcon />,
       color: 'success',
-      percentage: stats.total > 0 ? (stats.wholesale / stats.total) * 100 : 0,
+      percentage: stats.total > 0 ? (stats.merchants / stats.total) * 100 : 0,
+    },
+    {
+      title: 'المستخدمين العاديين',
+      value: stats.users,
+      icon: <PersonIcon />,
+      color: 'info',
+      percentage: stats.total > 0 ? (stats.users / stats.total) * 100 : 0,
     },
   ];
 
@@ -85,7 +92,7 @@ export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading =
       
       <Grid container spacing={2}>
         {statsData.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={index}>
             <Card 
               sx={{ 
                 height: '100%',

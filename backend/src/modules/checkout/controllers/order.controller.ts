@@ -24,7 +24,7 @@ import {
 /**
  * Controller للطلبات - للعملاء
  */
-@ApiTags('orders')
+@ApiTags('الطلبات')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
@@ -47,7 +47,7 @@ export class OrderController {
   async previewCheckout(
     @Req() req: ExpressRequest,
     @Body() dto: CheckoutPreviewDto,
-  ): Promise<OrderResponseDto> {
+  ) {
     const result = await this.orderService.previewCheckout(
       this.getUserId(req),
       dto.currency,
@@ -55,9 +55,8 @@ export class OrderController {
     );
 
     return {
-      success: true,
-      message: 'تم إنشاء معاينة الطلب بنجاح',
-      data: result.data,
+      preview: result.data,
+      message: 'تم إنشاء معاينة الطلب بنجاح'
     };
   }
 
@@ -71,13 +70,12 @@ export class OrderController {
   async confirmCheckout(
     @Req() req: ExpressRequest,
     @Body() dto: CheckoutConfirmDto,
-  ): Promise<OrderResponseDto> {
+  ) {
     const result = await this.orderService.confirmCheckout(this.getUserId(req), dto);
 
     return {
-      success: true,
-      message: 'تم إنشاء الطلب بنجاح',
-      data: result,
+      order: result,
+      message: 'تم إنشاء الطلب بنجاح'
     };
   }
 
@@ -92,14 +90,13 @@ export class OrderController {
   async getUserOrders(
     @Req() req: ExpressRequest,
     @Query() query: ListOrdersDto,
-  ): Promise<OrderResponseDto> {
+  ) {
     const result = await this.orderService.getUserOrders(this.getUserId(req), query);
 
     return {
-      success: true,
-      message: 'تم الحصول على الطلبات بنجاح',
-      data: result.orders,
+      orders: result.orders,
       pagination: result.pagination,
+      message: 'تم الحصول على الطلبات بنجاح'
     };
   }
 
@@ -113,7 +110,7 @@ export class OrderController {
   async getRecentOrders(
     @Req() req: ExpressRequest,
     @Query('limit') limit?: number,
-  ): Promise<OrderResponseDto> {
+  ) {
     const query: ListOrdersDto = {
       page: 1,
       limit: limit || 5,
@@ -122,9 +119,8 @@ export class OrderController {
     const result = await this.orderService.getUserOrders(this.getUserId(req), query);
 
     return {
-      success: true,
-      message: 'تم الحصول على الطلبات الأخيرة',
-      data: result.orders,
+      orders: result.orders,
+      message: 'تم الحصول على الطلبات الأخيرة'
     };
   }
 
@@ -139,13 +135,12 @@ export class OrderController {
   async getOrderDetails(
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.getOrderDetails(orderId, this.getUserId(req));
 
     return {
-      success: true,
-      message: 'تم الحصول على تفاصيل الطلب',
-      data: order,
+      order,
+      message: 'تم الحصول على تفاصيل الطلب'
     };
   }
 
@@ -159,7 +154,7 @@ export class OrderController {
   async trackOrder(
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.getOrderDetails(orderId, this.getUserId(req));
 
     // بناء معلومات التتبع
@@ -181,9 +176,8 @@ export class OrderController {
     };
 
     return {
-      success: true,
-      message: 'تم الحصول على معلومات التتبع',
-      data: tracking,
+      tracking,
+      message: 'تم الحصول على معلومات التتبع'
     };
   }
 
@@ -199,13 +193,12 @@ export class OrderController {
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: CancelOrderDto,
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.cancelOrder(orderId, this.getUserId(req), dto);
 
     return {
-      success: true,
-      message: 'تم إلغاء الطلب بنجاح',
-      data: order,
+      order,
+      message: 'تم إلغاء الطلب بنجاح'
     };
   }
 
@@ -221,13 +214,12 @@ export class OrderController {
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: RateOrderDto,
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.rateOrder(orderId, this.getUserId(req), dto);
 
     return {
-      success: true,
-      message: 'شكراً لتقييمك!',
-      data: order,
+      order,
+      message: 'شكراً لتقييمك!'
     };
   }
 
@@ -242,13 +234,12 @@ export class OrderController {
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
     @Body() dto: AddOrderNotesDto,
-  ): Promise<OrderResponseDto> {
+  ) {
     const order = await this.orderService.addOrderNotes(orderId, dto, this.getUserId(req));
 
     return {
-      success: true,
-      message: 'تم إضافة الملاحظات بنجاح',
-      data: order,
+      order,
+      message: 'تم إضافة الملاحظات بنجاح'
     };
   }
 
@@ -260,13 +251,12 @@ export class OrderController {
     description: 'الحصول على إحصائيات طلبات المستخدم',
   })
   @ApiResponse({ status: 200, description: 'تم الحصول على الإحصائيات' })
-  async getOrderStatistics(@Req() req: ExpressRequest): Promise<OrderResponseDto> {
+  async getOrderStatistics(@Req() req: ExpressRequest) {
     const stats = await this.orderService.getUserOrderStatistics(this.getUserId(req));
 
     return {
-      success: true,
-      message: 'تم الحصول على الإحصائيات',
-      data: stats,
+      stats,
+      message: 'تم الحصول على الإحصائيات'
     };
   }
 

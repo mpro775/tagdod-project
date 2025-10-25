@@ -144,9 +144,10 @@
 - ✅ `POST cart/guest/preview` - معاينة سلة الضيف
 
 ### المجدول (Cron Jobs):
-- ✅ **كل ساعة**: `processAbandonedCarts()` وتسجيل عدد المعالَج والمرسَل
-- ✅ **يومياً 2AM**: `cleanupExpiredCarts()`
-- ✅ **أسبوعياً**: `deleteOldConvertedCarts(90)`
+- ✅ **كل ساعة**: `handleAbandonedCarts()` - معالجة العربات بعد 1h, 24h, 72h
+- ✅ **كل 30 دقيقة**: `markAbandonedCarts()` - وضع علامة متروكة
+- ✅ **يومياً 2AM**: `cleanupExpiredCarts()` - تنظيف العربات المنتهية
+- ✅ **أسبوعياً**: `cleanupOldConvertedCarts(90)` - حذف العربات المحولة القديمة
 
 ---
 
@@ -356,6 +357,11 @@ Response:
 
 ---
 
-**Status:** ✅ Complete - مكتمل التنفيذ 100%  
-**Version:** 1.0.0  
+**Status:** ✅ Complete - مكتمل التنفيذ 100%
+**Version:** 1.0.1
 **Last Updated:** 2024-01-15
+
+**ملاحظات:**
+1. النظام مكتمل بالكامل ويعمل كما هو موثق
+2. تم تفعيل CartCronService لمعالجة العربات المتروكة تلقائياً
+3. تم تصحيح جدولة المهام التلقائية لتعكس الواقع الصحيح
