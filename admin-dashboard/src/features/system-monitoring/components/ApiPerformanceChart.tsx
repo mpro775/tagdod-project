@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Card, CardContent, CardHeader, Typography } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useEffect, useState } from 'react';
 import { systemMonitoringApi } from '../api/systemMonitoringApi';
-import { Skeleton } from '@/shared/components/ui/skeleton';
+import { Skeleton } from '@mui/material';
+import { toast } from 'react-hot-toast';
 
 export function ApiPerformanceChart() {
   const [data, setData] = useState<any[]>([]);
@@ -21,8 +22,8 @@ export function ApiPerformanceChart() {
         }));
 
         setData(formattedData);
-      } catch (error) {
-        console.error('Error fetching API performance:', error);
+      } catch {
+        toast.error('فشل في تحميل بيانات أداء النقاط API');
       } finally {
         setLoading(false);
       }
@@ -38,7 +39,7 @@ export function ApiPerformanceChart() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>أداء نقاط API</CardTitle>
+          <Typography variant="h6">أداء نقاط API</Typography>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[300px] w-full" />
@@ -50,7 +51,7 @@ export function ApiPerformanceChart() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>أبطأ نقاط API (متوسط وقت الاستجابة)</CardTitle>
+        <Typography variant="h6">أبطأ نقاط API (متوسط وقت الاستجابة)</Typography>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>

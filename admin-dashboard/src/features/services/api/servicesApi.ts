@@ -183,4 +183,31 @@ export const servicesApi = {
     );
     return response.data.data;
   },
+
+  // قبول عرض (للأدمن - يتطلب requestId و offerId)
+  acceptOffer: async (requestId: string, offerId: string): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>(
+      `/services/admin/requests/${requestId}/accept-offer`,
+      { offerId }
+    );
+    return response.data.data;
+  },
+
+  // رفض عرض (للأدمن - يتطلب تطوير endpoint في الباك إند)
+  rejectOffer: async (offerId: string, reason?: string): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>(
+      `/services/admin/offers/${offerId}/reject`,
+      { reason }
+    );
+    return response.data.data;
+  },
+
+  // إلغاء عرض (للأدمن - يتطلب تطوير endpoint في الباك إند)
+  cancelOffer: async (offerId: string, reason?: string): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>(
+      `/services/admin/offers/${offerId}/cancel`,
+      { reason }
+    );
+    return response.data.data;
+  },
 };

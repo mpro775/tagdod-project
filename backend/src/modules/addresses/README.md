@@ -42,6 +42,45 @@
 
 ## 📊 API Endpoints
 
+### 👤 User Endpoints (محمية - JWT Required)
+
+**Base URL:** `/addresses`
+
+جميع المسارات أدناه مخصصة للمستخدمين العاديين للتعامل مع عناوينهم الخاصة.
+
+### 🔐 Admin Endpoints (محمية - Admin Only)
+
+**Base URL:** `/admin/addresses`
+
+**الصلاحيات المطلوبة:**
+- `AdminPermission.ADDRESSES_READ`
+- `AdminPermission.ADMIN_ACCESS`
+
+**الأدوار المسموحة:** `ADMIN`, `SUPER_ADMIN`
+
+**عدد المسارات:** 11 endpoint
+
+📖 **[التوثيق الكامل لـ Admin API](./ADMIN_API_DOCUMENTATION.md)**
+
+#### ملخص سريع - Admin Endpoints:
+
+**الإحصائيات والتحليلات:**
+1. `GET /admin/addresses/stats` - إحصائيات شاملة
+2. `GET /admin/addresses/top-cities` - المدن الأكثر استخداماً
+3. `GET /admin/addresses/most-used` - العناوين الأكثر استخداماً
+4. `GET /admin/addresses/recently-used` - المستخدمة مؤخراً
+5. `GET /admin/addresses/never-used` - غير المستخدمة أبداً
+6. `GET /admin/addresses/usage-analytics` - تحليل الاستخدام
+7. `GET /admin/addresses/geographic-analytics` - التحليل الجغرافي
+
+**البحث والإدارة:**
+8. `GET /admin/addresses/list` - قائمة مع فلترة متقدمة
+9. `GET /admin/addresses/user/:userId` - عناوين مستخدم محدد
+10. `GET /admin/addresses/user/:userId/count` - عدد العناوين
+11. `GET /admin/addresses/nearby` - بحث جغرافي
+
+---
+
 ### User Endpoints (محمية - JWT Required)
 
 #### 1. Get All Addresses

@@ -291,7 +291,7 @@ export class MediaAnalyticsController {
     try {
       const files = await this.mediaService.getUnusedFiles(Number(limit));
       const totalSize = files.reduce((sum, file) => {
-        return sum + ((file as any).fileSize || 0);
+        return sum + ((file as { fileSize?: number }).fileSize || 0);
       }, 0);
       
       return {

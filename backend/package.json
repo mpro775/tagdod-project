@@ -28,6 +28,8 @@
     "db:migrate": "ts-node scripts/migrate.ts",
     "db:seed": "ts-node scripts/seed.ts",
     "db:migrate-isadmin": "ts-node scripts/migrate-remove-isadmin.ts",
+    "i18n:import": "node scripts/import-i18n-translations.js",
+    "i18n:test": "node scripts/test-i18n-api.js",
     "migrate:capabilities": "ts-node scripts/run-migration.ts",
     "migrate:cleanup": "ts-node scripts/cleanup-capabilities.ts",
     "migration:full": "npm run migrate:capabilities && echo 'Migration completed. Run npm run migrate:cleanup to remove old data.'",
@@ -100,27 +102,5 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.3"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "roots": [
-      "<rootDir>/src"
-    ],
-    "testMatch": [
-      "**/*.spec.ts"
-    ],
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "coverageThreshold": {
-      "global": {
-        "branches": 70,
-        "functions": 70,
-        "lines": 70,
-        "statements": 70
-      }
-    }
   }
 }

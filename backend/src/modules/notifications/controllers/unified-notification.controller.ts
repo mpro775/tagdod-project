@@ -2,14 +2,11 @@ import {
   Controller,
   Get,
   Post,
-  Put,
-  Delete,
+
   Body,
-  Param,
   Query,
   UseGuards,
-  HttpException,
-  HttpStatus,
+ 
   Request
 } from '@nestjs/common';
 import { Request as ExpressRequest } from 'express';
@@ -35,20 +32,15 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiParam,
   ApiQuery,
   ApiBody
 } from '@nestjs/swagger';
 import { NotificationService } from '../services/notification.service';
 import { 
   CreateNotificationDto, 
-  UpdateNotificationDto, 
   ListNotificationsDto,
   MarkAsReadDto,
-  BulkSendNotificationDto,
-  NotificationResponseDto,
-  NotificationListResponseDto,
-  NotificationStatsResponseDto
+
 } from '../dto/unified-notification.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';

@@ -1,8 +1,9 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { ServiceRequest } from './schemas/service-request.schema';
 import { EngineerOffer } from './schemas/engineer-offer.schema';
+import { User } from '../users/schemas/user.schema';
 import { AddressesService } from '../addresses/addresses.service';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
@@ -12,9 +13,11 @@ import { DistanceService } from './services/distance.service';
 
 @Injectable()
 export class ServicesService {
+  private readonly logger = new Logger(ServicesService.name);
   constructor(
     @InjectModel(ServiceRequest.name) private requests: Model<ServiceRequest>,
     @InjectModel(EngineerOffer.name) private offers: Model<EngineerOffer>,
+    @InjectModel(User.name) private userModel: Model<User>,
     @InjectConnection() private conn: Connection,
     private distanceService: DistanceService,
     private addressesService: AddressesService,
@@ -1051,5 +1054,122 @@ export class ServicesService {
     ]);
 
     return { items, meta: { page, limit, total } };
+  }
+
+  // === قبول عرض من الأدمن ===
+  async adminAcceptOffer(requestId: string, offerId: string) {
+    const r = await this.requests.findById(requestId);
+    if (!r) return { error: 'REQUEST_NOT_FOUND' };
+    
+    if (!['OPEN', 'OFFERS_COLLECTING'].includes(r.status)) {
+      return { error: 'INVALID_STATUS' };
+    }
+
+    const offer = await this.offers.findOne({ 
+      _id: offerId, 
+      requestId: r._id, 
+      status: 'OFFERED' 
+    });
+    
+    if (!offer) return { error: 'OFFER_NOT_FOUND' };
+
+    // تحديث الطلب
+    r.status = 'ASSIGNED';
+    r.engineerId = offer.engineerId;
+    r.acceptedOffer = { 
+      offerId: String(offer._id), 
+      amount: offer.amount, 
+      note: offer.note 
+    };
+    await r.save();
+
+    // تحديث العرض المقبول
+    offer.status = 'ACCEPTED';
+    await offer.save();
+
+    // رفض جميع العروض الأخرى
+    await this.offers.updateMany(
+      { requestId: r._id, _id: { $ne: offer._id }, status: 'OFFERED' },
+      { $set: { status: 'REJECTED' } },
+    );
+
+    // إرسال إشعار للمهندس
+    await this.safeNotify(
+      String(offer.engineerId),
+      NotificationType.OFFER_ACCEPTED,
+      'تم قبول عرضك',
+      `تم قبول عرضك للطلب ${String(r._id)} من قبل الإدارة`,
+      { requestId: String(r._id) }
+    );
+
+    this.logger.log(`Admin accepted offer ${offerId} for request ${requestId}`);
+    return { ok: true };
+  }
+
+  // === رفض عرض من الأدمن ===
+  async adminRejectOffer(offerId: string, reason?: string) {
+    const offer = await this.offers.findById(offerId);
+    if (!offer) return { error: 'OFFER_NOT_FOUND' };
+
+    if (offer.status !== 'OFFERED') {
+      return { error: 'INVALID_STATUS' };
+    }
+
+    // تحديث حالة العرض
+    offer.status = 'REJECTED';
+    await offer.save();
+
+    // إرسال إشعار للمهندس
+    await this.safeNotify(
+      String(offer.engineerId),
+      NotificationType.OFFER_REJECTED,
+      'تم رفض عرضك',
+      reason || `تم رفض عرضك للطلب ${String(offer.requestId)} من قبل الإدارة`,
+      { requestId: String(offer.requestId), reason }
+    );
+
+    this.logger.log(`Admin rejected offer ${offerId}. Reason: ${reason || 'No reason provided'}`);
+    return { ok: true };
+  }
+
+  // === إلغاء عرض من الأدمن ===
+  async adminCancelOffer(offerId: string, reason?: string) {
+    const offer = await this.offers.findById(offerId);
+    if (!offer) return { error: 'OFFER_NOT_FOUND' };
+
+    if (!['OFFERED', 'ACCEPTED'].includes(offer.status)) {
+      return { error: 'INVALID_STATUS' };
+    }
+
+    const previousStatus = offer.status;
+
+    // تحديث حالة العرض
+    offer.status = 'CANCELLED';
+    await offer.save();
+
+    // إذا كان العرض مقبولاً، نحتاج إلى تحديث الطلب أيضاً
+    if (previousStatus === 'ACCEPTED') {
+      const request = await this.requests.findById(offer.requestId);
+      if (request && request.status === 'ASSIGNED') {
+        request.status = 'OPEN';
+        request.engineerId = null;
+        request.acceptedOffer = undefined;
+        await request.save();
+
+        this.logger.log(`Request ${offer.requestId} status reverted to OPEN after cancelling accepted offer`);
+      }
+    }
+
+    // إرسال إشعار للمهندس
+    await this.safeNotify(
+      String(offer.engineerId),
+      NotificationType.OFFER_CANCELLED,
+      'تم إلغاء عرضك',
+      reason || `تم إلغاء عرضك للطلب ${String(offer.requestId)} من قبل الإدارة`,
+      { requestId: String(offer.requestId), reason }
+    );
+
+    this.logger.log(`Admin cancelled offer ${offerId}. Reason: ${reason || 'No reason provided'}`);
+    return { ok: true };
   }
 }

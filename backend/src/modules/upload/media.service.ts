@@ -676,7 +676,7 @@ export class MediaService {
    */
   async getUploadTimeline(period: string = 'month') {
     const now = new Date();
-    let groupFormat: any;
+    let groupFormat: Record<string, unknown>;
     let dateRange: Date;
 
     switch (period) {
@@ -809,7 +809,7 @@ export class MediaService {
     const available = maxStorage - totalUsed;
     const usagePercent = (totalUsed / maxStorage) * 100;
 
-    const breakdown: any = {
+    const breakdown: Record<string, number> = {
       images: 0,
       videos: 0,
       documents: 0,

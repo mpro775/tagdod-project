@@ -37,6 +37,7 @@ import {
   useUpdateCategory,
 } from '../hooks/useCategories';
 import type { CreateCategoryDto } from '../types/category.types';
+import { MediaCategory } from '@/features/media/types/media.types';
 
 // Validation Schema
 const categorySchema = z.object({
@@ -272,7 +273,7 @@ export const CategoryFormPage: React.FC = () => {
                         setSelectedImage(media);
                         methods.setValue('imageId', media?.id || '');
                       }}
-                      category="category"
+                      category={MediaCategory.CATEGORY}
                       helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
                     />
                   </Grid>

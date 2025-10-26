@@ -28,11 +28,8 @@ import {
   Edit,
   Visibility,
   Add,
-  Check,
-  Error as ErrorIcon,
   Info,
   Download,
-  Refresh,
 } from '@mui/icons-material';
 import { MediaPicker } from './MediaPicker';
 import { MediaUploader } from './MediaUploader';

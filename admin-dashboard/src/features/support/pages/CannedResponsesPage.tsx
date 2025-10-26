@@ -215,10 +215,10 @@ export const CannedResponsesPage: React.FC = () => {
       </Box>
 
       {/* Results Summary */}
-      {responsesData?.data?.data && (
+      {responsesData?.data && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="body1">
-            عرض {responsesData.data.data.length} من أصل {responsesData.data.meta?.total || 0} رد جاهز
+            عرض {responsesData.data.length} من أصل {responsesData.meta?.total || 0} رد جاهز
           </Typography>
         </Box>
       )}
@@ -226,9 +226,9 @@ export const CannedResponsesPage: React.FC = () => {
       {/* Responses Grid */}
       {isLoading ? (
         renderSkeletons()
-      ) : responsesData?.data?.data && responsesData.data.data.length > 0 ? (
+      ) : responsesData?.data && responsesData.data.length > 0 ? (
         <Grid container spacing={3}>
-          {responsesData.data.data.map((response) => (
+          {responsesData.data.map((response) => (
             <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={response._id}>
               <CannedResponseCard
                 response={response}

@@ -31,24 +31,19 @@ export interface SetPasswordDto {
 }
 
 export interface LoginResponse {
-  success: boolean;
-  data: {
-    tokens: {
-      access: string;
-      refresh: string;
-    };
-    me: {
-      id: string;
-      phone: string;
-      firstName?: string;
-      lastName?: string;
-      roles?: string[];
-      permissions?: string[];
-      isAdmin?: boolean;
-    };
+  tokens: {
+    access: string;
+    refresh: string;
   };
-  meta: any;
-  requestId: any;
+  me: {
+    id: string;
+    phone: string;
+    firstName?: string;
+    lastName?: string;
+    roles?: string[];
+    permissions?: string[];
+    isAdmin?: boolean;
+  };
 }
 
 export interface UserProfile {

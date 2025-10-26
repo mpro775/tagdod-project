@@ -79,9 +79,9 @@ export const CartAnalyticsPage: React.FC = () => {
 
   // Calculate additional metrics
   const getConversionTrend = () => {
-    if (!conversionRates?.data?.daily || conversionRates.data.daily.length < 2) return 0;
-    const recent = conversionRates.data.daily.slice(-7); // Last 7 days
-    const older = conversionRates.data.daily.slice(-14, -7); // Previous 7 days
+    if (!conversionRates?.daily || conversionRates.daily.length < 2) return 0;
+    const recent = conversionRates.daily.slice(-7); // Last 7 days
+    const older = conversionRates.daily.slice(-14, -7); // Previous 7 days
 
     if (recent.length === 0 || older.length === 0) return 0;
 
@@ -95,9 +95,9 @@ export const CartAnalyticsPage: React.FC = () => {
   };
 
   const getAbandonmentTrend = () => {
-    if (!conversionRates?.data?.daily || conversionRates.data.daily.length < 2) return 0;
-    const recent = conversionRates.data.daily.slice(-7);
-    const older = conversionRates.data.daily.slice(-14, -7);
+    if (!conversionRates?.daily || conversionRates.daily.length < 2) return 0;
+    const recent = conversionRates.daily.slice(-7);
+    const older = conversionRates.daily.slice(-14, -7);
 
     if (recent.length === 0 || older.length === 0) return 0;
 
@@ -147,8 +147,8 @@ export const CartAnalyticsPage: React.FC = () => {
 
       {/* Statistics Cards */}
       <CartStatsCards
-        statistics={statistics?.data}
-        analytics={analytics?.data}
+        statistics={statistics}
+        analytics={analytics}
         isLoading={isLoading}
         onRefresh={handleRefresh}
       />
@@ -185,7 +185,7 @@ export const CartAnalyticsPage: React.FC = () => {
                     <Box display="flex" justifyContent="center" p={4}>
                       <CircularProgress />
                     </Box>
-                  ) : conversionRates?.data?.daily ? (
+                  ) : conversionRates?.daily ? (
                     <Box height={300}>
                       {/* Line Chart would go here */}
                       <Box display="flex" alignItems="center" justifyContent="center" height="100%">
@@ -214,8 +214,8 @@ export const CartAnalyticsPage: React.FC = () => {
                         معدل التحويل الحالي
                       </Typography>
                       <Typography variant="h4" color="primary">
-                        {statistics?.data?.conversionRate
-                          ? `${(statistics.data.conversionRate * 100).toFixed(1)}%`
+                        {statistics?.conversionRate
+                          ? `${(statistics.conversionRate * 100).toFixed(1)}%`
                           : '0%'}
                       </Typography>
                       <Typography
@@ -232,8 +232,8 @@ export const CartAnalyticsPage: React.FC = () => {
                         معدل الهجر الحالي
                       </Typography>
                       <Typography variant="h4" color="warning.main">
-                        {statistics?.data?.abandonmentRate
-                          ? `${(statistics.data.abandonmentRate * 100).toFixed(1)}%`
+                        {statistics?.abandonmentRate
+                          ? `${(statistics.abandonmentRate * 100).toFixed(1)}%`
                           : '0%'}
                       </Typography>
                       <Typography
@@ -316,7 +316,7 @@ export const CartAnalyticsPage: React.FC = () => {
                     <Box display="flex" justifyContent="center" p={4}>
                       <CircularProgress />
                     </Box>
-                  ) : conversionRates?.data ? (
+                  ) : conversionRates ? (
                     <Box>
                       <Grid container spacing={2}>
                         <Grid size={{ xs: 12, md: 4 }}>
@@ -325,7 +325,7 @@ export const CartAnalyticsPage: React.FC = () => {
                               يومياً
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              آخر 7 أيام: {conversionRates.data.daily?.slice(-7).length || 0} أيام
+                              آخر 7 أيام: {conversionRates.daily?.slice(-7).length || 0} أيام
                             </Typography>
                           </Paper>
                         </Grid>
@@ -335,7 +335,7 @@ export const CartAnalyticsPage: React.FC = () => {
                               أسبوعياً
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              آخر 4 أسابيع: {conversionRates.data.weekly?.length || 0} أسابيع
+                              آخر 4 أسابيع: {conversionRates.weekly?.length || 0} أسابيع
                             </Typography>
                           </Paper>
                         </Grid>
@@ -345,7 +345,7 @@ export const CartAnalyticsPage: React.FC = () => {
                               شهرياً
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              آخر 12 شهر: {conversionRates.data.monthly?.length || 0} أشهر
+                              آخر 12 شهر: {conversionRates.monthly?.length || 0} أشهر
                             </Typography>
                           </Paper>
                         </Grid>

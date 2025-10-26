@@ -76,7 +76,7 @@ export function isValidCity(city: string): boolean {
  * الحصول على كود المدينة من الاسم
  */
 export function getCityCode(cityName: YemeniCity): string | null {
-  const entry = Object.entries(CITY_CODE_MAP).find(([_, value]) => value === cityName);
+  const entry = Object.entries(CITY_CODE_MAP).find(([, value]) => value === cityName);
   return entry ? entry[0] : null;
 }
 

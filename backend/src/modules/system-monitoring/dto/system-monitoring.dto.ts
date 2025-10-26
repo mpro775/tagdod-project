@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum MetricType {
@@ -49,22 +49,22 @@ export class SystemMetricsQueryDto {
 
 export class SystemHealthDto {
   @ApiProperty({ description: 'حالة النظام العامة' })
-  status: 'healthy' | 'warning' | 'critical';
+  status!: 'healthy' | 'warning' | 'critical';
 
   @ApiProperty({ description: 'وقت التشغيل بالثواني' })
-  uptime: number;
+  uptime!: number;
 
   @ApiProperty({ description: 'استخدام CPU (نسبة مئوية)' })
-  cpuUsage: number;
+  cpuUsage!: number;
 
   @ApiProperty({ description: 'استخدام الذاكرة (نسبة مئوية)' })
-  memoryUsage: number;
+  memoryUsage!: number;
 
   @ApiProperty({ description: 'استخدام القرص (نسبة مئوية)' })
-  diskUsage: number;
+  diskUsage!: number;
 
   @ApiProperty({ description: 'حالة قاعدة البيانات' })
-  databaseStatus: {
+  databaseStatus!: {
     connected: boolean;
     responseTime: number;
     collections: number;
@@ -72,7 +72,7 @@ export class SystemHealthDto {
   };
 
   @ApiProperty({ description: 'حالة Redis Cache' })
-  redisStatus: {
+  redisStatus!: {
     connected: boolean;
     responseTime: number;
     memoryUsage: number;
@@ -80,31 +80,31 @@ export class SystemHealthDto {
   };
 
   @ApiProperty({ description: 'متوسط وقت استجابة API (ms)' })
-  avgApiResponseTime: number;
+  avgApiResponseTime!: number;
 
   @ApiProperty({ description: 'عدد الطلبات النشطة' })
-  activeRequests: number;
+  activeRequests!: number;
 
   @ApiProperty({ description: 'معدل الأخطاء (نسبة مئوية)' })
-  errorRate: number;
+  errorRate!: number;
 
   @ApiProperty({ description: 'وقت آخر تحديث' })
-  lastUpdated: Date;
+  lastUpdated!: Date;
 }
 
 export class ResourceUsageDto {
   @ApiProperty({ description: 'الطابع الزمني' })
-  timestamp: Date;
+  timestamp!: Date;
 
   @ApiProperty({ description: 'استخدام CPU' })
-  cpu: {
+  cpu!: {
     usage: number;
     cores: number;
     load: number[];
   };
 
   @ApiProperty({ description: 'استخدام الذاكرة' })
-  memory: {
+  memory!: {
     total: number;
     used: number;
     free: number;
@@ -114,7 +114,7 @@ export class ResourceUsageDto {
   };
 
   @ApiProperty({ description: 'استخدام القرص' })
-  disk: {
+  disk!: {
     total: number;
     used: number;
     free: number;
@@ -124,28 +124,28 @@ export class ResourceUsageDto {
 
 export class DatabaseMetricsDto {
   @ApiProperty({ description: 'حالة الاتصال' })
-  connected: boolean;
+  connected!: boolean;
 
   @ApiProperty({ description: 'وقت الاستجابة (ms)' })
-  responseTime: number;
+  responseTime!: number;
 
   @ApiProperty({ description: 'عدد المجموعات' })
-  collectionsCount: number;
+  collectionsCount!: number;
 
   @ApiProperty({ description: 'إجمالي عدد الوثائق' })
-  totalDocuments: number;
+  totalDocuments!: number;
 
   @ApiProperty({ description: 'حجم قاعدة البيانات (bytes)' })
-  databaseSize: number;
+  databaseSize!: number;
 
   @ApiProperty({ description: 'حجم الفهارس (bytes)' })
-  indexSize: number;
+  indexSize!: number;
 
   @ApiProperty({ description: 'العمليات النشطة' })
-  activeOperations: number;
+  activeOperations!: number;
 
   @ApiProperty({ description: 'قائمة بأبطأ الاستعلامات' })
-  slowQueries: Array<{
+  slowQueries!: Array<{
     operation: string;
     collection: string;
     duration: number;
@@ -155,31 +155,31 @@ export class DatabaseMetricsDto {
 
 export class ApiPerformanceDto {
   @ApiProperty({ description: 'إجمالي عدد الطلبات' })
-  totalRequests: number;
+  totalRequests!: number;
 
   @ApiProperty({ description: 'الطلبات الناجحة' })
-  successfulRequests: number;
+  successfulRequests!: number;
 
   @ApiProperty({ description: 'الطلبات الفاشلة' })
-  failedRequests: number;
+  failedRequests!: number;
 
   @ApiProperty({ description: 'متوسط وقت الاستجابة (ms)' })
-  avgResponseTime: number;
+  avgResponseTime!: number;
 
   @ApiProperty({ description: 'أدنى وقت استجابة (ms)' })
-  minResponseTime: number;
+  minResponseTime!: number;
 
   @ApiProperty({ description: 'أقصى وقت استجابة (ms)' })
-  maxResponseTime: number;
+  maxResponseTime!: number;
 
   @ApiProperty({ description: 'عدد الطلبات في الدقيقة' })
-  requestsPerMinute: number;
+  requestsPerMinute!: number;
 
   @ApiProperty({ description: 'معدل الأخطاء (%)' })
-  errorRate: number;
+  errorRate!: number;
 
   @ApiProperty({ description: 'أبطأ نقاط النهاية' })
-  slowestEndpoints: Array<{
+  slowestEndpoints!: Array<{
     endpoint: string;
     method: string;
     avgTime: number;
@@ -190,36 +190,36 @@ export class ApiPerformanceDto {
 
 export class RedisMetricsDto {
   @ApiProperty({ description: 'حالة الاتصال' })
-  connected: boolean;
+  connected!: boolean;
 
   @ApiProperty({ description: 'وقت الاستجابة (ms)' })
-  responseTime: number;
+  responseTime!: number;
 
   @ApiProperty({ description: 'استخدام الذاكرة (bytes)' })
-  memoryUsage: number;
+  memoryUsage!: number;
 
   @ApiProperty({ description: 'الذاكرة القصوى (bytes)' })
-  maxMemory: number;
+  maxMemory!: number;
 
   @ApiProperty({ description: 'نسبة استخدام الذاكرة (%)' })
-  memoryUsagePercentage: number;
+  memoryUsagePercentage!: number;
 
   @ApiProperty({ description: 'عدد المفاتيح' })
-  keysCount: number;
+  keysCount!: number;
 
   @ApiProperty({ description: 'معدل الإصابة (%)' })
-  hitRate: number;
+  hitRate!: number;
 
   @ApiProperty({ description: 'معدل الفشل (%)' })
-  missRate: number;
+  missRate!: number;
 
   @ApiProperty({ description: 'العمليات في الثانية' })
-  operationsPerSecond: number;
+  operationsPerSecond!: number;
 }
 
 export class SystemAlertsDto {
   @ApiProperty({ description: 'قائمة التنبيهات' })
-  alerts: Array<{
+  alerts!: Array<{
     id: string;
     type: 'warning' | 'critical' | 'info';
     category: string;
@@ -230,25 +230,25 @@ export class SystemAlertsDto {
   }>;
 
   @ApiProperty({ description: 'عدد التنبيهات النشطة' })
-  activeAlertsCount: number;
+  activeAlertsCount?: number;
 
   @ApiProperty({ description: 'عدد التنبيهات الحرجة' })
-  criticalAlertsCount: number;
+  criticalAlertsCount?: number;
 }
 
 export class SystemMetricsHistoryDto {
   @ApiProperty({ description: 'نوع المقياس' })
-  metricType: MetricType;
+  metricType!: MetricType;
 
   @ApiProperty({ description: 'البيانات التاريخية' })
-  data: Array<{
+  data!: Array<{
     timestamp: Date;
     value: number;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }>;
 
   @ApiProperty({ description: 'الإحصائيات' })
-  statistics: {
+  statistics!: {
     min: number;
     max: number;
     avg: number;

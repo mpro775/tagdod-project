@@ -24,7 +24,6 @@ import {
   SystemMetricsQueryDto,
 } from './dto/system-monitoring.dto';
 import * as os from 'os';
-import * as fs from 'fs';
 
 @Injectable()
 export class SystemMonitoringService {
@@ -259,7 +258,7 @@ export class SystemMonitoringService {
     
     const dateFilter = this.buildDateFilter(timeRange, startDate, endDate);
     
-    const filter: any = {
+    const filter: Record<string, unknown> = {
       timestamp: dateFilter,
     };
 
@@ -400,7 +399,7 @@ export class SystemMonitoringService {
     timeRange?: TimeRange,
     startDate?: string,
     endDate?: string,
-  ): any {
+  ): Record<string, unknown> {
     const now = new Date();
     let start: Date;
     let end: Date = now;

@@ -18,8 +18,8 @@ export class AuditService {
     action: 'grant' | 'revoke';
     grantedBy: string;
     reason?: string;
-    oldValues?: any;
-    newValues?: any;
+    oldValues?: Record<string, unknown>;
+    newValues?: Record<string, unknown>;
     ipAddress?: string;
     userAgent?: string;
     sessionId?: string;
@@ -64,8 +64,8 @@ export class AuditService {
     action: 'assign' | 'remove';
     changedBy: string;
     reason?: string;
-    oldValues?: any;
-    newValues?: any;
+    oldValues?: Record<string, unknown>;
+    newValues?: Record<string, unknown>;
     ipAddress?: string;
     userAgent?: string;
     sessionId?: string;
@@ -109,8 +109,8 @@ export class AuditService {
     action: 'approve' | 'reject';
     decidedBy: string;
     reason?: string;
-    oldValues?: any;
-    newValues?: any;
+    oldValues?: Record<string, unknown>;
+    newValues?: Record<string, unknown>;
     ipAddress?: string;
     userAgent?: string;
     sessionId?: string;
@@ -153,7 +153,7 @@ export class AuditService {
     action: string;
     resource: string;
     resourceId?: string;
-    details?: any;
+    details?: Record<string, unknown>;
     ipAddress?: string;
     userAgent?: string;
     sessionId?: string;
@@ -199,7 +199,7 @@ export class AuditService {
     ipAddress?: string;
     userAgent?: string;
     sessionId?: string;
-    details?: any;
+    details?: Record<string, unknown>;
   }): Promise<void> {
     try {
       let auditAction: AuditAction;
@@ -263,7 +263,7 @@ export class AuditService {
     skip?: number;
   }): Promise<AuditLogDocument[]> {
     try {
-      const query: any = {};
+      const query: Record<string, unknown> = {};
 
       if (filters.userId) query.userId = filters.userId;
       if (filters.performedBy) query.performedBy = filters.performedBy;
@@ -273,9 +273,9 @@ export class AuditService {
       if (filters.isSensitive !== undefined) query.isSensitive = filters.isSensitive;
 
       if (filters.startDate || filters.endDate) {
-        query.timestamp = {};
-        if (filters.startDate) query.timestamp.$gte = filters.startDate;
-        if (filters.endDate) query.timestamp.$lte = filters.endDate;
+        query.timestamp = {} as Record<string, Date>;
+        if (filters.startDate) (query.timestamp as Record<string, Date>).$gte = filters.startDate;
+        if (filters.endDate) (query.timestamp as Record<string, Date>).$lte = filters.endDate;
       }
 
       return await this.auditLogModel
@@ -306,7 +306,7 @@ export class AuditService {
     isSensitive?: boolean;
   }): Promise<number> {
     try {
-      const query: any = {};
+      const query: Record<string, unknown> = {};
 
       if (filters.userId) query.userId = filters.userId;
       if (filters.performedBy) query.performedBy = filters.performedBy;
@@ -316,9 +316,9 @@ export class AuditService {
       if (filters.isSensitive !== undefined) query.isSensitive = filters.isSensitive;
 
       if (filters.startDate || filters.endDate) {
-        query.timestamp = {};
-        if (filters.startDate) query.timestamp.$gte = filters.startDate;
-        if (filters.endDate) query.timestamp.$lte = filters.endDate;
+        query.timestamp = {} as Record<string, Date>;
+        if (filters.startDate) (query.timestamp as Record<string, Date>).$gte = filters.startDate;
+        if (filters.endDate) (query.timestamp as Record<string, Date>).$lte = filters.endDate;
       }
 
       return await this.auditLogModel.countDocuments(query).exec();

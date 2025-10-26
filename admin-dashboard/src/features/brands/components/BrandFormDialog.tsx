@@ -24,6 +24,7 @@ import { z } from 'zod';
 import { ImageField } from '@/features/media';
 import { useCreateBrand, useUpdateBrand } from '../hooks/useBrands';
 import type { Brand, CreateBrandDto, UpdateBrandDto } from '../types/brand.types';
+import { MediaCategory } from '@/features/media/types/media.types';
 
 const brandSchema = z.object({
   name: z
@@ -238,7 +239,7 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
                     setSelectedImage(media);
                     methods.setValue('image', media?.url || '');
                   }}
-                  category="brand"
+                  category={MediaCategory.BRAND}
                   helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
                   disabled={isLoading}
                 />

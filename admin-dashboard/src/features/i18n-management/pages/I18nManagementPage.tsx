@@ -1,18 +1,40 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Badge } from '@/shared/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
-import { Textarea } from '@/shared/components/ui/textarea';
-import { Label } from '@/shared/components/ui/label';
+import {
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Button,
+  TextField,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Grid,
+  CircularProgress,
+  InputAdornment,
+} from '@mui/material';
+import {
+  Language,
+  Add,
+  Download,
+  Upload,
+  Search,
+  TrendingUp,
+  CheckCircle,
+  Warning,
+} from '@mui/icons-material';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { Languages, Plus, Download, Upload, Search, TrendingUp, CheckCircle2, AlertCircle } from 'lucide-react';
 import { i18nApi } from '../api/i18nApi';
 import type { Translation, TranslationStats } from '../api/i18nApi';
-import { toast } from 'sonner';
-import type { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'react-hot-toast';
+import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 
 const NAMESPACES = [
   'common',
@@ -34,6 +56,10 @@ export function I18nManagementPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [editingTranslation, setEditingTranslation] = useState<Translation | null>(null);
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 20,
+  });
 
   // Filters
   const [namespace, setNamespace] = useState('');
@@ -61,8 +87,7 @@ export function I18nManagementPage() {
 
       setTranslations(translationsData);
       setStats(statsData);
-    } catch (error) {
-      console.error('Error fetching translations:', error);
+    } catch {
       toast.error('فشل في تحميل الترجمات');
     } finally {
       setLoading(false);
@@ -71,6 +96,7 @@ export function I18nManagementPage() {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namespace, search, missingOnly]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,7 +143,7 @@ export function I18nManagementPage() {
       await i18nApi.deleteTranslation(key);
       toast.success('تم حذف الترجمة بنجاح');
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('فشل في حذف الترجمة');
     }
   };
@@ -138,7 +164,7 @@ export function I18nManagementPage() {
       a.click();
       
       toast.success('تم التصدير بنجاح');
-    } catch (error) {
+    } catch {
       toast.error('فشل في التصدير');
     }
   };
@@ -156,7 +182,7 @@ export function I18nManagementPage() {
       setShowImportDialog(false);
       setImportData('');
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('فشل في الاستيراد - تأكد من صحة البيانات');
     }
   };
@@ -172,368 +198,475 @@ export function I18nManagementPage() {
     setEditingTranslation(null);
   };
 
-  const columns: ColumnDef<Translation>[] = [
+  const columns: GridColDef[] = [
     {
-      accessorKey: 'key',
-      header: 'المفتاح',
-      cell: ({ row }) => (
-        <code className="text-xs bg-secondary px-2 py-1 rounded">
-          {row.original.key}
-        </code>
+      field: 'key',
+      headerName: 'المفتاح',
+      minWidth: 200,
+      flex: 1,
+      renderCell: (params) => (
+        <Box
+          component="code"
+          sx={{
+            fontSize: '0.75rem',
+            bgcolor: 'action.hover',
+            px: 1,
+            py: 0.5,
+            borderRadius: 1,
+          }}
+        >
+          {params.row.key}
+        </Box>
       ),
     },
     {
-      accessorKey: 'ar',
-      header: 'العربية',
-      cell: ({ row }) => (
-        <div className="max-w-xs truncate" title={row.original.ar}>
-          {row.original.ar || (
-            <span className="text-muted-foreground italic">-</span>
+      field: 'ar',
+      headerName: 'العربية',
+      minWidth: 200,
+      flex: 1.5,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            maxWidth: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          title={params.row.ar}
+        >
+          {params.row.ar || (
+            <Typography variant="body2" color="text.secondary" fontStyle="italic">
+              -
+            </Typography>
           )}
-        </div>
+        </Box>
       ),
     },
     {
-      accessorKey: 'en',
-      header: 'الإنجليزية',
-      cell: ({ row }) => (
-        <div className="max-w-xs truncate" title={row.original.en}>
-          {row.original.en || (
-            <span className="text-muted-foreground italic">-</span>
+      field: 'en',
+      headerName: 'الإنجليزية',
+      minWidth: 200,
+      flex: 1.5,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            maxWidth: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          title={params.row.en}
+        >
+          {params.row.en || (
+            <Typography variant="body2" color="text.secondary" fontStyle="italic">
+              -
+            </Typography>
           )}
-        </div>
+        </Box>
       ),
     },
     {
-      accessorKey: 'namespace',
-      header: 'المساحة',
-      cell: ({ row }) => (
-        <Badge variant="outline">{row.original.namespace}</Badge>
+      field: 'namespace',
+      headerName: 'المساحة',
+      minWidth: 120,
+      flex: 0.8,
+      renderCell: (params) => (
+        <Chip label={params.row.namespace} size="small" variant="outlined" />
       ),
     },
     {
-      id: 'actions',
-      header: 'الإجراءات',
-      cell: ({ row }) => (
-        <div className="flex gap-2">
+      field: 'actions',
+      headerName: 'الإجراءات',
+      minWidth: 180,
+      flex: 1,
+      sortable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => handleEdit(row.original)}
+            size="small"
+            variant="text"
+            onClick={() => handleEdit(params.row)}
           >
             تعديل
           </Button>
           <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => handleDelete(row.original.key)}
+            size="small"
+            variant="text"
+            color="error"
+            onClick={() => handleDelete(params.row.key)}
           >
             حذف
           </Button>
-        </div>
+        </Box>
       ),
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ p: 3 }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">إدارة نصوص التعريب</h1>
-          <p className="text-muted-foreground">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            إدارة نصوص التعريب
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
             إدارة الترجمات بالعربية والإنجليزية
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
-        <div className="flex gap-2">
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
-            variant="outline"
-            size="sm"
+            variant="outlined"
+            size="small"
             onClick={() => handleExport('json')}
+            startIcon={<Download />}
           >
-            <Download className="h-4 w-4 ml-2" />
             تصدير JSON
           </Button>
           <Button
-            variant="outline"
-            size="sm"
+            variant="outlined"
+            size="small"
             onClick={() => handleExport('csv')}
+            startIcon={<Download />}
           >
-            <Download className="h-4 w-4 ml-2" />
             تصدير CSV
           </Button>
           <Button
-            variant="outline"
-            size="sm"
+            variant="outlined"
+            size="small"
             onClick={() => setShowImportDialog(true)}
+            startIcon={<Upload />}
           >
-            <Upload className="h-4 w-4 ml-2" />
             استيراد
           </Button>
           <Button
-            size="sm"
+            variant="contained"
+            size="small"
             onClick={() => {
               resetForm();
               setShowDialog(true);
             }}
+            startIcon={<Add />}
           >
-            <Plus className="h-4 w-4 ml-2" />
             إضافة ترجمة
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Statistics */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">إجمالي الترجمات</CardTitle>
-              <Languages className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalTranslations}</div>
-            </CardContent>
-          </Card>
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Card>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      إجمالي الترجمات
+                    </Typography>
+                    <Language color="action" />
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold">
+                  {stats.totalTranslations}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">اكتمال العربية</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.arabicCompleteness.toFixed(1)}%</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.missingArabic} ترجمة مفقودة
-              </p>
-            </CardContent>
-          </Card>
+          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Card>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      اكتمال العربية
+                    </Typography>
+                    <CheckCircle color="success" />
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold">
+                  {stats.arabicCompleteness.toFixed(1)}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {stats.missingArabic} ترجمة مفقودة
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">اكتمال الإنجليزية</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.englishCompleteness.toFixed(1)}%</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.missingEnglish} ترجمة مفقودة
-              </p>
-            </CardContent>
-          </Card>
+          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Card>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      اكتمال الإنجليزية
+                    </Typography>
+                    <CheckCircle color="success" />
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold">
+                  {stats.englishCompleteness.toFixed(1)}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {stats.missingEnglish} ترجمة مفقودة
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">المساحات</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {Object.keys(stats.byNamespace).length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Card>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      المساحات
+                    </Typography>
+                    <TrendingUp color="action" />
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold">
+                  {Object.keys(stats.byNamespace).length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       )}
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>تصفية الترجمات</CardTitle>
-        </CardHeader>
+      <Card sx={{ mb: 3 }}>
+        <CardHeader
+          title={
+            <Typography variant="h6" fontWeight="bold">
+              تصفية الترجمات
+            </Typography>
+          }
+        />
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>البحث</Label>
-              <div className="relative">
-                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="ابحث في المفتاح أو النص..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pr-9"
-                />
-              </div>
-            </div>
+          <Grid container spacing={2}>
+            <Grid component="div" size={{ xs: 12, md: 3 }}>
+              <TextField
+                label="البحث"
+                placeholder="ابحث في المفتاح أو النص..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
 
-            <div className="space-y-2">
-              <Label>المساحة</Label>
-              <Select value={namespace} onValueChange={setNamespace}>
-                <SelectTrigger>
-                  <SelectValue placeholder="جميع المساحات" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">جميع المساحات</SelectItem>
+            <Grid component="div" size={{ xs: 12, md: 3 }}>
+              <FormControl fullWidth>
+                <InputLabel>المساحة</InputLabel>
+                <Select
+                  value={namespace}
+                  onChange={(e) => setNamespace(e.target.value)}
+                  label="المساحة"
+                >
+                  <MenuItem value="">جميع المساحات</MenuItem>
                   {NAMESPACES.map((ns) => (
-                    <SelectItem key={ns} value={ns}>
+                    <MenuItem key={ns} value={ns}>
                       {ns}
-                    </SelectItem>
+                    </MenuItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </Select>
+              </FormControl>
+            </Grid>
 
-            <div className="flex items-end">
+            <Grid component="div" size={{ xs: 12, md: 3 }} sx={{ display: 'flex', alignItems: 'flex-end' }}>
               <Button
-                variant={missingOnly ? 'default' : 'outline'}
+                variant={missingOnly ? 'contained' : 'outlined'}
                 onClick={() => setMissingOnly(!missingOnly)}
-                className="w-full"
+                fullWidth
+                startIcon={<Warning />}
               >
-                <AlertCircle className="h-4 w-4 ml-2" />
                 الترجمات المفقودة فقط
               </Button>
-            </div>
+            </Grid>
 
-            <div className="flex items-end">
+            <Grid component="div" size={{ xs: 12, md: 3 }} sx={{ display: 'flex', alignItems: 'flex-end' }}>
               <Button
-                variant="outline"
+                variant="outlined"
                 onClick={() => {
                   setNamespace('');
                   setSearch('');
                   setMissingOnly(false);
                 }}
-                className="w-full"
+                fullWidth
               >
                 إعادة تعيين
               </Button>
-            </div>
-          </div>
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
 
       {/* Data Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>الترجمات</CardTitle>
-          <CardDescription>
-            عرض {translations.length} ترجمة
-          </CardDescription>
-        </CardHeader>
+        <CardHeader
+          title={
+            <Typography variant="h6" fontWeight="bold">
+              الترجمات
+            </Typography>
+          }
+          subheader={
+            <Typography variant="body2" color="text.secondary">
+              عرض {translations.length} ترجمة
+            </Typography>
+          }
+        />
         <CardContent>
-          <DataTable columns={columns} data={translations} loading={loading} />
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <DataTable 
+              columns={columns} 
+              rows={translations} 
+              getRowId={(row: any) => row.key}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+            />
+          )}
         </CardContent>
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingTranslation ? 'تعديل الترجمة' : 'إضافة ترجمة جديدة'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>المفتاح *</Label>
-              <Input
+      <Dialog 
+        open={showDialog} 
+        onClose={() => setShowDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {editingTranslation ? 'تعديل الترجمة' : 'إضافة ترجمة جديدة'}
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
+              <TextField
+                label="المفتاح *"
                 value={formData.key}
                 onChange={(e) => setFormData({ ...formData, key: e.target.value })}
                 placeholder="auth.welcome"
                 required
                 disabled={!!editingTranslation}
+                fullWidth
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>المساحة *</Label>
-              <Select
-                value={formData.namespace}
-                onValueChange={(value) => setFormData({ ...formData, namespace: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+              <FormControl fullWidth required>
+                <InputLabel>المساحة</InputLabel>
+                <Select
+                  value={formData.namespace}
+                  onChange={(e) => setFormData({ ...formData, namespace: e.target.value })}
+                  label="المساحة"
+                >
                   {NAMESPACES.map((ns) => (
-                    <SelectItem key={ns} value={ns}>
+                    <MenuItem key={ns} value={ns}>
                       {ns}
-                    </SelectItem>
+                    </MenuItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </Select>
+              </FormControl>
 
-            <div className="space-y-2">
-              <Label>النص بالعربية *</Label>
-              <Textarea
+              <TextField
+                label="النص بالعربية *"
                 value={formData.ar}
                 onChange={(e) => setFormData({ ...formData, ar: e.target.value })}
                 placeholder="النص بالعربية"
                 required
+                multiline
                 rows={3}
+                fullWidth
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>النص بالإنجليزية *</Label>
-              <Textarea
+              <TextField
+                label="النص بالإنجليزية *"
                 value={formData.en}
                 onChange={(e) => setFormData({ ...formData, en: e.target.value })}
                 placeholder="English text"
                 required
+                multiline
                 rows={3}
+                fullWidth
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>الوصف</Label>
-              <Input
+              <TextField
+                label="الوصف"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="وصف الترجمة"
+                fullWidth
               />
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>
-                إلغاء
-              </Button>
-              <Button type="submit">
-                {editingTranslation ? 'تحديث' : 'إضافة'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button variant="outlined" onClick={() => setShowDialog(false)}>
+              إلغاء
+            </Button>
+            <Button type="submit" variant="contained">
+              {editingTranslation ? 'تحديث' : 'إضافة'}
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       {/* Import Dialog */}
-      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+      <Dialog 
+        open={showImportDialog} 
+        onClose={() => setShowImportDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>استيراد ترجمات</DialogTitle>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>استيراد ترجمات</DialogTitle>
-          </DialogHeader>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="بيانات JSON"
+              value={importData}
+              onChange={(e) => setImportData(e.target.value)}
+              placeholder={'{\n  "key1": { "ar": "نص1", "en": "Text1" },\n  "key2": { "ar": "نص2", "en": "Text2" }\n}'}
+              multiline
+              rows={10}
+              fullWidth
+              InputProps={{
+                sx: { fontFamily: 'monospace', fontSize: '0.75rem' },
+              }}
+            />
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>بيانات JSON</Label>
-              <Textarea
-                value={importData}
-                onChange={(e) => setImportData(e.target.value)}
-                placeholder={'{\n  "key1": { "ar": "نص1", "en": "Text1" },\n  "key2": { "ar": "نص2", "en": "Text2" }\n}'}
-                rows={10}
-                className="font-mono text-xs"
-              />
-            </div>
-
-            <p className="text-sm text-muted-foreground">
+            <Typography variant="body2" color="text.secondary">
               * سيتم استبدال الترجمات الموجودة بنفس المفتاح
-            </p>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowImportDialog(false)}
-              >
-                إلغاء
-              </Button>
-              <Button onClick={handleImport}>استيراد</Button>
-            </DialogFooter>
-          </div>
+            </Typography>
+          </Box>
         </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={() => setShowImportDialog(false)}>
+            إلغاء
+          </Button>
+          <Button variant="contained" onClick={handleImport}>
+            استيراد
+          </Button>
+        </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 }

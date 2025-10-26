@@ -65,15 +65,15 @@ export class ErrorLogsQueryDto {
 export class CreateErrorLogDto {
   @ApiProperty({ description: 'مستوى الخطأ', enum: ErrorLevel })
   @IsEnum(ErrorLevel)
-  level: ErrorLevel;
+  level!: ErrorLevel;
 
   @ApiProperty({ description: 'فئة الخطأ', enum: ErrorCategory })
   @IsEnum(ErrorCategory)
-  category: ErrorCategory;
+  category!: ErrorCategory;
 
   @ApiProperty({ description: 'رسالة الخطأ' })
   @IsString()
-  message: string;
+  message!: string;
 
   @ApiPropertyOptional({ description: 'Stack trace' })
   @IsOptional()
@@ -82,7 +82,7 @@ export class CreateErrorLogDto {
 
   @ApiPropertyOptional({ description: 'معلومات إضافية' })
   @IsOptional()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'معرف المستخدم (إن وجد)' })
   @IsOptional()
@@ -108,19 +108,19 @@ export class CreateErrorLogDto {
 
 export class ErrorStatisticsDto {
   @ApiProperty({ description: 'إجمالي الأخطاء' })
-  totalErrors: number;
+  totalErrors!: number;
 
   @ApiProperty({ description: 'الأخطاء في آخر 24 ساعة' })
-  last24Hours: number;
+  last24Hours!: number;
 
   @ApiProperty({ description: 'الأخطاء في آخر 7 أيام' })
-  last7Days: number;
+  last7Days!: number;
 
   @ApiProperty({ description: 'معدل الأخطاء (نسبة مئوية)' })
-  errorRate: number;
+  errorRate!: number;
 
   @ApiProperty({ description: 'الأخطاء حسب المستوى' })
-  byLevel: {
+  byLevel!: {
     error: number;
     warn: number;
     fatal: number;
@@ -128,10 +128,10 @@ export class ErrorStatisticsDto {
   };
 
   @ApiProperty({ description: 'الأخطاء حسب الفئة' })
-  byCategory: Record<string, number>;
+  byCategory!: Record<string, number>;
 
   @ApiProperty({ description: 'أكثر الأخطاء تكراراً' })
-  topErrors: Array<{
+  topErrors!: Array<{
     message: string;
     count: number;
     level: ErrorLevel;
@@ -140,7 +140,7 @@ export class ErrorStatisticsDto {
   }>;
 
   @ApiProperty({ description: 'الأخطاء حسب نقطة النهاية' })
-  byEndpoint: Array<{
+  byEndpoint!: Array<{
     endpoint: string;
     count: number;
     errorRate: number;
@@ -149,7 +149,7 @@ export class ErrorStatisticsDto {
 
 export class ErrorTrendDto {
   @ApiProperty({ description: 'البيانات التاريخية' })
-  data: Array<{
+  data!: Array<{
     date: string;
     total: number;
     byLevel: {
@@ -161,30 +161,30 @@ export class ErrorTrendDto {
   }>;
 
   @ApiProperty({ description: 'الاتجاه' })
-  trend: 'increasing' | 'decreasing' | 'stable';
+  trend!: 'increasing' | 'decreasing' | 'stable';
 
   @ApiProperty({ description: 'نسبة التغيير (%)' })
-  changePercentage: number;
+  changePercentage!: number;
 }
 
 export class ErrorLogDto {
   @ApiProperty({ description: 'معرف السجل' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ description: 'مستوى الخطأ', enum: ErrorLevel })
-  level: ErrorLevel;
+  level!: ErrorLevel;
 
   @ApiProperty({ description: 'فئة الخطأ', enum: ErrorCategory })
-  category: ErrorCategory;
+  category!: ErrorCategory;
 
   @ApiProperty({ description: 'رسالة الخطأ' })
-  message: string;
+  message!: string;
 
   @ApiProperty({ description: 'Stack trace' })
   stack?: string;
 
   @ApiProperty({ description: 'معلومات إضافية' })
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 
   @ApiProperty({ description: 'معرف المستخدم' })
   userId?: string;
@@ -199,39 +199,39 @@ export class ErrorLogDto {
   statusCode?: number;
 
   @ApiProperty({ description: 'عدد التكرارات' })
-  occurrences: number;
+  occurrences!: number;
 
   @ApiProperty({ description: 'أول ظهور' })
-  firstOccurrence: Date;
+  firstOccurrence!: Date;
 
   @ApiProperty({ description: 'آخر ظهور' })
-  lastOccurrence: Date;
+  lastOccurrence!: Date;
 
   @ApiProperty({ description: 'هل تم الحل؟' })
-  resolved: boolean;
+  resolved!: boolean;
 
   @ApiProperty({ description: 'تاريخ الإنشاء' })
-  createdAt: Date;
+  createdAt!: Date;
 }
 
 export class SystemLogDto {
   @ApiProperty({ description: 'معرف السجل' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ description: 'المستوى' })
-  level: string;
+  level!: string;
 
   @ApiProperty({ description: 'الرسالة' })
-  message: string;
+  message!: string;
 
   @ApiProperty({ description: 'السياق/الوحدة' })
   context?: string;
 
   @ApiProperty({ description: 'البيانات الإضافية' })
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 
   @ApiProperty({ description: 'الطابع الزمني' })
-  timestamp: Date;
+  timestamp!: Date;
 }
 
 export class LogsExportDto {

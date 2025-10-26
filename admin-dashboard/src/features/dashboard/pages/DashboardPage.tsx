@@ -204,9 +204,9 @@ export const DashboardPage: React.FC = () => {
             title="إحصائيات الأداء"
             stats={{
               activeUsers: dashboardData?.overview?.totalUsers,
-              systemHealth: performanceData?.data?.uptime,
-              errorRate: performanceData?.data?.errorRate,
-              responseTime: performanceData?.data?.averageApiResponseTime,
+              systemHealth: performanceData?.uptime,
+              errorRate: performanceData?.errorRate,
+              responseTime: performanceData?.averageApiResponseTime,
             }}
             isLoading={performanceLoading}
           />

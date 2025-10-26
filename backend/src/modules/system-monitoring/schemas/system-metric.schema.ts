@@ -6,19 +6,19 @@ export type SystemMetricDocument = SystemMetric & Document;
 @Schema({ timestamps: true })
 export class SystemMetric {
   @Prop({ required: true, index: true })
-  metricType: string; // cpu, memory, disk, database, redis, api
+  metricType!: string; // cpu, memory, disk, database, redis, api
 
   @Prop({ required: true })
-  value: number;
+  value!: number;
 
   @Prop({ type: Object })
-  metadata: Record<string, any>;
+  metadata!: Record<string, unknown>;
 
   @Prop({ default: Date.now, index: true })
-  timestamp: Date;
+  timestamp!: Date;
 
   @Prop({ type: Object })
-  details: {
+  details!: {
     cpu?: {
       usage: number;
       cores: number;

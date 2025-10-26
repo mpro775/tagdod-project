@@ -555,4 +555,108 @@ export class AdminServicesController {
     });
     return { items: data.items, meta: data.meta };
   }
+
+  @Post('requests/:id/accept-offer')
+  @RequireServicePermission(ServicePermission.ADMIN)
+  @ApiOperation({ 
+    summary: 'قبول عرض من قبل الإدارة',
+    description: 'قبول عرض مهندس لطلب خدمة من قبل الإدارة'
+  })
+  @ApiParam({ name: 'id', description: 'معرف طلب الخدمة' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['offerId'],
+      properties: {
+        offerId: { type: 'string', example: '507f1f77bcf86cd799439011', description: 'معرف العرض' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'تم قبول العرض بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        ok: { type: 'boolean', example: true }
+      }
+    }
+  })
+  @ApiResponse({ status: 404, description: 'الطلب أو العرض غير موجود' })
+  @ApiResponse({ status: 400, description: 'حالة غير صالحة' })
+  async acceptOfferByAdmin(
+    @Param('id') requestId: string,
+    @Body('offerId') offerId: string,
+  ) {
+    const result = await this.svc.adminAcceptOffer(requestId, offerId);
+    return result;
+  }
+
+  @Post('offers/:id/reject')
+  @RequireServicePermission(ServicePermission.ADMIN)
+  @ApiOperation({ 
+    summary: 'رفض عرض من قبل الإدارة',
+    description: 'رفض عرض مهندس من قبل الإدارة'
+  })
+  @ApiParam({ name: 'id', description: 'معرف العرض' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        reason: { type: 'string', example: 'تم رفض العرض', description: 'سبب الرفض (اختياري)' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'تم رفض العرض بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        ok: { type: 'boolean', example: true }
+      }
+    }
+  })
+  @ApiResponse({ status: 404, description: 'العرض غير موجود' })
+  async rejectOfferByAdmin(
+    @Param('id') offerId: string,
+    @Body('reason') reason?: string,
+  ) {
+    const result = await this.svc.adminRejectOffer(offerId, reason);
+    return result;
+  }
+
+  @Post('offers/:id/cancel')
+  @RequireServicePermission(ServicePermission.ADMIN)
+  @ApiOperation({ 
+    summary: 'إلغاء عرض من قبل الإدارة',
+    description: 'إلغاء عرض مهندس من قبل الإدارة'
+  })
+  @ApiParam({ name: 'id', description: 'معرف العرض' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        reason: { type: 'string', example: 'تم إلغاء العرض', description: 'سبب الإلغاء (اختياري)' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'تم إلغاء العرض بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        ok: { type: 'boolean', example: true }
+      }
+    }
+  })
+  @ApiResponse({ status: 404, description: 'العرض غير موجود' })
+  async cancelOfferByAdmin(
+    @Param('id') offerId: string,
+    @Body('reason') reason?: string,
+  ) {
+    const result = await this.svc.adminCancelOffer(offerId, reason);
+    return result;
+  }
 }

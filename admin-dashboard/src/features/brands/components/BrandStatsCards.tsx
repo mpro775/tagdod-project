@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Card, CardContent, Typography, Grid, Skeleton } from '@mui/material';
+import { Box, Card, CardContent, Typography, Skeleton } from '@mui/material';
+import { Grid } from '@mui/material';
 import { Business, BusinessCenter, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useBrandStats } from '../hooks/useBrands';
 

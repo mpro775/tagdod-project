@@ -16,8 +16,9 @@ import {
   ErrorStatisticsDto,
   ErrorTrendDto,
   ErrorLogDto,
-  SystemLogDto,
   LogsExportDto,
+  ErrorLevel,
+  ErrorCategory,
 } from './dto/error-logs.dto';
 
 @Injectable()
@@ -71,7 +72,7 @@ export class ErrorLogsService {
   async getErrorLogs(query: ErrorLogsQueryDto) {
     const { level, category, search, startDate, endDate, page = 1, limit = 20 } = query;
 
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
 
     if (level) {
       filter.level = level;
@@ -86,12 +87,12 @@ export class ErrorLogsService {
     }
 
     if (startDate || endDate) {
-      filter.createdAt = {};
+      filter.createdAt = {} as Record<string, Date>;
       if (startDate) {
-        filter.createdAt.$gte = new Date(startDate);
+        (filter.createdAt as Record<string, Date>).$gte = new Date(startDate);
       }
       if (endDate) {
-        filter.createdAt.$lte = new Date(endDate);
+        (filter.createdAt as Record<string, Date>).$lte = new Date(endDate);
       }
     }
 
@@ -177,7 +178,7 @@ export class ErrorLogsService {
       .lean();
 
     // Group by date
-    const dataMap = new Map<string, any>();
+    const dataMap = new Map<string, { date: string; total: number; byLevel: { error: number; warn: number; fatal: number; debug: number } }>();
 
     for (let i = 0; i < days; i++) {
       const date = new Date(startDate);
@@ -195,8 +196,9 @@ export class ErrorLogsService {
       const data = dataMap.get(dateStr);
       if (data) {
         data.total++;
-        if (data.byLevel[error.level] !== undefined) {
-          data.byLevel[error.level]++;
+        const levelKey = error.level as 'error' | 'warn' | 'fatal' | 'debug';
+        if (data.byLevel[levelKey] !== undefined) {
+          data.byLevel[levelKey]++;
         }
       }
     });
@@ -255,7 +257,7 @@ export class ErrorLogsService {
     level: string,
     message: string,
     context?: string,
-    data?: Record<string, any>,
+    data?: Record<string, unknown>,
   ): Promise<void> {
     await this.systemLogModel.create({
       level,
@@ -272,7 +274,7 @@ export class ErrorLogsService {
     page: number = 1,
     limit: number = 50,
   ) {
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
 
     if (level) {
       filter.level = level;
@@ -315,37 +317,35 @@ export class ErrorLogsService {
   async exportLogs(dto: LogsExportDto): Promise<string> {
     const { format, startDate, endDate, level } = dto;
 
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
 
     if (level) {
       filter.level = level;
     }
 
     if (startDate || endDate) {
-      filter.createdAt = {};
+      filter.createdAt = {} as Record<string, Date>;
       if (startDate) {
-        filter.createdAt.$gte = new Date(startDate);
+        (filter.createdAt as Record<string, Date>).$gte = new Date(startDate);
       }
       if (endDate) {
-        filter.createdAt.$lte = new Date(endDate);
+        (filter.createdAt as Record<string, Date>).$lte = new Date(endDate);
       }
     }
 
     const logs = await this.errorLogModel.find(filter).lean();
 
-    // Generate file based on format
-    let content: string;
-
+    // Generate file based on format (content not used currently, would be uploaded to storage)
     switch (format) {
       case 'csv':
-        content = this.generateCSV(logs);
+        this.generateCSV(logs);
         break;
       case 'txt':
-        content = this.generateTXT(logs);
+        this.generateTXT(logs);
         break;
       case 'json':
       default:
-        content = JSON.stringify(logs, null, 2);
+        JSON.stringify(logs, null, 2);
         break;
     }
 
@@ -377,8 +377,8 @@ export class ErrorLogsService {
 
     const byLevel = { error: 0, warn: 0, fatal: 0, debug: 0 };
     results.forEach((r) => {
-      if (byLevel[r._id] !== undefined) {
-        byLevel[r._id] = r.count;
+      if (byLevel[r._id as keyof typeof byLevel] !== undefined) {
+        byLevel[r._id as keyof typeof byLevel] = r.count;
       }
     });
 
@@ -413,8 +413,8 @@ export class ErrorLogsService {
     return errors.map((e) => ({
       message: e.message,
       count: e.occurrences,
-      level: e.level as any,
-      category: e.category as any,
+      level: e.level as ErrorLevel,
+      category: e.category as ErrorCategory,
       lastOccurrence: e.lastOccurrence,
     }));
   }
@@ -445,11 +445,11 @@ export class ErrorLogsService {
     }));
   }
 
-  private mapToDto(log: any): ErrorLogDto {
+  private mapToDto(log: ErrorLog & { _id: unknown; createdAt?: Date }): ErrorLogDto {
     return {
-      id: log._id.toString(),
-      level: log.level,
-      category: log.category,
+      id: String(log._id),
+      level: log.level as ErrorLevel,
+      category: log.category as ErrorCategory,
       message: log.message,
       stack: log.stack,
       metadata: log.metadata,
@@ -465,10 +465,10 @@ export class ErrorLogsService {
     };
   }
 
-  private generateCSV(logs: any[]): string {
+  private generateCSV(logs: Array<ErrorLog & { _id: unknown }>): string {
     const headers = ['ID', 'Level', 'Category', 'Message', 'Endpoint', 'Occurrences', 'Last Occurrence'];
     const rows = logs.map((log) => [
-      log._id,
+      String(log._id),
       log.level,
       log.category,
       log.message.replace(/"/g, '""'),
@@ -483,7 +483,7 @@ export class ErrorLogsService {
     ].join('\n');
   }
 
-  private generateTXT(logs: any[]): string {
+  private generateTXT(logs: ErrorLog[]): string {
     return logs
       .map(
         (log) =>

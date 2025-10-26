@@ -227,3 +227,52 @@ export const useOffers = (params: ListOffersParams = {}) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+// === إدارة قبول/رفض/إلغاء العروض ===
+export const useAcceptOffer = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ requestId, offerId }: { requestId: string; offerId: string }) =>
+      servicesApi.acceptOffer(requestId, offerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [SERVICES_KEY] });
+      toast.success('تم قبول العرض بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'فشل في قبول العرض');
+    },
+  });
+};
+
+export const useRejectOffer = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ offerId, reason }: { offerId: string; reason?: string }) =>
+      servicesApi.rejectOffer(offerId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [SERVICES_KEY] });
+      toast.success('تم رفض العرض بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'فشل في رفض العرض');
+    },
+  });
+};
+
+export const useCancelOffer = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ offerId, reason }: { offerId: string; reason?: string }) =>
+      servicesApi.cancelOffer(offerId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [SERVICES_KEY] });
+      toast.success('تم إلغاء العرض بنجاح');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'فشل في إلغاء العرض');
+    },
+  });
+};

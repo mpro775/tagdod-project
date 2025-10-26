@@ -110,6 +110,11 @@ export enum AdminPermission {
   FAVORITES_READ = 'favorites.read',
   FAVORITES_MANAGE = 'favorites.manage',
 
+  // العناوين
+  ADDRESSES_READ = 'addresses.read',
+  ADDRESSES_MANAGE = 'addresses.manage',
+  ADDRESSES_ANALYTICS = 'addresses.analytics',
+
   // الرفع والتحميل
   UPLOAD_MANAGE = 'upload.manage',
   UPLOAD_DELETE = 'upload.delete',
@@ -155,6 +160,8 @@ export const PERMISSION_GROUPS = {
     AdminPermission.CARTS_SEND_REMINDERS,
     AdminPermission.CARTS_CONVERT_TO_ORDER,
     AdminPermission.CARTS_BULK_ACTIONS,
+    AdminPermission.ADDRESSES_READ,
+    AdminPermission.ADDRESSES_ANALYTICS,
     AdminPermission.ANALYTICS_READ,
     AdminPermission.REPORTS_GENERATE,
     AdminPermission.ADMIN_ACCESS,
@@ -168,6 +175,7 @@ export const PERMISSION_GROUPS = {
     AdminPermission.SUPPORT_CLOSE,
     AdminPermission.USERS_READ,
     AdminPermission.USERS_UPDATE,
+    AdminPermission.ADDRESSES_READ,
     AdminPermission.ADMIN_ACCESS,
   ],
 
@@ -193,6 +201,7 @@ export const PERMISSION_GROUPS = {
     AdminPermission.SUPPORT_READ,
     AdminPermission.MARKETING_READ,
     AdminPermission.ANALYTICS_READ,
+    AdminPermission.ADDRESSES_READ,
     AdminPermission.ADMIN_ACCESS,
   ],
 

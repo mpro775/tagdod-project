@@ -73,7 +73,7 @@ export class I18nController {
     status: 200,
     description: 'تم استرداد الترجمات بنجاح',
   })
-  async getAllPublicTranslations(): Promise<Record<string, Record<string, any>>> {
+  async getAllPublicTranslations(): Promise<Record<string, { ar: Record<string, string>; en: Record<string, string> }>> {
     return this.i18nService.getAllTranslationsGrouped();
   }
 
@@ -94,7 +94,7 @@ export class I18nController {
   })
   async createTranslation(
     @Body() dto: CreateTranslationDto,
-    @Request() req: any,
+    @Request() req: Express.Request & { user: { userId: string } },
   ): Promise<TranslationDto> {
     const userId = req.user.userId;
     return this.i18nService.createTranslation(dto, userId);
@@ -152,7 +152,7 @@ export class I18nController {
   })
   async bulkImport(
     @Body() dto: BulkImportDto,
-    @Request() req: any,
+    @Request() req: Express.Request & { user: { userId: string } },
   ) {
     const userId = req.user.userId;
     const result = await this.i18nService.bulkImport(dto, userId);
@@ -219,7 +219,7 @@ export class I18nController {
   async updateTranslation(
     @Param('key') key: string,
     @Body() dto: UpdateTranslationDto,
-    @Request() req: any,
+    @Request() req: Express.Request & { user: { userId: string } },
   ): Promise<TranslationDto> {
     const userId = req.user.userId;
     return this.i18nService.updateTranslation(key, dto, userId);

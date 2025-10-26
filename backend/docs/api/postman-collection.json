@@ -5777,6 +5777,312 @@
       "description": "Endpoints for العناوين functionality"
     },
     {
+      "name": "إدارة-العناوين",
+      "item": [
+        {
+          "name": "الحصول على إحصائيات شاملة للعناوين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "stats"
+              ]
+            },
+            "description": "استرداد إحصائيات مفصلة حول العناوين في النظام"
+          }
+        },
+        {
+          "name": "المدن الأكثر استخداماً",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/top-cities",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "top-cities"
+              ]
+            },
+            "description": "استرداد قائمة بالمدن الأكثر استخداماً في العناوين مرتبة تنازلياً"
+          }
+        },
+        {
+          "name": "العناوين الأكثر استخداماً",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/most-used",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "most-used"
+              ]
+            },
+            "description": "استرداد قائمة بالعناوين الأكثر استخداماً مع معلومات المستخدمين"
+          }
+        },
+        {
+          "name": "العناوين المستخدمة مؤخراً",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/recently-used",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "recently-used"
+              ]
+            },
+            "description": "استرداد قائمة بالعناوين التي تم استخدامها مؤخراً"
+          }
+        },
+        {
+          "name": "العناوين التي لم تستخدم أبداً",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/never-used",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "never-used"
+              ]
+            },
+            "description": "استرداد قائمة بالعناوين التي لم يتم استخدامها مطلقاً"
+          }
+        },
+        {
+          "name": "تحليلات استخدام العناوين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/usage-analytics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "usage-analytics"
+              ]
+            },
+            "description": "استرداد تحليلات مفصلة حول استخدام العناوين في النظام"
+          }
+        },
+        {
+          "name": "التحليل الجغرافي للعناوين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/geographic-analytics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "geographic-analytics"
+              ]
+            },
+            "description": "استرداد بيانات التوزيع الجغرافي للعناوين (للخرائط الحرارية)"
+          }
+        },
+        {
+          "name": "قائمة جميع العناوين مع فلترة وبحث",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/list",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "list"
+              ]
+            },
+            "description": "استرداد جميع العناوين في النظام مع دعم الفلترة والبحث والترتيب"
+          }
+        },
+        {
+          "name": "الحصول على عناوين مستخدم محدد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/user/{userId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "user",
+                "{userId}"
+              ]
+            },
+            "description": "استرداد جميع عناوين مستخدم محدد مع معلومات المستخدم"
+          }
+        },
+        {
+          "name": "عدد عناوين مستخدم محدد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/user/{userId}/count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "user",
+                "{userId}",
+                "count"
+              ]
+            },
+            "description": "الحصول على عدد العناوين النشطة لمستخدم محدد"
+          }
+        },
+        {
+          "name": "البحث عن عناوين قريبة من نقطة معينة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/addresses/nearby",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "addresses",
+                "nearby"
+              ]
+            },
+            "description": "استرداد العناوين القريبة من إحداثيات معينة (مفيد للتخطيط اللوجستي)"
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة-العناوين functionality"
+    },
+    {
       "name": "دعم-العملاء",
       "item": [
         {
@@ -8660,6 +8966,282 @@
       "description": "Endpoints for البحث functionality"
     },
     {
+      "name": "إدارة-البحث",
+      "item": [
+        {
+          "name": "إحصائيات البحث الشاملة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "stats"
+              ]
+            },
+            "description": "استرداد إحصائيات شاملة حول عمليات البحث في النظام"
+          }
+        },
+        {
+          "name": "الكلمات المفتاحية الأكثر بحثاً",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/top-terms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "top-terms"
+              ]
+            },
+            "description": "استرداد قائمة بالكلمات والعبارات الأكثر بحثاً في النظام"
+          }
+        },
+        {
+          "name": "عمليات البحث بدون نتائج",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/zero-results",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "zero-results"
+              ]
+            },
+            "description": "استرداد قائمة بعمليات البحث التي لم تُرجع أي نتائج (مفيد لتحسين المحتوى)"
+          }
+        },
+        {
+          "name": "اتجاهات البحث عبر الزمن",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/trends",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "trends"
+              ]
+            },
+            "description": "تحليل اتجاهات البحث على مدى فترة زمنية محددة"
+          }
+        },
+        {
+          "name": "سجلات البحث",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "logs"
+              ]
+            },
+            "description": "استرداد سجلات عمليات البحث مع إمكانية الفلترة"
+          }
+        },
+        {
+          "name": "المنتجات الأكثر ظهوراً في البحث",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/most-searched-products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "most-searched-products"
+              ]
+            },
+            "description": "استرداد قائمة بالمنتجات الأكثر شيوعاً في نتائج البحث"
+          }
+        },
+        {
+          "name": "الفئات الأكثر بحثاً",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/most-searched-categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "most-searched-categories"
+              ]
+            },
+            "description": "استرداد قائمة بالفئات الأكثر شيوعاً في عمليات البحث"
+          }
+        },
+        {
+          "name": "العلامات التجارية الأكثر بحثاً",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/most-searched-brands",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "most-searched-brands"
+              ]
+            },
+            "description": "استرداد قائمة بالعلامات التجارية الأكثر شيوعاً في البحث"
+          }
+        },
+        {
+          "name": "مؤشرات أداء البحث",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/performance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "performance"
+              ]
+            },
+            "description": "استرداد مؤشرات الأداء ومعلومات النظام للبحث"
+          }
+        },
+        {
+          "name": "مسح ذاكرة التخزين المؤقت للبحث",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/search/clear-cache",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "search",
+                "clear-cache"
+              ]
+            },
+            "description": "مسح جميع بيانات الكاش الخاصة بالبحث (للصيانة أو التحديثات)"
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة-البحث functionality"
+    },
+    {
       "name": "إدارة-العلامات-التجارية",
       "item": [
         {
@@ -9718,6 +10300,994 @@
         }
       ],
       "description": "Endpoints for التدقيق functionality"
+    },
+    {
+      "name": "مراقبة النظام",
+      "item": [
+        {
+          "name": "الحصول على صحة النظام العامة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "health"
+              ]
+            },
+            "description": "استرداد مقاييس صحة النظام الشاملة مع جميع المكونات"
+          }
+        },
+        {
+          "name": "الحصول على استخدام الموارد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/resources",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "resources"
+              ]
+            },
+            "description": "استرداد معلومات استخدام CPU والذاكرة والقرص"
+          }
+        },
+        {
+          "name": "الحصول على مقاييس قاعدة البيانات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/database",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "database"
+              ]
+            },
+            "description": "استرداد معلومات أداء وحالة MongoDB"
+          }
+        },
+        {
+          "name": "الحصول على مقاييس Redis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/redis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "redis"
+              ]
+            },
+            "description": "استرداد معلومات أداء وحالة Redis Cache"
+          }
+        },
+        {
+          "name": "الحصول على أداء API",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/api-performance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "api-performance"
+              ]
+            },
+            "description": "استرداد إحصائيات أداء واستجابة API"
+          }
+        },
+        {
+          "name": "الحصول على تاريخ المقاييس",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/metrics/history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "metrics",
+                "history"
+              ]
+            },
+            "description": "استرداد البيانات التاريخية للمقاييس المختلفة"
+          }
+        },
+        {
+          "name": "الحصول على تنبيهات النظام",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/alerts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "alerts"
+              ]
+            },
+            "description": "استرداد قائمة التنبيهات النشطة والحرجة"
+          }
+        },
+        {
+          "name": "حل تنبيه",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/alerts/{id}/resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "alerts",
+                "{id}",
+                "resolve"
+              ]
+            },
+            "description": "وضع علامة على تنبيه كمحلول"
+          }
+        },
+        {
+          "name": "الحصول على نظرة عامة شاملة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "overview"
+              ]
+            },
+            "description": "استرداد جميع المقاييس في استجابة واحدة"
+          }
+        }
+      ],
+      "description": "Endpoints for مراقبة النظام functionality"
+    },
+    {
+      "name": "إدارة الأخطاء والسجلات",
+      "item": [
+        {
+          "name": "إنشاء سجل خطأ جديد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs"
+              ]
+            },
+            "description": "تسجيل خطأ جديد في النظام"
+          }
+        },
+        {
+          "name": "الحصول على قائمة الأخطاء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs"
+              ]
+            },
+            "description": "استرداد سجلات الأخطاء مع التصفية والترتيب"
+          }
+        },
+        {
+          "name": "الحصول على إحصائيات الأخطاء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "statistics"
+              ]
+            },
+            "description": "استرداد تحليلات شاملة للأخطاء"
+          }
+        },
+        {
+          "name": "الحصول على اتجاهات الأخطاء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/trends",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "trends"
+              ]
+            },
+            "description": "تحليل اتجاه الأخطاء عبر الزمن"
+          }
+        },
+        {
+          "name": "تصدير سجلات الأخطاء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "export"
+              ]
+            },
+            "description": "تصدير السجلات بصيغ مختلفة (JSON, CSV, TXT)"
+          }
+        },
+        {
+          "name": "الحصول على سجلات النظام",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/system-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "system-logs"
+              ]
+            },
+            "description": "استرداد سجلات النظام العامة"
+          }
+        },
+        {
+          "name": "الحصول على تفاصيل خطأ",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "{id}"
+              ]
+            },
+            "description": "استرداد معلومات مفصلة عن خطأ معين"
+          }
+        },
+        {
+          "name": "حذف خطأ",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "{id}"
+              ]
+            },
+            "description": "حذف سجل خطأ من قاعدة البيانات"
+          }
+        },
+        {
+          "name": "حل خطأ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/{id}/resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "{id}",
+                "resolve"
+              ]
+            },
+            "description": "وضع علامة على خطأ كمحلول"
+          }
+        },
+        {
+          "name": "تنظيف السجلات القديمة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/cleanup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "cleanup"
+              ]
+            },
+            "description": "حذف سجلات الأخطاء الأقدم من عدد معين من الأيام"
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة الأخطاء والسجلات functionality"
+    },
+    {
+      "name": "إدارة نصوص التعريب",
+      "item": [
+        {
+          "name": "الحصول على جميع الترجمات للغة معينة (عام)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n/public/translations/{lang}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n",
+                "public",
+                "translations",
+                "{lang}"
+              ]
+            },
+            "description": "يستخدم من قبل Frontend لتحميل الترجمات"
+          }
+        },
+        {
+          "name": "الحصول على جميع الترجمات مجمعة (عام)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n/public/all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n",
+                "public",
+                "all"
+              ]
+            },
+            "description": "جميع الترجمات مجمعة حسب المساحة واللغة"
+          }
+        },
+        {
+          "name": "إنشاء ترجمة جديدة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n"
+              ]
+            },
+            "description": "إضافة ترجمة جديدة للنظام"
+          }
+        },
+        {
+          "name": "الحصول على قائمة الترجمات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n"
+              ]
+            },
+            "description": "استرداد الترجمات مع التصفية"
+          }
+        },
+        {
+          "name": "الحصول على إحصائيات الترجمات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n",
+                "statistics"
+              ]
+            },
+            "description": "تحليلات شاملة عن الترجمات ونسبة الاكتمال"
+          }
+        },
+        {
+          "name": "استيراد ترجمات بالجملة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n/bulk-import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n",
+                "bulk-import"
+              ]
+            },
+            "description": "استيراد ملف JSON يحتوي على ترجمات متعددة"
+          }
+        },
+        {
+          "name": "تصدير الترجمات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n",
+                "export"
+              ]
+            },
+            "description": "تصدير الترجمات بصيغ مختلفة (JSON, CSV)"
+          }
+        },
+        {
+          "name": "الحصول على ترجمة بالمفتاح",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n",
+                "{key}"
+              ]
+            },
+            "description": "استرداد تفاصيل ترجمة معينة"
+          }
+        },
+        {
+          "name": "تحديث ترجمة",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n",
+                "{key}"
+              ]
+            },
+            "description": "تعديل ترجمة موجودة"
+          }
+        },
+        {
+          "name": "حذف ترجمة",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/i18n/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "i18n",
+                "{key}"
+              ]
+            },
+            "description": "حذف ترجمة من النظام"
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة نصوص التعريب functionality"
+    },
+    {
+      "name": "إعدادات النظام",
+      "item": [
+        {
+          "name": "الحصول على الإعدادات العامة (عام)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings/public",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings",
+                "public"
+              ]
+            },
+            "description": "إعدادات النظام المتاحة للعموم"
+          }
+        },
+        {
+          "name": "إنشاء إعداد جديد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings"
+              ]
+            },
+            "description": "إضافة إعداد جديد للنظام"
+          }
+        },
+        {
+          "name": "الحصول على جميع الإعدادات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings"
+              ]
+            },
+            "description": "استرداد جميع إعدادات النظام"
+          }
+        },
+        {
+          "name": "الحصول على إعدادات فئة معينة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings/category/{category}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings",
+                "category",
+                "{category}"
+              ]
+            },
+            "description": "استرداد الإعدادات حسب الفئة كـ key-value pairs"
+          }
+        },
+        {
+          "name": "تحديث عدة إعدادات",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings",
+                "bulk"
+              ]
+            },
+            "description": "تحديث إعدادات متعددة دفعة واحدة"
+          }
+        },
+        {
+          "name": "الحصول على إعداد بالمفتاح",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings",
+                "{key}"
+              ]
+            },
+            "description": "استرداد إعداد معين"
+          }
+        },
+        {
+          "name": "تحديث إعداد",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings",
+                "{key}"
+              ]
+            },
+            "description": "تعديل قيمة إعداد موجود"
+          }
+        },
+        {
+          "name": "حذف إعداد",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings",
+                "{key}"
+              ]
+            },
+            "description": "حذف إعداد من النظام"
+          }
+        }
+      ],
+      "description": "Endpoints for إعدادات النظام functionality"
     },
     {
       "name": "General",

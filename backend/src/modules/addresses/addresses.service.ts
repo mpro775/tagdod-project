@@ -292,4 +292,395 @@ export class AddressesService {
       deletedAt: null,
     });
   }
+
+  // =====================================================
+  // ADMIN METHODS
+  // =====================================================
+
+  /**
+   * Get all addresses with filters and pagination (Admin)
+   */
+  async adminList(filters: {
+    userId?: string;
+    city?: string;
+    label?: string;
+    isDefault?: boolean;
+    isActive?: boolean;
+    includeDeleted?: boolean;
+    search?: string;
+    limit?: number;
+    page?: number;
+    sortBy?: string;
+    sortOrder?: string;
+  }) {
+    const {
+      userId,
+      city,
+      label,
+      isDefault,
+      isActive,
+      includeDeleted,
+      search,
+      limit = 20,
+      page = 1,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = filters;
+
+    const query: FilterQuery<Address> = {};
+
+    // Filters
+    if (userId) {
+      query.userId = new Types.ObjectId(userId);
+    }
+
+    if (city) {
+      query.city = new RegExp(city, 'i');
+    }
+
+    if (label) {
+      query.label = new RegExp(label, 'i');
+    }
+
+    if (isDefault !== undefined) {
+      query.isDefault = isDefault;
+    }
+
+    if (isActive !== undefined) {
+      query.isActive = isActive;
+    }
+
+    if (!includeDeleted) {
+      query.deletedAt = null;
+    }
+
+    // Search in text fields
+    if (search) {
+      query.$or = [
+        { label: new RegExp(search, 'i') },
+        { line1: new RegExp(search, 'i') },
+        { city: new RegExp(search, 'i') },
+        { notes: new RegExp(search, 'i') },
+      ];
+    }
+
+    // Pagination
+    const skip = (page - 1) * limit;
+
+    // Sorting
+    const sortOptions: Record<string, 1 | -1> = {};
+    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Execute query
+    const [addresses, total] = await Promise.all([
+      this.addressModel
+        .find(query)
+        .populate('userId', 'name phone email isActive createdAt')
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.addressModel.countDocuments(query),
+    ]);
+
+    return {
+      data: addresses,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get comprehensive statistics (Admin)
+   */
+  async getStats() {
+    const [
+      totalAddresses,
+      totalActiveAddresses,
+      totalDeletedAddresses,
+      totalUsers,
+      avgPerUser,
+    ] = await Promise.all([
+      // Total addresses (including deleted)
+      this.addressModel.countDocuments(),
+
+      // Active addresses
+      this.addressModel.countDocuments({ deletedAt: null, isActive: true }),
+
+      // Deleted addresses
+      this.addressModel.countDocuments({ deletedAt: { $ne: null } }),
+
+      // Users with addresses
+      this.addressModel.distinct('userId', { deletedAt: null }),
+
+      // Average addresses per user
+      this.addressModel
+        .aggregate([
+          { $match: { deletedAt: null } },
+          {
+            $group: {
+              _id: '$userId',
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              avgAddresses: { $avg: '$count' },
+            },
+          },
+        ])
+        .then((result) => result[0]?.avgAddresses || 0),
+    ]);
+
+    return {
+      totalAddresses,
+      totalActiveAddresses,
+      totalDeletedAddresses,
+      totalUsers: totalUsers.length,
+      averagePerUser: Number(avgPerUser.toFixed(2)),
+    };
+  }
+
+  /**
+   * Get top cities by address count (Admin)
+   */
+  async getTopCities(limit = 10) {
+    const cities = await this.addressModel.aggregate([
+      { $match: { deletedAt: null } },
+      {
+        $group: {
+          _id: '$city',
+          count: { $sum: 1 },
+          activeCount: {
+            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] },
+          },
+          defaultCount: {
+            $sum: { $cond: [{ $eq: ['$isDefault', true] }, 1, 0] },
+          },
+          totalUsage: { $sum: '$usageCount' },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: limit },
+      {
+        $project: {
+          _id: 0,
+          city: '$_id',
+          count: 1,
+          activeCount: 1,
+          defaultCount: 1,
+          totalUsage: 1,
+          percentage: {
+            $multiply: [
+              { $divide: ['$count', { $literal: 0 }] }, // Will be calculated after
+              100,
+            ],
+          },
+        },
+      },
+    ]);
+
+    // Calculate total for percentage
+    const total = await this.addressModel.countDocuments({ deletedAt: null });
+
+    return cities.map((city) => ({
+      ...city,
+      percentage: Number(((city.count / total) * 100).toFixed(2)),
+    }));
+  }
+
+  /**
+   * Get most used addresses (Admin)
+   */
+  async getMostUsedAddresses(limit = 10) {
+    return await this.addressModel
+      .find({ deletedAt: null, usageCount: { $gt: 0 } })
+      .populate('userId', 'name phone')
+      .sort({ usageCount: -1 })
+      .limit(limit)
+      .select('label line1 city usageCount lastUsedAt userId')
+      .lean();
+  }
+
+  /**
+   * Get recently used addresses (Admin)
+   */
+  async getRecentlyUsedAddresses(limit = 20) {
+    return await this.addressModel
+      .find({ deletedAt: null, lastUsedAt: { $exists: true } })
+      .populate('userId', 'name phone')
+      .sort({ lastUsedAt: -1 })
+      .limit(limit)
+      .select('label line1 city usageCount lastUsedAt userId')
+      .lean();
+  }
+
+  /**
+   * Get never used addresses (Admin)
+   */
+  async getNeverUsedAddresses(limit = 20) {
+    return await this.addressModel
+      .find({
+        deletedAt: null,
+        $or: [{ usageCount: 0 }, { usageCount: { $exists: false } }],
+      })
+      .populate('userId', 'name phone')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .select('label line1 city createdAt userId')
+      .lean();
+  }
+
+  /**
+   * Get user addresses with full details (Admin)
+   */
+  async getUserAddresses(userId: string, includeDeleted = false) {
+    const query: FilterQuery<Address> = { userId: new Types.ObjectId(userId) };
+
+    if (!includeDeleted) {
+      query.deletedAt = null;
+    }
+
+    return await this.addressModel
+      .find(query)
+      .sort({ isDefault: -1, lastUsedAt: -1, createdAt: -1 })
+      .lean();
+  }
+
+  /**
+   * Get geographic analytics (Admin)
+   */
+  async getGeographicAnalytics() {
+    const [cityDistribution, coordinatesData] = await Promise.all([
+      // City distribution
+      this.addressModel.aggregate([
+        { $match: { deletedAt: null } },
+        {
+          $group: {
+            _id: '$city',
+            count: { $sum: 1 },
+            coordinates: { $push: '$coords' },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]),
+
+      // All coordinates for heatmap
+      this.addressModel
+        .find({ deletedAt: null, coords: { $exists: true } })
+        .select('coords city label')
+        .lean(),
+    ]);
+
+    return {
+      cityDistribution,
+      coordinates: coordinatesData.map((addr) => ({
+        lat: addr.coords.lat,
+        lng: addr.coords.lng,
+        city: addr.city,
+        label: addr.label,
+      })),
+      totalPoints: coordinatesData.length,
+    };
+  }
+
+  /**
+   * Get usage analytics (Admin)
+   */
+  async getUsageAnalytics(startDate?: Date, endDate?: Date) {
+    const matchQuery: Record<string, unknown> = { deletedAt: null };
+
+    if (startDate || endDate) {
+      matchQuery.lastUsedAt = {} as Record<string, Date>;
+      if (startDate) (matchQuery.lastUsedAt as Record<string, Date>).$gte = startDate;
+      if (endDate) (matchQuery.lastUsedAt as Record<string, Date>).$lte = endDate;
+    }
+
+    const [usageStats, dailyUsage] = await Promise.all([
+      // Overall usage stats
+      this.addressModel.aggregate([
+        { $match: { deletedAt: null } },
+        {
+          $group: {
+            _id: null,
+            totalUsage: { $sum: '$usageCount' },
+            avgUsage: { $avg: '$usageCount' },
+            maxUsage: { $max: '$usageCount' },
+            addressesUsed: {
+              $sum: { $cond: [{ $gt: ['$usageCount', 0] }, 1, 0] },
+            },
+            addressesNeverUsed: {
+              $sum: { $cond: [{ $eq: ['$usageCount', 0] }, 1, 0] },
+            },
+          },
+        },
+      ]),
+
+      // Daily usage trend (if dates provided)
+      startDate && endDate
+        ? this.addressModel.aggregate([
+            { $match: matchQuery },
+            {
+              $group: {
+                _id: {
+                  $dateToString: { format: '%Y-%m-%d', date: '$lastUsedAt' },
+                },
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { _id: 1 } },
+          ])
+        : [],
+    ]);
+
+    return {
+      stats: usageStats[0] || {
+        totalUsage: 0,
+        avgUsage: 0,
+        maxUsage: 0,
+        addressesUsed: 0,
+        addressesNeverUsed: 0,
+      },
+      dailyTrend: dailyUsage,
+    };
+  }
+
+  /**
+   * Get address count for specific user (Admin)
+   */
+  async getUserAddressCount(userId: string): Promise<number> {
+    return await this.addressModel.countDocuments({
+      userId: new Types.ObjectId(userId),
+      deletedAt: null,
+    });
+  }
+
+  /**
+   * Search addresses near coordinates (Admin)
+   */
+  async searchNearby(lat: number, lng: number, radiusInKm = 10, limit = 20) {
+    const radiusInMeters = radiusInKm * 1000;
+
+    return await this.addressModel
+      .find({
+        deletedAt: null,
+        coords: {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [lng, lat],
+            },
+            $maxDistance: radiusInMeters,
+          },
+        },
+      })
+      .populate('userId', 'name phone')
+      .limit(limit)
+      .lean();
+  }
 }

@@ -645,4 +645,281 @@ export class SearchService {
     await this.cacheService.clear('search:*');
     this.logger.log('Cleared all search caches');
   }
+
+  // =====================================================
+  // ADMIN METHODS - إضافة لاحقاً عند ربط Search Logs
+  // =====================================================
+
+  /**
+   * Get search statistics (Admin)
+   */
+  async getSearchStats() {
+    // حساب الإحصائيات بناءً على البيانات الموجودة
+    const [totalProducts, totalCategories, totalBrands] = await Promise.all([
+      this.productModel.countDocuments({ status: 'active', deletedAt: null }),
+      this.categoryModel.countDocuments({ isActive: true, deletedAt: null }),
+      this.brandModel.countDocuments({ isActive: true }),
+    ]);
+
+    return {
+      totalSearchableItems: totalProducts + totalCategories + totalBrands,
+      products: totalProducts,
+      categories: totalCategories,
+      brands: totalBrands,
+      cacheHitRate: 0, // سيتم حسابها لاحقاً مع Search Logs
+      averageResponseTime: 0, // سيتم حسابها لاحقاً مع Search Logs
+      topLanguage: 'ar',
+      topEntityType: 'products',
+    };
+  }
+
+  /**
+   * Get top search terms (Admin)
+   */
+  async getTopSearchTerms(filters?: {
+    limit?: number;
+    startDate?: Date;
+    endDate?: Date;
+    language?: string;
+  }) {
+    const limit = filters?.limit || 10;
+    const lang = filters?.language || 'ar';
+
+    // نحصل على المنتجات الأكثر مشاهدة كمؤشر للمصطلحات الأكثر بحثاً
+    const topProducts = await this.productModel
+      .find({ status: 'active', deletedAt: null })
+      .sort({ viewsCount: -1 })
+      .limit(limit)
+      .select('name nameEn viewsCount')
+      .lean();
+
+    return topProducts.map((p) => ({
+      term: lang === 'ar' ? p.name : p.nameEn,
+      count: p.viewsCount || 0,
+    }));
+  }
+
+  /**
+   * Get zero-result searches (Admin)
+   */
+  async getZeroResultSearches(_filters?: {
+    limit?: number;
+    page?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
+    // ملاحظة: هذه الوظيفة تتطلب Search Logs Schema لتتبع البحث الفعلي
+    // حالياً نرجع بيانات فارغة حتى يتم إضافة Search Logs
+    return {
+      data: [],
+      pagination: {
+        total: 0,
+        page: _filters?.page || 1,
+        limit: _filters?.limit || 20,
+        pages: 0,
+      },
+      message: 'Search logs not implemented yet',
+    };
+  }
+
+  /**
+   * Get search logs with pagination (Admin)
+   */
+  async getSearchLogs(_filters?: {
+    query?: string;
+    userId?: string;
+    hasResults?: boolean;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+    page?: number;
+  }) {
+    // ملاحظة: هذه الوظيفة تتطلب Search Logs Schema لتتبع البحث الفعلي
+    // حالياً نرجع بيانات فارغة حتى يتم إضافة Search Logs
+    return {
+      data: [],
+      pagination: {
+        total: 0,
+        page: _filters?.page || 1,
+        limit: _filters?.limit || 20,
+        pages: 0,
+      },
+      message: 'Search logs not implemented yet',
+    };
+  }
+
+  /**
+   * Get search trends over time (Admin)
+   */
+  async getSearchTrends() {
+    // ملاحظة: هذه الوظيفة تتطلب Search Logs Schema لتتبع البحث الفعلي
+    // حالياً نرجع اتجاهات بناءً على نشاط المنتجات
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    
+    const productActivity = await this.productModel.aggregate([
+      {
+        $match: {
+          status: 'active',
+          deletedAt: null,
+          createdAt: { $gte: lastMonth },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+            day: { $dayOfMonth: '$createdAt' },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+    ]);
+
+    return productActivity.map((item) => ({
+      date: `${item._id.year}-${String(item._id.month).padStart(2, '0')}-${String(item._id.day).padStart(2, '0')}`,
+      count: item.count,
+      type: 'product_activity',
+    }));
+  }
+
+  /**
+   * Get products most found in searches (Admin)
+   */
+  async getMostSearchedProducts(filters?: {
+    limit?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
+    const limit = filters?.limit || 20;
+
+    // نحلل المنتجات الأكثر ظهوراً في نتائج البحث بناءً على:
+    // - عدد المشاهدات
+    // - التصنيف
+    // - عدد المراجعات
+
+    const products = await this.productModel
+      .find({
+        status: 'active',
+        deletedAt: null,
+      })
+      .sort({ viewsCount: -1, rating: -1, reviewsCount: -1 })
+      .limit(limit)
+      .populate('categoryId', 'name nameEn')
+      .populate('brandId', 'name nameEn')
+      .select('name nameEn viewsCount rating reviewsCount isFeatured')
+      .lean();
+
+    return products.map((p) => ({
+      _id: p._id,
+      name: p.name,
+      nameEn: p.nameEn,
+      viewsCount: p.viewsCount || 0,
+      rating: p.rating || 0,
+      reviewsCount: p.reviewsCount || 0,
+      isFeatured: p.isFeatured || false,
+      category: p.categoryId,
+      brand: p.brandId,
+    }));
+  }
+
+  /**
+   * Get categories most searched (Admin)
+   */
+  async getMostSearchedCategories(filters?: {
+    limit?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
+    const limit = filters?.limit || 10;
+
+    const categories = await this.categoryModel
+      .find({
+        isActive: true,
+        deletedAt: null,
+      })
+      .sort({ productsCount: -1, isFeatured: -1 })
+      .limit(limit)
+      .select('name nameEn productsCount isFeatured')
+      .lean();
+
+    return categories.map((c) => ({
+      _id: c._id,
+      name: c.name,
+      nameEn: c.nameEn,
+      productsCount: c.productsCount || 0,
+      isFeatured: c.isFeatured || false,
+    }));
+  }
+
+  /**
+   * Get brands most searched (Admin)
+   */
+  async getMostSearchedBrands(filters?: {
+    limit?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
+    const limit = filters?.limit || 10;
+
+    // نحصل على البراندات الأكثر شيوعاً بناءً على عدد المنتجات
+    const brands = await this.brandModel
+      .find({ isActive: true })
+      .sort({ sortOrder: 1 })
+      .limit(limit)
+      .select('name nameEn')
+      .lean();
+
+    // نحسب عدد المنتجات لكل براند
+    const brandsWithCount = await Promise.all(
+      brands.map(async (brand) => {
+        const productCount = await this.productModel.countDocuments({
+          brandId: brand._id,
+          status: 'active',
+          deletedAt: null,
+        });
+
+        return {
+          _id: brand._id,
+          name: brand.name,
+          nameEn: brand.nameEn,
+          productCount,
+        };
+      }),
+    );
+
+    // ترتيب حسب عدد المنتجات
+    return brandsWithCount.sort((a, b) => b.productCount - a.productCount);
+  }
+
+  /**
+   * Get search performance metrics (Admin)
+   */
+  async getSearchPerformanceMetrics() {
+    // إحصائيات الأداء العامة
+
+    const [totalProducts, totalCategories, totalBrands, activeProducts] = await Promise.all([
+      this.productModel.countDocuments({ deletedAt: null }),
+      this.categoryModel.countDocuments({ deletedAt: null }),
+      this.brandModel.countDocuments(),
+      this.productModel.countDocuments({ status: 'active', deletedAt: null }),
+    ]);
+
+    return {
+      indexedData: {
+        totalProducts,
+        activeProducts,
+        totalCategories,
+        totalBrands,
+      },
+      cacheStatus: {
+        searchCacheTTL: this.CACHE_TTL.SEARCH_RESULTS,
+        suggestionsCacheTTL: this.CACHE_TTL.SUGGESTIONS,
+        facetsCacheTTL: this.CACHE_TTL.FACETS,
+      },
+      systemHealth: 'healthy' as const,
+    };
+  }
 }

@@ -1,31 +1,46 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Badge } from '@/shared/components/ui/badge';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { 
-  AlertCircle, 
-  AlertTriangle, 
+import {
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Chip,
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
+  IconButton,
+  InputAdornment,
+  CircularProgress,
+} from '@mui/material';
+import {
+  Error as ErrorIcon,
+  Warning,
   Info,
-  XCircle,
+  Cancel,
   Download,
-  Trash2,
-  CheckCircle2,
+  Delete,
+  CheckCircle,
   Search,
-  Filter,
+  FilterList,
   TrendingUp,
   TrendingDown,
-  Minus,
-} from 'lucide-react';
+  Remove,
+} from '@mui/icons-material';
 import { errorLogsApi } from '../api/errorLogsApi';
 import type { ErrorLog, ErrorStatistics, ErrorTrend } from '../api/errorLogsApi';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { toast } from 'sonner';
+import { toast } from 'react-hot-toast';
 import { formatRelativeTime } from '@/shared/utils/format';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 
 export function ErrorLogsPage() {
   const [errors, setErrors] = useState<ErrorLog[]>([]);
@@ -34,29 +49,35 @@ export function ErrorLogsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedError, setSelectedError] = useState<ErrorLog | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 20,
+  });
   
   // Filters
   const [level, setLevel] = useState<string>('');
   const [category, setCategory] = useState<string>('');
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [logsData, statsData, trendsData] = await Promise.all([
-        errorLogsApi.getErrorLogs({ level, category, search, page, limit: 20 }),
+        errorLogsApi.getErrorLogs({ 
+          level, 
+          category, 
+          search, 
+          page: paginationModel.page + 1, 
+          limit: paginationModel.pageSize 
+        }),
         errorLogsApi.getStatistics(),
         errorLogsApi.getTrends(7),
       ]);
 
       setErrors(logsData.data);
-      setTotalPages(logsData.meta.totalPages);
       setStatistics(statsData);
       setTrends(trendsData);
-    } catch (error) {
-      console.error('Error fetching error logs:', error);
+    } catch {
       toast.error('فشل في تحميل سجلات الأخطاء');
     } finally {
       setLoading(false);
@@ -65,14 +86,15 @@ export function ErrorLogsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [level, category, search, page]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level, category, search, paginationModel.page, paginationModel.pageSize]);
 
   const handleResolveError = async (id: string) => {
     try {
       await errorLogsApi.resolveError(id);
       toast.success('تم حل الخطأ بنجاح');
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('فشل في حل الخطأ');
     }
   };
@@ -84,7 +106,7 @@ export function ErrorLogsPage() {
       await errorLogsApi.deleteError(id);
       toast.success('تم حذف الخطأ بنجاح');
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('فشل في حذف الخطأ');
     }
   };
@@ -94,7 +116,7 @@ export function ErrorLogsPage() {
       const result = await errorLogsApi.exportLogs({ format });
       window.open(result.fileUrl, '_blank');
       toast.success('تم تصدير السجلات بنجاح');
-    } catch (error) {
+    } catch {
       toast.error('فشل في تصدير السجلات');
     }
   };
@@ -102,31 +124,40 @@ export function ErrorLogsPage() {
   const getLevelIcon = (level: string) => {
     switch (level) {
       case 'fatal':
-        return <XCircle className="h-4 w-4 text-red-600" />;
+        return <Cancel sx={{ fontSize: 16, color: 'error.dark' }} />;
       case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
+        return <ErrorIcon sx={{ fontSize: 16, color: 'error.main' }} />;
       case 'warn':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+        return <Warning sx={{ fontSize: 16, color: 'warning.main' }} />;
       case 'debug':
-        return <Info className="h-4 w-4 text-blue-500" />;
+        return <Info sx={{ fontSize: 16, color: 'info.main' }} />;
       default:
-        return <Info className="h-4 w-4" />;
+        return <Info sx={{ fontSize: 16 }} />;
+    }
+  };
+
+  const getLevelColor = (level: string): 'error' | 'warning' | 'info' | 'default' => {
+    switch (level) {
+      case 'fatal':
+      case 'error':
+        return 'error';
+      case 'warn':
+        return 'warning';
+      case 'debug':
+        return 'info';
+      default:
+        return 'default';
     }
   };
 
   const getLevelBadge = (level: string) => {
-    const variants: Record<string, any> = {
-      fatal: 'destructive',
-      error: 'destructive',
-      warn: 'default',
-      debug: 'secondary',
-    };
-
     return (
-      <Badge variant={variants[level] || 'default'} className="gap-1">
-        {getLevelIcon(level)}
-        {level}
-      </Badge>
+      <Chip
+        icon={getLevelIcon(level)}
+        label={level}
+        color={getLevelColor(level)}
+        size="small"
+      />
     );
   };
 
@@ -135,387 +166,536 @@ export function ErrorLogsPage() {
     
     switch (trends.trend) {
       case 'increasing':
-        return <TrendingUp className="h-4 w-4 text-red-500" />;
+        return <TrendingUp color="error" />;
       case 'decreasing':
-        return <TrendingDown className="h-4 w-4 text-green-500" />;
+        return <TrendingDown color="success" />;
       case 'stable':
-        return <Minus className="h-4 w-4 text-gray-500" />;
+        return <Remove color="action" />;
     }
   };
 
-  const columns: ColumnDef<ErrorLog>[] = [
+  const columns: GridColDef[] = [
     {
-      accessorKey: 'level',
-      header: 'المستوى',
-      cell: ({ row }) => getLevelBadge(row.original.level),
+      field: 'level',
+      headerName: 'المستوى',
+      minWidth: 120,
+      flex: 0.8,
+      renderCell: (params) => getLevelBadge(params.row.level),
     },
     {
-      accessorKey: 'category',
-      header: 'الفئة',
-      cell: ({ row }) => (
-        <Badge variant="outline">{row.original.category}</Badge>
+      field: 'category',
+      headerName: 'الفئة',
+      minWidth: 120,
+      flex: 0.8,
+      renderCell: (params) => (
+        <Chip label={params.row.category} variant="outlined" size="small" />
       ),
     },
     {
-      accessorKey: 'message',
-      header: 'الرسالة',
-      cell: ({ row }) => (
-        <div className="max-w-md truncate" title={row.original.message}>
-          {row.original.message}
-        </div>
+      field: 'message',
+      headerName: 'الرسالة',
+      minWidth: 300,
+      flex: 2,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            maxWidth: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+          title={params.row.message}
+        >
+          {params.row.message}
+        </Box>
       ),
     },
     {
-      accessorKey: 'endpoint',
-      header: 'نقطة النهاية',
-      cell: ({ row }) => (
-        <code className="text-xs bg-secondary px-2 py-1 rounded">
-          {row.original.endpoint || '-'}
-        </code>
+      field: 'endpoint',
+      headerName: 'نقطة النهاية',
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => (
+        <Box
+          component="code"
+          sx={{
+            fontSize: '0.75rem',
+            bgcolor: 'action.hover',
+            px: 1,
+            py: 0.5,
+            borderRadius: 1,
+          }}
+        >
+          {params.row.endpoint || '-'}
+        </Box>
       ),
     },
     {
-      accessorKey: 'occurrences',
-      header: 'التكرارات',
-      cell: ({ row }) => (
-        <Badge variant="secondary">{row.original.occurrences}</Badge>
+      field: 'occurrences',
+      headerName: 'التكرارات',
+      minWidth: 100,
+      flex: 0.6,
+      renderCell: (params) => (
+        <Chip label={params.row.occurrences} size="small" color="default" />
       ),
     },
     {
-      accessorKey: 'lastOccurrence',
-      header: 'آخر ظهور',
-      cell: ({ row }) => formatRelativeTime(row.original.lastOccurrence),
+      field: 'lastOccurrence',
+      headerName: 'آخر ظهور',
+      minWidth: 150,
+      flex: 1,
+      valueFormatter: (value) => formatRelativeTime(value),
     },
     {
-      accessorKey: 'resolved',
-      header: 'محلول؟',
-      cell: ({ row }) => (
-        row.original.resolved ? (
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
+      field: 'resolved',
+      headerName: 'محلول؟',
+      minWidth: 80,
+      flex: 0.5,
+      renderCell: (params) => (
+        params.row.resolved ? (
+          <CheckCircle color="success" />
         ) : (
-          <XCircle className="h-4 w-4 text-red-500" />
+          <Cancel color="error" />
         )
       ),
     },
     {
-      id: 'actions',
-      header: 'الإجراءات',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+      field: 'actions',
+      headerName: 'الإجراءات',
+      minWidth: 200,
+      flex: 1.2,
+      sortable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
-            size="sm"
-            variant="ghost"
+            size="small"
+            variant="text"
             onClick={() => {
-              setSelectedError(row.original);
+              setSelectedError(params.row);
               setShowDetailsDialog(true);
             }}
           >
             عرض
           </Button>
-          {!row.original.resolved && (
+          {!params.row.resolved && (
             <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleResolveError(row.original.id)}
+              size="small"
+              variant="text"
+              color="success"
+              onClick={() => handleResolveError(params.row.id)}
             >
               حل
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => handleDeleteError(row.original.id)}
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => handleDeleteError(params.row.id)}
           >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+            <Delete fontSize="small" />
+          </IconButton>
+        </Box>
       ),
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ p: 3 }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">إدارة الأخطاء والسجلات</h1>
-          <p className="text-muted-foreground">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            إدارة الأخطاء والسجلات
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
             تتبع وإدارة أخطاء النظام
-          </p>
-        </div>
+          </Typography>
+        </Box>
         
-        <div className="flex items-center gap-2">
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
-            variant="outline"
-            size="sm"
+            variant="outlined"
+            size="small"
             onClick={() => handleExport('csv')}
+            startIcon={<Download />}
           >
-            <Download className="h-4 w-4 ml-2" />
             تصدير CSV
           </Button>
           <Button
-            variant="outline"
-            size="sm"
+            variant="outlined"
+            size="small"
             onClick={() => handleExport('json')}
+            startIcon={<Download />}
           >
-            <Download className="h-4 w-4 ml-2" />
             تصدير JSON
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Statistics */}
       {statistics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">إجمالي الأخطاء</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.totalErrors.toLocaleString()}</div>
-            </CardContent>
-          </Card>
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Card>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      إجمالي الأخطاء
+                    </Typography>
+                    <ErrorIcon color="action" />
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold">
+                  {statistics.totalErrors.toLocaleString()}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">آخر 24 ساعة</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.last24Hours.toLocaleString()}</div>
-            </CardContent>
-          </Card>
+          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Card>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      آخر 24 ساعة
+                    </Typography>
+                    <TrendingUp color="action" />
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold">
+                  {statistics.last24Hours.toLocaleString()}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">معدل الأخطاء</CardTitle>
-              {getTrendIcon()}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.errorRate.toFixed(2)}%</div>
-              {trends && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {trends.trend === 'increasing' ? 'في ازدياد' : trends.trend === 'decreasing' ? 'في انخفاض' : 'مستقر'}
-                  {' '}({trends.changePercentage > 0 ? '+' : ''}{trends.changePercentage.toFixed(1)}%)
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Card>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      معدل الأخطاء
+                    </Typography>
+                    {getTrendIcon()}
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold">
+                  {statistics.errorRate.toFixed(2)}%
+                </Typography>
+                {trends && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    {trends.trend === 'increasing' ? 'في ازدياد' : trends.trend === 'decreasing' ? 'في انخفاض' : 'مستقر'}
+                    {' '}({trends.changePercentage > 0 ? '+' : ''}{trends.changePercentage.toFixed(1)}%)
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">آخر 7 أيام</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.last7Days.toLocaleString()}</div>
-            </CardContent>
-          </Card>
-        </div>
+          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Card>
+              <CardHeader
+                title={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" fontWeight="medium">
+                      آخر 7 أيام
+                    </Typography>
+                    <Warning color="action" />
+                  </Box>
+                }
+              />
+              <CardContent>
+                <Typography variant="h4" fontWeight="bold">
+                  {statistics.last7Days.toLocaleString()}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       )}
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>تصفية السجلات</CardTitle>
-        </CardHeader>
+      <Card sx={{ mb: 3 }}>
+        <CardHeader
+          title={
+            <Typography variant="h6" fontWeight="bold">
+              تصفية السجلات
+            </Typography>
+          }
+        />
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">البحث</label>
-              <div className="relative">
-                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="ابحث في الرسائل..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pr-9"
-                />
-              </div>
-            </div>
+          <Grid container spacing={2}>
+            <Grid component="div" size={{ xs: 12, md: 3 }}>
+              <TextField
+                label="البحث"
+                placeholder="ابحث في الرسائل..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">المستوى</label>
-              <Select value={level} onValueChange={setLevel}>
-                <SelectTrigger>
-                  <SelectValue placeholder="جميع المستويات" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">جميع المستويات</SelectItem>
-                  <SelectItem value="fatal">Fatal</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
-                  <SelectItem value="warn">Warning</SelectItem>
-                  <SelectItem value="debug">Debug</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Grid component="div" size={{ xs: 12, md: 3 }}>
+              <FormControl fullWidth>
+                <InputLabel>المستوى</InputLabel>
+                <Select
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value)}
+                  label="المستوى"
+                >
+                  <MenuItem value="">جميع المستويات</MenuItem>
+                  <MenuItem value="fatal">Fatal</MenuItem>
+                  <MenuItem value="error">Error</MenuItem>
+                  <MenuItem value="warn">Warning</MenuItem>
+                  <MenuItem value="debug">Debug</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">الفئة</label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="جميع الفئات" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">جميع الفئات</SelectItem>
-                  <SelectItem value="database">قاعدة البيانات</SelectItem>
-                  <SelectItem value="api">API</SelectItem>
-                  <SelectItem value="authentication">المصادقة</SelectItem>
-                  <SelectItem value="validation">التحقق</SelectItem>
-                  <SelectItem value="business_logic">منطق الأعمال</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Grid component="div" size={{ xs: 12, md: 3 }}>
+              <FormControl fullWidth>
+                <InputLabel>الفئة</InputLabel>
+                <Select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  label="الفئة"
+                >
+                  <MenuItem value="">جميع الفئات</MenuItem>
+                  <MenuItem value="database">قاعدة البيانات</MenuItem>
+                  <MenuItem value="api">API</MenuItem>
+                  <MenuItem value="authentication">المصادقة</MenuItem>
+                  <MenuItem value="validation">التحقق</MenuItem>
+                  <MenuItem value="business_logic">منطق الأعمال</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
-            <div className="flex items-end">
+            <Grid component="div" size={{ xs: 12, md: 3 }} sx={{ display: 'flex', alignItems: 'flex-end' }}>
               <Button
-                variant="outline"
+                variant="outlined"
                 onClick={() => {
                   setLevel('');
                   setCategory('');
                   setSearch('');
                 }}
-                className="w-full"
+                fullWidth
+                startIcon={<FilterList />}
               >
-                <Filter className="h-4 w-4 ml-2" />
                 إعادة تعيين
               </Button>
-            </div>
-          </div>
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
 
       {/* Data Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>سجلات الأخطاء</CardTitle>
-          <CardDescription>
-            عرض {errors.length} من إجمالي السجلات
-          </CardDescription>
-        </CardHeader>
+        <CardHeader
+          title={
+            <Typography variant="h6" fontWeight="bold">
+              سجلات الأخطاء
+            </Typography>
+          }
+          subheader={
+            <Typography variant="body2" color="text.secondary">
+              عرض {errors.length} من إجمالي السجلات
+            </Typography>
+          }
+        />
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={errors}
-            loading={loading}
-          />
-          
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
-              الصفحة {page} من {totalPages}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                السابق
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                التالي
-              </Button>
-            </div>
-          </div>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <DataTable
+              columns={columns}
+              rows={errors}
+              getRowId={(row: any) => row.id}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+            />
+          )}
         </CardContent>
       </Card>
 
       {/* Error Details Dialog */}
-      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>تفاصيل الخطأ</DialogTitle>
-          </DialogHeader>
-          
+      <Dialog 
+        open={showDetailsDialog} 
+        onClose={() => setShowDetailsDialog(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>تفاصيل الخطأ</DialogTitle>
+        <DialogContent>
           {selectedError && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">المستوى</label>
-                  <div className="mt-1">{getLevelBadge(selectedError.level)}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">الفئة</label>
-                  <div className="mt-1">
-                    <Badge variant="outline">{selectedError.category}</Badge>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">التكرارات</label>
-                  <div className="mt-1 font-bold">{selectedError.occurrences}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">آخر ظهور</label>
-                  <div className="mt-1">{new Date(selectedError.lastOccurrence).toLocaleString('ar-YE')}</div>
-                </div>
-              </div>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
+              <Grid container spacing={3}>
+                <Grid component="div" size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    المستوى
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>{getLevelBadge(selectedError.level)}</Box>
+                </Grid>
+                <Grid component="div" size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    الفئة
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    <Chip label={selectedError.category} variant="outlined" size="small" />
+                  </Box>
+                </Grid>
+                <Grid component="div" size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    التكرارات
+                  </Typography>
+                  <Typography variant="h6" fontWeight="bold" sx={{ mt: 1 }}>
+                    {selectedError.occurrences}
+                  </Typography>
+                </Grid>
+                <Grid component="div" size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    آخر ظهور
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 1 }}>
+                    {new Date(selectedError.lastOccurrence).toLocaleString('ar-YE')}
+                  </Typography>
+                </Grid>
+              </Grid>
 
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">الرسالة</label>
-                <p className="mt-1 p-3 bg-secondary rounded-md">{selectedError.message}</p>
-              </div>
+              <Box>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  الرسالة
+                </Typography>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    mt: 1, 
+                    p: 2, 
+                    bgcolor: 'action.hover', 
+                    borderRadius: 1 
+                  }}
+                >
+                  {selectedError.message}
+                </Typography>
+              </Box>
 
               {selectedError.endpoint && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">نقطة النهاية</label>
-                  <code className="mt-1 block p-3 bg-secondary rounded-md text-sm">
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    نقطة النهاية
+                  </Typography>
+                  <Box
+                    component="code"
+                    sx={{
+                      display: 'block',
+                      mt: 1,
+                      p: 2,
+                      bgcolor: 'action.hover',
+                      borderRadius: 1,
+                      fontSize: '0.875rem',
+                    }}
+                  >
                     {selectedError.method} {selectedError.endpoint}
-                  </code>
-                </div>
+                  </Box>
+                </Box>
               )}
 
               {selectedError.stack && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Stack Trace</label>
-                  <pre className="mt-1 p-3 bg-secondary rounded-md text-xs overflow-x-auto">
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Stack Trace
+                  </Typography>
+                  <Box
+                    component="pre"
+                    sx={{
+                      mt: 1,
+                      p: 2,
+                      bgcolor: 'action.hover',
+                      borderRadius: 1,
+                      fontSize: '0.75rem',
+                      overflow: 'auto',
+                      maxHeight: 300,
+                    }}
+                  >
                     {selectedError.stack}
-                  </pre>
-                </div>
+                  </Box>
+                </Box>
               )}
 
               {selectedError.metadata && Object.keys(selectedError.metadata).length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">معلومات إضافية</label>
-                  <pre className="mt-1 p-3 bg-secondary rounded-md text-xs overflow-x-auto">
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    معلومات إضافية
+                  </Typography>
+                  <Box
+                    component="pre"
+                    sx={{
+                      mt: 1,
+                      p: 2,
+                      bgcolor: 'action.hover',
+                      borderRadius: 1,
+                      fontSize: '0.75rem',
+                      overflow: 'auto',
+                      maxHeight: 200,
+                    }}
+                  >
                     {JSON.stringify(selectedError.metadata, null, 2)}
-                  </pre>
-                </div>
+                  </Box>
+                </Box>
               )}
-
-              <div className="flex gap-2">
-                {!selectedError.resolved && (
-                  <Button onClick={() => {
-                    handleResolveError(selectedError.id);
-                    setShowDetailsDialog(false);
-                  }}>
-                    <CheckCircle2 className="h-4 w-4 ml-2" />
-                    حل الخطأ
-                  </Button>
-                )}
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    handleDeleteError(selectedError.id);
-                    setShowDetailsDialog(false);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 ml-2" />
-                  حذف
-                </Button>
-              </div>
-            </div>
+            </Box>
           )}
         </DialogContent>
+        <DialogActions>
+          {selectedError && !selectedError.resolved && (
+            <Button 
+              variant="contained"
+              color="success"
+              onClick={() => {
+                handleResolveError(selectedError.id);
+                setShowDetailsDialog(false);
+              }}
+              startIcon={<CheckCircle />}
+            >
+              حل الخطأ
+            </Button>
+          )}
+          {selectedError && (
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => {
+                handleDeleteError(selectedError.id);
+                setShowDetailsDialog(false);
+              }}
+              startIcon={<Delete />}
+            >
+              حذف
+            </Button>
+          )}
+          <Button variant="outlined" onClick={() => setShowDetailsDialog(false)}>
+            إغلاق
+          </Button>
+        </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 }
 

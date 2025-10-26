@@ -300,6 +300,12 @@ const ErrorLogsPage = lazy(() => import('@/features/error-logs/pages/ErrorLogsPa
 const I18nManagementPage = lazy(() => import('@/features/i18n-management/pages/I18nManagementPage').then((m) => ({ default: m.I18nManagementPage })));
 const SystemSettingsPage = lazy(() => import('@/features/system-settings/pages/SystemSettingsPage').then((m) => ({ default: m.SystemSettingsPage })));
 
+// Addresses Admin
+const AddressesDashboardPage = lazy(() => import('@/features/addresses/pages/AddressesDashboardPage').then((m) => ({ default: m.AddressesDashboardPage })));
+
+// Search Admin
+const SearchDashboardPage = lazy(() => import('@/features/search/pages/SearchDashboardPage').then((m) => ({ default: m.SearchDashboardPage })));
+
 export const routes: RouteObject[] = [
   // ===========================================
   // PUBLIC ROUTES - Accessible without authentication
@@ -691,6 +697,22 @@ export const routes: RouteObject[] = [
       {
         path: 'system/settings',
         element: <SystemSettingsPage />,
+      },
+
+      // ===========================================
+      // ADMIN ANALYTICS & MANAGEMENT (NEW)
+      // ===========================================
+
+      // Addresses Management
+      {
+        path: 'admin/addresses',
+        element: <AddressesDashboardPage />,
+      },
+
+      // Search Analytics
+      {
+        path: 'admin/search',
+        element: <SearchDashboardPage />,
       },
     ],
   },

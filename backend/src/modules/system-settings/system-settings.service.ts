@@ -36,7 +36,7 @@ export class SystemSettingsService {
   }
 
   async getAllSettings(category?: SettingCategory): Promise<SettingDto[]> {
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
     if (category) {
       filter.category = category;
     }
@@ -45,15 +45,15 @@ export class SystemSettingsService {
     return settings.map((s) => this.mapToDto(s));
   }
 
-  async getPublicSettings(category?: SettingCategory): Promise<Record<string, any>> {
-    const filter: any = { isPublic: true };
+  async getPublicSettings(category?: SettingCategory): Promise<Record<string, unknown>> {
+    const filter: Record<string, unknown> = { isPublic: true };
     if (category) {
       filter.category = category;
     }
 
     const settings = await this.systemSettingModel.find(filter).lean();
 
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     settings.forEach((s) => {
       result[s.key] = s.value;
     });
@@ -69,7 +69,7 @@ export class SystemSettingsService {
     return this.mapToDto(setting);
   }
 
-  async getSettingValue(key: string, defaultValue?: any): Promise<any> {
+  async getSettingValue(key: string, defaultValue?: unknown): Promise<unknown> {
     try {
       const setting = await this.getSetting(key);
       return setting.value;
@@ -131,10 +131,10 @@ export class SystemSettingsService {
 
   // ==================== Category-specific getters ====================
 
-  async getSettingsByCategory(category: SettingCategory): Promise<Record<string, any>> {
+  async getSettingsByCategory(category: SettingCategory): Promise<Record<string, unknown>> {
     const settings = await this.systemSettingModel.find({ category }).lean();
 
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     settings.forEach((s) => {
       result[s.key] = s.value;
     });
@@ -191,16 +191,16 @@ export class SystemSettingsService {
     }
   }
 
-  private mapToDto(setting: any): SettingDto {
+  private mapToDto(setting: SystemSetting & { _id: unknown; updatedAt?: Date }): SettingDto {
     return {
-      id: setting._id.toString(),
+      id: String(setting._id),
       key: setting.key,
       value: setting.value,
       category: setting.category,
       type: setting.type,
       description: setting.description,
       isPublic: setting.isPublic,
-      updatedAt: setting.updatedAt,
+      updatedAt: setting.updatedAt || new Date(),
       updatedBy: setting.updatedBy,
     };
   }

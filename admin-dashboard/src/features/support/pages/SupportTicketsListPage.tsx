@@ -104,10 +104,10 @@ export const SupportTicketsListPage: React.FC = () => {
       </Stack>
 
       {/* SLA Alerts */}
-      {breachedSLA?.data && breachedSLA.data.tickets.length > 0 && (
+      {breachedSLA && breachedSLA.tickets.length > 0 && (
         <Box mb={3}>
           <SLAAlerter
-            tickets={breachedSLA.data.tickets}
+            tickets={breachedSLA.tickets}
             onRefresh={refetchSLA}
             onTicketClick={handleTicketClick}
           />

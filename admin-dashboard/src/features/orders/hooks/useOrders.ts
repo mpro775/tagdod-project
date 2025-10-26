@@ -105,8 +105,8 @@ export const useBulkUpdateOrderStatus = () => {
   return useMutation({
     mutationFn: (data: BulkOrderUpdateDto) => ordersApi.bulkUpdateStatus(data),
     onSuccess: (data) => {
-      const successCount = data.data.results.length;
-      const errorCount = data.data.errors.length;
+      const successCount = data.results.length;
+      const errorCount = data.errors.length;
       toast.success(`تم تحديث ${successCount} طلب بنجاح${errorCount > 0 ? `، فشل ${errorCount} طلب` : ''}`);
       queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
     },

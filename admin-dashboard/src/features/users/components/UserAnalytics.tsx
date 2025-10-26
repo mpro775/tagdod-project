@@ -72,17 +72,17 @@ export const UserAnalytics: React.FC<UserAnalyticsProps> = ({ stats, onDateRange
     deletedUsers: stats.deleted,
     admins: stats.admins,
     engineers: stats.engineers,
-    merchants: stats.wholesale,
+    merchants: stats.merchants,
     growthRate: 15.5, // 15.5% growth
     retentionRate: 87.3, // 87.3% retention
     topRoles: [
       {
         role: 'مستخدم',
-        count: stats.total - stats.admins - stats.engineers - stats.wholesale,
+        count: stats.total - stats.admins - stats.engineers - stats.merchants,
         percentage: 65,
       },
       { role: 'مهندس', count: stats.engineers, percentage: 20 },
-      { role: 'تاجر', count: stats.wholesale, percentage: 10 },
+      { role: 'تاجر', count: stats.merchants, percentage: 10 },
       { role: 'مدير', count: stats.admins, percentage: 5 },
     ],
     userActivity: [

@@ -34,7 +34,12 @@ import {
 } from '@mui/icons-material';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useOffers, useOffersStatistics } from '../hooks/useServices';
+import { 
+  useOffers, 
+  useOffersStatistics,
+  useAcceptOffer,
+  useRejectOffer,
+} from '../hooks/useServices';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 
 const statusColors = {
@@ -68,6 +73,9 @@ export const OffersManagementPage: React.FC = () => {
 
   const { data: offersData, isLoading: isOffersLoading } = useOffers(filters);
   const { data: statistics, isLoading: isStatisticsLoading } = useOffersStatistics();
+  
+  const acceptOfferMutation = useAcceptOffer();
+  const rejectOfferMutation = useRejectOffer();
 
   const offers = offersData?.data || [];
   const isLoading = isOffersLoading || isStatisticsLoading;
@@ -90,28 +98,34 @@ export const OffersManagementPage: React.FC = () => {
     setDetailsDialogOpen(true);
   };
 
-  const handleEditOffer = (offer: any) => {
-    // TODO: Implement offer edit
-    console.log('Edit offer:', offer);
-    showSnackbar('تم فتح نموذج التعديل', 'info');
+  const handleAcceptOffer = async (offer: any) => {
+    try {
+      // استخدام requestId من العرض مباشرة أو من الـ populated field
+      const requestId = offer.requestId || offer.request?._id;
+      
+      if (!requestId) {
+        showSnackbar('معرف الطلب غير موجود', 'error');
+        return;
+      }
+      
+      await acceptOfferMutation.mutateAsync({
+        requestId,
+        offerId: offer._id,
+      });
+    } catch {
+      // الخطأ يتم معالجته في الـ mutation
+    }
   };
 
-  const handleAcceptOffer = (offer: any) => {
-    // TODO: Implement accept offer
-    console.log('Accept offer:', offer);
-    showSnackbar('تم قبول العرض بنجاح', 'success');
-  };
-
-  const handleRejectOffer = (offer: any) => {
-    // TODO: Implement reject offer
-    console.log('Reject offer:', offer);
-    showSnackbar('تم رفض العرض', 'warning');
-  };
-
-  const handleCancelOffer = (offer: any) => {
-    // TODO: Implement cancel offer
-    console.log('Cancel offer:', offer);
-    showSnackbar('تم إلغاء العرض', 'info');
+  const handleRejectOffer = async (offer: any) => {
+    try {
+      await rejectOfferMutation.mutateAsync({
+        offerId: offer._id,
+        reason: 'تم الرفض من قبل الإدارة',
+      });
+    } catch {
+      // الخطأ يتم معالجته في الـ mutation
+    }
   };
 
   // تعريف الأعمدة

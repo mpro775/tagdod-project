@@ -6,60 +6,64 @@ export type ErrorLogDocument = ErrorLog & Document;
 @Schema({ timestamps: true })
 export class ErrorLog {
   @Prop({ required: true, enum: ['error', 'warn', 'fatal', 'debug'], index: true })
-  level: string;
+  level!: string;
 
   @Prop({ 
     required: true, 
     enum: ['database', 'api', 'authentication', 'validation', 'business_logic', 'external_service', 'system', 'unknown'],
     index: true 
   })
-  category: string;
+  category!: string;
 
   @Prop({ required: true, text: true })
-  message: string;
+  message!: string;
 
   @Prop({ type: String })
-  stack: string;
+  stack!: string;
 
   @Prop({ type: Object })
-  metadata: Record<string, any>;
+  metadata!: Record<string, unknown>;
 
   @Prop({ index: true })
-  userId: string;
+  userId!: string;
 
   @Prop({ index: true })
-  endpoint: string;
+  endpoint!: string;
 
   @Prop()
-  method: string;
+  method!: string;
 
   @Prop()
-  statusCode: number;
+  statusCode!: number;
 
   @Prop({ default: 1 })
-  occurrences: number;
+  occurrences!: number;
 
   @Prop({ default: Date.now, index: true })
-  firstOccurrence: Date;
+  firstOccurrence!: Date;
 
   @Prop({ default: Date.now, index: true })
-  lastOccurrence: Date;
+  lastOccurrence!: Date;
 
   @Prop({ default: false, index: true })
-  resolved: boolean;
+  resolved!: boolean;
 
   @Prop()
-  resolvedAt: Date;
+  resolvedAt!: Date;
 
   @Prop()
-  resolvedBy: string;
+  resolvedBy!: string;
 
   @Prop()
-  notes: string;
+  notes!: string;
 
   // Create a hash for deduplication
   @Prop({ index: true })
-  hash: string;
+  hash!: string;
+
+  // Timestamps (added automatically by { timestamps: true })
+  createdAt!: Date;
+  updatedAt!: Date;
 }
 
 export const ErrorLogSchema = SchemaFactory.createForClass(ErrorLog);

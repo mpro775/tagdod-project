@@ -33,7 +33,6 @@ import {
   AddOrderNotesDto,
   OrderAnalyticsDto,
   BulkOrderUpdateDto,
-  OrderResponseDto
 } from '../dto/order.dto';
 
 /**

@@ -6,30 +6,39 @@ export type SystemSettingDocument = SystemSetting & Document;
 @Schema({ timestamps: true })
 export class SystemSetting {
   @Prop({ required: true, unique: true, index: true })
-  key: string;
+  key!: string;
 
   @Prop({ type: Object, required: true })
-  value: any;
+  value: unknown;
 
-  @Prop({ 
-    required: true, 
-    enum: ['general', 'email', 'payment', 'shipping', 'security', 'notifications', 'seo', 'advanced'],
+  @Prop({
+    required: true,
+    enum: [
+      'general',
+      'email',
+      'payment',
+      'shipping',
+      'security',
+      'notifications',
+      'seo',
+      'advanced',
+    ],
     default: 'general',
-    index: true 
+    index: true,
   })
-  category: string;
+  category!: string;
 
   @Prop({ default: 'string' })
-  type: string; // string, number, boolean, object, array
+  type!: string; // string, number, boolean, object, array
 
   @Prop()
-  description: string;
+  description!: string;
 
   @Prop({ default: false })
-  isPublic: boolean; // Whether this setting can be accessed publicly
+  isPublic!: boolean; // Whether this setting can be accessed publicly
 
   @Prop({ index: true })
-  updatedBy: string;
+  updatedBy!: string;
 }
 
 export const SystemSettingSchema = SchemaFactory.createForClass(SystemSetting);
@@ -37,4 +46,3 @@ export const SystemSettingSchema = SchemaFactory.createForClass(SystemSetting);
 // Create indexes
 SystemSettingSchema.index({ category: 1, key: 1 });
 SystemSettingSchema.index({ isPublic: 1 });
-

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
-  Grid,
   Card,
   CardContent,
   Typography,
@@ -21,6 +20,7 @@ import {
   Chip,
   LinearProgress,
   useTheme,
+  Grid,
 } from '@mui/material';
 import {
   CloudUpload,
@@ -30,10 +30,8 @@ import {
   Description,
   TrendingUp,
   Refresh,
-  Download,
   Assessment,
   Timeline,
-  PieChart,
   Folder,
 } from '@mui/icons-material';
 import { apiClient } from '@/core/api/client';
@@ -51,7 +49,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import {  Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -151,8 +149,7 @@ export const MediaAnalyticsPage: React.FC = () => {
       setLoading(true);
       const response = await apiClient.get('/admin/media-analytics/overview');
       setOverview(response.data.data);
-    } catch (error) {
-      console.error('Error fetching overview:', error);
+    } catch  {
       toast.error('فشل تحميل الإحصائيات العامة');
     } finally {
       setLoading(false);
@@ -164,8 +161,7 @@ export const MediaAnalyticsPage: React.FC = () => {
       setLoading(true);
       const response = await apiClient.get('/admin/media-analytics/storage');
       setStorage(response.data.data);
-    } catch (error) {
-      console.error('Error fetching storage:', error);
+    } catch  {
       toast.error('فشل تحميل إحصائيات التخزين');
     } finally {
       setLoading(false);
@@ -179,8 +175,7 @@ export const MediaAnalyticsPage: React.FC = () => {
         params: { limit: 10 },
       });
       setLargestFiles(response.data.data || []);
-    } catch (error) {
-      console.error('Error fetching largest files:', error);
+    } catch  {
       toast.error('فشل تحميل أكبر الملفات');
     } finally {
       setLoading(false);
@@ -194,8 +189,7 @@ export const MediaAnalyticsPage: React.FC = () => {
         params: { limit: 10 },
       });
       setRecentFiles(response.data.data || []);
-    } catch (error) {
-      console.error('Error fetching recent files:', error);
+    } catch  {
       toast.error('فشل تحميل الملفات الحديثة');
     } finally {
       setLoading(false);
@@ -289,7 +283,7 @@ export const MediaAnalyticsPage: React.FC = () => {
       {/* KPI Cards */}
       {overview && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -308,7 +302,7 @@ export const MediaAnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -331,7 +325,7 @@ export const MediaAnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -350,7 +344,7 @@ export const MediaAnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -373,7 +367,7 @@ export const MediaAnalyticsPage: React.FC = () => {
       {/* File Types Distribution */}
       {overview && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={6}>
+          <Grid component="div" size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -386,14 +380,14 @@ export const MediaAnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid component="div" size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   تفاصيل حسب النوع
                 </Typography>
                 <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={6}>
+                    <Grid component="div" size={{ xs: 6 }}>
                     <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1, color: 'white' }}>
                       <Image />
                       <Typography variant="h6">{overview.filesByType.images}</Typography>
@@ -403,7 +397,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                       </Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid component="div" size={{ xs: 6 }}>
                     <Box sx={{ p: 2, bgcolor: 'secondary.light', borderRadius: 1, color: 'white' }}>
                       <VideoLibrary />
                       <Typography variant="h6">{overview.filesByType.videos}</Typography>
@@ -413,7 +407,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                       </Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={6}>
+                    <Grid component="div" size={{ xs: 6 }}>
                     <Box sx={{ p: 2, bgcolor: 'warning.light', borderRadius: 1, color: 'white' }}>
                       <Description />
                       <Typography variant="h6">{overview.filesByType.documents}</Typography>
@@ -423,7 +417,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                       </Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid component="div" size={{ xs: 6 }}>
                     <Box sx={{ p: 2, bgcolor: 'grey.400', borderRadius: 1, color: 'white' }}>
                       <Folder />
                       <Typography variant="h6">{overview.filesByType.other}</Typography>

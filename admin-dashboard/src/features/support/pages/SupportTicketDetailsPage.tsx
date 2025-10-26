@@ -162,20 +162,20 @@ export const SupportTicketDetailsPage: React.FC = () => {
           </IconButton>
           <Box sx={{ flex: 1 }}>
             <Typography variant="h5" fontWeight="bold">
-              {ticket.data.title}
+              {ticket.title}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {format(new Date(ticket.data.createdAt), 'dd/MM/yyyy HH:mm')}
+              {format(new Date(ticket.createdAt), 'dd/MM/yyyy HH:mm')}
             </Typography>
           </Box>
           <Stack direction="row" spacing={1}>
-            <Chip label={getStatusLabel(ticket.data.status)} color="primary" variant="outlined" />
+            <Chip label={getStatusLabel(ticket.status)} color="primary" variant="outlined" />
             <Chip
-              label={getPriorityLabel(ticket.data.priority)}
-              color={ticket.data.priority === SupportPriority.URGENT ? 'error' : 'default'}
+              label={getPriorityLabel(ticket.priority)}
+              color={ticket.priority === SupportPriority.URGENT ? 'error' : 'default'}
               variant="outlined"
             />
-            {ticket.data.slaBreached && (
+            {ticket.slaBreached && (
               <Chip label="متجاوزة SLA" color="error" icon={<Warning />} />
             )}
           </Stack>
@@ -252,7 +252,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="h6">المحادثة</Typography>
               <Typography variant="body2" color="text.secondary">
-                {messagesData?.data?.data?.length || 0} رسالة
+                {messagesData?.data?.length || 0} رسالة
               </Typography>
             </Stack>
             <Divider sx={{ mb: 2 }} />
@@ -265,9 +265,9 @@ export const SupportTicketDetailsPage: React.FC = () => {
                     <Skeleton key={index} variant="rectangular" height={80} />
                   ))}
                 </Stack>
-              ) : messagesData?.data?.data && messagesData.data.data.length > 0 ? (
+              ) : messagesData?.data && messagesData.data.length > 0 ? (
                 <Stack spacing={2}>
-                  {messagesData.data.data.map((msg) => (
+                  {messagesData.data.map((msg) => (
                     <SupportMessageBubble
                       key={msg._id}
                       message={msg}
@@ -331,7 +331,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
                       الفئة
                     </Typography>
                     <Typography variant="body2">
-                      {getCategoryLabel(ticket.data.category)}
+                      {getCategoryLabel(ticket.category)}
                     </Typography>
                   </Box>
 
@@ -339,7 +339,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
                     <Typography variant="caption" color="text.secondary">
                       الحالة
                     </Typography>
-                    <Typography variant="body2">{getStatusLabel(ticket.data.status)}</Typography>
+                    <Typography variant="body2">{getStatusLabel(ticket.status)}</Typography>
                   </Box>
 
                   <Box>
@@ -347,30 +347,30 @@ export const SupportTicketDetailsPage: React.FC = () => {
                       الأولوية
                     </Typography>
                     <Typography variant="body2">
-                      {getPriorityLabel(ticket.data.priority)}
+                      {getPriorityLabel(ticket.priority)}
                     </Typography>
                   </Box>
 
-                  {ticket.data.slaDueDate && (
+                  {ticket.slaDueDate && (
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         انتهاء SLA
                       </Typography>
                       <Typography variant="body2">
-                        {format(new Date(ticket.data.slaDueDate), 'dd/MM/yyyy HH:mm')}
+                        {format(new Date(ticket.slaDueDate), 'dd/MM/yyyy HH:mm')}
                       </Typography>
                     </Box>
                   )}
 
-                  {ticket.data.rating && (
+                  {ticket.rating && (
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         التقييم
                       </Typography>
-                      <Typography variant="body2">⭐ {ticket.data.rating}/5</Typography>
-                      {ticket.data.feedback && (
+                      <Typography variant="body2">⭐ {ticket.rating}/5</Typography>
+                      {ticket.feedback && (
                         <Typography variant="caption" color="text.secondary">
-                          {ticket.data.feedback}
+                          {ticket.feedback}
                         </Typography>
                       )}
                     </Box>
@@ -380,7 +380,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
             </Card>
 
             {/* SLA Status */}
-            {ticket.data.slaBreached && (
+            {ticket.slaBreached && (
               <Alert severity="error" icon={<Warning />}>
                 <AlertTitle>تنبيه SLA</AlertTitle>
                 هذه التذكرة متجاوزة لوقت الاستجابة المتفق عليه
@@ -395,7 +395,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {ticket.data.description}
+                  {ticket.description}
                 </Typography>
               </CardContent>
             </Card>

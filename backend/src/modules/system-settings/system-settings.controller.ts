@@ -49,7 +49,7 @@ export class SystemSettingsController {
   })
   async getPublicSettings(
     @Query('category') category?: SettingCategory,
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     return this.systemSettingsService.getPublicSettings(category);
   }
 
@@ -70,7 +70,7 @@ export class SystemSettingsController {
   })
   async createSetting(
     @Body() dto: CreateSettingDto,
-    @Request() req: any,
+      @Request() req: { user: { userId: string } },
   ): Promise<SettingDto> {
     const userId = req.user.userId;
     return this.systemSettingsService.createSetting(dto, userId);
@@ -109,7 +109,7 @@ export class SystemSettingsController {
   })
   async getSettingsByCategory(
     @Param('category') category: SettingCategory,
-  ): Promise<Record<string, any>> {
+  ): Promise<Record<string, unknown>> {
     return this.systemSettingsService.getSettingsByCategory(category);
   }
 
@@ -127,7 +127,7 @@ export class SystemSettingsController {
   })
   async bulkUpdate(
     @Body() dto: BulkUpdateSettingsDto,
-    @Request() req: any,
+    @Request() req: { user: { userId: string } },
   ) {
     const userId = req.user.userId;
     const result = await this.systemSettingsService.bulkUpdate(dto, userId);
@@ -171,7 +171,7 @@ export class SystemSettingsController {
   async updateSetting(
     @Param('key') key: string,
     @Body() dto: UpdateSettingDto,
-    @Request() req: any,
+    @Request() req: { user: { userId: string } },
   ): Promise<SettingDto> {
     const userId = req.user.userId;
     return this.systemSettingsService.updateSetting(key, dto, userId);

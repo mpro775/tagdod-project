@@ -1,19 +1,38 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Label } from '@/shared/components/ui/label';
-import { Switch } from '@/shared/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { Settings, Save, Mail, CreditCard, Truck, Shield, Bell, Search as SearchIcon } from 'lucide-react';
+import {
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Button,
+  TextField,
+  Switch,
+  FormControlLabel,
+  Tabs,
+  Tab,
+  CircularProgress,
+  Grid,
+  Divider,
+} from '@mui/material';
+import {
+  Settings,
+  Save,
+  Email,
+  CreditCard,
+  LocalShipping,
+  Security,
+  Notifications,
+} from '@mui/icons-material';
 import { systemSettingsApi } from '../api/systemSettingsApi';
 import type { SystemSetting } from '../api/systemSettingsApi';
-import { toast } from 'sonner';
+import { toast } from 'react-hot-toast';
 
 export function SystemSettingsPage() {
   const [settings, setSettings] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   const fetchSettings = async () => {
     try {
@@ -26,8 +45,7 @@ export function SystemSettingsPage() {
       });
       
       setSettings(settingsMap);
-    } catch (error) {
-      console.error('Error fetching settings:', error);
+    } catch {
       toast.error('فشل في تحميل الإعدادات');
     } finally {
       setLoading(false);
@@ -38,20 +56,13 @@ export function SystemSettingsPage() {
     fetchSettings();
   }, []);
 
-  const handleSave = async (category: string) => {
+  const handleSave = async () => {
     try {
       setSaving(true);
       
-      // Get all settings for this category
-      const categorySettings: Record<string, any> = {};
-      Object.keys(settings).forEach((key) => {
-        // This is a simple approach - in production you'd want proper category mapping
-        categorySettings[key] = settings[key];
-      });
-
-      await systemSettingsApi.bulkUpdate(categorySettings);
+      await systemSettingsApi.bulkUpdate(settings);
       toast.success('تم حفظ الإعدادات بنجاح');
-    } catch (error) {
+    } catch {
       toast.error('فشل في حفظ الإعدادات');
     } finally {
       setSaving(false);
@@ -64,518 +75,619 @@ export function SystemSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <Settings className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">جاري تحميل الإعدادات...</p>
-        </div>
-      </div>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 400 }}>
+        <CircularProgress size={48} sx={{ mb: 2 }} />
+        <Typography variant="body1" color="text.secondary">
+          جاري تحميل الإعدادات...
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <Box sx={{ p: 3 }}>
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">إعدادات النظام</h1>
-        <p className="text-muted-foreground">
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          إعدادات النظام
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
           إدارة جميع إعدادات النظام من مكان واحد
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="general">
-            <Settings className="h-4 w-4 ml-2" />
-            عام
-          </TabsTrigger>
-          <TabsTrigger value="email">
-            <Mail className="h-4 w-4 ml-2" />
-            البريد
-          </TabsTrigger>
-          <TabsTrigger value="payment">
-            <CreditCard className="h-4 w-4 ml-2" />
-            الدفع
-          </TabsTrigger>
-          <TabsTrigger value="shipping">
-            <Truck className="h-4 w-4 ml-2" />
-            الشحن
-          </TabsTrigger>
-          <TabsTrigger value="security">
-            <Shield className="h-4 w-4 ml-2" />
-            الأمان
-          </TabsTrigger>
-          <TabsTrigger value="notifications">
-            <Bell className="h-4 w-4 ml-2" />
-            الإشعارات
-          </TabsTrigger>
-        </TabsList>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto">
+          <Tab icon={<Settings />} iconPosition="start" label="عام" />
+          <Tab icon={<Email />} iconPosition="start" label="البريد" />
+          <Tab icon={<CreditCard />} iconPosition="start" label="الدفع" />
+          <Tab icon={<LocalShipping />} iconPosition="start" label="الشحن" />
+          <Tab icon={<Security />} iconPosition="start" label="الأمان" />
+          <Tab icon={<Notifications />} iconPosition="start" label="الإشعارات" />
+        </Tabs>
+      </Box>
 
         {/* General Settings */}
-        <TabsContent value="general">
+        {activeTab === 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>الإعدادات العامة</CardTitle>
-              <CardDescription>إعدادات الموقع الأساسية</CardDescription>
+              <Typography variant="h6" fontWeight="bold">
+                الإعدادات العامة
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                إعدادات الموقع الأساسية
+              </Typography>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label>اسم الموقع</Label>
-                  <Input
-                    value={settings.site_name || ''}
-                    onChange={(e) => updateSetting('site_name', e.target.value)}
-                    placeholder="TagDoD"
-                  />
-                </div>
+            <CardContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <TextField
+                  label="اسم الموقع"
+                  value={settings.site_name || ''}
+                  onChange={(e) => updateSetting('site_name', e.target.value)}
+                  placeholder="TagDoD"
+                  fullWidth
+                />
 
-                <div className="space-y-2">
-                  <Label>وصف الموقع</Label>
-                  <Input
-                    value={settings.site_description || ''}
-                    onChange={(e) => updateSetting('site_description', e.target.value)}
-                    placeholder="منصة خدمات الطاقة الشمسية"
-                  />
-                </div>
+                <TextField
+                  label="وصف الموقع"
+                  value={settings.site_description || ''}
+                  onChange={(e) => updateSetting('site_description', e.target.value)}
+                  placeholder="منصة خدمات الطاقة الشمسية"
+                  fullWidth
+                />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>اللغة الافتراضية</Label>
-                    <Input
+                <Grid container spacing={2}>
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label="اللغة الافتراضية"
                       value={settings.default_language || ''}
                       onChange={(e) => updateSetting('default_language', e.target.value)}
                       placeholder="ar"
+                      fullWidth
                     />
-                  </div>
+                  </Grid>
 
-                  <div className="space-y-2">
-                    <Label>العملة الافتراضية</Label>
-                    <Input
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label="العملة الافتراضية"
                       value={settings.default_currency || ''}
                       onChange={(e) => updateSetting('default_currency', e.target.value)}
                       placeholder="YER"
+                      fullWidth
                     />
-                  </div>
-                </div>
+                  </Grid>
+                </Grid>
 
-                <div className="space-y-2">
-                  <Label>المنطقة الزمنية</Label>
-                  <Input
-                    value={settings.timezone || ''}
-                    onChange={(e) => updateSetting('timezone', e.target.value)}
-                    placeholder="Asia/Aden"
-                  />
-                </div>
+                <TextField
+                  label="المنطقة الزمنية"
+                  value={settings.timezone || ''}
+                  onChange={(e) => updateSetting('timezone', e.target.value)}
+                  placeholder="Asia/Aden"
+                  fullWidth
+                />
 
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>وضع الصيانة</Label>
-                    <p className="text-sm text-muted-foreground">
-                      تفعيل وضع الصيانة للموقع
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.maintenance_mode || false}
-                    onCheckedChange={(checked) => updateSetting('maintenance_mode', checked)}
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.maintenance_mode || false}
+                        onChange={(e) => updateSetting('maintenance_mode', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">وضع الصيانة</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          تفعيل وضع الصيانة للموقع
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
+                </Box>
 
                 {settings.maintenance_mode && (
-                  <div className="space-y-2">
-                    <Label>رسالة وضع الصيانة</Label>
-                    <Input
-                      value={settings.maintenance_message || ''}
-                      onChange={(e) => updateSetting('maintenance_message', e.target.value)}
-                      placeholder="الموقع تحت الصيانة..."
-                    />
-                  </div>
+                  <TextField
+                    label="رسالة وضع الصيانة"
+                    value={settings.maintenance_message || ''}
+                    onChange={(e) => updateSetting('maintenance_message', e.target.value)}
+                    placeholder="الموقع تحت الصيانة..."
+                    fullWidth
+                  />
                 )}
-              </div>
 
-              <Button onClick={() => handleSave('general')} disabled={saving}>
-                <Save className="h-4 w-4 ml-2" />
-                حفظ الإعدادات
-              </Button>
+                <Divider />
+
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={saving}
+                  startIcon={<Save />}
+                >
+                  حفظ الإعدادات
+                </Button>
+              </Box>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Email Settings */}
-        <TabsContent value="email">
+        {activeTab === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>إعدادات البريد الإلكتروني</CardTitle>
-              <CardDescription>إعدادات SMTP والبريد</CardDescription>
+              <Typography variant="h6" fontWeight="bold">
+                إعدادات البريد الإلكتروني
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                إعدادات SMTP والبريد
+              </Typography>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>SMTP Host</Label>
-                    <Input
+            <CardContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Grid container spacing={2}>
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label="SMTP Host"
                       value={settings.smtp_host || ''}
                       onChange={(e) => updateSetting('smtp_host', e.target.value)}
                       placeholder="smtp.gmail.com"
+                      fullWidth
                     />
-                  </div>
+                  </Grid>
 
-                  <div className="space-y-2">
-                    <Label>SMTP Port</Label>
-                    <Input
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label="SMTP Port"
                       type="number"
                       value={settings.smtp_port || ''}
                       onChange={(e) => updateSetting('smtp_port', parseInt(e.target.value))}
                       placeholder="587"
+                      fullWidth
                     />
-                  </div>
-                </div>
+                  </Grid>
+                </Grid>
 
-                <div className="space-y-2">
-                  <Label>SMTP User</Label>
-                  <Input
-                    value={settings.smtp_user || ''}
-                    onChange={(e) => updateSetting('smtp_user', e.target.value)}
-                    placeholder="user@example.com"
-                  />
-                </div>
+                <TextField
+                  label="SMTP User"
+                  value={settings.smtp_user || ''}
+                  onChange={(e) => updateSetting('smtp_user', e.target.value)}
+                  placeholder="user@example.com"
+                  fullWidth
+                />
 
-                <div className="space-y-2">
-                  <Label>SMTP Password</Label>
-                  <Input
-                    type="password"
-                    value={settings.smtp_password || ''}
-                    onChange={(e) => updateSetting('smtp_password', e.target.value)}
-                    placeholder="••••••••"
-                  />
-                </div>
+                <TextField
+                  label="SMTP Password"
+                  type="password"
+                  value={settings.smtp_password || ''}
+                  onChange={(e) => updateSetting('smtp_password', e.target.value)}
+                  placeholder="••••••••"
+                  fullWidth
+                />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>بريد المرسل</Label>
-                    <Input
+                <Grid container spacing={2}>
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label="بريد المرسل"
                       value={settings.from_email || ''}
                       onChange={(e) => updateSetting('from_email', e.target.value)}
                       placeholder="noreply@tagdod.com"
+                      fullWidth
                     />
-                  </div>
+                  </Grid>
 
-                  <div className="space-y-2">
-                    <Label>اسم المرسل</Label>
-                    <Input
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label="اسم المرسل"
                       value={settings.from_name || ''}
                       onChange={(e) => updateSetting('from_name', e.target.value)}
                       placeholder="TagDoD"
+                      fullWidth
                     />
-                  </div>
-                </div>
+                  </Grid>
+                </Grid>
 
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>SMTP Secure (TLS)</Label>
-                    <p className="text-sm text-muted-foreground">
-                      استخدام اتصال آمن
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.smtp_secure || false}
-                    onCheckedChange={(checked) => updateSetting('smtp_secure', checked)}
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.smtp_secure || false}
+                        onChange={(e) => updateSetting('smtp_secure', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">SMTP Secure (TLS)</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          استخدام اتصال آمن
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
-              </div>
+                </Box>
 
-              <Button onClick={() => handleSave('email')} disabled={saving}>
-                <Save className="h-4 w-4 ml-2" />
-                حفظ الإعدادات
-              </Button>
+                <Divider />
+
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={saving}
+                  startIcon={<Save />}
+                >
+                  حفظ الإعدادات
+                </Button>
+              </Box>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Payment Settings */}
-        <TabsContent value="payment">
+        {activeTab === 2 && (
           <Card>
             <CardHeader>
-              <CardTitle>إعدادات الدفع</CardTitle>
-              <CardDescription>إعدادات طرق الدفع</CardDescription>
+              <Typography variant="h6" fontWeight="bold">
+                إعدادات الدفع
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                إعدادات طرق الدفع
+              </Typography>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>الدفع عند الاستلام (COD)</Label>
-                    <p className="text-sm text-muted-foreground">
-                      تفعيل خيار الدفع عند الاستلام
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.cod_enabled || false}
-                    onCheckedChange={(checked) => updateSetting('cod_enabled', checked)}
+            <CardContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.cod_enabled || false}
+                        onChange={(e) => updateSetting('cod_enabled', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">الدفع عند الاستلام (COD)</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          تفعيل خيار الدفع عند الاستلام
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
+                </Box>
 
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>الدفع بالبطاقات</Label>
-                    <p className="text-sm text-muted-foreground">
-                      تفعيل الدفع بالبطاقات الائتمانية
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.card_enabled || false}
-                    onCheckedChange={(checked) => updateSetting('card_enabled', checked)}
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.card_enabled || false}
+                        onChange={(e) => updateSetting('card_enabled', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">الدفع بالبطاقات</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          تفعيل الدفع بالبطاقات الائتمانية
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
+                </Box>
 
                 {settings.card_enabled && (
                   <>
-                    <div className="space-y-2">
-                      <Label>Stripe Public Key</Label>
-                      <Input
-                        value={settings.stripe_public_key || ''}
-                        onChange={(e) => updateSetting('stripe_public_key', e.target.value)}
-                        placeholder="pk_..."
-                      />
-                    </div>
+                    <TextField
+                      label="Stripe Public Key"
+                      value={settings.stripe_public_key || ''}
+                      onChange={(e) => updateSetting('stripe_public_key', e.target.value)}
+                      placeholder="pk_..."
+                      fullWidth
+                    />
 
-                    <div className="space-y-2">
-                      <Label>Stripe Secret Key</Label>
-                      <Input
-                        type="password"
-                        value={settings.stripe_secret_key || ''}
-                        onChange={(e) => updateSetting('stripe_secret_key', e.target.value)}
-                        placeholder="sk_..."
-                      />
-                    </div>
+                    <TextField
+                      label="Stripe Secret Key"
+                      type="password"
+                      value={settings.stripe_secret_key || ''}
+                      onChange={(e) => updateSetting('stripe_secret_key', e.target.value)}
+                      placeholder="sk_..."
+                      fullWidth
+                    />
                   </>
                 )}
 
-                <div className="space-y-2">
-                  <Label>رسوم الدفع (%)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={settings.payment_fee_percentage || ''}
-                    onChange={(e) => updateSetting('payment_fee_percentage', parseFloat(e.target.value))}
-                    placeholder="2.5"
-                  />
-                </div>
-              </div>
+                <TextField
+                  label="رسوم الدفع (%)"
+                  type="number"
+                  inputProps={{ step: '0.01' }}
+                  value={settings.payment_fee_percentage || ''}
+                  onChange={(e) => updateSetting('payment_fee_percentage', parseFloat(e.target.value))}
+                  placeholder="2.5"
+                  fullWidth
+                />
 
-              <Button onClick={() => handleSave('payment')} disabled={saving}>
-                <Save className="h-4 w-4 ml-2" />
-                حفظ الإعدادات
-              </Button>
+                <Divider />
+
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={saving}
+                  startIcon={<Save />}
+                >
+                  حفظ الإعدادات
+                </Button>
+              </Box>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Shipping Settings */}
-        <TabsContent value="shipping">
+        {activeTab === 3 && (
           <Card>
             <CardHeader>
-              <CardTitle>إعدادات الشحن</CardTitle>
-              <CardDescription>إعدادات الشحن والتوصيل</CardDescription>
+              <Typography variant="h6" fontWeight="bold">
+                إعدادات الشحن
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                إعدادات الشحن والتوصيل
+              </Typography>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>الشحن المجاني</Label>
-                    <p className="text-sm text-muted-foreground">
-                      تفعيل الشحن المجاني
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.free_shipping_enabled || false}
-                    onCheckedChange={(checked) => updateSetting('free_shipping_enabled', checked)}
+            <CardContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.free_shipping_enabled || false}
+                        onChange={(e) => updateSetting('free_shipping_enabled', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">الشحن المجاني</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          تفعيل الشحن المجاني
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
+                </Box>
 
                 {settings.free_shipping_enabled && (
-                  <div className="space-y-2">
-                    <Label>الحد الأدنى للشحن المجاني (ريال)</Label>
-                    <Input
-                      type="number"
-                      value={settings.free_shipping_threshold || ''}
-                      onChange={(e) => updateSetting('free_shipping_threshold', parseInt(e.target.value))}
-                      placeholder="100000"
-                    />
-                  </div>
+                  <TextField
+                    label="الحد الأدنى للشحن المجاني (ريال)"
+                    type="number"
+                    value={settings.free_shipping_threshold || ''}
+                    onChange={(e) => updateSetting('free_shipping_threshold', parseInt(e.target.value))}
+                    placeholder="100000"
+                    fullWidth
+                  />
                 )}
 
-                <div className="space-y-2">
-                  <Label>تكلفة الشحن الافتراضية (ريال)</Label>
-                  <Input
-                    type="number"
-                    value={settings.default_shipping_cost || ''}
-                    onChange={(e) => updateSetting('default_shipping_cost', parseInt(e.target.value))}
-                    placeholder="5000"
-                  />
-                </div>
+                <TextField
+                  label="تكلفة الشحن الافتراضية (ريال)"
+                  type="number"
+                  value={settings.default_shipping_cost || ''}
+                  onChange={(e) => updateSetting('default_shipping_cost', parseInt(e.target.value))}
+                  placeholder="5000"
+                  fullWidth
+                />
 
-                <div className="space-y-2">
-                  <Label>مدة التوصيل المتوقعة (أيام)</Label>
-                  <Input
-                    type="number"
-                    value={settings.estimated_delivery_days || ''}
-                    onChange={(e) => updateSetting('estimated_delivery_days', parseInt(e.target.value))}
-                    placeholder="3"
-                  />
-                </div>
-              </div>
+                <TextField
+                  label="مدة التوصيل المتوقعة (أيام)"
+                  type="number"
+                  value={settings.estimated_delivery_days || ''}
+                  onChange={(e) => updateSetting('estimated_delivery_days', parseInt(e.target.value))}
+                  placeholder="3"
+                  fullWidth
+                />
 
-              <Button onClick={() => handleSave('shipping')} disabled={saving}>
-                <Save className="h-4 w-4 ml-2" />
-                حفظ الإعدادات
-              </Button>
+                <Divider />
+
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={saving}
+                  startIcon={<Save />}
+                >
+                  حفظ الإعدادات
+                </Button>
+              </Box>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Security Settings */}
-        <TabsContent value="security">
+        {activeTab === 4 && (
           <Card>
             <CardHeader>
-              <CardTitle>إعدادات الأمان</CardTitle>
-              <CardDescription>إعدادات الأمان والحماية</CardDescription>
+              <Typography variant="h6" fontWeight="bold">
+                إعدادات الأمان
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                إعدادات الأمان والحماية
+              </Typography>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>المصادقة الثنائية (2FA)</Label>
-                    <p className="text-sm text-muted-foreground">
-                      إجبار المصادقة الثنائية لجميع المستخدمين
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.force_2fa || false}
-                    onCheckedChange={(checked) => updateSetting('force_2fa', checked)}
+            <CardContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.force_2fa || false}
+                        onChange={(e) => updateSetting('force_2fa', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">المصادقة الثنائية (2FA)</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          إجبار المصادقة الثنائية لجميع المستخدمين
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
+                </Box>
 
-                <div className="space-y-2">
-                  <Label>مدة صلاحية الجلسة (دقائق)</Label>
-                  <Input
-                    type="number"
-                    value={settings.session_timeout || ''}
-                    onChange={(e) => updateSetting('session_timeout', parseInt(e.target.value))}
-                    placeholder="60"
-                  />
-                </div>
+                <TextField
+                  label="مدة صلاحية الجلسة (دقائق)"
+                  type="number"
+                  value={settings.session_timeout || ''}
+                  onChange={(e) => updateSetting('session_timeout', parseInt(e.target.value))}
+                  placeholder="60"
+                  fullWidth
+                />
 
-                <div className="space-y-2">
-                  <Label>الحد الأقصى لمحاولات الدخول</Label>
-                  <Input
-                    type="number"
-                    value={settings.max_login_attempts || ''}
-                    onChange={(e) => updateSetting('max_login_attempts', parseInt(e.target.value))}
-                    placeholder="5"
-                  />
-                </div>
+                <TextField
+                  label="الحد الأقصى لمحاولات الدخول"
+                  type="number"
+                  value={settings.max_login_attempts || ''}
+                  onChange={(e) => updateSetting('max_login_attempts', parseInt(e.target.value))}
+                  placeholder="5"
+                  fullWidth
+                />
 
-                <div className="space-y-2">
-                  <Label>مدة الحظر بعد الفشل (دقائق)</Label>
-                  <Input
-                    type="number"
-                    value={settings.lockout_duration || ''}
-                    onChange={(e) => updateSetting('lockout_duration', parseInt(e.target.value))}
-                    placeholder="15"
-                  />
-                </div>
-              </div>
+                <TextField
+                  label="مدة الحظر بعد الفشل (دقائق)"
+                  type="number"
+                  value={settings.lockout_duration || ''}
+                  onChange={(e) => updateSetting('lockout_duration', parseInt(e.target.value))}
+                  placeholder="15"
+                  fullWidth
+                />
 
-              <Button onClick={() => handleSave('security')} disabled={saving}>
-                <Save className="h-4 w-4 ml-2" />
-                حفظ الإعدادات
-              </Button>
+                <Divider />
+
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={saving}
+                  startIcon={<Save />}
+                >
+                  حفظ الإعدادات
+                </Button>
+              </Box>
             </CardContent>
           </Card>
-        </TabsContent>
+        )}
 
         {/* Notifications Settings */}
-        <TabsContent value="notifications">
+        {activeTab === 5 && (
           <Card>
             <CardHeader>
-              <CardTitle>إعدادات الإشعارات</CardTitle>
-              <CardDescription>إدارة الإشعارات والتنبيهات</CardDescription>
+              <Typography variant="h6" fontWeight="bold">
+                إعدادات الإشعارات
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                إدارة الإشعارات والتنبيهات
+              </Typography>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>إشعارات البريد الإلكتروني</Label>
-                    <p className="text-sm text-muted-foreground">
-                      تفعيل الإشعارات عبر البريد
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.email_notifications_enabled || false}
-                    onCheckedChange={(checked) => updateSetting('email_notifications_enabled', checked)}
+            <CardContent>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.email_notifications_enabled || false}
+                        onChange={(e) => updateSetting('email_notifications_enabled', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">إشعارات البريد الإلكتروني</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          تفعيل الإشعارات عبر البريد
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
+                </Box>
 
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>إشعارات SMS</Label>
-                    <p className="text-sm text-muted-foreground">
-                      تفعيل الإشعارات عبر الرسائل النصية
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.sms_notifications_enabled || false}
-                    onCheckedChange={(checked) => updateSetting('sms_notifications_enabled', checked)}
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.sms_notifications_enabled || false}
+                        onChange={(e) => updateSetting('sms_notifications_enabled', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">إشعارات SMS</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          تفعيل الإشعارات عبر الرسائل النصية
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
+                </Box>
 
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>إشعارات Push</Label>
-                    <p className="text-sm text-muted-foreground">
-                      تفعيل الإشعارات الفورية
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.push_notifications_enabled || false}
-                    onCheckedChange={(checked) => updateSetting('push_notifications_enabled', checked)}
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.push_notifications_enabled || false}
+                        onChange={(e) => updateSetting('push_notifications_enabled', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">إشعارات Push</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          تفعيل الإشعارات الفورية
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
+                </Box>
 
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>إشعار الطلبات الجديدة</Label>
-                    <p className="text-sm text-muted-foreground">
-                      إشعار عند استلام طلب جديد
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.notify_new_orders || false}
-                    onCheckedChange={(checked) => updateSetting('notify_new_orders', checked)}
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.notify_new_orders || false}
+                        onChange={(e) => updateSetting('notify_new_orders', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">إشعار الطلبات الجديدة</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          إشعار عند استلام طلب جديد
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
+                </Box>
 
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <Label>إشعار المخزون المنخفض</Label>
-                    <p className="text-sm text-muted-foreground">
-                      إشعار عند انخفاض المخزون
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.notify_low_stock || false}
-                    onCheckedChange={(checked) => updateSetting('notify_low_stock', checked)}
+                <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={settings.notify_low_stock || false}
+                        onChange={(e) => updateSetting('notify_low_stock', e.target.checked)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">إشعار المخزون المنخفض</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          إشعار عند انخفاض المخزون
+                        </Typography>
+                      </Box>
+                    }
                   />
-                </div>
-              </div>
+                </Box>
 
-              <Button onClick={() => handleSave('notifications')} disabled={saving}>
-                <Save className="h-4 w-4 ml-2" />
-                حفظ الإعدادات
-              </Button>
+                <Divider />
+
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={saving}
+                  startIcon={<Save />}
+                >
+                  حفظ الإعدادات
+                </Button>
+              </Box>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+        )}
+    </Box>
   );
 }

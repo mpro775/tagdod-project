@@ -51,7 +51,7 @@ export class I18nService {
   async getTranslations(query: TranslationsQueryDto) {
     const { namespace, search, missingOnly, missingLanguage } = query;
 
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
 
     if (namespace) {
       filter.namespace = namespace;
@@ -193,10 +193,10 @@ export class I18nService {
     return { imported, updated, skipped };
   }
 
-  async exportTranslations(dto: ExportTranslationsDto): Promise<any> {
+  async exportTranslations(dto: ExportTranslationsDto): Promise<Record<string, unknown> | string> {
     const { namespace, format, language } = dto;
 
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
     if (namespace) {
       filter.namespace = namespace;
     }
@@ -214,7 +214,7 @@ export class I18nService {
   // ==================== Public API (for Frontend) ====================
 
   async getTranslationsForLanguage(lang: Language, namespace?: string): Promise<Record<string, string>> {
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
     if (namespace) {
       filter.namespace = namespace;
     }
@@ -229,10 +229,10 @@ export class I18nService {
     return result;
   }
 
-  async getAllTranslationsGrouped(): Promise<Record<string, Record<string, any>>> {
+  async getAllTranslationsGrouped(): Promise<Record<string, { ar: Record<string, string>; en: Record<string, string> }>> {
     const translations = await this.translationModel.find().lean();
 
-    const grouped: Record<string, Record<string, any>> = {};
+    const grouped: Record<string, { ar: Record<string, string>; en: Record<string, string> }> = {};
 
     Object.values(TranslationNamespace).forEach((ns) => {
       grouped[ns] = { ar: {}, en: {} };
@@ -285,21 +285,21 @@ export class I18nService {
     }));
   }
 
-  private mapToDto(translation: any): TranslationDto {
+  private mapToDto(translation: Translation & { _id: unknown; createdAt?: Date; updatedAt?: Date }): TranslationDto {
     return {
-      id: translation._id.toString(),
+      id: String(translation._id),
       key: translation.key,
       ar: translation.ar,
       en: translation.en,
       namespace: translation.namespace,
       description: translation.description,
-      createdAt: translation.createdAt,
-      updatedAt: translation.updatedAt,
+      createdAt: translation.createdAt || new Date(),
+      updatedAt: translation.updatedAt || new Date(),
       updatedBy: translation.updatedBy,
     };
   }
 
-  private generateJSON(translations: any[], language: Language | 'both'): any {
+  private generateJSON(translations: Translation[], language: Language | 'both'): Record<string, unknown> {
     if (language === 'both') {
       const result: Record<string, { ar: string; en: string }> = {};
       translations.forEach((t) => {
@@ -315,7 +315,7 @@ export class I18nService {
     return result;
   }
 
-  private generateCSV(translations: any[], language: Language | 'both'): string {
+  private generateCSV(translations: Translation[], language: Language | 'both'): string {
     const headers = language === 'both'
       ? ['Key', 'Arabic', 'English', 'Namespace', 'Description']
       : ['Key', language === Language.AR ? 'Arabic' : 'English', 'Namespace', 'Description'];

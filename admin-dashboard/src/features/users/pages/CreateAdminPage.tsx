@@ -25,6 +25,7 @@ import { adminApi, CreateAdminDto } from '../api/adminApi';
 import { PERMISSIONS, PERMISSION_GROUPS } from '@/shared/constants/permissions';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'react-hot-toast';
+import { AxiosError } from 'axios';
 
 // Validation Schema
 const createAdminSchema = z.object({
@@ -168,17 +169,16 @@ export const CreateAdminPage: React.FC = () => {
       toast.success('تم إنشاء الأدمن بنجاح!');
 
       // Show login credentials if temporary password was generated
-      if (response.data.temporaryPassword) {
+      if (response.temporaryPassword) {
         toast.success(
-          `معلومات تسجيل الدخول:\nرقم الهاتف: ${response.data.phone}\nكلمة المرور: ${response.data.temporaryPassword}`,
+          `معلومات تسجيل الدخول:\nرقم الهاتف: ${response.phone}\nكلمة المرور: ${response.temporaryPassword}`,
           { duration: 10000 }
         );
       }
 
       navigate('/users');
-    } catch (error: any) {
-      console.error('Error creating admin:', error);
-      toast.error(error?.response?.data?.message || 'حدث خطأ أثناء إنشاء الأدمن');
+    } catch (error: unknown) {
+      toast.error((error as AxiosError<{ message: string }>)?.response?.data?.message || 'حدث خطأ أثناء إنشاء الأدمن');
     } finally {
       setIsSubmitting(false);
     }

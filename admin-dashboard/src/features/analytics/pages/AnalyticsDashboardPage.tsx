@@ -65,8 +65,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="إجمالي الإيرادات"
-            value={formatCurrency(data?.data?.overview?.totalRevenue || 0)}
-            change={data?.data?.kpis?.revenueGrowth}
+            value={formatCurrency(data?.overview?.totalRevenue || 0)}
+            change={data?.kpis?.revenueGrowth}
             icon={<AttachMoney sx={{ fontSize: 32, color: 'primary.main' }} />}
             color="primary"
           />
@@ -74,8 +74,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="إجمالي الطلبات"
-            value={data?.data?.overview?.totalOrders || 0}
-            change={data?.data?.kpis?.orderGrowth}
+            value={data?.overview?.totalOrders || 0}
+            change={data?.kpis?.orderGrowth}
             icon={<ShoppingCart sx={{ fontSize: 32, color: 'success.main' }} />}
             color="success"
           />
@@ -83,8 +83,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="إجمالي المستخدمين"
-            value={data?.data?.overview?.totalUsers || 0}
-            change={data?.data?.kpis?.userGrowth}
+            value={data?.overview?.totalUsers || 0}
+            change={data?.kpis?.userGrowth}
             icon={<People sx={{ fontSize: 32, color: 'info.main' }} />}
             color="info"
           />
@@ -92,8 +92,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
             title="متوسط قيمة الطلب"
-            value={formatCurrency(data?.data?.overview?.averageOrderValue || 0)}
-            change={data?.data?.kpis?.conversionRate}
+            value={formatCurrency(data?.overview?.averageOrderValue || 0)}
+            change={data?.kpis?.conversionRate}
             icon={<TrendingUp sx={{ fontSize: 32, color: 'warning.main' }} />}
             color="warning"
           />
@@ -105,7 +105,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
         {/* Revenue Chart */}
         <Grid size={{ xs: 12, lg: 8 }}>
           <RevenueChart
-            data={data?.data?.revenueCharts?.daily || []}
+            data={data?.revenueCharts?.daily || []}
             title="الإيرادات اليومية"
             type="area"
             height={350}
@@ -116,7 +116,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, lg: 4 }}>
           <PieChartComponent
             data={
-              data?.data?.revenueCharts?.byCategory?.map((item) => ({
+              data?.revenueCharts?.byCategory?.map((item) => ({
                 name: item.category,
                 value: item.revenue,
               })) || []
@@ -133,7 +133,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <PieChartComponent
             data={
-              data?.data?.productCharts?.topSelling?.slice(0, 5).map((item) => ({
+              data?.productCharts?.topSelling?.slice(0, 5).map((item) => ({
                 name: item.product,
                 value: item.sales,
               })) || []
@@ -146,7 +146,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <PieChartComponent
             data={
-              data?.data?.revenueCharts?.byPaymentMethod?.map((item) => ({
+              data?.revenueCharts?.byPaymentMethod?.map((item) => ({
                 name: item.method,
                 value: item.amount,
               })) || []

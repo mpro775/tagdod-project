@@ -250,8 +250,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               </Grid>
             ) : (
               <Grid container spacing={2}>
-                {dashboardData?.data?.kpis &&
-                  Object.entries(dashboardData.data.kpis).map(([key, value]) => (
+                {dashboardData?.kpis &&
+                  Object.entries(dashboardData.kpis).map(([key, value]) => (
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={key}>
                       <KPICard title={key} value={value} />
                     </Grid>
@@ -270,7 +270,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 {isLoading ? (
                   <Skeleton variant="rectangular" height={300} />
                 ) : (
-                  <RevenueChart data={dashboardData?.data?.revenueCharts} />
+                  <RevenueChart data={dashboardData?.revenueCharts} />
                 )}
               </CardContent>
             </Card>
@@ -297,7 +297,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         {/* Revenue Tab */}
         <Grid container spacing={3}>
           <Grid size={{ xs: 12 }}>
-            <RevenueChart data={dashboardData?.data?.revenueCharts} />
+            <RevenueChart data={dashboardData?.revenueCharts} />
           </Grid>
         </Grid>
       </TabPanel>
@@ -306,7 +306,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         {/* Users Tab */}
         <Grid container spacing={3}>
           <Grid size={{ xs: 12 }}>
-            <UserAnalyticsChart data={dashboardData?.data?.userCharts} />
+            <UserAnalyticsChart data={dashboardData?.userCharts} />
           </Grid>
         </Grid>
       </TabPanel>
@@ -315,7 +315,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         {/* Products Tab */}
         <Grid container spacing={3}>
           <Grid size={{ xs: 12 }}>
-            <ProductPerformanceChart data={dashboardData?.data?.productCharts} />
+            <ProductPerformanceChart data={dashboardData?.productCharts} />
           </Grid>
         </Grid>
       </TabPanel>
@@ -324,7 +324,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         {/* Services Tab */}
         <Grid container spacing={3}>
           <Grid size={{ xs: 12 }}>
-            <ServiceAnalyticsChart data={dashboardData?.data?.serviceCharts} />
+            <ServiceAnalyticsChart data={dashboardData?.serviceCharts} />
           </Grid>
         </Grid>
       </TabPanel>
@@ -333,7 +333,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         {/* Support Tab */}
         <Grid container spacing={3}>
           <Grid size={{ xs: 12 }}>
-            <SupportAnalyticsChart data={dashboardData?.data?.supportCharts} />
+            <SupportAnalyticsChart data={dashboardData?.supportCharts} />
           </Grid>
         </Grid>
       </TabPanel>

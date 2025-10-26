@@ -232,7 +232,7 @@ export const filterMenuByPermissions = (
     .map(item => {
       // Check if user has permission for this menu item
       const itemPermissions = MENU_PERMISSIONS[item.id as keyof typeof MENU_PERMISSIONS];
-      const hasAccess = hasAnyPermission(userPermissions, itemPermissions || []);
+      const hasAccess = hasAnyPermission(userPermissions, itemPermissions ? [...itemPermissions] : []);
 
       if (!hasAccess) {
         return null; // Hide this menu item

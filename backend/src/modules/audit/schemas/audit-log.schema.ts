@@ -1,4 +1,4 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+  import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
 export type AuditLogDocument = HydratedDocument<AuditLog>;
@@ -63,13 +63,13 @@ export class AuditLog {
   resourceId?: string; // معرف المورد المؤثر عليه
 
   @Prop({ type: Object })
-  oldValues?: any; // القيم القديمة قبل التغيير
+  oldValues?: unknown; // القيم القديمة قبل التغيير
 
   @Prop({ type: Object })
-  newValues?: any; // القيم الجديدة بعد التغيير
+  newValues?: unknown; // القيم الجديدة بعد التغيير
 
   @Prop({ type: Object })
-  metadata?: any; // بيانات إضافية
+  metadata?: unknown; // بيانات إضافية
 
   @Prop()
   ipAddress?: string;

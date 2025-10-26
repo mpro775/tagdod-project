@@ -34,8 +34,8 @@ export class Translation {
     action: string;
     changes: Array<{
       field: string;
-      oldValue: any;
-      newValue: any;
+      oldValue: unknown;
+      newValue: unknown;
     }>;
     userId: string;
     timestamp: Date;

@@ -6,28 +6,28 @@ export type SystemLogDocument = SystemLog & Document;
 @Schema({ timestamps: true })
 export class SystemLog {
   @Prop({ required: true, index: true })
-  level: string; // info, debug, warn, error
+  level!: string; // info, debug, warn, error
 
   @Prop({ required: true })
-  message: string;
+  message!: string;
 
   @Prop({ index: true })
-  context: string; // Module or service name
+  context!: string; // Module or service name
 
   @Prop({ type: Object })
-  data: Record<string, any>;
+  data!: Record<string, unknown>;
 
   @Prop({ default: Date.now, index: true })
-  timestamp: Date;
+  timestamp!: Date;
 
   @Prop()
-  userId: string;
+  userId?: string;
 
   @Prop()
-  requestId: string;
+  requestId?: string;
 
   @Prop()
-  correlationId: string;
+  correlationId?: string;
 }
 
 export const SystemLogSchema = SchemaFactory.createForClass(SystemLog);

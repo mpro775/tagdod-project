@@ -219,8 +219,8 @@ export class TranslationHistoryDto {
     action: 'created' | 'updated' | 'deleted';
     changes: {
       field: string;
-      oldValue: any;
-      newValue: any;
+      oldValue: unknown;
+      newValue: unknown;
     }[];
     userId: string;
     userName: string;

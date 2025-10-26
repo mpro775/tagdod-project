@@ -23,7 +23,7 @@ import {
   ApiQuery
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UploadService, UploadResult } from './upload.service';
+import { UploadService } from './upload.service';
 import { UploadFileDto, DeleteFileDto } from './dto/upload.dto';
 
 @ApiTags('رفع-الملفات')

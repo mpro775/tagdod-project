@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import * as mongoose from 'mongoose';
 import { User, UserStatus } from '../schemas/user.schema';
 import { Order, OrderItem, OrderStatus } from '../../checkout/schemas/order.schema';
 import { Favorite } from '../../favorites/schemas/favorite.schema';
@@ -204,7 +205,7 @@ export class UserAnalyticsService {
       }
 
       // تجميع بيانات العملاء مع تحسين الاستعلام
-      const pipeline = [
+      const pipeline: mongoose.PipelineStage[] = [
         {
           $match: {
             status: { $in: ['COMPLETED', 'DELIVERED'] },
@@ -252,7 +253,7 @@ export class UserAnalyticsService {
 
       const result = await this.userQueryService.getOptimizedAggregation(
         this.orderModel,
-        pipeline as any,
+        pipeline,
         { maxLimit: limit },
       );
 

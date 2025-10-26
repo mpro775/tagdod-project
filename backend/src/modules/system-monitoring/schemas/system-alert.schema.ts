@@ -6,31 +6,31 @@ export type SystemAlertDocument = SystemAlert & Document;
 @Schema({ timestamps: true })
 export class SystemAlert {
   @Prop({ required: true, enum: ['warning', 'critical', 'info'], index: true })
-  type: string;
+  type!: string;
 
   @Prop({ required: true, index: true })
-  category: string; // cpu, memory, disk, database, redis, api
+  category!: string; // cpu, memory, disk, database, redis, api
 
   @Prop({ required: true })
-  message: string;
+  message!: string;
 
   @Prop()
-  details: string;
+  details!: string;
 
   @Prop({ type: Object })
-  metadata: Record<string, any>;
+  metadata!: Record<string, unknown>;
 
   @Prop({ default: false, index: true })
-  resolved: boolean;
+  resolved!: boolean;
 
   @Prop()
-  resolvedAt: Date;
+  resolvedAt!: Date;
 
   @Prop()
-  resolvedBy: string;
+  resolvedBy!: string;
 
   @Prop({ default: Date.now, index: true })
-  timestamp: Date;
+  timestamp!: Date;
 }
 
 export const SystemAlertSchema = SchemaFactory.createForClass(SystemAlert);

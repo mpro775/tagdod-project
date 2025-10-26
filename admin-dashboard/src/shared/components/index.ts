@@ -6,15 +6,15 @@ export { default as AccessibleNavigation } from './AccessibleNavigation';
 
 // Layout Components
 export { default as Header } from './Header';
-export { default as MainLayout } from './Layout/MainLayout';
-export { default as Sidebar } from './Layout/Sidebar';
+export { MainLayout } from './Layout/MainLayout';
+export { Sidebar } from './Layout/Sidebar';
 
 // Form Components
-export { default as FormInput } from './Form/FormInput';
-export { default as FormSelect } from './Form/FormSelect';
+export { FormInput } from './Form/FormInput';
+export { FormSelect } from './Form/FormSelect';
 
 // Data Components
-export { default as DataTable } from './DataTable/DataTable';
+export { DataTable } from './DataTable/DataTable';
 
 // Responsive List Components
 export { ResponsiveListWrapper } from './ResponsiveList';

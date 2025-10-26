@@ -5,7 +5,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
-  ApiParam
 } from '@nestjs/swagger';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';

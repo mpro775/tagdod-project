@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsEmail, IsUrl, IsObject, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsObject, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum SettingCategory {
@@ -14,7 +14,7 @@ export enum SettingCategory {
 
 export class UpdateSettingDto {
   @ApiProperty({ description: 'قيمة الإعداد' })
-  value: any;
+  value: unknown;
 
   @ApiPropertyOptional({ description: 'الوصف' })
   @IsOptional()
@@ -25,10 +25,10 @@ export class UpdateSettingDto {
 export class CreateSettingDto {
   @ApiProperty({ description: 'مفتاح الإعداد', example: 'site_name' })
   @IsString()
-  key: string;
+  key!: string;
 
   @ApiProperty({ description: 'قيمة الإعداد' })
-  value: any;
+  value: unknown;
 
   @ApiProperty({ 
     description: 'الفئة', 
@@ -36,7 +36,7 @@ export class CreateSettingDto {
     default: SettingCategory.GENERAL
   })
   @IsEnum(SettingCategory)
-  category: SettingCategory;
+  category!: SettingCategory;
 
   @ApiPropertyOptional({ description: 'نوع البيانات', enum: ['string', 'number', 'boolean', 'object', 'array'] })
   @IsOptional()
@@ -56,28 +56,28 @@ export class CreateSettingDto {
 
 export class SettingDto {
   @ApiProperty({ description: 'معرف الإعداد' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ description: 'مفتاح الإعداد' })
-  key: string;
+  key!: string;
 
   @ApiProperty({ description: 'قيمة الإعداد' })
-  value: any;
+  value: unknown;
 
   @ApiProperty({ description: 'الفئة', enum: SettingCategory })
-  category: string;
+  category!: string;
 
   @ApiProperty({ description: 'نوع البيانات' })
-  type: string;
+  type!: string;
 
   @ApiProperty({ description: 'الوصف' })
   description?: string;
 
   @ApiProperty({ description: 'هل عام؟' })
-  isPublic: boolean;
+  isPublic!: boolean;
 
   @ApiProperty({ description: 'آخر تحديث' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @ApiProperty({ description: 'آخر من قام بالتحديث' })
   updatedBy?: string;
@@ -93,7 +93,7 @@ export class BulkUpdateSettingsDto {
     }
   })
   @IsObject()
-  settings: Record<string, any>;
+  settings!: Record<string, unknown>;
 }
 
 // Predefined settings interfaces for type safety

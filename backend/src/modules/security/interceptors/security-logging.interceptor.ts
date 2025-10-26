@@ -102,6 +102,7 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
     const headers = this.sanitizeHeaders(request.headers);
     const userAgent = request.get('User-Agent') || '';
     const referer = request.get('Referer') || '';
+    const reqWithUser = request as Request & { user?: { sub: string }; deviceFingerprint?: string };
 
     return {
       timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
@@ -114,8 +115,8 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
       headers,
       bodySize: request.headers['content-length'] || 0,
       requestId: request.headers['x-request-id'] || 'unknown',
-      userId: (request as any).user?.sub || 'anonymous',
-      deviceFingerprint: (request as any).deviceFingerprint || 'unknown',
+      userId: reqWithUser.user?.sub || 'anonymous',
+      deviceFingerprint: reqWithUser.deviceFingerprint || 'unknown',
     };
   }
 

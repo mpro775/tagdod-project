@@ -5,8 +5,6 @@ import type {
   CreateBannerDto,
   UpdateBannerDto,
   ListBannersDto,
-  BannerListApiResponse,
-  BannerResponse,
 } from '../types/banner.types';
 
 // Query keys
@@ -24,11 +22,13 @@ export const BANNER_QUERY_KEYS = {
 export const useBanners = (params: ListBannersDto = {}) => {
   return useQuery({
     queryKey: BANNER_QUERY_KEYS.list(params),
-    queryFn: () => bannersApi.getBanners(params),
-    select: (data: BannerListApiResponse) => ({
-      banners: data.data.data,
-      pagination: data.data.meta.pagination,
-    }),
+    queryFn: async () => {
+      const response = await bannersApi.getBanners(params);
+      return {
+        banners: response.data,
+        pagination: response.meta.pagination,
+      };
+    },
   });
 };
 
@@ -37,7 +37,6 @@ export const useBanner = (id: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: BANNER_QUERY_KEYS.detail(id),
     queryFn: () => bannersApi.getBanner(id),
-    select: (data: BannerResponse) => data.data.data,
     enabled: options?.enabled !== false && !!id,
   });
 };
@@ -104,12 +103,12 @@ export const useToggleBannerStatus = () => {
 
   return useMutation({
     mutationFn: (id: string) => bannersApi.toggleBannerStatus(id),
-    onSuccess: (data: BannerResponse, id) => {
+    onSuccess: (data, id) => {
       queryClient.invalidateQueries({ queryKey: BANNER_QUERY_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: BANNER_QUERY_KEYS.detail(id) });
       queryClient.invalidateQueries({ queryKey: BANNER_QUERY_KEYS.analytics() });
       
-      const isActive = data.data.data.isActive;
+      const isActive = data.isActive;
       toast.success(isActive ? 'تم تفعيل البانر' : 'تم تعطيل البانر');
     },
     onError: (error: any) => {
@@ -124,7 +123,6 @@ export const useBannerAnalytics = (id: string, options?: { enabled?: boolean }) 
   return useQuery({
     queryKey: BANNER_QUERY_KEYS.bannerAnalytics(id),
     queryFn: () => bannersApi.getBannerAnalytics(id),
-    select: (data) => data.data.data,
     enabled: options?.enabled !== false && !!id,
   });
 };
@@ -134,6 +132,5 @@ export const useBannersAnalytics = () => {
   return useQuery({
     queryKey: BANNER_QUERY_KEYS.analytics(),
     queryFn: () => bannersApi.getBannersAnalytics(),
-    select: (data) => data.data.data,
   });
 };

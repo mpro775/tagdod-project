@@ -27,7 +27,6 @@ import {
   ErrorStatisticsDto,
   ErrorTrendDto,
   ErrorLogDto,
-  SystemLogDto,
   LogsExportDto,
   ErrorLevel,
   ErrorCategory,
@@ -192,7 +191,7 @@ export class ErrorLogsController {
   })
   async resolveError(
     @Param('id') id: string,
-    @Request() req: any,
+    @Request() req: Express.Request & { user: { userId: string } },
     @Body('notes') notes?: string,
   ) {
     const userId = req.user.userId;

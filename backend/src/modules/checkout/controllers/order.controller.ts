@@ -17,7 +17,6 @@ import {
   CancelOrderDto,
   RateOrderDto,
   AddOrderNotesDto,
-  OrderResponseDto,
   OrderTrackingDto,
 } from '../dto/order.dto';
 

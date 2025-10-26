@@ -177,7 +177,7 @@ export class SystemMonitoringController {
   })
   async resolveAlert(
     @Param('id') id: string,
-    @Request() req: any,
+    @Request() req: { user: { userId: string } },
   ): Promise<{ message: string }> {
     const userId = req.user.userId;
     await this.systemMonitoringService.resolveAlert(id, userId);

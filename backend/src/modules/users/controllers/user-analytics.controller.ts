@@ -15,9 +15,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
-  ApiParam,
-  ApiQuery,
-  ApiBody
+
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
@@ -35,7 +33,6 @@ import {
   OverallUserAnalyticsDto,
   UserStatsFilterDto,
   PaginatedUserStatsDto,
-  ScoringConfigDto,
 } from '../dto/user-analytics.dto';
 
 @ApiTags('تحليلات-المستخدمين')

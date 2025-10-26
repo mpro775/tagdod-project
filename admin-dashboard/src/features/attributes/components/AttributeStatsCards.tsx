@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Grid, Box, Skeleton, Chip, Stack } from '@mui/material';
+import { Card, CardContent, Typography, Box, Skeleton, Chip, Stack, Grid } from '@mui/material';
 import {
   Category,
   CheckCircle,

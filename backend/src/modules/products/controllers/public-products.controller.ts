@@ -8,6 +8,7 @@ import {
   ApiNotFoundResponse,
   ApiResponse,
 } from '@nestjs/swagger';
+import { Types } from 'mongoose';
 import { ProductService } from '../services/product.service';
 import { VariantService } from '../services/variant.service';
 import { PricingService } from '../services/pricing.service';
@@ -17,6 +18,8 @@ import {
   CacheResponse,
 } from '../../../shared/interceptors/response-cache.interceptor';
 import { ProductStatus } from '../schemas/product.schema';
+
+type WithId = { _id: Types.ObjectId | string };
 
 @ApiTags('المنتجات')
 @Controller('products')
@@ -183,7 +186,8 @@ export class PublicProductsController {
     if (currency && currency !== 'USD') {
       const prices = await this.pricingService.getProductPrices(id, currency);
       variantsWithPrices = variants.map((variant) => {
-        const price = prices.find((p) => p.variantId === (variant as any)._id.toString());
+        const variantWithId = variant as unknown as WithId;
+        const price = prices.find((p) => p.variantId === variantWithId._id.toString());
         return {
           ...variant,
           ...price,
@@ -207,20 +211,20 @@ export class PublicProductsController {
   @CacheResponse({ ttl: 600 }) // 10 minutes
   async getProductBySlug(@Param('slug') slug: string, @Query('currency') currency?: string) {
     const product = await this.productService.findBySlug(slug);
-    const variants = await this.variantService.findByProductId((product as any)._id.toString());
+    const productWithId = product as unknown as WithId;
+    const productId = productWithId._id.toString();
+    const variants = await this.variantService.findByProductId(productId);
 
     // زيادة المشاهدات
-    await this.productService.incrementViews((product as any)._id.toString());
+    await this.productService.incrementViews(productId);
 
     // جلب الأسعار إذا تم تحديد عملة
     let variantsWithPrices = variants;
     if (currency && currency !== 'USD') {
-      const prices = await this.pricingService.getProductPrices(
-        (product as any)._id.toString(),
-        currency,
-      );
+      const prices = await this.pricingService.getProductPrices(productId, currency);
       variantsWithPrices = variants.map((variant) => {
-        const price = prices.find((p) => p.variantId === (variant as any)._id.toString());
+        const variantWithId = variant as unknown as WithId;
+        const price = prices.find((p) => p.variantId === variantWithId._id.toString());
         return {
           ...variant,
           ...price,
@@ -275,7 +279,8 @@ export class PublicProductsController {
     if (currency && currency !== 'USD') {
       const prices = await this.pricingService.getProductPrices(productId, currency);
       variantsWithPrices = variants.map((variant) => {
-        const price = prices.find((p) => p.variantId === (variant as any)._id.toString());
+        const variantWithId = variant as unknown as WithId;
+        const price = prices.find((p) => p.variantId === variantWithId._id.toString());
         return {
           ...variant,
           ...price,

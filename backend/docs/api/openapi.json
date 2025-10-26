@@ -472,23 +472,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "phone": {
-                    "type": "string",
-                    "example": "0501234567",
-                    "description": "رقم الهاتف"
-                  },
-                  "password": {
-                    "type": "string",
-                    "example": "SecurePass123!",
-                    "description": "كلمة المرور"
-                  }
-                },
-                "required": [
-                  "phone",
-                  "password"
-                ]
+                "$ref": "#/components/schemas/AdminLoginDto"
               }
             }
           }
@@ -11498,6 +11482,865 @@
         ]
       }
     },
+    "/api/v1/admin/addresses/stats": {
+      "get": {
+        "operationId": "getStats",
+        "summary": "الحصول على إحصائيات شاملة للعناوين",
+        "description": "استرداد إحصائيات مفصلة حول العناوين في النظام",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإحصائيات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalAddresses": {
+                      "type": "number",
+                      "example": 1250,
+                      "description": "إجمالي عدد العناوين (بما في ذلك المحذوفة)"
+                    },
+                    "totalActiveAddresses": {
+                      "type": "number",
+                      "example": 1180,
+                      "description": "عدد العناوين النشطة"
+                    },
+                    "totalDeletedAddresses": {
+                      "type": "number",
+                      "example": 70,
+                      "description": "عدد العناوين المحذوفة"
+                    },
+                    "totalUsers": {
+                      "type": "number",
+                      "example": 450,
+                      "description": "عدد المستخدمين الذين لديهم عناوين"
+                    },
+                    "averagePerUser": {
+                      "type": "number",
+                      "example": 2.8,
+                      "description": "متوسط عدد العناوين لكل مستخدم"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك بالوصول إلى هذه البيانات"
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/top-cities": {
+      "get": {
+        "operationId": "getTopCities",
+        "summary": "المدن الأكثر استخداماً",
+        "description": "استرداد قائمة بالمدن الأكثر استخداماً في العناوين مرتبة تنازلياً",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد المدن المراد عرضها",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد المدن الأكثر استخداماً بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "city": {
+                            "type": "string",
+                            "example": "صنعاء",
+                            "description": "اسم المدينة"
+                          },
+                          "count": {
+                            "type": "number",
+                            "example": 450,
+                            "description": "عدد العناوين"
+                          },
+                          "activeCount": {
+                            "type": "number",
+                            "example": 420,
+                            "description": "عدد العناوين النشطة"
+                          },
+                          "defaultCount": {
+                            "type": "number",
+                            "example": 150,
+                            "description": "عدد العناوين الافتراضية"
+                          },
+                          "totalUsage": {
+                            "type": "number",
+                            "example": 1250,
+                            "description": "إجمالي مرات الاستخدام"
+                          },
+                          "percentage": {
+                            "type": "number",
+                            "example": 36.5,
+                            "description": "النسبة المئوية من إجمالي العناوين"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/most-used": {
+      "get": {
+        "operationId": "getMostUsedAddresses",
+        "summary": "العناوين الأكثر استخداماً",
+        "description": "استرداد قائمة بالعناوين الأكثر استخداماً مع معلومات المستخدمين",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد العناوين المراد عرضها",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد العناوين الأكثر استخداماً بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "_id": {
+                            "type": "string",
+                            "example": "507f1f77bcf86cd799439011"
+                          },
+                          "label": {
+                            "type": "string",
+                            "example": "المنزل"
+                          },
+                          "line1": {
+                            "type": "string",
+                            "example": "شارع الستين، بجوار مطعم السلطان"
+                          },
+                          "city": {
+                            "type": "string",
+                            "example": "صنعاء"
+                          },
+                          "usageCount": {
+                            "type": "number",
+                            "example": 15
+                          },
+                          "lastUsedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "userId": {
+                            "type": "object",
+                            "properties": {
+                              "_id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "أحمد محمد"
+                              },
+                              "phone": {
+                                "type": "string",
+                                "example": "+967771234567"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/recently-used": {
+      "get": {
+        "operationId": "getRecentlyUsedAddresses",
+        "summary": "العناوين المستخدمة مؤخراً",
+        "description": "استرداد قائمة بالعناوين التي تم استخدامها مؤخراً",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد العناوين المراد عرضها",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد العناوين المستخدمة مؤخراً بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/never-used": {
+      "get": {
+        "operationId": "getNeverUsedAddresses",
+        "summary": "العناوين التي لم تستخدم أبداً",
+        "description": "استرداد قائمة بالعناوين التي لم يتم استخدامها مطلقاً",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد العناوين المراد عرضها",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد العناوين غير المستخدمة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/usage-analytics": {
+      "get": {
+        "operationId": "getUsageAnalytics",
+        "summary": "تحليلات استخدام العناوين",
+        "description": "استرداد تحليلات مفصلة حول استخدام العناوين في النظام",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية (YYYY-MM-DD)",
+            "schema": {
+              "example": "2024-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية (YYYY-MM-DD)",
+            "schema": {
+              "example": "2024-12-31",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تحليلات الاستخدام بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "stats": {
+                          "type": "object",
+                          "properties": {
+                            "totalUsage": {
+                              "type": "number",
+                              "example": 3500
+                            },
+                            "avgUsage": {
+                              "type": "number",
+                              "example": 2.8
+                            },
+                            "maxUsage": {
+                              "type": "number",
+                              "example": 25
+                            },
+                            "addressesUsed": {
+                              "type": "number",
+                              "example": 1050
+                            },
+                            "addressesNeverUsed": {
+                              "type": "number",
+                              "example": 130
+                            }
+                          }
+                        },
+                        "dailyTrend": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": {
+                                "type": "string",
+                                "example": "2024-01-15"
+                              },
+                              "count": {
+                                "type": "number",
+                                "example": 45
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/geographic-analytics": {
+      "get": {
+        "operationId": "getGeographicAnalytics",
+        "summary": "التحليل الجغرافي للعناوين",
+        "description": "استرداد بيانات التوزيع الجغرافي للعناوين (للخرائط الحرارية)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد التحليل الجغرافي بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "cityDistribution": {
+                          "type": "array",
+                          "description": "توزيع العناوين حسب المدينة"
+                        },
+                        "coordinates": {
+                          "type": "array",
+                          "description": "جميع الإحداثيات (لخريطة حرارية)",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "lat": {
+                                "type": "number",
+                                "example": 15.3694
+                              },
+                              "lng": {
+                                "type": "number",
+                                "example": 44.191
+                              },
+                              "city": {
+                                "type": "string",
+                                "example": "صنعاء"
+                              },
+                              "label": {
+                                "type": "string",
+                                "example": "المنزل"
+                              }
+                            }
+                          }
+                        },
+                        "totalPoints": {
+                          "type": "number",
+                          "example": 1250
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/list": {
+      "get": {
+        "operationId": "listAddresses",
+        "summary": "قائمة جميع العناوين مع فلترة وبحث",
+        "description": "استرداد جميع العناوين في النظام مع دعم الفلترة والبحث والترتيب",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "تصفية حسب معرف المستخدم",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "تصفية حسب المدينة",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "label",
+            "required": false,
+            "in": "query",
+            "description": "تصفية حسب التسمية",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isDefault",
+            "required": false,
+            "in": "query",
+            "description": "العناوين الافتراضية فقط",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "isActive",
+            "required": false,
+            "in": "query",
+            "description": "العناوين النشطة فقط",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeDeleted",
+            "required": false,
+            "in": "query",
+            "description": "تضمين المحذوفة",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "البحث في النص",
+            "schema": {
+              "example": "شارع",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد النتائج",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "الترتيب حسب",
+            "schema": {
+              "enum": [
+                "createdAt",
+                "usageCount",
+                "lastUsedAt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "اتجاه الترتيب",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد قائمة العناوين بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "description": "قائمة العناوين مع معلومات المستخدمين"
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number",
+                          "example": 1250
+                        },
+                        "page": {
+                          "type": "number",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "number",
+                          "example": 20
+                        },
+                        "pages": {
+                          "type": "number",
+                          "example": 63
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/user/{userId}": {
+      "get": {
+        "operationId": "getUserAddresses",
+        "summary": "الحصول على عناوين مستخدم محدد",
+        "description": "استرداد جميع عناوين مستخدم محدد مع معلومات المستخدم",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المستخدم",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeDeleted",
+            "required": false,
+            "in": "query",
+            "description": "تضمين العناوين المحذوفة",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد عناوين المستخدم بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "description": "قائمة العناوين"
+                    },
+                    "count": {
+                      "type": "number",
+                      "example": 3
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "المستخدم غير موجود"
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/user/{userId}/count": {
+      "get": {
+        "operationId": "getUserAddressCount",
+        "summary": "عدد عناوين مستخدم محدد",
+        "description": "الحصول على عدد العناوين النشطة لمستخدم محدد",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المستخدم",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد العدد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "userId": {
+                          "type": "string",
+                          "example": "507f1f77bcf86cd799439011"
+                        },
+                        "count": {
+                          "type": "number",
+                          "example": 3
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/addresses/nearby": {
+      "get": {
+        "operationId": "searchNearbyAddresses",
+        "summary": "البحث عن عناوين قريبة من نقطة معينة",
+        "description": "استرداد العناوين القريبة من إحداثيات معينة (مفيد للتخطيط اللوجستي)",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "description": "خط العرض",
+            "schema": {
+              "example": 15.3694,
+              "type": "string"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "description": "خط الطول",
+            "schema": {
+              "example": 44.191,
+              "type": "string"
+            }
+          },
+          {
+            "name": "radius",
+            "required": false,
+            "in": "query",
+            "description": "نصف القطر بالكيلومتر",
+            "schema": {
+              "example": 10,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد النتائج",
+            "schema": {
+              "example": 20,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد العناوين القريبة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "description": "العناوين القريبة مرتبة حسب المسافة"
+                    },
+                    "searchParams": {
+                      "type": "object",
+                      "properties": {
+                        "lat": {
+                          "type": "number",
+                          "example": 15.3694
+                        },
+                        "lng": {
+                          "type": "number",
+                          "example": 44.191
+                        },
+                        "radiusKm": {
+                          "type": "number",
+                          "example": 10
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-العناوين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/support/tickets": {
       "post": {
         "operationId": "createTicket",
@@ -18171,6 +19014,749 @@
         ]
       }
     },
+    "/api/v1/admin/search/stats": {
+      "get": {
+        "operationId": "getSearchStats",
+        "summary": "إحصائيات البحث الشاملة",
+        "description": "استرداد إحصائيات شاملة حول عمليات البحث في النظام",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية (YYYY-MM-DD)",
+            "schema": {
+              "example": "2024-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية (YYYY-MM-DD)",
+            "schema": {
+              "example": "2024-12-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "required": false,
+            "in": "query",
+            "description": "اللغة",
+            "schema": {
+              "enum": [
+                "ar",
+                "en"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "description": "نوع الكيان",
+            "schema": {
+              "enum": [
+                "products",
+                "categories",
+                "brands",
+                "all"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "zeroResults",
+            "required": false,
+            "in": "query",
+            "description": "عمليات البحث بدون نتائج فقط",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإحصائيات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalSearches": {
+                          "type": "number",
+                          "example": 15420,
+                          "description": "إجمالي عمليات البحث"
+                        },
+                        "totalUniqueQueries": {
+                          "type": "number",
+                          "example": 3250,
+                          "description": "عدد الاستعلامات الفريدة"
+                        },
+                        "averageResultsPerSearch": {
+                          "type": "number",
+                          "example": 8.5,
+                          "description": "متوسط النتائج لكل بحث"
+                        },
+                        "zeroResultSearches": {
+                          "type": "number",
+                          "example": 420,
+                          "description": "عمليات بحث بدون نتائج"
+                        },
+                        "zeroResultsPercentage": {
+                          "type": "number",
+                          "example": 2.7,
+                          "description": "نسبة البحث بدون نتائج"
+                        },
+                        "averageResponseTime": {
+                          "type": "number",
+                          "example": 125,
+                          "description": "متوسط وقت الاستجابة (ms)"
+                        },
+                        "topLanguage": {
+                          "type": "string",
+                          "example": "ar",
+                          "description": "اللغة الأكثر استخداماً"
+                        },
+                        "topEntityType": {
+                          "type": "string",
+                          "example": "products",
+                          "description": "نوع الكيان الأكثر بحثاً"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/search/top-terms": {
+      "get": {
+        "operationId": "getTopSearchTerms",
+        "summary": "الكلمات المفتاحية الأكثر بحثاً",
+        "description": "استرداد قائمة بالكلمات والعبارات الأكثر بحثاً في النظام",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد النتائج",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية",
+            "schema": {
+              "example": "2024-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية",
+            "schema": {
+              "example": "2024-12-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "required": false,
+            "in": "query",
+            "description": "اللغة",
+            "schema": {
+              "enum": [
+                "ar",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الكلمات المفتاحية بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "query": {
+                            "type": "string",
+                            "example": "هاتف سامسونج",
+                            "description": "نص البحث"
+                          },
+                          "count": {
+                            "type": "number",
+                            "example": 450,
+                            "description": "عدد مرات البحث"
+                          },
+                          "hasResults": {
+                            "type": "boolean",
+                            "example": true,
+                            "description": "وجود نتائج"
+                          },
+                          "averageResults": {
+                            "type": "number",
+                            "example": 12,
+                            "description": "متوسط عدد النتائج"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/search/zero-results": {
+      "get": {
+        "operationId": "getZeroResultSearches",
+        "summary": "عمليات البحث بدون نتائج",
+        "description": "استرداد قائمة بعمليات البحث التي لم تُرجع أي نتائج (مفيد لتحسين المحتوى)",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد عمليات البحث الفاشلة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/search/trends": {
+      "get": {
+        "operationId": "getSearchTrends",
+        "summary": "اتجاهات البحث عبر الزمن",
+        "description": "تحليل اتجاهات البحث على مدى فترة زمنية محددة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد اتجاهات البحث بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": {
+                            "type": "string",
+                            "example": "2024-01-15",
+                            "description": "التاريخ"
+                          },
+                          "count": {
+                            "type": "number",
+                            "example": 450,
+                            "description": "عدد عمليات البحث"
+                          },
+                          "uniqueQueries": {
+                            "type": "number",
+                            "example": 120,
+                            "description": "الاستعلامات الفريدة"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/search/logs": {
+      "get": {
+        "operationId": "getSearchLogs",
+        "summary": "سجلات البحث",
+        "description": "استرداد سجلات عمليات البحث مع إمكانية الفلترة",
+        "parameters": [
+          {
+            "name": "query",
+            "required": false,
+            "in": "query",
+            "description": "نص البحث للفلترة",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "معرف المستخدم",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasResults",
+            "required": false,
+            "in": "query",
+            "description": "وجود نتائج",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "من تاريخ",
+            "schema": {
+              "example": "2024-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "إلى تاريخ",
+            "schema": {
+              "example": "2024-12-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد النتائج",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "الصفحة",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد السجلات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/search/most-searched-products": {
+      "get": {
+        "operationId": "getMostSearchedProducts",
+        "summary": "المنتجات الأكثر ظهوراً في البحث",
+        "description": "استرداد قائمة بالمنتجات الأكثر شيوعاً في نتائج البحث",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد النتائج",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد المنتجات الأكثر بحثاً بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "_id": {
+                            "type": "string",
+                            "example": "507f1f77bcf86cd799439011"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "هاتف سامسونج"
+                          },
+                          "nameEn": {
+                            "type": "string",
+                            "example": "Samsung Phone"
+                          },
+                          "mainImage": {
+                            "type": "string",
+                            "example": "https://..."
+                          },
+                          "viewsCount": {
+                            "type": "number",
+                            "example": 1250
+                          },
+                          "rating": {
+                            "type": "number",
+                            "example": 4.5
+                          },
+                          "reviewsCount": {
+                            "type": "number",
+                            "example": 85
+                          },
+                          "isFeatured": {
+                            "type": "boolean",
+                            "example": true
+                          },
+                          "category": {
+                            "type": "object"
+                          },
+                          "brand": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/search/most-searched-categories": {
+      "get": {
+        "operationId": "getMostSearchedCategories",
+        "summary": "الفئات الأكثر بحثاً",
+        "description": "استرداد قائمة بالفئات الأكثر شيوعاً في عمليات البحث",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الفئات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/search/most-searched-brands": {
+      "get": {
+        "operationId": "getMostSearchedBrands",
+        "summary": "العلامات التجارية الأكثر بحثاً",
+        "description": "استرداد قائمة بالعلامات التجارية الأكثر شيوعاً في البحث",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد العلامات التجارية بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/search/performance": {
+      "get": {
+        "operationId": "getPerformanceMetrics",
+        "summary": "مؤشرات أداء البحث",
+        "description": "استرداد مؤشرات الأداء ومعلومات النظام للبحث",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد مؤشرات الأداء بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "indexedData": {
+                          "type": "object",
+                          "properties": {
+                            "totalProducts": {
+                              "type": "number",
+                              "example": 1250
+                            },
+                            "activeProducts": {
+                              "type": "number",
+                              "example": 1180
+                            },
+                            "totalCategories": {
+                              "type": "number",
+                              "example": 45
+                            },
+                            "totalBrands": {
+                              "type": "number",
+                              "example": 32
+                            }
+                          }
+                        },
+                        "cacheStatus": {
+                          "type": "object",
+                          "properties": {
+                            "searchCacheTTL": {
+                              "type": "number",
+                              "example": 300
+                            },
+                            "suggestionsCacheTTL": {
+                              "type": "number",
+                              "example": 1800
+                            },
+                            "facetsCacheTTL": {
+                              "type": "number",
+                              "example": 600
+                            }
+                          }
+                        },
+                        "systemHealth": {
+                          "type": "string",
+                          "example": "healthy"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/search/clear-cache": {
+      "post": {
+        "operationId": "clearCache",
+        "summary": "مسح ذاكرة التخزين المؤقت للبحث",
+        "description": "مسح جميع بيانات الكاش الخاصة بالبحث (للصيانة أو التحديثات)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم مسح الكاش بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-البحث"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/brands": {
       "post": {
         "operationId": "createBrand",
@@ -20602,6 +22188,1520 @@
         ]
       }
     },
+    "/api/v1/system-monitoring/health": {
+      "get": {
+        "operationId": "getSystemHealth",
+        "summary": "الحصول على صحة النظام العامة",
+        "description": "استرداد مقاييس صحة النظام الشاملة مع جميع المكونات",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد صحة النظام بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/resources": {
+      "get": {
+        "operationId": "getResourceUsage",
+        "summary": "الحصول على استخدام الموارد",
+        "description": "استرداد معلومات استخدام CPU والذاكرة والقرص",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد استخدام الموارد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceUsageDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/database": {
+      "get": {
+        "operationId": "getDatabaseMetrics",
+        "summary": "الحصول على مقاييس قاعدة البيانات",
+        "description": "استرداد معلومات أداء وحالة MongoDB",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد مقاييس قاعدة البيانات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatabaseMetricsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/redis": {
+      "get": {
+        "operationId": "getRedisMetrics",
+        "summary": "الحصول على مقاييس Redis",
+        "description": "استرداد معلومات أداء وحالة Redis Cache",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد مقاييس Redis بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedisMetricsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/api-performance": {
+      "get": {
+        "operationId": "getApiPerformance",
+        "summary": "الحصول على أداء API",
+        "description": "استرداد إحصائيات أداء واستجابة API",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد أداء API بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiPerformanceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/metrics/history": {
+      "get": {
+        "operationId": "getMetricsHistory",
+        "summary": "الحصول على تاريخ المقاييس",
+        "description": "استرداد البيانات التاريخية للمقاييس المختلفة",
+        "parameters": [
+          {
+            "name": "metricType",
+            "required": false,
+            "in": "query",
+            "description": "نوع المقياس",
+            "schema": {
+              "enum": [
+                "cpu",
+                "memory",
+                "disk",
+                "database",
+                "redis",
+                "api"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeRange",
+            "required": false,
+            "in": "query",
+            "description": "النطاق الزمني",
+            "schema": {
+              "enum": [
+                "last_hour",
+                "last_24_hours",
+                "last_7_days",
+                "last_30_days",
+                "custom"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية (صيغة ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية (صيغة ISO)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تاريخ المقاييس بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemMetricsHistoryDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/alerts": {
+      "get": {
+        "operationId": "getSystemAlerts",
+        "summary": "الحصول على تنبيهات النظام",
+        "description": "استرداد قائمة التنبيهات النشطة والحرجة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد التنبيهات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemAlertsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/alerts/{id}/resolve": {
+      "post": {
+        "operationId": "resolveAlert",
+        "summary": "حل تنبيه",
+        "description": "وضع علامة على تنبيه كمحلول",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف التنبيه",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حل التنبيه بنجاح"
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/overview": {
+      "get": {
+        "operationId": "getSystemOverview",
+        "summary": "الحصول على نظرة عامة شاملة",
+        "description": "استرداد جميع المقاييس في استجابة واحدة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد النظرة العامة بنجاح"
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs": {
+      "post": {
+        "operationId": "createErrorLog",
+        "summary": "إنشاء سجل خطأ جديد",
+        "description": "تسجيل خطأ جديد في النظام",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateErrorLogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء سجل الخطأ بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorLogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "getErrorLogs",
+        "summary": "الحصول على قائمة الأخطاء",
+        "description": "استرداد سجلات الأخطاء مع التصفية والترتيب",
+        "parameters": [
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "description": "مستوى الخطأ",
+            "schema": {
+              "enum": [
+                "error",
+                "warn",
+                "fatal",
+                "debug"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "فئة الخطأ",
+            "schema": {
+              "enum": [
+                "database",
+                "api",
+                "authentication",
+                "validation",
+                "business_logic",
+                "external_service",
+                "system",
+                "unknown"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "نص البحث في الرسالة",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية (صيغة ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية (صيغة ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد العناصر في الصفحة",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد سجلات الأخطاء بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/statistics": {
+      "get": {
+        "operationId": "getStatistics",
+        "summary": "الحصول على إحصائيات الأخطاء",
+        "description": "استرداد تحليلات شاملة للأخطاء",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإحصائيات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorStatisticsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/trends": {
+      "get": {
+        "operationId": "getErrorTrend",
+        "summary": "الحصول على اتجاهات الأخطاء",
+        "description": "تحليل اتجاه الأخطاء عبر الزمن",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "عدد الأيام للتحليل",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد اتجاهات الأخطاء بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorTrendDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/export": {
+      "get": {
+        "operationId": "exportLogs",
+        "summary": "تصدير سجلات الأخطاء",
+        "description": "تصدير السجلات بصيغ مختلفة (JSON, CSV, TXT)",
+        "parameters": [
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "صيغة التصدير",
+            "schema": {
+              "enum": [
+                "json",
+                "csv",
+                "txt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "description": "مستوى الخطأ",
+            "schema": {
+              "enum": [
+                "error",
+                "warn",
+                "fatal",
+                "debug"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم إنشاء رابط التصدير بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/system-logs": {
+      "get": {
+        "operationId": "getSystemLogs",
+        "summary": "الحصول على سجلات النظام",
+        "description": "استرداد سجلات النظام العامة",
+        "parameters": [
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد سجلات النظام بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/{id}": {
+      "get": {
+        "operationId": "getErrorById",
+        "summary": "الحصول على تفاصيل خطأ",
+        "description": "استرداد معلومات مفصلة عن خطأ معين",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف سجل الخطأ",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تفاصيل الخطأ بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorLogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteError",
+        "summary": "حذف خطأ",
+        "description": "حذف سجل خطأ من قاعدة البيانات",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف سجل الخطأ",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الخطأ بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/{id}/resolve": {
+      "post": {
+        "operationId": "resolveError",
+        "summary": "حل خطأ",
+        "description": "وضع علامة على خطأ كمحلول",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف سجل الخطأ",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "notes": {
+                    "type": "string",
+                    "description": "ملاحظات الحل"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم حل الخطأ بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/cleanup": {
+      "post": {
+        "operationId": "cleanupOldErrors",
+        "summary": "تنظيف السجلات القديمة",
+        "description": "حذف سجلات الأخطاء الأقدم من عدد معين من الأيام",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "type": "number",
+                    "description": "عدد الأيام",
+                    "default": 30
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تنظيف السجلات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/i18n/public/translations/{lang}": {
+      "get": {
+        "operationId": "getPublicTranslations",
+        "summary": "الحصول على جميع الترجمات للغة معينة (عام)",
+        "description": "يستخدم من قبل Frontend لتحميل الترجمات",
+        "parameters": [
+          {
+            "name": "lang",
+            "required": true,
+            "in": "path",
+            "description": "اللغة",
+            "schema": {
+              "enum": [
+                "ar",
+                "en"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "namespace",
+            "required": false,
+            "in": "query",
+            "description": "تحديد مساحة معينة (اختياري)",
+            "schema": {
+              "enum": [
+                "common",
+                "auth",
+                "products",
+                "orders",
+                "services",
+                "users",
+                "settings",
+                "errors",
+                "validation",
+                "notifications"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الترجمات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ]
+      }
+    },
+    "/api/v1/i18n/public/all": {
+      "get": {
+        "operationId": "getAllPublicTranslations",
+        "summary": "الحصول على جميع الترجمات مجمعة (عام)",
+        "description": "جميع الترجمات مجمعة حسب المساحة واللغة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الترجمات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ]
+      }
+    },
+    "/api/v1/i18n": {
+      "post": {
+        "operationId": "createTranslation",
+        "summary": "إنشاء ترجمة جديدة",
+        "description": "إضافة ترجمة جديدة للنظام",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTranslationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء الترجمة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "getTranslations",
+        "summary": "الحصول على قائمة الترجمات",
+        "description": "استرداد الترجمات مع التصفية",
+        "parameters": [
+          {
+            "name": "namespace",
+            "required": false,
+            "in": "query",
+            "description": "المساحة/الوحدة",
+            "schema": {
+              "enum": [
+                "common",
+                "auth",
+                "products",
+                "orders",
+                "services",
+                "users",
+                "settings",
+                "errors",
+                "validation",
+                "notifications"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "البحث في المفتاح أو النص",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "missingOnly",
+            "required": false,
+            "in": "query",
+            "description": "إظهار الترجمات المفقودة فقط",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "missingLanguage",
+            "required": false,
+            "in": "query",
+            "description": "اللغة المفقودة",
+            "schema": {
+              "enum": [
+                "ar",
+                "en"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الترجمات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TranslationDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/i18n/statistics": {
+      "get": {
+        "operationId": "getStatistics",
+        "summary": "الحصول على إحصائيات الترجمات",
+        "description": "تحليلات شاملة عن الترجمات ونسبة الاكتمال",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإحصائيات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationStatsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/i18n/bulk-import": {
+      "post": {
+        "operationId": "bulkImport",
+        "summary": "استيراد ترجمات بالجملة",
+        "description": "استيراد ملف JSON يحتوي على ترجمات متعددة",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkImportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم الاستيراد بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/i18n/export": {
+      "get": {
+        "operationId": "exportTranslations",
+        "summary": "تصدير الترجمات",
+        "description": "تصدير الترجمات بصيغ مختلفة (JSON, CSV)",
+        "parameters": [
+          {
+            "name": "namespace",
+            "required": false,
+            "in": "query",
+            "description": "المساحة/الوحدة للتصدير",
+            "schema": {
+              "enum": [
+                "common",
+                "auth",
+                "products",
+                "orders",
+                "services",
+                "users",
+                "settings",
+                "errors",
+                "validation",
+                "notifications"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "صيغة التصدير",
+            "schema": {
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "required": false,
+            "in": "query",
+            "description": "اللغة للتصدير (أو كلاهما)",
+            "schema": {
+              "enum": [
+                "ar",
+                "en",
+                "both"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم التصدير بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/i18n/{key}": {
+      "get": {
+        "operationId": "getTranslationByKey",
+        "summary": "الحصول على ترجمة بالمفتاح",
+        "description": "استرداد تفاصيل ترجمة معينة",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "مفتاح الترجمة",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الترجمة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateTranslation",
+        "summary": "تحديث ترجمة",
+        "description": "تعديل ترجمة موجودة",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "مفتاح الترجمة",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTranslationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث الترجمة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteTranslation",
+        "summary": "حذف ترجمة",
+        "description": "حذف ترجمة من النظام",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "مفتاح الترجمة",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الترجمة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة نصوص التعريب"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-settings/public": {
+      "get": {
+        "operationId": "getPublicSettings",
+        "summary": "الحصول على الإعدادات العامة (عام)",
+        "description": "إعدادات النظام المتاحة للعموم",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "general",
+                "email",
+                "payment",
+                "shipping",
+                "security",
+                "notifications",
+                "seo",
+                "advanced"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإعدادات العامة بنجاح"
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ]
+      }
+    },
+    "/api/v1/system-settings": {
+      "post": {
+        "operationId": "createSetting",
+        "summary": "إنشاء إعداد جديد",
+        "description": "إضافة إعداد جديد للنظام",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSettingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء الإعداد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "getAllSettings",
+        "summary": "الحصول على جميع الإعدادات",
+        "description": "استرداد جميع إعدادات النظام",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "general",
+                "email",
+                "payment",
+                "shipping",
+                "security",
+                "notifications",
+                "seo",
+                "advanced"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإعدادات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettingDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-settings/category/{category}": {
+      "get": {
+        "operationId": "getSettingsByCategory",
+        "summary": "الحصول على إعدادات فئة معينة",
+        "description": "استرداد الإعدادات حسب الفئة كـ key-value pairs",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "general",
+                "email",
+                "payment",
+                "shipping",
+                "security",
+                "notifications",
+                "seo",
+                "advanced"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد إعدادات الفئة بنجاح"
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-settings/bulk": {
+      "put": {
+        "operationId": "bulkUpdate",
+        "summary": "تحديث عدة إعدادات",
+        "description": "تحديث إعدادات متعددة دفعة واحدة",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث الإعدادات بنجاح"
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-settings/{key}": {
+      "get": {
+        "operationId": "getSetting",
+        "summary": "الحصول على إعداد بالمفتاح",
+        "description": "استرداد إعداد معين",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "مفتاح الإعداد",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإعداد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateSetting",
+        "summary": "تحديث إعداد",
+        "description": "تعديل قيمة إعداد موجود",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "مفتاح الإعداد",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث الإعداد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteSetting",
+        "summary": "حذف إعداد",
+        "description": "حذف إعداد من النظام",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "مفتاح الإعداد",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الإعداد بنجاح"
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",
@@ -21243,6 +24343,26 @@
           "phone",
           "code",
           "newPassword"
+        ]
+      },
+      "AdminLoginDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "رقم هاتف الأدمن",
+            "example": "0501234567"
+          },
+          "password": {
+            "type": "string",
+            "description": "كلمة المرور",
+            "example": "SecurePassword123!",
+            "minLength": 6
+          }
+        },
+        "required": [
+          "phone",
+          "password"
         ]
       },
       "AddFavoriteDto": {
@@ -22906,6 +26026,9 @@
                 "exchange_rates.manual_update",
                 "favorites.read",
                 "favorites.manage",
+                "addresses.read",
+                "addresses.manage",
+                "addresses.analytics",
                 "upload.manage",
                 "upload.delete"
               ]
@@ -23062,6 +26185,9 @@
                 "exchange_rates.manual_update",
                 "favorites.read",
                 "favorites.manage",
+                "addresses.read",
+                "addresses.manage",
+                "addresses.analytics",
                 "upload.manage",
                 "upload.delete"
               ]
@@ -23595,6 +26721,925 @@
       "UpdateMediaDto": {
         "type": "object",
         "properties": {}
+      },
+      "SystemHealthDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "حالة النظام العامة"
+          },
+          "uptime": {
+            "type": "number",
+            "description": "وقت التشغيل بالثواني"
+          },
+          "cpuUsage": {
+            "type": "number",
+            "description": "استخدام CPU (نسبة مئوية)"
+          },
+          "memoryUsage": {
+            "type": "number",
+            "description": "استخدام الذاكرة (نسبة مئوية)"
+          },
+          "diskUsage": {
+            "type": "number",
+            "description": "استخدام القرص (نسبة مئوية)"
+          },
+          "databaseStatus": {
+            "type": "object",
+            "description": "حالة قاعدة البيانات"
+          },
+          "redisStatus": {
+            "type": "object",
+            "description": "حالة Redis Cache"
+          },
+          "avgApiResponseTime": {
+            "type": "number",
+            "description": "متوسط وقت استجابة API (ms)"
+          },
+          "activeRequests": {
+            "type": "number",
+            "description": "عدد الطلبات النشطة"
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "معدل الأخطاء (نسبة مئوية)"
+          },
+          "lastUpdated": {
+            "format": "date-time",
+            "type": "string",
+            "description": "وقت آخر تحديث"
+          }
+        },
+        "required": [
+          "status",
+          "uptime",
+          "cpuUsage",
+          "memoryUsage",
+          "diskUsage",
+          "databaseStatus",
+          "redisStatus",
+          "avgApiResponseTime",
+          "activeRequests",
+          "errorRate",
+          "lastUpdated"
+        ]
+      },
+      "ResourceUsageDto": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "format": "date-time",
+            "type": "string",
+            "description": "الطابع الزمني"
+          },
+          "cpu": {
+            "type": "object",
+            "description": "استخدام CPU"
+          },
+          "memory": {
+            "type": "object",
+            "description": "استخدام الذاكرة"
+          },
+          "disk": {
+            "type": "object",
+            "description": "استخدام القرص"
+          }
+        },
+        "required": [
+          "timestamp",
+          "cpu",
+          "memory",
+          "disk"
+        ]
+      },
+      "DatabaseMetricsDto": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "description": "حالة الاتصال"
+          },
+          "responseTime": {
+            "type": "number",
+            "description": "وقت الاستجابة (ms)"
+          },
+          "collectionsCount": {
+            "type": "number",
+            "description": "عدد المجموعات"
+          },
+          "totalDocuments": {
+            "type": "number",
+            "description": "إجمالي عدد الوثائق"
+          },
+          "databaseSize": {
+            "type": "number",
+            "description": "حجم قاعدة البيانات (bytes)"
+          },
+          "indexSize": {
+            "type": "number",
+            "description": "حجم الفهارس (bytes)"
+          },
+          "activeOperations": {
+            "type": "number",
+            "description": "العمليات النشطة"
+          },
+          "slowQueries": {
+            "description": "قائمة بأبطأ الاستعلامات",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "connected",
+          "responseTime",
+          "collectionsCount",
+          "totalDocuments",
+          "databaseSize",
+          "indexSize",
+          "activeOperations",
+          "slowQueries"
+        ]
+      },
+      "RedisMetricsDto": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "description": "حالة الاتصال"
+          },
+          "responseTime": {
+            "type": "number",
+            "description": "وقت الاستجابة (ms)"
+          },
+          "memoryUsage": {
+            "type": "number",
+            "description": "استخدام الذاكرة (bytes)"
+          },
+          "maxMemory": {
+            "type": "number",
+            "description": "الذاكرة القصوى (bytes)"
+          },
+          "memoryUsagePercentage": {
+            "type": "number",
+            "description": "نسبة استخدام الذاكرة (%)"
+          },
+          "keysCount": {
+            "type": "number",
+            "description": "عدد المفاتيح"
+          },
+          "hitRate": {
+            "type": "number",
+            "description": "معدل الإصابة (%)"
+          },
+          "missRate": {
+            "type": "number",
+            "description": "معدل الفشل (%)"
+          },
+          "operationsPerSecond": {
+            "type": "number",
+            "description": "العمليات في الثانية"
+          }
+        },
+        "required": [
+          "connected",
+          "responseTime",
+          "memoryUsage",
+          "maxMemory",
+          "memoryUsagePercentage",
+          "keysCount",
+          "hitRate",
+          "missRate",
+          "operationsPerSecond"
+        ]
+      },
+      "ApiPerformanceDto": {
+        "type": "object",
+        "properties": {
+          "totalRequests": {
+            "type": "number",
+            "description": "إجمالي عدد الطلبات"
+          },
+          "successfulRequests": {
+            "type": "number",
+            "description": "الطلبات الناجحة"
+          },
+          "failedRequests": {
+            "type": "number",
+            "description": "الطلبات الفاشلة"
+          },
+          "avgResponseTime": {
+            "type": "number",
+            "description": "متوسط وقت الاستجابة (ms)"
+          },
+          "minResponseTime": {
+            "type": "number",
+            "description": "أدنى وقت استجابة (ms)"
+          },
+          "maxResponseTime": {
+            "type": "number",
+            "description": "أقصى وقت استجابة (ms)"
+          },
+          "requestsPerMinute": {
+            "type": "number",
+            "description": "عدد الطلبات في الدقيقة"
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "معدل الأخطاء (%)"
+          },
+          "slowestEndpoints": {
+            "description": "أبطأ نقاط النهاية",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "totalRequests",
+          "successfulRequests",
+          "failedRequests",
+          "avgResponseTime",
+          "minResponseTime",
+          "maxResponseTime",
+          "requestsPerMinute",
+          "errorRate",
+          "slowestEndpoints"
+        ]
+      },
+      "SystemMetricsHistoryDto": {
+        "type": "object",
+        "properties": {
+          "metricType": {
+            "type": "string",
+            "description": "نوع المقياس"
+          },
+          "data": {
+            "description": "البيانات التاريخية",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "statistics": {
+            "type": "object",
+            "description": "الإحصائيات"
+          }
+        },
+        "required": [
+          "metricType",
+          "data",
+          "statistics"
+        ]
+      },
+      "SystemAlertsDto": {
+        "type": "object",
+        "properties": {
+          "alerts": {
+            "description": "قائمة التنبيهات",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "activeAlertsCount": {
+            "type": "number",
+            "description": "عدد التنبيهات النشطة"
+          },
+          "criticalAlertsCount": {
+            "type": "number",
+            "description": "عدد التنبيهات الحرجة"
+          }
+        },
+        "required": [
+          "alerts",
+          "activeAlertsCount",
+          "criticalAlertsCount"
+        ]
+      },
+      "CreateErrorLogDto": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string",
+            "description": "مستوى الخطأ",
+            "enum": [
+              "error",
+              "warn",
+              "fatal",
+              "debug"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "description": "فئة الخطأ",
+            "enum": [
+              "database",
+              "api",
+              "authentication",
+              "validation",
+              "business_logic",
+              "external_service",
+              "system",
+              "unknown"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "رسالة الخطأ"
+          },
+          "stack": {
+            "type": "string",
+            "description": "Stack trace"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "معلومات إضافية"
+          },
+          "userId": {
+            "type": "string",
+            "description": "معرف المستخدم (إن وجد)"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "مسار الطلب (endpoint)"
+          },
+          "method": {
+            "type": "string",
+            "description": "طريقة HTTP"
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "رمز حالة HTTP"
+          }
+        },
+        "required": [
+          "level",
+          "category",
+          "message"
+        ]
+      },
+      "ErrorLogDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "معرف السجل"
+          },
+          "level": {
+            "type": "string",
+            "description": "مستوى الخطأ",
+            "enum": [
+              "error",
+              "warn",
+              "fatal",
+              "debug"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "description": "فئة الخطأ",
+            "enum": [
+              "database",
+              "api",
+              "authentication",
+              "validation",
+              "business_logic",
+              "external_service",
+              "system",
+              "unknown"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "رسالة الخطأ"
+          },
+          "stack": {
+            "type": "string",
+            "description": "Stack trace"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "معلومات إضافية"
+          },
+          "userId": {
+            "type": "string",
+            "description": "معرف المستخدم"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "مسار الطلب"
+          },
+          "method": {
+            "type": "string",
+            "description": "طريقة HTTP"
+          },
+          "statusCode": {
+            "type": "number",
+            "description": "رمز حالة HTTP"
+          },
+          "occurrences": {
+            "type": "number",
+            "description": "عدد التكرارات"
+          },
+          "firstOccurrence": {
+            "format": "date-time",
+            "type": "string",
+            "description": "أول ظهور"
+          },
+          "lastOccurrence": {
+            "format": "date-time",
+            "type": "string",
+            "description": "آخر ظهور"
+          },
+          "resolved": {
+            "type": "boolean",
+            "description": "هل تم الحل؟"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "تاريخ الإنشاء"
+          }
+        },
+        "required": [
+          "id",
+          "level",
+          "category",
+          "message",
+          "stack",
+          "metadata",
+          "userId",
+          "endpoint",
+          "method",
+          "statusCode",
+          "occurrences",
+          "firstOccurrence",
+          "lastOccurrence",
+          "resolved",
+          "createdAt"
+        ]
+      },
+      "ErrorStatisticsDto": {
+        "type": "object",
+        "properties": {
+          "totalErrors": {
+            "type": "number",
+            "description": "إجمالي الأخطاء"
+          },
+          "last24Hours": {
+            "type": "number",
+            "description": "الأخطاء في آخر 24 ساعة"
+          },
+          "last7Days": {
+            "type": "number",
+            "description": "الأخطاء في آخر 7 أيام"
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "معدل الأخطاء (نسبة مئوية)"
+          },
+          "byLevel": {
+            "type": "object",
+            "description": "الأخطاء حسب المستوى"
+          },
+          "byCategory": {
+            "type": "object",
+            "description": "الأخطاء حسب الفئة"
+          },
+          "topErrors": {
+            "description": "أكثر الأخطاء تكراراً",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "byEndpoint": {
+            "description": "الأخطاء حسب نقطة النهاية",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "totalErrors",
+          "last24Hours",
+          "last7Days",
+          "errorRate",
+          "byLevel",
+          "byCategory",
+          "topErrors",
+          "byEndpoint"
+        ]
+      },
+      "ErrorTrendDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "البيانات التاريخية",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "trend": {
+            "type": "string",
+            "description": "الاتجاه"
+          },
+          "changePercentage": {
+            "type": "number",
+            "description": "نسبة التغيير (%)"
+          }
+        },
+        "required": [
+          "data",
+          "trend",
+          "changePercentage"
+        ]
+      },
+      "CreateTranslationDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "مفتاح الترجمة",
+            "example": "auth.welcome"
+          },
+          "ar": {
+            "type": "string",
+            "description": "النص بالعربية"
+          },
+          "en": {
+            "type": "string",
+            "description": "النص بالإنجليزية"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "المساحة/الوحدة",
+            "enum": [
+              "common",
+              "auth",
+              "products",
+              "orders",
+              "services",
+              "users",
+              "settings",
+              "errors",
+              "validation",
+              "notifications"
+            ],
+            "default": "common"
+          },
+          "description": {
+            "type": "string",
+            "description": "وصف/ملاحظة"
+          }
+        },
+        "required": [
+          "key",
+          "ar",
+          "en"
+        ]
+      },
+      "TranslationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "المعرف"
+          },
+          "key": {
+            "type": "string",
+            "description": "مفتاح الترجمة"
+          },
+          "ar": {
+            "type": "string",
+            "description": "النص بالعربية"
+          },
+          "en": {
+            "type": "string",
+            "description": "النص بالإنجليزية"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "المساحة/الوحدة",
+            "enum": [
+              "common",
+              "auth",
+              "products",
+              "orders",
+              "services",
+              "users",
+              "settings",
+              "errors",
+              "validation",
+              "notifications"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "الوصف"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "تاريخ الإنشاء"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "تاريخ آخر تحديث"
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "آخر من قام بالتحديث"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "ar",
+          "en",
+          "namespace",
+          "description",
+          "createdAt",
+          "updatedAt",
+          "updatedBy"
+        ]
+      },
+      "TranslationStatsDto": {
+        "type": "object",
+        "properties": {
+          "totalTranslations": {
+            "type": "number",
+            "description": "إجمالي الترجمات"
+          },
+          "byNamespace": {
+            "type": "object",
+            "description": "الترجمات حسب المساحة"
+          },
+          "missingArabic": {
+            "type": "number",
+            "description": "الترجمات المفقودة بالعربية"
+          },
+          "missingEnglish": {
+            "type": "number",
+            "description": "الترجمات المفقودة بالإنجليزية"
+          },
+          "arabicCompleteness": {
+            "type": "number",
+            "description": "نسبة الاكتمال بالعربية (%)"
+          },
+          "englishCompleteness": {
+            "type": "number",
+            "description": "نسبة الاكتمال بالإنجليزية (%)"
+          },
+          "recentUpdates": {
+            "description": "آخر التحديثات",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "totalTranslations",
+          "byNamespace",
+          "missingArabic",
+          "missingEnglish",
+          "arabicCompleteness",
+          "englishCompleteness",
+          "recentUpdates"
+        ]
+      },
+      "BulkImportDto": {
+        "type": "object",
+        "properties": {
+          "translations": {
+            "type": "object",
+            "description": "ملف JSON للاستيراد",
+            "example": {
+              "auth.welcome": {
+                "ar": "مرحبا",
+                "en": "Welcome"
+              },
+              "auth.login": {
+                "ar": "تسجيل الدخول",
+                "en": "Login"
+              }
+            }
+          },
+          "namespace": {
+            "type": "string",
+            "description": "المساحة/الوحدة",
+            "enum": [
+              "common",
+              "auth",
+              "products",
+              "orders",
+              "services",
+              "users",
+              "settings",
+              "errors",
+              "validation",
+              "notifications"
+            ]
+          },
+          "overwrite": {
+            "type": "boolean",
+            "description": "استبدال الترجمات الموجودة",
+            "default": false
+          }
+        },
+        "required": [
+          "translations"
+        ]
+      },
+      "UpdateTranslationDto": {
+        "type": "object",
+        "properties": {
+          "ar": {
+            "type": "string",
+            "description": "النص بالعربية"
+          },
+          "en": {
+            "type": "string",
+            "description": "النص بالإنجليزية"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "المساحة/الوحدة",
+            "enum": [
+              "common",
+              "auth",
+              "products",
+              "orders",
+              "services",
+              "users",
+              "settings",
+              "errors",
+              "validation",
+              "notifications"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "وصف/ملاحظة"
+          }
+        }
+      },
+      "CreateSettingDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "مفتاح الإعداد",
+            "example": "site_name"
+          },
+          "value": {
+            "type": "object",
+            "description": "قيمة الإعداد"
+          },
+          "category": {
+            "type": "string",
+            "description": "الفئة",
+            "enum": [
+              "general",
+              "email",
+              "payment",
+              "shipping",
+              "security",
+              "notifications",
+              "seo",
+              "advanced"
+            ],
+            "default": "general"
+          },
+          "type": {
+            "type": "string",
+            "description": "نوع البيانات",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "object",
+              "array"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "وصف الإعداد"
+          },
+          "isPublic": {
+            "type": "boolean",
+            "description": "هل هذا الإعداد عام (يمكن للمستخدمين رؤيته)؟"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "category"
+        ]
+      },
+      "SettingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "معرف الإعداد"
+          },
+          "key": {
+            "type": "string",
+            "description": "مفتاح الإعداد"
+          },
+          "value": {
+            "type": "object",
+            "description": "قيمة الإعداد"
+          },
+          "category": {
+            "type": "string",
+            "description": "الفئة",
+            "enum": [
+              "general",
+              "email",
+              "payment",
+              "shipping",
+              "security",
+              "notifications",
+              "seo",
+              "advanced"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "نوع البيانات"
+          },
+          "description": {
+            "type": "string",
+            "description": "الوصف"
+          },
+          "isPublic": {
+            "type": "boolean",
+            "description": "هل عام؟"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "آخر تحديث"
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "آخر من قام بالتحديث"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "value",
+          "category",
+          "type",
+          "description",
+          "isPublic",
+          "updatedAt",
+          "updatedBy"
+        ]
+      },
+      "BulkUpdateSettingsDto": {
+        "type": "object",
+        "properties": {
+          "settings": {
+            "type": "object",
+            "description": "الإعدادات المراد تحديثها",
+            "example": {
+              "site_name": "TagDoD",
+              "site_description": "منصة الطاقة الشمسية",
+              "maintenance_mode": false
+            }
+          }
+        },
+        "required": [
+          "settings"
+        ]
+      },
+      "UpdateSettingDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "object",
+            "description": "قيمة الإعداد"
+          },
+          "description": {
+            "type": "string",
+            "description": "الوصف"
+          }
+        },
+        "required": [
+          "value"
+        ]
       }
     }
   }

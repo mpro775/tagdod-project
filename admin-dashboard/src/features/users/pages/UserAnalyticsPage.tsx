@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
-  Grid,
   Card,
   CardContent,
   Typography,
@@ -20,11 +19,11 @@ import {
   CircularProgress,
   Alert,
   useTheme,
+  Grid,
 } from '@mui/material';
 import {
   TrendingUp,
   People,
-  ShoppingCart,
   AttachMoney,
   Warning,
   Star,
@@ -111,8 +110,7 @@ export const UserAnalyticsPage: React.FC = () => {
       setLoading(true);
       const response = await apiClient.get('/admin/user-analytics/overview');
       setOverallAnalytics(response.data.data);
-    } catch (error) {
-      console.error('Error fetching overall analytics:', error);
+    } catch  {
       toast.error('فشل تحميل الإحصائيات العامة');
     } finally {
       setLoading(false);
@@ -127,8 +125,7 @@ export const UserAnalyticsPage: React.FC = () => {
         params: { limit: 50 },
       });
       setCustomerRankings(response.data.data || []);
-    } catch (error) {
-      console.error('Error fetching customer rankings:', error);
+    } catch  {
       toast.error('فشل تحميل ترتيب العملاء');
     } finally {
       setLoading(false);
@@ -141,8 +138,7 @@ export const UserAnalyticsPage: React.FC = () => {
       setLoading(true);
       const response = await apiClient.get('/admin/user-analytics/reports/customer-segments');
       setCustomerSegments(response.data.data || response.data);
-    } catch (error) {
-      console.error('Error fetching customer segments:', error);
+    } catch  {
       toast.error('فشل تحميل شرائح العملاء');
     } finally {
       setLoading(false);
@@ -156,8 +152,7 @@ export const UserAnalyticsPage: React.FC = () => {
       const response = await apiClient.get('/admin/user-analytics/alerts/churn-risk');
       const data = response.data.data || response.data;
       setChurnRiskAlerts(data.customers || []);
-    } catch (error) {
-      console.error('Error fetching churn risk alerts:', error);
+    } catch  {
       toast.error('فشل تحميل تنبيهات المخاطر');
     } finally {
       setLoading(false);
@@ -235,7 +230,7 @@ export const UserAnalyticsPage: React.FC = () => {
       {/* KPI Cards */}
       {overallAnalytics && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -258,7 +253,7 @@ export const UserAnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -281,7 +276,7 @@ export const UserAnalyticsPage: React.FC = () => {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -384,7 +379,7 @@ export const UserAnalyticsPage: React.FC = () => {
         ) : customerRankings.length > 0 ? (
           <Grid container spacing={3}>
             {customerRankings.slice(0, 10).map((customer, index) => (
-              <Grid item xs={12} md={6} key={customer.userId}>
+              <Grid size={{ xs: 12, md: 6 }} key={customer.userId}>
                 <Card>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -435,7 +430,7 @@ export const UserAnalyticsPage: React.FC = () => {
         ) : customerSegments ? (
           <>
             <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Card sx={{ bgcolor: '#fef2f2' }}>
                   <CardContent>
                     <Typography variant="h4" color="error.main" fontWeight="bold">
@@ -448,7 +443,7 @@ export const UserAnalyticsPage: React.FC = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Card sx={{ bgcolor: '#fffbeb' }}>
                   <CardContent>
                     <Typography variant="h4" color="warning.main" fontWeight="bold">
@@ -461,7 +456,7 @@ export const UserAnalyticsPage: React.FC = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Card sx={{ bgcolor: '#eff6ff' }}>
                   <CardContent>
                     <Typography variant="h4" color="info.main" fontWeight="bold">
@@ -474,7 +469,7 @@ export const UserAnalyticsPage: React.FC = () => {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Card sx={{ bgcolor: '#f0fdf4' }}>
                   <CardContent>
                     <Typography variant="h4" color="success.main" fontWeight="bold">
@@ -517,7 +512,7 @@ export const UserAnalyticsPage: React.FC = () => {
         ) : churnRiskAlerts.length > 0 ? (
           <Grid container spacing={3}>
             {churnRiskAlerts.map((alert) => (
-              <Grid item xs={12} md={6} key={alert.userId}>
+              <Grid component="div" size={{ xs: 12, md: 6 }} key={alert.userId}>
                 <Card>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>

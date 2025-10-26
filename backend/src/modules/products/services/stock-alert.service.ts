@@ -6,6 +6,8 @@ import { Variant, VariantDocument } from '../schemas/variant.schema';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
 
+type PopulatedProduct = { name: string; nameEn: string };
+
 @Injectable()
 export class StockAlertService {
   private readonly logger = new Logger(StockAlertService.name);
@@ -45,7 +47,7 @@ export class StockAlertService {
    */
   async sendLowStockAlert(variant: VariantDocument): Promise<void> {
     try {
-      const product = variant.productId as any; // Populated product
+      const product = variant.productId as unknown as PopulatedProduct;
       const alert = {
         type: 'LOW_STOCK',
         variantId: variant._id.toString(),
@@ -110,7 +112,7 @@ export class StockAlertService {
    */
   async sendOutOfStockAlert(variant: VariantDocument): Promise<void> {
     try {
-      const product = variant.productId as any; // Populated product
+      const product = variant.productId as unknown as PopulatedProduct;
       const alert = {
         type: 'OUT_OF_STOCK',
         variantId: variant._id.toString(),
@@ -227,23 +229,29 @@ export class StockAlertService {
     return {
       lowStockCount: lowStockVariants.length,
       outOfStockCount: outOfStockVariants.length,
-      lowStockVariants: lowStockVariants.map(v => ({
-        variantId: v._id.toString(),
-        productId: v.productId.toString(),
-        productName: (v.productId as any).name,
-        productNameEn: (v.productId as any).nameEn,
-        sku: v.sku,
-        currentStock: v.stock,
-        minStock: v.minStock
-      })),
+      lowStockVariants: lowStockVariants.map(v => {
+        const product = v.productId as unknown as PopulatedProduct;
+        return {
+          variantId: v._id.toString(),
+          productId: v.productId.toString(),
+          productName: product.name,
+          productNameEn: product.nameEn,
+          sku: v.sku,
+          currentStock: v.stock,
+          minStock: v.minStock
+        };
+      }),
 
-      outOfStockVariants: outOfStockVariants.map(v => ({
-        variantId: v._id.toString(),
-        productId: v.productId.toString(),
-        productName: (v.productId as any).name,
-        productNameEn: (v.productId as any).nameEn,
-        sku: v.sku
-      }))
+      outOfStockVariants: outOfStockVariants.map(v => {
+        const product = v.productId as unknown as PopulatedProduct;
+        return {
+          variantId: v._id.toString(),
+          productId: v.productId.toString(),
+          productName: product.name,
+          productNameEn: product.nameEn,
+          sku: v.sku
+        };
+      })
     };
   }
 }

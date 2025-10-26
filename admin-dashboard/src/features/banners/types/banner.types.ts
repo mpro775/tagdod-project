@@ -1,3 +1,4 @@
+// Enum values are used in BANNER_LOCATION_OPTIONS below
 export enum BannerLocation {
   HOME_TOP = 'home_top',
   HOME_MIDDLE = 'home_middle',
@@ -10,6 +11,7 @@ export enum BannerLocation {
   FOOTER = 'footer',
 }
 
+// Enum values are used in BANNER_PROMOTION_TYPE_OPTIONS below
 export enum BannerPromotionType {
   DISCOUNT = 'discount',
   FREE_SHIPPING = 'free_shipping',
@@ -105,9 +107,7 @@ export interface BannerListResponse {
 
 export interface BannerResponse {
   success: boolean;
-  data: {
-    data: Banner;
-  };
+  data: Banner;
 }
 
 export interface BannerListApiResponse {

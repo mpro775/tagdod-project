@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Card, CardContent, CardHeader, Typography } from '@mui/material';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from 'react';
 import { systemMonitoringApi } from '../api/systemMonitoringApi';
-import { Skeleton } from '@/shared/components/ui/skeleton';
+import { Skeleton } from '@mui/material';
+import { toast } from 'react-hot-toast';
 
 interface MetricsChartProps {
   metricType: 'cpu' | 'memory' | 'disk';
@@ -31,8 +32,8 @@ export function MetricsChart({ metricType, title, color }: MetricsChartProps) {
         }));
 
         setData(formattedData);
-      } catch (error) {
-        console.error('Error fetching chart data:', error);
+      } catch {
+        toast.error('فشل في تحميل بيانات المراقبة');
       } finally {
         setLoading(false);
       }
@@ -48,7 +49,7 @@ export function MetricsChart({ metricType, title, color }: MetricsChartProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
+          <Typography variant="h6">{title}</Typography>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[300px] w-full" />
@@ -60,7 +61,7 @@ export function MetricsChart({ metricType, title, color }: MetricsChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <Typography variant="h6">{title}</Typography>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>

@@ -3,7 +3,6 @@ import {
   Get,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuditService } from '../../shared/services/audit.service';

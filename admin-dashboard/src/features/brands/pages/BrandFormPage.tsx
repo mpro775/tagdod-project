@@ -24,6 +24,7 @@ import { FormInput } from '@/shared/components/Form/FormInput';
 import { ImageField } from '@/features/media';
 import { useBrand, useCreateBrand, useUpdateBrand } from '../hooks/useBrands';
 import type { CreateBrandDto, UpdateBrandDto } from '../types/brand.types';
+import { MediaCategory } from '@/features/media/types/media.types';
 
 const brandSchema = z.object({
   name: z
@@ -262,7 +263,7 @@ export const BrandFormPage: React.FC = () => {
                     setSelectedImage(media);
                     methods.setValue('image', media?.url || '');
                   }}
-                  category="brand"
+                  category={MediaCategory.BRAND}
                   helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
                   disabled={isSubmitting}
                 />
