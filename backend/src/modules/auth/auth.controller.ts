@@ -18,6 +18,7 @@ import { SetPasswordDto } from './dto/set-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdatePreferredCurrencyDto } from './dto/update-preferred-currency.dto';
+import { AdminLoginDto } from './dto/admin-login.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserRole, UserStatus } from '../users/schemas/user.schema';
@@ -493,6 +494,132 @@ export class AuthController {
       loginInfo: {
         phone: superAdmin.phone,
         password: 'Admin123!@#',
+      },
+    };
+  }
+
+  // ==================== تسجيل دخول الأدمن بكلمة المرور ====================
+  @Post('admin-login')
+  @ApiOperation({
+    summary: 'تسجيل دخول الأدمن/السوبر أدمن بكلمة المرور',
+    description: 'تسجيل دخول المسؤولين باستخدام رقم الهاتف وكلمة المرور'
+  })
+  @ApiBody({ type: AdminLoginDto })
+  @ApiCreatedResponse({
+    description: 'تم تسجيل الدخول بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            tokens: {
+              type: 'object',
+              properties: {
+                access: { type: 'string', description: 'Access Token' },
+                refresh: { type: 'string', description: 'Refresh Token' },
+              },
+            },
+            me: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                phone: { type: 'string' },
+                firstName: { type: 'string' },
+                lastName: { type: 'string' },
+                roles: { type: 'array', items: { type: 'string' } },
+                permissions: { type: 'array', items: { type: 'string' } },
+                isAdmin: { type: 'boolean' },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'بيانات غير صحيحة' })
+  @ApiUnauthorizedResponse({ description: 'كلمة المرور غير صحيحة' })
+  async adminLogin(@Body() body: AdminLoginDto) {
+    this.logger.log(`Admin login attempt for phone: ${body.phone}`);
+
+    // البحث عن المستخدم
+    const user = await this.userModel.findOne({ phone: body.phone });
+    if (!user) {
+      this.logger.warn(`Admin login failed - user not found: ${body.phone}`);
+      throw new AppException('AUTH_USER_NOT_FOUND', 'رقم الهاتف أو كلمة المرور غير صحيحة', null, 401);
+    }
+
+    // التحقق من كلمة المرور
+    if (!user.passwordHash) {
+      this.logger.warn(`Admin login failed - no password set: ${body.phone}`);
+      throw new AppException(
+        'AUTH_NO_PASSWORD',
+        'لم يتم تعيين كلمة مرور لهذا الحساب. يرجى استخدام OTP',
+        null,
+        400,
+      );
+    }
+
+    const isPasswordValid = await compare(body.password, user.passwordHash);
+    if (!isPasswordValid) {
+      this.logger.warn(`Admin login failed - invalid password: ${body.phone}`);
+      throw new AppException('AUTH_INVALID_PASSWORD', 'رقم الهاتف أو كلمة المرور غير صحيحة', null, 401);
+    }
+
+    // التحقق من حالة المستخدم
+    if (user.status !== UserStatus.ACTIVE) {
+      this.logger.warn(`Admin login failed - user not active: ${body.phone}`);
+      throw new AppException(
+        'AUTH_USER_NOT_ACTIVE',
+        'هذا الحساب غير نشط. يرجى التواصل مع الإدارة',
+        null,
+        403,
+      );
+    }
+
+    // حساب صلاحية الأدمن من الأدوار
+    const isAdminUser =
+      Array.isArray(user.roles) &&
+      (user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.SUPER_ADMIN));
+
+    // التحقق من الصلاحية
+    if (!isAdminUser) {
+      this.logger.warn(`Admin login failed - not an admin: ${body.phone}`);
+      throw new AppException(
+        'AUTH_NOT_ADMIN',
+        'هذا الحساب غير مصرح له بالدخول للوحة التحكم',
+        null,
+        403,
+      );
+    }
+
+    // إنشاء الـ Tokens
+    const payload = {
+      sub: String(user._id),
+      phone: user.phone,
+      isAdmin: isAdminUser,
+      roles: user.roles || [],
+      permissions: user.permissions || [],
+    };
+    const access = this.tokens.signAccess(payload);
+    const refresh = this.tokens.signRefresh(payload);
+
+    this.logger.log(`Admin login successful: ${body.phone}`);
+
+    return {
+      success: true,
+      data: {
+        tokens: { access, refresh },
+        me: {
+          id: String(user._id),
+          phone: user.phone,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          roles: user.roles || [],
+          permissions: user.permissions || [],
+          isAdmin: isAdminUser,
+        },
       },
     };
   }

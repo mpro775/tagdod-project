@@ -328,6 +328,49 @@ export class MarketingAdminController {
     return result;
   }
 
+  @Get('banners/analytics')
+  @ApiOperation({
+    summary: 'إحصائيات البانرات',
+    description: 'استرداد إحصائيات الأداء للبانرات الإعلانية'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد إحصائيات البانرات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            totalBanners: { type: 'number', example: 10, description: 'إجمالي عدد البانرات' },
+            activeBanners: { type: 'number', example: 7, description: 'عدد البانرات النشطة' },
+            totalViews: { type: 'number', example: 5420, description: 'إجمالي المشاهدات' },
+            totalClicks: { type: 'number', example: 342, description: 'إجمالي النقرات' },
+            averageCTR: { type: 'number', example: 6.31, description: 'متوسط معدل النقر (%)' },
+            topPerforming: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  title: { type: 'string' },
+                  views: { type: 'number' },
+                  clicks: { type: 'number' },
+                  ctr: { type: 'number' }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  async getBannersAnalytics() {
+    const analytics = await this.svc.getBannersAnalytics();
+    return analytics;
+  }
+
   @Get('banners/:id')
   @ApiOperation({
     summary: 'الحصول على بانر',

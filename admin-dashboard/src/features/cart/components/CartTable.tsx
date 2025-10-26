@@ -339,7 +339,14 @@ export const CartTable: React.FC<CartTableProps> = ({
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
       <TableContainer>
         <Table>
-          <TableHead>
+          <TableHead
+            sx={{
+              backgroundColor: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? theme.palette.grey[800]
+                  : theme.palette.grey[100],
+            }}
+          >
             <TableRow>
               <TableCell padding="checkbox">
                 <Checkbox
@@ -349,13 +356,13 @@ export const CartTable: React.FC<CartTableProps> = ({
                   color="primary"
                 />
               </TableCell>
-              <TableCell>المستخدم</TableCell>
-              <TableCell>الحالة</TableCell>
-              <TableCell>عدد المنتجات</TableCell>
-              <TableCell>القيمة الإجمالية</TableCell>
-              <TableCell>آخر نشاط</TableCell>
-              <TableCell>معلومات إضافية</TableCell>
-              <TableCell>الإجراءات</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المستخدم</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحالة</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>عدد المنتجات</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>القيمة الإجمالية</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>آخر نشاط</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>معلومات إضافية</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

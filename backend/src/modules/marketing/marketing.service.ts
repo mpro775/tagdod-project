@@ -320,6 +320,58 @@ export class MarketingService {
     await this.bannerModel.findByIdAndUpdate(id, { $inc: { clickCount: 1 } });
   }
 
+  async getBannersAnalytics() {
+    const totalBanners = await this.bannerModel.countDocuments({ deletedAt: null });
+    const activeBanners = await this.bannerModel.countDocuments({ 
+      deletedAt: null, 
+      isActive: true 
+    });
+
+    // Get aggregated stats
+    const stats = await this.bannerModel.aggregate([
+      { $match: { deletedAt: null } },
+      {
+        $group: {
+          _id: null,
+          totalViews: { $sum: '$viewCount' },
+          totalClicks: { $sum: '$clickCount' },
+        }
+      }
+    ]);
+
+    const totalViews = stats[0]?.totalViews || 0;
+    const totalClicks = stats[0]?.totalClicks || 0;
+    const averageCTR = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
+
+    // Get top performing banners
+    const topPerforming = await this.bannerModel
+      .find({ deletedAt: null })
+      .select('_id title viewCount clickCount')
+      .sort({ clickCount: -1 })
+      .limit(5)
+      .lean();
+
+    const topPerformingFormatted = topPerforming.map(banner => ({
+      id: banner._id.toString(),
+      title: banner.title,
+      views: banner.viewCount || 0,
+      clicks: banner.clickCount || 0,
+      ctr: banner.viewCount > 0 ? ((banner.clickCount || 0) / banner.viewCount) * 100 : 0
+    }));
+
+    return {
+      success: true,
+      data: {
+        totalBanners,
+        activeBanners,
+        totalViews,
+        totalClicks,
+        averageCTR: parseFloat(averageCTR.toFixed(2)),
+        topPerforming: topPerformingFormatted
+      }
+    };
+  }
+
   // ==================== Helper Methods ====================
 
   /**

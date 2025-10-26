@@ -6,19 +6,6 @@ import {
   Typography,
   Grid,
   Chip,
-  Button,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Avatar,
   IconButton,
   Dialog,
@@ -28,27 +15,25 @@ import {
   Stack,
   Tooltip,
   Skeleton,
-  Alert,
   Snackbar,
+  Button,
+  Alert,
 } from '@mui/material';
 import {
   RequestQuote,
-  LocationOn,
-  AttachMoney,
-  Search,
-  FilterList,
   Visibility,
-  Edit,
   CheckCircle,
   Cancel,
-  Block,
-  Refresh,
-  Download,
   TrendingUp,
   Schedule,
   Person,
   Assignment,
+  Refresh,
+  Download,
+  AttachMoney,
 } from '@mui/icons-material';
+import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useOffers, useOffersStatistics } from '../hooks/useServices';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 
@@ -76,11 +61,15 @@ export const OffersManagementPage: React.FC = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning' | 'info'>('success');
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 20,
+  });
 
   const { data: offersData, isLoading: isOffersLoading } = useOffers(filters);
   const { data: statistics, isLoading: isStatisticsLoading } = useOffersStatistics();
 
-  const offers = offersData || [];
+  const offers = offersData?.data || [];
   const isLoading = isOffersLoading || isStatisticsLoading;
 
   const handleFilterChange = (key: string, value: any) => {
@@ -125,6 +114,143 @@ export const OffersManagementPage: React.FC = () => {
     showSnackbar('تم إلغاء العرض', 'info');
   };
 
+  // تعريف الأعمدة
+  const columns: GridColDef[] = [
+    {
+      field: 'amount',
+      headerName: 'العرض',
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => (
+        <Box>
+          <Typography variant="body2" fontWeight="medium">
+            {formatCurrency(params.row.amount)}
+          </Typography>
+          {params.row.note && (
+            <Typography variant="caption" color="text.secondary">
+              {params.row.note.length > 50 
+                ? `${params.row.note.substring(0, 50)}...` 
+                : params.row.note
+              }
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
+    {
+      field: 'engineer',
+      headerName: 'المهندس',
+      minWidth: 180,
+      flex: 1.2,
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center">
+          <Avatar sx={{ mr: 1, bgcolor: 'primary.main', width: 32, height: 32 }}>
+            {params.row.engineer?.firstName?.charAt(0) || '?'}
+          </Avatar>
+          <Box>
+            <Typography variant="body2" fontWeight="medium">
+              {params.row.engineer?.firstName} {params.row.engineer?.lastName}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {params.row.engineer?.phone}
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      field: 'request',
+      headerName: 'الطلب',
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => (
+        <Box>
+          <Typography variant="body2" fontWeight="medium">
+            {params.row.request?.title}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {params.row.request?.type}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'distanceKm',
+      headerName: 'المسافة',
+      minWidth: 100,
+      flex: 0.7,
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center">
+          <Typography variant="body2">
+            {params.row.distanceKm ? `${params.row.distanceKm} كم` : '-'}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'الحالة',
+      minWidth: 100,
+      flex: 0.8,
+      renderCell: (params) => (
+        <Chip
+          label={getStatusLabel(params.row.status as keyof typeof statusLabels)}
+          color={getStatusColor(params.row.status as keyof typeof statusColors) as any}
+          size="small"
+        />
+      ),
+    },
+    {
+      field: 'createdAt',
+      headerName: 'التاريخ',
+      minWidth: 120,
+      flex: 0.8,
+      valueFormatter: (value) => formatDate(value as Date),
+    },
+    {
+      field: 'actions',
+      headerName: 'الإجراءات',
+      minWidth: 180,
+      flex: 1.2,
+      sortable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="عرض التفاصيل">
+            <IconButton
+              size="small"
+              onClick={() => handleViewDetails(params.row)}
+              color="primary"
+            >
+              <Visibility fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {params.row.status === 'OFFERED' && (
+            <>
+              <Tooltip title="قبول العرض">
+                <IconButton
+                  size="small"
+                  onClick={() => handleAcceptOffer(params.row)}
+                  color="success"
+                >
+                  <CheckCircle fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="رفض العرض">
+                <IconButton
+                  size="small"
+                  onClick={() => handleRejectOffer(params.row)}
+                  color="error"
+                >
+                  <Cancel fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+        </Stack>
+      ),
+    },
+  ];
+
   if (isLoading) {
     return (
       <Box>
@@ -133,7 +259,7 @@ export const OffersManagementPage: React.FC = () => {
             <Typography variant="h4" gutterBottom>
               إدارة العروض
             </Typography>
-            <Typography variant="body1" color="textSecondary">
+            <Typography variant="body1" color="text.secondary">
               إدارة وتتبع عروض المهندسين
             </Typography>
           </Box>
@@ -177,7 +303,7 @@ export const OffersManagementPage: React.FC = () => {
           <Typography variant="h4" gutterBottom>
             إدارة العروض
           </Typography>
-          <Typography variant="body1" color="textSecondary">
+          <Typography variant="body1" color="text.secondary">
             إدارة وتتبع عروض المهندسين
           </Typography>
         </Box>
@@ -198,13 +324,13 @@ export const OffersManagementPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="textSecondary" gutterBottom variant="body2">
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     إجمالي العروض
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1 }}>
                     {totalOffers}
                   </Typography>
-                  <Typography color="textSecondary" variant="body2">
+                  <Typography color="text.secondary" variant="body2">
                     جميع العروض
                   </Typography>
                 </Box>
@@ -221,13 +347,13 @@ export const OffersManagementPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="textSecondary" gutterBottom variant="body2">
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     العروض المقبولة
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1, color: 'success.main' }}>
                     {acceptedOffers}
                   </Typography>
-                  <Typography color="textSecondary" variant="body2">
+                  <Typography color="text.secondary" variant="body2">
                     تم قبولها
                   </Typography>
                 </Box>
@@ -244,13 +370,13 @@ export const OffersManagementPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="textSecondary" gutterBottom variant="body2">
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     العروض المعلقة
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1, color: 'warning.main' }}>
                     {pendingOffers}
                   </Typography>
-                  <Typography color="textSecondary" variant="body2">
+                  <Typography color="text.secondary" variant="body2">
                     في الانتظار
                   </Typography>
                 </Box>
@@ -267,13 +393,13 @@ export const OffersManagementPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="textSecondary" gutterBottom variant="body2">
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     إجمالي قيمة العروض
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1, color: 'info.main' }}>
                     {formatCurrency(totalValue)}
                   </Typography>
-                  <Typography color="textSecondary" variant="body2">
+                  <Typography color="text.secondary" variant="body2">
                     القيمة الإجمالية
                   </Typography>
                 </Box>
@@ -290,13 +416,13 @@ export const OffersManagementPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="textSecondary" gutterBottom variant="body2">
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     متوسط قيمة العرض
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1, color: 'secondary.main' }}>
                     {formatCurrency(averageOffer)}
                   </Typography>
-                  <Typography color="textSecondary" variant="body2">
+                  <Typography color="text.secondary" variant="body2">
                     المتوسط
                   </Typography>
                 </Box>
@@ -309,230 +435,21 @@ export const OffersManagementPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* الفلاتر */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            فلاتر البحث
-          </Typography>
-          <Grid container spacing={2} alignItems="center">
-            <Grid  size={{ xs: 12, sm: 6, md: 4 }}>
-              <TextField
-                fullWidth
-                label="البحث"
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                InputProps={{
-                  startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
-              />
-            </Grid>
-            
-            <Grid  size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>حالة العرض</InputLabel>
-                <Select
-                  value={filters.status}
-                  label="حالة العرض"
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                >
-                  <MenuItem value="">جميع الحالات</MenuItem>
-                  {Object.entries(statusLabels).map(([value, label]) => (
-                    <MenuItem key={value} value={value}>
-                      {label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-              <Grid  size={{ xs: 12, sm: 6, md: 4 }}>
-              <Button
-                variant="contained"
-                startIcon={<FilterList />}
-                fullWidth
-              >
-                تطبيق الفلاتر
-              </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-
       {/* جدول العروض */}
-      <Card>
-        <CardContent>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Box display="flex" alignItems="center">
-              <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
-                <RequestQuote />
-              </Avatar>
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  قائمة العروض
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {(offers as any[]).length} عرض مسجل
-                </Typography>
-              </Box>
-            </Box>
-            <Chip 
-              label={`${(offers as any[]).filter((o: any) => o.status === 'OFFERED').length} معلق`} 
-              color="warning" 
-              size="small" 
-            />
-          </Box>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>العرض</TableCell>
-                  <TableCell>المهندس</TableCell>
-                  <TableCell>الطلب</TableCell>
-                  <TableCell>المبلغ</TableCell>
-                  <TableCell>المسافة</TableCell>
-                  <TableCell>الحالة</TableCell>
-                  <TableCell>التاريخ</TableCell>
-                  <TableCell>الإجراءات</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(offers as any[]).map((offer: any) => (
-                  <TableRow key={offer._id}>
-                    <TableCell>
-                      <Box>
-                        <Typography variant="body2" fontWeight="medium">
-                          {formatCurrency(offer.amount)}
-                        </Typography>
-                        {offer.note && (
-                          <Typography variant="caption" color="textSecondary">
-                            {offer.note.length > 50 
-                              ? `${offer.note.substring(0, 50)}...` 
-                              : offer.note
-                            }
-                          </Typography>
-                        )}
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <Avatar sx={{ mr: 1, bgcolor: 'primary.main', width: 32, height: 32 }}>
-                          {offer.engineer?.firstName?.charAt(0) || '?'}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight="medium">
-                            {offer.engineer?.firstName} {offer.engineer?.lastName}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {offer.engineer?.phone}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Box>
-                        <Typography variant="body2" fontWeight="medium">
-                          {offer.request?.title}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {offer.request?.type}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="medium" color="success.main">
-                        {formatCurrency(offer.amount)}
-                      </Typography>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <LocationOn sx={{ mr: 0.5, fontSize: '1rem', color: 'text.secondary' }} />
-                        <Typography variant="body2">
-                          {offer.distanceKm ? `${offer.distanceKm} كم` : '-'}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Chip
-                        label={getStatusLabel(offer.status as keyof typeof statusLabels)}
-                        color={getStatusColor(offer.status as keyof typeof statusColors)}
-                        size="small"
-                      />
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Typography variant="body2">
-                        {formatDate(offer.createdAt)}
-                      </Typography>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Stack direction="row" spacing={1}>
-                        <Tooltip title="عرض التفاصيل">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewDetails(offer)}
-                            color="primary"
-                          >
-                            <Visibility />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="تعديل">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditOffer(offer)}
-                            color="info"
-                          >
-                            <Edit />
-                          </IconButton>
-                        </Tooltip>
-                        {offer.status === 'OFFERED' && (
-                          <>
-                            <Tooltip title="قبول العرض">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleAcceptOffer(offer)}
-                                color="success"
-                              >
-                                <CheckCircle />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="رفض العرض">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleRejectOffer(offer)}
-                                color="error"
-                              >
-                                <Cancel />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        )}
-                        {offer.status !== 'CANCELLED' && (
-                          <Tooltip title="إلغاء العرض">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleCancelOffer(offer)}
-                              color="warning"
-                            >
-                              <Block />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+      <Box sx={{ mb: 2 }}>
+        <DataTable
+          title={`قائمة العروض (${offers.length} عرض • ${offers.filter((o: any) => o.status === 'OFFERED').length} معلق)`}
+          columns={columns}
+          rows={offers}
+          loading={isOffersLoading}
+          searchPlaceholder="البحث في العروض..."
+          onSearch={(search) => handleFilterChange('search', search)}
+          getRowId={(row: any) => row._id}
+          height="calc(100vh - 450px)"
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+        />
+      </Box>
 
       {/* حوار تفاصيل العرض */}
       <Dialog open={detailsDialogOpen} onClose={() => setDetailsDialogOpen(false)} maxWidth="md" fullWidth>
@@ -557,14 +474,14 @@ export const OffersManagementPage: React.FC = () => {
                           <Typography variant="h6">
                             {formatCurrency(selectedOffer.amount)}
                           </Typography>
-                          <Typography variant="body2" color="textSecondary">
+                          <Typography variant="body2" color="text.secondary">
                             قيمة العرض
                           </Typography>
                         </Box>
                       </Box>
                       {selectedOffer.note && (
                         <Box>
-                          <Typography variant="body2" color="textSecondary" gutterBottom>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
                             ملاحظات:
                           </Typography>
                           <Typography variant="body2">
@@ -590,7 +507,7 @@ export const OffersManagementPage: React.FC = () => {
                           <Typography variant="h6">
                             {selectedOffer.engineer?.firstName} {selectedOffer.engineer?.lastName}
                           </Typography>
-                          <Typography variant="body2" color="textSecondary">
+                          <Typography variant="body2" color="text.secondary">
                             {selectedOffer.engineer?.phone}
                           </Typography>
                         </Box>
@@ -613,7 +530,7 @@ export const OffersManagementPage: React.FC = () => {
                           <Typography variant="h6">
                             {selectedOffer.request?.title}
                           </Typography>
-                          <Typography variant="body2" color="textSecondary">
+                          <Typography variant="body2" color="text.secondary">
                             {selectedOffer.request?.type}
                           </Typography>
                         </Box>

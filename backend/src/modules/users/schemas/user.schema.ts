@@ -41,6 +41,9 @@ export class User {
   @Prop() gender?: 'male' | 'female' | 'other';
   @Prop() jobTitle?: string; // المسمى الوظيفي للمهندس
   @Prop() passwordHash?: string;
+  
+  // معلومات الموقع
+  @Prop({ default: 'صنعاء' }) city?: string; // المدينة (للمهندسين وطلبات الخدمات)
 
   // نظام الصلاحيات الموحد
   @Prop({ type: [String], default: ['user'] }) roles!: UserRole[]; // الأدوار

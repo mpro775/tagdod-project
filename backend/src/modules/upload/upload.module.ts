@@ -4,6 +4,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { UploadController } from './upload.controller';
 import { UploadService } from './upload.service';
 import { MediaController } from './media.controller';
+import { MediaAnalyticsController } from './media-analytics.controller';
 import { MediaService } from './media.service';
 import { Media, MediaSchema } from './schemas/media.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
@@ -27,7 +28,7 @@ import { SharedModule } from '../../shared/shared.module';
     AuthModule,
     SharedModule,
   ],
-  controllers: [UploadController, MediaController],
+  controllers: [UploadController, MediaController, MediaAnalyticsController],
   providers: [UploadService, MediaService],
   exports: [UploadService, MediaService], // Export services so other modules can use them
 })

@@ -128,7 +128,7 @@ export const SupportTicketsListPage: React.FC = () => {
         <Paper sx={{ p: 2, mb: 3 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="body1">
-              عرض {data.data.data.length} من أصل {data.data.meta?.total || 0} تذكرة
+              عرض {Array.isArray(data.data) ? data.data.length : 0} من أصل {data.meta?.total || 0} تذكرة
             </Typography>
             <Stack direction="row" spacing={1}>
               {Object.entries(filters as any)
@@ -156,9 +156,9 @@ export const SupportTicketsListPage: React.FC = () => {
       {/* Tickets Grid */}
       {isLoading ? (
         renderSkeletons()
-      ) : data?.data?.data && data.data.data.length > 0 ? (
+      ) : data?.data && Array.isArray(data.data) && data.data.length > 0 ? (
         <Grid container spacing={3}>
-          {data.data.data.map((ticket) => (
+          {data.data.map((ticket) => (
             <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={ticket._id}>
               <SupportTicketCard
                 ticket={ticket}
@@ -181,10 +181,10 @@ export const SupportTicketsListPage: React.FC = () => {
       )}
 
       {/* Pagination */}
-      {data?.data?.meta && data.data.meta.total > pageSize && (
+      {data?.meta && data.meta.total > pageSize && (
         <Box mt={3} display="flex" justifyContent="center">
           <Stack direction="row" spacing={1}>
-            {Array.from({ length: Math.ceil(data.data.meta.total / pageSize) }, (_, i) => (
+            {Array.from({ length: Math.ceil(data.meta.total / pageSize) }, (_, i) => (
               <Button
                 key={i + 1}
                 variant={currentPage === i + 1 ? 'contained' : 'outlined'}

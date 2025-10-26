@@ -5,3 +5,4 @@ export { AuthStepper } from './AuthStepper';
 export { AuthBackground } from './AuthBackground';
 export { LoadingOverlay } from './LoadingOverlay';
 export { DevLoginStep } from './DevLoginStep';
+export { PasswordLoginStep } from './PasswordLoginStep';

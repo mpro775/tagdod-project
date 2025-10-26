@@ -39,6 +39,7 @@ import {
   CheckCircle,
   Error,
   Warning,
+  LocationCity,
 } from '@mui/icons-material';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -50,6 +51,7 @@ import {
 } from '../hooks/useServices';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 import type { ServiceStatus } from '../types/service.types';
+import { getCityEmoji } from '@/shared/constants/yemeni-cities';
 
 const statusColors: Record<ServiceStatus, 'default' | 'primary' | 'success' | 'error' | 'warning'> =
   {
@@ -217,7 +219,7 @@ export const ServicesListPage: React.FC = () => {
             <Typography variant="body2" fontWeight="medium">
               {params.value}
             </Typography>
-            <Typography variant="caption" color="textSecondary">
+            <Typography variant="caption" color="text.secondary">
               {params.row.type}
             </Typography>
           </Box>
@@ -237,11 +239,25 @@ export const ServicesListPage: React.FC = () => {
             <Typography variant="body2" fontWeight="medium">
               {params.value?.firstName} {params.value?.lastName}
             </Typography>
-            <Typography variant="caption" color="textSecondary">
+            <Typography variant="caption" color="text.secondary">
               {params.value?.phone}
             </Typography>
           </Box>
         </Box>
+      ),
+    },
+    {
+      field: 'city',
+      headerName: 'المدينة',
+      width: 140,
+      renderCell: (params) => (
+        <Chip
+          icon={<LocationCity />}
+          label={`${getCityEmoji(params.value || 'صنعاء')} ${params.value || 'صنعاء'}`}
+          size="small"
+          color="primary"
+          variant="outlined"
+        />
       ),
     },
     {
@@ -258,7 +274,7 @@ export const ServicesListPage: React.FC = () => {
               <Typography variant="body2" fontWeight="medium">
                 {params.value.firstName} {params.value.lastName}
               </Typography>
-              <Typography variant="caption" color="textSecondary">
+              <Typography variant="caption" color="text.secondary">
                 {params.value.phone}
               </Typography>
             </Box>
@@ -268,7 +284,7 @@ export const ServicesListPage: React.FC = () => {
             <Avatar sx={{ bgcolor: 'grey.300', width: 32, height: 32 }}>
               <Engineering />
             </Avatar>
-            <Typography variant="body2" color="textSecondary">
+            <Typography variant="body2" color="text.secondary">
               غير مُعيَّن
             </Typography>
           </Box>
@@ -287,7 +303,7 @@ export const ServicesListPage: React.FC = () => {
             </Typography>
           </Box>
         ) : (
-          <Typography variant="body2" color="textSecondary">
+          <Typography variant="body2" color="text.secondary">
             -
           </Typography>
         ),
@@ -531,6 +547,15 @@ export const ServicesListPage: React.FC = () => {
                       <strong>الوصف:</strong> {selectedService.description}
                     </Typography>
                     <Typography>
+                      <strong>المدينة:</strong>{' '}
+                      <Chip
+                        label={`${getCityEmoji(selectedService.city || 'صنعاء')} ${selectedService.city || 'صنعاء'}`}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </Typography>
+                    <Typography>
                       <strong>الحالة:</strong>{' '}
                       {statusLabels[selectedService.status as ServiceStatus]}
                     </Typography>
@@ -598,7 +623,7 @@ export const ServicesListPage: React.FC = () => {
                           <strong>التعليق:</strong> {selectedService.rating.comment}
                         </Typography>
                       )}
-                      <Typography variant="caption" color="textSecondary">
+                      <Typography variant="caption" color="text.secondary">
                         {formatDate(selectedService.rating.at)}
                       </Typography>
                     </Grid>
@@ -611,7 +636,7 @@ export const ServicesListPage: React.FC = () => {
                       {selectedService.adminNotes.map((note: any, index: number) => (
                         <Box key={index} sx={{ mb: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
                           <Typography variant="body2">{note.note}</Typography>
-                          <Typography variant="caption" color="textSecondary">
+                          <Typography variant="caption" color="text.secondary">
                             {formatDate(note.at)}
                           </Typography>
                         </Box>

@@ -97,6 +97,14 @@ export const authApi = {
   },
 
   /**
+   * تسجيل دخول الأدمن بكلمة المرور
+   */
+  adminLogin: async (data: { phone: string; password: string }) => {
+    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/admin-login', data);
+    return response.data.data;
+  },
+
+  /**
    * تسجيل دخول التطوير (للاستخدام في مرحلة التطوير فقط)
    */
   devLogin: async (data: { phone: string; password: string }) => {

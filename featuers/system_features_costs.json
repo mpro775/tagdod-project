@@ -69,11 +69,24 @@
         {"name": "الأمان والحماية", "description": "تشفير، حماية من الهجمات، GDPR", "hours": 0, "cost": 0},
         {"name": "مراقبة الصحة", "description": "فحوصات شاملة، مراقبة الخدمات الخارجية", "hours": 0, "cost": 0}
       ]
+    },
+    {
+      "name": "System Management (NEW)",
+      "name_ar": "أنظمة إدارة النظام (جديد)",
+      "total_hours": 106,
+      "total_cost": 6625,
+      "features": [
+        {"name": "مراقبة الأداء والموارد", "description": "مراقبة CPU/Memory/Disk، MongoDB، Redis، API Performance، تنبيهات تلقائية، رسوم بيانية حية", "hours": 22, "cost": 1375},
+        {"name": "إدارة الأخطاء والسجلات", "description": "تسجيل ذكي، Deduplication، تصنيف متقدم، إحصائيات شاملة، تصدير متعدد الصيغ", "hours": 26, "cost": 1625},
+        {"name": "إدارة نصوص التعريب", "description": "إدارة ترجمات عربي/إنجليزي، Namespaces، استيراد/تصدير، إحصائيات الاكتمال، تتبع التغييرات", "hours": 30, "cost": 1875},
+        {"name": "إعدادات النظام المركزية", "description": "8 فئات شاملة، 30+ إعداد، تحديث فوري، واجهة Tabs منظمة، Public API", "hours": 28, "cost": 1750}
+      ]
     }
   ],
   "summary": {
-    "total_hours": 0,
-    "total_cost": 0,
+    "total_hours": 106,
+    "total_cost": 6625,
+    "new_systems_note": "تم إضافة 4 أنظمة جديدة متقدمة في المرحلة الثالثة",
     "payment_terms": {
       "deposit": "20% (0 دولار)",
       "milestone": "40% عند منتصف المشروع (0 دولار)",

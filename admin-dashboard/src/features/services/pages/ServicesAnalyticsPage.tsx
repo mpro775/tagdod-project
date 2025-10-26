@@ -146,7 +146,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
           <Typography variant="h4" gutterBottom>
             تحليلات الخدمات
           </Typography>
-          <Typography variant="body1" color="textSecondary">
+          <Typography variant="body1" color="text.secondary">
             تحليلات شاملة لأداء النظام والخدمات
           </Typography>
         </Box>
@@ -298,7 +298,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                       <Typography variant="h4" color="primary" sx={{ mb: 1 }}>
                         {stat.total}
                       </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         إجمالي الطلبات
                       </Typography>
 
@@ -310,7 +310,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             <Typography variant="h6" color="success.main">
                               {stat.completed}
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               مكتمل
                             </Typography>
                           </Box>
@@ -320,7 +320,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             <Typography variant="h6" color="error.main">
                               {stat.cancelled}
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               ملغي
                             </Typography>
                           </Box>
@@ -379,7 +379,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                           <Typography variant="h6" gutterBottom>
                             {engineer.engineerName}
                           </Typography>
-                          <Typography variant="body2" color="textSecondary">
+                          <Typography variant="body2" color="text.secondary">
                             {engineer.engineerPhone}
                           </Typography>
                         </Box>
@@ -391,7 +391,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             <Typography variant="h4" color="primary">
                               {engineer.totalRequests}
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               طلبات
                             </Typography>
                           </Box>
@@ -401,7 +401,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             <Typography variant="h4" color="success.main">
                               {engineer.completionRate.toFixed(1)}%
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               معدل الإنجاز
                             </Typography>
                           </Box>
@@ -411,7 +411,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             <Typography variant="h4" color="warning.main">
                               {engineer.averageRating.toFixed(1)}
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               التقييم
                             </Typography>
                           </Box>
@@ -421,7 +421,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             <Typography variant="h4" color="info.main">
                               {engineer.totalRevenue.toLocaleString()}
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               الإيرادات
                             </Typography>
                           </Box>
@@ -488,7 +488,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                         <Typography variant="h4" color="primary" sx={{ mb: 1 }}>
                           {serviceType.total}
                         </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                           إجمالي الطلبات
                         </Typography>
 
@@ -500,7 +500,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                               <Typography variant="h6" color="success.main">
                                 {serviceType.completed}
                               </Typography>
-                              <Typography variant="caption" color="textSecondary">
+                              <Typography variant="caption" color="text.secondary">
                                 مكتمل
                               </Typography>
                             </Box>
@@ -510,7 +510,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                               <Typography variant="h6" color="info.main">
                                 {serviceType.averageRevenue?.toFixed(0) || 0}
                               </Typography>
-                              <Typography variant="caption" color="textSecondary">
+                              <Typography variant="caption" color="text.secondary">
                                 متوسط السعر
                               </Typography>
                             </Box>
@@ -566,7 +566,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                       <Typography variant="h4" color="success.main" sx={{ mb: 1 }}>
                         {revenue.totalRevenue.toLocaleString()}
                       </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         إجمالي الإيرادات
                       </Typography>
 
@@ -578,7 +578,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             <Typography variant="h6" color="primary">
                               {revenue.requestsCount}
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               طلبات
                             </Typography>
                           </Box>
@@ -588,7 +588,7 @@ export const ServicesAnalyticsPage: React.FC = () => {
                             <Typography variant="h6" color="info.main">
                               {revenue.averageRevenue?.toFixed(0) || 0}
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               متوسط السعر
                             </Typography>
                           </Box>

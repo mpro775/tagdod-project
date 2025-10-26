@@ -63,6 +63,7 @@ export class ServicesService {
       type: dto.type,
       description: dto.description,
       images: dto.images || [],
+      city: dto.city || 'صنعاء', // المدينة مطلوبة، افتراضياً صنعاء
       addressId: addr._id,
       location,
       status: 'OPEN',
@@ -178,10 +179,18 @@ export class ServicesService {
   // ---- Engineer flows
   async nearby(engineerUserId: string, lat: number, lng: number, radiusKm: number) {
     const meters = radiusKm * 1000;
+    
+    // جلب مدينة المهندس
+    const engineer = await this.userModel.findById(engineerUserId).select('city').lean();
+    const engineerCity = engineer?.city || 'صنعاء'; // القيمة الافتراضية صنعاء
+    
+    this.logger.log(`Engineer ${engineerUserId} from city: ${engineerCity} searching for nearby requests`);
+    
     const list = await this.requests
       .find({
         status: { $in: ['OPEN', 'OFFERS_COLLECTING'] },
         engineerId: null,
+        city: engineerCity, // فقط الطلبات من نفس المدينة
         userId: { $ne: new Types.ObjectId(engineerUserId) }, // منع المهندس من رؤية طلباته الخاصة
         location: {
           $near: {
@@ -192,6 +201,8 @@ export class ServicesService {
       })
       .limit(100)
       .lean();
+      
+    this.logger.log(`Found ${list.length} nearby requests in city ${engineerCity}`);
     return list;
   }
 

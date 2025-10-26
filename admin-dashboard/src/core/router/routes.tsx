@@ -37,6 +37,11 @@ const CreateAdminPage = lazy(() =>
     default: m.CreateAdminPage,
   }))
 );
+const UserAnalyticsPage = lazy(() =>
+  import('@/features/users/pages/UserAnalyticsPage').then((m) => ({
+    default: m.UserAnalyticsPage,
+  }))
+);
 const ProductsListPage = lazy(() =>
   import('@/features/products/pages/ProductsListPage').then((m) => ({
     default: m.ProductsListPage,
@@ -45,6 +50,26 @@ const ProductsListPage = lazy(() =>
 const ProductFormPage = lazy(() =>
   import('@/features/products/pages/ProductFormPage').then((m) => ({
     default: m.ProductFormPage,
+  }))
+);
+const ProductsAnalyticsPage = lazy(() =>
+  import('@/features/products/pages/ProductsAnalyticsPage').then((m) => ({
+    default: m.ProductsAnalyticsPage,
+  }))
+);
+const InventoryPage = lazy(() =>
+  import('@/features/products/pages/InventoryPage').then((m) => ({
+    default: m.InventoryPage,
+  }))
+);
+const ProductVariantsPage = lazy(() =>
+  import('@/features/products/pages/ProductVariantsPage').then((m) => ({
+    default: m.ProductVariantsPage,
+  }))
+);
+const ProductViewPage = lazy(() =>
+  import('@/features/products/pages/ProductViewPage').then((m) => ({
+    default: m.ProductViewPage,
   }))
 );
 const CategoriesListPage = lazy(() =>
@@ -92,6 +117,11 @@ const AuditAnalyticsPage = lazy(() =>
     default: m.AuditAnalyticsPage,
   }))
 );
+const AuditMainPage = lazy(() =>
+  import('@/features/audit/pages/AuditMainPage').then((m) => ({
+    default: m.AuditMainPage,
+  }))
+);
 const OrdersListPage = lazy(() =>
   import('@/features/orders/pages/OrdersListPage').then((m) => ({
     default: m.OrdersListPage,
@@ -100,6 +130,11 @@ const OrdersListPage = lazy(() =>
 const OrderDetailsPage = lazy(() =>
   import('@/features/orders/pages/OrderDetailsPage').then((m) => ({
     default: m.OrderDetailsPage,
+  }))
+);
+const OrderAnalyticsPage = lazy(() =>
+  import('@/features/orders/pages/OrderAnalyticsPage').then((m) => ({
+    default: m.OrderAnalyticsPage,
   }))
 );
 const AnalyticsDashboardPage = lazy(() =>
@@ -122,6 +157,11 @@ const ReportsManagementPage = lazy(() =>
     default: m.ReportsManagementPage,
   }))
 );
+const AnalyticsMainPage = lazy(() =>
+  import('@/features/analytics/pages/AnalyticsMainPage').then((m) => ({
+    default: m.AnalyticsMainPage,
+  }))
+);
 const CouponsListPage = lazy(() =>
   import('@/features/coupons/pages/CouponsListPage').then((m) => ({
     default: m.CouponsListPage,
@@ -140,6 +180,11 @@ const CouponAnalyticsPage = lazy(() =>
 const MediaLibraryPage = lazy(() =>
   import('@/features/media/pages/MediaLibraryPage').then((m) => ({
     default: m.MediaLibraryPage,
+  }))
+);
+const MediaAnalyticsPage = lazy(() =>
+  import('@/features/media/pages/MediaAnalyticsPage').then((m) => ({
+    default: m.MediaAnalyticsPage,
   }))
 );
 const MarketingDashboardPage = lazy(() =>
@@ -185,6 +230,11 @@ const SupportTicketDetailsPage = lazy(() =>
 const SupportStatsPage = lazy(() =>
   import('@/features/support/pages/SupportStatsPage').then((m) => ({
     default: m.SupportStatsPage,
+  }))
+);
+const CannedResponsesPage = lazy(() =>
+  import('@/features/support/pages/CannedResponsesPage').then((m) => ({
+    default: m.CannedResponsesPage,
   }))
 );
 const NotificationsListPage = lazy(() =>
@@ -245,6 +295,10 @@ const CartAnalyticsPage = lazy(() =>
 const NotFoundPage = lazy(() => import('@/features/auth/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const ExchangeRatesPage = lazy(() => import('@/features/exchange-rates/pages/ExchangeRatesPage').then((m) => ({ default: m.default })));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage').then((m) => ({ default: m.default })));
+const SystemMonitoringPage = lazy(() => import('@/features/system-monitoring/pages/SystemMonitoringPage').then((m) => ({ default: m.SystemMonitoringPage })));
+const ErrorLogsPage = lazy(() => import('@/features/error-logs/pages/ErrorLogsPage').then((m) => ({ default: m.ErrorLogsPage })));
+const I18nManagementPage = lazy(() => import('@/features/i18n-management/pages/I18nManagementPage').then((m) => ({ default: m.I18nManagementPage })));
+const SystemSettingsPage = lazy(() => import('@/features/system-settings/pages/SystemSettingsPage').then((m) => ({ default: m.SystemSettingsPage })));
 
 export const routes: RouteObject[] = [
   // ===========================================
@@ -291,6 +345,10 @@ export const routes: RouteObject[] = [
         element: <UsersListPage />,
       },
       {
+        path: 'users/analytics',
+        element: <UserAnalyticsPage />,
+      },
+      {
         path: 'users/new',
         element: <UserFormPage />,
       },
@@ -319,6 +377,22 @@ export const routes: RouteObject[] = [
       {
         path: 'products/:id',
         element: <ProductFormPage />,
+      },
+      {
+        path: 'products/:id/view',
+        element: <ProductViewPage />,
+      },
+      {
+        path: 'products/:id/variants',
+        element: <ProductVariantsPage />,
+      },
+      {
+        path: 'products/analytics',
+        element: <ProductsAnalyticsPage />,
+      },
+      {
+        path: 'products/inventory',
+        element: <InventoryPage />,
       },
 
       // Categories
@@ -376,6 +450,10 @@ export const routes: RouteObject[] = [
         element: <OrdersListPage />,
       },
       {
+        path: 'orders/analytics',
+        element: <OrderAnalyticsPage />,
+      },
+      {
         path: 'orders/:id',
         element: <OrderDetailsPage />,
       },
@@ -386,6 +464,10 @@ export const routes: RouteObject[] = [
       {
         path: 'analytics',
         element: <AnalyticsDashboardPage />,
+      },
+      {
+        path: 'analytics/main',
+        element: <AnalyticsMainPage />,
       },
       {
         path: 'analytics/advanced',
@@ -438,30 +520,12 @@ export const routes: RouteObject[] = [
         element: <CouponFormPage />,
       },
       {
-        path: 'coupons/:id/analytics',
+        path: 'coupons/analytics',
         element: <CouponAnalyticsPage />,
       },
-      // Media routes
       {
-        path: 'media',
-        element: <MediaLibraryPage />,
-      },
-      // Marketing routes
-      {
-        path: 'marketing',
-        element: <MarketingDashboardPage />,
-      },
-      {
-        path: 'marketing/price-rules',
-        element: <PriceRulesListPage />,
-      },
-      {
-        path: 'marketing/price-rules/new',
-        element: <CreatePriceRulePage />,
-      },
-      {
-        path: 'marketing/price-rules/:id',
-        element: <CreatePriceRulePage />,
+        path: 'coupons/:id/analytics',
+        element: <CouponAnalyticsPage />,
       },
       // Banners
       {
@@ -515,12 +579,16 @@ export const routes: RouteObject[] = [
         element: <SupportTicketsListPage />,
       },
       {
-        path: 'support/:id',
-        element: <SupportTicketDetailsPage />,
-      },
-      {
         path: 'support/stats',
         element: <SupportStatsPage />,
+      },
+      {
+        path: 'support/canned-responses',
+        element: <CannedResponsesPage />,
+      },
+      {
+        path: 'support/:id',
+        element: <SupportTicketDetailsPage />,
       },
 
       // Notifications
@@ -561,6 +629,10 @@ export const routes: RouteObject[] = [
         element: <AuditLogsPage />,
       },
       {
+        path: 'audit/main',
+        element: <AuditMainPage />,
+      },
+      {
         path: 'audit/analytics',
         element: <AuditAnalyticsPage />,
       },
@@ -571,6 +643,10 @@ export const routes: RouteObject[] = [
       {
         path: 'media',
         element: <MediaLibraryPage />,
+      },
+      {
+        path: 'media/analytics',
+        element: <MediaAnalyticsPage />,
       },
 
       // ===========================================
@@ -587,6 +663,34 @@ export const routes: RouteObject[] = [
       {
         path: 'settings',
         element: <SettingsPage />,
+      },
+
+      // ===========================================
+      // SYSTEM MANAGEMENT (NEW)
+      // ===========================================
+
+      // System Monitoring
+      {
+        path: 'system/monitoring',
+        element: <SystemMonitoringPage />,
+      },
+
+      // Error & Logs Management
+      {
+        path: 'system/error-logs',
+        element: <ErrorLogsPage />,
+      },
+
+      // i18n Management
+      {
+        path: 'system/i18n',
+        element: <I18nManagementPage />,
+      },
+
+      // System Settings
+      {
+        path: 'system/settings',
+        element: <SystemSettingsPage />,
       },
     ],
   },

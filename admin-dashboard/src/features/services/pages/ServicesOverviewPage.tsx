@@ -50,7 +50,7 @@ const StatCard: React.FC<{
     <CardContent>
       <Box display="flex" alignItems="center" justifyContent="space-between">
         <Box flex={1}>
-          <Typography color="textSecondary" gutterBottom variant="body2" sx={{ mb: 1 }}>
+          <Typography color="text.secondary" gutterBottom variant="body2" sx={{ mb: 1 }}>
             {title}
           </Typography>
           {loading ? (
@@ -61,7 +61,7 @@ const StatCard: React.FC<{
             </Typography>
           )}
           {subtitle && (
-            <Typography color="textSecondary" variant="body2" sx={{ mb: 1 }}>
+            <Typography color="text.secondary" variant="body2" sx={{ mb: 1 }}>
               {subtitle}
             </Typography>
           )}
@@ -174,7 +174,7 @@ export const ServicesOverviewPage: React.FC = () => {
           <Typography variant="h4" gutterBottom>
             نظرة عامة على الخدمات
           </Typography>
-          <Typography variant="body1" color="textSecondary">
+          <Typography variant="body1" color="text.secondary">
             إحصائيات شاملة عن أداء النظام والخدمات
           </Typography>
         </Box>
@@ -274,7 +274,7 @@ export const ServicesOverviewPage: React.FC = () => {
                 sx={{ height: 12, borderRadius: 6, mb: 1 }}
                 color="success"
               />
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 من أصل {stats.totalRequests} طلب
               </Typography>
             </CardContent>
@@ -315,7 +315,7 @@ export const ServicesOverviewPage: React.FC = () => {
                 sx={{ height: 12, borderRadius: 6, mb: 1 }}
                 color="warning"
               />
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 بناءً على تقييمات العملاء
               </Typography>
             </CardContent>
@@ -339,7 +339,7 @@ export const ServicesOverviewPage: React.FC = () => {
               <Typography variant="h3" color="primary" sx={{ mb: 1 }}>
                 {formatNumber(stats.dailyRequests)}
               </Typography>
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 طلبات جديدة اليوم
               </Typography>
             </CardContent>
@@ -360,7 +360,7 @@ export const ServicesOverviewPage: React.FC = () => {
               <Typography variant="h3" color="info.main" sx={{ mb: 1 }}>
                 {formatNumber(stats.weeklyRequests)}
               </Typography>
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 طلبات جديدة هذا الأسبوع
               </Typography>
             </CardContent>
@@ -381,7 +381,7 @@ export const ServicesOverviewPage: React.FC = () => {
               <Typography variant="h3" color="success.main" sx={{ mb: 1 }}>
                 {formatNumber(stats.monthlyRequests)}
               </Typography>
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 طلبات جديدة هذا الشهر
               </Typography>
             </CardContent>
@@ -403,7 +403,7 @@ export const ServicesOverviewPage: React.FC = () => {
           <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Box display="flex" alignItems="center" gap={1}>
               <CheckCircle color="success" />
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 مكتمل:
               </Typography>
               <Typography variant="h6" color="success.main">
@@ -414,7 +414,7 @@ export const ServicesOverviewPage: React.FC = () => {
           <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Box display="flex" alignItems="center" gap={1}>
               <Cancel color="error" />
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 ملغي:
               </Typography>
               <Typography variant="h6" color="error.main">
@@ -425,7 +425,7 @@ export const ServicesOverviewPage: React.FC = () => {
           <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Box display="flex" alignItems="center" gap={1}>
               <Engineering color="primary" />
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 المهندسين:
               </Typography>
               <Typography variant="h6" color="primary.main">
@@ -436,7 +436,7 @@ export const ServicesOverviewPage: React.FC = () => {
             <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Box display="flex" alignItems="center" gap={1}>
               <AttachMoney color="warning" />
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.secondary">
                 الإيرادات:
               </Typography>
               <Typography variant="h6" color="warning.main">

@@ -7,16 +7,8 @@ import {
   Grid,
   Chip,
   Button,
-  TextField,
   Avatar,
   LinearProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   IconButton,
   Dialog,
   DialogTitle,
@@ -26,6 +18,7 @@ import {
   Alert,
   Stack,
   Tooltip,
+  TextField,
 } from '@mui/material';
 import {
   Engineering,
@@ -40,19 +33,27 @@ import {
   Cancel,
   Edit,
   Block,
+  LocationCity,
 } from '@mui/icons-material';
+import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useEngineers, useEngineersOverviewStatistics } from '../hooks/useServices';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
+import { getCityEmoji } from '@/shared/constants/yemeni-cities';
 
 export const EngineersManagementPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEngineer, setSelectedEngineer] = useState<any>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 20,
+  });
 
   const { data: engineersData, isLoading: isEngineersLoading, error: engineersError } = useEngineers({ search: searchTerm });
   const { data: engineersStats, isLoading: isStatsLoading, error: statsError } = useEngineersOverviewStatistics();
 
-  const engineers = engineersData || [];
+  const engineers = engineersData?.data || [];
   const stats = engineersStats || {};
   const isLoading = isEngineersLoading || isStatsLoading;
   const hasError = engineersError || statsError;
@@ -73,6 +74,174 @@ export const EngineersManagementPage: React.FC = () => {
     if (rate >= 60) return 'warning';
     return 'error';
   };
+
+  // تعريف الأعمدة
+  const columns: GridColDef[] = [
+    {
+      field: 'engineerName',
+      headerName: 'المهندس',
+      minWidth: 200,
+      flex: 1.5,
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center">
+          <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+            {params.row.engineerName.charAt(0)}
+          </Avatar>
+          <Box>
+            <Typography variant="body2" fontWeight="medium">
+              {params.row.engineerName}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {params.row.engineerPhone}
+            </Typography>
+            <Box display="flex" alignItems="center" mt={0.5}>
+              <Chip 
+                label={params.row.specialization || 'عام'} 
+                size="small" 
+                color="info" 
+                variant="outlined"
+              />
+            </Box>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      field: 'totalRequests',
+      headerName: 'الطلبات',
+      minWidth: 120,
+      flex: 0.8,
+      renderCell: (params) => (
+        <Box>
+          <Typography variant="body2" fontWeight="medium">
+            {formatNumber(params.row.totalRequests)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {formatNumber(params.row.completedRequests)} مكتمل
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'completionRate',
+      headerName: 'معدل الإنجاز',
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center">
+          <Typography variant="body2" sx={{ mr: 1 }}>
+            {params.row.completionRate.toFixed(1)}%
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={params.row.completionRate}
+            color={getCompletionRateColor(params.row.completionRate) as any}
+            sx={{ width: 60, height: 6, borderRadius: 3 }}
+          />
+        </Box>
+      ),
+    },
+    {
+      field: 'city',
+      headerName: 'المدينة',
+      minWidth: 130,
+      flex: 0.9,
+      renderCell: (params) => (
+        <Chip
+          icon={<LocationCity />}
+          label={`${getCityEmoji(params.row.city || 'صنعاء')} ${params.row.city || 'صنعاء'}`}
+          size="small"
+          color="primary"
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      field: 'averageRating',
+      headerName: 'التقييم',
+      minWidth: 100,
+      flex: 0.8,
+      renderCell: (params) => (
+        <Box display="flex" alignItems="center">
+          <Star 
+            sx={{ 
+              color: 'warning.main', 
+              mr: 0.5,
+              fontSize: '1rem'
+            }} 
+          />
+          <Chip
+            label={params.row.averageRating.toFixed(1)}
+            color={getRatingColor(params.row.averageRating) as any}
+            size="small"
+          />
+        </Box>
+      ),
+    },
+    {
+      field: 'totalRevenue',
+      headerName: 'الإيرادات',
+      minWidth: 120,
+      flex: 0.8,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="medium" color="success.main">
+          {formatCurrency(params.row.totalRevenue)}
+        </Typography>
+      ),
+    },
+    {
+      field: 'isActive',
+      headerName: 'الحالة',
+      minWidth: 100,
+      flex: 0.8,
+      renderCell: (params) => (
+        <Chip
+          label={params.row.isActive ? 'نشط' : 'غير نشط'}
+          color={params.row.isActive ? 'success' : 'default'}
+          size="small"
+          icon={params.row.isActive ? <CheckCircle /> : <Cancel />}
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'الإجراءات',
+      minWidth: 150,
+      flex: 1,
+      sortable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="عرض التفاصيل">
+            <IconButton
+              size="small"
+              onClick={() => handleViewDetails(params.row)}
+              color="primary"
+            >
+              <Visibility />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="تعديل">
+            <IconButton
+              size="small"
+              onClick={() => handleEditEngineer(params.row)}
+              color="info"
+            >
+              <Edit />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={params.row.isActive ? 'إيقاف' : 'تفعيل'}>
+            <IconButton
+              size="small"
+              onClick={() => handleToggleStatus(params.row)}
+              color={params.row.isActive ? 'warning' : 'success'}
+            >
+              <Block />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -162,7 +331,7 @@ export const EngineersManagementPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="textSecondary" gutterBottom variant="body2">
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     إجمالي المهندسين
                   </Typography>
                   <Typography variant="h4">
@@ -182,7 +351,7 @@ export const EngineersManagementPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="textSecondary" gutterBottom variant="body2">
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     متوسط التقييم
                   </Typography>
                   <Typography variant="h4">
@@ -202,7 +371,7 @@ export const EngineersManagementPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="textSecondary" gutterBottom variant="body2">
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     متوسط معدل الإنجاز
                   </Typography>
                   <Typography variant="h4">
@@ -222,7 +391,7 @@ export const EngineersManagementPage: React.FC = () => {
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography color="textSecondary" gutterBottom variant="body2">
+                  <Typography color="text.secondary" gutterBottom variant="body2">
                     إجمالي الإيرادات
                   </Typography>
                   <Typography variant="h4">
@@ -239,163 +408,20 @@ export const EngineersManagementPage: React.FC = () => {
       </Grid>
 
       {/* جدول المهندسين */}
-      <Card sx={{ mt: 3 }}>
-        <CardContent>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Box display="flex" alignItems="center">
-              <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
-                <Engineering />
-              </Avatar>
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  قائمة المهندسين
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {(engineers as any[]).length} مهندس مسجل
-                </Typography>
-              </Box>
-            </Box>
-            <Chip 
-              label={`${(engineers as any[]).filter((e: any) => e.isActive).length} نشط`} 
-              color="success" 
-              size="small" 
-            />
-          </Box>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>المهندس</TableCell>
-                  <TableCell>الطلبات</TableCell>
-                  <TableCell>معدل الإنجاز</TableCell>
-                  <TableCell>التقييم</TableCell>
-                  <TableCell>الإيرادات</TableCell>
-                  <TableCell>الحالة</TableCell>
-                  <TableCell>الإجراءات</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(engineers as any[]).map((engineer: any) => (
-                  <TableRow key={engineer.engineerId}>
-                    <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
-                          {engineer.engineerName.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight="medium">
-                            {engineer.engineerName}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {engineer.engineerPhone}
-                          </Typography>
-                          <Box display="flex" alignItems="center" mt={0.5}>
-                            <Chip 
-                              label={engineer.specialization || 'عام'} 
-                              size="small" 
-                              color="info" 
-                              variant="outlined"
-                            />
-                          </Box>
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Box>
-                        <Typography variant="body2" fontWeight="medium">
-                          {formatNumber(engineer.totalRequests)}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {formatNumber(engineer.completedRequests)} مكتمل
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <Typography variant="body2" sx={{ mr: 1 }}>
-                          {engineer.completionRate.toFixed(1)}%
-                        </Typography>
-                        <LinearProgress
-                          variant="determinate"
-                          value={engineer.completionRate}
-                          color={getCompletionRateColor(engineer.completionRate)}
-                          sx={{ width: 60, height: 6, borderRadius: 3 }}
-                        />
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <Star 
-                          sx={{ 
-                            color: 'warning.main', 
-                            mr: 0.5,
-                            fontSize: '1rem'
-                          }} 
-                        />
-                        <Chip
-                          label={engineer.averageRating.toFixed(1)}
-                          color={getRatingColor(engineer.averageRating)}
-                          size="small"
-                        />
-                      </Box>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="medium" color="success.main">
-                        {formatCurrency(engineer.totalRevenue)}
-                      </Typography>
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Chip
-                        label={engineer.isActive ? 'نشط' : 'غير نشط'}
-                        color={engineer.isActive ? 'success' : 'default'}
-                        size="small"
-                        icon={engineer.isActive ? <CheckCircle /> : <Cancel />}
-                      />
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Stack direction="row" spacing={1}>
-                        <Tooltip title="عرض التفاصيل">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewDetails(engineer)}
-                            color="primary"
-                          >
-                            <Visibility />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="تعديل">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditEngineer(engineer)}
-                            color="info"
-                          >
-                            <Edit />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="تغيير الحالة">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleToggleStatus(engineer)}
-                            color={engineer.isActive ? 'warning' : 'success'}
-                          >
-                            {engineer.isActive ? <Block /> : <CheckCircle />}
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+      <Box sx={{ mb: 2 }}>
+        <DataTable
+          title={`قائمة المهندسين (${engineers.length} مهندس • ${engineers.filter((e: any) => e.isActive).length} نشط)`}
+          columns={columns}
+          rows={engineers}
+          loading={isEngineersLoading}
+          searchPlaceholder="البحث عن مهندس..."
+          onSearch={setSearchTerm}
+          getRowId={(row: any) => row.engineerId}
+          height="calc(100vh - 450px)"
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+        />
+      </Box>
 
       {/* حوار تفاصيل المهندس */}
       <Dialog open={detailsDialogOpen} onClose={() => setDetailsDialogOpen(false)} maxWidth="md" fullWidth>
@@ -422,14 +448,14 @@ export const EngineersManagementPage: React.FC = () => {
                           </Typography>
                           <Box display="flex" alignItems="center">
                             <Phone sx={{ mr: 1, fontSize: '1rem', color: 'text.secondary' }} />
-                            <Typography variant="body2" color="textSecondary">
+                            <Typography variant="body2" color="text.secondary">
                               {selectedEngineer.engineerPhone}
                             </Typography>
                           </Box>
                           {selectedEngineer.engineerEmail && (
                             <Box display="flex" alignItems="center">
                               <Email sx={{ mr: 1, fontSize: '1rem', color: 'text.secondary' }} />
-                              <Typography variant="body2" color="textSecondary">
+                              <Typography variant="body2" color="text.secondary">
                                 {selectedEngineer.engineerEmail}
                               </Typography>
                             </Box>
@@ -452,7 +478,7 @@ export const EngineersManagementPage: React.FC = () => {
                             <Typography variant="h4" color="primary">
                               {formatNumber(selectedEngineer.totalRequests)}
                             </Typography>
-                            <Typography variant="body2" color="textSecondary">
+                            <Typography variant="body2" color="text.secondary">
                               إجمالي الطلبات
                             </Typography>
                           </Box>
@@ -462,7 +488,7 @@ export const EngineersManagementPage: React.FC = () => {
                             <Typography variant="h4" color="success.main">
                               {formatNumber(selectedEngineer.completedRequests)}
                             </Typography>
-                            <Typography variant="body2" color="textSecondary">
+                            <Typography variant="body2" color="text.secondary">
                               مكتمل
                             </Typography>
                           </Box>
@@ -472,7 +498,7 @@ export const EngineersManagementPage: React.FC = () => {
                             <Typography variant="h4" color="warning.main">
                               {selectedEngineer.averageRating.toFixed(1)}
                             </Typography>
-                            <Typography variant="body2" color="textSecondary">
+                            <Typography variant="body2" color="text.secondary">
                               التقييم المتوسط
                             </Typography>
                           </Box>
@@ -482,7 +508,7 @@ export const EngineersManagementPage: React.FC = () => {
                             <Typography variant="h4" color="info.main">
                               {formatCurrency(selectedEngineer.totalRevenue)}
                             </Typography>
-                            <Typography variant="body2" color="textSecondary">
+                            <Typography variant="body2" color="text.secondary">
                               إجمالي الإيرادات
                             </Typography>
                           </Box>
@@ -509,7 +535,7 @@ export const EngineersManagementPage: React.FC = () => {
                           sx={{ flexGrow: 1, height: 12, borderRadius: 6 }}
                         />
                       </Box>
-                      <Typography variant="body2" color="textSecondary" mt={1}>
+                      <Typography variant="body2" color="text.secondary" mt={1}>
                         {selectedEngineer.completedRequests} من أصل {selectedEngineer.totalRequests} طلب
                       </Typography>
                     </CardContent>

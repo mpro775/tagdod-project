@@ -325,12 +325,19 @@ export const CouponAnalyticsPage: React.FC = () => {
               <CardContent>
                 <TableContainer component={Paper}>
                   <Table>
-                    <TableHead>
+                    <TableHead
+                      sx={{
+                        backgroundColor: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.grey[800]
+                            : theme.palette.grey[100],
+                      }}
+                    >
                       <TableRow>
-                        <TableCell>المؤشر</TableCell>
-                        <TableCell align="right">القيمة</TableCell>
-                        <TableCell align="right">التغيير</TableCell>
-                        <TableCell align="right">النسبة</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المؤشر</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>القيمة</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>التغيير</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>النسبة</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>

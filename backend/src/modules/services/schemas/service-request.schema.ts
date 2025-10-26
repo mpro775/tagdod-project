@@ -21,6 +21,8 @@ export class ServiceRequest {
   @Prop() description?: string;
   @Prop({ type: [String], default: [] }) images!: string[];
 
+  // معلومات الموقع
+  @Prop({ required: true, default: 'صنعاء', index: true }) city!: string; // المدينة اليمنية
   @Prop({ type: Types.ObjectId, ref: 'Address' }) addressId?: string;
 
   // GeoJSON for nearby
@@ -72,5 +74,7 @@ ServiceRequestSchema.index({ title: 'text', description: 'text', type: 'text' })
 ServiceRequestSchema.index({ userId: 1, status: 1, createdAt: -1 });
 ServiceRequestSchema.index({ engineerId: 1, status: 1, createdAt: -1 });
 ServiceRequestSchema.index({ status: 1, createdAt: -1 });
+ServiceRequestSchema.index({ city: 1, status: 1 }); // فهرس للمدينة والحالة
+ServiceRequestSchema.index({ city: 1, createdAt: -1 }); // فهرس للمدينة والتاريخ
 ServiceRequestSchema.index({ scheduledAt: 1 }, { sparse: true });
 ServiceRequestSchema.index({ 'rating.score': 1 }, { sparse: true });

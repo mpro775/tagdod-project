@@ -36,6 +36,10 @@ import {
   Description,
   ViewModule,
   Security,
+  Monitor,
+  BugReport,
+  Translate,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +79,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       id: 'users',
       label: t('navigation.users'),
       icon: <People />,
-      path: '/users',
+      children: [
+        {
+          id: 'users-list',
+          label: t('navigation.usersList', 'قائمة المستخدمين'),
+          icon: <People />,
+          path: '/users',
+        },
+        {
+          id: 'users-analytics',
+          label: t('navigation.usersAnalytics', 'تحليلات المستخدمين'),
+          icon: <Assessment />,
+          path: '/users/analytics',
+        },
+      ],
     },
     {
       id: 'catalog',
@@ -86,7 +103,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           id: 'products',
           label: t('navigation.products'),
           icon: <Inventory />,
-          path: '/products',
+          children: [
+            {
+              id: 'products-list',
+              label: t('navigation.productsList', 'قائمة المنتجات'),
+              icon: <Inventory />,
+              path: '/products',
+            },
+            {
+              id: 'products-analytics',
+              label: t('navigation.productsAnalytics', 'تحليلات المنتجات'),
+              icon: <Assessment />,
+              path: '/products/analytics',
+            },
+            {
+              id: 'products-inventory',
+              label: t('navigation.productsInventory', 'إدارة المخزون'),
+              icon: <ViewModule />,
+              path: '/products/inventory',
+            },
+          ],
         },
         {
           id: 'categories',
@@ -117,25 +153,45 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           id: 'orders',
           label: t('navigation.orders'),
           icon: <Receipt />,
-          path: '/orders',
+          children: [
+            {
+              id: 'orders-list',
+              label: t('navigation.ordersList', 'قائمة الطلبات'),
+              icon: <Receipt />,
+              path: '/orders',
+            },
+            {
+              id: 'orders-analytics',
+              label: t('navigation.ordersAnalytics', 'تحليلات الطلبات'),
+              icon: <Assessment />,
+              path: '/orders/analytics',
+            },
+          ],
         },
         {
           id: 'carts',
           label: 'إدارة السلال',
           icon: <ShoppingCart />,
-          path: '/carts',
-        },
-        {
-          id: 'carts-abandoned',
-          label: 'السلال المتروكة',
-          icon: <ShoppingCart />,
-          path: '/carts/abandoned',
-        },
-        {
-          id: 'carts-analytics',
-          label: 'تحليلات السلة',
-          icon: <Assessment />,
-          path: '/carts/analytics',
+          children: [
+            {
+              id: 'carts-list',
+              label: 'قائمة السلال',
+              icon: <ShoppingCart />,
+              path: '/carts',
+            },
+            {
+              id: 'carts-abandoned',
+              label: 'السلال المتروكة',
+              icon: <ShoppingCart />,
+              path: '/carts/abandoned',
+            },
+            {
+              id: 'carts-analytics',
+              label: 'تحليلات السلة',
+              icon: <Assessment />,
+              path: '/carts/analytics',
+            },
+          ],
         },
       ],
     },
@@ -160,13 +216,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           id: 'banners',
           label: t('navigation.banners', 'البنرات'),
           icon: <Campaign />,
-          path: '/banners',
+          children: [
+            {
+              id: 'banners-list',
+              label: t('navigation.bannersList', 'قائمة البنرات'),
+              icon: <Campaign />,
+              path: '/banners',
+            },
+            {
+              id: 'banners-analytics',
+              label: t('navigation.bannersAnalytics', 'تحليلات البنرات'),
+              icon: <Assessment />,
+              path: '/banners/analytics',
+            },
+          ],
         },
         {
           id: 'coupons',
           label: t('navigation.coupons', 'الكوبونات'),
           icon: <LocalOffer />,
-          path: '/coupons',
+          children: [
+            {
+              id: 'coupons-list',
+              label: t('navigation.couponsList', 'قائمة الكوبونات'),
+              icon: <LocalOffer />,
+              path: '/coupons',
+            },
+            {
+              id: 'coupons-analytics',
+              label: t('navigation.couponsAnalytics', 'تحليلات الكوبونات'),
+              icon: <Assessment />,
+              path: '/coupons/analytics',
+            },
+          ],
         },
       ],
     },
@@ -211,7 +293,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
         id: 'media',
         label: t('navigation.media', 'مكتبة الوسائط'),
         icon: <PhotoLibrary />,
-        path: '/media',
+        children: [
+          {
+            id: 'media-library',
+            label: t('navigation.mediaLibrary', 'مكتبة الوسائط'),
+            icon: <PhotoLibrary />,
+            path: '/media',
+          },
+          {
+            id: 'media-analytics',
+            label: t('navigation.mediaAnalytics', 'إحصائيات الوسائط'),
+            icon: <Assessment />,
+            path: '/media/analytics',
+          },
+        ],
       },
       {
         id: 'analytics',
@@ -223,6 +318,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: t('navigation.analyticsDashboard', 'لوحة الإحصائيات'),
             icon: <Analytics />,
             path: '/analytics',
+          },
+          {
+            id: 'analytics-main',
+            label: t('navigation.analyticsMain', 'نظام التحليلات الشامل'),
+            icon: <Dashboard />,
+            path: '/analytics/main',
           },
           {
             id: 'analytics-advanced',
@@ -256,6 +357,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             path: '/audit',
           },
           {
+            id: 'audit-main',
+            label: t('navigation.auditMain', 'نظام التدقيق الشامل'),
+            icon: <Dashboard />,
+            path: '/audit/main',
+          },
+          {
             id: 'audit-analytics',
             label: t('navigation.auditAnalytics', 'تحليلات التدقيق'),
             icon: <Assessment />,
@@ -267,7 +374,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
         id: 'support',
         label: t('navigation.support', 'الدعم الفني'),
         icon: <Support />,
-        path: '/support',
+        children: [
+          {
+            id: 'support-tickets',
+            label: t('navigation.supportTickets', 'قائمة التذاكر'),
+            icon: <Support />,
+            path: '/support',
+          },
+          {
+            id: 'support-stats',
+            label: t('navigation.supportStats', 'إحصائيات الدعم'),
+            icon: <Assessment />,
+            path: '/support/stats',
+          },
+          {
+            id: 'support-canned-responses',
+            label: t('navigation.supportCannedResponses', 'الردود الجاهزة'),
+            icon: <ViewModule />,
+            path: '/support/canned-responses',
+          },
+        ],
       },
       {
         id: 'notifications',
@@ -291,6 +417,37 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: t('navigation.notificationsTemplates', 'قوالب الإشعارات'),
             icon: <ViewModule />,
             path: '/notifications/templates',
+          },
+        ],
+      },
+      {
+        id: 'system-management',
+        label: t('navigation.systemManagement', 'إدارة النظام'),
+        icon: <AdminPanelSettings />,
+        children: [
+          {
+            id: 'system-monitoring',
+            label: t('navigation.systemMonitoring', 'مراقبة الأداء'),
+            icon: <Monitor />,
+            path: '/system/monitoring',
+          },
+          {
+            id: 'error-logs',
+            label: t('navigation.errorLogs', 'سجلات الأخطاء'),
+            icon: <BugReport />,
+            path: '/system/error-logs',
+          },
+          {
+            id: 'i18n-management',
+            label: t('navigation.i18nManagement', 'نصوص التعريب'),
+            icon: <Translate />,
+            path: '/system/i18n',
+          },
+          {
+            id: 'system-settings',
+            label: t('navigation.systemSettings', 'إعدادات النظام'),
+            icon: <Settings />,
+            path: '/system/settings',
           },
         ],
       },

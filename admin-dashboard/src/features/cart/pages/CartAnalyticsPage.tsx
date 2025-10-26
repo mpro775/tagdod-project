@@ -83,11 +83,14 @@ export const CartAnalyticsPage: React.FC = () => {
     const recent = conversionRates.data.daily.slice(-7); // Last 7 days
     const older = conversionRates.data.daily.slice(-14, -7); // Previous 7 days
 
+    if (recent.length === 0 || older.length === 0) return 0;
+
     const recentAvg =
       recent.reduce((sum: number, day: any) => sum + day.conversionRate, 0) / recent.length;
     const olderAvg =
       older.reduce((sum: number, day: any) => sum + day.conversionRate, 0) / older.length;
 
+    if (olderAvg === 0) return 0;
     return ((recentAvg - olderAvg) / olderAvg) * 100;
   };
 
@@ -96,11 +99,14 @@ export const CartAnalyticsPage: React.FC = () => {
     const recent = conversionRates.data.daily.slice(-7);
     const older = conversionRates.data.daily.slice(-14, -7);
 
+    if (recent.length === 0 || older.length === 0) return 0;
+
     const recentAvg =
       recent.reduce((sum: number, day: any) => sum + day.abandonedCarts, 0) / recent.length;
     const olderAvg =
       older.reduce((sum: number, day: any) => sum + day.abandonedCarts, 0) / older.length;
 
+    if (olderAvg === 0) return 0;
     return ((recentAvg - olderAvg) / olderAvg) * 100;
   };
 
@@ -310,7 +316,7 @@ export const CartAnalyticsPage: React.FC = () => {
                     <Box display="flex" justifyContent="center" p={4}>
                       <CircularProgress />
                     </Box>
-                  ) : conversionRates ? (
+                  ) : conversionRates?.data ? (
                     <Box>
                       <Grid container spacing={2}>
                         <Grid size={{ xs: 12, md: 4 }}>
@@ -319,7 +325,7 @@ export const CartAnalyticsPage: React.FC = () => {
                               يومياً
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              آخر 7 أيام: {conversionRates.data.daily.slice(-7).length} أيام
+                              آخر 7 أيام: {conversionRates.data.daily?.slice(-7).length || 0} أيام
                             </Typography>
                           </Paper>
                         </Grid>
@@ -329,7 +335,7 @@ export const CartAnalyticsPage: React.FC = () => {
                               أسبوعياً
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              آخر 4 أسابيع: {conversionRates.data.weekly.length} أسابيع
+                              آخر 4 أسابيع: {conversionRates.data.weekly?.length || 0} أسابيع
                             </Typography>
                           </Paper>
                         </Grid>
@@ -339,7 +345,7 @@ export const CartAnalyticsPage: React.FC = () => {
                               شهرياً
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              آخر 12 شهر: {conversionRates.data.monthly.length} أشهر
+                              آخر 12 شهر: {conversionRates.data.monthly?.length || 0} أشهر
                             </Typography>
                           </Paper>
                         </Grid>

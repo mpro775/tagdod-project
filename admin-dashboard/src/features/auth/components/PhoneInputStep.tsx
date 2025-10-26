@@ -6,6 +6,7 @@ import {
   InputAdornment,
   CircularProgress,
   Typography,
+  Divider,
 } from '@mui/material';
 import { Phone } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
@@ -26,12 +27,14 @@ interface PhoneInputStepProps {
   onSubmit: (phone: string) => void; // eslint-disable-line no-unused-vars
   isLoading?: boolean;
   error?: string;
+  onSwitchToPassword?: () => void;
 }
 
 export const PhoneInputStep: React.FC<PhoneInputStepProps> = ({
   onSubmit,
   isLoading = false,
   error,
+  onSwitchToPassword,
 }) => {
   const form = useForm<PhoneFormData>({
     resolver: zodResolver(phoneSchema),
@@ -71,10 +74,30 @@ export const PhoneInputStep: React.FC<PhoneInputStepProps> = ({
         size="large"
         disabled={isLoading}
         startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
-        sx={{ py: 1.5 }}
+        sx={{ py: 1.5, mb: 2 }}
       >
         {isLoading ? 'جارٍ الإرسال...' : 'إرسال رمز التحقق'}
       </Button>
+
+      {onSwitchToPassword && (
+        <>
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              أو
+            </Typography>
+          </Divider>
+
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={onSwitchToPassword}
+            disabled={isLoading}
+            sx={{ py: 1.5 }}
+          >
+            تسجيل الدخول بكلمة المرور
+          </Button>
+        </>
+      )}
 
       <Typography
         variant="caption"

@@ -398,15 +398,22 @@ export const BannerAnalyticsPage: React.FC = () => {
           </Typography>
           <TableContainer>
             <Table>
-              <TableHead>
+              <TableHead
+                sx={{
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.grey[800]
+                      : theme.palette.grey[100],
+                }}
+              >
                 <TableRow>
-                  <TableCell>البانر</TableCell>
-                  <TableCell align="center">المشاهدات</TableCell>
-                  <TableCell align="center">النقرات</TableCell>
-                  <TableCell align="center">التحويلات</TableCell>
-                  <TableCell align="center">معدل النقر</TableCell>
-                  <TableCell align="center">معدل التحويل</TableCell>
-                  <TableCell align="center">الحالة</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>البانر</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>المشاهدات</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>النقرات</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>التحويلات</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>معدل النقر</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>معدل التحويل</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحالة</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

@@ -5,7 +5,8 @@ flowchart TD
   B --> B1[title: عنوان الطلب - مطلوب]
   B1 --> B2[description: الوصف - اختياري]
   B2 --> B3[images: الصور - اختياري]
-  B3 --> B4[addressId: معرف العنوان - اختياري]
+  B3 --> B3A[city: المدينة اليمنية - مطلوب - افتراضي صنعاء]
+  B3A --> B4[addressId: معرف العنوان - اختياري]
   B4 --> B5[location: الإحداثيات - مطلوب]
   B5 --> B6[type: نوع الخدمة - اختياري]
   B6 --> B7[scheduledAt: التاريخ المجدول - اختياري]
@@ -16,6 +17,7 @@ flowchart TD
   C2 --> C3[acceptedOffer: null]
   C3 --> C4[rating: null]
   C4 --> C5[adminNotes: empty]
+  C5 --> C6[city: المدينة المحددة]
 
   C5 --> D[تغيير الحالة]
   D --> D1[OPEN → OFFERS_COLLECTING]

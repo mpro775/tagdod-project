@@ -16,7 +16,6 @@ import { Edit, Delete, Restore } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { ResponsiveListWrapper } from '@/shared/components/ResponsiveList';
 import {
   useUsers,
   useDeleteUser,
@@ -405,7 +404,8 @@ export const UsersListPage: React.FC = () => {
         onClearFilters={handleClearFilters}
       />
 
-      <Box sx={{ mb: 2 }}>
+      {/* Desktop View - Table */}
+      <Box sx={{ mb: 2, display: { xs: 'none', md: 'block' } }}>
         <DataTable
           title="إدارة المستخدمين"
           columns={columns}
@@ -430,34 +430,24 @@ export const UsersListPage: React.FC = () => {
         />
       </Box>
 
-      {/* Responsive List for Mobile */}
-      <ResponsiveListWrapper
-        data={data?.data || []}
-        loading={isLoading}
-        columns={columns}
-        CardComponent={UserCard}
-        getRowId={(user) => user._id}
-        onEdit={(user) => navigate(`/users/${user._id}`)}
-        onDelete={handleDelete}
-        onView={(user) => navigate(`/users/${user._id}`)}
-        showActions={true}
-        cardBreakpoint="md"
-        emptyMessage="لا يوجد مستخدمون"
-        emptyDescription="لم يتم العثور على أي مستخدمين في النظام"
-        errorMessage="حدث خطأ أثناء تحميل المستخدمين"
-        cardContainerProps={{
-          sx: { 
-            display: { xs: 'block', md: 'none' },
-            px: 2 
-          }
-        }}
-        gridProps={{
-          sx: { 
-            display: { xs: 'none', md: 'block' },
-            height: screenSize < 600 ? "calc(100vh - 140px)" : "calc(100vh - 180px)"
-          }
-        }}
-      />
+      {/* Mobile View - Cards */}
+      <Box sx={{ display: { xs: 'block', md: 'none' }, px: 2 }}>
+        {isLoading ? (
+          <Box>جاري التحميل...</Box>
+        ) : (
+          (data?.data || []).map((user: User) => (
+            <UserCard
+              key={user._id}
+              user={user}
+              onEdit={() => navigate(`/users/${user._id}`)}
+              onDelete={() => handleDelete(user)}
+              onRestore={() => handleRestore(user)}
+              onStatusToggle={handleStatusToggle}
+              showActions={true}
+            />
+          ))
+        )}
+      </Box>
 
       {/* Confirmation Dialog */}
       <Dialog

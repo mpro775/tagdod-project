@@ -17,6 +17,7 @@ import {
   Stack,
 } from '@mui/material';
 import { Save, Cancel } from '@mui/icons-material';
+import { CitySelect } from '@/shared/components/CitySelect';
 
 interface ServiceFormProps {
   open: boolean;
@@ -58,6 +59,7 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
     } else if (type === 'engineer') {
       if (!formData.engineerName) newErrors.engineerName = 'اسم المهندس مطلوب';
       if (!formData.engineerPhone) newErrors.engineerPhone = 'رقم الهاتف مطلوب';
+      if (!formData.city) newErrors.city = 'المدينة مطلوبة';
     } else if (type === 'offer') {
       if (!formData.amount) newErrors.amount = 'المبلغ مطلوب';
       if (!formData.engineerId) newErrors.engineerId = 'المهندس مطلوب';
@@ -113,6 +115,15 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
             <MenuItem value="CONSULTATION">استشارة</MenuItem>
           </Select>
         </FormControl>
+      </Grid>
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <CitySelect
+          value={formData.city || 'صنعاء'}
+          onChange={(city) => handleInputChange('city', city)}
+          error={!!errors.city}
+          helperText={errors.city}
+          required
+        />
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
@@ -188,6 +199,14 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
             <MenuItem value="GENERAL">عام</MenuItem>
           </Select>
         </FormControl>
+      </Grid>
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <CitySelect
+          value={formData.city || 'صنعاء'}
+          onChange={(city) => handleInputChange('city', city)}
+          label="مدينة عمل المهندس"
+          required
+        />
       </Grid>
       <Grid size={{ xs: 12 }}>
         <TextField

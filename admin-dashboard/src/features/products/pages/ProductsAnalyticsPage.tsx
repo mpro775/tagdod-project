@@ -285,14 +285,21 @@ export const ProductsAnalyticsPage: React.FC = () => {
           {lowStockVariants && lowStockVariants.length > 0 ? (
             <TableContainer component={Paper}>
               <Table>
-                <TableHead>
+                <TableHead
+                  sx={{
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[800]
+                        : theme.palette.grey[100],
+                  }}
+                >
                   <TableRow>
-                    <TableCell>SKU</TableCell>
-                    <TableCell>المنتج</TableCell>
-                    <TableCell>المخزون الحالي</TableCell>
-                    <TableCell>الحد الأدنى</TableCell>
-                    <TableCell>السعر</TableCell>
-                    <TableCell>الإجراءات</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>SKU</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المنتج</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المخزون الحالي</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحد الأدنى</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>السعر</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -333,14 +340,21 @@ export const ProductsAnalyticsPage: React.FC = () => {
           {outOfStockVariants && outOfStockVariants.length > 0 ? (
             <TableContainer component={Paper}>
               <Table>
-                <TableHead>
+                <TableHead
+                  sx={{
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[800]
+                        : theme.palette.grey[100],
+                  }}
+                >
                   <TableRow>
-                    <TableCell>SKU</TableCell>
-                    <TableCell>المنتج</TableCell>
-                    <TableCell>المخزون</TableCell>
-                    <TableCell>الحد الأدنى</TableCell>
-                    <TableCell>السعر</TableCell>
-                    <TableCell>الإجراءات</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>SKU</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المنتج</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المخزون</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحد الأدنى</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>السعر</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>

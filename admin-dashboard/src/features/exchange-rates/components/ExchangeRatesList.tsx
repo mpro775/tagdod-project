@@ -163,24 +163,31 @@ export const ExchangeRatesList: React.FC<ExchangeRatesListProps> = ({
       <CardContent>
         <TableContainer component={Paper} variant="outlined">
           <Table>
-            <TableHead>
+            <TableHead
+              sx={{
+                backgroundColor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.grey[800]
+                    : theme.palette.grey[100],
+              }}
+            >
               <TableRow>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                <TableCell align="right" sx={{ fontWeight: 600, color: 'text.primary' }}>
                   العملة المصدر
                 </TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                <TableCell align="right" sx={{ fontWeight: 600, color: 'text.primary' }}>
                   العملة الهدف
                 </TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                <TableCell align="right" sx={{ fontWeight: 600, color: 'text.primary' }}>
                   السعر
                 </TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                <TableCell align="right" sx={{ fontWeight: 600, color: 'text.primary' }}>
                   الحالة
                 </TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                <TableCell align="right" sx={{ fontWeight: 600, color: 'text.primary' }}>
                   آخر تحديث
                 </TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                <TableCell align="right" sx={{ fontWeight: 600, color: 'text.primary' }}>
                   الإجراءات
                 </TableCell>
               </TableRow>

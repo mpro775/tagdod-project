@@ -179,7 +179,14 @@ export const DataTable: React.FC<DataTableProps> = ({
             cursor: onRowClick ? 'pointer' : 'default',
           },
           '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: 'background.paper',
+            backgroundColor: (theme) => 
+              theme.palette.mode === 'dark' 
+                ? theme.palette.grey[800] 
+                : theme.palette.grey[100],
+          },
+          '& .MuiDataGrid-columnHeaderTitle': {
+            fontWeight: 'bold',
+            color: 'text.primary',
           },
           '& .MuiDataGrid-cell': {
             fontSize: { xs: '0.75rem', sm: '0.875rem' },

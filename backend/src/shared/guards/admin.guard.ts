@@ -7,6 +7,11 @@ export class AdminGuard implements CanActivate {
     const req = context.switchToHttp().getRequest();
     const user = req.user;
 
+    // السوبر أدمن له صلاحية كاملة دائماً
+    if (user?.roles && Array.isArray(user.roles) && user.roles.includes(UserRole.SUPER_ADMIN)) {
+      return true;
+    }
+
     // التحقق من isAdmin من JWT payload
     if (user?.isAdmin === true) {
       return true;

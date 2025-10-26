@@ -461,6 +461,117 @@
         ]
       }
     },
+    "/api/v1/auth/admin-login": {
+      "post": {
+        "operationId": "adminLogin",
+        "summary": "تسجيل دخول الأدمن/السوبر أدمن بكلمة المرور",
+        "description": "تسجيل دخول المسؤولين باستخدام رقم الهاتف وكلمة المرور",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "example": "0501234567",
+                    "description": "رقم الهاتف"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "SecurePass123!",
+                    "description": "كلمة المرور"
+                  }
+                },
+                "required": [
+                  "phone",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم تسجيل الدخول بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "tokens": {
+                          "type": "object",
+                          "properties": {
+                            "access": {
+                              "type": "string",
+                              "description": "Access Token"
+                            },
+                            "refresh": {
+                              "type": "string",
+                              "description": "Refresh Token"
+                            }
+                          }
+                        },
+                        "me": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "phone": {
+                              "type": "string"
+                            },
+                            "firstName": {
+                              "type": "string"
+                            },
+                            "lastName": {
+                              "type": "string"
+                            },
+                            "roles": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "permissions": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "isAdmin": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "بيانات غير صحيحة"
+          },
+          "401": {
+            "description": "كلمة المرور غير صحيحة"
+          }
+        },
+        "tags": [
+          "المصادقة"
+        ]
+      }
+    },
     "/api/v1/auth/dev-login": {
       "post": {
         "operationId": "devLogin",
@@ -6308,142 +6419,6 @@
         ]
       }
     },
-    "/api/v1/notifications/admin/{id}": {
-      "get": {
-        "operationId": "adminGetNotification",
-        "summary": "الإدارة: الحصول على إشعار بالمعرف",
-        "description": "استرداد إشعار محدد بالمعرف (للإداريين فقط)",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Notification retrieved successfully"
-          },
-          "404": {
-            "description": "Notification not found"
-          }
-        },
-        "tags": [
-          "الإشعارات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "put": {
-        "operationId": "adminUpdateNotification",
-        "summary": "الإدارة: تحديث إشعار",
-        "description": "تحديث إشعار موجود (للإداريين فقط)",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateNotificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Notification updated successfully"
-          },
-          "404": {
-            "description": "Notification not found"
-          }
-        },
-        "tags": [
-          "الإشعارات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "adminDeleteNotification",
-        "summary": "الإدارة: حذف إشعار",
-        "description": "حذف إشعار من النظام (للإداريين فقط)",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Notification deleted successfully"
-          },
-          "404": {
-            "description": "Notification not found"
-          }
-        },
-        "tags": [
-          "الإشعارات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/notifications/admin/bulk-send": {
-      "post": {
-        "operationId": "adminBulkSend",
-        "summary": "الإدارة: إرسال إشعارات جماعية",
-        "description": "إرسال إشعارات إلى مجموعة من المستخدمين (للإداريين فقط)",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BulkSendNotificationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Bulk notifications sent successfully"
-          }
-        },
-        "tags": [
-          "الإشعارات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
     "/api/v1/notifications/admin/stats": {
       "get": {
         "operationId": "adminGetStats",
@@ -6462,6 +6437,27 @@
         "responses": {
           "200": {
             "description": "Statistics retrieved successfully"
+          }
+        },
+        "tags": [
+          "الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/admin/templates": {
+      "get": {
+        "operationId": "adminGetTemplates",
+        "summary": "الإدارة: الحصول على قوالب الإشعارات",
+        "description": "استرداد قائمة بقوالب الإشعارات المتاحة في النظام (للإداريين فقط)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Templates retrieved successfully"
           }
         },
         "tags": [
@@ -10676,6 +10672,93 @@
         "responses": {
           "200": {
             "description": "تم استرداد قائمة البانرات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/banners/analytics": {
+      "get": {
+        "operationId": "getBannersAnalytics",
+        "summary": "إحصائيات البانرات",
+        "description": "استرداد إحصائيات الأداء للبانرات الإعلانية",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد إحصائيات البانرات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalBanners": {
+                          "type": "number",
+                          "example": 10,
+                          "description": "إجمالي عدد البانرات"
+                        },
+                        "activeBanners": {
+                          "type": "number",
+                          "example": 7,
+                          "description": "عدد البانرات النشطة"
+                        },
+                        "totalViews": {
+                          "type": "number",
+                          "example": 5420,
+                          "description": "إجمالي المشاهدات"
+                        },
+                        "totalClicks": {
+                          "type": "number",
+                          "example": 342,
+                          "description": "إجمالي النقرات"
+                        },
+                        "averageCTR": {
+                          "type": "number",
+                          "example": 6.31,
+                          "description": "متوسط معدل النقر (%)"
+                        },
+                        "topPerforming": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "views": {
+                                "type": "number"
+                              },
+                              "clicks": {
+                                "type": "number"
+                              },
+                              "ctr": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -20066,6 +20149,375 @@
         ]
       }
     },
+    "/api/v1/admin/media-analytics/overview": {
+      "get": {
+        "operationId": "getOverview",
+        "summary": "الإحصائيات العامة للوسائط",
+        "description": "يعرض إحصائيات شاملة عن جميع الملفات والوسائط في النظام",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم جلب الإحصائيات العامة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalFiles": {
+                          "type": "number",
+                          "example": 1250,
+                          "description": "إجمالي عدد الملفات"
+                        },
+                        "totalSize": {
+                          "type": "number",
+                          "example": 5242880000,
+                          "description": "إجمالي حجم الملفات بالبايت"
+                        },
+                        "totalSizeFormatted": {
+                          "type": "string",
+                          "example": "5.24 GB",
+                          "description": "إجمالي الحجم منسق"
+                        },
+                        "filesThisMonth": {
+                          "type": "number",
+                          "example": 156,
+                          "description": "عدد الملفات المرفوعة هذا الشهر"
+                        },
+                        "filesThisWeek": {
+                          "type": "number",
+                          "example": 42,
+                          "description": "عدد الملفات المرفوعة هذا الأسبوع"
+                        },
+                        "filesToday": {
+                          "type": "number",
+                          "example": 8,
+                          "description": "عدد الملفات المرفوعة اليوم"
+                        },
+                        "averageFileSize": {
+                          "type": "number",
+                          "example": 419430,
+                          "description": "متوسط حجم الملف"
+                        },
+                        "averageFileSizeFormatted": {
+                          "type": "string",
+                          "example": "419.43 KB"
+                        },
+                        "filesByType": {
+                          "type": "object",
+                          "properties": {
+                            "images": {
+                              "type": "number",
+                              "example": 850
+                            },
+                            "videos": {
+                              "type": "number",
+                              "example": 120
+                            },
+                            "documents": {
+                              "type": "number",
+                              "example": 200
+                            },
+                            "other": {
+                              "type": "number",
+                              "example": 80
+                            }
+                          }
+                        },
+                        "sizeByType": {
+                          "type": "object",
+                          "properties": {
+                            "images": {
+                              "type": "number",
+                              "example": 2147483648
+                            },
+                            "videos": {
+                              "type": "number",
+                              "example": 2684354560
+                            },
+                            "documents": {
+                              "type": "number",
+                              "example": 314572800
+                            },
+                            "other": {
+                              "type": "number",
+                              "example": 96468992
+                            }
+                          }
+                        },
+                        "storageUsagePercent": {
+                          "type": "number",
+                          "example": 52.4,
+                          "description": "نسبة استخدام التخزين"
+                        },
+                        "topUploaders": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "userId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "uploadCount": {
+                                "type": "number"
+                              },
+                              "totalSize": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/by-type": {
+      "get": {
+        "operationId": "getStatsByType",
+        "summary": "إحصائيات الوسائط حسب النوع",
+        "description": "يعرض توزيع الملفات حسب أنواعها المختلفة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم جلب الإحصائيات بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/upload-timeline": {
+      "get": {
+        "operationId": "getUploadTimeline",
+        "summary": "إحصائيات الرفع حسب الفترة الزمنية",
+        "description": "يعرض توزيع عمليات الرفع خلال فترة زمنية محددة",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "الفترة الزمنية للإحصائيات",
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب الإحصائيات بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/largest-files": {
+      "get": {
+        "operationId": "getLargestFiles",
+        "summary": "قائمة أكبر الملفات",
+        "description": "يعرض الملفات الأكبر حجماً في النظام",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد الملفات المراد عرضها",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب القائمة بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/recent-uploads": {
+      "get": {
+        "operationId": "getRecentUploads",
+        "summary": "أحدث الملفات المرفوعة",
+        "description": "يعرض آخر الملفات التي تم رفعها",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد الملفات المراد عرضها",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب القائمة بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/storage": {
+      "get": {
+        "operationId": "getStorageStats",
+        "summary": "إحصائيات التخزين",
+        "description": "يعرض معلومات عن مساحة التخزين المستخدمة والمتاحة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم جلب إحصائيات التخزين بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/by-user": {
+      "get": {
+        "operationId": "getStatsByUser",
+        "summary": "إحصائيات الرفع حسب المستخدم",
+        "description": "يعرض إحصائيات عمليات الرفع لكل مستخدم",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد المستخدمين المراد عرضهم",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب الإحصائيات بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/unused-files": {
+      "get": {
+        "operationId": "getUnusedFiles",
+        "summary": "الملفات غير المستخدمة",
+        "description": "يعرض الملفات التي لم يتم استخدامها في أي مكان",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد الملفات المراد عرضها",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب القائمة بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/full-report": {
+      "get": {
+        "operationId": "getFullReport",
+        "summary": "تقرير شامل عن الوسائط",
+        "description": "يولد تقرير شامل يحتوي على جميع الإحصائيات",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم توليد التقرير بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/audit/logs": {
       "get": {
         "operationId": "getAuditLogs",
@@ -21090,14 +21542,6 @@
         "properties": {}
       },
       "CreateNotificationDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdateNotificationDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "BulkSendNotificationDto": {
         "type": "object",
         "properties": {}
       },

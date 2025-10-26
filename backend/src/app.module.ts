@@ -27,6 +27,10 @@ import { AttributesModule } from './modules/attributes/attributes.module';
 import { ExchangeRatesModule } from './modules/exchange-rates/exchange-rates.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { SystemMonitoringModule } from './modules/system-monitoring/system-monitoring.module';
+import { ErrorLogsModule } from './modules/error-logs/error-logs.module';
+import { I18nModule } from './modules/i18n/i18n.module';
+import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
 
 // Health module
 // import { HealthModule } from './health/health.module';
@@ -95,6 +99,10 @@ import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-enve
     ExchangeRatesModule,
     UploadModule,
     AuditModule,
+    SystemMonitoringModule,
+    ErrorLogsModule,
+    I18nModule,
+    SystemSettingsModule,
 
     // Health module
     HealthModule,

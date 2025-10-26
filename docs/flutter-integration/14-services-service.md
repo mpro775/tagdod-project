@@ -48,6 +48,7 @@
   "title": "تركيب نظام طاقة شمسية",
   "type": "INSTALLATION",
   "description": "أحتاج تركيب نظام 10 كيلو واط",
+  "city": "صنعاء",
   "images": [
     "https://cdn.example.com/uploads/site-photo-1.jpg"
   ],
@@ -95,6 +96,7 @@ Future<ServiceRequest> createServiceRequest({
   required String title,
   String? type,
   String? description,
+  String city = 'صنعاء', // المدينة - إلزامي - افتراضي صنعاء ⭐ جديد
   List<String>? images,
   required String addressId,
   DateTime? scheduledAt,
@@ -103,6 +105,7 @@ Future<ServiceRequest> createServiceRequest({
     'title': title,
     if (type != null) 'type': type,
     if (description != null) 'description': description,
+    'city': city, // ⭐ جديد
     if (images != null) 'images': images,
     'addressId': addressId,
     if (scheduledAt != null) 'scheduledAt': scheduledAt.toIso8601String(),
@@ -882,6 +885,7 @@ class ServiceRequest {
   final String title;
   final String? type;
   final String? description;
+  final String city; // المدينة اليمنية ⭐ جديد
   final List<String> images;
   final String? addressId;
   final ServiceLocation location;
@@ -900,6 +904,7 @@ class ServiceRequest {
     required this.title,
     this.type,
     this.description,
+    this.city = 'صنعاء', // ⭐ جديد - افتراضي صنعاء
     required this.images,
     this.addressId,
     required this.location,
@@ -920,6 +925,7 @@ class ServiceRequest {
       title: json['title'] ?? '',
       type: json['type'],
       description: json['description'],
+      city: json['city'] ?? 'صنعاء', // ⭐ جديد
       images: List<String>.from(json['images'] ?? []),
       addressId: json['addressId'],
       location: ServiceLocation.fromJson(json['location'] ?? {}),
@@ -1112,6 +1118,7 @@ class CreateServiceRequestDto {
   final String title;
   final String? type;
   final String? description;
+  final String city; // المدينة اليمنية ⭐ جديد
   final List<String>? images;
   final String addressId;
   final DateTime? scheduledAt;
@@ -1120,6 +1127,7 @@ class CreateServiceRequestDto {
     required this.title,
     this.type,
     this.description,
+    this.city = 'صنعاء', // ⭐ جديد - افتراضي صنعاء
     this.images,
     required this.addressId,
     this.scheduledAt,
@@ -1130,6 +1138,7 @@ class CreateServiceRequestDto {
       'title': title,
       if (type != null) 'type': type,
       if (description != null) 'description': description,
+      'city': city, // ⭐ جديد - إلزامي
       if (images != null) 'images': images,
       'addressId': addressId,
       if (scheduledAt != null) 'scheduledAt': scheduledAt!.toIso8601String(),
@@ -1242,6 +1251,7 @@ class NearbyQueryDto {
    - `title`: عنوان الطلب (مطلوب)
    - `type`: نوع الخدمة (اختياري)
    - `description`: وصف الطلب (اختياري)
+   - `city`: المدينة اليمنية (مطلوب - افتراضي: صنعاء) ⭐ جديد
    - `images`: صور الطلب (اختياري)
    - `addressId`: معرف العنوان (مطلوب)
    - `scheduledAt`: موعد التنفيذ (اختياري)
@@ -1270,6 +1280,7 @@ class NearbyQueryDto {
 5. **الطلبات القريبة:**
    - `lat`, `lng`: موقع المهندس
    - `radiusKm`: نصف القطر بالكيلومتر
+   - **فلترة حسب المدينة:** يرى المهندس فقط طلبات مدينته ⭐ جديد
    - يتم ترتيب النتائج حسب المسافة
 
 6. **تقديم العروض:**
@@ -1390,6 +1401,7 @@ class NearbyQueryDto {
    - `OFFERED`, `ACCEPTED`, `REJECTED`, `CANCELLED`
 4. ✅ تحديث جميع return types - معظمها ترجع `ServiceRequest` أو `EngineerOffer` كاملة
 5. ✅ إزالة جميع الـ Cache flags (لا يوجد caching في endpoints الفعلية)
+6. ✅ **إضافة نظام المدن اليمنية** - فلترة الطلبات حسب المدينة ⭐ جديد
 
 **Endpoints للعملاء (Customers):**
 - `POST /services/customer` - إنشاء طلب
@@ -1414,6 +1426,195 @@ class NearbyQueryDto {
 - `backend/src/modules/services/schemas/service-request.schema.ts` - ServiceRequest Schema
 - `backend/src/modules/services/schemas/engineer-offer.schema.ts` - EngineerOffer Schema
 - `backend/src/modules/services/enums/service-status.enum.ts` - Status Enums
+- `backend/src/modules/services/enums/yemeni-cities.enum.ts` - Yemeni Cities Enum ⭐ جديد
+
+---
+
+## 🏙️ نظام المدن اليمنية ⭐ جديد
+
+### المدن المدعومة (22 مدينة)
+
+```dart
+class YemeniCities {
+  static const String SANAA = 'صنعاء';
+  static const String ADEN = 'عدن';
+  static const String TAIZ = 'تعز';
+  static const String HODEIDAH = 'الحديدة';
+  static const String IBB = 'إب';
+  static const String DHAMAR = 'ذمار';
+  static const String MUKALLA = 'المكلا';
+  static const String HAJJAH = 'حجة';
+  static const String AMRAN = 'عمران';
+  static const String SAADA = 'صعدة';
+  static const String SEIYUN = 'سيئون';
+  static const String ZINJIBAR = 'زنجبار';
+  static const String MARIB = 'مأرب';
+  static const String BAYDA = 'البيضاء';
+  static const String LAHIJ = 'لحج';
+  static const String ABYAN = 'أبين';
+  static const String SHABWAH = 'شبوة';
+  static const String MAHWIT = 'المحويت';
+  static const String HADRAMOUT = 'حضرموت';
+  static const String JAWF = 'الجوف';
+  static const String MAHRA = 'المهرة';
+  static const String SOCOTRA = 'سقطرى';
+
+  static const String DEFAULT_CITY = SANAA;
+
+  static const List<String> ALL_CITIES = [
+    SANAA, ADEN, TAIZ, HODEIDAH, IBB, DHAMAR,
+    MUKALLA, HAJJAH, AMRAN, SAADA, SEIYUN, ZINJIBAR,
+    MARIB, BAYDA, LAHIJ, ABYAN, SHABWAH, MAHWIT,
+    HADRAMOUT, JAWF, MAHRA, SOCOTRA,
+  ];
+
+  static const Map<String, String> CITY_EMOJI = {
+    SANAA: '🏛️',
+    ADEN: '🌊',
+    TAIZ: '⛰️',
+    HODEIDAH: '🏖️',
+    IBB: '🌄',
+    DHAMAR: '🏔️',
+    MUKALLA: '🏝️',
+    HAJJAH: '🌾',
+    AMRAN: '🏰',
+    SAADA: '🏜️',
+    SEIYUN: '🕌',
+    ZINJIBAR: '🏘️',
+    MARIB: '🏛️',
+    BAYDA: '⛰️',
+    LAHIJ: '🌳',
+    ABYAN: '🌴',
+    SHABWAH: '🏔️',
+    MAHWIT: '🌄',
+    HADRAMOUT: '🏛️',
+    JAWF: '🏜️',
+    MAHRA: '🏝️',
+    SOCOTRA: '🏝️',
+  };
+
+  static String getEmoji(String city) {
+    return CITY_EMOJI[city] ?? '🏙️';
+  }
+
+  static bool isValidCity(String city) {
+    return ALL_CITIES.contains(city);
+  }
+}
+```
+
+### آلية عمل الفلترة
+
+**عند إنشاء طلب:**
+```dart
+final request = await servicesService.createServiceRequest(
+  title: 'إصلاح لوح شمسي',
+  type: 'REPAIR',
+  description: 'يحتاج صيانة',
+  city: 'صنعاء', // ← إلزامي
+  addressId: addressId,
+);
+```
+
+**عند بحث المهندس:**
+```dart
+// المهندس من صنعاء
+final nearbyRequests = await servicesService.getNearbyRequests(
+  lat: 15.3694,
+  lng: 44.2060,
+  radiusKm: 10,
+);
+
+// النتيجة: فقط طلبات صنعاء ضمن نطاق 10 كم
+// ✅ طلب 1 - صنعاء - 2 كم
+// ✅ طلب 2 - صنعاء - 5 كم
+// ✅ طلب 3 - صنعاء - 8 كم
+// ❌ طلب 4 - عدن - 5 كم (مدينة مختلفة)
+// ❌ طلب 5 - تعز - 3 كم (مدينة مختلفة)
+```
+
+### UI Component للمدن
+
+```dart
+class CityDropdown extends StatelessWidget {
+  final String? value;
+  final ValueChanged<String?>? onChanged;
+  final bool enabled;
+
+  const CityDropdown({
+    Key? key,
+    this.value,
+    this.onChanged,
+    this.enabled = true,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: value ?? YemeniCities.DEFAULT_CITY,
+      decoration: InputDecoration(
+        labelText: 'المدينة',
+        prefixIcon: Icon(Icons.location_city),
+      ),
+      items: YemeniCities.ALL_CITIES.map((city) {
+        return DropdownMenuItem<String>(
+          value: city,
+          child: Row(
+            children: [
+              Text(YemeniCities.getEmoji(city)),
+              SizedBox(width: 8),
+              Text(city),
+            ],
+          ),
+        );
+      }).toList(),
+      onChanged: enabled ? onChanged : null,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'المدينة مطلوبة';
+        }
+        if (!YemeniCities.isValidCity(value)) {
+          return 'المدينة غير صحيحة';
+        }
+        return null;
+      },
+    );
+  }
+}
+```
+
+### Validation
+
+```dart
+String? validateCity(String? city) {
+  if (city == null || city.isEmpty) {
+    return 'المدينة مطلوبة';
+  }
+  
+  if (!YemeniCities.isValidCity(city)) {
+    return 'المدينة يجب أن تكون من المدن اليمنية المدعومة';
+  }
+  
+  return null;
+}
+```
+
+### الفوائد
+
+1. **للعملاء:**
+   - ✅ مهندسون من نفس المدينة
+   - ✅ استجابة أسرع
+   - ✅ تكاليف تنقل أقل
+
+2. **للمهندسين:**
+   - ✅ طلبات قريبة فقط
+   - ✅ توفير الوقت والجهد
+   - ✅ تركيز أفضل على منطقتهم
+
+3. **للنظام:**
+   - ✅ أداء محسّن (فهارس المدن)
+   - ✅ بيانات أقل تحميلاً
+   - ✅ تجربة مستخدم أفضل
 
 ---
 

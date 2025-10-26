@@ -225,7 +225,14 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
         {/* Table */}
         <TableContainer>
           <Table size="small">
-            <TableHead>
+            <TableHead
+              sx={{
+                backgroundColor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.grey[800]
+                    : theme.palette.grey[100],
+              }}
+            >
               <TableRow>
                 {columns.map((column) => (
                   <TableCell
@@ -233,6 +240,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
                     align={column.align}
                     style={{ minWidth: column.minWidth }}
                     sortDirection={orderBy === column.id ? order : false}
+                    sx={{ fontWeight: 'bold', color: 'text.primary' }}
                   >
                     {column.sortable ? (
                       <TableSortLabel
@@ -248,7 +256,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
                   </TableCell>
                 ))}
                 {actions.length > 0 && (
-                  <TableCell align="center">الإجراءات</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
                 )}
               </TableRow>
             </TableHead>

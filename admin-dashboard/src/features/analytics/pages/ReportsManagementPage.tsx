@@ -221,14 +221,15 @@ export const ReportsManagementPage: React.FC = () => {
     { label: 'التسويق', value: 6, category: ReportCategory.MARKETING },
   ];
 
-  const filteredReports =
-    reportsData?.data?.filter((report) => {
-      const matchesSearch =
-        report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        report.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = filterCategory === 'all' || report.category === filterCategory;
-      return matchesSearch && matchesCategory;
-    }) || [];
+  const reports = Array.isArray(reportsData?.data) ? reportsData.data : [];
+  
+  const filteredReports = reports.filter((report) => {
+    const matchesSearch =
+      report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = filterCategory === 'all' || report.category === filterCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const sortedReports = [...filteredReports].sort((a, b) => {
     let comparison = 0;

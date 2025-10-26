@@ -40,6 +40,11 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
+    // Super admin has access to everything - check from JWT directly
+    if (user.roles && Array.isArray(user.roles) && user.roles.includes(UserRole.SUPER_ADMIN)) {
+      return true;
+    }
+
     // Check if user is deleted or suspended
     const fullUser = await this.userModel.findById(user.sub).lean();
     if (!fullUser) {
@@ -50,7 +55,7 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-    // Super admin has access to everything
+    // Double check super admin from database
     if (await this.permissionService.isSuperAdmin(user.sub)) {
       return true;
     }

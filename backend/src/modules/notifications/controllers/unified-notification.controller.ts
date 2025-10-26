@@ -174,7 +174,10 @@ export class UnifiedNotificationController {
     const userId = req.user.id;
     const count = await this.notificationService.getUnreadCount(userId);
     
-    return { unreadCount: count };
+    return { 
+      success: true,
+      data: { count }
+    };
   }
 
   @Post('mark-read')
@@ -401,89 +404,6 @@ export class UnifiedNotificationController {
     };
   }
 
-  @Get('admin/:id')
-  @UseGuards(AdminGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({
-    summary: 'الإدارة: الحصول على إشعار بالمعرف',
-    description: 'استرداد إشعار محدد بالمعرف (للإداريين فقط)'
-  })
-  @ApiResponse({ status: 200, description: 'Notification retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'Notification not found' })
-  async adminGetNotification(@Param('id') id: string) {
-    const notification = await this.notificationService.getNotificationById(id);
-    
-    if (!notification) {
-      throw new HttpException('Notification not found', HttpStatus.NOT_FOUND);
-    }
-    
-    return notification;
-  }
-
-  @Put('admin/:id')
-  @UseGuards(AdminGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({
-    summary: 'الإدارة: تحديث إشعار',
-    description: 'تحديث إشعار موجود (للإداريين فقط)'
-  })
-  @ApiResponse({ status: 200, description: 'Notification updated successfully' })
-  @ApiResponse({ status: 404, description: 'Notification not found' })
-  async adminUpdateNotification(
-    @Param('id') id: string,
-    @Body() dto: UpdateNotificationDto
-  ) {
-    const notification = await this.notificationService.updateNotification(id, dto);
-    
-    if (!notification) {
-      throw new HttpException('Notification not found', HttpStatus.NOT_FOUND);
-    }
-    
-    return {
-      notification,
-      message: 'Notification updated successfully'
-    };
-  }
-
-  @Delete('admin/:id')
-  @UseGuards(AdminGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({
-    summary: 'الإدارة: حذف إشعار',
-    description: 'حذف إشعار من النظام (للإداريين فقط)'
-  })
-  @ApiResponse({ status: 200, description: 'Notification deleted successfully' })
-  @ApiResponse({ status: 404, description: 'Notification not found' })
-  async adminDeleteNotification(@Param('id') id: string) {
-    const deleted = await this.notificationService.deleteNotification(id);
-    
-    if (!deleted) {
-      throw new HttpException('Notification not found', HttpStatus.NOT_FOUND);
-    }
-    
-    return {
-      deleted: true,
-      message: 'Notification deleted successfully'
-    };
-  }
-
-  @Post('admin/bulk-send')
-  @UseGuards(AdminGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({
-    summary: 'الإدارة: إرسال إشعارات جماعية',
-    description: 'إرسال إشعارات إلى مجموعة من المستخدمين (للإداريين فقط)'
-  })
-  @ApiResponse({ status: 200, description: 'Bulk notifications sent successfully' })
-  async adminBulkSend(@Body() dto: BulkSendNotificationDto) {
-    const result = await this.notificationService.bulkSendNotifications(dto);
-    
-    return {
-      result,
-      message: `Bulk send completed: ${result.sent} sent, ${result.failed} failed`
-    };
-  }
-
   @Get('admin/stats')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -493,9 +413,75 @@ export class UnifiedNotificationController {
   })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
   async adminGetStats(@Query('userId') userId?: string) {
-    const stats = await this.notificationService.getNotificationStats(userId);
-    
-    return stats;
+    try {
+      const stats = await this.notificationService.getNotificationStats(userId);
+      return { success: true, data: stats };
+    } catch (error) {
+      return { 
+        success: false, 
+        data: {
+          total: 0,
+          byType: {},
+          byStatus: {},
+          byChannel: {},
+          byCategory: {},
+          unreadCount: 0,
+          readRate: 0,
+          deliveryRate: 0
+        }
+      };
+    }
+  }
+
+  @Get('admin/templates')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: الحصول على قوالب الإشعارات',
+    description: 'استرداد قائمة بقوالب الإشعارات المتاحة في النظام (للإداريين فقط)'
+  })
+  @ApiResponse({ status: 200, description: 'Templates retrieved successfully' })
+  async adminGetTemplates() {
+    // قائمة القوالب الافتراضية
+    const templates = [
+      {
+        id: 'order_created',
+        name: 'طلب جديد',
+        description: 'إشعار بإنشاء طلب جديد',
+        category: 'order',
+        variables: ['orderId', 'orderNumber', 'totalAmount']
+      },
+      {
+        id: 'order_updated',
+        name: 'تحديث الطلب',
+        description: 'إشعار بتحديث حالة الطلب',
+        category: 'order',
+        variables: ['orderId', 'orderNumber', 'status']
+      },
+      {
+        id: 'payment_success',
+        name: 'دفع ناجح',
+        description: 'إشعار بنجاح عملية الدفع',
+        category: 'payment',
+        variables: ['paymentId', 'amount', 'method']
+      },
+      {
+        id: 'shipment_update',
+        name: 'تحديث الشحن',
+        description: 'إشعار بتحديث حالة الشحن',
+        category: 'shipping',
+        variables: ['trackingNumber', 'status', 'location']
+      },
+      {
+        id: 'support_ticket',
+        name: 'تذكرة دعم',
+        description: 'إشعار بتذكرة دعم جديدة',
+        category: 'support',
+        variables: ['ticketId', 'subject', 'priority']
+      }
+    ];
+
+    return { success: true, data: templates };
   }
 
   @Post('admin/cleanup')

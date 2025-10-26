@@ -276,12 +276,19 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                   </Typography>
                   <TableContainer>
                     <Table size="small">
-                      <TableHead>
+                      <TableHead
+                        sx={{
+                          backgroundColor: (theme) =>
+                            theme.palette.mode === 'dark'
+                              ? theme.palette.grey[800]
+                              : theme.palette.grey[100],
+                        }}
+                      >
                         <TableRow>
-                          <TableCell>المنتج</TableCell>
-                          <TableCell>الكمية</TableCell>
-                          <TableCell>السعر</TableCell>
-                          <TableCell>الإجمالي</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المنتج</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الكمية</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>السعر</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجمالي</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>

@@ -9,13 +9,21 @@ import {
   MaxLength,
   Min,
   Max,
+  IsIn,
+  IsNotEmpty,
 } from 'class-validator';
+import { YEMENI_CITIES, DEFAULT_CITY } from '../enums/yemeni-cities.enum';
 
 export class CreateServiceRequestDto {
   @IsString() @MaxLength(140) title!: string;
   @IsOptional() @IsString() type?: string;
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsArray() images?: string[];
+
+  @IsNotEmpty({ message: 'المدينة مطلوبة' })
+  @IsString({ message: 'المدينة يجب أن تكون نصاً' })
+  @IsIn(YEMENI_CITIES, { message: 'المدينة يجب أن تكون من المدن اليمنية المدعومة' })
+  city: string = DEFAULT_CITY;
 
   @IsMongoId() addressId!: string;
   @IsOptional() @IsDateString() scheduledAt?: string;

@@ -103,15 +103,22 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
   return (
     <div className="rounded-md border">
       <Table>
-        <TableHead>
+        <TableHead
+          sx={{
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'dark'
+                ? theme.palette.grey[800]
+                : theme.palette.grey[100],
+          }}
+        >
           <TableRow>
-            <TableHead>الوقت</TableHead>
-            <TableHead>المستخدم</TableHead>
-            <TableHead>نوع العملية</TableHead>
-            <TableHead>المورد</TableHead>
-            <TableHead>البيانات</TableHead>
-            <TableHead>الحساسية</TableHead>
-            <TableHead>الإجراءات</TableHead>
+            <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الوقت</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المستخدم</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>نوع العملية</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المورد</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>البيانات</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحساسية</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

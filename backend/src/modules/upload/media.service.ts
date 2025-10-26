@@ -533,4 +533,361 @@ export class MediaService {
 
     return { removedCount, errors };
   }
+
+  // ==================== Analytics Methods ====================
+
+  /**
+   * Get comprehensive media statistics
+   */
+  async getMediaStatistics() {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - 7);
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const [
+      totalFiles,
+      totalSizeResult,
+      filesThisMonth,
+      filesThisWeek,
+      filesToday,
+      filesByType,
+    ] = await Promise.all([
+      this.mediaModel.countDocuments({ deletedAt: null }),
+      this.mediaModel.aggregate([
+        { $match: { deletedAt: null } },
+        { $group: { _id: null, totalSize: { $sum: '$fileSize' } } },
+      ]),
+      this.mediaModel.countDocuments({
+        deletedAt: null,
+        createdAt: { $gte: startOfMonth },
+      }),
+      this.mediaModel.countDocuments({
+        deletedAt: null,
+        createdAt: { $gte: startOfWeek },
+      }),
+      this.mediaModel.countDocuments({
+        deletedAt: null,
+        createdAt: { $gte: startOfDay },
+      }),
+      this.mediaModel.aggregate([
+        { $match: { deletedAt: null } },
+        {
+          $group: {
+            _id: {
+              $cond: [
+                { $regexMatch: { input: '$mimeType', regex: /^image\// } },
+                'images',
+                {
+                  $cond: [
+                    { $regexMatch: { input: '$mimeType', regex: /^video\// } },
+                    'videos',
+                    {
+                      $cond: [
+                        { $regexMatch: { input: '$mimeType', regex: /^application\/(pdf|msword|vnd\.)/ } },
+                        'documents',
+                        'other',
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            count: { $sum: 1 },
+            size: { $sum: '$fileSize' },
+          },
+        },
+      ]),
+    ]);
+
+    const totalSize = totalSizeResult[0]?.totalSize || 0;
+    const averageFileSize = totalFiles > 0 ? totalSize / totalFiles : 0;
+
+    // تنسيق البيانات حسب النوع
+    const filesByTypeFormatted = {
+      images: 0,
+      videos: 0,
+      documents: 0,
+      other: 0,
+    };
+    const sizeByType = {
+      images: 0,
+      videos: 0,
+      documents: 0,
+      other: 0,
+    };
+
+    filesByType.forEach((item) => {
+      const type = item._id as 'images' | 'videos' | 'documents' | 'other';
+      filesByTypeFormatted[type] = item.count;
+      sizeByType[type] = item.size;
+    });
+
+    // حساب نسبة استخدام التخزين (افتراض سعة 100GB)
+    const maxStorage = 100 * 1024 * 1024 * 1024; // 100GB
+    const storageUsagePercent = (totalSize / maxStorage) * 100;
+
+    return {
+      totalFiles,
+      totalSize,
+      totalSizeFormatted: this.formatFileSize(totalSize),
+      filesThisMonth,
+      filesThisWeek,
+      filesToday,
+      averageFileSize,
+      averageFileSizeFormatted: this.formatFileSize(averageFileSize),
+      filesByType: filesByTypeFormatted,
+      sizeByType,
+      storageUsagePercent: Number(storageUsagePercent.toFixed(2)),
+    };
+  }
+
+  /**
+   * Get statistics by file type
+   */
+  async getStatsByFileType() {
+    const stats = await this.mediaModel.aggregate([
+      { $match: { deletedAt: null } },
+      {
+        $group: {
+          _id: '$mimeType',
+          count: { $sum: 1 },
+          totalSize: { $sum: '$fileSize' },
+          avgSize: { $avg: '$fileSize' },
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+
+    return stats.map((item) => ({
+      mimeType: item._id,
+      count: item.count,
+      totalSize: item.totalSize,
+      totalSizeFormatted: this.formatFileSize(item.totalSize),
+      averageSize: item.avgSize,
+      averageSizeFormatted: this.formatFileSize(item.avgSize),
+    }));
+  }
+
+  /**
+   * Get upload timeline
+   */
+  async getUploadTimeline(period: string = 'month') {
+    const now = new Date();
+    let groupFormat: any;
+    let dateRange: Date;
+
+    switch (period) {
+      case 'day':
+        dateRange = new Date(now);
+        dateRange.setHours(now.getHours() - 24);
+        groupFormat = {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' },
+          hour: { $hour: '$createdAt' },
+        };
+        break;
+      case 'week':
+        dateRange = new Date(now);
+        dateRange.setDate(now.getDate() - 7);
+        groupFormat = {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' },
+        };
+        break;
+      case 'year':
+        dateRange = new Date(now);
+        dateRange.setFullYear(now.getFullYear() - 1);
+        groupFormat = {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+        };
+        break;
+      default: // month
+        dateRange = new Date(now);
+        dateRange.setMonth(now.getMonth() - 1);
+        groupFormat = {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' },
+        };
+    }
+
+    const timeline = await this.mediaModel.aggregate([
+      {
+        $match: {
+          deletedAt: null,
+          createdAt: { $gte: dateRange },
+        },
+      },
+      {
+        $group: {
+          _id: groupFormat,
+          count: { $sum: 1 },
+          totalSize: { $sum: '$fileSize' },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.hour': 1 } },
+    ]);
+
+    return timeline.map((item) => ({
+      date: item._id,
+      count: item.count,
+      totalSize: item.totalSize,
+      totalSizeFormatted: this.formatFileSize(item.totalSize),
+    }));
+  }
+
+  /**
+   * Get largest files
+   */
+  async getLargestFiles(limit: number = 20) {
+    return this.mediaModel
+      .find({ deletedAt: null })
+      .sort({ fileSize: -1 })
+      .limit(limit)
+      .select('fileName fileSize filePath mimeType createdAt uploadedBy')
+      .lean();
+  }
+
+  /**
+   * Get recent uploads
+   */
+  async getRecentUploads(limit: number = 20) {
+    return this.mediaModel
+      .find({ deletedAt: null })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .select('fileName fileSize filePath mimeType createdAt uploadedBy')
+      .lean();
+  }
+
+  /**
+   * Get storage statistics
+   */
+  async getStorageStatistics() {
+    const [totalSizeResult, filesByType] = await Promise.all([
+      this.mediaModel.aggregate([
+        { $match: { deletedAt: null } },
+        { $group: { _id: null, totalSize: { $sum: '$fileSize' } } },
+      ]),
+      this.mediaModel.aggregate([
+        { $match: { deletedAt: null } },
+        {
+          $group: {
+            _id: {
+              $cond: [
+                { $regexMatch: { input: '$mimeType', regex: /^image\// } },
+                'images',
+                {
+                  $cond: [
+                    { $regexMatch: { input: '$mimeType', regex: /^video\// } },
+                    'videos',
+                    {
+                      $cond: [
+                        { $regexMatch: { input: '$mimeType', regex: /^application\/(pdf|msword|vnd\.)/ } },
+                        'documents',
+                        'other',
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            size: { $sum: '$fileSize' },
+          },
+        },
+      ]),
+    ]);
+
+    const totalUsed = totalSizeResult[0]?.totalSize || 0;
+    const maxStorage = 100 * 1024 * 1024 * 1024; // 100GB
+    const available = maxStorage - totalUsed;
+    const usagePercent = (totalUsed / maxStorage) * 100;
+
+    const breakdown: any = {
+      images: 0,
+      videos: 0,
+      documents: 0,
+      other: 0,
+    };
+
+    filesByType.forEach((item) => {
+      breakdown[item._id] = item.size;
+    });
+
+    return {
+      total: maxStorage,
+      totalFormatted: this.formatFileSize(maxStorage),
+      used: totalUsed,
+      usedFormatted: this.formatFileSize(totalUsed),
+      available,
+      availableFormatted: this.formatFileSize(available),
+      usagePercent: Number(usagePercent.toFixed(2)),
+      breakdown,
+      breakdownFormatted: {
+        images: this.formatFileSize(breakdown.images),
+        videos: this.formatFileSize(breakdown.videos),
+        documents: this.formatFileSize(breakdown.documents),
+        other: this.formatFileSize(breakdown.other),
+      },
+    };
+  }
+
+  /**
+   * Get statistics by user
+   */
+  async getStatsByUser(limit: number = 20) {
+    const stats = await this.mediaModel.aggregate([
+      { $match: { deletedAt: null } },
+      {
+        $group: {
+          _id: '$uploadedBy',
+          uploadCount: { $sum: 1 },
+          totalSize: { $sum: '$fileSize' },
+        },
+      },
+      { $sort: { uploadCount: -1 } },
+      { $limit: limit },
+    ]);
+
+    return stats.map((item) => ({
+      userId: item._id,
+      uploadCount: item.uploadCount,
+      totalSize: item.totalSize,
+      totalSizeFormatted: this.formatFileSize(item.totalSize),
+    }));
+  }
+
+  /**
+   * Get unused files
+   */
+  async getUnusedFiles(limit: number = 50) {
+    return this.mediaModel
+      .find({
+        deletedAt: null,
+        usageCount: 0,
+      })
+      .sort({ createdAt: 1 })
+      .limit(limit)
+      .select('fileName fileSize filePath mimeType createdAt')
+      .lean();
+  }
+
+  /**
+   * Format file size to human readable
+   */
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  }
 }

@@ -7,23 +7,31 @@ import {
   Container,
   useTheme,
   useMediaQuery,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
+import { Brightness4, Brightness7 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { useThemeStore } from '@/store/themeStore';
 
 const StyledContainer = styled(Container)(({ theme }) => ({
   minHeight: '100vh',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+  background: theme.palette.mode === 'dark'
+    ? `linear-gradient(135deg, ${theme.palette.background.default} 0%, ${theme.palette.grey[900]} 100%)`
+    : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
   padding: theme.spacing(2),
 }));
 
-const StyledCard = styled(Card)(() => ({
+const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: 450,
   width: '100%',
-  background: '#ffffff',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+  background: theme.palette.background.paper,
+  boxShadow: theme.palette.mode === 'dark'
+    ? '0 4px 20px rgba(0, 0, 0, 0.5)'
+    : '0 4px 20px rgba(0, 0, 0, 0.1)',
   borderRadius: 12,
 }));
 
@@ -38,16 +46,16 @@ const LogoContainer = styled(Box)(({ theme }) => ({
   height: 60,
   margin: '0 auto',
   marginBottom: theme.spacing(2),
-  background: '#667eea',
+  background: theme.palette.primary.main,
   borderRadius: '50%',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  boxShadow: '0 2px 8px rgba(102, 126, 234, 0.2)',
+  boxShadow: `0 2px 8px ${theme.palette.primary.main}33`,
 }));
 
-const LogoText = styled(Typography)(() => ({
-  color: 'white',
+const LogoText = styled(Typography)(({ theme }) => ({
+  color: theme.palette.primary.contrastText,
   fontSize: '1.5rem',
   fontFamily: 'Cairo',
 }));
@@ -67,9 +75,19 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { mode, toggleMode } = useThemeStore();
 
   return (
     <StyledContainer maxWidth={false}>
+      {/* زر تبديل الوضع */}
+      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+        <Tooltip title={mode === 'dark' ? 'الوضع النهاري' : 'الوضع الليلي'}>
+          <IconButton onClick={toggleMode} color="primary">
+            {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+          </IconButton>
+        </Tooltip>
+      </Box>
+
       <StyledCard elevation={0}>
         <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
           <HeaderSection>

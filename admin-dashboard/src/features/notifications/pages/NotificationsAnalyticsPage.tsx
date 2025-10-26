@@ -81,8 +81,25 @@ export const NotificationsAnalyticsPage: React.FC = () => {
     }
   };
 
-  const successRate = stats.total > 0 ? ((stats.sent / stats.total) * 100).toFixed(1) : 0;
-  const failureRate = stats.total > 0 ? ((stats.failed / stats.total) * 100).toFixed(1) : 0;
+  // معالجة البيانات بأمان
+  const safeStats = {
+    total: stats?.total || 0,
+    sent: stats?.sent || 0,
+    failed: stats?.failed || 0,
+    queued: stats?.queued || 0,
+    read: stats?.read || 0,
+    recent24h: stats?.recent24h || 0,
+    byChannel: stats?.byChannel || {},
+    byType: stats?.byType || {},
+    byStatus: stats?.byStatus || {},
+    byCategory: stats?.byCategory || {},
+    unreadCount: stats?.unreadCount || 0,
+    readRate: stats?.readRate || 0,
+    deliveryRate: stats?.deliveryRate || 0,
+  };
+
+  const successRate = safeStats.total > 0 ? ((safeStats.sent / safeStats.total) * 100).toFixed(1) : 0;
+  const failureRate = safeStats.total > 0 ? ((safeStats.failed / safeStats.total) * 100).toFixed(1) : 0;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -97,7 +114,7 @@ export const NotificationsAnalyticsPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Notifications color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">{stats.total}</Typography>
+                <Typography variant="h6">{safeStats.total}</Typography>
               </Box>
               <Typography variant="body2" color="text.secondary">
                 إجمالي التنبيهات
@@ -111,7 +128,7 @@ export const NotificationsAnalyticsPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Send color="success" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="success.main">{stats.sent}</Typography>
+                <Typography variant="h6" color="success.main">{safeStats.sent}</Typography>
               </Box>
               <Typography variant="body2" color="text.secondary">
                 مرسل بنجاح
@@ -128,7 +145,7 @@ export const NotificationsAnalyticsPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Schedule color="warning" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="warning.main">{stats.queued}</Typography>
+                <Typography variant="h6" color="warning.main">{safeStats.queued}</Typography>
               </Box>
               <Typography variant="body2" color="text.secondary">
                 قيد الانتظار
@@ -142,7 +159,7 @@ export const NotificationsAnalyticsPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Error color="error" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="error.main">{stats.failed}</Typography>
+                <Typography variant="h6" color="error.main">{safeStats.failed}</Typography>
               </Box>
               <Typography variant="body2" color="text.secondary">
                 فشل في الإرسال
@@ -159,7 +176,7 @@ export const NotificationsAnalyticsPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Visibility color="info" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="info.main">{stats.read}</Typography>
+                <Typography variant="h6" color="info.main">{safeStats.read}</Typography>
               </Box>
               <Typography variant="body2" color="text.secondary">
                 تم القراءة
@@ -173,7 +190,7 @@ export const NotificationsAnalyticsPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <TrendingUp color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">{stats.recent24h}</Typography>
+                <Typography variant="h6">{safeStats.recent24h}</Typography>
               </Box>
               <Typography variant="body2" color="text.secondary">
                 آخر 24 ساعة
@@ -191,9 +208,9 @@ export const NotificationsAnalyticsPage: React.FC = () => {
               توزيع التنبيهات حسب القناة
             </Typography>
             
-            {Object.keys(stats.byChannel).length > 0 ? (
+            {Object.keys(safeStats.byChannel).length > 0 ? (
               <List>
-                {Object.entries(stats.byChannel).map(([channel, count], index) => (
+                {Object.entries(safeStats.byChannel).map(([channel, count], index) => (
                   <React.Fragment key={channel}>
                     <ListItem>
                       <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
@@ -214,12 +231,12 @@ export const NotificationsAnalyticsPage: React.FC = () => {
                         }
                         secondary={
                           <Typography variant="body2" color="text.secondary">
-                            {stats.total > 0 ? ((count / stats.total) * 100).toFixed(1) : 0}% من إجمالي التنبيهات
+                            {safeStats.total > 0 ? ((count as number / safeStats.total) * 100).toFixed(1) : 0}% من إجمالي التنبيهات
                           </Typography>
                         }
                       />
                     </ListItem>
-                    {index < Object.keys(stats.byChannel).length - 1 && <Divider />}
+                    {index < Object.keys(safeStats.byChannel).length - 1 && <Divider />}
                   </React.Fragment>
                 ))}
               </List>
@@ -289,19 +306,19 @@ export const NotificationsAnalyticsPage: React.FC = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2">متوسط التنبيهات يومياً:</Typography>
                   <Typography variant="body2" fontWeight="medium">
-                    {stats.recent24h}
+                    {safeStats.recent24h}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2">التنبيهات المقروءة:</Typography>
                   <Typography variant="body2" fontWeight="medium">
-                    {stats.read} ({stats.total > 0 ? ((stats.read / stats.total) * 100).toFixed(1) : 0}%)
+                    {safeStats.read} ({safeStats.total > 0 ? ((safeStats.read / safeStats.total) * 100).toFixed(1) : 0}%)
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2">التنبيهات المعلقة:</Typography>
                   <Typography variant="body2" fontWeight="medium">
-                    {stats.queued}
+                    {safeStats.queued}
                   </Typography>
                 </Box>
               </Box>

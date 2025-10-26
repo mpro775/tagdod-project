@@ -346,6 +346,32 @@
           }
         },
         {
+          "name": "تسجيل دخول الأدمن/السوبر أدمن بكلمة المرور",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/admin-login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "admin-login"
+              ]
+            },
+            "description": "تسجيل دخول المسؤولين باستخدام رقم الهاتف وكلمة المرور"
+          }
+        },
+        {
           "name": "POST /api/v1/auth/dev-login",
           "request": {
             "method": "POST",
@@ -2894,114 +2920,6 @@
           }
         },
         {
-          "name": "الإدارة: الحصول على إشعار بالمعرف",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "admin",
-                "{id}"
-              ]
-            },
-            "description": "استرداد إشعار محدد بالمعرف (للإداريين فقط)"
-          }
-        },
-        {
-          "name": "الإدارة: تحديث إشعار",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "admin",
-                "{id}"
-              ]
-            },
-            "description": "تحديث إشعار موجود (للإداريين فقط)"
-          }
-        },
-        {
-          "name": "الإدارة: حذف إشعار",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "admin",
-                "{id}"
-              ]
-            },
-            "description": "حذف إشعار من النظام (للإداريين فقط)"
-          }
-        },
-        {
-          "name": "الإدارة: إرسال إشعارات جماعية",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/bulk-send",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "admin",
-                "bulk-send"
-              ]
-            },
-            "description": "إرسال إشعارات إلى مجموعة من المستخدمين (للإداريين فقط)"
-          }
-        },
-        {
           "name": "الإدارة: الحصول على إحصائيات الإشعارات",
           "request": {
             "method": "GET",
@@ -3026,6 +2944,33 @@
               ]
             },
             "description": "استرداد إحصائيات شاملة حول جميع الإشعارات في النظام (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: الحصول على قوالب الإشعارات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/templates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "templates"
+              ]
+            },
+            "description": "استرداد قائمة بقوالب الإشعارات المتاحة في النظام (للإداريين فقط)"
           }
         },
         {
@@ -5305,6 +5250,34 @@
               ]
             },
             "description": "استرداد قائمة البانرات الإعلانية"
+          }
+        },
+        {
+          "name": "إحصائيات البانرات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/banners/analytics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "banners",
+                "analytics"
+              ]
+            },
+            "description": "استرداد إحصائيات الأداء للبانرات الإعلانية"
           }
         },
         {
@@ -9382,6 +9355,255 @@
         }
       ],
       "description": "Endpoints for إدارة-الوسائط functionality"
+    },
+    {
+      "name": "إحصائيات-الوسائط",
+      "item": [
+        {
+          "name": "الإحصائيات العامة للوسائط",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "overview"
+              ]
+            },
+            "description": "يعرض إحصائيات شاملة عن جميع الملفات والوسائط في النظام"
+          }
+        },
+        {
+          "name": "إحصائيات الوسائط حسب النوع",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/by-type",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "by-type"
+              ]
+            },
+            "description": "يعرض توزيع الملفات حسب أنواعها المختلفة"
+          }
+        },
+        {
+          "name": "إحصائيات الرفع حسب الفترة الزمنية",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/upload-timeline",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "upload-timeline"
+              ]
+            },
+            "description": "يعرض توزيع عمليات الرفع خلال فترة زمنية محددة"
+          }
+        },
+        {
+          "name": "قائمة أكبر الملفات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/largest-files",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "largest-files"
+              ]
+            },
+            "description": "يعرض الملفات الأكبر حجماً في النظام"
+          }
+        },
+        {
+          "name": "أحدث الملفات المرفوعة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/recent-uploads",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "recent-uploads"
+              ]
+            },
+            "description": "يعرض آخر الملفات التي تم رفعها"
+          }
+        },
+        {
+          "name": "إحصائيات التخزين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/storage",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "storage"
+              ]
+            },
+            "description": "يعرض معلومات عن مساحة التخزين المستخدمة والمتاحة"
+          }
+        },
+        {
+          "name": "إحصائيات الرفع حسب المستخدم",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/by-user",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "by-user"
+              ]
+            },
+            "description": "يعرض إحصائيات عمليات الرفع لكل مستخدم"
+          }
+        },
+        {
+          "name": "الملفات غير المستخدمة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/unused-files",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "unused-files"
+              ]
+            },
+            "description": "يعرض الملفات التي لم يتم استخدامها في أي مكان"
+          }
+        },
+        {
+          "name": "تقرير شامل عن الوسائط",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/full-report",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "full-report"
+              ]
+            },
+            "description": "يولد تقرير شامل يحتوي على جميع الإحصائيات"
+          }
+        }
+      ],
+      "description": "Endpoints for إحصائيات-الوسائط functionality"
     },
     {
       "name": "التدقيق",

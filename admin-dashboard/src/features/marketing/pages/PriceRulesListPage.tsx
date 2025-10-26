@@ -114,15 +114,22 @@ const PriceRulesListPage: React.FC = () => {
       {/* Table */}
       <TableContainer component={Paper}>
         <Table>
-          <TableHead>
+          <TableHead
+            sx={{
+              backgroundColor: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? theme.palette.grey[800]
+                  : theme.palette.grey[100],
+            }}
+          >
             <TableRow>
-              <TableCell>العنوان</TableCell>
-              <TableCell>الأولوية</TableCell>
-              <TableCell>الحالة</TableCell>
-              <TableCell>تاريخ البداية</TableCell>
-              <TableCell>تاريخ النهاية</TableCell>
-              <TableCell>الإحصائيات</TableCell>
-              <TableCell>الإجراءات</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>العنوان</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الأولوية</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحالة</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>تاريخ البداية</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>تاريخ النهاية</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإحصائيات</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
