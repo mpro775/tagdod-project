@@ -214,6 +214,8 @@ UnifiedNotificationSchema.pre('save', function(next) {
       [NotificationType.SERVICE_REQUEST_OPENED]: NotificationCategory.SERVICE,
       [NotificationType.NEW_ENGINEER_OFFER]: NotificationCategory.SERVICE,
       [NotificationType.OFFER_ACCEPTED]: NotificationCategory.SERVICE,
+      [NotificationType.OFFER_REJECTED]: NotificationCategory.SERVICE,
+      [NotificationType.OFFER_CANCELLED]: NotificationCategory.SERVICE,
       [NotificationType.SERVICE_STARTED]: NotificationCategory.SERVICE,
       [NotificationType.SERVICE_COMPLETED]: NotificationCategory.SERVICE,
       [NotificationType.SERVICE_RATED]: NotificationCategory.SERVICE,
