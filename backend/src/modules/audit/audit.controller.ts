@@ -9,17 +9,20 @@ import { AuditService } from '../../shared/services/audit.service';
 import { AuditAction, AuditResource } from './schemas/audit-log.schema';
 import { RolesGuard } from '../../shared/guards/roles.guard';
 import { Roles } from '../../shared/decorators/roles.decorator';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
 import { UserRole } from '../users/schemas/user.schema';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('التدقيق')
 @ApiBearerAuth()
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/audit')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get('logs')
+  @RequirePermissions('audit.read', 'admin.access')
   @ApiOperation({
     summary: 'الحصول على سجلات التدقيق مع التصفية',
     description: 'استرداد سجلات التدقيق مع خيارات التصفية المتنوعة',
@@ -72,6 +75,7 @@ export class AuditController {
   }
 
   @Get('stats')
+  @RequirePermissions('audit.read', 'admin.access')
   @ApiOperation({
     summary: 'الحصول على إحصائيات التدقيق',
     description: 'الحصول على إحصائيات حول سجلات التدقيق',
@@ -140,6 +144,7 @@ export class AuditController {
   }
 
   @Get('actions')
+  @RequirePermissions('audit.read', 'admin.access')
   @ApiOperation({
     summary: 'الحصول على إجراءات التدقيق المتاحة',
     description: 'الحصول على قائمة بجميع إجراءات التدقيق المتاحة',
@@ -149,6 +154,7 @@ export class AuditController {
   }
 
   @Get('resources')
+  @RequirePermissions('audit.read', 'admin.access')
   @ApiOperation({
     summary: 'الحصول على موارد التدقيق المتاحة',
     description: 'الحصول على قائمة بجميع موارد التدقيق المتاحة',

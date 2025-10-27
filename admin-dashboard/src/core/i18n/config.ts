@@ -4,6 +4,20 @@ import Backend from 'i18next-http-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { DEFAULT_LANGUAGE, API_BASE_URL } from '@/config/constants';
 
+// استيراد الترجمات المحلية كاحتياطي
+import arCommon from './locales/ar/common.json';
+import enCommon from './locales/en/common.json';
+
+// الترجمات المحلية
+const resources = {
+  ar: {
+    common: arCommon,
+  },
+  en: {
+    common: enCommon,
+  },
+};
+
 i18n
   .use(Backend) // Load translations from API
   .use(LanguageDetector)
@@ -11,7 +25,7 @@ i18n
   .init({
     // تحميل الترجمات من Backend API
     backend: {
-      loadPath: `${API_BASE_URL}/api/v1/i18n/public/translations/{{lng}}?namespace={{ns}}`,
+      loadPath: `${API_BASE_URL}/i18n/public/translations/{{lng}}?namespace={{ns}}`,
       crossDomain: false,
       // إعادة المحاولة في حالة الفشل
       requestOptions: {
@@ -19,7 +33,19 @@ i18n
         credentials: 'same-origin',
         cache: 'default',
       },
+      // في حالة فشل التحميل من API، استخدم الترجمات المحلية
+      parse: (data: string) => {
+        try {
+          return JSON.parse(data);
+        } catch {
+          // Failed to parse translations from API, using local fallback
+          return {};
+        }
+      },
     },
+    
+    // الترجمات المحلية كاحتياطي
+    resources,
     
     fallbackLng: DEFAULT_LANGUAGE,
     defaultNS: 'common',
@@ -37,7 +63,7 @@ i18n
 
     // React-specific options
     react: {
-      useSuspense: true, // تمكين Suspense للانتظار حتى تحميل الترجمات
+      useSuspense: false, // تعطيل Suspense لأننا نستخدم ترجمات محلية
     },
 
     // إعدادات Cache
@@ -45,6 +71,9 @@ i18n
       enabled: true,
       expirationTime: 24 * 60 * 60 * 1000, // 24 ساعة
     },
+
+    // استخدام الموارد المحلية كاحتياطي
+    partialBundledLanguages: true,
 
     // Debug في بيئة التطوير فقط
     debug: import.meta.env.DEV,

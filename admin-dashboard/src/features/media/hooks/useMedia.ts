@@ -38,7 +38,7 @@ export const useUploadMedia = () => {
     mutationFn: ({ file, data }: { file: File; data: UploadMediaDto }) =>
       mediaApi.upload(file, data),
     onSuccess: (response) => {
-      if (response.meta.isDuplicate) {
+      if (response.isDuplicate) {
         toast.success('الصورة موجودة مسبقاً');
       } else {
         toast.success('تم رفع الملف بنجاح');

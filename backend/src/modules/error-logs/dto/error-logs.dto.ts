@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEnum, IsNumber, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export enum ErrorLevel {
   ERROR = 'error',
@@ -23,26 +23,31 @@ export enum ErrorCategory {
 export class ErrorLogsQueryDto {
   @ApiPropertyOptional({ description: 'مستوى الخطأ', enum: ErrorLevel })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEnum(ErrorLevel)
   level?: ErrorLevel;
 
   @ApiPropertyOptional({ description: 'فئة الخطأ', enum: ErrorCategory })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEnum(ErrorCategory)
   category?: ErrorCategory;
 
   @ApiPropertyOptional({ description: 'نص البحث في الرسالة' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   search?: string;
 
   @ApiPropertyOptional({ description: 'تاريخ البداية (صيغة ISO)' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   startDate?: string;
 
   @ApiPropertyOptional({ description: 'تاريخ النهاية (صيغة ISO)' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   endDate?: string;
 
@@ -246,16 +251,19 @@ export class LogsExportDto {
 
   @ApiPropertyOptional({ description: 'تاريخ البداية' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   startDate?: string;
 
   @ApiPropertyOptional({ description: 'تاريخ النهاية' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   endDate?: string;
 
   @ApiPropertyOptional({ description: 'مستوى الخطأ', enum: ErrorLevel })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEnum(ErrorLevel)
   level?: ErrorLevel;
 }

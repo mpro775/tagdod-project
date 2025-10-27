@@ -5087,6 +5087,62 @@
           }
         },
         {
+          "name": "إحصائيات الكوبونات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/analytics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "analytics"
+              ]
+            },
+            "description": "استرداد إحصائيات شاملة عن الكوبونات"
+          }
+        },
+        {
+          "name": "إحصائيات مفصلة للكوبونات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "statistics"
+              ]
+            },
+            "description": "استرداد إحصائيات تفصيلية عن استخدام وأنواع الكوبونات"
+          }
+        },
+        {
           "name": "الحصول على كوبون",
           "request": {
             "method": "GET",
@@ -8851,6 +8907,93 @@
               ]
             },
             "description": ""
+          }
+        },
+        {
+          "name": "قبول عرض من قبل الإدارة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/admin/requests/{id}/accept-offer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "admin",
+                "requests",
+                "{id}",
+                "accept-offer"
+              ]
+            },
+            "description": "قبول عرض مهندس لطلب خدمة من قبل الإدارة"
+          }
+        },
+        {
+          "name": "رفض عرض من قبل الإدارة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/admin/offers/{id}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "admin",
+                "offers",
+                "{id}",
+                "reject"
+              ]
+            },
+            "description": "رفض عرض مهندس من قبل الإدارة"
+          }
+        },
+        {
+          "name": "إلغاء عرض من قبل الإدارة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/admin/offers/{id}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "admin",
+                "offers",
+                "{id}",
+                "cancel"
+              ]
+            },
+            "description": "إلغاء عرض مهندس من قبل الإدارة"
           }
         }
       ],

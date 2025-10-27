@@ -110,6 +110,12 @@ export class InventoryService {
       return { available: false, reason: 'VARIANT_NOT_AVAILABLE' };
     }
 
+    // التحقق من صحة قيمة المخزون
+    if (variant.trackInventory && isNaN(variant.stock)) {
+      this.logger.warn(`Invalid stock value for variant ${variantId}: ${variant.stock}`);
+      return { available: false, reason: 'INVALID_STOCK_VALUE' };
+    }
+
     if (variant.trackInventory && variant.stock < requestedQuantity) {
       if (!variant.allowBackorder) {
         return { 
@@ -162,6 +168,12 @@ export class InventoryService {
     const variant = await this.variantModel.findById(variantId).lean();
 
     if (!variant || !variant.trackInventory) {
+      return;
+    }
+
+    // التحقق من صحة قيم المخزون
+    if (isNaN(variant.stock) || isNaN(variant.minStock)) {
+      this.logger.warn(`Invalid stock values for variant ${variantId}: stock=${variant.stock}, minStock=${variant.minStock}`);
       return;
     }
 
@@ -233,31 +245,52 @@ export class InventoryService {
     minStock: number;
     difference: number;
   }>> {
-    const filter: FilterQuery<Variant> = {
-      trackInventory: true,
-      deletedAt: null,
-      isActive: true
-    };
+    try {
+      const filter: FilterQuery<Variant> = {
+        trackInventory: true,
+        deletedAt: null,
+        isActive: true,
+        // فلترة قيم NaN وغير الصحيحة
+        stock: { $type: 'number', $ne: null },
+        minStock: { $type: 'number', $ne: null }
+      };
 
-    if (threshold !== undefined) {
-      filter.stock = { $lte: threshold };
-    } else {
-      filter.$expr = { $lte: ['$stock', '$minStock'] };
+      if (threshold !== undefined) {
+        filter.stock = { ...filter.stock, $lte: threshold };
+      } else {
+        filter.$expr = { $lte: ['$stock', '$minStock'] };
+      }
+
+      const variants = await this.variantModel
+        .find(filter)
+        .select('_id productId sku stock minStock')
+        .lean();
+
+      // تصفية إضافية للتأكد من عدم وجود NaN
+      return variants
+        .filter(variant => 
+          !isNaN(variant.stock) && 
+          !isNaN(variant.minStock) &&
+          variant.stock !== null &&
+          variant.minStock !== null
+        )
+        .map(variant => ({
+          variantId: variant._id.toString(),
+          productId: variant.productId.toString(),
+          sku: variant.sku,
+          currentStock: variant.stock,
+          minStock: variant.minStock,
+          difference: variant.minStock - variant.stock
+        }));
+    } catch (error) {
+      this.logger.error('Error getting low stock variants:', error);
+      throw new AppException(
+        'LOW_STOCK_QUERY_ERROR',
+        'فشل في جلب المتغيرات ذات المخزون المنخفض',
+        error instanceof Error ? error.message : String(error),
+        500
+      );
     }
-
-    const variants = await this.variantModel
-      .find(filter)
-      .select('_id productId sku stock minStock')
-      .lean();
-
-    return variants.map(variant => ({
-      variantId: variant._id.toString(),
-      productId: variant.productId.toString(),
-      sku: variant.sku,
-      currentStock: variant.stock,
-      minStock: variant.minStock,
-      difference: variant.minStock - variant.stock
-    }));
   }
 
   async getOutOfStockVariants(): Promise<Array<{
@@ -265,21 +298,36 @@ export class InventoryService {
     productId: string;
     sku?: string;
   }>> {
-    const variants = await this.variantModel
-      .find({
-        trackInventory: true,
-        stock: 0,
-        deletedAt: null,
-        isActive: true
-      })
-      .select('_id productId sku')
-      .lean();
+    try {
+      const variants = await this.variantModel
+        .find({
+          trackInventory: true,
+          stock: 0,
+          deletedAt: null,
+          isActive: true,
+          // فلترة قيم NaN وغير الصحيحة
+          $expr: { $eq: [{ $type: '$stock' }, 'number'] }
+        })
+        .select('_id productId sku stock')
+        .lean();
 
-    return variants.map(variant => ({
-      variantId: variant._id.toString(),
-      productId: variant.productId.toString(),
-      sku: variant.sku
-    }));
+      // تصفية إضافية للتأكد من عدم وجود NaN
+      return variants
+        .filter(variant => !isNaN(variant.stock) && variant.stock === 0)
+        .map(variant => ({
+          variantId: variant._id.toString(),
+          productId: variant.productId.toString(),
+          sku: variant.sku
+        }));
+    } catch (error) {
+      this.logger.error('Error getting out of stock variants:', error);
+      throw new AppException(
+        'OUT_OF_STOCK_QUERY_ERROR',
+        'فشل في جلب المتغيرات غير المتوفرة',
+        error instanceof Error ? error.message : String(error),
+        500
+      );
+    }
   }
 
   async getInventorySummary(): Promise<{

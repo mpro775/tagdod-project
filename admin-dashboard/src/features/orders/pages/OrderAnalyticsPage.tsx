@@ -123,8 +123,8 @@ export const OrderAnalyticsPage: React.FC = () => {
               startIcon={<Download />}
               onClick={() => {
                 // TODO: Implement export functionality
-                console.log('Export analytics');
               }}
+              disabled
             >
               تصدير التقرير
             </Button>
@@ -253,7 +253,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                     <TrendingUp fontSize="large" />
                   </Box>
                   <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                    {analytics.ordersByStatus.find(s => s.status === 'completed')?.count || 0}
+                    {analytics.ordersByStatus?.find(s => s.status === 'completed')?.count || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     طلبات مكتملة
@@ -265,7 +265,7 @@ export const OrderAnalyticsPage: React.FC = () => {
         ) : null}
 
         {/* Orders by Status */}
-        {analytics && (
+        {analytics && analytics.ordersByStatus && analytics.ordersByStatus.length > 0 && (
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -341,23 +341,29 @@ export const OrderAnalyticsPage: React.FC = () => {
                       أفضل المنتجات
                     </Typography>
                     <List dense>
-                      {revenueAnalytics.topProducts.slice(0, 5).map((product, index) => (
-                        <ListItem key={index} divider>
-                          <ListItemText
-                            primary={product.productName}
-                            secondary={
-                              <Box>
-                                <Typography variant="body2" color="text.secondary">
-                                  الإيرادات: {formatCurrency(product.revenue, 'YER')}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  الطلبات: {product.orders}
-                                </Typography>
-                              </Box>
-                            }
-                          />
-                        </ListItem>
-                      ))}
+                      {revenueAnalytics.topProducts && revenueAnalytics.topProducts.length > 0 ? (
+                        revenueAnalytics.topProducts.slice(0, 5).map((product, index) => (
+                          <ListItem key={index} divider>
+                            <ListItemText
+                              primary={product.productName}
+                              secondary={
+                                <Box>
+                                  <Typography variant="body2" color="text.secondary">
+                                    الإيرادات: {formatCurrency(product.revenue, 'YER')}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    الطلبات: {product.orders}
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                          لا توجد بيانات متاحة
+                        </Typography>
+                      )}
                     </List>
                   </Paper>
                 </Grid>
@@ -465,7 +471,7 @@ export const OrderAnalyticsPage: React.FC = () => {
         ) : null}
 
         {/* Recent Orders */}
-        {analytics && analytics.recentOrders.length > 0 && (
+        {analytics && analytics.recentOrders && analytics.recentOrders.length > 0 && (
           <Card sx={{ mt: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>

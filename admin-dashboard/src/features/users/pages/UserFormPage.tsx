@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Box, Paper, Typography, Button, Divider, CircularProgress, Grid } from '@mui/material';
+import { Box, Paper, Typography, Button, Divider, CircularProgress, Grid, Chip, Alert } from '@mui/material';
 import { Save, Cancel } from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
@@ -42,6 +42,7 @@ export const UserFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditMode = id !== 'new' && !!id;
+  const [primaryRole, setPrimaryRole] = React.useState<UserRole>(UserRole.USER);
 
   // Form
   const methods = useForm<UserFormData>({
@@ -60,6 +61,35 @@ export const UserFormPage: React.FC = () => {
       wholesaleDiscountPercent: undefined,
     },
   });
+
+  // Role display names with descriptions
+  const getRoleDisplayName = (role: UserRole | string) => {
+    const roleNames: Record<string, string> = {
+      [UserRole.USER]: 'مستخدم',
+      [UserRole.ENGINEER]: 'مهندس',
+      [UserRole.MERCHANT]: 'تاجر (يحصل على تخفيض)',
+      [UserRole.ADMIN]: 'مدير (أدمن)',
+      [UserRole.SUPER_ADMIN]: 'مدير عام (سوبر أدمن)',
+    };
+    return roleNames[role] || role;
+  };
+
+  // Check if selected role requires admin permissions
+  const isAdminRole = () => {
+    return primaryRole === UserRole.ADMIN || primaryRole === UserRole.SUPER_ADMIN;
+  };
+
+  // Handle primary role change
+  const handlePrimaryRoleChange = (role: UserRole) => {
+    setPrimaryRole(role);
+    methods.setValue('role', role);
+    methods.setValue('roles', [role]);
+    
+    // Clear permissions for non-admin roles
+    if (role !== UserRole.ADMIN && role !== UserRole.SUPER_ADMIN) {
+      methods.setValue('permissions', []);
+    }
+  };
 
   // API
   const { data: user, isLoading } = useUser(id!);
@@ -94,6 +124,9 @@ export const UserFormPage: React.FC = () => {
       // eslint-disable-next-line no-console
       console.log('💼 Capabilities:', user.capabilities);
 
+      const userPrimaryRole = user.roles?.[0] || UserRole.USER;
+      setPrimaryRole(userPrimaryRole as UserRole);
+
       const formData = {
         phone: user.phone || '',
         firstName: user.firstName || '',
@@ -101,7 +134,7 @@ export const UserFormPage: React.FC = () => {
         gender: user.gender || 'male',
         jobTitle: user.jobTitle || '',
         password: '', // لا نحمل كلمة المرور في وضع التعديل
-        role: user.roles?.[0] || UserRole.USER, // نأخذ الدور الأول فقط
+        role: userPrimaryRole, // نأخذ الدور الأول فقط
         status: user.status || UserStatus.ACTIVE,
         roles: user.roles || [UserRole.USER],
         permissions: user.permissions || [],
@@ -209,18 +242,39 @@ export const UserFormPage: React.FC = () => {
                 </Typography>
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12 }}>
                 <FormSelect
                   name="role"
                   label="الدور الرئيسي *"
+                  value={primaryRole}
+                  onChange={(e) => handlePrimaryRoleChange(e.target.value as UserRole)}
                   options={[
-                    { value: UserRole.USER, label: 'مستخدم' },
-                    { value: UserRole.ENGINEER, label: 'مهندس' },
-                    { value: UserRole.MERCHANT, label: 'تاجر' },
-                    { value: UserRole.ADMIN, label: 'مدير' },
-                    { value: UserRole.SUPER_ADMIN, label: 'مدير عام' },
+                    { value: UserRole.USER, label: getRoleDisplayName(UserRole.USER) },
+                    { value: UserRole.ENGINEER, label: getRoleDisplayName(UserRole.ENGINEER) },
+                    { value: UserRole.MERCHANT, label: getRoleDisplayName(UserRole.MERCHANT) },
+                    { value: UserRole.ADMIN, label: getRoleDisplayName(UserRole.ADMIN) },
+                    { value: UserRole.SUPER_ADMIN, label: getRoleDisplayName(UserRole.SUPER_ADMIN) },
                   ]}
                 />
+                
+                {/* Display selected role with chip */}
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    الدور المحدد:
+                  </Typography>
+                  <Chip
+                    label={getRoleDisplayName(primaryRole)}
+                    color={
+                      primaryRole === UserRole.SUPER_ADMIN ? 'error' :
+                      primaryRole === UserRole.ADMIN ? 'primary' :
+                      primaryRole === UserRole.MERCHANT ? 'success' :
+                      primaryRole === UserRole.ENGINEER ? 'warning' :
+                      'default'
+                    }
+                    size="medium"
+                    sx={{ fontWeight: 'bold' }}
+                  />
+                </Box>
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -235,17 +289,30 @@ export const UserFormPage: React.FC = () => {
                 />
               </Grid>
 
-              {/* إدارة الأدوار والصلاحيات */}
-              <Grid size={{ xs: 12 }}>
-                <UserRoleManager
-                  roles={methods.watch('roles') || []}
-                  permissions={methods.watch('permissions') || []}
-                  onRolesChange={(roles) => methods.setValue('roles', roles)}
-                  onPermissionsChange={(permissions) =>
-                    methods.setValue('permissions', permissions)
-                  }
-                />
-              </Grid>
+              {/* إدارة الأدوار والصلاحيات - فقط للأدوار الإدارية */}
+              {isAdminRole() && (
+                <Grid size={{ xs: 12 }}>
+                  <UserRoleManager
+                    roles={methods.watch('roles') || []}
+                    permissions={methods.watch('permissions') || []}
+                    onRolesChange={(roles) => methods.setValue('roles', roles)}
+                    onPermissionsChange={(permissions) =>
+                      methods.setValue('permissions', permissions)
+                    }
+                  />
+                </Grid>
+              )}
+
+              {/* تنبيه للأدوار غير الإدارية */}
+              {!isAdminRole() && (
+                <Grid size={{ xs: 12 }}>
+                  <Alert severity="info">
+                    الدور المحدد ({getRoleDisplayName(primaryRole)}) لا يحتاج إلى صلاحيات إدارية إضافية.
+                    {primaryRole === UserRole.MERCHANT && ' سيحصل على نسبة تخفيض يمكن تحديدها أدناه.'}
+                    {primaryRole === UserRole.ENGINEER && ' سيحتاج إلى الموافقة على قدرة المهندس من قبل الإدارة.'}
+                  </Alert>
+                </Grid>
+              )}
 
               {/* إدارة القدرات */}
               <Grid size={{ xs: 12 }}>
@@ -302,13 +369,13 @@ export const UserFormPage: React.FC = () => {
               </Grid>
 
               {/* المسمى الوظيفي يظهر فقط للمهندس */}
-              {(methods.watch('role') === UserRole.ENGINEER ||
-                methods.watch('roles')?.includes(UserRole.ENGINEER)) && (
+              {primaryRole === UserRole.ENGINEER && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <FormInput
                     name="jobTitle"
                     label="المسمى الوظيفي"
                     placeholder="مهندس كهربائي، ميكانيكي، إلخ..."
+                    helperText="تخصص المهندس في مجال الطاقة الشمسية"
                   />
                 </Grid>
               )}
@@ -325,14 +392,14 @@ export const UserFormPage: React.FC = () => {
               )}
 
               {/* نسبة الخصم للتاجر */}
-              {(methods.watch('role') === UserRole.MERCHANT ||
-                methods.watch('roles')?.includes(UserRole.MERCHANT)) && (
+              {primaryRole === UserRole.MERCHANT && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <FormInput
                     name="wholesaleDiscountPercent"
-                    label="نسبة خصم الجملة (%)"
+                    label="نسبة التخفيض للتاجر (%)"
                     type="number"
                     placeholder="0-100"
+                    helperText="النسبة المئوية للتخفيض الذي سيحصل عليه التاجر على جميع المنتجات"
                   />
                 </Grid>
               )}

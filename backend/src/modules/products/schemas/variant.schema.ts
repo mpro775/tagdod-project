@@ -91,6 +91,39 @@ export class Variant {
 
 export const VariantSchema = SchemaFactory.createForClass(Variant);
 
+// Custom validators to prevent NaN values
+VariantSchema.path('stock').validate(function(value: number) {
+  return !isNaN(value) && isFinite(value) && value >= 0;
+}, 'Stock must be a valid non-negative number');
+
+VariantSchema.path('minStock').validate(function(value: number) {
+  return !isNaN(value) && isFinite(value) && value >= 0;
+}, 'MinStock must be a valid non-negative number');
+
+VariantSchema.path('basePriceUSD').validate(function(value: number) {
+  return !isNaN(value) && isFinite(value) && value >= 0;
+}, 'BasePriceUSD must be a valid non-negative number');
+
+// Pre-save hook to sanitize numeric fields
+VariantSchema.pre('save', function(next) {
+  // Sanitize stock
+  if (typeof this.stock !== 'number' || isNaN(this.stock) || !isFinite(this.stock)) {
+    this.stock = 0;
+  }
+  
+  // Sanitize minStock
+  if (typeof this.minStock !== 'number' || isNaN(this.minStock) || !isFinite(this.minStock)) {
+    this.minStock = 0;
+  }
+  
+  // Sanitize basePriceUSD
+  if (typeof this.basePriceUSD !== 'number' || isNaN(this.basePriceUSD) || !isFinite(this.basePriceUSD)) {
+    this.basePriceUSD = 0;
+  }
+  
+  next();
+});
+
 // Indexes (مبسطة)
 VariantSchema.index({ productId: 1, isActive: 1 });
 VariantSchema.index({ sku: 1 }, { unique: true, sparse: true });

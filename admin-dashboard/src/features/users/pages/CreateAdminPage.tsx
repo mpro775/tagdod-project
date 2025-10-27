@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -49,7 +49,8 @@ export const CreateAdminPage: React.FC = () => {
   const navigate = useNavigate();
   const { hasPermission } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [selectedPermissions, setSelectedPermissions] = React.useState<string[]>([]);
+  const [selectedPermissions, setSelectedPermissions] = React.useState<string[]>([PERMISSIONS.ADMIN_ACCESS]);
+  const [primaryRole, setPrimaryRole] = React.useState<string>('admin');
 
   const methods = useForm<CreateAdminFormData>({
     resolver: zodResolver(createAdminSchema),
@@ -70,6 +71,45 @@ export const CreateAdminPage: React.FC = () => {
 
   // Check if user can create super admin
   const canCreateSuperAdmin = hasPermission(PERMISSIONS.SUPER_ADMIN_ACCESS);
+
+  // Role display names with descriptions
+  const getRoleDisplayName = (role: string) => {
+    const roleNames: Record<string, string> = {
+      'admin': 'أدمن (مدير)',
+      'super_admin': 'سوبر أدمن (مدير عام)',
+      'user': 'مستخدم',
+      'customer': 'عميل',
+      'wholesale': 'تاجر (يحصل على تخفيض)',
+    };
+    return roleNames[role] || role;
+  };
+
+  // Check if selected role requires admin permissions
+  const isAdminRole = () => {
+    return primaryRole === 'admin' || primaryRole === 'super_admin';
+  };
+
+  // Handle primary role change
+  const handlePrimaryRoleChange = (role: string) => {
+    setPrimaryRole(role);
+    setValue('roles', [role]);
+    
+    // Set default permissions based on role
+    if (role === 'admin' || role === 'super_admin') {
+      if (role === 'super_admin') {
+        const allPermissions = Object.values(PERMISSIONS);
+        setSelectedPermissions(allPermissions);
+        setValue('permissions', allPermissions);
+      } else {
+        setSelectedPermissions([PERMISSIONS.ADMIN_ACCESS]);
+        setValue('permissions', [PERMISSIONS.ADMIN_ACCESS]);
+      }
+    } else {
+      // For non-admin roles, clear permissions
+      setSelectedPermissions([]);
+      setValue('permissions', []);
+    }
+  };
 
   // Permission categories for better organization
   const permissionCategories: Record<string, { title: string; permissions: string[] }> = {
@@ -92,6 +132,35 @@ export const CreateAdminPage: React.FC = () => {
         PERMISSIONS.PRODUCTS_CREATE,
         PERMISSIONS.PRODUCTS_UPDATE,
         PERMISSIONS.PRODUCTS_DELETE,
+        PERMISSIONS.PRODUCTS_PUBLISH,
+        PERMISSIONS.PRODUCTS_UNPUBLISH,
+      ],
+    },
+    categories: {
+      title: 'إدارة الفئات',
+      permissions: [
+        PERMISSIONS.CATEGORIES_READ,
+        PERMISSIONS.CATEGORIES_CREATE,
+        PERMISSIONS.CATEGORIES_UPDATE,
+        PERMISSIONS.CATEGORIES_DELETE,
+      ],
+    },
+    brands: {
+      title: 'إدارة العلامات التجارية',
+      permissions: [
+        PERMISSIONS.BRANDS_READ,
+        PERMISSIONS.BRANDS_CREATE,
+        PERMISSIONS.BRANDS_UPDATE,
+        PERMISSIONS.BRANDS_DELETE,
+      ],
+    },
+    attributes: {
+      title: 'إدارة الخصائص',
+      permissions: [
+        PERMISSIONS.ATTRIBUTES_READ,
+        PERMISSIONS.ATTRIBUTES_CREATE,
+        PERMISSIONS.ATTRIBUTES_UPDATE,
+        PERMISSIONS.ATTRIBUTES_DELETE,
       ],
     },
     orders: {
@@ -101,6 +170,27 @@ export const CreateAdminPage: React.FC = () => {
         PERMISSIONS.ORDERS_UPDATE,
         PERMISSIONS.ORDERS_CANCEL,
         PERMISSIONS.ORDERS_REFUND,
+        PERMISSIONS.ORDERS_STATUS_UPDATE,
+      ],
+    },
+    carts: {
+      title: 'إدارة السلة',
+      permissions: [
+        PERMISSIONS.CARTS_READ,
+        PERMISSIONS.CARTS_UPDATE,
+        PERMISSIONS.CARTS_DELETE,
+        PERMISSIONS.CARTS_SEND_REMINDERS,
+        PERMISSIONS.CARTS_CONVERT_TO_ORDER,
+        PERMISSIONS.CARTS_BULK_ACTIONS,
+      ],
+    },
+    services: {
+      title: 'إدارة الخدمات',
+      permissions: [
+        PERMISSIONS.SERVICES_READ,
+        PERMISSIONS.SERVICES_UPDATE,
+        PERMISSIONS.SERVICES_CANCEL,
+        PERMISSIONS.SERVICES_ASSIGN,
       ],
     },
     marketing: {
@@ -110,15 +200,8 @@ export const CreateAdminPage: React.FC = () => {
         PERMISSIONS.MARKETING_CREATE,
         PERMISSIONS.MARKETING_UPDATE,
         PERMISSIONS.MARKETING_DELETE,
-        PERMISSIONS.CARTS_SEND_REMINDERS,
-      ],
-    },
-    analytics: {
-      title: 'التحليلات والتقارير',
-      permissions: [
-        PERMISSIONS.ANALYTICS_READ,
-        PERMISSIONS.REPORTS_GENERATE,
-        PERMISSIONS.ANALYTICS_EXPORT,
+        PERMISSIONS.MARKETING_PUBLISH,
+        PERMISSIONS.MARKETING_ANALYZE,
       ],
     },
     support: {
@@ -127,6 +210,78 @@ export const CreateAdminPage: React.FC = () => {
         PERMISSIONS.SUPPORT_READ,
         PERMISSIONS.SUPPORT_UPDATE,
         PERMISSIONS.SUPPORT_ASSIGN,
+        PERMISSIONS.SUPPORT_CLOSE,
+      ],
+    },
+    analytics: {
+      title: 'التحليلات والتقارير',
+      permissions: [
+        PERMISSIONS.ANALYTICS_READ,
+        PERMISSIONS.ANALYTICS_EXPORT,
+        PERMISSIONS.REPORTS_GENERATE,
+        PERMISSIONS.REPORTS_SCHEDULE,
+      ],
+    },
+    media: {
+      title: 'إدارة الوسائط والرفع',
+      permissions: [
+        PERMISSIONS.MEDIA_MANAGE,
+        PERMISSIONS.MEDIA_DELETE,
+        PERMISSIONS.UPLOAD_MANAGE,
+        PERMISSIONS.UPLOAD_DELETE,
+      ],
+    },
+    notifications: {
+      title: 'إدارة الإشعارات',
+      permissions: [
+        PERMISSIONS.NOTIFICATIONS_READ,
+        PERMISSIONS.NOTIFICATIONS_CREATE,
+        PERMISSIONS.NOTIFICATIONS_UPDATE,
+        PERMISSIONS.NOTIFICATIONS_DELETE,
+        PERMISSIONS.NOTIFICATIONS_SEND,
+        PERMISSIONS.NOTIFICATIONS_MANAGE,
+      ],
+    },
+    audit: {
+      title: 'التدقيق والمراجعة',
+      permissions: [
+        PERMISSIONS.AUDIT_READ,
+        PERMISSIONS.AUDIT_MANAGE,
+      ],
+    },
+    capabilities: {
+      title: 'إدارة القدرات',
+      permissions: [
+        PERMISSIONS.CAPABILITIES_READ,
+        PERMISSIONS.CAPABILITIES_UPDATE,
+        PERMISSIONS.CAPABILITIES_APPROVE,
+        PERMISSIONS.CAPABILITIES_REJECT,
+      ],
+    },
+    roles: {
+      title: 'إدارة الأدوار',
+      permissions: [
+        PERMISSIONS.ROLES_READ,
+        PERMISSIONS.ROLES_CREATE,
+        PERMISSIONS.ROLES_UPDATE,
+        PERMISSIONS.ROLES_DELETE,
+        PERMISSIONS.ROLES_ASSIGN,
+        PERMISSIONS.ROLES_REVOKE,
+      ],
+    },
+    addresses: {
+      title: 'إدارة العناوين',
+      permissions: [
+        PERMISSIONS.ADDRESSES_READ,
+        PERMISSIONS.ADDRESSES_MANAGE,
+        PERMISSIONS.ADDRESSES_ANALYTICS,
+      ],
+    },
+    favorites: {
+      title: 'إدارة المفضلات',
+      permissions: [
+        PERMISSIONS.FAVORITES_READ,
+        PERMISSIONS.FAVORITES_MANAGE,
       ],
     },
     system: {
@@ -136,6 +291,8 @@ export const CreateAdminPage: React.FC = () => {
         PERMISSIONS.SETTINGS_UPDATE,
         PERMISSIONS.EXCHANGE_RATES_READ,
         PERMISSIONS.EXCHANGE_RATES_UPDATE,
+        PERMISSIONS.SYSTEM_MAINTENANCE,
+        PERMISSIONS.SYSTEM_BACKUP,
         PERMISSIONS.SYSTEM_LOGS,
       ],
     },
@@ -158,10 +315,13 @@ export const CreateAdminPage: React.FC = () => {
     try {
       setIsSubmitting(true);
 
+      // For non-admin roles, ensure permissions array is empty or only has basic permissions
+      const finalPermissions = isAdminRole() ? selectedPermissions : [];
+
       const adminData: CreateAdminDto = {
         ...data,
         roles: data.roles,
-        permissions: selectedPermissions,
+        permissions: finalPermissions.length > 0 ? finalPermissions : [PERMISSIONS.ADMIN_ACCESS],
       };
 
       const response = await adminApi.createAdmin(adminData);
@@ -184,7 +344,6 @@ export const CreateAdminPage: React.FC = () => {
     }
   };
 
-  const watchedRoles = watch('roles');
 
   return (
     <Box sx={{ p: 3 }}>
@@ -196,8 +355,9 @@ export const CreateAdminPage: React.FC = () => {
           </Typography>
         </Box>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Grid container spacing={3}>
+        <FormProvider {...methods}>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Grid container spacing={3}>
             {/* Basic Information */}
             <Grid component="div" size={{ xs: 12 }}>
               <Card>
@@ -247,144 +407,168 @@ export const CreateAdminPage: React.FC = () => {
               </Card>
             </Grid>
 
-            {/* Roles */}
+            {/* Primary Role Selection */}
             <Grid component="div" size={{ xs: 12 }}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    الأدوار
+                    الدور الرئيسي
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip
-                      label="أدمن"
-                      color={watchedRoles.includes('admin') ? 'primary' : 'default'}
-                      onClick={() => {
-                        const newRoles = watchedRoles.includes('admin')
-                          ? watchedRoles.filter(r => r !== 'admin')
-                          : [...watchedRoles, 'admin'];
-                        setValue('roles', newRoles);
-                      }}
+                  <Box sx={{ mb: 2 }}>
+                    <FormSelect
+                      name="primaryRole"
+                      label="اختر الدور الرئيسي"
+                      value={primaryRole}
+                      onChange={(e) => handlePrimaryRoleChange(String(e.target.value))}
+                      options={[
+                        { value: 'admin', label: getRoleDisplayName('admin') },
+                        ...(canCreateSuperAdmin ? [{ value: 'super_admin', label: getRoleDisplayName('super_admin') }] : []),
+                        { value: 'user', label: getRoleDisplayName('user') },
+                        { value: 'customer', label: getRoleDisplayName('customer') },
+                        { value: 'wholesale', label: getRoleDisplayName('wholesale') },
+                      ]}
+                      required
+                      {...methods}
                     />
-                    {canCreateSuperAdmin && (
-                      <Chip
-                        label="سوبر أدمن"
-                        color={watchedRoles.includes('super_admin') ? 'error' : 'default'}
-                        onClick={() => {
-                          const newRoles = watchedRoles.includes('super_admin')
-                            ? watchedRoles.filter(r => r !== 'super_admin')
-                            : [...watchedRoles, 'super_admin'];
-                          setValue('roles', newRoles);
-                        }}
-                      />
-                    )}
                   </Box>
+                  
+                  {/* Display selected role with chip */}
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      الدور المحدد:
+                    </Typography>
+                    <Chip
+                      label={getRoleDisplayName(primaryRole)}
+                      color={primaryRole === 'super_admin' ? 'error' : primaryRole === 'admin' ? 'primary' : 'default'}
+                      size="medium"
+                      sx={{ fontWeight: 'bold' }}
+                    />
+                  </Box>
+
+                  {/* Warning for non-admin roles */}
+                  {!isAdminRole() && (
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      الدور المحدد ({getRoleDisplayName(primaryRole)}) لا يحتاج إلى صلاحيات إدارية. 
+                      لن تظهر خيارات الصلاحيات المخصصة.
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
 
-            {/* Permission Presets */}
-            <Grid component="div" size={{ xs: 12 }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    قوالب الصلاحيات الجاهزة
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => applyPermissionPreset('PRODUCT_MANAGER')}
-                    >
-                      مدير المنتجات
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => applyPermissionPreset('SALES_MANAGER')}
-                    >
-                      مدير المبيعات
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => applyPermissionPreset('SUPPORT_MANAGER')}
-                    >
-                      مدير الدعم
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => applyPermissionPreset('MARKETING_MANAGER')}
-                    >
-                      مدير التسويق
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => applyPermissionPreset('CONTENT_MANAGER')}
-                    >
-                      مدير المحتوى
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => applyPermissionPreset('VIEW_ONLY_ADMIN')}
-                    >
-                      قراءة فقط
-                    </Button>
-                    {canCreateSuperAdmin && (
+            {/* Permission Presets - Only show for admin roles */}
+            {isAdminRole() && (
+              <Grid component="div" size={{ xs: 12 }}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      قوالب الصلاحيات الجاهزة
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      اختر قالباً جاهزاً أو قم بتخصيص الصلاحيات يدوياً في الأسفل
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                       <Button
                         variant="outlined"
                         size="small"
-                        color="error"
-                        onClick={() => applyPermissionPreset('FULL_ADMIN')}
+                        onClick={() => applyPermissionPreset('PRODUCT_MANAGER')}
                       >
-                        الأدمن الكامل
+                        مدير المنتجات
                       </Button>
-                    )}
-                  </Box>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    الصلاحيات المحددة: {selectedPermissions.length} صلاحية
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Permissions */}
-            <Grid component="div" size={{ xs: 12 }}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Security sx={{ mr: 1 }} />
-                    الصلاحيات المخصصة
-                  </Typography>
-
-                  {Object.entries(permissionCategories).map(([categoryKey, category]) => (
-                    <Box key={categoryKey} sx={{ mb: 3 }}>
-                      <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
-                        {category.title}
-                      </Typography>
-                      <FormCheckboxGroup
-                        name={`permissions-${categoryKey}`}
-                        control={methods.control}
-                        options={category.permissions.map(perm => ({
-                          value: perm,
-                          label: perm.split('.').pop()?.replace('_', ' ') || perm,
-                        }))}
-                        value={selectedPermissions.filter((p: string) => category.permissions.includes(p))}
-                        onChange={(values) => {
-                          const newPermissions = selectedPermissions.filter(
-                            (p: string) => !category.permissions.includes(p)
-                          ).concat(values);
-                          handlePermissionChange(newPermissions);
-                        }}
-                      />
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => applyPermissionPreset('SALES_MANAGER')}
+                      >
+                        مدير المبيعات
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => applyPermissionPreset('SUPPORT_MANAGER')}
+                      >
+                        مدير الدعم
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => applyPermissionPreset('MARKETING_MANAGER')}
+                      >
+                        مدير التسويق
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => applyPermissionPreset('CONTENT_MANAGER')}
+                      >
+                        مدير المحتوى
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => applyPermissionPreset('VIEW_ONLY_ADMIN')}
+                      >
+                        قراءة فقط
+                      </Button>
+                      {canCreateSuperAdmin && primaryRole === 'super_admin' && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          color="error"
+                          onClick={() => applyPermissionPreset('FULL_ADMIN')}
+                        >
+                          جميع الصلاحيات
+                        </Button>
+                      )}
                     </Box>
-                  ))}
-                </CardContent>
-              </Card>
-            </Grid>
+                    <Divider sx={{ my: 2 }} />
+                    <Typography variant="body2" color="text.secondary">
+                      الصلاحيات المحددة: {selectedPermissions.length} صلاحية
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* Permissions - Only show for admin roles */}
+            {isAdminRole() && (
+              <Grid component="div" size={{ xs: 12 }}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Security sx={{ mr: 1 }} />
+                      الصلاحيات المخصصة
+                    </Typography>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      يمكنك تخصيص الصلاحيات حسب احتياجاتك، أو اختيار قالب جاهز من الأعلى
+                    </Alert>
+
+                    {Object.entries(permissionCategories).map(([categoryKey, category]) => (
+                      <Box key={categoryKey} sx={{ mb: 3 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
+                          {category.title}
+                        </Typography>
+                        <FormCheckboxGroup
+                          name={`permissions-${categoryKey}`}
+                          control={methods.control}
+                          options={category.permissions.map(perm => ({
+                            value: perm,
+                            label: perm.split('.').pop()?.replace('_', ' ') || perm,
+                          }))}
+                          value={selectedPermissions.filter((p: string) => category.permissions.includes(p))}
+                          onChange={(values) => {
+                            const newPermissions = selectedPermissions.filter(
+                              (p: string) => !category.permissions.includes(p)
+                            ).concat(values);
+                            handlePermissionChange(newPermissions);
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
 
             {/* Additional Settings */}
             <Grid component="div" size={{ xs: 12 }}>
@@ -449,8 +633,9 @@ export const CreateAdminPage: React.FC = () => {
                 </Button>
               </Box>
             </Grid>
-          </Grid>
-        </form>
+            </Grid>
+          </form>
+        </FormProvider>
 
         {Object.keys(errors).length > 0 && (
           <Alert severity="error" sx={{ mt: 2 }}>

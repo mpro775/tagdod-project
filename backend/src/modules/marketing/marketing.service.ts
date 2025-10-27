@@ -232,6 +232,108 @@ export class MarketingService {
     return { valid: true, coupon };
   }
 
+  async getCouponsAnalytics(period: number = 30) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - period);
+
+    const [totalCoupons, activeCoupons, expiredCoupons, coupons] = await Promise.all([
+      this.couponModel.countDocuments({ deletedAt: null }),
+      this.couponModel.countDocuments({ 
+        deletedAt: null, 
+        status: CouponStatus.ACTIVE,
+        validUntil: { $gte: new Date() }
+      }),
+      this.couponModel.countDocuments({ 
+        deletedAt: null, 
+        status: CouponStatus.ACTIVE,
+        validUntil: { $lt: new Date() }
+      }),
+      this.couponModel.find({ deletedAt: null }).lean()
+    ]);
+
+    const totalUses = coupons.reduce((sum, c) => sum + (c.usedCount || 0), 0);
+    const totalLimit = coupons.reduce((sum, c) => sum + (c.usageLimit || 0), 0);
+    
+    return {
+      success: true,
+      data: {
+        totalCoupons,
+        activeCoupons,
+        expiredCoupons,
+        totalUses,
+        totalLimit,
+        usageRate: totalLimit > 0 ? ((totalUses / totalLimit) * 100).toFixed(2) : 0,
+        period,
+      }
+    };
+  }
+
+  async getCouponsStatistics(period: number = 30) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - period);
+
+    const coupons = await this.couponModel.find({ 
+      deletedAt: null,
+      createdAt: { $gte: startDate }
+    }).lean();
+
+    const statusBreakdown = {
+      active: 0,
+      inactive: 0,
+      expired: 0,
+      scheduled: 0
+    };
+
+    const typeBreakdown = {
+      percentage: 0,
+      fixed: 0,
+      freeShipping: 0
+    };
+
+    const now = new Date();
+    coupons.forEach(coupon => {
+      // Status breakdown
+      if (coupon.status === CouponStatus.ACTIVE) {
+        if (now < coupon.validFrom) {
+          statusBreakdown.scheduled++;
+        } else if (now > coupon.validUntil) {
+          statusBreakdown.expired++;
+        } else {
+          statusBreakdown.active++;
+        }
+      } else {
+        statusBreakdown.inactive++;
+      }
+
+      // Type breakdown
+      if (coupon.type === 'percentage') {
+        typeBreakdown.percentage++;
+      } else if (coupon.type === 'fixed_amount') {
+        typeBreakdown.fixed++;
+      } else if (coupon.type === 'free_shipping') {
+        typeBreakdown.freeShipping++;
+      }
+    });
+
+    const topUsedCoupons = await this.couponModel
+      .find({ deletedAt: null })
+      .sort({ usedCount: -1 })
+      .limit(10)
+      .select('code type discountValue usedCount usageLimit')
+      .lean();
+
+    return {
+      success: true,
+      data: {
+        statusBreakdown,
+        typeBreakdown,
+        topUsedCoupons,
+        period,
+        totalInPeriod: coupons.length
+      }
+    };
+  }
+
   // ==================== BANNERS ====================
 
   async createBanner(dto: CreateBannerDto): Promise<Banner> {

@@ -14,6 +14,8 @@ export const PERMISSIONS = {
   PRODUCTS_CREATE: 'products.create',
   PRODUCTS_UPDATE: 'products.update',
   PRODUCTS_DELETE: 'products.delete',
+  PRODUCTS_PUBLISH: 'products.publish',
+  PRODUCTS_UNPUBLISH: 'products.unpublish',
 
   // Categories
   CATEGORIES_READ: 'categories.read',
@@ -38,51 +40,101 @@ export const PERMISSIONS = {
   ORDERS_UPDATE: 'orders.update',
   ORDERS_CANCEL: 'orders.cancel',
   ORDERS_REFUND: 'orders.refund',
+  ORDERS_STATUS_UPDATE: 'orders.status_update',
 
   // Carts
   CARTS_READ: 'carts.read',
+  CARTS_UPDATE: 'carts.update',
+  CARTS_DELETE: 'carts.delete',
   CARTS_SEND_REMINDERS: 'carts.send_reminders',
   CARTS_CONVERT_TO_ORDER: 'carts.convert_to_order',
+  CARTS_BULK_ACTIONS: 'carts.bulk_actions',
 
   // Services
   SERVICES_READ: 'services.read',
   SERVICES_UPDATE: 'services.update',
+  SERVICES_CANCEL: 'services.cancel',
+  SERVICES_ASSIGN: 'services.assign',
 
   // Support
   SUPPORT_READ: 'support.read',
   SUPPORT_UPDATE: 'support.update',
   SUPPORT_ASSIGN: 'support.assign',
+  SUPPORT_CLOSE: 'support.close',
 
   // Marketing
   MARKETING_READ: 'marketing.read',
   MARKETING_CREATE: 'marketing.create',
   MARKETING_UPDATE: 'marketing.update',
   MARKETING_DELETE: 'marketing.delete',
+  MARKETING_PUBLISH: 'marketing.publish',
+  MARKETING_ANALYZE: 'marketing.analyze',
 
   // Analytics
   ANALYTICS_READ: 'analytics.read',
-  REPORTS_GENERATE: 'reports.generate',
   ANALYTICS_EXPORT: 'analytics.export',
+  REPORTS_GENERATE: 'reports.generate',
+  REPORTS_SCHEDULE: 'reports.schedule',
 
   // Media
   MEDIA_MANAGE: 'media.manage',
+  MEDIA_DELETE: 'media.delete',
 
   // Notifications
   NOTIFICATIONS_READ: 'notifications.read',
   NOTIFICATIONS_MANAGE: 'notifications.manage',
+  NOTIFICATIONS_CREATE: 'notifications.create',
+  NOTIFICATIONS_UPDATE: 'notifications.update',
+  NOTIFICATIONS_DELETE: 'notifications.delete',
+  NOTIFICATIONS_SEND: 'notifications.send',
 
   // Exchange Rates
   EXCHANGE_RATES_READ: 'exchange_rates.read',
   EXCHANGE_RATES_UPDATE: 'exchange_rates.update',
+  EXCHANGE_RATES_MANUAL_UPDATE: 'exchange_rates.manual_update',
+
+  // Audit
+  AUDIT_READ: 'audit.read',
+  AUDIT_MANAGE: 'audit.manage',
+  AUDIT_DELETE: 'audit.delete',
+
+  // Capabilities
+  CAPABILITIES_READ: 'capabilities.read',
+  CAPABILITIES_UPDATE: 'capabilities.update',
+  CAPABILITIES_APPROVE: 'capabilities.approve',
+  CAPABILITIES_REJECT: 'capabilities.reject',
+
+  // Favorites
+  FAVORITES_READ: 'favorites.read',
+  FAVORITES_MANAGE: 'favorites.manage',
+
+  // Addresses
+  ADDRESSES_READ: 'addresses.read',
+  ADDRESSES_MANAGE: 'addresses.manage',
+  ADDRESSES_ANALYTICS: 'addresses.analytics',
+
+  // Upload
+  UPLOAD_MANAGE: 'upload.manage',
+  UPLOAD_DELETE: 'upload.delete',
+
+  // Roles
+  ROLES_READ: 'roles.read',
+  ROLES_CREATE: 'roles.create',
+  ROLES_UPDATE: 'roles.update',
+  ROLES_DELETE: 'roles.delete',
+  ROLES_ASSIGN: 'roles.assign',
+  ROLES_REVOKE: 'roles.revoke',
 
   // System
   SETTINGS_READ: 'settings.read',
   SETTINGS_UPDATE: 'settings.update',
+  SYSTEM_MAINTENANCE: 'system.maintenance',
+  SYSTEM_BACKUP: 'system.backup',
+  SYSTEM_LOGS: 'system.logs',
 
   // Admin Access
   ADMIN_ACCESS: 'admin.access',
   SUPER_ADMIN_ACCESS: 'super_admin.access',
-  SYSTEM_LOGS: 'system.logs',
 } as const;
 
 // Permission Groups - Presets for different admin roles

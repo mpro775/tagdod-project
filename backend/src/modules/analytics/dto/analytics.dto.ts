@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsEnum, IsDateString, IsArray, IsObject, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { PeriodType } from '../schemas/analytics-snapshot.schema';
 import { ReportType, ReportFormat, ScheduleFrequency } from '../schemas/report-schedule.schema';
 
@@ -20,6 +21,7 @@ export class AnalyticsQueryDto {
     required: false,
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsDateString()
   startDate?: string;
 
@@ -29,6 +31,7 @@ export class AnalyticsQueryDto {
     required: false,
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsDateString()
   endDate?: string;
 
@@ -69,6 +72,7 @@ export class ReportGenerationDto {
     required: false,
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsDateString()
   startDate?: string;
 
@@ -78,6 +82,7 @@ export class ReportGenerationDto {
     required: false,
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsDateString()
   endDate?: string;
 

@@ -34,11 +34,13 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
     );
   }
 
-  const chartData = data?.slice(-14).map(item => ({
-    date: new Date(item.date).toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' }),
-    revenue: item.revenue || 0,
-    orders: item.orders || 0,
-  })) || [];
+  const chartData = Array.isArray(data) 
+    ? data.slice(-14).map(item => ({
+        date: new Date(item.date).toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' }),
+        revenue: item.revenue || 0,
+        orders: item.orders || 0,
+      }))
+    : [];
 
   const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
   const avgRevenue = chartData.length > 0 ? totalRevenue / chartData.length : 0;

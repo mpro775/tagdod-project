@@ -1,5 +1,6 @@
 import { IsString, IsEnum, IsOptional, IsObject, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export enum Language {
   AR = 'ar',
@@ -38,11 +39,13 @@ export class CreateTranslationDto {
     default: TranslationNamespace.COMMON
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEnum(TranslationNamespace)
   namespace?: TranslationNamespace;
 
   @ApiPropertyOptional({ description: 'وصف/ملاحظة' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   description?: string;
 }
@@ -50,11 +53,13 @@ export class CreateTranslationDto {
 export class UpdateTranslationDto {
   @ApiPropertyOptional({ description: 'النص بالعربية' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   ar?: string;
 
   @ApiPropertyOptional({ description: 'النص بالإنجليزية' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   en?: string;
 
@@ -63,11 +68,13 @@ export class UpdateTranslationDto {
     enum: TranslationNamespace 
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEnum(TranslationNamespace)
   namespace?: TranslationNamespace;
 
   @ApiPropertyOptional({ description: 'وصف/ملاحظة' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   description?: string;
 }
@@ -78,11 +85,13 @@ export class TranslationsQueryDto {
     enum: TranslationNamespace 
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEnum(TranslationNamespace)
   namespace?: TranslationNamespace;
 
   @ApiPropertyOptional({ description: 'البحث في المفتاح أو النص' })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   search?: string;
 
@@ -93,6 +102,7 @@ export class TranslationsQueryDto {
 
   @ApiPropertyOptional({ description: 'اللغة المفقودة', enum: Language })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEnum(Language)
   missingLanguage?: Language;
 }
@@ -173,6 +183,7 @@ export class BulkImportDto {
     enum: TranslationNamespace 
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEnum(TranslationNamespace)
   namespace?: TranslationNamespace;
 
@@ -191,6 +202,7 @@ export class ExportTranslationsDto {
     enum: TranslationNamespace 
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsEnum(TranslationNamespace)
   namespace?: TranslationNamespace;
 
@@ -200,6 +212,7 @@ export class ExportTranslationsDto {
     default: 'json'
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   format?: 'json' | 'csv';
 
@@ -209,6 +222,7 @@ export class ExportTranslationsDto {
     default: 'both'
   })
   @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
   @IsString()
   language?: Language | 'both';
 }

@@ -4,7 +4,8 @@ import { Model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 import { User, UserRole, UserStatus } from '../src/modules/users/schemas/user.schema';
 import { Capabilities } from '../src/modules/capabilities/schemas/capabilities.schema';
-import * as bcrypt from 'bcryptjs';
+import { PERMISSION_GROUPS } from '../src/shared/constants/permissions';
+import * as bcrypt from 'bcrypt';
 
 async function createSuperAdmin() {
   console.log('🚀 بدء إنشاء الادمن الرئيسي...');
@@ -19,7 +20,7 @@ async function createSuperAdmin() {
 
     // بيانات الادمن الرئيسي
     const superAdminData = {
-      phone: '+966500000000', // رقم هاتف افتراضي
+      phone: '0500000000', // رقم هاتف افتراضي (يبدأ بـ 05)
       firstName: 'Super',
       lastName: 'Admin',
       gender: 'male' as const,
@@ -27,35 +28,13 @@ async function createSuperAdmin() {
       passwordHash: await bcrypt.hash('Admin123!@#', 10), // كلمة مرور قوية
       isAdmin: true,
       roles: [UserRole.SUPER_ADMIN],
-      permissions: [
-        'users.create',
-        'users.read',
-        'users.update',
-        'users.delete',
-        'products.create',
-        'products.read',
-        'products.update',
-        'products.delete',
-        'orders.create',
-        'orders.read',
-        'orders.update',
-        'orders.delete',
-        'analytics.read',
-        'reports.read',
-        'settings.read',
-        'settings.update',
-        'admin.access',
-        'super_admin.access'
-      ],
+      permissions: PERMISSION_GROUPS.FULL_ADMIN, // جميع الصلاحيات المتاحة في النظام
       status: UserStatus.ACTIVE
     };
 
     // التحقق من وجود الادمن الرئيسي
     const existingAdmin = await userModel.findOne({ 
-      $or: [
-        { phone: superAdminData.phone },
-        { roles: UserRole.SUPER_ADMIN }
-      ]
+      roles: UserRole.SUPER_ADMIN
     });
 
     if (existingAdmin) {
@@ -65,15 +44,30 @@ async function createSuperAdmin() {
       console.log(`🔑 الأدوار: ${existingAdmin.roles?.join(', ')}`);
       console.log(`📊 الحالة: ${existingAdmin.status}`);
       
-      // تحديث كلمة المرور إذا لزم الأمر
-      if (process.argv.includes('--update-password')) {
-        existingAdmin.passwordHash = await bcrypt.hash('Admin123!@#', 10);
-        await existingAdmin.save();
-        console.log('✅ تم تحديث كلمة المرور');
+      // خيار لإعادة إنشاء المستخدم
+      if (process.argv.includes('--recreate')) {
+        console.log('🔄 جاري حذف المستخدم القديم وإعادة إنشائه...');
+        // حذف capabilities القديم
+        await capsModel.deleteMany({ userId: existingAdmin._id.toString() });
+        // حذف المستخدم
+        await userModel.findByIdAndDelete(existingAdmin._id);
+        console.log('✅ تم حذف المستخدم القديم');
       }
-      
-      await app.close();
-      return;
+      // تحديث كلمة المرور والصلاحيات إذا لزم الأمر
+      else if (process.argv.includes('--update')) {
+        existingAdmin.passwordHash = await bcrypt.hash('Admin123!@#', 10);
+        existingAdmin.permissions = PERMISSION_GROUPS.FULL_ADMIN;
+        existingAdmin.phone = superAdminData.phone;
+        await existingAdmin.save();
+        console.log('✅ تم تحديث كلمة المرور والصلاحيات');
+        await app.close();
+        return;
+      } else {
+        console.log('\n💡 استخدم --recreate لحذف المستخدم القديم وإعادة إنشائه');
+        console.log('💡 أو استخدم --update لتحديث المستخدم الحالي');
+        await app.close();
+        return;
+      }
     }
 
     // إنشاء الادمن الرئيسي

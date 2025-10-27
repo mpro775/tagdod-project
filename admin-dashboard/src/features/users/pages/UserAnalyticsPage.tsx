@@ -55,8 +55,9 @@ interface OverallAnalytics {
   activeUsers: number;
   newUsersThisMonth: number;
   averageOrderValue: number;
-  totalRevenue: number;
-  averageOrdersPerUser: number;
+  customerLifetimeValue: number;
+  topSpenders: Array<{ userId: string; totalSpent: number }>;
+  userGrowth: Array<{ month: string; newUsers: number }>;
 }
 
 interface CustomerRanking {
@@ -260,10 +261,10 @@ export const UserAnalyticsPage: React.FC = () => {
                   <AttachMoney sx={{ fontSize: 40, color: theme.palette.success.main, mr: 2 }} />
                   <Box>
                     <Typography variant="h4" fontWeight="bold">
-                      {overallAnalytics.totalRevenue.toLocaleString('ar-SA')} ر.س
+                      {overallAnalytics.customerLifetimeValue.toFixed(2)} ر.س
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      إجمالي الإيرادات
+                      القيمة الدائمة للعميل
                     </Typography>
                   </Box>
                 </Box>
@@ -291,7 +292,7 @@ export const UserAnalyticsPage: React.FC = () => {
                   </Box>
                 </Box>
                 <Chip
-                  label={`معدل الطلبات: ${overallAnalytics.averageOrdersPerUser.toFixed(1)}`}
+                  label={`أفضل العملاء: ${overallAnalytics.topSpenders.length}`}
                   size="small"
                   color="warning"
                 />

@@ -225,6 +225,109 @@ export class MarketingAdminController {
     return result;
   }
 
+  @Get('coupons/analytics')
+  @ApiOperation({
+    summary: 'إحصائيات الكوبونات',
+    description: 'استرداد إحصائيات شاملة عن الكوبونات'
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    type: Number,
+    description: 'عدد الأيام للإحصائيات (افتراضي: 30)',
+    example: 30
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد إحصائيات الكوبونات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            totalCoupons: { type: 'number', example: 25 },
+            activeCoupons: { type: 'number', example: 15 },
+            expiredCoupons: { type: 'number', example: 5 },
+            totalUses: { type: 'number', example: 342 },
+            totalLimit: { type: 'number', example: 500 },
+            usageRate: { type: 'string', example: '68.40' },
+            period: { type: 'number', example: 30 }
+          }
+        }
+      }
+    }
+  })
+  async getCouponsAnalytics(@Query('period') period?: number) {
+    const analytics = await this.svc.getCouponsAnalytics(period || 30);
+    return analytics;
+  }
+
+  @Get('coupons/statistics')
+  @ApiOperation({
+    summary: 'إحصائيات مفصلة للكوبونات',
+    description: 'استرداد إحصائيات تفصيلية عن استخدام وأنواع الكوبونات'
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    type: Number,
+    description: 'عدد الأيام للإحصائيات (افتراضي: 30)',
+    example: 30
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد الإحصائيات المفصلة بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            statusBreakdown: {
+              type: 'object',
+              properties: {
+                active: { type: 'number', example: 15 },
+                inactive: { type: 'number', example: 3 },
+                expired: { type: 'number', example: 5 },
+                scheduled: { type: 'number', example: 2 }
+              }
+            },
+            typeBreakdown: {
+              type: 'object',
+              properties: {
+                percentage: { type: 'number', example: 12 },
+                fixed: { type: 'number', example: 8 },
+                freeShipping: { type: 'number', example: 5 }
+              }
+            },
+            topUsedCoupons: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  code: { type: 'string' },
+                  type: { type: 'string', enum: ['percentage', 'fixed_amount', 'free_shipping', 'buy_x_get_y'] },
+                  discountValue: { type: 'number' },
+                  usedCount: { type: 'number' },
+                  usageLimit: { type: 'number' }
+                }
+              }
+            },
+            period: { type: 'number', example: 30 },
+            totalInPeriod: { type: 'number', example: 25 }
+          }
+        }
+      }
+    }
+  })
+  async getCouponsStatistics(@Query('period') period?: number) {
+    const statistics = await this.svc.getCouponsStatistics(period || 30);
+    return statistics;
+  }
+
   @Get('coupons/:id')
   @ApiOperation({
     summary: 'الحصول على كوبون',

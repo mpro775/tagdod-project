@@ -608,18 +608,15 @@ export class AuthController {
     this.logger.log(`Admin login successful: ${body.phone}`);
 
     return {
-      success: true,
-      data: {
-        tokens: { access, refresh },
-        me: {
-          id: String(user._id),
-          phone: user.phone,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          roles: user.roles || [],
-          permissions: user.permissions || [],
-          isAdmin: isAdminUser,
-        },
+      tokens: { access, refresh },
+      me: {
+        id: String(user._id),
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: user.roles || [],
+        permissions: user.permissions || [],
+        isAdmin: isAdminUser,
       },
     };
   }

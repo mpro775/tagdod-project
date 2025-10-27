@@ -38,7 +38,8 @@ import { MediaCategory } from '../types/media.types';
 interface MediaUploaderProps {
   open: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  // eslint-disable-next-line no-unused-vars
+  onSuccess?: (media?: any) => void;
   defaultCategory?: MediaCategory;
 }
 
@@ -111,6 +112,20 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     setActiveStep(prev => prev - 1);
   }, []);
 
+  const handleClose = useCallback(() => {
+    setActiveStep(0);
+    setFile(null);
+    setName('');
+    setDescription('');
+    setTags([]);
+    setTagInput('');
+    setIsPublic(true);
+    setPreview(null);
+    setUploadProgress(0);
+    setUploadError(null);
+    onClose();
+  }, [onClose]);
+
   const handleUpload = useCallback(() => {
     if (!file || !name) return;
 
@@ -129,11 +144,11 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           setUploadProgress(100);
           setTimeout(() => {
             handleClose();
-            onSuccess?.();
+            onSuccess?.(response.media);
           }, 1000);
         },
         onError: (error) => {
@@ -141,21 +156,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         },
       }
     );
-  }, [file, name, category, description, tags, isPublic, upload, onSuccess]);
-
-  const handleClose = useCallback(() => {
-    setActiveStep(0);
-    setFile(null);
-    setName('');
-    setDescription('');
-    setTags([]);
-    setTagInput('');
-    setIsPublic(true);
-    setPreview(null);
-    setUploadProgress(0);
-    setUploadError(null);
-    onClose();
-  }, [onClose]);
+  }, [file, name, category, description, tags, isPublic, upload, onSuccess, handleClose]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';

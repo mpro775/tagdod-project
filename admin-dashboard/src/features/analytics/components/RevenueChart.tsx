@@ -24,7 +24,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, title, height 
           {title || 'اتجاهات الإيرادات'}
         </Typography>
         <ResponsiveContainer width="100%" height={height || 400}>
-          <LineChart data={data || []}>
+          <LineChart data={Array.isArray(data) ? data : []}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />

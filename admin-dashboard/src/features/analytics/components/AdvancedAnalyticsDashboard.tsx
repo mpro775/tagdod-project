@@ -102,7 +102,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const [selectedTab, setSelectedTab] = useState(0);
-  const [selectedCategory] = useState<ReportCategory>(initialCategory);
+  const [selectedCategory, setSelectedCategory] = useState<ReportCategory>(initialCategory);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportForm, setReportForm] = useState({
     title: '',
@@ -130,6 +130,12 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
+    
+    // تحديث الفئة بناءً على التبويب المحدد
+    const tabConfig = tabs.find(tab => tab.value === newValue);
+    if (tabConfig?.category) {
+      setSelectedCategory(tabConfig.category);
+    }
   };
 
   const handleGenerateReport = async () => {
@@ -394,7 +400,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
                   </Box>
                 ) : (
                   <List>
-                    {advancedReports.data?.data?.map((report) => (
+                    {Array.isArray(advancedReports.data?.data) && advancedReports.data.data.map((report) => (
                       <ListItem key={report.reportId} divider>
                         <ListItemText
                           primary={report.title}

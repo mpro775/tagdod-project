@@ -116,19 +116,19 @@ export const BannerStatsCards: React.FC = () => {
   }
 
   const {
-    totalBanners,
-    activeBanners,
-    inactiveBanners,
-    totalViews,
-    totalClicks,
-    totalConversions,
-    averageClickThroughRate,
-    averageConversionRate,
+    totalBanners = 0,
+    activeBanners = 0,
+    inactiveBanners = 0,
+    totalViews = 0,
+    totalClicks = 0,
+    totalConversions = 0,
+    averageClickThroughRate = 0,
+    averageConversionRate = 0,
   } = analytics;
 
   const activePercentage = totalBanners > 0 ? (activeBanners / totalBanners) * 100 : 0;
-  const ctrPercentage = averageClickThroughRate * 100;
-  const conversionPercentage = averageConversionRate * 100;
+  const ctrPercentage = (averageClickThroughRate || 0) * 100;
+  const conversionPercentage = (averageConversionRate || 0) * 100;
 
   return (
     <Grid container spacing={3}>

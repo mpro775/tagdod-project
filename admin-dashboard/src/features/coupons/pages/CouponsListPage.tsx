@@ -341,6 +341,7 @@ export const CouponsListPage: React.FC = () => {
         loading={isLoading}
         paginationModel={paginationModel}
         onPaginationModelChange={setPaginationModel}
+        getRowId={(row) => (row as Coupon)._id}
         onAdd={() => navigate('/coupons/new')}
         addButtonText="إضافة كوبون"
         onRowClick={(params) => {

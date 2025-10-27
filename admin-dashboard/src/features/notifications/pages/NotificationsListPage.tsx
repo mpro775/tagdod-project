@@ -911,6 +911,7 @@ export const NotificationsListPage: React.FC = () => {
               limit: model.pageSize,
           }));
         }}
+        getRowId={(row) => (row as Notification)._id}
         selectable
         onRowSelectionModelChange={(newSelection) => {
           setSelectedNotifications(newSelection as string[]);

@@ -46,7 +46,11 @@ export const CategoriesListPage: React.FC = () => {
   }>({ open: false, category: null, permanent: false });
 
   // API
-  const { data: categoriesResponse, isLoading, refetch } = useCategories(filters);
+  const { data: categoriesResponse, isLoading, refetch } = useCategories({
+    ...filters,
+    includeDeleted: filters.includeDeleted || false,
+  });
+  
   const categories = Array.isArray(categoriesResponse)
     ? categoriesResponse
     : (categoriesResponse as any)?.data || [];
@@ -288,11 +292,20 @@ export const CategoriesListPage: React.FC = () => {
       <CategoryFilters onFiltersChange={handleFiltersChange} />
 
       {/* View Mode Tabs */}
-      <Box sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ mb: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Tabs value={viewMode} onChange={(_, v) => setViewMode(v)}>
           <Tab icon={<AccountTree />} label="عرض شجري" value="tree" iconPosition="start" />
           <Tab label="عرض قائمة" value="list" />
         </Tabs>
+        <Button
+          startIcon={<Refresh />}
+          onClick={refetch}
+          variant="outlined"
+          size="small"
+          sx={{ mr: 2 }}
+        >
+          تحديث
+        </Button>
       </Box>
 
       {/* Tree View */}

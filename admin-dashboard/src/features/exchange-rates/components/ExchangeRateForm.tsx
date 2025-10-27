@@ -137,8 +137,9 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
   };
 
   const isFormValid =
-    Object.values(errors).every((error) => error === '') &&
-    Object.values(touched).every((touched) => touched);
+    formData.usdToYer > 0 &&
+    formData.usdToSar > 0 &&
+    Object.values(errors).every((error) => error === '');
 
   return (
     <Card>

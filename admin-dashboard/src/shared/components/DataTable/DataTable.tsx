@@ -39,6 +39,7 @@ export interface DataTableProps {
 
   // Height
   height?: number | string;
+  rowHeight?: number;
 
   // Row actions
   // eslint-disable-next-line no-unused-vars
@@ -65,6 +66,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   onAdd,
   addButtonText = 'إضافة',
   height = 600,
+  rowHeight,
   onRowClick,
   getRowId,
 }) => {
@@ -152,6 +154,8 @@ export const DataTable: React.FC<DataTableProps> = ({
         loading={loading}
         // Row ID
         getRowId={getRowId}
+        // Row height
+        rowHeight={rowHeight}
         // Pagination
         paginationMode="client"
         paginationModel={paginationModel}

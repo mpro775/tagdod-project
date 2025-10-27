@@ -118,6 +118,22 @@ export enum AdminPermission {
   // الرفع والتحميل
   UPLOAD_MANAGE = 'upload.manage',
   UPLOAD_DELETE = 'upload.delete',
+  
+  // إدارة الوسائط
+  MEDIA_MANAGE = 'media.manage',
+  MEDIA_DELETE = 'media.delete',
+  
+  // التدقيق والمراجعة
+  AUDIT_READ = 'audit.read',
+  AUDIT_MANAGE = 'audit.manage',
+  AUDIT_DELETE = 'audit.delete',
+  
+  // الإشعارات
+  NOTIFICATIONS_READ = 'notifications.read',
+  NOTIFICATIONS_CREATE = 'notifications.create',
+  NOTIFICATIONS_UPDATE = 'notifications.update',
+  NOTIFICATIONS_DELETE = 'notifications.delete',
+  NOTIFICATIONS_SEND = 'notifications.send',
 }
 
 // مجموعات الصلاحيات للأدوار الشائعة
@@ -220,6 +236,7 @@ export const PERMISSION_GROUPS = {
     AdminPermission.MARKETING_READ,
     AdminPermission.MARKETING_UPDATE,
     AdminPermission.UPLOAD_MANAGE,
+    AdminPermission.MEDIA_MANAGE,
     AdminPermission.ADMIN_ACCESS,
   ],
 };

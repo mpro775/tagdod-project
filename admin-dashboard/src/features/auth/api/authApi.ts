@@ -61,8 +61,8 @@ export const authApi = {
    * الحصول على بيانات المستخدم الحالي
    */
   getProfile: async () => {
-    const response = await apiClient.get<ApiResponse<UserProfile>>('/auth/me');
-    return response.data.data;
+    const response = await apiClient.get<UserProfile>('/auth/me');
+    return response.data;
   },
 
   /**

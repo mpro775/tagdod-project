@@ -239,16 +239,16 @@ export const MediaAnalyticsPage: React.FC = () => {
   };
 
   // Doughnut chart data for file types
-  const fileTypesChartData = overview
+  const fileTypesChartData = overview && overview.filesByType
     ? {
         labels: ['صور', 'فيديوهات', 'مستندات', 'أخرى'],
         datasets: [
           {
             data: [
-              overview.filesByType.images,
-              overview.filesByType.videos,
-              overview.filesByType.documents,
-              overview.filesByType.other,
+              overview.filesByType.images || 0,
+              overview.filesByType.videos || 0,
+              overview.filesByType.documents || 0,
+              overview.filesByType.other || 0,
             ],
             backgroundColor: [
               theme.palette.primary.main,
@@ -290,14 +290,14 @@ export const MediaAnalyticsPage: React.FC = () => {
                   <CloudUpload sx={{ fontSize: 40, color: theme.palette.primary.main, mr: 2 }} />
                   <Box>
                     <Typography variant="h4" fontWeight="bold">
-                      {overview.totalFiles.toLocaleString('ar-SA')}
+                      {(overview.totalFiles || 0).toLocaleString('ar-SA')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       إجمالي الملفات
                     </Typography>
                   </Box>
                 </Box>
-                <Chip label={`${overview.filesToday} اليوم`} size="small" color="success" />
+                <Chip label={`${overview.filesToday || 0} اليوم`} size="small" color="success" />
               </CardContent>
             </Card>
           </Grid>
@@ -309,7 +309,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                   <Storage sx={{ fontSize: 40, color: theme.palette.success.main, mr: 2 }} />
                   <Box>
                     <Typography variant="h4" fontWeight="bold">
-                      {overview.totalSizeFormatted}
+                      {overview.totalSizeFormatted || '0 B'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       إجمالي المساحة
@@ -317,9 +317,9 @@ export const MediaAnalyticsPage: React.FC = () => {
                   </Box>
                 </Box>
                 <Chip
-                  label={`${overview.storageUsagePercent}% مستخدم`}
+                  label={`${overview.storageUsagePercent || 0}% مستخدم`}
                   size="small"
-                  color={overview.storageUsagePercent > 80 ? 'error' : 'info'}
+                  color={(overview.storageUsagePercent || 0) > 80 ? 'error' : 'info'}
                 />
               </CardContent>
             </Card>
@@ -332,14 +332,14 @@ export const MediaAnalyticsPage: React.FC = () => {
                   <TrendingUp sx={{ fontSize: 40, color: theme.palette.warning.main, mr: 2 }} />
                   <Box>
                     <Typography variant="h4" fontWeight="bold">
-                      {overview.filesThisMonth}
+                      {overview.filesThisMonth || 0}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       ملفات هذا الشهر
                     </Typography>
                   </Box>
                 </Box>
-                <Chip label={`${overview.filesThisWeek} هذا الأسبوع`} size="small" color="warning" />
+                <Chip label={`${overview.filesThisWeek || 0} هذا الأسبوع`} size="small" color="warning" />
               </CardContent>
             </Card>
           </Grid>
@@ -351,7 +351,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                   <Assessment sx={{ fontSize: 40, color: theme.palette.info.main, mr: 2 }} />
                   <Box>
                     <Typography variant="h4" fontWeight="bold">
-                      {overview.averageFileSizeFormatted}
+                      {overview.averageFileSizeFormatted || '0 B'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       متوسط حجم الملف
@@ -365,7 +365,7 @@ export const MediaAnalyticsPage: React.FC = () => {
       )}
 
       {/* File Types Distribution */}
-      {overview && (
+      {overview && overview.filesByType && overview.sizeByType && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid component="div" size={{ xs: 12, md: 6 }}>
             <Card>
@@ -390,40 +390,40 @@ export const MediaAnalyticsPage: React.FC = () => {
                     <Grid component="div" size={{ xs: 6 }}>
                     <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1, color: 'white' }}>
                       <Image />
-                      <Typography variant="h6">{overview.filesByType.images}</Typography>
+                      <Typography variant="h6">{overview.filesByType.images || 0}</Typography>
                       <Typography variant="caption">صور</Typography>
                       <Typography variant="caption" display="block">
-                        {formatFileSize(overview.sizeByType.images)}
+                        {formatFileSize(overview.sizeByType.images || 0)}
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid component="div" size={{ xs: 6 }}>
                     <Box sx={{ p: 2, bgcolor: 'secondary.light', borderRadius: 1, color: 'white' }}>
                       <VideoLibrary />
-                      <Typography variant="h6">{overview.filesByType.videos}</Typography>
+                      <Typography variant="h6">{overview.filesByType.videos || 0}</Typography>
                       <Typography variant="caption">فيديوهات</Typography>
                       <Typography variant="caption" display="block">
-                        {formatFileSize(overview.sizeByType.videos)}
+                        {formatFileSize(overview.sizeByType.videos || 0)}
                       </Typography>
                     </Box>
                   </Grid>
                     <Grid component="div" size={{ xs: 6 }}>
                     <Box sx={{ p: 2, bgcolor: 'warning.light', borderRadius: 1, color: 'white' }}>
                       <Description />
-                      <Typography variant="h6">{overview.filesByType.documents}</Typography>
+                      <Typography variant="h6">{overview.filesByType.documents || 0}</Typography>
                       <Typography variant="caption">مستندات</Typography>
                       <Typography variant="caption" display="block">
-                        {formatFileSize(overview.sizeByType.documents)}
+                        {formatFileSize(overview.sizeByType.documents || 0)}
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid component="div" size={{ xs: 6 }}>
                     <Box sx={{ p: 2, bgcolor: 'grey.400', borderRadius: 1, color: 'white' }}>
                       <Folder />
-                      <Typography variant="h6">{overview.filesByType.other}</Typography>
+                      <Typography variant="h6">{overview.filesByType.other || 0}</Typography>
                       <Typography variant="caption">أخرى</Typography>
                       <Typography variant="caption" display="block">
-                        {formatFileSize(overview.sizeByType.other)}
+                        {formatFileSize(overview.sizeByType.other || 0)}
                       </Typography>
                     </Box>
                   </Grid>
@@ -444,17 +444,17 @@ export const MediaAnalyticsPage: React.FC = () => {
             <Box sx={{ mt: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2">
-                  المستخدم: {storage.usedFormatted} / {storage.totalFormatted}
+                  المستخدم: {storage.usedFormatted || '0 B'} / {storage.totalFormatted || '0 B'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {storage.usagePercent}%
+                  {storage.usagePercent || 0}%
                 </Typography>
               </Box>
               <LinearProgress
                 variant="determinate"
-                value={storage.usagePercent}
+                value={storage.usagePercent || 0}
                 sx={{ height: 10, borderRadius: 5 }}
-                color={storage.usagePercent > 80 ? 'error' : storage.usagePercent > 60 ? 'warning' : 'success'}
+                color={(storage.usagePercent || 0) > 80 ? 'error' : (storage.usagePercent || 0) > 60 ? 'warning' : 'success'}
               />
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                 <Box>
@@ -462,7 +462,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                     المتاح
                   </Typography>
                   <Typography variant="h6" color="success.main">
-                    {storage.availableFormatted}
+                    {storage.availableFormatted || '0 B'}
                   </Typography>
                 </Box>
                 <Box>
@@ -470,7 +470,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                     المستخدم
                   </Typography>
                   <Typography variant="h6" color="primary.main">
-                    {storage.usedFormatted}
+                    {storage.usedFormatted || '0 B'}
                   </Typography>
                 </Box>
               </Box>

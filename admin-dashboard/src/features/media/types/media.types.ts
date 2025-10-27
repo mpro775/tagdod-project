@@ -92,10 +92,8 @@ export interface MediaStats {
 
 // Upload Response
 export interface UploadResponse {
-  data: Media;
-  meta: {
-    isDuplicate: boolean;
-  };
+  media: Media;
+  isDuplicate: boolean;
   message: string;
 }
 

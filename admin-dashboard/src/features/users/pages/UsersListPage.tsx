@@ -10,9 +10,11 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button
+  Button,
+  Stack,
+  Paper as MuiPaper
 } from '@mui/material';
-import { Edit, Delete, Restore } from '@mui/icons-material';
+import { Edit, Delete, Restore, PersonAdd, AdminPanelSettings } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -404,6 +406,31 @@ export const UsersListPage: React.FC = () => {
         onClearFilters={handleClearFilters}
       />
 
+      {/* Action Buttons */}
+      <Box sx={{ mb: 2, display: { xs: 'none', md: 'block' } }}>
+        <MuiPaper sx={{ p: 2, mb: 2 }}>
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <Button
+              variant="outlined"
+              startIcon={<PersonAdd />}
+              onClick={() => navigate('/users/new')}
+              size="medium"
+            >
+              إضافة مستخدم
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AdminPanelSettings />}
+              onClick={() => navigate('/users/create-admin')}
+              size="medium"
+              color="primary"
+            >
+              إنشاء أدمن
+            </Button>
+          </Stack>
+        </MuiPaper>
+      </Box>
+
       {/* Desktop View - Table */}
       <Box sx={{ mb: 2, display: { xs: 'none', md: 'block' } }}>
         <DataTable
@@ -419,8 +446,6 @@ export const UsersListPage: React.FC = () => {
           onSearch={(search) => {
             setFilters(prev => ({ ...prev, search }));
           }}
-          onAdd={() => navigate('/users/new')}
-          addButtonText="إضافة مستخدم"
           getRowId={(row: any) => row._id}
           onRowClick={(params) => {
             const row = params.row as User;
@@ -428,6 +453,29 @@ export const UsersListPage: React.FC = () => {
           }}
           height={screenSize < 600 ? "calc(100vh - 140px)" : "calc(100vh - 180px)"}
         />
+      </Box>
+
+      {/* Mobile Action Buttons */}
+      <Box sx={{ mb: 2, display: { xs: 'block', md: 'none' }, px: 2 }}>
+        <Stack direction="column" spacing={1}>
+          <Button
+            variant="outlined"
+            startIcon={<PersonAdd />}
+            onClick={() => navigate('/users/new')}
+            fullWidth
+          >
+            إضافة مستخدم
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AdminPanelSettings />}
+            onClick={() => navigate('/users/create-admin')}
+            fullWidth
+            color="primary"
+          >
+            إنشاء أدمن
+          </Button>
+        </Stack>
       </Box>
 
       {/* Mobile View - Cards */}

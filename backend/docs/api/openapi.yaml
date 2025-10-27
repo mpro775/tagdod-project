@@ -6905,6 +6905,142 @@ paths:
         - إدارة-التسويق
       security:
         - bearer: []
+  /api/v1/admin/marketing/coupons/analytics:
+    get:
+      operationId: getCouponsAnalytics
+      summary: إحصائيات الكوبونات
+      description: استرداد إحصائيات شاملة عن الكوبونات
+      parameters:
+        - name: period
+          required: false
+          in: query
+          description: 'عدد الأيام للإحصائيات (افتراضي: 30)'
+          schema:
+            example: 30
+            type: number
+      responses:
+        '200':
+          description: تم استرداد إحصائيات الكوبونات بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      totalCoupons:
+                        type: number
+                        example: 25
+                      activeCoupons:
+                        type: number
+                        example: 15
+                      expiredCoupons:
+                        type: number
+                        example: 5
+                      totalUses:
+                        type: number
+                        example: 342
+                      totalLimit:
+                        type: number
+                        example: 500
+                      usageRate:
+                        type: string
+                        example: '68.40'
+                      period:
+                        type: number
+                        example: 30
+      tags:
+        - إدارة-التسويق
+      security:
+        - bearer: []
+  /api/v1/admin/marketing/coupons/statistics:
+    get:
+      operationId: getCouponsStatistics
+      summary: إحصائيات مفصلة للكوبونات
+      description: استرداد إحصائيات تفصيلية عن استخدام وأنواع الكوبونات
+      parameters:
+        - name: period
+          required: false
+          in: query
+          description: 'عدد الأيام للإحصائيات (افتراضي: 30)'
+          schema:
+            example: 30
+            type: number
+      responses:
+        '200':
+          description: تم استرداد الإحصائيات المفصلة بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      statusBreakdown:
+                        type: object
+                        properties:
+                          active:
+                            type: number
+                            example: 15
+                          inactive:
+                            type: number
+                            example: 3
+                          expired:
+                            type: number
+                            example: 5
+                          scheduled:
+                            type: number
+                            example: 2
+                      typeBreakdown:
+                        type: object
+                        properties:
+                          percentage:
+                            type: number
+                            example: 12
+                          fixed:
+                            type: number
+                            example: 8
+                          freeShipping:
+                            type: number
+                            example: 5
+                      topUsedCoupons:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code:
+                              type: string
+                            type:
+                              type: string
+                              enum:
+                                - percentage
+                                - fixed_amount
+                                - free_shipping
+                                - buy_x_get_y
+                            discountValue:
+                              type: number
+                            usedCount:
+                              type: number
+                            usageLimit:
+                              type: number
+                      period:
+                        type: number
+                        example: 30
+                      totalInPeriod:
+                        type: number
+                        example: 25
+      tags:
+        - إدارة-التسويق
+      security:
+        - bearer: []
   /api/v1/admin/marketing/coupons/{id}:
     get:
       operationId: getCoupon
@@ -12028,6 +12164,130 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OffersManagementResponseDto'
+      tags:
+        - إدارة-الخدمات
+      security:
+        - bearer: []
+  /api/v1/services/admin/requests/{id}/accept-offer:
+    post:
+      operationId: acceptOfferByAdmin
+      summary: قبول عرض من قبل الإدارة
+      description: قبول عرض مهندس لطلب خدمة من قبل الإدارة
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف طلب الخدمة
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - offerId
+              properties:
+                offerId:
+                  type: string
+                  example: 507f1f77bcf86cd799439011
+                  description: معرف العرض
+      responses:
+        '200':
+          description: تم قبول العرض بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        '400':
+          description: حالة غير صالحة
+        '404':
+          description: الطلب أو العرض غير موجود
+      tags:
+        - إدارة-الخدمات
+      security:
+        - bearer: []
+  /api/v1/services/admin/offers/{id}/reject:
+    post:
+      operationId: rejectOfferByAdmin
+      summary: رفض عرض من قبل الإدارة
+      description: رفض عرض مهندس من قبل الإدارة
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف العرض
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: تم رفض العرض
+                  description: سبب الرفض (اختياري)
+      responses:
+        '200':
+          description: تم رفض العرض بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        '404':
+          description: العرض غير موجود
+      tags:
+        - إدارة-الخدمات
+      security:
+        - bearer: []
+  /api/v1/services/admin/offers/{id}/cancel:
+    post:
+      operationId: cancelOfferByAdmin
+      summary: إلغاء عرض من قبل الإدارة
+      description: إلغاء عرض مهندس من قبل الإدارة
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف العرض
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: تم إلغاء العرض
+                  description: سبب الإلغاء (اختياري)
+      responses:
+        '200':
+          description: تم إلغاء العرض بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        '404':
+          description: العرض غير موجود
       tags:
         - إدارة-الخدمات
       security:
@@ -17332,6 +17592,16 @@ components:
               - addresses.analytics
               - upload.manage
               - upload.delete
+              - media.manage
+              - media.delete
+              - audit.read
+              - audit.manage
+              - audit.delete
+              - notifications.read
+              - notifications.create
+              - notifications.update
+              - notifications.delete
+              - notifications.send
         temporaryPassword:
           type: string
           description: كلمة مرور مؤقتة (سيتم تغييرها عند أول تسجيل دخول)
@@ -17474,6 +17744,16 @@ components:
               - addresses.analytics
               - upload.manage
               - upload.delete
+              - media.manage
+              - media.delete
+              - audit.read
+              - audit.manage
+              - audit.delete
+              - notifications.read
+              - notifications.create
+              - notifications.update
+              - notifications.delete
+              - notifications.send
         description:
           type: string
           description: وصف الدور والمسؤوليات

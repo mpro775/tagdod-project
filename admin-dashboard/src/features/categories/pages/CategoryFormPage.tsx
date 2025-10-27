@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import toast from 'react-hot-toast';
 import {
   Box,
   Paper,
@@ -50,7 +51,7 @@ const categorySchema = z.object({
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   metaKeywords: z.array(z.string()).optional(),
-  order: z.number().optional(),
+  order: z.coerce.number().optional(),
   isActive: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
 });
@@ -67,7 +68,7 @@ export const CategoryFormPage: React.FC = () => {
 
   // Form
   const methods = useForm<CategoryFormData>({
-    resolver: zodResolver(categorySchema),
+    resolver: zodResolver(categorySchema) as any,
     defaultValues: {
       parentId: null,
       name: '',
@@ -128,7 +129,7 @@ export const CategoryFormPage: React.FC = () => {
       metaTitle: data.metaTitle || undefined,
       metaDescription: data.metaDescription || undefined,
       metaKeywords: data.metaKeywords || undefined,
-      order: data.order, // Already transformed by zod
+      order: data.order,
       isActive: data.isActive,
       isFeatured: data.isFeatured,
     };
@@ -208,7 +209,12 @@ export const CategoryFormPage: React.FC = () => {
       </Card>
 
       <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)}>
+        <form onSubmit={methods.handleSubmit(
+          onSubmit,
+          () => {
+            toast.error('يرجى ملء جميع الحقول المطلوبة بشكل صحيح');
+          }
+        )}>
           <Paper sx={{ p: 3 }}>
             {/* Step 1: Basic Information */}
             {activeStep === 0 && (

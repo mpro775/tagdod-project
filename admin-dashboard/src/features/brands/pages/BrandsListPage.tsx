@@ -117,29 +117,50 @@ export const BrandsListPage: React.FC = () => {
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box
-              component="img"
-              src={brand.image}
-              alt={brand.name}
               sx={{
-                width: 50,
-                height: 50,
-                borderRadius: 1,
-                objectFit: 'contain',
-                backgroundColor: 'grey.100',
+                width: 60,
+                height: 60,
+                borderRadius: 2,
+                overflow: 'hidden',
+                backgroundColor: 'grey.50',
+                border: '1px solid',
+                borderColor: 'grey.200',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                  transform: 'scale(1.05)',
+                },
               }}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-            <Box>
-              <Typography variant="subtitle2" fontWeight="bold">
+            >
+              <Box
+                component="img"
+                src={brand.image}
+                alt={brand.name}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  padding: 0.5,
+                }}
+                onError={(e) => {
+                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="60"%3E%3Crect width="60" height="60" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="24" fill="%23999"%3E?%3C/text%3E%3C/svg%3E';
+                }}
+              />
+            </Box>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography variant="subtitle2" fontWeight="bold" noWrap>
                 {brand.name}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary" display="block" noWrap>
                 {brand.nameEn}
               </Typography>
-              <Typography variant="caption" display="block" color="text.secondary">
-                Slug: {brand.slug}
+              <Typography variant="caption" color="text.secondary" display="block" noWrap sx={{ fontSize: '0.7rem' }}>
+                {brand.slug}
               </Typography>
             </Box>
           </Box>
@@ -285,11 +306,13 @@ export const BrandsListPage: React.FC = () => {
         onPaginationModelChange={handlePaginationModelChange}
         onAdd={handleAddBrand}
         addButtonText="إضافة علامة تجارية"
+        getRowId={(row) => (row as Brand)._id}
         onRowClick={(params) => {
           const row = params.row as Brand;
           handleEditBrand(row);
         }}
         height="calc(100vh - 400px)"
+        rowHeight={80}
       />
 
       {/* نافذة إضافة/تعديل العلامة التجارية */}
