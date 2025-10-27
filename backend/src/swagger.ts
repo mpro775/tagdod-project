@@ -58,7 +58,7 @@ export function setupSwagger(app: INestApplication) {
     .addTag('search', 'Product search and filtering')
     .addTag('upload', 'File upload and media management')
     .addServer('http://localhost:3000', 'Development server')
-    .addServer('https://api.tagadod.com', 'Production server')
+    .addServer('https://tagdod-project.onrender.com', 'Production server')
     .build();
 
   const document = SwaggerModule.createDocument(app, config, {

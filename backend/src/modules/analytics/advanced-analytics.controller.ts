@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, Param, UseGuards, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Param, UseGuards, Delete, Req } from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -140,8 +140,15 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiOperation({ summary: 'إنشاء تقرير متقدم' })
   @ApiBody({ schema: { type: 'object' } })
   @ApiResponse({ status: 201, description: 'تم إنشاء التقرير بنجاح' })
-  async generateAdvancedReport(@Body() data: ReportData) {
-    return await this.advancedAnalyticsService.generateAdvancedReport(data);
+  async generateAdvancedReport(
+    @Body() data: ReportData,
+    @Req() req: { user: { sub: string; firstName?: string; lastName?: string } }
+  ) {
+    return await this.advancedAnalyticsService.generateAdvancedReport({
+      ...data,
+      createdBy: req.user.sub,
+      creatorName: [req.user.firstName, req.user.lastName].filter(Boolean).join(' ') || undefined,
+    });
   }
 
   @Get('reports')

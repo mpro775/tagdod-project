@@ -7,6 +7,7 @@ import { SystemMonitoringService } from './system-monitoring.service';
 import { RedisHealthIndicator } from '../../health/redis-health.indicator';
 import { SystemMetric, SystemMetricSchema } from './schemas/system-metric.schema';
 import { SystemAlert, SystemAlertSchema } from './schemas/system-alert.schema';
+import { UptimeRecord, UptimeRecordSchema } from './schemas/uptime-record.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
@@ -18,6 +19,7 @@ import { SharedModule } from '../../shared/shared.module';
     MongooseModule.forFeature([
       { name: SystemMetric.name, schema: SystemMetricSchema },
       { name: SystemAlert.name, schema: SystemAlertSchema },
+      { name: UptimeRecord.name, schema: UptimeRecordSchema },
       { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => AuthModule),

@@ -338,12 +338,23 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </Grid>
       </TabPanel>
 
-      {/* Data Table */}
+      {/* Data Table - Using existing data from charts */}
       <Box sx={{ mt: 4 }}>
         <Typography variant="h5" gutterBottom>
           البيانات التفصيلية
         </Typography>
-        <AnalyticsDataTable data={[]} columns={[]} />
+        {isLoading ? (
+          <Skeleton variant="rectangular" height={400} />
+        ) : (
+          <AnalyticsDataTable 
+            data={dashboardData?.productCharts?.topSelling || []} 
+            columns={[
+              { id: 'product', label: 'المنتج', minWidth: 200 },
+              { id: 'sales', label: 'المبيعات', minWidth: 120 },
+              { id: 'revenue', label: 'الإيرادات', minWidth: 120 },
+            ]} 
+          />
+        )}
       </Box>
     </Box>
   );

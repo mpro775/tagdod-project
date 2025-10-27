@@ -17,7 +17,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     try {
-      if (!(this.redisService as any).status || (this.redisService as any).status === 'wait') {
+      if (!this.redisService.status || this.redisService.status === 'wait') {
         await this.redisService.connect();
       }
       const pong = await this.redisService.ping();

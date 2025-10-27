@@ -335,4 +335,61 @@ export class PublicProductsController {
     const stats = await this.productService.getStats();
     return { count: stats.data.total };
   }
+
+  // ==================== Related Products ====================
+
+  @Get(':id/related')
+  @ApiOperation({
+    summary: 'الحصول على المنتجات الشبيهة',
+    description: 'استرداد قائمة المنتجات الشبيهة لمنتج معين لعرضها في صفحة تفاصيل المنتج',
+  })
+  @ApiParam({ name: 'id', description: 'Product ID', example: '507f1f77bcf86cd799439011' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Maximum number of related products to return (default: 10)',
+  })
+  @ApiOkResponse({
+    description: 'Related products retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+              name: { type: 'string', example: 'Solar Panel 400W' },
+              nameEn: { type: 'string', example: 'Solar Panel 400W' },
+              description: { type: 'string', example: 'High efficiency solar panel' },
+              category: { type: 'object' },
+              brand: { type: 'object' },
+              mainImageId: { type: 'object' },
+              isFeatured: { type: 'boolean', example: true },
+              isNew: { type: 'boolean', example: false },
+            },
+          },
+        },
+        count: { type: 'number', example: 5 },
+      },
+    },
+  })
+  @ApiNotFoundResponse({ description: 'Product not found' })
+  @CacheResponse({ ttl: 600 }) // 10 minutes
+  async getRelatedProducts(
+    @Param('id') productId: string,
+    @Query('limit') limit?: string,
+  ) {
+    const products = await this.productService.getRelatedProducts(
+      productId,
+      limit ? Number(limit) : 10,
+    );
+
+    return {
+      data: products,
+      count: products.length,
+    };
+  }
 }

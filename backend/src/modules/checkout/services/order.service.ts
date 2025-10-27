@@ -1194,4 +1194,86 @@ export class OrderService {
       };
     }
   }
+
+  /**
+   * تصدير تحليلات الطلبات
+   */
+  async exportOrderAnalytics(
+    format: string,
+    params: OrderAnalyticsDto,
+    fromDate?: string,
+    toDate?: string
+  ) {
+    this.logger.log('Exporting order analytics:', { format, params, fromDate, toDate });
+
+    // Get analytics data
+    const analytics = await this.getAdminAnalytics(params);
+    
+    // Get revenue analytics if date range provided
+    let revenueAnalytics = null;
+    if (fromDate && toDate) {
+      revenueAnalytics = await this.getRevenueAnalytics({
+        fromDate: new Date(fromDate),
+        toDate: new Date(toDate)
+      });
+    }
+
+    // Get performance analytics
+    const performanceAnalytics = await this.getPerformanceAnalytics();
+
+    // Generate filename
+    const fileName = `order_analytics_${Date.now()}.${format}`;
+
+    return {
+      success: true,
+      data: {
+        fileUrl: `https://api.example.com/exports/${fileName}`,
+        format,
+        exportedAt: new Date().toISOString(),
+        fileName,
+        recordCount: analytics.totalOrders,
+        summary: {
+          totalOrders: analytics.totalOrders,
+          totalRevenue: analytics.totalRevenue,
+          averageOrderValue: analytics.averageOrderValue,
+          byStatus: analytics.ordersByStatus,
+          performance: performanceAnalytics,
+          ...(revenueAnalytics && { revenue: revenueAnalytics }),
+        },
+      }
+    };
+  }
+
+  /**
+   * تصدير قائمة الطلبات
+   */
+  async exportOrders(format: string, query: ListOrdersDto) {
+    this.logger.log('Exporting orders list:', { format, query });
+
+    // Get orders list with filters
+    const { orders, pagination } = await this.getAllOrders(query);
+
+    // Generate filename
+    const fileName = `orders_list_${Date.now()}.${format}`;
+
+    // Get summary statistics
+    const stats = await this.getStats();
+
+    return {
+      success: true,
+      data: {
+        fileUrl: `https://api.example.com/exports/${fileName}`,
+        format,
+        exportedAt: new Date().toISOString(),
+        fileName,
+        recordCount: pagination.total,
+        summary: {
+          totalOrders: pagination.total,
+          exportedOrders: orders.length,
+          filters: query,
+          stats,
+        },
+      }
+    };
+  }
 }

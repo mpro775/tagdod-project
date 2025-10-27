@@ -129,25 +129,18 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
     }
   };
 
-  // Generate mock real-time data for charts
-  const generateRealTimeData = () => {
-    const data = [];
-    const now = new Date();
-    for (let i = 29; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 60000); // Every minute
-      data.push({
-        time: time.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-        activeUsers: Math.floor(Math.random() * 100) + 50,
-        apiResponseTime: Math.floor(Math.random() * 200) + 100,
-        errorRate: Math.random() * 5,
-        memoryUsage: Math.random() * 20 + 60,
-        cpuUsage: Math.random() * 30 + 40,
-      });
-    }
-    return data;
-  };
-
-  const realTimeData = generateRealTimeData();
+  // Use real-time data from backend (current snapshot only)
+  // For historical charts, would need to implement real-time metrics collection
+  const realTimeData = [
+    {
+      time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+      activeUsers: data?.activeUsers || 0,
+      apiResponseTime: data?.systemHealth?.responseTime || 0,
+      errorRate: data?.systemHealth?.errorRate || 0,
+      memoryUsage: data?.memoryUsage || 0,
+      cpuUsage: data?.cpuUsage || 0,
+    },
+  ];
 
   return (
     <Card>
@@ -243,12 +236,9 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.activeUsers || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +5.2% من الساعة الماضية
-                </Typography>
-              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                مستخدمون نشطون حالياً
+              </Typography>
             </Box>
           </Grid>
 
@@ -270,12 +260,9 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(data?.todaySales || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +12.8% من أمس
-                </Typography>
-              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                إجمالي مبيعات اليوم
+              </Typography>
             </Box>
           </Grid>
 
@@ -297,12 +284,9 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.todayOrders || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +8.5% من أمس
-                </Typography>
-              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                إجمالي طلبات اليوم
+              </Typography>
             </Box>
           </Grid>
 
@@ -324,12 +308,9 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.pendingSupportTickets || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingDownIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  -3.2% من أمس
-                </Typography>
-              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                تذاكر قيد المعالجة
+              </Typography>
             </Box>
           </Grid>
         </Grid>

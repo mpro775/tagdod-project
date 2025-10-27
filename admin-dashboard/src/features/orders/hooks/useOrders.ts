@@ -170,6 +170,45 @@ export const useGenerateFinancialReport = () => {
   });
 };
 
+// Export order analytics
+export const useExportOrderAnalytics = () => {
+  return useMutation({
+    mutationFn: ({
+      format,
+      days,
+      fromDate,
+      toDate,
+    }: {
+      format?: string;
+      days?: number;
+      fromDate?: string;
+      toDate?: string;
+    }) => ordersApi.exportOrderAnalytics(format || 'csv', days, fromDate, toDate),
+    onSuccess: (data) => {
+      toast.success('تم تصدير البيانات بنجاح');
+      if (data?.fileUrl) {
+        window.open(data.fileUrl, '_blank');
+      }
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Export orders list
+export const useExportOrders = () => {
+  return useMutation({
+    mutationFn: ({ format, params }: { format?: string; params: ListOrdersParams }) =>
+      ordersApi.exportOrders(format || 'csv', params),
+    onSuccess: (data) => {
+      toast.success('تم تصدير قائمة الطلبات بنجاح');
+      if (data?.fileUrl) {
+        window.open(data.fileUrl, '_blank');
+      }
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 // Get stats
 export const useOrderStats = () => {
   return useQuery({

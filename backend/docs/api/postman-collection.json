@@ -1427,6 +1427,120 @@
             },
             "description": ""
           }
+        },
+        {
+          "name": "الحصول على المنتجات الشبيهة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/{id}/related",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "{id}",
+                "related"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "تحديث المنتجات الشبيهة (استبدال كامل)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/{id}/related",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "{id}",
+                "related"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "إضافة منتج شبيه",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/{id}/related/{relatedId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "{id}",
+                "related",
+                "{relatedId}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "إزالة منتج شبيه",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/{id}/related/{relatedId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "{id}",
+                "related",
+                "{relatedId}"
+              ]
+            },
+            "description": ""
+          }
         }
       ],
       "description": "Endpoints for إدارة-المنتجات functionality"
@@ -1701,6 +1815,33 @@
               ]
             },
             "description": ""
+          }
+        },
+        {
+          "name": "الحصول على المنتجات الشبيهة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/{id}/related",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "{id}",
+                "related"
+              ]
+            },
+            "description": "استرداد قائمة المنتجات الشبيهة لمنتج معين لعرضها في صفحة تفاصيل المنتج"
           }
         }
       ],
@@ -3977,6 +4118,61 @@
             },
             "description": "تقرير مالي مفصل للطلبات"
           }
+        },
+        {
+          "name": "تصدير تحليلات الطلبات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/analytics/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "analytics",
+                "export"
+              ]
+            },
+            "description": "تصدير بيانات تحليلات الطلبات بصيغ مختلفة (CSV, Excel, JSON)"
+          }
+        },
+        {
+          "name": "تصدير قائمة الطلبات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "export"
+              ]
+            },
+            "description": "تصدير قائمة الطلبات مع التصفية بصيغ مختلفة (CSV, Excel, JSON)"
+          }
         }
       ],
       "description": "Endpoints for إدارة-الطلبات functionality"
@@ -5418,6 +5614,34 @@
               ]
             },
             "description": "حذف بانر من النظام"
+          }
+        },
+        {
+          "name": "تصدير بيانات الكوبونات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "export"
+              ]
+            },
+            "description": "تصدير بيانات الكوبونات وتحليلاتها بصيغ مختلفة (CSV, Excel, JSON)"
           }
         }
       ],
@@ -8054,6 +8278,514 @@
       "description": "Endpoints for التحليلات/متقدمة functionality"
     },
     {
+      "name": "مراقبة النظام",
+      "item": [
+        {
+          "name": "الحصول على صحة النظام العامة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "health"
+              ]
+            },
+            "description": "استرداد مقاييس صحة النظام الشاملة مع جميع المكونات"
+          }
+        },
+        {
+          "name": "الحصول على استخدام الموارد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/resources",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "resources"
+              ]
+            },
+            "description": "استرداد معلومات استخدام CPU والذاكرة والقرص"
+          }
+        },
+        {
+          "name": "الحصول على مقاييس قاعدة البيانات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/database",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "database"
+              ]
+            },
+            "description": "استرداد معلومات أداء وحالة MongoDB"
+          }
+        },
+        {
+          "name": "الحصول على مقاييس Redis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/redis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "redis"
+              ]
+            },
+            "description": "استرداد معلومات أداء وحالة Redis Cache"
+          }
+        },
+        {
+          "name": "الحصول على أداء API",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/api-performance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "api-performance"
+              ]
+            },
+            "description": "استرداد إحصائيات أداء واستجابة API"
+          }
+        },
+        {
+          "name": "الحصول على تاريخ المقاييس",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/metrics/history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "metrics",
+                "history"
+              ]
+            },
+            "description": "استرداد البيانات التاريخية للمقاييس المختلفة"
+          }
+        },
+        {
+          "name": "الحصول على تنبيهات النظام",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/alerts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "alerts"
+              ]
+            },
+            "description": "استرداد قائمة التنبيهات النشطة والحرجة"
+          }
+        },
+        {
+          "name": "حل تنبيه",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/alerts/{id}/resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "alerts",
+                "{id}",
+                "resolve"
+              ]
+            },
+            "description": "وضع علامة على تنبيه كمحلول"
+          }
+        },
+        {
+          "name": "الحصول على نظرة عامة شاملة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-monitoring/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-monitoring",
+                "overview"
+              ]
+            },
+            "description": "استرداد جميع المقاييس في استجابة واحدة"
+          }
+        }
+      ],
+      "description": "Endpoints for مراقبة النظام functionality"
+    },
+    {
+      "name": "إدارة الأخطاء والسجلات",
+      "item": [
+        {
+          "name": "إنشاء سجل خطأ جديد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs"
+              ]
+            },
+            "description": "تسجيل خطأ جديد في النظام"
+          }
+        },
+        {
+          "name": "الحصول على قائمة الأخطاء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs"
+              ]
+            },
+            "description": "استرداد سجلات الأخطاء مع التصفية والترتيب"
+          }
+        },
+        {
+          "name": "الحصول على إحصائيات الأخطاء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "statistics"
+              ]
+            },
+            "description": "استرداد تحليلات شاملة للأخطاء"
+          }
+        },
+        {
+          "name": "الحصول على اتجاهات الأخطاء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/trends",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "trends"
+              ]
+            },
+            "description": "تحليل اتجاه الأخطاء عبر الزمن"
+          }
+        },
+        {
+          "name": "تصدير سجلات الأخطاء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "export"
+              ]
+            },
+            "description": "تصدير السجلات بصيغ مختلفة (JSON, CSV, TXT)"
+          }
+        },
+        {
+          "name": "الحصول على سجلات النظام",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/system-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "system-logs"
+              ]
+            },
+            "description": "استرداد سجلات النظام العامة"
+          }
+        },
+        {
+          "name": "الحصول على تفاصيل خطأ",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "{id}"
+              ]
+            },
+            "description": "استرداد معلومات مفصلة عن خطأ معين"
+          }
+        },
+        {
+          "name": "حذف خطأ",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "{id}"
+              ]
+            },
+            "description": "حذف سجل خطأ من قاعدة البيانات"
+          }
+        },
+        {
+          "name": "حل خطأ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/{id}/resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "{id}",
+                "resolve"
+              ]
+            },
+            "description": "وضع علامة على خطأ كمحلول"
+          }
+        },
+        {
+          "name": "تنظيف السجلات القديمة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/error-logs/cleanup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "error-logs",
+                "cleanup"
+              ]
+            },
+            "description": "حذف سجلات الأخطاء الأقدم من عدد معين من الأيام"
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة الأخطاء والسجلات functionality"
+    },
+    {
       "name": "خدمات-العملاء",
       "item": [
         {
@@ -10443,514 +11175,6 @@
         }
       ],
       "description": "Endpoints for التدقيق functionality"
-    },
-    {
-      "name": "مراقبة النظام",
-      "item": [
-        {
-          "name": "الحصول على صحة النظام العامة",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-monitoring/health",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-monitoring",
-                "health"
-              ]
-            },
-            "description": "استرداد مقاييس صحة النظام الشاملة مع جميع المكونات"
-          }
-        },
-        {
-          "name": "الحصول على استخدام الموارد",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-monitoring/resources",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-monitoring",
-                "resources"
-              ]
-            },
-            "description": "استرداد معلومات استخدام CPU والذاكرة والقرص"
-          }
-        },
-        {
-          "name": "الحصول على مقاييس قاعدة البيانات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-monitoring/database",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-monitoring",
-                "database"
-              ]
-            },
-            "description": "استرداد معلومات أداء وحالة MongoDB"
-          }
-        },
-        {
-          "name": "الحصول على مقاييس Redis",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-monitoring/redis",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-monitoring",
-                "redis"
-              ]
-            },
-            "description": "استرداد معلومات أداء وحالة Redis Cache"
-          }
-        },
-        {
-          "name": "الحصول على أداء API",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-monitoring/api-performance",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-monitoring",
-                "api-performance"
-              ]
-            },
-            "description": "استرداد إحصائيات أداء واستجابة API"
-          }
-        },
-        {
-          "name": "الحصول على تاريخ المقاييس",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-monitoring/metrics/history",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-monitoring",
-                "metrics",
-                "history"
-              ]
-            },
-            "description": "استرداد البيانات التاريخية للمقاييس المختلفة"
-          }
-        },
-        {
-          "name": "الحصول على تنبيهات النظام",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-monitoring/alerts",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-monitoring",
-                "alerts"
-              ]
-            },
-            "description": "استرداد قائمة التنبيهات النشطة والحرجة"
-          }
-        },
-        {
-          "name": "حل تنبيه",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-monitoring/alerts/{id}/resolve",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-monitoring",
-                "alerts",
-                "{id}",
-                "resolve"
-              ]
-            },
-            "description": "وضع علامة على تنبيه كمحلول"
-          }
-        },
-        {
-          "name": "الحصول على نظرة عامة شاملة",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-monitoring/overview",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-monitoring",
-                "overview"
-              ]
-            },
-            "description": "استرداد جميع المقاييس في استجابة واحدة"
-          }
-        }
-      ],
-      "description": "Endpoints for مراقبة النظام functionality"
-    },
-    {
-      "name": "إدارة الأخطاء والسجلات",
-      "item": [
-        {
-          "name": "إنشاء سجل خطأ جديد",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs"
-              ]
-            },
-            "description": "تسجيل خطأ جديد في النظام"
-          }
-        },
-        {
-          "name": "الحصول على قائمة الأخطاء",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs"
-              ]
-            },
-            "description": "استرداد سجلات الأخطاء مع التصفية والترتيب"
-          }
-        },
-        {
-          "name": "الحصول على إحصائيات الأخطاء",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs/statistics",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs",
-                "statistics"
-              ]
-            },
-            "description": "استرداد تحليلات شاملة للأخطاء"
-          }
-        },
-        {
-          "name": "الحصول على اتجاهات الأخطاء",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs/trends",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs",
-                "trends"
-              ]
-            },
-            "description": "تحليل اتجاه الأخطاء عبر الزمن"
-          }
-        },
-        {
-          "name": "تصدير سجلات الأخطاء",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs/export",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs",
-                "export"
-              ]
-            },
-            "description": "تصدير السجلات بصيغ مختلفة (JSON, CSV, TXT)"
-          }
-        },
-        {
-          "name": "الحصول على سجلات النظام",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs/system-logs",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs",
-                "system-logs"
-              ]
-            },
-            "description": "استرداد سجلات النظام العامة"
-          }
-        },
-        {
-          "name": "الحصول على تفاصيل خطأ",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs",
-                "{id}"
-              ]
-            },
-            "description": "استرداد معلومات مفصلة عن خطأ معين"
-          }
-        },
-        {
-          "name": "حذف خطأ",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs",
-                "{id}"
-              ]
-            },
-            "description": "حذف سجل خطأ من قاعدة البيانات"
-          }
-        },
-        {
-          "name": "حل خطأ",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs/{id}/resolve",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs",
-                "{id}",
-                "resolve"
-              ]
-            },
-            "description": "وضع علامة على خطأ كمحلول"
-          }
-        },
-        {
-          "name": "تنظيف السجلات القديمة",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/error-logs/cleanup",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "error-logs",
-                "cleanup"
-              ]
-            },
-            "description": "حذف سجلات الأخطاء الأقدم من عدد معين من الأيام"
-          }
-        }
-      ],
-      "description": "Endpoints for إدارة الأخطاء والسجلات functionality"
     },
     {
       "name": "إدارة نصوص التعريب",

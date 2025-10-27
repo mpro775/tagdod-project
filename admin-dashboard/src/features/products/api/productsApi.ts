@@ -259,4 +259,51 @@ export const productsApi = {
     );
     return response.data.data;
   },
+
+  // ==================== Related Products ====================
+
+  /**
+   * Get related products
+   */
+  getRelatedProducts: async (productId: string, limit?: number): Promise<Product[]> => {
+    const response = await apiClient.get<ApiResponse<{ data: Product[] }>>(
+      `/admin/products/${productId}/related`,
+      { params: { limit } }
+    );
+    return response.data.data.data;
+  },
+
+  /**
+   * Update related products (replace all)
+   */
+  updateRelatedProducts: async (
+    productId: string,
+    relatedProductIds: string[]
+  ): Promise<Product> => {
+    const response = await apiClient.put<ApiResponse<{ product: Product }>>(
+      `/admin/products/${productId}/related`,
+      { relatedProductIds }
+    );
+    return response.data.data.product;
+  },
+
+  /**
+   * Add a single related product
+   */
+  addRelatedProduct: async (productId: string, relatedProductId: string): Promise<Product> => {
+    const response = await apiClient.post<ApiResponse<{ product: Product }>>(
+      `/admin/products/${productId}/related/${relatedProductId}`
+    );
+    return response.data.data.product;
+  },
+
+  /**
+   * Remove a related product
+   */
+  removeRelatedProduct: async (productId: string, relatedProductId: string): Promise<Product> => {
+    const response = await apiClient.delete<ApiResponse<{ product: Product }>>(
+      `/admin/products/${productId}/related/${relatedProductId}`
+    );
+    return response.data.data.product;
+  },
 };

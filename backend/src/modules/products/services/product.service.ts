@@ -291,6 +291,138 @@ export class ProductService {
     };
   }
 
+  // ==================== Related Products ====================
+
+  /**
+   * تحديث المنتجات الشبيهة لمنتج معين
+   */
+  async updateRelatedProducts(productId: string, relatedProductIds: string[]): Promise<Product> {
+    // التحقق من وجود المنتج
+    const product = await this.productModel.findById(productId);
+    if (!product) {
+      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+    }
+
+    if (product.deletedAt) {
+      throw new AppException('PRODUCT_DELETED', 'المنتج محذوف', null, 400);
+    }
+
+    // التحقق من أن جميع المنتجات الشبيهة موجودة وغير محذوفة
+    const uniqueIds = [...new Set(relatedProductIds)]; // إزالة التكرارات
+    
+    // إزالة المنتج نفسه من القائمة إذا كان موجوداً
+    const filteredIds = uniqueIds.filter(id => id !== productId);
+
+    if (filteredIds.length > 0) {
+      const relatedProducts = await this.productModel.find({
+        _id: { $in: filteredIds },
+        deletedAt: null,
+      });
+
+      if (relatedProducts.length !== filteredIds.length) {
+        throw new AppException(
+          'INVALID_RELATED_PRODUCTS',
+          'بعض المنتجات الشبيهة غير موجودة أو محذوفة',
+          null,
+          400,
+        );
+      }
+    }
+
+    // تحديث المنتجات الشبيهة
+    product.relatedProducts = filteredIds;
+    await product.save();
+
+    await this.clearCache();
+    return this.findById(productId);
+  }
+
+  /**
+   * إضافة منتج شبيه واحد
+   */
+  async addRelatedProduct(productId: string, relatedProductId: string): Promise<Product> {
+    const product = await this.productModel.findById(productId);
+    if (!product) {
+      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+    }
+
+    // التحقق من أن المنتج لا يضيف نفسه
+    if (productId === relatedProductId) {
+      throw new AppException('INVALID_OPERATION', 'لا يمكن إضافة المنتج لنفسه', null, 400);
+    }
+
+    // التحقق من وجود المنتج الشبيه
+    const relatedProduct = await this.productModel.findOne({
+      _id: relatedProductId,
+      deletedAt: null,
+    });
+
+    if (!relatedProduct) {
+      throw new AppException('RELATED_PRODUCT_NOT_FOUND', 'المنتج الشبيه غير موجود', null, 404);
+    }
+
+    // إضافة المنتج إذا لم يكن موجوداً بالفعل
+    if (!product.relatedProducts.includes(relatedProductId)) {
+      product.relatedProducts.push(relatedProductId);
+      await product.save();
+      await this.clearCache();
+    }
+
+    return this.findById(productId);
+  }
+
+  /**
+   * إزالة منتج شبيه
+   */
+  async removeRelatedProduct(productId: string, relatedProductId: string): Promise<Product> {
+    const product = await this.productModel.findById(productId);
+    if (!product) {
+      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+    }
+
+    product.relatedProducts = product.relatedProducts.filter(
+      id => id !== relatedProductId,
+    );
+    await product.save();
+
+    await this.clearCache();
+    return this.findById(productId);
+  }
+
+  /**
+   * الحصول على المنتجات الشبيهة لمنتج معين
+   */
+  async getRelatedProducts(productId: string, limit: number = 10): Promise<Product[]> {
+    const product = await this.productModel.findOne({
+      _id: productId,
+      deletedAt: null,
+    });
+
+    if (!product) {
+      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+    }
+
+    if (!product.relatedProducts || product.relatedProducts.length === 0) {
+      return [];
+    }
+
+    // جلب المنتجات الشبيهة
+    const relatedProducts = await this.productModel
+      .find({
+        _id: { $in: product.relatedProducts },
+        deletedAt: null,
+        status: ProductStatus.ACTIVE,
+        isActive: true,
+      })
+      .populate('categoryId')
+      .populate('brandId')
+      .populate('mainImageId')
+      .limit(limit)
+      .lean();
+
+    return relatedProducts;
+  }
+
   // ==================== Cache Management ====================
 
   private async clearCache(): Promise<void> {

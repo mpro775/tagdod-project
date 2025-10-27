@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Grid,
-  Card,
-  CardContent,
   Typography,
   Tabs,
   Tab,
@@ -17,10 +14,6 @@ import {
   Analytics as AnalyticsIcon,
   Assessment as AssessmentIcon,
   FileDownload as FileDownloadIcon,
-  TrendingUp as TrendingUpIcon,
-  People as PeopleIcon,
-  ShoppingCart as ShoppingCartIcon,
-  Support as SupportIcon,
 } from '@mui/icons-material';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { AdvancedAnalyticsDashboard } from '../components/AdvancedAnalyticsDashboard';
@@ -126,86 +119,6 @@ export const AnalyticsMainPage: React.FC = () => {
           </Box>
         </Paper>
 
-        {/* Quick Stats */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card
-              sx={{
-                background: `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}05)`,
-                border: `1px solid ${theme.palette.success.main}20`,
-              }}
-            >
-              <CardContent sx={{ textAlign: 'center' }}>
-                <TrendingUpIcon sx={{ fontSize: 40, color: theme.palette.success.main, mb: 1 }} />
-                <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
-                  +15.2%
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  نمو الإيرادات
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card
-              sx={{
-                background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}05)`,
-                border: `1px solid ${theme.palette.primary.main}20`,
-              }}
-            >
-              <CardContent sx={{ textAlign: 'center' }}>
-                <PeopleIcon sx={{ fontSize: 40, color: theme.palette.primary.main, mb: 1 }} />
-                <Typography variant="h4" color="primary" sx={{ fontWeight: 'bold' }}>
-                  1,250
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  مستخدم نشط
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card
-              sx={{
-                background: `linear-gradient(135deg, ${theme.palette.secondary.main}15, ${theme.palette.secondary.main}05)`,
-                border: `1px solid ${theme.palette.secondary.main}20`,
-              }}
-            >
-              <CardContent sx={{ textAlign: 'center' }}>
-                <ShoppingCartIcon
-                  sx={{ fontSize: 40, color: theme.palette.secondary.main, mb: 1 }}
-                />
-                <Typography variant="h4" color="secondary" sx={{ fontWeight: 'bold' }}>
-                  890
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  طلب هذا الشهر
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card
-              sx={{
-                background: `linear-gradient(135deg, ${theme.palette.warning.main}15, ${theme.palette.warning.main}05)`,
-                border: `1px solid ${theme.palette.warning.main}20`,
-              }}
-            >
-              <CardContent sx={{ textAlign: 'center' }}>
-                <SupportIcon sx={{ fontSize: 40, color: theme.palette.warning.main, mb: 1 }} />
-                <Typography variant="h4" color="warning.main" sx={{ fontWeight: 'bold' }}>
-                  98.5%
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  رضا العملاء
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
 
         {/* Navigation Tabs */}
         <Paper elevation={1} sx={{ mb: 3 }}>

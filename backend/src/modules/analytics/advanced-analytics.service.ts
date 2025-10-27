@@ -1,10 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Order, OrderDocument } from '../checkout/schemas/order.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { Cart, CartDocument } from '../cart/schemas/cart.schema';
+import { AdvancedReport, AdvancedReportDocument, ReportCategory, ReportPriority } from './schemas/advanced-report.schema';
+import { SystemMonitoringService } from '../system-monitoring/system-monitoring.service';
+
+/**
+ * Advanced Analytics Service
+ * 
+ * NOTE: All monetary values are in USD (US Dollars)
+ * All revenue, pricing, and financial calculations use USD as the base currency
+ */
 
 interface AnalyticsParams {
   startDate?: string;
@@ -12,6 +22,97 @@ interface AnalyticsParams {
   period?: string;
   limit?: number;
   page?: number;
+}
+
+interface ProductAggregateResult {
+  _id: Types.ObjectId;
+  product: string;
+  sales: number;
+  revenue: number;
+}
+
+interface CustomerAggregateResult {
+  _id: Types.ObjectId;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  totalSpent: number;
+  orderCount: number;
+}
+
+interface InventoryAggregateResult {
+  _id: Types.ObjectId;
+  categoryName: string;
+  count: number;
+  totalStock: number;
+}
+
+interface RevenueSourceResult {
+  _id: string;
+  amount: number;
+}
+
+interface TopProductDetailResult {
+  _id: Types.ObjectId;
+  id: Types.ObjectId;
+  name: string;
+  sales: number;
+  revenue: number;
+  stock: number;
+  rating: number;
+}
+
+interface CategoryPerformanceResult {
+  _id: Types.ObjectId;
+  category: string;
+  count: number;
+  sales: number;
+  revenue: number;
+}
+
+interface CustomerSegment {
+  segment: string;
+  count: number;
+  percentage: number;
+  customerIds?: Types.ObjectId[];
+}
+
+interface ReportDocument {
+  reportId: string;
+  title: string;
+  titleEn: string;
+  category: string;
+  priority: string;
+  status: string;
+  generatedAt: Date;
+  summary: {
+    totalRecords: number;
+    totalValue: number;
+    currency: string;
+    growth?: number;
+  };
+  createdBy: Types.ObjectId | string;
+  creatorName?: string;
+}
+
+export interface TopCustomerResult {
+  id: string;
+  name: string;
+  orders: number;
+  totalSpent: number;
+}
+
+export interface MetricTrendDataPoint {
+  date: string;
+  value: number;
+  change: number;
+}
+
+export interface LowStockProductResult {
+  _id: Types.ObjectId;
+  name: string;
+  stock: number;
+  minStock: number;
 }
 
 @Injectable()
@@ -23,6 +124,9 @@ export class AdvancedAnalyticsService {
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
+    @InjectModel(AdvancedReport.name) private advancedReportModel: Model<AdvancedReportDocument>,
+    private systemMonitoring: SystemMonitoringService,
   ) {}
 
   // ==================== Helper Methods ====================
@@ -179,8 +283,9 @@ export class AdvancedAnalyticsService {
 
     const results = await this.orderModel.aggregate(pipeline);
 
-    return results.map((item) => ({
-      product: item.product,
+    return results.map((item: ProductAggregateResult) => ({
+      id: item._id.toString(),
+      name: item.product,
       sales: item.sales,
       revenue: item.revenue,
     }));
@@ -373,7 +478,7 @@ export class AdvancedAnalyticsService {
       activeCustomers: activeCustomers[0]?.activeCustomers || 0,
       customerLifetimeValue,
       customerSegments: await this.getCustomerSegments(),
-      topCustomers: topCustomers.map((customer) => ({
+      topCustomers: topCustomers.map((customer: CustomerAggregateResult) => ({
         id: customer._id.toString(),
         name: `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || customer.phone,
         orders: customer.orderCount,
@@ -473,10 +578,10 @@ export class AdvancedAnalyticsService {
       lowStock: lowStockProducts,
       outOfStock: outOfStockProducts,
       totalValue: await this.calculateInventoryValue(),
-      byCategory: inventoryByCategory.map((item) => ({
+      byCategory: inventoryByCategory.map((item: InventoryAggregateResult) => ({
         category: item.categoryName,
         count: item.count,
-        value: item.totalStock * 100, // Assuming average price of 100 per unit
+        value: item.totalStock * 100, // Assuming average price of $100 USD per unit
       })),
       movements: recentMovements.map((movement) => ({
         date: movement.date,
@@ -516,28 +621,16 @@ export class AdvancedAnalyticsService {
 
     const revenue = revenueData[0]?.totalRevenue || 0;
 
-    // Calculate estimated expenses (this would need actual expense tracking)
-    const estimatedExpenses = revenue * 0.6; // Assuming 60% cost ratio
-    const profit = revenue - estimatedExpenses;
-    const profitMargin = revenue > 0 ? (profit / revenue) * 100 : 0;
-
     // Generate cash flow data
     const cashFlow = await this.generateCashFlowData(startDate, endDate);
 
     // Get revenue by source (from orders)
     const revenueBySource = await this.getRevenueBySource(startDate, endDate);
 
-    // Get expenses by category (estimated)
-    const expensesByCategory = await this.getExpensesByCategory(estimatedExpenses);
-
     return {
       revenue,
-      expenses: estimatedExpenses,
-      profit,
-      profitMargin,
       cashFlow,
       revenueBySource,
-      expensesByCategory,
     };
   }
 
@@ -545,15 +638,74 @@ export class AdvancedAnalyticsService {
   async getCartAnalytics(params: AnalyticsParams) {
     this.logger.log('Getting cart analytics with params:', params);
 
+    const startDate = params.startDate
+      ? new Date(params.startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = params.endDate ? new Date(params.endDate) : new Date();
+
+    // Get total carts count
+    const totalCarts = await this.cartModel.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+
+    // Get active carts (carts with recent activity)
+    const activeCarts = await this.cartModel.countDocuments({
+      status: 'active',
+      lastActivityAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // Last 24 hours
+      items: { $exists: true, $not: { $size: 0 } }, // Has items
+    });
+
+    // Get abandoned carts (carts with no activity for more than 24 hours and have items)
+    const abandonedCarts = await this.cartModel.countDocuments({
+      status: 'active',
+      lastActivityAt: { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // No activity for 24+ hours
+      items: { $exists: true, $not: { $size: 0 } }, // Has items
+      isAbandoned: false, // Not already marked as abandoned
+    });
+
+    // Get converted carts (carts that were converted to orders)
+    const convertedCarts = await this.cartModel.countDocuments({
+      status: 'converted',
+      convertedAt: { $gte: startDate, $lte: endDate },
+    });
+
+    // Calculate abandonment rate
+    const totalActiveCarts = activeCarts + abandonedCarts;
+    const abandonmentRate = totalActiveCarts > 0 ? (abandonedCarts / totalActiveCarts) * 100 : 0;
+
+    // Calculate conversion rate
+    const conversionRate = totalCarts > 0 ? (convertedCarts / totalCarts) * 100 : 0;
+
+    // Calculate average cart value from active carts
+    const cartValueData = await this.cartModel.aggregate([
+      {
+        $match: {
+          status: 'active',
+          items: { $exists: true, $not: { $size: 0 } },
+          'pricingSummary.total': { $exists: true, $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageCartValue: { $avg: '$pricingSummary.total' },
+          totalCartValue: { $sum: '$pricingSummary.total' },
+        },
+      },
+    ]);
+
+    const averageCartValue = cartValueData[0]?.averageCartValue || 0;
+    const totalCartValue = cartValueData[0]?.totalCartValue || 0;
+
     return {
-      totalCarts: 1500,
-      activeCarts: 320,
-      abandonedCarts: 450,
-      convertedCarts: 730,
-      abandonmentRate: 30,
-      conversionRate: 48.7,
-      averageCartValue: 1250,
-      totalCartValue: 1875000,
+      totalCarts,
+      activeCarts,
+      abandonedCarts,
+      convertedCarts,
+      abandonmentRate: Math.round(abandonmentRate * 100) / 100, // Round to 2 decimal places
+      conversionRate: Math.round(conversionRate * 100) / 100, // Round to 2 decimal places
+      averageCartValue: Math.round(averageCartValue * 100) / 100, // Round to 2 decimal places
+      totalCartValue: Math.round(totalCartValue * 100) / 100, // Round to 2 decimal places
     };
   }
 
@@ -700,15 +852,18 @@ export class AdvancedAnalyticsService {
 
     const currentRevenue = currentRevenueData[0]?.totalRevenue || 0;
 
+    // Get real system health from monitoring service
+    const systemHealth = await this.systemMonitoring.getSystemHealth();
+
     return {
       activeUsers,
       todaySales,
       todayOrders: todayOrdersCount,
       currentRevenue,
       systemHealth: {
-        status: 'healthy',
-        uptime: 99.9,
-        responseTime: Math.floor(Math.random() * 100) + 50, // This would need actual monitoring
+        status: systemHealth.status,
+        uptime: Math.round((systemHealth.uptime / 86400) * 1000) / 10, // Convert seconds to days, show as percentage
+        responseTime: Math.round(systemHealth.avgApiResponseTime),
       },
       lastUpdated: new Date().toISOString(),
     };
@@ -764,49 +919,258 @@ export class AdvancedAnalyticsService {
   }
 
   // ==================== Advanced Reports ====================
-  async generateAdvancedReport(data: AnalyticsParams & { title?: string; type?: string }) {
-    this.logger.log('Generating advanced report:', data);
 
-    return {
-      id: `report_${Date.now()}`,
-      title: data.title || 'Advanced Analytics Report',
-      type: data.type || 'comprehensive',
-      status: 'completed',
-      generatedAt: new Date().toISOString(),
-      data: {
-        summary: 'Comprehensive analytics report for the selected period',
-        metrics: {
-          revenue: 450000,
-          orders: 890,
-          customers: 1250,
-        },
-      },
-      fileUrl: `https://example.com/reports/report_${Date.now()}.pdf`,
-    };
+  /**
+   * Generate unique report ID
+   */
+  private generateReportId(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const sequence = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    return `REP-${year}-${month}-${sequence}`;
   }
 
-  async listAdvancedReports(params: AnalyticsParams) {
+  async generateAdvancedReport(
+    data: AnalyticsParams & {
+      title?: string;
+      type?: string;
+      category?: ReportCategory;
+      priority?: string;
+      createdBy: string;
+      creatorName?: string;
+    }
+  ) {
+    this.logger.log('Generating advanced report:', data);
+
+    const startDate = data.startDate ? new Date(data.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = data.endDate ? new Date(data.endDate) : new Date();
+    const reportId = this.generateReportId();
+    const startTime = Date.now(); // Track processing time
+
+    try {
+      // Get comprehensive analytics data
+      const [salesAnalytics, productAnalytics, customerAnalytics, cartAnalytics] = await Promise.all([
+        this.getSalesAnalytics(data),
+        this.getProductPerformance(data),
+        this.getCustomerAnalytics(data),
+        this.getCartAnalytics(data),
+      ]);
+
+      // Calculate summary metrics
+      const totalRevenue = salesAnalytics.totalRevenue;
+      const totalOrders = salesAnalytics.totalOrders;
+
+      // Create report data
+      const reportData: Partial<AdvancedReport> = {
+        reportId,
+      title: data.title || 'Advanced Analytics Report',
+        titleEn: data.title || 'Advanced Analytics Report',
+        category: data.category || ReportCategory.CUSTOM,
+        priority: data.priority ? (data.priority as ReportPriority) : ReportPriority.MEDIUM,
+        startDate,
+        endDate,
+        generatedAt: new Date(),
+        createdBy: new Types.ObjectId(data.createdBy),
+        creatorName: data.creatorName,
+
+        // Summary
+        summary: {
+          totalRecords: totalOrders,
+          totalValue: totalRevenue,
+          currency: 'USD',
+          growth: salesAnalytics.salesGrowth,
+        },
+
+        // Sales Analytics
+        salesAnalytics: {
+          totalSales: salesAnalytics.totalOrders,
+          totalOrders: salesAnalytics.totalOrders,
+          totalRevenue: salesAnalytics.totalRevenue,
+          averageOrderValue: salesAnalytics.averageOrderValue,
+          totalDiscount: await this.calculateTotalDiscount(startDate, endDate), // Calculate from orders
+          netRevenue: salesAnalytics.totalRevenue,
+          topSellingProducts: salesAnalytics.topProducts.map((p) => ({
+            productId: p.id || '',
+            name: p.name || '',
+            quantity: p.sales || 0,
+            revenue: p.revenue || 0,
+          })),
+          salesByDate: salesAnalytics.salesByDate.map((item) => ({
+            date: item.date,
+            sales: item.orders,
+            orders: item.orders,
+            revenue: item.revenue,
+          })),
+          salesByCategory: salesAnalytics.salesByCategory.map((item) => ({
+            categoryId: item.category,
+            categoryName: item.category,
+            sales: item.sales,
+            revenue: item.revenue,
+            percentage: item.percentage,
+          })),
+          salesByRegion: await this.getSalesByRegion(startDate, endDate),
+          paymentMethods: await this.getPaymentMethodsWithPercentage(salesAnalytics.salesByPaymentMethod, salesAnalytics.totalRevenue),
+        },
+
+        // Product Analytics
+        productAnalytics: {
+          totalProducts: productAnalytics.totalProducts,
+          activeProducts: await this.getActiveProductsCount(), // Filter active
+          outOfStock: await this.getOutOfStockCount(), // Calculate
+          lowStock: await this.getLowStockCount(), // Calculate
+          topPerformers: productAnalytics.topProducts.map((p) => ({
+            productId: p.id || '',
+            name: p.name || '',
+            views: 0, // View tracking would need to be implemented in product service
+            sales: p.sales || 0,
+            revenue: p.revenue || 0,
+            rating: p.rating || 0,
+          })),
+          underPerformers: await this.getUnderPerformers(startDate, endDate),
+          categoryBreakdown: productAnalytics.byCategory.map((item) => ({
+            categoryId: item.category || '',
+            name: item.category || '',
+            productCount: item.count || 0,
+            totalSales: item.sales || 0,
+            revenue: item.revenue || 0,
+          })),
+          brandBreakdown: await this.getBrandBreakdown(),
+          inventoryValue: await this.calculateInventoryValue(), // Calculate
+          averageProductRating: await this.getAverageProductRating(), // Calculate
+        },
+
+        // Customer Analytics
+        customerAnalytics: {
+          totalCustomers: customerAnalytics.totalCustomers,
+          newCustomers: customerAnalytics.newCustomers,
+          activeCustomers: customerAnalytics.activeCustomers,
+          returningCustomers: await this.getReturningCustomersCount(startDate, endDate), // Calculate
+          customerRetentionRate: customerAnalytics.retentionRate,
+          averageLifetimeValue: customerAnalytics.customerLifetimeValue,
+          topCustomers: await Promise.all(customerAnalytics.topCustomers.map(async (c: TopCustomerResult) => ({
+            userId: c.id,
+            name: c.name,
+            totalOrders: c.orders,
+            totalSpent: c.totalSpent,
+            lastOrderDate: await this.getLastOrderDate(c.id), // Get actual last order date
+          }))),
+          customersByRegion: await this.getCustomersByRegion(),
+          customerSegmentation: await this.getCustomerSegmentationWithMetrics(customerAnalytics.customerSegments, startDate, endDate),
+          churnRate: customerAnalytics.churnRate,
+          newVsReturning: {
+            new: customerAnalytics.newCustomers,
+            returning: customerAnalytics.totalCustomers - customerAnalytics.newCustomers,
+            newPercentage: customerAnalytics.totalCustomers > 0 ?
+              (customerAnalytics.newCustomers / customerAnalytics.totalCustomers) * 100 : 0,
+            returningPercentage: customerAnalytics.totalCustomers > 0 ?
+              ((customerAnalytics.totalCustomers - customerAnalytics.newCustomers) / customerAnalytics.totalCustomers) * 100 : 0,
+          },
+        },
+
+        // Cart Analytics
+        cartAnalytics: {
+          totalCarts: cartAnalytics.totalCarts,
+          activeCarts: cartAnalytics.activeCarts,
+          abandonedCarts: cartAnalytics.abandonedCarts,
+          abandonmentRate: cartAnalytics.abandonmentRate,
+          recoveredCarts: cartAnalytics.convertedCarts,
+          recoveryRate: cartAnalytics.conversionRate,
+          averageCartValue: cartAnalytics.averageCartValue,
+          averageCartItems: await this.getAverageCartItems(), // Calculate
+          conversionRate: cartAnalytics.conversionRate,
+          checkoutDropoffRate: await this.getCheckoutDropoffRate(), // Calculate
+          abandonedCartValue: await this.getAbandonedCartValue(), // Calculate
+          topAbandonedProducts: await this.getTopAbandonedProducts(), // Implement
+        },
+
+        // Status
+      status: 'completed',
+        metadata: {
+          processingTime: Date.now() - startTime, // Calculate actual processing time
+          dataSourceVersion: '1.0',
+          reportVersion: '1.0',
+          generationMode: 'manual',
+        },
+      };
+
+      // Save report to database
+      const savedReport = await this.advancedReportModel.create(reportData);
+
+      return {
+        id: savedReport.reportId,
+        title: savedReport.title,
+        category: savedReport.category,
+        status: savedReport.status,
+        generatedAt: savedReport.generatedAt.toISOString(),
+        summary: savedReport.summary,
+      data: {
+          salesAnalytics: savedReport.salesAnalytics,
+          productAnalytics: savedReport.productAnalytics,
+          customerAnalytics: savedReport.customerAnalytics,
+          cartAnalytics: savedReport.cartAnalytics,
+        },
+      };
+
+    } catch (error) {
+      this.logger.error('Error generating advanced report:', error);
+      throw error;
+    }
+  }
+
+  async listAdvancedReports(params: AnalyticsParams & { createdBy?: string; category?: string }) {
     this.logger.log('Listing advanced reports with params:', params);
 
     const page = parseInt(params.page?.toString() || '1', 10);
     const limit = parseInt(params.limit?.toString() || '10', 10);
+    const skip = (page - 1) * limit;
 
-    // Mock data
-    const reports = Array.from({ length: limit }, (_, i) => ({
-      id: `report_${Date.now() - i * 1000}`,
-      title: `Analytics Report ${page * limit - limit + i + 1}`,
-      type: i % 2 === 0 ? 'sales' : 'comprehensive',
-      status: i % 3 === 0 ? 'completed' : 'pending',
-      generatedAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
-    }));
+    // Build filter
+    const filter: Record<string, unknown> = { isArchived: false };
+
+    if (params.createdBy) {
+      filter.createdBy = params.createdBy;
+    }
+
+    if (params.category) {
+      filter.category = params.category;
+    }
+
+    if (params.startDate && params.endDate) {
+      filter.startDate = { $gte: new Date(params.startDate) };
+      filter.endDate = { $lte: new Date(params.endDate) };
+    }
+
+    // Get reports with pagination
+    const [reports, total] = await Promise.all([
+      this.advancedReportModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('reportId title titleEn category priority status generatedAt summary createdBy creatorName')
+        .lean(),
+      this.advancedReportModel.countDocuments(filter),
+    ]);
 
     return {
-      data: reports,
+      data: reports.map((report: ReportDocument) => ({
+        id: report.reportId,
+        title: report.title,
+        titleEn: report.titleEn,
+        category: report.category,
+        priority: report.priority,
+        status: report.status,
+        generatedAt: report.generatedAt.toISOString(),
+        summary: report.summary,
+        createdBy: report.createdBy,
+        creatorName: report.creatorName,
+      })),
       meta: {
-        total: 50,
+        total,
         page,
         limit,
-        totalPages: Math.ceil(50 / limit),
+        totalPages: Math.ceil(total / limit),
       },
     };
   }
@@ -814,49 +1178,98 @@ export class AdvancedAnalyticsService {
   async getAdvancedReport(reportId: string) {
     this.logger.log('Getting advanced report:', reportId);
 
+    const report = await this.advancedReportModel
+      .findOne({ reportId })
+      .populate('createdBy', 'firstName lastName email')
+      .lean();
+
+    if (!report) {
+      throw new Error('Report not found');
+    }
+
     return {
-      id: reportId,
-      title: 'Advanced Analytics Report',
-      type: 'comprehensive',
-      status: 'completed',
-      generatedAt: new Date().toISOString(),
+      id: report.reportId,
+      title: report.title,
+      titleEn: report.titleEn,
+      category: report.category,
+      priority: report.priority,
+      status: report.status,
+      generatedAt: report.generatedAt.toISOString(),
+      startDate: report.startDate.toISOString(),
+      endDate: report.endDate.toISOString(),
+      summary: report.summary,
       data: {
-        summary: 'Comprehensive analytics report',
-        metrics: {
-          revenue: 450000,
-          orders: 890,
-          customers: 1250,
-        },
+        salesAnalytics: report.salesAnalytics,
+        productAnalytics: report.productAnalytics,
+        customerAnalytics: report.customerAnalytics,
+        cartAnalytics: report.cartAnalytics,
+        financialAnalytics: report.financialAnalytics,
+        marketingAnalytics: report.marketingAnalytics,
+        operationalAnalytics: report.operationalAnalytics,
       },
-      fileUrl: `https://example.com/reports/${reportId}.pdf`,
+      insights: report.insights,
+      recommendations: report.recommendations,
+      alerts: report.alerts,
+      chartsData: report.chartsData,
+      createdBy: report.createdBy,
+      creatorName: report.creatorName,
+      metadata: report.metadata,
     };
   }
 
   async archiveReport(reportId: string) {
     this.logger.log('Archiving report:', reportId);
 
+    const report = await this.advancedReportModel
+      .findOneAndUpdate(
+        { reportId },
+        {
+          isArchived: true,
+          status: 'archived' as const,
+          updatedAt: new Date(),
+        },
+        { new: true }
+      )
+      .select('reportId title status updatedAt')
+      .lean();
+
+    if (!report) {
+      throw new Error('Report not found');
+    }
+
     return {
-      id: reportId,
-      title: 'Advanced Analytics Report',
-      type: 'comprehensive',
-      status: 'archived',
-      generatedAt: new Date().toISOString(),
-      archivedAt: new Date().toISOString(),
+      id: report.reportId,
+      title: report.title,
+      status: report.status,
+      archivedAt: report.updatedAt?.toISOString() || new Date().toISOString(),
     };
   }
 
   async deleteReport(reportId: string) {
     this.logger.log('Deleting report:', reportId);
-    // In a real implementation, this would delete the report from the database
+
+    const result = await this.advancedReportModel.deleteOne({ reportId });
+
+    if (result.deletedCount === 0) {
+      throw new Error('Report not found');
+    }
+
+    return { success: true, message: 'Report deleted successfully' };
   }
 
   async exportReport(reportId: string, data: { format?: string }) {
     this.logger.log('Exporting report:', reportId, data);
 
+    // In a real implementation, this would generate and store the actual file
+    // For now, return mock data
+    const format = data.format || 'pdf';
+    const fileName = `${reportId}_${Date.now()}.${format}`;
+
     return {
-      fileUrl: `https://example.com/exports/${reportId}.${data.format || 'pdf'}`,
-      format: data.format || 'pdf',
+      fileUrl: `https://api.example.com/reports/exports/${fileName}`,
+      format,
       exportedAt: new Date().toISOString(),
+      fileName,
     };
   }
 
@@ -864,30 +1277,70 @@ export class AdvancedAnalyticsService {
   async exportSalesData(format: string, startDate: string, endDate: string) {
     this.logger.log('Exporting sales data:', { format, startDate, endDate });
 
+    // Get real sales data
+    const salesData = await this.getSalesAnalytics({
+      startDate,
+      endDate,
+      period: 'custom',
+    });
+
+    // In a real implementation, this would generate and store the actual file
+    const fileName = `sales_data_${startDate}_${endDate}_${Date.now()}.${format}`;
+
     return {
-      fileUrl: `https://example.com/exports/sales_${Date.now()}.${format}`,
+      fileUrl: `https://api.example.com/exports/${fileName}`,
       format,
       exportedAt: new Date().toISOString(),
+      fileName,
+      recordCount: salesData.totalOrders,
+      totalValue: salesData.totalRevenue,
+      currency: 'USD',
     };
   }
 
   async exportProductsData(format: string, startDate?: string, endDate?: string) {
     this.logger.log('Exporting products data:', { format, startDate, endDate });
 
+    // Get real products data
+    const productsData = await this.getProductPerformance({
+      startDate,
+      endDate,
+      period: startDate && endDate ? 'custom' : '30d',
+    });
+
+    const fileName = `products_data_${startDate || 'all'}_${endDate || 'all'}_${Date.now()}.${format}`;
+
     return {
-      fileUrl: `https://example.com/exports/products_${Date.now()}.${format}`,
+      fileUrl: `https://api.example.com/exports/${fileName}`,
       format,
       exportedAt: new Date().toISOString(),
+      fileName,
+      recordCount: productsData.totalProducts,
+      totalValue: productsData.totalSales,
+      currency: 'USD',
     };
   }
 
   async exportCustomersData(format: string, startDate?: string, endDate?: string) {
     this.logger.log('Exporting customers data:', { format, startDate, endDate });
 
+    // Get real customers data
+    const customersData = await this.getCustomerAnalytics({
+      startDate,
+      endDate,
+      period: startDate && endDate ? 'custom' : '30d',
+    });
+
+    const fileName = `customers_data_${startDate || 'all'}_${endDate || 'all'}_${Date.now()}.${format}`;
+
     return {
-      fileUrl: `https://example.com/exports/customers_${Date.now()}.${format}`,
+      fileUrl: `https://api.example.com/exports/${fileName}`,
       format,
       exportedAt: new Date().toISOString(),
+      fileName,
+      recordCount: customersData.totalCustomers,
+      totalValue: customersData.topCustomers.reduce((sum: number, c: TopCustomerResult) => sum + c.totalSpent, 0),
+      currency: 'USD',
     };
   }
 
@@ -900,22 +1353,68 @@ export class AdvancedAnalyticsService {
   ) {
     this.logger.log('Comparing periods:', { currentStart, currentEnd, previousStart, previousEnd });
 
+    // Get current period data
+    const currentData = await this.getSalesAnalytics({
+      startDate: currentStart,
+      endDate: currentEnd,
+      period: 'custom',
+    });
+
+    // Get previous period data
+    const previousData = await this.getSalesAnalytics({
+      startDate: previousStart,
+      endDate: previousEnd,
+      period: 'custom',
+    });
+
+    // Calculate changes
+    const revenueChange = previousData.totalRevenue > 0
+      ? ((currentData.totalRevenue - previousData.totalRevenue) / previousData.totalRevenue) * 100
+      : 0;
+
+    const ordersChange = previousData.totalOrders > 0
+      ? ((currentData.totalOrders - previousData.totalOrders) / previousData.totalOrders) * 100
+      : 0;
+
+    // Get customer data for both periods
+    const currentCustomers = await this.getCustomerAnalytics({
+      startDate: currentStart,
+      endDate: currentEnd,
+      period: 'custom',
+    });
+
+    const previousCustomers = await this.getCustomerAnalytics({
+      startDate: previousStart,
+      endDate: previousEnd,
+      period: 'custom',
+    });
+
+    const customersChange = previousCustomers.totalCustomers > 0
+      ? ((currentCustomers.totalCustomers - previousCustomers.totalCustomers) / previousCustomers.totalCustomers) * 100
+      : 0;
+
     return {
       current: {
-        revenue: 450000,
-        orders: 890,
-        customers: 245,
+        revenue: currentData.totalRevenue,
+        orders: currentData.totalOrders,
+        customers: currentCustomers.totalCustomers,
+        averageOrderValue: currentData.averageOrderValue,
       },
       previous: {
-        revenue: 390000,
-        orders: 765,
-        customers: 198,
+        revenue: previousData.totalRevenue,
+        orders: previousData.totalOrders,
+        customers: previousCustomers.totalCustomers,
+        averageOrderValue: previousData.averageOrderValue,
       },
       change: {
-        revenue: 15.4,
-        orders: 16.3,
-        customers: 23.7,
+        revenue: Math.round(revenueChange * 100) / 100,
+        orders: Math.round(ordersChange * 100) / 100,
+        customers: Math.round(customersChange * 100) / 100,
+        averageOrderValue: previousData.averageOrderValue > 0
+          ? Math.round(((currentData.averageOrderValue - previousData.averageOrderValue) / previousData.averageOrderValue) * 100 * 100) / 100
+          : 0,
       },
+      currency: 'USD',
     };
   }
 
@@ -931,16 +1430,110 @@ export class AdvancedAnalyticsService {
     const end = new Date(endDate);
     const days = Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
 
+    const data: MetricTrendDataPoint[] = [];
+
+    // Generate real trend data based on metric
+    switch (metric) {
+      case 'revenue':
+        for (let i = 0; i < Math.min(days, 90); i++) {
+          const date = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
+          const nextDate = new Date(date.getTime() + 24 * 60 * 60 * 1000);
+
+          const dayOrders = await this.orderModel
+            .find({
+              createdAt: { $gte: date, $lt: nextDate },
+              status: { $in: ['completed', 'delivered'] },
+              paymentStatus: 'paid',
+            })
+            .lean();
+
+          const value = dayOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+          data.push({
+            date: date.toISOString().split('T')[0],
+            value: Math.round(value * 100) / 100,
+            change: i > 0 ? ((value - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100 : 0,
+          });
+        }
+        break;
+
+      case 'orders':
+        for (let i = 0; i < Math.min(days, 90); i++) {
+          const date = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
+          const nextDate = new Date(date.getTime() + 24 * 60 * 60 * 1000);
+
+          const orderCount = await this.orderModel.countDocuments({
+            createdAt: { $gte: date, $lt: nextDate },
+            status: { $in: ['completed', 'delivered'] },
+            paymentStatus: 'paid',
+          });
+
+          data.push({
+            date: date.toISOString().split('T')[0],
+            value: orderCount,
+            change: i > 0 ? ((orderCount - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100 : 0,
+          });
+        }
+        break;
+
+      case 'customers':
+        // For customers, we'll show daily new customer registrations
+        for (let i = 0; i < Math.min(days, 90); i++) {
+          const date = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
+          const nextDate = new Date(date.getTime() + 24 * 60 * 60 * 1000);
+
+          const customerCount = await this.userModel.countDocuments({
+            roles: { $in: ['user'] },
+            status: 'active',
+            deletedAt: null,
+            createdAt: { $gte: date, $lt: nextDate },
+          });
+
+          data.push({
+            date: date.toISOString().split('T')[0],
+            value: customerCount,
+            change: i > 0 ? ((customerCount - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100 : 0,
+          });
+        }
+        break;
+
+      case 'conversion_rate':
+        // Calculate daily conversion rate
+        for (let i = 0; i < Math.min(days, 90); i++) {
+          const date = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
+          const nextDate = new Date(date.getTime() + 24 * 60 * 60 * 1000);
+
+          const [totalCarts, convertedCarts] = await Promise.all([
+            this.cartModel.countDocuments({
+              createdAt: { $gte: date, $lt: nextDate },
+            }),
+            this.cartModel.countDocuments({
+              convertedAt: { $gte: date, $lt: nextDate },
+              status: 'converted',
+            }),
+          ]);
+
+          const conversionRate = totalCarts > 0 ? (convertedCarts / totalCarts) * 100 : 0;
+
+          data.push({
+            date: date.toISOString().split('T')[0],
+            value: Math.round(conversionRate * 100) / 100,
+            change: i > 0 ? ((conversionRate - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100 : 0,
+          });
+        }
+        break;
+
+      default:
+        // For other metrics, return empty data
+        break;
+    }
+
     return {
       metric,
       startDate,
       endDate,
       groupBy: groupBy || 'day',
-      data: Array.from({ length: Math.min(days, 90) }, (_, i) => ({
-        date: new Date(start.getTime() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        value: Math.floor(Math.random() * 10000) + 5000,
-        change: (Math.random() - 0.5) * 20,
-      })),
+      currency: 'USD',
+      data,
     };
   }
 
@@ -1033,39 +1626,112 @@ export class AdvancedAnalyticsService {
   }
 
   /**
-   * Get customer segments
+   * Get customer segments with real data
    */
   private async getCustomerSegments() {
-    const totalCustomers = await this.userModel.countDocuments({
-      roles: { $in: ['user'] },
-      status: 'active',
-      deletedAt: null,
-    });
+    // Get all customers with their spending
+    const customersWithSpending = await this.userModel.aggregate([
+      {
+        $match: {
+          roles: { $in: ['user'] },
+          status: 'active',
+          deletedAt: null,
+        },
+      },
+      {
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'orders',
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          createdAt: 1,
+          lastActivityAt: 1,
+          totalSpent: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: '$orders',
+                    as: 'order',
+                    cond: {
+                      $and: [
+                        { $in: ['$$order.status', ['completed', 'delivered']] },
+                        { $eq: ['$$order.paymentStatus', 'paid'] },
+                      ],
+                    },
+                  },
+                },
+                as: 'order',
+                in: '$$order.total',
+              },
+            },
+          },
+          orderCount: {
+            $size: {
+              $filter: {
+                input: '$orders',
+                as: 'order',
+                cond: {
+                  $and: [
+                    { $in: ['$$order.status', ['completed', 'delivered']] },
+                    { $eq: ['$$order.paymentStatus', 'paid'] },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      { $sort: { totalSpent: -1 } },
+    ]);
 
-    // VIP customers (top 10% by spending)
-    const vipCount = Math.floor(totalCustomers * 0.1);
+    const totalCustomers = customersWithSpending.length;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    // Regular customers (40%)
-    const regularCount = Math.floor(totalCustomers * 0.4);
-
-    // New customers (30%)
-    const newCount = Math.floor(totalCustomers * 0.3);
-
-    // Inactive customers (20%)
-    const inactiveCount = totalCustomers - vipCount - regularCount - newCount;
+    // Segment customers based on actual behavior
+    const vipCustomers = customersWithSpending.slice(0, Math.floor(totalCustomers * 0.1));
+    const regularCustomers = customersWithSpending.filter(
+      (c) => c.orderCount >= 2 && !vipCustomers.find((v) => v._id.equals(c._id))
+    );
+    const newCustomers = customersWithSpending.filter(
+      (c) => new Date(c.createdAt) >= thirtyDaysAgo
+    );
+    const inactiveCustomers = customersWithSpending.filter(
+      (c) =>
+        c.lastActivityAt &&
+        new Date(c.lastActivityAt) < thirtyDaysAgo &&
+        !newCustomers.find((n) => n._id.equals(c._id))
+    );
 
     return [
-      { segment: 'VIP Customers', count: vipCount, percentage: (vipCount / totalCustomers) * 100 },
+      {
+        segment: 'VIP Customers',
+        count: vipCustomers.length,
+        percentage: (vipCustomers.length / totalCustomers) * 100,
+        customerIds: vipCustomers.map((c) => c._id),
+      },
       {
         segment: 'Regular Customers',
-        count: regularCount,
-        percentage: (regularCount / totalCustomers) * 100,
+        count: regularCustomers.length,
+        percentage: (regularCustomers.length / totalCustomers) * 100,
+        customerIds: regularCustomers.map((c) => c._id),
       },
-      { segment: 'New Customers', count: newCount, percentage: (newCount / totalCustomers) * 100 },
+      {
+        segment: 'New Customers',
+        count: newCustomers.length,
+        percentage: (newCustomers.length / totalCustomers) * 100,
+        customerIds: newCustomers.map((c) => c._id),
+      },
       {
         segment: 'Inactive Customers',
-        count: inactiveCount,
-        percentage: (inactiveCount / totalCustomers) * 100,
+        count: inactiveCustomers.length,
+        percentage: (inactiveCustomers.length / totalCustomers) * 100,
+        customerIds: inactiveCustomers.map((c) => c._id),
       },
     ];
   }
@@ -1118,14 +1784,12 @@ export class AdvancedAnalyticsService {
         .lean();
 
       const inflow = dailyOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-      const outflow = inflow * 0.6; // Estimated expenses
-      const balance = inflow - outflow;
 
       cashFlow.push({
         date: date.toISOString().split('T')[0],
         inflow,
-        outflow,
-        balance,
+        outflow: 0, // No expense tracking system
+        balance: inflow,
       });
     }
 
@@ -1154,9 +1818,9 @@ export class AdvancedAnalyticsService {
     ];
 
     const results = await this.orderModel.aggregate(pipeline);
-    const totalRevenue = results.reduce((sum, item) => sum + item.amount, 0);
+    const totalRevenue = results.reduce((sum, item: RevenueSourceResult) => sum + item.amount, 0);
 
-    return results.map((item) => ({
+    return results.map((item: RevenueSourceResult) => ({
       source: item._id || 'Unknown',
       amount: item.amount,
       percentage: totalRevenue > 0 ? (item.amount / totalRevenue) * 100 : 0,
@@ -1164,14 +1828,248 @@ export class AdvancedAnalyticsService {
   }
 
   /**
-   * Get expenses by category (estimated)
+   * Calculate total discount from orders
    */
-  private async getExpensesByCategory(totalExpenses: number) {
-    return [
-      { category: 'Inventory', amount: totalExpenses * 0.5, percentage: 50 },
-      { category: 'Operations', amount: totalExpenses * 0.3, percentage: 30 },
-      { category: 'Marketing', amount: totalExpenses * 0.2, percentage: 20 },
-    ];
+  private async calculateTotalDiscount(startDate: Date, endDate: Date): Promise<number> {
+    const result = await this.orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: { $in: ['completed', 'delivered'] },
+          paymentStatus: 'paid',
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalDiscount: { $sum: '$totalDiscount' },
+          couponDiscount: { $sum: '$couponDiscount' },
+          itemsDiscount: { $sum: '$itemsDiscount' },
+        },
+      },
+    ]);
+
+    const data = result[0];
+    return (data?.totalDiscount || 0) + (data?.couponDiscount || 0) + (data?.itemsDiscount || 0);
+  }
+
+  /**
+   * Get active products count
+   */
+  private async getActiveProductsCount(): Promise<number> {
+    return await this.productModel.countDocuments({
+      status: 'active',
+      isActive: true,
+      deletedAt: null,
+    });
+  }
+
+  /**
+   * Get out of stock products count
+   */
+  private async getOutOfStockCount(): Promise<number> {
+    return await this.productModel.countDocuments({
+      deletedAt: null,
+      trackStock: true,
+      stock: 0,
+    });
+  }
+
+  /**
+   * Get low stock products count
+   */
+  private async getLowStockCount(): Promise<number> {
+    return await this.productModel.countDocuments({
+      deletedAt: null,
+      trackStock: true,
+      $expr: { $lt: ['$stock', '$minStock'] },
+    });
+  }
+
+  /**
+   * Get returning customers count
+   */
+  private async getReturningCustomersCount(startDate: Date, endDate: Date): Promise<number> {
+    const result = await this.userModel.aggregate([
+      {
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'orders',
+        },
+      },
+      {
+        $match: {
+          roles: { $in: ['user'] },
+          status: 'active',
+          deletedAt: null,
+          'orders.createdAt': { $gte: startDate, $lte: endDate },
+          'orders.status': { $in: ['completed', 'delivered'] },
+        },
+      },
+      {
+        $project: {
+          orderCount: { $size: '$orders' },
+        },
+      },
+      {
+        $match: {
+          orderCount: { $gt: 1 }, // More than one order = returning customer
+        },
+      },
+      { $count: 'returningCustomers' },
+    ]);
+
+    return result[0]?.returningCustomers || 0;
+  }
+
+  /**
+   * Get average cart items count
+   */
+  private async getAverageCartItems(): Promise<number> {
+    const result = await this.cartModel.aggregate([
+      {
+        $match: {
+          status: 'active',
+          items: { $exists: true, $not: { $size: 0 } },
+        },
+      },
+      {
+        $project: {
+          itemCount: { $size: '$items' },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageItems: { $avg: '$itemCount' },
+        },
+      },
+    ]);
+
+    return Math.round((result[0]?.averageItems || 0) * 100) / 100;
+  }
+
+  /**
+   * Get checkout dropoff rate
+   */
+  private async getCheckoutDropoffRate(): Promise<number> {
+    const [totalCarts, convertedCarts] = await Promise.all([
+      this.cartModel.countDocuments({
+        status: 'active',
+        items: { $exists: true, $not: { $size: 0 } },
+      }),
+      this.cartModel.countDocuments({
+        status: 'converted',
+      }),
+    ]);
+
+    return totalCarts > 0 ? Math.round(((totalCarts - convertedCarts) / totalCarts) * 100 * 100) / 100 : 0;
+  }
+
+  /**
+   * Get abandoned cart value
+   */
+  private async getAbandonedCartValue(): Promise<number> {
+    const result = await this.cartModel.aggregate([
+      {
+        $match: {
+          status: 'active',
+          lastActivityAt: { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // No activity for 24+ hours
+          items: { $exists: true, $not: { $size: 0 } },
+          'pricingSummary.total': { $exists: true, $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalValue: { $sum: '$pricingSummary.total' },
+        },
+      },
+    ]);
+
+    return Math.round((result[0]?.totalValue || 0) * 100) / 100;
+  }
+
+  /**
+   * Get top abandoned products
+   */
+  private async getTopAbandonedProducts(): Promise<Array<{ productId: string; name: string; abandonedCount: number; lostRevenue: number }>> {
+    const result = await this.cartModel.aggregate([
+      {
+        $match: {
+          status: 'active',
+          lastActivityAt: { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // No activity for 24+ hours
+          items: { $exists: true, $not: { $size: 0 } },
+        },
+      },
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'product',
+        },
+      },
+      { $unwind: '$product' },
+      {
+        $group: {
+          _id: '$product._id',
+          name: { $first: '$product.name' },
+          abandonedCount: { $sum: 1 },
+          lostRevenue: { $sum: { $multiply: ['$items.quantity', '$items.price'] } },
+        },
+      },
+      { $sort: { abandonedCount: -1 } },
+      { $limit: 5 },
+    ]);
+
+    return result.map((item) => ({
+      productId: item._id.toString(),
+      name: item.name,
+      abandonedCount: item.abandonedCount,
+      lostRevenue: Math.round((item.lostRevenue || 0) * 100) / 100,
+    }));
+  }
+
+  /**
+   * Get average product rating
+   */
+  private async getAverageProductRating(): Promise<number> {
+    const result = await this.productModel.aggregate([
+      {
+        $match: {
+          deletedAt: null,
+          averageRating: { $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: '$averageRating' },
+        },
+      },
+    ]);
+
+    return Math.round((result[0]?.averageRating || 0) * 100) / 100;
+  }
+
+  /**
+   * Get last order date for a customer
+   */
+  private async getLastOrderDate(customerId: string): Promise<Date> {
+    const lastOrder = await this.orderModel
+      .findOne({
+        userId: customerId,
+        status: { $in: ['completed', 'delivered'] },
+      })
+      .sort({ createdAt: -1 })
+      .select('createdAt')
+      .lean();
+
+    return lastOrder?.createdAt || new Date();
   }
 
   // ==================== Additional Helper Methods ====================
@@ -1215,7 +2113,7 @@ export class AdvancedAnalyticsService {
 
     const results = await this.orderModel.aggregate(pipeline);
 
-    return results.map((item) => ({
+    return results.map((item: TopProductDetailResult) => ({
       id: item.id.toString(),
       name: item.name,
       sales: item.sales,
@@ -1236,13 +2134,13 @@ export class AdvancedAnalyticsService {
         $expr: { $lt: ['$stock', '$minStock'] },
       })
       .select('_id name stock minStock')
-      .lean();
+      .lean<LowStockProductResult[]>();
 
     return products.map((product) => ({
       id: product._id.toString(),
       name: product.name,
-      stock: (product as Record<string, unknown>).stock || 0,
-      minStock: (product as Record<string, unknown>).minStock || 0,
+      stock: product.stock || 0,
+      minStock: product.minStock || 0,
     }));
   }
 
@@ -1299,11 +2197,263 @@ export class AdvancedAnalyticsService {
 
     const results = await this.orderModel.aggregate(pipeline);
 
-    return results.map((item) => ({
+    return results.map((item: CategoryPerformanceResult) => ({
       category: item.category,
       count: item.count,
       sales: item.sales,
       revenue: item.revenue,
     }));
+  }
+
+  // ==================== New Helper Methods for Missing Features ====================
+
+  /**
+   * Get sales by region
+   */
+  private async getSalesByRegion(startDate: Date, endDate: Date) {
+    const pipeline = [
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: { $in: ['completed', 'delivered'] },
+          paymentStatus: 'paid',
+          'shippingAddress.city': { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: '$shippingAddress.city',
+          orders: { $sum: 1 },
+          revenue: { $sum: '$total' },
+        },
+      },
+      { $sort: { revenue: -1 as 1 | -1 } },
+      { $limit: 10 },
+    ];
+
+    const results = await this.orderModel.aggregate(pipeline);
+
+    return results.map((item) => ({
+      region: item._id,
+      city: item._id,
+      sales: item.orders,
+      revenue: item.revenue,
+    }));
+  }
+
+  /**
+   * Get payment methods with percentage
+   */
+  private async getPaymentMethodsWithPercentage(
+    paymentMethods: Array<{ method: string; count: number; amount: number }>,
+    totalRevenue: number,
+  ) {
+    return paymentMethods.map((item) => ({
+      method: item.method,
+      count: item.count,
+      amount: item.amount,
+      percentage: totalRevenue > 0 ? Math.round((item.amount / totalRevenue) * 100 * 100) / 100 : 0,
+    }));
+  }
+
+  /**
+   * Get under-performing products with real data
+   */
+  private async getUnderPerformers(startDate: Date, endDate: Date) {
+    const pipeline = [
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: { $in: ['completed', 'delivered'] },
+          paymentStatus: 'paid',
+        },
+      },
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'product',
+        },
+      },
+      { $unwind: '$product' },
+      {
+        $group: {
+          _id: '$product._id',
+          name: { $first: '$product.name' },
+          sales: { $sum: '$items.qty' },
+          revenue: { $sum: { $multiply: ['$items.qty', '$items.finalPrice'] } },
+          lastSold: { $max: '$createdAt' },
+        },
+      },
+      { $sort: { sales: 1 as 1 | -1 } }, // Ascending to get lowest
+      { $limit: 10 },
+    ];
+
+    const results = await this.orderModel.aggregate(pipeline);
+
+    return results.map((item) => ({
+      productId: item._id.toString(),
+      name: item.name,
+      views: 0, // View tracking not implemented yet - would need separate tracking system
+      sales: item.sales,
+      lastSold: item.lastSold || undefined,
+    }));
+  }
+
+  /**
+   * Get brand breakdown with real revenue and sales
+   */
+  private async getBrandBreakdown() {
+    // First, get brands with product count
+    const brandsWithProducts = await this.productModel.aggregate([
+      {
+        $match: {
+          deletedAt: null,
+          brand: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: '$brand',
+          productIds: { $push: '$_id' },
+          productCount: { $sum: 1 },
+        },
+      },
+      { $sort: { productCount: -1 } },
+      { $limit: 10 },
+    ]);
+
+    // Calculate revenue and sales for each brand
+    const brandMetrics = await Promise.all(
+      brandsWithProducts.map(async (brand) => {
+        const salesData = await this.orderModel.aggregate([
+          {
+            $match: {
+              status: { $in: ['completed', 'delivered'] },
+              paymentStatus: 'paid',
+            },
+          },
+          { $unwind: '$items' },
+          {
+            $match: {
+              'items.productId': { $in: brand.productIds },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalSales: { $sum: '$items.qty' },
+              totalRevenue: { $sum: { $multiply: ['$items.qty', '$items.finalPrice'] } },
+            },
+          },
+        ]);
+
+        return {
+          brandId: brand._id,
+          name: brand._id,
+          productCount: brand.productCount,
+          totalSales: salesData[0]?.totalSales || 0,
+          revenue: Math.round((salesData[0]?.totalRevenue || 0) * 100) / 100,
+        };
+      })
+    );
+
+    return brandMetrics;
+  }
+
+  /**
+   * Get customers by region
+   */
+  private async getCustomersByRegion() {
+    const results = await this.userModel.aggregate([
+      {
+        $match: {
+          roles: { $in: ['user'] },
+          status: 'active',
+          deletedAt: null,
+          'addresses.city': { $exists: true, $ne: null },
+        },
+      },
+      { $unwind: '$addresses' },
+      {
+        $group: {
+          _id: '$addresses.city',
+          customers: { $addToSet: '$_id' },
+        },
+      },
+      {
+        $project: {
+          region: '$_id',
+          count: { $size: '$customers' },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+    ]);
+
+    const totalCustomers = results.reduce((sum, item) => sum + item.count, 0);
+
+    return results.map((item) => ({
+      region: item._id,
+      count: item.count,
+      percentage: totalCustomers > 0 ? Math.round((item.count / totalCustomers) * 100 * 100) / 100 : 0,
+    }));
+  }
+
+  /**
+   * Get customer segmentation with revenue and AOV metrics - Real calculation
+   */
+  private async getCustomerSegmentationWithMetrics(
+    segments: CustomerSegment[],
+    startDate: Date,
+    endDate: Date,
+  ) {
+    // Calculate revenue and AOV for each segment using actual order data
+    const segmentMetrics = await Promise.all(
+      segments.map(async (segment) => {
+        if (!segment.customerIds || segment.customerIds.length === 0) {
+          return {
+            segment: segment.segment,
+            count: segment.count,
+            revenue: 0,
+            averageOrderValue: 0,
+          };
+        }
+
+        // Get orders for customers in this segment
+        const ordersData = await this.orderModel.aggregate([
+          {
+            $match: {
+              userId: { $in: segment.customerIds },
+              createdAt: { $gte: startDate, $lte: endDate },
+              status: { $in: ['completed', 'delivered'] },
+              paymentStatus: 'paid',
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalRevenue: { $sum: '$total' },
+              orderCount: { $sum: 1 },
+            },
+          },
+        ]);
+
+        const totalRevenue = ordersData[0]?.totalRevenue || 0;
+        const orderCount = ordersData[0]?.orderCount || 0;
+        const averageOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
+
+        return {
+          segment: segment.segment,
+          count: segment.count,
+          revenue: Math.round(totalRevenue * 100) / 100,
+          averageOrderValue: Math.round(averageOrderValue * 100) / 100,
+        };
+      })
+    );
+
+    return segmentMetrics;
   }
 }

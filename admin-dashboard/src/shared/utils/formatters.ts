@@ -19,7 +19,7 @@ export const formatDate = (
  */
 export const formatCurrency = (
   amount: number,
-  currency = 'SAR',
+  currency = 'USD',
   locale: 'ar' | 'en' = 'ar'
 ): string => {
   const localeStr = locale === 'ar' ? 'ar-SA' : 'en-US';

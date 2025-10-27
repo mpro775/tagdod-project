@@ -7,3 +7,4 @@ export { StockManager } from './StockManager';
 export { PricingManager } from './PricingManager';
 export { VariantCard } from './VariantCard';
 export { InventoryDashboard } from './InventoryDashboard';
+export { RelatedProductsSelector } from './RelatedProductsSelector';

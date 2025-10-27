@@ -81,18 +81,10 @@ export const bannersApi = {
     averageConversionRate: number;
     topPerformingBanners: Banner[];
   }> => {
-    const response = await apiClient.get<ApiResponse<{
-      totalBanners: number;
-      activeBanners: number;
-      inactiveBanners: number;
-      totalViews: number;
-      totalClicks: number;
-      totalConversions: number;
-      averageClickThroughRate: number;
-      averageConversionRate: number;
-      topPerformingBanners: Banner[];
-    }>>(`${API_BASE}/analytics`);
-    return response.data.data;
+    const response = await apiClient.get<any>(`${API_BASE}/analytics`);
+    // Handle nested data structure from backend
+    const analyticsData = response.data?.data?.data || response.data?.data || response.data;
+    return analyticsData;
   },
 };
 

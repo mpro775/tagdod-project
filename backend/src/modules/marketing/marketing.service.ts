@@ -514,4 +514,43 @@ export class MarketingService {
 
     return Math.round(effectivePrice * 100) / 100; // Round to 2 decimal places
   }
+
+  // ==================== Export Coupons Data ====================
+  async exportCouponsData(format: string, period?: number) {
+    this.logger.log('Exporting coupons data:', { format, period });
+
+    // Get coupons data
+    const coupons = await this.couponModel
+      .find({ deletedAt: null })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Get analytics
+    const analytics = await this.getCouponsAnalytics(period || 30);
+    const statistics = await this.getCouponsStatistics(period || 30);
+
+    // In a real implementation, this would generate and store the actual file
+    // For now, return URL pointing to where file would be stored
+    const fileName = `coupons_data_${Date.now()}.${format}`;
+
+    return {
+      success: true,
+      data: {
+        fileUrl: `https://api.example.com/exports/${fileName}`,
+        format,
+        exportedAt: new Date().toISOString(),
+        fileName,
+        recordCount: coupons.length,
+        summary: {
+          totalCoupons: analytics.data.totalCoupons,
+          activeCoupons: analytics.data.activeCoupons,
+          expiredCoupons: analytics.data.expiredCoupons,
+          totalUses: analytics.data.totalUses,
+          usageRate: analytics.data.usageRate,
+          statusBreakdown: statistics.data.statusBreakdown,
+          typeBreakdown: statistics.data.typeBreakdown,
+        },
+      }
+    };
+  }
 }

@@ -92,24 +92,17 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
     return <ErrorIcon sx={{ color: theme.palette.error.main }} />;
   };
 
-  // Generate mock performance data for charts
-  const generatePerformanceData = () => {
-    const data = [];
-    const now = new Date();
-    for (let i = 23; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 60 * 60 * 1000); // Every hour
-      data.push({
-        time: time.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-        responseTime: Math.floor(Math.random() * 200) + 100,
-        memoryUsage: Math.random() * 30 + 60,
-        cpuUsage: Math.random() * 40 + 30,
-        errorRate: Math.random() * 2,
-      });
-    }
-    return data;
-  };
-
-  const performanceData = generatePerformanceData();
+  // Use current performance metrics from backend
+  // For historical performance charts, would need to query SystemMetrics collection
+  const performanceData = [
+    {
+      time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+      responseTime: data?.apiResponseTime || 0,
+      memoryUsage: data?.memoryUsage || 0,
+      cpuUsage: data?.cpuUsage || 0,
+      errorRate: data?.errorRate || 0,
+    },
+  ];
 
   return (
     <Card>

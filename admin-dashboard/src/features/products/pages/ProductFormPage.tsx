@@ -22,6 +22,7 @@ import { useProduct, useCreateProduct, useUpdateProduct, useGenerateVariants } f
 import { useProductFormData } from '../hooks/useProductData';
 import { AttributeSelector } from '../components/AttributeSelector';
 import { MultipleImagesSelector } from '../components/MultipleImagesSelector';
+import { RelatedProductsSelector } from '../components/RelatedProductsSelector';
 import { ProductStatus } from '../types/product.types';
 import type { CreateProductDto } from '../types/product.types';
 
@@ -59,6 +60,7 @@ export const ProductFormPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = React.useState<any>(null);
   const [selectedImages, setSelectedImages] = React.useState<any[]>([]);
   const [selectedAttributes, setSelectedAttributes] = React.useState<string[]>([]);
+  const [relatedProducts, setRelatedProducts] = React.useState<string[]>([]);
   const [metaKeywords, setMetaKeywords] = React.useState<string[]>([]);
   const [defaultPrice, setDefaultPrice] = React.useState<number>(0);
   const [defaultStock, setDefaultStock] = React.useState<number>(0);
@@ -159,6 +161,7 @@ export const ProductFormPage: React.FC = () => {
       // Set attributes and keywords
       setSelectedAttributes(product.attributes || []);
       setMetaKeywords(product.metaKeywords || []);
+      setRelatedProducts(product.relatedProducts || []);
     }
   }, [product, isEditMode, methods]);
 
@@ -180,6 +183,7 @@ export const ProductFormPage: React.FC = () => {
       metaDescription: data.metaDescription,
       metaKeywords: metaKeywords,
       attributes: selectedAttributes,
+      relatedProducts: relatedProducts,
       mainImage: selectedImage?.url || data.imageUrl,
       images: selectedImages.map(img => img.url),
     };
@@ -387,6 +391,19 @@ export const ProductFormPage: React.FC = () => {
                   name="isBestseller"
                   label="الأكثر مبيعاً"
                   type="checkbox"
+                />
+              </Grid>
+
+              {/* Related Products */}
+              <Grid size={{ xs: 12 }}>
+                <Divider sx={{ my: 2 }} />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <RelatedProductsSelector
+                  value={relatedProducts}
+                  onChange={setRelatedProducts}
+                  currentProductId={isEditMode ? id : undefined}
                 />
               </Grid>
 

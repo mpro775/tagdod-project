@@ -274,6 +274,20 @@ export const useBulkGenerateCoupons = () => {
   });
 };
 
+export const useExportCouponsData = () => {
+  return useMutation({
+    mutationFn: ({ format, period }: { format?: string; period?: number }) =>
+      marketingApi.exportCouponsData(format || 'csv', period || 30),
+    onSuccess: (data) => {
+      toast.success('تم تصدير البيانات بنجاح');
+      if (data?.fileUrl) {
+        window.open(data.fileUrl, '_blank');
+      }
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 // ==================== BANNERS HOOKS ====================
 
 export const useBanners = (params?: ListBannersParams) => {

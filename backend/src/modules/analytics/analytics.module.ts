@@ -12,7 +12,9 @@ import { StockAlertService } from '../products/services/stock-alert.service';
 import { ActivityTrackingMiddleware } from '../../shared/middleware/activity-tracking.middleware';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { AuthModule } from '../auth/auth.module';
-import { SharedModule } from '../../shared/shared.module';  
+import { SharedModule } from '../../shared/shared.module';
+import { SystemMonitoringModule } from '../system-monitoring/system-monitoring.module';
+import { ErrorLogsModule } from '../error-logs/error-logs.module';
 // Schemas
 import { AnalyticsSnapshot, AnalyticsSnapshotSchema } from './schemas/analytics-snapshot.schema';
 import { ReportSchedule, ReportScheduleSchema } from './schemas/report-schedule.schema';
@@ -35,6 +37,8 @@ import { CacheService } from '../../shared/cache/cache.service';
   imports: [
     NotificationsCompleteModule,
     forwardRef(() => AuthModule),
+    forwardRef(() => SystemMonitoringModule),
+    forwardRef(() => ErrorLogsModule),
     MongooseModule.forFeature([
       { name: AnalyticsSnapshot.name, schema: AnalyticsSnapshotSchema },
       { name: ReportSchedule.name, schema: ReportScheduleSchema },

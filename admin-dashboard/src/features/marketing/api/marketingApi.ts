@@ -428,6 +428,13 @@ export const marketingApi = {
     return response.data.data;
   },
 
+  exportCouponsData: async (format: string = 'csv', period: number = 30) => {
+    const response = await apiClient.post<ApiResponse<any>>(
+      `/admin/marketing/coupons/export?format=${format}&period=${period}`
+    );
+    return response.data.data;
+  },
+
   validateCoupon: async (data: ValidateCouponDto): Promise<any> => {
     const response = await apiClient.post<ApiResponse<any>>(
       '/admin/marketing/coupons/validate',

@@ -37,7 +37,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useOrders, useOrderStats, useBulkUpdateOrderStatus } from '../hooks/useOrders';
+import { useOrders, useOrderStats, useBulkUpdateOrderStatus, useExportOrders } from '../hooks/useOrders';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 import type {
   Order,
@@ -119,6 +119,7 @@ export const OrdersListPage: React.FC = () => {
   const { data, isLoading, error, refetch } = useOrders(filters);
   const { data: stats } = useOrderStats();
   const bulkUpdateMutation = useBulkUpdateOrderStatus();
+  const exportMutation = useExportOrders();
 
   // Update filters when pagination changes
   React.useEffect(() => {
@@ -158,8 +159,19 @@ export const OrdersListPage: React.FC = () => {
         notes: `تم تحديث ${selectedOrders.length} طلب إلى حالة ${orderStatusLabels[status]}`,
       });
       setSelectedOrders([]);
-    } catch (error) {
-      console.error('Bulk update failed:', error);
+    } catch {
+      // Error handled by mutation onError
+    }
+  };
+
+  const handleExportOrders = async () => {
+    try {
+      await exportMutation.mutateAsync({
+        format: 'csv',
+        params: filters,
+      });
+    } catch {
+      // Error handled by mutation onError
     }
   };
 
@@ -331,12 +343,10 @@ export const OrdersListPage: React.FC = () => {
             <Button
               variant="contained"
               startIcon={<Download />}
-              onClick={() => {
-                // TODO: Implement export functionality
-                console.log('Export orders');
-              }}
+              onClick={handleExportOrders}
+              disabled={exportMutation.isPending}
             >
-              تصدير
+              {exportMutation.isPending ? 'جاري التصدير...' : 'تصدير'}
             </Button>
           </Stack>
         </Box>

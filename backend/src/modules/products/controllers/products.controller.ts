@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -240,5 +241,57 @@ export class ProductsController {
   async getInventorySummary() {
     const summary = await this.inventoryService.getInventorySummary();
     return summary;
+  }
+
+  // ==================== Related Products Management ====================
+
+  @Get(':id/related')
+  @ApiOperation({ summary: 'الحصول على المنتجات الشبيهة' })
+  @ApiResponse({ status: 200, description: 'Related products retrieved successfully' })
+  async getRelatedProducts(
+    @Param('id') productId: string,
+    @Query('limit') limit?: number
+  ) {
+    const products = await this.productService.getRelatedProducts(
+      productId,
+      limit ? Number(limit) : 10
+    );
+    return { data: products };
+  }
+
+  @Put(':id/related')
+  @ApiOperation({ summary: 'تحديث المنتجات الشبيهة (استبدال كامل)' })
+  @ApiResponse({ status: 200, description: 'Related products updated successfully' })
+  async updateRelatedProducts(
+    @Param('id') productId: string,
+    @Body() body: { relatedProductIds: string[] }
+  ) {
+    const product = await this.productService.updateRelatedProducts(
+      productId,
+      body.relatedProductIds
+    );
+    return { product };
+  }
+
+  @Post(':id/related/:relatedId')
+  @ApiOperation({ summary: 'إضافة منتج شبيه' })
+  @ApiResponse({ status: 200, description: 'Related product added successfully' })
+  async addRelatedProduct(
+    @Param('id') productId: string,
+    @Param('relatedId') relatedProductId: string
+  ) {
+    const product = await this.productService.addRelatedProduct(productId, relatedProductId);
+    return { product };
+  }
+
+  @Delete(':id/related/:relatedId')
+  @ApiOperation({ summary: 'إزالة منتج شبيه' })
+  @ApiResponse({ status: 200, description: 'Related product removed successfully' })
+  async removeRelatedProduct(
+    @Param('id') productId: string,
+    @Param('relatedId') relatedProductId: string
+  ) {
+    const product = await this.productService.removeRelatedProduct(productId, relatedProductId);
+    return { product };
   }
 }

@@ -12,12 +12,6 @@ import {
   MenuItem,
   Chip,
   LinearProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Avatar,
   Skeleton,
   Alert,
@@ -32,8 +26,11 @@ import {
   Campaign,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { GridColDef } from '@mui/x-data-grid';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useBannersAnalytics } from '../hooks/useBanners';
 import { BANNER_LOCATION_OPTIONS } from '../types/banner.types';
+import type { Banner } from '../types/banner.types';
 
 const formatNumber = (num: number) => {
   return new Intl.NumberFormat('ar-SA').format(num);
@@ -146,6 +143,103 @@ const LoadingSkeleton: React.FC = () => (
   </Grid>
 );
 
+const getTopBannersColumns = (): GridColDef[] => [
+  {
+    field: 'title',
+    headerName: 'البانر',
+    width: 300,
+    renderCell: (params) => {
+      const banner = params.row as Banner & { imageUrl?: string };
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar
+            src={banner.imageUrl}
+            alt={banner.title}
+            variant="rounded"
+            sx={{ width: 50, height: 35 }}
+          />
+          <Box>
+            <Typography variant="body2" fontWeight="bold">
+              {banner.title}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {BANNER_LOCATION_OPTIONS.find((opt) => opt.value === banner.location)?.label}
+            </Typography>
+          </Box>
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'viewCount',
+    headerName: 'المشاهدات',
+    width: 120,
+    align: 'center',
+    renderCell: (params) => formatNumber(params.value as number),
+  },
+  {
+    field: 'clickCount',
+    headerName: 'النقرات',
+    width: 120,
+    align: 'center',
+    renderCell: (params) => formatNumber(params.value as number),
+  },
+  {
+    field: 'conversionCount',
+    headerName: 'التحويلات',
+    width: 120,
+    align: 'center',
+    renderCell: (params) => formatNumber(params.value as number),
+  },
+  {
+    field: 'ctr',
+    headerName: 'معدل النقر',
+    width: 130,
+    align: 'center',
+    renderCell: (params) => {
+      const banner = params.row as Banner & { viewCount: number; clickCount: number };
+      const ctr = banner.viewCount > 0 ? (banner.clickCount / banner.viewCount) * 100 : 0;
+      return (
+        <Chip
+          label={formatPercentage(ctr)}
+          size="small"
+          color={ctr > 5 ? 'success' : ctr > 2 ? 'warning' : 'default'}
+        />
+      );
+    },
+  },
+  {
+    field: 'conversionRate',
+    headerName: 'معدل التحويل',
+    width: 140,
+    align: 'center',
+    renderCell: (params) => {
+      const banner = params.row as Banner & { clickCount: number; conversionCount: number };
+      const conversionRate = banner.clickCount > 0 ? (banner.conversionCount / banner.clickCount) * 100 : 0;
+      return (
+        <Chip
+          label={formatPercentage(conversionRate)}
+          size="small"
+          color={conversionRate > 10 ? 'success' : conversionRate > 5 ? 'warning' : 'default'}
+        />
+      );
+    },
+  },
+  {
+    field: 'isActive',
+    headerName: 'الحالة',
+    width: 100,
+    align: 'center',
+    renderCell: (params) => (
+      <Chip
+        label={params.value ? 'نشط' : 'غير نشط'}
+        size="small"
+        color={params.value ? 'success' : 'default'}
+      />
+    ),
+  },
+];
+
 export const BannerAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState('30d');
@@ -198,20 +292,20 @@ export const BannerAnalyticsPage: React.FC = () => {
   }
 
   const {
-    totalBanners,
-    activeBanners,
-    inactiveBanners,
-    totalViews,
-    totalClicks,
-    totalConversions,
-    averageClickThroughRate,
-    averageConversionRate,
-    topPerformingBanners,
-  } = analytics;
+    totalBanners = 0,
+    activeBanners = 0,
+    inactiveBanners = 0,
+    totalViews = 0,
+    totalClicks = 0,
+    totalConversions = 0,
+    averageClickThroughRate = 0,
+    averageConversionRate = 0,
+    topPerformingBanners = [],
+  } = analytics || {};
 
   const activePercentage = totalBanners > 0 ? (activeBanners / totalBanners) * 100 : 0;
-  const ctrPercentage = averageClickThroughRate * 100;
-  const conversionPercentage = averageConversionRate * 100;
+  const ctrPercentage = (averageClickThroughRate || 0) * 100;
+  const conversionPercentage = (averageConversionRate || 0) * 100;
 
   return (
     <Box>
@@ -273,10 +367,6 @@ export const BannerAnalyticsPage: React.FC = () => {
             subtitle={`${activeBanners} نشط، ${inactiveBanners} غير نشط`}
             icon={<Campaign />}
             color="primary"
-            trend={{
-              value: 12,
-              direction: 'up',
-            }}
           />
         </Grid>
 
@@ -287,10 +377,6 @@ export const BannerAnalyticsPage: React.FC = () => {
             subtitle="جميع البانرات"
             icon={<Visibility />}
             color="info"
-            trend={{
-              value: 8,
-              direction: 'up',
-            }}
           />
         </Grid>
 
@@ -301,10 +387,6 @@ export const BannerAnalyticsPage: React.FC = () => {
             subtitle={`معدل النقر: ${formatPercentage(ctrPercentage)}`}
             icon={<AdsClick />}
             color="success"
-            trend={{
-              value: 15,
-              direction: 'up',
-            }}
           />
         </Grid>
 
@@ -315,10 +397,6 @@ export const BannerAnalyticsPage: React.FC = () => {
             subtitle={`معدل التحويل: ${formatPercentage(conversionPercentage)}`}
             icon={<TrendingUp />}
             color="warning"
-            trend={{
-              value: 5,
-              direction: 'up',
-            }}
           />
         </Grid>
       </Grid>
@@ -391,107 +469,16 @@ export const BannerAnalyticsPage: React.FC = () => {
       </Grid>
 
       {/* Top Performing Banners */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            أفضل البانرات أداءً
-          </Typography>
-          <TableContainer>
-            <Table>
-              <TableHead
-                sx={{
-                  backgroundColor: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? theme.palette.grey[800]
-                      : theme.palette.grey[100],
-                }}
-              >
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>البانر</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>المشاهدات</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>النقرات</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>التحويلات</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>معدل النقر</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>معدل التحويل</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحالة</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {topPerformingBanners.map((banner) => {
-                  const ctr =
-                    banner.viewCount > 0 ? (banner.clickCount / banner.viewCount) * 100 : 0;
-                  const conversionRate =
-                    banner.clickCount > 0 ? (banner.conversionCount / banner.clickCount) * 100 : 0;
-
-                  return (
-                    <TableRow key={banner._id}>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={2}>
-                          <Avatar
-                            src={banner.imageUrl}
-                            alt={banner.title}
-                            variant="rounded"
-                            sx={{ width: 40, height: 30 }}
-                          />
-                          <Box>
-                            <Typography variant="body2" fontWeight="bold">
-                              {banner.title}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {
-                                BANNER_LOCATION_OPTIONS.find((opt) => opt.value === banner.location)
-                                  ?.label
-                              }
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="body2">{formatNumber(banner.viewCount)}</Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="body2">{formatNumber(banner.clickCount)}</Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="body2">
-                          {formatNumber(banner.conversionCount)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={formatPercentage(ctr)}
-                          size="small"
-                          color={ctr > 5 ? 'success' : ctr > 2 ? 'warning' : 'default'}
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={formatPercentage(conversionRate)}
-                          size="small"
-                          color={
-                            conversionRate > 10
-                              ? 'success'
-                              : conversionRate > 5
-                              ? 'warning'
-                              : 'default'
-                          }
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={banner.isActive ? 'نشط' : 'غير نشط'}
-                          size="small"
-                          color={banner.isActive ? 'success' : 'default'}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+      <DataTable
+        title="أفضل البانرات أداءً"
+        columns={getTopBannersColumns()}
+        rows={topPerformingBanners || []}
+        loading={false}
+        paginationModel={{ page: 0, pageSize: 10 }}
+        onPaginationModelChange={() => {}}
+        getRowId={(row) => (row as Banner)._id}
+        height="500px"
+      />
     </Box>
   );
 };

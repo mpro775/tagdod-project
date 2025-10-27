@@ -2137,6 +2137,142 @@
         ]
       }
     },
+    "/api/v1/admin/products/{id}/related": {
+      "get": {
+        "operationId": "getRelatedProducts",
+        "summary": "الحصول على المنتجات الشبيهة",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Related products retrieved successfully"
+          }
+        },
+        "tags": [
+          "إدارة-المنتجات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateRelatedProducts",
+        "summary": "تحديث المنتجات الشبيهة (استبدال كامل)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Related products updated successfully"
+          }
+        },
+        "tags": [
+          "إدارة-المنتجات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/products/{id}/related/{relatedId}": {
+      "post": {
+        "operationId": "addRelatedProduct",
+        "summary": "إضافة منتج شبيه",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "relatedId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Related product added successfully"
+          }
+        },
+        "tags": [
+          "إدارة-المنتجات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "removeRelatedProduct",
+        "summary": "إزالة منتج شبيه",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "relatedId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Related product removed successfully"
+          }
+        },
+        "tags": [
+          "إدارة-المنتجات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/products": {
       "get": {
         "operationId": "listProducts",
@@ -2592,6 +2728,99 @@
         "responses": {
           "200": {
             "description": "Count retrieved successfully"
+          }
+        },
+        "tags": [
+          "المنتجات"
+        ]
+      }
+    },
+    "/api/v1/products/{id}/related": {
+      "get": {
+        "operationId": "getRelatedProducts",
+        "summary": "الحصول على المنتجات الشبيهة",
+        "description": "استرداد قائمة المنتجات الشبيهة لمنتج معين لعرضها في صفحة تفاصيل المنتج",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Product ID",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of related products to return (default: 10)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Related products retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "507f1f77bcf86cd799439011"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "Solar Panel 400W"
+                          },
+                          "nameEn": {
+                            "type": "string",
+                            "example": "Solar Panel 400W"
+                          },
+                          "description": {
+                            "type": "string",
+                            "example": "High efficiency solar panel"
+                          },
+                          "category": {
+                            "type": "object"
+                          },
+                          "brand": {
+                            "type": "object"
+                          },
+                          "mainImageId": {
+                            "type": "object"
+                          },
+                          "isFeatured": {
+                            "type": "boolean",
+                            "example": true
+                          },
+                          "isNew": {
+                            "type": "boolean",
+                            "example": false
+                          }
+                        }
+                      }
+                    },
+                    "count": {
+                      "type": "number",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
           }
         },
         "tags": [
@@ -7939,6 +8168,239 @@
         ]
       }
     },
+    "/api/v1/admin/orders/analytics/export": {
+      "post": {
+        "operationId": "exportOrderAnalytics",
+        "summary": "تصدير تحليلات الطلبات",
+        "description": "تصدير بيانات تحليلات الطلبات بصيغ مختلفة (CSV, Excel, JSON)",
+        "parameters": [
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "صيغة الملف (csv, xlsx, json)",
+            "schema": {
+              "example": "csv",
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "عدد الأيام",
+            "schema": {
+              "example": 30,
+              "type": "number"
+            }
+          },
+          {
+            "name": "fromDate",
+            "required": false,
+            "in": "query",
+            "description": "من تاريخ",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toDate",
+            "required": false,
+            "in": "query",
+            "description": "إلى تاريخ",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم تصدير البيانات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fileUrl": {
+                          "type": "string"
+                        },
+                        "format": {
+                          "type": "string"
+                        },
+                        "exportedAt": {
+                          "type": "string"
+                        },
+                        "fileName": {
+                          "type": "string"
+                        },
+                        "recordCount": {
+                          "type": "number"
+                        },
+                        "summary": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-الطلبات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/orders/export": {
+      "post": {
+        "operationId": "exportOrders",
+        "summary": "تصدير قائمة الطلبات",
+        "description": "تصدير قائمة الطلبات مع التصفية بصيغ مختلفة (CSV, Excel, JSON)",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "draft",
+                "pending_payment",
+                "confirmed",
+                "payment_failed",
+                "processing",
+                "ready_to_ship",
+                "shipped",
+                "out_for_delivery",
+                "delivered",
+                "completed",
+                "on_hold",
+                "cancelled",
+                "refunded",
+                "partially_refunded",
+                "returned"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "pending",
+                "authorized",
+                "paid",
+                "failed",
+                "refunded",
+                "partially_refunded",
+                "cancelled"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "fromDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "صيغة الملف",
+            "schema": {
+              "example": "csv",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم تصدير القائمة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-الطلبات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/webhooks/payment": {
       "post": {
         "operationId": "handlePaymentWebhook",
@@ -11048,6 +11510,111 @@
         "responses": {
           "200": {
             "description": "تم حذف البانر بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/coupons/export": {
+      "post": {
+        "operationId": "exportCouponsData",
+        "summary": "تصدير بيانات الكوبونات",
+        "description": "تصدير بيانات الكوبونات وتحليلاتها بصيغ مختلفة (CSV, Excel, JSON)",
+        "parameters": [
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "صيغة الملف (csv, xlsx, json)",
+            "schema": {
+              "example": "csv",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "عدد الأيام للتحليلات (افتراضي: 30)",
+            "schema": {
+              "example": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم تصدير البيانات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fileUrl": {
+                          "type": "string",
+                          "example": "https://api.example.com/exports/coupons_data_1698765432.csv"
+                        },
+                        "format": {
+                          "type": "string",
+                          "example": "csv"
+                        },
+                        "exportedAt": {
+                          "type": "string",
+                          "example": "2024-10-27T12:00:00.000Z"
+                        },
+                        "fileName": {
+                          "type": "string",
+                          "example": "coupons_data_1698765432.csv"
+                        },
+                        "recordCount": {
+                          "type": "number",
+                          "example": 25
+                        },
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "totalCoupons": {
+                              "type": "number",
+                              "example": 25
+                            },
+                            "activeCoupons": {
+                              "type": "number",
+                              "example": 15
+                            },
+                            "expiredCoupons": {
+                              "type": "number",
+                              "example": 5
+                            },
+                            "totalUses": {
+                              "type": "number",
+                              "example": 150
+                            },
+                            "usageRate": {
+                              "type": "string",
+                              "example": "75.00"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -16228,6 +16795,786 @@
         },
         "tags": [
           "التحليلات/متقدمة"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/health": {
+      "get": {
+        "operationId": "getSystemHealth",
+        "summary": "الحصول على صحة النظام العامة",
+        "description": "استرداد مقاييس صحة النظام الشاملة مع جميع المكونات",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد صحة النظام بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/resources": {
+      "get": {
+        "operationId": "getResourceUsage",
+        "summary": "الحصول على استخدام الموارد",
+        "description": "استرداد معلومات استخدام CPU والذاكرة والقرص",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد استخدام الموارد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceUsageDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/database": {
+      "get": {
+        "operationId": "getDatabaseMetrics",
+        "summary": "الحصول على مقاييس قاعدة البيانات",
+        "description": "استرداد معلومات أداء وحالة MongoDB",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد مقاييس قاعدة البيانات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatabaseMetricsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/redis": {
+      "get": {
+        "operationId": "getRedisMetrics",
+        "summary": "الحصول على مقاييس Redis",
+        "description": "استرداد معلومات أداء وحالة Redis Cache",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد مقاييس Redis بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedisMetricsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/api-performance": {
+      "get": {
+        "operationId": "getApiPerformance",
+        "summary": "الحصول على أداء API",
+        "description": "استرداد إحصائيات أداء واستجابة API",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد أداء API بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiPerformanceDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/metrics/history": {
+      "get": {
+        "operationId": "getMetricsHistory",
+        "summary": "الحصول على تاريخ المقاييس",
+        "description": "استرداد البيانات التاريخية للمقاييس المختلفة",
+        "parameters": [
+          {
+            "name": "metricType",
+            "required": false,
+            "in": "query",
+            "description": "نوع المقياس",
+            "schema": {
+              "enum": [
+                "cpu",
+                "memory",
+                "disk",
+                "database",
+                "redis",
+                "api"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeRange",
+            "required": false,
+            "in": "query",
+            "description": "النطاق الزمني",
+            "schema": {
+              "enum": [
+                "last_hour",
+                "last_24_hours",
+                "last_7_days",
+                "last_30_days",
+                "custom"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية (صيغة ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية (صيغة ISO)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تاريخ المقاييس بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemMetricsHistoryDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/alerts": {
+      "get": {
+        "operationId": "getSystemAlerts",
+        "summary": "الحصول على تنبيهات النظام",
+        "description": "استرداد قائمة التنبيهات النشطة والحرجة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد التنبيهات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemAlertsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/alerts/{id}/resolve": {
+      "post": {
+        "operationId": "resolveAlert",
+        "summary": "حل تنبيه",
+        "description": "وضع علامة على تنبيه كمحلول",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف التنبيه",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حل التنبيه بنجاح"
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-monitoring/overview": {
+      "get": {
+        "operationId": "getSystemOverview",
+        "summary": "الحصول على نظرة عامة شاملة",
+        "description": "استرداد جميع المقاييس في استجابة واحدة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد النظرة العامة بنجاح"
+          }
+        },
+        "tags": [
+          "مراقبة النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs": {
+      "post": {
+        "operationId": "createErrorLog",
+        "summary": "إنشاء سجل خطأ جديد",
+        "description": "تسجيل خطأ جديد في النظام",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateErrorLogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء سجل الخطأ بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorLogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "getErrorLogs",
+        "summary": "الحصول على قائمة الأخطاء",
+        "description": "استرداد سجلات الأخطاء مع التصفية والترتيب",
+        "parameters": [
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "description": "مستوى الخطأ",
+            "schema": {
+              "enum": [
+                "error",
+                "warn",
+                "fatal",
+                "debug"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "فئة الخطأ",
+            "schema": {
+              "enum": [
+                "database",
+                "api",
+                "authentication",
+                "validation",
+                "business_logic",
+                "external_service",
+                "system",
+                "unknown"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "نص البحث في الرسالة",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية (صيغة ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية (صيغة ISO)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد العناصر في الصفحة",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد سجلات الأخطاء بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/statistics": {
+      "get": {
+        "operationId": "getStatistics",
+        "summary": "الحصول على إحصائيات الأخطاء",
+        "description": "استرداد تحليلات شاملة للأخطاء",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإحصائيات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorStatisticsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/trends": {
+      "get": {
+        "operationId": "getErrorTrend",
+        "summary": "الحصول على اتجاهات الأخطاء",
+        "description": "تحليل اتجاه الأخطاء عبر الزمن",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "عدد الأيام للتحليل",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد اتجاهات الأخطاء بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorTrendDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/export": {
+      "get": {
+        "operationId": "exportLogs",
+        "summary": "تصدير سجلات الأخطاء",
+        "description": "تصدير السجلات بصيغ مختلفة (JSON, CSV, TXT)",
+        "parameters": [
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "صيغة التصدير",
+            "schema": {
+              "enum": [
+                "json",
+                "csv",
+                "txt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "description": "مستوى الخطأ",
+            "schema": {
+              "enum": [
+                "error",
+                "warn",
+                "fatal",
+                "debug"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم إنشاء رابط التصدير بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/system-logs": {
+      "get": {
+        "operationId": "getSystemLogs",
+        "summary": "الحصول على سجلات النظام",
+        "description": "استرداد سجلات النظام العامة",
+        "parameters": [
+          {
+            "name": "level",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد سجلات النظام بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/{id}": {
+      "get": {
+        "operationId": "getErrorById",
+        "summary": "الحصول على تفاصيل خطأ",
+        "description": "استرداد معلومات مفصلة عن خطأ معين",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف سجل الخطأ",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تفاصيل الخطأ بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorLogDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteError",
+        "summary": "حذف خطأ",
+        "description": "حذف سجل خطأ من قاعدة البيانات",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف سجل الخطأ",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الخطأ بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/{id}/resolve": {
+      "post": {
+        "operationId": "resolveError",
+        "summary": "حل خطأ",
+        "description": "وضع علامة على خطأ كمحلول",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف سجل الخطأ",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "notes": {
+                    "type": "string",
+                    "description": "ملاحظات الحل"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم حل الخطأ بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/error-logs/cleanup": {
+      "post": {
+        "operationId": "cleanupOldErrors",
+        "summary": "تنظيف السجلات القديمة",
+        "description": "حذف سجلات الأخطاء الأقدم من عدد معين من الأيام",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "type": "number",
+                    "description": "عدد الأيام",
+                    "default": 30
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تنظيف السجلات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة الأخطاء والسجلات"
         ],
         "security": [
           {
@@ -22589,786 +23936,6 @@
         ]
       }
     },
-    "/api/v1/system-monitoring/health": {
-      "get": {
-        "operationId": "getSystemHealth",
-        "summary": "الحصول على صحة النظام العامة",
-        "description": "استرداد مقاييس صحة النظام الشاملة مع جميع المكونات",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد صحة النظام بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SystemHealthDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "مراقبة النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/system-monitoring/resources": {
-      "get": {
-        "operationId": "getResourceUsage",
-        "summary": "الحصول على استخدام الموارد",
-        "description": "استرداد معلومات استخدام CPU والذاكرة والقرص",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد استخدام الموارد بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResourceUsageDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "مراقبة النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/system-monitoring/database": {
-      "get": {
-        "operationId": "getDatabaseMetrics",
-        "summary": "الحصول على مقاييس قاعدة البيانات",
-        "description": "استرداد معلومات أداء وحالة MongoDB",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد مقاييس قاعدة البيانات بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DatabaseMetricsDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "مراقبة النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/system-monitoring/redis": {
-      "get": {
-        "operationId": "getRedisMetrics",
-        "summary": "الحصول على مقاييس Redis",
-        "description": "استرداد معلومات أداء وحالة Redis Cache",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد مقاييس Redis بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RedisMetricsDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "مراقبة النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/system-monitoring/api-performance": {
-      "get": {
-        "operationId": "getApiPerformance",
-        "summary": "الحصول على أداء API",
-        "description": "استرداد إحصائيات أداء واستجابة API",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد أداء API بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiPerformanceDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "مراقبة النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/system-monitoring/metrics/history": {
-      "get": {
-        "operationId": "getMetricsHistory",
-        "summary": "الحصول على تاريخ المقاييس",
-        "description": "استرداد البيانات التاريخية للمقاييس المختلفة",
-        "parameters": [
-          {
-            "name": "metricType",
-            "required": false,
-            "in": "query",
-            "description": "نوع المقياس",
-            "schema": {
-              "enum": [
-                "cpu",
-                "memory",
-                "disk",
-                "database",
-                "redis",
-                "api"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "timeRange",
-            "required": false,
-            "in": "query",
-            "description": "النطاق الزمني",
-            "schema": {
-              "enum": [
-                "last_hour",
-                "last_24_hours",
-                "last_7_days",
-                "last_30_days",
-                "custom"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "startDate",
-            "required": false,
-            "in": "query",
-            "description": "تاريخ البداية (صيغة ISO)",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endDate",
-            "required": false,
-            "in": "query",
-            "description": "تاريخ النهاية (صيغة ISO)",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد تاريخ المقاييس بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SystemMetricsHistoryDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "مراقبة النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/system-monitoring/alerts": {
-      "get": {
-        "operationId": "getSystemAlerts",
-        "summary": "الحصول على تنبيهات النظام",
-        "description": "استرداد قائمة التنبيهات النشطة والحرجة",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد التنبيهات بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SystemAlertsDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "مراقبة النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/system-monitoring/alerts/{id}/resolve": {
-      "post": {
-        "operationId": "resolveAlert",
-        "summary": "حل تنبيه",
-        "description": "وضع علامة على تنبيه كمحلول",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف التنبيه",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم حل التنبيه بنجاح"
-          }
-        },
-        "tags": [
-          "مراقبة النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/system-monitoring/overview": {
-      "get": {
-        "operationId": "getSystemOverview",
-        "summary": "الحصول على نظرة عامة شاملة",
-        "description": "استرداد جميع المقاييس في استجابة واحدة",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد النظرة العامة بنجاح"
-          }
-        },
-        "tags": [
-          "مراقبة النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/error-logs": {
-      "post": {
-        "operationId": "createErrorLog",
-        "summary": "إنشاء سجل خطأ جديد",
-        "description": "تسجيل خطأ جديد في النظام",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateErrorLogDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "تم إنشاء سجل الخطأ بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorLogDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "get": {
-        "operationId": "getErrorLogs",
-        "summary": "الحصول على قائمة الأخطاء",
-        "description": "استرداد سجلات الأخطاء مع التصفية والترتيب",
-        "parameters": [
-          {
-            "name": "level",
-            "required": false,
-            "in": "query",
-            "description": "مستوى الخطأ",
-            "schema": {
-              "enum": [
-                "error",
-                "warn",
-                "fatal",
-                "debug"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "category",
-            "required": false,
-            "in": "query",
-            "description": "فئة الخطأ",
-            "schema": {
-              "enum": [
-                "database",
-                "api",
-                "authentication",
-                "validation",
-                "business_logic",
-                "external_service",
-                "system",
-                "unknown"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "description": "نص البحث في الرسالة",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "startDate",
-            "required": false,
-            "in": "query",
-            "description": "تاريخ البداية (صيغة ISO)",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endDate",
-            "required": false,
-            "in": "query",
-            "description": "تاريخ النهاية (صيغة ISO)",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "رقم الصفحة",
-            "schema": {
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "عدد العناصر في الصفحة",
-            "schema": {
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد سجلات الأخطاء بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/error-logs/statistics": {
-      "get": {
-        "operationId": "getStatistics",
-        "summary": "الحصول على إحصائيات الأخطاء",
-        "description": "استرداد تحليلات شاملة للأخطاء",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد الإحصائيات بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorStatisticsDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/error-logs/trends": {
-      "get": {
-        "operationId": "getErrorTrend",
-        "summary": "الحصول على اتجاهات الأخطاء",
-        "description": "تحليل اتجاه الأخطاء عبر الزمن",
-        "parameters": [
-          {
-            "name": "days",
-            "required": false,
-            "in": "query",
-            "description": "عدد الأيام للتحليل",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد اتجاهات الأخطاء بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorTrendDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/error-logs/export": {
-      "get": {
-        "operationId": "exportLogs",
-        "summary": "تصدير سجلات الأخطاء",
-        "description": "تصدير السجلات بصيغ مختلفة (JSON, CSV, TXT)",
-        "parameters": [
-          {
-            "name": "format",
-            "required": false,
-            "in": "query",
-            "description": "صيغة التصدير",
-            "schema": {
-              "enum": [
-                "json",
-                "csv",
-                "txt"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "startDate",
-            "required": false,
-            "in": "query",
-            "description": "تاريخ البداية",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "endDate",
-            "required": false,
-            "in": "query",
-            "description": "تاريخ النهاية",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "level",
-            "required": false,
-            "in": "query",
-            "description": "مستوى الخطأ",
-            "schema": {
-              "enum": [
-                "error",
-                "warn",
-                "fatal",
-                "debug"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم إنشاء رابط التصدير بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/error-logs/system-logs": {
-      "get": {
-        "operationId": "getSystemLogs",
-        "summary": "الحصول على سجلات النظام",
-        "description": "استرداد سجلات النظام العامة",
-        "parameters": [
-          {
-            "name": "level",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "context",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد سجلات النظام بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/error-logs/{id}": {
-      "get": {
-        "operationId": "getErrorById",
-        "summary": "الحصول على تفاصيل خطأ",
-        "description": "استرداد معلومات مفصلة عن خطأ معين",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف سجل الخطأ",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد تفاصيل الخطأ بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorLogDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "deleteError",
-        "summary": "حذف خطأ",
-        "description": "حذف سجل خطأ من قاعدة البيانات",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف سجل الخطأ",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم حذف الخطأ بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/error-logs/{id}/resolve": {
-      "post": {
-        "operationId": "resolveError",
-        "summary": "حل خطأ",
-        "description": "وضع علامة على خطأ كمحلول",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف سجل الخطأ",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "notes": {
-                    "type": "string",
-                    "description": "ملاحظات الحل"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم حل الخطأ بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/error-logs/cleanup": {
-      "post": {
-        "operationId": "cleanupOldErrors",
-        "summary": "تنظيف السجلات القديمة",
-        "description": "حذف سجلات الأخطاء الأقدم من عدد معين من الأيام",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "days": {
-                    "type": "number",
-                    "description": "عدد الأيام",
-                    "default": 30
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم تنظيف السجلات بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة الأخطاء والسجلات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
     "/api/v1/i18n/public/translations/{lang}": {
       "get": {
         "operationId": "getPublicTranslations",
@@ -24546,7 +25113,7 @@
       "description": "Development server"
     },
     {
-      "url": "https://api.tagadod.com",
+      "url": "https://tagdod-project.onrender.com",
       "description": "Production server"
     }
   ],
@@ -26987,162 +27554,6 @@
           "frequency"
         ]
       },
-      "CreateServiceRequestDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "AcceptOfferDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "RateServiceDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CreateOfferDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdateOfferDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "EngineersOverviewStatisticsDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "OffersStatisticsDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "OffersManagementResponseDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CreateBrandDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Apple",
-            "description": "Brand name"
-          },
-          "nameEn": {
-            "type": "string",
-            "example": "Apple",
-            "description": "Brand name in English"
-          },
-          "image": {
-            "type": "string",
-            "example": "https://example.com/apple-logo.png",
-            "description": "Brand image URL"
-          },
-          "description": {
-            "type": "string",
-            "example": "Leading technology company"
-          },
-          "descriptionEn": {
-            "type": "string",
-            "example": "Leading technology company"
-          },
-          "isActive": {
-            "type": "boolean",
-            "example": true
-          },
-          "sortOrder": {
-            "type": "number",
-            "example": 0
-          },
-          "metadata": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "name",
-          "nameEn",
-          "image"
-        ]
-      },
-      "UpdateBrandDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Apple"
-          },
-          "nameEn": {
-            "type": "string",
-            "example": "Apple"
-          },
-          "image": {
-            "type": "string",
-            "example": "https://example.com/apple-logo.png"
-          },
-          "description": {
-            "type": "string",
-            "example": "Leading technology company"
-          },
-          "descriptionEn": {
-            "type": "string",
-            "example": "Leading technology company"
-          },
-          "isActive": {
-            "type": "boolean",
-            "example": true
-          },
-          "sortOrder": {
-            "type": "number",
-            "example": 0
-          },
-          "metadata": {
-            "type": "object"
-          }
-        }
-      },
-      "UploadFileDto": {
-        "type": "object",
-        "properties": {
-          "file": {
-            "type": "string",
-            "format": "binary",
-            "description": "File to upload"
-          },
-          "folder": {
-            "type": "string",
-            "description": "Folder to upload to",
-            "example": "products"
-          },
-          "customFilename": {
-            "type": "string",
-            "description": "Custom filename (optional)",
-            "example": "my-image.jpg"
-          }
-        },
-        "required": [
-          "file"
-        ]
-      },
-      "DeleteFileDto": {
-        "type": "object",
-        "properties": {
-          "filePath": {
-            "type": "string",
-            "description": "Path of the file to delete",
-            "example": "uploads/my-image.jpg"
-          }
-        },
-        "required": [
-          "filePath"
-        ]
-      },
-      "UploadMediaDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdateMediaDto": {
-        "type": "object",
-        "properties": {}
-      },
       "SystemHealthDto": {
         "type": "object",
         "properties": {
@@ -27681,6 +28092,162 @@
           "trend",
           "changePercentage"
         ]
+      },
+      "CreateServiceRequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AcceptOfferDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RateServiceDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateOfferDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateOfferDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "EngineersOverviewStatisticsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "OffersStatisticsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "OffersManagementResponseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateBrandDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Apple",
+            "description": "Brand name"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Apple",
+            "description": "Brand name in English"
+          },
+          "image": {
+            "type": "string",
+            "example": "https://example.com/apple-logo.png",
+            "description": "Brand image URL"
+          },
+          "description": {
+            "type": "string",
+            "example": "Leading technology company"
+          },
+          "descriptionEn": {
+            "type": "string",
+            "example": "Leading technology company"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 0
+          },
+          "metadata": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "nameEn",
+          "image"
+        ]
+      },
+      "UpdateBrandDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Apple"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Apple"
+          },
+          "image": {
+            "type": "string",
+            "example": "https://example.com/apple-logo.png"
+          },
+          "description": {
+            "type": "string",
+            "example": "Leading technology company"
+          },
+          "descriptionEn": {
+            "type": "string",
+            "example": "Leading technology company"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 0
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      },
+      "UploadFileDto": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "File to upload"
+          },
+          "folder": {
+            "type": "string",
+            "description": "Folder to upload to",
+            "example": "products"
+          },
+          "customFilename": {
+            "type": "string",
+            "description": "Custom filename (optional)",
+            "example": "my-image.jpg"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      },
+      "DeleteFileDto": {
+        "type": "object",
+        "properties": {
+          "filePath": {
+            "type": "string",
+            "description": "Path of the file to delete",
+            "example": "uploads/my-image.jpg"
+          }
+        },
+        "required": [
+          "filePath"
+        ]
+      },
+      "UploadMediaDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateMediaDto": {
+        "type": "object",
+        "properties": {}
       },
       "CreateTranslationDto": {
         "type": "object",

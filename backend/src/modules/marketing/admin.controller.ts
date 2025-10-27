@@ -531,4 +531,64 @@ export class MarketingAdminController {
     const result = await this.svc.deleteBanner(id);
     return result;
   }
+
+  // ==================== Export Coupons Data ====================
+  @Post('coupons/export')
+  @ApiOperation({
+    summary: 'تصدير بيانات الكوبونات',
+    description: 'تصدير بيانات الكوبونات وتحليلاتها بصيغ مختلفة (CSV, Excel, JSON)'
+  })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    type: String,
+    description: 'صيغة الملف (csv, xlsx, json)',
+    example: 'csv'
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    type: Number,
+    description: 'عدد الأيام للتحليلات (افتراضي: 30)',
+    example: 30
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تصدير البيانات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            fileUrl: { type: 'string', example: 'https://api.example.com/exports/coupons_data_1698765432.csv' },
+            format: { type: 'string', example: 'csv' },
+            exportedAt: { type: 'string', example: '2024-10-27T12:00:00.000Z' },
+            fileName: { type: 'string', example: 'coupons_data_1698765432.csv' },
+            recordCount: { type: 'number', example: 25 },
+            summary: {
+              type: 'object',
+              properties: {
+                totalCoupons: { type: 'number', example: 25 },
+                activeCoupons: { type: 'number', example: 15 },
+                expiredCoupons: { type: 'number', example: 5 },
+                totalUses: { type: 'number', example: 150 },
+                usageRate: { type: 'string', example: '75.00' }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  async exportCouponsData(
+    @Query('format') format?: string,
+    @Query('period') period?: number
+  ) {
+    const exportFormat = format || 'csv';
+    const exportPeriod = period || 30;
+    
+    return await this.svc.exportCouponsData(exportFormat, exportPeriod);
+  }
 }

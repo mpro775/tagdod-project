@@ -20,6 +20,8 @@ export class CreateProductDto {
   @IsOptional() @IsString() metaDescription?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) metaKeywords?: string[];
   
+  @IsOptional() @IsArray() @IsString({ each: true }) relatedProducts?: string[]; // Related product IDs
+  
   @IsOptional() @IsEnum(ProductStatus) status?: ProductStatus;
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsBoolean() isNew?: boolean;
@@ -51,6 +53,8 @@ export class UpdateProductDto {
   @IsOptional() @IsString() metaTitle?: string;
   @IsOptional() @IsString() metaDescription?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) metaKeywords?: string[];
+  
+  @IsOptional() @IsArray() @IsString({ each: true }) relatedProducts?: string[]; // Related product IDs
   
   @IsOptional() @IsEnum(ProductStatus) status?: ProductStatus;
   @IsOptional() @IsBoolean() isActive?: boolean;

@@ -1,0 +1,15 @@
+# اجعل index.html هو الصفحة الرئيسية
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # إذا كان الملف أو المجلد موجود فعلاً → قدّمه مباشرة
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # غير ذلك → وجّه كل شيء إلى index.html (للـ router في SPA)
+  RewriteRule ^ index.html [L]
+</IfModule>

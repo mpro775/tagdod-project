@@ -94,6 +94,10 @@ export class Product {
   @Prop({ default: 0 })
   order!: number;
 
+  // المنتجات الشبيهة
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Product' }], default: [] })
+  relatedProducts!: string[]; // IDs of related/similar products
+
   // Soft Delete
   @Prop({ type: Date, default: null })
   deletedAt?: Date | null;

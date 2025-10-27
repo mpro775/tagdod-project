@@ -38,7 +38,7 @@ import {
   Visibility,
   VisibilityOff,
 } from '@mui/icons-material';
-import { useCouponAnalytics, useCouponStatistics } from '../../marketing/hooks/useMarketing';
+import { useCouponAnalytics, useCouponStatistics, useExportCouponsData } from '../../marketing/hooks/useMarketing';
 import { formatCurrency } from '../../cart/api/cartApi';
 import { toast } from 'react-hot-toast';
 
@@ -114,6 +114,8 @@ export const CouponAnalyticsPage: React.FC = () => {
     refetch: refetchStats,
   } = useCouponStatistics(analyticsPeriod);
 
+  const exportMutation = useExportCouponsData();
+
   const periodOptions = [
     { value: 7, label: 'آخر 7 أيام' },
     { value: 30, label: 'آخر 30 يوم' },
@@ -127,9 +129,15 @@ export const CouponAnalyticsPage: React.FC = () => {
     toast.success('تم تحديث البيانات');
   };
 
-  const handleExportData = () => {
-    // TODO: Implement export functionality
-    toast.success('ميزة التصدير قيد التطوير');
+  const handleExportData = async () => {
+    try {
+      await exportMutation.mutateAsync({ 
+        format: 'csv', 
+        period: analyticsPeriod 
+      });
+    } catch {
+      // Error handled by mutation onError
+    }
   };
 
   if (analyticsLoading || statsLoading) {
@@ -177,8 +185,12 @@ export const CouponAnalyticsPage: React.FC = () => {
           </Tooltip>
 
           <Tooltip title="تصدير البيانات">
-            <IconButton onClick={handleExportData} color="secondary">
-              <Download />
+            <IconButton 
+              onClick={handleExportData} 
+              color="secondary"
+              disabled={exportMutation.isPending}
+            >
+              {exportMutation.isPending ? <CircularProgress size={24} /> : <Download />}
             </IconButton>
           </Tooltip>
 

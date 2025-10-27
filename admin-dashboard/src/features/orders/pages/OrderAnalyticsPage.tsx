@@ -37,7 +37,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useOrderAnalytics, useRevenueAnalytics, usePerformanceAnalytics } from '../hooks/useOrders';
+import { useOrderAnalytics, useRevenueAnalytics, usePerformanceAnalytics, useExportOrderAnalytics } from '../hooks/useOrders';
 import { formatCurrency, formatDate } from '@/shared/utils/formatters';
 import type { OrderAnalyticsParams } from '../types/order.types';
 import { ar } from 'date-fns/locale';
@@ -56,12 +56,26 @@ export const OrderAnalyticsPage: React.FC = () => {
     toDate?.toISOString()
   );
   const { data: performanceAnalytics, isLoading: performanceLoading } = usePerformanceAnalytics();
+  const exportMutation = useExportOrderAnalytics();
 
   const handleParamsChange = (key: keyof OrderAnalyticsParams, value: any) => {
     setAnalyticsParams(prev => ({
       ...prev,
       [key]: value,
     }));
+  };
+
+  const handleExportAnalytics = async () => {
+    try {
+      await exportMutation.mutateAsync({
+        format: 'csv',
+        days: analyticsParams.days,
+        fromDate: fromDate?.toISOString(),
+        toDate: toDate?.toISOString(),
+      });
+    } catch {
+      // Error handled by mutation onError
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -121,12 +135,10 @@ export const OrderAnalyticsPage: React.FC = () => {
             <Button
               variant="contained"
               startIcon={<Download />}
-              onClick={() => {
-                // TODO: Implement export functionality
-              }}
-              disabled
+              onClick={handleExportAnalytics}
+              disabled={exportMutation.isPending}
             >
-              تصدير التقرير
+              {exportMutation.isPending ? 'جاري التصدير...' : 'تصدير التقرير'}
             </Button>
           </Stack>
         </Box>

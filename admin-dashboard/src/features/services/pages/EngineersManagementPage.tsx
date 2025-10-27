@@ -38,6 +38,7 @@ import {
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useEngineers, useEngineersOverviewStatistics } from '../hooks/useServices';
+import { useSuspendUser, useActivateUser } from '../../users/hooks/useUsers';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
 import { getCityEmoji } from '@/shared/constants/yemeni-cities';
 
@@ -50,8 +51,10 @@ export const EngineersManagementPage: React.FC = () => {
     pageSize: 20,
   });
 
-  const { data: engineersData, isLoading: isEngineersLoading, error: engineersError } = useEngineers({ search: searchTerm });
+  const { data: engineersData, isLoading: isEngineersLoading, error: engineersError, refetch } = useEngineers({ search: searchTerm });
   const { data: engineersStats, isLoading: isStatsLoading, error: statsError } = useEngineersOverviewStatistics();
+  const suspendUserMutation = useSuspendUser();
+  const activateUserMutation = useActivateUser();
 
   const engineers = engineersData?.data || [];
   const stats = engineersStats || {};
@@ -61,6 +64,31 @@ export const EngineersManagementPage: React.FC = () => {
   const handleViewDetails = (engineer: any) => {
     setSelectedEngineer(engineer);
     setDetailsDialogOpen(true);
+  };
+
+  const handleEditEngineer = (engineer: any) => {
+    // Navigate to edit page or open edit dialog
+    setSelectedEngineer(engineer);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleToggleStatus = async (engineer: any) => {
+    try {
+      if (engineer.status === 'suspended' || engineer.isSuspended) {
+        // Activate the engineer
+        await activateUserMutation.mutateAsync(engineer._id || engineer.id);
+        refetch();
+      } else {
+        // Suspend the engineer
+        await suspendUserMutation.mutateAsync({
+          id: engineer._id || engineer.id,
+          data: { reason: 'تعليق من قبل المسؤول' },
+        });
+        refetch();
+      }
+    } catch {
+      // Error handled by mutation onError
+    }
   };
 
   const getRatingColor = (rating: number) => {
@@ -553,15 +581,4 @@ export const EngineersManagementPage: React.FC = () => {
       </Dialog>
     </Box>
   );
-};
-
-// Helper functions
-const handleEditEngineer = (engineer: any) => {
-  // TODO: Implement engineer edit
-  console.log('Edit engineer:', engineer);
-};
-
-const handleToggleStatus = (engineer: any) => {
-  // TODO: Implement toggle engineer status
-  console.log('Toggle engineer status:', engineer);
 };

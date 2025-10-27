@@ -63,6 +63,9 @@ export interface Product extends BaseEntity {
   // الترتيب
   order: number;
 
+  // المنتجات الشبيهة
+  relatedProducts?: string[]; // IDs of related products
+
   // Soft Delete
   deletedAt?: Date | null;
   deletedBy?: string;
@@ -139,6 +142,8 @@ export interface CreateProductDto {
   metaDescription?: string;
   metaKeywords?: string[];
   
+  relatedProducts?: string[]; // Related product IDs
+  
   status?: ProductStatus;
   isFeatured?: boolean;
   isNew?: boolean;
@@ -170,6 +175,8 @@ export interface UpdateProductDto {
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string[];
+  
+  relatedProducts?: string[]; // Related product IDs
   
   status?: ProductStatus;
   isActive?: boolean;

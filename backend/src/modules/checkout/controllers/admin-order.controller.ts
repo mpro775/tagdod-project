@@ -366,4 +366,71 @@ export class AdminOrderController {
       message: 'تم إنشاء التقرير المالي'
     };
   }
+
+  @Post('analytics/export')
+  @ApiOperation({
+    summary: 'تصدير تحليلات الطلبات',
+    description: 'تصدير بيانات تحليلات الطلبات بصيغ مختلفة (CSV, Excel, JSON)'
+  })
+  @ApiQuery({ name: 'format', required: false, type: String, description: 'صيغة الملف (csv, xlsx, json)', example: 'csv' })
+  @ApiQuery({ name: 'days', required: false, type: Number, description: 'عدد الأيام', example: 30 })
+  @ApiQuery({ name: 'fromDate', required: false, type: String, description: 'من تاريخ' })
+  @ApiQuery({ name: 'toDate', required: false, type: String, description: 'إلى تاريخ' })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تصدير البيانات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            fileUrl: { type: 'string' },
+            format: { type: 'string' },
+            exportedAt: { type: 'string' },
+            fileName: { type: 'string' },
+            recordCount: { type: 'number' },
+            summary: { type: 'object' }
+          }
+        }
+      }
+    }
+  })
+  async exportOrderAnalytics(
+    @Query('format') format?: string,
+    @Query('days') days?: number,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string
+  ) {
+    const exportFormat = format || 'csv';
+    const analyticsParams: OrderAnalyticsDto = {
+      days: days || 30,
+    };
+
+    return await this.orderService.exportOrderAnalytics(
+      exportFormat,
+      analyticsParams,
+      fromDate,
+      toDate
+    );
+  }
+
+  @Post('export')
+  @ApiOperation({
+    summary: 'تصدير قائمة الطلبات',
+    description: 'تصدير قائمة الطلبات مع التصفية بصيغ مختلفة (CSV, Excel, JSON)'
+  })
+  @ApiQuery({ name: 'format', required: false, type: String, description: 'صيغة الملف', example: 'csv' })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تصدير القائمة بنجاح'
+  })
+  async exportOrders(
+    @Query() query: ListOrdersDto,
+    @Query('format') format?: string
+  ) {
+    const exportFormat = format || 'csv';
+    return await this.orderService.exportOrders(exportFormat, query);
+  }
 }

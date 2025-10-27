@@ -299,7 +299,7 @@ export const CategoriesListPage: React.FC = () => {
         </Tabs>
         <Button
           startIcon={<Refresh />}
-          onClick={refetch}
+          onClick={() => refetch()}
           variant="outlined"
           size="small"
           sx={{ mr: 2 }}

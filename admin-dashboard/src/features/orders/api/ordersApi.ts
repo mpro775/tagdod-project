@@ -131,6 +131,39 @@ export const ordersApi = {
   },
 
   /**
+   * Export order analytics
+   */
+  exportOrderAnalytics: async (
+    format: string = 'csv',
+    days?: number,
+    fromDate?: string,
+    toDate?: string
+  ) => {
+    const response = await apiClient.post<ApiResponse<any>>(
+      '/admin/orders/analytics/export',
+      {},
+      {
+        params: { format, days, fromDate, toDate },
+      }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Export orders list
+   */
+  exportOrders: async (format: string = 'csv', params: ListOrdersParams) => {
+    const response = await apiClient.post<ApiResponse<any>>(
+      '/admin/orders/export',
+      {},
+      {
+        params: { ...sanitizePaginationParams(params), format },
+      }
+    );
+    return response.data.data;
+  },
+
+  /**
    * Generate orders report
    */
   generateOrdersReport: async (params: ListOrdersParams, format: 'json' | 'pdf' | 'excel' = 'json') => {
