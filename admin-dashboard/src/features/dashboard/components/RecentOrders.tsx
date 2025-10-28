@@ -161,7 +161,7 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
 
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="h6" fontWeight="bold" color="success.main">
-                    {order.total?.toLocaleString('ar-SA') || 0} ر.س
+                    {order.total?.toLocaleString('ar-SA') || 0} $
                   </Typography>
                   {orderDate && (
                     <Typography variant="caption" color="text.secondary">

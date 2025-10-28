@@ -3,8 +3,8 @@ import { Currency } from '../hooks/useSimpleCurrency';
 
 const currencies: { value: Currency; label: string; symbol: string }[] = [
   { value: 'USD', label: 'دولار أمريكي', symbol: '$' },
-  { value: 'YER', label: 'ريال يمني', symbol: 'ر.ي' },
-  { value: 'SAR', label: 'ريال سعودي', symbol: 'ر.س' },
+  { value: 'YER', label: 'ريال يمني', symbol: '$' },
+  { value: 'SAR', label: 'ريال سعودي', symbol: '$' },
 ];
 
 interface SimpleCurrencySelectorProps {

@@ -330,8 +330,15 @@ export class AdvancedAnalyticsService {
       (sum, order) => sum + (order.total || 0),
       0,
     );
+    const previousOrders = previousPeriodOrders.length;
+    
+    // Calculate growth metrics
     const salesGrowth =
       previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+    const revenueGrowth =
+      previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+    const ordersGrowth =
+      previousOrders > 0 ? ((totalOrders - previousOrders) / previousOrders) * 100 : 0;
 
     // Generate sales by date
     const salesByDate = await this.generateSalesByDate(startDate, endDate);
@@ -350,6 +357,8 @@ export class AdvancedAnalyticsService {
       totalOrders,
       averageOrderValue,
       salesGrowth,
+      revenueGrowth,
+      ordersGrowth,
       salesByDate,
       salesByCategory,
       salesByPaymentMethod,
@@ -361,27 +370,118 @@ export class AdvancedAnalyticsService {
   async getProductPerformance(params: AnalyticsParams) {
     this.logger.log('Getting product performance with params:', params);
 
-    // Get actual product count
-    const totalProducts = await this.productModel.countDocuments();
-
     const startDate = params.startDate
       ? new Date(params.startDate)
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const endDate = params.endDate ? new Date(params.endDate) : new Date();
 
-    // Get real product performance data
-    const [topProducts, lowStockProducts, categoryPerformance] = await Promise.all([
-      this.getTopProductsWithDetails(startDate, endDate, params.limit || 5),
+    // Calculate previous period for growth comparison
+    const periodDuration = endDate.getTime() - startDate.getTime();
+    const previousStartDate = new Date(startDate.getTime() - periodDuration);
+    const previousEndDate = startDate;
+
+    // Get actual product count for both periods
+    const totalProducts = await this.productModel.countDocuments({ deletedAt: null });
+    const previousTotalProducts = await this.productModel.countDocuments({
+      deletedAt: null,
+      createdAt: { $lt: startDate },
+    });
+
+    // Get real product performance data for both periods
+    const [
+      topProducts,
+      lowStockProducts,
+      categoryPerformance,
+      totalSalesData,
+      previousTotalSalesData,
+    ] = await Promise.all([
+      this.getTopProductsWithDetails(startDate, endDate, params.limit || 10),
       this.getLowStockProducts(),
       this.getProductPerformanceByCategory(startDate, endDate),
+      this.getTotalSalesFromOrders(startDate, endDate),
+      this.getTotalSalesFromOrders(previousStartDate, previousEndDate),
     ]);
 
-    // Calculate total sales from top products
-    const totalSales = topProducts.reduce((sum, product) => sum + product.sales, 0);
+    // Calculate total sales
+    const totalSales = totalSalesData.totalSales || 0;
+    const previousTotalSales = previousTotalSalesData.totalSales || 0;
+
+    // Calculate growth metrics
+    const totalProductsGrowth =
+      previousTotalProducts > 0
+        ? ((totalProducts - previousTotalProducts) / previousTotalProducts) * 100
+        : 0;
+
+    const totalSalesGrowth =
+      previousTotalSales > 0
+        ? ((totalSales - previousTotalSales) / previousTotalSales) * 100
+        : 0;
+
+    // Calculate average rating from all products
+    const avgRatingData = await this.productModel.aggregate([
+      {
+        $match: {
+          deletedAt: null,
+          status: 'active',
+          averageRating: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: '$averageRating' },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const previousAvgRatingData = await this.productModel.aggregate([
+      {
+        $match: {
+          deletedAt: null,
+          status: 'active',
+          averageRating: { $exists: true, $ne: null },
+          createdAt: { $lt: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: '$averageRating' },
+        },
+      },
+    ]);
+
+    const averageRating = avgRatingData[0]?.averageRating || 0;
+    const previousAverageRating = previousAvgRatingData[0]?.averageRating || 0;
+    const averageRatingGrowth =
+      previousAverageRating > 0
+        ? ((averageRating - previousAverageRating) / previousAverageRating) * 100
+        : 0;
+
+    // Calculate low stock growth
+    const previousLowStockCount = await this.productModel.countDocuments({
+      deletedAt: null,
+      trackStock: true,
+      $expr: { $lt: ['$stock', '$minStock'] },
+      updatedAt: { $gte: previousStartDate, $lt: startDate },
+    });
+
+    const lowStockGrowth =
+      previousLowStockCount > 0
+        ? ((lowStockProducts.length - previousLowStockCount) /
+            previousLowStockCount) *
+          100
+        : 0;
 
     return {
       totalProducts,
       totalSales,
+      averageRating: Math.round(averageRating * 10) / 10,
+      totalProductsGrowth: Math.round(totalProductsGrowth * 10) / 10,
+      totalSalesGrowth: Math.round(totalSalesGrowth * 10) / 10,
+      averageRatingGrowth: Math.round(averageRatingGrowth * 10) / 10,
+      lowStockGrowth: Math.round(lowStockGrowth * 10) / 10,
       topProducts,
       lowStockProducts,
       byCategory: categoryPerformance,
@@ -397,22 +497,44 @@ export class AdvancedAnalyticsService {
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const endDate = params.endDate ? new Date(params.endDate) : new Date();
 
-    // Get actual customer counts
+    // Calculate previous period for comparison
+    const periodDuration = endDate.getTime() - startDate.getTime();
+    const previousStartDate = new Date(startDate.getTime() - periodDuration);
+    const previousEndDate = startDate;
+
+    // Get actual customer counts for current period
     const totalCustomers = await this.userModel.countDocuments({
       roles: { $in: ['user'] },
       status: 'active',
       deletedAt: null,
     });
 
-    const recentCustomers = await this.userModel.countDocuments({
+    // Get previous period total customers
+    const previousTotalCustomers = await this.userModel.countDocuments({
       roles: { $in: ['user'] },
       status: 'active',
       deletedAt: null,
-      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      createdAt: { $lt: startDate },
     });
 
-    // Get active customers (customers with orders in the last 30 days)
-    const activeCustomers = await this.userModel.aggregate([
+    // Get new customers in current period
+    const newCustomers = await this.userModel.countDocuments({
+      roles: { $in: ['user'] },
+      status: 'active',
+      deletedAt: null,
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+
+    // Get new customers in previous period
+    const previousNewCustomers = await this.userModel.countDocuments({
+      roles: { $in: ['user'] },
+      status: 'active',
+      deletedAt: null,
+      createdAt: { $gte: previousStartDate, $lt: previousEndDate },
+    });
+
+    // Get active customers (customers with orders in current period)
+    const activeCustomersData = await this.userModel.aggregate([
       {
         $lookup: {
           from: 'orders',
@@ -426,11 +548,35 @@ export class AdvancedAnalyticsService {
           roles: { $in: ['user'] },
           status: 'active',
           deletedAt: null,
-          'orders.createdAt': { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+          'orders.createdAt': { $gte: startDate, $lte: endDate },
         },
       },
       { $count: 'activeCustomers' },
     ]);
+
+    // Get active customers in previous period
+    const previousActiveCustomersData = await this.userModel.aggregate([
+      {
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'orders',
+        },
+      },
+      {
+        $match: {
+          roles: { $in: ['user'] },
+          status: 'active',
+          deletedAt: null,
+          'orders.createdAt': { $gte: previousStartDate, $lt: previousEndDate },
+        },
+      },
+      { $count: 'activeCustomers' },
+    ]);
+
+    const activeCustomers = activeCustomersData[0]?.activeCustomers || 0;
+    const previousActiveCustomers = previousActiveCustomersData[0]?.activeCustomers || 0;
 
     // Get top customers by spending
     const topCustomers = await this.userModel.aggregate([
@@ -465,18 +611,30 @@ export class AdvancedAnalyticsService {
       { $limit: 5 },
     ]);
 
-    // Calculate customer lifetime value
-    const customerLifetimeValue =
-      totalCustomers > 0 ? await this.calculateCustomerLifetimeValue() : 0;
+    // Calculate customer lifetime value (average spending per customer)
+    const customerLifetimeValue = totalCustomers > 0 ? await this.calculateCustomerLifetimeValue() : 0;
+    const previousCustomerLifetimeValue = previousTotalCustomers > 0 ? 
+      await this.calculateCustomerLifetimeValueForPeriod(previousStartDate, previousEndDate) : 0;
 
-    // Calculate retention and churn rates
-    const retentionData = await this.calculateRetentionRates(startDate, endDate);
+    // Calculate growth metrics
+    const totalCustomersGrowth = previousTotalCustomers > 0 
+      ? ((totalCustomers - previousTotalCustomers) / previousTotalCustomers) * 100 : 0;
+    const newCustomersGrowth = previousNewCustomers > 0 
+      ? ((newCustomers - previousNewCustomers) / previousNewCustomers) * 100 : 0;
+    const activeCustomersGrowth = previousActiveCustomers > 0 
+      ? ((activeCustomers - previousActiveCustomers) / previousActiveCustomers) * 100 : 0;
+    const customerLifetimeValueGrowth = previousCustomerLifetimeValue > 0 
+      ? ((customerLifetimeValue - previousCustomerLifetimeValue) / previousCustomerLifetimeValue) * 100 : 0;
 
     return {
       totalCustomers,
-      newCustomers: recentCustomers,
-      activeCustomers: activeCustomers[0]?.activeCustomers || 0,
+      newCustomers,
+      activeCustomers,
       customerLifetimeValue,
+      totalCustomersGrowth,
+      newCustomersGrowth,
+      activeCustomersGrowth,
+      customerLifetimeValueGrowth,
       customerSegments: await this.getCustomerSegments(),
       topCustomers: topCustomers.map((customer: CustomerAggregateResult) => ({
         id: customer._id.toString(),
@@ -484,8 +642,6 @@ export class AdvancedAnalyticsService {
         orders: customer.orderCount,
         totalSpent: customer.totalSpent,
       })),
-      retentionRate: retentionData.retentionRate,
-      churnRate: retentionData.churnRate,
     };
   }
 
@@ -498,7 +654,11 @@ export class AdvancedAnalyticsService {
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const endDate = params.endDate ? new Date(params.endDate) : new Date();
 
-    // Get real product counts
+    // Calculate previous period for comparison
+    const periodDuration = endDate.getTime() - startDate.getTime();
+    const previousStartDate = new Date(startDate.getTime() - periodDuration);
+
+    // Get current period product counts
     const totalProducts = await this.productModel.countDocuments({ deletedAt: null });
     const activeProducts = await this.productModel.countDocuments({
       status: 'active',
@@ -519,6 +679,40 @@ export class AdvancedAnalyticsService {
       trackStock: true,
       stock: 0,
     });
+
+    // Get previous period counts for comparison
+    const previousTotalProducts = await this.productModel.countDocuments({
+      deletedAt: null,
+      createdAt: { $lt: startDate },
+    });
+
+    const previousActiveProducts = await this.productModel.countDocuments({
+      status: 'active',
+      isActive: true,
+      deletedAt: null,
+      createdAt: { $lt: startDate },
+    });
+
+    const previousOutOfStockProducts = await this.productModel.countDocuments({
+      deletedAt: null,
+      trackStock: true,
+      stock: 0,
+      updatedAt: { $gte: previousStartDate, $lt: startDate },
+    });
+
+    // Calculate current and previous inventory values
+    const totalValue = await this.calculateInventoryValue();
+    const previousTotalValue = await this.calculateInventoryValueForDate(previousStartDate);
+
+    // Calculate growth metrics
+    const totalProductsGrowth = previousTotalProducts > 0 
+      ? ((totalProducts - previousTotalProducts) / previousTotalProducts) * 100 : 0;
+    const inStockGrowth = previousActiveProducts > 0 
+      ? ((activeProducts - previousActiveProducts) / previousActiveProducts) * 100 : 0;
+    const outOfStockGrowth = previousOutOfStockProducts > 0 
+      ? ((outOfStockProducts - previousOutOfStockProducts) / previousOutOfStockProducts) * 100 : 0;
+    const totalValueGrowth = previousTotalValue > 0 
+      ? ((totalValue - previousTotalValue) / previousTotalValue) * 100 : 0;
 
     // Get inventory by category
     const inventoryByCategory = await this.productModel.aggregate([
@@ -577,7 +771,11 @@ export class AdvancedAnalyticsService {
       inStock: activeProducts,
       lowStock: lowStockProducts,
       outOfStock: outOfStockProducts,
-      totalValue: await this.calculateInventoryValue(),
+      totalValue,
+      totalProductsGrowth,
+      inStockGrowth,
+      outOfStockGrowth,
+      totalValueGrowth,
       byCategory: inventoryByCategory.map((item: InventoryAggregateResult) => ({
         category: item.categoryName,
         count: item.count,
@@ -601,34 +799,62 @@ export class AdvancedAnalyticsService {
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const endDate = params.endDate ? new Date(params.endDate) : new Date();
 
-    // Get real revenue from orders
-    const revenueData = await this.orderModel.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
-          paymentStatus: 'paid',
+    // Calculate previous period for comparison
+    const periodDuration = endDate.getTime() - startDate.getTime();
+    const previousStartDate = new Date(startDate.getTime() - periodDuration);
+    const previousEndDate = startDate;
+
+    // Get current and previous period revenue from orders
+    const [currentRevenueData, previousRevenueData] = await Promise.all([
+      this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            status: { $in: ['completed', 'delivered'] },
+            paymentStatus: 'paid',
+          },
         },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: '$total' },
-          orderCount: { $sum: 1 },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$total' },
+            orderCount: { $sum: 1 },
+          },
         },
-      },
+      ]),
+      this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: previousStartDate, $lt: previousEndDate },
+            status: { $in: ['completed', 'delivered'] },
+            paymentStatus: 'paid',
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$total' },
+            orderCount: { $sum: 1 },
+          },
+        },
+      ]),
     ]);
 
-    const revenue = revenueData[0]?.totalRevenue || 0;
+    const revenue = currentRevenueData[0]?.totalRevenue || 0;
+    const previousRevenue = previousRevenueData[0]?.totalRevenue || 0;
 
-    // Generate cash flow data
+    // Calculate revenue growth
+    const revenueGrowth = previousRevenue > 0 ? ((revenue - previousRevenue) / previousRevenue) * 100 : 0;
+
+    // Generate cash flow data (daily revenue)
     const cashFlow = await this.generateCashFlowData(startDate, endDate);
 
-    // Get revenue by source (from orders)
+    // Get revenue by source (payment methods)
     const revenueBySource = await this.getRevenueBySource(startDate, endDate);
 
     return {
       revenue,
+      revenueGrowth,
       cashFlow,
       revenueBySource,
     };
@@ -718,89 +944,177 @@ export class AdvancedAnalyticsService {
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const endDate = params.endDate ? new Date(params.endDate) : new Date();
 
-    // Get coupon usage data from orders
-    const couponData = await this.orderModel.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: startDate, $lte: endDate },
-          appliedCouponCode: { $exists: true, $ne: null },
+    // Calculate previous period for growth comparison
+    const periodDuration = endDate.getTime() - startDate.getTime();
+    const previousStartDate = new Date(startDate.getTime() - periodDuration);
+    const previousEndDate = startDate;
+
+    // Get current and previous period data in parallel
+    const [
+      couponData,
+      previousCouponData,
+      totalDiscountGivenData,
+      previousTotalDiscountGivenData,
+      currentPeriodRevenue,
+      previousPeriodRevenue,
+    ] = await Promise.all([
+      // Current period coupon data
+      this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            appliedCouponCode: { $exists: true, $ne: null },
+          },
         },
-      },
-      {
-        $group: {
-          _id: '$appliedCouponCode',
-          uses: { $sum: 1 },
-          totalDiscount: { $sum: '$couponDiscount' },
-          totalRevenue: { $sum: '$total' },
+        {
+          $group: {
+            _id: '$appliedCouponCode',
+            uses: { $sum: 1 },
+            totalDiscount: { $sum: '$couponDiscount' },
+            totalRevenue: { $sum: '$total' },
+          },
         },
-      },
-      { $sort: { uses: -1 } },
+        { $sort: { uses: -1 } },
+      ]),
+      // Previous period coupon data
+      this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: previousStartDate, $lt: previousEndDate },
+            appliedCouponCode: { $exists: true, $ne: null },
+          },
+        },
+        {
+          $group: {
+            _id: '$appliedCouponCode',
+            uses: { $sum: 1 },
+          },
+        },
+      ]),
+      // Current period total discount
+      this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            couponDiscount: { $gt: 0 },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalDiscount: { $sum: '$couponDiscount' },
+          },
+        },
+      ]),
+      // Previous period total discount
+      this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: previousStartDate, $lt: previousEndDate },
+            couponDiscount: { $gt: 0 },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalDiscount: { $sum: '$couponDiscount' },
+          },
+        },
+      ]),
+      // Current period revenue
+      this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            status: { $in: ['completed', 'delivered'] },
+            paymentStatus: 'paid',
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$total' },
+            totalOrders: { $sum: 1 },
+            ordersWithCoupons: {
+              $sum: { $cond: [{ $ne: ['$appliedCouponCode', null] }, 1, 0] },
+            },
+          },
+        },
+      ]),
+      // Previous period revenue
+      this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: previousStartDate, $lt: previousEndDate },
+            status: { $in: ['completed', 'delivered'] },
+            paymentStatus: 'paid',
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$total' },
+            ordersWithCoupons: {
+              $sum: { $cond: [{ $ne: ['$appliedCouponCode', null] }, 1, 0] },
+            },
+          },
+        },
+      ]),
     ]);
 
-    // Get total discount given
-    const totalDiscountGiven = await this.orderModel.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: startDate, $lte: endDate },
-          couponDiscount: { $gt: 0 },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalDiscount: { $sum: '$couponDiscount' },
-        },
-      },
-    ]);
-
-    // Calculate conversion rate
-    const totalOrders = await this.orderModel.countDocuments({
-      createdAt: { $gte: startDate, $lte: endDate },
-      status: { $in: ['completed', 'delivered'] },
-    });
-
-    const ordersWithCoupons = await this.orderModel.countDocuments({
-      createdAt: { $gte: startDate, $lte: endDate },
-      status: { $in: ['completed', 'delivered'] },
-      appliedCouponCode: { $exists: true, $ne: null },
-    });
-
+    // Current period metrics
+    const totalCoupons = couponData.length;
+    const activeCoupons = couponData.filter((c) => c.uses > 0).length;
+    const discount = totalDiscountGivenData[0]?.totalDiscount || 0;
+    const revenue = currentPeriodRevenue[0]?.totalRevenue || 0;
+    const totalOrders = currentPeriodRevenue[0]?.totalOrders || 0;
+    const ordersWithCoupons = currentPeriodRevenue[0]?.ordersWithCoupons || 0;
     const conversionRate = totalOrders > 0 ? (ordersWithCoupons / totalOrders) * 100 : 0;
-
-    // Calculate ROI (simplified)
-    const totalRevenue = await this.orderModel.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
-          paymentStatus: 'paid',
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: '$total' },
-        },
-      },
-    ]);
-
-    const revenue = totalRevenue[0]?.totalRevenue || 0;
-    const discount = totalDiscountGiven[0]?.totalDiscount || 0;
     const roi = discount > 0 ? ((revenue - discount) / discount) * 100 : 0;
+
+    // Previous period metrics
+    const previousTotalCoupons = previousCouponData.length;
+    const previousDiscount = previousTotalDiscountGivenData[0]?.totalDiscount || 0;
+    const previousRevenue = previousPeriodRevenue[0]?.totalRevenue || 0;
+    const previousOrdersWithCoupons = previousPeriodRevenue[0]?.ordersWithCoupons || 0;
+    const previousConversionRate =
+      previousOrdersWithCoupons > 0
+        ? (previousOrdersWithCoupons / (previousRevenue > 0 ? 1 : 1)) * 100
+        : 0;
+    const previousRoi =
+      previousDiscount > 0 ? ((previousRevenue - previousDiscount) / previousDiscount) * 100 : 0;
+
+    // Calculate growth metrics
+    const totalCouponsGrowth =
+      previousTotalCoupons > 0
+        ? ((totalCoupons - previousTotalCoupons) / previousTotalCoupons) * 100
+        : 0;
+    const totalDiscountGrowth =
+      previousDiscount > 0 ? ((discount - previousDiscount) / previousDiscount) * 100 : 0;
+    const roiGrowth = previousRoi > 0 ? ((roi - previousRoi) / previousRoi) * 100 : 0;
+    const conversionRateGrowth =
+      previousConversionRate > 0
+        ? ((conversionRate - previousConversionRate) / previousConversionRate) * 100
+        : 0;
 
     return {
       totalCampaigns: 0, // Would need campaign tracking system
       activeCampaigns: 0,
-      totalCoupons: couponData.length,
-      activeCoupons: couponData.filter((c) => c.uses > 0).length,
-      roi,
-      conversionRate,
+      totalCoupons,
+      activeCoupons,
+      roi: Math.round(roi * 10) / 10,
+      conversionRate: Math.round(conversionRate * 10) / 10,
       totalDiscountGiven: discount,
+      totalCouponsGrowth: Math.round(totalCouponsGrowth * 10) / 10,
+      totalDiscountGrowth: Math.round(totalDiscountGrowth * 10) / 10,
+      roiGrowth: Math.round(roiGrowth * 10) / 10,
+      conversionRateGrowth: Math.round(conversionRateGrowth * 10) / 10,
       campaignPerformance: [], // Would need campaign tracking system
-      topCoupons: couponData.slice(0, 4).map((coupon) => ({
+      topCoupons: couponData.slice(0, 10).map((coupon) => ({
         code: coupon._id,
         uses: coupon.uses,
         revenue: coupon.totalRevenue,
+        discount: coupon.totalDiscount,
       })),
     };
   }
@@ -1046,7 +1360,7 @@ export class AdvancedAnalyticsService {
           newCustomers: customerAnalytics.newCustomers,
           activeCustomers: customerAnalytics.activeCustomers,
           returningCustomers: await this.getReturningCustomersCount(startDate, endDate), // Calculate
-          customerRetentionRate: customerAnalytics.retentionRate,
+          customerRetentionRate: (await this.calculateRetentionRates(startDate, endDate)).retentionRate,
           averageLifetimeValue: customerAnalytics.customerLifetimeValue,
           topCustomers: await Promise.all(customerAnalytics.topCustomers.map(async (c: TopCustomerResult) => ({
             userId: c.id,
@@ -1057,7 +1371,7 @@ export class AdvancedAnalyticsService {
           }))),
           customersByRegion: await this.getCustomersByRegion(),
           customerSegmentation: await this.getCustomerSegmentationWithMetrics(customerAnalytics.customerSegments, startDate, endDate),
-          churnRate: customerAnalytics.churnRate,
+          churnRate: (await this.calculateRetentionRates(startDate, endDate)).churnRate,
           newVsReturning: {
             new: customerAnalytics.newCustomers,
             returning: customerAnalytics.totalCustomers - customerAnalytics.newCustomers,
@@ -1577,6 +1891,58 @@ export class AdvancedAnalyticsService {
   }
 
   /**
+   * Calculate customer lifetime value for a specific period
+   */
+  private async calculateCustomerLifetimeValueForPeriod(startDate: Date, endDate: Date) {
+    const pipeline = [
+      {
+        $match: {
+          roles: { $in: ['user'] },
+          status: 'active',
+          deletedAt: null,
+          createdAt: { $lt: endDate },
+        },
+      },
+      {
+        $lookup: {
+          from: 'orders',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$userId', '$$userId'] },
+                    { $gte: ['$createdAt', startDate] },
+                    { $lt: ['$createdAt', endDate] },
+                    { $in: ['$status', ['completed', 'delivered']] },
+                    { $eq: ['$paymentStatus', 'paid'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'orders',
+        },
+      },
+      {
+        $project: {
+          totalSpent: { $sum: '$orders.total' },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageLifetimeValue: { $avg: '$totalSpent' },
+        },
+      },
+    ];
+
+    const result = await this.userModel.aggregate(pipeline);
+    return result[0]?.averageLifetimeValue || 0;
+  }
+
+  /**
    * Calculate retention and churn rates
    */
   private async calculateRetentionRates(startDate: Date, endDate: Date) {
@@ -1764,17 +2130,48 @@ export class AdvancedAnalyticsService {
   }
 
   /**
+   * Calculate inventory value for a specific date
+   */
+  private async calculateInventoryValueForDate(date: Date) {
+    // For simplicity, we'll calculate based on products created before this date
+    // In a real system, you'd track stock history over time
+    const result = await this.variantModel.aggregate([
+      {
+        $match: {
+          trackInventory: true,
+          deletedAt: null,
+          isActive: true,
+          createdAt: { $lt: date },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalValue: {
+            $sum: {
+              $multiply: ['$stock', '$basePriceUSD'],
+            },
+          },
+        },
+      },
+    ]);
+
+    return result[0]?.totalValue || 0;
+  }
+
+  /**
    * Generate cash flow data
    */
   private async generateCashFlowData(startDate: Date, endDate: Date) {
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const cashFlow = [];
+    let cumulativeBalance = 0;
 
     for (let i = 0; i < Math.min(daysDiff, 30); i++) {
       const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
       const nextDate = new Date(date.getTime() + 24 * 60 * 60 * 1000);
 
-      // Get daily revenue
+      // Get daily revenue from completed orders
       const dailyOrders = await this.orderModel
         .find({
           createdAt: { $gte: date, $lt: nextDate },
@@ -1783,13 +2180,13 @@ export class AdvancedAnalyticsService {
         })
         .lean();
 
-      const inflow = dailyOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const dailyRevenue = dailyOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+      cumulativeBalance += dailyRevenue;
 
       cashFlow.push({
         date: date.toISOString().split('T')[0],
-        inflow,
-        outflow: 0, // No expense tracking system
-        balance: inflow,
+        revenue: dailyRevenue,
+        balance: cumulativeBalance,
       });
     }
 
@@ -2203,6 +2600,35 @@ export class AdvancedAnalyticsService {
       sales: item.sales,
       revenue: item.revenue,
     }));
+  }
+
+  /**
+   * Get total sales from orders for a specific period
+   */
+  private async getTotalSalesFromOrders(startDate: Date, endDate: Date) {
+    const pipeline = [
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: { $in: ['completed', 'delivered'] },
+          paymentStatus: 'paid',
+        },
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: '$items.qty' },
+          totalRevenue: { $sum: { $multiply: ['$items.qty', '$items.finalPrice'] } },
+        },
+      },
+    ];
+
+    const results = await this.orderModel.aggregate(pipeline);
+    return {
+      totalSales: results[0]?.totalSales || 0,
+      totalRevenue: results[0]?.totalRevenue || 0,
+    };
   }
 
   // ==================== New Helper Methods for Missing Features ====================

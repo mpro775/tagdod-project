@@ -72,9 +72,11 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'SAR',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -120,12 +122,21 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(data?.totalRevenue || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +12.5% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.revenueGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.revenueGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.revenueGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.revenueGrowth >= 0 ? '+' : ''}{data.revenueGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -147,12 +158,21 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.totalOrders || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +8.3% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.ordersGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.ordersGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.ordersGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.ordersGrowth >= 0 ? '+' : ''}{data.ordersGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -174,12 +194,13 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(data?.averageOrderValue || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="error.main">
-                  -2.1% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.totalOrders && data.totalOrders > 0 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {formatNumber(data.totalOrders)} طلب
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -195,18 +216,29 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <AssessmentIcon sx={{ color: theme.palette.warning.main, mr: 1 }} />
                 <Typography variant="h6" color="warning.main">
-                  معدل النمو
+                  معدل نمو المبيعات
                 </Typography>
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                15.2%
+                {data?.salesGrowth !== undefined 
+                  ? `${data.salesGrowth >= 0 ? '+' : ''}${data.salesGrowth.toFixed(1)}%`
+                  : 'لا توجد بيانات'}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +3.2% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.salesGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.salesGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.salesGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.salesGrowth >= 0 ? 'نمو إيجابي' : 'انخفاض'}
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
         </Grid>

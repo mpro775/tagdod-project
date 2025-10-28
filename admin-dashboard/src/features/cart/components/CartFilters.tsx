@@ -235,7 +235,7 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
                   InputProps={{
                     startAdornment: (
                       <Box component="span" sx={{ mr: 1 }}>
-                        ر.ي
+                        $
                       </Box>
                     ),
                   }}
@@ -257,7 +257,7 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
                   InputProps={{
                     startAdornment: (
                       <Box component="span" sx={{ mr: 1 }}>
-                        ر.ي
+                        $
                       </Box>
                     ),
                   }}
@@ -346,14 +346,14 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
               )}
               {filters.minTotal && (
                 <Chip
-                  label={`الحد الأدنى: ${filters.minTotal} ر.ي`}
+                  label={`الحد الأدنى: ${filters.minTotal} $`}
                   onDelete={() => handleFilterChange('minTotal', undefined)}
                   size="small"
                 />
               )}
               {filters.maxTotal && (
                 <Chip
-                  label={`الحد الأقصى: ${filters.maxTotal} ر.ي`}
+                  label={`الحد الأقصى: ${filters.maxTotal} $`}
                   onDelete={() => handleFilterChange('maxTotal', undefined)}
                   size="small"
                 />

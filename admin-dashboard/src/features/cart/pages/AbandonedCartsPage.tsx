@@ -194,7 +194,7 @@ export const AbandonedCartsPage: React.FC = () => {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h4" component="div" color="error.main">
-                    {totalAbandonedValue.toLocaleString('ar-YE')} ر.ي
+                    {totalAbandonedValue.toLocaleString('ar-YE')} $
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     إجمالي القيمة المتروكة
@@ -212,7 +212,7 @@ export const AbandonedCartsPage: React.FC = () => {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h4" component="div" color="info.main">
-                    {averageAbandonedValue.toLocaleString('ar-YE')} ر.ي
+                    {averageAbandonedValue.toLocaleString('ar-YE')} $
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     متوسط قيمة السلة المتروكة

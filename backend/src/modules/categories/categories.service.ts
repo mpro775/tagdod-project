@@ -361,31 +361,39 @@ export class CategoriesService {
 
   // ==================== إحصائيات الفئات ====================
   async getStats() {
-    const [total, active, featured, deleted, byDepth] = await Promise.all([
+    const [totalCategories, activeCategories, featuredCategories, deletedCategories, productsStats] = await Promise.all([
       this.categoryModel.countDocuments({ deletedAt: null }),
       this.categoryModel.countDocuments({ deletedAt: null, isActive: true }),
       this.categoryModel.countDocuments({ deletedAt: null, isFeatured: true }),
       this.categoryModel.countDocuments({ deletedAt: { $ne: null } }),
       this.categoryModel.aggregate([
         { $match: { deletedAt: null } },
-        { $group: { _id: '$depth', count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
+        {
+          $group: {
+            _id: null,
+            totalProducts: { $sum: '$productsCount' },
+            categoriesWithProducts: {
+              $sum: { $cond: [{ $gt: ['$productsCount', 0] }, 1, 0] },
+            },
+          },
+        },
       ]),
     ]);
 
-    const depthStats: Record<string, unknown> = {};
-    byDepth.forEach((item: Record<string, unknown>) => {
-      depthStats[`level_${item._id}`] = item.count;
-    });
+    const totalProducts = productsStats[0]?.totalProducts || 0;
+    const categoriesWithProducts = productsStats[0]?.categoriesWithProducts || 0;
+    const averageProductsPerCategory = totalCategories > 0 
+      ? parseFloat((totalProducts / totalCategories).toFixed(2))
+      : 0;
 
     return {
-      data: {
-        total,
-        active,
-        featured,
-        deleted,
-        byDepth: depthStats,
-      },
+      totalCategories,
+      activeCategories,
+      featuredCategories,
+      deletedCategories,
+      totalProducts,
+      categoriesWithProducts,
+      averageProductsPerCategory,
     };
   }
 

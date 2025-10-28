@@ -31,7 +31,7 @@ export const NotificationTemplatesPage: React.FC = () => {
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [testUserId, setTestUserId] = useState('');
 
-  const { data: templates, isLoading } = useNotificationTemplates();
+  const { data: templates = [], isLoading } = useNotificationTemplates();
   const { mutate: testNotification, isPending: isTesting } = useTestNotification();
 
   const handleTestTemplate = (template: NotificationTemplate) => {
@@ -120,7 +120,7 @@ export const NotificationTemplatesPage: React.FC = () => {
         إدارة قوالب الإشعارات المستخدمة في النظام. يمكنك تعديل القوالب الموجودة أو إضافة قوالب جديدة.
       </Typography>
 
-      {templates && templates.length > 0 ? (
+      {templates.length > 0 ? (
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: 2 }}>
           {templates.map((template) => (
             <Card key={template.key} sx={{ height: 'fit-content' }}>

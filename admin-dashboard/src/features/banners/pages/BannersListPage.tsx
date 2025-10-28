@@ -146,7 +146,7 @@ export const BannersListPage: React.FC = () => {
   };
 
   const handleViewAnalytics = () => {
-    navigate('/admin/banners/analytics');
+    navigate('/banners/analytics');
   };
 
   return (

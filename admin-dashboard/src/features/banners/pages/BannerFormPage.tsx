@@ -10,11 +10,14 @@ import {
   FormControlLabel,
   Switch,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { Save, ArrowBack } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
-import { FormSelect } from '@/shared/components/Form/FormSelect';
 import { useCreateBanner, useUpdateBanner, useBanner } from '../hooks/useBanners';
 import {
   BANNER_LOCATION_OPTIONS,
@@ -97,7 +100,7 @@ export const BannerFormPage: React.FC = () => {
         {
           onSuccess: () => {
             toast.success('تم تحديث البانر بنجاح');
-            navigate('/admin/banners');
+            navigate('/banners');
           },
           onError: (error: any) => {
             toast.error(error.response?.data?.message || 'فشل في تحديث البانر');
@@ -108,7 +111,7 @@ export const BannerFormPage: React.FC = () => {
       createBanner(data as CreateBannerDto, {
         onSuccess: () => {
           toast.success('تم إنشاء البانر بنجاح');
-          navigate('/admin/banners');
+          navigate('/banners');
         },
         onError: (error: any) => {
           toast.error(error.response?.data?.message || 'فشل في إنشاء البانر');
@@ -130,7 +133,7 @@ export const BannerFormPage: React.FC = () => {
       <Box display="flex" alignItems="center" gap={2} mb={3}>
         <Button
           startIcon={<ArrowBack />}
-          onClick={() => navigate('/admin/banners')}
+          onClick={() => navigate('/banners')}
           variant="outlined"
         >
           العودة
@@ -153,6 +156,7 @@ export const BannerFormPage: React.FC = () => {
             <Grid size={{ xs: 12, md: 8 }}>
               <Controller
                 name="title"
+                control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -168,6 +172,7 @@ export const BannerFormPage: React.FC = () => {
             <Grid size={{ xs: 12, md: 4 }}>
               <Controller
                 name="location"
+                control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -298,11 +303,20 @@ export const BannerFormPage: React.FC = () => {
                 name="promotionType"
                 control={control}
                 render={({ field }) => (
-                  <FormSelect
-                    {...field}
-                    label="نوع الترويج"
-                    options={BANNER_PROMOTION_TYPE_OPTIONS}
-                  />
+                  <FormControl fullWidth>
+                    <InputLabel>نوع الترويج</InputLabel>
+                    <Select
+                      {...field}
+                      label="نوع الترويج"
+                      value={field.value || ''}
+                    >
+                      {BANNER_PROMOTION_TYPE_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 )}
               />
             </Grid>
@@ -397,7 +411,7 @@ export const BannerFormPage: React.FC = () => {
               <Box display="flex" gap={2} justifyContent="flex-end">
                 <Button
                   variant="outlined"
-                  onClick={() => navigate('/admin/banners')}
+                  onClick={() => navigate('/banners')}
                   disabled={creating || updating}
                 >
                   إلغاء

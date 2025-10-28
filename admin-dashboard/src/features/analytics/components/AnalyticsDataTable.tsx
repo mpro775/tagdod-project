@@ -111,9 +111,61 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
   };
 
   const handleExport = () => {
-    // Export functionality
-    // eslint-disable-next-line no-console
-    console.log('Exporting data...');
+    // Export data to CSV
+    if (filteredData.length === 0) {
+      alert('لا توجد بيانات للتصدير');
+      return;
+    }
+
+    try {
+      // Prepare CSV header
+      const headers = columns.map(col => col.label).join(',');
+      
+      // Prepare CSV rows
+      const rows = filteredData.map(row => {
+        return columns.map(col => {
+          const value = row[col.id];
+          // Handle different value types
+          if (value === null || value === undefined) {
+            return '';
+          }
+          // Format the value if format function exists
+          const formattedValue = col.format && typeof col.format === 'function' 
+            ? String(col.format(value)).replace(/<[^>]*>/g, '') // Remove HTML tags
+            : String(value);
+          
+          // Escape commas and quotes in CSV
+          const escapedValue = formattedValue.includes(',') || formattedValue.includes('"')
+            ? `"${formattedValue.replace(/"/g, '""')}"`
+            : formattedValue;
+          
+          return escapedValue;
+        }).join(',');
+      });
+
+      // Combine headers and rows
+      const csvContent = [headers, ...rows].join('\n');
+
+      // Create blob and download
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `analytics_data_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error exporting data:', error);
+      alert('حدث خطأ أثناء تصدير البيانات');
+    }
   };
 
   // Filter and search data

@@ -151,7 +151,7 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
                       {product.sales} مبيعة
                     </Typography>
                     <Typography variant="caption" fontWeight="600" color="success.main">
-                      {product.revenue.toLocaleString('ar-SA')} ر.س
+                      {product.revenue.toLocaleString('ar-SA')} $
                     </Typography>
                   </Box>
                 </Box>

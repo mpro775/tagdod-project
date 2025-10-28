@@ -184,7 +184,7 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
                   endAdornment={
                     <InputAdornment position="end">
                       <Typography variant="body2" color="text.secondary">
-                        ر.ي
+                        $
                       </Typography>
                     </InputAdornment>
                   }
@@ -223,7 +223,7 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
                   endAdornment={
                     <InputAdornment position="end">
                       <Typography variant="body2" color="text.secondary">
-                        ر.س
+                        $
                       </Typography>
                     </InputAdornment>
                   }

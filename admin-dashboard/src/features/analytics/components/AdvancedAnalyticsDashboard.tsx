@@ -48,7 +48,6 @@ import {
 } from '@mui/icons-material';
 import { 
   useSalesAnalytics,
-  useProductPerformance,
   useCustomerAnalytics,
   useInventoryReport,
   useFinancialReport,
@@ -115,7 +114,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
 
   // Hooks for different analytics
   const salesAnalytics = useSalesAnalytics();
-  const productPerformance = useProductPerformance();
+  // ProductPerformanceCard now handles its own data fetching
   const customerAnalytics = useCustomerAnalytics();
   const inventoryReport = useInventoryReport();
   const financialReport = useFinancialReport();
@@ -301,11 +300,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         {/* Product Performance */}
         <Grid container spacing={3}>
         <Grid size={{ xs: 12}}>
-            <ProductPerformanceCard 
-              data={productPerformance.data}
-              isLoading={productPerformance.isLoading}
-              error={productPerformance.error}
-            />
+            <ProductPerformanceCard />
           </Grid>
         </Grid>
       </TabPanel>

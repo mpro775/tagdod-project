@@ -127,9 +127,9 @@ interface StorageStats {
 
 interface FileInfo {
   _id: string;
-  fileName: string;
-  fileSize: number;
-  filePath: string;
+  filename: string;
+  size: number;
+  url: string;
   mimeType: string;
   createdAt: string;
 }
@@ -148,8 +148,15 @@ export const MediaAnalyticsPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/media-analytics/overview');
-      setOverview(response.data.data);
-    } catch  {
+      console.log('Overview Full Response:', response);
+      console.log('Overview response.data:', response.data);
+      console.log('Overview response.data.data:', response.data.data);
+      // Handle nested data structure: response.data.data.data
+      const data = response.data.data?.data || response.data.data;
+      console.log('Overview Final Data:', data);
+      setOverview(data);
+    } catch (error) {
+      console.error('Overview Error:', error);
       toast.error('فشل تحميل الإحصائيات العامة');
     } finally {
       setLoading(false);
@@ -160,8 +167,15 @@ export const MediaAnalyticsPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/media-analytics/storage');
-      setStorage(response.data.data);
-    } catch  {
+      console.log('Storage Full Response:', response);
+      console.log('Storage response.data:', response.data);
+      console.log('Storage response.data.data:', response.data.data);
+      // Handle nested data structure: response.data.data.data
+      const data = response.data.data?.data || response.data.data;
+      console.log('Storage Final Data:', data);
+      setStorage(data);
+    } catch (error) {
+      console.error('Storage Error:', error);
       toast.error('فشل تحميل إحصائيات التخزين');
     } finally {
       setLoading(false);
@@ -174,7 +188,9 @@ export const MediaAnalyticsPage: React.FC = () => {
       const response = await apiClient.get('/admin/media-analytics/largest-files', {
         params: { limit: 10 },
       });
-      setLargestFiles(response.data.data || []);
+      // Handle nested data structure: response.data.data.data
+      const data = response.data.data?.data || response.data.data;
+      setLargestFiles(data || []);
     } catch  {
       toast.error('فشل تحميل أكبر الملفات');
     } finally {
@@ -188,7 +204,9 @@ export const MediaAnalyticsPage: React.FC = () => {
       const response = await apiClient.get('/admin/media-analytics/recent-uploads', {
         params: { limit: 10 },
       });
-      setRecentFiles(response.data.data || []);
+      // Handle nested data structure: response.data.data.data
+      const data = response.data.data?.data || response.data.data;
+      setRecentFiles(data || []);
     } catch  {
       toast.error('فشل تحميل الملفات الحديثة');
     } finally {
@@ -515,14 +533,14 @@ export const MediaAnalyticsPage: React.FC = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {getTypeIcon(file.mimeType)}
-                        {file.fileName}
+                        {file.filename}
                       </Box>
                     </TableCell>
                     <TableCell>
                       <Chip label={file.mimeType} size="small" color={getTypeColor(file.mimeType)} />
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                      {formatFileSize(file.fileSize)}
+                      {formatFileSize(file.size)}
                     </TableCell>
                     <TableCell>{new Date(file.createdAt).toLocaleDateString('ar-SA')}</TableCell>
                   </TableRow>
@@ -557,13 +575,13 @@ export const MediaAnalyticsPage: React.FC = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {getTypeIcon(file.mimeType)}
-                        {file.fileName}
+                        {file.filename}
                       </Box>
                     </TableCell>
                     <TableCell>
                       <Chip label={file.mimeType} size="small" color={getTypeColor(file.mimeType)} />
                     </TableCell>
-                    <TableCell align="right">{formatFileSize(file.fileSize)}</TableCell>
+                    <TableCell align="right">{formatFileSize(file.size)}</TableCell>
                     <TableCell>{new Date(file.createdAt).toLocaleDateString('ar-SA')}</TableCell>
                   </TableRow>
                 ))}

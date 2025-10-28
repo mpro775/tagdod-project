@@ -104,8 +104,8 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
   const getCurrencySymbol = (currency: string) => {
     switch (currency) {
       case 'USD': return '$';
-      case 'YER': return 'ر.ي';
-      case 'SAR': return 'ر.س';
+      case 'YER': return '$';
+      case 'SAR': return '$';
       default: return currency;
     }
   };

@@ -261,7 +261,7 @@ export const UserAnalyticsPage: React.FC = () => {
                   <AttachMoney sx={{ fontSize: 40, color: theme.palette.success.main, mr: 2 }} />
                   <Box>
                     <Typography variant="h4" fontWeight="bold">
-                      {overallAnalytics.customerLifetimeValue.toFixed(2)} ر.س
+                      {overallAnalytics.customerLifetimeValue.toFixed(2)} $
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       القيمة الدائمة للعميل
@@ -269,7 +269,7 @@ export const UserAnalyticsPage: React.FC = () => {
                   </Box>
                 </Box>
                 <Chip
-                  label={`معدل الطلب: ${overallAnalytics.averageOrderValue.toFixed(2)} ر.س`}
+                  label={`معدل الطلب: ${overallAnalytics.averageOrderValue.toFixed(2)} $`}
                   size="small"
                   color="info"
                 />
@@ -356,11 +356,11 @@ export const UserAnalyticsPage: React.FC = () => {
                       />
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                      {customer.totalSpent.toLocaleString('ar-SA')} ر.س
+                      {customer.totalSpent.toLocaleString('ar-SA')} $
                     </TableCell>
                     <TableCell align="center">{customer.orderCount}</TableCell>
                     <TableCell align="right">
-                      {customer.averageOrderValue.toFixed(2)} ر.س
+                      {customer.averageOrderValue.toFixed(2)} $
                     </TableCell>
                   </TableRow>
                 ))}
@@ -403,7 +403,7 @@ export const UserAnalyticsPage: React.FC = () => {
                           إجمالي الإنفاق
                         </Typography>
                         <Typography variant="h6" color="success.main">
-                          {customer.totalSpent.toLocaleString('ar-SA')} ر.س
+                          {customer.totalSpent.toLocaleString('ar-SA')} $
                         </Typography>
                       </Box>
                       <Box>
@@ -439,7 +439,7 @@ export const UserAnalyticsPage: React.FC = () => {
                     </Typography>
                     <Typography variant="body2">عملاء VIP</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      أكثر من 5,000 ر.س
+                      أكثر من 5,000 $
                     </Typography>
                   </CardContent>
                 </Card>
@@ -452,7 +452,7 @@ export const UserAnalyticsPage: React.FC = () => {
                     </Typography>
                     <Typography variant="body2">عملاء مميزون</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      2,000 - 5,000 ر.س
+                      2,000 - 5,000 $
                     </Typography>
                   </CardContent>
                 </Card>
@@ -465,7 +465,7 @@ export const UserAnalyticsPage: React.FC = () => {
                     </Typography>
                     <Typography variant="body2">عملاء عاديون</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      500 - 2,000 ر.س
+                      500 - 2,000 $
                     </Typography>
                   </CardContent>
                 </Card>
@@ -478,7 +478,7 @@ export const UserAnalyticsPage: React.FC = () => {
                     </Typography>
                     <Typography variant="body2">عملاء جدد</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      أقل من 500 ر.س
+                      أقل من 500 $
                     </Typography>
                   </CardContent>
                 </Card>
@@ -546,7 +546,7 @@ export const UserAnalyticsPage: React.FC = () => {
                         إجمالي الإنفاق:
                       </Typography>
                       <Typography variant="body1" fontWeight="bold" color="success.main">
-                        {alert.totalSpent.toLocaleString('ar-SA')} ر.س
+                        {alert.totalSpent.toLocaleString('ar-SA')} $
                       </Typography>
                     </Box>
                   </CardContent>

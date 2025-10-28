@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
   People as PeopleIcon,
   AttachMoney as AttachMoneyIcon,
   Assessment as AssessmentIcon,
@@ -72,9 +73,11 @@ export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'SAR',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -116,12 +119,21 @@ export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.totalCustomers || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +8.5% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.totalCustomersGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.totalCustomersGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.totalCustomersGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.totalCustomersGrowth >= 0 ? '+' : ''}{data.totalCustomersGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -143,12 +155,21 @@ export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.newCustomers || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +12.3% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.newCustomersGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.newCustomersGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.newCustomersGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.newCustomersGrowth >= 0 ? '+' : ''}{data.newCustomersGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -170,12 +191,21 @@ export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.activeCustomers || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +6.7% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.activeCustomersGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.activeCustomersGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.activeCustomersGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.activeCustomersGrowth >= 0 ? '+' : ''}{data.activeCustomersGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -197,12 +227,21 @@ export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(data?.customerLifetimeValue || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +15.2% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.customerLifetimeValueGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.customerLifetimeValueGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.customerLifetimeValueGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.customerLifetimeValueGrowth >= 0 ? '+' : ''}{data.customerLifetimeValueGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
         </Grid>

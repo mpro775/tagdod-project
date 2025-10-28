@@ -14,9 +14,7 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   AttachMoney as AttachMoneyIcon,
-  AccountBalance as AccountBalanceIcon,
   Assessment as AssessmentIcon,
-  TrendingFlat as TrendingFlatIcon,
 } from '@mui/icons-material';
 import {
   LineChart,
@@ -69,15 +67,14 @@ export const FinancialReportCard: React.FC<FinancialReportCardProps> = ({
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'SAR',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
-  };
 
   const COLORS = [
     theme.palette.primary.main,
@@ -99,158 +96,84 @@ export const FinancialReportCard: React.FC<FinancialReportCardProps> = ({
 
         {/* Key Metrics */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12 }}>
             <Box
               sx={{
-                p: 2,
+                p: 3,
                 borderRadius: 2,
                 background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}05)`,
                 border: `1px solid ${theme.palette.primary.main}20`,
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <AttachMoneyIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                <Typography variant="h6" color="primary">
-                  الإيرادات
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <AttachMoneyIcon sx={{ color: theme.palette.primary.main, mr: 1, fontSize: 40 }} />
+                <Box>
+                  <Typography variant="h6" color="primary">
+                    إجمالي الإيرادات
+                  </Typography>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+                    {formatCurrency(data?.revenue || 0)}
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                {formatCurrency(data?.revenue || 0)}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +12.5% من الشهر الماضي
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.error.main}15, ${theme.palette.error.main}05)`,
-                border: `1px solid ${theme.palette.error.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <TrendingDownIcon sx={{ color: theme.palette.error.main, mr: 1 }} />
-                <Typography variant="h6" color="error.main">
-                  المصروفات
-                </Typography>
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                {formatCurrency(data?.expenses || 0)}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="error.main">
-                  +8.3% من الشهر الماضي
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}05)`,
-                border: `1px solid ${theme.palette.success.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <AccountBalanceIcon sx={{ color: theme.palette.success.main, mr: 1 }} />
-                <Typography variant="h6" color="success.main">
-                  الأرباح
-                </Typography>
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                {formatCurrency(data?.profit || 0)}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +18.7% من الشهر الماضي
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.warning.main}15, ${theme.palette.warning.main}05)`,
-                border: `1px solid ${theme.palette.warning.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <TrendingFlatIcon sx={{ color: theme.palette.warning.main, mr: 1 }} />
-                <Typography variant="h6" color="warning.main">
-                  هامش الربح
-                </Typography>
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                {formatPercentage(data?.profitMargin || 0)}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +2.1% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.revenueGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {data.revenueGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 20, mr: 1 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 20, mr: 1 }} />
+                  )}
+                  <Typography 
+                    variant="h6" 
+                    color={data.revenueGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.revenueGrowth >= 0 ? '+' : ''}{data.revenueGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
         </Grid>
 
         {/* Charts */}
         <Grid container spacing={3}>
-          {/* Cash Flow */}
+          {/* Cash Flow - Revenue Over Time */}
           <Grid size={{ xs: 12, lg: 8 }}>
             <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
               <Typography variant="h6" gutterBottom>
-                التدفق النقدي
+                الإيرادات اليومية
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={data?.cashFlow || []}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
+                  <XAxis 
+                    dataKey="date"
+                    tickFormatter={(value) => new Date(value).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' })}
+                  />
                   <YAxis tickFormatter={(value) => formatCurrency(value)} />
                   <Tooltip
                     formatter={(value: number, name: string) => [
                       formatCurrency(value),
-                      name === 'inflow'
-                        ? 'التدفق الداخل'
-                        : name === 'outflow'
-                        ? 'التدفق الخارج'
-                        : 'الرصيد',
+                      name === 'revenue' ? 'الإيرادات اليومية' : 'الرصيد التراكمي',
                     ]}
+                    labelFormatter={(value) => new Date(value).toLocaleDateString('ar-SA')}
                   />
                   <Line
                     type="monotone"
-                    dataKey="inflow"
-                    stroke={theme.palette.success.main}
+                    dataKey="revenue"
+                    name="revenue"
+                    stroke={theme.palette.primary.main}
                     strokeWidth={3}
-                    dot={{ fill: theme.palette.success.main, strokeWidth: 2, r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="outflow"
-                    stroke={theme.palette.error.main}
-                    strokeWidth={3}
-                    dot={{ fill: theme.palette.error.main, strokeWidth: 2, r: 4 }}
+                    dot={{ fill: theme.palette.primary.main, strokeWidth: 2, r: 4 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="balance"
-                    stroke={theme.palette.primary.main}
-                    strokeWidth={3}
-                    dot={{ fill: theme.palette.primary.main, strokeWidth: 2, r: 4 }}
+                    name="balance"
+                    stroke={theme.palette.success.main}
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ fill: theme.palette.success.main, strokeWidth: 2, r: 3 }}
                   />
                 </LineChart>
               </ResponsiveContainer>

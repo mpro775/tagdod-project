@@ -151,7 +151,7 @@ export const CouponFormPage: React.FC = () => {
         {
           onSuccess: () => {
             toast.success('تم تحديث الكوبون بنجاح');
-            navigate('/admin/coupons');
+            navigate('/coupons');
           },
           onError: (error: any) => {
             toast.error(error.response?.data?.message || 'فشل في تحديث الكوبون');
@@ -162,7 +162,7 @@ export const CouponFormPage: React.FC = () => {
       createCoupon(data as CreateCouponDto, {
         onSuccess: () => {
           toast.success('تم إنشاء الكوبون بنجاح');
-          navigate('/admin/coupons');
+          navigate('/coupons');
         },
         onError: (error: any) => {
           toast.error(error.response?.data?.message || 'فشل في إنشاء الكوبون');
@@ -185,7 +185,7 @@ export const CouponFormPage: React.FC = () => {
         <Box display="flex" alignItems="center" gap={2}>
           <Button
             startIcon={<ArrowBack />}
-            onClick={() => navigate('/admin/coupons')}
+            onClick={() => navigate('/coupons')}
             variant="outlined"
           >
             العودة
@@ -591,7 +591,7 @@ export const CouponFormPage: React.FC = () => {
               <Box display="flex" gap={2} justifyContent="flex-end">
                 <Button
                   variant="outlined"
-                  onClick={() => navigate('/admin/coupons')}
+                  onClick={() => navigate('/coupons')}
                   disabled={creating || updating}
                 >
                   إلغاء

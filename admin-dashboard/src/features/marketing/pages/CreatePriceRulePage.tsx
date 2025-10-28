@@ -60,7 +60,7 @@ const CreatePriceRulePage: React.FC = () => {
     e.preventDefault();
     try {
       await createPriceRule.mutateAsync(formData);
-      navigate('/admin/marketing/price-rules');
+      navigate('/marketing/price-rules');
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error creating price rule:', error);
@@ -354,7 +354,7 @@ const CreatePriceRulePage: React.FC = () => {
               <Button
                 variant="outlined"
                 startIcon={<Cancel />}
-                onClick={() => navigate('/admin/marketing/price-rules')}
+                onClick={() => navigate('/marketing/price-rules')}
               >
                 إلغاء
               </Button>

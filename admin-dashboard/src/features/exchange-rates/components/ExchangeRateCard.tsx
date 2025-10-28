@@ -44,7 +44,7 @@ export const ExchangeRateCard: React.FC<ExchangeRateCardProps> = ({
   };
 
   const getCurrencySymbol = (curr: string) => {
-    return curr === 'YER' ? 'ر.ي' : 'ر.س';
+    return curr === 'YER' ? '$' : '$';
   };
 
   if (loading) {

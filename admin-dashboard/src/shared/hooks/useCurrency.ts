@@ -12,13 +12,13 @@ export const CURRENCY_INFO: Record<Currency, CurrencyInfo> = {
   },
   [Currency.YER]: {
     code: Currency.YER,
-    symbol: 'ر.ي',
+    symbol: '$',
     name: 'ريال يمني',
     decimalPlaces: 0,
   },
   [Currency.SAR]: {
     code: Currency.SAR,
-    symbol: 'ر.س',
+    symbol: '$',
     name: 'ريال سعودي',
     decimalPlaces: 2,
   },

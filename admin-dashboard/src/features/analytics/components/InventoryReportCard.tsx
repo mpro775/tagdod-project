@@ -73,11 +73,14 @@ export const InventoryReportCard: React.FC<InventoryReportCardProps> = ({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'SAR',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
+
 
   const COLORS = [
     theme.palette.primary.main,
@@ -117,12 +120,21 @@ export const InventoryReportCard: React.FC<InventoryReportCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.totalProducts || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +3.2% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.totalProductsGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.totalProductsGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.totalProductsGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.totalProductsGrowth >= 0 ? '+' : ''}{data.totalProductsGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -144,12 +156,21 @@ export const InventoryReportCard: React.FC<InventoryReportCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.inStock || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +5.7% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.inStockGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.inStockGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.inStockGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.inStockGrowth >= 0 ? '+' : ''}{data.inStockGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -171,14 +192,21 @@ export const InventoryReportCard: React.FC<InventoryReportCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatNumber(data?.outOfStock || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingDownIcon
-                  sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }}
-                />
-                <Typography variant="body2" color="success.main">
-                  -2.1% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.outOfStockGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.outOfStockGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.outOfStockGrowth >= 0 ? 'error.main' : 'success.main'}
+                  >
+                    {data.outOfStockGrowth >= 0 ? '+' : ''}{data.outOfStockGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -200,12 +228,21 @@ export const InventoryReportCard: React.FC<InventoryReportCardProps> = ({
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(data?.totalValue || 0)}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +8.9% من الشهر الماضي
-                </Typography>
-              </Box>
+              {data?.totalValueGrowth !== undefined && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  {data.totalValueGrowth >= 0 ? (
+                    <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+                  )}
+                  <Typography 
+                    variant="body2" 
+                    color={data.totalValueGrowth >= 0 ? 'success.main' : 'error.main'}
+                  >
+                    {data.totalValueGrowth >= 0 ? '+' : ''}{data.totalValueGrowth.toFixed(1)}% من الفترة السابقة
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
         </Grid>

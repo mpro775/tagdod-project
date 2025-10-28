@@ -97,7 +97,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
   const performanceData = [
     {
       time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-      responseTime: data?.apiResponseTime || 0,
+      responseTime: data?.averageApiResponseTime || 0,
       memoryUsage: data?.memoryUsage || 0,
       cpuUsage: data?.cpuUsage || 0,
       errorRate: data?.errorRate || 0,

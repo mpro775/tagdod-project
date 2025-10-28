@@ -157,7 +157,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                   المستخدمون النشطون: {realtimeMetrics.activeUsers || 0}
                 </Typography>
                 <Typography variant="body2">
-                  المبيعات اليوم: {(realtimeMetrics.todaySales || 0).toLocaleString()} ر.س
+                  المبيعات اليوم: {(realtimeMetrics.todaySales || 0).toLocaleString()} $
                 </Typography>
                 <Typography variant="body2">
                   حالة النظام: {realtimeMetrics.systemHealth?.status === 'healthy' ? 'سليم' : 'تحت الصيانة'}
@@ -249,7 +249,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               <Grid size={{xs: 12, md: 3}}>
                 <StatsCard
                   title="إجمالي الإيرادات"
-                  value={`${salesAnalytics?.totalRevenue?.toLocaleString() || 0} ر.س`}
+                  value={`${salesAnalytics?.totalRevenue?.toLocaleString() || 0} $`}
                   change={15.5}
                   icon={<AttachMoney sx={{ fontSize: 32, color: 'primary.main' }} />}
                   color="primary"
@@ -267,7 +267,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               <Grid size={{xs: 12, md: 3}}>
                 <StatsCard
                   title="متوسط قيمة الطلب"
-                  value={`${salesAnalytics?.averageOrderValue?.toLocaleString() || 0} ر.س`}
+                  value={`${salesAnalytics?.averageOrderValue?.toLocaleString() || 0} $`}
                   change={12.1}
                   icon={<TrendingUp sx={{ fontSize: 32, color: 'warning.main' }} />}
                   color="warning"
@@ -358,7 +358,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               <Grid size={{xs: 12, md: 3}}>
                 <StatsCard
                   title="إجمالي الإيرادات"
-                  value={`${salesAnalytics?.totalRevenue?.toLocaleString() || 0} ر.س`}
+                  value={`${salesAnalytics?.totalRevenue?.toLocaleString() || 0} $`}
                   change={15.5}
                   icon={<AttachMoney sx={{ fontSize: 32, color: 'primary.main' }} />}
                   color="primary"
@@ -376,7 +376,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               <Grid size={{xs: 12, md: 3}}>
                 <StatsCard
                   title="متوسط قيمة الطلب"
-                  value={`${salesAnalytics?.averageOrderValue?.toLocaleString() || 0} ر.س`}
+                  value={`${salesAnalytics?.averageOrderValue?.toLocaleString() || 0} $`}
                   change={12.1}
                   icon={<TrendingUp sx={{ fontSize: 32, color: 'warning.main' }} />}
                   color="warning"
@@ -430,7 +430,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                           {method.method}
                         </Typography>
                         <Typography variant="body2" color="primary">
-                          {method.amount.toLocaleString()} ر.س ({method.count} طلب)
+                          {method.amount.toLocaleString()} $ ({method.count} طلب)
                         </Typography>
                       </Box>
                     ))}
@@ -451,7 +451,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                           {index + 1}. {product.product}
                         </Typography>
                         <Typography variant="body2" color="primary">
-                          {product.sales} مبيعة ({product.revenue.toLocaleString()} ر.س)
+                          {product.sales} مبيعة ({product.revenue.toLocaleString()} $)
                         </Typography>
                       </Box>
                     ))}
@@ -536,7 +536,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                             {product.sales} مبيعة
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {product.revenue.toLocaleString()} ر.س
+                            {product.revenue.toLocaleString()} $
                           </Typography>
                         </Box>
                       </Box>
@@ -660,7 +660,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               <Grid size={{xs: 12, md: 3}}>
                 <StatsCard
                   title="القيمة مدى الحياة"
-                  value={`${customerAnalytics?.customerLifetimeValue?.toLocaleString() || 0} ر.س`}
+                  value={`${customerAnalytics?.customerLifetimeValue?.toLocaleString() || 0} $`}
                   change={9.4}
                   icon={<AttachMoney sx={{ fontSize: 32, color: 'info.main' }} />}
                   color="info"
@@ -709,7 +709,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                           </Box>
                         </Box>
                         <Typography variant="body2" color="primary" fontWeight="medium">
-                          {customer.totalSpent.toLocaleString()} ر.س
+                          {customer.totalSpent.toLocaleString()} $
                         </Typography>
                       </Box>
                     ))}
@@ -797,7 +797,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                           متوسط القيمة لكل عميل
                         </Typography>
                         <Typography variant="body2" color="warning.dark" fontWeight="bold">
-                          2,450 ر.س
+                          2,450 $
                         </Typography>
                       </Box>
                     </Box>
@@ -814,46 +814,22 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               <Grid size={{xs: 12, md: 3}}>
                 <StatsCard
                   title="إجمالي الإيرادات"
-                  value={`${financialReport?.revenue?.toLocaleString() || 0} ر.س`}
+                  value={`${financialReport?.revenue?.toLocaleString() || 0} $`}
                   change={12.5}
                   icon={<AttachMoney sx={{ fontSize: 32, color: 'success.main' }} />}
                   color="success"
                 />
               </Grid>
-              <Grid size={{xs: 12, md: 3}}>
-                <StatsCard
-                  title="إجمالي المصروفات"
-                  value={`${financialReport?.expenses?.toLocaleString() || 0} ر.س`}
-                  change={-5.2}
-                  icon={<TrendingUp sx={{ fontSize: 32, color: 'error.main' }} />}
-                  color="error"
-                />
-              </Grid>
-              <Grid size={{xs: 12, md: 3}}>
-                <StatsCard
-                  title="صافي الربح"
-                  value={`${financialReport?.profit?.toLocaleString() || 0} ر.س`}
-                  change={18.7}
-                  icon={<Assessment sx={{ fontSize: 32, color: 'primary.main' }} />}
-                  color="primary"
-                />
-              </Grid>
-              <Grid size={{xs: 12, md: 3}}>
-                <StatsCard
-                  title="هامش الربح"
-                  value={`${financialReport?.profitMargin?.toFixed(1) || 0}%`}
-                  change={3.2}
-                  icon={<Inventory sx={{ fontSize: 32, color: 'warning.main' }} />}
-                  color="warning"
-                />
-              </Grid>
+            
+             
+             
 
               {/* Cash Flow Chart */}
               <Grid size={{xs: 12, lg: 8}}>
                 <RevenueChart
                   data={financialReport?.cashFlow?.map(item => ({
                     date: item.date,
-                    revenue: item.inflow - item.outflow,
+                    revenue: item.revenue - item.balance,
                   })) || []}
                   title="تدفق السيولة النقدية"
                   type="area"
@@ -873,47 +849,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                 />
               </Grid>
 
-              {/* Detailed Cash Flow */}
-              <Grid size={{xs: 12, md: 6}}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      تفاصيل التدفق النقدي
-                    </Typography>
-                    {financialReport?.cashFlow?.slice(-7).map((flow, index) => (
-                      <Box key={index} sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        py: 1.5,
-                        borderBottom: index < 6 ? '1px solid' : 'none',
-                        borderColor: 'divider'
-                      }}>
-                        <Box>
-                          <Typography variant="body2" fontWeight="medium">
-                            {new Date(flow.date).toLocaleDateString('ar-SA')}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            تدفق داخلي: {flow.inflow.toLocaleString()} ر.س
-                          </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'right' }}>
-                          <Typography 
-                            variant="body2" 
-                            color={flow.balance >= 0 ? 'success.main' : 'error.main'}
-                            fontWeight="medium"
-                          >
-                            {flow.balance.toLocaleString()} ر.س
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            تدفق خارجي: {flow.outflow.toLocaleString()} ر.س
-                          </Typography>
-                        </Box>
-                      </Box>
-                    ))}
-                  </CardContent>
-                </Card>
-              </Grid>
+         
 
               {/* Revenue Sources */}
               <Grid size={{xs: 12, md: 6}}>
@@ -936,7 +872,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                         </Typography>
                         <Box sx={{ textAlign: 'right' }}>
                           <Typography variant="body2" color="primary" fontWeight="medium">
-                            {source.amount.toLocaleString()} ر.س
+                            {source.amount.toLocaleString()} $
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {source.percentage}%
@@ -948,80 +884,6 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                 </Card>
               </Grid>
 
-              {/* Financial Health Indicators */}
-              <Grid size={{xs: 12}}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      مؤشرات الصحة المالية
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid size={{xs: 12, sm: 6, md: 3}}>
-                        <Box sx={{ 
-                          p: 2,
-                          bgcolor: 'success.light',
-                          borderRadius: 1,
-                          textAlign: 'center'
-                        }}>
-                          <Typography variant="h6" color="success.dark" fontWeight="bold">
-                            {((financialReport?.profit || 0) / (financialReport?.revenue || 1) * 100).toFixed(1)}%
-                          </Typography>
-                          <Typography variant="body2" color="success.dark">
-                            هامش الربح
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid size={{xs: 12, sm: 6, md: 3}}>
-                        <Box sx={{ 
-                          p: 2,
-                          bgcolor: 'primary.light',
-                          borderRadius: 1,
-                          textAlign: 'center'
-                        }}>
-                          <Typography variant="h6" color="primary.dark" fontWeight="bold">
-                            {((financialReport?.revenue || 0) / (financialReport?.expenses || 1)).toFixed(1)}x
-                          </Typography>
-                          <Typography variant="body2" color="primary.dark">
-                            نسبة الإيرادات للمصروفات
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid size={{xs: 12, sm: 6, md: 3}}>
-                        <Box sx={{ 
-                          p: 2,
-                          bgcolor: 'warning.light',
-                          borderRadius: 1,
-                          textAlign: 'center'
-                        }}>
-                          <Typography variant="h6" color="warning.dark" fontWeight="bold">
-                            {financialReport?.cashFlow?.length ? 
-                              (financialReport.cashFlow[financialReport.cashFlow.length - 1]?.balance || 0).toLocaleString() : 
-                              0} ر.س
-                          </Typography>
-                          <Typography variant="body2" color="warning.dark">
-                            الرصيد النقدي الحالي
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid size={{xs: 12, sm: 6, md: 3}}>
-                        <Box sx={{ 
-                          p: 2,
-                          bgcolor: 'info.light',
-                          borderRadius: 1,
-                          textAlign: 'center'
-                        }}>
-                          <Typography variant="h6" color="info.dark" fontWeight="bold">
-                            +12.5%
-                          </Typography>
-                          <Typography variant="body2" color="info.dark">
-                            نمو الإيرادات
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
             </Grid>
           </TabPanel>
 
@@ -1092,7 +954,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                         </Box>
                         <Box sx={{ textAlign: 'right' }}>
                           <Typography variant="body2" color="primary" fontWeight="medium">
-                            {campaign.revenue.toLocaleString()} ر.س
+                            {campaign.revenue.toLocaleString()} $
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             معدل التحويل: {((campaign.conversions / campaign.reach) * 100).toFixed(1)}%
@@ -1137,7 +999,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                           إجمالي الخصومات
                         </Typography>
                         <Typography variant="body2" color="success.dark" fontWeight="bold">
-                          {marketingReport?.totalDiscountGiven?.toLocaleString() || 0} ر.س
+                          {marketingReport?.totalDiscountGiven?.toLocaleString() || 0} $
                         </Typography>
                       </Box>
                       <Box sx={{ 
@@ -1184,7 +1046,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                           </Typography>
                         </Box>
                         <Typography variant="body2" color="primary" fontWeight="medium">
-                          {coupon.revenue.toLocaleString()} ر.س
+                          {coupon.revenue.toLocaleString()} $
                         </Typography>
                       </Box>
                     ))}
@@ -1225,7 +1087,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                           💰 إجمالي العائد من التسويق
                         </Typography>
                         <Typography variant="caption" color="primary.dark">
-                          {marketingReport?.campaignPerformance?.reduce((sum, campaign) => sum + campaign.revenue, 0)?.toLocaleString() || 0} ر.س
+                          {marketingReport?.campaignPerformance?.reduce((sum, campaign) => sum + campaign.revenue, 0)?.toLocaleString() || 0} $
                         </Typography>
                       </Box>
                       <Box sx={{ 
@@ -1297,7 +1159,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               <Grid size={{xs: 12, md: 3}}>
                 <StatsCard
                   title="قيمة المخزون"
-                  value={`${inventoryReport?.totalValue?.toLocaleString() || 0} ر.س`}
+                  value={`${inventoryReport?.totalValue?.toLocaleString() || 0} $`}
                   change={8.9}
                   icon={<AttachMoney sx={{ fontSize: 32, color: 'warning.main' }} />}
                   color="warning"
@@ -1385,7 +1247,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                           💰 إجمالي القيمة
                         </Typography>
                         <Typography variant="body2" color="primary.dark" fontWeight="bold">
-                          {inventoryReport?.totalValue?.toLocaleString() || 0} ر.س
+                          {inventoryReport?.totalValue?.toLocaleString() || 0} $
                         </Typography>
                       </Box>
                     </Box>
@@ -1463,7 +1325,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                             {category.count} منتج
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {category.value.toLocaleString()} ر.س
+                            {category.value.toLocaleString()} $
                           </Typography>
                         </Box>
                       </Box>

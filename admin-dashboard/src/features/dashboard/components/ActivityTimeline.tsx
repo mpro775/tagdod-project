@@ -49,7 +49,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       title: order.status === 'completed' ? 'طلب مكتمل' : 
              order.status === 'pending' ? 'طلب جديد' :
              order.status === 'cancelled' ? 'طلب ملغي' : 'طلب قيد المعالجة',
-      description: `طلب #${order.orderNumber} بقيمة ${order.total?.toLocaleString('ar-SA')} ر.س`,
+      description: `طلب #${order.orderNumber} بقيمة ${order.total?.toLocaleString('ar-SA')} $`,
       time: timeAgo,
       status: order.status === 'completed' ? 'success' :
               order.status === 'cancelled' ? 'error' : 'warning',

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -10,6 +10,12 @@ import {
   Alert,
   Skeleton,
   useTheme,
+  IconButton,
+  Tooltip as MuiTooltip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
@@ -18,6 +24,7 @@ import {
   Star as StarIcon,
   Inventory as InventoryIcon,
   Assessment as AssessmentIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import {
   XAxis,
@@ -31,23 +38,39 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { ProductPerformance } from '../types/analytics.types';
+import { PeriodType } from '../types/analytics.types';
+import { useProductPerformance } from '../hooks/useAnalytics';
 
 interface ProductPerformanceCardProps {
-  data?: ProductPerformance;
-  isLoading?: boolean;
-  error?: any;
+  initialPeriod?: PeriodType;
 }
 
 export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
-  data,
-  isLoading = false,
-  error,
+  initialPeriod = PeriodType.MONTHLY,
 }) => {
   const theme = useTheme();
+  const [period, setPeriod] = useState<PeriodType>(initialPeriod);
+
+  const { data, isLoading, error, refetch } = useProductPerformance({ period });
+
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  const handlePeriodChange = (newPeriod: PeriodType) => {
+    setPeriod(newPeriod);
+  };
 
   if (error) {
-    return <Alert severity="error">حدث خطأ في تحميل بيانات أداء المنتجات</Alert>;
+    return (
+      <Alert severity="error" action={
+        <IconButton size="small" onClick={handleRefresh}>
+          <RefreshIcon />
+        </IconButton>
+      }>
+        حدث خطأ في تحميل بيانات أداء المنتجات. الرجاء المحاولة مرة أخرى.
+      </Alert>
+    );
   }
 
   if (isLoading) {
@@ -74,11 +97,14 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'SAR',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
+
 
   const COLORS = [
     theme.palette.primary.main,
@@ -88,14 +114,57 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
     theme.palette.error.main,
   ];
 
+  const getTrendIcon = (growth?: number) => {
+    if (!growth && growth !== 0) return null;
+    return growth >= 0 ? (
+      <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
+    ) : (
+      <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
+    );
+  };
+
+  const getTrendColor = (growth?: number) => {
+    if (!growth && growth !== 0) return 'text.secondary';
+    return growth >= 0 ? 'success.main' : 'error.main';
+  };
+
+  const formatGrowth = (growth?: number) => {
+    if (!growth && growth !== 0) return '0%';
+    const sign = growth >= 0 ? '+' : '';
+    return `${sign}${growth.toFixed(1)}% من الفترة السابقة`;
+  };
+
   return (
     <Card>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" component="h2">
-            أداء المنتجات
-          </Typography>
-          <Chip icon={<AssessmentIcon />} label="تحليل شامل" color="primary" variant="outlined" />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h5" component="h2">
+              أداء المنتجات
+            </Typography>
+            <Chip icon={<AssessmentIcon />} label="تحليل شامل" color="primary" variant="outlined" />
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>الفترة الزمنية</InputLabel>
+              <Select
+                value={period}
+                label="الفترة الزمنية"
+                onChange={(e) => handlePeriodChange(e.target.value as PeriodType)}
+              >
+                <MenuItem value={PeriodType.DAILY}>يومي</MenuItem>
+                <MenuItem value={PeriodType.WEEKLY}>أسبوعي</MenuItem>
+                <MenuItem value={PeriodType.MONTHLY}>شهري</MenuItem>
+                <MenuItem value={PeriodType.QUARTERLY}>ربع سنوي</MenuItem>
+                <MenuItem value={PeriodType.YEARLY}>سنوي</MenuItem>
+              </Select>
+            </FormControl>
+            <MuiTooltip title="تحديث البيانات">
+              <IconButton onClick={handleRefresh} size="small">
+                <RefreshIcon />
+              </IconButton>
+            </MuiTooltip>
+          </Box>
         </Box>
 
         {/* Key Metrics */}
@@ -119,9 +188,9 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                 {formatNumber(data?.totalProducts || 0)}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +5.2% من الشهر الماضي
+                {getTrendIcon(data?.totalProductsGrowth)}
+                <Typography variant="body2" color={getTrendColor(data?.totalProductsGrowth)}>
+                  {formatGrowth(data?.totalProductsGrowth)}
                 </Typography>
               </Box>
             </Box>
@@ -146,9 +215,9 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                 {formatNumber(data?.totalSales || 0)}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +12.8% من الشهر الماضي
+                {getTrendIcon(data?.totalSalesGrowth)}
+                <Typography variant="body2" color={getTrendColor(data?.totalSalesGrowth)}>
+                  {formatGrowth(data?.totalSalesGrowth)}
                 </Typography>
               </Box>
             </Box>
@@ -170,12 +239,12 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                 </Typography>
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                4.6
+                {data?.averageRating?.toFixed(1) || '0.0'}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.success.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="success.main">
-                  +0.2 من الشهر الماضي
+                {getTrendIcon(data?.averageRatingGrowth)}
+                <Typography variant="body2" color={getTrendColor(data?.averageRatingGrowth)}>
+                  {formatGrowth(data?.averageRatingGrowth)}
                 </Typography>
               </Box>
             </Box>
@@ -200,9 +269,9 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                 {data?.lowStockProducts?.length || 0}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <TrendingDownIcon sx={{ color: theme.palette.error.main, fontSize: 16, mr: 0.5 }} />
-                <Typography variant="body2" color="error.main">
-                  -2 من الشهر الماضي
+                {getTrendIcon(data?.lowStockGrowth)}
+                <Typography variant="body2" color={getTrendColor(data?.lowStockGrowth)}>
+                  {formatGrowth(data?.lowStockGrowth)}
                 </Typography>
               </Box>
             </Box>

@@ -77,11 +77,11 @@ export function useCurrencyProvider() {
     switch (selectedCurrency) {
       case 'YER':
         amount = amountUSD * exchangeRates.usdToYer;
-        formatted = `${Math.round(amount).toLocaleString()} ر.ي`;
+        formatted = `${Math.round(amount).toLocaleString()} $`;
         break;
       case 'SAR':
         amount = amountUSD * exchangeRates.usdToSar;
-        formatted = `${amount.toFixed(2)} ر.س`;
+        formatted = `${amount.toFixed(2)} $`;
         break;
       default:
         amount = amountUSD;
@@ -96,9 +96,9 @@ export function useCurrencyProvider() {
     
     switch (targetCurrency) {
       case 'YER':
-        return `${Math.round(amount).toLocaleString()} ر.ي`;
+        return `${Math.round(amount).toLocaleString()} $`;
       case 'SAR':
-        return `${amount.toFixed(2)} ر.س`;
+        return `${amount.toFixed(2)} $`;
       default:
         return `$${amount}`;
     }

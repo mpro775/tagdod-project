@@ -134,6 +134,7 @@ export enum AdminPermission {
   NOTIFICATIONS_UPDATE = 'notifications.update',
   NOTIFICATIONS_DELETE = 'notifications.delete',
   NOTIFICATIONS_SEND = 'notifications.send',
+  NOTIFICATIONS_MANAGE = 'notifications.manage',
 }
 
 // مجموعات الصلاحيات للأدوار الشائعة

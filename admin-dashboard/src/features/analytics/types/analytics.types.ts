@@ -119,6 +119,9 @@ export interface SalesAnalytics {
   totalRevenue: number;
   totalOrders: number;
   averageOrderValue: number;
+  salesGrowth?: number; // نسبة النمو مقارنة بالفترة السابقة
+  revenueGrowth?: number; // نمو الإيرادات
+  ordersGrowth?: number; // نمو الطلبات
   salesByDate: Array<{
     date: string;
     revenue: number;
@@ -145,6 +148,11 @@ export interface SalesAnalytics {
 export interface ProductPerformance {
   totalProducts: number;
   totalSales: number;
+  averageRating: number;
+  totalProductsGrowth?: number;
+  totalSalesGrowth?: number;
+  averageRatingGrowth?: number;
+  lowStockGrowth?: number;
   topProducts: Array<{
     id: string;
     name: string;
@@ -156,11 +164,13 @@ export interface ProductPerformance {
     id: string;
     name: string;
     stock: number;
+    minStock?: number;
   }>;
   byCategory: Array<{
     category: string;
     count: number;
     sales: number;
+    revenue?: number;
   }>;
 }
 
@@ -170,6 +180,10 @@ export interface CustomerAnalytics {
   newCustomers: number;
   activeCustomers: number;
   customerLifetimeValue: number;
+  totalCustomersGrowth?: number; // نمو إجمالي العملاء
+  newCustomersGrowth?: number; // نمو العملاء الجدد
+  activeCustomersGrowth?: number; // نمو العملاء النشطين
+  customerLifetimeValueGrowth?: number; // نمو قيمة العميل
   topCustomers: Array<{
     id: string;
     name: string;
@@ -190,6 +204,10 @@ export interface InventoryReport {
   outOfStock: number;
   lowStock: number;
   totalValue: number;
+  totalProductsGrowth?: number; // نمو إجمالي المنتجات
+  inStockGrowth?: number; // نمو المنتجات المتوفرة
+  outOfStockGrowth?: number; // نمو/انخفاض المنتجات غير المتوفرة
+  totalValueGrowth?: number; // نمو قيمة المخزون
   byCategory: Array<{
     category: string;
     count: number;
@@ -205,13 +223,10 @@ export interface InventoryReport {
 // Financial Report
 export interface FinancialReport {
   revenue: number;
-  expenses: number;
-  profit: number;
-  profitMargin: number;
+  revenueGrowth?: number; // نمو الإيرادات
   cashFlow: Array<{
     date: string;
-    inflow: number;
-    outflow: number;
+    revenue: number;
     balance: number;
   }>;
   revenueBySource: Array<{
@@ -240,13 +255,20 @@ export interface MarketingReport {
   totalCampaigns: number;
   activeCampaigns: number;
   totalCoupons: number;
+  activeCoupons: number;
   totalDiscountGiven: number;
   roi: number;
   conversionRate: number;
+  // Growth metrics (نسب النمو مقارنة بالفترة السابقة)
+  totalCouponsGrowth?: number;
+  totalDiscountGrowth?: number;
+  roiGrowth?: number;
+  conversionRateGrowth?: number;
   topCoupons: Array<{
     code: string;
     uses: number;
     revenue: number;
+    discount?: number;
   }>;
   campaignPerformance: Array<{
     campaign: string;

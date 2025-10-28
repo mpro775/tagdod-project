@@ -61,8 +61,8 @@ export const ExchangeRatesList: React.FC<ExchangeRatesListProps> = ({
 
   const getCurrencySymbol = (currency: string) => {
     switch (currency) {
-      case 'YER': return 'ر.ي';
-      case 'SAR': return 'ر.س';
+      case 'YER': return '$';
+      case 'SAR': return '$';
       case 'USD': return '$';
       default: return currency;
     }
@@ -257,7 +257,7 @@ export const ExchangeRatesList: React.FC<ExchangeRatesListProps> = ({
           <Card variant="outlined" sx={{ flex: 1, minWidth: 200 }}>
             <CardContent sx={{ textAlign: 'center', py: 2 }}>
               <Typography variant="h6" color="primary" fontWeight={600}>
-                {formatRate(rates.usdToYer)} ر.ي
+                {formatRate(rates.usdToYer)} $
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 1 دولار = {formatRate(rates.usdToYer)} ريال يمني
@@ -267,7 +267,7 @@ export const ExchangeRatesList: React.FC<ExchangeRatesListProps> = ({
           <Card variant="outlined" sx={{ flex: 1, minWidth: 200 }}>
             <CardContent sx={{ textAlign: 'center', py: 2 }}>
               <Typography variant="h6" color="secondary" fontWeight={600}>
-                {formatRate(rates.usdToSar)} ر.س
+                {formatRate(rates.usdToSar)} $
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 1 دولار = {formatRate(rates.usdToSar)} ريال سعودي

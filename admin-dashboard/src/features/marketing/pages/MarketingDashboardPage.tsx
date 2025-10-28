@@ -18,7 +18,7 @@ const MarketingDashboardPage: React.FC = () => {
       count: priceRules.length,
       active: priceRules.filter((rule) => rule.active).length,
       color: 'primary',
-      path: '/admin/marketing/price-rules',
+      path: '/marketing/price-rules',
     },
     {
       title: 'الكوبونات',
@@ -26,14 +26,14 @@ const MarketingDashboardPage: React.FC = () => {
       active:
         (coupons as any)?.data?.filter((coupon: any) => coupon.status === 'active').length || 0,
       color: 'success',
-      path: '/admin/marketing/coupons',
+      path: '/coupons',
     },
     {
       title: 'البانرات',
       count: (banners as any)?.data?.length || 0,
       active: activeBanners.length,
       color: 'info',
-      path: '/admin/marketing/banners',
+      path: '/banners',
     },
   ];
 
@@ -96,7 +96,7 @@ const MarketingDashboardPage: React.FC = () => {
           <Grid size={{ xs: 12 }}>
             <Button
               variant="contained"
-              onClick={() => navigate('/admin/marketing/price-rules/create')}
+              onClick={() => navigate('/marketing/price-rules/new')}
             >
               إنشاء قاعدة سعر جديدة
             </Button>
@@ -105,7 +105,7 @@ const MarketingDashboardPage: React.FC = () => {
             <Button
               variant="contained"
               color="success"
-              onClick={() => navigate('/admin/marketing/coupons/create')}
+              onClick={() => navigate('/coupons/new')}
             >
               إنشاء كوبون جديد
             </Button>
@@ -114,7 +114,7 @@ const MarketingDashboardPage: React.FC = () => {
             <Button
               variant="contained"
               color="info"
-              onClick={() => navigate('/admin/marketing/banners/create')}
+              onClick={() => navigate('/banners/new')}
             >
               إنشاء بانر جديد
             </Button>

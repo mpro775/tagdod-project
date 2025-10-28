@@ -54,7 +54,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
               نظرة عامة على الإيرادات
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              متوسط {avgRevenue.toLocaleString('ar-SA', { maximumFractionDigits: 0 })} ر.س يومياً
+              متوسط {avgRevenue.toLocaleString('ar-SA', { maximumFractionDigits: 0 })} $ يومياً
             </Typography>
           </Box>
           
@@ -97,7 +97,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
                   borderRadius: '8px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 }}
-                formatter={(value: number) => [`${value.toLocaleString('ar-SA')} ر.س`, 'الإيرادات']}
+                formatter={(value: number) => [`${value.toLocaleString('ar-SA')} $`, 'الإيرادات']}
               />
               <Legend />
               <Area

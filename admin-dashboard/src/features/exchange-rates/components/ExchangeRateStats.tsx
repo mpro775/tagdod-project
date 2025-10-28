@@ -102,14 +102,14 @@ export const ExchangeRateStats: React.FC<ExchangeRateStatsProps> = ({ rates, loa
                   sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                 >
                   <Typography variant="body2">USD → YER</Typography>
-                  <Chip label={`${formatRate(rates.usdToYer)} ر.ي`} color="primary" size="small" />
+                  <Chip label={`${formatRate(rates.usdToYer)} $`} color="primary" size="small" />
                 </Box>
                 <Box
                   sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                 >
                   <Typography variant="body2">USD → SAR</Typography>
                   <Chip
-                    label={`${formatRate(rates.usdToSar)} ر.س`}
+                    label={`${formatRate(rates.usdToSar)} $`}
                     color="secondary"
                     size="small"
                   />

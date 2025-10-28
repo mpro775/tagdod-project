@@ -5746,7 +5746,7 @@
                     },
                     "formatted": {
                       "type": "string",
-                      "example": "1 USD = 250.50 ر.ي",
+                      "example": "1 USD = 250.50 $",
                       "description": "السعر منسق للعرض"
                     }
                   }
@@ -5786,7 +5786,7 @@
                     },
                     "formatted": {
                       "type": "string",
-                      "example": "1 USD = 3.75 ر.س",
+                      "example": "1 USD = 3.75 $",
                       "description": "السعر منسق للعرض"
                     }
                   }
@@ -6032,7 +6032,7 @@
                     },
                     "formatted": {
                       "type": "string",
-                      "example": "1 USD = 250.50 ر.ي",
+                      "example": "1 USD = 250.50 $",
                       "description": "السعر منسق للعرض"
                     }
                   }
@@ -6077,7 +6077,7 @@
                     },
                     "formatted": {
                       "type": "string",
-                      "example": "1 USD = 3.75 ر.س",
+                      "example": "1 USD = 3.75 $",
                       "description": "السعر منسق للعرض"
                     }
                   }
@@ -27008,7 +27008,8 @@
                 "notifications.create",
                 "notifications.update",
                 "notifications.delete",
-                "notifications.send"
+                "notifications.send",
+                "notifications.manage"
               ]
             }
           },
@@ -27177,7 +27178,8 @@
                 "notifications.create",
                 "notifications.update",
                 "notifications.delete",
-                "notifications.send"
+                "notifications.send",
+                "notifications.manage"
               ]
             }
           },

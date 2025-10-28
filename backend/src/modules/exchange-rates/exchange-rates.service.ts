@@ -78,10 +78,10 @@ export class ExchangeRatesService {
 
       if (convertDto.fromCurrency === 'USD' && convertDto.toCurrency === 'YER') {
         rate = rates.usdToYer;
-        formatted = `${Math.round(convertDto.amount * rate).toLocaleString()} ر.ي`;
+        formatted = `${Math.round(convertDto.amount * rate).toLocaleString()} $`;
       } else if (convertDto.fromCurrency === 'USD' && convertDto.toCurrency === 'SAR') {
         rate = rates.usdToSar;
-        formatted = `${(convertDto.amount * rate).toFixed(2)} ر.س`;
+        formatted = `${(convertDto.amount * rate).toFixed(2)} $`;
       } else {
         throw new NotFoundException('تحويل العملة غير مدعوم');
       }

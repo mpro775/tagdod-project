@@ -97,14 +97,14 @@ result = amount * exchangeRate
 ```typescript
 // USD إلى YER
 yerResult = usdAmount * usdToYerRate
-formattedResult = Math.round(yerResult).toLocaleString() + " ر.ي"
+formattedResult = Math.round(yerResult).toLocaleString() + " $"
 ```
 
 ### التحويل للريال السعودي
 ```typescript
 // USD إلى SAR
 sarResult = usdAmount * usdToSarRate
-formattedResult = sarResult.toFixed(2) + " ر.س"
+formattedResult = sarResult.toFixed(2) + " $"
 ```
 
 ### التقريب التلقائي
@@ -216,7 +216,7 @@ POST /exchange-rates/convert
   "amount": 100,
   "rate": 250,
   "result": 25000,
-  "formatted": "25,000 ر.ي"
+  "formatted": "25,000 $"
 }
 ```
 
@@ -230,7 +230,7 @@ GET /exchange-rates/usd-to-yer
 {
   "rate": 250,
   "currency": "YER",
-  "formatted": "1 USD = 250 ر.ي"
+  "formatted": "1 USD = 250 $"
 }
 ```
 
@@ -244,7 +244,7 @@ GET /exchange-rates/usd-to-sar
 {
   "rate": 3.75,
   "currency": "SAR",
-  "formatted": "1 USD = 3.75 ر.س"
+  "formatted": "1 USD = 3.75 $"
 }
 ```
 

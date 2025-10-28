@@ -161,8 +161,8 @@ export const formatCartStatus = (status: string): string => {
 
 export const formatCurrency = (amount: number, currency: string = 'YER'): string => {
   const currencySymbols: Record<string, string> = {
-    YER: 'ر.ي',
-    SAR: 'ر.س',
+    YER: '$',
+    SAR: '$',
     USD: '$',
     EUR: '€',
   };

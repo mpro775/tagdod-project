@@ -100,7 +100,7 @@ POST /exchange-rates/convert
   "amount": 100,
   "rate": 250,
   "result": 25000,
-  "formatted": "25,000 ر.ي"
+  "formatted": "25,000 $"
 }
 ```
 
@@ -114,7 +114,7 @@ GET /exchange-rates/usd-to-yer
 {
   "rate": 250,
   "currency": "YER",
-  "formatted": "1 USD = 250 ر.ي"
+  "formatted": "1 USD = 250 $"
 }
 ```
 
@@ -128,7 +128,7 @@ GET /exchange-rates/usd-to-sar
 {
   "rate": 3.75,
   "currency": "SAR",
-  "formatted": "1 USD = 3.75 ر.س"
+  "formatted": "1 USD = 3.75 $"
 }
 ```
 

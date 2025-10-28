@@ -558,7 +558,7 @@ export class MediaService {
       this.mediaModel.countDocuments({ deletedAt: null }),
       this.mediaModel.aggregate([
         { $match: { deletedAt: null } },
-        { $group: { _id: null, totalSize: { $sum: '$fileSize' } } },
+        { $group: { _id: null, totalSize: { $sum: '$size' } } },
       ]),
       this.mediaModel.countDocuments({
         deletedAt: null,
@@ -596,7 +596,7 @@ export class MediaService {
               ],
             },
             count: { $sum: 1 },
-            size: { $sum: '$fileSize' },
+            size: { $sum: '$size' },
           },
         },
       ]),
@@ -654,8 +654,8 @@ export class MediaService {
         $group: {
           _id: '$mimeType',
           count: { $sum: 1 },
-          totalSize: { $sum: '$fileSize' },
-          avgSize: { $avg: '$fileSize' },
+          totalSize: { $sum: '$size' },
+          avgSize: { $avg: '$size' },
         },
       },
       { $sort: { count: -1 } },
@@ -728,7 +728,7 @@ export class MediaService {
         $group: {
           _id: groupFormat,
           count: { $sum: 1 },
-          totalSize: { $sum: '$fileSize' },
+          totalSize: { $sum: '$size' },
         },
       },
       { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.hour': 1 } },
@@ -748,9 +748,9 @@ export class MediaService {
   async getLargestFiles(limit: number = 20) {
     return this.mediaModel
       .find({ deletedAt: null })
-      .sort({ fileSize: -1 })
+      .sort({ size: -1 })
       .limit(limit)
-      .select('fileName fileSize filePath mimeType createdAt uploadedBy')
+      .select('filename size url mimeType createdAt uploadedBy')
       .lean();
   }
 
@@ -762,7 +762,7 @@ export class MediaService {
       .find({ deletedAt: null })
       .sort({ createdAt: -1 })
       .limit(limit)
-      .select('fileName fileSize filePath mimeType createdAt uploadedBy')
+      .select('filename size url mimeType createdAt uploadedBy')
       .lean();
   }
 
@@ -773,7 +773,7 @@ export class MediaService {
     const [totalSizeResult, filesByType] = await Promise.all([
       this.mediaModel.aggregate([
         { $match: { deletedAt: null } },
-        { $group: { _id: null, totalSize: { $sum: '$fileSize' } } },
+        { $group: { _id: null, totalSize: { $sum: '$size' } } },
       ]),
       this.mediaModel.aggregate([
         { $match: { deletedAt: null } },
@@ -798,7 +798,7 @@ export class MediaService {
                 },
               ],
             },
-            size: { $sum: '$fileSize' },
+            size: { $sum: '$size' },
           },
         },
       ]),
@@ -848,7 +848,7 @@ export class MediaService {
         $group: {
           _id: '$uploadedBy',
           uploadCount: { $sum: 1 },
-          totalSize: { $sum: '$fileSize' },
+          totalSize: { $sum: '$size' },
         },
       },
       { $sort: { uploadCount: -1 } },
@@ -874,7 +874,7 @@ export class MediaService {
       })
       .sort({ createdAt: 1 })
       .limit(limit)
-      .select('fileName fileSize filePath mimeType createdAt')
+      .select('filename size url mimeType createdAt')
       .lean();
   }
 

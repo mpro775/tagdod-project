@@ -14,8 +14,7 @@ import {
   Badge,
 } from '@mui/material';
 import {
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
+
   People as PeopleIcon,
   ShoppingCart as ShoppingCartIcon,
   AttachMoney as AttachMoneyIcon,
@@ -80,11 +79,14 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'SAR',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
+
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ar-SA').format(num);
@@ -135,7 +137,7 @@ export const RealTimeMetricsCard: React.FC<RealTimeMetricsCardProps> = ({
     {
       time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
       activeUsers: data?.activeUsers || 0,
-      apiResponseTime: data?.systemHealth?.responseTime || 0,
+      apiResponseTime: data?.systemHealth?.apiResponseTime || 0,
       errorRate: data?.systemHealth?.errorRate || 0,
       memoryUsage: data?.memoryUsage || 0,
       cpuUsage: data?.cpuUsage || 0,

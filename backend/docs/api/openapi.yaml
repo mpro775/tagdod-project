@@ -3815,7 +3815,7 @@ paths:
                     description: رمز العملة
                   formatted:
                     type: string
-                    example: 1 USD = 250.50 ر.ي
+                    example: 1 USD = 250.50 $
                     description: السعر منسق للعرض
       tags:
         - أسعار-الصرف
@@ -3843,7 +3843,7 @@ paths:
                     description: رمز العملة
                   formatted:
                     type: string
-                    example: 1 USD = 3.75 ر.س
+                    example: 1 USD = 3.75 $
                     description: السعر منسق للعرض
       tags:
         - أسعار-الصرف
@@ -4011,7 +4011,7 @@ paths:
                     description: رمز العملة
                   formatted:
                     type: string
-                    example: 1 USD = 250.50 ر.ي
+                    example: 1 USD = 250.50 $
                     description: السعر منسق للعرض
       tags:
         - إدارة-أسعار-الصرف
@@ -4041,7 +4041,7 @@ paths:
                     description: رمز العملة
                   formatted:
                     type: string
-                    example: 1 USD = 3.75 ر.س
+                    example: 1 USD = 3.75 $
                     description: السعر منسق للعرض
       tags:
         - إدارة-أسعار-الصرف
@@ -17974,6 +17974,7 @@ components:
               - notifications.update
               - notifications.delete
               - notifications.send
+              - notifications.manage
         temporaryPassword:
           type: string
           description: كلمة مرور مؤقتة (سيتم تغييرها عند أول تسجيل دخول)
@@ -18126,6 +18127,7 @@ components:
               - notifications.update
               - notifications.delete
               - notifications.send
+              - notifications.manage
         description:
           type: string
           description: وصف الدور والمسؤوليات

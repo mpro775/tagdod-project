@@ -76,7 +76,7 @@ const PriceRulesListPage: React.FC = () => {
         <Button
           variant="contained"
           startIcon={<Add />}
-          onClick={() => navigate('/admin/marketing/price-rules/create')}
+          onClick={() => navigate('/marketing/price-rules/new')}
         >
           إنشاء قاعدة سعر جديدة
         </Button>
@@ -169,13 +169,13 @@ const PriceRulesListPage: React.FC = () => {
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <IconButton
                       size="small"
-                      onClick={() => navigate(`/admin/marketing/price-rules/${rule._id}`)}
+                      onClick={() => navigate(`/marketing/price-rules/${rule._id}`)}
                     >
                       <Visibility />
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => navigate(`/admin/marketing/price-rules/${rule._id}/edit`)}
+                      onClick={() => navigate(`/marketing/price-rules/${rule._id}`)}
                     >
                       <Edit />
                     </IconButton>

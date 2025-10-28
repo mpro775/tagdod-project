@@ -284,8 +284,8 @@ export const ProductsListPage: React.FC = () => {
             إدارة المخزون
           </Button>
         </Box>
-        <Box display="flex" gap={1}>
-          <CurrencySelector size="sm" />
+        <Box display="flex" gap={1} alignItems="center">
+          <CurrencySelector size="sm" showLabel={false} />
           <Button variant="contained" onClick={() => navigate('/products/new')}>
             إضافة منتج
           </Button>

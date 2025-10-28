@@ -257,7 +257,7 @@ export const BannerAnalyticsPage: React.FC = () => {
         <Box display="flex" alignItems="center" gap={2} mb={3}>
           <Button
             startIcon={<ArrowBack />}
-            onClick={() => navigate('/admin/banners')}
+            onClick={() => navigate('/banners')}
             variant="outlined"
           >
             العودة
@@ -275,7 +275,7 @@ export const BannerAnalyticsPage: React.FC = () => {
         <Box display="flex" alignItems="center" gap={2} mb={3}>
           <Button
             startIcon={<ArrowBack />}
-            onClick={() => navigate('/admin/banners')}
+            onClick={() => navigate('/banners')}
             variant="outlined"
           >
             العودة
@@ -314,7 +314,7 @@ export const BannerAnalyticsPage: React.FC = () => {
         <Box display="flex" alignItems="center" gap={2}>
           <Button
             startIcon={<ArrowBack />}
-            onClick={() => navigate('/admin/banners')}
+            onClick={() => navigate('/banners')}
             variant="outlined"
           >
             العودة

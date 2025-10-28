@@ -146,13 +146,13 @@ export class AdminExchangeRatesController {
       properties: {
         rate: { type: 'number', example: 250.50, description: 'سعر الصرف الحالي' },
         currency: { type: 'string', example: 'YER', description: 'رمز العملة' },
-        formatted: { type: 'string', example: '1 USD = 250.50 ر.ي', description: 'السعر منسق للعرض' }
+        formatted: { type: 'string', example: '1 USD = 250.50 $', description: 'السعر منسق للعرض' }
       }
     }
   })
   async getUSDToYERRate() {
     const rate = await this.exchangeRatesService.getUSDToYERRate();
-    return { rate, currency: 'YER', formatted: `1 USD = ${rate} ر.ي` };
+    return { rate, currency: 'YER', formatted: `1 USD = ${rate} $` };
   }
 
   @Get('usd-to-sar')
@@ -168,12 +168,12 @@ export class AdminExchangeRatesController {
       properties: {
         rate: { type: 'number', example: 3.75, description: 'سعر الصرف الحالي' },
         currency: { type: 'string', example: 'SAR', description: 'رمز العملة' },
-        formatted: { type: 'string', example: '1 USD = 3.75 ر.س', description: 'السعر منسق للعرض' }
+        formatted: { type: 'string', example: '1 USD = 3.75 $', description: 'السعر منسق للعرض' }
       }
     }
   })
   async getUSDToSARRate() {
     const rate = await this.exchangeRatesService.getUSDToSARRate();
-    return { rate, currency: 'SAR', formatted: `1 USD = ${rate} ر.س` };
+    return { rate, currency: 'SAR', formatted: `1 USD = ${rate} $` };
   }
 }

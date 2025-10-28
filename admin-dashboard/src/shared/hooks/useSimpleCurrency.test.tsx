@@ -125,7 +125,7 @@ describe('useSimpleCurrency', () => {
 
       expect(converted.amount).toBe(25000); // 100 * 250
       expect(converted.formatted).toContain('25,000');
-      expect(converted.formatted).toContain('ر.ي');
+      expect(converted.formatted).toContain('$');
     });
 
     it('should convert USD to SAR', async () => {
@@ -149,7 +149,7 @@ describe('useSimpleCurrency', () => {
       const converted = result.current.convertFromUSD(100);
 
       expect(converted.amount).toBe(375); // 100 * 3.75
-      expect(converted.formatted).toBe('375.00 ر.س');
+      expect(converted.formatted).toBe('375.00 $');
     });
 
     it('should return USD when currency is USD', async () => {
@@ -202,7 +202,7 @@ describe('useSimpleCurrency', () => {
       const formatted = result.current.formatPrice(25000, 'YER');
 
       expect(formatted).toContain('25,000');
-      expect(formatted).toContain('ر.ي');
+      expect(formatted).toContain('$');
     });
 
     it('should format SAR price', async () => {
@@ -221,7 +221,7 @@ describe('useSimpleCurrency', () => {
 
       const formatted = result.current.formatPrice(375, 'SAR');
 
-      expect(formatted).toBe('375.00 ر.س');
+      expect(formatted).toBe('375.00 $');
     });
 
     it('should format USD price', async () => {
@@ -263,7 +263,7 @@ describe('useSimpleCurrency', () => {
 
       const formatted = result.current.formatPrice(375);
 
-      expect(formatted).toBe('375.00 ر.س');
+      expect(formatted).toBe('375.00 $');
     });
   });
 });
