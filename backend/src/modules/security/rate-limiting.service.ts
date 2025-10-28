@@ -30,7 +30,12 @@ export class RateLimitingService {
     private configService: ConfigService,
   ) {
     this.redis = redisClient;
-    this.initializeRateLimiters();
+    // Initialize rate limiters only if Redis is available
+    try {
+      this.initializeRateLimiters();
+    } catch (error) {
+      this.logger.warn('Rate limiting disabled due to Redis unavailability:', error instanceof Error ? error.message : 'Unknown error');
+    }
   }
 
   private initializeRateLimiters() {

@@ -46,7 +46,7 @@ export class SecurityModule implements NestModule {
       .apply(ThreatDetectionMiddleware)
       .forRoutes('*')
 
-      // 3. Rate limiting (after basic validation)
+      // 3. Rate limiting (after basic validation) - Made optional if Redis unavailable
       .apply(RateLimitingMiddleware)
       .forRoutes('*');
   }

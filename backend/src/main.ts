@@ -40,9 +40,21 @@ async function bootstrap() {
 
   // CORS configuration
   const allowed = (process.env.CORS_ORIGINS ?? '').split(',').filter(Boolean);
-  app.enableCors({ 
-    origin: allowed.length ? allowed : [/localhost/], 
-    credentials: true 
+  const corsOrigins = allowed.length ? allowed : [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:8080',
+    /^https?:\/\/localhost(:\d+)?$/
+  ];
+
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    exposedHeaders: ['Content-Length', 'X-Custom-Header'],
+    maxAge: 86400, // 24 hours
   });
 
   // Setup Swagger documentation
