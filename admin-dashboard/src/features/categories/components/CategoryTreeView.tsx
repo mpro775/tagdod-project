@@ -30,6 +30,7 @@ import {
   Add,
 } from '@mui/icons-material';
 import { useCategoryTree } from '../hooks/useCategories';
+import { CategoryImage } from './CategoryImage';
 import type { Category, CategoryTreeNode } from '../types/category.types';
 
 interface CategoryTreeViewProps {
@@ -127,11 +128,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           )}
           {!hasChildren && <Box sx={{ width: 32 }} />}
 
-          {expanded ? (
-            <FolderOpen sx={{ mr: 1, color: 'primary.main' }} />
-          ) : (
-            <Folder sx={{ mr: 1, color: 'text.secondary' }} />
-          )}
+          <CategoryImage image={node.imageId} size={24} />
 
           <ListItemText
             primary={

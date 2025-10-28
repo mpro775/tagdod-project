@@ -103,7 +103,8 @@ export class CategoriesService {
 
   // ==================== عرض فئة واحدة ====================
   async getCategory(id: string) {
-    const cacheKey = `category:detail:${id}`;
+    const ver = await this.getCacheVersion();
+    const cacheKey = `categories:v${ver}:detail:${id}`;
 
     const cached = await this.cacheService.get(cacheKey);
     if (cached) {
@@ -148,17 +149,21 @@ export class CategoriesService {
       isActive?: boolean;
       isFeatured?: boolean;
       includeDeleted?: boolean;
+      force?: boolean;
     } = {},
   ) {
-    const { parentId, search, isActive, isFeatured, includeDeleted = false } = query;
+    const { parentId, search, isActive, isFeatured, includeDeleted = false, force = false } = query;
 
-    const cacheKey = `categories:list:${JSON.stringify(query)}`;
+    const ver = await this.getCacheVersion();
+    const key = `categories:v${ver}:list:${this.normalizeQuery(query)}`;
 
-    // Try to get from cache first
-    const cached = await this.cacheService.get<Category[]>(cacheKey);
-    if (cached) {
-      this.logger.debug(`Categories cache hit`);
-      return cached;
+    // Try to get from cache first (unless force refresh)
+    if (!force) {
+      const cached = await this.cacheService.get<Category[]>(key);
+      if (cached) {
+        this.logger.debug(`Categories cache hit`);
+        return cached;
+      }
     }
 
     // Build query
@@ -168,8 +173,17 @@ export class CategoriesService {
       q.deletedAt = null;
     }
 
+    // عرض الفئات النشطة افتراضياً لتطابق العرض الشجري
+    if (isActive === undefined) {
+      q.isActive = true;
+    } else {
+      q.isActive = isActive;
+    }
+
+    // تحسين معالجة parentId
     if (parentId !== undefined) {
-      q.parentId = parentId === null || parentId === 'null' ? null : new Types.ObjectId(parentId);
+      const isNullish = parentId === null || parentId === 'null' || parentId === '' || parentId === 'undefined';
+      q.parentId = isNullish ? null : new Types.ObjectId(parentId);
     }
 
     if (search) {
@@ -177,10 +191,6 @@ export class CategoriesService {
         { name: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
       ];
-    }
-
-    if (isActive !== undefined) {
-      q.isActive = isActive;
     }
 
     if (isFeatured !== undefined) {
@@ -194,14 +204,15 @@ export class CategoriesService {
       .lean();
 
     // Cache the result
-    await this.cacheService.set(cacheKey, categories, { ttl: this.CACHE_TTL.CATEGORIES });
+    await this.cacheService.set(key, categories, { ttl: this.CACHE_TTL.CATEGORIES });
 
     return categories;
   }
 
   // ==================== شجرة الفئات الكاملة ====================
   async getCategoryTree() {
-    const cacheKey = 'categories:tree:full';
+    const ver = await this.getCacheVersion();
+    const cacheKey = `categories:v${ver}:tree:full`;
 
     const cached = await this.cacheService.get(cacheKey);
     if (cached) {
@@ -496,14 +507,31 @@ export class CategoriesService {
   }
 
 
+  // ==================== Cache Versioning ====================
+  private async getCacheVersion(): Promise<number> {
+    const ver = await this.cacheService.get('categories:ver');
+    return (typeof ver === 'number' ? ver : 1);
+  }
+
+  private async bumpCacheVersion(): Promise<void> {
+    const v = await this.getCacheVersion();
+    await this.cacheService.set('categories:ver', v + 1);
+  }
+
+  private normalizeQuery(obj: Record<string, unknown>): string {
+    // احذف undefined وثبّت ترتيب المفاتيح
+    const entries = Object.entries(obj).filter(([, v]) => v !== undefined);
+    entries.sort(([a], [b]) => a.localeCompare(b));
+    return JSON.stringify(Object.fromEntries(entries));
+  }
+
   // ==================== Cache Management ====================
   async clearAllCaches() {
     try {
-      await this.cacheService.clear('categories:*');
-      await this.cacheService.clear('category:*');
-      this.logger.log('Cleared all category caches');
+      await this.bumpCacheVersion(); // أسرع وأضمن من مسح wildcards
+      this.logger.log('Bumped categories cache version');
     } catch (error) {
-      this.logger.error('Error clearing category caches:', error);
+      this.logger.error('Error bumping category cache version:', error);
     }
   }
 }

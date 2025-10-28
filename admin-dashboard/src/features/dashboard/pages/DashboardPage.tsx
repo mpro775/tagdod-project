@@ -42,7 +42,7 @@ export const DashboardPage: React.FC = () => {
   // Fetch real dashboard data from analytics API
   const { data: dashboardResponse, isLoading, error, refetch } = useDashboardOverview();
   const { data: recentOrdersData, isLoading: ordersLoading } = useRecentOrders(5);
-  const { data: productsData, isLoading: productsLoading } = useProductsCount();
+  const { data: productsData } = useProductsCount();
   const { data: topProductsData, isLoading: topProductsLoading } = useTopProducts();
   const { data: salesAnalyticsData, isLoading: salesLoading } = useSalesAnalytics();
   const { data: performanceData, isLoading: performanceLoading } = usePerformanceMetrics();
@@ -71,18 +71,14 @@ export const DashboardPage: React.FC = () => {
 
   const revenueGrowth = calculateRevenueGrowth();
 
-  if (isLoading || productsLoading) {
-    return (
-      <Box sx={{ 
-        height: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
-      }}>
-        <CircularProgress size={60} />
-      </Box>
-    );
-  }
+  if (isLoading) return <Box sx={{
+    height: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }}>
+    <CircularProgress size={60} />
+  </Box>; // اعتمد فقط على overview
 
   if (error) {
     return (

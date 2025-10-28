@@ -19,6 +19,9 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdatePreferredCurrencyDto } from './dto/update-preferred-currency.dto';
 import { AdminLoginDto } from './dto/admin-login.dto';
+import { UserLoginDto } from './dto/user-login.dto';
+
+import { UserSignupDto } from './dto/user-signup.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserRole, UserStatus } from '../users/schemas/user.schema';
@@ -617,6 +620,267 @@ export class AuthController {
         roles: user.roles || [],
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
+      },
+    };
+  }
+
+  // ==================== تسجيل حساب جديد بكلمة مرور ====================
+  @Post('user-signup')
+  @ApiOperation({
+    summary: 'تسجيل حساب جديد للمستخدم العادي/المهندس/التاجر بكلمة مرور',
+    description: 'إنشاء حساب جديد باستخدام رقم الهاتف وكلمة المرور مع البيانات الأساسية'
+  })
+  @ApiBody({ type: UserSignupDto })
+  @ApiCreatedResponse({
+    description: 'تم إنشاء الحساب بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            tokens: {
+              type: 'object',
+              properties: {
+                access: { type: 'string', description: 'Access Token' },
+                refresh: { type: 'string', description: 'Refresh Token' },
+              },
+            },
+            me: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                phone: { type: 'string' },
+                firstName: { type: 'string' },
+                lastName: { type: 'string' },
+                gender: { type: 'string' },
+                jobTitle: { type: 'string' },
+                roles: { type: 'array', items: { type: 'string' } },
+                permissions: { type: 'array', items: { type: 'string' } },
+                isAdmin: { type: 'boolean' },
+                preferredCurrency: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'بيانات غير صحيحة أو رقم الهاتف موجود مسبقاً' })
+  async userSignup(@Body() dto: UserSignupDto) {
+    this.logger.log(`User signup attempt for phone: ${dto.phone}`);
+
+    // التحقق من أن رقم الهاتف غير موجود مسبقاً
+    const existingUser = await this.userModel.findOne({ phone: dto.phone });
+    if (existingUser) {
+      this.logger.warn(`User signup failed - phone already exists: ${dto.phone}`);
+      throw new AppException(
+        'AUTH_PHONE_EXISTS',
+        'رقم الهاتف موجود مسبقاً. يرجى تسجيل الدخول بدلاً من التسجيل',
+        null,
+        400,
+      );
+    }
+
+    // التحقق من صحة البيانات عند طلب أن يكون مهندساً
+    if (dto.capabilityRequest === 'engineer' && !dto.jobTitle) {
+      throw new AppException(
+        'AUTH_JOB_TITLE_REQUIRED',
+        'المسمى الوظيفي مطلوب للمهندسين',
+        null,
+        400,
+      );
+    }
+
+    // تشفير كلمة المرور
+    const hashedPassword = await hash(dto.password, 10);
+
+    // إنشاء المستخدم الجديد
+    const user = await this.userModel.create({
+      phone: dto.phone,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      gender: dto.gender,
+      jobTitle: dto.capabilityRequest === 'engineer' ? dto.jobTitle : undefined,
+      passwordHash: hashedPassword,
+    });
+
+    // إنشاء capabilities للمستخدم
+    const caps = await this.capsModel.create({
+      userId: user._id,
+      customer_capable: true,
+      engineer_capable: false,
+      engineer_status: 'none',
+      wholesale_capable: false,
+      wholesale_status: 'none',
+      wholesale_discount_percent: 0,
+    });
+
+    // تحديث capabilities إذا طلب المستخدم أن يكون مهندساً أو تاجراً
+    if (dto.capabilityRequest) {
+      if (dto.capabilityRequest === 'engineer') {
+        caps.engineer_status = 'pending';
+      } else if (dto.capabilityRequest === 'wholesale') {
+        caps.wholesale_status = 'pending';
+      }
+      await caps.save();
+    }
+
+    // مزامنة المفضلات تلقائياً عند التسجيل
+    if (dto.deviceId) {
+      try {
+        await this.favoritesService.syncGuestToUser(dto.deviceId, String(user._id));
+      } catch (error) {
+        // نتجاهل الأخطاء في المزامنة لأنها ليست حرجة
+        this.logger.error('Favorites sync error during signup:', error);
+      }
+    }
+
+    // حساب صلاحية الأدمن من الأدوار (سوف تكون false للمستخدمين العاديين الجدد)
+    const isAdminUser = false;
+
+    // إنشاء الـ Tokens
+    const payload = {
+      sub: String(user._id),
+      phone: user.phone,
+      isAdmin: isAdminUser,
+      roles: user.roles || [],
+      permissions: user.permissions || [],
+      preferredCurrency: user.preferredCurrency || 'USD',
+    };
+    const access = this.tokens.signAccess(payload);
+    const refresh = this.tokens.signRefresh(payload);
+
+    this.logger.log(`User signup successful: ${dto.phone}`);
+
+    return {
+      tokens: { access, refresh },
+      me: {
+        id: String(user._id),
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: user.gender,
+        jobTitle: user.jobTitle,
+        roles: user.roles || [],
+        permissions: user.permissions || [],
+        isAdmin: isAdminUser,
+        preferredCurrency: user.preferredCurrency || 'USD',
+      },
+    };
+  }
+
+  // ==================== تسجيل دخول المستخدم العادي بكلمة المرور ====================
+  @Post('user-login')
+  @ApiOperation({
+    summary: 'تسجيل دخول المستخدم العادي/المهندس/التاجر بكلمة المرور',
+    description: 'تسجيل دخول المستخدمين العاديين باستخدام رقم الهاتف وكلمة المرور'
+  })
+  @ApiBody({ type: UserLoginDto })
+  @ApiCreatedResponse({
+    description: 'تم تسجيل الدخول بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            tokens: {
+              type: 'object',
+              properties: {
+                access: { type: 'string', description: 'Access Token' },
+                refresh: { type: 'string', description: 'Refresh Token' },
+              },
+            },
+            me: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                phone: { type: 'string' },
+                firstName: { type: 'string' },
+                lastName: { type: 'string' },
+                roles: { type: 'array', items: { type: 'string' } },
+                permissions: { type: 'array', items: { type: 'string' } },
+                isAdmin: { type: 'boolean' },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'بيانات غير صحيحة' })
+  @ApiUnauthorizedResponse({ description: 'كلمة المرور غير صحيحة' })
+  async userLogin(@Body() body: UserLoginDto) {
+    this.logger.log(`User login attempt for phone: ${body.phone}`);
+
+    // البحث عن المستخدم
+    const user = await this.userModel.findOne({ phone: body.phone });
+    if (!user) {
+      this.logger.warn(`User login failed - user not found: ${body.phone}`);
+      throw new AppException('AUTH_USER_NOT_FOUND', 'رقم الهاتف أو كلمة المرور غير صحيحة', null, 401);
+    }
+
+    // التحقق من كلمة المرور
+    if (!user.passwordHash) {
+      this.logger.warn(`User login failed - no password set: ${body.phone}`);
+      throw new AppException(
+        'AUTH_NO_PASSWORD',
+        'لم يتم تعيين كلمة مرور لهذا الحساب. يرجى استخدام OTP للدخول',
+        null,
+        400,
+      );
+    }
+
+    const isPasswordValid = await compare(body.password, user.passwordHash);
+    if (!isPasswordValid) {
+      this.logger.warn(`User login failed - invalid password: ${body.phone}`);
+      throw new AppException('AUTH_INVALID_PASSWORD', 'رقم الهاتف أو كلمة المرور غير صحيحة', null, 401);
+    }
+
+    // التحقق من حالة المستخدم
+    if (user.status !== UserStatus.ACTIVE) {
+      this.logger.warn(`User login failed - user not active: ${body.phone}`);
+      throw new AppException(
+        'AUTH_USER_NOT_ACTIVE',
+        'هذا الحساب غير نشط. يرجى التواصل مع الإدارة',
+        null,
+        403,
+      );
+    }
+
+    // حساب صلاحية الأدمن من الأدوار
+    const isAdminUser =
+      Array.isArray(user.roles) &&
+      (user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.SUPER_ADMIN));
+
+    // إنشاء الـ Tokens
+    const payload = {
+      sub: String(user._id),
+      phone: user.phone,
+      isAdmin: isAdminUser,
+      roles: user.roles || [],
+      permissions: user.permissions || [],
+      preferredCurrency: user.preferredCurrency || 'USD',
+    };
+    const access = this.tokens.signAccess(payload);
+    const refresh = this.tokens.signRefresh(payload);
+
+    this.logger.log(`User login successful: ${body.phone}`);
+
+    return {
+      tokens: { access, refresh },
+      me: {
+        id: String(user._id),
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: user.roles || [],
+        permissions: user.permissions || [],
+        isAdmin: isAdminUser,
+        preferredCurrency: user.preferredCurrency || 'USD',
       },
     };
   }

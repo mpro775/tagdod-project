@@ -30,6 +30,7 @@ import type { Category, ListCategoriesParams } from '../types/category.types';
 import { CategoryTreeView } from '../components/CategoryTreeView';
 import { CategoryStatsCards } from '../components/CategoryStatsCards';
 import { CategoryFilters } from '../components/CategoryFilters';
+import { CategoryImage } from '../components/CategoryImage';
 
 export const CategoriesListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -117,7 +118,7 @@ export const CategoriesListPage: React.FC = () => {
       width: 300,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ fontSize: 32, color: 'text.secondary' }}>📁</Box>
+          <CategoryImage image={params.row.imageId} size={32} />
           <Box>
             <Box sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', gap: 1 }}>
               {params.row.name}

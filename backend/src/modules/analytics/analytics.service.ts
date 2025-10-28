@@ -151,40 +151,88 @@ export class AnalyticsService {
   async getDashboardData(query: AnalyticsQueryDto = {}): Promise<DashboardDataDto> {
     const cacheKey = `dashboard:${JSON.stringify(query)}`;
 
-    // Clear cache to force regeneration with new KPI structure
-    await this.cacheService.delete(cacheKey);
-
-    // Try to get from cache first
+    // Try to get from cache first (don't clear cache to prevent forcing regeneration)
     const cached = await this.cacheService.get<DashboardDataDto>(cacheKey);
     if (cached) {
       this.logger.debug('Dashboard data cache hit');
       return cached;
     }
 
-    // Cache miss - build dashboard data
     this.logger.debug('Dashboard data cache miss');
-    this.getDateRangeForQuery(query);
-    const previousPeriod = this.getPreviousPeriodRange(query);
 
-    // Force regeneration of current period snapshot with new KPI structure
-    const { startDate: snapshotDate } = this.getDateRange(new Date(), query.period || PeriodType.MONTHLY);
-    await this.generateAnalyticsSnapshot(snapshotDate, query.period || PeriodType.MONTHLY);
-    const snapshot = await this.analyticsModel.findOne({ date: snapshotDate, period: query.period || PeriodType.MONTHLY }) as AnalyticsSnapshotDocument | null;
+    const period = query.period || PeriodType.MONTHLY;
+    const { startDate } = this.getDateRange(new Date(), period);
+
+    // ثبّت التاريخ (بداية اليوم UTC) حتى يطابق المستند
+    const snapshotDate = new Date(Date.UTC(
+      startDate.getUTCFullYear(),
+      startDate.getUTCMonth(),
+      startDate.getUTCDate()
+    ));
+
+    // جرّب توليد السناپشوت لكن بمهلة 3s
+    try {
+      await Promise.race([
+        this.generateAnalyticsSnapshot(snapshotDate, period),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('SNAPSHOT_TIMEOUT')), 3000))
+      ]).catch(() => this.logger.warn('Snapshot generation timed out — serving last available snapshot'));
+    } catch (error) {
+      this.logger.warn('Snapshot generation failed, proceeding with existing data');
+    }
+
+    // حاول تجيب نفس التاريخ؛ وإلا خُذ آخر واحد
+    let snapshot = await this.analyticsModel.findOne({ date: snapshotDate, period }).lean();
+    if (!snapshot) {
+      snapshot = await this.analyticsModel.findOne({ period }).sort({ date: -1 }).lean();
+    }
 
     if (!snapshot) {
-      throw new Error(`Failed to generate analytics snapshot for ${snapshotDate}`);
+      // رجّع هيكل خفيف بدل التعليق
+      const empty: DashboardDataDto = {
+        overview: { totalUsers: 0, totalRevenue: 0, totalOrders: 0, activeServices: 0, openSupportTickets: 0, systemHealth: 0 },
+        revenueCharts: {
+          daily: [],
+          monthly: [],
+          byCategory: []
+        },
+        userCharts: {
+          registrationTrend: [],
+          userTypes: [],
+          geographic: []
+        },
+        productCharts: {
+          topSelling: [],
+          categoryPerformance: [],
+          stockAlerts: []
+        },
+        serviceCharts: {
+          requestTrend: [],
+          engineerPerformance: [],
+          responseTimes: { average: 0, target: 0, trend: [] }
+        },
+        supportCharts: {
+          ticketTrend: [],
+          categoryBreakdown: [],
+          agentPerformance: []
+        },
+        kpis: {
+          revenueGrowth: 0,
+          customerSatisfaction: 0,
+          orderConversion: 0,
+          serviceEfficiency: 0,
+          supportResolution: 0,
+          systemUptime: 0
+        }
+      };
+      await this.cacheService.set(cacheKey, empty, { ttl: this.CACHE_TTL.DASHBOARD_DATA });
+      return empty;
     }
 
-    // Create fresh dashboard data with correct KPI structure
+    // قياسات زمنية لمعرفة موضع البطء
+    const t0 = Date.now();
     const freshKpis = await this.calculateKPIs();
+    this.logger.debug(`calculateKPIs took ${Date.now() - t0}ms`);
 
-    // Get previous period data for comparison (also regenerate if needed)
-    if (query.compareWithPrevious && previousPeriod) {
-      const prevSnapshotDate = this.getDateRange(previousPeriod.endDate, query.period || PeriodType.MONTHLY).startDate;
-      await this.generateAnalyticsSnapshot(prevSnapshotDate, query.period || PeriodType.MONTHLY);
-    }
-
-    // Build dashboard data
     const dashboardData: DashboardDataDto = {
       overview: {
         totalUsers: snapshot.users.total,
@@ -202,9 +250,7 @@ export class AnalyticsService {
       kpis: freshKpis,
     };
 
-    // Cache the result
     await this.cacheService.set(cacheKey, dashboardData, { ttl: this.CACHE_TTL.DASHBOARD_DATA });
-
     return dashboardData;
   }
 

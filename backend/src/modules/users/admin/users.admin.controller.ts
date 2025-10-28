@@ -20,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery, SortOrder } from 'mongoose';
-import bcrypt from 'bcrypt';
+import { hash } from 'bcrypt';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
@@ -203,7 +203,7 @@ export class UsersAdminController {
     // إنشاء كلمة مرور مؤقتة إذا لم يتم تحديدها
     let passwordHash: string | undefined;
     if (dto.temporaryPassword) {
-      passwordHash = await bcrypt.hash(dto.temporaryPassword, 10);
+      passwordHash = await hash(dto.temporaryPassword, 10);
     }
 
     // إنشاء المستخدم
@@ -328,7 +328,7 @@ export class UsersAdminController {
 
     // إضافة كلمة المرور إن وجدت
     if (dto.password) {
-      userData.passwordHash = await bcrypt.hash(dto.password, 10);
+      userData.passwordHash = await hash(dto.password, 10);
     }
 
     // إنشاء المستخدم
@@ -400,7 +400,7 @@ export class UsersAdminController {
 
     // تحديث كلمة المرور
     if (dto.password) {
-      user.passwordHash = await bcrypt.hash(dto.password, 10);
+      user.passwordHash = await hash(dto.password, 10);
     }
 
     await user.save();
