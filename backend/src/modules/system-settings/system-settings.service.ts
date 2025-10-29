@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -12,6 +12,7 @@ import {
   BulkUpdateSettingsDto,
   SettingCategory,
 } from './dto/system-settings.dto';
+import { DomainException, ErrorCode } from '../../shared/exceptions';
 
 @Injectable()
 export class SystemSettingsService {
@@ -64,7 +65,7 @@ export class SystemSettingsService {
   async getSetting(key: string): Promise<SettingDto> {
     const setting = await this.systemSettingModel.findOne({ key }).lean();
     if (!setting) {
-      throw new NotFoundException(`Setting with key "${key}" not found`);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { key, reason: 'setting_not_found' });
     }
     return this.mapToDto(setting);
   }
@@ -85,7 +86,7 @@ export class SystemSettingsService {
   ): Promise<SettingDto> {
     const setting = await this.systemSettingModel.findOne({ key });
     if (!setting) {
-      throw new NotFoundException(`Setting with key "${key}" not found`);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { key, reason: 'setting_not_found' });
     }
 
     setting.value = dto.value;
@@ -125,7 +126,7 @@ export class SystemSettingsService {
   async deleteSetting(key: string): Promise<void> {
     const result = await this.systemSettingModel.deleteOne({ key });
     if (result.deletedCount === 0) {
-      throw new NotFoundException(`Setting with key "${key}" not found`);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { key, reason: 'setting_not_found' });
     }
   }
 

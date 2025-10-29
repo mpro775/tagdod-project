@@ -4,7 +4,12 @@ import { Model, Types } from 'mongoose';
 import { Category, CategoryDocument } from './schemas/category.schema';
 import { slugify } from '../../shared/utils/slug.util';
 import { CacheService } from '../../shared/cache/cache.service';
-import { AppException } from '../../shared/exceptions/app.exception';
+import { 
+  CategoryNotFoundException,
+  CategoryAlreadyExistsException,
+  CategoryException,
+  ErrorCode 
+} from '../../shared/exceptions';
 
 @Injectable()
 export class CategoriesService {
@@ -27,16 +32,16 @@ export class CategoriesService {
     // التحقق من عدم تكرار الـ slug
     const existing = await this.categoryModel.findOne({ slug, deletedAt: null });
     if (existing) {
-      throw new AppException('CATEGORY_SLUG_EXISTS', 'اسم الفئة موجود بالفعل', null, 400);
+      throw new CategoryAlreadyExistsException({ slug: dto.slug });
     }
 
     if (dto.parentId) {
       const parent = await this.categoryModel.findById(dto.parentId).lean();
       if (!parent) {
-        throw new AppException('PARENT_NOT_FOUND', 'الفئة الأب غير موجودة', null, 404);
+        throw new CategoryException(ErrorCode.CATEGORY_INVALID_PARENT, { parentId: dto.parentId });
       }
       if (parent.deletedAt) {
-        throw new AppException('PARENT_DELETED', 'الفئة الأب محذوفة', null, 400);
+        throw new CategoryException(ErrorCode.CATEGORY_INVALID_PARENT, { parentId: dto.parentId, reason: 'deleted' });
       }
 
       // تحديث عدد الأطفال للأب
@@ -63,11 +68,11 @@ export class CategoriesService {
   async updateCategory(id: string, patch: Partial<Category>) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
-      throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
+      throw new CategoryNotFoundException({ categoryId: id });
     }
 
     if (category.deletedAt) {
-      throw new AppException('CATEGORY_DELETED', 'الفئة محذوفة', null, 400);
+      throw new CategoryException(ErrorCode.CATEGORY_NOT_FOUND, { categoryId: id, reason: 'deleted' });
     }
 
     if (patch.nameEn) {
@@ -80,7 +85,7 @@ export class CategoriesService {
         deletedAt: null,
       });
       if (existing) {
-        throw new AppException('CATEGORY_SLUG_EXISTS', 'اسم الفئة موجود بالفعل', null, 400);
+        throw new CategoryAlreadyExistsException({ slug });
       }
 
       patch.slug = slug;
@@ -88,7 +93,7 @@ export class CategoriesService {
 
     // إذا تم تغيير parentId، نحتاج لتحديث الأطفال
     if (patch.parentId !== undefined && patch.parentId !== category.parentId) {
-      await this.handleParentChange(id, category.parentId, patch.parentId);
+      await this.handleParentChange(id, category.parentId || null, patch.parentId || null);
     }
 
     await this.categoryModel.updateOne({ _id: id }, { $set: patch });
@@ -118,7 +123,7 @@ export class CategoriesService {
       .lean();
 
     if (!category) {
-      throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
+      throw new CategoryNotFoundException({ categoryId: id });
     }
 
     // جلب الأطفال
@@ -240,11 +245,11 @@ export class CategoriesService {
     const category = await this.categoryModel.findById(id);
 
     if (!category) {
-      throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
+      throw new CategoryNotFoundException({ categoryId: id });
     }
 
     if (category.deletedAt) {
-      throw new AppException('CATEGORY_ALREADY_DELETED', 'الفئة محذوفة بالفعل', null, 400);
+      throw new CategoryException(ErrorCode.CATEGORY_NOT_FOUND, { categoryId: id, reason: 'already_deleted' });
     }
 
     // فحص إذا كان لديها أطفال
@@ -254,12 +259,7 @@ export class CategoriesService {
     });
 
     if (childrenCount > 0) {
-      throw new AppException(
-        'CATEGORY_HAS_CHILDREN',
-        'لا يمكن حذف فئة تحتوي على فئات فرعية. احذف الفئات الفرعية أولاً',
-        { childrenCount },
-        400,
-      );
+      throw new CategoryException(ErrorCode.CATEGORY_HAS_SUBCATEGORIES, { categoryId: id, childrenCount });
     }
 
     // Soft delete
@@ -285,11 +285,11 @@ export class CategoriesService {
     const category = await this.categoryModel.findById(id);
 
     if (!category) {
-      throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
+      throw new CategoryNotFoundException({ categoryId: id });
     }
 
     if (!category.deletedAt) {
-      throw new AppException('CATEGORY_NOT_DELETED', 'الفئة غير محذوفة', null, 400);
+      throw new CategoryException(ErrorCode.CATEGORY_NOT_FOUND, { categoryId: id, reason: 'not_deleted' });
     }
 
     category.deletedAt = null;
@@ -314,18 +314,13 @@ export class CategoriesService {
     const category = await this.categoryModel.findById(id);
 
     if (!category) {
-      throw new AppException('CATEGORY_NOT_FOUND', 'الفئة غير موجودة', null, 404);
+      throw new CategoryNotFoundException({ categoryId: id });
     }
 
     // التحقق من عدم وجود أطفال
     const childrenCount = await this.categoryModel.countDocuments({ parentId: id });
     if (childrenCount > 0) {
-      throw new AppException(
-        'CATEGORY_HAS_CHILDREN',
-        'لا يمكن حذف فئة تحتوي على فئات فرعية',
-        { childrenCount },
-        400,
-      );
+      throw new CategoryException(ErrorCode.CATEGORY_HAS_SUBCATEGORIES, { categoryId: id, childrenCount });
     }
 
     // حذف من قاعدة البيانات
@@ -454,18 +449,18 @@ export class CategoriesService {
     if (newParentId) {
       const newParent = await this.categoryModel.findById(newParentId);
       if (!newParent || newParent.deletedAt) {
-        throw new AppException('PARENT_NOT_FOUND', 'الفئة الأب الجديدة غير موجودة', null, 404);
+        throw new CategoryException(ErrorCode.CATEGORY_INVALID_PARENT, { parentId: newParentId });
       }
       
       // التحقق من عدم إنشاء حلقة (الفئة لا يمكن أن تكون أب لنفسها)
       if (newParentId === categoryId) {
-        throw new AppException('INVALID_PARENT', 'لا يمكن للفئة أن تكون أب لنفسها', null, 400);
+        throw new CategoryException(ErrorCode.CATEGORY_INVALID_PARENT, { categoryId, reason: 'self_parent' });
       }
       
       // التحقق من عدم إنشاء حلقة مع الأحفاد
       const isDescendant = await this.isDescendant(categoryId, newParentId);
       if (isDescendant) {
-        throw new AppException('INVALID_PARENT', 'لا يمكن للفئة أن تكون أب لأحد أحفادها', null, 400);
+        throw new CategoryException(ErrorCode.CATEGORY_INVALID_PARENT, { categoryId, reason: 'descendant_parent' });
       }
     }
 

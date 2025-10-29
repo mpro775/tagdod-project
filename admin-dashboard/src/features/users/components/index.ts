@@ -1,6 +1,7 @@
 // User Management Components
 export { UserRoleManager } from './UserRoleManager';
 export { UserCapabilitiesManager } from './UserCapabilitiesManager';
+export { PermissionSelector } from './PermissionSelector';
 export { UserStatsCards } from './UserStatsCards';
 export { UsersFilter } from './UsersFilter';
 export { UserCard } from './UserCard';

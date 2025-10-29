@@ -23,7 +23,6 @@ import {
   Edit,
   Delete,
   Folder,
-  FolderOpen,
   Star,
   VisibilityOff,
   Refresh,
@@ -128,7 +127,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           )}
           {!hasChildren && <Box sx={{ width: 32 }} />}
 
-          <CategoryImage image={node.imageId} size={24} />
+          <Box sx={{ mr: 1.5, display: 'flex', alignItems: 'center' }}>
+            <CategoryImage image={node.imageId} size={48} />
+          </Box>
 
           <ListItemText
             primary={

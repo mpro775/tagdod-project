@@ -24,60 +24,66 @@ export class CartErrorHandler {
       // Server responded with error status
       const { status, data } = error.response;
       
+      // Extract error from new unified format: { success: false, error: { code, message, details } }
+      const errorData = data?.error || data;
+      const errorMessage = errorData?.message || error.message;
+      const errorCode = errorData?.code || status;
+      const errorDetails = errorData?.details || {};
+      
       switch (status) {
         case 400:
           return this.createError(
-            'VALIDATION_ERROR',
-            data.message || 'بيانات غير صحيحة',
-            data.details
+            errorCode || 'VALIDATION_ERROR',
+            errorMessage || 'بيانات غير صحيحة',
+            errorDetails
           );
         case 401:
           return this.createError(
-            'UNAUTHORIZED',
-            'غير مصرح بالوصول',
-            { status }
+            errorCode || 'UNAUTHORIZED',
+            errorMessage || 'غير مصرح بالوصول',
+            errorDetails
           );
         case 403:
           return this.createError(
-            'FORBIDDEN',
-            'غير مسموح بتنفيذ هذا الإجراء',
-            { status }
+            errorCode || 'FORBIDDEN',
+            errorMessage || 'غير مسموح بتنفيذ هذا الإجراء',
+            errorDetails
           );
         case 404:
           return this.createError(
-            'NOT_FOUND',
-            'السلة غير موجودة',
-            { status }
+            errorCode || 'NOT_FOUND',
+            errorMessage || 'السلة غير موجودة',
+            errorDetails
           );
         case 409:
           return this.createError(
-            'CONFLICT',
-            data.message || 'تعارض في البيانات',
-            data.details
+            errorCode || 'CONFLICT',
+            errorMessage || 'تعارض في البيانات',
+            errorDetails
           );
         case 422:
           return this.createError(
-            'VALIDATION_ERROR',
-            data.message || 'بيانات غير صحيحة',
-            data.errors
+            errorCode || 'VALIDATION_ERROR',
+            errorMessage || 'بيانات غير صحيحة',
+            errorData?.fieldErrors || errorData?.errors
           );
         case 429:
           return this.createError(
-            'RATE_LIMITED',
-            'تم تجاوز الحد المسموح من الطلبات',
-            { status }
+            errorCode || 'RATE_LIMITED',
+            errorMessage || 'تم تجاوز الحد المسموح من الطلبات',
+            errorDetails
           );
         case 500:
           return this.createError(
-            'SERVER_ERROR',
-            'خطأ في الخادم',
-            { status }
+            errorCode || 'SERVER_ERROR',
+            errorMessage || 'خطأ في الخادم',
+            errorDetails
           );
         default:
           return this.createError(
-            'UNKNOWN_ERROR',
-            data.message || 'حدث خطأ غير متوقع',
-            { status, data }
+            errorCode || 'UNKNOWN_ERROR',
+            errorMessage || 'حدث خطأ غير متوقع',
+            { status, ...errorDetails }
           );
       }
     } else if (error.request) {

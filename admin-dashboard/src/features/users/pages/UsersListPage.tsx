@@ -14,7 +14,7 @@ import {
   Stack,
   Paper as MuiPaper
 } from '@mui/material';
-import { Edit, Delete, Restore, PersonAdd, AdminPanelSettings } from '@mui/icons-material';
+import { Edit, Delete, Restore, PersonAdd } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -411,21 +411,13 @@ export const UsersListPage: React.FC = () => {
         <MuiPaper sx={{ p: 2, mb: 2 }}>
           <Stack direction="row" spacing={2} justifyContent="flex-end">
             <Button
-              variant="outlined"
+              variant="contained"
               startIcon={<PersonAdd />}
               onClick={() => navigate('/users/new')}
               size="medium"
-            >
-              إضافة مستخدم
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AdminPanelSettings />}
-              onClick={() => navigate('/users/create-admin')}
-              size="medium"
               color="primary"
             >
-              إنشاء أدمن
+              إضافة مستخدم / أدمن
             </Button>
           </Stack>
         </MuiPaper>
@@ -457,25 +449,15 @@ export const UsersListPage: React.FC = () => {
 
       {/* Mobile Action Buttons */}
       <Box sx={{ mb: 2, display: { xs: 'block', md: 'none' }, px: 2 }}>
-        <Stack direction="column" spacing={1}>
-          <Button
-            variant="outlined"
-            startIcon={<PersonAdd />}
-            onClick={() => navigate('/users/new')}
-            fullWidth
-          >
-            إضافة مستخدم
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AdminPanelSettings />}
-            onClick={() => navigate('/users/create-admin')}
-            fullWidth
-            color="primary"
-          >
-            إنشاء أدمن
-          </Button>
-        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<PersonAdd />}
+          onClick={() => navigate('/users/new')}
+          fullWidth
+          color="primary"
+        >
+          إضافة مستخدم / أدمن
+        </Button>
       </Box>
 
       {/* Mobile View - Cards */}

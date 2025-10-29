@@ -1,4 +1,5 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { ForbiddenException, ErrorCode } from '../../../shared/exceptions';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 
@@ -37,7 +38,7 @@ export class ServicesPermissionGuard implements CanActivate {
     const user = request.user as RequestUser;
 
     if (!user) {
-      throw new ForbiddenException('User not authenticated');
+      throw new ForbiddenException({ reason: 'not_authenticated' });
     }
 
     // Check user role based on required permission

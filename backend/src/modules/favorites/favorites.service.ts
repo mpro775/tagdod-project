@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Favorite } from './schemas/favorite.schema';
-import { AppException } from '../../shared/exceptions/app.exception';
+import { 
+  FavoriteNotFoundException,
+  ErrorCode 
+} from '../../shared/exceptions';
 
 @Injectable()
 export class FavoritesService {
@@ -77,7 +80,7 @@ export class FavoritesService {
     });
 
     if (!favorite) {
-      throw new AppException('FAVORITE_NOT_FOUND', 'المفضلة غير موجودة', null, 404);
+      throw new FavoriteNotFoundException({ favoriteId });
     }
 
     if (dto.note !== undefined) favorite.note = dto.note;

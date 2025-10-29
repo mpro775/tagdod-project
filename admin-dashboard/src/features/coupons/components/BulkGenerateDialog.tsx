@@ -102,7 +102,7 @@ export const BulkGenerateDialog: React.FC<BulkGenerateDialogProps> = ({
         onSuccess();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'فشل في إنشاء الكوبونات');
+        toast.error(error.response?.data?.error?.message || 'فشل في إنشاء الكوبونات');
       },
     });
   };

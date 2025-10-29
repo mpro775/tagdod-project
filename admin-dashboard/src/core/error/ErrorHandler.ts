@@ -18,10 +18,16 @@ export class ErrorHandler {
   static getErrorMessage(error: unknown): string {
     // Axios error
     if (error instanceof AxiosError) {
-      const apiError = error.response?.data as ApiErrorResponse;
+      const data = error.response?.data;
       
-      if (apiError?.error?.message) {
-        return apiError.error.message;
+      // New unified format: { success: false, error: { code, message, details } }
+      if (data?.error?.message) {
+        return data.error.message;
+      }
+      
+      // Legacy format: { message: string }
+      if (data?.message) {
+        return data.message;
       }
 
       // Network error

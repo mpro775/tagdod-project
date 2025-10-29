@@ -9,6 +9,7 @@ import { ErrorBoundary } from './core/error/ErrorBoundary';
 import { initializeGA4, setupScrollTracking } from './lib/analytics';
 import { initSentry } from './core/sentry';
 import './core/i18n/config';
+import './assets/toast-fix.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,7 +51,36 @@ const App: React.FC = () => {
           <BrowserRouter>
             <AppRouter />
           </BrowserRouter>
-          <Toaster position="top-center" />
+          <Toaster 
+            position="top-center"
+            reverseOrder={false}
+            gutter={8}
+            toastOptions={{
+              duration: 4000,
+              success: {
+                duration: 4000,
+                style: {
+                  background: '#4caf50',
+                  color: '#fff',
+                  padding: '16px',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  minWidth: '250px',
+                },
+              },
+              error: {
+                duration: 5000,
+                style: {
+                  background: '#f44336',
+                  color: '#fff',
+                  padding: '16px',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  minWidth: '250px',
+                },
+              },
+            }}
+          />
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>

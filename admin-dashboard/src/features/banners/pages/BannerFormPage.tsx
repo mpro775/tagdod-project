@@ -103,7 +103,7 @@ export const BannerFormPage: React.FC = () => {
             navigate('/banners');
           },
           onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'فشل في تحديث البانر');
+            toast.error(error.response?.data?.error?.message || 'فشل في تحديث البانر');
           },
         }
       );
@@ -114,7 +114,7 @@ export const BannerFormPage: React.FC = () => {
           navigate('/banners');
         },
         onError: (error: any) => {
-          toast.error(error.response?.data?.message || 'فشل في إنشاء البانر');
+          toast.error(error.response?.data?.error?.message || 'فشل في إنشاء البانر');
         },
       });
     }

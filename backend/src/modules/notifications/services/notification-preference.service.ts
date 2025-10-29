@@ -7,7 +7,10 @@ import {
 } from '../schemas/notification-preference.schema';
 import { UpdatePreferenceDto } from '../dto/unified-notification.dto';
 import { NotificationCategory } from '../enums/notification.enums';
-import { AppException } from '../../../shared/exceptions/app.exception';
+import { 
+  NotificationException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 
 interface FrequencyLimits {
   maxNotificationsPerDay?: number;
@@ -66,7 +69,7 @@ export class NotificationPreferenceService {
       return preferences;
     } catch (error) {
       this.logger.error('Failed to update preferences:', error);
-      throw new AppException('PREFERENCE_UPDATE_FAILED', 'فشل في تحديث التفضيلات', error, 500);
+      throw new NotificationException(ErrorCode.NOTIFICATION_PREFERENCE_UPDATE_FAILED, { error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -174,12 +177,7 @@ export class NotificationPreferenceService {
       return savedPreferences;
     } catch (error) {
       this.logger.error('Failed to create default preferences:', error);
-      throw new AppException(
-        'PREFERENCE_CREATE_FAILED',
-        'فشل في إنشاء التفضيلات الافتراضية',
-        error,
-        500,
-      );
+      throw new NotificationException(ErrorCode.NOTIFICATION_PREFERENCE_UPDATE_FAILED, { error: error instanceof Error ? error.message : String(error) });
     }
   }
 

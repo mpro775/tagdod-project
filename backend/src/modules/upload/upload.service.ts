@@ -1,6 +1,13 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosResponse } from 'axios';
+import { 
+  UploadFailedException,
+  FileTooLargeException,
+  InvalidFileTypeException,
+  UploadException,
+  ErrorCode 
+} from '../../shared/exceptions';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface UploadResult {
@@ -31,10 +38,10 @@ export class UploadService {
 
     // Validate required credentials with clear error messages
     if (!this.bunnyCredentials.storageZoneName) {
-      throw new Error('BUNNY_STORAGE_ZONE environment variable is required');
+      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, { reason: 'BUNNY_STORAGE_ZONE not configured' });
     }
     if (!this.bunnyCredentials.apiKey) {
-      throw new Error('BUNNY_API_KEY environment variable is required');
+      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, { reason: 'BUNNY_API_KEY not configured' });
     }
   }
 
@@ -75,13 +82,13 @@ export class UploadService {
         
         // Return specific error messages based on status code
         if (res.status === 401) {
-          throw new BadRequestException('Invalid Bunny.net API credentials (401 Unauthorized)');
+          throw new UploadFailedException({ reason: 'invalid_bunny_credentials' });
         } else if (res.status === 403) {
-          throw new BadRequestException('Access denied to Bunny.net storage (403 Forbidden)');
+          throw new UploadFailedException({ reason: 'bunny_access_denied' });
         } else if (res.status === 413) {
-          throw new BadRequestException('File size exceeds Bunny.net storage limit');
+          throw new FileTooLargeException();
         } else {
-          throw new BadRequestException(`Failed to upload file to Bunny.net (${res.status})`);
+          throw new UploadFailedException({ status: res.status });
         }
       }
 
@@ -109,12 +116,12 @@ export class UploadService {
       this.logger.error('Upload error:', error);
       
       // Handle specific error types
-      if (error instanceof BadRequestException) {
+      if (error instanceof UploadFailedException || error instanceof FileTooLargeException) {
         throw error; // Re-throw our custom errors
       } else if (error instanceof Error && ('code' in error) && (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')) {
-        throw new BadRequestException('Cannot connect to Bunny.net storage service');
+        throw new UploadException(ErrorCode.NETWORK_ERROR, { reason: 'bunny_connection_failed' });
       } else {
-        throw new BadRequestException('File upload failed due to server error');
+        throw new UploadFailedException();
       }
     }
   }
@@ -150,11 +157,11 @@ export class UploadService {
       });
 
       if (response.status !== 200) {
-        throw new BadRequestException('Failed to delete file from Bunny.net');
+        throw new UploadException(ErrorCode.MEDIA_DELETE_FAILED, { filePath });
       }
     } catch (error) {
       this.logger.error('Delete error:', error);
-      throw new BadRequestException('File deletion failed');
+      throw new UploadException(ErrorCode.MEDIA_DELETE_FAILED, { filePath });
     }
   }
 
@@ -187,14 +194,12 @@ export class UploadService {
     // Check file size
     if (file.size > maxSize) {
       const maxSizeMB = Math.round(maxSize / (1024 * 1024));
-      throw new BadRequestException(`File size exceeds ${maxSizeMB}MB limit`);
+      throw new FileTooLargeException({ size: file.size, maxSize: maxSizeMB * 1024 * 1024 });
     }
 
     // Check file type
     if (!allowedTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        `File type '${file.mimetype}' not allowed. Allowed types: ${allowedTypes.join(', ')}`,
-      );
+      throw new InvalidFileTypeException({ type: file.mimetype, allowedTypes });
     }
   }
 

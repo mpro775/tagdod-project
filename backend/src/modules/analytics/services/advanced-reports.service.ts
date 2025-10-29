@@ -1,4 +1,5 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { DomainException, ErrorCode } from '../../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -2083,7 +2084,7 @@ export class AdvancedReportsService {
   async getReportById(reportId: string): Promise<AdvancedReportDocument> {
     const report = await this.reportModel.findOne({ reportId });
     if (!report) {
-      throw new NotFoundException(`Report with ID ${reportId} not found`);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { reportId, reason: 'not_found' });
     }
     return report;
   }

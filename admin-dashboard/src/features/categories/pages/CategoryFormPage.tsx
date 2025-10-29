@@ -101,7 +101,7 @@ export const CategoryFormPage: React.FC = () => {
         nameEn: category.nameEn,
         description: category.description,
         descriptionEn: category.descriptionEn,
-        imageId: category.imageId,
+        imageId: typeof category.imageId === 'string' ? category.imageId : category.imageId?._id,
         metaTitle: category.metaTitle,
         metaDescription: category.metaDescription,
         metaKeywords: category.metaKeywords || [],
@@ -112,20 +112,38 @@ export const CategoryFormPage: React.FC = () => {
       
       // Set image if exists
       if (category.imageId) {
-        setSelectedImage({ id: category.imageId, name: 'صورة الفئة' });
+        if (typeof category.imageId === 'string') {
+          setSelectedImage({ 
+            _id: category.imageId, 
+            url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/uploads/${category.imageId}`,
+            filename: 'صورة الفئة' 
+          });
+        } else if (typeof category.imageId === 'object' && category.imageId !== null) {
+          setSelectedImage({
+            _id: category.imageId._id,
+            url: category.imageId.url,
+            filename: category.imageId.filename || 'صورة الفئة',
+            mimeType: category.imageId.mimeType,
+          });
+        }
       }
     }
   }, [category, isEditMode, methods]);
 
   // Submit
   const onSubmit = (data: CategoryFormData) => {
+    // eslint-disable-next-line no-console
+    console.log('📤 Category form data:', data);
+    // eslint-disable-next-line no-console
+    console.log('🖼️ Selected image:', selectedImage);
+    
     const categoryData: CreateCategoryDto = {
       parentId: data.parentId || null,
       name: data.name,
       nameEn: data.nameEn,
       description: data.description || undefined,
       descriptionEn: data.descriptionEn || undefined,
-      imageId: selectedImage?.id || data.imageId || undefined,
+      imageId: selectedImage?._id || selectedImage?.id || data.imageId || undefined,
       metaTitle: data.metaTitle || undefined,
       metaDescription: data.metaDescription || undefined,
       metaKeywords: data.metaKeywords || undefined,
@@ -133,6 +151,9 @@ export const CategoryFormPage: React.FC = () => {
       isActive: data.isActive,
       isFeatured: data.isFeatured,
     };
+    
+    // eslint-disable-next-line no-console
+    console.log('📦 Category data to send:', categoryData);
 
     if (isEditMode) {
       updateCategory(
@@ -276,8 +297,14 @@ export const CategoryFormPage: React.FC = () => {
                       label="صورة الفئة"
                       value={selectedImage}
                       onChange={(media: any) => {
+                        // eslint-disable-next-line no-console
+                        console.log('🖼️ ImageField onChange - media:', media);
                         setSelectedImage(media);
-                        methods.setValue('imageId', media?.id || '');
+                        // استخراج ID من Media object (قد يكون _id أو id)
+                        const mediaId = media?._id || media?.id || '';
+                        // eslint-disable-next-line no-console
+                        console.log('🆔 Extracted mediaId:', mediaId);
+                        methods.setValue('imageId', mediaId);
                       }}
                       category={MediaCategory.CATEGORY}
                       helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"

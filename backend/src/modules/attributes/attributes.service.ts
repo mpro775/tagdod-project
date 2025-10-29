@@ -5,7 +5,10 @@ import { Attribute } from './schemas/attribute.schema';
 import { AttributeValue } from './schemas/attribute-value.schema';
 import { AttributeGroup } from './schemas/attribute-group.schema';
 import { slugify } from '../../shared/utils/slug.util';
-import { AppException } from '../../shared/exceptions/app.exception';
+import { 
+  DomainException,
+  ErrorCode 
+} from '../../shared/exceptions';
 
 @Injectable()
 export class AttributesService {
@@ -23,7 +26,7 @@ export class AttributesService {
     // التحقق من عدم التكرار
     const existing = await this.attributeModel.findOne({ slug, deletedAt: null });
     if (existing) {
-      throw new AppException('ATTRIBUTE_EXISTS', 'السمة موجودة بالفعل', null, 400);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'attribute', reason: 'already_exists' });
     }
 
     const attribute = await this.attributeModel.create({
@@ -39,11 +42,11 @@ export class AttributesService {
     const attribute = await this.attributeModel.findById(id);
     
     if (!attribute) {
-      throw new AppException('ATTRIBUTE_NOT_FOUND', 'السمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
     }
 
     if (attribute.deletedAt) {
-      throw new AppException('ATTRIBUTE_DELETED', 'السمة محذوفة', null, 400);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'deleted' });
     }
 
     if (patch.nameEn) {
@@ -61,7 +64,7 @@ export class AttributesService {
       .lean();
 
     if (!attribute) {
-      throw new AppException('ATTRIBUTE_NOT_FOUND', 'السمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
     }
 
     // جلب القيم
@@ -121,17 +124,16 @@ export class AttributesService {
     const attribute = await this.attributeModel.findById(id);
 
     if (!attribute) {
-      throw new AppException('ATTRIBUTE_NOT_FOUND', 'السمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
     }
 
     // فحص الاستخدام
     if (attribute.usageCount > 0) {
-      throw new AppException(
-        'ATTRIBUTE_IN_USE',
-        'لا يمكن حذف سمة مستخدمة في منتجات',
-        { usageCount: attribute.usageCount },
-        400
-      );
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { 
+        attributeId: id,
+        reason: 'in_use', 
+        usageCount: attribute.usageCount 
+      });
     }
 
     attribute.deletedAt = new Date();
@@ -145,7 +147,7 @@ export class AttributesService {
     const attribute = await this.attributeModel.findById(id);
 
     if (!attribute || !attribute.deletedAt) {
-      throw new AppException('ATTRIBUTE_NOT_DELETED', 'السمة غير محذوفة', null, 400);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_deleted' });
     }
 
     attribute.deletedAt = null;
@@ -161,7 +163,7 @@ export class AttributesService {
     const attribute = await this.attributeModel.findById(attributeId);
 
     if (!attribute) {
-      throw new AppException('ATTRIBUTE_NOT_FOUND', 'السمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId, reason: 'not_found' });
     }
 
     const slug = slugify(dto.value!);
@@ -174,7 +176,7 @@ export class AttributesService {
     });
 
     if (existing) {
-      throw new AppException('VALUE_EXISTS', 'القيمة موجودة بالفعل', null, 400);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { value: dto.value, reason: 'already_exists' });
     }
 
     const value = await this.valueModel.create({
@@ -191,7 +193,7 @@ export class AttributesService {
     const value = await this.valueModel.findById(id);
 
     if (!value) {
-      throw new AppException('VALUE_NOT_FOUND', 'القيمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { valueId: id, reason: 'not_found' });
     }
 
     if (patch.value) {
@@ -206,16 +208,15 @@ export class AttributesService {
     const value = await this.valueModel.findById(id);
 
     if (!value) {
-      throw new AppException('VALUE_NOT_FOUND', 'القيمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { valueId: id, reason: 'not_found' });
     }
 
     if (value.usageCount > 0) {
-      throw new AppException(
-        'VALUE_IN_USE',
-        'لا يمكن حذف قيمة مستخدمة في variants',
-        { usageCount: value.usageCount },
-        400
-      );
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { 
+        valueId: id,
+        reason: 'in_use', 
+        usageCount: value.usageCount 
+      });
     }
 
     value.deletedAt = new Date();

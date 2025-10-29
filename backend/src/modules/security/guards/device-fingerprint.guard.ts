@@ -1,4 +1,5 @@
-import { Injectable, CanActivate, ExecutionContext, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, Logger } from '@nestjs/common';
+import { DomainException, ErrorCode } from '../../../shared/exceptions';
 import { Request } from 'express';
 import { createHash } from 'crypto';
 import { ClientIPService } from '../services/client-ip.service';
@@ -30,13 +31,13 @@ export class DeviceFingerprintGuard implements CanActivate {
     // Check for suspicious user agents
     if (this.isSuspiciousUserAgent(userAgent)) {
       this.logger.warn(`Suspicious user agent detected: ${userAgent} from IP: ${clientIP}`);
-      throw new BadRequestException('Invalid request');
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { message: 'طلب غير صالح' });
     }
 
     // Check for automated requests
     if (this.isAutomatedRequest(request)) {
       this.logger.warn(`Automated request detected from IP: ${clientIP}`);
-      throw new BadRequestException('Automated requests not allowed');
+      throw new DomainException(ErrorCode.RATE_LIMIT_EXCEEDED, { message: 'الطلبات الآلية غير مسموحة' });
     }
 
     // Generate device fingerprint for monitoring

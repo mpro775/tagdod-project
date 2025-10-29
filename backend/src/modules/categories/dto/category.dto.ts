@@ -53,6 +53,10 @@ export class CreateCategoryDto {
 export class UpdateCategoryDto {
   @IsOptional() 
   @IsString() 
+  parentId?: string | null; // الفئة الأب
+  
+  @IsOptional() 
+  @IsString() 
   name?: string; // الاسم بالعربية
   
   @IsOptional() 

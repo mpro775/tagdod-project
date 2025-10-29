@@ -3,7 +3,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { Variant } from '../schemas/variant.schema';
 import { Product } from '../schemas/product.schema';
-import { AppException } from '../../../shared/exceptions/app.exception';
+import { 
+  ProductNotFoundException,
+  VariantNotFoundException,
+  ProductException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 import { AttributesService } from '../../attributes/attributes.service';
 
 @Injectable()
@@ -22,7 +27,7 @@ export class VariantService {
     const product = await this.productModel.findById(dto.productId);
 
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId: dto.productId });
     }
 
     // حفظ name و value للعرض السريع
@@ -63,7 +68,7 @@ export class VariantService {
     const variant = await this.variantModel.findById(id).populate('imageId').lean();
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId: id });
     }
 
     return variant;
@@ -83,7 +88,7 @@ export class VariantService {
     const variant = await this.variantModel.findById(id);
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId: id });
     }
 
     await this.variantModel.updateOne({ _id: id }, { $set: dto });
@@ -94,7 +99,7 @@ export class VariantService {
     const variant = await this.variantModel.findById(id);
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId: id });
     }
 
     // Soft delete
@@ -124,11 +129,11 @@ export class VariantService {
     const product = await this.productModel.findById(productId).lean();
 
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId });
     }
 
     if (!product.attributes || product.attributes.length === 0) {
-      throw new AppException('NO_ATTRIBUTES', 'المنتج ليس لديه سمات', null, 400);
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { productId, reason: 'no_attributes' });
     }
 
     // جلب جميع قيم السمات

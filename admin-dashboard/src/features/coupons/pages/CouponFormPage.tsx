@@ -154,7 +154,7 @@ export const CouponFormPage: React.FC = () => {
             navigate('/coupons');
           },
           onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'فشل في تحديث الكوبون');
+            toast.error(error.response?.data?.error?.message || 'فشل في تحديث الكوبون');
           },
         }
       );
@@ -165,7 +165,7 @@ export const CouponFormPage: React.FC = () => {
           navigate('/coupons');
         },
         onError: (error: any) => {
-          toast.error(error.response?.data?.message || 'فشل في إنشاء الكوبون');
+          toast.error(error.response?.data?.error?.message || 'فشل في إنشاء الكوبون');
         },
       });
     }

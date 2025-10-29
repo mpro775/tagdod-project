@@ -150,15 +150,16 @@ export class ErrorLogsService {
       this.getErrorsByEndpoint(),
     ]);
 
-    // Calculate error rate (errors per total requests)
-    // This would need to be calculated from actual request counts
-    const errorRate = 2.5; // Mock value
+    // Calculate error rate (errors per hour for last 24h)
+    // Note: For accurate error rate (errors/total requests), integration with 
+    // request tracking system is needed. Currently showing errors per hour.
+    const errorRate = errors24h > 0 ? Number((errors24h / 24).toFixed(2)) : 0;
 
     return {
       totalErrors,
       last24Hours: errors24h,
       last7Days: errors7d,
-      errorRate,
+      errorRate, // Errors per hour in last 24 hours
       byLevel,
       byCategory,
       topErrors,

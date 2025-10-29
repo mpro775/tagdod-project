@@ -1,4 +1,5 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { CurrencyNotSupportedException } from '../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ExchangeRate, ExchangeRateDocument } from './schemas/exchange-rate.schema';
@@ -83,7 +84,7 @@ export class ExchangeRatesService {
         rate = rates.usdToSar;
         formatted = `${(convertDto.amount * rate).toFixed(2)} $`;
       } else {
-        throw new NotFoundException('تحويل العملة غير مدعوم');
+        throw new CurrencyNotSupportedException({ from: convertDto.fromCurrency, to: convertDto.toCurrency });
       }
 
       const result = convertDto.amount * rate;

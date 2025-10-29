@@ -115,11 +115,11 @@ export const CategoriesListPage: React.FC = () => {
     {
       field: 'name',
       headerName: 'الفئة',
-      width: 300,
+      width: 350,
       renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CategoryImage image={params.row.imageId} size={32} />
-          <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
+          <CategoryImage image={params.row.imageId} size={64} />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <Box sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', gap: 1 }}>
               {params.row.name}
               {params.row.isFeatured && <Star sx={{ fontSize: 16, color: 'warning.main' }} />}

@@ -29,7 +29,17 @@ import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
-import { AppException } from '../../shared/exceptions/app.exception';
+import { 
+  InvalidOTPException,
+  UserNotFoundException, 
+  InvalidPasswordException,
+  NoPasswordException,
+  SuperAdminExistsException,
+  InvalidSecretException,
+  NotAllowedInProductionException,
+  AuthException,
+  ErrorCode 
+} from '../../shared/exceptions';
 import { FavoritesService } from '../favorites/favorites.service';
 
 @ApiTags('المصادقة')
@@ -137,16 +147,11 @@ export class AuthController {
   })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     const ok = await this.otp.verifyOtp(dto.phone, dto.code, 'register');
-    if (!ok) throw new AppException('AUTH_INVALID_OTP', 'رمز التحقق غير صالح', null, 401);
+    if (!ok) throw new InvalidOTPException({ phone: dto.phone });
 
     // التحقق من أن المسمى الوظيفي موجود عند طلب أن يكون مهندساً
     if (dto.capabilityRequest === 'engineer' && !dto.jobTitle) {
-      throw new AppException(
-        'AUTH_JOB_TITLE_REQUIRED',
-        'المسمى الوظيفي مطلوب للمهندسين',
-        null,
-        400,
-      );
+      throw new AuthException(ErrorCode.AUTH_JOB_TITLE_REQUIRED);
     }
 
     let user = await this.userModel.findOne({ phone: dto.phone });
@@ -241,7 +246,7 @@ export class AuthController {
     );
 
     if (!user) {
-      throw new AppException('User not found', '404');
+      throw new UserNotFoundException();
     }
 
     return {
@@ -252,16 +257,16 @@ export class AuthController {
 
   @Post('forgot-password') async forgot(@Body() dto: ForgotPasswordDto) {
     const user = await this.userModel.findOne({ phone: dto.phone });
-    if (!user) throw new AppException('AUTH_USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+    if (!user) throw new UserNotFoundException();
     const result = await this.otp.sendOtp(dto.phone, 'reset');
     return { sent: result.sent, devCode: result.devCode };
   }
 
   @Post('reset-password') async reset(@Body() dto: ResetPasswordDto) {
     const ok = await this.otp.verifyOtp(dto.phone, dto.code, 'reset');
-    if (!ok) throw new AppException('AUTH_INVALID_OTP', 'رمز التحقق غير صالح', null, 401);
+    if (!ok) throw new InvalidOTPException({ phone: dto.phone });
     const user = await this.userModel.findOne({ phone: dto.phone });
-    if (!user) throw new AppException('AUTH_USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+    if (!user) throw new UserNotFoundException();
     const hashedPassword = await hash(dto.newPassword, 10);
     await this.userModel.updateOne({ _id: user._id }, { $set: { passwordHash: hashedPassword } });
     return { updated: true };
@@ -377,7 +382,7 @@ export class AuthController {
     },
   ) {
     const caps = await this.capsModel.findOne({ userId: body.userId });
-    if (!caps) throw new AppException('CAPS_NOT_FOUND', 'سجل القدرات غير موجود', null, 404);
+    if (!caps) throw new AuthException(ErrorCode.AUTH_CAPS_NOT_FOUND, { userId: body.userId });
 
     if (body.capability === 'engineer') {
       caps.engineer_status = body.approve ? 'approved' : 'rejected';
@@ -395,12 +400,7 @@ export class AuthController {
           body.wholesaleDiscountPercent < 0 ||
           body.wholesaleDiscountPercent > 100
         ) {
-          throw new AppException(
-            'INVALID_DISCOUNT',
-            'نسبة الخصم يجب أن تكون بين 0 و 100',
-            null,
-            400,
-          );
+          throw new AuthException(ErrorCode.AUTH_INVALID_DISCOUNT, { discount: body.wholesaleDiscountPercent });
         }
         caps.wholesale_discount_percent = body.wholesaleDiscountPercent;
       } else {
@@ -418,13 +418,13 @@ export class AuthController {
   async createSuperAdmin(@Body() body: { secretKey: string }) {
     // منع الوصول في بيئة الإنتاج لأسباب أمنية
     if (process.env.NODE_ENV === 'production') {
-      throw new AppException('NOT_ALLOWED', 'هذا الـ endpoint غير متاح في الإنتاج', null, 403);
+      throw new NotAllowedInProductionException();
     }
 
     // التحقق من المفتاح السري (يجب أن يكون في متغيرات البيئة)
     const expectedSecret = process.env.SUPER_ADMIN_SECRET || 'TAGADODO_SUPER_ADMIN_2024';
     if (body.secretKey !== expectedSecret) {
-      throw new AppException('INVALID_SECRET', 'مفتاح سري غير صحيح', null, 403);
+      throw new InvalidSecretException();
     }
 
     // التحقق من وجود ادمن رئيسي بالفعل
@@ -433,7 +433,7 @@ export class AuthController {
     });
 
     if (existingSuperAdmin) {
-      throw new AppException('SUPER_ADMIN_EXISTS', 'الادمن الرئيسي موجود بالفعل', null, 400);
+      throw new SuperAdminExistsException();
     }
 
     // بيانات الادمن الرئيسي
@@ -550,35 +550,25 @@ export class AuthController {
     const user = await this.userModel.findOne({ phone: body.phone });
     if (!user) {
       this.logger.warn(`Admin login failed - user not found: ${body.phone}`);
-      throw new AppException('AUTH_USER_NOT_FOUND', 'رقم الهاتف أو كلمة المرور غير صحيحة', null, 401);
+      throw new InvalidPasswordException({ phone: body.phone });
     }
 
     // التحقق من كلمة المرور
     if (!user.passwordHash) {
       this.logger.warn(`Admin login failed - no password set: ${body.phone}`);
-      throw new AppException(
-        'AUTH_NO_PASSWORD',
-        'لم يتم تعيين كلمة مرور لهذا الحساب. يرجى استخدام OTP',
-        null,
-        400,
-      );
+      throw new AuthException(ErrorCode.AUTH_PASSWORD_NOT_SET, { phone: body.phone });
     }
 
     const isPasswordValid = await compare(body.password, user.passwordHash);
     if (!isPasswordValid) {
       this.logger.warn(`Admin login failed - invalid password: ${body.phone}`);
-      throw new AppException('AUTH_INVALID_PASSWORD', 'رقم الهاتف أو كلمة المرور غير صحيحة', null, 401);
+      throw new InvalidPasswordException({ phone: body.phone });
     }
 
     // التحقق من حالة المستخدم
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`Admin login failed - user not active: ${body.phone}`);
-      throw new AppException(
-        'AUTH_USER_NOT_ACTIVE',
-        'هذا الحساب غير نشط. يرجى التواصل مع الإدارة',
-        null,
-        403,
-      );
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: body.phone, status: user.status });
     }
 
     // حساب صلاحية الأدمن من الأدوار
@@ -589,12 +579,7 @@ export class AuthController {
     // التحقق من الصلاحية
     if (!isAdminUser) {
       this.logger.warn(`Admin login failed - not an admin: ${body.phone}`);
-      throw new AppException(
-        'AUTH_NOT_ADMIN',
-        'هذا الحساب غير مصرح له بالدخول للوحة التحكم',
-        null,
-        403,
-      );
+      throw new AuthException(ErrorCode.AUTH_NOT_ADMIN, { phone: body.phone });
     }
 
     // إنشاء الـ Tokens
@@ -675,22 +660,12 @@ export class AuthController {
     const existingUser = await this.userModel.findOne({ phone: dto.phone });
     if (existingUser) {
       this.logger.warn(`User signup failed - phone already exists: ${dto.phone}`);
-      throw new AppException(
-        'AUTH_PHONE_EXISTS',
-        'رقم الهاتف موجود مسبقاً. يرجى تسجيل الدخول بدلاً من التسجيل',
-        null,
-        400,
-      );
+      throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
     }
 
     // التحقق من صحة البيانات عند طلب أن يكون مهندساً
     if (dto.capabilityRequest === 'engineer' && !dto.jobTitle) {
-      throw new AppException(
-        'AUTH_JOB_TITLE_REQUIRED',
-        'المسمى الوظيفي مطلوب للمهندسين',
-        null,
-        400,
-      );
+      throw new AuthException(ErrorCode.AUTH_JOB_TITLE_REQUIRED);
     }
 
     // تشفير كلمة المرور
@@ -820,35 +795,25 @@ export class AuthController {
     const user = await this.userModel.findOne({ phone: body.phone });
     if (!user) {
       this.logger.warn(`User login failed - user not found: ${body.phone}`);
-      throw new AppException('AUTH_USER_NOT_FOUND', 'رقم الهاتف أو كلمة المرور غير صحيحة', null, 401);
+      throw new InvalidPasswordException({ phone: body.phone });
     }
 
     // التحقق من كلمة المرور
     if (!user.passwordHash) {
       this.logger.warn(`User login failed - no password set: ${body.phone}`);
-      throw new AppException(
-        'AUTH_NO_PASSWORD',
-        'لم يتم تعيين كلمة مرور لهذا الحساب. يرجى استخدام OTP للدخول',
-        null,
-        400,
-      );
+      throw new AuthException(ErrorCode.AUTH_PASSWORD_NOT_SET, { phone: body.phone });
     }
 
     const isPasswordValid = await compare(body.password, user.passwordHash);
     if (!isPasswordValid) {
       this.logger.warn(`User login failed - invalid password: ${body.phone}`);
-      throw new AppException('AUTH_INVALID_PASSWORD', 'رقم الهاتف أو كلمة المرور غير صحيحة', null, 401);
+      throw new InvalidPasswordException({ phone: body.phone });
     }
 
     // التحقق من حالة المستخدم
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`User login failed - user not active: ${body.phone}`);
-      throw new AppException(
-        'AUTH_USER_NOT_ACTIVE',
-        'هذا الحساب غير نشط. يرجى التواصل مع الإدارة',
-        null,
-        403,
-      );
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: body.phone, status: user.status });
     }
 
     // حساب صلاحية الأدمن من الأدوار
@@ -891,22 +856,22 @@ export class AuthController {
   async devLogin(@Body() body: { phone: string; password: string }) {
     // هذا الـ endpoint مخصص للتطوير فقط
     if (process.env.NODE_ENV === 'production') {
-      throw new AppException('NOT_ALLOWED', 'هذا الـ endpoint غير متاح في الإنتاج', null, 403);
+      throw new NotAllowedInProductionException();
     }
 
     const user = await this.userModel.findOne({ phone: body.phone });
     if (!user) {
-      throw new AppException('AUTH_USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+      throw new UserNotFoundException();
     }
 
     // التحقق من كلمة المرور
     if (!user.passwordHash) {
-      throw new AppException('AUTH_NO_PASSWORD', 'كلمة المرور غير محددة', null, 400);
+      throw new NoPasswordException({ userId: user._id });
     }
 
     const isPasswordValid = await compare(body.password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new AppException('AUTH_INVALID_PASSWORD', 'كلمة المرور غير صحيحة', null, 401);
+      throw new InvalidPasswordException({ userId: user._id });
     }
 
     // حساب صلاحية الأدمن من الأدوار
@@ -916,12 +881,7 @@ export class AuthController {
 
     // التحقق من الصلاحية
     if (!isAdminUser) {
-      throw new AppException(
-        'AUTH_NOT_ADMIN',
-        'هذا الحساب غير مصرح له بالدخول للوحة التحكم',
-        null,
-        403,
-      );
+      throw new AuthException(ErrorCode.AUTH_NOT_ADMIN, { phone: body.phone });
     }
 
     const payload = {

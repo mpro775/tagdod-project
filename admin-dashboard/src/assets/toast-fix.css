@@ -1,0 +1,55 @@
+/* Toast Notifications Fix - إصلاح الإشعارات */
+
+/* إزالة جميع التنسيقات التي قد تخفي النص */
+div[data-react-hot-toast] {
+  z-index: 9999 !important;
+}
+
+/* التأكد من ظهور container Toast */
+div[data-react-hot-toast] > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  font-family: 'Cairo', 'Tajawal', Arial, sans-serif !important;
+  direction: rtl !important;
+  text-align: center !important;
+}
+
+/* التأكد من ظهور النص داخل Toast */
+div[data-react-hot-toast] > div > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+}
+
+/* جميع العناصر داخل Toast */
+div[data-react-hot-toast] * {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline !important;
+}
+
+/* الأيقونة */
+div[data-react-hot-toast] svg {
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+}
+
+/* النص */
+div[data-react-hot-toast] div[style*="flex: 1"] {
+  display: inline-block !important;
+  flex: 1 !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  text-align: center !important;
+}
+

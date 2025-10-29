@@ -1,4 +1,5 @@
-import { Injectable, NestMiddleware, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
+import { DomainException, ErrorCode } from '../../shared/exceptions';
 import { Request, Response, NextFunction } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { ClientIPService } from './services/client-ip.service';
@@ -97,7 +98,7 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
       // Check URL path
       if (this.containsPathTraversal(req.path)) {
         this.logThreat('Path Traversal', req.path, req);
-        throw new BadRequestException('Invalid request path');
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, { reason: 'invalid_path' });
       }
 
       // Additional security checks
@@ -105,8 +106,8 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
 
       next();
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        this.logger.warn(`Threat detected and blocked: ${error.message}`, {
+      if (error instanceof DomainException) {
+        this.logger.warn(`Threat detected and blocked: ${error instanceof Error ? error.message : 'Unknown threat'}`, {
           ip: this.clientIPService.getClientIP(req),
           path: req.path,
           method: req.method,
@@ -123,7 +124,7 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
     if (threats.length > 0) {
       const threatDetails = threats.map(t => `${t.type}: ${t.pattern}`).join(', ');
       this.logThreat(`Multiple threats in ${source}`, threatDetails, req);
-      throw new BadRequestException(`Invalid input detected in ${source}`);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { source, reason: 'invalid_input' });
     }
   }
 
@@ -195,20 +196,20 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
     // Suspicious user agents
     if (this.isSuspiciousUserAgent(userAgent)) {
       this.logThreat('Suspicious User Agent', userAgent, req);
-      throw new BadRequestException('Invalid request');
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { reason: 'invalid_request' });
     }
 
     // Check for extremely large payloads
     if (contentLength > 50 * 1024 * 1024) { // 50MB
       this.logThreat('Large Payload', `${contentLength} bytes`, req);
-      throw new BadRequestException('Request payload too large');
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { reason: 'payload_too_large' });
     }
 
     // Check for too many parameters
     const paramCount = Object.keys(req.query).length + this.countNestedKeys(req.body);
     if (paramCount > 100) {
       this.logThreat('Too Many Parameters', `Count: ${paramCount}`, req);
-      throw new BadRequestException('Too many request parameters');
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { reason: 'too_many_parameters' });
     }
   }
 

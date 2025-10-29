@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserRole } from '../../modules/users/schemas/user.schema';
@@ -6,6 +6,8 @@ import { AuditService } from './audit.service';
 
 @Injectable()
 export class PermissionService {
+  private readonly logger = new Logger(PermissionService.name);
+
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private auditService: AuditService,
@@ -27,7 +29,7 @@ export class PermissionService {
       // Check user permissions
       return user.permissions?.includes(permission) || false;
     } catch (error) {
-      console.error('Error checking permission:', error);
+      this.logger.error('Error checking permission:', error);
       return false;
     }
   }
@@ -40,7 +42,7 @@ export class PermissionService {
       const user = await this.userModel.findById(userId);
       return user?.roles?.includes(role) || false;
     } catch (error) {
-      console.error('Error checking role:', error);
+      this.logger.error('Error checking role:', error);
       return false;
     }
   }
@@ -55,7 +57,7 @@ export class PermissionService {
 
       return roles.some(role => user.roles.includes(role));
     } catch (error) {
-      console.error('Error checking any role:', error);
+      this.logger.error('Error checking any role:', error);
       return false;
     }
   }
@@ -70,7 +72,7 @@ export class PermissionService {
 
       return roles.every(role => user.roles.includes(role));
     } catch (error) {
-      console.error('Error checking all roles:', error);
+      this.logger.error('Error checking all roles:', error);
       return false;
     }
   }
@@ -110,7 +112,7 @@ export class PermissionService {
 
       return true;
     } catch (error) {
-      console.error('Error granting permission:', error);
+      this.logger.error('Error granting permission:', error);
       return false;
     }
   }
@@ -145,7 +147,7 @@ export class PermissionService {
 
       return true;
     } catch (error) {
-      console.error('Error revoking permission:', error);
+      this.logger.error('Error revoking permission:', error);
       return false;
     }
   }
@@ -194,7 +196,7 @@ export class PermissionService {
 
       return true;
     } catch (error) {
-      console.error('Error setting roles:', error);
+      this.logger.error('Error setting roles:', error);
       return false;
     }
   }
@@ -231,7 +233,7 @@ export class PermissionService {
 
       return true;
     } catch (error) {
-      console.error('Error adding role:', error);
+      this.logger.error('Error adding role:', error);
       return false;
     }
   }
@@ -264,7 +266,7 @@ export class PermissionService {
 
       return true;
     } catch (error) {
-      console.error('Error removing role:', error);
+      this.logger.error('Error removing role:', error);
       return false;
     }
   }
@@ -277,7 +279,7 @@ export class PermissionService {
       const user = await this.userModel.findById(userId);
       return user?.permissions || [];
     } catch (error) {
-      console.error('Error getting user permissions:', error);
+      this.logger.error('Error getting user permissions:', error);
       return [];
     }
   }
@@ -290,7 +292,7 @@ export class PermissionService {
       const user = await this.userModel.findById(userId);
       return user?.roles || [];
     } catch (error) {
-      console.error('Error getting user roles:', error);
+      this.logger.error('Error getting user roles:', error);
       return [];
     }
   }

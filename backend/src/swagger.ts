@@ -1,5 +1,5 @@
 import { DocumentBuilder, SwaggerModule, OpenAPIObject } from '@nestjs/swagger';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import * as fs from 'fs';
@@ -21,6 +21,7 @@ interface PostmanItem {
   description: string;
 }
 export function setupSwagger(app: INestApplication) {
+  const logger = new Logger('Swagger');
   const config = new DocumentBuilder()
     .setTitle('Tagadod API')
     .setDescription(
@@ -95,7 +96,7 @@ export function setupSwagger(app: INestApplication) {
     // Export as JSON
     const jsonPath = join(outputPath, 'openapi.json');
     writeFileSync(jsonPath, JSON.stringify(document, null, 2));
-    console.log(`📄 OpenAPI JSON exported to: ${jsonPath}`);
+    logger.log(`📄 OpenAPI JSON exported to: ${jsonPath}`);
 
     // Export as YAML
     const yamlPath = join(outputPath, 'openapi.yaml');
@@ -107,7 +108,7 @@ export function setupSwagger(app: INestApplication) {
         noRefs: true,
       }),
     );
-    console.log(`📄 OpenAPI YAML exported to: ${yamlPath}`);
+    logger.log(`📄 OpenAPI YAML exported to: ${yamlPath}`);
 
     // Export Postman Collection
     const postmanCollection = {
@@ -144,9 +145,9 @@ export function setupSwagger(app: INestApplication) {
 
     const postmanPath = join(outputPath, 'postman-collection.json');
     writeFileSync(postmanPath, JSON.stringify(postmanCollection, null, 2));
-    console.log(`📄 Postman Collection exported to: ${postmanPath}`);
+    logger.log(`📄 Postman Collection exported to: ${postmanPath}`);
   } catch (error) {
-    console.warn('⚠️  Could not export OpenAPI specification:', (error as Error).message);
+    logger.warn('⚠️  Could not export OpenAPI specification:', (error as Error).message);
   }
 
   return document;

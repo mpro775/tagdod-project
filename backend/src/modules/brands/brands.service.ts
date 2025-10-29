@@ -3,7 +3,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, SortOrder } from 'mongoose';
 import { Brand } from './schemas/brand.schema';
 import { CreateBrandDto, UpdateBrandDto, ListBrandsDto } from './dto/brand.dto';
-import { AppException } from '../../shared/exceptions/app.exception';
+import { 
+  BrandNotFoundException,
+  BrandException,
+  ErrorCode 
+} from '../../shared/exceptions';
 import { slugify } from '../../shared/utils/slug.util';
 
 @Injectable()
@@ -20,7 +24,7 @@ export class BrandsService {
     // Check if slug already exists
     const existing = await this.brandModel.findOne({ slug });
     if (existing) {
-      throw new AppException('Brand with this name already exists', '400');
+      throw new BrandException(ErrorCode.BRAND_ALREADY_EXISTS, { name: dto.name });
     }
 
     const brand = new this.brandModel({
@@ -92,7 +96,7 @@ export class BrandsService {
   async getBrandById(id: string): Promise<Brand> {
     const brand = await this.brandModel.findById(id);
     if (!brand) {
-      throw new AppException('Brand not found', '404');
+      throw new BrandNotFoundException({ brandId: id });
     }
     return brand;
   }
@@ -103,7 +107,7 @@ export class BrandsService {
   async getBrandBySlug(slug: string): Promise<Brand> {
     const brand = await this.brandModel.findOne({ slug });
     if (!brand) {
-      throw new AppException('Brand not found', '404');
+      throw new BrandNotFoundException({ slug });
     }
     return brand;
   }
@@ -114,7 +118,7 @@ export class BrandsService {
   async updateBrand(id: string, dto: UpdateBrandDto): Promise<Brand> {
     const brand = await this.brandModel.findById(id);
     if (!brand) {
-      throw new AppException('Brand not found', '404');
+      throw new BrandNotFoundException({ brandId: id });
     }
 
     // If name is being updated, regenerate slug
@@ -125,7 +129,7 @@ export class BrandsService {
         _id: { $ne: id },
       });
       if (existing) {
-        throw new AppException('Brand with this name already exists', '400');
+        throw new BrandException(ErrorCode.BRAND_ALREADY_EXISTS, { name: dto.name });
       }
       brand.slug = newSlug;
     }
@@ -150,7 +154,7 @@ export class BrandsService {
   async deleteBrand(id: string): Promise<void> {
     const brand = await this.brandModel.findById(id);
     if (!brand) {
-      throw new AppException('Brand not found', '404');
+      throw new BrandNotFoundException({ brandId: id });
     }
 
     // Note: You might want to check if there are products using this brand
@@ -171,7 +175,7 @@ export class BrandsService {
   async toggleBrandStatus(id: string): Promise<Brand> {
     const brand = await this.brandModel.findById(id);
     if (!brand) {
-      throw new AppException('Brand not found', '404');
+      throw new BrandNotFoundException({ brandId: id });
     }
 
     brand.isActive = !brand.isActive;

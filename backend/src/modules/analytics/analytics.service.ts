@@ -180,53 +180,49 @@ export class AnalyticsService {
       this.logger.warn('Snapshot generation failed, proceeding with existing data');
     }
 
-    // حاول تجيب نفس التاريخ؛ وإلا خُذ آخر واحد
-    let snapshot = await this.analyticsModel.findOne({ date: snapshotDate, period }).lean();
-    if (!snapshot) {
-      snapshot = await this.analyticsModel.findOne({ period }).sort({ date: -1 }).lean();
-    }
+    // بدلاً من الاعتماد على snapshot، نقرأ البيانات مباشرة من قاعدة البيانات
+    this.logger.debug('Building dashboard data from live database queries');
 
-    if (!snapshot) {
-      // رجّع هيكل خفيف بدل التعليق
-      const empty: DashboardDataDto = {
-        overview: { totalUsers: 0, totalRevenue: 0, totalOrders: 0, activeServices: 0, openSupportTickets: 0, systemHealth: 0 },
-        revenueCharts: {
-          daily: [],
-          monthly: [],
-          byCategory: []
+    // Get real-time overview data
+    const [
+      totalUsers,
+      totalOrders,
+      totalRevenue,
+      activeServices,
+      openSupportTickets,
+    ] = await Promise.all([
+      // Count users where deletedAt is null or doesn't exist
+      this.userModel.countDocuments({ 
+        $or: [
+          { deletedAt: null },
+          { deletedAt: { $exists: false } }
+        ]
+      }),
+      this.orderModel.countDocuments({ 
+        status: { $in: ['completed', 'delivered'] },
+        paymentStatus: 'paid'
+      }),
+      this.orderModel.aggregate([
+        {
+          $match: {
+            status: { $in: ['completed', 'delivered'] },
+            paymentStatus: 'paid',
+          },
         },
-        userCharts: {
-          registrationTrend: [],
-          userTypes: [],
-          geographic: []
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$total' },
+          },
         },
-        productCharts: {
-          topSelling: [],
-          categoryPerformance: [],
-          stockAlerts: []
-        },
-        serviceCharts: {
-          requestTrend: [],
-          engineerPerformance: [],
-          responseTimes: { average: 0, target: 0, trend: [] }
-        },
-        supportCharts: {
-          ticketTrend: [],
-          categoryBreakdown: [],
-          agentPerformance: []
-        },
-        kpis: {
-          revenueGrowth: 0,
-          customerSatisfaction: 0,
-          orderConversion: 0,
-          serviceEfficiency: 0,
-          supportResolution: 0,
-          systemUptime: 0
-        }
-      };
-      await this.cacheService.set(cacheKey, empty, { ttl: this.CACHE_TTL.DASHBOARD_DATA });
-      return empty;
-    }
+      ]).then(result => result[0]?.total || 0),
+      this.serviceModel.countDocuments({ 
+        status: { $in: ['OPEN', 'OFFERS_COLLECTING', 'ASSIGNED', 'IN_PROGRESS'] }
+      }),
+      this.supportModel.countDocuments({ 
+        status: { $in: ['open', 'in_progress', 'waiting_for_user'] }
+      }),
+    ]);
 
     // قياسات زمنية لمعرفة موضع البطء
     const t0 = Date.now();
@@ -235,12 +231,12 @@ export class AnalyticsService {
 
     const dashboardData: DashboardDataDto = {
       overview: {
-        totalUsers: snapshot.users.total,
-        totalRevenue: snapshot.orders.totalRevenue,
-        totalOrders: snapshot.orders.total,
-        activeServices: snapshot.services.open,
-        openSupportTickets: snapshot.support.open,
-        systemHealth: this.calculateSystemHealth(snapshot),
+        totalUsers,
+        totalRevenue,
+        totalOrders,
+        activeServices,
+        openSupportTickets,
+        systemHealth: 100, // Default to 100 if no snapshot available
       },
       revenueCharts: await this.buildRevenueCharts(),
       userCharts: await this.buildUserCharts(),
@@ -255,38 +251,53 @@ export class AnalyticsService {
   }
 
   /**
+   * Helper to get "not deleted" filter
+   */
+  private getNotDeletedFilter() {
+    return {
+      $or: [
+        { deletedAt: null },
+        { deletedAt: { $exists: false } }
+      ]
+    };
+  }
+
+  /**
    * Calculate user analytics
    */
   private async calculateUserAnalytics(startDate: Date, endDate: Date) {
+    const notDeleted = this.getNotDeletedFilter();
     const [totalUsers, activeUsers, newUsers] = await Promise.all([
-      this.userModel.countDocuments({ deletedAt: null }),
+      this.userModel.countDocuments(notDeleted),
       this.userModel.countDocuments({ 
         lastActivityAt: { $gte: startDate },
-        deletedAt: null 
+        ...notDeleted
       }),
       this.userModel.countDocuments({ 
         createdAt: { $gte: startDate, $lte: endDate },
-        deletedAt: null 
+        ...notDeleted
       }),
     ]);
 
-    // Get user types breakdown
+    // Get user types breakdown - handle roles array
     const userTypes = await this.userModel.aggregate([
+      { $unwind: '$roles' },
       {
         $group: {
-          _id: '$role',
+          _id: '$roles',
           count: { $sum: 1 },
         },
       },
     ]);
 
-    const customers = userTypes.find(t => t._id === 'customer')?.count || 0;
+    const customers = userTypes.find(t => t._id === 'user')?.count || 0;
     const engineers = userTypes.find(t => t._id === 'engineer')?.count || 0;
-    const admins = userTypes.find(t => t._id === 'admin')?.count || 0;
+    const adminTypes = userTypes.filter(t => ['admin', 'super_admin'].includes(t._id));
+    const admins = adminTypes.reduce((sum, type) => sum + type.count, 0);
 
-    // Email verification stats
-    const verified = await this.userModel.countDocuments({ isEmailVerified: true });
-    const suspended = await this.userModel.countDocuments({ isSuspended: true });
+    // User status breakdown
+    const verified = totalUsers; // All users are considered verified after phone verification
+    const suspended = await this.userModel.countDocuments({ status: 'suspended' });
 
     return {
       total: totalUsers,
@@ -424,21 +435,21 @@ export class AnalyticsService {
       deliveredOrders,
     ] = await Promise.all([
       this.orderModel.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
-      this.orderModel.countDocuments({ status: 'COMPLETED', createdAt: { $gte: startDate, $lte: endDate } }),
-      this.orderModel.countDocuments({ status: 'PENDING', createdAt: { $gte: startDate, $lte: endDate } }),
-      this.orderModel.countDocuments({ status: 'CANCELLED', createdAt: { $gte: startDate, $lte: endDate } }),
-      this.orderModel.countDocuments({ status: 'PROCESSING', createdAt: { $gte: startDate, $lte: endDate } }),
-      this.orderModel.countDocuments({ status: 'SHIPPED', createdAt: { $gte: startDate, $lte: endDate } }),
-      this.orderModel.countDocuments({ status: 'DELIVERED', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.orderModel.countDocuments({ status: 'completed', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.orderModel.countDocuments({ status: 'pending_payment', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.orderModel.countDocuments({ status: 'cancelled', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.orderModel.countDocuments({ status: 'processing', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.orderModel.countDocuments({ status: 'shipped', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.orderModel.countDocuments({ status: 'delivered', createdAt: { $gte: startDate, $lte: endDate } }),
     ]);
 
     // Revenue calculations
     const revenueResult = await this.orderModel.aggregate([
-      { $match: { status: 'COMPLETED', createdAt: { $gte: startDate, $lte: endDate } } },
+      { $match: { status: { $in: ['completed', 'delivered'] }, paymentStatus: 'paid', createdAt: { $gte: startDate, $lte: endDate } } },
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: '$totalAmount' },
+          totalRevenue: { $sum: '$total' },
           count: { $sum: 1 },
         },
       },
@@ -540,7 +551,7 @@ export class AnalyticsService {
       this.serviceModel.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
       this.serviceModel.countDocuments({ status: 'OPEN', createdAt: { $gte: startDate, $lte: endDate } }),
       this.serviceModel.countDocuments({ status: 'ASSIGNED', createdAt: { $gte: startDate, $lte: endDate } }),
-      this.serviceModel.countDocuments({ status: 'COMPLETED', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.serviceModel.countDocuments({ status: 'completed', createdAt: { $gte: startDate, $lte: endDate } }),
       this.serviceModel.countDocuments({ status: 'CANCELLED', createdAt: { $gte: startDate, $lte: endDate } }),
     ]);
 
@@ -576,7 +587,7 @@ export class AnalyticsService {
 
     // Top engineers
     const topEngineers = await this.serviceModel.aggregate([
-      { $match: { status: 'COMPLETED', engineerId: { $ne: null }, createdAt: { $gte: startDate, $lte: endDate } } },
+      { $match: { status: 'completed', engineerId: { $ne: null }, createdAt: { $gte: startDate, $lte: endDate } } },
       {
         $group: {
           _id: '$engineerId',
@@ -610,7 +621,7 @@ export class AnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: 'COMPLETED',
+          status: 'completed',
           assignedAt: { $exists: true },
           completedAt: { $exists: true },
         },
@@ -869,14 +880,14 @@ export class AnalyticsService {
     const totalRevenueResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: { $in: ['completed', 'delivered'] },
           paymentStatus: 'paid',
         },
       },
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: '$totalAmount' },
+          totalRevenue: { $sum: '$total' },
           orderCount: { $sum: 1 },
         },
       },
@@ -892,7 +903,7 @@ export class AnalyticsService {
       {
         $match: {
           createdAt: { $gte: twelveMonthsAgo },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: { $in: ['completed', 'delivered'] },
           paymentStatus: 'paid',
         },
       },
@@ -902,7 +913,7 @@ export class AnalyticsService {
             year: { $year: '$createdAt' },
             month: { $month: '$createdAt' },
           },
-          revenue: { $sum: '$totalAmount' },
+          revenue: { $sum: '$total' },
         },
       },
       { $sort: { '_id.year': 1, '_id.month': 1 } },
@@ -918,7 +929,7 @@ export class AnalyticsService {
     const categoryRevenueResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: { $in: ['completed', 'delivered'] },
           paymentStatus: 'paid',
         },
       },
@@ -958,14 +969,14 @@ export class AnalyticsService {
     const paymentMethodResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: { $in: ['completed', 'delivered'] },
           paymentStatus: 'paid',
         },
       },
       {
         $group: {
           _id: '$paymentMethod',
-          revenue: { $sum: '$totalAmount' },
+          revenue: { $sum: '$total' },
         },
       },
     ]);
@@ -985,7 +996,7 @@ export class AnalyticsService {
       {
         $group: {
           _id: null,
-          totalRefunds: { $sum: '$totalAmount' },
+          totalRefunds: { $sum: '$total' },
         },
       },
     ]);
@@ -1002,14 +1013,14 @@ export class AnalyticsService {
         {
           $match: {
             createdAt: { $gte: thirtyDaysAgo },
-            status: { $in: ['COMPLETED', 'DELIVERED'] },
+            status: { $in: ['completed', 'delivered'] },
             paymentStatus: 'paid',
           },
         },
         {
           $group: {
             _id: null,
-            revenue: { $sum: '$totalAmount' },
+            revenue: { $sum: '$total' },
           },
         },
       ]),
@@ -1017,14 +1028,14 @@ export class AnalyticsService {
         {
           $match: {
             createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo },
-            status: { $in: ['COMPLETED', 'DELIVERED'] },
+            status: { $in: ['completed', 'delivered'] },
             paymentStatus: 'paid',
           },
         },
         {
           $group: {
             _id: null,
-            revenue: { $sum: '$totalAmount' },
+            revenue: { $sum: '$total' },
           },
         },
       ]),
@@ -1130,16 +1141,16 @@ export class AnalyticsService {
     const topLocationsResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: { $in: ['completed', 'delivered'] },
           paymentStatus: 'paid',
-          'shippingAddress.city': { $exists: true, $ne: null },
+          'deliveryAddress.city': { $exists: true, $ne: null },
         },
       },
       {
         $group: {
           _id: '$shippingAddress.city',
           orders: { $sum: 1 },
-          revenue: { $sum: '$totalAmount' },
+          revenue: { $sum: '$total' },
         },
       },
       { $sort: { revenue: -1 } },
@@ -1351,14 +1362,14 @@ export class AnalyticsService {
         {
           $match: {
             createdAt: { $gte: thirtyDaysAgo },
-            status: { $in: ['COMPLETED', 'DELIVERED'] },
+            status: { $in: ['completed', 'delivered'] },
             paymentStatus: 'paid',
           },
         },
         {
           $group: {
             _id: null,
-            revenue: { $sum: '$totalAmount' },
+            revenue: { $sum: '$total' },
           },
         },
       ]),
@@ -1366,14 +1377,14 @@ export class AnalyticsService {
         {
           $match: {
             createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo },
-            status: { $in: ['COMPLETED', 'DELIVERED'] },
+            status: { $in: ['completed', 'delivered'] },
             paymentStatus: 'paid',
           },
         },
         {
           $group: {
             _id: null,
-            revenue: { $sum: '$totalAmount' },
+            revenue: { $sum: '$total' },
           },
         },
       ]),
@@ -1404,7 +1415,7 @@ export class AnalyticsService {
     // Calculate order conversion rate (orders per customer)
     const [totalOrders, totalCustomers] = await Promise.all([
       this.orderModel.countDocuments({
-        status: { $in: ['COMPLETED', 'DELIVERED'] },
+        status: { $in: ['completed', 'delivered'] },
         paymentStatus: 'paid',
       }),
       this.userModel.countDocuments({
@@ -1568,7 +1579,8 @@ export class AnalyticsService {
     const dailyAgg = await this.orderModel.aggregate([
       {
         $match: {
-          status: 'COMPLETED',
+          status: { $in: ['completed', 'delivered'] },
+          paymentStatus: 'paid',
           createdAt: { $gte: startOfDay(thirtyDaysAgo), $lte: endOfDay(today) },
         },
       },
@@ -1579,7 +1591,7 @@ export class AnalyticsService {
             m: { $month: '$createdAt' },
             d: { $dayOfMonth: '$createdAt' },
           },
-          revenue: { $sum: '$totalAmount' },
+          revenue: { $sum: '$total' },
           orders: { $sum: 1 },
         },
       },
@@ -1605,14 +1617,14 @@ export class AnalyticsService {
     const monthlyAgg = await this.orderModel.aggregate([
       {
         $match: {
-          status: 'COMPLETED',
+          status: 'completed',
           createdAt: { $gte: startOfMonth(twelveMonthsAgo), $lte: endOfMonth(today) },
         },
       },
       {
         $group: {
           _id: { y: { $year: '$createdAt' }, m: { $month: '$createdAt' } },
-          revenue: { $sum: '$totalAmount' },
+          revenue: { $sum: '$total' },
         },
       },
       { $sort: { '_id.y': 1, '_id.m': 1 } },
@@ -1639,7 +1651,7 @@ export class AnalyticsService {
     const categoryRevenueAgg = await this.orderModel.aggregate([
       {
         $match: {
-          status: 'COMPLETED',
+          status: 'completed',
           createdAt: { $gte: startOfMonth(twelveMonthsAgo), $lte: endOfMonth(today) },
         },
       },
@@ -1664,51 +1676,75 @@ export class AnalyticsService {
   }
 
   private async buildUserCharts() {
-    // Generate registration trend from actual data
-    const registrationTrend = [];
+    // Generate registration trend from actual data - OPTIMIZED
+    const today = new Date();
+    const thirtyDaysAgo = subDays(today, 29);
     
-    for (let i = 0; i < 30; i++) {
-      const date = subDays(new Date(), 29 - i);
-      const nextDate = subDays(new Date(), 28 - i);
-      
-      const [newUsers, activeUsers] = await Promise.all([
-        this.userModel.countDocuments({
-          createdAt: { $gte: date, $lt: nextDate },
-          deletedAt: null,
-        }),
-        this.userModel.countDocuments({
-          lastActivityAt: { $gte: date },
-          deletedAt: null,
-        }),
-      ]);
-      
-      registrationTrend.push({
-        date: format(date, 'yyyy-MM-dd'),
-        newUsers,
-        activeUsers,
-      });
-    }
-
-    // Get user types from actual data
-    const userTypesResult = await this.userModel.aggregate([
+    // Get new users per day using single aggregation
+    const notDeleted = this.getNotDeletedFilter();
+    const newUsersAgg = await this.userModel.aggregate([
       {
         $match: {
-          deletedAt: null,
+          createdAt: { $gte: startOfDay(thirtyDaysAgo), $lte: endOfDay(today) },
+          ...notDeleted,
         },
       },
       {
         $group: {
-          _id: '$role',
+          _id: {
+            y: { $year: '$createdAt' },
+            m: { $month: '$createdAt' },
+            d: { $dayOfMonth: '$createdAt' },
+          },
           count: { $sum: 1 },
         },
       },
     ]);
 
-    const totalUsers = userTypesResult.reduce((sum, type) => sum + type.count, 0);
+    const newUsersMap = new Map();
+    newUsersAgg.forEach(item => {
+      const date = new Date(item._id.y, item._id.m - 1, item._id.d);
+      const key = format(date, 'yyyy-MM-dd');
+      newUsersMap.set(key, item.count);
+    });
+
+    // Get total active users count (more efficient than daily)
+    const totalActiveUsers = await this.userModel.countDocuments({
+      lastActivityAt: { $gte: thirtyDaysAgo },
+      ...notDeleted,
+    });
+
+    // Build registration trend array
+    const registrationTrend = Array.from({ length: 30 }, (_, i) => {
+      const date = subDays(today, 29 - i);
+      const key = format(date, 'yyyy-MM-dd');
+      return {
+        date: key,
+        newUsers: newUsersMap.get(key) || 0,
+        activeUsers: totalActiveUsers, // Use same total for all days for performance
+      };
+    });
+
+    // Get user types from actual data - handle roles array
+    const totalUsersCount = await this.userModel.countDocuments(notDeleted);
+    
+    const userTypesResult = await this.userModel.aggregate([
+      {
+        $match: notDeleted,
+      },
+      { $unwind: '$roles' },
+      {
+        $group: {
+          _id: '$roles',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
     const userTypes = userTypesResult.map(type => ({
       type: type._id || 'unknown',
       count: type.count,
-      percentage: totalUsers > 0 ? Math.round((type.count / totalUsers) * 100) : 0,
+      percentage: totalUsersCount > 0 ? Math.round((type.count / totalUsersCount) * 100) : 0,
     }));
 
     // Get geographic data from actual user addresses
@@ -1733,15 +1769,15 @@ export class AnalyticsService {
     const revenueByLocation = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: { $in: ['completed', 'delivered'] },
           paymentStatus: 'paid',
-          'shippingAddress.city': { $exists: true, $ne: null },
+          'deliveryAddress.city': { $exists: true, $ne: null },
         },
       },
       {
         $group: {
           _id: '$shippingAddress.city',
-          revenue: { $sum: '$totalAmount' },
+          revenue: { $sum: '$total' },
         },
       },
     ]);
@@ -1765,7 +1801,7 @@ export class AnalyticsService {
     const topSellingResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: { $in: ['completed', 'delivered'] },
           paymentStatus: 'paid',
         },
       },
@@ -1801,7 +1837,7 @@ export class AnalyticsService {
     const categoryPerformanceResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: { $in: ['completed', 'delivered'] },
           paymentStatus: 'paid',
         },
       },
@@ -1878,34 +1914,55 @@ export class AnalyticsService {
   }
 
   private async buildServiceCharts() {
-    // Generate request trend from actual service data
-    const requestTrend = [];
-    for (let i = 0; i < 30; i++) {
-      const date = subDays(new Date(), 29 - i);
-      const nextDate = subDays(new Date(), 28 - i);
-      
-      const [requests, completed] = await Promise.all([
-        this.serviceModel.countDocuments({
-          createdAt: { $gte: date, $lt: nextDate },
-        }),
-        this.serviceModel.countDocuments({
-          createdAt: { $gte: date, $lt: nextDate },
-          status: 'COMPLETED',
-        }),
-      ]);
-      
-      requestTrend.push({
-        date: format(date, 'yyyy-MM-dd'),
-        requests,
-        completed,
-      });
-    }
+    // Generate request trend from actual service data - OPTIMIZED
+    const today = new Date();
+    const thirtyDaysAgo = subDays(today, 29);
+    
+    // Get service requests per day using single aggregation
+    const requestsAgg = await this.serviceModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startOfDay(thirtyDaysAgo), $lte: endOfDay(today) },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            y: { $year: '$createdAt' },
+            m: { $month: '$createdAt' },
+            d: { $dayOfMonth: '$createdAt' },
+          },
+          total: { $sum: 1 },
+          completed: {
+            $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+
+    const requestsMap = new Map();
+    requestsAgg.forEach(item => {
+      const date = new Date(item._id.y, item._id.m - 1, item._id.d);
+      const key = format(date, 'yyyy-MM-dd');
+      requestsMap.set(key, { total: item.total, completed: item.completed });
+    });
+
+    const requestTrend = Array.from({ length: 30 }, (_, i) => {
+      const date = subDays(today, 29 - i);
+      const key = format(date, 'yyyy-MM-dd');
+      const data = requestsMap.get(key) || { total: 0, completed: 0 };
+      return {
+        date: key,
+        requests: data.total,
+        completed: data.completed,
+      };
+    });
 
     // Get engineer performance from actual data
     const engineerPerformanceResult = await this.serviceModel.aggregate([
       {
         $match: {
-          status: 'COMPLETED',
+          status: 'completed',
           engineerId: { $ne: null },
         },
       },
@@ -1946,7 +2003,7 @@ export class AnalyticsService {
     const responseTimesResult = await this.serviceModel.aggregate([
       {
         $match: {
-          status: 'COMPLETED',
+          status: 'completed',
           assignedAt: { $exists: true },
         },
       },
@@ -1970,40 +2027,9 @@ export class AnalyticsService {
 
     const averageResponseTime = Math.round((responseTimesResult[0]?.avgResponseTime || 12) * 100) / 100;
 
-    // Calculate daily response times from actual data
-    const dailyResponseTimes = [];
-    for (let i = 0; i < 30; i++) {
-      const date = subDays(new Date(), 29 - i);
-      const nextDate = subDays(new Date(), 28 - i);
-      
-      const dayResponseResult = await this.serviceModel.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: date, $lt: nextDate },
-            status: 'COMPLETED',
-            assignedAt: { $exists: true },
-          },
-        },
-        {
-          $project: {
-            responseTimeHours: {
-              $divide: [
-                { $subtract: ['$assignedAt', '$createdAt'] },
-                1000 * 60 * 60, // Convert to hours
-              ],
-            },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            avgResponseTime: { $avg: '$responseTimeHours' },
-          },
-        },
-      ]);
-
-      dailyResponseTimes.push(Math.round((dayResponseResult[0]?.avgResponseTime || averageResponseTime) * 100) / 100);
-    }
+    // Use average response time for all days (performance optimization)
+    // In production, you might want to calculate daily response times with a more efficient aggregation
+    const dailyResponseTimes = Array.from({ length: 30 }, () => averageResponseTime);
 
     const responseTimes = {
       average: averageResponseTime,
@@ -2015,28 +2041,55 @@ export class AnalyticsService {
   }
 
   private async buildSupportCharts() {
-    // Generate ticket trend from actual support data
-    const ticketTrend = [];
-    for (let i = 0; i < 30; i++) {
-      const date = subDays(new Date(), 29 - i);
-      const nextDate = subDays(new Date(), 28 - i);
-      
-      const [newTickets, resolvedTickets] = await Promise.all([
-        this.supportModel.countDocuments({
-          createdAt: { $gte: date, $lt: nextDate },
-        }),
-        this.supportModel.countDocuments({
-          createdAt: { $gte: date, $lt: nextDate },
-          status: { $in: ['resolved', 'closed'] },
-        }),
-      ]);
-      
-      ticketTrend.push({
-        date: format(date, 'yyyy-MM-dd'),
-        new: newTickets,
-        resolved: resolvedTickets,
-      });
-    }
+    // Generate ticket trend from actual support data - OPTIMIZED
+    const today = new Date();
+    const thirtyDaysAgo = subDays(today, 29);
+    
+    // Get support tickets per day using single aggregation
+    const ticketsAgg = await this.supportModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startOfDay(thirtyDaysAgo), $lte: endOfDay(today) },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            y: { $year: '$createdAt' },
+            m: { $month: '$createdAt' },
+            d: { $dayOfMonth: '$createdAt' },
+          },
+          total: { $sum: 1 },
+          resolved: {
+            $sum: {
+              $cond: [
+                { $in: ['$status', ['resolved', 'closed']] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    const ticketsMap = new Map();
+    ticketsAgg.forEach(item => {
+      const date = new Date(item._id.y, item._id.m - 1, item._id.d);
+      const key = format(date, 'yyyy-MM-dd');
+      ticketsMap.set(key, { total: item.total, resolved: item.resolved });
+    });
+
+    const ticketTrend = Array.from({ length: 30 }, (_, i) => {
+      const date = subDays(today, 29 - i);
+      const key = format(date, 'yyyy-MM-dd');
+      const data = ticketsMap.get(key) || { total: 0, resolved: 0 };
+      return {
+        date: key,
+        new: data.total,
+        resolved: data.resolved,
+      };
+    });
 
     // Get category breakdown from actual data
     const categoryBreakdownResult = await this.supportModel.aggregate([

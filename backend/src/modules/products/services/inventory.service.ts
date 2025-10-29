@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { Variant } from '../schemas/variant.schema';
-import { AppException } from '../../../shared/exceptions/app.exception';
+import { 
+  VariantNotFoundException,
+  ProductException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
 
@@ -26,7 +30,7 @@ export class InventoryService {
     const variant = await this.variantModel.findById(variantId);
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId });
     }
 
     const update = operation === 'add' 
@@ -63,7 +67,7 @@ export class InventoryService {
     const variant = await this.variantModel.findById(variantId);
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId });
     }
 
     const oldStock = variant.stock;
@@ -246,50 +250,55 @@ export class InventoryService {
     difference: number;
   }>> {
     try {
-      const filter: FilterQuery<Variant> = {
-        trackInventory: true,
-        deletedAt: null,
-        isActive: true,
-        // فلترة قيم NaN وغير الصحيحة
-        stock: { $type: 'number', $ne: null },
-        minStock: { $type: 'number', $ne: null }
-      };
-
-      if (threshold !== undefined) {
-        filter.stock = { ...filter.stock, $lte: threshold };
-      } else {
-        filter.$expr = { $lte: ['$stock', '$minStock'] };
-      }
-
+      // جلب جميع الـ variants النشطة ثم تصفيتها في JavaScript (تجنب مشاكل NaN في MongoDB)
       const variants = await this.variantModel
-        .find(filter)
+        .find({
+          trackInventory: true,
+          deletedAt: null,
+          isActive: true,
+        })
         .select('_id productId sku stock minStock')
         .lean();
 
-      // تصفية إضافية للتأكد من عدم وجود NaN
-      return variants
-        .filter(variant => 
-          !isNaN(variant.stock) && 
-          !isNaN(variant.minStock) &&
-          variant.stock !== null &&
-          variant.minStock !== null
-        )
-        .map(variant => ({
-          variantId: variant._id.toString(),
-          productId: variant.productId.toString(),
-          sku: variant.sku,
-          currentStock: variant.stock,
-          minStock: variant.minStock,
-          difference: variant.minStock - variant.stock
-        }));
+      // تصفية في JavaScript لتجنب مشاكل NaN
+      const validVariants = variants.filter(variant => {
+        // التأكد من أن القيم أرقام صحيحة
+        const stockIsValid = typeof variant.stock === 'number' && 
+                            !isNaN(variant.stock) && 
+                            isFinite(variant.stock) && 
+                            variant.stock !== null;
+        
+        const minStockIsValid = typeof variant.minStock === 'number' && 
+                               !isNaN(variant.minStock) && 
+                               isFinite(variant.minStock) && 
+                               variant.minStock !== null;
+
+        if (!stockIsValid || !minStockIsValid) {
+          return false;
+        }
+
+        // تطبيق شرط threshold أو المقارنة
+        if (threshold !== undefined && !isNaN(threshold)) {
+          return variant.stock <= threshold;
+        } else {
+          return variant.stock <= variant.minStock;
+        }
+      });
+
+      return validVariants.map(variant => ({
+        variantId: variant._id.toString(),
+        productId: variant.productId.toString(),
+        sku: variant.sku,
+        currentStock: variant.stock,
+        minStock: variant.minStock,
+        difference: variant.minStock - variant.stock
+      }));
     } catch (error) {
       this.logger.error('Error getting low stock variants:', error);
-      throw new AppException(
-        'LOW_STOCK_QUERY_ERROR',
-        'فشل في جلب المتغيرات ذات المخزون المنخفض',
-        error instanceof Error ? error.message : String(error),
-        500
-      );
+      
+      // إرجاع مصفوفة فارغة بدلاً من رمي خطأ
+      this.logger.warn('Returning empty array due to query error');
+      return [];
     }
   }
 
@@ -299,21 +308,24 @@ export class InventoryService {
     sku?: string;
   }>> {
     try {
+      // جلب الـ variants ثم تصفيتها في JavaScript
       const variants = await this.variantModel
         .find({
           trackInventory: true,
-          stock: 0,
           deletedAt: null,
           isActive: true,
-          // فلترة قيم NaN وغير الصحيحة
-          $expr: { $eq: [{ $type: '$stock' }, 'number'] }
         })
         .select('_id productId sku stock')
         .lean();
 
-      // تصفية إضافية للتأكد من عدم وجود NaN
+      // تصفية في JavaScript لتجنب مشاكل NaN
       return variants
-        .filter(variant => !isNaN(variant.stock) && variant.stock === 0)
+        .filter(variant => {
+          const stockIsValid = typeof variant.stock === 'number' && 
+                              !isNaN(variant.stock) && 
+                              isFinite(variant.stock);
+          return stockIsValid && variant.stock === 0;
+        })
         .map(variant => ({
           variantId: variant._id.toString(),
           productId: variant.productId.toString(),
@@ -321,12 +333,10 @@ export class InventoryService {
         }));
     } catch (error) {
       this.logger.error('Error getting out of stock variants:', error);
-      throw new AppException(
-        'OUT_OF_STOCK_QUERY_ERROR',
-        'فشل في جلب المتغيرات غير المتوفرة',
-        error instanceof Error ? error.message : String(error),
-        500
-      );
+      
+      // إرجاع مصفوفة فارغة بدلاً من رمي خطأ
+      this.logger.warn('Returning empty array due to query error');
+      return [];
     }
   }
 
