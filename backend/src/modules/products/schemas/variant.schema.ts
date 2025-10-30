@@ -91,6 +91,23 @@ export class Variant {
 
 export const VariantSchema = SchemaFactory.createForClass(Variant);
 
+// Virtual getters للتوافق مع الفرونت اند
+VariantSchema.virtual('price').get(function() {
+  return this.basePriceUSD;
+});
+
+VariantSchema.virtual('compareAtPrice').get(function() {
+  return this.compareAtPriceUSD;
+});
+
+VariantSchema.virtual('costPrice').get(function() {
+  return this.costPriceUSD;
+});
+
+// تأكد من أن virtuals يتم تضمينها في JSON و Object
+VariantSchema.set('toJSON', { virtuals: true });
+VariantSchema.set('toObject', { virtuals: true });
+
 // Custom validators to prevent NaN values
 VariantSchema.path('stock').validate(function(value: number) {
   return !isNaN(value) && isFinite(value) && value >= 0;

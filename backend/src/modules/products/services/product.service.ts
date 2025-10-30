@@ -4,7 +4,11 @@ import { Model, Types } from 'mongoose';
 import { Product, ProductStatus } from '../schemas/product.schema';
 import { Variant } from '../schemas/variant.schema';
 import { slugify } from '../../../shared/utils/slug.util';
-import { AppException } from '../../../shared/exceptions/app.exception';
+import { 
+  ProductNotFoundException,
+  ProductException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 import { CacheService } from '../../../shared/cache/cache.service';
 import { CategoriesService } from '../../categories/categories.service';
 
@@ -27,7 +31,7 @@ export class ProductService {
     // التحقق من عدم التكرار
     const existing = await this.productModel.findOne({ slug, deletedAt: null });
     if (existing) {
-      throw new AppException('PRODUCT_SLUG_EXISTS', 'اسم المنتج موجود بالفعل', null, 400);
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { slug: dto.slug, reason: 'already_exists' });
     }
 
     const product = await this.productModel.create({
@@ -59,7 +63,7 @@ export class ProductService {
       .lean();
 
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId: id });
     }
 
     return product;
@@ -75,7 +79,7 @@ export class ProductService {
       .lean();
 
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ slug });
     }
 
     return product;
@@ -85,11 +89,11 @@ export class ProductService {
     const product = await this.productModel.findById(id);
 
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId: id });
     }
 
     if (product.deletedAt) {
-      throw new AppException('PRODUCT_DELETED', 'المنتج محذوف', null, 400);
+      throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND, { productId: id, reason: 'deleted' });
     }
 
     // تحديث الـ slug إذا تغير الاسم
@@ -114,7 +118,7 @@ export class ProductService {
     const product = await this.productModel.findById(id);
 
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId: id });
     }
 
     // Soft delete
@@ -139,7 +143,7 @@ export class ProductService {
     const product = await this.productModel.findById(id);
 
     if (!product || !product.deletedAt) {
-      throw new AppException('PRODUCT_NOT_DELETED', 'المنتج غير محذوف', null, 400);
+      throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND, { productId: id, reason: 'not_deleted' });
     }
 
     product.deletedAt = null;
@@ -300,11 +304,11 @@ export class ProductService {
     // التحقق من وجود المنتج
     const product = await this.productModel.findById(productId);
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId });
     }
 
     if (product.deletedAt) {
-      throw new AppException('PRODUCT_DELETED', 'المنتج محذوف', null, 400);
+      throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND, { productId, reason: 'deleted' });
     }
 
     // التحقق من أن جميع المنتجات الشبيهة موجودة وغير محذوفة
@@ -320,12 +324,11 @@ export class ProductService {
       });
 
       if (relatedProducts.length !== filteredIds.length) {
-        throw new AppException(
-          'INVALID_RELATED_PRODUCTS',
-          'بعض المنتجات الشبيهة غير موجودة أو محذوفة',
-          null,
-          400,
-        );
+        throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { 
+          reason: 'invalid_related_products',
+          provided: filteredIds.length,
+          found: relatedProducts.length 
+        });
       }
     }
 
@@ -343,12 +346,12 @@ export class ProductService {
   async addRelatedProduct(productId: string, relatedProductId: string): Promise<Product> {
     const product = await this.productModel.findById(productId);
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId });
     }
 
     // التحقق من أن المنتج لا يضيف نفسه
     if (productId === relatedProductId) {
-      throw new AppException('INVALID_OPERATION', 'لا يمكن إضافة المنتج لنفسه', null, 400);
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { reason: 'self_reference', productId });
     }
 
     // التحقق من وجود المنتج الشبيه
@@ -358,7 +361,7 @@ export class ProductService {
     });
 
     if (!relatedProduct) {
-      throw new AppException('RELATED_PRODUCT_NOT_FOUND', 'المنتج الشبيه غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId: relatedProductId });
     }
 
     // إضافة المنتج إذا لم يكن موجوداً بالفعل
@@ -377,7 +380,7 @@ export class ProductService {
   async removeRelatedProduct(productId: string, relatedProductId: string): Promise<Product> {
     const product = await this.productModel.findById(productId);
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId });
     }
 
     product.relatedProducts = product.relatedProducts.filter(
@@ -399,7 +402,7 @@ export class ProductService {
     });
 
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId });
     }
 
     if (!product.relatedProducts || product.relatedProducts.length === 0) {

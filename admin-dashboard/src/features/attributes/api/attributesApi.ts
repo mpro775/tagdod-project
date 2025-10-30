@@ -28,10 +28,11 @@ export const attributesApi = {
    * GET /admin/attributes
    */
   list: async (params: ListAttributesParams = {}): Promise<{ data: Attribute[]; meta?: any }> => {
-    const response = await apiClient.get<ApiResponse<{ data: Attribute[]; meta?: any }>>('/admin/attributes', {
+    const response = await apiClient.get<ApiResponse<Attribute[]>>('/admin/attributes', {
       params,
     });
-    return response.data.data;
+    // Backend يرجع array مباشرة، نحوله لـ object
+    return { data: response.data.data as Attribute[], meta: undefined };
   },
 
   /**
@@ -128,7 +129,8 @@ export const attributesApi = {
    * GET /admin/attributes/stats/summary
    */
   getStats: async (): Promise<AttributeStats> => {
-    const response = await apiClient.get<ApiResponse<AttributeStats>>('/admin/attributes/stats/summary');
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<{ data: AttributeStats }>>('/admin/attributes/stats/summary');
+    // Backend يرجع data.data.data بسبب التداخل
+    return (response.data.data as any).data || response.data.data;
   },
 };

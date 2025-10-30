@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, Typography } from '@mui/material';
 import { formatCurrency } from '../api/cartApi';
+import { useTranslation } from 'react-i18next';
 
 interface CartStatsCardProps {
   title: string;
@@ -33,12 +34,12 @@ export const CartStatsCard: React.FC<CartStatsCardProps> = ({
   isCurrency = false,
 }) => {
   const colorClass = colorClasses[color];
-  
+  const { t } = useTranslation();
   const formatValue = (val: number | string) => {
     if (isCurrency && typeof val === 'number') {
-      return formatCurrency(val);
+      return formatCurrency(val, t('cart.stats.currency', { defaultValue: 'USD' }));
     }
-    return val.toLocaleString('ar-SA');
+    return val.toLocaleString(t('cart.stats.locale', { defaultValue: 'en-US' }));
   };
 
   return (
@@ -59,8 +60,8 @@ export const CartStatsCard: React.FC<CartStatsCardProps> = ({
         </div>
         {subtitle && (
           <p className="text-xs text-gray-500 mt-1">
-            {subtitle}
-          </p>
+            {t(subtitle, { defaultValue: subtitle })}
+            </p>
         )}
         {trend && (
           <div className="flex items-center mt-2">
@@ -69,10 +70,10 @@ export const CartStatsCard: React.FC<CartStatsCardProps> = ({
                 trend.isPositive ? 'text-green-600' : 'text-red-600'
               }`}
             >
-              {trend.isPositive ? '↗' : '↘'} {Math.abs(trend.value)}%
+              {trend.isPositive ? '↗' : '↘'} {t('cart.stats.trend.value', { value: Math.abs(trend.value) })}%
             </span>
             <span className="text-xs text-gray-500 mr-2">
-              من الفترة السابقة
+              {t('cart.stats.trend.previousPeriod', { defaultValue: 'من الفترة السابقة' })}
             </span>
           </div>
         )}

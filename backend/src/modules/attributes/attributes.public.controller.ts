@@ -40,9 +40,9 @@ export class AttributesPublicController {
               name: { type: 'string', example: 'اللون' },
               nameEn: { type: 'string', example: 'Color' },
               slug: { type: 'string', example: 'color' },
-              type: { 
-                type: 'string', 
-                enum: ['select', 'multiselect', 'text', 'number', 'boolean'],
+              type: {
+                type: 'string',
+                enum: ['select', 'multiselect', 'text', 'number', 'boolean', 'color'],
                 example: 'select'
               },
               description: { type: 'string', example: 'لون المنتج' },
@@ -90,9 +90,9 @@ export class AttributesPublicController {
               name: { type: 'string', example: 'اللون' },
               nameEn: { type: 'string', example: 'Color' },
               slug: { type: 'string', example: 'color' },
-              type: { 
-                type: 'string', 
-                enum: ['select', 'multiselect', 'text', 'number', 'boolean'],
+              type: {
+                type: 'string',
+                enum: ['select', 'multiselect', 'text', 'number', 'boolean', 'color'],
                 example: 'select'
               },
               description: { type: 'string', example: 'لون المنتج' },
@@ -179,9 +179,9 @@ export class AttributesPublicController {
             name: { type: 'string', example: 'اللون' },
             nameEn: { type: 'string', example: 'Color' },
             slug: { type: 'string', example: 'color' },
-            type: { 
-              type: 'string', 
-              enum: ['select', 'multiselect', 'text', 'number', 'boolean'],
+            type: {
+              type: 'string',
+              enum: ['select', 'multiselect', 'text', 'number', 'boolean', 'color'],
               example: 'select'
             },
             description: { type: 'string', example: 'لون المنتج' },

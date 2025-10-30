@@ -32,6 +32,7 @@ import {
   DeviceUnknown,
   ShoppingCart,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { Cart, CartStatus } from '../types/cart.types';
 import {
   formatCurrency,
@@ -78,6 +79,7 @@ const CartTableRow: React.FC<CartTableRowProps> = ({
   onSendReminder,
   onDelete,
 }) => {
+  const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -104,16 +106,16 @@ const CartTableRow: React.FC<CartTableRowProps> = ({
 
   const getUserDisplayName = () => {
     if (cart.user) {
-      return cart.user.name || cart.user.email || 'مستخدم غير معروف';
+      return cart.user.name || cart.user.email || t('cart.list.user.unknown');
     }
-    return cart.deviceId ? `جهاز ${cart.deviceId.slice(-8)}` : 'ضيف';
+    return cart.deviceId ? `${t('cart.list.user.device')} ${cart.deviceId.slice(-8)}` : t('cart.list.user.guest');
   };
 
   const getUserContact = () => {
     if (cart.user) {
-      return cart.user.email || cart.user.phone || 'لا يوجد';
+      return cart.user.email || cart.user.phone || t('cart.list.user.noContact');
     }
-    return 'غير متاح';
+    return t('cart.list.user.noContact');
   };
 
   const getLastActivity = () => {
@@ -167,7 +169,12 @@ const CartTableRow: React.FC<CartTableRowProps> = ({
       </TableCell>
 
       <TableCell>
-        <Typography variant="body2">{getCartItemsCount()} منتج</Typography>
+        <Typography variant="body2">
+          {getCartItemsCount() === 1
+            ? t('cart.list.items.single')
+            : t('cart.list.items.count', { count: getCartItemsCount() })
+          }
+        </Typography>
       </TableCell>
 
       <TableCell>
@@ -189,20 +196,20 @@ const CartTableRow: React.FC<CartTableRowProps> = ({
         <Box display="flex" alignItems="center" gap={1}>
           {cart.isAbandoned && (
             <Chip
-              label={`${cart.abandonmentEmailsSent} إيميل`}
+              label={t('cart.list.status.emailsSent', { count: cart.abandonmentEmailsSent })}
               size="small"
               color="warning"
               variant="outlined"
             />
           )}
           {cart.convertedToOrderId && (
-            <Chip label="محولة" size="small" color="success" variant="outlined" />
+            <Chip label={t('cart.list.status.convertedToOrder')} size="small" color="success" variant="outlined" />
           )}
         </Box>
       </TableCell>
 
       <TableCell>
-        <Tooltip title="المزيد من الإجراءات">
+        <Tooltip title={t('cart.list.menu.moreActions')}>
           <IconButton size="small" onClick={handleMenuClick}>
             <MoreVert />
           </IconButton>
@@ -225,7 +232,7 @@ const CartTableRow: React.FC<CartTableRowProps> = ({
             <ListItemIcon>
               <Visibility fontSize="small" />
             </ListItemIcon>
-            <ListItemText>عرض التفاصيل</ListItemText>
+            <ListItemText>{t('cart.list.menu.viewDetails')}</ListItemText>
           </MenuItem>
 
           {canConvert && (
@@ -233,7 +240,7 @@ const CartTableRow: React.FC<CartTableRowProps> = ({
               <ListItemIcon>
                 <ShoppingCartCheckout fontSize="small" />
               </ListItemIcon>
-              <ListItemText>تحويل إلى طلب</ListItemText>
+              <ListItemText>{t('cart.list.menu.convertToOrder')}</ListItemText>
             </MenuItem>
           )}
 
@@ -242,7 +249,7 @@ const CartTableRow: React.FC<CartTableRowProps> = ({
               <ListItemIcon>
                 <Email fontSize="small" />
               </ListItemIcon>
-              <ListItemText>إرسال تذكير</ListItemText>
+              <ListItemText>{t('cart.list.menu.sendReminder')}</ListItemText>
             </MenuItem>
           )}
 
@@ -250,7 +257,7 @@ const CartTableRow: React.FC<CartTableRowProps> = ({
             <ListItemIcon>
               <Delete fontSize="small" color="error" />
             </ListItemIcon>
-            <ListItemText>حذف السلة</ListItemText>
+            <ListItemText>{t('cart.list.menu.deleteCart')}</ListItemText>
           </MenuItem>
         </Menu>
       </TableCell>
@@ -314,6 +321,7 @@ export const CartTable: React.FC<CartTableProps> = ({
   onLimitChange,
   error,
 }) => {
+  const { t } = useTranslation();
   const allCartIds = carts.map((cart) => cart._id);
   const isAllSelected =
     allCartIds.length > 0 && allCartIds.every((id) => selectedCarts.includes(id));
@@ -356,13 +364,13 @@ export const CartTable: React.FC<CartTableProps> = ({
                   color="primary"
                 />
               </TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المستخدم</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحالة</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>عدد المنتجات</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>القيمة الإجمالية</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>آخر نشاط</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>معلومات إضافية</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('cart.list.columns.user')}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('cart.list.columns.status')}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('cart.list.columns.itemsCount')}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('cart.list.columns.totalValue')}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('cart.list.columns.lastActivity')}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('cart.list.columns.additionalInfo')}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('cart.list.columns.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -374,10 +382,10 @@ export const CartTable: React.FC<CartTableProps> = ({
                   <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
                     <ShoppingCart color="disabled" sx={{ fontSize: 48 }} />
                     <Typography variant="h6" color="text.secondary">
-                      لا توجد سلات
+                      {t('cart.list.empty.title')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      لم يتم العثور على أي سلات تطابق المعايير المحددة
+                      {t('cart.list.empty.message')}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -408,8 +416,8 @@ export const CartTable: React.FC<CartTableProps> = ({
         rowsPerPage={limit}
         onRowsPerPageChange={(e) => onLimitChange(parseInt(e.target.value))}
         rowsPerPageOptions={[10, 25, 50, 100]}
-        labelRowsPerPage="عدد الصفوف في الصفحة:"
-        labelDisplayedRows={({ from, to, count }) => `${from}-${to} من ${count}`}
+        labelRowsPerPage={t('cart.pagination.rowsPerPage')}
+        labelDisplayedRows={({ from, to, count }) => t('cart.pagination.displayedRows', { from, to, count })}
         sx={{
           '& .MuiTablePagination-toolbar': {
             direction: 'ltr',

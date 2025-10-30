@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Card,
@@ -19,6 +20,7 @@ interface CategoryStatsCardsProps {
 }
 
 export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefresh }) => {
+  const { t } = useTranslation('categories');
   const { data: stats, isLoading, error } = useCategoryStats();
   const { isPending: isUpdating } = useUpdateCategoryStats();
 
@@ -32,7 +34,7 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
     return (
       <Card sx={{ p: 2 }}>
         <Typography color="error" variant="body2">
-          خطأ في تحميل الإحصائيات
+          {t('stats.statsError')}
         </Typography>
       </Card>
     );
@@ -40,46 +42,46 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
 
   const statsCards = [
     {
-      title: 'إجمالي الفئات',
+      title: t('stats.totalCategories'),
       value: stats?.totalCategories || 0,
       icon: <Category sx={{ fontSize: 40, color: 'primary.main' }} />,
       color: 'primary',
-      description: 'جميع الفئات في النظام',
+      description: t('stats.totalDesc'),
     },
     {
-      title: 'الفئات النشطة',
+      title: t('stats.activeCategories'),
       value: stats?.activeCategories || 0,
       icon: <Visibility sx={{ fontSize: 40, color: 'success.main' }} />,
       color: 'success',
-      description: 'الفئات المعروضة للعملاء',
+      description: t('stats.activeDesc'),
     },
     {
-      title: 'الفئات المميزة',
+      title: t('stats.featuredCategories'),
       value: stats?.featuredCategories || 0,
       icon: <Star sx={{ fontSize: 40, color: 'warning.main' }} />,
       color: 'warning',
-      description: 'الفئات المميزة في الموقع',
+      description: t('stats.featuredDesc'),
     },
     {
-      title: 'إجمالي المنتجات',
+      title: t('stats.totalProducts'),
       value: stats?.totalProducts || 0,
       icon: <TrendingUp sx={{ fontSize: 40, color: 'info.main' }} />,
       color: 'info',
-      description: 'جميع المنتجات في الفئات',
+      description: t('stats.totalProductsDesc'),
     },
     {
-      title: 'الفئات مع منتجات',
+      title: t('stats.categoriesWithProducts'),
       value: stats?.categoriesWithProducts || 0,
       icon: <TrendingUp sx={{ fontSize: 40, color: 'secondary.main' }} />,
       color: 'secondary',
-      description: 'الفئات التي تحتوي على منتجات',
+      description: t('stats.categoriesWithProductsDesc'),
     },
     {
-      title: 'متوسط المنتجات',
+      title: t('stats.averageProducts'),
       value: stats?.averageProductsPerCategory || 0,
       icon: <TrendingUp sx={{ fontSize: 40, color: 'error.main' }} />,
       color: 'error',
-      description: 'متوسط المنتجات لكل فئة',
+      description: t('stats.averageProductsDesc'),
       isDecimal: true,
     },
   ];
@@ -88,10 +90,10 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
     <Box sx={{ mb: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6" fontWeight="bold">
-          إحصائيات الفئات
+          {t('stats.title')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title="تحديث الإحصائيات">
+          <Tooltip title={t('stats.refreshStats')}>
             <IconButton
               size="small"
               onClick={handleRefreshStats}
@@ -139,7 +141,7 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
                       color={`${card.color}.main`}
                       sx={{ lineHeight: 1 }}
                     >
-                      {card.isDecimal ? formatNumber(card.value, 'ar') : formatNumber(card.value)}
+                      {card.isDecimal ? formatNumber(card.value, 'en') : formatNumber(card.value)}
                     </Typography>
                   )}
                 </Box>
@@ -154,7 +156,7 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
                       </Typography>
                       {card.value > 0 && (
                         <Chip
-                          label="نشط"
+                          label={t('stats.active')}
                           size="small"
                           color={card.color as any}
                           variant="outlined"
@@ -172,7 +174,7 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
       {stats && (
         <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            آخر تحديث: {new Date().toLocaleString('ar-SA')}
+            {t('stats.lastUpdate')} {new Date().toLocaleString('ar-SA')}
           </Typography>
         </Box>
       )}

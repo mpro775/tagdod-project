@@ -12,6 +12,7 @@ import {
   Divider,
 } from '@mui/material';
 import { TrendingUp, Schedule, Person, Note } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { ExchangeRatesData } from '../api/exchangeRatesApi';
 
 interface ExchangeRateStatsProps {
@@ -21,8 +22,10 @@ interface ExchangeRateStatsProps {
 }
 
 export const ExchangeRateStats: React.FC<ExchangeRateStatsProps> = ({ rates, loading, error }) => {
+  const { t } = useTranslation('exchangeRates');
+
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'غير محدد';
+    if (!dateString) return t('messages.noData');
     return new Date(dateString).toLocaleString('ar-SA', {
       year: 'numeric',
       month: 'long',

@@ -58,12 +58,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     handleMenuClose();
   };
 
-  const handleToggleLanguage = () => {
-    const newLang = i18n.language === 'ar' ? 'en' : 'ar';
-    i18n.changeLanguage(newLang);
-    const newDir = newLang === 'ar' ? 'rtl' : 'ltr';
-    useThemeStore.getState().setDirection(newDir);
-    localStorage.setItem('language', newLang);
+  const handleToggleLanguage = async () => {
+    const newLang = (i18n.language === 'ar' ? 'en' : 'ar') as 'ar' | 'en';
+    await i18n.changeLanguage(newLang);
+    useThemeStore.getState().setLanguage(newLang);
     handleMenuClose();
   };
 

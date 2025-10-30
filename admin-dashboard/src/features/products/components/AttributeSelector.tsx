@@ -94,6 +94,8 @@ const getAttributeTypeLabel = (type: string) => {
       return 'رقم';
     case 'boolean':
       return 'نعم/لا';
+    case 'color':
+      return 'لون';
     default:
       return type;
   }

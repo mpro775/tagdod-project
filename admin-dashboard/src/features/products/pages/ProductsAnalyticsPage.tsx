@@ -31,6 +31,7 @@ import {
   Download,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   useProductStats,
   useInventorySummary,
@@ -63,11 +64,24 @@ function TabPanel(props: TabPanelProps) {
 export const ProductsAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
+  const { t } = useTranslation('products');
 
   const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useProductStats();
   const { data: inventorySummary, isLoading: loadingInventory } = useInventorySummary();
-  const { data: lowStockVariants } = useLowStockVariants();
-  const { data: outOfStockVariants } = useOutOfStockVariants();
+  const { data: lowStockVariantsResponse } = useLowStockVariants();
+  const { data: outOfStockVariantsResponse } = useOutOfStockVariants();
+
+  const lowStockVariants = Array.isArray(lowStockVariantsResponse)
+    ? lowStockVariantsResponse
+    : Array.isArray((lowStockVariantsResponse as any)?.data)
+    ? (lowStockVariantsResponse as any).data
+    : [];
+
+  const outOfStockVariants = Array.isArray(outOfStockVariantsResponse)
+    ? outOfStockVariantsResponse
+    : Array.isArray((outOfStockVariantsResponse as any)?.data)
+    ? (outOfStockVariantsResponse as any).data
+    : [];
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -78,8 +92,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
   };
 
   const handleExportData = () => {
-    // This would implement data export functionality
-    alert('ميزة التصدير ستكون متاحة قريباً');
+    alert(t('analytics.exportSoon', { defaultValue: 'ميزة التصدير ستكون متاحة قريباً' }));
   };
 
   if (loadingStats) {
@@ -95,17 +108,17 @@ export const ProductsAnalyticsPage: React.FC = () => {
       {/* Header */}
       <Box display="flex" alignItems="center" gap={2} mb={3}>
         <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate('/products')}>
-          العودة للمنتجات
+          {t('analytics.backToProducts', { defaultValue: 'العودة للمنتجات' })}
         </Button>
         <Typography variant="h4" component="h1">
-          إحصائيات المنتجات
+          {t('analytics.title', { defaultValue: 'إحصائيات المنتجات' })}
         </Typography>
         <Box ml="auto" display="flex" gap={1}>
           <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh}>
-            تحديث
+            {t('analytics.refresh', { defaultValue: 'تحديث' })}
           </Button>
           <Button variant="contained" startIcon={<Download />} onClick={handleExportData}>
-            تصدير البيانات
+            {t('analytics.export', { defaultValue: 'تصدير البيانات' })}
           </Button>
         </Box>
       </Box>
@@ -122,7 +135,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
                     {stats?.total || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    إجمالي المنتجات
+                    {t('analytics.totalProducts', { defaultValue: 'إجمالي المنتجات' })}
                   </Typography>
                 </Box>
               </Box>
@@ -140,7 +153,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
                     {stats?.active || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    منتجات نشطة
+                    {t('analytics.activeProducts', { defaultValue: 'منتجات نشطة' })}
                   </Typography>
                 </Box>
               </Box>
@@ -158,7 +171,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
                     {stats?.featured || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    منتجات مميزة
+                    {t('analytics.featuredProducts', { defaultValue: 'منتجات مميزة' })}
                   </Typography>
                 </Box>
               </Box>
@@ -176,7 +189,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
                     {stats?.new || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    منتجات جديدة
+                    {t('analytics.newProducts', { defaultValue: 'منتجات جديدة' })}
                   </Typography>
                 </Box>
               </Box>
@@ -191,25 +204,25 @@ export const ProductsAnalyticsPage: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                توزيع المنتجات حسب الحالة
+                {t('analytics.byStatus', { defaultValue: 'توزيع المنتجات حسب الحالة' })}
               </Typography>
               <Box display="flex" flexDirection="column" gap={2}>
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body1">نشط</Typography>
+                  <Typography variant="body1">{t('status.active', { defaultValue: 'نشط' })}</Typography>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="h6">{stats?.active || 0}</Typography>
                     <Chip label="نشط" color="success" size="small" />
                   </Box>
                 </Box>
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body1">مسودة</Typography>
+                  <Typography variant="body1">{t('status.draft', { defaultValue: 'مسودة' })}</Typography>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="h6">{stats?.draft || 0}</Typography>
                     <Chip label="مسودة" color="default" size="small" />
                   </Box>
                 </Box>
                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body1">مؤرشف</Typography>
+                  <Typography variant="body1">{t('status.archived', { defaultValue: 'مؤرشف' })}</Typography>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="h6">{stats?.archived || 0}</Typography>
                     <Chip label="مؤرشف" color="warning" size="small" />
@@ -224,7 +237,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                إحصائيات المخزون
+                {t('analytics.inventoryStats', { defaultValue: 'إحصائيات المخزون' })}
               </Typography>
               {loadingInventory ? (
                 <Box display="flex" justifyContent="center" p={2}>
@@ -233,33 +246,42 @@ export const ProductsAnalyticsPage: React.FC = () => {
               ) : (
                 <Box display="flex" flexDirection="column" gap={2}>
                   <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1">إجمالي المتغيرات</Typography>
+                    <Typography variant="body1">{t('analytics.totalVariants', { defaultValue: 'إجمالي المتغيرات' })}</Typography>
                     <Typography variant="h6">{inventorySummary?.totalVariants || 0}</Typography>
                   </Box>
                   <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1">متوفر في المخزون</Typography>
+                    <Typography variant="body1">{t('analytics.inStock', { defaultValue: 'متوفر في المخزون' })}</Typography>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Typography variant="h6">{inventorySummary?.inStock || 0}</Typography>
-                      <Chip label="متوفر" color="success" size="small" />
+                      {typeof inventorySummary?.inStockUnits === 'number' && (
+                      <Chip label={`${inventorySummary?.inStockUnits} ${t('analytics.unit', { defaultValue: 'وحدة' })}`} color="success" size="small" variant="outlined" />
+                      )}
+                      <Chip label={t('analytics.available', { defaultValue: 'متوفر' })} color="success" size="small" />
                     </Box>
                   </Box>
                   <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1">مخزون منخفض</Typography>
+                    <Typography variant="body1">{t('analytics.lowStock', { defaultValue: 'مخزون منخفض' })}</Typography>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Typography variant="h6">{inventorySummary?.lowStock || 0}</Typography>
-                      <Chip label="منخفض" color="warning" size="small" />
+                      {typeof inventorySummary?.lowStockUnits === 'number' && (
+                      <Chip label={`${inventorySummary?.lowStockUnits} ${t('analytics.unit', { defaultValue: 'وحدة' })}`} color="warning" size="small" variant="outlined" />
+                      )}
+                      <Chip label={t('analytics.low', { defaultValue: 'منخفض' })} color="warning" size="small" />
                     </Box>
                   </Box>
                   <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1">نفذ من المخزون</Typography>
+                    <Typography variant="body1">{t('analytics.outOfStock', { defaultValue: 'نفذ من المخزون' })}</Typography>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Typography variant="h6">{inventorySummary?.outOfStock || 0}</Typography>
-                      <Chip label="نفذ" color="error" size="small" />
+                      {typeof inventorySummary?.outOfStockUnits === 'number' && (
+                      <Chip label={`${inventorySummary?.outOfStockUnits} ${t('analytics.unit', { defaultValue: 'وحدة' })}`} color="error" size="small" variant="outlined" />
+                      )}
+                      <Chip label={t('analytics.soldOut', { defaultValue: 'نفذ' })} color="error" size="small" />
                     </Box>
                   </Box>
                   {inventorySummary?.totalValue && (
                     <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="body1">إجمالي قيمة المخزون</Typography>
+                      <Typography variant="body1">{t('analytics.totalInventoryValue', { defaultValue: 'إجمالي قيمة المخزون' })}</Typography>
                       <Typography variant="h6" color="primary">
                         {inventorySummary.totalValue.toLocaleString()} $
                       </Typography>
@@ -272,12 +294,58 @@ export const ProductsAnalyticsPage: React.FC = () => {
         </Grid>
       </Grid>
 
+      {/* Variants per Product (if provided) */}
+      {inventorySummary?.variantsPerProduct && inventorySummary.variantsPerProduct.length > 0 && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              {t('analytics.variantsPerProduct', { defaultValue: 'إحصائيات المتغيرات لكل منتج' })}
+            </Typography>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead
+                  sx={{
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[800]
+                        : theme.palette.grey[100],
+                  }}
+                >
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('analytics.product', { defaultValue: 'المنتج' })}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('analytics.variantsCount', { defaultValue: 'عدد المتغيرات' })}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('analytics.totalUnits', { defaultValue: 'إجمالي الوحدات' })}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {inventorySummary.variantsPerProduct.map((row) => (
+                    <TableRow key={row.productId} hover>
+                      <TableCell>{row.productName || row.productId}</TableCell>
+                      <TableCell>
+                        <Chip label={row.variantsCount} color="primary" size="small" />
+                      </TableCell>
+                      <TableCell>
+                        {typeof row.totalUnits === 'number' ? (
+                          <Chip label={row.totalUnits} color="success" size="small" variant="outlined" />
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Detailed Analytics Tabs */}
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label={`مخزون منخفض (${lowStockVariants?.length || 0})`} />
-            <Tab label={`نفذ من المخزون (${outOfStockVariants?.length || 0})`} />
+            <Tab label={`${t('analytics.lowStock', { defaultValue: 'مخزون منخفض' })} (${lowStockVariants.length})`} />
+            <Tab label={`${t('analytics.outOfStock', { defaultValue: 'نفذ من المخزون' })} (${outOfStockVariants.length})`} />
           </Tabs>
         </Box>
 
@@ -303,7 +371,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {lowStockVariants.map((variant) => (
+                  {lowStockVariants.map((variant: any) => (
                     <TableRow key={variant._id}>
                       <TableCell>{variant.sku || '-'}</TableCell>
                       <TableCell>منتج {variant.productId}</TableCell>
@@ -317,7 +385,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
                       <TableCell>{variant.minStock}</TableCell>
                       <TableCell>{variant.price} $</TableCell>
                       <TableCell>
-                        <Tooltip title="عرض التفاصيل">
+                        <Tooltip title={t('analytics.viewDetails', { defaultValue: 'عرض التفاصيل' })}>
                           <IconButton
                             size="small"
                             onClick={() => navigate(`/products/${variant.productId}`)}
@@ -332,7 +400,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
               </Table>
             </TableContainer>
           ) : (
-            <Alert severity="success">لا توجد منتجات بمخزون منخفض حالياً</Alert>
+            <Alert severity="success">{t('analytics.noLowStock', { defaultValue: 'لا توجد منتجات بمخزون منخفض حالياً' })}</Alert>
           )}
         </TabPanel>
 
@@ -358,7 +426,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {outOfStockVariants.map((variant) => (
+                  {outOfStockVariants.map((variant: any) => (
                     <TableRow key={variant._id}>
                       <TableCell>{variant.sku || '-'}</TableCell>
                       <TableCell>منتج {variant.productId}</TableCell>
@@ -368,7 +436,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
                       <TableCell>{variant.minStock}</TableCell>
                       <TableCell>{variant.price} $</TableCell>
                       <TableCell>
-                        <Tooltip title="عرض التفاصيل">
+                        <Tooltip title={t('analytics.viewDetails', { defaultValue: 'عرض التفاصيل' })}>
                           <IconButton
                             size="small"
                             onClick={() => navigate(`/products/${variant.productId}`)}
@@ -383,7 +451,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
               </Table>
             </TableContainer>
           ) : (
-            <Alert severity="success">جميع المنتجات متوفرة في المخزون</Alert>
+            <Alert severity="success">{t('analytics.allInStock', { defaultValue: 'جميع المنتجات متوفرة في المخزون' })}</Alert>
           )}
         </TabPanel>
       </Card>

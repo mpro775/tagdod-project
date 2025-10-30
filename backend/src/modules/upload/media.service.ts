@@ -2,11 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Media } from './schemas/media.schema';
+import { 
+  MediaNotFoundException,
+  UploadException,
+  ErrorCode 
+} from '../../shared/exceptions';
 import { UploadService } from './upload.service';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
 import { ListMediaDto } from './dto/list-media.dto';
-import { AppException } from '../../shared/exceptions/app.exception';
 import * as crypto from 'crypto';
 import * as sharp from 'sharp';
 
@@ -172,7 +176,7 @@ export class MediaService {
       .lean();
 
     if (!media) {
-      throw new AppException('MEDIA_NOT_FOUND', 'الصورة غير موجودة', null, 404);
+      throw new MediaNotFoundException({ mediaId: id });
     }
 
     return { data: media };
@@ -185,11 +189,11 @@ export class MediaService {
     const media = await this.mediaModel.findById(id);
 
     if (!media) {
-      throw new AppException('MEDIA_NOT_FOUND', 'الصورة غير موجودة', null, 404);
+      throw new MediaNotFoundException({ mediaId: id });
     }
 
     if (media.deletedAt) {
-      throw new AppException('MEDIA_DELETED', 'الصورة محذوفة', null, 400);
+      throw new UploadException(ErrorCode.MEDIA_NOT_FOUND, { mediaId: id, reason: 'deleted' });
     }
 
     // تحديث الحقول
@@ -218,11 +222,11 @@ export class MediaService {
     const media = await this.mediaModel.findById(id);
 
     if (!media) {
-      throw new AppException('MEDIA_NOT_FOUND', 'الصورة غير موجودة', null, 404);
+      throw new MediaNotFoundException({ mediaId: id });
     }
 
     if (media.deletedAt) {
-      throw new AppException('MEDIA_ALREADY_DELETED', 'الصورة محذوفة بالفعل', null, 400);
+      throw new UploadException(ErrorCode.MEDIA_NOT_FOUND, { mediaId: id, reason: 'already_deleted' });
     }
 
     // Soft delete
@@ -246,11 +250,11 @@ export class MediaService {
     const media = await this.mediaModel.findById(id);
 
     if (!media) {
-      throw new AppException('MEDIA_NOT_FOUND', 'الصورة غير موجودة', null, 404);
+      throw new MediaNotFoundException({ mediaId: id });
     }
 
     if (!media.deletedAt) {
-      throw new AppException('MEDIA_NOT_DELETED', 'الصورة غير محذوفة', null, 400);
+      throw new UploadException(ErrorCode.MEDIA_NOT_FOUND, { mediaId: id, reason: 'not_deleted' });
     }
 
     media.deletedAt = null;
@@ -272,7 +276,7 @@ export class MediaService {
     const media = await this.mediaModel.findById(id);
 
     if (!media) {
-      throw new AppException('MEDIA_NOT_FOUND', 'الصورة غير موجودة', null, 404);
+      throw new MediaNotFoundException({ mediaId: id });
     }
 
     // حذف من Bunny.net

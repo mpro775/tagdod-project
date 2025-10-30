@@ -17,7 +17,11 @@ import {
   NotificationChannel,
   NotificationPriority,
 } from '../enums/notification.enums';
-import { AppException } from '../../../shared/exceptions/app.exception';
+import { 
+  NotificationNotFoundException,
+  NotificationException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 
 @Injectable()
 export class NotificationService {
@@ -51,7 +55,7 @@ export class NotificationService {
       return savedNotification;
     } catch (error) {
       this.logger.error('Failed to create notification:', error);
-      throw new AppException('NOTIFICATION_CREATE_FAILED', 'فشل في إنشاء الإشعار', error, 500);
+      throw new NotificationException(ErrorCode.NOTIFICATION_SEND_FAILED, { error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -62,7 +66,7 @@ export class NotificationService {
     const notification = await this.notificationModel.findById(id).lean();
 
     if (!notification) {
-      throw new AppException('NOTIFICATION_NOT_FOUND', 'الإشعار غير موجود', null, 404);
+      throw new NotificationNotFoundException({ notificationId: id });
     }
 
     return notification;
@@ -79,7 +83,7 @@ export class NotificationService {
     );
 
     if (!notification) {
-      throw new AppException('NOTIFICATION_NOT_FOUND', 'الإشعار غير موجود', null, 404);
+      throw new NotificationNotFoundException({ notificationId: id });
     }
 
     this.logger.log(`Notification updated: ${id}`);

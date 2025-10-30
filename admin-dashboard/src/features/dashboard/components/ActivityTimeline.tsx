@@ -7,6 +7,7 @@ import {
   Avatar,
   alpha,
   useTheme,
+  Skeleton,
 } from '@mui/material';
 import { 
   ShoppingCart, 
@@ -16,6 +17,7 @@ import {
   CheckCircle,
   Cancel
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 
 interface Activity {
   id: string;
@@ -33,9 +35,20 @@ interface ActivityTimelineProps {
 
 export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ 
   recentOrders,
-
+  isLoading,
 }) => {
   const theme = useTheme();
+  const { t, i18n } = useTranslation(['dashboard']);
+  // Always use English numbers, regardless of language
+  const currencyFormatter = React.useMemo(
+    () =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: i18n.language === 'ar' ? 'USD' : 'USD',
+        maximumFractionDigits: 0,
+      }),
+    [i18n.language]
+  );
 
   // Ensure recentOrders is an array
   const ordersList = Array.isArray(recentOrders) ? recentOrders : [];
@@ -43,16 +56,20 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   // Convert recent orders to activities
   const displayActivities: Activity[] = ordersList.slice(0, 5).map((order: any) => {
     const timeAgo = getTimeAgo(order.createdAt);
+    const normalizedStatus = (order.status || '').toLowerCase();
+    const amountLabel = order.total !== undefined && order.total !== null
+      ? currencyFormatter.format(order.total)
+      : t('activityTimeline.amountPlaceholder', '—');
     return {
       id: order._id,
       type: 'order' as const,
-      title: order.status === 'completed' ? 'طلب مكتمل' : 
-             order.status === 'pending' ? 'طلب جديد' :
-             order.status === 'cancelled' ? 'طلب ملغي' : 'طلب قيد المعالجة',
-      description: `طلب #${order.orderNumber} بقيمة ${order.total?.toLocaleString('ar-SA')} $`,
+      title: t(`activityTimeline.status.${normalizedStatus}`, getDefaultStatusTitle(normalizedStatus)),
+      description: t('activityTimeline.description', 'طلب #{{number}} بقيمة {{amount}}', {
+        number: order.orderNumber || (order._id || '').slice(-6),
+        amount: amountLabel,
+      }),
       time: timeAgo,
-      status: order.status === 'completed' ? 'success' :
-              order.status === 'cancelled' ? 'error' : 'warning',
+      status: normalizedStatus === 'completed' ? 'success' : normalizedStatus === 'cancelled' ? 'error' : 'warning',
     };
   });
 
@@ -62,13 +79,26 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
     
-    if (seconds < 60) return 'منذ لحظات';
+    if (seconds < 60) return t('activityTimeline.time.justNow', 'منذ لحظات');
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `منذ ${minutes} دقيقة`;
+    if (minutes < 60) return t('activityTimeline.time.minutes', 'منذ {{count}} دقيقة', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `منذ ${hours} ساعة`;
+    if (hours < 24) return t('activityTimeline.time.hours', 'منذ {{count}} ساعة', { count: hours });
     const days = Math.floor(hours / 24);
-    return `منذ ${days} يوم`;
+    return t('activityTimeline.time.days', 'منذ {{count}} يوم', { count: days });
+  }
+
+  function getDefaultStatusTitle(status: string) {
+    switch (status) {
+      case 'completed':
+        return 'طلب مكتمل';
+      case 'pending':
+        return 'طلب جديد';
+      case 'cancelled':
+        return 'طلب ملغي';
+      default:
+        return 'طلب قيد المعالجة';
+    }
   }
 
   const getIcon = (type: Activity['type']) => {
@@ -101,16 +131,39 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     }
   };
 
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            {t('activityTimeline.title', 'النشاط الأخير')}
+          </Typography>
+          <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[1, 2, 3].map((item) => (
+              <Box key={item} sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Skeleton variant="circular" width={40} height={40} />
+                <Box sx={{ flex: 1 }}>
+                  <Skeleton variant="text" width="60%" height={16} />
+                  <Skeleton variant="text" width="40%" height={14} />
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (displayActivities.length === 0) {
     return (
       <Card>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            النشاط الأخير
+            {t('activityTimeline.title', 'النشاط الأخير')}
           </Typography>
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="body2" color="text.secondary">
-              لا توجد أنشطة حديثة
+              {t('activityTimeline.empty', 'لا توجد أنشطة حديثة')}
             </Typography>
           </Box>
         </CardContent>
@@ -122,7 +175,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     <Card>
       <CardContent>
         <Typography variant="h6" fontWeight="bold" gutterBottom>
-          النشاط الأخير
+          {t('activityTimeline.title', 'النشاط الأخير')}
         </Typography>
 
         <Box sx={{ position: 'relative', mt: 3 }}>

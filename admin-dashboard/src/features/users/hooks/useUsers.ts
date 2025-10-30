@@ -37,10 +37,26 @@ export const useCreateUser = () => {
   return useMutation({
     mutationFn: (data: CreateUserDto) => usersApi.create(data),
     onSuccess: () => {
-      toast.success('تم إنشاء المستخدم بنجاح');
+      // eslint-disable-next-line no-console
+      console.log('✅ User created successfully - showing toast');
+      const message = 'تم إنشاء المستخدم بنجاح';
+      // eslint-disable-next-line no-console
+      console.log('Message to show:', message);
+      toast.success(message, {
+        style: {
+          background: '#4caf50',
+          color: '#ffffff',
+          fontSize: '16px',
+          padding: '16px 24px',
+        },
+      });
       queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
     },
-    onError: ErrorHandler.showError,
+    onError: (error) => {
+      // eslint-disable-next-line no-console
+      console.error('❌ Error creating user:', error);
+      ErrorHandler.showError(error);
+    },
   });
 };
 
@@ -51,11 +67,27 @@ export const useUpdateUser = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) => usersApi.update(id, data),
     onSuccess: (_, variables) => {
-      toast.success('تم تحديث المستخدم بنجاح');
+      // eslint-disable-next-line no-console
+      console.log('✅ User updated successfully - showing toast');
+      const message = 'تم تحديث المستخدم بنجاح';
+      // eslint-disable-next-line no-console
+      console.log('Message to show:', message);
+      toast.success(message, {
+        style: {
+          background: '#4caf50',
+          color: '#ffffff',
+          fontSize: '16px',
+          padding: '16px 24px',
+        },
+      });
       queryClient.invalidateQueries({ queryKey: [USERS_KEY, variables.id] });
       queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
     },
-    onError: ErrorHandler.showError,
+    onError: (error) => {
+      // eslint-disable-next-line no-console
+      console.error('❌ Error updating user:', error);
+      ErrorHandler.showError(error);
+    },
   });
 };
 

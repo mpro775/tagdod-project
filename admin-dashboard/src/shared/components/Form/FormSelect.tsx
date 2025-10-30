@@ -17,8 +17,9 @@ interface Option {
 interface FormSelectProps extends Omit<SelectProps, 'name'> {
   name: string;
   label: string;
-  options: Option[];
+  options: readonly Option[];
   rules?: Record<string, unknown>;
+  helperText?: string;
 }
 
 export const FormSelect: React.FC<FormSelectProps> = ({
@@ -26,6 +27,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   label,
   options,
   rules,
+  helperText,
   ...selectProps
 }) => {
   const { control } = useFormContext();
@@ -50,7 +52,9 @@ export const FormSelect: React.FC<FormSelectProps> = ({
               </MenuItem>
             ))}
           </Select>
-          {error && <FormHelperText>{error.message as string}</FormHelperText>}
+          {(error || helperText) && (
+            <FormHelperText>{error ? (error.message as string) : helperText}</FormHelperText>
+          )}
         </FormControl>
       )}
     />

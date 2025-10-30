@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Search, Clear, Refresh } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { SupportStatus, SupportPriority, SupportCategory } from '../types/support.types';
 
 export interface SupportTicketFilters {
@@ -32,55 +33,40 @@ interface SupportTicketFiltersProps {
   isLoading?: boolean;
 }
 
-const getCategoryLabel = (category: SupportCategory): string => {
-  switch (category) {
-    case SupportCategory.TECHNICAL:
-      return 'تقني';
-    case SupportCategory.BILLING:
-      return 'الفواتير';
-    case SupportCategory.PRODUCTS:
-      return 'المنتجات';
-    case SupportCategory.SERVICES:
-      return 'الخدمات';
-    case SupportCategory.ACCOUNT:
-      return 'الحساب';
-    case SupportCategory.OTHER:
-      return 'أخرى';
-    default:
-      return 'جميع الفئات';
-  }
+const STATUS_FALLBACK_LABELS: Record<SupportStatus, string> = {
+  [SupportStatus.OPEN]: 'مفتوح',
+  [SupportStatus.IN_PROGRESS]: 'قيد التنفيذ',
+  [SupportStatus.WAITING_FOR_USER]: 'بانتظار العميل',
+  [SupportStatus.RESOLVED]: 'تم الحل',
+  [SupportStatus.CLOSED]: 'مغلق',
 };
 
-const getPriorityLabel = (priority: SupportPriority): string => {
-  switch (priority) {
-    case SupportPriority.LOW:
-      return 'منخفضة';
-    case SupportPriority.MEDIUM:
-      return 'متوسطة';
-    case SupportPriority.HIGH:
-      return 'عالية';
-    case SupportPriority.URGENT:
-      return 'عاجلة';
-    default:
-      return 'جميع الأولويات';
-  }
+const PRIORITY_FALLBACK_LABELS: Record<SupportPriority, string> = {
+  [SupportPriority.LOW]: 'منخفضة',
+  [SupportPriority.MEDIUM]: 'متوسطة',
+  [SupportPriority.HIGH]: 'عالية',
+  [SupportPriority.URGENT]: 'عاجلة',
 };
 
-const getStatusLabel = (status: SupportStatus): string => {
-  switch (status) {
-    case SupportStatus.OPEN:
-      return 'مفتوحة';
-    case SupportStatus.IN_PROGRESS:
-      return 'قيد المعالجة';
-    case SupportStatus.WAITING_FOR_USER:
-      return 'في انتظار المستخدم';
-    case SupportStatus.RESOLVED:
-      return 'محلولة';
-    case SupportStatus.CLOSED:
-      return 'مغلقة';
-    default:
-      return 'جميع الحالات';
-  }
+const CATEGORY_FALLBACK_LABELS: Record<SupportCategory, string> = {
+  [SupportCategory.TECHNICAL]: 'تقني',
+  [SupportCategory.BILLING]: 'الفواتير',
+  [SupportCategory.PRODUCTS]: 'المنتجات',
+  [SupportCategory.SERVICES]: 'الخدمات',
+  [SupportCategory.ACCOUNT]: 'الحساب',
+  [SupportCategory.OTHER]: 'أخرى',
+};
+
+const getCategoryLabel = (category: SupportCategory, t: any): string => {
+  return t(`category.${category}`, { defaultValue: CATEGORY_FALLBACK_LABELS[category] });
+};
+
+const getPriorityLabel = (priority: SupportPriority, t: any): string => {
+  return t(`priority.${priority}`, { defaultValue: PRIORITY_FALLBACK_LABELS[priority] });
+};
+
+const getStatusLabel = (status: SupportStatus, t: any): string => {
+  return t(`status.${status}`, { defaultValue: STATUS_FALLBACK_LABELS[status] });
 };
 
 export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
@@ -90,6 +76,7 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
   onRefresh,
   isLoading = false,
 }) => {
+  const { t } = useTranslation('support');
   const handleFilterChange = (key: keyof SupportTicketFilters, value: any) => {
     onFiltersChange({
       ...filters,
@@ -109,7 +96,7 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
     <Paper sx={{ p: 3, mb: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6" component="div">
-          فلترة التذاكر
+          {t('filters.title', { defaultValue: 'الفلاتر' })}
         </Typography>
         <Stack direction="row" spacing={1}>
           <Button
@@ -118,7 +105,7 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
             onClick={onRefresh}
             disabled={isLoading}
           >
-            تحديث
+            {t('labels.refresh', { defaultValue: 'تحديث' })}
           </Button>
           <Button
             variant="outlined"
@@ -126,7 +113,7 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
             onClick={onReset}
             disabled={activeFiltersCount === 0}
           >
-            مسح الفلاتر
+            {t('filters.clearFilters', { defaultValue: 'مسح الفلاتر' })}
           </Button>
         </Stack>
       </Stack>
@@ -135,8 +122,8 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
         <Grid component="div" size={{ xs: 12, md: 4 }}>
           <TextField
             fullWidth
-            label="البحث في التذاكر"
-            placeholder="ابحث في العنوان أو الوصف..."
+            label={t('filters.searchPlaceholder', { defaultValue: 'البحث' })}
+            placeholder={t('filters.searchPlaceholder', { defaultValue: 'البحث' } )}
             value={filters.search || ''}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             InputProps={{
@@ -147,18 +134,18 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
 
         <Grid component="div" size={{ xs: 12, md: 2 }}>
           <FormControl fullWidth>
-            <InputLabel>الحالة</InputLabel>
+            <InputLabel>{t('filters.statusLabel', { defaultValue: 'الحالة' })}</InputLabel>
             <Select
               value={filters.status || ''}
-              label="الحالة"
+              label={t('filters.statusLabel', { defaultValue: 'الحالة' })}
               onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
             >
               <MenuItem value="">
-                <em>جميع الحالات</em>
+                <em>{t('status.all', { defaultValue: 'الكل' })}</em>
               </MenuItem>
               {Object.values(SupportStatus).map((status) => (
                 <MenuItem key={status} value={status}>
-                  {getStatusLabel(status)}
+                  {getStatusLabel(status, t)}
                 </MenuItem>
               ))}
             </Select>
@@ -167,18 +154,18 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
 
         <Grid component="div" size={{ xs: 12, md: 2 }}>
           <FormControl fullWidth>
-            <InputLabel>الأولوية</InputLabel>
+            <InputLabel>{t('filters.priorityLabel', { defaultValue: 'الأولوية' })}</InputLabel>
             <Select
               value={filters.priority || ''}
-              label="الأولوية"
+              label={t('filters.priorityLabel', { defaultValue: 'الأولوية' })}
               onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
             >
               <MenuItem value="">
-                <em>جميع الأولويات</em>
+                <em>{t('priority.all', { defaultValue: 'الكل' })}</em>
               </MenuItem>
               {Object.values(SupportPriority).map((priority) => (
                 <MenuItem key={priority} value={priority}>
-                  {getPriorityLabel(priority)}
+                  {getPriorityLabel(priority, t)}
                 </MenuItem>
               ))}
             </Select>
@@ -187,18 +174,18 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
 
         <Grid component="div" size={{ xs: 12, md: 2 }}>
           <FormControl fullWidth>
-            <InputLabel>الفئة</InputLabel>
+            <InputLabel>{t('filters.categoryLabel', { defaultValue: 'الفئة' })}</InputLabel>
             <Select
               value={filters.category || ''}
-              label="الفئة"
+              label={t('filters.categoryLabel', { defaultValue: 'الفئة' })}
               onChange={(e) => handleFilterChange('category', e.target.value || undefined)}
             >
               <MenuItem value="">
-                <em>جميع الفئات</em>
+                <em>{t('category.all', { defaultValue: 'الكل' })}</em>
               </MenuItem>
               {Object.values(SupportCategory).map((category) => (
                 <MenuItem key={category} value={category}>
-                  {getCategoryLabel(category)}
+                  {getCategoryLabel(category, t)}
                 </MenuItem>
               ))}
             </Select>
@@ -208,8 +195,8 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
         <Grid component="div" size={{ xs: 12, md: 2 }}>
           <TextField
             fullWidth
-            label="المسؤول"
-            placeholder="معرف المسؤول..."
+            label={t('filters.assignedToLabel', { defaultValue: 'المسؤول' })}
+            placeholder={t('filters.assignedToPlaceholder', { defaultValue: 'البحث عن مسؤول' })}
             value={filters.assignedTo || ''}
             onChange={(e) => handleFilterChange('assignedTo', e.target.value || undefined)}
           />
@@ -219,40 +206,40 @@ export const SupportTicketFilters: React.FC<SupportTicketFiltersProps> = ({
       {activeFiltersCount > 0 && (
         <Box mt={2}>
           <Typography variant="subtitle2" gutterBottom>
-            الفلاتر النشطة:
+            {t('filters.activeFilters', { defaultValue: 'الفلاتر النشطة' })}:
           </Typography>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             {filters.search && (
               <Chip
-                label={`البحث: ${filters.search}`}
+                label={`${t('filters.search', { defaultValue: 'البحث' })}: ${filters.search}`}
                 onDelete={() => clearFilter('search')}
                 deleteIcon={<Clear />}
               />
             )}
             {filters.status && (
               <Chip
-                label={`الحالة: ${getStatusLabel(filters.status)}`}
+                label={`${t('filters.statusLabel', { defaultValue: 'الحالة' })}: ${getStatusLabel(filters.status, t)}`}
                 onDelete={() => clearFilter('status')}
                 deleteIcon={<Clear />}
               />
             )}
             {filters.priority && (
               <Chip
-                label={`الأولوية: ${getPriorityLabel(filters.priority)}`}
+                label={`${t('filters.priorityLabel', { defaultValue: 'الأولوية' })}: ${getPriorityLabel(filters.priority, t)}`}
                 onDelete={() => clearFilter('priority')}
                 deleteIcon={<Clear />}
               />
             )}
             {filters.category && (
               <Chip
-                label={`الفئة: ${getCategoryLabel(filters.category)}`}
+                label={`${t('filters.categoryLabel', { defaultValue: 'الفئة' })}: ${getCategoryLabel(filters.category, t)}`}
                 onDelete={() => clearFilter('category')}
                 deleteIcon={<Clear />}
               />
             )}
             {filters.assignedTo && (
               <Chip
-                label={`المسؤول: ${filters.assignedTo}`}
+                label={`${t('filters.assignedToLabel', { defaultValue: 'المسؤول' }  )}: ${filters.assignedTo}`}
                 onDelete={() => clearFilter('assignedTo')}
                 deleteIcon={<Clear />}
               />

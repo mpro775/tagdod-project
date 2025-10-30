@@ -2,17 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/core/api/client';
 
 // Hook for dashboard overview data
-export const useDashboardOverview = () => {
-  return useQuery({
+export const useDashboardOverview = () =>
+  useQuery({
     queryKey: ['dashboard-overview'],
-    queryFn: async () => {
-      const response = await apiClient.get('/analytics/dashboard');
-      return response.data;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2, // Retry failed requests
+    queryFn: async () => (await apiClient.get('/analytics/dashboard')).data, // {success,data,requestId}
+    select: (env) => env.data, // ارجع DTO مباشرة
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
-};
 
 // Hook for recent orders
 export const useRecentOrders = (limit: number = 5) => {

@@ -1,5 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { 
+  TicketNotFoundException,
+  SupportException,
+  ForbiddenException,
+  ErrorCode 
+} from '../../shared/exceptions';
 import { FilterQuery, Model } from 'mongoose';
 import {
   SupportTicket,
@@ -103,12 +109,12 @@ export class SupportService {
       .exec();
 
     if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+      throw new TicketNotFoundException({ ticketId });
     }
 
     // Check permissions
     if (!isAdmin && ticket.userId.toString() !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException({ ticketId, userId });
     }
 
     return ticket;
@@ -170,7 +176,7 @@ export class SupportService {
   ): Promise<SupportTicketDocument> {
     const ticket = await this.ticketModel.findById(ticketId);
     if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+      throw new TicketNotFoundException({ ticketId });
     }
 
     // Update status timestamps
@@ -195,7 +201,7 @@ export class SupportService {
       .exec();
 
     if (!updatedTicket) {
-      throw new NotFoundException('Ticket not found');
+      throw new TicketNotFoundException({ ticketId });
     }
 
     // Add system message for status change
@@ -220,12 +226,12 @@ export class SupportService {
   ): Promise<SupportMessageDocument> {
     const ticket = await this.ticketModel.findById(ticketId);
     if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+      throw new TicketNotFoundException({ ticketId });
     }
 
     // Check permissions
     if (!isAdmin && ticket.userId.toString() !== senderId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException({ ticketId, userId: senderId });
     }
 
     const messageType = isAdmin ? MessageType.ADMIN_REPLY : MessageType.USER_MESSAGE;
@@ -256,12 +262,12 @@ export class SupportService {
   }> {
     const ticket = await this.ticketModel.findById(ticketId);
     if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+      throw new TicketNotFoundException({ ticketId });
     }
 
     // Check permissions
     if (!isAdmin && ticket.userId.toString() !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException({ ticketId, userId });
     }
 
     const skip = (page - 1) * limit;
@@ -292,12 +298,12 @@ export class SupportService {
   async archiveTicket(ticketId: string, userId: string, isAdmin = false): Promise<void> {
     const ticket = await this.ticketModel.findById(ticketId);
     if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+      throw new TicketNotFoundException({ ticketId });
     }
 
     // Check permissions
     if (!isAdmin && ticket.userId.toString() !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException({ ticketId, userId });
     }
 
     await this.ticketModel.findByIdAndUpdate(ticketId, { isArchived: true });
@@ -466,22 +472,22 @@ export class SupportService {
   ): Promise<SupportTicketDocument> {
     const ticket = await this.ticketModel.findById(ticketId);
     if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+      throw new TicketNotFoundException({ ticketId });
     }
 
     // Check permissions
     if (ticket.userId.toString() !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException({ ticketId, userId });
     }
 
     // Check if ticket is resolved or closed
     if (![SupportStatus.RESOLVED, SupportStatus.CLOSED].includes(ticket.status)) {
-      throw new ForbiddenException('Ticket must be resolved or closed before rating');
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { ticketId, status: ticket.status });
     }
 
     // Check if already rated
     if (ticket.rating) {
-      throw new ForbiddenException('Ticket already rated');
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { ticketId, reason: 'already_rated' });
     }
 
     const updatedTicket = await this.ticketModel
@@ -498,7 +504,7 @@ export class SupportService {
       .exec();
 
     if (!updatedTicket) {
-      throw new NotFoundException('Ticket not found');
+      throw new TicketNotFoundException({ ticketId });
     }
 
     return updatedTicket;
@@ -565,7 +571,7 @@ export class SupportService {
   async getCannedResponse(id: string): Promise<CannedResponseDocument> {
     const response = await this.cannedResponseModel.findById(id);
     if (!response) {
-      throw new NotFoundException('Canned response not found');
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { responseId: id, reason: 'not_found' });
     }
     return response;
   }
@@ -583,7 +589,7 @@ export class SupportService {
       { new: true }
     );
     if (!response) {
-      throw new NotFoundException('Canned response not found');
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { responseId: id, reason: 'not_found' });
     }
     return response;
   }
@@ -594,7 +600,7 @@ export class SupportService {
   async deleteCannedResponse(id: string): Promise<void> {
     const response = await this.cannedResponseModel.findByIdAndDelete(id);
     if (!response) {
-      throw new NotFoundException('Canned response not found');
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { responseId: id, reason: 'not_found' });
     }
   }
 
@@ -608,7 +614,7 @@ export class SupportService {
       { new: true }
     );
     if (!response) {
-      throw new NotFoundException('Canned response not found');
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { responseId: id, reason: 'not_found' });
     }
     return response;
   }
@@ -622,7 +628,7 @@ export class SupportService {
       isActive: true,
     });
     if (!response) {
-      throw new NotFoundException('Canned response not found');
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { shortcut, reason: 'not_found' });
     }
     return response;
   }

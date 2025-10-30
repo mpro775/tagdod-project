@@ -6,7 +6,7 @@ export type CategoryDocument = HydratedDocument<Category>;
 export class Category {
   // هيكل الشجرة (Parent-Child)
   @Prop({ type: Types.ObjectId, ref: 'Category', default: null, index: true }) 
-  parentId!: string | null;
+  parentId?: string | null;
   
   @Prop({ required: true }) 
   name!: string; // الاسم بالعربية

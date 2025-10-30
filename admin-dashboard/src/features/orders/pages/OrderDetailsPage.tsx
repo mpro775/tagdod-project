@@ -57,6 +57,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { useTranslation } from 'react-i18next';
 import {
   useOrder,
   useUpdateOrderStatus,
@@ -66,15 +67,15 @@ import {
   useAddOrderNotes,
 } from '../hooks/useOrders';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
-import type {
-  OrderStatus,
+import {
+  type OrderStatus,
+ 
+  type UpdateOrderStatusDto,
+  type ShipOrderDto,
+  type RefundOrderDto,
+  type CancelOrderDto,
+  type AddOrderNotesDto,
   PaymentStatus,
-  PaymentMethod,
-  UpdateOrderStatusDto,
-  ShipOrderDto,
-  RefundOrderDto,
-  CancelOrderDto,
-  AddOrderNotesDto,
 } from '../types/order.types';
 import { ar } from 'date-fns/locale';
 
@@ -118,23 +119,6 @@ const orderStatusColors: Record<
   returned: 'error',
 };
 
-const paymentStatusLabels: Record<PaymentStatus, string> = {
-  pending: 'معلق',
-  authorized: 'مصرح',
-  paid: 'مدفوع',
-  failed: 'فشل',
-  refunded: 'مسترد',
-  partially_refunded: 'مسترد جزئياً',
-  cancelled: 'ملغي',
-};
-
-const paymentMethodLabels: Record<PaymentMethod, string> = {
-  COD: 'عند الاستلام',
-  ONLINE: 'أونلاين',
-  WALLET: 'محفظة',
-  BANK_TRANSFER: 'تحويل بنكي',
-};
-
 const getStatusIcon = (status: OrderStatus) => {
   switch (status) {
     case 'delivered':
@@ -159,6 +143,7 @@ const getStatusIcon = (status: OrderStatus) => {
 
 export const OrderDetailsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [activeStep] = useState(0);
 
@@ -297,7 +282,7 @@ export const OrderDetailsPage: React.FC = () => {
   if (error || !order) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="error">حدث خطأ في تحميل تفاصيل الطلب. يرجى المحاولة مرة أخرى.</Alert>
+        <Alert severity="error">{t('orders.messages.error.loadFailed')}</Alert>
       </Box>
     );
   }
@@ -312,7 +297,7 @@ export const OrderDetailsPage: React.FC = () => {
           </IconButton>
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-              تفاصيل الطلب #{order.orderNumber}
+              {t('orders.details.title')} #{order.orderNumber}
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
               تم إنشاء الطلب في {formatDate(order.createdAt)}
@@ -384,8 +369,8 @@ export const OrderDetailsPage: React.FC = () => {
                         حالة الدفع
                       </Typography>
                       <Chip
-                        label={paymentStatusLabels[order.paymentStatus]}
-                        color={order.paymentStatus === 'paid' ? 'success' : 'warning'}
+                        label={t(`orders.paymentStatus.${order.paymentStatus}`)}
+                        color={order.paymentStatus === PaymentStatus.PAID ? 'success' : 'warning'}
                       />
                     </Box>
                   </Grid>
@@ -394,7 +379,7 @@ export const OrderDetailsPage: React.FC = () => {
                       <Typography variant="subtitle2" color="text.secondary">
                         طريقة الدفع
                       </Typography>
-                      <Chip label={paymentMethodLabels[order.paymentMethod]} variant="outlined" />
+                      <Chip label={t(`orders.paymentMethod.${order.paymentMethod}`)} variant="outlined" />
                     </Box>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>

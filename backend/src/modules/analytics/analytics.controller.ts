@@ -6,8 +6,11 @@ import {
   Body,
   Param,
   UseGuards,
+  GatewayTimeoutException,
+  Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { TimeoutError, catchError, timeout, from } from 'rxjs';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { AnalyticsService } from './analytics.service';
@@ -40,7 +43,18 @@ export class AnalyticsController {
   @ApiQuery({ name: 'compareWithPrevious', required: false, type: Boolean, description: 'المقارنة مع الفترة السابقة' })
   @ApiResponse({ status: 200, description: 'تم استرداد بيانات لوحة التحكم بنجاح', type: Object })
   async getDashboard(@Query() query: AnalyticsQueryDto): Promise<DashboardDataDto> {
-    return this.analyticsService.getDashboardData(query);
+    const result = await from(this.analyticsService.getDashboardData(query))
+      .pipe(
+        timeout(30000), // Increased from 8s to 30s for large datasets
+        catchError((err) => {
+          if (err instanceof TimeoutError) {
+            throw new GatewayTimeoutException('Dashboard generation timed out');
+          }
+          throw err;
+        })
+      )
+      .toPromise();
+    return result!;
   }
 
   @Get('overview')
@@ -378,6 +392,20 @@ export class AnalyticsController {
     return {
       refreshedAt: new Date(),
       message: 'Analytics data refreshed successfully',
+    };
+  }
+
+  @Delete('cache')
+  @ApiOperation({
+    summary: 'مسح ذاكرة التخزين المؤقت للتحليلات',
+    description: 'مسح جميع بيانات التحليلات المخزنة مؤقتاً لإجبار قراءة البيانات الجديدة'
+  })
+  @ApiResponse({ status: 200, description: 'تم مسح ذاكرة التخزين المؤقت بنجاح' })
+  async clearCache() {
+    await this.analyticsService.clearAnalyticsCaches();
+    return {
+      clearedAt: new Date(),
+      message: 'Analytics cache cleared successfully',
     };
   }
 }

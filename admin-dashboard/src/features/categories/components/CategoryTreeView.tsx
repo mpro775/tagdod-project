@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -23,13 +24,13 @@ import {
   Edit,
   Delete,
   Folder,
-  FolderOpen,
   Star,
   VisibilityOff,
   Refresh,
   Add,
 } from '@mui/icons-material';
 import { useCategoryTree } from '../hooks/useCategories';
+import { CategoryImage } from './CategoryImage';
 import type { Category, CategoryTreeNode } from '../types/category.types';
 
 interface CategoryTreeViewProps {
@@ -54,14 +55,15 @@ interface TreeNodeProps {
   showStats?: boolean;
 }
 
-const TreeNode: React.FC<TreeNodeProps> = ({ 
-  node, 
-  level, 
-  onEdit, 
-  onDelete, 
-  onAdd, 
-  showStats = true 
+const TreeNode: React.FC<TreeNodeProps> = ({
+  node,
+  level,
+  onEdit,
+  onDelete,
+  onAdd,
+  showStats = true
 }) => {
+  const { t } = useTranslation('categories');
   const [expanded, setExpanded] = React.useState(level === 0);
 
   const hasChildren = node.children && node.children.length > 0;
@@ -81,11 +83,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         secondaryAction={
           <Box display="flex" gap={0.5}>
             {onAdd && (
-              <Tooltip title="إضافة فئة فرعية">
-                <IconButton 
-                  edge="end" 
-                  size="small" 
-                  onClick={() => onAdd(node._id)} 
+              <Tooltip title={t('tooltips.addSubcategory')}>
+                <IconButton
+                  edge="end"
+                  size="small"
+                  onClick={() => onAdd(node._id)}
                   color="success"
                 >
                   <Add fontSize="small" />
@@ -93,11 +95,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               </Tooltip>
             )}
             {onEdit && (
-              <Tooltip title="تعديل">
-                <IconButton 
-                  edge="end" 
-                  size="small" 
-                  onClick={() => onEdit(node)} 
+              <Tooltip title={t('tooltips.edit')}>
+                <IconButton
+                  edge="end"
+                  size="small"
+                  onClick={() => onEdit(node)}
                   color="primary"
                 >
                   <Edit fontSize="small" />
@@ -105,11 +107,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               </Tooltip>
             )}
             {onDelete && (
-              <Tooltip title="حذف">
-                <IconButton 
-                  edge="end" 
-                  size="small" 
-                  onClick={() => onDelete(node)} 
+              <Tooltip title={t('tooltips.delete')}>
+                <IconButton
+                  edge="end"
+                  size="small"
+                  onClick={() => onDelete(node)}
                   color="error"
                 >
                   <Delete fontSize="small" />
@@ -127,11 +129,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           )}
           {!hasChildren && <Box sx={{ width: 32 }} />}
 
-          {expanded ? (
-            <FolderOpen sx={{ mr: 1, color: 'primary.main' }} />
-          ) : (
-            <Folder sx={{ mr: 1, color: 'text.secondary' }} />
-          )}
+          <Box sx={{ mr: 1.5, display: 'flex', alignItems: 'center' }}>
+            <CategoryImage image={node.imageId} size={48} />
+          </Box>
 
           <ListItemText
             primary={
@@ -154,39 +154,43 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   ({node.nameEn})
                 </Typography>
                 {node.isFeatured && (
-                  <Star sx={{ fontSize: 16, color: 'warning.main' }} />
+                  <Tooltip title={t('tooltips.featured')}>
+                    <Star sx={{ fontSize: 16, color: 'warning.main' }} />
+                  </Tooltip>
                 )}
                 {!node.isActive && (
-                  <VisibilityOff sx={{ fontSize: 16, color: 'text.disabled' }} />
+                  <Tooltip title={t('tooltips.inactive')}>
+                    <VisibilityOff sx={{ fontSize: 16, color: 'text.disabled' }} />
+                  </Tooltip>
                 )}
               </Box>
             }
             secondary={
               showStats && (
                 <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-                  <Chip 
-                    label={`${node.productsCount} منتج`} 
-                    size="small" 
+                  <Chip
+                    label={t('tree.productsCount', { count: node.productsCount })}
+                    size="small"
                     variant="outlined"
                     color={node.productsCount > 0 ? 'primary' : 'default'}
                   />
                   {hasChildren && (
                     <Chip
-                      label={`${node.children.length} فئة فرعية`}
+                      label={t('tree.subcategoriesCount', { count: node.children.length })}
                       size="small"
                       variant="outlined"
                       color="secondary"
                     />
                   )}
                   <Chip
-                    label={node.isActive ? 'نشط' : 'غير نشط'}
+                    label={node.isActive ? t('status.active') : t('status.inactive')}
                     size="small"
                     color={node.isActive ? 'success' : 'default'}
                     variant="filled"
                   />
                   {node.order > 0 && (
                     <Chip
-                      label={`ترتيب: ${node.order}`}
+                      label={t('tree.orderLabel', { order: node.order })}
                       size="small"
                       variant="outlined"
                       color="info"
@@ -224,12 +228,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   );
 };
 
-export const CategoryTreeView: React.FC<CategoryTreeViewProps> = ({ 
-  onEdit, 
-  onDelete, 
+export const CategoryTreeView: React.FC<CategoryTreeViewProps> = ({
+  onEdit,
+  onDelete,
   onAdd,
-  showStats = true 
+  showStats = true
 }) => {
+  const { t } = useTranslation('categories');
   const { data: treeData, isLoading, error, refetch } = useCategoryTree();
 
   // Handle different response formats safely
@@ -266,18 +271,18 @@ export const CategoryTreeView: React.FC<CategoryTreeViewProps> = ({
         <CardContent>
           <Alert severity="error" sx={{ mb: 2 }}>
             <Typography variant="body1" fontWeight="bold">
-              خطأ في تحميل شجرة الفئات
+              {t('tree.treeError')}
             </Typography>
             <Typography variant="body2">
               {error.message}
             </Typography>
           </Alert>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             startIcon={<Refresh />}
             onClick={() => refetch()}
           >
-            إعادة المحاولة
+            {t('categories.retry')}
           </Button>
         </CardContent>
       </Card>
@@ -292,18 +297,18 @@ export const CategoryTreeView: React.FC<CategoryTreeViewProps> = ({
             <Folder sx={{ fontSize: 64, color: 'text.secondary' }} />
           </Box>
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            لا توجد فئات بعد
+            {t('categories.noCategories')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            ابدأ بإضافة فئة رئيسية لتنظيم منتجاتك
+            {t('categories.noCategoriesDesc')}
           </Typography>
           {onAdd && (
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               startIcon={<Add />}
               onClick={() => onAdd()}
             >
-              إضافة فئة رئيسية
+              {t('categories.addMainCategory')}
             </Button>
           )}
         </CardContent>
@@ -321,22 +326,22 @@ export const CategoryTreeView: React.FC<CategoryTreeViewProps> = ({
         {/* Header with Stats */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6" fontWeight="bold">
-            شجرة الفئات
+            {t('categories.categoryTree')}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title="إعادة تحميل">
+            <Tooltip title={t('tooltips.reload')}>
               <IconButton size="small" onClick={() => refetch()}>
                 <Refresh />
               </IconButton>
             </Tooltip>
             {onAdd && (
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 size="small"
                 startIcon={<Add />}
                 onClick={() => onAdd()}
               >
-                إضافة فئة
+                {t('tree.addCategory')}
               </Button>
             )}
           </Box>
@@ -345,23 +350,23 @@ export const CategoryTreeView: React.FC<CategoryTreeViewProps> = ({
         {/* Quick Stats */}
         {showStats && (
           <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-            <Chip 
-              label={`${totalCategories} فئة`} 
-              color="primary" 
-              variant="outlined" 
-              size="small" 
+            <Chip
+              label={t('tree.totalCategories', { count: totalCategories })}
+              color="primary"
+              variant="outlined"
+              size="small"
             />
-            <Chip 
-              label={`${activeCategories} نشط`} 
-              color="success" 
-              variant="outlined" 
-              size="small" 
+            <Chip
+              label={t('tree.activeCategories', { count: activeCategories })}
+              color="success"
+              variant="outlined"
+              size="small"
             />
-            <Chip 
-              label={`${featuredCategories} مميز`} 
-              color="warning" 
-              variant="outlined" 
-              size="small" 
+            <Chip
+              label={t('tree.featuredCategories', { count: featuredCategories })}
+              color="warning"
+              variant="outlined"
+              size="small"
             />
           </Box>
         )}

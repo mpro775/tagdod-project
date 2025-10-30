@@ -1,0 +1,146 @@
+{
+  "titles": {
+    "supportManagement": "Support Ticket Management",
+    "supportStats": "Support Statistics",
+    "ticketDetails": "Ticket Details",
+    "cannedResponses": "Canned Responses"
+  },
+  "labels": {
+    "user": "User",
+    "admin": "Admin",
+    "system": "System",
+    "attachment": "attachment",
+    "attachments": "attachments",
+    "tag": "tag",
+    "tags": "tags",
+    "rating": "Rating",
+    "feedback": "Feedback",
+    "assignedTo": "Assigned To",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "resolvedAt": "Resolved At",
+    "closedAt": "Closed At",
+    "firstResponseAt": "First Response At",
+    "slaDueDate": "SLA Due Date",
+    "slaBreached": "SLA Breached",
+    "slaHours": "SLA Hours",
+    "search": "Search",
+    "filter": "Filter",
+    "clearFilters": "Clear Filters",
+    "refresh": "Refresh",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "create": "Create",
+    "update": "Update",
+    "submit": "Submit",
+    "reply": "Reply",
+    "close": "Close",
+    "reopen": "Reopen",
+    "assign": "Assign",
+    "unassign": "Unassign",
+    "viewStats": "View Statistics",
+    "manageResponses": "Manage Responses"
+  },
+  "status": {
+    "open": "Open",
+    "in_progress": "In Progress",
+    "waiting_for_user": "Waiting for User",
+    "resolved": "Resolved",
+    "closed": "Closed",
+    "all": "All Statuses"
+  },
+  "priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "urgent": "Urgent",
+    "all": "All Priorities"
+  },
+  "category": {
+    "technical": "Technical",
+    "billing": "Billing",
+    "products": "Products",
+    "services": "Services",
+    "account": "Account",
+    "other": "Other",
+    "all": "All Categories"
+  },
+  "filters": {
+    "title": "Filter Tickets",
+    "searchPlaceholder": "Search in title or description...",
+    "statusLabel": "Status",
+    "priorityLabel": "Priority",
+    "categoryLabel": "Category",
+    "assignedToLabel": "Assigned To",
+    "assignedToPlaceholder": "Admin ID...",
+    "activeFilters": "Active Filters",
+    "search": "Search"
+  },
+  "stats": {
+    "totalTickets": "Total Tickets",
+    "openTickets": "Open Tickets",
+    "inProgressTickets": "In Progress Tickets",
+    "resolvedTickets": "Resolved Tickets",
+    "closedTickets": "Closed Tickets",
+    "averageResponseTime": "Average Response Time",
+    "averageResolutionTime": "Average Resolution Time",
+    "slaBreached": "SLA Breached",
+    "byCategory": "Distribution by Category",
+    "byPriority": "Distribution by Priority",
+    "percentageOfTotal": "% of total tickets"
+  },
+  "messages": {
+    "noTickets": "No tickets found",
+    "noTicketsDesc": "No tickets match the specified criteria",
+    "loadingTickets": "Loading tickets...",
+    "errorLoadingTickets": "Error loading tickets. Please try again.",
+    "errorLoadingStats": "Error loading statistics. Please try again.",
+    "noStatsData": "No statistics data available.",
+    "ticketCreated": "Ticket created successfully",
+    "ticketUpdated": "Ticket updated successfully",
+    "ticketClosed": "Ticket closed successfully",
+    "ticketReopened": "Ticket reopened successfully",
+    "responseSent": "Response sent successfully",
+    "slaBreachTooltip": "Service Level Agreement (SLA) deadline has been exceeded",
+    "backToTickets": "Back to Tickets"
+  },
+  "placeholders": {
+    "searchTickets": "Search tickets",
+    "ticketTitle": "Ticket title",
+    "ticketDescription": "Describe your issue...",
+    "adminReply": "Type your reply...",
+    "internalNote": "Internal note (visible to admins only)"
+  },
+  "time": {
+    "minutes": "minutes",
+    "hours": "hours",
+    "days": "days",
+    "minute": "minute",
+    "hour": "hour",
+    "day": "day"
+  },
+  "pagination": {
+    "showing": "Showing",
+    "of": "of",
+    "total": "total",
+    "tickets": "tickets"
+  },
+  "actions": {
+    "viewDetails": "View Details",
+    "addReply": "Add Reply",
+    "markResolved": "Mark as Resolved",
+    "markClosed": "Mark as Closed",
+    "assignToMe": "Assign to Me",
+    "escalate": "Escalate"
+  },
+  "validation": {
+    "titleRequired": "Title is required",
+    "descriptionRequired": "Description is required",
+    "categoryRequired": "Category is required",
+    "priorityRequired": "Priority is required"
+  }
+}

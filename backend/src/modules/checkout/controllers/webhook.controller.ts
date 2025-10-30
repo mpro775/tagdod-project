@@ -1,10 +1,16 @@
-import { Body, Controller, Post, Headers, Logger, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Post, Headers, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as crypto from 'crypto';
 import { OrderService } from '../services/order.service';
 import { WebhookDto } from '../dto/order.dto';
+import { 
+  AuthException,
+  OrderNotFoundException,
+  VariantNotFoundException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 import { Order, OrderDocument, OrderStatus } from '../schemas/order.schema';
 import { Product, ProductDocument } from '../../products/schemas/product.schema';
 import { Variant, VariantDocument } from '../../products/schemas/variant.schema';
@@ -88,7 +94,7 @@ export class WebhookController {
       const payload = JSON.stringify(dto);
       if (!this.verifyWebhookSignature(payload, signature, webhookSecret)) {
         this.logger.warn('Invalid payment webhook signature');
-        throw new UnauthorizedException('توقيع Webhook غير صحيح');
+        throw new AuthException(ErrorCode.AUTH_UNAUTHORIZED, { reason: 'invalid_webhook_signature' });
       }
     }
 
@@ -121,7 +127,7 @@ export class WebhookController {
       const payload = JSON.stringify(body);
       if (!this.verifyWebhookSignature(payload, signature, webhookSecret)) {
         this.logger.warn('Invalid shipping webhook signature');
-        throw new UnauthorizedException('توقيع Webhook غير صحيح');
+        throw new AuthException(ErrorCode.AUTH_UNAUTHORIZED, { reason: 'invalid_webhook_signature' });
       }
     }
 
@@ -129,7 +135,7 @@ export class WebhookController {
 
     // التحقق من صحة البيانات المطلوبة
     if (!trackingNumber || !status) {
-      throw new UnauthorizedException('رقم التتبع والحالة مطلوبان');
+      throw new AuthException(ErrorCode.VALIDATION_ERROR, { reason: 'missing_tracking_data' });
     }
 
     // البحث عن الطلب بناءً على رقم التتبع
@@ -141,7 +147,7 @@ export class WebhookController {
 
     if (!order) {
       this.logger.warn(`Order not found for tracking number: ${trackingNumber}`);
-      throw new UnauthorizedException('الطلب غير موجود');
+      throw new OrderNotFoundException();
     }
 
     // تحديث معلومات الشحن
@@ -242,7 +248,7 @@ export class WebhookController {
       const payload = JSON.stringify(body);
       if (!this.verifyWebhookSignature(payload, signature, webhookSecret)) {
         this.logger.warn('Invalid inventory webhook signature');
-        throw new UnauthorizedException('توقيع Webhook غير صحيح');
+        throw new AuthException(ErrorCode.AUTH_UNAUTHORIZED, { reason: 'invalid_webhook_signature' });
       }
     }
 
@@ -250,7 +256,7 @@ export class WebhookController {
 
     // التحقق من صحة البيانات المطلوبة
     if (!variantId || change === undefined) {
-      throw new UnauthorizedException('معرف المتغير والتغيير مطلوبان');
+      throw new AuthException(ErrorCode.VALIDATION_ERROR, { reason: 'missing_variant_data' });
     }
 
     // البحث عن المتغير
@@ -259,7 +265,7 @@ export class WebhookController {
       .populate('product', 'name titleEn');
     if (!variant) {
       this.logger.warn(`Variant not found: ${variantId}`);
-      throw new UnauthorizedException('المتغير غير موجود');
+      throw new VariantNotFoundException();
     }
 
     // حساب المخزون الجديد

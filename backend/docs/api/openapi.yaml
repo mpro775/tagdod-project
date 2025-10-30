@@ -356,6 +356,134 @@ paths:
           description: كلمة المرور غير صحيحة
       tags:
         - المصادقة
+  /api/v1/auth/user-signup:
+    post:
+      operationId: userSignup
+      summary: تسجيل حساب جديد للمستخدم العادي/المهندس/التاجر بكلمة مرور
+      description: إنشاء حساب جديد باستخدام رقم الهاتف وكلمة المرور مع البيانات الأساسية
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSignupDto'
+      responses:
+        '201':
+          description: تم إنشاء الحساب بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      tokens:
+                        type: object
+                        properties:
+                          access:
+                            type: string
+                            description: Access Token
+                          refresh:
+                            type: string
+                            description: Refresh Token
+                      me:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          phone:
+                            type: string
+                          firstName:
+                            type: string
+                          lastName:
+                            type: string
+                          gender:
+                            type: string
+                          jobTitle:
+                            type: string
+                          roles:
+                            type: array
+                            items:
+                              type: string
+                          permissions:
+                            type: array
+                            items:
+                              type: string
+                          isAdmin:
+                            type: boolean
+                          preferredCurrency:
+                            type: string
+        '400':
+          description: بيانات غير صحيحة أو رقم الهاتف موجود مسبقاً
+      tags:
+        - المصادقة
+  /api/v1/auth/user-login:
+    post:
+      operationId: userLogin
+      summary: تسجيل دخول المستخدم العادي/المهندس/التاجر بكلمة المرور
+      description: تسجيل دخول المستخدمين العاديين باستخدام رقم الهاتف وكلمة المرور
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginDto'
+      responses:
+        '201':
+          description: تم تسجيل الدخول بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      tokens:
+                        type: object
+                        properties:
+                          access:
+                            type: string
+                            description: Access Token
+                          refresh:
+                            type: string
+                            description: Refresh Token
+                      me:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          phone:
+                            type: string
+                          firstName:
+                            type: string
+                          lastName:
+                            type: string
+                          roles:
+                            type: array
+                            items:
+                              type: string
+                          permissions:
+                            type: array
+                            items:
+                              type: string
+                          isAdmin:
+                            type: boolean
+        '400':
+          description: بيانات غير صحيحة
+        '401':
+          description: كلمة المرور غير صحيحة
+      tags:
+        - المصادقة
   /api/v1/auth/dev-login:
     post:
       operationId: devLogin
@@ -1154,6 +1282,29 @@ paths:
       responses:
         '200':
           description: Variants retrieved successfully
+      tags:
+        - إدارة-المنتجات
+      security:
+        - bearer: []
+  /api/v1/admin/products/{productId}/generate-variants:
+    post:
+      operationId: generateVariants
+      summary: توليد المتغيرات تلقائياً
+      parameters:
+        - name: productId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateVariantsDto'
+      responses:
+        '201':
+          description: Variants generated successfully
       tags:
         - إدارة-المنتجات
       security:
@@ -2490,6 +2641,7 @@ paths:
                             - text
                             - number
                             - boolean
+                            - color
                           example: select
                         description:
                           type: string
@@ -2562,6 +2714,7 @@ paths:
                             - text
                             - number
                             - boolean
+                            - color
                           example: select
                         description:
                           type: string
@@ -2686,6 +2839,7 @@ paths:
                           - text
                           - number
                           - boolean
+                          - color
                         example: select
                       description:
                         type: string
@@ -10572,6 +10726,19 @@ paths:
         - التحليلات
       security:
         - bearer: []
+  /api/v1/analytics/cache:
+    delete:
+      operationId: clearCache
+      summary: مسح ذاكرة التخزين المؤقت للتحليلات
+      description: مسح جميع بيانات التحليلات المخزنة مؤقتاً لإجبار قراءة البيانات الجديدة
+      parameters: []
+      responses:
+        '200':
+          description: تم مسح ذاكرة التخزين المؤقت بنجاح
+      tags:
+        - التحليلات
+      security:
+        - bearer: []
   /api/v1/analytics/advanced/sales:
     get:
       operationId: getSalesAnalytics
@@ -16704,6 +16871,78 @@ components:
       required:
         - phone
         - password
+    UserSignupDto:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: رقم هاتف المستخدم
+          example: '0501234567'
+        password:
+          type: string
+          description: كلمة المرور
+          example: MySecurePassword123!
+          minLength: 6
+        firstName:
+          type: string
+          description: الاسم الأول
+          example: أحمد
+          minLength: 2
+          maxLength: 50
+        lastName:
+          type: string
+          description: الاسم الأخير
+          example: محمد
+          minLength: 2
+          maxLength: 50
+        gender:
+          type: string
+          description: الجنس
+          enum:
+            - male
+            - female
+            - other
+          example: male
+        capabilityRequest:
+          type: string
+          description: نوع القدرة المطلوبة
+          enum:
+            - engineer
+            - wholesale
+          example: engineer
+        jobTitle:
+          type: string
+          description: المسمى الوظيفي للمهندس (مطلوب إذا كان capabilityRequest = "engineer")
+          example: مهندس كهرباء
+          minLength: 3
+          maxLength: 100
+        deviceId:
+          type: string
+          description: معرف الجهاز للمزامنة التلقائية للمفضلات
+          example: device_123456789
+          minLength: 10
+          maxLength: 50
+      required:
+        - phone
+        - password
+        - firstName
+        - lastName
+        - gender
+    UserLoginDto:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: رقم هاتف المستخدم
+          example: '0501234567'
+        password:
+          type: string
+          description: كلمة المرور
+          example: MyPassword123!
+          minLength: 6
+      required:
+        - phone
+        - password
     AddFavoriteDto:
       type: object
       properties: {}
@@ -16731,6 +16970,9 @@ components:
     CreateVariantDto:
       type: object
       properties: {}
+    GenerateVariantsDto:
+      type: object
+      properties: {}
     UpdateVariantDto:
       type: object
       properties: {}
@@ -16743,6 +16985,7 @@ components:
         - text
         - number
         - boolean
+        - color
     CreateAttributeDto:
       type: object
       properties:

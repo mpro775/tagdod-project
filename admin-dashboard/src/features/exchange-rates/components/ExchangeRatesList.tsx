@@ -197,7 +197,7 @@ export const ExchangeRatesList: React.FC<ExchangeRatesListProps> = ({
                 <TableRow 
                   key={rate.id}
                   hover
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}
                 >
                   <TableCell align="right">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

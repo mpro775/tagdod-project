@@ -1,4 +1,14 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import {
+  OrderNotFoundException,
+  OrderPreviewFailedException,
+  OrderCannotCancelException,
+  OrderNotReadyToShipException,
+  OrderRatingNotAllowedException,
+  OrderException,
+  AddressNotFoundException,
+  ErrorCode
+} from '../../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User } from '../../users/schemas/user.schema';
@@ -179,7 +189,7 @@ export class OrderService {
       };
     } catch (error) {
       this.logger.error('Preview checkout failed:', error);
-      throw new BadRequestException('فشل في معاينة الطلب');
+      throw new OrderPreviewFailedException();
     }
   }
 
@@ -194,7 +204,7 @@ export class OrderService {
       // التحقق من ملكية العنوان
       const isValid = await this.addressesService.validateAddressOwnership(dto.deliveryAddressId, userId);
       if (!isValid) {
-        throw new BadRequestException('Address not found or invalid');
+        throw new AddressNotFoundException();
       }
 
       // جلب تفاصيل العنوان
@@ -283,7 +293,7 @@ export class OrderService {
       };
     } catch (error) {
       this.logger.error('Confirm checkout failed:', error);
-      throw new BadRequestException('فشل في تأكيد الطلب');
+      throw new OrderException(ErrorCode.ORDER_CONFIRM_FAILED);
     }
   }
 
@@ -355,12 +365,21 @@ export class OrderService {
    * الحصول على تفاصيل الطلب
    */
   async getOrderDetails(orderId: string, userId?: string): Promise<OrderDocument> {
+    // Validate IDs before constructing ObjectId to avoid BSONError
+    if (!Types.ObjectId.isValid(orderId)) {
+      throw new OrderNotFoundException();
+    }
     const filter: Record<string, unknown> = { _id: new Types.ObjectId(orderId) };
-    if (userId) filter.userId = new Types.ObjectId(userId);
+    if (userId) {
+      if (!Types.ObjectId.isValid(userId)) {
+        throw new OrderNotFoundException();
+      }
+      filter.userId = new Types.ObjectId(userId);
+    }
 
     const order = await this.orderModel.findOne(filter);
     if (!order) {
-      throw new NotFoundException('الطلب غير موجود');
+      throw new OrderNotFoundException();
     }
 
     return order;
@@ -378,12 +397,12 @@ export class OrderService {
   ): Promise<OrderDocument> {
     const order = await this.orderModel.findById(orderId);
     if (!order) {
-      throw new NotFoundException('الطلب غير موجود');
+      throw new OrderNotFoundException();
     }
 
     // التحقق من صحة الانتقال
     if (!OrderStateMachine.canTransition(order.status, newStatus)) {
-      throw new BadRequestException(`لا يمكن تغيير الحالة من ${order.status} إلى ${newStatus}`);
+      throw new OrderException(ErrorCode.ORDER_INVALID_STATUS, { from: order.status, to: newStatus });
     }
 
     // تحديث الحالة
@@ -429,7 +448,7 @@ export class OrderService {
     
     // التحقق من إمكانية الإلغاء
     if (!OrderStateMachine.canTransition(order.status, OrderStatus.CANCELLED)) {
-      throw new BadRequestException('لا يمكن إلغاء الطلب في هذه المرحلة');
+      throw new OrderCannotCancelException({ status: order.status });
     }
 
     order.cancellationReason = dto.reason;
@@ -451,7 +470,7 @@ export class OrderService {
     const order = await this.getOrderDetails(orderId);
     
     if (![OrderStatus.PROCESSING, OrderStatus.READY_TO_SHIP].includes(order.status)) {
-      throw new BadRequestException('الطلب غير جاهز للشحن');
+      throw new OrderNotReadyToShipException({ status: order.status });
     }
 
     order.trackingNumber = dto.trackingNumber;
@@ -477,11 +496,11 @@ export class OrderService {
     const order = await this.getOrderDetails(orderId);
     
     if (order.paymentStatus !== PaymentStatus.PAID) {
-      throw new BadRequestException('الطلب غير مدفوع');
+      throw new OrderException(ErrorCode.ORDER_ALREADY_PAID);
     }
 
     if (dto.amount > order.total) {
-      throw new BadRequestException('مبلغ الاسترداد أكبر من إجمالي الطلب');
+      throw new OrderException(ErrorCode.ORDER_REFUND_AMOUNT_INVALID, { amount: dto.amount, total: order.total });
     }
 
     order.returnInfo.isReturned = true;
@@ -513,7 +532,7 @@ export class OrderService {
     const order = await this.getOrderDetails(orderId, userId);
     
     if (![OrderStatus.DELIVERED, OrderStatus.COMPLETED].includes(order.status)) {
-      throw new BadRequestException('يمكن التقييم فقط بعد التسليم');
+      throw new OrderRatingNotAllowedException({ status: order.status });
     }
 
     order.ratingInfo.rating = dto.rating;

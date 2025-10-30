@@ -1,0 +1,179 @@
+{
+  "pageTitle": "مكتبة الوسائط",
+  "pageSubtitle": "إدارة وتنظيم جميع الملفات والوسائط",
+  "analyticsPageTitle": "إحصائيات الوسائط والملفات",
+  "analyticsPageSubtitle": "إحصائيات شاملة عن جميع الملفات والوسائط المرفوعة",
+
+  "uploadFile": "رفع ملف",
+  "uploadNewFile": "رفع ملف جديد",
+  "analytics": "الإحصائيات",
+  "cleanup": "تنظيف",
+  "refresh": "تحديث",
+  "close": "إغلاق",
+  "cancel": "إلغاء",
+  "back": "العودة",
+  "next": "التالي",
+  "upload": "رفع",
+  "uploading": "جاري الرفع...",
+  "delete": "حذف",
+  "restore": "استعادة",
+  "edit": "تعديل",
+  "copyUrl": "نسخ الرابط",
+  "show": "إظهار",
+  "hide": "إخفاء",
+  "public": "عام",
+  "private": "خاص",
+  "deleted": "محذوف",
+  "used": "مستخدم",
+
+  "filters": {
+    "search": "البحث",
+    "searchPlaceholder": "ابحث بالاسم أو الوصف...",
+    "category": "الفئة",
+    "type": "النوع",
+    "clearFilters": "مسح الفلاتر",
+    "bulkSelect": "تحديد متعدد",
+    "hideBulkSelect": "إخفاء التحديد المتعدد",
+    "selectAll": "تحديد الكل",
+    "unselectAll": "إلغاء تحديد الكل",
+    "selected": "مختار"
+  },
+
+  "categories": {
+    "all": "الكل",
+    "product": "منتجات",
+    "category": "فئات",
+    "brand": "براندات",
+    "banner": "بانرات",
+    "other": "أخرى"
+  },
+
+  "types": {
+    "all": "الكل",
+    "image": "صور",
+    "images": "صور",
+    "video": "فيديوهات",
+    "videos": "فيديوهات",
+    "document": "مستندات",
+    "documents": "مستندات",
+    "other": "أخرى"
+  },
+
+  "stats": {
+    "totalFiles": "إجمالي الملفات",
+    "totalSize": "إجمالي المساحة",
+    "filesThisMonth": "ملفات هذا الشهر",
+    "filesThisWeek": "ملفات هذا الأسبوع",
+    "filesToday": "ملفات اليوم",
+    "averageFileSize": "متوسط حجم الملف",
+    "used": "مستخدم",
+    "available": "المتاح",
+    "storageStats": "إحصائيات التخزين",
+    "fileDistribution": "توزيع الملفات حسب النوع",
+    "detailsByType": "تفاصيل حسب النوع",
+    "byCategory": "حسب الفئة:",
+    "byType": "حسب النوع:",
+    "overview": "نظرة عامة على الإحصائيات معروضة أعلاه",
+    "noData": "لا توجد بيانات متاحة"
+  },
+
+  "table": {
+    "filename": "اسم الملف",
+    "type": "النوع",
+    "size": "الحجم",
+    "uploadDate": "تاريخ الرفع",
+    "largestFiles": "أكبر الملفات",
+    "recentFiles": "الملفات الحديثة"
+  },
+
+  "uploader": {
+    "selectFile": "اختيار الملف",
+    "fileDetails": "تفاصيل الملف",
+    "uploadSettings": "إعدادات الرفع",
+    "uploadComplete": "تم الرفع بنجاح",
+    "dragDrop": "اسحب وأسقط الملف هنا أو انقر للاختيار",
+    "fileSelected": "تم اختيار الملف",
+    "fileNotSelected": "لم يتم اختيار ملف",
+    "fileName": "اسم الملف",
+    "category": "الفئة",
+    "description": "الوصف",
+    "tags": "العلامات",
+    "addTag": "إضافة علامة",
+    "publicFile": "ملف عام",
+    "privateFile": "ملف خاص",
+    "preview": "معاينة",
+    "fileSize": "حجم الملف",
+    "fileType": "نوع الملف",
+    "uploadError": "حدث خطأ أثناء الرفع"
+  },
+
+  "cleanup": {
+    "title": "عمليات التنظيف",
+    "description": "اختر نوع التنظيف المطلوب. هذه العمليات لا يمكن التراجع عنها.",
+    "deletedFiles": "تنظيف الملفات المحذوفة",
+    "deletedDescription": "حذف الملفات المحذوفة نهائياً من التخزين",
+    "duplicates": "تنظيف الملفات المكررة",
+    "duplicatesDescription": "إزالة الملفات المكررة والاحتفاظ بنسخة واحدة فقط",
+    "unused": "تنظيف الملفات غير المستخدمة",
+    "unusedDescription": "حذف الملفات التي لم تُستخدم منذ 90 يوم",
+    "cleanupDeleted": "تنظيف المحذوفة",
+    "cleanupDuplicates": "تنظيف المكررة",
+    "cleanupUnused": "تنظيف غير المستخدمة"
+  },
+
+  "details": {
+    "title": "تفاصيل الملف",
+    "fileName": "اسم الملف",
+    "category": "الفئة",
+    "type": "النوع",
+    "size": "الحجم",
+    "dimensions": "الأبعاد",
+    "url": "الرابط",
+    "public": "عام"
+  },
+
+  "tabs": {
+    "overview": "نظرة عامة",
+    "largestFiles": "أكبر الملفات",
+    "recentFiles": "الملفات الحديثة"
+  },
+
+  "empty": {
+    "noFiles": "لا توجد ملفات",
+    "noFilesDescription": "لم يتم العثور على ملفات تطابق المعايير المحددة",
+    "startUploading": "ابدأ برفع ملفاتك الأولى",
+    "uploadFirst": "رفع أول ملف"
+  },
+
+  "actions": {
+    "bulkDelete": "حذف المحدد",
+    "toggleDeleted": "عرض المحذوفة",
+    "gridView": "عرض شبكي",
+    "listView": "عرض قائمة",
+    "menu": "القائمة"
+  },
+
+  "messages": {
+    "uploadSuccess": "تم رفع الملف بنجاح",
+    "deleteSuccess": "تم حذف الملف بنجاح",
+    "restoreSuccess": "تم استعادة الملف بنجاح",
+    "updateSuccess": "تم تحديث الملف بنجاح",
+    "copyUrlSuccess": "تم نسخ الرابط",
+    "bulkOperationSuccess": "تمت العملية بنجاح",
+    "cleanupSuccess": "تم التنظيف بنجاح",
+    "overviewError": "فشل تحميل الإحصائيات العامة",
+    "storageError": "فشل تحميل إحصائيات التخزين",
+    "largestFilesError": "فشل تحميل أكبر الملفات",
+    "recentFilesError": "فشل تحميل الملفات الحديثة",
+    "uploadError": "حدث خطأ أثناء الرفع",
+    "deleteConfirm": "هل تريد حذف \"{name}\"؟",
+    "confirmDelete": "تأكيد الحذف"
+  },
+
+  "units": {
+    "files": "ملفات",
+    "today": "اليوم",
+    "thisWeek": "هذا الأسبوع",
+    "thisMonth": "هذا الشهر"
+  }
+}

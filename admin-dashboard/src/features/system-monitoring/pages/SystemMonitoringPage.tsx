@@ -22,6 +22,7 @@ import {
   Cancel,
   Cloud,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { systemMonitoringApi } from '../api/systemMonitoringApi';
 import type { SystemHealth, ResourceUsage } from '../api/systemMonitoringApi';
 import { toast } from 'react-hot-toast';
@@ -30,6 +31,7 @@ import { MetricsChart } from '../components/MetricsChart';
 import { ApiPerformanceChart } from '../components/ApiPerformanceChart';
 
 export function SystemMonitoringPage() {
+  const { t } = useTranslation();
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [resources, setResources] = useState<ResourceUsage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export function SystemMonitoringPage() {
       setHealth(healthData);
       setResources(resourcesData);
     } catch {
-      toast.error('فشل في تحميل بيانات المراقبة');
+      toast.error(t('system-monitoring.messages.error.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +93,7 @@ export function SystemMonitoringPage() {
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 400 }}>
         <CircularProgress size={48} sx={{ mb: 2 }} />
         <Typography variant="body1" color="text.secondary">
-          جاري تحميل بيانات المراقبة...
+          {t('system-monitoring.loading.message', { defaultValue: 'جاري تحميل البيانات...' })}
         </Typography>
       </Box>
     );
@@ -103,10 +105,10 @@ export function SystemMonitoringPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            مراقبة النظام
+            {t('system-monitoring.navigation.title', { defaultValue: 'مراقبة النظام' })}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            مراقبة الأداء والموارد في الوقت الفعلي
+            {t('system-monitoring.navigation.subtitle', { defaultValue: 'مراقبة النظام' })}
           </Typography>
         </Box>
         
@@ -116,7 +118,7 @@ export function SystemMonitoringPage() {
             size="small"
             onClick={() => setAutoRefresh(!autoRefresh)}
           >
-            {autoRefresh ? 'إيقاف التحديث التلقائي' : 'تفعيل التحديث التلقائي'}
+            {autoRefresh ? t('system-monitoring.actions.disableAutoRefresh', { defaultValue: 'تعطيل التحديث التلقائي' }) : t('system-monitoring.actions.enableAutoRefresh', { defaultValue: 'تمكين التحديث التلقائي' })}
           </Button>
           <Button
             variant="contained"
@@ -125,7 +127,7 @@ export function SystemMonitoringPage() {
             disabled={loading}
             startIcon={<Refresh />}
           >
-            تحديث
+            {t('system-monitoring.actions.refresh', { defaultValue: 'تحديث' })}
           </Button>
         </Box>
       </Box>
@@ -138,10 +140,10 @@ export function SystemMonitoringPage() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                   <Typography variant="h6" fontWeight="bold">
-                    حالة النظام
+                    {t('system-monitoring.systemHealth.title', { defaultValue: 'صحة النظام' })}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    نظرة عامة على صحة النظام
+                    {t('system-monitoring.systemHealth.subtitle', { defaultValue: 'صحة النظام' })}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -154,7 +156,7 @@ export function SystemMonitoringPage() {
                     }}
                   />
                   <Chip
-                    label={health.status === 'healthy' ? 'سليم' : health.status === 'warning' ? 'تحذير' : 'حرج'}
+                    label={t(`system-monitoring.systemHealth.status.${health.status}`, { defaultValue: 'صحة النظام' })}
                     color={health.status === 'healthy' ? 'success' : 'error'}
                     size="small"
                   />
@@ -166,37 +168,46 @@ export function SystemMonitoringPage() {
             <Grid container spacing={3}>
               <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  وقت التشغيل
+                  {t('system-monitoring.systemHealth.metrics.uptime', { defaultValue: 'وقت التشغيل' })}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold">
                   {formatUptime(health.uptime)}
                 </Typography>
               </Grid>
-              
+
               <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  متوسط وقت الاستجابة
+                  {t('system-monitoring.systemHealth.metrics.avgResponseTime', { defaultValue: 'متوسط وقت الاستجابة' })}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold">
-                  {health.avgApiResponseTime.toFixed(2)}ms
+                  {t('system-monitoring.systemHealth.units.milliseconds', {
+                    defaultValue: 'مللي ثانية',
+                    value: health.avgApiResponseTime.toFixed(2),
+                  })}
                 </Typography>
               </Grid>
-              
+
               <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  معدل الأخطاء
+                  {t('system-monitoring.systemHealth.metrics.errorRate', { defaultValue: 'معدل الأخطاء' })}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold" sx={{ color: getUsageColor(health.errorRate) }}>
-                  {health.errorRate.toFixed(2)}%
+                  {t('system-monitoring.systemHealth.units.percentage', {
+                    defaultValue: 'نسبة الأخطاء',
+                    value: health.errorRate.toFixed(2),
+                  })}
                 </Typography>
               </Grid>
-              
+
               <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  الطلبات النشطة
+                  {t('system-monitoring.systemHealth.metrics.activeRequests', { defaultValue: 'عدد الطلبات النشطة' }    )}
                 </Typography>
                 <Typography variant="h5" fontWeight="bold">
-                  {health.activeRequests}
+                  {t('system-monitoring.systemHealth.metrics.activeRequests', {
+                    defaultValue: 'عدد الطلبات النشطة',
+                    value: health.activeRequests,
+                  })}
                 </Typography>
               </Grid>
             </Grid>
@@ -209,9 +220,9 @@ export function SystemMonitoringPage() {
         <Box sx={{ mb: 3 }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
             <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-              <Tab icon={<Speed />} iconPosition="start" label="الموارد" />
-              <Tab icon={<Storage />} iconPosition="start" label="قاعدة البيانات" />
-              <Tab icon={<Cloud />} iconPosition="start" label="Cache" />
+              <Tab icon={<Speed />} iconPosition="start" label={t('system-monitoring.tabs.resources', { defaultValue: 'الموارد' })} />
+              <Tab icon={<Storage />} iconPosition="start" label={t('system-monitoring.tabs.database', { defaultValue: 'القاعدة البيانية' })} />
+              <Tab icon={<Cloud />} iconPosition="start" label={t('system-monitoring.tabs.cache', { defaultValue: 'الذاكرة المؤقتة' })} />
             </Tabs>
           </Box>
 
@@ -224,7 +235,7 @@ export function SystemMonitoringPage() {
                     title={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="body1" fontWeight="medium">
-                          المعالج (CPU)
+                          {t('system-monitoring.resources.cpu.title', { defaultValue: 'المعالج' })}
                         </Typography>
                         <Speed color="action" />
                       </Box>
@@ -243,7 +254,10 @@ export function SystemMonitoringPage() {
                       />
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      {resources.cpu.cores} نواة
+                      {t('system-monitoring.resources.cpu.cores', {
+                        defaultValue: 'عدد المعالجات',
+                        count: resources.cpu.cores,
+                      })}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -256,7 +270,7 @@ export function SystemMonitoringPage() {
                     title={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="body1" fontWeight="medium">
-                          الذاكرة (RAM)
+                          {t('system-monitoring.resources.memory.title', { defaultValue: 'الذاكرة' })}
                         </Typography>
                         <Memory color="action" />
                       </Box>
@@ -275,7 +289,11 @@ export function SystemMonitoringPage() {
                       />
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      {formatBytes(resources.memory.used)} / {formatBytes(resources.memory.total)}
+                      {t('system-monitoring.resources.memory.usage', {
+                        defaultValue: 'استخدام الذاكرة',
+                        used: formatBytes(resources.memory.used),
+                        total: formatBytes(resources.memory.total),
+                      })}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -288,7 +306,7 @@ export function SystemMonitoringPage() {
                     title={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="body1" fontWeight="medium">
-                          القرص
+                          {t('system-monitoring.resources.disk.title', { defaultValue: 'القرص' })}
                         </Typography>
                         <Storage color="action" />
                       </Box>
@@ -307,7 +325,11 @@ export function SystemMonitoringPage() {
                       />
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      {formatBytes(resources.disk.used)} / {formatBytes(resources.disk.total)}
+                      {t('system-monitoring.resources.disk.usage', {
+                        defaultValue: 'استخدام القرص',
+                        used: formatBytes(resources.disk.used),
+                        total: formatBytes(resources.disk.total),
+                      })}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -320,7 +342,7 @@ export function SystemMonitoringPage() {
               <CardHeader
                 title={
                   <Typography variant="h6" fontWeight="bold">
-                    MongoDB
+                    {t('system-monitoring.database.title', { defaultValue: 'القاعدة البيانية' })}
                   </Typography>
                 }
               />
@@ -328,7 +350,7 @@ export function SystemMonitoringPage() {
                 <Grid container spacing={3}>
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      الحالة
+                      {t('system-monitoring.database.metrics.status', { defaultValue: 'الحالة' })}
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {health.databaseStatus.connected ? (
@@ -337,32 +359,40 @@ export function SystemMonitoringPage() {
                         <Cancel color="error" />
                       )}
                       <Typography variant="body1" fontWeight="medium">
-                        {health.databaseStatus.connected ? 'متصل' : 'غير متصل'}
+                        {t(`system-monitoring.database.status.${health.databaseStatus.connected ? 'connected' : 'disconnected'}`, {
+                          defaultValue: health.databaseStatus.connected ? 'متصل' : 'غير متصل',
+                        })}
                       </Typography>
                     </Box>
                   </Grid>
-                  
+
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      وقت الاستجابة
+                      {t('system-monitoring.database.metrics.responseTime', { defaultValue: 'وقت الاستجابة' })}
                     </Typography>
                     <Typography variant="h6" fontWeight="bold">
-                      {health.databaseStatus.responseTime}ms
+                      {t('system-monitoring.database.units.milliseconds', {
+                        defaultValue: 'مللي ثانية',
+                        value: health.databaseStatus.responseTime,
+                      })}
                     </Typography>
                   </Grid>
-                  
+
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      عدد المجموعات
+                      {t('system-monitoring.database.metrics.collections', { defaultValue: 'عدد المجموعات' })}
                     </Typography>
                     <Typography variant="h6" fontWeight="bold">
-                      {health.databaseStatus.collections}
+                      {t('system-monitoring.database.metrics.collections', {
+                        defaultValue: 'عدد المجموعات',
+                        value: health.databaseStatus.collections,
+                      })}
                     </Typography>
                   </Grid>
-                  
+
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      الحجم الإجمالي
+                      {t('system-monitoring.database.metrics.totalSize', { defaultValue: 'حجم القاعدة البيانية' })}
                     </Typography>
                     <Typography variant="h6" fontWeight="bold">
                       {formatBytes(health.databaseStatus.totalSize)}
@@ -378,7 +408,7 @@ export function SystemMonitoringPage() {
               <CardHeader
                 title={
                   <Typography variant="h6" fontWeight="bold">
-                    Redis Cache
+                    {t('system-monitoring.cache.title', { defaultValue: 'الذاكرة المؤقتة' })}
                   </Typography>
                 }
               />
@@ -386,7 +416,7 @@ export function SystemMonitoringPage() {
                 <Grid container spacing={3}>
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      الحالة
+                      {t('system-monitoring.cache.metrics.status', { defaultValue: 'الحالة' })}
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {health.redisStatus.connected ? (
@@ -395,35 +425,46 @@ export function SystemMonitoringPage() {
                         <Cancel color="error" />
                       )}
                       <Typography variant="body1" fontWeight="medium">
-                        {health.redisStatus.connected ? 'متصل' : 'غير متصل'}
+                          {t(`system-monitoring.cache.status.${health.redisStatus.connected ? 'connected' : 'disconnected'}`, {
+                          defaultValue: health.redisStatus.connected ? 'متصل' : 'غير متصل',
+                        })}
                       </Typography>
                     </Box>
                   </Grid>
-                  
+
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      وقت الاستجابة
+                      {t('system-monitoring.cache.metrics.responseTime', { defaultValue: 'وقت الاستجابة' })}
                     </Typography>
-                    <Typography variant="h6" fontWeight="bold">
-                      {health.redisStatus.responseTime}ms
+                    <Typography variant="h6" fontWeight="bold"  >
+                      {t('system-monitoring.cache.units.milliseconds', {
+                        defaultValue: 'مللي ثانية',
+                        value: health.redisStatus.responseTime,
+                      })}
                     </Typography>
                   </Grid>
-                  
+
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      معدل الإصابة
+                      {t('system-monitoring.cache.metrics.hitRate', { defaultValue: 'معدل الإصابة' })}
                     </Typography>
                     <Typography variant="h6" fontWeight="bold" color="success.main">
-                      {health.redisStatus.hitRate.toFixed(1)}%
+                      {t('system-monitoring.cache.units.percentage', {
+                        defaultValue: 'نسبة الإصابة',
+                        value: health.redisStatus.hitRate.toFixed(1),
+                      })}
                     </Typography>
                   </Grid>
-                  
+
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      استخدام الذاكرة
+                      {t('system-monitoring.cache.metrics.memoryUsage', { defaultValue: 'استخدام الذاكرة' })}
                     </Typography>
                     <Typography variant="h6" fontWeight="bold">
-                      {health.redisStatus.memoryUsage.toFixed(1)}%
+                      {t('system-monitoring.cache.units.percentage', {
+                        defaultValue: 'نسبة الاستخدام',
+                        value: health.redisStatus.memoryUsage.toFixed(1),
+                      })}
                     </Typography>
                   </Grid>
                 </Grid>
@@ -436,30 +477,30 @@ export function SystemMonitoringPage() {
       {/* Charts Section */}
       <Box sx={{ mt: 4 }}>
         <Typography variant="h6" fontWeight="bold" sx={{ mb: 3 }}>
-          الرسوم البيانية - آخر 24 ساعة
+          {t('system-monitoring.charts.title', { defaultValue: 'الرسوم البيانية' }  )}
         </Typography>
-        
+
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid component="div" size={{ xs: 12, lg: 6 }}>
-            <MetricsChart 
-              metricType="cpu" 
-              title="استخدام المعالج (CPU)" 
+            <MetricsChart
+              metricType="cpu"
+              title={t('system-monitoring.charts.metrics.cpu', { defaultValue: 'المعالج' })}
               color="#3b82f6"
             />
           </Grid>
           <Grid component="div" size={{ xs: 12, lg: 6 }}>
-            <MetricsChart 
-              metricType="memory" 
-              title="استخدام الذاكرة (RAM)" 
+            <MetricsChart
+              metricType="memory"
+              title={t('system-monitoring.charts.metrics.memory', { defaultValue: 'الذاكرة' })}
               color="#10b981"
             />
           </Grid>
         </Grid>
 
         <Box sx={{ mb: 3 }}>
-          <MetricsChart 
-            metricType="disk" 
-            title="استخدام القرص" 
+          <MetricsChart
+            metricType="disk"
+            title={t('system-monitoring.charts.metrics.disk', { defaultValue: 'القرص' } )}
             color="#f59e0b"
           />
         </Box>
@@ -470,7 +511,10 @@ export function SystemMonitoringPage() {
       {/* Last Updated */}
       {health && (
         <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
-          آخر تحديث: {new Date(health.lastUpdated).toLocaleString('ar-YE')}
+          {t('system-monitoring.actions.lastUpdated', {
+            defaultValue: 'تم التحديث في',
+            time: new Date(health.lastUpdated).toLocaleString('ar-YE'),
+          })}
         </Typography>
       )}
     </Box>

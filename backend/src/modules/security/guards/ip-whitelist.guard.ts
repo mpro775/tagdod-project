@@ -1,4 +1,5 @@
-import { Injectable, CanActivate, ExecutionContext, Logger, ForbiddenException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, Logger } from '@nestjs/common';
+import { ForbiddenException } from '../../../shared/exceptions';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { ClientIPService } from '../services/client-ip.service';
@@ -43,13 +44,13 @@ export class IPWhitelistGuard implements CanActivate {
     // Check blacklist first
     if (this.isBlacklisted(clientIP)) {
       this.logger.warn(`Blocked blacklisted IP: ${clientIP}`);
-      throw new ForbiddenException('Access denied from this IP address');
+      throw new ForbiddenException({ ip: clientIP, reason: 'ip_not_allowed' });
     }
 
     // If whitelist is enabled, check it
     if (this.whitelist.length > 0 && !this.isWhitelisted(clientIP)) {
       this.logger.warn(`IP not in whitelist: ${clientIP}`);
-      throw new ForbiddenException('Access denied from this IP address');
+      throw new ForbiddenException({ ip: clientIP, reason: 'ip_not_allowed' });
     }
 
     return true;

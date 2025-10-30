@@ -1,6 +1,7 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, useTheme, alpha } from '@mui/material';
+import { Card, CardContent, Typography, Box, useTheme, alpha, Skeleton } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryData {
   name: string;
@@ -18,6 +19,7 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
   isLoading 
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation(['dashboard']);
 
   const PREDEFINED_COLORS = [
     theme.palette.primary.main,
@@ -50,7 +52,7 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
         const percentage = cat.percentage || Math.round((revenue / totalRevenue) * 100);
         
         return {
-          name: cat.categoryName || cat.category || cat.name || 'غير محدد',
+          name: cat.categoryName || cat.category || cat.name || t('categoryDistribution.unknown', 'غير محدد'),
           value: percentage || 0,
           color: PREDEFINED_COLORS[index % PREDEFINED_COLORS.length],
         };
@@ -64,10 +66,11 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
       <Card>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            توزيع الفئات
+            {t('categoryDistribution.title', 'توزيع الفئات')}
           </Typography>
-          <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography color="text.secondary">جاري التحميل...</Typography>
+          <Box sx={{ height: 300, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Skeleton variant="rectangular" height={32} width="50%" />
+            <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} />
           </Box>
         </CardContent>
       </Card>
@@ -80,11 +83,11 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
       <Card>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            توزيع الفئات
+            {t('categoryDistribution.title', 'توزيع الفئات')}
           </Typography>
           <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              لا توجد بيانات للفئات
+              {t('categoryDistribution.empty', 'لا توجد بيانات للفئات')}
             </Typography>
           </Box>
         </CardContent>
@@ -116,7 +119,7 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
     <Card>
       <CardContent>
         <Typography variant="h6" fontWeight="bold" gutterBottom>
-          توزيع الفئات
+          {t('categoryDistribution.title', 'توزيع الفئات')}
         </Typography>
 
         <Box sx={{ height: 300 }}>
@@ -145,7 +148,7 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
                   borderRadius: '8px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 }}
-                formatter={(value: number) => [`${value}%`, 'النسبة']}
+                formatter={(value: number) => [`${value}%`, t('categoryDistribution.tooltip', 'النسبة')]}
               />
               <Legend 
                 verticalAlign="bottom" 

@@ -1,30 +1,13 @@
 import React from 'react';
 import { Chip, ChipProps } from '@mui/material';
 import { CheckCircle, Schedule, LocalShipping, Error, Warning, Info } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import type { OrderStatus } from '../types/order.types';
 
 interface OrderStatusChipProps extends Omit<ChipProps, 'label' | 'color'> {
   status: OrderStatus;
   showIcon?: boolean;
 }
-
-const orderStatusLabels: Record<OrderStatus, string> = {
-  draft: 'مسودة',
-  pending_payment: 'انتظار الدفع',
-  confirmed: 'مؤكد',
-  payment_failed: 'فشل الدفع',
-  processing: 'قيد التجهيز',
-  ready_to_ship: 'جاهز للشحن',
-  shipped: 'تم الشحن',
-  out_for_delivery: 'في الطريق',
-  delivered: 'تم التسليم',
-  completed: 'مكتمل',
-  on_hold: 'معلق',
-  cancelled: 'ملغي',
-  refunded: 'مسترد',
-  partially_refunded: 'مسترد جزئياً',
-  returned: 'مرتجع',
-};
 
 const orderStatusColors: Record<
   OrderStatus,
@@ -74,9 +57,10 @@ export const OrderStatusChip: React.FC<OrderStatusChipProps> = ({
   showIcon = true,
   ...props
 }) => {
+  const { t } = useTranslation();
   return (
     <Chip
-      label={orderStatusLabels[status]}
+      label={t(`orders.status.${status}`)}
       color={orderStatusColors[status]}
       icon={showIcon ? getStatusIcon(status) : undefined}
       {...props}

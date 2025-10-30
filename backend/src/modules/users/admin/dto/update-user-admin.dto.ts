@@ -20,6 +20,10 @@ export class UpdateUserAdminDto {
 
   @IsOptional()
   @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
   @MinLength(8)
   password?: string;
 

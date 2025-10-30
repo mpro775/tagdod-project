@@ -1,0 +1,316 @@
+{
+  "navigation": {
+    "title": "Order Management",
+    "analytics": "Order Analytics"
+  },
+  "list": {
+    "title": "Order Management",
+    "subtitle": "Manage and track customer orders",
+    "searchPlaceholder": "Search by order number or customer name",
+    "columns": {
+      "orderNumber": "Order Number",
+      "customerName": "Customer",
+      "items": "Items",
+      "total": "Total",
+      "paymentMethod": "Payment Method",
+      "paymentStatus": "Payment Status",
+      "status": "Order Status",
+      "createdAt": "Order Date",
+      "actions": "Actions"
+    },
+    "user": {
+      "notSpecified": "Not Specified"
+    },
+    "items": {
+      "count": "{{count}} products"
+    },
+    "menu": {
+      "viewDetails": "View Details"
+    }
+  },
+  "status": {
+    "draft": "Draft",
+    "pending_payment": "Pending Payment",
+    "confirmed": "Confirmed",
+    "payment_failed": "Payment Failed",
+    "processing": "Processing",
+    "ready_to_ship": "Ready to Ship",
+    "shipped": "Shipped",
+    "out_for_delivery": "Out for Delivery",
+    "delivered": "Delivered",
+    "completed": "Completed",
+    "on_hold": "On Hold",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded",
+    "partially_refunded": "Partially Refunded",
+    "returned": "Returned"
+  },
+  "statusLabels": {
+    "draft": "Order Created",
+    "pending_payment": "Pending Payment",
+    "confirmed": "Order Confirmed",
+    "payment_failed": "Payment Failed",
+    "processing": "Processing",
+    "ready_to_ship": "Ready to Ship",
+    "shipped": "Shipped",
+    "out_for_delivery": "Out for Delivery",
+    "delivered": "Delivered",
+    "completed": "Completed",
+    "on_hold": "On Hold",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded",
+    "partially_refunded": "Partially Refunded",
+    "returned": "Returned"
+  },
+  "statusColors": {
+    "draft": "default",
+    "pending_payment": "warning",
+    "confirmed": "info",
+    "payment_failed": "error",
+    "processing": "primary",
+    "ready_to_ship": "secondary",
+    "shipped": "info",
+    "out_for_delivery": "primary",
+    "delivered": "success",
+    "completed": "success",
+    "on_hold": "warning",
+    "cancelled": "error",
+    "refunded": "error",
+    "partially_refunded": "warning",
+    "returned": "error"
+  },
+  "payment": {
+    "status": {
+      "pending": "Pending",
+      "authorized": "Authorized",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "partially_refunded": "Partially Refunded",
+      "cancelled": "Cancelled"
+    },
+    "method": {
+      "COD": "Cash on Delivery",
+      "ONLINE": "Online",
+      "WALLET": "Wallet",
+      "BANK_TRANSFER": "Bank Transfer"
+    }
+  },
+  "filters": {
+    "title": "Search Filters",
+    "search": "Search",
+    "status": {
+      "label": "Order Status",
+      "all": "All"
+    },
+    "paymentStatus": {
+      "label": "Payment Status",
+      "all": "All"
+    },
+    "paymentMethod": {
+      "label": "Payment Method",
+      "all": "All"
+    },
+    "dateRange": {
+      "from": "From Date",
+      "to": "To Date"
+    },
+    "sorting": {
+      "sortBy": "Sort By",
+      "sortOrder": "Sort Order",
+      "createdAt": "Order Date",
+      "total": "Total Amount",
+      "orderNumber": "Order Number",
+      "status": "Order Status",
+      "descending": "Descending",
+      "ascending": "Ascending"
+    },
+    "clearFilters": "Clear Filters"
+  },
+  "stats": {
+    "total": "Total Orders",
+    "processing": "Processing",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled"
+  },
+  "analytics": {
+    "title": "Order Analytics",
+    "subtitle": "Comprehensive order performance and analytics",
+    "period": {
+      "label": "Period",
+      "7days": "Last 7 days",
+      "30days": "Last 30 days",
+      "90days": "Last 90 days",
+      "365days": "Last year"
+    },
+    "groupBy": {
+      "day": "Daily",
+      "week": "Weekly",
+      "month": "Monthly"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "revenue": "Revenue",
+      "performance": "Performance",
+      "trends": "Trends"
+    },
+    "metrics": {
+      "totalOrders": "Total Orders",
+      "totalRevenue": "Total Revenue",
+      "averageOrderValue": "Average Order Value",
+      "conversionRate": "Conversion Rate",
+      "customerLifetimeValue": "Customer Lifetime Value"
+    },
+    "charts": {
+      "ordersOverTime": "Orders Over Time",
+      "revenueTrends": "Revenue Trends",
+      "statusDistribution": "Order Status Distribution",
+      "paymentMethods": "Payment Methods",
+      "topProducts": "Top Products",
+      "topCustomers": "Top Customers"
+    }
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "export": "Export",
+    "exporting": "Exporting...",
+    "view": "View",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "back": "Back",
+    "updateStatus": "Update Status",
+    "shipOrder": "Ship Order",
+    "refundOrder": "Refund Order",
+    "cancelOrder": "Cancel Order",
+    "addNotes": "Add Notes"
+  },
+  "bulk": {
+    "selected": "{{count}} orders selected",
+    "actions": "Bulk Actions",
+    "startProcessing": "Start Processing",
+    "markAsShipped": "Mark as Shipped",
+    "putOnHold": "Put on Hold",
+    "cancelOrders": "Cancel Orders"
+  },
+  "details": {
+    "title": "Order Details",
+    "summary": "Order Summary",
+    "timeline": "Order Timeline",
+    "customer": "Customer Information",
+    "shipping": "Shipping Address",
+    "billing": "Billing Address",
+    "items": "Order Items",
+    "notes": "Order Notes",
+    "history": "Order History"
+  },
+  "summary": {
+    "orderNumber": "Order #{{number}}",
+    "status": "Order Status:",
+    "paymentStatus": "Payment Status:",
+    "orderDate": "Order Date:",
+    "customer": "Customer:",
+    "total": "Total:",
+    "subtotal": "Subtotal:",
+    "shipping": "Shipping:",
+    "tax": "Tax:",
+    "discount": "Discount:",
+    "paymentMethod": "Payment Method:",
+    "notes": "Notes:"
+  },
+  "timeline": {
+    "roles": {
+      "customer": "Customer",
+      "admin": "Admin",
+      "system": "System"
+    },
+    "events": {
+      "orderCreated": "Order created",
+      "statusUpdated": "Status updated to {{status}}",
+      "paymentReceived": "Payment received",
+      "orderShipped": "Order shipped",
+      "orderDelivered": "Order delivered",
+      "orderCancelled": "Order cancelled",
+      "refundProcessed": "Refund processed",
+      "notesAdded": "Notes added"
+    }
+  },
+  "dialogs": {
+    "updateStatus": {
+      "title": "Update Order Status",
+      "currentStatus": "Current Status:",
+      "newStatus": "New Status:",
+      "notes": "Notes (Optional):",
+      "confirm": "Update Status"
+    },
+    "shipOrder": {
+      "title": "Ship Order",
+      "trackingNumber": "Tracking Number:",
+      "carrier": "Shipping Carrier:",
+      "shippingDate": "Shipping Date:",
+      "estimatedDelivery": "Estimated Delivery:",
+      "confirm": "Ship Order"
+    },
+    "refundOrder": {
+      "title": "Refund Order",
+      "amount": "Refund Amount:",
+      "reason": "Refund Reason:",
+      "fullRefund": "Full Refund",
+      "partialRefund": "Partial Refund",
+      "confirm": "Process Refund"
+    },
+    "cancelOrder": {
+      "title": "Cancel Order",
+      "reason": "Cancellation Reason:",
+      "notifyCustomer": "Notify Customer",
+      "confirm": "Cancel Order"
+    },
+    "addNotes": {
+      "title": "Add Order Notes",
+      "notes": "Notes:",
+      "isInternal": "Internal Note (not visible to customer)",
+      "confirm": "Add Notes"
+    }
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidAmount": "Invalid amount",
+    "invalidDate": "Invalid date",
+    "trackingRequired": "Tracking number is required",
+    "reasonRequired": "Reason is required"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "noData": "No data available",
+    "success": {
+      "statusUpdated": "Order status updated successfully",
+      "orderShipped": "Order shipped successfully",
+      "refundProcessed": "Refund processed successfully",
+      "orderCancelled": "Order cancelled successfully",
+      "notesAdded": "Notes added successfully",
+      "bulkUpdated": "Orders updated successfully",
+      "exported": "Data exported successfully"
+    },
+    "error": {
+      "loadFailed": "Failed to load orders",
+      "updateFailed": "Failed to update order",
+      "shipFailed": "Failed to ship order",
+      "refundFailed": "Failed to process refund",
+      "cancelFailed": "Failed to cancel order",
+      "exportFailed": "Failed to export data"
+    },
+    "confirm": {
+      "updateStatus": "Are you sure you want to update the order status?",
+      "shipOrder": "Are you sure you want to ship this order?",
+      "refundOrder": "Are you sure you want to process this refund?",
+      "cancelOrder": "Are you sure you want to cancel this order?"
+    }
+  },
+  "pagination": {
+    "rowsPerPage": "Rows per page:",
+    "displayedRows": "{{from}}-{{to}} of {{count}}"
+  }
+}

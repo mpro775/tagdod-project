@@ -4,8 +4,11 @@ import { Model } from 'mongoose';
 import { NotificationTemplate, NotificationTemplateDocument } from '../schemas/notification-template.schema';
 import { CreateTemplateDto, UpdateTemplateDto } from '../dto/unified-notification.dto';
 import { NotificationCategory } from '../enums/notification.enums';
-import { AppException } from '../../../shared/exceptions/app.exception';
 import { render } from '../templates';
+import { 
+  NotificationException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 
 @Injectable()
 export class NotificationTemplateService {
@@ -33,7 +36,7 @@ export class NotificationTemplateService {
     const template = await this.templateModel.findById(id).lean();
     
     if (!template) {
-      throw new AppException('TEMPLATE_NOT_FOUND', 'القالب غير موجود', null, 404);
+      throw new NotificationException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND, { templateId: id });
     }
 
     return template;
@@ -46,7 +49,7 @@ export class NotificationTemplateService {
     const template = await this.templateModel.findOne({ key, isActive: true }).lean();
     
     if (!template) {
-      throw new AppException('TEMPLATE_NOT_FOUND', 'القالب غير موجود', null, 404);
+      throw new NotificationException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND, { key });
     }
 
     return template;
@@ -60,7 +63,7 @@ export class NotificationTemplateService {
       // التحقق من عدم تكرار المفتاح
       const existing = await this.templateModel.findOne({ key: dto.key });
       if (existing) {
-        throw new AppException('TEMPLATE_KEY_EXISTS', 'مفتاح القالب موجود بالفعل', null, 400);
+        throw new NotificationException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND, { key: dto.key, reason: 'already_exists' });
       }
 
       const template = new this.templateModel({
@@ -90,7 +93,7 @@ export class NotificationTemplateService {
     );
 
     if (!template) {
-      throw new AppException('TEMPLATE_NOT_FOUND', 'القالب غير موجود', null, 404);
+      throw new NotificationException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND, { templateId: id });
     }
 
     this.logger.log(`Template updated: ${id}`);
@@ -116,7 +119,7 @@ export class NotificationTemplateService {
     );
 
     if (!template) {
-      throw new AppException('TEMPLATE_NOT_FOUND', 'القالب غير موجود', null, 404);
+      throw new NotificationException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND, { templateId: id });
     }
 
     this.logger.log(`Template ${isActive ? 'activated' : 'deactivated'}: ${id}`);
@@ -153,7 +156,7 @@ export class NotificationTemplateService {
         const builtInTemplate = builtInTemplates[templateKey];
         
         if (!builtInTemplate) {
-          throw new AppException('TEMPLATE_NOT_FOUND', 'القالب غير موجود', null, 404);
+          throw new NotificationException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND, { templateKey });
         }
 
         return {

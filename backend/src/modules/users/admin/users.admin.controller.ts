@@ -20,14 +20,19 @@ import {
 } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery, SortOrder } from 'mongoose';
-import bcrypt from 'bcrypt';
+import { hash } from 'bcrypt';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
-import { User, UserRole, UserStatus } from '../schemas/user.schema';
+import { User, UserRole, UserStatus, CapabilityStatus } from '../schemas/user.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
-import { AppException } from '../../../shared/exceptions/app.exception';
+import { 
+  UserNotFoundException,
+  AuthException,
+  ForbiddenException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 import { AdminPermission, PERMISSION_GROUPS } from '../../../shared/constants/permissions';
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 import { CreateAdminDto, CreateRoleBasedAdminDto } from './dto/create-admin.dto';
@@ -179,7 +184,7 @@ export class UsersAdminController {
   async getUser(@Param('id') id: string) {
     const user = await this.userModel.findById(id).select('-passwordHash').lean();
     if (!user) {
-      throw new AppException('USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+      throw new UserNotFoundException({ userId: id });
     }
 
     const capabilities = await this.capsModel.findOne({ userId: id }).lean();
@@ -197,13 +202,13 @@ export class UsersAdminController {
     // التحقق من عدم وجود المستخدم
     const existingUser = await this.userModel.findOne({ phone: dto.phone });
     if (existingUser) {
-      throw new AppException('USER_ALREADY_EXISTS', 'رقم الهاتف مستخدم بالفعل', null, 400);
+      throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
     }
 
     // إنشاء كلمة مرور مؤقتة إذا لم يتم تحديدها
     let passwordHash: string | undefined;
     if (dto.temporaryPassword) {
-      passwordHash = await bcrypt.hash(dto.temporaryPassword, 10);
+      passwordHash = await hash(dto.temporaryPassword, 10);
     }
 
     // إنشاء المستخدم
@@ -278,7 +283,7 @@ export class UsersAdminController {
         permissions = [...PERMISSION_GROUPS.VIEW_ONLY_ADMIN];
         break;
       default:
-        throw new AppException('INVALID_ADMIN_TYPE', 'نوع الأدمن غير صحيح', null, 400);
+        throw new AuthException(ErrorCode.VALIDATION_ERROR, { field: 'adminType' });
     }
 
     // إضافة الصلاحيات الإضافية إذا تم تحديدها
@@ -311,7 +316,7 @@ export class UsersAdminController {
     // التحقق من عدم وجود المستخدم
     const existingUser = await this.userModel.findOne({ phone: dto.phone });
     if (existingUser) {
-      throw new AppException('USER_ALREADY_EXISTS', 'رقم الهاتف مستخدم بالفعل', null, 400);
+      throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
     }
 
     // تجهيز البيانات
@@ -321,39 +326,62 @@ export class UsersAdminController {
       lastName: dto.lastName,
       gender: dto.gender,
       jobTitle: dto.jobTitle,
+      city: dto.city || 'صنعاء', // المدينة - افتراضي صنعاء
       roles: dto.roles || [UserRole.USER],
       permissions: dto.permissions || [],
       status: dto.status || UserStatus.ACTIVE,
+      // القدرات الافتراضية
+      customer_capable: true,
+      engineer_capable: false,
+      engineer_status: CapabilityStatus.NONE,
+      wholesale_capable: false,
+      wholesale_status: CapabilityStatus.NONE,
+      wholesale_discount_percent: 0,
+      admin_capable: false,
+      admin_status: CapabilityStatus.NONE,
     };
+
+    // معالجة طلبات القدرات - تحديث userData مباشرة
+    if (dto.capabilityRequest === 'engineer') {
+      if (!dto.jobTitle) {
+        throw new AuthException(ErrorCode.AUTH_JOB_TITLE_REQUIRED);
+      }
+      userData.engineer_capable = true;
+      userData.engineer_status = CapabilityStatus.APPROVED;
+    }
+
+    if (dto.capabilityRequest === 'wholesale') {
+      userData.wholesale_capable = true;
+      userData.wholesale_status = CapabilityStatus.APPROVED;
+      userData.wholesale_discount_percent = dto.wholesaleDiscountPercent || 0;
+    }
+
+    // تحديث القدرات للأدمن
+    if (dto.roles?.includes(UserRole.ADMIN) || dto.roles?.includes(UserRole.SUPER_ADMIN)) {
+      userData.admin_capable = true;
+      userData.admin_status = CapabilityStatus.APPROVED;
+    }
 
     // إضافة كلمة المرور إن وجدت
     if (dto.password) {
-      userData.passwordHash = await bcrypt.hash(dto.password, 10);
+      userData.passwordHash = await hash(dto.password, 10);
     }
 
     // إنشاء المستخدم
     const user = await this.userModel.create(userData);
 
-    // إنشاء Capabilities
+    // إنشاء Capabilities في الجدول المنفصل (للتوافق مع النظام القديم)
     const capsData: Partial<Capabilities> = {
       userId: user._id.toString(),
-      customer_capable: true,
+      customer_capable: user.customer_capable,
+      engineer_capable: user.engineer_capable,
+      engineer_status: user.engineer_status,
+      wholesale_capable: user.wholesale_capable,
+      wholesale_status: user.wholesale_status,
+      wholesale_discount_percent: user.wholesale_discount_percent,
+      admin_capable: user.admin_capable,
+      admin_status: user.admin_status,
     };
-
-    // معالجة طلبات القدرات
-    if (dto.capabilityRequest === 'engineer') {
-      if (!dto.jobTitle) {
-        throw new AppException('JOB_TITLE_REQUIRED', 'المسمى الوظيفي مطلوب للمهندسين', null, 400);
-      }
-      capsData.engineer_capable = true;
-      capsData.engineer_status = 'approved';
-    }
-
-    if (dto.capabilityRequest === 'wholesale') {
-      capsData.wholesale_capable = true;
-      capsData.wholesale_status = 'approved';
-      capsData.wholesale_discount_percent = dto.wholesaleDiscountPercent || 0;
-    }
 
     await this.capsModel.create(capsData);
 
@@ -377,7 +405,7 @@ export class UsersAdminController {
   ) {
     const user = await this.userModel.findById(id);
     if (!user) {
-      throw new AppException('USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+      throw new UserNotFoundException({ userId: id });
     }
 
     // منع تعديل Super Admin من قبل Admin عادي
@@ -386,7 +414,7 @@ export class UsersAdminController {
       user.roles?.includes(UserRole.SUPER_ADMIN) &&
       !adminUser?.roles?.includes(UserRole.SUPER_ADMIN)
     ) {
-      throw new AppException('PERMISSION_DENIED', 'لا يمكن تعديل Super Admin', null, 403);
+      throw new ForbiddenException({ reason: 'cannot_edit_super_admin' });
     }
 
     // تحديث الحقول
@@ -394,47 +422,69 @@ export class UsersAdminController {
     if (dto.lastName !== undefined) user.lastName = dto.lastName;
     if (dto.gender !== undefined) user.gender = dto.gender;
     if (dto.jobTitle !== undefined) user.jobTitle = dto.jobTitle;
+    if (dto.city !== undefined) user.city = dto.city;
     if (dto.roles !== undefined) user.roles = dto.roles;
     if (dto.permissions !== undefined) user.permissions = dto.permissions;
     if (dto.status !== undefined) user.status = dto.status;
 
     // تحديث كلمة المرور
     if (dto.password) {
-      user.passwordHash = await bcrypt.hash(dto.password, 10);
+      user.passwordHash = await hash(dto.password, 10);
+    }
+
+    // تحديث القدرات في User نفسه حسب النوع
+    if (dto.roles && dto.roles.length > 0) {
+      const mainRole = dto.roles[0];
+
+      // تنظيف القدرات القديمة أولاً
+      user.engineer_capable = false;
+      user.engineer_status = CapabilityStatus.NONE;
+      user.wholesale_capable = false;
+      user.wholesale_status = CapabilityStatus.NONE;
+      user.wholesale_discount_percent = 0;
+      user.admin_capable = false;
+      user.admin_status = CapabilityStatus.NONE;
+
+      // إضافة القدرات حسب النوع الجديد
+      if (mainRole === UserRole.ENGINEER) {
+        user.engineer_capable = true;
+        user.engineer_status = CapabilityStatus.APPROVED;
+      } else if (mainRole === UserRole.MERCHANT) {
+        user.wholesale_capable = true;
+        user.wholesale_status = CapabilityStatus.APPROVED;
+        user.wholesale_discount_percent = dto.wholesaleDiscountPercent || 0;
+      } else if (mainRole === UserRole.ADMIN || mainRole === UserRole.SUPER_ADMIN) {
+        user.admin_capable = true;
+        user.admin_status = CapabilityStatus.APPROVED;
+      }
     }
 
     await user.save();
 
-    // تحديث القدرات حسب النوع
-    if (dto.roles && dto.roles.length > 0) {
-      const mainRole = dto.roles[0];
-      let capabilities = await this.capsModel.findOne({ userId: id });
-
-      // إنشاء القدرات إذا لم تكن موجودة
-      if (!capabilities) {
-        capabilities = await this.capsModel.create({
-          userId: id,
-          customer_capable: true,
-        });
-      }
-
-      // تنظيف القدرات القديمة أولاً
-      capabilities.engineer_capable = false;
-      capabilities.engineer_status = 'pending';
-      capabilities.wholesale_capable = false;
-      capabilities.wholesale_status = 'pending';
-      capabilities.wholesale_discount_percent = 0;
-
-      // إضافة القدرات حسب النوع الجديد
-      if (mainRole === UserRole.ENGINEER) {
-        capabilities.engineer_capable = true;
-        capabilities.engineer_status = 'approved';
-      } else if (mainRole === UserRole.MERCHANT) {
-        capabilities.wholesale_capable = true;
-        capabilities.wholesale_status = 'approved';
-        capabilities.wholesale_discount_percent = dto.wholesaleDiscountPercent || 0;
-      }
-
+    // تحديث Capabilities في الجدول المنفصل (للتوافق مع النظام القديم)
+    let capabilities = await this.capsModel.findOne({ userId: id });
+    if (!capabilities) {
+      capabilities = await this.capsModel.create({
+        userId: id,
+        customer_capable: user.customer_capable,
+        engineer_capable: user.engineer_capable,
+        engineer_status: user.engineer_status,
+        wholesale_capable: user.wholesale_capable,
+        wholesale_status: user.wholesale_status,
+        wholesale_discount_percent: user.wholesale_discount_percent,
+        admin_capable: user.admin_capable,
+        admin_status: user.admin_status,
+      });
+    } else {
+      // تحديث القدرات الموجودة
+      capabilities.customer_capable = user.customer_capable;
+      capabilities.engineer_capable = user.engineer_capable;
+      capabilities.engineer_status = user.engineer_status;
+      capabilities.wholesale_capable = user.wholesale_capable;
+      capabilities.wholesale_status = user.wholesale_status;
+      capabilities.wholesale_discount_percent = user.wholesale_discount_percent;
+      capabilities.admin_capable = user.admin_capable;
+      capabilities.admin_status = user.admin_status;
       await capabilities.save();
     }
 
@@ -459,11 +509,11 @@ export class UsersAdminController {
   ) {
     const user = await this.userModel.findById(id);
     if (!user) {
-      throw new AppException('USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+      throw new UserNotFoundException({ userId: id });
     }
 
     if (user.status === UserStatus.SUSPENDED) {
-      throw new AppException('USER_ALREADY_SUSPENDED', 'المستخدم موقوف بالفعل', null, 400);
+      throw new AuthException(ErrorCode.AUTH_USER_SUSPENDED, { userId: id });
     }
 
     user.status = UserStatus.SUSPENDED;
@@ -486,7 +536,7 @@ export class UsersAdminController {
   async activateUser(@Param('id') id: string) {
     const user = await this.userModel.findById(id);
     if (!user) {
-      throw new AppException('USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+      throw new UserNotFoundException({ userId: id });
     }
 
     user.status = UserStatus.ACTIVE;
@@ -509,16 +559,16 @@ export class UsersAdminController {
   async deleteUser(@Param('id') id: string, @Req() req: { user: { sub: string } }) {
     const user = await this.userModel.findById(id);
     if (!user) {
-      throw new AppException('USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+      throw new UserNotFoundException({ userId: id });
     }
 
     if (user.deletedAt) {
-      throw new AppException('USER_ALREADY_DELETED', 'المستخدم محذوف بالفعل', null, 400);
+      throw new AuthException(ErrorCode.AUTH_USER_DELETED, { userId: id });
     }
 
     // منع حذف Super Admin
     if (user.roles?.includes(UserRole.SUPER_ADMIN)) {
-      throw new AppException('CANNOT_DELETE_SUPER_ADMIN', 'لا يمكن حذف Super Admin', null, 403);
+      throw new ForbiddenException({ reason: 'cannot_delete_super_admin' });
     }
 
     // Soft delete - إصلاح منطق الحذف الناعم
@@ -541,11 +591,11 @@ export class UsersAdminController {
   async restoreUser(@Param('id') id: string) {
     const user = await this.userModel.findById(id);
     if (!user) {
-      throw new AppException('USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+      throw new UserNotFoundException({ userId: id });
     }
 
     if (!user.deletedAt && user.status !== UserStatus.DELETED) {
-      throw new AppException('USER_NOT_DELETED', 'المستخدم غير محذوف', null, 400);
+      throw new AuthException(ErrorCode.USER_INVALID_DATA, { userId: id, reason: 'not_deleted' });
     }
 
     user.deletedAt = null;
@@ -567,11 +617,11 @@ export class UsersAdminController {
   async permanentDelete(@Param('id') id: string) {
     const user = await this.userModel.findById(id);
     if (!user) {
-      throw new AppException('USER_NOT_FOUND', 'المستخدم غير موجود', null, 404);
+      throw new UserNotFoundException({ userId: id });
     }
 
     if (user.roles?.includes(UserRole.SUPER_ADMIN)) {
-      throw new AppException('CANNOT_DELETE_SUPER_ADMIN', 'لا يمكن حذف Super Admin', null, 403);
+      throw new ForbiddenException({ reason: 'cannot_delete_super_admin' });
     }
 
     // حذف نهائي

@@ -1,21 +1,71 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
+import { 
+  ArgumentsHost, 
+  Catch, 
+  ExceptionFilter, 
+  HttpException, 
+  HttpStatus,
+  Logger 
+} from '@nestjs/common';
 import { AppException } from '../exceptions/app.exception';
+import { DomainException } from '../exceptions/domain.exceptions';
 import { Request, Response } from 'express';
+import { ErrorCode } from '../constants/error-codes';
 
 interface RequestWithId extends Request {
   requestId?: string;
+  user?: {
+    sub: string;
+    userId?: string;
+    phone: string;
+    isAdmin: boolean;
+    roles?: string[];
+    permissions?: string[];
+    preferredCurrency?: string;
+  };
 }
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  catch(exception: Error | HttpException | AppException, host: ArgumentsHost) {
+  private readonly logger = new Logger(GlobalExceptionFilter.name);
+
+  catch(exception: Error | HttpException | AppException | DomainException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
     const req = ctx.getRequest<RequestWithId>();
     const status =
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    // Handle AppException with custom error structure
+    // Log critical errors
+    if (status >= 500) {
+      this.logger.error(
+        `[${status}] ${exception.message}`,
+        {
+          path: req.url,
+          method: req.method,
+          userId: req.user?.userId,
+          requestId: req.requestId,
+          stack: exception.stack,
+        }
+      );
+    }
+
+    // Handle DomainException (new unified system)
+    if (exception instanceof DomainException) {
+      const response = exception.getResponse();
+      const responsePayload =
+        response && typeof response === 'object'
+          ? (response as Record<string, unknown>)
+          : { message: String(response) };
+      res.status(status).json({
+        ...responsePayload,
+        requestId: req?.requestId,
+        timestamp: new Date().toISOString(),
+        path: req.url,
+      });
+      return;
+    }
+
+    // Handle AppException (legacy - backward compatibility)
     if (exception instanceof AppException) {
       const payload = {
         success: false,
@@ -26,22 +76,56 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           fieldErrors: exception.fieldErrors,
         },
         requestId: req?.requestId,
+        timestamp: new Date().toISOString(),
+        path: req.url,
       };
       res.status(status).json(payload);
       return;
     }
 
-    // Handle other exceptions
+    // Handle NestJS built-in HttpException
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      const payload = {
+        success: false,
+        error: {
+          code: `HTTP_${status}`,
+          message:
+            typeof response === 'string'
+              ? response
+              : (typeof response === 'object' && response && 'message' in (response as Record<string, unknown>)
+                  ? (response as Record<string, unknown>).message as string
+                  : exception.message),
+          details: typeof response === 'object' ? (response as object) : null,
+          fieldErrors: null,
+        },
+        requestId: req?.requestId,
+        timestamp: new Date().toISOString(),
+        path: req.url,
+      };
+      res.status(status).json(payload);
+      return;
+    }
+
+    // Handle generic Error
     const payload = {
       success: false,
       error: {
-        code: status,
-        message: exception?.message ?? 'Internal Server Error',
-        details: exception instanceof HttpException ? exception.getResponse() : null,
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: process.env.NODE_ENV === 'production' 
+          ? 'حدث خطأ داخلي في الخادم' 
+          : exception?.message ?? 'Internal Server Error',
+        details: process.env.NODE_ENV === 'production' ? null : {
+          name: exception.name,
+          stack: exception.stack,
+        },
         fieldErrors: null,
       },
       requestId: req?.requestId,
+      timestamp: new Date().toISOString(),
+      path: req.url,
     };
+    
     res.status(status).json(payload);
   }
 }

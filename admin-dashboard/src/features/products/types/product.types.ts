@@ -28,8 +28,41 @@ export interface Product extends BaseEntity {
   descriptionEn: string; // الوصف بالإنجليزية
 
   // التصنيف
-  categoryId: string;
-  brandId?: string;
+  categoryId: string | {
+    _id: string;
+    parentId?: string | null;
+    name: string;
+    nameEn: string;
+    slug: string;
+    description?: string;
+    descriptionEn?: string;
+    metaKeywords?: string[];
+    order?: number;
+    isActive?: boolean;
+    isFeatured?: boolean;
+    productsCount?: number;
+    childrenCount?: number;
+    deletedAt?: Date | null;
+    createdAt?: string;
+    updatedAt?: string;
+    __v?: number;
+    imageId?: string;
+  };
+  brandId?: string | {
+    _id: string;
+    name: string;
+    nameEn: string;
+    slug: string;
+    image?: string;
+    description?: string;
+    descriptionEn?: string;
+    isActive?: boolean;
+    sortOrder?: number;
+    createdAt?: string;
+    updatedAt?: string;
+    __v?: number;
+    metadata?: any;
+  };
   sku?: string;
 
   mainImage?: string;
@@ -52,8 +85,13 @@ export interface Product extends BaseEntity {
   viewsCount: number; // عدد المشاهدات
   salesCount: number; // عدد المبيعات
   variantsCount: number; // عدد الـ variants
-  reviewsCount: number; // عدد التقييمات
-  averageRating: number; // متوسط التقييم
+  reviewsCount: number; // عدد التقييمات الحقيقية
+  averageRating: number; // متوسط التقييم الحقيقي
+
+  // التقييم اليدوي (للأدمن)
+  useManualRating?: boolean; // استخدام التقييم اليدوي بدلاً من الحقيقي
+  manualRating?: number; // التقييم اليدوي (0-5)
+  manualReviewsCount?: number; // عدد التقييمات اليدوي (للعرض فقط)
 
   // SEO
   metaTitle?: string;
@@ -156,6 +194,11 @@ export interface CreateProductDto {
   maxStock?: number;
   trackStock?: boolean;
   allowBackorder?: boolean;
+  
+  // التقييم اليدوي
+  useManualRating?: boolean;
+  manualRating?: number;
+  manualReviewsCount?: number;
 }
 
 export interface UpdateProductDto {
@@ -191,6 +234,11 @@ export interface UpdateProductDto {
   maxStock?: number;
   trackStock?: boolean;
   allowBackorder?: boolean;
+  
+  // التقييم اليدوي
+  useManualRating?: boolean;
+  manualRating?: number;
+  manualReviewsCount?: number;
 }
 
 export interface ListProductsParams extends ListParams {
@@ -262,6 +310,16 @@ export interface InventorySummary {
   lowStock: number;
   outOfStock: number;
   totalValue: number;
+  // Optional enhanced fields returned by backend if available
+  inStockUnits?: number;
+  lowStockUnits?: number;
+  outOfStockUnits?: number;
+  variantsPerProduct?: Array<{
+    productId: string;
+    productName?: string;
+    variantsCount: number;
+    totalUnits?: number;
+  }>;
 }
 
 export interface StockUpdateRequest {
@@ -283,5 +341,20 @@ export interface StockAlertDto {
   minStockThreshold?: number;
   includeOutOfStock?: boolean;
   includeLowStock?: boolean;
+}
+
+export interface LowStockItem {
+  variantId: string;
+  productId: string;
+  sku?: string;
+  currentStock: number;
+  minStock: number;
+  difference: number;
+}
+
+export interface OutOfStockItem {
+  variantId: string;
+  productId: string;
+  sku?: string;
 }
 

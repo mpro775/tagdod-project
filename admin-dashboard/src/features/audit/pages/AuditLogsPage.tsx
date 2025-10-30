@@ -21,6 +21,7 @@ import {
   Security as ShieldIcon,
   Warning as AlertTriangleIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { AuditFilters, AuditStatsCards, AuditLogsTable, AuditLogDetails } from '../components';
 import {
@@ -34,6 +35,7 @@ import {
 import { AuditLog } from '../types/audit.types';
 
 export const AuditLogsPage: React.FC = () => {
+  const { t } = useTranslation('audit');
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,7 +67,7 @@ export const AuditLogsPage: React.FC = () => {
     try {
       await exportLogs(filters);
     } catch (error) {
-      toast.error('فشل في تصدير البيانات');
+      toast.error(t('messages.exportFailed'));
     }
   };
 
@@ -114,10 +116,10 @@ export const AuditLogsPage: React.FC = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box>
           <Typography variant="h3" fontWeight="bold">
-            سجلات التدقيق
+            {t('audit.title', { defaultValue: 'سجلات التدقيق' })}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            مراقبة وتتبع جميع العمليات في النظام
+            {t('audit.subtitle', { defaultValue: 'سجلات التدقيق المسجلة' })}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -127,14 +129,14 @@ export const AuditLogsPage: React.FC = () => {
             disabled={isExporting}
             startIcon={<DownloadIcon />}
           >
-            {isExporting ? 'جاري التصدير...' : 'تصدير البيانات'}
+            {isExporting ? t('messages.exporting', { defaultValue: 'جاري التصدير' }) : t('buttons.exportData', { defaultValue: 'تصدير البيانات' })}
           </Button>
           <Button
             variant="outlined"
             onClick={() => window.location.reload()}
             startIcon={<RefreshIcon />}
           >
-            تحديث
+            {t('buttons.refresh', { defaultValue: 'تحديث' })}
           </Button>
         </Box>
       </Box>
@@ -147,7 +149,7 @@ export const AuditLogsPage: React.FC = () => {
         <CardHeader>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FilterIcon />
-            فلاتر سريعة
+            {t('filters.quickFilters', { defaultValue: 'فلاتر السجلات' })}
           </Typography>
         </CardHeader>
         <CardContent>
@@ -158,42 +160,42 @@ export const AuditLogsPage: React.FC = () => {
               onClick={() => handleQuickFilter('sensitive')}
               startIcon={<AlertTriangleIcon />}
             >
-              العمليات الحساسة
+              {t('filters.sensitiveOperations', { defaultValue: 'العمليات الحساسة' })}
             </Button>
             <Button
               variant={quickFilter === 'today' ? 'contained' : 'outlined'}
               size="small"
               onClick={() => handleQuickFilter('today')}
             >
-              اليوم
+              {t('filters.today', { defaultValue: 'اليوم' })}
             </Button>
             <Button
               variant={quickFilter === 'week' ? 'contained' : 'outlined'}
               size="small"
               onClick={() => handleQuickFilter('week')}
             >
-              آخر أسبوع
+              {t('filters.lastWeek', { defaultValue: 'الأسبوع الماضي' })}
             </Button>
             <Button
               variant={quickFilter === 'admin' ? 'contained' : 'outlined'}
               size="small"
               onClick={() => handleQuickFilter('admin')}
             >
-              الإجراءات الإدارية
+              {t('filters.adminActions', { defaultValue: 'إجراءات الإدارة' })}
             </Button>
             <Button
               variant={quickFilter === 'auth' ? 'contained' : 'outlined'}
               size="small"
               onClick={() => handleQuickFilter('auth')}
             >
-              أحداث المصادقة
+              {t('filters.authEvents', { defaultValue: 'أحداث المصادقة' })}
             </Button>
             <Button
               variant={quickFilter === 'all' ? 'contained' : 'outlined'}
               size="small"
               onClick={() => handleQuickFilter('all')}
             >
-              عرض الكل
+              {t('filters.showAll', { defaultValue: 'عرض الكل' })}
             </Button>
           </Box>
         </CardContent>
@@ -207,12 +209,12 @@ export const AuditLogsPage: React.FC = () => {
             <CardHeader>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <SearchIcon />
-                البحث
+                {t('filters.search', { defaultValue: 'البحث' })}    
               </Typography>
             </CardHeader>
             <CardContent>
               <TextField
-                placeholder="البحث في السجلات..."
+                placeholder={t('filters.searchPlaceholder', { defaultValue: 'البحث في السجلات...' })}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 fullWidth
@@ -227,7 +229,7 @@ export const AuditLogsPage: React.FC = () => {
             <CardHeader>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ShieldIcon />
-                النتائج
+                {t('filters.results', { defaultValue: 'النتائج' })}
               </Typography>
             </CardHeader>
             <CardContent>
@@ -235,7 +237,10 @@ export const AuditLogsPage: React.FC = () => {
                 {filteredLogs.length.toLocaleString()}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                من أصل {meta?.total.toLocaleString() || 0} سجل
+                {t('filters.resultsCount', {
+                  defaultValue: 'من أصل {count} سجل',
+                  count: meta?.total || 0,
+                })}
               </Typography>
             </CardContent>
           </Card>
@@ -245,19 +250,19 @@ export const AuditLogsPage: React.FC = () => {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Card>
             <CardHeader>
-              <Typography variant="h6">التحكم في الصفحات</Typography>
+              <Typography variant="h6">{t('filters.pagination', { defaultValue: 'التحكم في الصفحات' })}</Typography>
             </CardHeader>
             <CardContent>
               <FormControl fullWidth>
-                <InputLabel>عدد السجلات</InputLabel>
+                <InputLabel>{t('filters.logsPerPage', { defaultValue: 'عدد السجلات' })}</InputLabel>
                 <Select
                   value={pagination.limit.toString()}
                   onChange={(e) => handleLimitChange(parseInt(e.target.value))}
                 >
-                  <MenuItem value="25">25 سجل</MenuItem>
-                  <MenuItem value="50">50 سجل</MenuItem>
-                  <MenuItem value="100">100 سجل</MenuItem>
-                  <MenuItem value="200">200 سجل</MenuItem>
+                  <MenuItem value="25">{t('filters.25Logs', { defaultValue: '25 سجل' })}</MenuItem>
+                  <MenuItem value="50">{t('filters.50Logs', { defaultValue: '50 سجل' })}</MenuItem>
+                  <MenuItem value="100">{t('filters.100Logs', { defaultValue: '100 سجل' })}</MenuItem>
+                  <MenuItem value="200">{t('filters.200Logs', { defaultValue: '200 سجل' })}</MenuItem>
                 </Select>
               </FormControl>
             </CardContent>
@@ -278,7 +283,7 @@ export const AuditLogsPage: React.FC = () => {
       {/* Audit Logs Table */}
       <Card>
         <CardHeader>
-          <Typography variant="h6">سجلات التدقيق</Typography>
+          <Typography variant="h6">{t('audit.logs', { defaultValue: 'سجلات التدقيق' })}</Typography>
         </CardHeader>
         <CardContent>
           <AuditLogsTable
@@ -295,7 +300,7 @@ export const AuditLogsPage: React.FC = () => {
           <CardContent sx={{ pt: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="text.secondary">
-                عرض {(pagination.page - 1) * pagination.limit + 1} إلى{' '}
+                {t('audit.viewLogs', { defaultValue: 'عرض {start} إلى {end} من {total} سجل', start: (pagination.page - 1) * pagination.limit + 1, end: Math.min(pagination.page * pagination.limit, meta.total), total: meta.total })}
                 {Math.min(pagination.page * pagination.limit, meta.total)} من {meta.total} سجل
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -305,10 +310,10 @@ export const AuditLogsPage: React.FC = () => {
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page <= 1}
                 >
-                  السابق
+                  {t('audit.previous', { defaultValue: 'السابق' })}
                 </Button>
                 <Typography variant="body2">
-                  صفحة {pagination.page} من {Math.ceil(meta.total / pagination.limit)}
+                  {t('audit.page', { defaultValue: 'صفحة {page} من {total}', page: pagination.page, total: Math.ceil(meta.total / pagination.limit) })}
                 </Typography>
                 <Button
                   variant="outlined"
@@ -316,7 +321,7 @@ export const AuditLogsPage: React.FC = () => {
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={!meta.hasMore}
                 >
-                  التالي
+                  {t('audit.next', { defaultValue: 'التالي' })}
                 </Button>
               </Box>
             </Box>

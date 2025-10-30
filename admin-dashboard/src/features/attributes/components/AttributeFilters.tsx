@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Paper,
   Typography,
@@ -28,6 +29,7 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
   onClearFilters,
   initialFilters = {},
 }) => {
+  const { t } = useTranslation('attributes');
   const [filters, setFilters] = useState<ListAttributesParams>({
     search: initialFilters.search || '',
     type: initialFilters.type || undefined,
@@ -84,9 +86,9 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterList color="primary" />
-          <Typography variant="h6">البحث والفلترة</Typography>
+          <Typography variant="h6">{t('filters.searchAndFilter')}</Typography>
           {hasActiveFilters && (
-            <Chip label={`${getActiveFiltersCount()} فلتر نشط`} color="primary" size="small" />
+            <Chip label={t('filters.filterCount', { count: getActiveFiltersCount() })} color="primary" size="small" />
           )}
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -96,7 +98,7 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
             variant="outlined"
             size="small"
           >
-            {showAdvanced ? 'إخفاء الفلاتر المتقدمة' : 'إظهار الفلاتر المتقدمة'}
+            {showAdvanced ? t('filters.hideAdvanced') : t('filters.showAdvanced')}
           </Button>
           {hasActiveFilters && (
             <Button
@@ -106,7 +108,7 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
               color="error"
               size="small"
             >
-              مسح الفلاتر
+              {t('filters.clearFilters')}
             </Button>
           )}
         </Box>
@@ -117,38 +119,39 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
         <Grid size={{ xs: 12, md: 4 }}>
           <TextField
             fullWidth
-            placeholder="البحث في السمات..."
+            placeholder={t('placeholders.search')}
             value={filters.search}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             InputProps={{
               startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
             }}
-            helperText="البحث في الاسم العربي أو الإنجليزي"
+            helperText={t('filters.searchHelper')}
           />
         </Grid>
 
         {/* الفلاتر الأساسية */}
         <Grid size={{ xs: 12, md: 4 }}>
           <FormControl fullWidth>
-            <InputLabel>نوع السمة</InputLabel>
+            <InputLabel>{t('filters.attributeType')}</InputLabel>
             <Select
-              value={filters.type}
+              value={filters.type ?? ''}
               onChange={(e) => handleFilterChange('type', e.target.value)}
-              label="نوع السمة"
+              label={t('filters.attributeType')}
             >
-              <MenuItem value="">جميع الأنواع</MenuItem>
-              <MenuItem value="select">اختيار واحد</MenuItem>
-              <MenuItem value="multiselect">اختيار متعدد</MenuItem>
-              <MenuItem value="text">نص</MenuItem>
-              <MenuItem value="number">رقم</MenuItem>
-              <MenuItem value="boolean">نعم/لا</MenuItem>
+              <MenuItem value="">{t('filters.allTypes')}</MenuItem>
+              <MenuItem value="select">{t('typeLabels.select')}</MenuItem>
+              <MenuItem value="multiselect">{t('typeLabels.multiselect')}</MenuItem>
+              <MenuItem value="color">{t('typeLabels.color')}</MenuItem>
+              <MenuItem value="text">{t('typeLabels.text')}</MenuItem>
+              <MenuItem value="number">{t('typeLabels.number')}</MenuItem>
+              <MenuItem value="boolean">{t('typeLabels.boolean')}</MenuItem>
             </Select>
           </FormControl>
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
           <FormControl fullWidth>
-            <InputLabel>الحالة</InputLabel>
+            <InputLabel>{t('filters.status')}</InputLabel>
             <Select
               value={filters.isActive === undefined ? '' : filters.isActive}
               onChange={(e) =>
@@ -157,11 +160,11 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
                   e.target.value === '' ? undefined : e.target.value === 'true'
                 )
               }
-              label="الحالة"
+              label={t('filters.status')}
             >
-              <MenuItem value="">جميع الحالات</MenuItem>
-              <MenuItem value="true">نشط</MenuItem>
-              <MenuItem value="false">غير نشط</MenuItem>
+              <MenuItem value="">{t('filters.allStatuses')}</MenuItem>
+              <MenuItem value="true">{t('status.active')}</MenuItem>
+              <MenuItem value="false">{t('status.inactive')}</MenuItem>
             </Select>
           </FormControl>
         </Grid>
@@ -171,12 +174,12 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
           <Grid size={{ xs: 12 }}>
             <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
               <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
-                الفلاتر المتقدمة
+                {t('filters.advancedFilters')}
               </Typography>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <FormControl fullWidth>
-                    <InputLabel>قابل للفلترة</InputLabel>
+                    <InputLabel>{t('filters.filterable')}</InputLabel>
                     <Select
                       value={filters.isFilterable === undefined ? '' : filters.isFilterable}
                       onChange={(e) =>
@@ -185,11 +188,11 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
                           e.target.value === '' ? undefined : e.target.value === 'true'
                         )
                       }
-                      label="قابل للفلترة"
+                      label={t('filters.filterable')}
                     >
-                      <MenuItem value="">جميع الحالات</MenuItem>
-                      <MenuItem value="true">قابل للفلترة</MenuItem>
-                      <MenuItem value="false">غير قابل للفلترة</MenuItem>
+                      <MenuItem value="">{t('filters.allFilterable')}</MenuItem>
+                      <MenuItem value="true">{t('filters.yes')}</MenuItem>
+                      <MenuItem value="false">{t('filters.no')}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -197,25 +200,25 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
-                    label="معرف المجموعة"
+                    label={t('filters.groupId')}
                     value={filters.groupId}
                     onChange={(e) => handleFilterChange('groupId', e.target.value)}
-                    helperText="فلترة حسب مجموعة معينة"
+                    helperText={t('filters.groupIdHelper')}
                   />
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 4 }}>
                   <FormControl fullWidth>
-                    <InputLabel>تضمين المحذوفة</InputLabel>
+                    <InputLabel>{t('filters.includeDeleted')}</InputLabel>
                     <Select
                       value={filters.includeDeleted ? 'true' : 'false'}
                       onChange={(e) =>
                         handleFilterChange('includeDeleted', e.target.value === 'true')
                       }
-                      label="تضمين المحذوفة"
+                      label={t('filters.includeDeleted')}
                     >
-                      <MenuItem value="false">إخفاء المحذوفة</MenuItem>
-                      <MenuItem value="true">تضمين المحذوفة</MenuItem>
+                      <MenuItem value="false">{t('filters.hideDeleted')}</MenuItem>
+                      <MenuItem value="true">{t('filters.includeDeletedOption')}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -229,12 +232,12 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
       {hasActiveFilters && (
         <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
           <Typography variant="subtitle2" gutterBottom>
-            الفلاتر النشطة:
+            {t('filters.activeFilters')}:
           </Typography>
           <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
             {filters.search && (
               <Chip
-                label={`البحث: "${filters.search}"`}
+                label={t('filters.searchFilter', { value: filters.search })}
                 onDelete={() => handleFilterChange('search', '')}
                 color="primary"
                 size="small"
@@ -242,7 +245,7 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
             )}
             {filters.type && (
               <Chip
-                label={`النوع: ${filters.type}`}
+                label={t('filters.typeFilter', { value: filters.type })}
                 onDelete={() => handleFilterChange('type', '')}
                 color="secondary"
                 size="small"
@@ -250,7 +253,7 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
             )}
             {filters.isActive !== undefined && (
               <Chip
-                label={`الحالة: ${filters.isActive ? 'نشط' : 'غير نشط'}`}
+                label={t('filters.statusFilter', { value: filters.isActive ? t('status.active') : t('status.inactive') })}
                 onDelete={() => handleFilterChange('isActive', undefined)}
                 color="success"
                 size="small"
@@ -258,7 +261,7 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
             )}
             {filters.isFilterable !== undefined && (
               <Chip
-                label={`فلترة: ${filters.isFilterable ? 'قابل' : 'غير قابل'}`}
+                label={t('filters.filterableFilter', { value: filters.isFilterable ? t('filters.yes') : t('filters.no') })}
                 onDelete={() => handleFilterChange('isFilterable', undefined)}
                 color="info"
                 size="small"
@@ -266,7 +269,7 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
             )}
             {filters.groupId && (
               <Chip
-                label={`المجموعة: ${filters.groupId}`}
+                label={t('filters.groupFilter', { value: filters.groupId })}
                 onDelete={() => handleFilterChange('groupId', '')}
                 color="warning"
                 size="small"
@@ -274,7 +277,7 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
             )}
             {filters.includeDeleted && (
               <Chip
-                label="تضمين المحذوفة"
+                label={t('filters.includeDeletedFilter')}
                 onDelete={() => handleFilterChange('includeDeleted', false)}
                 color="error"
                 size="small"

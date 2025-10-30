@@ -9,6 +9,7 @@ export enum AttributeType {
   TEXT = 'text',           // نص حر
   NUMBER = 'number',       // رقم
   BOOLEAN = 'boolean',     // نعم/لا
+  COLOR = 'color',         // لون مع كود HEX
 }
 
 @Schema({ timestamps: true })

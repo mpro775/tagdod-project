@@ -3,8 +3,47 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { Variant } from '../schemas/variant.schema';
 import { Product } from '../schemas/product.schema';
-import { AppException } from '../../../shared/exceptions/app.exception';
+import { 
+  ProductNotFoundException,
+  VariantNotFoundException,
+  ProductException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 import { AttributesService } from '../../attributes/attributes.service';
+
+// Local, explicit types to eliminate 'any' usage and align with real data
+type AttributeValueInput = {
+  attributeId: string;
+  valueId: string;
+};
+
+type EnrichedAttributeValue = {
+  attributeId: string;
+  valueId: string;
+  name: string;
+  value: string;
+};
+
+type MonetaryInputFields = {
+  price?: number;
+  compareAtPrice?: number;
+  costPrice?: number;
+};
+
+type CreateVariantDto = {
+  productId: string;
+  attributeValues?: AttributeValueInput[];
+} & MonetaryInputFields & Partial<Variant>;
+
+type UpdateVariantDto = MonetaryInputFields & Partial<Variant>;
+
+type HasToObject<T> = {
+  toObject: () => T;
+};
+
+function hasToObject<T>(value: unknown): value is HasToObject<T> {
+  return typeof (value as HasToObject<T>).toObject === 'function';
+}
 
 @Injectable()
 export class VariantService {
@@ -18,16 +57,16 @@ export class VariantService {
 
   // ==================== CRUD Operations ====================
 
-  async create(dto: Partial<Variant>): Promise<Variant> {
+  async create(dto: CreateVariantDto): Promise<Variant> {
     const product = await this.productModel.findById(dto.productId);
 
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId: dto.productId });
     }
 
     // حفظ name و value للعرض السريع
-    const enrichedAttributes = await Promise.all(
-      (dto.attributeValues || []).map(async (av: { attributeId: string; valueId: string }) => {
+    const enrichedAttributes: EnrichedAttributeValue[] = await Promise.all(
+      (dto.attributeValues || []).map(async (av: AttributeValueInput) => {
         const attr = await this.attributesService.getAttribute(av.attributeId);
         const value = attr.values?.find(
           (v: { _id: Types.ObjectId }) => String(v._id) === String(av.valueId),
@@ -46,6 +85,9 @@ export class VariantService {
       ...dto,
       attributeValues: enrichedAttributes,
       productId: new Types.ObjectId(dto.productId as string),
+      basePriceUSD: dto.price ?? 0,
+      compareAtPriceUSD: dto.compareAtPrice,
+      costPriceUSD: dto.costPrice,
     });
 
     // تحديث عدد الـ variants
@@ -60,33 +102,53 @@ export class VariantService {
   }
 
   async findById(id: string): Promise<Variant> {
-    const variant = await this.variantModel.findById(id).populate('imageId').lean();
+    const variant = await this.variantModel.findById(id).populate('imageId');
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId: id });
     }
 
-    return variant;
+    return variant.toObject();
   }
 
   async findByProductId(productId: string, includeDeleted = false): Promise<Variant[]> {
-    const filter: FilterQuery<Variant> = { productId };
+    const filter: FilterQuery<Variant> = { productId: new Types.ObjectId(productId) } as FilterQuery<Variant>;
 
     if (!includeDeleted) {
       filter.deletedAt = null;
     }
 
-    return this.variantModel.find(filter).populate('imageId').sort({ basePriceUSD: 1 }).lean();
+    const variants = await this.variantModel
+      .find(filter)
+      .populate('imageId')
+      .sort({ basePriceUSD: 1 });
+    return variants.map(v => v.toObject());
   }
 
-  async update(id: string, dto: Partial<Variant>): Promise<Variant> {
+  async update(id: string, dto: UpdateVariantDto): Promise<Variant> {
     const variant = await this.variantModel.findById(id);
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId: id });
     }
 
-    await this.variantModel.updateOne({ _id: id }, { $set: dto });
+    // تحويل price إلى basePriceUSD إذا كان موجوداً
+    const updateData: Record<string, unknown> = { ...dto };
+    
+    if (Object.prototype.hasOwnProperty.call(dto, 'price') && dto.price !== undefined) {
+      updateData.basePriceUSD = dto.price;
+      delete (updateData as UpdateVariantDto).price;
+    }
+    if (Object.prototype.hasOwnProperty.call(dto, 'compareAtPrice') && dto.compareAtPrice !== undefined) {
+      updateData.compareAtPriceUSD = dto.compareAtPrice;
+      delete (updateData as UpdateVariantDto).compareAtPrice;
+    }
+    if (Object.prototype.hasOwnProperty.call(dto, 'costPrice') && dto.costPrice !== undefined) {
+      updateData.costPriceUSD = dto.costPrice;
+      delete (updateData as UpdateVariantDto).costPrice;
+    }
+
+    await this.variantModel.updateOne({ _id: id }, { $set: updateData });
     return this.findById(id);
   }
 
@@ -94,7 +156,7 @@ export class VariantService {
     const variant = await this.variantModel.findById(id);
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId: id });
     }
 
     // Soft delete
@@ -124,11 +186,11 @@ export class VariantService {
     const product = await this.productModel.findById(productId).lean();
 
     if (!product) {
-      throw new AppException('PRODUCT_NOT_FOUND', 'المنتج غير موجود', null, 404);
+      throw new ProductNotFoundException({ productId });
     }
 
     if (!product.attributes || product.attributes.length === 0) {
-      throw new AppException('NO_ATTRIBUTES', 'المنتج ليس لديه سمات', null, 400);
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { productId, reason: 'no_attributes' });
     }
 
     // جلب جميع قيم السمات
@@ -148,15 +210,15 @@ export class VariantService {
 
     // حذف الموجودة إذا overwrite
     if (overwrite) {
-      await this.variantModel.deleteMany({ productId });
+      await this.variantModel.deleteMany({ productId: new Types.ObjectId(productId) } as FilterQuery<Variant>);
     }
 
     // إنشاء الـ variants
-    const variants = [];
+    const variants: Variant[] = [];
     for (const combo of combinations) {
       // التحقق من عدم وجود variant بنفس التركيبة
       const existing = await this.variantModel.findOne({
-        productId,
+        productId: new Types.ObjectId(productId),
         deletedAt: null,
         attributeValues: {
           $all: combo.map((c: { attributeId: string; valueId: string }) => ({
@@ -189,9 +251,9 @@ export class VariantService {
 
     // تحديث عدد الـ variants
     const totalVariants = await this.variantModel.countDocuments({
-      productId,
+      productId: new Types.ObjectId(productId),
       deletedAt: null,
-    });
+    } as FilterQuery<Variant>);
 
     await this.productModel.updateOne(
       { _id: productId },
@@ -201,7 +263,7 @@ export class VariantService {
     return {
       generated: variants.length,
       total: totalVariants,
-      variants,
+      variants: variants.map(v => (hasToObject<Variant>(v) ? v.toObject() : v)),
     };
   }
 
@@ -253,9 +315,9 @@ export class VariantService {
 
   private async updateProductVariantCount(productId: string): Promise<void> {
     const count = await this.variantModel.countDocuments({
-      productId,
+      productId: new Types.ObjectId(productId),
       deletedAt: null,
-    });
+    } as FilterQuery<Variant>);
 
     await this.productModel.updateOne({ _id: productId }, { $set: { variantsCount: count } });
   }

@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Variant } from '../schemas/variant.schema';
-import { AppException } from '../../../shared/exceptions/app.exception';
+import { 
+  VariantNotFoundException,
+  ProductException,
+  ErrorCode 
+} from '../../../shared/exceptions';
 import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.service';
 
 @Injectable()
@@ -30,7 +34,7 @@ export class PricingService {
     const variant = await this.variantModel.findById(variantId).lean();
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId });
     }
 
     if (currency === 'USD') {
@@ -80,7 +84,7 @@ export class PricingService {
       };
     } catch (error) {
       this.logger.error(`Error converting prices for variant ${variantId}:`, error);
-      throw new AppException('PRICE_CONVERSION_ERROR', 'خطأ في تحويل السعر', null, 500);
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, { variantId, error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -153,7 +157,7 @@ export class PricingService {
       return convertedPrices;
     } catch (error) {
       this.logger.error(`Error converting product prices for ${productId}:`, error);
-      throw new AppException('PRICE_CONVERSION_ERROR', 'خطأ في تحويل أسعار المنتج', null, 500);
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, { productId, error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -209,7 +213,7 @@ export class PricingService {
       };
     } catch (error) {
       this.logger.error(`Error converting price range for product ${productId}:`, error);
-      throw new AppException('PRICE_CONVERSION_ERROR', 'خطأ في تحويل نطاق السعر', null, 500);
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, { error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -226,7 +230,7 @@ export class PricingService {
     const variant = await this.variantModel.findById(variantId);
 
     if (!variant) {
-      throw new AppException('VARIANT_NOT_FOUND', 'المتغير غير موجود', null, 404);
+      throw new VariantNotFoundException({ variantId });
     }
 
     await this.variantModel.updateOne(

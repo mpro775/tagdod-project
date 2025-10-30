@@ -23,6 +23,7 @@ import {
 import { Close, Save, Image, Link as LinkIcon, Campaign } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { BANNER_LOCATION_OPTIONS, BANNER_PROMOTION_TYPE_OPTIONS } from '../types/banner.types';
 import type {
   Banner,
@@ -52,8 +53,9 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
   onSave,
   isLoading = false,
 }) => {
+  const { t } = useTranslation('banners');
   const isEditing = !!banner;
-  const title = isEditing ? 'تعديل البانر' : 'إنشاء بانر جديد';
+  const title = isEditing ? t('editBanner') : t('createBanner');
 
   const {
     control,
@@ -128,7 +130,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
     try {
       onSave(data);
     } catch (error) {
-      toast.error('حدث خطأ في حفظ البيانات');
+      toast.error(t('messages.error'));
     }
   };
 
@@ -170,7 +172,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
             {/* Basic Information */}
             <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
-                المعلومات الأساسية
+                {t('basicInfo')}
               </Typography>
             </Grid>
 
@@ -178,12 +180,12 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
               <Controller
                 name="title"
                 control={control}
-                rules={{ required: 'عنوان البانر مطلوب' }}
+                rules={{ required: t('form.title.required') }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    label="عنوان البانر"
+                    label={t('form.title.label')}
                     error={!!errors.title}
                     helperText={errors.title?.message}
                     disabled={isLoading}
@@ -196,11 +198,11 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
               <Controller
                 name="location"
                 control={control}
-                rules={{ required: 'موقع العرض مطلوب' }}
+                rules={{ required: t('form.location.required') }}
                 render={({ field }) => (
                   <FormControl fullWidth error={!!errors.location}>
-                    <InputLabel>موقع العرض</InputLabel>
-                    <Select {...field} label="موقع العرض" disabled={isLoading}>
+                    <InputLabel>{t('form.location.label')}</InputLabel>
+                    <Select {...field} label={t('form.location.label')} disabled={isLoading}>
                       {BANNER_LOCATION_OPTIONS.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
@@ -220,7 +222,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                   <TextField
                     {...field}
                     fullWidth
-                    label="وصف البانر"
+                    label={t('form.description.label')}
                     multiline
                     rows={3}
                     disabled={isLoading}
@@ -232,7 +234,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
             {/* Image and Link */}
             <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
-                الصورة والرابط
+                {t('imageAndLink')}
               </Typography>
             </Grid>
 
@@ -241,17 +243,17 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                 name="imageUrl"
                 control={control}
                 rules={{
-                  required: 'رابط الصورة مطلوب',
+                  required: t('form.imageUrl.required'),
                   pattern: {
                     value: /^https?:\/\/.+/,
-                    message: 'يجب أن يكون رابط صورة صحيح',
+                    message: t('form.imageUrl.invalid'),
                   },
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    label="رابط الصورة"
+                    label={t('form.imageUrl.label')}
                     error={!!errors.imageUrl}
                     helperText={errors.imageUrl?.message}
                     disabled={isLoading}
@@ -270,16 +272,16 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                 rules={{
                   pattern: {
                     value: /^https?:\/\/.+/,
-                    message: 'يجب أن يكون رابط صحيح',
+                    message: t('form.linkUrl.invalid'),
                   },
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    label="رابط التوجيه"
+                    label={t('form.linkUrl.label')}
                     error={!!errors.linkUrl}
-                    helperText={errors.linkUrl?.message || 'اتركه فارغاً إذا لم يكن هناك رابط'}
+                    helperText={errors.linkUrl?.message || t('form.linkUrl.helper')}
                     disabled={isLoading}
                     InputProps={{
                       startAdornment: <LinkIcon sx={{ mr: 1, color: 'text.secondary' }} />,
@@ -296,7 +298,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                   sx={{ textAlign: 'center', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}
                 >
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    معاينة الصورة:
+                    {t('form.imagePreview')}
                   </Typography>
                   <Avatar
                     src={watchedImageUrl}
@@ -324,8 +326,8 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                   <TextField
                     {...field}
                     fullWidth
-                    label="نص بديل للصورة"
-                    helperText="مهم لإمكانية الوصول"
+                    label={t('form.altText.label')}
+                    helperText={t('form.altText.helper')}
                     disabled={isLoading}
                   />
                 )}
@@ -336,7 +338,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
             <Grid size={{ xs: 12 }}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="h6" gutterBottom>
-                الإعدادات
+                {t('settings')}
               </Typography>
             </Grid>
 
@@ -346,8 +348,8 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                 control={control}
                 render={({ field }) => (
                   <FormControl fullWidth>
-                    <InputLabel>نوع الترويج</InputLabel>
-                    <Select {...field} label="نوع الترويج" disabled={isLoading}>
+                    <InputLabel>{t('form.promotionType.label')}</InputLabel>
+                    <Select {...field} label={t('form.promotionType.label')} disabled={isLoading}>
                       {BANNER_PROMOTION_TYPE_OPTIONS.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
@@ -364,16 +366,16 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                 name="sortOrder"
                 control={control}
                 rules={{
-                  min: { value: 0, message: 'يجب أن يكون الترتيب أكبر من أو يساوي 0' },
+                  min: { value: 0, message: t('form.sortOrder.min') },
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    label="ترتيب العرض"
+                    label={t('form.sortOrder.label')}
                     type="number"
                     error={!!errors.sortOrder}
-                    helperText={errors.sortOrder?.message || 'رقم أقل = أولوية أعلى'}
+                    helperText={errors.sortOrder?.message || t('form.sortOrder.helper')}
                     disabled={isLoading}
                   />
                 )}
@@ -385,17 +387,17 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                 name="displayDuration"
                 control={control}
                 rules={{
-                  min: { value: 1000, message: 'يجب أن تكون المدة على الأقل 1000 مللي ثانية' },
+                  min: { value: 1000, message: t('form.displayDuration.min') },
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    label="مدة العرض (مللي ثانية)"
+                    label={t('form.displayDuration.label')}
                     type="number"
                     error={!!errors.displayDuration}
                     helperText={
-                      errors.displayDuration?.message || 'مدة عرض البانر في الشرائح المتحركة'
+                      errors.displayDuration?.message || t('form.displayDuration.helper')
                     }
                     disabled={isLoading}
                   />
@@ -417,7 +419,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                           disabled={isLoading}
                         />
                       }
-                      label={`${watchedIsActive ? 'نشط' : 'غير نشط'}`}
+                      label={`${watchedIsActive ? t('stats.active') : t('stats.inactive')}`}
                     />
                   )}
                 />
@@ -428,7 +430,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
             <Grid size={{ xs: 12 }}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="h6" gutterBottom>
-                نطاق التاريخ
+                {t('dateRange')}
               </Typography>
             </Grid>
 
@@ -440,7 +442,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                   <TextField
                     {...field}
                     fullWidth
-                    label="تاريخ البداية"
+                    label={t('form.startDate.label')}
                     type="date"
                     InputLabelProps={{ shrink: true }}
                     disabled={isLoading}
@@ -457,7 +459,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                   <TextField
                     {...field}
                     fullWidth
-                    label="تاريخ النهاية"
+                    label={t('form.endDate.label')}
                     type="date"
                     InputLabelProps={{ shrink: true }}
                     disabled={isLoading}
@@ -471,7 +473,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
 
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={handleClose} disabled={isLoading}>
-          إلغاء
+          {t('cancel')}
         </Button>
         <Button
           onClick={handleSubmit(onSubmit)}
@@ -479,7 +481,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
           startIcon={isLoading ? <CircularProgress size={20} /> : <Save />}
           disabled={isLoading}
         >
-          {isLoading ? 'جاري الحفظ...' : 'حفظ'}
+          {isLoading ? t('saving') : t('save')}
         </Button>
       </DialogActions>
     </Dialog>

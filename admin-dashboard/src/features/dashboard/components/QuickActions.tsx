@@ -8,6 +8,8 @@ import {
   Assessment,
   ShoppingCart
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 interface QuickAction {
   icon: React.ReactNode;
@@ -18,37 +20,45 @@ interface QuickAction {
 
 export const QuickActions: React.FC = () => {
   const theme = useTheme();
+  const { t } = useTranslation(['dashboard']);
+  const navigate = useNavigate();
 
   const actions: QuickAction[] = [
     {
       icon: <Add />,
-      label: 'إضافة منتج',
+      label: t('quickActions.addProduct', 'إضافة منتج'),
       color: theme.palette.primary.main,
+      onClick: () => navigate('/products/new'),
     },
     {
       icon: <ShoppingCart />,
-      label: 'الطلبات',
+      label: t('quickActions.orders', 'الطلبات'),
       color: theme.palette.success.main,
+      onClick: () => navigate('/orders'),
     },
     {
       icon: <LocalOffer />,
-      label: 'كوبون خصم',
+      label: t('quickActions.discount', 'كوبون خصم'),
       color: theme.palette.warning.main,
+      onClick: () => navigate('/coupons/new'),
     },
     {
       icon: <Category />,
-      label: 'فئة جديدة',
+      label: t('quickActions.newCategory', 'فئة جديدة'),
       color: theme.palette.info.main,
+      onClick: () => navigate('/categories/new'),
     },
     {
       icon: <Inventory />,
-      label: 'إدارة المخزون',
+      label: t('quickActions.inventory', 'إدارة المخزون'),
       color: theme.palette.error.main,
+      onClick: () => navigate('/products/inventory'),
     },
     {
       icon: <Assessment />,
-      label: 'التقارير',
+      label: t('quickActions.reports', 'التقارير'),
       color: theme.palette.secondary.main,
+      onClick: () => navigate('/analytics/reports'),
     },
   ];
 
@@ -56,7 +66,7 @@ export const QuickActions: React.FC = () => {
     <Card>
       <CardContent>
         <Typography variant="h6" fontWeight="bold" gutterBottom>
-          إجراءات سريعة
+          {t('quickActions.title', 'إجراءات سريعة')}
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2 }}>

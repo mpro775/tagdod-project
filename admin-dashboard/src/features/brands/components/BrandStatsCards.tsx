@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Card, CardContent, Typography, Skeleton } from '@mui/material';
 import { Grid } from '@mui/material';
 import { Business, BusinessCenter, Visibility, VisibilityOff } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useBrandStats } from '../hooks/useBrands';
 
 interface StatCardProps {
@@ -46,13 +47,14 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color, loading 
 );
 
 export const BrandStatsCards: React.FC = () => {
+  const { t } = useTranslation('brands');
   const { data: stats, isLoading, error } = useBrandStats();
 
   if (error) {
     return (
       <Box p={2}>
         <Typography color="error" variant="body2">
-          فشل في تحميل الإحصائيات
+          {t('stats.error', { defaultValue: 'حدث خطأ أثناء تحميل الإحصائيات' })}
         </Typography>
       </Box>
     );
@@ -62,7 +64,7 @@ export const BrandStatsCards: React.FC = () => {
     <Grid container spacing={3} sx={{ mb: 3 }}>
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
-          title="إجمالي العلامات التجارية"
+          title={t('stats.totalBrands', { defaultValue: 'إجمالي العلامات' })}
           value={stats?.total || 0}
           icon={<Business color="primary" />}
           color="primary"
@@ -71,7 +73,7 @@ export const BrandStatsCards: React.FC = () => {
       </Grid>
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
-          title="العلامات النشطة"
+          title={t('stats.activeBrands', { defaultValue: 'علامات نشطة' })}
           value={stats?.active || 0}
           icon={<Visibility color="success" />}
           color="success"
@@ -80,7 +82,7 @@ export const BrandStatsCards: React.FC = () => {
       </Grid>
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
-          title="العلامات غير النشطة"
+          title={t('stats.inactiveBrands', { defaultValue: 'علامات غير نشطة' })}
           value={stats?.inactive || 0}
           icon={<VisibilityOff color="warning" />}
           color="warning"
@@ -89,7 +91,7 @@ export const BrandStatsCards: React.FC = () => {
       </Grid>
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
-          title="العلامات مع المنتجات"
+          title={t('stats.brandsWithProducts', { defaultValue: 'علامات لديها منتجات' })}
           value={stats?.withProducts || 0}
           icon={<BusinessCenter color="error" />}
           color="error"

@@ -31,6 +31,7 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
   // Load available products
   useEffect(() => {
     loadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load selected products when value changes
@@ -40,7 +41,8 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
     } else {
       setSelectedProducts([]);
     }
-  }, [value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, products]);
 
   const loadProducts = async () => {
     try {
@@ -52,15 +54,19 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
         status: 'active' as any,
       });
       
+      // تحقق من أن response.data array
+      const productsData = Array.isArray(response.data) ? response.data : [];
+      
       // Filter out current product if in edit mode
       const filteredProducts = currentProductId
-        ? response.data.filter((p: Product) => p._id !== currentProductId)
-        : response.data;
+        ? productsData.filter((p: Product) => p._id !== currentProductId)
+        : productsData;
       
-      setProducts(filteredProducts);
+      setProducts(filteredProducts || []);
     } catch (err) {
       setError('فشل تحميل المنتجات');
       console.error('Error loading products:', err);
+      setProducts([]); // تعيين array فارغ عند الخطأ
     } finally {
       setLoading(false);
     }
@@ -68,10 +74,11 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
 
   const loadSelectedProducts = async () => {
     try {
-      const loadedProducts = products.filter((p: Product) => value.includes(p._id));
-      setSelectedProducts(loadedProducts);
+      const loadedProducts = (products || []).filter((p: Product) => value.includes(p._id));
+      setSelectedProducts(loadedProducts || []);
     } catch (err) {
       console.error('Error loading selected products:', err);
+      setSelectedProducts([]);
     }
   };
 
@@ -102,12 +109,12 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
       <Autocomplete
         multiple
         id="related-products-selector"
-        options={products}
-        value={selectedProducts}
+        options={products || []}
+        value={selectedProducts || []}
         onChange={handleChange}
         loading={loading}
-        getOptionLabel={(option: Product) => `${option.name} (${option.nameEn})`}
-        isOptionEqualToValue={(option: Product, value: Product) => option._id === value._id}
+        getOptionLabel={(option: Product) => option ? `${option.name} (${option.nameEn})` : ''}
+        isOptionEqualToValue={(option: Product, value: Product) => option?._id === value?._id}
         renderInput={(params) => (
           <TextField
             {...params}

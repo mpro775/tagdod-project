@@ -1,4 +1,5 @@
 import { Box, Typography, Tab, Tabs } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { SearchStatsCards } from '../components/SearchStatsCards';
 import { TopSearchTermsTable } from '../components/TopSearchTermsTable';
 import { useState } from 'react';
@@ -26,6 +27,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export function SearchDashboardPage() {
+  const { t } = useTranslation();
   const [currentTab, setCurrentTab] = useState(0);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -37,10 +39,10 @@ export function SearchDashboardPage() {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-          🔍 إدارة البحث والتحليلات
+          {t('search.navigation.title', { defaultValue: 'إحصائيات البحث' })}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          تحليل شامل لعمليات البحث وسلوك المستخدمين
+          {t('search.navigation.subtitle', { defaultValue: 'إحصائيات البحث المختلفة' })}
         </Typography>
       </Box>
 
@@ -52,8 +54,8 @@ export function SearchDashboardPage() {
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={currentTab} onChange={handleTabChange}>
-          <Tab label="📊 الكلمات الشائعة" />
-          <Tab label="⚠️ بحث بدون نتائج" />
+          <Tab label={t('search.tabs.popularTerms', { defaultValue: 'المصطلحات الشائعة' })} />
+          <Tab label={t('search.tabs.zeroResults', { defaultValue: 'النتائج الصفرية' })} />
         </Tabs>
       </Box>
 
@@ -66,10 +68,10 @@ export function SearchDashboardPage() {
       <TabPanel value={currentTab} index={1}>
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography variant="h6" color="text.secondary">
-            قريباً: عمليات البحث بدون نتائج
+            {t('search.placeholders.comingSoon.title', { defaultValue: 'قيد التطوير...' })}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            سيتم إضافة هذه الميزة عند تفعيل Search Logs
+            {t('search.placeholders.comingSoon.subtitle', { defaultValue: 'قيد التطوير...' }    )}
           </Typography>
         </Box>
       </TabPanel>

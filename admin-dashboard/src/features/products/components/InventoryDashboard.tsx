@@ -18,7 +18,6 @@ import {
   useLowStockVariants,
   useOutOfStockVariants,
 } from '../hooks/useProducts';
-import { VariantCard } from './VariantCard';
 import type { Variant } from '../types/product.types';
 
 interface InventoryDashboardProps {
@@ -204,9 +203,28 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onVarian
             </Box>
           ) : lowStockVariants && lowStockVariants.length > 0 ? (
             <Grid container spacing={3}>
-              {lowStockVariants.map((variant) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={variant._id}>
-                  <VariantCard variant={variant} onView={onVariantClick} showActions={false} />
+              {lowStockVariants.map((item) => (
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.variantId}>
+                  <Card>
+                    <CardContent>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                        <Typography variant="h6">{item.sku || item.variantId}</Typography>
+                        <Chip label="مخزون منخفض" color="warning" size="small" />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        المنتج: {item.productId}
+                      </Typography>
+                      <Box display="flex" gap={2}>
+                        <Chip label={`المتاح: ${item.currentStock}`} size="small" />
+                        <Chip label={`الحد الأدنى: ${item.minStock}`} size="small" />
+                        <Chip label={`النقص: ${item.difference}`} color="warning" size="small" />
+                      </Box>
+                      <Box mt={2} display="flex" gap={1}>
+                        <Button variant="outlined" size="small" onClick={() => onVariantClick && onVariantClick({ _id: item.variantId } as any)}>عرض المتغير</Button>
+                        <Button variant="text" size="small" onClick={() => window.open(`/products/${item.productId}`, '_blank')}>عرض المنتج</Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
                 </Grid>
               ))}
             </Grid>
@@ -222,9 +240,23 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onVarian
             </Box>
           ) : outOfStockVariants && outOfStockVariants.length > 0 ? (
             <Grid container spacing={3}>
-              {outOfStockVariants.map((variant) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={variant._id}>
-                  <VariantCard variant={variant} onView={onVariantClick} showActions={false} />
+              {outOfStockVariants.map((item) => (
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.variantId}>
+                  <Card>
+                    <CardContent>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                        <Typography variant="h6">{item.sku || item.variantId}</Typography>
+                        <Chip label="نفذ من المخزون" color="error" size="small" />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        المنتج: {item.productId}
+                      </Typography>
+                      <Box mt={2} display="flex" gap={1}>
+                        <Button variant="outlined" size="small" onClick={() => onVariantClick && onVariantClick({ _id: item.variantId } as any)}>عرض المتغير</Button>
+                        <Button variant="text" size="small" onClick={() => window.open(`/products/${item.productId}`, '_blank')}>عرض المنتج</Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
                 </Grid>
               ))}
             </Grid>

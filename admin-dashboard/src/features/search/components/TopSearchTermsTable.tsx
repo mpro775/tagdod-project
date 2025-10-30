@@ -12,44 +12,51 @@ import {
   Box,
 } from '@mui/material';
 import { CheckCircle as CheckIcon, Cancel as CancelIcon } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useTopSearchTerms } from '../hooks/useSearch';
 
 export function TopSearchTermsTable() {
-  const { data: terms, isLoading } = useTopSearchTerms({ limit: 50 });
+  const { t } = useTranslation();
+  const { data: termsResponse, isLoading } = useTopSearchTerms({ limit: 50 });
+  const terms = Array.isArray(termsResponse)
+    ? termsResponse
+    : Array.isArray((termsResponse as any)?.data)
+    ? (termsResponse as any).data
+    : [];
 
   return (
     <Card>
       <CardContent>
         <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-          📈 الكلمات المفتاحية الأكثر بحثاً
+          {t('search.table.title', { defaultValue: 'أكثر المصطلحات المبحث عنها' })}
         </Typography>
 
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>#</TableCell>
-                <TableCell>الكلمة المفتاحية</TableCell>
-                <TableCell align="center">عدد المرات</TableCell>
-                <TableCell align="center">متوسط النتائج</TableCell>
-                <TableCell align="center">الحالة</TableCell>
+                <TableCell>{t('search.table.columns.rank', { defaultValue: 'الترتيب' })}</TableCell>
+                <TableCell>{t('search.table.columns.keyword', { defaultValue: 'المصطلح' })}</TableCell>
+                <TableCell align="center">{t('search.table.columns.count', { defaultValue: 'عدد المرات' })}</TableCell>
+                <TableCell align="center">{t('search.table.columns.averageResults', { defaultValue: 'متوسط النتائج' })}</TableCell>
+                <TableCell align="center">{t('search.table.columns.status', { defaultValue: 'الحالة' })}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
-                    جاري التحميل...
+                    {t('search.table.loading', { defaultValue: 'جاري التحميل...' })}
                   </TableCell>
                 </TableRow>
               ) : !terms || terms.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
-                    <Typography color="text.secondary">لا توجد بيانات</Typography>
+                    <Typography color="text.secondary">{t('search.table.noData', { defaultValue: 'لا يوجد بيانات' })}</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
-                terms.map((term, index) => (
+                terms.map((term: any, index: number) => (
                   <TableRow key={index} hover>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>
@@ -69,14 +76,14 @@ export function TopSearchTermsTable() {
                           <>
                             <CheckIcon color="success" fontSize="small" />
                             <Typography variant="body2" color="success.main">
-                              نتائج
+                              {t('search.table.status.withResults', { defaultValue: 'بدون نتائج' })}
                             </Typography>
                           </>
                         ) : (
                           <>
                             <CancelIcon color="error" fontSize="small" />
                             <Typography variant="body2" color="error.main">
-                              بدون نتائج
+                              {t('search.table.status.noResults', { defaultValue: 'بدون نتائج' })}
                             </Typography>
                           </>
                         )}

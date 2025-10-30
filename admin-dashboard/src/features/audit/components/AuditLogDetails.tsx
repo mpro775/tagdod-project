@@ -25,6 +25,7 @@ import {
   Description as FileTextIcon,
   Timeline as ActivityIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import {
@@ -41,6 +42,7 @@ interface AuditLogDetailsProps {
 }
 
 export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, onClose }) => {
+  const { t } = useTranslation('audit');
   if (!log) return null;
 
   const formatTimestamp = (timestamp: string) => {
@@ -73,7 +75,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
       <DialogContent sx={{ overflow: 'auto' }}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ShieldIcon />
-          تفاصيل سجل التدقيق
+          {t('details.title', { defaultValue: 'تفاصيل السجل' })}
         </DialogTitle>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -82,7 +84,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
             <CardHeader>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ActivityIcon />
-                المعلومات الأساسية
+                {t('details.basicInfo', { defaultValue: 'معلومات أساسية' })}
               </Typography>
             </CardHeader>
             <CardContent>
@@ -91,7 +93,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <ClockIcon color="action" />
                     <Typography variant="body2" fontWeight="medium">
-                      الوقت:
+                      {t('details.timestamp', { defaultValue: 'تاريخ السجل' })}:
                     </Typography>
                   </Box>
                   <Typography variant="body2">{formatTimestamp(log.timestamp)}</Typography>
@@ -101,7 +103,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <KeyIcon color="action" />
                     <Typography variant="body2" fontWeight="medium">
-                      نوع العملية:
+                      {t('details.actionType', { defaultValue: 'نوع العملية' })}:
                     </Typography>
                   </Box>
                   <Chip
@@ -115,7 +117,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <DatabaseIcon color="action" />
                     <Typography variant="body2" fontWeight="medium">
-                      نوع المورد:
+                      {t('details.resourceType', { defaultValue: 'نوع المورد' })}:
                     </Typography>
                   </Box>
                   <Chip
@@ -129,18 +131,18 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <AlertTriangleIcon color="action" />
                     <Typography variant="body2" fontWeight="medium">
-                      مستوى الخطورة:
+                      {t('details.severityLevel', { defaultValue: 'مستوى الخطورة' })}:
                     </Typography>
                   </Box>
                   <Chip
                     label={
                       AUDIT_ACTION_SEVERITY[log.action] === 'critical'
-                        ? 'حرج'
+                        ? t('details.critical', { defaultValue: 'حرج' })
                         : AUDIT_ACTION_SEVERITY[log.action] === 'high'
-                        ? 'عالي'
+                        ? t('details.high', { defaultValue: 'عالي' })
                         : AUDIT_ACTION_SEVERITY[log.action] === 'medium'
-                        ? 'متوسط'
-                        : 'منخفض'
+                        ? t('details.medium', { defaultValue: 'متوسط' })
+                        : t('details.low', { defaultValue: 'منخفض' })
                     }
                     color={
                       AUDIT_ACTION_SEVERITY[log.action] === 'critical'
@@ -159,7 +161,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
               {log.resourceId && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
-                    معرف المورد:
+                    {t('details.resourceId', { defaultValue: 'معرف المورد' })}:
                   </Typography>
                   <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
                     <Typography variant="body2" fontFamily="monospace">
@@ -172,7 +174,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
               {log.reason && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
-                    السبب:
+                    {t('details.reason', { defaultValue: 'السبب' })}:
                   </Typography>
                   <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
                     <Typography variant="body2">{log.reason}</Typography>
@@ -187,18 +189,18 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
             <CardHeader>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <UserIcon />
-                معلومات المستخدم
+                {t('details.userInfo', { defaultValue: 'معلومات المستخدم' })}
               </Typography>
             </CardHeader>
             <CardContent>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
-                    المستخدم المتأثر:
+                    {t('details.affectedUser', { defaultValue: 'المستخدم المتأثر' })}:
                   </Typography>
                   <Box>
                     <Typography variant="body2" fontWeight="medium">
-                      {log.user?.name || 'غير معروف'}
+                      {log.user?.name || t('details.unknown', { defaultValue: 'غير معروف' })}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" display="block">
                       {log.user?.email}
@@ -214,11 +216,11 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                 {log.performedByUser && (
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
-                      من قام بالعملية:
+                      {t('details.performedBy', { defaultValue: 'من قام بالعملية' })}:
                     </Typography>
                     <Box>
                       <Typography variant="body2" fontWeight="medium">
-                        {log.performedByUser.name}
+                        {log.performedByUser.name || t('details.unknown', { defaultValue: 'غير معروف' })}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" display="block">
                         {log.performedByUser.email}

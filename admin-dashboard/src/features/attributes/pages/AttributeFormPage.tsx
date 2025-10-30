@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -30,28 +31,38 @@ import { useAttribute, useCreateAttribute, useUpdateAttribute } from '../hooks/u
 import { AttributeType } from '../types/attribute.types';
 import type { CreateAttributeDto, AttributeFormData } from '../types/attribute.types';
 
-const attributeSchema = z.object({
-  name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
-  nameEn: z.string().min(2, 'الاسم بالإنجليزية مطلوب'),
+const createAttributeSchema = (t: (key: string) => string) => z.object({
+  name: z.string().min(2, t('validation.nameRequired')),
+  nameEn: z.string().min(2, t('validation.nameEnRequired')),
   type: z.nativeEnum(AttributeType),
   description: z.string().optional(),
-  order: z.number().optional(),
-  isActive: z.boolean().optional(),
+  order: z.coerce.number().optional(),
+  isActive: z.boolean().optional(), // للعرض في UI فقط، لا يرسل في create
   isFilterable: z.boolean().optional(),
   isRequired: z.boolean().optional(),
   showInFilters: z.boolean().optional(),
+  groupId: z.string().nullable().optional(),
 });
 
-const steps = ['المعلومات الأساسية', 'الإعدادات', 'المراجعة'];
+const createSteps = (t: (key: string) => string) => [
+  t('form.basicInfo'),
+  t('form.settings'),
+  t('form.review')
+];
 
 export const AttributeFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('attributes');
   const isEditMode = id !== 'new' && !!id;
   const [activeStep, setActiveStep] = React.useState(0);
 
-  const methods = useForm<AttributeFormData>({
-    resolver: zodResolver(attributeSchema),
+  const attributeSchema = createAttributeSchema(t);
+  type AttributeSchemaType = z.infer<typeof attributeSchema>;
+  const steps = createSteps(t);
+
+  const methods = useForm<AttributeSchemaType>({
+    resolver: zodResolver(attributeSchema) as any,
     defaultValues: {
       name: '',
       nameEn: '',
@@ -74,18 +85,52 @@ export const AttributeFormPage: React.FC = () => {
     }
   }, [attribute, isEditMode, methods]);
 
-  const onSubmit = (data: AttributeFormData) => {
-    const attrData: CreateAttributeDto = data;
+  const onSubmit = (data: any) => {
+    // CreateAttributeDto في Backend لا يحتوي على isActive
+    const attrData: Omit<CreateAttributeDto, 'isActive'> = {
+      name: data.name,
+      nameEn: data.nameEn,
+      type: data.type,
+      description: data.description,
+      order: data.order,
+      isFilterable: data.isFilterable,
+      isRequired: data.isRequired,
+      showInFilters: data.showInFilters,
+      groupId: data.groupId,
+    };
 
     if (isEditMode) {
-      updateAttribute({ id: id!, data: attrData }, { onSuccess: () => navigate('/attributes') });
+      // UpdateAttributeDto يحتوي على isActive
+      const updateData = { ...attrData, isActive: data.isActive };
+      updateAttribute({ id: id!, data: updateData }, { 
+        onSuccess: () => navigate('/attributes')
+      });
     } else {
-      createAttribute(attrData, { onSuccess: () => navigate('/attributes') });
+      createAttribute(attrData as any, { 
+        onSuccess: () => navigate('/attributes')
+      });
     }
   };
 
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  const handleNext = async () => {
+    // التحقق من صحة الحقول في الخطوة الحالية قبل الانتقال
+    const fieldsToValidate = getFieldsForStep(activeStep);
+    const isValid = await methods.trigger(fieldsToValidate);
+    
+    if (isValid) {
+      setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    }
+  };
+
+  const getFieldsForStep = (step: number): (keyof AttributeSchemaType)[] => {
+    switch (step) {
+      case 0:
+        return ['name', 'nameEn', 'type'];
+      case 1:
+        return ['isActive', 'isFilterable', 'isRequired', 'showInFilters'];
+      default:
+        return [];
+    }
   };
 
   const handleBack = () => {
@@ -112,33 +157,34 @@ export const AttributeFormPage: React.FC = () => {
           <Grid container spacing={3}>
             <Grid size={{ xs: 12 }}>
               <Alert severity="info" icon={<Info />} sx={{ mb: 3 }}>
-                أدخل المعلومات الأساسية للسمة. هذه المعلومات ستظهر في واجهة المستخدم.
+                {t('form.basicInfoDesc')}
               </Alert>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
-              <FormInput name="name" label="اسم السمة (عربي) *" />
+              <FormInput name="name" label={t('form.attributeNameAr')} />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
-              <FormInput name="nameEn" label="Attribute Name (English) *" />
+              <FormInput name="nameEn" label={t('form.attributeNameEn')} />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <FormSelect
                 name="type"
-                label="نوع السمة *"
+                label={t('form.attributeType')}
                 options={[
-                  { value: AttributeType.SELECT, label: 'اختيار واحد (Select)' },
-                  { value: AttributeType.MULTISELECT, label: 'اختيار متعدد (Multi-select)' },
-                  { value: AttributeType.TEXT, label: 'نص (Text)' },
-                  { value: AttributeType.NUMBER, label: 'رقم (Number)' },
-                  { value: AttributeType.BOOLEAN, label: 'نعم/لا (Boolean)' },
+                  { value: AttributeType.SELECT, label: t('types.select') },
+                  { value: AttributeType.MULTISELECT, label: t('types.multiselect') },
+                  { value: AttributeType.COLOR, label: t('types.color') },
+                  { value: AttributeType.TEXT, label: t('types.text') },
+                  { value: AttributeType.NUMBER, label: t('types.number') },
+                  { value: AttributeType.BOOLEAN, label: t('types.boolean') },
                 ]}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
-              <FormInput name="order" label="الترتيب" type="number" />
+              <FormInput name="order" label={t('fields.order')} type="number" />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <FormInput name="description" label="الوصف" multiline rows={3} />
+              <FormInput name="description" label={t('fields.description')} multiline rows={3} />
             </Grid>
           </Grid>
         );
@@ -147,29 +193,73 @@ export const AttributeFormPage: React.FC = () => {
           <Grid container spacing={3}>
             <Grid size={{ xs: 12 }}>
               <Alert severity="warning" icon={<Settings />} sx={{ mb: 3 }}>
-                قم بتكوين إعدادات السمة حسب احتياجاتك.
+                {t('form.settingsDesc')}
               </Alert>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Card>
-                <CardHeader title="إعدادات العرض" />
+                <CardHeader title={t('form.displaySettings')} />
                 <CardContent>
                   <Stack spacing={2}>
-                    <FormControlLabel
-                      control={<Switch {...methods.register('isActive')} defaultChecked />}
-                      label="نشط - السمة متاحة للاستخدام"
+                    <Controller
+                      name="isActive"
+                      control={methods.control}
+                      render={({ field }) => (
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={field.value ?? true}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          }
+                          label={t('form.isActive')}
+                        />
+                      )}
                     />
-                    <FormControlLabel
-                      control={<Switch {...methods.register('isFilterable')} defaultChecked />}
-                      label="قابل للفلترة - يمكن للمستخدمين فلترة المنتجات بهذه السمة"
+                    <Controller
+                      name="isFilterable"
+                      control={methods.control}
+                      render={({ field }) => (
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={field.value ?? true}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          }
+                          label={t('form.isFilterable')}
+                        />
+                      )}
                     />
-                    <FormControlLabel
-                      control={<Switch {...methods.register('isRequired')} />}
-                      label="إلزامي - يجب ملء هذه السمة عند إنشاء منتج"
+                    <Controller
+                      name="isRequired"
+                      control={methods.control}
+                      render={({ field }) => (
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={field.value ?? false}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          }
+                          label={t('form.isRequired')}
+                        />
+                      )}
                     />
-                    <FormControlLabel
-                      control={<Switch {...methods.register('showInFilters')} defaultChecked />}
-                      label="عرض في الفلاتر الجانبية - تظهر في قائمة الفلاتر"
+                    <Controller
+                      name="showInFilters"
+                      control={methods.control}
+                      render={({ field }) => (
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={field.value ?? true}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          }
+                          label={t('form.showInFilters')}
+                        />
+                      )}
                     />
                   </Stack>
                 </CardContent>
@@ -179,21 +269,29 @@ export const AttributeFormPage: React.FC = () => {
         );
       case 2:
         const watchedValues = methods.watch();
+        const errors = methods.formState.errors;
+        const hasErrors = Object.keys(errors).length > 0;
         return (
           <Grid container spacing={3}>
             <Grid size={{ xs: 12 }}>
-              <Alert severity="success" icon={<CheckCircle />} sx={{ mb: 3 }}>
-                راجع المعلومات قبل الحفظ النهائي.
-              </Alert>
+              {hasErrors ? (
+                <Alert severity="error" icon={<Warning />} sx={{ mb: 3 }}>
+                  {t('form.reviewError')}
+                </Alert>
+              ) : (
+                <Alert severity="success" icon={<CheckCircle />} sx={{ mb: 3 }}>
+                  {t('form.reviewSuccess')}
+                </Alert>
+              )}
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <Card>
-                <CardHeader title="المعلومات الأساسية" />
+                <CardHeader title={t('form.basicInfo')} />
                 <CardContent>
                   <Stack spacing={2}>
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        الاسم العربي:
+                        {t('form.attributeNameAr').replace(' *', '')}:
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
                         {watchedValues.name}
@@ -201,7 +299,7 @@ export const AttributeFormPage: React.FC = () => {
                     </Box>
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        الاسم الإنجليزي:
+                        {t('form.attributeNameEn').replace(' *', '')}:
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
                         {watchedValues.nameEn}
@@ -209,13 +307,13 @@ export const AttributeFormPage: React.FC = () => {
                     </Box>
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        النوع:
+                        {t('fields.type')}:
                       </Typography>
                       <Chip label={watchedValues.type} color="primary" size="small" />
                     </Box>
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        الترتيب:
+                        {t('fields.order')}:
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
                         {watchedValues.order}
@@ -227,7 +325,7 @@ export const AttributeFormPage: React.FC = () => {
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <Card>
-                <CardHeader title="الإعدادات" />
+                <CardHeader title={t('form.settings')} />
                 <CardContent>
                   <Stack spacing={1}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -236,7 +334,7 @@ export const AttributeFormPage: React.FC = () => {
                       ) : (
                         <Warning color="warning" />
                       )}
-                      <Typography variant="body2">نشط</Typography>
+                      <Typography variant="body2">{t('status.active')}</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {watchedValues.isFilterable ? (
@@ -244,7 +342,7 @@ export const AttributeFormPage: React.FC = () => {
                       ) : (
                         <Warning color="warning" />
                       )}
-                      <Typography variant="body2">قابل للفلترة</Typography>
+                      <Typography variant="body2">{t('fields.filterable')}</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {watchedValues.isRequired ? (
@@ -252,7 +350,7 @@ export const AttributeFormPage: React.FC = () => {
                       ) : (
                         <Warning color="warning" />
                       )}
-                      <Typography variant="body2">إلزامي</Typography>
+                      <Typography variant="body2">{t('fields.required')}</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {watchedValues.showInFilters ? (
@@ -260,7 +358,7 @@ export const AttributeFormPage: React.FC = () => {
                       ) : (
                         <Warning color="warning" />
                       )}
-                      <Typography variant="body2">عرض في الفلاتر</Typography>
+                      <Typography variant="body2">{t('form.showInFilters').split(' - ')[0]}</Typography>
                     </Box>
                   </Stack>
                 </CardContent>
@@ -269,7 +367,7 @@ export const AttributeFormPage: React.FC = () => {
           </Grid>
         );
       default:
-        return 'خطأ غير معروف';
+        return t('common.error');
     }
   };
 
@@ -282,7 +380,7 @@ export const AttributeFormPage: React.FC = () => {
         </IconButton>
         <Box>
           <Typography variant="h4" fontWeight="bold">
-            {isEditMode ? 'تعديل السمة' : 'إضافة سمة جديدة'}
+            {isEditMode ? t('attributes.editAttribute') : t('attributes.createAttribute')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
             {isEditMode ? 'تعديل معلومات السمة الموجودة' : 'إنشاء سمة جديدة للمنتجات'}
@@ -309,23 +407,30 @@ export const AttributeFormPage: React.FC = () => {
           {/* Navigation Buttons */}
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Button disabled={activeStep === 0} onClick={handleBack} startIcon={<ArrowBack />}>
-                السابق
+              <Button
+                type="button"
+                disabled={activeStep === 0}
+                onClick={handleBack}
+                startIcon={<ArrowBack />}
+              >
+                {t('form.previous')}
               </Button>
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
+                  type="button"
                   variant="outlined"
                   startIcon={<Cancel />}
                   onClick={() => navigate('/attributes')}
                 >
-                  إلغاء
+                  {t('form.cancel')}
                 </Button>
                 <Button
+                  type="button"
                   variant="outlined"
                   color="secondary"
                   onClick={handleReset}
                 >
-                  إعادة تعيين
+                  {t('form.reset')}
                 </Button>
                 {activeStep === steps.length - 1 ? (
                   <Button
@@ -334,11 +439,16 @@ export const AttributeFormPage: React.FC = () => {
                     startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
                   >
-                    {isEditMode ? 'تحديث' : 'إنشاء'}
+                    {isEditMode ? t('form.update') : t('form.create')}
                   </Button>
                 ) : (
-                  <Button variant="contained" onClick={handleNext} startIcon={<CheckCircle />}>
-                    التالي
+                  <Button
+                    type="button"
+                    variant="contained"
+                    onClick={handleNext}
+                    startIcon={<CheckCircle />}
+                  >
+                    {t('form.next')}
                   </Button>
                 )}
               </Box>

@@ -1,10 +1,12 @@
 import React from 'react';
 import { Box, Card, CardContent, Typography, Button, Chip, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePriceRules, useCoupons, useBanners, useActiveBanners } from '../hooks/useMarketing';
 
 const MarketingDashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('marketing');
 
   // Fetch data
   const { data: priceRules = [] } = usePriceRules();
@@ -14,14 +16,14 @@ const MarketingDashboardPage: React.FC = () => {
 
   const stats = [
     {
-      title: 'قواعد الأسعار',
+      title: t('dashboard.stats.priceRules', { defaultValue: 'قاعدة الأسعار' }),
       count: priceRules.length,
       active: priceRules.filter((rule) => rule.active).length,
       color: 'primary',
       path: '/marketing/price-rules',
     },
     {
-      title: 'الكوبونات',
+      title: t('dashboard.stats.coupons', { defaultValue: 'الكوبونات' }),
       count: (coupons as any)?.data?.length || 0,
       active:
         (coupons as any)?.data?.filter((coupon: any) => coupon.status === 'active').length || 0,
@@ -29,7 +31,7 @@ const MarketingDashboardPage: React.FC = () => {
       path: '/coupons',
     },
     {
-      title: 'البانرات',
+      title: t('dashboard.stats.banners', { defaultValue: 'البانرات' }),
       count: (banners as any)?.data?.length || 0,
       active: activeBanners.length,
       color: 'info',
@@ -40,7 +42,7 @@ const MarketingDashboardPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        لوحة تحكم التسويق
+        {t('dashboard.title', { defaultValue: 'لوحة التحكم في التسويق' })}
       </Typography>
 
       <Grid container spacing={3}>
@@ -65,7 +67,7 @@ const MarketingDashboardPage: React.FC = () => {
                       {stat.count}
                     </Typography>
                     <Chip
-                      label={`${stat.active} نشط`}
+                      label={`${stat.active} ${t('dashboard.active', { defaultValue: 'نشط' })}`}
                       color={stat.color as any}
                       size="small"
                       sx={{ mt: 1 }}
@@ -79,7 +81,7 @@ const MarketingDashboardPage: React.FC = () => {
                       navigate(stat.path);
                     }}
                   >
-                    عرض الكل
+                    {t('dashboard.viewAll', { defaultValue: 'عرض الكل' })}
                   </Button>
                 </Box>
               </CardContent>
@@ -90,7 +92,7 @@ const MarketingDashboardPage: React.FC = () => {
 
       <Box sx={{ mt: 4 }}>
         <Typography variant="h5" gutterBottom>
-          الإجراءات السريعة
+          {t('dashboard.quickActions', { defaultValue: 'الإجراءات السريعة' })}
         </Typography>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12 }}>
@@ -98,7 +100,7 @@ const MarketingDashboardPage: React.FC = () => {
               variant="contained"
               onClick={() => navigate('/marketing/price-rules/new')}
             >
-              إنشاء قاعدة سعر جديدة
+              {t('dashboard.createPriceRule', { defaultValue: 'إنشاء قاعدة الأسعار' })}
             </Button>
           </Grid>
           <Grid size={{ xs: 12 }}>
@@ -107,7 +109,7 @@ const MarketingDashboardPage: React.FC = () => {
               color="success"
               onClick={() => navigate('/coupons/new')}
             >
-              إنشاء كوبون جديد
+              {t('dashboard.createCoupon', { defaultValue: 'إنشاء كوبون' })}
             </Button>
           </Grid>
           <Grid size={{ xs: 12 }}>
@@ -116,7 +118,7 @@ const MarketingDashboardPage: React.FC = () => {
               color="info"
               onClick={() => navigate('/banners/new')}
             >
-              إنشاء بانر جديد
+              {t('dashboard.createBanner', { defaultValue: 'إنشاء بانر' }   )}
             </Button>
           </Grid>
         </Grid>

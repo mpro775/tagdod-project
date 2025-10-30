@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Attribute } from './schemas/attribute.schema';
+import { Attribute, AttributeType } from './schemas/attribute.schema';
 import { AttributeValue } from './schemas/attribute-value.schema';
 import { AttributeGroup } from './schemas/attribute-group.schema';
 import { slugify } from '../../shared/utils/slug.util';
-import { AppException } from '../../shared/exceptions/app.exception';
+import { 
+  DomainException,
+  ErrorCode 
+} from '../../shared/exceptions';
+
+const HEX_COLOR_REGEX = /^#(?:[0-9A-F]{6})$/i;
 
 @Injectable()
 export class AttributesService {
@@ -23,7 +28,7 @@ export class AttributesService {
     // التحقق من عدم التكرار
     const existing = await this.attributeModel.findOne({ slug, deletedAt: null });
     if (existing) {
-      throw new AppException('ATTRIBUTE_EXISTS', 'السمة موجودة بالفعل', null, 400);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'attribute', reason: 'already_exists' });
     }
 
     const attribute = await this.attributeModel.create({
@@ -39,11 +44,11 @@ export class AttributesService {
     const attribute = await this.attributeModel.findById(id);
     
     if (!attribute) {
-      throw new AppException('ATTRIBUTE_NOT_FOUND', 'السمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
     }
 
     if (attribute.deletedAt) {
-      throw new AppException('ATTRIBUTE_DELETED', 'السمة محذوفة', null, 400);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'deleted' });
     }
 
     if (patch.nameEn) {
@@ -61,12 +66,12 @@ export class AttributesService {
       .lean();
 
     if (!attribute) {
-      throw new AppException('ATTRIBUTE_NOT_FOUND', 'السمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
     }
 
-    // جلب القيم
+    // جلب القيم (تأكد من مطابقة ObjectId)
     const values = await this.valueModel
-      .find({ attributeId: id, deletedAt: null })
+      .find({ attributeId: new Types.ObjectId(id), deletedAt: null })
       .sort({ order: 1, value: 1 })
       .lean();
 
@@ -121,17 +126,16 @@ export class AttributesService {
     const attribute = await this.attributeModel.findById(id);
 
     if (!attribute) {
-      throw new AppException('ATTRIBUTE_NOT_FOUND', 'السمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
     }
 
     // فحص الاستخدام
     if (attribute.usageCount > 0) {
-      throw new AppException(
-        'ATTRIBUTE_IN_USE',
-        'لا يمكن حذف سمة مستخدمة في منتجات',
-        { usageCount: attribute.usageCount },
-        400
-      );
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { 
+        attributeId: id,
+        reason: 'in_use', 
+        usageCount: attribute.usageCount 
+      });
     }
 
     attribute.deletedAt = new Date();
@@ -145,7 +149,7 @@ export class AttributesService {
     const attribute = await this.attributeModel.findById(id);
 
     if (!attribute || !attribute.deletedAt) {
-      throw new AppException('ATTRIBUTE_NOT_DELETED', 'السمة غير محذوفة', null, 400);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_deleted' });
     }
 
     attribute.deletedAt = null;
@@ -161,7 +165,24 @@ export class AttributesService {
     const attribute = await this.attributeModel.findById(attributeId);
 
     if (!attribute) {
-      throw new AppException('ATTRIBUTE_NOT_FOUND', 'السمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId, reason: 'not_found' });
+    }
+
+    if (dto.hexCode !== undefined) {
+      const normalizedHex = dto.hexCode.trim();
+      dto.hexCode = normalizedHex ? normalizedHex.toUpperCase() : undefined;
+    }
+
+    if (attribute.type === AttributeType.COLOR) {
+      if (!dto.hexCode) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'required_for_color' });
+      }
+
+      if (!HEX_COLOR_REGEX.test(dto.hexCode)) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
+      }
+    } else if (dto.hexCode && !HEX_COLOR_REGEX.test(dto.hexCode)) {
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
     }
 
     const slug = slugify(dto.value!);
@@ -174,7 +195,7 @@ export class AttributesService {
     });
 
     if (existing) {
-      throw new AppException('VALUE_EXISTS', 'القيمة موجودة بالفعل', null, 400);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { value: dto.value, reason: 'already_exists' });
     }
 
     const value = await this.valueModel.create({
@@ -191,7 +212,36 @@ export class AttributesService {
     const value = await this.valueModel.findById(id);
 
     if (!value) {
-      throw new AppException('VALUE_NOT_FOUND', 'القيمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { valueId: id, reason: 'not_found' });
+    }
+
+    if (patch.hexCode !== undefined) {
+      const normalizedHex = patch.hexCode.trim();
+      patch.hexCode = normalizedHex ? normalizedHex.toUpperCase() : undefined;
+    }
+
+    const attribute = await this.attributeModel.findById(value.attributeId);
+
+    if (!attribute) {
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: value.attributeId, reason: 'not_found' });
+    }
+
+    if (attribute.type === AttributeType.COLOR) {
+      const nextHex = patch.hexCode ?? value.hexCode;
+
+      if (!nextHex) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'required_for_color' });
+      }
+
+      if (!HEX_COLOR_REGEX.test(nextHex)) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
+      }
+
+      if (patch.hexCode) {
+        patch.hexCode = patch.hexCode.toUpperCase();
+      }
+    } else if (patch.hexCode && !HEX_COLOR_REGEX.test(patch.hexCode)) {
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
     }
 
     if (patch.value) {
@@ -206,16 +256,15 @@ export class AttributesService {
     const value = await this.valueModel.findById(id);
 
     if (!value) {
-      throw new AppException('VALUE_NOT_FOUND', 'القيمة غير موجودة', null, 404);
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { valueId: id, reason: 'not_found' });
     }
 
     if (value.usageCount > 0) {
-      throw new AppException(
-        'VALUE_IN_USE',
-        'لا يمكن حذف قيمة مستخدمة في variants',
-        { usageCount: value.usageCount },
-        400
-      );
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { 
+        valueId: id,
+        reason: 'in_use', 
+        usageCount: value.usageCount 
+      });
     }
 
     value.deletedAt = new Date();
@@ -227,7 +276,7 @@ export class AttributesService {
 
   async listValues(attributeId: string) {
     return this.valueModel
-      .find({ attributeId, deletedAt: null })
+      .find({ attributeId: new Types.ObjectId(attributeId), deletedAt: null })
       .sort({ order: 1, value: 1 })
       .lean();
   }
@@ -272,6 +321,12 @@ export class AttributesService {
     const typeStats: Record<string, number> = {};
     byType.forEach((item: { _id: string; count: number }) => {
       typeStats[item._id] = item.count;
+    });
+
+    Object.values(AttributeType).forEach((type) => {
+      if (!typeStats[type]) {
+        typeStats[type] = 0;
+      }
     });
 
     return {

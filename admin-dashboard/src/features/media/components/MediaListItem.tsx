@@ -26,6 +26,7 @@ import {
   Info,
 } from '@mui/icons-material';
 import { formatFileSize } from '@/shared/utils/formatters';
+import { useTranslation } from 'react-i18next';
 import type { Media } from '../types/media.types';
 
 interface MediaListItemProps {
@@ -60,6 +61,7 @@ export const MediaListItem: React.FC<MediaListItemProps> = ({
   isLoading = false,
   variant = 'list',
 }) => {
+  const { t } = useTranslation('media');
   const getFileIcon = (type: string) => {
     if (type.startsWith('image/')) return '🖼️';
     if (type.startsWith('video/')) return '🎥';
@@ -120,20 +122,20 @@ export const MediaListItem: React.FC<MediaListItemProps> = ({
                   color="primary"
                 />
                 <Chip
-                  label={media.isPublic ? 'عام' : 'خاص'}
+                  label={media.isPublic ? t('public') : t('private')}
                   size="small"
                   color={media.isPublic ? 'success' : 'warning'}
                   variant="outlined"
                 />
                 {media.deletedAt && (
-                  <Chip label="محذوف" size="small" color="error" variant="outlined" />
+                  <Chip label={t('deleted')} size="small" color="error" variant="outlined" />
                 )}
                 {media.usageCount > 0 && (
-                  <Chip 
-                    label={`مستخدم ${media.usageCount} مرة`} 
-                    size="small" 
-                    color="info" 
-                    variant="outlined" 
+                  <Chip
+                    label={`${t('used')} ${media.usageCount}`}
+                    size="small"
+                    color="info"
+                    variant="outlined"
                   />
                 )}
               </Box>
@@ -165,22 +167,22 @@ export const MediaListItem: React.FC<MediaListItemProps> = ({
         
         <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
           <Box sx={{ display: 'flex', gap: 0.5 }}>
-            <Tooltip title="نسخ الرابط">
+            <Tooltip title={t('copyUrl')}>
               <IconButton size="small" onClick={() => onCopyUrl(media.url)}>
                 <ContentCopy fontSize="small" />
               </IconButton>
             </Tooltip>
-            
+
             {onDownload && (
-              <Tooltip title="تحميل">
+              <Tooltip title={t('actions.gridView')}>
                 <IconButton size="small" onClick={() => onDownload(media)}>
                   <Download fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
-            
+
             {onInfo && (
-              <Tooltip title="تفاصيل">
+              <Tooltip title={t('details.title')}>
                 <IconButton size="small" onClick={() => onInfo(media)}>
                   <Info fontSize="small" />
                 </IconButton>
@@ -189,7 +191,7 @@ export const MediaListItem: React.FC<MediaListItemProps> = ({
           </Box>
           
           <Box sx={{ display: 'flex', gap: 0.5 }}>
-            <Tooltip title={media.isPublic ? 'إخفاء' : 'إظهار'}>
+            <Tooltip title={media.isPublic ? t('hide') : t('show')}>
               <IconButton
                 size="small"
                 color={media.isPublic ? 'success' : 'default'}
@@ -200,24 +202,24 @@ export const MediaListItem: React.FC<MediaListItemProps> = ({
             </Tooltip>
 
             {media.deletedAt ? (
-              <Tooltip title="استعادة">
+              <Tooltip title={t('restore')}>
                 <IconButton size="small" color="primary" onClick={() => onRestore(media._id)}>
                   <Restore fontSize="small" />
                 </IconButton>
               </Tooltip>
             ) : (
               <>
-                <Tooltip title="تعديل">
+                <Tooltip title={t('edit')}>
                   <IconButton size="small" color="primary" onClick={() => onEdit(media)}>
                     <Edit fontSize="small" />
                   </IconButton>
                 </Tooltip>
-                <Tooltip title="حذف">
+                <Tooltip title={t('delete')}>
                   <IconButton
                     size="small"
                     color="error"
                     onClick={() => {
-                      if (window.confirm(`هل تريد حذف "${media.name}"؟`)) {
+                      if (window.confirm(t('messages.deleteConfirm', { name: media.name }))) {
                         onDelete(media._id);
                       }
                     }}
@@ -274,13 +276,13 @@ export const MediaListItem: React.FC<MediaListItemProps> = ({
               color="primary"
             />
             <Chip
-              label={media.isPublic ? 'عام' : 'خاص'}
+              label={media.isPublic ? t('public') : t('private')}
               size="small"
               color={media.isPublic ? 'success' : 'warning'}
               variant="outlined"
             />
             {media.deletedAt && (
-              <Chip label="محذوف" size="small" color="error" variant="outlined" />
+              <Chip label={t('deleted')} size="small" color="error" variant="outlined" />
             )}
           </Box>
         }
@@ -310,21 +312,21 @@ export const MediaListItem: React.FC<MediaListItemProps> = ({
       />
 
       <Box sx={{ display: 'flex', gap: 0.5 }}>
-        <Tooltip title="نسخ الرابط">
+        <Tooltip title={t('copyUrl')}>
           <IconButton size="small" onClick={() => onCopyUrl(media.url)}>
             <ContentCopy fontSize="small" />
           </IconButton>
         </Tooltip>
 
         {onDownload && (
-          <Tooltip title="تحميل">
+          <Tooltip title={t('actions.gridView')}>
             <IconButton size="small" onClick={() => onDownload(media)}>
               <Download fontSize="small" />
             </IconButton>
           </Tooltip>
         )}
 
-        <Tooltip title={media.isPublic ? 'إخفاء' : 'إظهار'}>
+        <Tooltip title={media.isPublic ? t('hide') : t('show')}>
           <IconButton
             size="small"
             color={media.isPublic ? 'success' : 'default'}
@@ -335,24 +337,24 @@ export const MediaListItem: React.FC<MediaListItemProps> = ({
         </Tooltip>
 
         {media.deletedAt ? (
-          <Tooltip title="استعادة">
+          <Tooltip title={t('restore')}>
             <IconButton size="small" color="primary" onClick={() => onRestore(media._id)}>
               <Restore fontSize="small" />
             </IconButton>
           </Tooltip>
         ) : (
           <>
-            <Tooltip title="تعديل">
+            <Tooltip title={t('edit')}>
               <IconButton size="small" color="primary" onClick={() => onEdit(media)}>
                 <Edit fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title="حذف">
+            <Tooltip title={t('delete')}>
               <IconButton
                 size="small"
                 color="error"
                 onClick={() => {
-                  if (window.confirm(`هل تريد حذف "${media.name}"؟`)) {
+                  if (window.confirm(t('messages.deleteConfirm', { name: media.name }))) {
                     onDelete(media._id);
                   }
                 }}

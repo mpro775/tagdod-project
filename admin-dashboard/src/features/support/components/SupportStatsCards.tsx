@@ -10,6 +10,7 @@ import {
   Stack,
 } from '@mui/material';
 import { Support, TrendingUp, Warning, CheckCircle, Schedule, Person } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { SupportStats, SupportCategory, SupportPriority } from '../types/support.types';
 
 interface SupportStatsCardsProps {
@@ -17,47 +18,21 @@ interface SupportStatsCardsProps {
   isLoading?: boolean;
 }
 
-const getCategoryLabel = (category: SupportCategory): string => {
-  switch (category) {
-    case SupportCategory.TECHNICAL:
-      return 'تقني';
-    case SupportCategory.BILLING:
-      return 'الفواتير';
-    case SupportCategory.PRODUCTS:
-      return 'المنتجات';
-    case SupportCategory.SERVICES:
-      return 'الخدمات';
-    case SupportCategory.ACCOUNT:
-      return 'الحساب';
-    case SupportCategory.OTHER:
-      return 'أخرى';
-    default:
-      return 'غير محدد';
-  }
+const getCategoryLabel = (category: SupportCategory, t: any): string => {
+  return t(`category.${category}`, { defaultValue: 'غير محدد' });
 };
 
-const getPriorityLabel = (priority: SupportPriority): string => {
-  switch (priority) {
-    case SupportPriority.LOW:
-      return 'منخفضة';
-    case SupportPriority.MEDIUM:
-      return 'متوسطة';
-    case SupportPriority.HIGH:
-      return 'عالية';
-    case SupportPriority.URGENT:
-      return 'عاجلة';
-    default:
-      return 'غير محدد';
-  }
+const getPriorityLabel = (priority: SupportPriority, t: any): string => {
+  return t(`priority.${priority}`, { defaultValue: 'غير محدد' });
 };
 
-const formatTime = (minutes: number): string => {
+const formatTime = (minutes: number, t: any): string => {
   if (minutes < 60) {
-    return `${Math.round(minutes)} دقيقة`;
+    return `${Math.round(minutes)} ${t('time.minutes', { defaultValue: 'دقيقة' })}`;
   } else if (minutes < 1440) {
-    return `${Math.round(minutes / 60)} ساعة`;
+    return `${Math.round(minutes / 60)} ${t('time.hours', { defaultValue: 'ساعة' })}`;
   } else {
-    return `${Math.round(minutes / 1440)} يوم`;
+    return `${Math.round(minutes / 1440)} ${t('time.days', { defaultValue: 'يوم' })}`;
   }
 };
 
@@ -65,6 +40,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
   stats,
   isLoading = false,
 }) => {
+  const { t } = useTranslation('support');
   if (isLoading) {
     return (
       <Grid container spacing={3}>
@@ -94,7 +70,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Box>
                 <Typography color="text.secondary" gutterBottom variant="body2">
-                  إجمالي التذاكر
+                    {t('stats.totalTickets', { defaultValue: 'إجمالي التذاكر' })}
                 </Typography>
                 <Typography variant="h4" component="div">
                   {stats.total}
@@ -113,7 +89,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Box>
                 <Typography color="text.secondary" gutterBottom variant="body2">
-                  التذاكر المفتوحة
+                  {t('stats.openTickets', { defaultValue: 'التذاكر المفتوحة' })}
                 </Typography>
                 <Typography variant="h4" component="div" color="warning.main">
                   {stats.open}
@@ -132,7 +108,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Box>
                 <Typography color="text.secondary" gutterBottom variant="body2">
-                  التذاكر المحلولة
+                  {t('stats.resolvedTickets', { defaultValue: 'التذاكر المحلولة' })}
                 </Typography>
                 <Typography variant="h4" component="div" color="success.main">
                   {stats.resolved}
@@ -144,7 +120,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
                   sx={{ mt: 1 }}
                 />
                 <Typography variant="caption" color="text.secondary">
-                  {resolvedPercentage.toFixed(1)}% من إجمالي التذاكر
+                  {resolvedPercentage.toFixed(1)}{t('stats.percentageOfTotal', { defaultValue: 'من إجمالي التذاكر' })}
                 </Typography>
               </Box>
               <CheckCircle color="success" sx={{ fontSize: 40 }} />
@@ -160,10 +136,10 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Box>
                 <Typography color="text.secondary" gutterBottom variant="body2">
-                  متوسط وقت الاستجابة
+                  {t('stats.averageResponseTime', { defaultValue: 'متوسط وقت الاستجابة' })}
                 </Typography>
                 <Typography variant="h4" component="div">
-                  {formatTime(stats.averageResponseTime)}
+                  {formatTime(stats.averageResponseTime, t)}
                 </Typography>
               </Box>
               <TrendingUp color="info" sx={{ fontSize: 40 }} />
@@ -179,10 +155,10 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Box>
                 <Typography color="text.secondary" gutterBottom variant="body2">
-                  متوسط وقت الحل
+                  {t('stats.averageResolutionTime', { defaultValue: 'متوسط وقت الحل' })}
                 </Typography>
                 <Typography variant="h4" component="div">
-                  {formatTime(stats.averageResolutionTime)}
+                  {formatTime(stats.averageResolutionTime, t)}
                 </Typography>
               </Box>
               <Person color="secondary" sx={{ fontSize: 40 }} />
@@ -198,7 +174,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Box>
                 <Typography color="text.secondary" gutterBottom variant="body2">
-                  متجاوزة SLA
+                  {t('stats.slaBreached', { defaultValue: 'التذاكر المتجاوزة للـ SLA' })}
                 </Typography>
                 <Typography variant="h4" component="div" color="error.main">
                   {stats.slaBreached}
@@ -210,7 +186,7 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
                   sx={{ mt: 1 }}
                 />
                 <Typography variant="caption" color="text.secondary">
-                  {slaBreachPercentage.toFixed(1)}% من إجمالي التذاكر
+                  {slaBreachPercentage.toFixed(1)}{t('stats.percentageOfTotal', { defaultValue: 'من إجمالي التذاكر' })}
                 </Typography>
               </Box>
               <Warning color="error" sx={{ fontSize: 40 }} />
@@ -224,14 +200,14 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              التوزيع حسب الفئة
+              {t('stats.byCategory', { defaultValue: 'التوزيع حسب الفئة' })}
             </Typography>
             <Stack spacing={1}>
               {Object.entries(stats.byCategory).map(([category, count]) => (
                 <Box key={category}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2">
-                      {getCategoryLabel(category as SupportCategory)}
+                      {getCategoryLabel(category as SupportCategory, t)}
                     </Typography>
                     <Chip label={count} size="small" />
                   </Stack>
@@ -252,14 +228,14 @@ export const SupportStatsCards: React.FC<SupportStatsCardsProps> = ({
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              التوزيع حسب الأولوية
+              {t('stats.byPriority', { defaultValue: 'التوزيع حسب الأولوية' })}
             </Typography>
             <Stack spacing={1}>
               {Object.entries(stats.byPriority).map(([priority, count]) => (
                 <Box key={priority}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2">
-                      {getPriorityLabel(priority as SupportPriority)}
+                      {getPriorityLabel(priority as SupportPriority, t)}
                     </Typography>
                     <Chip label={count} size="small" />
                   </Stack>

@@ -31,9 +31,7 @@ import { SystemMonitoringModule } from './modules/system-monitoring/system-monit
 import { ErrorLogsModule } from './modules/error-logs/error-logs.module';
 import { I18nModule } from './modules/i18n/i18n.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
-
-// Health module
-// import { HealthModule } from './health/health.module';
+import { HealthModule } from './health/health.module';
 
 // Shared modules
 import { CacheModule } from './shared/cache/cache.module';
@@ -43,21 +41,16 @@ import { SharedModule } from './shared/shared.module';
 import { ActivityTrackingMiddleware } from './shared/middleware/activity-tracking.middleware';
 import { RequestIdMiddleware } from './shared/middleware/request-id.middleware';
 import { IdempotencyMiddleware } from './shared/middleware/idempotency.middleware';
-import { HealthModule } from './health/health.module';
 
 // Global filters and interceptors
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
 import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-envelope.interceptor';
-
-// Configuration
-// Using basic validation without Joi to avoid dependency conflicts
 
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      // validationSchema removed to avoid Joi dependency conflicts
       envFilePath: '.env',
     }),
 

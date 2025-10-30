@@ -34,6 +34,11 @@ export class CreateProductDto {
   @IsOptional() @IsNumber() @Min(0) maxStock?: number;
   @IsOptional() @IsBoolean() trackStock?: boolean;
   @IsOptional() @IsBoolean() allowBackorder?: boolean;
+  
+  // التقييم اليدوي
+  @IsOptional() @IsBoolean() useManualRating?: boolean;
+  @IsOptional() @IsNumber() @Min(0) manualRating?: number;
+  @IsOptional() @IsNumber() @Min(0) manualReviewsCount?: number;
 }
 
 export class UpdateProductDto {
@@ -69,6 +74,11 @@ export class UpdateProductDto {
   @IsOptional() @IsNumber() @Min(0) maxStock?: number;
   @IsOptional() @IsBoolean() trackStock?: boolean;
   @IsOptional() @IsBoolean() allowBackorder?: boolean;
+  
+  // التقييم اليدوي
+  @IsOptional() @IsBoolean() useManualRating?: boolean;
+  @IsOptional() @IsNumber() @Min(0) manualRating?: number;
+  @IsOptional() @IsNumber() @Min(0) manualReviewsCount?: number;
 }
 
 export class ListProductsDto {
@@ -113,9 +123,9 @@ export class UpdateVariantDto {
 }
 
 export class GenerateVariantsDto {
-  @IsNumber() @Min(0) defaultPrice!: number;
-  @IsNumber() @Min(0) defaultStock!: number;
-  @IsOptional() @IsBoolean() overwriteExisting?: boolean;
+  @IsNumber() @Min(0.01) defaultPrice!: number; // السعر الافتراضي بالدولار
+  @IsNumber() @Min(0) defaultStock!: number; // الكمية الافتراضية
+  @IsOptional() @IsBoolean() overwriteExisting?: boolean; // الكتابة فوق المتغيرات الموجودة
 }
 
 export class UpdateStockDto {

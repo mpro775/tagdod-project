@@ -118,13 +118,13 @@ export const ProductsListPage: React.FC = () => {
       field: 'category',
       headerName: 'الفئة',
       width: 150,
-      valueGetter: (_value, row) => row.category?.name || '-',
+      valueGetter: (_value, row) => (typeof row.categoryId === 'object' ? row.categoryId?.name : '-') || '-',
     },
     {
       field: 'brand',
       headerName: 'العلامة',
       width: 130,
-      valueGetter: (_value, row) => row.brand?.name || '-',
+      valueGetter: (_value, row) => (typeof row.brandId === 'object' ? row.brandId?.name : '-') || '-',
     },
     {
       field: 'variantsCount',

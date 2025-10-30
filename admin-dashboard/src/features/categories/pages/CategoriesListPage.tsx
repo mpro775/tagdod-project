@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Chip,
@@ -30,9 +31,11 @@ import type { Category, ListCategoriesParams } from '../types/category.types';
 import { CategoryTreeView } from '../components/CategoryTreeView';
 import { CategoryStatsCards } from '../components/CategoryStatsCards';
 import { CategoryFilters } from '../components/CategoryFilters';
+import { CategoryImage } from '../components/CategoryImage';
 
 export const CategoriesListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('categories');
   const [viewMode, setViewMode] = useState<'list' | 'tree'>('list');
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
@@ -113,60 +116,81 @@ export const CategoriesListPage: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'name',
-      headerName: 'الفئة',
-      width: 300,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ fontSize: 32, color: 'text.secondary' }}>📁</Box>
-          <Box>
-            <Box sx={{ fontWeight: 'medium', display: 'flex', alignItems: 'center', gap: 1 }}>
-              {params.row.name}
-              {params.row.isFeatured && <Star sx={{ fontSize: 16, color: 'warning.main' }} />}
-            </Box>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{params.row.nameEn}</Box>
-            {params.row.description && (
-              <Box sx={{ fontSize: '0.7rem', color: 'text.secondary', mt: 0.5 }}>
-                {params.row.description.length > 50
-                  ? `${params.row.description.substring(0, 50)}...`
-                  : params.row.description}
+      headerName: t('fields.category'),
+      width: 400,
+      renderCell: (params) => {
+        const category = params.row as Category;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 0.5 }}>
+            <CategoryImage image={category.imageId} size={60} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="subtitle2" fontWeight="bold" noWrap>
+                  {category.name}
+                </Typography>
+                {category.isFeatured && (
+                  <Tooltip title={t('tooltips.featured')}>
+                    <Star sx={{ fontSize: 18, color: 'warning.main' }} />
+                  </Tooltip>
+                )}
               </Box>
-            )}
+              <Typography variant="caption" color="text.secondary" display="block" noWrap>
+                {category.nameEn}
+              </Typography>
+              {category.description && (
+                <Tooltip title={category.description}>
+                  <Typography 
+                    variant="caption" 
+                    color="text.secondary" 
+                    display="block" 
+                    noWrap
+                    sx={{ fontSize: '0.7rem', mt: 0.25 }}
+                  >
+                    {category.description}
+                  </Typography>
+                </Tooltip>
+              )}
+            </Box>
           </Box>
-        </Box>
-      ),
+        );
+      },
     },
     {
       field: 'parentId',
-      headerName: 'الفئة الأب',
-      width: 150,
-      renderCell: (params) => (
-        <Box sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
-          {params.row.parentId ? 'فئة فرعية' : 'فئة رئيسية'}
-        </Box>
-      ),
-    },
-    {
-      field: 'productsCount',
-      headerName: 'المنتجات',
-      width: 100,
+      headerName: t('fields.type'),
+      width: 120,
       align: 'center',
       renderCell: (params) => (
         <Chip
-          label={params.row.productsCount}
+          label={params.row.parentId ? t('types.sub') : t('types.main')}
           size="small"
-          color={params.row.productsCount > 0 ? 'primary' : 'default'}
+          color={params.row.parentId ? 'info' : 'primary'}
           variant="outlined"
         />
       ),
     },
     {
-      field: 'childrenCount',
-      headerName: 'الفئات الفرعية',
-      width: 120,
+      field: 'productsCount',
+      headerName: t('fields.products'),
+      width: 100,
       align: 'center',
       renderCell: (params) => (
         <Chip
-          label={params.row.childrenCount}
+          label={params.row.productsCount || 0}
+          size="small"
+          color={params.row.productsCount > 0 ? 'success' : 'default'}
+          variant={params.row.productsCount > 0 ? 'filled' : 'outlined'}
+        />
+      ),
+    },
+    {
+      field: 'childrenCount',
+      headerName: t('fields.subcategories'),
+      width: 90,
+      align: 'center',
+      renderCell: (params) => (
+        <Chip
+          label={params.row.childrenCount || 0}
           size="small"
           color={params.row.childrenCount > 0 ? 'secondary' : 'default'}
           variant="outlined"
@@ -175,11 +199,11 @@ export const CategoriesListPage: React.FC = () => {
     },
     {
       field: 'isActive',
-      headerName: 'الحالة',
+      headerName: t('fields.status'),
       width: 100,
       renderCell: (params) => (
         <Chip
-          label={params.row.isActive ? 'نشط' : 'غير نشط'}
+          label={params.row.isActive ? t('status.active') : t('status.inactive')}
           color={params.row.isActive ? 'success' : 'default'}
           size="small"
         />
@@ -187,19 +211,19 @@ export const CategoriesListPage: React.FC = () => {
     },
     {
       field: 'order',
-      headerName: 'الترتيب',
+      headerName: t('fields.order'),
       width: 80,
       align: 'center',
     },
     {
       field: 'createdAt',
-      headerName: 'تاريخ الإنشاء',
+      headerName: t('fields.createdAt'),
       width: 140,
       valueFormatter: (value) => formatDate(value as Date),
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('fields.actions'),
       width: 200,
       sortable: false,
       renderCell: (params) => {
@@ -209,7 +233,7 @@ export const CategoriesListPage: React.FC = () => {
         if (isDeleted) {
           return (
             <Box display="flex" gap={0.5}>
-              <Tooltip title="استعادة">
+              <Tooltip title={t('tooltips.restore')}>
                 <IconButton
                   size="small"
                   color="primary"
@@ -221,7 +245,7 @@ export const CategoriesListPage: React.FC = () => {
                   <Restore fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="حذف نهائي">
+              <Tooltip title={t('tooltips.permanentDelete')}>
                 <IconButton
                   size="small"
                   color="error"
@@ -239,7 +263,7 @@ export const CategoriesListPage: React.FC = () => {
 
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title="تعديل">
+            <Tooltip title={t('tooltips.edit')}>
               <IconButton
                 size="small"
                 color="primary"
@@ -252,7 +276,7 @@ export const CategoriesListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="تحديث الإحصائيات">
+            <Tooltip title={t('tooltips.updateStats')}>
               <IconButton
                 size="small"
                 color="info"
@@ -265,7 +289,7 @@ export const CategoriesListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="حذف">
+            <Tooltip title={t('tooltips.delete')}>
               <IconButton
                 size="small"
                 color="error"
@@ -294,8 +318,8 @@ export const CategoriesListPage: React.FC = () => {
       {/* View Mode Tabs */}
       <Box sx={{ mb: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Tabs value={viewMode} onChange={(_, v) => setViewMode(v)}>
-          <Tab icon={<AccountTree />} label="عرض شجري" value="tree" iconPosition="start" />
-          <Tab label="عرض قائمة" value="list" />
+          <Tab icon={<AccountTree />} label={t('categories.treeView')} value="tree" iconPosition="start" />
+          <Tab label={t('categories.listView')} value="list" />
         </Tabs>
         <Button
           startIcon={<Refresh />}
@@ -304,7 +328,7 @@ export const CategoriesListPage: React.FC = () => {
           size="small"
           sx={{ mr: 2 }}
         >
-          تحديث
+          {t('categories.refresh')}
         </Button>
       </Box>
 
@@ -319,20 +343,21 @@ export const CategoriesListPage: React.FC = () => {
       {/* List View */}
       {viewMode === 'list' && (
         <DataTable
-          title="إدارة الفئات"
+          title={t('categories.manageCategories')}
           columns={columns}
           rows={categories}
           loading={isLoading}
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
           onAdd={() => navigate('/categories/new')}
-          addButtonText="إضافة فئة"
+          addButtonText={t('categories.addNew')}
           getRowId={(row) => (row as Category)._id}
           onRowClick={(params) => {
             const row = params.row as Category;
             navigate(`/categories/${row._id}`);
           }}
           height="calc(100vh - 400px)"
+          rowHeight={75}
         />
       )}
 
@@ -351,19 +376,19 @@ export const CategoriesListPage: React.FC = () => {
                 {deleteDialog.permanent ? (
                   <>
                     <Typography variant="body2" fontWeight="bold">
-                      تحذير: هذا الإجراء لا يمكن التراجع عنه!
+                      {t('messages.permanentDeleteWarning')}
                     </Typography>
                     <Typography variant="body2">
-                      سيتم حذف الفئة "{deleteDialog.category.name}" نهائياً من النظام.
+                      {t('messages.permanentDeleteDesc', { name: deleteDialog.category.name })}
                     </Typography>
                   </>
                 ) : (
                   <>
                     <Typography variant="body2" fontWeight="bold">
-                      سيتم حذف الفئة "{deleteDialog.category.name}" مؤقتاً.
+                      {t('messages.softDeleteDesc', { name: deleteDialog.category.name }).split('.')[0]}.
                     </Typography>
                     <Typography variant="body2">
-                      يمكنك استعادتها لاحقاً من قائمة الفئات المحذوفة.
+                      {t('messages.softDeleteDesc', { name: deleteDialog.category.name }).split('.')[1]}.
                     </Typography>
                   </>
                 )}
@@ -372,7 +397,7 @@ export const CategoriesListPage: React.FC = () => {
               {deleteDialog.category.productsCount > 0 && (
                 <Alert severity="info" sx={{ mb: 2 }}>
                   <Typography variant="body2">
-                    هذه الفئة تحتوي على {deleteDialog.category.productsCount} منتج.
+                    {t('messages.productsWarning', { count: deleteDialog.category.productsCount })}
                   </Typography>
                 </Alert>
               )}
@@ -380,7 +405,7 @@ export const CategoriesListPage: React.FC = () => {
               {deleteDialog.category.childrenCount > 0 && (
                 <Alert severity="info">
                   <Typography variant="body2">
-                    هذه الفئة تحتوي على {deleteDialog.category.childrenCount} فئة فرعية.
+                    {t('messages.subcategoriesWarning', { count: deleteDialog.category.childrenCount })}
                   </Typography>
                 </Alert>
               )}
@@ -391,7 +416,7 @@ export const CategoriesListPage: React.FC = () => {
           <Button
             onClick={() => setDeleteDialog({ open: false, category: null, permanent: false })}
           >
-            إلغاء
+            {t('actions.cancel')}
           </Button>
           <Button
             onClick={handleConfirmDelete}

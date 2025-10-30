@@ -18,6 +18,7 @@ import {
   Assessment,
   AttachMoney,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useExchangeRates } from '../hooks/useExchangeRates';
 import {
   ExchangeRateCard,
@@ -60,6 +61,7 @@ function a11yProps(index: number) {
 }
 
 export default function ExchangeRatesPage() {
+  const { t } = useTranslation('exchangeRates');
   const [activeTab, setActiveTab] = useState(0);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -90,13 +92,13 @@ export default function ExchangeRatesPage() {
       await updateRates(data);
       setSnackbar({
         open: true,
-        message: 'تم تحديث أسعار الصرف بنجاح',
+        message: t('messages.ratesUpdated', { defaultValue: 'تم تحديث الأسعار بنجاح' }),
         severity: 'success',
       });
     } catch (err) {
       setSnackbar({
         open: true,
-        message: 'فشل في تحديث أسعار الصرف',
+        message: t('messages.ratesUpdateFailed', { defaultValue: 'فشل في تحديث الأسعار' }    ),
         severity: 'error',
       });
     }
@@ -107,14 +109,14 @@ export default function ExchangeRatesPage() {
       const result = await convertCurrency(data);
       setSnackbar({
         open: true,
-        message: `تم التحويل بنجاح: ${result.formatted}`,
+        message: t('messages.conversionResult', { defaultValue: 'تم تحويل العملة بنجاح', result: result.formatted }),
         severity: 'success',
       });
       return result;
     } catch (err) {
       setSnackbar({
         open: true,
-        message: 'فشل في تحويل العملة',
+        message: t('messages.conversionFailed', { defaultValue: 'فشل في تحويل العملة' }     ),
         severity: 'error',
       });
       throw err;
@@ -147,10 +149,10 @@ export default function ExchangeRatesPage() {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-          إدارة أسعار الصرف
+          {t('exchangeRates.title', { defaultValue: 'أسعار الصرف' })}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          إدارة وتحديث أسعار الصرف للعملات المدعومة في النظام
+          {t('exchangeRates.subtitle', { defaultValue: 'أسعار الصرف الحالية للعملات المدعومة' })}
         </Typography>
       </Box>
 
@@ -164,35 +166,35 @@ export default function ExchangeRatesPage() {
       {/* Main Content */}
       <Paper sx={{ width: '100%' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs 
-            value={activeTab} 
-            onChange={handleTabChange} 
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
             aria-label="exchange rates tabs"
             variant="fullWidth"
           >
-            <Tab 
-              icon={<TrendingUp />} 
-              label="الأسعار الحالية" 
+            <Tab
+              icon={<TrendingUp />}
+              label={t('tabs.currentRates', { defaultValue: 'الأسعار الحالية' })}
               iconPosition="start"
-              {...a11yProps(0)} 
+              {...a11yProps(0)}
             />
-            <Tab 
-              icon={<AttachMoney />} 
-              label="تحديث الأسعار" 
+            <Tab
+              icon={<AttachMoney />}
+              label={t('tabs.updateRates', { defaultValue: 'تحديث أسعار الصرف' })}
               iconPosition="start"
-              {...a11yProps(1)} 
+              {...a11yProps(1)}
             />
-            <Tab 
-              icon={<Calculate />} 
-              label="محول العملات" 
+            <Tab
+              icon={<Calculate />}
+              label={t('tabs.converter', { defaultValue: 'محول العملات' })}
               iconPosition="start"
-              {...a11yProps(2)} 
+              {...a11yProps(2)}
             />
-            <Tab 
-              icon={<Assessment />} 
-              label="الإحصائيات" 
+            <Tab
+              icon={<Assessment />}
+              label={t('tabs.statistics', { defaultValue: 'إحصائيات أسعار الصرف' })}
               iconPosition="start"
-              {...a11yProps(3)} 
+              {...a11yProps(3)}
             />
           </Tabs>
         </Box>
@@ -201,10 +203,10 @@ export default function ExchangeRatesPage() {
         <TabPanel value={activeTab} index={0}>
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              الأسعار الحالية
+              {t('tabs.currentRates', { defaultValue: 'الأسعار الحالية' })}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              عرض أسعار الصرف الحالية للعملات المدعومة
+              {t('tabs.currentRatesDesc', { defaultValue: 'عرض أسعار الصرف الحالية للعملات المدعومة' })}
             </Typography>
           </Box>
 
@@ -214,7 +216,7 @@ export default function ExchangeRatesPage() {
                 rates={rates}
                 loading={loading}
                 error={error}
-                title="الدولار الأمريكي إلى الريال اليمني"
+                title={t('exchangeRates.title', { defaultValue: 'الدولار الأمريكي إلى الريال اليمني' })}
                 currency="YER"
                 rate={rates?.usdToYer || 0}
                 icon={<TrendingUp />}
@@ -226,7 +228,7 @@ export default function ExchangeRatesPage() {
                 rates={rates}
                 loading={loading}
                 error={error}
-                title="الدولار الأمريكي إلى الريال السعودي"
+                title={t('exchangeRates.title', { defaultValue: 'الدولار الأمريكي إلى الريال السعودي' })}
                 currency="SAR"
                 rate={rates?.usdToSar || 0}
                 icon={<TrendingUp />}
@@ -240,10 +242,10 @@ export default function ExchangeRatesPage() {
         <TabPanel value={activeTab} index={1}>
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              تحديث أسعار الصرف
+              {t('tabs.updateRates', { defaultValue: 'تحديث أسعار الصرف' })}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              قم بتحديث أسعار الصرف للعملات المدعومة
+              {t('tabs.updateRatesDesc', { defaultValue: 'قم بتحديث أسعار الصرف للعملات المدعومة' })}   
             </Typography>
           </Box>
 
@@ -263,10 +265,10 @@ export default function ExchangeRatesPage() {
         <TabPanel value={activeTab} index={2}>
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              محول العملات
+              {t('tabs.converter', { defaultValue: 'محول العملات' })}
           </Typography>
             <Typography variant="body2" color="text.secondary">
-              تحويل العملات باستخدام الأسعار الحالية
+              {t('tabs.converterDesc', { defaultValue: 'تحويل العملات باستخدام الأسعار الحالية' })}
               </Typography>
           </Box>
 
@@ -281,10 +283,10 @@ export default function ExchangeRatesPage() {
         <TabPanel value={activeTab} index={3}>
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              إحصائيات أسعار الصرف
+              {t('tabs.statistics', { defaultValue: 'إحصائيات أسعار الصرف' })}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              معلومات تفصيلية عن أسعار الصرف الحالية
+              {t('tabs.statisticsDesc', { defaultValue: 'معلومات تفصيلية عن أسعار الصرف الحالية' })}
               </Typography>
           </Box>
 
@@ -300,20 +302,20 @@ export default function ExchangeRatesPage() {
       <Paper sx={{ mt: 3, p: 3 }}>
         <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AttachMoney color="primary" />
-          معلومات مهمة
+          {t('infoCard.title', { defaultValue: 'معلومات مهمة' })}
         </Typography>
         <Box component="ul" sx={{ m: 0, pl: 2 }}>
           <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            جميع المنتجات في النظام تسعر بالدولار الأمريكي
+            {t('infoCard.item1', { defaultValue: 'جميع المنتجات في النظام تسعر بالدولار الأمريكي' })}
           </Typography>
           <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            سيتم تحويل الأسعار تلقائياً للعملاء حسب العملة المختارة
+            {t('infoCard.item2', { defaultValue: 'سيتم تحويل الأسعار تلقائياً للعملاء حسب العملة المختارة' })}
           </Typography>
           <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            تحديث الأسعار يؤثر على جميع المنتجات والفواتير فوراً
+            {t('infoCard.item3', { defaultValue: 'تحديث الأسعار يؤثر على جميع المنتجات والفواتير فوراً' })}
           </Typography>
           <Typography component="li" variant="body2" color="text.secondary">
-            تأكد من صحة الأسعار قبل الحفظ
+            {t('infoCard.item4', { defaultValue: 'تأكد من صحة الأسعار قبل الحفظ' })}
           </Typography>
         </Box>
       </Paper>
@@ -325,7 +327,7 @@ export default function ExchangeRatesPage() {
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <CircularProgress color="inherit" />
-          <Typography>جاري تحميل أسعار الصرف...</Typography>
+          <Typography>{t('loading.loadingRates', { defaultValue: 'جاري تحميل أسعار الصرف...' })}</Typography>
         </Box>
       </Backdrop>
 

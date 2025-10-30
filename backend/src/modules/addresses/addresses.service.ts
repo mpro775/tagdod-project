@@ -3,7 +3,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
 import { Address } from './schemas/address.schema';
 import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto';
-import { AppException } from '../../shared/exceptions/app.exception';
+import { 
+  AddressNotFoundException,
+  AddressException,
+  ErrorCode 
+} from '../../shared/exceptions';
 
 @Injectable()
 export class AddressesService {
@@ -54,7 +58,7 @@ export class AddressesService {
     });
 
     if (!address) {
-      throw new AppException('Address not found', '404');
+      throw new AddressNotFoundException({ addressId: id });
     }
 
     return address;
@@ -132,7 +136,7 @@ export class AddressesService {
     });
 
     if (activeAddressesCount === 0) {
-      throw new AppException('Cannot delete your only address', '400');
+      throw new AddressException(ErrorCode.ADDRESS_DELETE_FAILED, { reason: 'only_address' });
     }
 
     // If it's the default address, make another one default
@@ -249,7 +253,7 @@ export class AddressesService {
     });
 
     if (!address) {
-      throw new AppException('Address not found', '404');
+      throw new AddressNotFoundException({ addressId });
     }
 
     return address;
@@ -265,11 +269,11 @@ export class AddressesService {
     });
 
     if (!address) {
-      throw new AppException('Address not found', '404');
+      throw new AddressNotFoundException({ addressId: id });
     }
 
     if (!address.deletedAt) {
-      throw new AppException('Address is not deleted', '400');
+      throw new AddressException(ErrorCode.ADDRESS_INVALID_DATA, { addressId: id, reason: 'not_deleted' });
     }
 
     address.deletedAt = undefined;

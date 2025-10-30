@@ -71,7 +71,7 @@ export class AdminOrderController {
     };
   }
 
-  @Get(':id')
+  @Get(':id([0-9a-fA-F]{24})')
   @ApiOperation({ 
     summary: 'تفاصيل الطلب (للإدارة)',
     description: 'الحصول على تفاصيل طلب محدد مع جميع المعلومات'
@@ -90,7 +90,7 @@ export class AdminOrderController {
     };
   }
 
-  @Patch(':id/status')
+  @Patch(':id([0-9a-fA-F]{24})/status')
   @ApiOperation({ 
     summary: 'تحديث حالة الطلب',
     description: 'تحديث حالة طلب محدد من قبل الإدارة'
@@ -115,7 +115,7 @@ export class AdminOrderController {
     };
   }
 
-  @Post(':id/ship')
+  @Post(':id([0-9a-fA-F]{24})/ship')
   @ApiOperation({ 
     summary: 'شحن الطلب',
     description: 'تحديث معلومات الشحن للطلب'
@@ -143,7 +143,7 @@ export class AdminOrderController {
     };
   }
 
-  @Post(':id/refund')
+  @Post(':id([0-9a-fA-F]{24})/refund')
   @ApiOperation({ 
     summary: 'معالجة الاسترداد',
     description: 'معالجة استرداد مبلغ الطلب'
@@ -171,7 +171,7 @@ export class AdminOrderController {
     };
   }
 
-  @Post(':id/notes')
+  @Post(':id([0-9a-fA-F]{24})/notes')
   @ApiOperation({ 
     summary: 'إضافة ملاحظات إدارية',
     description: 'إضافة ملاحظات إدارية للطلب'

@@ -32,11 +32,6 @@ const UserFormPage = lazy(() =>
     default: m.UserFormPage,
   }))
 );
-const CreateAdminPage = lazy(() =>
-  import('@/features/users/pages/CreateAdminPage').then((m) => ({
-    default: m.CreateAdminPage,
-  }))
-);
 const UserAnalyticsPage = lazy(() =>
   import('@/features/users/pages/UserAnalyticsPage').then((m) => ({
     default: m.UserAnalyticsPage,
@@ -361,10 +356,6 @@ export const routes: RouteObject[] = [
       {
         path: 'users/:id',
         element: <UserFormPage />,
-      },
-      {
-        path: 'users/create-admin',
-        element: <CreateAdminPage />,
       },
 
       // ===========================================

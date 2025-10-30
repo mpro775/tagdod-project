@@ -18,6 +18,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { Close, Email } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { Cart } from '../types/cart.types';
 import { useSendCartReminder } from '../hooks/useCart';
 import { formatCurrency } from '../api/cartApi';
@@ -31,18 +32,37 @@ interface SendReminderDialogProps {
 
 type ReminderType = 'first' | 'second' | 'final';
 
-const reminderTypes = [
-  { value: 'first', label: 'التذكير الأول', description: 'يتم إرساله بعد ساعة من عدم النشاط' },
-  { value: 'second', label: 'التذكير الثاني', description: 'يتم إرساله بعد 24 ساعة مع كوبون خصم' },
-  { value: 'final', label: 'التذكير الأخير', description: 'يتم إرساله بعد 72 ساعة مع خصم أكبر' },
-];
-
 export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
   cart,
   open,
   onClose,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
+
+  const reminderTypes = [
+    {
+      value: 'first',
+      label: t('cart.dialogs.sendReminder.types.first', { defaultValue: 'التذكير الأول' }),
+      description: t('cart.dialogs.sendReminder.types.firstDesc', {
+        defaultValue: 'التذكير الأول هو التذكير الذي يرسل للعميل في البداية',
+      }),
+    },
+    {
+      value: 'second',
+      label: t('cart.dialogs.sendReminder.types.second', { defaultValue: 'التذكير الثاني' }),
+      description: t('cart.dialogs.sendReminder.types.secondDesc', {
+        defaultValue: 'التذكير الثاني هو التذكير الذي يرسل للعميل بعد التذكير الأول',
+      }),
+    },
+    {
+      value: 'final',
+      label: t('cart.dialogs.sendReminder.types.final', { defaultValue: 'التذكير الأخير' }),
+      description: t('cart.dialogs.sendReminder.types.finalDesc', {
+        defaultValue: 'التذكير الأخير هو التذكير الذي يرسل للعميل بعد التذكير الثاني',
+      }),
+    },
+  ];
   const [reminderType, setReminderType] = useState<ReminderType>('first');
   const [customMessage, setCustomMessage] = useState('');
   const [errors, setErrors] = useState<{ reminderType?: string; customMessage?: string }>({});
@@ -53,11 +73,15 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
     const newErrors: { reminderType?: string; customMessage?: string } = {};
 
     if (!reminderType) {
-      newErrors.reminderType = 'نوع التذكير مطلوب';
+      newErrors.reminderType = t('cart.dialogs.sendReminder.types.required', {
+        defaultValue: 'نوع التذكير مطلوب',
+      });
     }
 
     if (customMessage.length > 500) {
-      newErrors.customMessage = 'الرسالة طويلة جداً (الحد الأقصى 500 حرف)';
+      newErrors.customMessage = t('cart.dialogs.sendReminder.types.messageTooLong', {
+        defaultValue: 'الرسالة طويلة جداً (الحد الأقصى 500 حرف)',
+      });
     }
 
     setErrors(newErrors);
@@ -136,7 +160,7 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="h6">
             <Email sx={{ mr: 1, verticalAlign: 'middle' }} />
-            إرسال تذكير للعميل
+            {t('cart.dialogs.sendReminder.title', { defaultValue: 'إرسال تذكير للعميل' })}
           </Typography>
           <IconButton onClick={handleClose} size="small">
             <Close />
@@ -148,7 +172,7 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         {/* Cart Information */}
         <Box mb={3}>
           <Typography variant="h6" gutterBottom>
-            معلومات السلة
+            {t('cart.dialogs.sendReminder.cartInfo', { defaultValue: 'معلومات السلة' })}
           </Typography>
           <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
             <Chip
@@ -189,14 +213,18 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         {/* Reminder Type Selection */}
         <Box mb={3}>
           <Typography variant="h6" gutterBottom>
-            نوع التذكير
+            {t('cart.dialogs.sendReminder.type', { defaultValue: 'نوع التذكير' })}
           </Typography>
           <FormControl fullWidth error={!!errors.reminderType}>
-            <InputLabel>اختر نوع التذكير</InputLabel>
+            <InputLabel>
+              {t('cart.dialogs.sendReminder.selectType', { defaultValue: 'اختر نوع التذكير' })}
+            </InputLabel>
             <Select
               value={reminderType}
               onChange={(e) => setReminderType(e.target.value as ReminderType)}
-              label="اختر نوع التذكير"
+              label={t('cart.dialogs.sendReminder.selectType', {
+                defaultValue: 'اختر نوع التذكير',
+              })}
             >
               {reminderTypes.map((type) => (
                 <MenuItem key={type.value} value={type.value}>
@@ -226,7 +254,9 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         {/* Custom Message */}
         <Box mb={3}>
           <Typography variant="h6" gutterBottom>
-            رسالة مخصصة (اختيارية)
+            {t('cart.dialogs.sendReminder.customMessage', {
+              defaultValue: 'رسالة مخصصة (اختيارية)',
+            })}
           </Typography>
           <TextField
             fullWidth
@@ -236,7 +266,9 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
             onChange={(e) => setCustomMessage(e.target.value)}
             error={!!errors.customMessage}
             helperText={errors.customMessage || `${customMessage.length}/500 حرف`}
-            placeholder="أضف رسالة مخصصة للتذكير..."
+            placeholder={t('cart.dialogs.sendReminder.customMessagePlaceholder', {
+              defaultValue: 'أضف رسالة مخصصة للتذكير...',
+            })}
             inputProps={{ maxLength: 500 }}
           />
         </Box>
@@ -245,7 +277,7 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         {reminderType && (
           <Box mb={3}>
             <Typography variant="h6" gutterBottom>
-              معاينة التذكير
+              {t('cart.dialogs.sendReminder.preview', { defaultValue: 'معاينة التذكير' })}
             </Typography>
             <Box
               sx={{
@@ -257,9 +289,16 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
               }}
             >
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                الموضوع: تذكير - لديك منتجات في سلتك
+                {t('cart.dialogs.sendReminder.subject', {
+                  defaultValue: 'الموضوع: تذكير - لديك منتجات في سلتك',
+                })}
               </Typography>
-              <Typography variant="body2">مرحباً {cart.user?.name || 'عزيزي العميل'}،</Typography>
+              <Typography variant="body2">
+                {t('cart.dialogs.sendReminder.greeting', { defaultValue: 'مرحباً {name},' })}{' '}
+                {cart.user?.name ||
+                  t('cart.dialogs.sendReminder.guest', { defaultValue: 'عزيزي العميل' })}
+                ،
+              </Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 لاحظنا أن لديك {cart.items?.length || 0} منتج في سلتك بقيمة{' '}
                 {formatCurrency(cart.pricingSummary?.total || 0, cart.currency)}.
@@ -270,7 +309,9 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
                 </Typography>
               )}
               <Typography variant="body2" sx={{ mt: 1 }}>
-                لا تفوت الفرصة! أكمل طلبك الآن.
+                {t('cart.dialogs.sendReminder.callToAction', {
+                  defaultValue: 'لا تفوت الفرصة! أكمل طلبك الآن.',
+                })}
               </Typography>
             </Box>
           </Box>
@@ -286,7 +327,7 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
 
       <DialogActions>
         <Button onClick={handleClose} disabled={sendReminderMutation.isPending}>
-          إلغاء
+          {t('cart.dialogs.sendReminder.cancel', { defaultValue: 'إلغاء' })}
         </Button>
         <Button
           variant="contained"
@@ -294,7 +335,9 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
           disabled={sendReminderMutation.isPending}
           startIcon={sendReminderMutation.isPending ? <CircularProgress size={20} /> : <Email />}
         >
-          {sendReminderMutation.isPending ? 'جاري الإرسال...' : 'إرسال التذكير'}
+          {sendReminderMutation.isPending
+            ? t('cart.dialogs.sendReminder.sending', { defaultValue: 'جاري الإرسال...' })
+            : t('cart.dialogs.sendReminder.send', { defaultValue: 'إرسال التذكير' })}
         </Button>
       </DialogActions>
     </Dialog>

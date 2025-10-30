@@ -75,10 +75,20 @@ export class Product {
   variantsCount!: number; // عدد الـ variants
 
   @Prop({ default: 0 })
-  reviewsCount!: number; // عدد التقييمات
+  reviewsCount!: number; // عدد التقييمات الحقيقية
 
   @Prop({ default: 0 })
-  averageRating!: number; // متوسط التقييم
+  averageRating!: number; // متوسط التقييم الحقيقي
+
+  // التقييم اليدوي (للأدمن)
+  @Prop({ default: false })
+  useManualRating!: boolean; // استخدام التقييم اليدوي بدلاً من الحقيقي
+
+  @Prop({ default: 0, min: 0, max: 5 })
+  manualRating!: number; // التقييم اليدوي (0-5)
+
+  @Prop({ default: 0 })
+  manualReviewsCount!: number; // عدد التقييمات اليدوي (للعرض فقط)
 
   // SEO
   @Prop()

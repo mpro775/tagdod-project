@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import {
   Box,
@@ -41,10 +42,10 @@ import type { CreateCategoryDto } from '../types/category.types';
 import { MediaCategory } from '@/features/media/types/media.types';
 
 // Validation Schema
-const categorySchema = z.object({
+const createCategorySchema = (t: (key: string) => string) => z.object({
   parentId: z.string().optional().nullable(),
-  name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
-  nameEn: z.string().min(2, 'الاسم بالإنجليزية يجب أن يكون حرفين على الأقل'),
+  name: z.string().min(2, t('validation.nameRequired')),
+  nameEn: z.string().min(2, t('validation.nameEnRequired')),
   description: z.string().optional(),
   descriptionEn: z.string().optional(),
   imageId: z.string().optional(),
@@ -56,12 +57,14 @@ const categorySchema = z.object({
   isFeatured: z.boolean().optional(),
 });
 
-type CategoryFormData = z.infer<typeof categorySchema>;
-
 export const CategoryFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('categories');
   const isEditMode = id !== 'new' && !!id;
+
+  const categorySchema = createCategorySchema(t);
+  type CategoryFormData = z.infer<typeof categorySchema>;
 
   const [selectedImage, setSelectedImage] = React.useState<any>(null);
   const [activeStep, setActiveStep] = React.useState(0);
@@ -101,7 +104,7 @@ export const CategoryFormPage: React.FC = () => {
         nameEn: category.nameEn,
         description: category.description,
         descriptionEn: category.descriptionEn,
-        imageId: category.imageId,
+        imageId: typeof category.imageId === 'string' ? category.imageId : category.imageId?._id,
         metaTitle: category.metaTitle,
         metaDescription: category.metaDescription,
         metaKeywords: category.metaKeywords || [],
@@ -112,20 +115,38 @@ export const CategoryFormPage: React.FC = () => {
       
       // Set image if exists
       if (category.imageId) {
-        setSelectedImage({ id: category.imageId, name: 'صورة الفئة' });
+        if (typeof category.imageId === 'string') {
+          setSelectedImage({ 
+            _id: category.imageId, 
+            url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/uploads/${category.imageId}`,
+            filename: 'صورة الفئة' 
+          });
+        } else if (typeof category.imageId === 'object' && category.imageId !== null) {
+          setSelectedImage({
+            _id: category.imageId._id,
+            url: category.imageId.url,
+            filename: category.imageId.filename || 'صورة الفئة',
+            mimeType: category.imageId.mimeType,
+          });
+        }
       }
     }
   }, [category, isEditMode, methods]);
 
   // Submit
   const onSubmit = (data: CategoryFormData) => {
+    // eslint-disable-next-line no-console
+    console.log('📤 Category form data:', data);
+    // eslint-disable-next-line no-console
+    console.log('🖼️ Selected image:', selectedImage);
+    
     const categoryData: CreateCategoryDto = {
       parentId: data.parentId || null,
       name: data.name,
       nameEn: data.nameEn,
       description: data.description || undefined,
       descriptionEn: data.descriptionEn || undefined,
-      imageId: selectedImage?.id || data.imageId || undefined,
+      imageId: selectedImage?._id || selectedImage?.id || data.imageId || undefined,
       metaTitle: data.metaTitle || undefined,
       metaDescription: data.metaDescription || undefined,
       metaKeywords: data.metaKeywords || undefined,
@@ -133,6 +154,9 @@ export const CategoryFormPage: React.FC = () => {
       isActive: data.isActive,
       isFeatured: data.isFeatured,
     };
+    
+    // eslint-disable-next-line no-console
+    console.log('📦 Category data to send:', categoryData);
 
     if (isEditMode) {
       updateCategory(
@@ -153,10 +177,10 @@ export const CategoryFormPage: React.FC = () => {
   };
 
   const steps = [
-    'المعلومات الأساسية',
-    'الصور والوسائط',
-    'تحسين محركات البحث',
-    'الإعدادات',
+    t('form.basicInfo'),
+    t('form.imagesMedia'),
+    t('form.seo'),
+    t('form.settings'),
   ];
 
   const handleNext = () => {
@@ -184,11 +208,11 @@ export const CategoryFormPage: React.FC = () => {
           <ArrowBack />
         </IconButton>
         <Typography variant="h4" fontWeight="bold">
-          {isEditMode ? 'تعديل الفئة' : 'إضافة فئة جديدة'}
+          {isEditMode ? t('categories.editCategory') : t('categories.createCategory')}
         </Typography>
         {isEditMode && category && (
           <Chip
-            label={category.isActive ? 'نشط' : 'غير نشط'}
+            label={category.isActive ? t('status.active') : t('status.inactive')}
             color={category.isActive ? 'success' : 'default'}
             sx={{ ml: 2 }}
           />
@@ -212,7 +236,7 @@ export const CategoryFormPage: React.FC = () => {
         <form onSubmit={methods.handleSubmit(
           onSubmit,
           () => {
-            toast.error('يرجى ملء جميع الحقول المطلوبة بشكل صحيح');
+            toast.error(t('validation.fillRequiredFields'));
           }
         )}>
           <Paper sx={{ p: 3 }}>
@@ -220,32 +244,32 @@ export const CategoryFormPage: React.FC = () => {
             {activeStep === 0 && (
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-                  المعلومات الأساسية
+                  {t('form.basicInfo')}
                 </Typography>
                 
                 <Grid container spacing={3}>
                   <Grid size={{ xs: 12 }}>
-                    <FormInput name="name" label="اسم الفئة (عربي) *" />
+                    <FormInput name="name" label={t('form.categoryNameAr')} />
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
-                    <FormInput name="nameEn" label="Category Name (English) *" />
+                    <FormInput name="nameEn" label={t('form.categoryNameEn')} />
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
-                    <FormInput name="description" label="وصف الفئة (عربي)" multiline rows={3} />
+                    <FormInput name="description" label={t('form.descriptionAr')} multiline rows={3} />
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
-                    <FormInput name="descriptionEn" label="Category Description (English)" multiline rows={3} />
+                    <FormInput name="descriptionEn" label={t('form.descriptionEn')} multiline rows={3} />
                   </Grid>
 
                   <Grid size={{ xs: 12, md: 6 }}>
                     <FormSelect
                       name="parentId"
-                      label="الفئة الأب (اختياري)"
+                      label={t('form.parentCategory')}
                       options={[
-                        { value: '', label: 'لا يوجد (فئة رئيسية)' },
+                        { value: '', label: t('form.noParent') },
                         ...categories
                           .filter((c: any) => !isEditMode || c._id !== id)
                           .map((c: any) => ({
@@ -257,7 +281,7 @@ export const CategoryFormPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <FormInput name="order" label="الترتيب" type="number" placeholder="0" />
+                    <FormInput name="order" label={t('form.order')} type="number" placeholder={t('placeholders.order')} />
                   </Grid>
                 </Grid>
               </Box>
@@ -267,20 +291,26 @@ export const CategoryFormPage: React.FC = () => {
             {activeStep === 1 && (
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-                  الصور والوسائط
+                  {t('form.imagesMedia')}
                 </Typography>
-                
+
                 <Grid container spacing={3}>
                   <Grid size={{ xs: 12 }}>
                     <ImageField
-                      label="صورة الفئة"
+                      label={t('form.categoryImage')}
                       value={selectedImage}
                       onChange={(media: any) => {
+                        // eslint-disable-next-line no-console
+                        console.log('🖼️ ImageField onChange - media:', media);
                         setSelectedImage(media);
-                        methods.setValue('imageId', media?.id || '');
+                        // استخراج ID من Media object (قد يكون _id أو id)
+                        const mediaId = media?._id || media?.id || '';
+                        // eslint-disable-next-line no-console
+                        console.log('🆔 Extracted mediaId:', mediaId);
+                        methods.setValue('imageId', mediaId);
                       }}
                       category={MediaCategory.CATEGORY}
-                      helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
+                      helperText={t('form.imageHelper')}
                     />
                   </Grid>
                 </Grid>
@@ -291,18 +321,18 @@ export const CategoryFormPage: React.FC = () => {
             {activeStep === 2 && (
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-                  تحسين محركات البحث (SEO)
+                  {t('form.seo')}
                 </Typography>
-                
+
                 <Grid container spacing={3}>
                   <Grid size={{ xs: 12 }}>
-                    <FormInput name="metaTitle" label="عنوان الصفحة (Meta Title)" />
+                    <FormInput name="metaTitle" label={t('form.metaTitle')} />
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
                     <FormInput
                       name="metaDescription"
-                      label="وصف الصفحة (Meta Description)"
+                      label={t('form.metaDescription')}
                       multiline
                       rows={3}
                     />
@@ -311,7 +341,7 @@ export const CategoryFormPage: React.FC = () => {
                   <Grid size={{ xs: 12 }}>
                     <Alert severity="info" sx={{ mt: 2 }}>
                       <Typography variant="body2">
-                        هذه المعلومات تساعد في تحسين ظهور الفئة في محركات البحث
+                        {t('form.seoHelper')}
                       </Typography>
                     </Alert>
                   </Grid>
@@ -323,9 +353,9 @@ export const CategoryFormPage: React.FC = () => {
             {activeStep === 3 && (
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-                  الإعدادات
+                  {t('form.settings')}
                 </Typography>
-                
+
                 <Grid container spacing={3}>
                   <Grid size={{ xs: 12 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -336,7 +366,7 @@ export const CategoryFormPage: React.FC = () => {
                             defaultChecked={methods.getValues('isActive')}
                           />
                         }
-                        label="نشط"
+                        label={t('form.isActive')}
                       />
 
                       <FormControlLabel
@@ -346,7 +376,7 @@ export const CategoryFormPage: React.FC = () => {
                             defaultChecked={methods.getValues('isFeatured')}
                           />
                         }
-                        label="فئة مميزة"
+                        label={t('form.isFeatured')}
                       />
                     </Box>
                   </Grid>
@@ -354,7 +384,7 @@ export const CategoryFormPage: React.FC = () => {
                   <Grid size={{ xs: 12 }}>
                     <Alert severity="warning">
                       <Typography variant="body2">
-                        الفئات غير النشطة لن تظهر للعملاء في الموقع
+                        {t('form.inactiveWarning')}
                       </Typography>
                     </Alert>
                   </Grid>
@@ -367,7 +397,7 @@ export const CategoryFormPage: React.FC = () => {
               <Box>
                 {activeStep > 0 && (
                   <Button onClick={handleBack} startIcon={<ArrowBack />}>
-                    السابق
+                    {t('form.previous')}
                   </Button>
                 )}
               </Box>
@@ -378,12 +408,12 @@ export const CategoryFormPage: React.FC = () => {
                   startIcon={<Cancel />}
                   onClick={() => navigate('/categories')}
                 >
-                  إلغاء
+                  {t('form.cancel')}
                 </Button>
 
                 {activeStep < steps.length - 1 ? (
                   <Button variant="contained" onClick={handleNext}>
-                    التالي
+                    {t('form.next')}
                   </Button>
                 ) : (
                   <Button
@@ -392,7 +422,7 @@ export const CategoryFormPage: React.FC = () => {
                     startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
                   >
-                    {isEditMode ? 'تحديث' : 'إنشاء'}
+                    {isEditMode ? t('form.update') : t('form.create')}
                   </Button>
                 )}
               </Box>

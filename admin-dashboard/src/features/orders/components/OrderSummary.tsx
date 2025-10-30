@@ -20,33 +20,18 @@ import {
   LocationOn,
   Receipt,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { formatCurrency, formatDate } from '@/shared/utils/formatters';
 import { OrderStatusChip } from './OrderStatusChip';
-import type { Order, PaymentStatus, PaymentMethod } from '../types/order.types';
+import type { Order, PaymentStatus } from '../types/order.types';
 
 interface OrderSummaryProps {
   order: Order;
   showDetails?: boolean;
 }
 
-const paymentStatusLabels: Record<PaymentStatus, string> = {
-  pending: 'معلق',
-  authorized: 'مصرح',
-  paid: 'مدفوع',
-  failed: 'فشل',
-  refunded: 'مسترد',
-  partially_refunded: 'مسترد جزئياً',
-  cancelled: 'ملغي',
-};
-
-const paymentMethodLabels: Record<PaymentMethod, string> = {
-  COD: 'عند الاستلام',
-  ONLINE: 'أونلاين',
-  WALLET: 'محفظة',
-  BANK_TRANSFER: 'تحويل بنكي',
-};
-
 export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails = true }) => {
+  const { t } = useTranslation();
   const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
       case 'paid':
@@ -67,7 +52,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
       <CardContent>
         <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Receipt />
-          ملخص الطلب #{order.orderNumber}
+          {t('orders.summary.orderNumber', { number: order.orderNumber })}
         </Typography>
 
         <Grid container spacing={2}>
@@ -75,7 +60,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
           <Grid size={{ xs: 12, sm: 6 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">
-                حالة الطلب:
+                {t('orders.summary.status')}
               </Typography>
               <OrderStatusChip status={order.status} size="small" />
             </Box>
@@ -85,10 +70,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
           <Grid size={{ xs: 12, sm: 6 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Typography variant="subtitle2" color="text.secondary">
-                حالة الدفع:
+                {t('orders.summary.paymentStatus')}
               </Typography>
               <Chip
-                label={paymentStatusLabels[order.paymentStatus]}
+                label={t(`orders.payment.status.${order.paymentStatus}`)}
                 color={getPaymentStatusColor(order.paymentStatus) as any}
                 size="small"
               />
@@ -98,14 +83,14 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
           {/* Order Date */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <Typography variant="body2" color="text.secondary">
-              تاريخ الطلب: {formatDate(order.createdAt)}
+              {t('orders.summary.orderDate')} {formatDate(order.createdAt)}
             </Typography>
           </Grid>
 
           {/* Payment Method */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <Typography variant="body2" color="text.secondary">
-              طريقة الدفع: {paymentMethodLabels[order.paymentMethod]}
+              {t('orders.summary.paymentMethod')} {t(`orders.payment.method.${order.paymentMethod}` as const)}
             </Typography>
           </Grid>
         </Grid>
@@ -119,7 +104,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
             sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
           >
             <Person />
-            معلومات العميل
+            {t('orders.details.customer')}
           </Typography>
           <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
@@ -138,7 +123,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
             sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
           >
             <LocationOn />
-            عنوان التوصيل
+            {t('orders.details.shipping')}
           </Typography>
           <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
             <Typography variant="body2">{order.deliveryAddress.line1}</Typography>
@@ -149,9 +134,9 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
               {order.deliveryAddress.city}, {order.deliveryAddress.country}
             </Typography>
             {order.deliveryAddress.postalCode && (
-              <Typography variant="body2">
-                الرمز البريدي: {order.deliveryAddress.postalCode}
-              </Typography>
+                <Typography variant="body2">
+                  {order.deliveryAddress.postalCode}
+                </Typography>
             )}
           </Paper>
         </Box>
@@ -164,18 +149,18 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
               sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
             >
               <LocalShipping />
-              معلومات الشحن
+              {t('orders.summary.shippingInfo', { defaultValue: 'معلومات الشحن' })}
             </Typography>
             <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
               {order.shippingCompany && (
-                <Typography variant="body2">شركة الشحن: {order.shippingCompany}</Typography>
+                <Typography variant="body2">{t('orders.summary.shippingCompany', { defaultValue: 'شركة الشحن' })}: {order.shippingCompany}</Typography>
               )}
               {order.trackingNumber && (
-                <Typography variant="body2">رقم التتبع: {order.trackingNumber}</Typography>
+                <Typography variant="body2">{t('orders.summary.trackingNumber', { defaultValue: 'رقم التتبع' })}: {order.trackingNumber}</Typography>
               )}
               {order.estimatedDeliveryDate && (
                 <Typography variant="body2">
-                  التاريخ المتوقع: {formatDate(order.estimatedDeliveryDate)}
+                  {t('orders.summary.estimatedDeliveryDate', { defaultValue: 'التاريخ المتوقع' })}: {formatDate(order.estimatedDeliveryDate)}
                 </Typography>
               )}
             </Paper>
@@ -189,7 +174,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
             sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
           >
             <Inventory />
-            منتجات الطلب ({order.items.length})
+            {t('orders.details.items')} ({order.items.length})
           </Typography>
           <List dense>
             {order.items.map((item, index) => (
@@ -199,10 +184,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
                   secondary={
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        الكمية: {item.qty} × {formatCurrency(item.finalPrice, order.currency)}
+                        {item.qty} × {formatCurrency(item.finalPrice, order.currency)}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        المجموع: {formatCurrency(item.lineTotal, order.currency)}
+                        {t('orders.summary.total', { defaultValue: 'المجموع' })}: {formatCurrency(item.lineTotal, order.currency)}
                       </Typography>
                     </Box>
                   }
@@ -221,11 +206,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
             sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
           >
             <AttachMoney />
-            ملخص الأسعار
+            {t('orders.details.summary')}
           </Typography>
           <List dense>
             <ListItem sx={{ px: 0 }}>
-              <ListItemText primary="المجموع الفرعي" />
+              <ListItemText primary={t('orders.summary.subtotal')} />
               <Typography variant="body2">
                 {formatCurrency(order.subtotal, order.currency)}
               </Typography>
@@ -233,7 +218,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
 
             {order.itemsDiscount > 0 && (
               <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="خصم المنتجات" />
+                <ListItemText primary={t('orders.summary.discount')} />
                 <Typography variant="body2" color="success.main">
                   -{formatCurrency(order.itemsDiscount, order.currency)}
                 </Typography>
@@ -242,7 +227,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
 
             {order.couponDiscount > 0 && (
               <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="خصم الكوبون" />
+                <ListItemText primary={t('orders.summary.discount')} />
                 <Typography variant="body2" color="success.main">
                   -{formatCurrency(order.couponDiscount, order.currency)}
                 </Typography>
@@ -251,7 +236,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
 
             {order.shippingCost > 0 && (
               <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="تكلفة الشحن" />
+                <ListItemText primary={t('orders.summary.shipping')} />
                 <Typography variant="body2">
                   {formatCurrency(order.shippingCost, order.currency)}
                 </Typography>
@@ -260,7 +245,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
 
             {order.tax > 0 && (
               <ListItem sx={{ px: 0 }}>
-                <ListItemText primary="الضريبة" />
+                <ListItemText primary={t('orders.summary.tax')} />
                 <Typography variant="body2">{formatCurrency(order.tax, order.currency)}</Typography>
               </ListItem>
             )}
@@ -271,7 +256,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
               <ListItemText
                 primary={
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    المجموع الكلي
+                    {t('orders.summary.total')}
                   </Typography>
                 }
               />
@@ -291,19 +276,19 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
             {(order.customerNotes || order.adminNotes) && (
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                  الملاحظات
+                  {t('orders.summary.notes', { defaultValue: 'الملاحظات' })}
                 </Typography>
                 {order.customerNotes && (
                   <Paper sx={{ p: 2, bgcolor: 'info.light', mb: 1 }}>
                     <Typography variant="body2">
-                      <strong>ملاحظات العميل:</strong> {order.customerNotes}
+                      <strong>{t('orders.summary.customerNotes', { defaultValue: 'ملاحظات العميل' })}:</strong> {order.customerNotes}
                     </Typography>
                   </Paper>
                 )}
                 {order.adminNotes && (
                   <Paper sx={{ p: 2, bgcolor: 'warning.light' }}>
                     <Typography variant="body2">
-                      <strong>ملاحظات الإدارة:</strong> {order.adminNotes}
+                      <strong>{t('orders.summary.adminNotes', { defaultValue: 'ملاحظات الإدارة' })}:</strong> {order.adminNotes}
                     </Typography>
                   </Paper>
                 )}
@@ -314,21 +299,21 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
             {order.returnInfo.isRefunded && (
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                  معلومات الاسترداد
+                  {t('orders.summary.refundInfo', { defaultValue: 'معلومات الاسترداد' })}
                 </Typography>
                 <Paper sx={{ p: 2, bgcolor: 'error.light' }}>
                   <Typography variant="body2">
-                    <strong>مبلغ الاسترداد:</strong>{' '}
+                    <strong>{t('orders.summary.refundAmount', { defaultValue: 'مبلغ الاسترداد' })}:</strong>{' '}
                     {formatCurrency(order.returnInfo.refundAmount, order.currency)}
                   </Typography>
                   {order.returnInfo.refundReason && (
                     <Typography variant="body2">
-                      <strong>سبب الاسترداد:</strong> {order.returnInfo.refundReason}
+                      <strong>{t('orders.summary.refundReason', { defaultValue: 'سبب الاسترداد' })}:</strong> {order.returnInfo.refundReason}
                     </Typography>
                   )}
                   {order.returnInfo.refundedAt && (
                     <Typography variant="body2">
-                      <strong>تاريخ الاسترداد:</strong> {formatDate(order.returnInfo.refundedAt)}
+                      <strong>{t('orders.summary.refundedAt', { defaultValue: 'تاريخ الاسترداد' })} :</strong> {formatDate(order.returnInfo.refundedAt)}
                     </Typography>
                   )}
                 </Paper>

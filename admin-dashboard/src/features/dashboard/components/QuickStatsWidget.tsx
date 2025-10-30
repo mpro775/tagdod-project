@@ -1,6 +1,7 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Chip, LinearProgress } from '@mui/material';
+import { Card, CardContent, Typography, Box, Chip, Skeleton } from '@mui/material';
 import { TrendingUp, Speed, CheckCircle, Error, Warning } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 
 interface QuickStatsWidgetProps {
   title: string;
@@ -18,6 +19,10 @@ export const QuickStatsWidget: React.FC<QuickStatsWidgetProps> = ({
   stats,
   isLoading = false,
 }) => {
+  const { t } = useTranslation(['dashboard']);
+  // Always use English numbers, regardless of language
+  const numberFormatter = React.useMemo(() => new Intl.NumberFormat('en-US'), []);
+
   if (isLoading) {
     return (
       <Card>
@@ -25,7 +30,17 @@ export const QuickStatsWidget: React.FC<QuickStatsWidgetProps> = ({
           <Typography variant="h6" gutterBottom>
             {title}
           </Typography>
-          <LinearProgress />
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[1, 2, 3, 4].map((item) => (
+              <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Skeleton variant="circular" width={32} height={32} />
+                <Box sx={{ flex: 1 }}>
+                  <Skeleton variant="text" width="60%" height={18} />
+                  <Skeleton variant="text" width="40%" height={14} />
+                </Box>
+              </Box>
+            ))}
+          </Box>
         </CardContent>
       </Card>
     );
@@ -55,9 +70,11 @@ export const QuickStatsWidget: React.FC<QuickStatsWidgetProps> = ({
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <TrendingUp color="primary" />
-                <Typography variant="body2">المستخدمون النشطون</Typography>
+            <Typography variant="body2">
+              {t('quickStats.labels.activeUsers', 'المستخدمون النشطون')}
+            </Typography>
               </Box>
-              <Chip label={stats.activeUsers.toLocaleString('ar-SA')} color="primary" size="small" />
+          <Chip label={numberFormatter.format(stats.activeUsers)} color="primary" size="small" />
             </Box>
           )}
 
@@ -65,7 +82,9 @@ export const QuickStatsWidget: React.FC<QuickStatsWidgetProps> = ({
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 {getHealthIcon(stats.systemHealth)}
-                <Typography variant="body2">صحة النظام</Typography>
+            <Typography variant="body2">
+              {t('quickStats.labels.systemHealth', 'صحة النظام')}
+            </Typography>
               </Box>
               <Chip 
                 label={`${stats.systemHealth}%`} 
@@ -79,7 +98,9 @@ export const QuickStatsWidget: React.FC<QuickStatsWidgetProps> = ({
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Error color="error" />
-                <Typography variant="body2">معدل الأخطاء</Typography>
+            <Typography variant="body2">
+              {t('quickStats.labels.errorRate', 'معدل الأخطاء')}
+            </Typography>
               </Box>
               <Chip 
                 label={`${stats.errorRate.toFixed(2)}%`} 
@@ -93,10 +114,12 @@ export const QuickStatsWidget: React.FC<QuickStatsWidgetProps> = ({
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Speed color="info" />
-                <Typography variant="body2">وقت الاستجابة</Typography>
+            <Typography variant="body2">
+              {t('quickStats.labels.responseTime', 'وقت الاستجابة')}
+            </Typography>
               </Box>
               <Chip 
-                label={`${stats.responseTime}ms`} 
+            label={t('quickStats.values.responseTime', '{{value}} مللي ثانية', { value: stats.responseTime })}
                 color={stats.responseTime > 1000 ? 'error' : stats.responseTime > 500 ? 'warning' : 'success'} 
                 size="small" 
               />

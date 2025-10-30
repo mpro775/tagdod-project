@@ -38,7 +38,12 @@ import {
   Visibility,
   VisibilityOff,
 } from '@mui/icons-material';
-import { useCouponAnalytics, useCouponStatistics, useExportCouponsData } from '../../marketing/hooks/useMarketing';
+import { useTranslation } from 'react-i18next';
+import {
+  useCouponAnalytics,
+  useCouponStatistics,
+  useExportCouponsData,
+} from '../../marketing/hooks/useMarketing';
 import { formatCurrency } from '../../cart/api/cartApi';
 import { toast } from 'react-hot-toast';
 
@@ -100,6 +105,7 @@ const StatCard: React.FC<StatCardProps> = ({
 );
 
 export const CouponAnalyticsPage: React.FC = () => {
+  const { t } = useTranslation('coupons');
   const [analyticsPeriod, setAnalyticsPeriod] = useState(30);
   const [showDetailedView, setShowDetailedView] = useState(false);
 
@@ -117,23 +123,23 @@ export const CouponAnalyticsPage: React.FC = () => {
   const exportMutation = useExportCouponsData();
 
   const periodOptions = [
-    { value: 7, label: 'آخر 7 أيام' },
-    { value: 30, label: 'آخر 30 يوم' },
-    { value: 90, label: 'آخر 3 أشهر' },
-    { value: 365, label: 'آخر سنة' },
+    { value: 7, label: t('analytics.last7Days', { defaultValue: 'آخر 7 أيام' }) },
+    { value: 30, label: t('analytics.last30Days', { defaultValue: 'آخر 30 يوم' }) },
+    { value: 90, label: t('analytics.last3Months', { defaultValue: 'آخر 3 أشهر' }) },
+    { value: 365, label: t('analytics.lastYear', { defaultValue: 'آخر 365 يوم' }) },
   ];
 
   const handleRefresh = () => {
     refetchAnalytics();
     refetchStats();
-    toast.success('تم تحديث البيانات');
+    toast.success(t('messages.dataRefreshed', { defaultValue: 'تم تحديث البيانات بنجاح' }));
   };
 
   const handleExportData = async () => {
     try {
-      await exportMutation.mutateAsync({ 
-        format: 'csv', 
-        period: analyticsPeriod 
+      await exportMutation.mutateAsync({
+        format: 'csv',
+        period: analyticsPeriod,
       });
     } catch {
       // Error handled by mutation onError
@@ -147,7 +153,7 @@ export const CouponAnalyticsPage: React.FC = () => {
           <Box textAlign="center">
             <CircularProgress size={60} />
             <Typography variant="h6" sx={{ mt: 2 }}>
-              جاري تحميل البيانات...
+              {t('analytics.loading', { defaultValue: 'جاري التحميل...' })}
             </Typography>
           </Box>
         </Box>
@@ -159,15 +165,15 @@ export const CouponAnalyticsPage: React.FC = () => {
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
-          تحليلات الكوبونات
+          {t('analytics.title', { defaultValue: 'تحليلات الكوبونات' })}
         </Typography>
 
         <Box display="flex" gap={2} alignItems="center">
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>الفترة الزمنية</InputLabel>
+            <InputLabel>{t('analytics.timePeriod', { defaultValue: 'فترة الوقت' })}</InputLabel>
             <Select
               value={analyticsPeriod}
-              label="الفترة الزمنية"
+              label={t('analytics.timePeriod', { defaultValue: 'فترة الوقت' } )}
               onChange={(e) => setAnalyticsPeriod(Number(e.target.value))}
             >
               {periodOptions.map((option) => (
@@ -178,15 +184,15 @@ export const CouponAnalyticsPage: React.FC = () => {
             </Select>
           </FormControl>
 
-          <Tooltip title="تحديث البيانات">
+          <Tooltip title={t('analytics.refreshData', { defaultValue: 'تحديث البيانات' })}>
             <IconButton onClick={handleRefresh} color="primary">
               <Refresh />
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="تصدير البيانات">
-            <IconButton 
-              onClick={handleExportData} 
+          <Tooltip title={t('analytics.exportData', { defaultValue: 'تصدير البيانات' })}>
+            <IconButton
+              onClick={handleExportData}
               color="secondary"
               disabled={exportMutation.isPending}
             >
@@ -194,7 +200,13 @@ export const CouponAnalyticsPage: React.FC = () => {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title={showDetailedView ? 'عرض مبسط' : 'عرض مفصل'}>
+          <Tooltip
+            title={
+              showDetailedView
+                ? t('analytics.simpleView', { defaultValue: 'عرض مبسط' })
+                : t('analytics.detailedView', { defaultValue: 'عرض مفصل' })
+            }
+          >
             <IconButton onClick={() => setShowDetailedView(!showDetailedView)} color="info">
               {showDetailedView ? <VisibilityOff /> : <Visibility />}
             </IconButton>
@@ -206,7 +218,7 @@ export const CouponAnalyticsPage: React.FC = () => {
       <Grid container spacing={3} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title="إجمالي الكوبونات"
+            title={t('analytics.totalCoupons', { defaultValue: 'إجمالي الكوبونات' })}
             value={analytics?.totalCoupons || 0}
             icon={ConfirmationNumber}
             color="primary"
@@ -215,7 +227,7 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title="الكوبونات النشطة"
+            title={t('analytics.activeCoupons', { defaultValue: 'الكوبونات النشطة' })}
             value={analytics?.activeCoupons || 0}
             icon={TrendingUp}
             color="success"
@@ -224,7 +236,7 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title="إجمالي الاستخدامات"
+            title={t('analytics.totalRedemptions', { defaultValue: 'إجمالي الاستخدامات' })}
             value={statistics?.totalRedemptions || 0}
             icon={People}
             color="info"
@@ -233,7 +245,7 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title="إجمالي التوفير"
+            title={t('analytics.totalSavings', { defaultValue: 'إجمالي التوفير' })}
             value={formatCurrency(statistics?.totalSavings || 0)}
             icon={AttachMoney}
             color="warning"
@@ -246,7 +258,9 @@ export const CouponAnalyticsPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardHeader>
-              <Typography variant="h6">أداء الكوبونات حسب النوع</Typography>
+              <Typography variant="h6">
+                {t('analytics.couponTypePerformance', { defaultValue: 'أداء الكوبونات حسب النوع' })}
+              </Typography>
             </CardHeader>
             <CardContent>
               {statistics?.couponTypePerformance?.length > 0 ? (
@@ -263,7 +277,7 @@ export const CouponAnalyticsPage: React.FC = () => {
                           {item.type}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {item.usageCount} استخدام
+                          {item.usageCount} {t('analytics.usageCount', { defaultValue: 'استخدام' })}
                         </Typography>
                       </Box>
                       <Box textAlign="right">
@@ -271,14 +285,17 @@ export const CouponAnalyticsPage: React.FC = () => {
                           {formatCurrency(item.totalDiscount)}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {item.conversionRate}% معدل التحويل
+                          {item.conversionRate}%{' '}
+                          {t('analytics.conversionRate', { defaultValue: 'معدل التحويل' })}
                         </Typography>
                       </Box>
                     </Box>
                   ))}
                 </Stack>
               ) : (
-                <Alert severity="info">لا توجد بيانات متاحة</Alert>
+                <Alert severity="info">
+                  {t('analytics.noDataAvailable', { defaultValue: 'لا توجد بيانات متاحة' })}{' '}
+                </Alert>
               )}
             </CardContent>
           </Card>
@@ -287,7 +304,9 @@ export const CouponAnalyticsPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardHeader>
-              <Typography variant="h6">الكوبونات الأكثر استخداماً</Typography>
+              <Typography variant="h6">
+                {t('analytics.topCoupons', { defaultValue: 'الكوبونات الأكثر استخداماً' })}
+              </Typography>
             </CardHeader>
             <CardContent>
               {statistics?.topCoupons?.length > 0 ? (
@@ -312,7 +331,8 @@ export const CouponAnalyticsPage: React.FC = () => {
                       </Box>
                       <Box textAlign="right">
                         <Typography variant="body1" fontWeight="medium">
-                          {coupon.usageCount} استخدام
+                          {coupon.usageCount}{' '}
+                          {t('analytics.usageCount', { defaultValue: 'استخدام' })}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {formatCurrency(coupon.totalDiscount)}
@@ -322,7 +342,9 @@ export const CouponAnalyticsPage: React.FC = () => {
                   ))}
                 </Stack>
               ) : (
-                <Alert severity="info">لا توجد بيانات متاحة</Alert>
+                <Alert severity="info">
+                  {t('analytics.noDataAvailable', { defaultValue: 'لا توجد بيانات متاحة' })}
+                </Alert>
               )}
             </CardContent>
           </Card>
@@ -332,7 +354,9 @@ export const CouponAnalyticsPage: React.FC = () => {
           <Grid size={{ xs: 12 }}>
             <Card>
               <CardHeader>
-                <Typography variant="h6">تحليل مفصل للأداء</Typography>
+                <Typography variant="h6">
+                  {t('analytics.detailedPerformance', { defaultValue: 'تحليل مفصل للأداء' })}
+                </Typography>
               </CardHeader>
               <CardContent>
                 <TableContainer component={Paper}>
@@ -346,23 +370,44 @@ export const CouponAnalyticsPage: React.FC = () => {
                       }}
                     >
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المؤشر</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>القيمة</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>التغيير</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>النسبة</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                          {t('analytics.index', { defaultValue: 'المؤشر' })}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                          {t('analytics.value', { defaultValue: 'القيمة' })}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                          {t('analytics.change', { defaultValue: 'التغيير' })}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                          {t('analytics.percentage', { defaultValue: 'النسبة' })}
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       <TableRow>
-                        <TableCell>معدل التحويل</TableCell>
+                        <TableCell>
+                          {t('analytics.conversionRate', { defaultValue: 'معدل التحويل' })}
+                        </TableCell>
                         <TableCell align="right">{statistics?.conversionRate || 0}%</TableCell>
                         <TableCell align="right">
-                          <Box display="flex" alignItems="center" justifyContent="flex-end">
-                            <ArrowUpward color="success" fontSize="small" />
-                            <Typography variant="body2" color="success.main">
-                              +5.2%
-                            </Typography>
-                          </Box>
+                          {statistics?.conversionRateChange !== undefined ? (
+                            <Box display="flex" alignItems="center" justifyContent="flex-end">
+                              {statistics.conversionRateChange >= 0 ? (
+                                <ArrowUpward color="success" fontSize="small" />
+                              ) : (
+                                <ArrowDownward color="error" fontSize="small" />
+                              )}
+                              <Typography
+                                variant="body2"
+                                color={statistics.conversionRateChange >= 0 ? 'success.main' : 'error.main'}
+                              >
+                                {`${Math.abs(statistics.conversionRateChange)}%`}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">—</Typography>
+                          )}
                         </TableCell>
                         <TableCell align="right">
                           <LinearProgress
@@ -373,37 +418,63 @@ export const CouponAnalyticsPage: React.FC = () => {
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell>متوسط قيمة الطلب</TableCell>
+                        <TableCell>
+                          {t('analytics.averageOrderValue', { defaultValue: 'متوسط قيمة الطلب' })}
+                        </TableCell>
                         <TableCell align="right">
                           {formatCurrency(statistics?.averageOrderValue || 0)}
                         </TableCell>
                         <TableCell align="right">
-                          <Box display="flex" alignItems="center" justifyContent="flex-end">
-                            <ArrowUpward color="success" fontSize="small" />
-                            <Typography variant="body2" color="success.main">
-                              +12.3%
-                            </Typography>
-                          </Box>
+                          {statistics?.averageOrderValueChange !== undefined ? (
+                            <Box display="flex" alignItems="center" justifyContent="flex-end">
+                              {statistics.averageOrderValueChange >= 0 ? (
+                                <ArrowUpward color="success" fontSize="small" />
+                              ) : (
+                                <ArrowDownward color="error" fontSize="small" />
+                              )}
+                              <Typography
+                                variant="body2"
+                                color={statistics.averageOrderValueChange >= 0 ? 'success.main' : 'error.main'}
+                              >
+                                {`${Math.abs(statistics.averageOrderValueChange)}%`}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">—</Typography>
+                          )}
                         </TableCell>
                         <TableCell align="right">
-                          <LinearProgress variant="determinate" value={75} sx={{ width: 100 }} />
+                          <Typography variant="body2" color="text.secondary">—</Typography>
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell>إجمالي الإيرادات</TableCell>
+                        <TableCell>
+                          {t('analytics.totalRevenue', { defaultValue: 'إجمالي الإيرادات' })}
+                        </TableCell>
                         <TableCell align="right">
                           {formatCurrency(statistics?.totalRevenue || 0)}
                         </TableCell>
                         <TableCell align="right">
-                          <Box display="flex" alignItems="center" justifyContent="flex-end">
-                            <ArrowUpward color="success" fontSize="small" />
-                            <Typography variant="body2" color="success.main">
-                              +8.7%
-                            </Typography>
-                          </Box>
+                          {statistics?.totalRevenueChange !== undefined ? (
+                            <Box display="flex" alignItems="center" justifyContent="flex-end">
+                              {statistics.totalRevenueChange >= 0 ? (
+                                <ArrowUpward color="success" fontSize="small" />
+                              ) : (
+                                <ArrowDownward color="error" fontSize="small" />
+                              )}
+                              <Typography
+                                variant="body2"
+                                color={statistics.totalRevenueChange >= 0 ? 'success.main' : 'error.main'}
+                              >
+                                {`${Math.abs(statistics.totalRevenueChange)}%`}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">—</Typography>
+                          )}
                         </TableCell>
                         <TableCell align="right">
-                          <LinearProgress variant="determinate" value={85} sx={{ width: 100 }} />
+                          <Typography variant="body2" color="text.secondary">—</Typography>
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -417,7 +488,9 @@ export const CouponAnalyticsPage: React.FC = () => {
         <Grid size={{ xs: 12 }}>
           <Card>
             <CardHeader>
-              <Typography variant="h6">اتجاهات الاستخدام</Typography>
+              <Typography variant="h6">
+                {t('analytics.usageTrends', { defaultValue: 'اتجاهات الاستخدام' })}
+              </Typography>
             </CardHeader>
             <CardContent>
               <Box
@@ -430,10 +503,14 @@ export const CouponAnalyticsPage: React.FC = () => {
                 <Box>
                   <BarChart sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
                   <Typography variant="h6" color="text.secondary">
-                    مخطط اتجاهات الاستخدام قيد التطوير
+                    {t('analytics.usageTrendsChart', {
+                      defaultValue: 'مخطط اتجاهات الاستخدام قيد التطوير',
+                    })}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    سيتم عرض الرسوم البيانية لاتجاهات استخدام الكوبونات هنا
+                    {t('analytics.usageTrendsChartDescription', {
+                      defaultValue: 'سيتم عرض الرسوم البيانية لاتجاهات استخدام الكوبونات هنا',
+                    })}
                   </Typography>
                 </Box>
               </Box>

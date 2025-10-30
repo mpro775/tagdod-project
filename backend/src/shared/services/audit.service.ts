@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { AuditLog, AuditLogDocument, AuditAction, AuditResource } from '../../modules/audit/schemas/audit-log.schema';
 
 @Injectable()
 export class AuditService {
+  private readonly logger = new Logger(AuditService.name);
+
   constructor(
     @InjectModel(AuditLog.name) private auditLogModel: Model<AuditLogDocument>,
   ) {}
@@ -43,14 +45,9 @@ export class AuditService {
 
       await auditEntry.save();
 
-      console.log('🔐 Permission Change Audited:', {
-        userId: data.userId,
-        permission: data.permission,
-        action: data.action,
-        performedBy: data.grantedBy,
-      });
+      this.logger.log(`🔐 Permission Change Audited: ${data.action} permission "${data.permission}" for user ${data.userId} by ${data.grantedBy}`);
     } catch (error) {
-      console.error('❌ Failed to audit permission change:', error);
+      this.logger.error('❌ Failed to audit permission change:', error);
       // لا نرمي الخطأ لأن فشل التسجيل لا يجب أن يوقف العملية الأساسية
     }
   }
@@ -89,14 +86,9 @@ export class AuditService {
 
       await auditEntry.save();
 
-      console.log('👤 Role Change Audited:', {
-        userId: data.userId,
-        role: data.role,
-        action: data.action,
-        performedBy: data.changedBy,
-      });
+      this.logger.log(`👤 Role Change Audited: ${data.action} role "${data.role}" for user ${data.userId} by ${data.changedBy}`);
     } catch (error) {
-      console.error('❌ Failed to audit role change:', error);
+      this.logger.error('❌ Failed to audit role change:', error);
     }
   }
 
@@ -134,14 +126,9 @@ export class AuditService {
 
       await auditEntry.save();
 
-      console.log('🎯 Capability Decision Audited:', {
-        userId: data.userId,
-        capability: data.capability,
-        action: data.action,
-        performedBy: data.decidedBy,
-      });
+      this.logger.log(`🎯 Capability Decision Audited: ${data.action} capability "${data.capability}" for user ${data.userId} by ${data.decidedBy}`);
     } catch (error) {
-      console.error('❌ Failed to audit capability decision:', error);
+      this.logger.error('❌ Failed to audit capability decision:', error);
     }
   }
 
@@ -179,14 +166,9 @@ export class AuditService {
 
       await auditEntry.save();
 
-      console.log('👨‍💼 Admin Action Audited:', {
-        adminId: data.adminId,
-        action: data.action,
-        resource: data.resource,
-        resourceId: data.resourceId,
-      });
+      this.logger.log(`👨‍💼 Admin Action Audited: ${data.action} on ${data.resource} by admin ${data.adminId}`);
     } catch (error) {
-      console.error('❌ Failed to audit admin action:', error);
+      this.logger.error('❌ Failed to audit admin action:', error);
     }
   }
 
@@ -237,13 +219,9 @@ export class AuditService {
 
       await auditEntry.save();
 
-      console.log('🔐 Auth Event Audited:', {
-        userId: data.userId,
-        action: data.action,
-        ipAddress: data.ipAddress,
-      });
+      this.logger.log(`🔐 Auth Event Audited: ${data.action} for user ${data.userId} from IP ${data.ipAddress}`);
     } catch (error) {
-      console.error('❌ Failed to audit auth event:', error);
+      this.logger.error('❌ Failed to audit auth event:', error);
     }
   }
 
@@ -287,7 +265,7 @@ export class AuditService {
         .skip(filters.skip || 0)
         .exec();
     } catch (error) {
-      console.error('❌ Failed to search audit logs:', error);
+      this.logger.error('❌ Failed to search audit logs:', error);
       return [];
     }
   }
@@ -323,7 +301,7 @@ export class AuditService {
 
       return await this.auditLogModel.countDocuments(query).exec();
     } catch (error) {
-      console.error('❌ Failed to count audit logs:', error);
+      this.logger.error('❌ Failed to count audit logs:', error);
       return 0;
     }
   }
@@ -341,10 +319,10 @@ export class AuditService {
         isSensitive: false, // نحتفظ بالسجلات الحساسة لفترة أطول
       });
 
-      console.log(`🧹 Cleaned up ${result.deletedCount} old audit logs`);
+      this.logger.log(`🧹 Cleaned up ${result.deletedCount} old audit logs`);
       return result.deletedCount;
     } catch (error) {
-      console.error('❌ Failed to cleanup old logs:', error);
+      this.logger.error('❌ Failed to cleanup old logs:', error);
       return 0;
     }
   }

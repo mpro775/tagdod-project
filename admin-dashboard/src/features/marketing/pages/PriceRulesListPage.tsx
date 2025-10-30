@@ -25,11 +25,13 @@ import {
 } from '@mui/material';
 import { Add, Edit, Delete, Visibility, ToggleOn, ToggleOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { usePriceRules, useDeletePriceRule, useTogglePriceRule } from '../hooks/useMarketing';
 
 const PriceRulesListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('marketing');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<any>(null);
   const [filters, setFilters] = useState({
@@ -72,13 +74,13 @@ const PriceRulesListPage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">قواعد الأسعار</Typography>
+        <Typography variant="h4">{t('priceRules.title', { defaultValue: 'قاعدة الأسعار' })}</Typography>
         <Button
           variant="contained"
           startIcon={<Add />}
           onClick={() => navigate('/marketing/price-rules/new')}
         >
-          إنشاء قاعدة سعر جديدة
+          {t('priceRules.createNew', { defaultValue: 'إنشاء قاعدة الأسعار' })}
         </Button>
       </Box>
 
@@ -88,7 +90,7 @@ const PriceRulesListPage: React.FC = () => {
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <TextField
               fullWidth
-              label="البحث"
+              label={t('filters.search', { defaultValue: 'البحث' })}
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               size="small"
@@ -96,15 +98,15 @@ const PriceRulesListPage: React.FC = () => {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>الحالة</InputLabel>
+              <InputLabel>{t('filters.status', { defaultValue: 'الحالة' })}</InputLabel>
               <Select
                 value={filters.active}
                 onChange={(e) => setFilters({ ...filters, active: e.target.value })}
-                label="الحالة"
+                label={t('filters.status', { defaultValue: 'الحالة' })}
               >
-                <MenuItem value="">الكل</MenuItem>
-                <MenuItem value="true">نشط</MenuItem>
-                <MenuItem value="false">غير نشط</MenuItem>
+                <MenuItem value="">{t('filters.allStatuses', { defaultValue: 'جميع الحالات' })}</MenuItem>
+                <MenuItem value="true">{t('status.active', { defaultValue: 'نشط' }    )}</MenuItem>
+                <MenuItem value="false">{t('status.inactive', { defaultValue: 'غير نشط' })}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -123,13 +125,13 @@ const PriceRulesListPage: React.FC = () => {
             }}
           >
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>العنوان</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الأولوية</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحالة</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>تاريخ البداية</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>تاريخ النهاية</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإحصائيات</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('table.columns.title', { defaultValue: 'العنوان' })}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('table.columns.priority', { defaultValue: 'الأولوية' }   )}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('table.columns.status', { defaultValue: 'الحالة' })}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('table.columns.startDate', { defaultValue: 'تاريخ البداية' })}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('table.columns.endDate', { defaultValue: 'تاريخ النهاية' })}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('table.columns.stats', { defaultValue: 'الإحصائيات' })}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('table.columns.actions', { defaultValue: 'الإجراءات' })}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -138,7 +140,7 @@ const PriceRulesListPage: React.FC = () => {
                 <TableCell>
                   <Box>
                     <Typography variant="subtitle2">
-                      {rule.metadata?.title || 'قاعدة سعر بدون عنوان'}
+                      {rule.metadata?.title || t('priceRules.noTitle', { defaultValue: 'لا يوجد عنوان' })}
                     </Typography>
                     {rule.metadata?.description && (
                       <Typography variant="body2" color="text.secondary">
@@ -150,7 +152,7 @@ const PriceRulesListPage: React.FC = () => {
                 <TableCell>{rule.priority}</TableCell>
                 <TableCell>
                   <Chip
-                    label={rule.active ? 'نشط' : 'غير نشط'}
+                    label={rule.active ? t('status.active', { defaultValue: 'نشط' }) : t('status.inactive', { defaultValue: 'غير نشط' })}
                     color={rule.active ? 'success' : 'default'}
                     size="small"
                   />
@@ -159,9 +161,9 @@ const PriceRulesListPage: React.FC = () => {
                 <TableCell>{format(new Date(rule.endAt), 'dd/MM/yyyy')}</TableCell>
                 <TableCell>
                   <Box>
-                    <Typography variant="body2">المشاهدات: {rule.stats?.views || 0}</Typography>
+                    <Typography variant="body2">{t('fields.views', { defaultValue: 'المشاهدات' })}: {rule.stats?.views || 0}</Typography>
                     <Typography variant="body2">
-                      التطبيقات: {rule.stats?.appliedCount || 0}
+                      {t('fields.applications', { defaultValue: 'التطبيقات' })}: {rule.stats?.appliedCount || 0}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -171,20 +173,20 @@ const PriceRulesListPage: React.FC = () => {
                       size="small"
                       onClick={() => navigate(`/marketing/price-rules/${rule._id}`)}
                     >
-                      <Visibility />
+                      <Visibility titleAccess={t('tooltips.view', { defaultValue: 'عرض' })} />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => navigate(`/marketing/price-rules/${rule._id}`)}
                     >
-                      <Edit />
+                      <Edit titleAccess={t('tooltips.edit', { defaultValue: 'تعديل' })} />
                     </IconButton>
                     <IconButton
                       size="small"
                       onClick={() => handleToggle(rule)}
                       color={rule.active ? 'warning' : 'success'}
                     >
-                      {rule.active ? <ToggleOff /> : <ToggleOn />}
+                      {rule.active ? <ToggleOff titleAccess={t('tooltips.deactivate', { defaultValue: 'تعطيل' })} /> : <ToggleOn titleAccess={t('tooltips.activate', { defaultValue: 'تفعيل' })} />}
                     </IconButton>
                     <IconButton
                       size="small"
@@ -194,7 +196,7 @@ const PriceRulesListPage: React.FC = () => {
                       }}
                       color="error"
                     >
-                      <Delete />
+                      <Delete titleAccess={t('tooltips.delete', { defaultValue: 'حذف' })} />
                     </IconButton>
                   </Box>
                 </TableCell>
@@ -206,21 +208,21 @@ const PriceRulesListPage: React.FC = () => {
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>تأكيد الحذف</DialogTitle>
+        <DialogTitle>{t('messages.deleteConfirmTitle', { defaultValue: 'تأكيد الحذف' })}</DialogTitle>
         <DialogContent>
           <Typography>
-            هل أنت متأكد من حذف قاعدة السعر "{selectedRule?.metadata?.title}"؟
+            {t('messages.confirmDelete', { title: selectedRule?.metadata?.title, defaultValue: 'هل أنت متأكد من الحذف؟'      })}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>{t('dialogs.cancel')}</Button>
           <Button
             onClick={handleDelete}
             color="error"
             variant="contained"
             disabled={deletePriceRule.isPending}
           >
-            حذف
+            {t('dialogs.delete')}
           </Button>
         </DialogActions>
       </Dialog>

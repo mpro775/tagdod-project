@@ -1,0 +1,186 @@
+{
+  "systemSettings": {
+    "title": "System Settings",
+    "subtitle": "Manage all system settings from one place",
+    "loading": "Loading settings...",
+    "saving": "Saving...",
+    "saveSettings": "Save Settings",
+    "settingsSaved": "Settings saved successfully",
+    "settingsSaveFailed": "Failed to save settings",
+    "settingsLoadFailed": "Failed to load settings"
+  },
+  "tabs": {
+    "general": "General",
+    "email": "Email",
+    "payment": "Payment",
+    "shipping": "Shipping",
+    "security": "Security",
+    "notifications": "Notifications"
+  },
+  "sections": {
+    "general": {
+      "title": "General Settings",
+      "subtitle": "Basic site settings",
+      "siteName": "Site Name",
+      "siteDescription": "Site Description",
+      "defaultLanguage": "Default Language",
+      "defaultCurrency": "Default Currency",
+      "timezone": "Timezone",
+      "maintenanceMode": "Maintenance Mode",
+      "maintenanceModeDesc": "Enable maintenance mode for the site",
+      "maintenanceMessage": "Maintenance Message"
+    },
+    "email": {
+      "title": "Email Settings",
+      "subtitle": "SMTP and email settings",
+      "smtpHost": "SMTP Host",
+      "smtpPort": "SMTP Port",
+      "smtpUser": "SMTP User",
+      "smtpPassword": "SMTP Password",
+      "fromEmail": "From Email",
+      "fromName": "From Name",
+      "smtpSecure": "SMTP Secure (TLS)",
+      "smtpSecureDesc": "Use secure connection"
+    },
+    "payment": {
+      "title": "Payment Settings",
+      "subtitle": "Payment methods settings",
+      "codEnabled": "Cash on Delivery (COD)",
+      "codEnabledDesc": "Enable cash on delivery option",
+      "cardEnabled": "Card Payments",
+      "cardEnabledDesc": "Enable credit card payments",
+      "stripePublicKey": "Stripe Public Key",
+      "stripeSecretKey": "Stripe Secret Key",
+      "paymentFeePercentage": "Payment Fee (%)"
+    },
+    "shipping": {
+      "title": "Shipping Settings",
+      "subtitle": "Shipping and delivery settings",
+      "freeShippingEnabled": "Free Shipping",
+      "freeShippingEnabledDesc": "Enable free shipping",
+      "freeShippingThreshold": "Free Shipping Threshold (USD)",
+      "defaultShippingCost": "Default Shipping Cost (USD)",
+      "estimatedDeliveryDays": "Estimated Delivery Days"
+    },
+    "security": {
+      "title": "Security Settings",
+      "subtitle": "Security and protection settings",
+      "force2FA": "Two-Factor Authentication (2FA)",
+      "force2FADesc": "Force 2FA for all users",
+      "sessionTimeout": "Session Timeout (minutes)",
+      "maxLoginAttempts": "Maximum Login Attempts",
+      "lockoutDuration": "Lockout Duration After Failure (minutes)"
+    },
+    "notifications": {
+      "title": "Notification Settings",
+      "subtitle": "Manage notifications and alerts",
+      "emailNotificationsEnabled": "Email Notifications",
+      "emailNotificationsEnabledDesc": "Enable email notifications",
+      "smsNotificationsEnabled": "SMS Notifications",
+      "smsNotificationsEnabledDesc": "Enable SMS notifications",
+      "pushNotificationsEnabled": "Push Notifications",
+      "pushNotificationsEnabledDesc": "Enable push notifications",
+      "notifyNewOrders": "New Order Notifications",
+      "notifyNewOrdersDesc": "Notify when new order is received",
+      "notifyLowStock": "Low Stock Notifications",
+      "notifyLowStockDesc": "Notify when inventory is low"
+    }
+  },
+  "placeholders": {
+    "siteName": "TagDoD",
+    "siteDescription": "Solar energy services platform",
+    "defaultLanguage": "ar",
+    "defaultCurrency": "YER",
+    "timezone": "Asia/Aden",
+    "maintenanceMessage": "Site is under maintenance...",
+    "smtpHost": "smtp.gmail.com",
+    "smtpPort": "587",
+    "smtpUser": "user@example.com",
+    "smtpPassword": "••••••••",
+    "fromEmail": "noreply@tagdod.com",
+    "fromName": "TagDoD",
+    "stripePublicKey": "pk_...",
+    "stripeSecretKey": "sk_...",
+    "paymentFeePercentage": "2.5",
+    "freeShippingThreshold": "100000",
+    "defaultShippingCost": "5000",
+    "estimatedDeliveryDays": "3",
+    "sessionTimeout": "60",
+    "maxLoginAttempts": "5",
+    "lockoutDuration": "15"
+  },
+  "messages": {
+    "loading": "Loading settings...",
+    "saving": "Saving settings...",
+    "saved": "Settings saved successfully",
+    "saveFailed": "Failed to save settings",
+    "loadFailed": "Failed to load settings",
+    "maintenanceModeEnabled": "Maintenance mode is enabled",
+    "maintenanceModeDisabled": "Maintenance mode is disabled",
+    "smtpTestSuccess": "SMTP connection test successful",
+    "smtpTestFailed": "SMTP connection test failed",
+    "paymentMethodEnabled": "Payment method enabled",
+    "paymentMethodDisabled": "Payment method disabled",
+    "notificationEnabled": "Notifications enabled",
+    "notificationDisabled": "Notifications disabled"
+  },
+  "tooltips": {
+    "save": "Save all settings",
+    "reset": "Reset to default values",
+    "test": "Test configuration",
+    "preview": "Preview changes",
+    "export": "Export settings",
+    "import": "Import settings"
+  },
+  "buttons": {
+    "save": "Save Settings",
+    "reset": "Reset",
+    "test": "Test",
+    "preview": "Preview",
+    "export": "Export",
+    "import": "Import",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "status": {
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "active": "Active",
+    "inactive": "Inactive",
+    "configured": "Configured",
+    "notConfigured": "Not Configured",
+    "testing": "Testing...",
+    "success": "Success",
+    "error": "Error"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "invalidUrl": "Invalid URL",
+    "invalidNumber": "Must be a valid number",
+    "minValue": "Must be at least {{min}}",
+    "maxValue": "Must be at most {{max}}",
+    "positiveNumber": "Must be a positive number",
+    "invalidPort": "Invalid port number (1-65535)",
+    "invalidPercentage": "Must be between 0 and 100",
+    "invalidCurrency": "Invalid currency code",
+    "invalidTimezone": "Invalid timezone"
+  },
+  "categories": {
+    "site": "Site",
+    "communication": "Communication",
+    "commerce": "Commerce",
+    "delivery": "Delivery",
+    "protection": "Protection",
+    "alerts": "Alerts"
+  },
+  "units": {
+    "minutes": "minutes",
+    "hours": "hours",
+    "days": "days",
+    "percentage": "percentage",
+    "usd": "USD",
+    "yer": "YER",
+    "sar": "SAR"
+  }
+}

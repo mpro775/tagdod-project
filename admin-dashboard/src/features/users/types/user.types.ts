@@ -72,6 +72,7 @@ export interface User extends BaseEntity {
   lastName?: string;
   gender?: 'male' | 'female' | 'other';
   jobTitle?: string;
+  city?: string; // المدينة - مهمة للمهندسين
 
   // Roles & Permissions
   roles: UserRole[];
@@ -105,6 +106,7 @@ export interface CreateUserDto {
   lastName?: string;
   gender?: 'male' | 'female' | 'other';
   jobTitle?: string;
+  city?: string; // المدينة - للمهندسين
   password?: string;
   roles?: UserRole[];
   permissions?: string[];
@@ -118,6 +120,7 @@ export interface UpdateUserDto {
   lastName?: string;
   gender?: 'male' | 'female' | 'other';
   jobTitle?: string;
+  city?: string; // المدينة - للمهندسين
   password?: string;
   roles?: UserRole[];
   permissions?: string[];

@@ -372,6 +372,58 @@
           }
         },
         {
+          "name": "تسجيل حساب جديد للمستخدم العادي/المهندس/التاجر بكلمة مرور",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/user-signup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "user-signup"
+              ]
+            },
+            "description": "إنشاء حساب جديد باستخدام رقم الهاتف وكلمة المرور مع البيانات الأساسية"
+          }
+        },
+        {
+          "name": "تسجيل دخول المستخدم العادي/المهندس/التاجر بكلمة المرور",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/user-login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "user-login"
+              ]
+            },
+            "description": "تسجيل دخول المستخدمين العاديين باستخدام رقم الهاتف وكلمة المرور"
+          }
+        },
+        {
           "name": "POST /api/v1/auth/dev-login",
           "request": {
             "method": "POST",
@@ -1112,6 +1164,34 @@
                 "products",
                 "{productId}",
                 "variants"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "توليد المتغيرات تلقائياً",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/{productId}/generate-variants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "{productId}",
+                "generate-variants"
               ]
             },
             "description": ""
@@ -7714,6 +7794,32 @@
               ]
             },
             "description": "إجبار تحديث لقطات التحليلات وحساباتها"
+          }
+        },
+        {
+          "name": "مسح ذاكرة التخزين المؤقت للتحليلات",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/analytics/cache",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "cache"
+              ]
+            },
+            "description": "مسح جميع بيانات التحليلات المخزنة مؤقتاً لإجبار قراءة البيانات الجديدة"
           }
         }
       ],

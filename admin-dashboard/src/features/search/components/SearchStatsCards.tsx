@@ -5,32 +5,34 @@ import {
   Speed as SpeedIcon,
   ErrorOutline as ErrorIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useSearchStats } from '../hooks/useSearch';
 
 export function SearchStatsCards() {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useSearchStats();
 
   const cards = [
     {
-      title: 'إجمالي عمليات البحث',
+      title: t('search.stats.totalSearches', { defaultValue: 'عدد البحث الكلي' }),
       value: stats?.totalSearches || 0,
       icon: <SearchIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       color: '#3f51b5',
     },
     {
-      title: 'استعلامات فريدة',
+      title: t('search.stats.uniqueQueries', { defaultValue: 'عدد المصطلحات المميزة' }),
       value: stats?.totalUniqueQueries || 0,
       icon: <TrendingIcon sx={{ fontSize: 40, color: 'info.main' }} />,
       color: '#2196f3',
     },
     {
-      title: 'متوسط وقت الاستجابة',
+      title: t('search.stats.averageResponseTime', { defaultValue: 'متوسط وقت الاستجابة' }),
       value: `${stats?.averageResponseTime || 0} ms`,
       icon: <SpeedIcon sx={{ fontSize: 40, color: 'success.main' }} />,
       color: '#4caf50',
     },
     {
-      title: 'بحث بدون نتائج',
+      title: t('search.stats.zeroResultsPercentage', { defaultValue: 'نسبة النتائج الصفرية' }),
       value: `${stats?.zeroResultsPercentage?.toFixed(1) || 0}%`,
       icon: <ErrorIcon sx={{ fontSize: 40, color: 'warning.main' }} />,
       color: '#ff9800',

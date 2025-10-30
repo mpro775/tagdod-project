@@ -24,6 +24,7 @@ import {
   AttachMoney,
   TrendingUp,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { ConvertCurrencyRequest, ConvertCurrencyResponse } from '../api/exchangeRatesApi';
 
 interface CurrencyConverterProps {
@@ -37,6 +38,7 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
   loading = false,
   error,
 }) => {
+  const { t } = useTranslation('exchangeRates');
   const [formData, setFormData] = useState({
     amount: '',
     fromCurrency: 'USD' as 'USD',
@@ -71,7 +73,7 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
 
   const handleConvert = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      setConvertError('يرجى إدخال مبلغ صحيح');
+      setConvertError(t('messages.invalidAmount'));
       return;
     }
 

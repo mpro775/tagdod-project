@@ -54,34 +54,18 @@ import { OrderStatusChip } from '../components/OrderStatusChip';
 import type {
   Order,
   OrderStatus,
-  PaymentStatus,
-  PaymentMethod,
   ListOrdersParams,
 } from '../types/order.types';
 import { ar } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
-const paymentStatusLabels: Record<PaymentStatus, string> = {
-  pending: 'معلق',
-  authorized: 'مصرح',
-  paid: 'مدفوع',
-  failed: 'فشل',
-  refunded: 'مسترد',
-  partially_refunded: 'مسترد جزئياً',
-  cancelled: 'ملغي',
-};
-
-const paymentMethodLabels: Record<PaymentMethod, string> = {
-  COD: 'عند الاستلام',
-  ONLINE: 'أونلاين',
-  WALLET: 'محفظة',
-  BANK_TRANSFER: 'تحويل بنكي',
-};
+ 
 
 export const OrdersListPageResponsive: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
-
+  const { t } = useTranslation();
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
   const [filters, setFilters] = useState<ListOrdersParams>({
     page: 1,
@@ -133,7 +117,7 @@ export const OrdersListPageResponsive: React.FC = () => {
       await bulkUpdateMutation.mutateAsync({
         orderIds: selectedOrders,
         status,
-        notes: `تم تحديث ${selectedOrders.length} طلب إلى حالة ${status}`,
+        notes: `تم تحديث ${selectedOrders.length} طلب إلى حالة ${t(`orders.status.${status}`, { defaultValue: status })}`,
       });
       setSelectedOrders([]);
     } catch {
@@ -201,8 +185,8 @@ export const OrdersListPageResponsive: React.FC = () => {
         <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth
-            label="البحث"
-            placeholder="رقم الطلب أو اسم العميل"
+              label={t('orders.filters.search.label', { defaultValue: 'البحث' })}
+            placeholder={t('orders.filters.search.placeholder', { defaultValue: 'رقم الطلب أو اسم العميل' })}
             value={filters.search || ''}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             InputProps={{
@@ -212,41 +196,41 @@ export const OrdersListPageResponsive: React.FC = () => {
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <FormControl fullWidth>
-            <InputLabel>حالة الطلب</InputLabel>
+            <InputLabel>{t('orders.filters.status.label', { defaultValue: 'حالة الطلب' })}</InputLabel>
             <Select
               value={filters.status || ''}
               onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-              label="حالة الطلب"
+              label={t('orders.filters.status.label', { defaultValue: 'حالة الطلب' })}
             >
-              <MenuItem value="">الكل</MenuItem>
-              <MenuItem value="pending_payment">انتظار الدفع</MenuItem>
-              <MenuItem value="confirmed">مؤكد</MenuItem>
-              <MenuItem value="processing">قيد التجهيز</MenuItem>
-              <MenuItem value="shipped">تم الشحن</MenuItem>
-              <MenuItem value="delivered">تم التسليم</MenuItem>
-              <MenuItem value="cancelled">ملغي</MenuItem>
+              <MenuItem value="">{t('orders.filters.status.all', { defaultValue: 'الكل' })}</MenuItem>
+              <MenuItem value="pending_payment">{t('orders.status.pending_payment', { defaultValue: 'انتظار الدفع' })}</MenuItem>
+              <MenuItem value="confirmed">{t('orders.status.confirmed', { defaultValue: 'مؤكد' })}</MenuItem>
+              <MenuItem value="processing">{t('orders.status.processing', { defaultValue: 'قيد التجهيز' })}</MenuItem>
+              <MenuItem value="shipped">{t('orders.status.shipped', { defaultValue: 'تم الشحن' })}  </MenuItem>
+              <MenuItem value="delivered">{t('orders.status.delivered', { defaultValue: 'تم التسليم' })}</MenuItem>
+              <MenuItem value="cancelled">{t('orders.status.cancelled', { defaultValue: 'ملغي' })}</MenuItem>
             </Select>
           </FormControl>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <FormControl fullWidth>
-            <InputLabel>حالة الدفع</InputLabel>
+            <InputLabel>{t('orders.filters.paymentStatus.label', { defaultValue: 'حالة الدفع' })}</InputLabel>
             <Select
               value={filters.paymentStatus || ''}
               onChange={(e) => handleFilterChange('paymentStatus', e.target.value || undefined)}
-              label="حالة الدفع"
+                  label={t('orders.filters.paymentStatus.label', { defaultValue: 'حالة الدفع' })}
             >
-              <MenuItem value="">الكل</MenuItem>
-              <MenuItem value="pending">معلق</MenuItem>
-              <MenuItem value="paid">مدفوع</MenuItem>
-              <MenuItem value="failed">فشل</MenuItem>
+              <MenuItem value="">{t('orders.filters.paymentStatus.all', { defaultValue: 'الكل' })}</MenuItem>
+              <MenuItem value="pending">{t('orders.payment.status.pending', { defaultValue: 'معلق' })}</MenuItem>
+              <MenuItem value="paid">{t('orders.payment.status.paid', { defaultValue: 'مدفوع' })}</MenuItem>
+              <MenuItem value="failed">{t('orders.payment.status.failed', { defaultValue: 'فشل' })}</MenuItem>
             </Select>
           </FormControl>
         </Grid>
         <Grid size={{ xs: 12 }}>
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" startIcon={<Clear />} onClick={handleClearFilters} fullWidth>
-              مسح الفلاتر
+              {t('orders.filters.clearFilters', { defaultValue: 'مسح الفلاتر' })}       
             </Button>
           </Stack>
         </Grid>
@@ -265,7 +249,7 @@ export const OrdersListPageResponsive: React.FC = () => {
               #{order.orderNumber}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {order.deliveryAddress?.recipientName || 'غير محدد'}
+              {order.deliveryAddress?.recipientName || t('orders.deliveryAddress.notDefined', { defaultValue: 'غير محدد' })}
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'right' }}>
@@ -279,24 +263,24 @@ export const OrdersListPageResponsive: React.FC = () => {
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid size={{ xs: 6 }}>
             <Typography variant="body2" color="text.secondary">
-              المنتجات: {order.items?.length || 0}
+              {t('orders.products.label', { defaultValue: 'المنتجات' })}: {order.items?.length || 0}
             </Typography>
           </Grid>
           <Grid size={{ xs: 6 }}>
             <Typography variant="body2" color="text.secondary">
-              {paymentMethodLabels[order.paymentMethod] || order.paymentMethod}
+              {t(`orders.paymentMethod.${order.paymentMethod}`, { defaultValue: order.paymentMethod })}
             </Typography>
           </Grid>
           <Grid size={{ xs: 6 }}>
             <Chip
-              label={paymentStatusLabels[order.paymentStatus]}
+              label={t(`orders.paymentStatus.${order.paymentStatus}`, { defaultValue: order.paymentStatus })}
               color={order.paymentStatus === 'paid' ? 'success' : 'warning'}
               size="small"
             />
           </Grid>
           <Grid size={{ xs: 6 }}>
             <Typography variant="body2" color="text.secondary">
-              {formatDate(order.createdAt)}
+              {t('orders.createdAt', { defaultValue: 'تاريخ الطلب' })}: {formatDate(order.createdAt)}
             </Typography>
           </Grid>
         </Grid>
@@ -310,7 +294,7 @@ export const OrdersListPageResponsive: React.FC = () => {
             onClick={() => navigate(`/orders/${order._id}`)}
             size="small"
           >
-            عرض التفاصيل
+            {t('orders.actions.view', { defaultValue: 'عرض التفاصيل' })}
           </Button>
 
           <IconButton
@@ -324,7 +308,7 @@ export const OrdersListPageResponsive: React.FC = () => {
         <Collapse in={expandedOrder === order._id}>
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              منتجات الطلب:
+              {t('orders.products.label', { defaultValue: 'منتجات الطلب' })}:
             </Typography>
             <List dense>
               {order.items?.slice(0, 3).map((item, index) => (
@@ -342,7 +326,7 @@ export const OrdersListPageResponsive: React.FC = () => {
               ))}
               {order.items && order.items.length > 3 && (
                 <ListItem sx={{ px: 0 }}>
-                  <ListItemText secondary={`و ${order.items.length - 3} منتج آخر...`} />
+                  <ListItemText secondary={`${t('orders.products.other', { defaultValue: 'و' })} ${order.items.length - 3} ${t('orders.products.other', { defaultValue: 'منتج آخر...' })}`} />
                 </ListItem>
               )}
             </List>
@@ -362,7 +346,7 @@ export const OrdersListPageResponsive: React.FC = () => {
             component="h1"
             sx={{ fontWeight: 'bold', fontSize: { xs: '1.5rem', md: '2rem' } }}
           >
-            إدارة الطلبات
+            {t('orders.list.title', { defaultValue: 'إدارة الطلبات' })}
           </Typography>
           <Stack direction="row" spacing={1}>
             {isMobile && (
@@ -371,7 +355,7 @@ export const OrdersListPageResponsive: React.FC = () => {
                 startIcon={<Menu />}
                 onClick={() => setMobileFiltersOpen(true)}
               >
-                فلاتر
+                {t('orders.filters.title', { defaultValue: 'فلاتر' })}
               </Button>
             )}
             <Button
@@ -380,7 +364,7 @@ export const OrdersListPageResponsive: React.FC = () => {
               onClick={() => refetch()}
               disabled={isLoading}
             >
-              تحديث
+              {t('orders.actions.refresh', { defaultValue: 'تحديث' })}
             </Button>
             <Button
               variant="contained"
@@ -388,7 +372,7 @@ export const OrdersListPageResponsive: React.FC = () => {
               onClick={handleExportOrders}
               disabled={exportMutation.isPending}
             >
-              {exportMutation.isPending ? 'جاري التصدير...' : 'تصدير'}
+              {exportMutation.isPending ? t('orders.actions.exporting', { defaultValue: 'جاري التصدير...' }) : t('orders.actions.export', { defaultValue: 'تصدير' })    }
             </Button>
           </Stack>
         </Box>
@@ -405,7 +389,7 @@ export const OrdersListPageResponsive: React.FC = () => {
                       {stat.value}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {stat.title}
+                      {t(`orders.stats.${stat.title}`, { defaultValue: stat.title })}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -427,7 +411,7 @@ export const OrdersListPageResponsive: React.FC = () => {
           <Box
             sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
           >
-            <Typography variant="h6">فلاتر البحث</Typography>
+            <Typography variant="h6">{t('orders.filters.title', { defaultValue: 'فلاتر البحث' })}</Typography>
             <IconButton onClick={() => setMobileFiltersOpen(false)}>
               <Close />
             </IconButton>
@@ -440,7 +424,7 @@ export const OrdersListPageResponsive: React.FC = () => {
         {selectedOrders.length > 0 && (
           <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
             <Typography variant="subtitle1" sx={{ mb: 2 }}>
-              تم تحديد {selectedOrders.length} طلب
+              {t('orders.bulk.selectedOrders', { defaultValue: 'تم تحديد' })} {selectedOrders.length} {t('orders.bulk.orders', { defaultValue: 'طلب' })}
             </Typography>
             <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
               <Button
@@ -450,7 +434,7 @@ export const OrdersListPageResponsive: React.FC = () => {
                 onClick={() => handleBulkStatusUpdate('processing' as OrderStatus)}
                 disabled={bulkUpdateMutation.isPending}
               >
-                وضع في التجهيز
+                {t('orders.bulk.putOnProcessing', { defaultValue: 'وضع في التجهيز' })}
               </Button>
               <Button
                 variant="contained"
@@ -459,7 +443,7 @@ export const OrdersListPageResponsive: React.FC = () => {
                 onClick={() => handleBulkStatusUpdate('shipped' as OrderStatus)}
                 disabled={bulkUpdateMutation.isPending}
               >
-                وضع في الشحن
+                {t('orders.bulk.putOnShipped', { defaultValue: 'وضع في الشحن' })}
               </Button>
               <Button
                 variant="contained"
@@ -468,7 +452,7 @@ export const OrdersListPageResponsive: React.FC = () => {
                 onClick={() => handleBulkStatusUpdate('cancelled' as OrderStatus)}
                 disabled={bulkUpdateMutation.isPending}
               >
-                إلغاء
+                {t('orders.bulk.cancel', { defaultValue: 'إلغاء' })}
               </Button>
             </Stack>
           </Paper>
@@ -477,7 +461,7 @@ export const OrdersListPageResponsive: React.FC = () => {
         {/* Error Alert */}
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
-            حدث خطأ في تحميل الطلبات. يرجى المحاولة مرة أخرى.
+            {t('orders.messages.error.loadFailed', { defaultValue: 'حدث خطأ في تحميل الطلبات. يرجى المحاولة مرة أخرى.' })}
           </Alert>
         )}
 
@@ -504,10 +488,10 @@ export const OrdersListPageResponsive: React.FC = () => {
                         setPaginationModel((prev) => ({ ...prev, page: prev.page - 1 }))
                       }
                     >
-                      السابق
+                      {t('orders.pagination.previous', { defaultValue: 'السابق' })}   
                     </Button>
                     <Button variant="outlined" disabled>
-                      {paginationModel.page + 1} من{' '}
+                      {paginationModel.page + 1} {t('orders.pagination.of', { defaultValue: 'من' })} {Math.ceil((data?.meta?.total || 0) / paginationModel.pageSize)}
                       {Math.ceil((data?.meta?.total || 0) / paginationModel.pageSize)}
                     </Button>
                     <Button
@@ -520,7 +504,7 @@ export const OrdersListPageResponsive: React.FC = () => {
                         setPaginationModel((prev) => ({ ...prev, page: prev.page + 1 }))
                       }
                     >
-                      التالي
+                      {t('orders.pagination.next', { defaultValue: 'التالي' })}   
                     </Button>
                   </Stack>
                 </Box>

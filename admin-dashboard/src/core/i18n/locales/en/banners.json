@@ -1,0 +1,197 @@
+{
+  "pageTitle": "Banner Management",
+  "pageSubtitle": "Manage and monitor advertising banners",
+  "addBanner": "Add Banner",
+  "analytics": "Analytics",
+  "editBanner": "Edit Banner",
+  "createBanner": "Create New Banner",
+  "back": "Back",
+  "cancel": "Cancel",
+  "save": "Save",
+  "saving": "Saving...",
+  "deleting": "Deleting...",
+  "delete": "Delete",
+  "confirmDelete": "Confirm Delete",
+  "deleteConfirmation": "Are you sure you want to delete the banner \"{title}\"?",
+  "deleteWarning": "This action cannot be undone.",
+  "softDelete": "Soft Delete",
+  "permanentDelete": "Permanent Delete",
+
+  "basicInfo": "Basic Information",
+  "imageAndLink": "Image and Link",
+  "settings": "Settings",
+  "dateRange": "Date Range",
+
+  "form": {
+    "title": {
+      "label": "Banner Title",
+      "required": "Banner title is required"
+    },
+    "location": {
+      "label": "Display Location",
+      "required": "Display location is required"
+    },
+    "description": {
+      "label": "Banner Description"
+    },
+    "imageUrl": {
+      "label": "Image URL",
+      "required": "Image URL is required",
+      "helper": "Image URL is required",
+      "invalid": "Must be a valid image URL"
+    },
+    "linkUrl": {
+      "label": "Redirect URL",
+      "helper": "Leave empty if no redirect needed",
+      "invalid": "Must be a valid URL"
+    },
+    "altText": {
+      "label": "Alt Text",
+      "helper": "Important for accessibility"
+    },
+    "promotionType": {
+      "label": "Promotion Type"
+    },
+    "sortOrder": {
+      "label": "Display Order",
+      "helper": "Lower number = higher priority",
+      "min": "Must be greater than or equal to 0"
+    },
+    "displayDuration": {
+      "label": "Display Duration (ms)",
+      "helper": "Banner display duration in carousels",
+      "min": "Must be at least 1000 milliseconds"
+    },
+    "isActive": {
+      "label": "Active"
+    },
+    "startDate": {
+      "label": "Start Date"
+    },
+    "endDate": {
+      "label": "End Date"
+    },
+    "imagePreview": "Image Preview:"
+  },
+
+  "filters": {
+    "title": "Search Filters",
+    "activeFilter": "active filter",
+    "activeFilters": "Active Filters:",
+    "search": {
+      "label": "Search Banners",
+      "placeholder": "Search in title or description..."
+    },
+    "location": {
+      "label": "Display Location",
+      "all": "All Locations"
+    },
+    "status": {
+      "label": "Status",
+      "all": "All Statuses",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "sortBy": {
+      "label": "Sort By",
+      "sortOrder": "Display Order",
+      "title": "Title",
+      "createdAt": "Creation Date",
+      "updatedAt": "Update Date",
+      "viewCount": "View Count",
+      "clickCount": "Click Count",
+      "conversionCount": "Conversion Count"
+    },
+    "sortOrder": {
+      "label": "Sort Direction",
+      "asc": "Ascending",
+      "desc": "Descending"
+    },
+    "limit": {
+      "label": "Items per page"
+    },
+    "reset": "Reset",
+    "apply": "Apply Filters"
+  },
+
+  "table": {
+    "banner": "Banner",
+    "location": "Location",
+    "promotionType": "Promotion Type",
+    "stats": "Statistics",
+    "status": "Status",
+    "sortOrder": "Order",
+    "dateRange": "Date Range",
+    "createdAt": "Created At",
+    "actions": "Actions",
+    "redirectLink": "Redirect Link",
+    "noTimeConstraints": "No time constraints",
+    "from": "From:",
+    "to": "To:",
+    "ctr": "CTR: {rate}%",
+    "conversion": "Conv: {rate}%"
+  },
+
+  "stats": {
+    "totalBanners": "Total Banners",
+    "totalViews": "Total Views",
+    "totalClicks": "Total Clicks",
+    "totalConversions": "Total Conversions",
+    "allBanners": "All Banners",
+    "activeInactive": "{active} active, {inactive} inactive",
+    "clickRate": "Click rate: {rate}%",
+    "conversionRate": "Conversion rate: {rate}%",
+    "statusChart": "Banner Status",
+    "performanceChart": "Overall Performance",
+    "activeBanners": "Active Banners",
+    "clickRateLabel": "Click Rate",
+    "conversionRateLabel": "Conversion Rate",
+    "active": "Active",
+    "inactive": "Inactive",
+    "fromLastMonth": "from last month",
+    "error": "Failed to load statistics"
+  },
+
+  "analytics": {
+    "pageTitle": "Banner Analytics",
+    "timeRange": {
+      "label": "Time Range",
+      "7days": "Last 7 days",
+      "30days": "Last 30 days",
+      "90days": "Last 90 days",
+      "1year": "Last year"
+    },
+    "location": {
+      "label": "Display Location",
+      "all": "All Locations"
+    },
+    "topBanners": "Top Performing Banners",
+    "banner": "Banner",
+    "views": "Views",
+    "clicks": "Clicks",
+    "conversions": "Conversions",
+    "clickRate": "Click Rate",
+    "conversionRate": "Conversion Rate",
+    "status": "Status",
+    "error": "Failed to load analytics data"
+  },
+
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "toggleOn": "Activate",
+    "toggleOff": "Deactivate"
+  },
+
+  "messages": {
+    "created": "Banner created successfully",
+    "updated": "Banner updated successfully",
+    "deleted": "Banner deleted successfully",
+    "toggled": "Banner {action}",
+    "activated": "activated",
+    "deactivated": "deactivated",
+    "error": "An error occurred while saving data",
+    "createError": "Failed to create banner",
+    "updateError": "Failed to update banner"
+  }
+}

@@ -1,0 +1,333 @@
+{
+  "list": {
+    "title": "إدارة المستخدمين",
+    "searchPlaceholder": "البحث في المستخدمين...",
+    "columns": {
+      "phone": "رقم الهاتف",
+      "name": "الاسم",
+      "role": "الدور",
+      "status": "الحالة",
+      "capabilities": "القدرات",
+      "createdAt": "تاريخ الإنشاء",
+      "actions": "الإجراءات"
+    }
+  },
+  "roles": {
+    "super_admin": "مدير عام",
+    "admin": "مدير",
+    "merchant": "تاجر",
+    "engineer": "مهندس",
+    "user": "مستخدم"
+  },
+  "status": {
+    "active": "نشط",
+    "suspended": "موقوف",
+    "pending": "قيد الانتظار",
+    "deleted": "محذوف"
+  },
+  "capabilities": {
+    "engineer": "مهندس",
+    "wholesale": "تاجر جملة",
+    "customer": "عميل"
+  },
+  "actions": {
+    "addUser": "إضافة مستخدم / أدمن",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "restore": "استعادة",
+    "suspend": "إيقاف",
+    "activate": "تفعيل"
+  },
+  "dialog": {
+    "delete": {
+      "title": "حذف المستخدم",
+      "message": "هل أنت متأكد من حذف المستخدم {{name}}؟",
+      "note": "يمكنك استعادة المستخدم لاحقاً من المستخدمين المحذوفين."
+    }
+  },
+  "suspend": {
+    "reason": "تم الإيقاف من لوحة التحكم"
+  },
+  "analytics": {
+    "title": "تحليلات المستخدمين",
+    "subtitle": "تحليلات شاملة عن سلوك وأداء المستخدمين في المنصة",
+    "errors": {
+      "loadOverview": "فشل تحميل الإحصائيات العامة",
+      "loadRankings": "فشل تحميل ترتيب العملاء",
+      "loadSegments": "فشل تحميل شرائح العملاء",
+      "loadAlerts": "فشل تحميل تنبيهات المخاطر"
+    },
+    "kpi": {
+      "totalUsers": "إجمالي المستخدمين",
+      "activeUsers": "{{count}} نشط",
+      "customerLifetimeValue": "القيمة الدائمة للعميل",
+      "averageOrderValue": "معدل الطلب: {{value}} $",
+      "newUsersThisMonth": "مستخدمون جدد هذا الشهر",
+      "topSpenders": "أفضل العملاء: {{count}}"
+    },
+    "tabs": {
+      "rankings": "ترتيب العملاء",
+      "topCustomers": "أفضل العملاء",
+      "segments": "شرائح العملاء",
+      "alerts": "تنبيهات المخاطر"
+    },
+    "table": {
+      "rank": "الترتيب",
+      "customer": "العميل",
+      "email": "البريد الإلكتروني",
+      "tier": "الفئة",
+      "totalSpent": "إجمالي الإنفاق",
+      "orderCount": "عدد الطلبات",
+      "averageOrder": "متوسط الطلب"
+    },
+    "tiers": {
+      "vip": "VIP",
+      "premium": "مميز",
+      "regular": "عادي",
+      "new": "جديد"
+    },
+    "segments": {
+      "vip": "عملاء VIP",
+      "premium": "عملاء مميزون",
+      "regular": "عملاء عاديون",
+      "new": "عملاء جدد",
+      "range": {
+        "vip": "أكثر من 5,000 $",
+        "premium": "2,000 - 5,000 $",
+        "regular": "500 - 2,000 $",
+        "new": "أقل من 500 $"
+      }
+    },
+    "churnRisk": {
+      "high": "عالٍ",
+      "medium": "متوسط",
+      "low": "منخفض",
+      "lastOrder": "آخر طلب منذ: {{days}} يوم",
+      "recommendedAction": "الإجراء الموصى به:",
+      "totalSpent": "إجمالي الإنفاق:"
+    },
+    "recommendations": {
+      "title": "توصيات"
+    },
+    "unknown": "غير معروف",
+    "noData": "لا توجد بيانات متاحة",
+    "noAlerts": "لا توجد تنبيهات حالياً",
+    "component": {
+      "title": "تحليلات المستخدمين"
+    },
+    "period": {
+      "label": "الفترة الزمنية",
+      "7d": "آخر 7 أيام",
+      "30d": "آخر 30 يوم",
+      "90d": "آخر 90 يوم",
+      "1y": "آخر سنة"
+    },
+    "newUsers": "مستخدمين جدد",
+    "rolesDistribution": "توزيع الأدوار",
+    "userCount": "{{count}} مستخدم ({{percentage}}%)"
+  },
+  "search": {
+    "advanced": {
+      "title": "البحث المتقدم",
+      "activeFilters": "{{count}} فلتر نشط",
+      "options": "خيارات البحث المتقدمة"
+    },
+    "basic": {
+      "searchLabel": "البحث في المستخدمين",
+      "searchPlaceholder": "رقم الهاتف، الاسم، المسمى الوظيفي...",
+      "sortBy": "ترتيب حسب",
+      "sortOrder": "اتجاه الترتيب",
+      "ascending": "تصاعدي",
+      "descending": "تنازلي"
+    },
+    "sort": {
+      "createdAt": "تاريخ الإنشاء",
+      "firstName": "الاسم الأول",
+      "lastName": "الاسم الأخير",
+      "phone": "رقم الهاتف",
+      "status": "الحالة"
+    },
+    "searching": "جاري البحث..."
+  },
+  "filter": {
+    "status": "الحالة",
+    "role": "الدور",
+    "userType": "نوع المستخدم",
+    "capabilities": "القدرات",
+    "allStatuses": "جميع الحالات",
+    "allRoles": "جميع الأدوار",
+    "allTypes": "جميع الأنواع",
+    "admins": "مديرين",
+    "regularUsers": "مستخدمين عاديين",
+    "includeDeleted": "يشمل المستخدمين المحذوفين",
+    "clearFilters": "مسح الفلاتر",
+    "title": "فلاتر البحث",
+    "activeFilters": "{{count}} فلتر نشط",
+    "searchLabel": "البحث في المستخدمين",
+    "searchPlaceholder": "رقم الهاتف، الاسم...",
+    "activeFiltersLabel": "الفلاتر النشطة:",
+    "search": "بحث",
+    "statusLabel": "حالة:",
+    "roleLabel": "دور:",
+    "typeLabel": "نوع:"
+  },
+  "stats": {
+    "title": "إحصائيات المستخدمين",
+    "total": "إجمالي المستخدمين",
+    "active": "المستخدمين النشطين",
+    "suspended": "المستخدمين المعلقين",
+    "deleted": "المستخدمين المحذوفين",
+    "admins": "المديرين",
+    "engineers": "المهندسين",
+    "merchants": "التجار",
+    "users": "المستخدمين العاديين",
+    "percentageOfTotal": "{{percentage}}% من الإجمالي"
+  },
+  "card": {
+    "unknown": "غير محدد",
+    "capabilities": "القدرات:",
+    "jobTitle": "الوظيفة:",
+    "wholesaleDiscount": "خصم الجملة:",
+    "createdAt": "تاريخ الإنشاء:"
+  },
+  "permissions": {
+    "selectedCount": "{{selected}} صلاحية محددة من {{total}} صلاحية",
+    "description": "اختر الصلاحيات المناسبة للأدمن. يمكنك تحديد/إلغاء تحديد فئات كاملة أو صلاحيات فردية.",
+    "selectAll": "تحديد الكل",
+    "deselectAll": "إلغاء الكل",
+    "actions": {
+      "read": "عرض",
+      "create": "إنشاء",
+      "update": "تعديل",
+      "delete": "حذف",
+      "suspend": "تعليق",
+      "activate": "تفعيل",
+      "restore": "استرجاع",
+      "assign": "إسناد",
+      "revoke": "إلغاء",
+      "publish": "نشر",
+      "unpublish": "إلغاء النشر",
+      "cancel": "إلغاء",
+      "refund": "استرداد",
+      "statusUpdate": "تحديث الحالة",
+      "convertToOrder": "تحويل لطلب",
+      "sendReminders": "إرسال تذكيرات",
+      "bulkActions": "عمليات جماعية",
+      "close": "إغلاق",
+      "analyze": "تحليل",
+      "export": "تصدير",
+      "generateReports": "إنشاء تقارير",
+      "scheduleReports": "جدولة تقارير",
+      "manageMedia": "إدارة وسائط",
+      "deleteMedia": "حذف وسائط",
+      "manageUpload": "إدارة رفع",
+      "deleteUpload": "حذف مرفوعات",
+      "send": "إرسال",
+      "manageFull": "إدارة كاملة",
+      "approve": "قبول",
+      "reject": "رفض",
+      "manage": "إدارة",
+      "analytics": "تحليلات",
+      "update": "تحديث",
+      "manualUpdate": "تحديث يدوي",
+      "readSettings": "عرض إعدادات",
+      "updateSettings": "تعديل إعدادات",
+      "systemMaintenance": "صيانة النظام",
+      "systemBackup": "نسخ احتياطي",
+      "systemLogs": "سجلات النظام"
+    },
+    "categories": {
+      "users": {
+        "title": "المستخدمون",
+        "description": "إدارة المستخدمين والحسابات"
+      },
+      "roles": {
+        "title": "الأدوار والصلاحيات",
+        "description": "إدارة أدوار النظام والصلاحيات"
+      },
+      "products": {
+        "title": "المنتجات",
+        "description": "إدارة المنتجات والكتالوج"
+      },
+      "categories": {
+        "title": "الفئات",
+        "description": "إدارة فئات المنتجات"
+      },
+      "brands": {
+        "title": "العلامات التجارية",
+        "description": "إدارة العلامات التجارية للمنتجات"
+      },
+      "attributes": {
+        "title": "الخصائص",
+        "description": "إدارة خصائص ومواصفات المنتجات"
+      },
+      "orders": {
+        "title": "الطلبات",
+        "description": "إدارة طلبات العملاء"
+      },
+      "carts": {
+        "title": "سلة التسوق",
+        "description": "إدارة سلات العملاء والتخلي عن الشراء"
+      },
+      "services": {
+        "title": "الخدمات",
+        "description": "إدارة طلبات الخدمات والمهندسين"
+      },
+      "support": {
+        "title": "الدعم الفني",
+        "description": "إدارة تذاكر الدعم الفني"
+      },
+      "marketing": {
+        "title": "التسويق والعروض",
+        "description": "إدارة الحملات التسويقية والكوبونات"
+      },
+      "analytics": {
+        "title": "التحليلات والتقارير",
+        "description": "عرض وتصدير البيانات والتقارير"
+      },
+      "media": {
+        "title": "الوسائط والرفع",
+        "description": "إدارة الملفات والصور"
+      },
+      "notifications": {
+        "title": "الإشعارات",
+        "description": "إدارة إشعارات النظام"
+      },
+      "capabilities": {
+        "title": "القدرات والقبول",
+        "description": "الموافقة على قدرات المهندسين والتجار"
+      },
+      "favorites": {
+        "title": "المفضلات",
+        "description": "إدارة مفضلات المستخدمين"
+      },
+      "addresses": {
+        "title": "العناوين",
+        "description": "إدارة عناوين العملاء"
+      },
+      "exchangeRates": {
+        "title": "أسعار الصرف",
+        "description": "إدارة أسعار العملات"
+      },
+      "audit": {
+        "title": "التدقيق والمراجعة",
+        "description": "عرض سجلات النظام والتدقيق"
+      },
+      "settings": {
+        "title": "إعدادات النظام",
+        "description": "إدارة إعدادات وصيانة النظام"
+      }
+    },
+    "descriptions": {
+      "users": {
+        "read": "عرض قائمة المستخدمين",
+        "create": "إنشاء مستخدمين جدد",
+        "update": "تعديل بيانات المستخدمين",
+        "delete": "حذف المستخدمين",
+        "suspend": "تعليق الحسابات",
+        "activate": "تفعيل الحسابات المعلقة",
+        "restore": "استرجاع المستخدمين المحذوفين"
+      }
+    }
+  }
+}

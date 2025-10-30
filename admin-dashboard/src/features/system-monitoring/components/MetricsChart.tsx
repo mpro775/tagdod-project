@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, Typography } from '@mui/material';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { systemMonitoringApi } from '../api/systemMonitoringApi';
 import { Skeleton } from '@mui/material';
 import { toast } from 'react-hot-toast';
@@ -12,6 +13,7 @@ interface MetricsChartProps {
 }
 
 export function MetricsChart({ metricType, title, color }: MetricsChartProps) {
+  const { t } = useTranslation();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +35,7 @@ export function MetricsChart({ metricType, title, color }: MetricsChartProps) {
 
         setData(formattedData);
       } catch {
-        toast.error('فشل في تحميل بيانات المراقبة');
+        toast.error(t('system-monitoring.messages.error.loadFailed', { defaultValue: 'فشل تحميل البيانات' }));
       } finally {
         setLoading(false);
       }
@@ -91,13 +93,13 @@ export function MetricsChart({ metricType, title, color }: MetricsChartProps) {
               }}
               labelStyle={{ color: 'hsl(var(--foreground))' }}
             />
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke={color} 
-              fillOpacity={1} 
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              fillOpacity={1}
               fill={`url(#gradient-${metricType})`}
-              name="الاستخدام %"
+              name={t(`system-monitoring.charts.metrics.${metricType}`, { defaultValue: 'استخدام' })}
             />
           </AreaChart>
         </ResponsiveContainer>

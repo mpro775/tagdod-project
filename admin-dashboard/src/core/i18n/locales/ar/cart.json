@@ -1,0 +1,309 @@
+{
+  "navigation": {
+    "title": "إدارة السلال",
+    "abandonedCarts": "السلال المتروكة",
+    "analytics": "تحليلات السلة"
+  },
+  "list": {
+    "title": "إدارة السلال",
+    "subtitle": "إدارة سلال التسوق الخاصة بالعملاء والمشتريات المتروكة",
+    "searchPlaceholder": "البحث في السلال...",
+    "columns": {
+      "user": "المستخدم",
+      "status": "الحالة",
+      "itemsCount": "عدد المنتجات",
+      "totalValue": "القيمة الإجمالية",
+      "lastActivity": "آخر نشاط",
+      "additionalInfo": "معلومات إضافية",
+      "actions": "الإجراءات"
+    },
+    "empty": {
+      "title": "لا توجد سلال",
+      "message": "لم يتم العثور على سلال تطابق المعايير المحددة"
+    },
+    "user": {
+      "unknown": "مستخدم غير معروف",
+      "guest": "ضيف",
+      "device": "جهاز {{id}}",
+      "noContact": "غير متاح"
+    },
+    "status": {
+      "active": "نشطة",
+      "abandoned": "متروكة",
+      "converted": "محولة",
+      "expired": "منتهية الصلاحية",
+      "emailsSent": "{{count}} إيميل مرسل",
+      "convertedToOrder": "محولة لطلب"
+    },
+    "items": {
+      "count": "{{count}} منتج",
+      "single": "منتج واحد"
+    },
+    "menu": {
+      "viewDetails": "عرض التفاصيل",
+      "convertToOrder": "تحويل لطلب",
+      "sendReminder": "إرسال تذكير",
+      "deleteCart": "حذف السلة",
+      "moreActions": "المزيد من الإجراءات"
+    }
+  },
+  "filters": {
+    "title": "تصفية السلال",
+    "search": "بحث",
+    "clearFilters": "مسح جميع المرشحات",
+    "advanced": {
+      "show": "عرض المرشحات المتقدمة",
+      "hide": "إخفاء المرشحات المتقدمة",
+      "clearTooltip": "مسح جميع المرشحات"
+    },
+    "status": {
+      "label": "حالة السلة",
+      "all": "جميع الحالات",
+      "active": "نشطة",
+      "abandoned": "متروكة",
+      "converted": "محولة",
+      "expired": "منتهية الصلاحية"
+    },
+    "type": {
+      "label": "نوع السلة",
+      "all": "جميع الأنواع",
+      "abandonedOnly": "متروكة فقط",
+      "notAbandoned": "غير متروكة"
+    },
+    "sorting": {
+      "sortBy": "ترتيب حسب",
+      "sortOrder": "اتجاه الترتيب",
+      "createdAt": "تاريخ الإنشاء",
+      "updatedAt": "تاريخ التحديث",
+      "lastActivity": "آخر نشاط",
+      "total": "القيمة الإجمالية",
+      "ascending": "تصاعدي",
+      "descending": "تنازلي"
+    },
+    "dateRange": {
+      "from": "من تاريخ",
+      "to": "إلى تاريخ"
+    },
+    "valueRange": {
+      "minTotal": "الحد الأدنى للقيمة",
+      "maxTotal": "الحد الأقصى للقيمة"
+    },
+    "content": {
+      "label": "حالة المحتوى",
+      "all": "جميع السلال",
+      "withItems": "تحتوي على منتجات",
+      "empty": "فارغة"
+    },
+    "user": {
+      "id": "معرف المستخدم",
+      "idPlaceholder": "أدخل معرف المستخدم",
+      "deviceId": "معرف الجهاز",
+      "deviceIdPlaceholder": "أدخل معرف الجهاز"
+    },
+    "activeFilters": {
+      "title": "المرشحات النشطة:",
+      "count": "{{count}} مرشح نشط",
+      "status": "الحالة: {{status}}",
+      "type": "النوع: {{type}}",
+      "from": "من: {{date}}",
+      "to": "إلى: {{date}}",
+      "minTotal": "الحد الأدنى: {{value}} ريال",
+      "maxTotal": "الحد الأقصى: {{value}} ريال",
+      "content": "المحتوى: {{content}}"
+    }
+  },
+  "stats": {
+    "title": "إحصائيات السلال",
+    "totalCarts": "إجمالي السلال",
+    "activeCarts": "السلال النشطة",
+    "abandonedCarts": "السلال المتروكة",
+    "convertedCarts": "السلال المحولة",
+    "abandonmentRate": "معدل الترك",
+    "conversionRate": "معدل التحويل",
+    "averageValue": "متوسط قيمة السلة",
+    "recoveryRate": "معدل الاسترداد",
+    "trend": {
+      "positive": "+{{value}}%",
+      "negative": "{{value}}%"
+    },
+    "period": {
+      "label": "الفترة الزمنية",
+      "7days": "آخر 7 أيام",
+      "30days": "آخر 30 يوم",
+      "90days": "آخر 90 يوم",
+      "1year": "آخر سنة"
+    }
+  },
+  "analytics": {
+    "title": "تحليلات السلال",
+    "subtitle": "تحليلات شاملة عن سلوك السلال وأدائها",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "conversion": "تحليل التحويل",
+      "recovery": "حملات الاسترداد",
+      "insights": "الرؤى"
+    },
+    "conversion": {
+      "title": "معدلات التحويل",
+      "daily": "التحويل اليومي",
+      "weekly": "التحويل الأسبوعي",
+      "monthly": "التحويل الشهري",
+      "trend": "اتجاه التحويل"
+    },
+    "recovery": {
+      "title": "حملات الاسترداد",
+      "emailsSent": "الإيميلات المرسلة",
+      "emailsOpened": "الإيميلات المفتوحة",
+      "clicks": "النقرات",
+      "conversions": "التحويلات",
+      "effectiveness": "فعالية الحملة"
+    },
+    "insights": {
+      "title": "الرؤى الرئيسية",
+      "abandonmentReasons": "أسباب الترك",
+      "optimalTiming": "التوقيت الأمثل للتذكير",
+      "effectiveContent": "أنواع المحتوى الفعال",
+      "recommendations": "التوصيات"
+    }
+  },
+  "actions": {
+    "refresh": "تحديث",
+    "view": "عرض",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "convert": "تحويل لطلب",
+    "sendReminder": "إرسال تذكير",
+    "bulkDelete": "حذف المحدد",
+    "bulkClear": "مسح المحتوى",
+    "deselectAll": "إلغاء التحديد",
+    "search": "بحث",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "save": "حفظ",
+    "send": "إرسال"
+  },
+  "dialogs": {
+    "convertToOrder": {
+      "title": "تحويل السلة لطلب",
+      "subtitle": "تحويل هذه السلة لطلب عميل",
+      "customerInfo": "معلومات العميل",
+      "shippingAddress": "عنوان الشحن",
+      "orderSummary": "ملخص الطلب",
+      "cartItems": "منتجات السلة",
+      "total": "الإجمالي",
+      "confirm": "تأكيد التحويل",
+      "success": "تم تحويل السلة لطلب بنجاح",
+      "error": "فشل في تحويل السلة لطلب"
+    },
+    "sendReminder": {
+      "title": "إرسال إيميل تذكير",
+      "subtitle": "إرسال إيميل تذكير لاسترداد هذه السلة المتروكة",
+      "preview": "معاينة الإيميل",
+      "subject": "موضوع الإيميل",
+      "content": "محتوى الإيميل",
+      "send": "إرسال التذكير",
+      "success": "تم إرسال إيميل التذكير بنجاح",
+      "error": "فشل في إرسال إيميل التذكير"
+    },
+    "delete": {
+      "title": "حذف السلة",
+      "message": "هل أنت متأكد من حذف هذه السلة؟ هذا الإجراء لا يمكن التراجع عنه.",
+      "confirm": "حذف السلة"
+    },
+    "bulkDelete": {
+      "title": "حذف سلال متعددة",
+      "message": "هل أنت متأكد من حذف {{count}} سلة؟ هذا الإجراء لا يمكن التراجع عنه.",
+      "confirm": "حذف السلال"
+    },
+    "bulkClear": {
+      "title": "مسح محتوى السلة",
+      "message": "هل أنت متأكد من مسح محتوى {{count}} سلة؟",
+      "confirm": "مسح المحتوى"
+    }
+  },
+  "bulk": {
+    "selected": "{{count}} سلة محددة",
+    "actions": "الإجراءات المجمعة",
+    "noneSelected": "يرجى اختيار سلة واحدة على الأقل"
+  },
+  "pagination": {
+    "rowsPerPage": "عدد الصفوف في الصفحة:",
+    "displayedRows": "{{from}}-{{to}} من {{count}}"
+  },
+  "validation": {
+    "customerNameRequired": "اسم العميل مطلوب",
+    "emailRequired": "البريد الإلكتروني مطلوب",
+    "emailInvalid": "البريد الإلكتروني غير صحيح",
+    "phoneRequired": "رقم الهاتف مطلوب",
+    "streetRequired": "عنوان الشارع مطلوب",
+    "cityRequired": "المدينة مطلوبة",
+    "countryRequired": "الدولة مطلوبة"
+  },
+  "dialogs": {
+    "convertToOrder": {
+      "title": "تحويل السلة إلى طلب",
+      "subtitle": "تحويل هذه السلة إلى طلب عميل",
+      "customerInfo": "معلومات العميل",
+      "shippingAddress": "عنوان الشحن",
+      "cartSummary": "ملخص السلة",
+      "orderSummary": "ملخص الطلب",
+      "cartItems": "منتجات السلة",
+      "total": "الإجمالي",
+      "confirm": "تأكيد التحويل",
+      "success": "تم تحويل السلة إلى طلب بنجاح",
+      "error": "فشل في تحويل السلة إلى طلب",
+      "defaultCountry": "اليمن",
+      "fields": {
+        "customerName": "اسم العميل",
+        "email": "البريد الإلكتروني",
+        "phone": "رقم الهاتف",
+        "street": "عنوان الشارع",
+        "city": "المدينة",
+        "state": "الولاية/المحافظة",
+        "postalCode": "الرمز البريدي",
+        "country": "الدولة"
+      }
+    },
+    "sendReminder": {
+      "title": "إرسال إيميل تذكير",
+      "subtitle": "إرسال إيميل تذكير لاسترداد هذه السلة المتروكة",
+      "preview": "معاينة الإيميل",
+      "subject": "موضوع الإيميل",
+      "content": "محتوى الإيميل",
+      "send": "إرسال التذكير",
+      "success": "تم إرسال إيميل التذكير بنجاح",
+      "error": "فشل في إرسال إيميل التذكير",
+      "types": {
+        "first": "التذكير الأول",
+        "second": "التذكير الثاني",
+        "final": "التذكير الأخير",
+        "firstDesc": "يتم إرساله بعد ساعة من عدم النشاط",
+        "secondDesc": "يتم إرساله بعد 24 ساعة مع كوبون خصم",
+        "finalDesc": "يتم إرساله بعد 72 ساعة مع خصم أكبر"
+      },
+      "fields": {
+        "reminderType": "نوع التذكير",
+        "customMessage": "رسالة مخصصة (اختيارية)"
+      }
+    }
+  },
+  "messages": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ",
+    "noData": "لا توجد بيانات",
+    "success": {
+      "converted": "تم تحويل السلة بنجاح",
+      "deleted": "تم حذف السلة بنجاح",
+      "reminderSent": "تم إرسال التذكير بنجاح",
+      "bulkDeleted": "تم حذف السلال بنجاح",
+      "bulkCleared": "تم مسح محتوى السلة بنجاح"
+    },
+    "error": {
+      "loadFailed": "فشل في تحميل السلال",
+      "convertFailed": "فشل في تحويل السلة",
+      "deleteFailed": "فشل في حذف السلة",
+      "reminderFailed": "فشل في إرسال التذكير",
+      "bulkFailed": "فشل في العملية المجمعة"
+    }
+  }
+}

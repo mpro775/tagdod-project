@@ -1,0 +1,87 @@
+{
+  "pageTitle": "Error Logs Management",
+  "pageSubtitle": "Track and manage system errors",
+
+  "exportCsv": "Export CSV",
+  "exportJson": "Export JSON",
+
+  "statistics": {
+    "totalErrors": "Total Errors",
+    "last24Hours": "Last 24 Hours",
+    "errorRate": "Error Rate",
+    "last7Days": "Last 7 Days",
+    "increasing": "Increasing",
+    "decreasing": "Decreasing",
+    "stable": "Stable"
+  },
+
+  "filters": {
+    "title": "Filter Logs",
+    "search": "Search",
+    "searchPlaceholder": "Search in messages...",
+    "level": "Level",
+    "allLevels": "All Levels",
+    "category": "Category",
+    "allCategories": "All Categories",
+    "reset": "Reset"
+  },
+
+  "levels": {
+    "fatal": "Fatal",
+    "error": "Error",
+    "warn": "Warning",
+    "debug": "Debug"
+  },
+
+  "categories": {
+    "database": "Database",
+    "api": "API",
+    "authentication": "Authentication",
+    "validation": "Validation",
+    "business_logic": "Business Logic"
+  },
+
+  "table": {
+    "level": "Level",
+    "category": "Category",
+    "message": "Message",
+    "endpoint": "Endpoint",
+    "occurrences": "Occurrences",
+    "lastOccurrence": "Last Occurrence",
+    "resolved": "Resolved?",
+    "actions": "Actions",
+    "title": "Error Logs",
+    "showing": "Showing {count} of total records"
+  },
+
+  "actions": {
+    "view": "View",
+    "resolve": "Resolve",
+    "delete": "Delete",
+    "resolveError": "Resolve Error",
+    "close": "Close"
+  },
+
+  "details": {
+    "title": "Error Details",
+    "level": "Level",
+    "category": "Category",
+    "occurrences": "Occurrences",
+    "lastOccurrence": "Last Occurrence",
+    "message": "Message",
+    "endpoint": "Endpoint",
+    "stackTrace": "Stack Trace",
+    "additionalInfo": "Additional Information"
+  },
+
+  "messages": {
+    "loadError": "Failed to load error logs",
+    "resolveSuccess": "Error resolved successfully",
+    "resolveError": "Failed to resolve error",
+    "deleteConfirm": "Are you sure you want to delete this error?",
+    "deleteSuccess": "Error deleted successfully",
+    "deleteError": "Failed to delete error",
+    "exportSuccess": "Logs exported successfully",
+    "exportError": "Failed to export logs"
+  }
+}

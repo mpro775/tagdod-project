@@ -1,0 +1,141 @@
+{
+  "exchangeRates": {
+    "title": "إدارة أسعار الصرف",
+    "subtitle": "إدارة وتحديث أسعار صرف العملات في النظام",
+    "currentRates": "الأسعار الحالية",
+    "updateRates": "تحديث الأسعار",
+    "currencyConverter": "محول العملات",
+    "statistics": "الإحصائيات",
+    "lastUpdated": "آخر تحديث",
+    "rate": "السعر",
+    "currency": "العملة",
+    "amount": "المبلغ",
+    "convert": "تحويل",
+    "swap": "تبديل",
+    "from": "من",
+    "to": "إلى",
+    "result": "النتيجة",
+    "baseCurrency": "العملة الأساسية",
+    "targetCurrency": "العملة المستهدفة"
+  },
+  "currencies": {
+    "USD": "دولار أمريكي",
+    "YER": "ريال يمني",
+    "SAR": "ريال سعودي",
+    "usd": "USD",
+    "yer": "YER",
+    "sar": "SAR"
+  },
+  "form": {
+    "usdToYer": "سعر USD إلى YER",
+    "usdToSar": "سعر USD إلى SAR",
+    "notes": "ملاحظات",
+    "updateRates": "تحديث أسعار الصرف",
+    "save": "حفظ الأسعار",
+    "cancel": "إلغاء",
+    "reset": "إعادة تعيين",
+    "currentRate": "السعر الحالي",
+    "newRate": "السعر الجديد",
+    "change": "التغيير",
+    "percentageChange": "نسبة التغيير"
+  },
+  "converter": {
+    "title": "محول العملات",
+    "subtitle": "تحويل المبالغ بين العملات المختلفة",
+    "amountToConvert": "المبلغ المراد تحويله",
+    "fromCurrency": "العملة المصدر",
+    "toCurrency": "العملة الهدف",
+    "convertCurrency": "تحويل العملة",
+    "conversionResult": "نتيجة التحويل",
+    "exchangeRate": "سعر الصرف",
+    "convertedAmount": "المبلغ المحول",
+    "lastUpdated": "آخر تحديث"
+  },
+  "stats": {
+    "title": "إحصائيات أسعار الصرف",
+    "subtitle": "إحصائيات وتحليلات أسعار الصرف",
+    "totalConversions": "إجمالي التحويلات",
+    "mostConvertedCurrency": "الأكثر تحويلاً",
+    "averageRateChange": "متوسط تغيير السعر",
+    "rateStability": "استقرار السعر",
+    "conversionTrends": "اتجاهات التحويل",
+    "popularPairs": "أزواج العملات الشائعة",
+    "dailyConversions": "التحويلات اليومية",
+    "monthlyConversions": "التحويلات الشهرية"
+  },
+  "validation": {
+    "amountRequired": "المبلغ مطلوب",
+    "amountPositive": "يجب أن يكون المبلغ موجباً",
+    "amountMax": "لا يمكن أن يتجاوز المبلغ {{max}}",
+    "rateRequired": "سعر الصرف مطلوب",
+    "ratePositive": "يجب أن يكون سعر الصرف موجباً",
+    "rateMax": "لا يمكن أن يتجاوز سعر الصرف {{max}}",
+    "currencyRequired": "العملة مطلوبة",
+    "invalidCurrency": "العملة المحددة غير صحيحة",
+    "notesMaxLength": "لا يمكن أن تتجاوز الملاحظات {{max}} حرف"
+  },
+  "messages": {
+    "ratesUpdated": "تم تحديث أسعار الصرف بنجاح",
+    "ratesUpdateFailed": "فشل في تحديث أسعار الصرف",
+    "conversionSuccess": "تم تحويل العملة بنجاح",
+    "conversionFailed": "فشل في تحويل العملة",
+    "conversionResult": "تم التحويل بنجاح: {{result}}",
+    "dataRefreshed": "تم تحديث البيانات بنجاح",
+    "dataRefreshFailed": "فشل في تحديث البيانات",
+    "loading": "جاري تحميل أسعار الصرف...",
+    "error": "حدث خطأ",
+    "noData": "لا توجد أسعار صرف متاحة",
+    "rateNotFound": "لم يتم العثور على سعر الصرف",
+    "invalidAmount": "يرجى إدخال مبلغ صحيح",
+    "invalidCurrency": "يرجى اختيار عملات صحيحة",
+    "networkError": "حدث خطأ في الشبكة",
+    "serverError": "حدث خطأ في الخادم"
+  },
+  "tooltips": {
+    "refresh": "تحديث البيانات",
+    "update": "تحديث الأسعار",
+    "convert": "تحويل العملة",
+    "swap": "تبديل العملات",
+    "viewStats": "عرض الإحصائيات",
+    "editRate": "تعديل السعر",
+    "copyRate": "نسخ السعر",
+    "viewHistory": "عرض تاريخ السعر"
+  },
+  "placeholders": {
+    "amount": "أدخل المبلغ",
+    "notes": "ملاحظات اختيارية حول تحديث السعر",
+    "search": "البحث في العملات..."
+  },
+  "table": {
+    "title": "أسعار الصرف",
+    "columns": {
+      "currency": "العملة",
+      "rate": "السعر",
+      "lastUpdated": "آخر تحديث",
+      "change": "التغيير",
+      "actions": "الإجراءات"
+    }
+  },
+  "tabs": {
+    "currentRates": "الأسعار الحالية",
+    "updateRates": "تحديث الأسعار",
+    "converter": "محول العملات",
+    "statistics": "الإحصائيات"
+  },
+  "status": {
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "loading": "جاري التحميل...",
+    "updating": "جاري التحديث...",
+    "converting": "جاري التحويل...",
+    "success": "نجح",
+    "error": "خطأ"
+  },
+  "units": {
+    "currency": "عملة",
+    "rate": "سعر",
+    "percentage": "نسبة مئوية",
+    "amount": "مبلغ",
+    "change": "تغيير"
+  }
+}

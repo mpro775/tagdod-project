@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -25,27 +26,30 @@ import { AttributeStatsCards } from '../components/AttributeStatsCards';
 import AttributeFilters from '../components/AttributeFilters';
 import type { Attribute, AttributeType, ListAttributesParams } from '../types/attribute.types';
 
-const attributeTypeLabels: Record<AttributeType, string> = {
-  select: 'اختيار واحد',
-  multiselect: 'اختيار متعدد',
-  text: 'نص',
-  number: 'رقم',
-  boolean: 'نعم/لا',
-};
+const getAttributeTypeLabels = (t: (key: string) => string): Record<AttributeType, string> => ({
+  select: t('typeLabels.select'),
+  multiselect: t('typeLabels.multiselect'),
+  text: t('typeLabels.text'),
+  number: t('typeLabels.number'),
+  boolean: t('typeLabels.boolean'),
+  color: t('typeLabels.color'),
+});
 
 const attributeTypeColors: Record<
   AttributeType,
-  'primary' | 'secondary' | 'info' | 'warning' | 'success'
+  'default' | 'primary' | 'secondary' | 'info' | 'warning' | 'success'
 > = {
   select: 'primary',
   multiselect: 'secondary',
-  text: 'info',
+  text: 'default',
   number: 'warning',
   boolean: 'success',
+  color: 'info',
 };
 
 export const AttributesListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('attributes');
   const [filters, setFilters] = useState<ListAttributesParams>({});
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -76,40 +80,48 @@ export const AttributesListPage: React.FC = () => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = (id: string) => {
     deleteAttribute(id, {
       onSuccess: () => {
-        showSnackbar(`تم حذف السمة "${name}" بنجاح`, 'success');
+        showSnackbar(t('messages.deleteSuccess', { item: t('messages.attribute') }), 'success');
         refetch();
       },
       onError: (error) => {
         showSnackbar(
-          `فشل في حذف السمة: ${error instanceof Error ? error.message : 'حدث خطأ غير معروف'}`,
+          t('messages.deleteError', {
+            item: t('messages.attribute'),
+            error: error instanceof Error ? error.message : t('messages.unknownError')
+          }),
           'error'
         );
       },
     });
   };
 
-  const handleRestore = (id: string, name: string) => {
+  const handleRestore = (id: string) => {
     restoreAttribute(id, {
       onSuccess: () => {
-        showSnackbar(`تم استعادة السمة "${name}" بنجاح`, 'success');
+        showSnackbar(t('messages.restoreSuccess', { item: t('messages.attribute') }), 'success');
         refetch();
       },
       onError: (error) => {
         showSnackbar(
-          `فشل في استعادة السمة: ${error instanceof Error ? error.message : 'حدث خطأ غير معروف'}`,
+          t('messages.restoreError', {
+            item: t('messages.attribute'),
+            error: error instanceof Error ? error.message : t('messages.unknownError')
+          }),
           'error'
         );
       },
     });
   };
+
+  const attributeTypeLabels = getAttributeTypeLabels(t);
 
   const columns: GridColDef[] = [
     {
       field: 'name',
-      headerName: 'السمة',
+      headerName: t('fields.name'),
       width: 250,
       renderCell: (params) => (
         <Box>
@@ -120,7 +132,7 @@ export const AttributesListPage: React.FC = () => {
     },
     {
       field: 'type',
-      headerName: 'النوع',
+      headerName: t('fields.type'),
       width: 150,
       renderCell: (params) => (
         <Chip
@@ -132,35 +144,35 @@ export const AttributesListPage: React.FC = () => {
     },
     {
       field: 'usageCount',
-      headerName: 'الاستخدام',
+      headerName: t('fields.usage'),
       width: 100,
       align: 'center',
     },
     {
       field: 'isFilterable',
-      headerName: 'قابل للفلترة',
+      headerName: t('fields.filterable'),
       width: 120,
       renderCell: (params) =>
         params.row.isFilterable ? (
-          <Chip label="نعم" color="success" size="small" />
+          <Chip label={t('common.yes')} color="success" size="small" />
         ) : (
-          <Chip label="لا" color="default" size="small" />
+          <Chip label={t('common.no')} color="default" size="small" />
         ),
     },
     {
       field: 'isRequired',
-      headerName: 'إلزامي',
+      headerName: t('fields.required'),
       width: 100,
       renderCell: (params) =>
-        params.row.isRequired ? <Chip label="نعم" color="error" size="small" /> : null,
+        params.row.isRequired ? <Chip label={t('common.yes')} color="error" size="small" /> : null,
     },
     {
       field: 'isActive',
-      headerName: 'الحالة',
+      headerName: t('fields.status'),
       width: 100,
       renderCell: (params) => (
         <Chip
-          label={params.row.isActive ? 'نشط' : 'غير نشط'}
+          label={params.row.isActive ? t('status.active') : t('status.inactive')}
           color={params.row.isActive ? 'success' : 'default'}
           size="small"
         />
@@ -168,13 +180,13 @@ export const AttributesListPage: React.FC = () => {
     },
     {
       field: 'createdAt',
-      headerName: 'تاريخ الإنشاء',
+      headerName: t('fields.createdAt'),
       width: 140,
       valueFormatter: (value) => formatDate(value as Date),
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('fields.actions'),
       width: 200,
       sortable: false,
       renderCell: (params) => {
@@ -183,13 +195,13 @@ export const AttributesListPage: React.FC = () => {
 
         if (isDeleted) {
           return (
-            <Tooltip title="استعادة">
+            <Tooltip title={t('tooltips.restore')}>
               <IconButton
                 size="small"
                 color="primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleRestore(attr._id, attr.name);
+                  handleRestore(attr._id);
                 }}
               >
                 <Restore fontSize="small" />
@@ -200,7 +212,7 @@ export const AttributesListPage: React.FC = () => {
 
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title="تعديل">
+            <Tooltip title={t('tooltips.edit')}>
               <IconButton
                 size="small"
                 color="primary"
@@ -213,7 +225,7 @@ export const AttributesListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="إدارة القيم">
+            <Tooltip title={t('tooltips.manageValues')}>
               <IconButton
                 size="small"
                 color="info"
@@ -226,14 +238,14 @@ export const AttributesListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="حذف">
+            <Tooltip title={t('tooltips.delete')}>
               <IconButton
                 size="small"
                 color="error"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (window.confirm(`هل تريد حذف السمة "${attr.name}"؟`)) {
-                    handleDelete(attr._id, attr.name);
+                  if (window.confirm(t('messages.deleteConfirm', { name: attr.name }))) {
+                    handleDelete(attr._id);
                   }
                 }}
               >
@@ -253,10 +265,10 @@ export const AttributesListPage: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              إدارة السمات
+              {t('attributes.title')}
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              إدارة وتنظيم سمات المنتجات في النظام
+              {t('attributes.subtitle')}
             </Typography>
           </Box>
           <Button
@@ -265,7 +277,7 @@ export const AttributesListPage: React.FC = () => {
             onClick={() => navigate('/attributes/new')}
             size="large"
           >
-            إضافة سمة جديدة
+            {t('attributes.addNew')}
           </Button>
         </Box>
       </Box>
@@ -292,7 +304,7 @@ export const AttributesListPage: React.FC = () => {
           paginationModel={{ page: 0, pageSize: 25 }}
           onPaginationModelChange={() => {}}
           onAdd={() => navigate('/attributes/new')}
-          addButtonText="إضافة سمة جديدة"
+          addButtonText={t('attributes.addNew')}
           onRowClick={(params) => {
             const row = params.row as Attribute;
             navigate(`/attributes/${row._id}`);

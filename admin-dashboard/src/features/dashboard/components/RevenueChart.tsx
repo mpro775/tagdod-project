@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Card, CardContent, Typography, Box, ToggleButtonGroup, ToggleButton, Skeleton } from '@mui/material';
 import { 
   AreaChart, 
   Area, 
@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 interface RevenueChartProps {
   data: Array<{ date: string; revenue: number; orders?: number }>;
@@ -18,16 +19,29 @@ interface RevenueChartProps {
 
 export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) => {
   const [period, setPeriod] = React.useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const { t, i18n } = useTranslation(['dashboard']);
+  // Always use English numbers, regardless of language
+  const locale = React.useMemo(() => (i18n.language === 'ar' ? 'ar-SA' : 'en-US'), [i18n.language]);
+  const currencyFormatter = React.useMemo(
+    () =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: i18n.language === 'ar' ? 'USD' : 'USD',
+        maximumFractionDigits: 0,
+      }),
+    [i18n.language]
+  );
 
   if (isLoading) {
     return (
       <Card>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            نظرة عامة على الإيرادات
+            {t('revenueChart.title', 'نظرة عامة على الإيرادات')}
           </Typography>
-          <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography color="text.secondary">جاري التحميل...</Typography>
+          <Box sx={{ height: 300, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Skeleton variant="rectangular" height={32} width="60%" />
+            <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} />
           </Box>
         </CardContent>
       </Card>
@@ -36,7 +50,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
 
   const chartData = Array.isArray(data) 
     ? data.slice(-14).map(item => ({
-        date: new Date(item.date).toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' }),
+        date: new Date(item.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' }),
         revenue: item.revenue || 0,
         orders: item.orders || 0,
       }))
@@ -51,10 +65,12 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Box>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
-              نظرة عامة على الإيرادات
+              {t('revenueChart.title', 'نظرة عامة على الإيرادات')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              متوسط {avgRevenue.toLocaleString('ar-SA', { maximumFractionDigits: 0 })} $ يومياً
+              {t('revenueChart.average', 'متوسط {{value}} يومياً', {
+                value: currencyFormatter.format(avgRevenue),
+              })}
             </Typography>
           </Box>
           
@@ -64,9 +80,9 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
             onChange={(_, newPeriod) => newPeriod && setPeriod(newPeriod)}
             size="small"
           >
-            <ToggleButton value="daily">يومي</ToggleButton>
-            <ToggleButton value="weekly">أسبوعي</ToggleButton>
-            <ToggleButton value="monthly">شهري</ToggleButton>
+            <ToggleButton value="daily">{t('revenueChart.period.daily', 'يومي')}</ToggleButton>
+            <ToggleButton value="weekly">{t('revenueChart.period.weekly', 'أسبوعي')}</ToggleButton>
+            <ToggleButton value="monthly">{t('revenueChart.period.monthly', 'شهري')}</ToggleButton>
           </ToggleButtonGroup>
         </Box>
 
@@ -97,7 +113,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
                   borderRadius: '8px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 }}
-                formatter={(value: number) => [`${value.toLocaleString('ar-SA')} $`, 'الإيرادات']}
+                formatter={(value: number) => [currencyFormatter.format(value), t('revenueChart.tooltip.revenue', 'الإيرادات')]}
               />
               <Legend />
               <Area
@@ -107,7 +123,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorRevenue)"
-                name="الإيرادات"
+                name={t('revenueChart.legend.revenue', 'الإيرادات')}
               />
             </AreaChart>
           </ResponsiveContainer>

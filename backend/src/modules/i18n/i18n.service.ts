@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { 
+  I18nKeyNotFoundException,
+  I18nKeyAlreadyExistsException,
+ 
+} from '../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -35,7 +40,7 @@ export class I18nService {
     // Check if key already exists
     const existing = await this.translationModel.findOne({ key: dto.key });
     if (existing) {
-      throw new ConflictException(`Translation with key "${dto.key}" already exists`);
+      throw new I18nKeyAlreadyExistsException({ key: dto.key });
     }
 
     const translation = new this.translationModel({
@@ -77,7 +82,7 @@ export class I18nService {
   async getTranslationByKey(key: string): Promise<TranslationDto> {
     const translation = await this.translationModel.findOne({ key }).lean();
     if (!translation) {
-      throw new NotFoundException(`Translation with key "${key}" not found`);
+      throw new I18nKeyNotFoundException({ key });
     }
     return this.mapToDto(translation);
   }
@@ -89,7 +94,7 @@ export class I18nService {
   ): Promise<TranslationDto> {
     const translation = await this.translationModel.findOne({ key });
     if (!translation) {
-      throw new NotFoundException(`Translation with key "${key}" not found`);
+      throw new I18nKeyNotFoundException({ key });
     }
 
     if (dto.ar !== undefined) translation.ar = dto.ar;
@@ -106,7 +111,7 @@ export class I18nService {
   async deleteTranslation(key: string): Promise<void> {
     const result = await this.translationModel.deleteOne({ key });
     if (result.deletedCount === 0) {
-      throw new NotFoundException(`Translation with key "${key}" not found`);
+      throw new I18nKeyNotFoundException({ key });
     }
   }
 

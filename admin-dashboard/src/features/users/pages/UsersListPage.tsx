@@ -14,7 +14,7 @@ import {
   Stack,
   Paper as MuiPaper
 } from '@mui/material';
-import { Edit, Delete, Restore, PersonAdd, AdminPanelSettings } from '@mui/icons-material';
+import { Edit, Delete, Restore, PersonAdd } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -31,10 +31,12 @@ import type { User, UserStatus } from '../types/user.types';
 import { UserStatsCards } from '../components/UserStatsCards';
 import { UsersFilter } from '../components/UsersFilter';
 import { UserCard } from '../components/UserCard';
+import { useTranslation } from 'react-i18next';
 import '../styles/responsive-users.css';
 
 export const UsersListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation(['users', 'common']);
 
   // State
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -105,7 +107,7 @@ export const UsersListPage: React.FC = () => {
       suspendUser(
         { 
           id: user._id, 
-          data: { reason: 'تم الإيقاف من لوحة التحكم' }
+          data: { reason: t('users:suspend.reason', 'تم الإيقاف من لوحة التحكم') }
         },
         { 
           onSuccess: () => refetch(),
@@ -161,11 +163,11 @@ export const UsersListPage: React.FC = () => {
     setPaginationModel(prev => ({ ...prev, page: 0 }));
   };
 
-  // Columns
-  const columns: GridColDef[] = [
-    {
-      field: 'phone',
-      headerName: 'رقم الهاتف',
+  // Columns - using useMemo to update when language changes
+  const columns: GridColDef[] = React.useMemo(() => [
+      {
+        field: 'phone',
+        headerName: t('users:list.columns.phone', 'رقم الهاتف'),
       minWidth: 130,
       flex: 0.9,
       renderCell: (params) => (
@@ -174,9 +176,9 @@ export const UsersListPage: React.FC = () => {
         </Box>
       ),
     },
-    {
-      field: 'name',
-      headerName: 'الاسم',
+      {
+        field: 'name',
+        headerName: t('users:list.columns.name', 'الاسم'),
       minWidth: 150,
       flex: 1.2,
       renderCell: (params) => {
@@ -190,7 +192,7 @@ export const UsersListPage: React.FC = () => {
     },
     {
       field: 'roles',
-      headerName: 'الدور',
+      headerName: t('users:list.columns.role', 'الدور'),
       minWidth: 100,
       flex: 0.8,
       renderCell: (params) => {
@@ -203,11 +205,11 @@ export const UsersListPage: React.FC = () => {
           user: 'default',
         };
         const labelMap: Record<string, string> = {
-          super_admin: 'مدير عام',
-          admin: 'مدير',
-          merchant: 'تاجر',
-          engineer: 'مهندس',
-          user: 'مستخدم',
+          super_admin: t('users:roles.super_admin', 'مدير عام'),
+          admin: t('users:roles.admin', 'مدير'),
+          merchant: t('users:roles.merchant', 'تاجر'),
+          engineer: t('users:roles.engineer', 'مهندس'),
+          user: t('users:roles.user', 'مستخدم'),
         };
         return (
           <Chip 
@@ -219,9 +221,9 @@ export const UsersListPage: React.FC = () => {
         );
       },
     },
-    {
-      field: 'status',
-      headerName: 'الحالة',
+      {
+        field: 'status',
+        headerName: t('users:list.columns.status', 'الحالة'),
       minWidth: 90,
       flex: 0.7,
       renderCell: (params) => {
@@ -229,10 +231,10 @@ export const UsersListPage: React.FC = () => {
           UserStatus,
           { label: string; color: 'success' | 'error' | 'warning' | 'default' }
         > = {
-          active: { label: 'نشط', color: 'success' },
-          suspended: { label: 'معلق', color: 'error' },
-          pending: { label: 'قيد الانتظار', color: 'warning' },
-          deleted: { label: 'محذوف', color: 'default' },
+          active: { label: t('users:status.active', 'نشط'), color: 'success' },
+          suspended: { label: t('users:status.suspended', 'معلق'), color: 'error' },
+          pending: { label: t('users:status.pending', 'قيد الانتظار'), color: 'warning' },
+          deleted: { label: t('users:status.deleted', 'محذوف'), color: 'default' },
         };
         const status = statusMap[params.row.status as UserStatus];
         return (
@@ -245,9 +247,9 @@ export const UsersListPage: React.FC = () => {
         );
       },
     },
-    {
-      field: 'capabilities',
-      headerName: 'القدرات',
+      {
+        field: 'capabilities',
+        headerName: t('users:list.columns.capabilities', 'القدرات'),
       minWidth: 120,
       flex: 1,
       renderCell: (params) => {
@@ -255,9 +257,9 @@ export const UsersListPage: React.FC = () => {
         if (!caps) return '-';
 
         const badges = [];
-        if (caps.engineer_capable) badges.push('مهندس');
-        if (caps.wholesale_capable) badges.push('تاجر جملة');
-        if (badges.length === 0) badges.push('عميل');
+        if (caps.engineer_capable) badges.push(t('users:capabilities.engineer', 'مهندس'));
+        if (caps.wholesale_capable) badges.push(t('users:capabilities.wholesale', 'تاجر جملة'));
+        if (badges.length === 0) badges.push(t('users:capabilities.customer', 'عميل'));
 
         return (
           <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
@@ -282,16 +284,16 @@ export const UsersListPage: React.FC = () => {
         );
       },
     },
-    {
-      field: 'createdAt',
-      headerName: 'تاريخ الإنشاء',
+      {
+        field: 'createdAt',
+        headerName: t('users:list.columns.createdAt', 'تاريخ الإنشاء'),
       minWidth: 120,
       flex: 0.8,
       valueFormatter: (value) => formatDate(value as Date),
     },
-    {
-      field: 'actions',
-      headerName: 'الإجراءات',
+      {
+        field: 'actions',
+        headerName: t('users:list.columns.actions', 'الإجراءات'),
       minWidth: 120,
       flex: 0.8,
       sortable: false,
@@ -302,7 +304,7 @@ export const UsersListPage: React.FC = () => {
         if (isDeleted) {
           return (
             <Box display="flex" gap={0.5} flexWrap="wrap">
-              <Tooltip title="استعادة">
+              <Tooltip title={t('users:actions.restore', 'استعادة')}>
                 <IconButton
                   size="small"
                   color="primary"
@@ -321,7 +323,7 @@ export const UsersListPage: React.FC = () => {
 
         return (
           <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
-            <Tooltip title="تعديل">
+            <Tooltip title={t('users:actions.edit', 'تعديل')}>
               <IconButton
                 size="small"
                 color="primary"
@@ -335,7 +337,7 @@ export const UsersListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={user.status === 'active' ? 'نشط' : 'موقوف'}>
+            <Tooltip title={user.status === 'active' ? t('users:status.active', 'نشط') : t('users:status.suspended', 'موقوف')}>
               <Box 
                 onClick={(e) => e.stopPropagation()}
                 sx={{ display: 'flex', alignItems: 'center' }}
@@ -360,7 +362,7 @@ export const UsersListPage: React.FC = () => {
               </Box>
             </Tooltip>
 
-            <Tooltip title="حذف">
+            <Tooltip title={t('users:actions.delete', 'حذف')}>
               <IconButton
                 size="small"
                 color="error"
@@ -377,7 +379,7 @@ export const UsersListPage: React.FC = () => {
         );
       },
     },
-  ];
+  ], [t, i18n.language, navigate]);
 
   return (
     <Box>
@@ -411,21 +413,13 @@ export const UsersListPage: React.FC = () => {
         <MuiPaper sx={{ p: 2, mb: 2 }}>
           <Stack direction="row" spacing={2} justifyContent="flex-end">
             <Button
-              variant="outlined"
+              variant="contained"
               startIcon={<PersonAdd />}
               onClick={() => navigate('/users/new')}
               size="medium"
-            >
-              إضافة مستخدم
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AdminPanelSettings />}
-              onClick={() => navigate('/users/create-admin')}
-              size="medium"
               color="primary"
             >
-              إنشاء أدمن
+              {t('users:actions.addUser', 'إضافة مستخدم / أدمن')}
             </Button>
           </Stack>
         </MuiPaper>
@@ -434,7 +428,7 @@ export const UsersListPage: React.FC = () => {
       {/* Desktop View - Table */}
       <Box sx={{ mb: 2, display: { xs: 'none', md: 'block' } }}>
         <DataTable
-          title="إدارة المستخدمين"
+          title={t('users:list.title', 'إدارة المستخدمين')}
           columns={columns}
           rows={data?.data || []}
           loading={isLoading}
@@ -442,7 +436,7 @@ export const UsersListPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           sortModel={sortModel}
           onSortModelChange={setSortModel}
-          searchPlaceholder="البحث في المستخدمين..."
+          searchPlaceholder={t('users:list.searchPlaceholder', 'البحث في المستخدمين...')}
           onSearch={(search) => {
             setFilters(prev => ({ ...prev, search }));
           }}
@@ -457,31 +451,21 @@ export const UsersListPage: React.FC = () => {
 
       {/* Mobile Action Buttons */}
       <Box sx={{ mb: 2, display: { xs: 'block', md: 'none' }, px: 2 }}>
-        <Stack direction="column" spacing={1}>
-          <Button
-            variant="outlined"
-            startIcon={<PersonAdd />}
-            onClick={() => navigate('/users/new')}
-            fullWidth
-          >
-            إضافة مستخدم
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AdminPanelSettings />}
-            onClick={() => navigate('/users/create-admin')}
-            fullWidth
-            color="primary"
-          >
-            إنشاء أدمن
-          </Button>
-        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<PersonAdd />}
+          onClick={() => navigate('/users/new')}
+          fullWidth
+          color="primary"
+        >
+          {t('users:actions.addUser', 'إضافة مستخدم / أدمن')}
+        </Button>
       </Box>
 
       {/* Mobile View - Cards */}
       <Box sx={{ display: { xs: 'block', md: 'none' }, px: 2 }}>
         {isLoading ? (
-          <Box>جاري التحميل...</Box>
+          <Box>{t('common:loading', 'جاري التحميل...')}</Box>
         ) : (
           (data?.data || []).map((user: User) => (
             <UserCard
@@ -510,14 +494,16 @@ export const UsersListPage: React.FC = () => {
         }}
       >
         <DialogTitle sx={{ pb: 1, fontSize: '1.25rem', fontWeight: 'bold' }}>
-          🗑️ حذف المستخدم
+          🗑️ {t('users:dialog.delete.title', 'حذف المستخدم')}
         </DialogTitle>
         
         <DialogContent>
           <DialogContentText sx={{ mb: 2, fontSize: '0.95rem' }}>
-            هل أنت متأكد من حذف المستخدم <strong>{confirmDialog.user?.firstName} {confirmDialog.user?.lastName}</strong>؟
+            {t('users:dialog.delete.message', 'هل أنت متأكد من حذف المستخدم {{name}}؟', { 
+              name: `${confirmDialog.user?.firstName} ${confirmDialog.user?.lastName}` 
+            })}
             <br />
-            يمكنك استعادة المستخدم لاحقاً من المستخدمين المحذوفين.
+            {t('users:dialog.delete.note', 'يمكنك استعادة المستخدم لاحقاً من المستخدمين المحذوفين.')}
           </DialogContentText>
         </DialogContent>
 
@@ -527,7 +513,7 @@ export const UsersListPage: React.FC = () => {
             color="inherit"
             variant="outlined"
           >
-            إلغاء
+            {t('common:actions.cancel', 'إلغاء')}
           </Button>
           <Button 
             onClick={handleConfirmAction} 
@@ -535,7 +521,7 @@ export const UsersListPage: React.FC = () => {
             color="error"
             // autoFocus
           >
-            حذف
+            {t('users:actions.delete', 'حذف')}
           </Button>
         </DialogActions>
       </Dialog>

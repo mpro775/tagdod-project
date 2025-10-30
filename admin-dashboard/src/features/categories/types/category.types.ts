@@ -1,5 +1,22 @@
 import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
+// Media type for populated images
+export interface Media {
+  _id: string;
+  url: string;
+  filename: string;
+  storedFilename: string;
+  name: string;
+  category: string;
+  type: string;
+  mimeType?: string;
+  size?: number;
+  width?: number;
+  height?: number;
+  description?: string;
+  isPublic: boolean;
+}
+
 // Category Interface - متطابق تماماً مع Backend Schema
 export interface Category extends BaseEntity {
   // Tree Structure
@@ -15,7 +32,7 @@ export interface Category extends BaseEntity {
   descriptionEn?: string; // English
 
   // Images
-  imageId?: string; // Reference to Media collection
+  imageId?: string | Media; // Reference to Media collection (populated)
 
   // SEO
   metaTitle?: string;

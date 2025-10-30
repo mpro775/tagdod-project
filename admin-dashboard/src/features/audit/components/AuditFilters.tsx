@@ -19,6 +19,7 @@ import {
   FilterList as FilterIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -48,6 +49,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
   availableActions,
   availableResources,
 }) => {
+  const { t } = useTranslation('audit');
   const [startDate, setStartDate] = React.useState<Date | undefined>(
     filters.startDate ? new Date(filters.startDate) : undefined
   );
@@ -81,7 +83,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FilterIcon />
-            فلاتر البحث
+            {t('filters.title', { defaultValue: 'فلاتر السجلات' })}
           </Typography>
           {hasActiveFilters && (
             <Button
@@ -90,7 +92,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
               onClick={onClearFilters}
               startIcon={<ClearIcon />}
             >
-              مسح الفلاتر
+              {t('filters.clearFilters', { defaultValue: 'مسح الفلاتر' })}
             </Button>
           )}
         </Box>

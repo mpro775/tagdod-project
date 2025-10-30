@@ -18,6 +18,7 @@ import {
 import { Save, ArrowBack } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { useCreateBanner, useUpdateBanner, useBanner } from '../hooks/useBanners';
 import {
   BANNER_LOCATION_OPTIONS,
@@ -34,6 +35,7 @@ export const BannerFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
+  const { t } = useTranslation('banners');
 
   const { data: banner, isLoading: loadingBanner } = useBanner(id!, {
     enabled: isEditing,
@@ -99,22 +101,22 @@ export const BannerFormPage: React.FC = () => {
         { id: id!, data },
         {
           onSuccess: () => {
-            toast.success('تم تحديث البانر بنجاح');
+            toast.success(t('messages.updated'));
             navigate('/banners');
           },
           onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'فشل في تحديث البانر');
+            toast.error(error.response?.data?.error?.message || t('messages.updateError'));
           },
         }
       );
     } else {
       createBanner(data as CreateBannerDto, {
         onSuccess: () => {
-          toast.success('تم إنشاء البانر بنجاح');
+          toast.success(t('messages.created'));
           navigate('/banners');
         },
         onError: (error: any) => {
-          toast.error(error.response?.data?.message || 'فشل في إنشاء البانر');
+          toast.error(error.response?.data?.error?.message || t('messages.createError'));
         },
       });
     }
@@ -136,10 +138,10 @@ export const BannerFormPage: React.FC = () => {
           onClick={() => navigate('/banners')}
           variant="outlined"
         >
-          العودة
+          {t('back')}
         </Button>
         <Typography variant="h4" component="h1">
-          {isEditing ? 'تعديل البانر' : 'إنشاء بانر جديد'}
+          {isEditing ? t('editBanner') : t('createBanner')}
         </Typography>
       </Box>
 
@@ -149,7 +151,7 @@ export const BannerFormPage: React.FC = () => {
             {/* Basic Information */}
             <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
-                المعلومات الأساسية
+                {t('basicInfo')}
               </Typography>
             </Grid>
 
@@ -161,7 +163,7 @@ export const BannerFormPage: React.FC = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="عنوان البانر"
+                    label={t('form.title.label')}
                     error={!!errors.title}
                     helperText={errors.title?.message}
                   />
@@ -177,7 +179,7 @@ export const BannerFormPage: React.FC = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="موقع العرض"
+                    label={t('form.location.label')}
                     error={!!errors.location}
                     helperText={errors.location?.message}
                   />
@@ -195,9 +197,8 @@ export const BannerFormPage: React.FC = () => {
                     multiline
                     rows={3}
                     fullWidth
-                    label="وصف البانر"
-                
-                />
+                    label={t('form.description.label')}
+                  />
               )}
               />
             </Grid>
@@ -205,7 +206,7 @@ export const BannerFormPage: React.FC = () => {
             {/* Image and Link */}
             <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
-                الصورة والرابط
+                {t('imageAndLink')}
               </Typography>
             </Grid>
 
@@ -214,19 +215,19 @@ export const BannerFormPage: React.FC = () => {
                 name="imageUrl"
                 control={control}
                 rules={{
-                  required: 'رابط الصورة مطلوب',
+                  required: t('form.imageUrl.required'),
                   pattern: {
                     value: /^https?:\/\/.+/,
-                    message: 'يجب أن يكون رابط صورة صحيح',
+                    message: t('form.imageUrl.invalid'),
                   },
                 }}
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    label="رابط الصورة"
+                    label={t('form.imageUrl.label')}
                     error={!!error}
-                    helperText={error?.message || "رابط الصورة مطلوب"}
+                    helperText={error?.message || t('form.imageUrl.helper')}
                   />
                 )}
               />
@@ -240,9 +241,9 @@ export const BannerFormPage: React.FC = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="رابط التوجيه"
+                    label={t('form.linkUrl.label')}
                     error={!!error}
-                    helperText={error?.message || "اتركه فارغاً إذا لم يكن هناك رابط"}
+                    helperText={error?.message || t('form.linkUrl.helper')}
                   />
                 )}
               />
@@ -254,7 +255,7 @@ export const BannerFormPage: React.FC = () => {
                   sx={{ textAlign: 'center', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}
                 >
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    معاينة الصورة:
+                    {t('form.imagePreview')}
                   </Typography>
                   <Box
                     component="img"
@@ -283,7 +284,7 @@ export const BannerFormPage: React.FC = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="نص بديل للصورة"
+                    label={t('form.altText.label')}
                     type="text"
                     InputProps={{ inputProps: { min: 0 } }}
                   />
@@ -294,7 +295,7 @@ export const BannerFormPage: React.FC = () => {
             {/* Settings */}
             <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
-                الإعدادات
+                {t('settings')}
               </Typography>
             </Grid>
 
@@ -304,10 +305,10 @@ export const BannerFormPage: React.FC = () => {
                 control={control}
                 render={({ field }) => (
                   <FormControl fullWidth>
-                    <InputLabel>نوع الترويج</InputLabel>
+                    <InputLabel>{t('form.promotionType.label')}</InputLabel>
                     <Select
                       {...field}
-                      label="نوع الترويج"
+                      label={t('form.promotionType.label')}
                       value={field.value || ''}
                     >
                       {BANNER_PROMOTION_TYPE_OPTIONS.map((option) => (
@@ -329,7 +330,7 @@ export const BannerFormPage: React.FC = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="ترتيب العرض"
+                    label={t('form.sortOrder.label')}
                     type="number"
                     InputProps={{ inputProps: { min: 0 } }}
                   />
@@ -345,7 +346,7 @@ export const BannerFormPage: React.FC = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="مدة العرض (مللي ثانية)"
+                    label={t('form.displayDuration.label')}
                     type="number"
                     InputProps={{ inputProps: { min: 1000 } }}
                   />
@@ -362,7 +363,7 @@ export const BannerFormPage: React.FC = () => {
                       onChange={(e) => setValue('isActive', e.target.checked)}
                     />
                   }
-                  label="نشط"
+                  label={t('form.isActive.label')}
                 />
               </Box>
             </Grid>
@@ -370,7 +371,7 @@ export const BannerFormPage: React.FC = () => {
             {/* Date Range */}
             <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom>
-                نطاق التاريخ
+                {t('dateRange')}
               </Typography>
             </Grid>
 
@@ -382,7 +383,7 @@ export const BannerFormPage: React.FC = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="تاريخ البداية"
+                    label={t('form.startDate.label')}
                     type="date"
                     InputLabelProps={{ shrink: true }}
                   />
@@ -398,7 +399,7 @@ export const BannerFormPage: React.FC = () => {
                   <TextField
                     {...field}
                     fullWidth
-                    label="تاريخ النهاية"
+                    label={t('form.endDate.label')}
                     type="date"
                     InputLabelProps={{ shrink: true }}
                   />
@@ -414,7 +415,7 @@ export const BannerFormPage: React.FC = () => {
                   onClick={() => navigate('/banners')}
                   disabled={creating || updating}
                 >
-                  إلغاء
+                  {t('cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -422,7 +423,7 @@ export const BannerFormPage: React.FC = () => {
                   startIcon={creating || updating ? <CircularProgress size={20} /> : <Save />}
                   disabled={creating || updating}
                 >
-                  {creating || updating ? 'جاري الحفظ...' : 'حفظ'}
+                  {creating || updating ? t('saving') : t('save')}
                 </Button>
               </Box>
             </Grid>

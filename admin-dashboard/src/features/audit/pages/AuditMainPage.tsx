@@ -26,32 +26,33 @@ import {
 import { AuditLogsPage } from './AuditLogsPage';
 import { AuditAnalyticsPage } from './AuditAnalyticsPage';
 import { useAuditStats } from '../hooks/useAudit';
+import { useTranslation } from 'react-i18next';
 
 export const AuditMainPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('logs');
   const { stats, isLoading } = useAuditStats();
-
+  const { t } = useTranslation();
   const quickStats = [
     {
-      title: 'إجمالي السجلات',
+      title: t('audit.totalLogs', { defaultValue: 'إجمالي السجلات' }),
       value: stats?.totalLogs || 0,
       icon: DatabaseIcon,
       color: 'primary',
     },
     {
-      title: 'العمليات الحساسة',
+      title: t('audit.sensitiveLogs', { defaultValue: 'العمليات الحساسة' }),
       value: stats?.sensitiveLogs || 0,
       icon: AlertTriangleIcon,
       color: 'error',
     },
     {
-      title: 'الإجراءات الإدارية',
+      title: t('audit.adminActions', { defaultValue: 'الإجراءات الإدارية' }),
       value: stats?.adminActions || 0,
       icon: SettingsIcon,
       color: 'secondary',
     },
     {
-      title: 'أحداث المصادقة',
+      title: t('audit.authEvents', { defaultValue: 'أحداث المصادقة' }),
       value: stats?.authEvents || 0,
       icon: KeyIcon,
       color: 'success',
@@ -64,14 +65,14 @@ export const AuditMainPage: React.FC = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box>
           <Typography variant="h3" fontWeight="bold">
-            نظام التدقيق
+            {t('audit.title', { defaultValue: 'نظام التدقيق' })}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            مراقبة وتتبع جميع العمليات في النظام
+            {t('audit.subtitle', { defaultValue: 'مراقبة وتتبع جميع العمليات في النظام' })}
           </Typography>
         </Box>
         <Button variant="outlined" size="small" startIcon={<SettingsIcon />}>
-          الإعدادات
+          {t('audit.settings', { defaultValue: 'الإعدادات' })}
         </Button>
       </Box>
 
@@ -104,8 +105,8 @@ export const AuditMainPage: React.FC = () => {
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {stat.title === 'العمليات الحساسة' && stats?.totalLogs
-                      ? `${Math.round((stat.value / stats.totalLogs) * 100)}% من إجمالي العمليات`
-                      : 'آخر تحديث'}
+                      ? `${Math.round((stat.value / stats.totalLogs) * 100)}% ${t('audit.ofTotalOperations', { defaultValue: 'من إجمالي العمليات' })}`
+                      : t('audit.lastUpdate', { defaultValue: 'آخر تحديث' })}
                   </Typography>
                 </CardContent>
               </Card>
@@ -118,12 +119,12 @@ export const AuditMainPage: React.FC = () => {
       <Box>
         <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tab value="logs" icon={<FileTextIcon />} iconPosition="start" label="سجلات التدقيق" />
+            <Tab value="logs" icon={<FileTextIcon />} iconPosition="start" label={t('audit.logs', { defaultValue: 'سجلات التدقيق' })} />
             <Tab
               value="analytics"
               icon={<BarChartIcon />}
               iconPosition="start"
-              label="التحليلات والإحصائيات"
+              label={t('audit.analytics', { defaultValue: 'التحليلات والإحصائيات' })}
             />
           </Box>
         </Tabs>
@@ -139,7 +140,7 @@ export const AuditMainPage: React.FC = () => {
         <CardHeader>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ShieldIcon />
-            حالة نظام التدقيق
+            {t('audit.status', { defaultValue: 'حالة نظام التدقيق' })}  
           </Typography>
         </CardHeader>
         <CardContent>
@@ -151,10 +152,10 @@ export const AuditMainPage: React.FC = () => {
                 </Paper>
                 <Box>
                   <Typography variant="body2" fontWeight="medium">
-                    النظام نشط
+                    {t('audit.active', { defaultValue: 'النظام نشط' })}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    جميع العمليات يتم تسجيلها
+                    {t('audit.allOperationsLogged', { defaultValue: 'جميع العمليات يتم تسجيلها' })}
                   </Typography>
                 </Box>
               </Box>
@@ -167,7 +168,7 @@ export const AuditMainPage: React.FC = () => {
                 </Paper>
                 <Box>
                   <Typography variant="body2" fontWeight="medium">
-                    آخر تحديث
+                    {t('audit.lastUpdate', { defaultValue: 'آخر تحديث' })}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {new Date().toLocaleString('ar-SA')}
@@ -183,10 +184,10 @@ export const AuditMainPage: React.FC = () => {
                 </Paper>
                 <Box>
                   <Typography variant="body2" fontWeight="medium">
-                    المستخدمون النشطون
+                    {t('audit.activeUsers', { defaultValue: 'المستخدمون النشطون' })}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {stats?.authEvents || 0} حدث مصادقة
+                    {stats?.authEvents || 0} {t('audit.authEvents', { defaultValue: 'حدث مصادقة' })}  
                   </Typography>
                 </Box>
               </Box>

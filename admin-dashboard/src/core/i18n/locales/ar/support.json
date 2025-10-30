@@ -1,0 +1,146 @@
+{
+  "titles": {
+    "supportManagement": "إدارة تذاكر الدعم",
+    "supportStats": "إحصائيات الدعم الفني",
+    "ticketDetails": "تفاصيل التذكرة",
+    "cannedResponses": "الردود الجاهزة"
+  },
+  "labels": {
+    "user": "المستخدم",
+    "admin": "المدير",
+    "system": "النظام",
+    "attachment": "مرفق",
+    "attachments": "مرفقات",
+    "tag": "وسم",
+    "tags": "وسوم",
+    "rating": "التقييم",
+    "feedback": "التعليق",
+    "assignedTo": "مُسند إلى",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "تاريخ التحديث",
+    "resolvedAt": "تاريخ الحل",
+    "closedAt": "تاريخ الإغلاق",
+    "firstResponseAt": "تاريخ الرد الأول",
+    "slaDueDate": "انتهاء SLA",
+    "slaBreached": "متجاوز SLA",
+    "slaHours": "ساعات SLA",
+    "search": "بحث",
+    "filter": "تصفية",
+    "clearFilters": "مسح المرشحات",
+    "refresh": "تحديث",
+    "back": "العودة",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "add": "إضافة",
+    "create": "إنشاء",
+    "update": "تحديث",
+    "submit": "إرسال",
+    "reply": "رد",
+    "close": "إغلاق",
+    "reopen": "إعادة فتح",
+    "assign": "تخصيص",
+    "unassign": "إلغاء التخصيص",
+    "viewStats": "عرض الإحصائيات",
+    "manageResponses": "إدارة الردود"
+  },
+  "status": {
+    "open": "مفتوحة",
+    "in_progress": "قيد المعالجة",
+    "waiting_for_user": "في انتظار المستخدم",
+    "resolved": "محلولة",
+    "closed": "مغلقة",
+    "all": "جميع الحالات"
+  },
+  "priority": {
+    "low": "منخفضة",
+    "medium": "متوسطة",
+    "high": "عالية",
+    "urgent": "عاجلة",
+    "all": "جميع الأولويات"
+  },
+  "category": {
+    "technical": "تقني",
+    "billing": "الفواتير",
+    "products": "المنتجات",
+    "services": "الخدمات",
+    "account": "الحساب",
+    "other": "أخرى",
+    "all": "جميع الفئات"
+  },
+  "filters": {
+    "title": "فلترة التذاكر",
+    "searchPlaceholder": "ابحث في العنوان أو الوصف...",
+    "statusLabel": "الحالة",
+    "priorityLabel": "الأولوية",
+    "categoryLabel": "الفئة",
+    "assignedToLabel": "المسؤول",
+    "assignedToPlaceholder": "معرف المسؤول...",
+    "activeFilters": "الفلاتر النشطة",
+    "search": "البحث"
+  },
+  "stats": {
+    "totalTickets": "إجمالي التذاكر",
+    "openTickets": "التذاكر المفتوحة",
+    "inProgressTickets": "التذاكر قيد المعالجة",
+    "resolvedTickets": "التذاكر المحلولة",
+    "closedTickets": "التذاكر المغلقة",
+    "averageResponseTime": "متوسط وقت الاستجابة",
+    "averageResolutionTime": "متوسط وقت الحل",
+    "slaBreached": "متجاوزة SLA",
+    "byCategory": "التوزيع حسب الفئة",
+    "byPriority": "التوزيع حسب الأولوية",
+    "percentageOfTotal": "% من إجمالي التذاكر"
+  },
+  "messages": {
+    "noTickets": "لا توجد تذاكر",
+    "noTicketsDesc": "لم يتم العثور على أي تذاكر تطابق المعايير المحددة",
+    "loadingTickets": "جارٍ تحميل التذاكر...",
+    "errorLoadingTickets": "حدث خطأ في تحميل التذاكر. يرجى المحاولة مرة أخرى.",
+    "errorLoadingStats": "حدث خطأ في تحميل الإحصائيات. يرجى المحاولة مرة أخرى.",
+    "noStatsData": "لا توجد بيانات متاحة للإحصائيات.",
+    "ticketCreated": "تم إنشاء التذكرة بنجاح",
+    "ticketUpdated": "تم تحديث التذكرة بنجاح",
+    "ticketClosed": "تم إغلاق التذكرة بنجاح",
+    "ticketReopened": "تم إعادة فتح التذكرة بنجاح",
+    "responseSent": "تم إرسال الرد بنجاح",
+    "slaBreachTooltip": "تم تجاوز وقت الاستجابة المتفق عليه (SLA)",
+    "backToTickets": "العودة للتذاكر"
+  },
+  "placeholders": {
+    "searchTickets": "البحث في التذاكر",
+    "ticketTitle": "عنوان التذكرة",
+    "ticketDescription": "صف المشكلة...",
+    "adminReply": "اكتب ردك...",
+    "internalNote": "ملاحظة داخلية (مرئية للمدراء فقط)"
+  },
+  "time": {
+    "minutes": "دقائق",
+    "hours": "ساعات",
+    "days": "أيام",
+    "minute": "دقيقة",
+    "hour": "ساعة",
+    "day": "يوم"
+  },
+  "pagination": {
+    "showing": "عرض",
+    "of": "من",
+    "total": "إجمالي",
+    "tickets": "تذاكر"
+  },
+  "actions": {
+    "viewDetails": "عرض التفاصيل",
+    "addReply": "إضافة رد",
+    "markResolved": "تحديد كمحلولة",
+    "markClosed": "تحديد كمغلقة",
+    "assignToMe": "تخصيص لي",
+    "escalate": "تصعيد"
+  },
+  "validation": {
+    "titleRequired": "العنوان مطلوب",
+    "descriptionRequired": "الوصف مطلوب",
+    "categoryRequired": "الفئة مطلوبة",
+    "priorityRequired": "الأولوية مطلوبة"
+  }
+}

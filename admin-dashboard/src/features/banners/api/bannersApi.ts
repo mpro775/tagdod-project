@@ -90,7 +90,7 @@ export const bannersApi = {
 
 // Error handling utility
 export const handleBannerApiError = (error: any): ApiErrorResponse => {
-  const message = error.response?.data?.message || error.message || 'حدث خطأ غير متوقع';
+  const message = error.response?.data?.error?.message || error.message || 'حدث خطأ غير متوقع';
   const code = error.response?.data?.code || error.code || 'UNKNOWN_ERROR';
 
   return {

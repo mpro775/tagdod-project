@@ -68,7 +68,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ar-SA', {
       style: 'currency',
-      currency: 'SAR',
+      currency: 'USD',
     }).format(price);
   };
 

@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, LogLevel } from '@nestjs/common';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import { AppModule } from './app.module';
@@ -10,8 +10,13 @@ async function bootstrap() {
   
   let app;
   try {
+    // Use appropriate logging levels based on environment
+    const logLevels: LogLevel[] = process.env.NODE_ENV === 'production' 
+      ? ['error', 'warn', 'log']
+      : ['error', 'warn', 'log', 'debug', 'verbose'];
+    
     app = await NestFactory.create(AppModule, {
-      logger: ['error', 'warn', 'debug', 'verbose'],
+      logger: logLevels,
     });
   } catch (error) {
     logger.error('Failed to create NestJS application:', error);
@@ -59,9 +64,9 @@ async function bootstrap() {
 
   // Setup Swagger documentation
   try {
-    console.log('\n📝 Setting up Swagger documentation...');
+    logger.log('📝 Setting up Swagger documentation...');
     setupSwagger(app);
-    console.log('✅ Swagger documentation setup completed\n');
+    logger.log('✅ Swagger documentation setup completed');
   } catch (error) {
     logger.warn('Failed to setup Swagger documentation:', error instanceof Error ? error.message : 'Unknown error');
   }
@@ -69,13 +74,13 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   
   try {
-    console.log(`🔌 Starting server on port ${port}...`);
-    console.log(`📍 Attempting to bind to: 0.0.0.0:${port}`);
-    console.log('⏳ This may take a few seconds...\n');
+    logger.log(`🔌 Starting server on port ${port}...`);
+    logger.log(`📍 Attempting to bind to: 0.0.0.0:${port}`);
+    logger.log('⏳ This may take a few seconds...');
     
     await app.listen(port, '0.0.0.0');
     
-    console.log('\n✅ Server started successfully!');
+    logger.log('✅ Server started successfully!');
     logger.log(`🚀 Application is running on: http://localhost:${port}`);
     logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
     logger.log(`🔍 Analytics Dashboard: http://localhost:${port}/api/analytics/dashboard`);
@@ -88,6 +93,7 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  console.error('Fatal error during bootstrap:', error);
+  const logger = new Logger('Bootstrap');
+  logger.error('Fatal error during bootstrap:', error);
   process.exit(1);
 });

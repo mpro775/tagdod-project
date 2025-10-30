@@ -1,0 +1,114 @@
+{
+  "navigation": {
+    "title": "مراقبة النظام",
+    "subtitle": "مراقبة الأداء والموارد في الوقت الفعلي"
+  },
+  "actions": {
+    "refresh": "تحديث",
+    "enableAutoRefresh": "تفعيل التحديث التلقائي",
+    "disableAutoRefresh": "إيقاف التحديث التلقائي",
+    "lastUpdated": "آخر تحديث: {{time}}"
+  },
+  "loading": {
+    "message": "جاري تحميل بيانات المراقبة...",
+    "failed": "فشل في تحميل بيانات المراقبة"
+  },
+  "systemHealth": {
+    "title": "حالة النظام",
+    "subtitle": "نظرة عامة على صحة النظام",
+    "status": {
+      "healthy": "سليم",
+      "warning": "تحذير",
+      "critical": "حرج"
+    },
+    "metrics": {
+      "uptime": "وقت التشغيل",
+      "avgResponseTime": "متوسط وقت الاستجابة",
+      "errorRate": "معدل الأخطاء",
+      "activeRequests": "الطلبات النشطة"
+    },
+    "units": {
+      "milliseconds": "{{value}}ms",
+      "percentage": "{{value}}%"
+    }
+  },
+  "tabs": {
+    "resources": "الموارد",
+    "database": "قاعدة البيانات",
+    "cache": "Cache"
+  },
+  "resources": {
+    "cpu": {
+      "title": "المعالج (CPU)",
+      "cores": "{{count}} نواة"
+    },
+    "memory": {
+      "title": "الذاكرة (RAM)",
+      "usage": "{{used}} / {{total}}"
+    },
+    "disk": {
+      "title": "القرص",
+      "usage": "{{used}} / {{total}}"
+    }
+  },
+  "database": {
+    "title": "MongoDB",
+    "metrics": {
+      "status": "الحالة",
+      "responseTime": "وقت الاستجابة",
+      "collections": "عدد المجموعات",
+      "totalSize": "الحجم الإجمالي"
+    },
+    "status": {
+      "connected": "متصل",
+      "disconnected": "غير متصل"
+    },
+    "units": {
+      "milliseconds": "{{value}}ms"
+    }
+  },
+  "cache": {
+    "title": "Redis Cache",
+    "metrics": {
+      "status": "الحالة",
+      "responseTime": "وقت الاستجابة",
+      "hitRate": "معدل الإصابة",
+      "memoryUsage": "استخدام الذاكرة"
+    },
+    "status": {
+      "connected": "متصل",
+      "disconnected": "غير متصل"
+    },
+    "units": {
+      "milliseconds": "{{value}}ms",
+      "percentage": "{{value}}%"
+    }
+  },
+  "charts": {
+    "title": "الرسوم البيانية - آخر 24 ساعة",
+    "metrics": {
+      "cpu": "استخدام المعالج (CPU)",
+      "memory": "استخدام الذاكرة (RAM)",
+      "disk": "استخدام القرص",
+      "usage": "الاستخدام %"
+    },
+    "apiPerformance": {
+      "title": "أداء نقاط API",
+      "subtitle": "أبطأ نقاط API (متوسط وقت الاستجابة)",
+      "metrics": {
+        "avgTime": "متوسط الوقت (ms)",
+        "maxTime": "أقصى وقت (ms)"
+      }
+    },
+    "failed": "فشل في تحميل بيانات أداء النقاط API"
+  },
+  "messages": {
+    "error": {
+      "loadFailed": "فشل في تحميل بيانات المراقبة",
+      "apiPerformanceFailed": "فشل في تحميل بيانات أداء النقاط API"
+    },
+    "success": {
+      "loaded": "تم تحميل البيانات بنجاح"
+    }
+  }
+}

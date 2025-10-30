@@ -12,6 +12,8 @@ export enum AttributeType {
   NUMBER = 'number',
   // eslint-disable-next-line no-unused-vars
   BOOLEAN = 'boolean',
+  // eslint-disable-next-line no-unused-vars
+  COLOR = 'color',
 }
 
 // Attribute Interface - متطابق تماماً مع Backend
@@ -86,7 +88,8 @@ export interface CreateAttributeDto {
   type: AttributeType;
   description?: string;
   order?: number;
-  isActive?: boolean;
+  // ملاحظة: isActive غير موجود في CreateDto في Backend
+  // يتم تعيينه تلقائياً كـ true في Backend
   isFilterable?: boolean;
   isRequired?: boolean;
   showInFilters?: boolean;
@@ -99,7 +102,7 @@ export interface UpdateAttributeDto {
   type?: AttributeType;
   description?: string;
   order?: number;
-  isActive?: boolean;
+  isActive?: boolean; // UpdateDto يحتوي على isActive
   isFilterable?: boolean;
   isRequired?: boolean;
   showInFilters?: boolean;
@@ -114,7 +117,8 @@ export interface CreateAttributeValueDto {
   imageId?: string;
   description?: string;
   order?: number;
-  isActive?: boolean;
+  // ملاحظة: isActive غير موجود في CreateDto في Backend
+  // يتم تعيينه تلقائياً كـ true في Backend
 }
 
 export interface UpdateAttributeValueDto {
@@ -125,7 +129,7 @@ export interface UpdateAttributeValueDto {
   imageId?: string;
   description?: string;
   order?: number;
-  isActive?: boolean;
+  isActive?: boolean; // UpdateDto يحتوي على isActive
 }
 
 export interface ListAttributesParams extends ListParams {
@@ -165,6 +169,7 @@ export interface AttributeStats {
     text: number;
     number: number;
     boolean: number;
+    color: number;
   };
 }
 
