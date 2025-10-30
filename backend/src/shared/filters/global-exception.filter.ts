@@ -52,8 +52,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Handle DomainException (new unified system)
     if (exception instanceof DomainException) {
       const response = exception.getResponse();
+      const responsePayload =
+        response && typeof response === 'object'
+          ? (response as Record<string, unknown>)
+          : { message: String(response) };
       res.status(status).json({
-        ...response,
+        ...responsePayload,
         requestId: req?.requestId,
         timestamp: new Date().toISOString(),
         path: req.url,
@@ -86,8 +90,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         success: false,
         error: {
           code: `HTTP_${status}`,
-          message: typeof response === 'string' ? response : (response).message || exception.message,
-          details: typeof response === 'object' ? response : null,
+          message:
+            typeof response === 'string'
+              ? response
+              : (typeof response === 'object' && response && 'message' in (response as Record<string, unknown>)
+                  ? (response as Record<string, unknown>).message as string
+                  : exception.message),
+          details: typeof response === 'object' ? (response as object) : null,
           fieldErrors: null,
         },
         requestId: req?.requestId,

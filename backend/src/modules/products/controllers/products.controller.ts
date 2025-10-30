@@ -110,7 +110,7 @@ export class ProductsController {
     @Body() dto: CreateVariantDto
   ) {
     dto.productId = productId;
-    const variant = await this.variantService.create(dto as Partial<Variant>);
+    const variant = await this.variantService.create(dto);
     return variant;
   }
 
@@ -156,7 +156,7 @@ export class ProductsController {
     @Param('id') id: string,
     @Body() dto: UpdateVariantDto
   ) {
-    const variant = await this.variantService.update(id, dto as Partial<Variant>);
+    const variant = await this.variantService.update(id, dto);
     return variant;
   }
 
