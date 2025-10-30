@@ -38,7 +38,6 @@ import {
   useUpdateVariant,
   useDeleteVariant,
 } from '../hooks/useProducts';
-import { VariantCard } from '../components/VariantCard';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import type { Variant, CreateVariantDto, UpdateVariantDto } from '../types/product.types';
 
@@ -395,6 +394,15 @@ export const ProductVariantsPage: React.FC = () => {
                         </Box>
                       ) : (
                         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                          <Tooltip title={t('products:variants.edit', 'تعديل متغير')}>
+                            <IconButton 
+                              color="primary" 
+                              size="small"
+                              onClick={() => handleEditVariant(variant)}
+                            >
+                              <Edit />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title={t('products:variants.form.quickEdit', 'تعديل سريع')}>
                             <IconButton 
                               color="primary" 

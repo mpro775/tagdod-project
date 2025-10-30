@@ -51,7 +51,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     // Handle DomainException (new unified system)
     if (exception instanceof DomainException) {
-      const response = exception.getResponse() as any;
+      const response = exception.getResponse();
       res.status(status).json({
         ...response,
         requestId: req?.requestId,
@@ -86,7 +86,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         success: false,
         error: {
           code: `HTTP_${status}`,
-          message: typeof response === 'string' ? response : (response as any).message || exception.message,
+          message: typeof response === 'string' ? response : (response).message || exception.message,
           details: typeof response === 'object' ? response : null,
           fieldErrors: null,
         },

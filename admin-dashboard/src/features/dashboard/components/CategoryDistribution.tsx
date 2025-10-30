@@ -19,8 +19,7 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
   isLoading 
 }) => {
   const theme = useTheme();
-  const { t, i18n } = useTranslation(['dashboard']);
-  const locale = React.useMemo(() => (i18n.language === 'ar' ? 'ar-SA' : 'en-US'), [i18n.language]);
+  const { t } = useTranslation(['dashboard']);
 
   const PREDEFINED_COLORS = [
     theme.palette.primary.main,

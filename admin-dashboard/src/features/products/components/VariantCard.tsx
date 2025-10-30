@@ -10,7 +10,6 @@ import {
   Tooltip,
   Avatar,
   Button,
-  Grid,
 } from '@mui/material';
 import { Edit, Delete, Visibility, Inventory, AttachMoney, Image } from '@mui/icons-material';
 import { formatDate } from '@/shared/utils/formatters';

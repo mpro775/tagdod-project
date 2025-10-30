@@ -1,11 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model, Types } from 'mongoose';
+import {  Model, Types } from 'mongoose';
 import { Variant } from '../schemas/variant.schema';
 import { 
   VariantNotFoundException,
-  ProductException,
-  ErrorCode 
+ 
 } from '../../../shared/exceptions';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';

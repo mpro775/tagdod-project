@@ -54,29 +54,12 @@ import { OrderStatusChip } from '../components/OrderStatusChip';
 import type {
   Order,
   OrderStatus,
-  PaymentStatus,
-  PaymentMethod,
   ListOrdersParams,
 } from '../types/order.types';
 import { ar } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 
-const paymentStatusLabels: Record<PaymentStatus, string> = {
-  pending: 'معلق',
-  authorized: 'مصرح',
-  paid: 'مدفوع',
-  failed: 'فشل',
-  refunded: 'مسترد',
-  partially_refunded: 'مسترد جزئياً',
-  cancelled: 'ملغي',
-};
-
-const paymentMethodLabels: Record<PaymentMethod, string> = {
-  COD: 'عند الاستلام',
-  ONLINE: 'أونلاين',
-  WALLET: 'محفظة',
-  BANK_TRANSFER: 'تحويل بنكي',
-};
+ 
 
 export const OrdersListPageResponsive: React.FC = () => {
   const theme = useTheme();

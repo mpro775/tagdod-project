@@ -19,7 +19,7 @@ export const QuickStatsWidget: React.FC<QuickStatsWidgetProps> = ({
   stats,
   isLoading = false,
 }) => {
-  const { t, i18n } = useTranslation(['dashboard']);
+  const { t } = useTranslation(['dashboard']);
   // Always use English numbers, regardless of language
   const numberFormatter = React.useMemo(() => new Intl.NumberFormat('en-US'), []);
 

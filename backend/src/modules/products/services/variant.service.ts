@@ -11,6 +11,40 @@ import {
 } from '../../../shared/exceptions';
 import { AttributesService } from '../../attributes/attributes.service';
 
+// Local, explicit types to eliminate 'any' usage and align with real data
+type AttributeValueInput = {
+  attributeId: string;
+  valueId: string;
+};
+
+type EnrichedAttributeValue = {
+  attributeId: string;
+  valueId: string;
+  name: string;
+  value: string;
+};
+
+type MonetaryInputFields = {
+  price?: number;
+  compareAtPrice?: number;
+  costPrice?: number;
+};
+
+type CreateVariantDto = {
+  productId: string;
+  attributeValues?: AttributeValueInput[];
+} & MonetaryInputFields & Partial<Variant>;
+
+type UpdateVariantDto = MonetaryInputFields & Partial<Variant>;
+
+type HasToObject<T> = {
+  toObject: () => T;
+};
+
+function hasToObject<T>(value: unknown): value is HasToObject<T> {
+  return typeof (value as HasToObject<T>).toObject === 'function';
+}
+
 @Injectable()
 export class VariantService {
   private readonly logger = new Logger(VariantService.name);
@@ -23,7 +57,7 @@ export class VariantService {
 
   // ==================== CRUD Operations ====================
 
-  async create(dto: Partial<Variant>): Promise<Variant> {
+  async create(dto: CreateVariantDto): Promise<Variant> {
     const product = await this.productModel.findById(dto.productId);
 
     if (!product) {
@@ -31,8 +65,8 @@ export class VariantService {
     }
 
     // حفظ name و value للعرض السريع
-    const enrichedAttributes = await Promise.all(
-      (dto.attributeValues || []).map(async (av: { attributeId: string; valueId: string }) => {
+    const enrichedAttributes: EnrichedAttributeValue[] = await Promise.all(
+      (dto.attributeValues || []).map(async (av: AttributeValueInput) => {
         const attr = await this.attributesService.getAttribute(av.attributeId);
         const value = attr.values?.find(
           (v: { _id: Types.ObjectId }) => String(v._id) === String(av.valueId),
@@ -51,9 +85,9 @@ export class VariantService {
       ...dto,
       attributeValues: enrichedAttributes,
       productId: new Types.ObjectId(dto.productId as string),
-      basePriceUSD: (dto as any).price || 0,
-      compareAtPriceUSD: (dto as any).compareAtPrice,
-      costPriceUSD: (dto as any).costPrice,
+      basePriceUSD: dto.price ?? 0,
+      compareAtPriceUSD: dto.compareAtPrice,
+      costPriceUSD: dto.costPrice,
     });
 
     // تحديث عدد الـ variants
@@ -78,7 +112,7 @@ export class VariantService {
   }
 
   async findByProductId(productId: string, includeDeleted = false): Promise<Variant[]> {
-    const filter: FilterQuery<Variant> = { productId: new Types.ObjectId(productId) } as any;
+    const filter: FilterQuery<Variant> = { productId: new Types.ObjectId(productId) } as FilterQuery<Variant>;
 
     if (!includeDeleted) {
       filter.deletedAt = null;
@@ -91,7 +125,7 @@ export class VariantService {
     return variants.map(v => v.toObject());
   }
 
-  async update(id: string, dto: Partial<Variant>): Promise<Variant> {
+  async update(id: string, dto: UpdateVariantDto): Promise<Variant> {
     const variant = await this.variantModel.findById(id);
 
     if (!variant) {
@@ -99,19 +133,19 @@ export class VariantService {
     }
 
     // تحويل price إلى basePriceUSD إذا كان موجوداً
-    const updateData: any = { ...dto };
+    const updateData: Record<string, unknown> = { ...dto };
     
-    if ((dto as any).price !== undefined) {
-      updateData.basePriceUSD = (dto as any).price;
-      delete updateData.price;
+    if (Object.prototype.hasOwnProperty.call(dto, 'price') && dto.price !== undefined) {
+      updateData.basePriceUSD = dto.price;
+      delete (updateData as UpdateVariantDto).price;
     }
-    if ((dto as any).compareAtPrice !== undefined) {
-      updateData.compareAtPriceUSD = (dto as any).compareAtPrice;
-      delete updateData.compareAtPrice;
+    if (Object.prototype.hasOwnProperty.call(dto, 'compareAtPrice') && dto.compareAtPrice !== undefined) {
+      updateData.compareAtPriceUSD = dto.compareAtPrice;
+      delete (updateData as UpdateVariantDto).compareAtPrice;
     }
-    if ((dto as any).costPrice !== undefined) {
-      updateData.costPriceUSD = (dto as any).costPrice;
-      delete updateData.costPrice;
+    if (Object.prototype.hasOwnProperty.call(dto, 'costPrice') && dto.costPrice !== undefined) {
+      updateData.costPriceUSD = dto.costPrice;
+      delete (updateData as UpdateVariantDto).costPrice;
     }
 
     await this.variantModel.updateOne({ _id: id }, { $set: updateData });
@@ -176,15 +210,15 @@ export class VariantService {
 
     // حذف الموجودة إذا overwrite
     if (overwrite) {
-      await this.variantModel.deleteMany({ productId });
+      await this.variantModel.deleteMany({ productId: new Types.ObjectId(productId) } as FilterQuery<Variant>);
     }
 
     // إنشاء الـ variants
-    const variants = [];
+    const variants: Variant[] = [];
     for (const combo of combinations) {
       // التحقق من عدم وجود variant بنفس التركيبة
       const existing = await this.variantModel.findOne({
-        productId,
+        productId: new Types.ObjectId(productId),
         deletedAt: null,
         attributeValues: {
           $all: combo.map((c: { attributeId: string; valueId: string }) => ({
@@ -219,7 +253,7 @@ export class VariantService {
     const totalVariants = await this.variantModel.countDocuments({
       productId: new Types.ObjectId(productId),
       deletedAt: null,
-    } as any);
+    } as FilterQuery<Variant>);
 
     await this.productModel.updateOne(
       { _id: productId },
@@ -229,7 +263,7 @@ export class VariantService {
     return {
       generated: variants.length,
       total: totalVariants,
-      variants: variants.map(v => (v.toObject ? v.toObject() : v)),
+      variants: variants.map(v => (hasToObject<Variant>(v) ? v.toObject() : v)),
     };
   }
 
@@ -283,7 +317,7 @@ export class VariantService {
     const count = await this.variantModel.countDocuments({
       productId: new Types.ObjectId(productId),
       deletedAt: null,
-    } as any);
+    } as FilterQuery<Variant>);
 
     await this.productModel.updateOne({ _id: productId }, { $set: { variantsCount: count } });
   }

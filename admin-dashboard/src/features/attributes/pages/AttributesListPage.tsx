@@ -80,7 +80,7 @@ export const AttributesListPage: React.FC = () => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = (id: string) => {
     deleteAttribute(id, {
       onSuccess: () => {
         showSnackbar(t('messages.deleteSuccess', { item: t('messages.attribute') }), 'success');
@@ -98,7 +98,7 @@ export const AttributesListPage: React.FC = () => {
     });
   };
 
-  const handleRestore = (id: string, name: string) => {
+  const handleRestore = (id: string) => {
     restoreAttribute(id, {
       onSuccess: () => {
         showSnackbar(t('messages.restoreSuccess', { item: t('messages.attribute') }), 'success');
@@ -201,7 +201,7 @@ export const AttributesListPage: React.FC = () => {
                 color="primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleRestore(attr._id, attr.name);
+                  handleRestore(attr._id);
                 }}
               >
                 <Restore fontSize="small" />
@@ -245,7 +245,7 @@ export const AttributesListPage: React.FC = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   if (window.confirm(t('messages.deleteConfirm', { name: attr.name }))) {
-                    handleDelete(attr._id, attr.name);
+                    handleDelete(attr._id);
                   }
                 }}
               >

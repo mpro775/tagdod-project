@@ -23,7 +23,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   isLoading = false,
 }) => {
   const theme = useTheme();
-  const { t, i18n } = useTranslation(['dashboard']);
+  const { t } = useTranslation(['dashboard']);
   
   const colorMap = {
     primary: theme.palette.primary.main,

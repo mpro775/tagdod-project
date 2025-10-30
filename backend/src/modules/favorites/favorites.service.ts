@@ -4,7 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Favorite } from './schemas/favorite.schema';
 import { 
   FavoriteNotFoundException,
-  ErrorCode 
+   
 } from '../../shared/exceptions';
 
 @Injectable()

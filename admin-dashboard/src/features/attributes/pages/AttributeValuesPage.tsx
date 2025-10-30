@@ -119,7 +119,7 @@ export const AttributeValuesPage: React.FC = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = (valueId: string, valueName: string) => {
+  const handleDelete = (valueId: string) => {
     deleteValue(valueId, {
       onSuccess: () => {
         showSnackbar(t('messages.deleteSuccess', { item: t('messages.value') }), 'success');
@@ -286,7 +286,7 @@ export const AttributeValuesPage: React.FC = () => {
                 color="error"
                 onClick={() => {
                   if (window.confirm(t('messages.deleteValueConfirm', { name: value.value }))) {
-                    handleDelete(value._id, value.value);
+                    handleDelete(value._id);
                   }
                 }}
               >

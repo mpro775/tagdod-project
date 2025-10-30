@@ -39,18 +39,10 @@ import { formatCurrency } from '@/shared/utils/format';
 
 export const DashboardPage: React.FC = () => {
   const theme = useTheme();
-  const { t, i18n } = useTranslation(['dashboard', 'common']);
+  const { t } = useTranslation(['dashboard', 'common']);
   // Always use English numbers, regardless of language
   const numberFormatter = React.useMemo(() => new Intl.NumberFormat('en-US'), []);
-  const currencyFormatter = React.useMemo(
-    () =>
-      new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: i18n.language === 'ar' ? 'YER' : 'USD',
-        maximumFractionDigits: 0,
-      }),
-    [i18n.language]
-  );
+
   
   // Fetch real dashboard data from analytics API
   const { data: dashboardResponse, isLoading, error, refetch } = useDashboardOverview();

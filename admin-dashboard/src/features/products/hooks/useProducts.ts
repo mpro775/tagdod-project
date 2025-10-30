@@ -122,15 +122,8 @@ export const useUpdateVariant = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      productId,
-      variantId,
-      data,
-    }: {
-      productId: string;
-      variantId: string;
-      data: UpdateVariantDto;
-    }) => productsApi.updateVariant(variantId, data),
+    mutationFn: (args: { productId: string; variantId: string; data: UpdateVariantDto }) =>
+      productsApi.updateVariant(args.variantId, args.data),
     onSuccess: (_, variables) => {
       toast.success('تم تحديث الخيار بنجاح');
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, variables.productId] });
@@ -144,8 +137,8 @@ export const useDeleteVariant = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ productId, variantId }: { productId: string; variantId: string }) =>
-      productsApi.deleteVariant(variantId),
+    mutationFn: (args: { productId: string; variantId: string }) =>
+      productsApi.deleteVariant(args.variantId),
     onSuccess: (_, variables) => {
       toast.success('تم حذف الخيار بنجاح');
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, variables.productId] });
@@ -217,7 +210,7 @@ export const useUpdateStock = () => {
   return useMutation({
     mutationFn: ({ variantId, data }: { variantId: string; data: StockUpdateRequest }) =>
       productsApi.updateStock(variantId, data),
-    onSuccess: (_,) => {
+    onSuccess: () => {
       toast.success('تم تحديث المخزون بنجاح');
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY] });
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, 'inventory'] });

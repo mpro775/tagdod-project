@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { ForbiddenException, ErrorCode } from '../../../shared/exceptions';
+import { ForbiddenException } from '../../../shared/exceptions';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 
