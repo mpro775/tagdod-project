@@ -1,0 +1,97 @@
+{
+  "navigation": {
+    "title": "Address Management",
+    "subtitle": "Comprehensive overview of user addresses and geographic analytics"
+  },
+  "tabs": {
+    "statistics": "📊 Statistics",
+    "list": "📋 Address List"
+  },
+  "stats": {
+    "totalAddresses": "Total Addresses",
+    "activeAddresses": "Active Addresses",
+    "totalUsers": "Total Users",
+    "averagePerUser": "Average per User",
+    "deletedAddresses": "Deleted Addresses"
+  },
+  "list": {
+    "title": "Address List",
+    "search": {
+      "placeholder": "Search...",
+      "label": "Search"
+    },
+    "filters": {
+      "city": {
+        "label": "City",
+        "all": "All Cities",
+        "sanaa": "Sana'a",
+        "aden": "Aden",
+        "taiz": "Taiz",
+        "alHudaydah": "Al Hudaydah",
+        "ibb": "Ibb"
+      },
+      "sortBy": {
+        "label": "Sort By",
+        "createdAt": "Creation Date",
+        "usageCount": "Usage Count",
+        "lastUsedAt": "Last Used"
+      }
+    },
+    "columns": {
+      "user": "User",
+      "label": "Label",
+      "address": "Address",
+      "city": "City",
+      "usage": "Usage",
+      "status": "Status",
+      "createdAt": "Created At"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "default": "⭐ Default"
+    },
+    "usage": {
+      "times": "{{count}} times"
+    },
+    "address": {
+      "notes": "📝 {{notes}}"
+    },
+    "loading": "Loading...",
+    "noResults": "No results found"
+  },
+  "chart": {
+    "title": "🏙️ Top Cities",
+    "subtitle": "Most Used Cities",
+    "noData": "No data available",
+    "tooltip": {
+      "addresses": "Addresses: {{count}}",
+      "percentage": "Percentage: {{percentage}}%",
+      "usage": "Usage: {{usage}}"
+    },
+    "legend": {
+      "address": "{{count}} address",
+      "addresses": "{{count}} addresses"
+    }
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "search": "Search"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "noData": "No data available",
+    "success": {
+      "loaded": "Data loaded successfully"
+    },
+    "error": {
+      "loadFailed": "Failed to load addresses",
+      "refreshFailed": "Failed to refresh data"
+    }
+  },
+  "pagination": {
+    "rowsPerPage": "Rows per page:",
+    "displayedRows": "{{from}}-{{to}} of {{count}}"
+  }
+}

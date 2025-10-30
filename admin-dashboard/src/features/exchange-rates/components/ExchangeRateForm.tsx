@@ -18,6 +18,7 @@ import {
   FormHelperText,
 } from '@mui/material';
 import { Save, AttachMoney, TrendingUp } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { UpdateExchangeRatesRequest } from '../api/exchangeRatesApi';
 
 interface ExchangeRateFormProps {
@@ -39,6 +40,7 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
   loading = false,
   error,
 }) => {
+  const { t } = useTranslation('exchangeRates');
   const [formData, setFormData] = useState({
     usdToYer: initialData?.usdToYer || 250,
     usdToSar: initialData?.usdToSar || 3.75,
@@ -73,10 +75,10 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
 
     if (field === 'usdToYer' || field === 'usdToSar') {
       if (isNaN(numValue) || numValue <= 0) {
-        return 'يجب أن يكون السعر أكبر من صفر';
+        return t('validation.ratePositive');
       }
       if (numValue > 10000) {
-        return 'السعر كبير جداً';
+        return t('validation.rateMax', { max: 10000 });
       }
     }
 

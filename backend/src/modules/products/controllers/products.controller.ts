@@ -20,7 +20,7 @@ import { ProductService } from '../services/product.service';
 import { VariantService } from '../services/variant.service';
 import { PricingService } from '../services/pricing.service';
 import { InventoryService } from '../services/inventory.service';
-import { CreateProductDto, UpdateProductDto, ListProductsDto, CreateVariantDto, UpdateVariantDto } from '../dto/product.dto';
+import { CreateProductDto, UpdateProductDto, ListProductsDto, CreateVariantDto, UpdateVariantDto, GenerateVariantsDto } from '../dto/product.dto';
 import { Product } from '../schemas/product.schema';
 import { Variant } from '../schemas/variant.schema';
 
@@ -112,6 +112,22 @@ export class ProductsController {
     dto.productId = productId;
     const variant = await this.variantService.create(dto as Partial<Variant>);
     return variant;
+  }
+
+  @Post(':productId/generate-variants')
+  @ApiOperation({ summary: 'توليد المتغيرات تلقائياً' })
+  @ApiResponse({ status: 201, description: 'Variants generated successfully' })
+  async generateVariants(
+    @Param('productId') productId: string,
+    @Body() dto: GenerateVariantsDto
+  ) {
+    const result = await this.variantService.generateVariants(
+      productId,
+      dto.defaultPrice,
+      dto.defaultStock,
+      dto.overwriteExisting || false
+    );
+    return result;
   }
 
   @Get(':productId/variants')

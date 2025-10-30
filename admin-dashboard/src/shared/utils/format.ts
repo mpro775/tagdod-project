@@ -40,8 +40,8 @@ export function formatNumber(num: number): string {
 /**
  * Format currency
  */
-export function formatCurrency(amount: number, currency: string = 'YER'): string {
-  return new Intl.NumberFormat('ar-YE', {
+export function formatCurrency(amount: number, currency: string = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,

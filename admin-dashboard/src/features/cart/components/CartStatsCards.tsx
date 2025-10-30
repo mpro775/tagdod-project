@@ -19,6 +19,7 @@ import {
   Email,
   Refresh,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { CartStatistics, CartAnalytics } from '../types/cart.types';
 import { formatCurrency } from '../api/cartApi';
 
@@ -51,6 +52,7 @@ const StatCard: React.FC<StatCardProps> = ({
   trend,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   if (isLoading) {
     return (
       <Card sx={{ height: '100%' }}>
@@ -94,7 +96,10 @@ const StatCard: React.FC<StatCardProps> = ({
           {trend && (
             <Chip
               icon={trend.isPositive ? <TrendingUp /> : <TrendingDown />}
-              label={`${trend.isPositive ? '+' : ''}${trend.value}%`}
+              label={trend.isPositive
+                ? t('cart.stats.trend.positive', { value: trend.value })
+                : t('cart.stats.trend.negative', { value: trend.value })
+              }
               size="small"
               color={trend.isPositive ? 'success' : 'error'}
               variant="outlined"
@@ -126,62 +131,64 @@ export const CartStatsCards: React.FC<CartStatsCardsProps> = ({
   isLoading = false,
   onRefresh,
 }) => {
+  const { t } = useTranslation();
+
   const stats = [
     {
-      title: 'إجمالي السلات',
-      value: statistics?.totalCarts?.toLocaleString('ar-YE') || analytics?.totalCarts?.toLocaleString('ar-YE') || '0',
-      subtitle: 'جميع السلات في النظام',
+      title: t('cart.stats.totalCarts', { defaultValue: 'عدد السلات' }),
+      value: statistics?.totalCarts?.toLocaleString('en-US') || analytics?.totalCarts?.toLocaleString('en-US') || '0',
+      subtitle: t('cart.stats.subtitle.totalCarts', { defaultValue: 'عدد السلات' }),
       icon: <ShoppingCart />,
       color: '#2196f3',
     },
     {
-      title: 'السلات النشطة',
-      value: statistics?.totalCarts ? 
-        ((statistics.totalCarts - (analytics?.abandonedCarts || 0) - (analytics?.convertedCarts || 0))).toLocaleString('ar-YE') :
-        analytics?.activeCarts?.toLocaleString('ar-YE') || '0',
-      subtitle: 'سلات قيد الاستخدام',
+      title: t('cart.stats.activeCarts', { defaultValue: 'عدد السلات النشطة' }),
+      value: statistics?.totalCarts ?
+        ((statistics.totalCarts - (analytics?.abandonedCarts || 0) - (analytics?.convertedCarts || 0))).toLocaleString('en-US') :
+          analytics?.activeCarts?.toLocaleString('en-US') || '0',
+      subtitle: t('cart.stats.subtitle.activeCarts', { defaultValue: 'عدد السلات النشطة' }),
       icon: <LooksOne />,
       color: '#4caf50',
     },
     {
-      title: 'السلات المتروكة',
-      value: analytics?.abandonedCarts?.toLocaleString('ar-YE') || '0',
-      subtitle: 'تحتاج إلى متابعة',
+      title: t('cart.stats.abandonedCarts', { defaultValue: 'عدد السلات المهملة' }),
+      value: analytics?.abandonedCarts?.toLocaleString('en-US') || '0',
+      subtitle: t('cart.stats.subtitle.abandonedCarts', { defaultValue: 'عدد السلات المهملة' }),
       icon: <Email />,
       color: '#ff9800',
     },
     {
-      title: 'السلات المحولة',
-      value: analytics?.convertedCarts?.toLocaleString('ar-YE') || '0',
-      subtitle: 'تم تحويلها إلى طلبات',
+      title: t('cart.stats.convertedCarts', { defaultValue: 'عدد السلات المحولة' }  ),
+      value: analytics?.convertedCarts?.toLocaleString('en-US') || '0',
+      subtitle: t('cart.stats.subtitle.convertedCarts', { defaultValue: 'عدد السلات المحولة' }),
       icon: <TrendingUp />,
       color: '#9c27b0',
     },
     {
-      title: 'إجمالي القيمة',
+      title: t('cart.stats.totalValue', { defaultValue: 'المجموع الكلي' }),
       value: formatCurrency(statistics?.totalValue || analytics?.totalValue || 0),
-      subtitle: 'قيمة جميع السلات',
+      subtitle: t('cart.stats.subtitle.totalValue', { defaultValue: 'المجموع الكلي' }),
       icon: <MonetizationOn />,
       color: '#00bcd4',
     },
     {
-      title: 'متوسط قيمة السلة',
+      title: t('cart.stats.averageValue', { defaultValue: 'المجموع المتوسط' }),
       value: formatCurrency(statistics?.averageCartValue || analytics?.averageCartValue || 0),
-      subtitle: 'القيمة المتوسطة للسلة',
+      subtitle: t('cart.stats.subtitle.averageValue', { defaultValue: 'المجموع المتوسط' }),
       icon: <TrendingUp />,
       color: '#795548',
     },
     {
-      title: 'معدل التحويل',
+      title: t('cart.stats.conversionRate', { defaultValue: 'معدل التحويل' }),
       value: `${((statistics?.conversionRate || analytics?.conversionRate || 0) * 100).toFixed(1)}%`,
-      subtitle: 'نسبة السلات المحولة',
+      subtitle: t('cart.stats.subtitle.conversionRate', { defaultValue: 'معدل التحويل' }  ),
       icon: <TrendingUp />,
       color: '#607d8b',
     },
     {
-      title: 'معدل الاسترداد',
+      title: t('cart.stats.recoveryRate', { defaultValue: 'معدل الاسترداد' }),
       value: `${((statistics?.recoveryRate || 0) * 100).toFixed(1)}%`,
-      subtitle: 'نسبة السلات المستردة',
+        subtitle: t('cart.stats.subtitle.recoveryRate', { defaultValue: 'معدل الاسترداد' }),
       icon: <Refresh />,
       color: '#e91e63',
     },
@@ -191,10 +198,10 @@ export const CartStatsCards: React.FC<CartStatsCardsProps> = ({
     <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
         <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-          إحصائيات السلة
+          {t('cart.stats.title', { defaultValue: 'إحصائيات السلات' })}
         </Typography>
         {onRefresh && (
-          <Tooltip title="تحديث البيانات">
+          <Tooltip title={t('cart.actions.refresh', { defaultValue: 'تحديث' }     )}>
             <IconButton onClick={onRefresh} disabled={isLoading}>
               <Refresh />
             </IconButton>

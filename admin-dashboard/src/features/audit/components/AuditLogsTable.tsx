@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Table, TableBody, TableCell, TableHead, TableRow, Badge, Button } from '@mui/material';
-
+import { useTranslation } from 'react-i18next';
 import {
   Visibility as Eye,
   Warning as AlertTriangle,
@@ -30,6 +30,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
   isLoading,
   onViewDetails,
 }) => {
+  const { t } = useTranslation('audit');
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
@@ -92,9 +93,9 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
     return (
       <div className="text-center py-8">
         <Shield className="mx-auto h-12 w-12 text-muted-foreground" />
-        <h3 className="mt-2 text-sm font-semibold text-gray-900">لا توجد سجلات</h3>
+        <h3 className="mt-2 text-sm font-semibold text-gray-900">{t('table.noLogs', { defaultValue: 'لا توجد سجلات' })}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          لم يتم العثور على سجلات تدقيق تطابق المعايير المحددة
+          {t('table.noLogsDesc', { defaultValue: 'لا توجد سجلات مسجلة' })}
         </p>
       </div>
     );
@@ -135,11 +136,11 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{log.user?.name || 'مستخدم غير معروف'}</span>
+                    <span className="font-medium">{log.user?.name || t('table.unknownUser', { defaultValue: 'مستخدم غير معروف' })}</span>
                   </div>
                   {log.performedByUser && log.performedByUser._id !== log.user?._id && (
                     <div className="text-xs text-muted-foreground">
-                      بواسطة: {log.performedByUser.name}
+                      {t('table.performedBy', { defaultValue: 'بواسطة' })}: {log.performedByUser.name}
                     </div>
                   )}
                 </div>
@@ -161,7 +162,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                   <span className="text-sm font-medium">{AUDIT_RESOURCE_LABELS[log.resource]}</span>
                   {log.resourceId && (
                     <div className="text-xs text-muted-foreground">
-                      ID: {truncateText(log.resourceId, 20)}
+                      {t('table.id', { defaultValue: 'ID' })}: {truncateText(log.resourceId, 20)}
                     </div>
                   )}
                 </div>
@@ -171,19 +172,19 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                 <div className="space-y-1">
                   {log.oldValues && (
                     <div className="text-xs">
-                      <span className="text-muted-foreground">قبل:</span>{' '}
+                      <span className="text-muted-foreground">{t('table.before', { defaultValue: 'قبل' })}:</span>{' '}
                       {truncateText(JSON.stringify(log.oldValues), 30)}
                     </div>
                   )}
                   {log.newValues && (
                     <div className="text-xs">
-                      <span className="text-muted-foreground">بعد:</span>{' '}
+                      <span className="text-muted-foreground">{t('table.after', { defaultValue: 'بعد' })}:</span>{' '}
                       {truncateText(JSON.stringify(log.newValues), 30)}
                     </div>
                   )}
                   {log.reason && (
                     <div className="text-xs text-muted-foreground">
-                      السبب: {truncateText(log.reason, 40)}
+                      {t('table.reason', { defaultValue: 'السبب' })}: {truncateText(log.reason, 40)}
                     </div>
                   )}
                 </div>
@@ -194,7 +195,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                   {log.isSensitive && (
                     <Badge variant="standard" className="text-xs">
                       <AlertTriangle className="h-3 w-3 mr-1" />
-                      حساس
+                      {t('table.sensitive', { defaultValue: 'حساس' })}
                     </Badge>
                   )}
                   <Badge
@@ -203,12 +204,12 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                     className="text-xs"
                   >
                     {AUDIT_ACTION_SEVERITY[log.action] === 'critical'
-                      ? 'حرج'
+                      ? t('table.critical', { defaultValue: 'حرج' })
                       : AUDIT_ACTION_SEVERITY[log.action] === 'high'
-                      ? 'عالي'
+                      ? t('table.high', { defaultValue: 'عالي' })
                       : AUDIT_ACTION_SEVERITY[log.action] === 'medium'
-                      ? 'متوسط'
-                      : 'منخفض'}
+                      ? t('table.medium', { defaultValue: 'متوسط' })
+                      : t('table.low', { defaultValue: 'منخفض' })}
                   </Badge>
                 </div>
               </TableCell>

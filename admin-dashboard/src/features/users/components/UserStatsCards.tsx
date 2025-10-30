@@ -18,6 +18,7 @@ import {
   Store as StoreIcon,
 } from '@mui/icons-material';
 import { UserStats } from '../types/user.types';
+import { useTranslation } from 'react-i18next';
 
 interface UserStatsCardsProps {
   stats: UserStats;
@@ -25,58 +26,59 @@ interface UserStatsCardsProps {
 }
 
 export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading = false }) => {
+  const { t } = useTranslation(['users', 'common']);
   const statsData = [
     {
-      title: 'إجمالي المستخدمين',
+      title: t('users:stats.total', 'إجمالي المستخدمين'),
       value: stats.total,
       icon: <PeopleIcon />,
       color: 'primary',
       percentage: 100,
     },
     {
-      title: 'المستخدمين النشطين',
+      title: t('users:stats.active', 'المستخدمين النشطين'),
       value: stats.active,
       icon: <PersonIcon />,
       color: 'success',
       percentage: stats.total > 0 ? (stats.active / stats.total) * 100 : 0,
     },
     {
-      title: 'المستخدمين المعلقين',
+      title: t('users:stats.suspended', 'المستخدمين المعلقين'),
       value: stats.suspended,
       icon: <BlockIcon />,
       color: 'warning',
       percentage: stats.total > 0 ? (stats.suspended / stats.total) * 100 : 0,
     },
     {
-      title: 'المستخدمين المحذوفين',
+      title: t('users:stats.deleted', 'المستخدمين المحذوفين'),
       value: stats.deleted,
       icon: <DeleteIcon />,
       color: 'error',
       percentage: stats.total > 0 ? (stats.deleted / stats.total) * 100 : 0,
     },
     {
-      title: 'المديرين',
+      title: t('users:stats.admins', 'المديرين'),
       value: stats.admins,
       icon: <AdminIcon />,
       color: 'info',
       percentage: stats.total > 0 ? (stats.admins / stats.total) * 100 : 0,
     },
     {
-      title: 'المهندسين',
+      title: t('users:stats.engineers', 'المهندسين'),
       value: stats.engineers,
       icon: <EngineeringIcon />,
       color: 'secondary',
       percentage: stats.total > 0 ? (stats.engineers / stats.total) * 100 : 0,
     },
     {
-      title: 'التجار',
+      title: t('users:stats.merchants', 'التجار'),
       value: stats.merchants,
       icon: <StoreIcon />,
       color: 'success',
       percentage: stats.total > 0 ? (stats.merchants / stats.total) * 100 : 0,
     },
     {
-      title: 'المستخدمين العاديين',
+      title: t('users:stats.users', 'المستخدمين العاديين'),
       value: stats.users,
       icon: <PersonIcon />,
       color: 'info',
@@ -87,7 +89,7 @@ export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading =
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-        إحصائيات المستخدمين
+        {t('users:stats.title', 'إحصائيات المستخدمين')}
       </Typography>
       
       <Grid container spacing={2}>
@@ -122,7 +124,7 @@ export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading =
                 </Box>
                 
                 <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
-                  {loading ? '...' : stat.value.toLocaleString()}
+                  {loading ? '...' : stat.value.toLocaleString('en-US')}
                 </Typography>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -144,7 +146,7 @@ export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading =
                 </Box>
                 
                 <Chip
-                  label={`${stat.percentage.toFixed(1)}% من الإجمالي`}
+                  label={t('users:stats.percentageOfTotal', '{{percentage}}% من الإجمالي', { percentage: stat.percentage.toFixed(1) })}
                   size="small"
                   color={stat.color as any}
                   variant="outlined"

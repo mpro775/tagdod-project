@@ -1286,6 +1286,29 @@ paths:
         - إدارة-المنتجات
       security:
         - bearer: []
+  /api/v1/admin/products/{productId}/generate-variants:
+    post:
+      operationId: generateVariants
+      summary: توليد المتغيرات تلقائياً
+      parameters:
+        - name: productId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateVariantsDto'
+      responses:
+        '201':
+          description: Variants generated successfully
+      tags:
+        - إدارة-المنتجات
+      security:
+        - bearer: []
   /api/v1/admin/products/variants/{id}:
     get:
       operationId: getVariant
@@ -2618,6 +2641,7 @@ paths:
                             - text
                             - number
                             - boolean
+                            - color
                           example: select
                         description:
                           type: string
@@ -2690,6 +2714,7 @@ paths:
                             - text
                             - number
                             - boolean
+                            - color
                           example: select
                         description:
                           type: string
@@ -2814,6 +2839,7 @@ paths:
                           - text
                           - number
                           - boolean
+                          - color
                         example: select
                       description:
                         type: string
@@ -16944,6 +16970,9 @@ components:
     CreateVariantDto:
       type: object
       properties: {}
+    GenerateVariantsDto:
+      type: object
+      properties: {}
     UpdateVariantDto:
       type: object
       properties: {}
@@ -16956,6 +16985,7 @@ components:
         - text
         - number
         - boolean
+        - color
     CreateAttributeDto:
       type: object
       properties:

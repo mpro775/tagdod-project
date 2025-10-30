@@ -1,6 +1,7 @@
 import { Box, Typography, Tab, Tabs } from '@mui/material';
 import { Grid } from '@mui/material';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AddressStatsCards } from '../components/AddressStatsCards';
 import { TopCitiesChart } from '../components/TopCitiesChart';
 import { AddressListTable } from '../components/AddressListTable';
@@ -28,6 +29,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export function AddressesDashboardPage() {
+  const { t } = useTranslation();
   const [currentTab, setCurrentTab] = useState(0);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -39,10 +41,10 @@ export function AddressesDashboardPage() {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-          📍 إدارة العناوين
+          {t('addresses.navigation.title', { defaultValue: 'إحصائيات العناوين' })}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          نظرة شاملة على عناوين المستخدمين والتحليلات الجغرافية
+          {t('addresses.navigation.subtitle', { defaultValue: 'إحصائيات العناوين المختلفة' })}
         </Typography>
       </Box>
 
@@ -54,8 +56,8 @@ export function AddressesDashboardPage() {
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={currentTab} onChange={handleTabChange}>
-          <Tab label="📊 الإحصائيات" />
-          <Tab label="📋 قائمة العناوين" />
+          <Tab label={t('addresses.tabs.statistics', { defaultValue: 'إحصائيات العناوين' })} />
+          <Tab label={t('addresses.tabs.list', { defaultValue: 'قائمة العناوين' }   )} />
         </Tabs>
       </Box>
 

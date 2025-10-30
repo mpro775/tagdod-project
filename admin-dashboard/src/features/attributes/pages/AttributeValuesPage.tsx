@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -40,6 +41,7 @@ import type { AttributeValue, AttributeValueFormData } from '../types/attribute.
 export const AttributeValuesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('attributes');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingValue, setEditingValue] = useState<AttributeValue | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -66,41 +68,44 @@ export const AttributeValuesPage: React.FC = () => {
     if (!id) return;
 
     if (editingValue) {
-      // Update existing value
+      // Update existing value - UpdateDto يحتوي على isActive
       updateValue(
         { id: editingValue._id, data },
         {
           onSuccess: () => {
             setDialogOpen(false);
             setEditingValue(null);
-            showSnackbar('تم تحديث القيمة بنجاح', 'success');
+            showSnackbar(t('messages.updateSuccess', { item: t('messages.value') }), 'success');
             refetch();
           },
           onError: (error) => {
             showSnackbar(
-              `فشل في تحديث القيمة: ${
-                error instanceof Error ? error.message : 'حدث خطأ غير معروف'
-              }`,
+              t('messages.updateError', {
+                item: t('messages.value'),
+                error: error instanceof Error ? error.message : t('messages.unknownError')
+              }),
               'error'
             );
           },
         }
       );
     } else {
-      // Create new value
+      // Create new value - CreateDto لا يحتوي على isActive
+      const { isActive, ...createData } = data;
       createValue(
-        { attributeId: id, data },
+        { attributeId: id, data: createData },
         {
           onSuccess: () => {
             setDialogOpen(false);
-            showSnackbar('تم إضافة القيمة بنجاح', 'success');
+            showSnackbar(t('messages.createSuccess', { item: t('messages.value') }), 'success');
             refetch();
           },
           onError: (error) => {
             showSnackbar(
-              `فشل في إضافة القيمة: ${
-                error instanceof Error ? error.message : 'حدث خطأ غير معروف'
-              }`,
+              t('messages.createError', {
+                item: t('messages.value'),
+                error: error instanceof Error ? error.message : t('messages.unknownError')
+              }),
               'error'
             );
           },
@@ -117,12 +122,15 @@ export const AttributeValuesPage: React.FC = () => {
   const handleDelete = (valueId: string, valueName: string) => {
     deleteValue(valueId, {
       onSuccess: () => {
-        showSnackbar(`تم حذف القيمة "${valueName}" بنجاح`, 'success');
+        showSnackbar(t('messages.deleteSuccess', { item: t('messages.value') }), 'success');
         refetch();
       },
       onError: (error) => {
         showSnackbar(
-          `فشل في حذف القيمة: ${error instanceof Error ? error.message : 'حدث خطأ غير معروف'}`,
+          t('messages.deleteError', {
+            item: t('messages.value'),
+            error: error instanceof Error ? error.message : t('messages.unknownError')
+          }),
           'error'
         );
       },
@@ -137,47 +145,113 @@ export const AttributeValuesPage: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'value',
-      headerName: 'القيمة',
-      width: 200,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {params.row.hexCode && (
-            <Box
-              sx={{
-                width: 24,
-                height: 24,
-                borderRadius: '50%',
-                bgcolor: params.row.hexCode,
-                border: '1px solid #ddd',
-              }}
-            />
-          )}
-          <Box>
-            <Box sx={{ fontWeight: 'medium' }}>{params.row.value}</Box>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{params.row.valueEn}</Box>
+      headerName: t('fields.valueAr'),
+      width: 350,
+      renderCell: (params) => {
+        const value = params.row as AttributeValue;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 0.5 }}>
+            {/* الصورة أو اللون */}
+            {value.imageUrl ? (
+              <Box
+                sx={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  backgroundColor: 'grey.50',
+                  border: '1px solid',
+                  borderColor: 'grey.200',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                }}
+              >
+                <Box
+                  component="img"
+                  src={value.imageUrl}
+                  alt={value.value}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </Box>
+            ) : value.hexCode ? (
+              <Box
+                sx={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 2,
+                  bgcolor: value.hexCode,
+                  border: '2px solid',
+                  borderColor: 'grey.300',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                }}
+              />
+            ) : null}
+            
+            {/* معلومات القيمة */}
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography variant="subtitle2" fontWeight="bold" noWrap>
+                {value.value}
+              </Typography>
+              {value.valueEn && (
+                <Typography variant="caption" color="text.secondary" display="block" noWrap>
+                  {value.valueEn}
+                </Typography>
+              )}
+              {value.hexCode && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                    {value.hexCode}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
           </Box>
-        </Box>
-      ),
+        );
+      },
     },
     {
-      field: 'hexCode',
-      headerName: 'كود اللون',
-      width: 120,
-      renderCell: (params) =>
-        params.row.hexCode ? <Chip label={params.row.hexCode} size="small" /> : null,
+      field: 'description',
+      headerName: t('fields.description'),
+      width: 200,
+      renderCell: (params) => {
+        const value = params.row as AttributeValue;
+        return value.description ? (
+          <Tooltip title={value.description}>
+            <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
+              {value.description}
+            </Typography>
+          </Tooltip>
+        ) : (
+          <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+            -
+          </Typography>
+        );
+      },
     },
     {
       field: 'order',
-      headerName: 'الترتيب',
-      width: 100,
+      headerName: t('fields.order'),
+      width: 80,
+      align: 'center',
     },
     {
       field: 'isActive',
-      headerName: 'الحالة',
+      headerName: t('fields.status'),
       width: 100,
       renderCell: (params) => (
         <Chip
-          label={params.row.isActive ? 'نشط' : 'غير نشط'}
+          label={params.row.isActive ? t('status.active') : t('status.inactive')}
           color={params.row.isActive ? 'success' : 'default'}
           size="small"
         />
@@ -185,30 +259,33 @@ export const AttributeValuesPage: React.FC = () => {
     },
     {
       field: 'usageCount',
-      headerName: 'الاستخدام',
-      width: 100,
+      headerName: t('fields.usage'),
+      width: 90,
       align: 'center',
+      renderCell: (params) => (
+        <Chip label={params.row.usageCount || 0} variant="outlined" size="small" />
+      ),
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('fields.actions'),
       width: 150,
       sortable: false,
       renderCell: (params) => {
         const value = params.row as AttributeValue;
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title="تعديل">
+            <Tooltip title={t('tooltips.edit')}>
               <IconButton size="small" color="primary" onClick={() => handleEdit(value)}>
                 <Edit fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title="حذف">
+            <Tooltip title={t('tooltips.delete')}>
               <IconButton
                 size="small"
                 color="error"
                 onClick={() => {
-                  if (window.confirm(`هل تريد حذف القيمة "${value.value}"؟`)) {
+                  if (window.confirm(t('messages.deleteValueConfirm', { name: value.value }))) {
                     handleDelete(value._id, value.value);
                   }
                 }}
@@ -240,15 +317,15 @@ export const AttributeValuesPage: React.FC = () => {
         </IconButton>
         <Box sx={{ flex: 1 }}>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            إدارة قيم السمة: {attribute?.name}
+            {t('attributes.manageAttributeValues', { name: attribute?.name })}
           </Typography>
           <Typography variant="body1" color="text.secondary" gutterBottom>
             {attribute?.nameEn}
           </Typography>
           <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
-            <Chip label={`النوع: ${attribute?.type}`} color="primary" size="small" />
-            <Chip label={`القيم: ${values.length}`} color="info" size="small" />
-            {attribute?.isFilterable && <Chip label="قابل للفلترة" color="success" size="small" />}
+            <Chip label={`${t('fields.type')}: ${attribute?.type}`} color="primary" size="small" />
+            <Chip label={`${t('stats.totalValues')}: ${values.length}`} color="info" size="small" />
+            {attribute?.isFilterable && <Chip label={t('fields.filterable')} color="success" size="small" />}
           </Stack>
         </Box>
         <Button
@@ -257,7 +334,7 @@ export const AttributeValuesPage: React.FC = () => {
           onClick={() => setDialogOpen(true)}
           size="large"
         >
-          إضافة قيمة جديدة
+          {t('attributes.addValue')}
         </Button>
       </Box>
 
@@ -268,7 +345,7 @@ export const AttributeValuesPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <TrendingUp color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">إجمالي القيم</Typography>
+                <Typography variant="h6">{t('stats.totalValues')}</Typography>
               </Box>
               <Typography variant="h3" fontWeight="bold" color="primary">
                 {values.length}
@@ -281,7 +358,7 @@ export const AttributeValuesPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <CheckCircle color="success" sx={{ mr: 1 }} />
-                <Typography variant="h6">القيم النشطة</Typography>
+                <Typography variant="h6">{t('stats.activeValues')}</Typography>
               </Box>
               <Typography variant="h3" fontWeight="bold" color="success.main">
                 {values.filter((v) => v.isActive).length}
@@ -294,7 +371,7 @@ export const AttributeValuesPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <ColorLens color="info" sx={{ mr: 1 }} />
-                <Typography variant="h6">مع ألوان</Typography>
+                <Typography variant="h6">{t('stats.valuesWithColors')}</Typography>
               </Box>
               <Typography variant="h3" fontWeight="bold" color="info.main">
                 {values.filter((v) => v.hexCode).length}
@@ -307,7 +384,7 @@ export const AttributeValuesPage: React.FC = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Image color="warning" sx={{ mr: 1 }} />
-                <Typography variant="h6">مع صور</Typography>
+                <Typography variant="h6">{t('stats.valuesWithImages')}</Typography>
               </Box>
               <Typography variant="h3" fontWeight="bold" color="warning.main">
                 {values.filter((v) => v.imageUrl).length}
@@ -328,7 +405,18 @@ export const AttributeValuesPage: React.FC = () => {
           initialState={{
             pagination: { paginationModel: { pageSize: 25 } },
           }}
-          sx={{ height: '100%' }}
+          rowHeight={70}
+          sx={{
+            height: '100%',
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: 'action.hover',
+              cursor: 'pointer',
+            },
+          }}
         />
       </Paper>
 

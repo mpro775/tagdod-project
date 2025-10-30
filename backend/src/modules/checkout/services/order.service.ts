@@ -365,8 +365,17 @@ export class OrderService {
    * الحصول على تفاصيل الطلب
    */
   async getOrderDetails(orderId: string, userId?: string): Promise<OrderDocument> {
+    // Validate IDs before constructing ObjectId to avoid BSONError
+    if (!Types.ObjectId.isValid(orderId)) {
+      throw new OrderNotFoundException();
+    }
     const filter: Record<string, unknown> = { _id: new Types.ObjectId(orderId) };
-    if (userId) filter.userId = new Types.ObjectId(userId);
+    if (userId) {
+      if (!Types.ObjectId.isValid(userId)) {
+        throw new OrderNotFoundException();
+      }
+      filter.userId = new Types.ObjectId(userId);
+    }
 
     const order = await this.orderModel.findOne(filter);
     if (!order) {

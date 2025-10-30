@@ -55,11 +55,11 @@ import {
   CleanHands,
 
 } from '@mui/icons-material';
-import { 
-  useMedia, 
-  useDeleteMedia, 
-  useRestoreMedia, 
-  useMediaStats, 
+import {
+  useMedia,
+  useDeleteMedia,
+  useRestoreMedia,
+  useMediaStats,
   useUpdateMedia,
   useCleanupDeletedFiles,
   useCleanupDuplicateFiles,
@@ -69,9 +69,11 @@ import {
 import { MediaUploader } from '../components/MediaUploader';
 import { MediaListItem } from '../components/MediaListItem';
 import { formatFileSize } from '@/shared/utils/formatters';
+import { useTranslation } from 'react-i18next';
 import type { Media, MediaCategory, MediaType } from '../types/media.types';
 
 export const MediaLibraryPage: React.FC = () => {
+  const { t } = useTranslation('media');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<MediaCategory | ''>('');
@@ -212,10 +214,10 @@ export const MediaLibraryPage: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Box>
             <Typography variant="h5" fontWeight="bold">
-              مكتبة الوسائط
+              {t('pageTitle')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              إجمالي الملفات: {safeStats.total} | الحجم الإجمالي: {safeStats.totalSizeMB} ميجابايت
+              {t('stats.totalFiles')}: {safeStats.total} | {t('stats.totalSize')}: {safeStats.totalSizeMB} MB
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -224,28 +226,28 @@ export const MediaLibraryPage: React.FC = () => {
               startIcon={<Analytics />}
               onClick={() => setStatsDialogOpen(true)}
             >
-              الإحصائيات
+              {t('analytics')}
             </Button>
             <Button
               variant="outlined"
               startIcon={<CleanHands />}
               onClick={() => setCleanupDialogOpen(true)}
             >
-              تنظيف
+              {t('cleanup.title', { defaultValue: 'تنظيف' })}
             </Button>
             <Button
               variant="outlined"
               startIcon={<Refresh />}
               onClick={() => refetch()}
             >
-              تحديث
+              {t('refresh')}
             </Button>
             <Button
               variant="contained"
               startIcon={<CloudUpload />}
               onClick={() => setUploadDialogOpen(true)}
             >
-              رفع ملف
+              {t('uploadFile')}
             </Button>
           </Box>
         </Box>
@@ -255,10 +257,10 @@ export const MediaLibraryPage: React.FC = () => {
           <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               fullWidth
-              label="البحث"
+              label={t('filters.search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ابحث بالاسم أو الوصف..."
+              placeholder={t('filters.searchPlaceholder')}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -270,39 +272,39 @@ export const MediaLibraryPage: React.FC = () => {
           </Grid>
           <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>الفئة</InputLabel>
+              <InputLabel>{t('filters.category')}</InputLabel>
               <Select
                 value={categoryFilter}
-                label="الفئة"
+                label={t('filters.category')}
                 onChange={(e) => setCategoryFilter(e.target.value as MediaCategory | '')}
               >
-                <MenuItem value="">الكل</MenuItem>
-                <MenuItem value="product">منتجات</MenuItem>
-                <MenuItem value="category">فئات</MenuItem>
-                <MenuItem value="brand">براندات</MenuItem>
-                <MenuItem value="banner">بانرات</MenuItem>
-                <MenuItem value="other">أخرى</MenuItem>
+                <MenuItem value="">{t('categories.all')}</MenuItem>
+                <MenuItem value="product">{t('categories.product')}</MenuItem>
+                <MenuItem value="category">{t('categories.category')}</MenuItem>
+                <MenuItem value="brand">{t('categories.brand')}</MenuItem>
+                <MenuItem value="banner">{t('categories.banner')}</MenuItem>
+                <MenuItem value="other">{t('categories.other')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
           <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>النوع</InputLabel>
+              <InputLabel>{t('filters.type')}</InputLabel>
               <Select
                 value={typeFilter}
-                label="النوع"
+                label={t('filters.type')}
                 onChange={(e) => setTypeFilter(e.target.value as MediaType | '')}
               >
-                <MenuItem value="">الكل</MenuItem>
-                <MenuItem value="image">صور</MenuItem>
-                <MenuItem value="video">فيديوهات</MenuItem>
-                <MenuItem value="document">مستندات</MenuItem>
+                <MenuItem value="">{t('types.all')}</MenuItem>
+                <MenuItem value="image">{t('types.image')}</MenuItem>
+                <MenuItem value="video">{t('types.video')}</MenuItem>
+                <MenuItem value="document">{t('types.document')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
           <Grid size={{ xs: 12, md: 2 }}>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
-              <Tooltip title="عرض المحذوفة">
+              <Tooltip title={t('actions.toggleDeleted')}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -311,7 +313,7 @@ export const MediaLibraryPage: React.FC = () => {
                       size="small"
                     />
                   }
-                  label="محذوفة"
+                  label={t('deleted')}
                 />
               </Tooltip>
             </Box>
@@ -327,14 +329,14 @@ export const MediaLibraryPage: React.FC = () => {
               startIcon={<FilterList />}
               onClick={handleClearFilters}
             >
-              مسح الفلاتر
+              {t('filters.clearFilters')}
             </Button>
             <Button
               variant="outlined"
               size="small"
               onClick={() => setShowBulkActions(!showBulkActions)}
             >
-              {showBulkActions ? 'إخفاء التحديد المتعدد' : 'تحديد متعدد'}
+              {showBulkActions ? t('filters.hideBulkSelect') : t('filters.bulkSelect')}
             </Button>
             {showBulkActions && (
               <Button
@@ -342,12 +344,12 @@ export const MediaLibraryPage: React.FC = () => {
                 size="small"
                 onClick={handleBulkSelectAll}
               >
-                {selectedMediaIds.length === (data?.data?.length || 0) ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+                {selectedMediaIds.length === (data?.data?.length || 0) ? t('filters.unselectAll') : t('filters.selectAll')}
               </Button>
             )}
             {selectedMediaIds.length > 0 && (
               <Chip
-                label={`${selectedMediaIds.length} مختار`}
+                label={`${selectedMediaIds.length} ${t('filters.selected')}`}
                 color="primary"
                 onDelete={() => setSelectedMediaIds([])}
               />
@@ -360,12 +362,12 @@ export const MediaLibraryPage: React.FC = () => {
                 onClick={() => handleBulkOperation('delete')}
                 color="error"
               >
-                حذف المحدد
+                {t('actions.bulkDelete')}
               </Button>
             )}
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title="عرض شبكي">
+            <Tooltip title={t('actions.gridView')}>
               <IconButton
                 size="small"
                 color={viewMode === 'grid' ? 'primary' : 'default'}
@@ -374,7 +376,7 @@ export const MediaLibraryPage: React.FC = () => {
                 <ViewModule />
               </IconButton>
             </Tooltip>
-            <Tooltip title="عرض قائمة">
+            <Tooltip title={t('actions.listView')}>
               <IconButton
                 size="small"
                 color={viewMode === 'list' ? 'primary' : 'default'}
@@ -383,7 +385,7 @@ export const MediaLibraryPage: React.FC = () => {
                 <ViewList />
               </IconButton>
             </Tooltip>
-            <Tooltip title="تحديث">
+            <Tooltip title={t('refresh')}>
               <IconButton size="small" onClick={() => refetch()}>
                 <Refresh />
               </IconButton>
@@ -439,35 +441,35 @@ export const MediaLibraryPage: React.FC = () => {
                         )}
                         <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                           <Chip label={media.category} size="small" variant="outlined" />
-                          <Chip 
-                            label={media.isPublic ? 'عام' : 'خاص'} 
-                            size="small" 
+                          <Chip
+                            label={media.isPublic ? t('public') : t('private')}
+                            size="small"
                             color={media.isPublic ? 'success' : 'warning'}
                             variant="outlined"
                           />
                           {media.deletedAt && (
-                            <Chip label="محذوف" size="small" color="error" variant="outlined" />
+                            <Chip label={t('deleted')} size="small" color="error" variant="outlined" />
                           )}
                         </Box>
                       </Box>
                       {media.usageCount > 0 && (
                         <Badge badgeContent={media.usageCount} color="primary">
                           <Typography variant="caption" color="text.secondary">
-                            مستخدم
+                            {t('used')}
                           </Typography>
                         </Badge>
                       )}
                     </Box>
                   </CardContent>
                   <CardActions>
-                    <Tooltip title="نسخ الرابط">
+                    <Tooltip title={t('copyUrl')}>
                       <IconButton size="small" onClick={() => handleCopyUrl(media.url)}>
                         <ContentCopy fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title={media.isPublic ? 'إخفاء' : 'إظهار'}>
-                      <IconButton 
-                        size="small" 
+                    <Tooltip title={media.isPublic ? t('hide') : t('show')}>
+                      <IconButton
+                        size="small"
                         color={media.isPublic ? 'success' : 'default'}
                         onClick={() => handleTogglePublic(media)}
                       >
@@ -475,7 +477,7 @@ export const MediaLibraryPage: React.FC = () => {
                       </IconButton>
                     </Tooltip>
                     {media.deletedAt ? (
-                      <Tooltip title="استعادة">
+                      <Tooltip title={t('restore')}>
                         <IconButton
                           size="small"
                           color="primary"
@@ -486,7 +488,7 @@ export const MediaLibraryPage: React.FC = () => {
                       </Tooltip>
                     ) : (
                       <>
-                        <Tooltip title="تعديل">
+                        <Tooltip title={t('edit')}>
                           <IconButton
                             size="small"
                             color="primary"
@@ -498,12 +500,12 @@ export const MediaLibraryPage: React.FC = () => {
                             <Edit fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="حذف">
+                        <Tooltip title={t('delete')}>
                           <IconButton
                             size="small"
                             color="error"
                             onClick={() => {
-                              if (window.confirm(`هل تريد حذف "${media.name}"؟`)) {
+                              if (window.confirm(t('messages.deleteConfirm', { name: media.name }))) {
                                 deleteMedia(media._id, { onSuccess: () => refetch() });
                               }
                             }}
@@ -548,12 +550,12 @@ export const MediaLibraryPage: React.FC = () => {
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <Folder sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              لا توجد ملفات
+              {t('empty.noFiles')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               {searchTerm || categoryFilter || typeFilter || showDeleted
-                ? 'لم يتم العثور على ملفات تطابق المعايير المحددة'
-                : 'ابدأ برفع ملفاتك الأولى'}
+                ? t('empty.noFilesDescription')
+                : t('empty.startUploading')}
             </Typography>
             {(!searchTerm && !categoryFilter && !typeFilter && !showDeleted) && (
               <Button
@@ -561,7 +563,7 @@ export const MediaLibraryPage: React.FC = () => {
                 startIcon={<CloudUpload />}
                 onClick={() => setUploadDialogOpen(true)}
               >
-                رفع أول ملف
+                {t('empty.uploadFirst')}
               </Button>
             )}
           </Box>
@@ -601,7 +603,7 @@ export const MediaLibraryPage: React.FC = () => {
           }}
         >
           <Edit sx={{ mr: 1, fontSize: 18 }} />
-          تعديل
+          {t('edit')}
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -609,7 +611,7 @@ export const MediaLibraryPage: React.FC = () => {
           }}
         >
           <ContentCopy sx={{ mr: 1, fontSize: 18 }} />
-          نسخ الرابط
+          {t('copyUrl')}
         </MenuItem>
         {selectedMedia && !selectedMedia.deletedAt && (
           <MenuItem
@@ -618,7 +620,7 @@ export const MediaLibraryPage: React.FC = () => {
             }}
           >
             {selectedMedia.isPublic ? <VisibilityOff sx={{ mr: 1, fontSize: 18 }} /> : <Visibility sx={{ mr: 1, fontSize: 18 }} />}
-            {selectedMedia.isPublic ? 'إخفاء' : 'إظهار'}
+            {selectedMedia.isPublic ? t('hide') : t('show')}
           </MenuItem>
         )}
         {selectedMedia && selectedMedia.deletedAt && (
@@ -631,14 +633,14 @@ export const MediaLibraryPage: React.FC = () => {
             }}
           >
             <Restore sx={{ mr: 1, fontSize: 18 }} />
-            استعادة
+            {t('restore')}
           </MenuItem>
         )}
       </Menu>
 
       {/* Media Details Dialog */}
       <Dialog open={detailsDialogOpen} onClose={() => setDetailsDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>تفاصيل الملف</DialogTitle>
+        <DialogTitle>{t('details.title')}</DialogTitle>
         <DialogContent>
           {selectedMedia && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -660,28 +662,28 @@ export const MediaLibraryPage: React.FC = () => {
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="اسم الملف"
+                  label={t('details.fileName')}
                   value={selectedMedia.name}
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
                 />
                 <TextField
                   fullWidth
-                  label="الفئة"
+                  label={t('details.category')}
                   value={selectedMedia.category}
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
                 />
                 <TextField
                   fullWidth
-                  label="النوع"
+                  label={t('details.type')}
                   value={selectedMedia.type}
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
                 />
                 <TextField
                   fullWidth
-                  label="الحجم"
+                  label={t('details.size')}
                   value={formatFileSize(selectedMedia.size)}
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
@@ -689,7 +691,7 @@ export const MediaLibraryPage: React.FC = () => {
                 {selectedMedia.width && selectedMedia.height && (
                   <TextField
                     fullWidth
-                    label="الأبعاد"
+                    label={t('details.dimensions')}
                     value={`${selectedMedia.width} × ${selectedMedia.height}`}
                     sx={{ mb: 2 }}
                     InputProps={{ readOnly: true }}
@@ -697,7 +699,7 @@ export const MediaLibraryPage: React.FC = () => {
                 )}
                 <TextField
                   fullWidth
-                  label="الرابط"
+                  label={t('details.url')}
                   value={selectedMedia.url}
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
@@ -709,30 +711,30 @@ export const MediaLibraryPage: React.FC = () => {
                       onChange={() => handleTogglePublic(selectedMedia)}
                     />
                   }
-                  label="عام"
+                  label={t('details.public')}
                 />
               </Grid>
             </Grid>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailsDialogOpen(false)}>إغلاق</Button>
+          <Button onClick={() => setDetailsDialogOpen(false)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Stats Dialog */}
       <Dialog open={statsDialogOpen} onClose={() => setStatsDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>إحصائيات مكتبة الوسائط</DialogTitle>
+        <DialogTitle>{t('stats.storageStats')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid size={{ xs: 12 }}>
               <Alert severity="info" sx={{ mb: 2 }}>
-                إجمالي الملفات: <strong>{safeStats.total}</strong>
+                {t('stats.totalFiles')}: <strong>{safeStats.total}</strong>
               </Alert>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <Typography variant="h6" gutterBottom>
-                حسب الفئة:
+                {t('stats.byCategory')}:
               </Typography>
               {Object.entries(safeStats.byCategory || {}).map(([category, count]) => (
                 <Box key={category} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -743,7 +745,7 @@ export const MediaLibraryPage: React.FC = () => {
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <Typography variant="h6" gutterBottom>
-                حسب النوع:
+                {t('stats.byType')}:
               </Typography>
               {Object.entries(safeStats.byType).map(([type, count]) => (
                 <Box key={type} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -754,22 +756,22 @@ export const MediaLibraryPage: React.FC = () => {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Alert severity="success">
-                الحجم الإجمالي: <strong>{safeStats.totalSizeMB} ميجابايت</strong>
+                {t('stats.totalSize')}: <strong>{safeStats.totalSizeMB} MB</strong>
               </Alert>
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setStatsDialogOpen(false)}>إغلاق</Button>
+          <Button onClick={() => setStatsDialogOpen(false)}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
 
       {/* Cleanup Dialog */}
       <Dialog open={cleanupDialogOpen} onClose={() => setCleanupDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>عمليات التنظيف</DialogTitle>
+        <DialogTitle>{t('cleanup.title')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            اختر نوع التنظيف المطلوب. هذه العمليات لا يمكن التراجع عنها.
+            {t('cleanup.description')}
           </Typography>
           
           <Stack spacing={2}>
@@ -778,20 +780,20 @@ export const MediaLibraryPage: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Delete color="error" />
                   <Box>
-                    <Typography variant="h6">تنظيف الملفات المحذوفة</Typography>
+                    <Typography variant="h6">{t('cleanup.deletedFiles')}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      حذف الملفات المحذوفة نهائياً من التخزين
+                      {t('cleanup.deletedDescription')}
                     </Typography>
                   </Box>
                 </Box>
               </CardContent>
               <CardActions>
-                <Button 
-                  color="error" 
+                <Button
+                  color="error"
                   onClick={() => handleCleanupOperation('deleted')}
                   startIcon={<Delete />}
                 >
-                  تنظيف المحذوفة
+                  {t('cleanup.cleanupDeleted')}
                 </Button>
               </CardActions>
             </Card>
@@ -801,20 +803,20 @@ export const MediaLibraryPage: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Warning color="warning" />
                   <Box>
-                    <Typography variant="h6">تنظيف الملفات المكررة</Typography>
+                    <Typography variant="h6">{t('cleanup.duplicates')}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      إزالة الملفات المكررة والاحتفاظ بنسخة واحدة فقط
+                      {t('cleanup.duplicatesDescription')}
                     </Typography>
                   </Box>
                 </Box>
               </CardContent>
               <CardActions>
-                <Button 
-                  color="warning" 
+                <Button
+                  color="warning"
                   onClick={() => handleCleanupOperation('duplicates')}
                   startIcon={<Warning />}
                 >
-                  تنظيف المكررة
+                  {t('cleanup.cleanupDuplicates')}
                 </Button>
               </CardActions>
             </Card>
@@ -824,27 +826,27 @@ export const MediaLibraryPage: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Storage color="info" />
                   <Box>
-                    <Typography variant="h6">تنظيف الملفات غير المستخدمة</Typography>
+                    <Typography variant="h6">{t('cleanup.unused')}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      حذف الملفات التي لم تُستخدم منذ 90 يوم
+                      {t('cleanup.unusedDescription')}
                     </Typography>
                   </Box>
                 </Box>
               </CardContent>
               <CardActions>
-                <Button 
-                  color="info" 
+                <Button
+                  color="info"
                   onClick={() => handleCleanupOperation('unused')}
                   startIcon={<Storage />}
                 >
-                  تنظيف غير المستخدمة
+                  {t('cleanup.cleanupUnused')}
                 </Button>
               </CardActions>
             </Card>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCleanupDialogOpen(false)}>إلغاء</Button>
+          <Button onClick={() => setCleanupDialogOpen(false)}>{t('cancel')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

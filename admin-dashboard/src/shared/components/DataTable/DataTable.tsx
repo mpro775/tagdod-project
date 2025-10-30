@@ -160,7 +160,7 @@ export const DataTable: React.FC<DataTableProps> = ({
         paginationMode="client"
         paginationModel={paginationModel}
         onPaginationModelChange={onPaginationModelChange}
-        pageSizeOptions={[5, 10, 20, 50]}
+        pageSizeOptions={[5, 10, 20, 25, 50]}
         // Sorting
         sortingMode="client"
         sortModel={sortModel}

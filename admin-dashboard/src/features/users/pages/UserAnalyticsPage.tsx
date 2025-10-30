@@ -34,6 +34,7 @@ import {
 } from '@mui/icons-material';
 import { apiClient } from '@/core/api/client';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -96,6 +97,7 @@ interface ChurnRiskAlert {
 
 export const UserAnalyticsPage: React.FC = () => {
   const theme = useTheme();
+  const { t } = useTranslation(['users', 'common']);
   const [selectedTab, setSelectedTab] = useState(0);
   const [loading, setLoading] = useState(false);
   
@@ -106,20 +108,20 @@ export const UserAnalyticsPage: React.FC = () => {
   const [churnRiskAlerts, setChurnRiskAlerts] = useState<ChurnRiskAlert[]>([]);
 
   // Fetch overall analytics
-  const fetchOverallAnalytics = async () => {
+  const fetchOverallAnalytics = React.useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/user-analytics/overview');
       setOverallAnalytics(response.data.data);
     } catch  {
-      toast.error('فشل تحميل الإحصائيات العامة');
+      toast.error(t('users:analytics.errors.loadOverview', 'فشل تحميل الإحصائيات العامة'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   // Fetch customer rankings
-  const fetchCustomerRankings = async () => {
+  const fetchCustomerRankings = React.useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/user-analytics/rankings', {
@@ -127,43 +129,43 @@ export const UserAnalyticsPage: React.FC = () => {
       });
       setCustomerRankings(response.data.data || []);
     } catch  {
-      toast.error('فشل تحميل ترتيب العملاء');
+      toast.error(t('users:analytics.errors.loadRankings', 'فشل تحميل ترتيب العملاء'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   // Fetch customer segments
-  const fetchCustomerSegments = async () => {
+  const fetchCustomerSegments = React.useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/user-analytics/reports/customer-segments');
       setCustomerSegments(response.data.data || response.data);
     } catch  {
-      toast.error('فشل تحميل شرائح العملاء');
+      toast.error(t('users:analytics.errors.loadSegments', 'فشل تحميل شرائح العملاء'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   // Fetch churn risk alerts
-  const fetchChurnRiskAlerts = async () => {
+  const fetchChurnRiskAlerts = React.useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/user-analytics/alerts/churn-risk');
       const data = response.data.data || response.data;
       setChurnRiskAlerts(data.customers || []);
     } catch  {
-      toast.error('فشل تحميل تنبيهات المخاطر');
+      toast.error(t('users:analytics.errors.loadAlerts', 'فشل تحميل تنبيهات المخاطر'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchOverallAnalytics();
     fetchCustomerRankings();
-  }, []);
+  }, [fetchOverallAnalytics, fetchCustomerRankings]);
 
   useEffect(() => {
     if (selectedTab === 2) {
@@ -171,7 +173,7 @@ export const UserAnalyticsPage: React.FC = () => {
     } else if (selectedTab === 3) {
       fetchChurnRiskAlerts();
     }
-  }, [selectedTab]);
+  }, [selectedTab, fetchCustomerSegments, fetchChurnRiskAlerts]);
 
   const handleRefresh = () => {
     fetchOverallAnalytics();
@@ -212,10 +214,10 @@ export const UserAnalyticsPage: React.FC = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
-            تحليلات المستخدمين
+            {t('users:analytics.title', 'تحليلات المستخدمين')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            تحليلات شاملة عن سلوك وأداء المستخدمين في المنصة
+            {t('users:analytics.subtitle', 'تحليلات شاملة عن سلوك وأداء المستخدمين في المنصة')}
           </Typography>
         </Box>
         <Button
@@ -224,7 +226,7 @@ export const UserAnalyticsPage: React.FC = () => {
           onClick={handleRefresh}
           disabled={loading}
         >
-          تحديث
+          {t('common:actions.refresh', 'تحديث')}
         </Button>
       </Box>
 
@@ -238,15 +240,15 @@ export const UserAnalyticsPage: React.FC = () => {
                   <People sx={{ fontSize: 40, color: theme.palette.primary.main, mr: 2 }} />
                   <Box>
                     <Typography variant="h4" fontWeight="bold">
-                      {overallAnalytics.totalUsers.toLocaleString('ar-SA')}
+                      {overallAnalytics.totalUsers.toLocaleString('en-US')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      إجمالي المستخدمين
+                      {t('users:analytics.kpi.totalUsers', 'إجمالي المستخدمين')}
                     </Typography>
                   </Box>
                 </Box>
                 <Chip
-                  label={`${overallAnalytics.activeUsers} نشط`}
+                  label={t('users:analytics.kpi.activeUsers', '{{count}} نشط', { count: overallAnalytics.activeUsers })}
                   size="small"
                   color="success"
                 />
@@ -264,12 +266,12 @@ export const UserAnalyticsPage: React.FC = () => {
                       {overallAnalytics.customerLifetimeValue.toFixed(2)} $
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      القيمة الدائمة للعميل
+                      {t('users:analytics.kpi.customerLifetimeValue', 'القيمة الدائمة للعميل')}
                     </Typography>
                   </Box>
                 </Box>
                 <Chip
-                  label={`معدل الطلب: ${overallAnalytics.averageOrderValue.toFixed(2)} $`}
+                  label={t('users:analytics.kpi.averageOrderValue', 'معدل الطلب: {{value}} $', { value: overallAnalytics.averageOrderValue.toFixed(2) })}
                   size="small"
                   color="info"
                 />
@@ -284,15 +286,15 @@ export const UserAnalyticsPage: React.FC = () => {
                   <TrendingUp sx={{ fontSize: 40, color: theme.palette.warning.main, mr: 2 }} />
                   <Box>
                     <Typography variant="h4" fontWeight="bold">
-                      {overallAnalytics.newUsersThisMonth.toLocaleString('ar-SA')}
+                      {overallAnalytics.newUsersThisMonth.toLocaleString('en-US')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      مستخدمون جدد هذا الشهر
+                      {t('users:analytics.kpi.newUsersThisMonth', 'مستخدمون جدد هذا الشهر')}
                     </Typography>
                   </Box>
                 </Box>
                 <Chip
-                  label={`أفضل العملاء: ${overallAnalytics.topSpenders.length}`}
+                  label={t('users:analytics.kpi.topSpenders', 'أفضل العملاء: {{count}}', { count: overallAnalytics.topSpenders.length })}
                   size="small"
                   color="warning"
                 />
@@ -310,10 +312,10 @@ export const UserAnalyticsPage: React.FC = () => {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab icon={<EmojiEvents />} label="ترتيب العملاء" iconPosition="start" />
-          <Tab icon={<Assessment />} label="أفضل العملاء" iconPosition="start" />
-          <Tab icon={<Timeline />} label="شرائح العملاء" iconPosition="start" />
-          <Tab icon={<Warning />} label="تنبيهات المخاطر" iconPosition="start" />
+          <Tab icon={<EmojiEvents />} label={t('users:analytics.tabs.rankings', 'ترتيب العملاء')} iconPosition="start" />
+          <Tab icon={<Assessment />} label={t('users:analytics.tabs.topCustomers', 'أفضل العملاء')} iconPosition="start" />
+          <Tab icon={<Timeline />} label={t('users:analytics.tabs.segments', 'شرائح العملاء')} iconPosition="start" />
+          <Tab icon={<Warning />} label={t('users:analytics.tabs.alerts', 'تنبيهات المخاطر')} iconPosition="start" />
         </Tabs>
       </Paper>
 
@@ -328,13 +330,13 @@ export const UserAnalyticsPage: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>الترتيب</TableCell>
-                  <TableCell>العميل</TableCell>
-                  <TableCell>البريد الإلكتروني</TableCell>
-                  <TableCell align="center">الفئة</TableCell>
-                  <TableCell align="right">إجمالي الإنفاق</TableCell>
-                  <TableCell align="center">عدد الطلبات</TableCell>
-                  <TableCell align="right">متوسط الطلب</TableCell>
+                  <TableCell>{t('users:analytics.table.rank', 'الترتيب')}</TableCell>
+                  <TableCell>{t('users:analytics.table.customer', 'العميل')}</TableCell>
+                  <TableCell>{t('users:analytics.table.email', 'البريد الإلكتروني')}</TableCell>
+                  <TableCell align="center">{t('users:analytics.table.tier', 'الفئة')}</TableCell>
+                  <TableCell align="right">{t('users:analytics.table.totalSpent', 'إجمالي الإنفاق')}</TableCell>
+                  <TableCell align="center">{t('users:analytics.table.orderCount', 'عدد الطلبات')}</TableCell>
+                  <TableCell align="right">{t('users:analytics.table.averageOrder', 'متوسط الطلب')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -346,17 +348,17 @@ export const UserAnalyticsPage: React.FC = () => {
                         #{index + 1}
                       </Box>
                     </TableCell>
-                    <TableCell>{customer.name || 'غير معروف'}</TableCell>
+                    <TableCell>{customer.name || t('users:analytics.unknown', 'غير معروف')}</TableCell>
                     <TableCell>{customer.email}</TableCell>
                     <TableCell align="center">
                       <Chip
-                        label={customer.tier || 'عادي'}
+                        label={customer.tier ? t(`users:analytics.tiers.${customer.tier.toLowerCase()}`, customer.tier) : t('users:analytics.tiers.regular', 'عادي')}
                         size="small"
                         color={getTierColor(customer.tier)}
                       />
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                      {customer.totalSpent.toLocaleString('ar-SA')} $
+                      {customer.totalSpent.toLocaleString('en-US')} $
                     </TableCell>
                     <TableCell align="center">{customer.orderCount}</TableCell>
                     <TableCell align="right">
@@ -368,7 +370,7 @@ export const UserAnalyticsPage: React.FC = () => {
             </Table>
           </TableContainer>
         ) : (
-          <Alert severity="info">لا توجد بيانات متاحة</Alert>
+          <Alert severity="info">{t('users:analytics.noData', 'لا توجد بيانات متاحة')}</Alert>
         )}
       </TabPanel>
 
@@ -389,7 +391,7 @@ export const UserAnalyticsPage: React.FC = () => {
                         <Typography variant="h6">{customer.name || 'غير معروف'}</Typography>
                       </Box>
                       <Chip
-                        label={customer.tier || 'عادي'}
+                        label={customer.tier ? t(`users:analytics.tiers.${customer.tier.toLowerCase()}`, customer.tier) : t('users:analytics.tiers.regular', 'عادي')}
                         size="small"
                         color={getTierColor(customer.tier)}
                       />
@@ -400,15 +402,15 @@ export const UserAnalyticsPage: React.FC = () => {
                     <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                       <Box>
                         <Typography variant="caption" color="text.secondary">
-                          إجمالي الإنفاق
+                          {t('users:analytics.table.totalSpent', 'إجمالي الإنفاق')}
                         </Typography>
                         <Typography variant="h6" color="success.main">
-                          {customer.totalSpent.toLocaleString('ar-SA')} $
+                          {customer.totalSpent.toLocaleString('en-US')} $
                         </Typography>
                       </Box>
                       <Box>
                         <Typography variant="caption" color="text.secondary">
-                          عدد الطلبات
+                          {t('users:analytics.table.orderCount', 'عدد الطلبات')}
                         </Typography>
                         <Typography variant="h6">{customer.orderCount}</Typography>
                       </Box>
@@ -419,7 +421,7 @@ export const UserAnalyticsPage: React.FC = () => {
             ))}
           </Grid>
         ) : (
-          <Alert severity="info">لا توجد بيانات متاحة</Alert>
+          <Alert severity="info">{t('users:analytics.noData', 'لا توجد بيانات متاحة')}</Alert>
         )}
       </TabPanel>
 
@@ -437,9 +439,9 @@ export const UserAnalyticsPage: React.FC = () => {
                     <Typography variant="h4" color="error.main" fontWeight="bold">
                       {customerSegments.segments.vip}
                     </Typography>
-                    <Typography variant="body2">عملاء VIP</Typography>
+                    <Typography variant="body2">{t('users:analytics.segments.vip', 'عملاء VIP')}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      أكثر من 5,000 $
+                      {t('users:analytics.segments.range.vip', 'أكثر من 5,000 $')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -450,9 +452,9 @@ export const UserAnalyticsPage: React.FC = () => {
                     <Typography variant="h4" color="warning.main" fontWeight="bold">
                       {customerSegments.segments.premium}
                     </Typography>
-                    <Typography variant="body2">عملاء مميزون</Typography>
+                    <Typography variant="body2">{t('users:analytics.segments.premium', 'عملاء مميزون')}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      2,000 - 5,000 $
+                      {t('users:analytics.segments.range.premium', '2,000 - 5,000 $')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -463,9 +465,9 @@ export const UserAnalyticsPage: React.FC = () => {
                     <Typography variant="h4" color="info.main" fontWeight="bold">
                       {customerSegments.segments.regular}
                     </Typography>
-                    <Typography variant="body2">عملاء عاديون</Typography>
+                    <Typography variant="body2">{t('users:analytics.segments.regular', 'عملاء عاديون')}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      500 - 2,000 $
+                      {t('users:analytics.segments.range.regular', '500 - 2,000 $')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -476,9 +478,9 @@ export const UserAnalyticsPage: React.FC = () => {
                     <Typography variant="h4" color="success.main" fontWeight="bold">
                       {customerSegments.segments.new}
                     </Typography>
-                    <Typography variant="body2">عملاء جدد</Typography>
+                    <Typography variant="body2">{t('users:analytics.segments.new', 'عملاء جدد')}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      أقل من 500 $
+                      {t('users:analytics.segments.range.new', 'أقل من 500 $')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -489,7 +491,7 @@ export const UserAnalyticsPage: React.FC = () => {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    توصيات
+                    {t('users:analytics.recommendations.title', 'توصيات')}
                   </Typography>
                   {customerSegments.recommendations.map((rec, index) => (
                     <Alert key={index} severity="info" sx={{ mb: 1 }}>
@@ -501,7 +503,7 @@ export const UserAnalyticsPage: React.FC = () => {
             )}
           </>
         ) : (
-          <Alert severity="info">لا توجد بيانات متاحة</Alert>
+          <Alert severity="info">{t('users:analytics.noData', 'لا توجد بيانات متاحة')}</Alert>
         )}
       </TabPanel>
 
@@ -519,10 +521,10 @@ export const UserAnalyticsPage: React.FC = () => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Warning sx={{ color: 'warning.main', mr: 1 }} />
-                        <Typography variant="h6">{alert.name || 'غير معروف'}</Typography>
+                        <Typography variant="h6">{alert.name || t('users:analytics.unknown', 'غير معروف')}</Typography>
                       </Box>
                       <Chip
-                        label={alert.churnRisk}
+                        label={t(`users:analytics.churnRisk.${alert.churnRisk}`, alert.churnRisk)}
                         size="small"
                         color={getRiskColor(alert.churnRisk)}
                       />
@@ -532,21 +534,21 @@ export const UserAnalyticsPage: React.FC = () => {
                     </Typography>
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="caption" color="text.secondary">
-                        آخر طلب منذ: {alert.lastOrderDays} يوم
+                        {t('users:analytics.churnRisk.lastOrder', 'آخر طلب منذ: {{days}} يوم', { days: alert.lastOrderDays })}
                       </Typography>
                     </Box>
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="caption" color="text.secondary">
-                        الإجراء الموصى به:
+                        {t('users:analytics.churnRisk.recommendedAction', 'الإجراء الموصى به:')}
                       </Typography>
                       <Typography variant="body2">{alert.recommendedAction}</Typography>
                     </Box>
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="caption" color="text.secondary">
-                        إجمالي الإنفاق:
+                        {t('users:analytics.churnRisk.totalSpent', 'إجمالي الإنفاق:')}
                       </Typography>
                       <Typography variant="body1" fontWeight="bold" color="success.main">
-                        {alert.totalSpent.toLocaleString('ar-SA')} $
+                        {alert.totalSpent.toLocaleString('en-US')} $
                       </Typography>
                     </Box>
                   </CardContent>
@@ -555,7 +557,7 @@ export const UserAnalyticsPage: React.FC = () => {
             ))}
           </Grid>
         ) : (
-          <Alert severity="success">لا توجد تنبيهات حالياً</Alert>
+          <Alert severity="success">{t('users:analytics.noAlerts', 'لا توجد تنبيهات حالياً')}</Alert>
         )}
       </TabPanel>
     </Container>

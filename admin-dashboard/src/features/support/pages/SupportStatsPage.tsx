@@ -1,21 +1,23 @@
 import React from 'react';
-import { 
-  Box, 
-  Typography, 
-  Button, 
+import {
+  Box,
+  Typography,
+  Button,
   Stack,
   Alert,
   Skeleton,
 } from '@mui/material';
-import { 
+import {
   Refresh,
   ArrowBack,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useSupportStats } from '../hooks/useSupport';
 import { SupportStatsCards } from '../components';
 
 export const SupportStatsPage: React.FC = () => {
+  const { t } = useTranslation('support');
   const navigate = useNavigate();
   const { data: stats, isLoading, error, refetch } = useSupportStats();
 
@@ -28,7 +30,7 @@ export const SupportStatsPage: React.FC = () => {
       <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4" fontWeight="bold">
-            إحصائيات الدعم الفني
+            {t('titles.supportStats', { defaultValue: 'إحصائيات التذاكر' })}
           </Typography>
           <Button
             variant="outlined"
@@ -36,7 +38,7 @@ export const SupportStatsPage: React.FC = () => {
             onClick={handleRefresh}
             disabled={isLoading}
           >
-            تحديث
+            {t('labels.refresh', { defaultValue: 'تحديث' }  )}
           </Button>
         </Stack>
         
@@ -53,7 +55,7 @@ export const SupportStatsPage: React.FC = () => {
       <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4" fontWeight="bold">
-            إحصائيات الدعم الفني
+            {t('titles.supportStats', { defaultValue: 'إحصائيات التذاكر' })}
           </Typography>
           <Stack direction="row" spacing={2}>
             <Button
@@ -61,20 +63,20 @@ export const SupportStatsPage: React.FC = () => {
               startIcon={<ArrowBack />}
               onClick={() => navigate('/support')}
             >
-              العودة للتذاكر
+              {t('messages.backToTickets', { defaultValue: 'العودة للتذاكر' })}
             </Button>
             <Button
               variant="outlined"
               startIcon={<Refresh />}
               onClick={handleRefresh}
             >
-              تحديث
+              {t('labels.refresh', { defaultValue: 'تحديث' })}
             </Button>
           </Stack>
         </Stack>
         
         <Alert severity="error">
-          حدث خطأ في تحميل الإحصائيات. يرجى المحاولة مرة أخرى.
+          {t('messages.errorLoadingStats', { defaultValue: 'حدث خطأ أثناء تحميل الإحصائيات' })}
         </Alert>
       </Box>
     );
@@ -85,19 +87,19 @@ export const SupportStatsPage: React.FC = () => {
       <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4" fontWeight="bold">
-            إحصائيات الدعم الفني
+            {t('titles.supportStats', { defaultValue: 'إحصائيات التذاكر' })}
           </Typography>
           <Button
             variant="outlined"
             startIcon={<ArrowBack />}
             onClick={() => navigate('/support')}
           >
-            العودة للتذاكر
+            {t('messages.backToTickets', { defaultValue: 'العودة للتذاكر' })}
           </Button>
         </Stack>
-        
+
         <Alert severity="info">
-          لا توجد بيانات متاحة للإحصائيات.
+          {t('messages.noStatsData', { defaultValue: 'لا توجد بيانات إحصائية متاحة' })}
         </Alert>
       </Box>
     );
@@ -107,7 +109,7 @@ export const SupportStatsPage: React.FC = () => {
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" fontWeight="bold">
-          إحصائيات الدعم الفني
+          {t('titles.supportStats', { defaultValue: 'إحصائيات التذاكر' })}
         </Typography>
         <Stack direction="row" spacing={2}>
           <Button
@@ -115,7 +117,7 @@ export const SupportStatsPage: React.FC = () => {
             startIcon={<ArrowBack />}
             onClick={() => navigate('/support')}
           >
-            العودة للتذاكر
+            {t('messages.backToTickets', { defaultValue: 'العودة للتذاكر' })}
           </Button>
           <Button
             variant="outlined"
@@ -123,7 +125,7 @@ export const SupportStatsPage: React.FC = () => {
             onClick={handleRefresh}
             disabled={isLoading}
           >
-            تحديث
+            {t('labels.refresh', { defaultValue: 'تحديث' }    )}
           </Button>
         </Stack>
       </Stack>

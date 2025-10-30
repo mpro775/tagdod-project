@@ -48,7 +48,7 @@ export const NotificationTemplatesPage: React.FC = () => {
           payload: {
             orderId: 'TEST-123',
             amount: '150',
-            currency: 'SAR',
+            currency: 'USD',
             requestId: 'REQ-456'
           }
         },

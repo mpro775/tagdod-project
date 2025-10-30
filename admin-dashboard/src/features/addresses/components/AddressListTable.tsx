@@ -18,12 +18,14 @@ import {
   InputAdornment,
 } from '@mui/material';
 import { Search as SearchIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useAddressList } from '../hooks/useAddresses';
 import type { AddressFilters } from '../types/address.types';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 export function AddressListTable() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState<AddressFilters>({
     page: 1,
     limit: 20,
@@ -32,6 +34,11 @@ export function AddressListTable() {
   });
 
   const { data, isLoading, refetch } = useAddressList(filters);
+  const rows = Array.isArray(data)
+    ? data
+    : Array.isArray((data as any)?.data)
+    ? (data as any).data
+    : [];
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage + 1 }));
@@ -50,7 +57,7 @@ export function AddressListTable() {
       <CardContent>
         <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <TextField
-            placeholder="بحث..."
+            placeholder={t('addresses.list.search.placeholder', { defaultValue: 'ابحث عن عنوان...' })}
             size="small"
             sx={{ minWidth: 250 }}
             value={filters.search || ''}
@@ -67,23 +74,23 @@ export function AddressListTable() {
           <TextField
             select
             size="small"
-            label="المدينة"
+            label={t('addresses.list.filters.city.label', { defaultValue: 'المدينة' })}
             sx={{ minWidth: 150 }}
             value={filters.city || ''}
             onChange={(e) => setFilters((prev) => ({ ...prev, city: e.target.value, page: 1 }))}
           >
-            <MenuItem value="">الكل</MenuItem>
-            <MenuItem value="صنعاء">صنعاء</MenuItem>
-            <MenuItem value="عدن">عدن</MenuItem>
-            <MenuItem value="تعز">تعز</MenuItem>
-            <MenuItem value="الحديدة">الحديدة</MenuItem>
-            <MenuItem value="إب">إب</MenuItem>
+            <MenuItem value="">{t('addresses.list.filters.city.all', { defaultValue: 'جميع المدن' })}</MenuItem>
+            <MenuItem value="صنعاء">{t('addresses.list.filters.city.sanaa', { defaultValue: 'صنعاء' })}</MenuItem>
+            <MenuItem value="عدن">{t('addresses.list.filters.city.aden', { defaultValue: 'عدن' })}</MenuItem>
+            <MenuItem value="تعز">{t('addresses.list.filters.city.taiz', { defaultValue: 'تعز' })}</MenuItem>
+            <MenuItem value="الحديدة">{t('addresses.list.filters.city.alHudaydah', { defaultValue: 'الحديدة' })}</MenuItem>
+            <MenuItem value="إب">{t('addresses.list.filters.city.ibb', { defaultValue: 'إب' })}</MenuItem>
           </TextField>
 
           <TextField
             select
             size="small"
-            label="الترتيب حسب"
+            label={t('addresses.list.filters.sortBy.label', { defaultValue: 'ترتيب العناوين' })}
             sx={{ minWidth: 150 }}
             value={filters.sortBy || 'createdAt'}
             onChange={(e) =>
@@ -94,9 +101,9 @@ export function AddressListTable() {
               }))
             }
           >
-            <MenuItem value="createdAt">تاريخ الإنشاء</MenuItem>
-            <MenuItem value="usageCount">عدد الاستخدام</MenuItem>
-            <MenuItem value="lastUsedAt">آخر استخدام</MenuItem>
+            <MenuItem value="createdAt">{t('addresses.list.filters.sortBy.createdAt', { defaultValue: 'تاريخ الإنشاء' })}</MenuItem>
+            <MenuItem value="usageCount">{t('addresses.list.filters.sortBy.usageCount', { defaultValue: 'عدد الاستخدامات' })}</MenuItem>
+            <MenuItem value="lastUsedAt">{t('addresses.list.filters.sortBy.lastUsedAt', { defaultValue: 'تاريخ الإستخدام الأخير' })}</MenuItem>
           </TextField>
 
           <Button
@@ -105,7 +112,7 @@ export function AddressListTable() {
             onClick={() => refetch()}
             size="small"
           >
-            تحديث
+            {t('addresses.actions.refresh', { defaultValue: 'تحديث' })}
           </Button>
         </Box>
 
@@ -113,30 +120,30 @@ export function AddressListTable() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>المستخدم</TableCell>
-                <TableCell>التسمية</TableCell>
-                <TableCell>العنوان</TableCell>
-                <TableCell>المدينة</TableCell>
-                <TableCell align="center">الاستخدام</TableCell>
-                <TableCell align="center">الحالة</TableCell>
-                <TableCell>تاريخ الإنشاء</TableCell>
+                <TableCell>{t('addresses.list.columns.user', { defaultValue: 'المستخدم' })}</TableCell>
+                <TableCell>{t('addresses.list.columns.label', { defaultValue: 'التسمية' })}</TableCell>
+                <TableCell>{t('addresses.list.columns.address', { defaultValue: 'العنوان' })}</TableCell>
+                <TableCell>{t('addresses.list.columns.city', { defaultValue: 'المدينة' })}</TableCell>
+                <TableCell align="center">{t('addresses.list.columns.usage', { defaultValue: 'الاستخدام' })}</TableCell>
+                <TableCell align="center">{t('addresses.list.columns.status', { defaultValue: 'الحالة' })}</TableCell>
+                <TableCell>{t('addresses.list.columns.createdAt', { defaultValue: 'تاريخ الإنشاء' })}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
-                    جاري التحميل...
+                    {t('addresses.list.loading', { defaultValue: 'جاري التحميل...' })}
                   </TableCell>
                 </TableRow>
-              ) : !data || data.data.length === 0 ? (
+              ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
-                    <Typography color="text.secondary">لا توجد نتائج</Typography>
+                    <Typography color="text.secondary">{t('addresses.list.noResults', { defaultValue: 'لا يوجد نتائج' })}</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
-                data.data.map((address) => (
+                rows.map((address: any) => (
                   <TableRow key={address._id} hover>
                     <TableCell>
                       <Box>
@@ -152,7 +159,7 @@ export function AddressListTable() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {address.label}
                         {address.isDefault && (
-                          <Chip label="⭐ افتراضي" size="small" color="primary" />
+                          <Chip label={t('addresses.list.status.default', { defaultValue: 'افتراضي' })} size="small" color="primary" />
                         )}
                       </Box>
                     </TableCell>
@@ -160,14 +167,14 @@ export function AddressListTable() {
                       <Typography variant="body2">{address.line1}</Typography>
                       {address.notes && (
                         <Typography variant="caption" color="text.secondary">
-                          📝 {address.notes}
+                          {t('addresses.list.address.notes', { defaultValue: 'ملاحظات', notes: address.notes })}
                         </Typography>
                       )}
                     </TableCell>
                     <TableCell>{address.city}</TableCell>
                     <TableCell align="center">
                       <Chip
-                        label={`${address.usageCount} مرة`}
+                        label={t('addresses.list.usage.times', { defaultValue: 'مرات الاستخدام', count: address.usageCount })}
                         size="small"
                         variant="outlined"
                         color={address.usageCount > 5 ? 'success' : 'default'}
@@ -175,7 +182,7 @@ export function AddressListTable() {
                     </TableCell>
                     <TableCell align="center">
                       <Chip
-                        label={address.isActive ? 'نشط' : 'غير نشط'}
+                        label={address.isActive ? t('addresses.list.status.active', { defaultValue: 'نشط' }) : t('addresses.list.status.inactive', { defaultValue: 'غير نشط' })}
                         size="small"
                         color={address.isActive ? 'success' : 'default'}
                       />
@@ -193,13 +200,16 @@ export function AddressListTable() {
         {data && (
           <TablePagination
             component="div"
-            count={data.pagination.total}
+            count={
+              (data as any)?.pagination?.total ??
+              (Array.isArray((data as any)?.data) ? (data as any).data.length : Array.isArray(data) ? data.length : 0)
+            }
             page={filters.page! - 1}
             onPageChange={handleChangePage}
             rowsPerPage={filters.limit!}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="عدد الصفوف:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} من ${count}`}
+            labelRowsPerPage={t('addresses.pagination.rowsPerPage', { defaultValue: 'عدد العناوين في الصفحة' })}
+            labelDisplayedRows={({ from, to, count }) => t('addresses.pagination.displayedRows', { defaultValue: 'عرض العناوين', from, to, count })}
           />
         )}
       </CardContent>

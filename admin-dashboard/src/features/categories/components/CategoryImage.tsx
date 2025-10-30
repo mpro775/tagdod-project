@@ -40,27 +40,19 @@ export const CategoryImage: React.FC<CategoryImageProps> = ({
           width: size,
           height: size,
           borderRadius: 2,
-          border: '2px solid',
-          borderColor: 'divider',
+          border: '1px solid',
+          borderColor: 'grey.200',
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
           backgroundColor: 'grey.50',
-          boxShadow: 1,
-          position: 'relative',
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'rgba(0,0,0,0.05)',
-            pointerEvents: 'none',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            transform: 'scale(1.05)',
           },
         }}
         className={className}
@@ -73,21 +65,12 @@ export const CategoryImage: React.FC<CategoryImageProps> = ({
           sx={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover', // Use cover for better visibility
+            objectFit: 'cover',
             display: 'block',
-            transition: 'transform 0.2s ease-in-out',
-            '&:hover': {
-              transform: 'scale(1.05)',
-            },
+            padding: 0.5,
           }}
           onError={(e) => {
-            // Fallback to folder icon if image fails to load
-            const target = e.target as HTMLImageElement;
-            const parent = target.parentElement;
-            if (parent) {
-              target.style.display = 'none';
-              parent.innerHTML = `<span style="font-size: ${size * 0.5}px; color: #999;">📁</span>`;
-            }
+            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="60"%3E%3Crect width="60" height="60" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="24" fill="%23999"%3E📁%3C/text%3E%3C/svg%3E';
           }}
         />
       </Box>
@@ -98,18 +81,18 @@ export const CategoryImage: React.FC<CategoryImageProps> = ({
     <Box
       sx={{
         fontSize: size * 0.5,
-        color: 'text.secondary',
+        color: 'grey.400',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         width: size,
         height: size,
         borderRadius: 2,
-        border: '2px solid',
-        borderColor: 'divider',
+        border: '1px solid',
+        borderColor: 'grey.200',
         flexShrink: 0,
         backgroundColor: 'grey.50',
-        boxShadow: 1,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
       }}
       className={className}
     >

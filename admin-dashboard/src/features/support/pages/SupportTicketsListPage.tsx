@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Button, 
-  Grid, 
+import {
+  Box,
+  Typography,
+  Button,
+  Grid,
   Skeleton,
   Alert,
   Stack,
   Chip,
   Paper,
 } from '@mui/material';
-import { 
-  Analytics, 
+import {
+  Analytics,
   Refresh,
   Support,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   SupportTicketCard, 
   SupportTicketFilters, 
@@ -31,6 +32,7 @@ import type {
 } from '../types/support.types';
 
 export const SupportTicketsListPage: React.FC = () => {
+  const { t } = useTranslation('support');
   const navigate = useNavigate();
   const [filters, setFilters] = useState<ListTicketsParams>({});
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,7 +84,7 @@ export const SupportTicketsListPage: React.FC = () => {
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" fontWeight="bold">
-          إدارة تذاكر الدعم
+          {t('titles.supportManagement', { defaultValue: 'إدارة التذاكر' })}
         </Typography>
         <Stack direction="row" spacing={2}>
           <Button
@@ -90,7 +92,7 @@ export const SupportTicketsListPage: React.FC = () => {
             startIcon={<Analytics />}
             onClick={() => navigate('/support/stats')}
           >
-            عرض الإحصائيات
+            {t('actions.viewStats', { defaultValue: 'عرض الإحصائيات' })}
           </Button>
           <Button
             variant="outlined"
@@ -98,7 +100,7 @@ export const SupportTicketsListPage: React.FC = () => {
             onClick={handleRefresh}
             disabled={isLoading}
           >
-            تحديث
+            {t('labels.refresh', { defaultValue: 'تحديث' })}
           </Button>
         </Stack>
       </Stack>
@@ -128,7 +130,7 @@ export const SupportTicketsListPage: React.FC = () => {
         <Paper sx={{ p: 2, mb: 3 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="body1">
-              عرض {Array.isArray(data.data) ? data.data.length : 0} من أصل {data.meta?.total || 0} تذكرة
+              {t('pagination.showing', { defaultValue: 'عرض {count} من {total} تذاكر', count: Array.isArray(data.data) ? data.data.length : 0, total: data.meta?.total || 0 })}
             </Typography>
             <Stack direction="row" spacing={1}>
               {Object.entries(filters as any)
@@ -149,7 +151,7 @@ export const SupportTicketsListPage: React.FC = () => {
       {/* Error State */}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          حدث خطأ في تحميل التذاكر. يرجى المحاولة مرة أخرى.
+          {t('messages.errorLoadingTickets', { defaultValue: 'حدث خطأ أثناء تحميل التذاكر' })}
         </Alert>
       )}
 
@@ -172,10 +174,10 @@ export const SupportTicketsListPage: React.FC = () => {
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <Support sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            لا توجد تذاكر
+            {t('messages.noTickets', { defaultValue: 'لا توجد تذاكر' })}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            لم يتم العثور على أي تذاكر تطابق المعايير المحددة
+            {t('messages.noTicketsDesc', { defaultValue: 'لا توجد تذاكر مسجلة' })}
           </Typography>
         </Paper>
       )}

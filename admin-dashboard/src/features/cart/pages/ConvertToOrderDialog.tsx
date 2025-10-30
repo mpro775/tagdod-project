@@ -18,6 +18,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { Close, Person, LocationOn } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { Cart } from '../types/cart.types';
 import { useConvertCartToOrder } from '../hooks/useCart';
 import { formatCurrency } from '../api/cartApi';
@@ -49,6 +50,8 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
+
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: '',
     email: '',
@@ -60,7 +63,7 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
     city: '',
     state: '',
     postalCode: '',
-    country: 'اليمن',
+    country: t('cart.dialogs.convertToOrder.defaultCountry'),
   });
 
   const [errors, setErrors] = useState<Partial<CustomerInfo & ShippingAddress>>({});
@@ -82,25 +85,29 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
     const newErrors: Partial<CustomerInfo & ShippingAddress> = {};
 
     if (!customerInfo.name.trim()) {
-      newErrors.name = 'اسم العميل مطلوب';
+      newErrors.name = t('cart.validation.customerNameRequired');
     }
 
     if (!customerInfo.email.trim()) {
-      newErrors.email = 'البريد الإلكتروني مطلوب';
+      newErrors.email = t('cart.validation.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(customerInfo.email)) {
-      newErrors.email = 'البريد الإلكتروني غير صحيح';
+      newErrors.email = t('cart.validation.emailInvalid');
     }
 
     if (!customerInfo.phone.trim()) {
-      newErrors.phone = 'رقم الهاتف مطلوب';
+      newErrors.phone = t('cart.validation.phoneRequired');
     }
 
     if (!shippingAddress.street.trim()) {
-      newErrors.street = 'عنوان الشارع مطلوب';
+      newErrors.street = t('cart.validation.streetRequired');
     }
 
     if (!shippingAddress.city.trim()) {
-      newErrors.city = 'المدينة مطلوبة';
+      newErrors.city = t('cart.validation.cityRequired');
+    }
+
+    if (!shippingAddress.country.trim()) {
+      newErrors.country = t('cart.validation.countryRequired');
     }
 
     setErrors(newErrors);
@@ -128,7 +135,7 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
 
   const handleClose = () => {
     setCustomerInfo({ name: '', email: '', phone: '' });
-    setShippingAddress({ street: '', city: '', state: '', postalCode: '', country: 'اليمن' });
+    setShippingAddress({ street: '', city: '', state: '', postalCode: '', country: t('cart.dialogs.convertToOrder.defaultCountry') });
     setErrors({});
     onClose();
   };
@@ -163,7 +170,7 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">تحويل السلة إلى طلب</Typography>
+          <Typography variant="h6">{t('cart.dialogs.convertToOrder.title')}</Typography>
           <IconButton onClick={handleClose} size="small">
             <Close />
           </IconButton>
@@ -174,18 +181,23 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
         {/* Cart Summary */}
         <Box mb={3}>
           <Typography variant="h6" gutterBottom>
-            ملخص السلة
+            {t('cart.dialogs.convertToOrder.cartSummary')}
           </Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 6 }}>
               <Typography variant="body2" color="text.secondary">
-                عدد المنتجات
+                {t('cart.list.columns.itemsCount')}
               </Typography>
-              <Typography variant="body1">{cart.items?.length || 0} منتج</Typography>
+              <Typography variant="body1">
+                {cart.items?.length === 1
+                  ? t('cart.list.items.single')
+                  : t('cart.list.items.count', { count: cart.items?.length || 0 })
+                }
+              </Typography>
             </Grid>
             <Grid size={{ xs: 6 }}>
               <Typography variant="body2" color="text.secondary">
-                القيمة الإجمالية
+                {t('cart.list.columns.totalValue')}
               </Typography>
               <Typography variant="h6" color="primary">
                 {formatCurrency(cart.pricingSummary?.total || 0, cart.currency)}
@@ -198,13 +210,13 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
         <Box mb={3}>
           <Typography variant="h6" gutterBottom>
             <Person sx={{ mr: 1, verticalAlign: 'middle' }} />
-            معلومات العميل
+            {t('cart.dialogs.convertToOrder.customerInfo')}
           </Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
-                label="اسم العميل"
+                label={t('cart.dialogs.convertToOrder.fields.customerName')}
                 value={customerInfo.name}
                 onChange={(e) => handleCustomerInfoChange('name', e.target.value)}
                 error={!!errors.name}
@@ -215,7 +227,7 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
-                label="البريد الإلكتروني"
+                label={t('cart.dialogs.convertToOrder.fields.email')}
                 type="email"
                 value={customerInfo.email}
                 onChange={(e) => handleCustomerInfoChange('email', e.target.value)}
@@ -227,7 +239,7 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
-                label="رقم الهاتف"
+                label={t('cart.dialogs.convertToOrder.fields.phone')}
                 value={customerInfo.phone}
                 onChange={(e) => handleCustomerInfoChange('phone', e.target.value)}
                 error={!!errors.phone}
@@ -242,13 +254,13 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
         <Box mb={3}>
           <Typography variant="h6" gutterBottom>
             <LocationOn sx={{ mr: 1, verticalAlign: 'middle' }} />
-            عنوان الشحن
+            {t('cart.dialogs.convertToOrder.shippingAddress')}
           </Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
-                label="عنوان الشارع"
+                label={t('cart.dialogs.convertToOrder.fields.street')}
                 value={shippingAddress.street}
                 onChange={(e) => handleShippingAddressChange('street', e.target.value)}
                 error={!!errors.street}
@@ -261,7 +273,7 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
-                label="المدينة"
+                label={t('cart.dialogs.convertToOrder.fields.city')}
                 value={shippingAddress.city}
                 onChange={(e) => handleShippingAddressChange('city', e.target.value)}
                 error={!!errors.city}
@@ -272,7 +284,7 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
-                label="المحافظة"
+                label={t('cart.dialogs.convertToOrder.fields.state')}
                 value={shippingAddress.state}
                 onChange={(e) => handleShippingAddressChange('state', e.target.value)}
               />
@@ -280,20 +292,22 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
-                label="الرمز البريدي"
+                label={t('cart.dialogs.convertToOrder.fields.postalCode')}
                 value={shippingAddress.postalCode}
                 onChange={(e) => handleShippingAddressChange('postalCode', e.target.value)}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
-                <InputLabel>البلد</InputLabel>
+                <InputLabel>{t('cart.dialogs.convertToOrder.fields.country')}</InputLabel>
                 <Select
                   value={shippingAddress.country}
                   onChange={(e) => handleShippingAddressChange('country', e.target.value)}
-                  label="البلد"
+                  label={t('cart.dialogs.convertToOrder.fields.country')}
                 >
-                  <MenuItem value="اليمن">اليمن</MenuItem>
+                  <MenuItem value={t('cart.dialogs.convertToOrder.defaultCountry')}>
+                    {t('cart.dialogs.convertToOrder.defaultCountry')}
+                  </MenuItem>
                   <MenuItem value="السعودية">السعودية</MenuItem>
                   <MenuItem value="الإمارات">الإمارات</MenuItem>
                   <MenuItem value="قطر">قطر</MenuItem>
@@ -316,7 +330,7 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
 
       <DialogActions>
         <Button onClick={handleClose} disabled={convertMutation.isPending}>
-          إلغاء
+          {t('cart.actions.cancel')}
         </Button>
         <Button
           variant="contained"
@@ -324,7 +338,7 @@ export const ConvertToOrderDialog: React.FC<ConvertToOrderDialogProps> = ({
           disabled={convertMutation.isPending}
           startIcon={convertMutation.isPending ? <CircularProgress size={20} /> : null}
         >
-          {convertMutation.isPending ? 'جاري التحويل...' : 'تحويل إلى طلب'}
+          {convertMutation.isPending ? t('cart.messages.loading') : t('cart.dialogs.convertToOrder.confirm')}
         </Button>
       </DialogActions>
     </Dialog>

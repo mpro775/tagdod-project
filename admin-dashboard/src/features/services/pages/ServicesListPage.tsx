@@ -52,6 +52,7 @@ import {
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 import type { ServiceStatus } from '../types/service.types';
 import { getCityEmoji } from '@/shared/constants/yemeni-cities';
+import { useTranslation } from 'react-i18next';
 
 const statusColors: Record<ServiceStatus, 'default' | 'primary' | 'success' | 'error' | 'warning'> =
   {
@@ -64,14 +65,17 @@ const statusColors: Record<ServiceStatus, 'default' | 'primary' | 'success' | 'e
     CANCELLED: 'error',
   };
 
-const statusLabels: Record<ServiceStatus, string> = {
-  OPEN: 'مفتوح',
-  OFFERS_COLLECTING: 'جمع العروض',
-  ASSIGNED: 'مُعيَّن',
-  IN_PROGRESS: 'قيد التنفيذ',
-  COMPLETED: 'مكتمل',
-  RATED: 'مُقيَّم',
-  CANCELLED: 'ملغي',
+const getStatusLabel = (status: ServiceStatus, t: any): string => {
+  const statusMap: Record<ServiceStatus, string> = {
+    OPEN: 'open',
+    OFFERS_COLLECTING: 'offersCollecting',
+    ASSIGNED: 'assigned',
+    IN_PROGRESS: 'inProgress',
+    COMPLETED: 'completed',
+    RATED: 'rated',
+    CANCELLED: 'cancelled',
+  };
+  return t(`status.${statusMap[status]}`, status);
 };
 
 const statusIcons: Record<ServiceStatus, React.ReactNode> = {
@@ -85,6 +89,7 @@ const statusIcons: Record<ServiceStatus, React.ReactNode> = {
 };
 
 export const ServicesListPage: React.FC = () => {
+  const { t } = useTranslation('services');
   const [filters, setFilters] = useState({
     status: undefined as ServiceStatus | undefined,
     type: '',
@@ -153,9 +158,15 @@ export const ServicesListPage: React.FC = () => {
           note: dialogData.note,
         });
         setDialogOpen(false);
-        showSnackbar('تم تحديث حالة الطلب بنجاح', 'success');
+        showSnackbar(
+          t('messages.statusUpdated', { defaultValue: 'تم تعديل الحالة بنجاح' }),
+          'success'
+        );
       } catch (error: any) {
-        showSnackbar(error.message || 'فشل في تحديث حالة الطلب', 'error');
+        showSnackbar(
+          error.message || t('messages.errorUpdatingStatus', { defaultValue: 'فشل تعديل الحالة' }),
+          'error'
+        );
       }
     }
   };
@@ -168,9 +179,16 @@ export const ServicesListPage: React.FC = () => {
           reason: dialogData.reason,
         });
         setDialogOpen(false);
-        showSnackbar('تم إلغاء الطلب بنجاح', 'success');
+        showSnackbar(
+          t('messages.requestCancelled', { defaultValue: 'تم إلغاء الطلب بنجاح' }),
+          'success'
+        );
       } catch (error: any) {
-        showSnackbar(error.message || 'فشل في إلغاء الطلب', 'error');
+        showSnackbar(
+          error.message ||
+            t('messages.errorCancellingRequest', { defaultValue: 'فشل إلغاء الطلب' }),
+          'error'
+        );
       }
     }
   };
@@ -184,9 +202,16 @@ export const ServicesListPage: React.FC = () => {
           note: dialogData.note,
         });
         setDialogOpen(false);
-        showSnackbar('تم تعيين المهندس بنجاح', 'success');
+        showSnackbar(
+          t('messages.engineerAssigned', { defaultValue: 'تم تعيين مهندس بنجاح' }),
+          'success'
+        );
       } catch (error: any) {
-        showSnackbar(error.message || 'فشل في تعيين المهندس', 'error');
+        showSnackbar(
+          error.message ||
+            t('messages.errorAssigningEngineer', { defaultValue: 'فشل تعيين مهندس' }),
+          'error'
+        );
       }
     }
   };
@@ -208,7 +233,7 @@ export const ServicesListPage: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'title',
-      headerName: 'عنوان الطلب',
+      headerName: t('labels.title', { defaultValue: 'العنوان' }),
       width: 250,
       renderCell: (params) => (
         <Box display="flex" alignItems="center" gap={1}>
@@ -228,7 +253,7 @@ export const ServicesListPage: React.FC = () => {
     },
     {
       field: 'user',
-      headerName: 'العميل',
+      headerName: t('labels.customer', { defaultValue: 'العميل' }),
       width: 200,
       renderCell: (params) => (
         <Box display="flex" alignItems="center" gap={1}>
@@ -248,7 +273,7 @@ export const ServicesListPage: React.FC = () => {
     },
     {
       field: 'city',
-      headerName: 'المدينة',
+      headerName: t('labels.city', { defaultValue: 'المدينة' }),
       width: 140,
       renderCell: (params) => (
         <Chip
@@ -262,7 +287,7 @@ export const ServicesListPage: React.FC = () => {
     },
     {
       field: 'engineer',
-      headerName: 'المهندس',
+      headerName: t('labels.engineer', { defaultValue: 'المهندس' }),
       width: 200,
       renderCell: (params) =>
         params.value ? (
@@ -292,7 +317,7 @@ export const ServicesListPage: React.FC = () => {
     },
     {
       field: 'acceptedOffer',
-      headerName: 'المبلغ',
+      headerName: t('labels.amount', { defaultValue: 'المبلغ' }),
       width: 120,
       renderCell: (params) =>
         params.value ? (
@@ -310,12 +335,12 @@ export const ServicesListPage: React.FC = () => {
     },
     {
       field: 'status',
-      headerName: 'الحالة',
+      headerName: t('labels.status', { defaultValue: 'الحالة' }),
       width: 140,
       renderCell: (params) => (
         <Chip
           icon={statusIcons[params.value as ServiceStatus] as React.ReactElement}
-          label={statusLabels[params.value as ServiceStatus] || params.value}
+          label={getStatusLabel(params.value as ServiceStatus, t)}
           color={statusColors[params.value as ServiceStatus]}
           size="small"
           variant="outlined"
@@ -324,17 +349,17 @@ export const ServicesListPage: React.FC = () => {
     },
     {
       field: 'createdAt',
-      headerName: 'تاريخ الطلب',
+      headerName: t('labels.createdAt', { defaultValue: 'تاريخ الإنشاء' }),
       width: 140,
       valueFormatter: (value) => formatDate(value as Date),
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('labels.actions', { defaultValue: 'الإجراءات' }),
       width: 200,
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5}>
-          <Tooltip title="عرض التفاصيل">
+          <Tooltip title={t('messages.viewDetails', { defaultValue: 'عرض التفاصيل' })}>
             <IconButton
               size="small"
               onClick={() => handleAction('view', params.row)}
@@ -343,14 +368,14 @@ export const ServicesListPage: React.FC = () => {
               <Visibility />
             </IconButton>
           </Tooltip>
-          <Tooltip title="تعديل الحالة">
+          <Tooltip title={t('messages.editStatus', { defaultValue: 'تعديل الحالة' })}>
             <IconButton size="small" onClick={() => handleAction('edit', params.row)} color="info">
               <Edit />
             </IconButton>
           </Tooltip>
           {params.row.status !== 'COMPLETED' && params.row.status !== 'CANCELLED' && (
             <>
-              <Tooltip title="تعيين مهندس">
+              <Tooltip title={t('messages.assignEngineer', { defaultValue: 'تعيين مهندس' })}>
                 <IconButton
                   size="small"
                   onClick={() => handleAction('assign', params.row)}
@@ -359,7 +384,7 @@ export const ServicesListPage: React.FC = () => {
                   <PersonAdd />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="إلغاء الطلب">
+              <Tooltip title={t('messages.cancelRequest', { defaultValue: 'إلغاء الطلب' })}>
                 <IconButton
                   size="small"
                   onClick={() => handleAction('cancel', params.row)}
@@ -380,7 +405,7 @@ export const ServicesListPage: React.FC = () => {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
-          إدارة الخدمات
+          {t('services.servicesList', { defaultValue: 'إدارة الخدمات' })}
         </Typography>
         <Card sx={{ mb: 3 }}>
           <CardContent>
@@ -410,13 +435,14 @@ export const ServicesListPage: React.FC = () => {
     return (
       <Box>
         <Typography variant="h4" gutterBottom>
-          إدارة الخدمات
+          {t('services.servicesList', { defaultValue: 'إدارة الخدمات' })}
         </Typography>
         <Alert severity="error" sx={{ mb: 3 }}>
-          فشل في تحميل البيانات: {error.message}
+          {t('services.errorLoadingData', { defaultValue: 'فشل في تحميل البيانات:' })}{' '}
+          {error.message}
         </Alert>
         <Button variant="contained" startIcon={<Refresh />} onClick={() => refetch()}>
-          إعادة المحاولة
+          {t('services.retry', { defaultValue: 'إعادة المحاولة' })}
         </Button>
       </Box>
     );
@@ -425,20 +451,20 @@ export const ServicesListPage: React.FC = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        إدارة الخدمات
+        {t('services.servicesList', { defaultValue: 'إدارة الخدمات' })}
       </Typography>
 
       {/* الفلاتر */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            فلاتر البحث
+            {t('services.searchFilters', { defaultValue: 'فلاتر البحث' })}
           </Typography>
           <Grid container spacing={2} alignItems="center">
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
-                label="البحث"
+                label={t('services.search', { defaultValue: 'البحث' })}
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 InputProps={{
@@ -449,16 +475,18 @@ export const ServicesListPage: React.FC = () => {
 
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>الحالة</InputLabel>
+                <InputLabel>{t('services.status', { defaultValue: 'الحالة' })}</InputLabel>
                 <Select
                   value={filters.status || ''}
-                  label="الحالة"
+                  label={t('services.status', { defaultValue: 'الحالة' })}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
                 >
-                  <MenuItem value="">جميع الحالات</MenuItem>
-                  {Object.entries(statusLabels).map(([value, label]) => (
+                  <MenuItem value="">
+                    {t('services.allStatuses', { defaultValue: 'جميع الحالات' })}
+                  </MenuItem>
+                  {Object.keys(statusColors).map((value) => (
                     <MenuItem key={value} value={value}>
-                      {label}
+                      {getStatusLabel(value as ServiceStatus, t)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -468,7 +496,7 @@ export const ServicesListPage: React.FC = () => {
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
-                label="نوع الخدمة"
+                label={t('services.serviceType', { defaultValue: 'نوع الخدمة' })}
                 value={filters.type}
                 onChange={(e) => handleFilterChange('type', e.target.value)}
               />
@@ -482,7 +510,7 @@ export const ServicesListPage: React.FC = () => {
                   onClick={() => refetch()}
                   fullWidth
                 >
-                  تطبيق الفلاتر
+                  {t('services.applyFilters', { defaultValue: 'تطبيق الفلاتر' })}
                 </Button>
                 <Button
                   variant="outlined"
@@ -498,7 +526,7 @@ export const ServicesListPage: React.FC = () => {
                     refetch();
                   }}
                 >
-                  إعادة تعيين
+                  {t('services.resetFilters', { defaultValue: 'إعادة تعيين' })}
                 </Button>
               </Stack>
             </Grid>
@@ -508,7 +536,7 @@ export const ServicesListPage: React.FC = () => {
 
       {/* جدول البيانات */}
       <DataTable
-        title="طلبات الخدمات"
+        title={t('services.servicesRequests', { defaultValue: 'طلبات الخدمات' })}
         columns={columns}
         rows={services}
         loading={isLoading}
@@ -523,10 +551,10 @@ export const ServicesListPage: React.FC = () => {
       {/* حوار التفاصيل */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
-          {dialogType === 'view' && 'تفاصيل الطلب'}
-          {dialogType === 'edit' && 'تعديل حالة الطلب'}
-          {dialogType === 'cancel' && 'إلغاء الطلب'}
-          {dialogType === 'assign' && 'تعيين مهندس'}
+          {dialogType === 'view' && t('services.viewDetails', { defaultValue: 'تفاصيل الطلب' })}
+          {dialogType === 'edit' && t('services.editStatus', { defaultValue: 'تعديل حالة الطلب' })}
+          {dialogType === 'cancel' && t('services.cancelRequest', { defaultValue: 'إلغاء الطلب' })}
+          {dialogType === 'assign' && t('services.assignEngineer', { defaultValue: 'تعيين مهندس' })}
         </DialogTitle>
         <DialogContent>
           {selectedService && (
@@ -535,63 +563,74 @@ export const ServicesListPage: React.FC = () => {
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="h6" gutterBottom>
-                      معلومات الطلب
+                      {t('services.requestDetails', { defaultValue: 'معلومات الطلب' })}
                     </Typography>
                     <Typography>
-                      <strong>العنوان:</strong> {selectedService.title}
+                      <strong>{t('services.title', { defaultValue: 'العنوان' })}:</strong>{' '}
+                      {selectedService.title}
                     </Typography>
                     <Typography>
-                      <strong>النوع:</strong> {selectedService.type}
+                      <strong>{t('services.type', { defaultValue: 'النوع' })}:</strong>{' '}
+                      {selectedService.type}
                     </Typography>
                     <Typography>
-                      <strong>الوصف:</strong> {selectedService.description}
+                      <strong>{t('services.description', { defaultValue: 'الوصف' })}:</strong>{' '}
+                      {selectedService.description}
                     </Typography>
                     <Typography>
-                      <strong>المدينة:</strong>{' '}
+                      <strong>{t('services.city', { defaultValue: 'المدينة' })}:</strong>{' '}
                       <Chip
-                        label={`${getCityEmoji(selectedService.city || 'صنعاء')} ${selectedService.city || 'صنعاء'}`}
+                        label={`${getCityEmoji(selectedService.city || 'صنعاء')} ${
+                          selectedService.city || 'صنعاء'
+                        }`}
                         size="small"
                         color="primary"
                         variant="outlined"
                       />
                     </Typography>
                     <Typography>
-                      <strong>الحالة:</strong>{' '}
-                      {statusLabels[selectedService.status as ServiceStatus]}
+                      <strong>{t('services.status', { defaultValue: 'الحالة' })}:</strong>{' '}
+                      {getStatusLabel(selectedService.status as ServiceStatus, t)}
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="h6" gutterBottom>
-                      معلومات العميل
+                      {t('services.clientDetails', { defaultValue: 'معلومات العميل' })}
                     </Typography>
                     <Typography>
-                      <strong>الاسم:</strong> {selectedService.user?.firstName}{' '}
-                      {selectedService.user?.lastName}
+                      <strong>{t('services.name', { defaultValue: 'الاسم' })} :</strong>{' '}
+                      {selectedService.user?.firstName} {selectedService.user?.lastName}
                     </Typography>
                     <Typography>
-                      <strong>الهاتف:</strong> {selectedService.user?.phone}
+                      <strong>{t('services.phone', { defaultValue: 'الهاتف' })}:</strong>{' '}
+                      {selectedService.user?.phone}
                     </Typography>
                     <Typography>
-                      <strong>البريد:</strong> {selectedService.user?.email}
+                      <strong>{t('services.email', { defaultValue: 'البريد' })}:</strong>{' '}
+                      {selectedService.user?.email}
                     </Typography>
                   </Grid>
                   {selectedService.engineer && (
                     <Grid size={{ xs: 12 }}>
                       <Typography variant="h6" gutterBottom>
-                        معلومات المهندس
+                        {t('services.engineerDetails', { defaultValue: 'معلومات المهندس' })}
                       </Typography>
                       <Typography>
-                        <strong>الاسم:</strong> {selectedService.engineer.firstName}{' '}
-                        {selectedService.engineer.lastName}
+                        <strong>{t('services.name', { defaultValue: 'الاسم' })}:</strong>{' '}
+                        {selectedService.engineer.firstName} {selectedService.engineer.lastName}
                       </Typography>
                       <Typography>
-                        <strong>الهاتف:</strong> {selectedService.engineer.phone}
+                        <strong>{t('services.phone', { defaultValue: 'الهاتف' })}:</strong>{' '}
+                        {selectedService.engineer.phone}
                       </Typography>
                       <Typography>
-                        <strong>البريد:</strong> {selectedService.engineer.email || 'غير محدد'}
+                        <strong>{t('services.email', { defaultValue: 'البريد' })}:</strong>{' '}
+                        {selectedService.engineer.email || 'غير محدد'}
                       </Typography>
                       <Typography>
-                        <strong>المسمى الوظيفي:</strong>{' '}
+                        <strong>
+                          {t('services.jobTitle', { defaultValue: 'المسمى الوظيفي' })}:
+                        </strong>{' '}
                         {selectedService.engineer.jobTitle || 'غير محدد'}
                       </Typography>
                     </Grid>
@@ -599,28 +638,36 @@ export const ServicesListPage: React.FC = () => {
                   {selectedService.acceptedOffer && (
                     <Grid size={{ xs: 12 }}>
                       <Typography variant="h6" gutterBottom>
-                        معلومات العرض المقبول
+                        {t('services.acceptedOfferDetails', {
+                          defaultValue: 'معلومات العرض المقبول',
+                        })}
                       </Typography>
                       <Typography>
-                        <strong>المبلغ:</strong>{' '}
+                        <strong>{t('services.amount', { defaultValue: 'المبلغ' })}:</strong>{' '}
                         {formatCurrency(selectedService.acceptedOffer.amount)}
                       </Typography>
                       <Typography>
-                        <strong>الملاحظة:</strong> {selectedService.acceptedOffer.note}
+                        <strong>{t('services.note', { defaultValue: 'الملاحظة' })}:</strong>{' '}
+                        {selectedService.acceptedOffer.note}
                       </Typography>
                     </Grid>
                   )}
                   {selectedService.rating && (
                     <Grid size={{ xs: 12 }}>
                       <Typography variant="h6" gutterBottom>
-                        تقييم الخدمة
+                        {t('services.serviceRating', { defaultValue: 'تقييم الخدمة' })}
                       </Typography>
                       <Typography>
-                        <strong>النتيجة:</strong> {selectedService.rating.score} / 5
+                        <strong>
+                          {t('services.score', { defaultValue: 'النتيجة' })}{' '}
+                          {t('services.outOf', { defaultValue: 'من 5' })}:
+                        </strong>{' '}
+                        {selectedService.rating.score} / 5
                       </Typography>
                       {selectedService.rating.comment && (
                         <Typography>
-                          <strong>التعليق:</strong> {selectedService.rating.comment}
+                          <strong>{t('services.comment', { defaultValue: 'التعليق' })}:</strong>{' '}
+                          {selectedService.rating.comment}
                         </Typography>
                       )}
                       <Typography variant="caption" color="text.secondary">
@@ -631,7 +678,7 @@ export const ServicesListPage: React.FC = () => {
                   {selectedService.adminNotes && selectedService.adminNotes.length > 0 && (
                     <Grid size={{ xs: 12 }}>
                       <Typography variant="h6" gutterBottom>
-                        ملاحظات إدارية
+                        {t('services.adminNotes', { defaultValue: 'ملاحظات إدارية' })}
                       </Typography>
                       {selectedService.adminNotes.map((note: any, index: number) => (
                         <Box key={index} sx={{ mb: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
@@ -649,25 +696,27 @@ export const ServicesListPage: React.FC = () => {
               {dialogType === 'edit' && (
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    تغيير حالة الطلب
+                    {t('services.editStatus', { defaultValue: 'تغيير حالة الطلب' })}
                   </Typography>
                   <FormControl fullWidth sx={{ mt: 2 }}>
-                    <InputLabel>الحالة الجديدة</InputLabel>
+                    <InputLabel>
+                      {t('services.newStatus', { defaultValue: 'الحالة الجديدة' })}
+                    </InputLabel>
                     <Select
                       value={dialogData.status}
-                      label="الحالة الجديدة"
+                      label={t('services.newStatus', { defaultValue: 'الحالة الجديدة' })}
                       onChange={(e) => handleDialogDataChange('status', e.target.value)}
                     >
-                      {Object.entries(statusLabels).map(([value, label]) => (
+                      {Object.keys(statusColors).map((value) => (
                         <MenuItem key={value} value={value}>
-                          {label}
+                          {getStatusLabel(value as ServiceStatus, t)}
                         </MenuItem>
                       ))}
                     </Select>
                   </FormControl>
                   <TextField
                     fullWidth
-                    label="ملاحظة (اختيارية)"
+                    label={t('services.note', { defaultValue: 'ملاحظة (اختيارية)' })}
                     multiline
                     rows={3}
                     value={dialogData.note}
@@ -680,11 +729,11 @@ export const ServicesListPage: React.FC = () => {
               {dialogType === 'cancel' && (
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    إلغاء الطلب
+                    {t('services.cancelRequest', { defaultValue: 'إلغاء الطلب' })}
                   </Typography>
                   <TextField
                     fullWidth
-                    label="سبب الإلغاء"
+                    label={t('services.cancelReason', { defaultValue: 'سبب الإلغاء' })}
                     multiline
                     rows={3}
                     value={dialogData.reason}
@@ -697,18 +746,18 @@ export const ServicesListPage: React.FC = () => {
               {dialogType === 'assign' && (
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    تعيين مهندس
+                    {t('services.assignEngineer', { defaultValue: 'تعيين مهندس' })}
                   </Typography>
                   <TextField
                     fullWidth
-                    label="معرف المهندس"
+                    label={t('services.engineerId', { defaultValue: 'معرف المهندس' })}
                     value={dialogData.engineerId}
                     onChange={(e) => handleDialogDataChange('engineerId', e.target.value)}
                     sx={{ mt: 2 }}
                   />
                   <TextField
                     fullWidth
-                    label="ملاحظة (اختيارية)"
+                    label={t('services.note', { defaultValue: 'ملاحظة (اختيارية)' })}
                     multiline
                     rows={3}
                     value={dialogData.note}
@@ -721,7 +770,9 @@ export const ServicesListPage: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>إلغاء</Button>
+          <Button onClick={handleCloseDialog}>
+            {t('services.cancel', { defaultValue: 'إلغاء' })}{' '}
+          </Button>
           {dialogType !== 'view' && (
             <Button
               variant="contained"

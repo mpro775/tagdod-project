@@ -3,53 +3,37 @@
 /* إزالة جميع التنسيقات التي قد تخفي النص */
 div[data-react-hot-toast] {
   z-index: 9999 !important;
-}
-
-/* التأكد من ظهور container Toast */
-div[data-react-hot-toast] > div {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 10px !important;
-  font-family: 'Cairo', 'Tajawal', Arial, sans-serif !important;
   direction: rtl !important;
-  text-align: center !important;
+  font-family: 'Cairo', 'Tajawal', Arial, sans-serif !important;
 }
 
-/* التأكد من ظهور النص داخل Toast */
-div[data-react-hot-toast] > div > div {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  color: #ffffff !important;
-  font-size: 16px !important;
-  font-weight: 500 !important;
-  line-height: 1.5 !important;
-  white-space: pre-wrap !important;
-  word-break: break-word !important;
+div[data-react-hot-toast] > div {
+  direction: inherit !important;
 }
 
-/* جميع العناصر داخل Toast */
-div[data-react-hot-toast] * {
-  color: #ffffff !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: inline !important;
+.toast-bar-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  color: inherit;
 }
 
-/* الأيقونة */
-div[data-react-hot-toast] svg {
-  display: inline-block !important;
-  flex-shrink: 0 !important;
+.toast-bar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
 }
 
-/* النص */
-div[data-react-hot-toast] div[style*="flex: 1"] {
-  display: inline-block !important;
-  flex: 1 !important;
-  color: #ffffff !important;
-  font-size: 16px !important;
-  line-height: 1.5 !important;
-  text-align: center !important;
+.toast-bar-message {
+  flex: 1;
+  color: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.6;
+  text-align: right;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 

@@ -3,8 +3,7 @@ import {
   Box, 
   Grid, 
   Typography, 
-  Button, 
-  CircularProgress,
+  Button,
   Paper,
   alpha,
   useTheme
@@ -18,7 +17,7 @@ import {
   TrendingUp
 } from '@mui/icons-material';
 import { usePerformanceMetrics } from '../../analytics/hooks/useAnalytics';
-import { 
+import {
   StatsCard,
   QuickStatsWidget,
   RevenueChart,
@@ -35,9 +34,23 @@ import {
   useTopProducts,
   useSalesAnalytics,
 } from '../hooks';
+import { useTranslation } from 'react-i18next';
+import { formatCurrency } from '@/shared/utils/format';
 
 export const DashboardPage: React.FC = () => {
   const theme = useTheme();
+  const { t, i18n } = useTranslation(['dashboard', 'common']);
+  // Always use English numbers, regardless of language
+  const numberFormatter = React.useMemo(() => new Intl.NumberFormat('en-US'), []);
+  const currencyFormatter = React.useMemo(
+    () =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: i18n.language === 'ar' ? 'YER' : 'USD',
+        maximumFractionDigits: 0,
+      }),
+    [i18n.language]
+  );
   
   // Fetch real dashboard data from analytics API
   const { data: dashboardResponse, isLoading, error, refetch } = useDashboardOverview();
@@ -48,7 +61,19 @@ export const DashboardPage: React.FC = () => {
   const { data: performanceData, isLoading: performanceLoading } = usePerformanceMetrics();
 
   // Extract dashboard data
-  const dashboardData = dashboardResponse?.data;
+  const dashboardData = dashboardResponse ?? dashboardResponse?.data;
+  const isOverviewLoading = isLoading && !dashboardData;
+
+  const formatNumber = React.useCallback(
+    (value?: number | null) => {
+      if (value === undefined || value === null) {
+        return null;
+      }
+      return numberFormatter.format(value);
+    },
+    [numberFormatter]
+  );
+
 
   // Calculate real revenue growth from sales data
   const calculateRevenueGrowth = (): number | undefined => {
@@ -71,27 +96,18 @@ export const DashboardPage: React.FC = () => {
 
   const revenueGrowth = calculateRevenueGrowth();
 
-  if (isLoading) return <Box sx={{
-    height: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  }}>
-    <CircularProgress size={60} />
-  </Box>; // اعتمد فقط على overview
-
   if (error) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography variant="h6" color="error" gutterBottom>
-          خطأ في تحميل البيانات
+          {t('dashboard:error.title', 'خطأ في تحميل البيانات')}
         </Typography>
         <Button 
           variant="contained" 
           onClick={() => refetch()}
           sx={{ mt: 2 }}
         >
-          إعادة المحاولة
+          {t('dashboard:error.retry', 'إعادة المحاولة')}
         </Button>
       </Box>
     );
@@ -113,11 +129,11 @@ export const DashboardPage: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              لوحة التحكم الرئيسية
+              {t('dashboard:header.title', 'لوحة التحكم الرئيسية')}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="body1" color="text.secondary">
-                مرحباً بك في لوحة تحكم تجدٌد
+                {t('dashboard:header.subtitle', 'مرحباً بك في لوحة تحكم تجدٌد')}
               </Typography>
               <TrendingUp sx={{ color: 'success.main' }} />
             </Box>
@@ -138,7 +154,7 @@ export const DashboardPage: React.FC = () => {
               transition: 'all 0.2s',
             }}
           >
-            تحديث البيانات
+            {t('dashboard:header.refresh', 'تحديث البيانات')}
           </Button>
         </Box>
       </Paper>
@@ -147,42 +163,46 @@ export const DashboardPage: React.FC = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
-            title="إجمالي المستخدمين"
-            value={dashboardData?.overview?.totalUsers?.toLocaleString('ar-SA') || 0}
+            title={t('dashboard:stats.totalUsers.title', 'إجمالي المستخدمين')}
+            value={formatNumber(dashboardData?.overview?.totalUsers)}
             icon={<People sx={{ fontSize: 32 }} />}
-            growth={dashboardData?.kpis?.userGrowth}
+            growth={dashboardData?.kpis?.userGrowth ?? null}
             color="primary"
-            subtitle="مستخدم نشط"
+            subtitle={t('dashboard:stats.totalUsers.subtitle', 'مستخدم نشط')}
+            isLoading={isOverviewLoading}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
-            title="إجمالي الطلبات"
-            value={dashboardData?.overview?.totalOrders?.toLocaleString('ar-SA') || 0}
+            title={t('dashboard:stats.totalOrders.title', 'إجمالي الطلبات')}
+            value={formatNumber(dashboardData?.overview?.totalOrders)}
             icon={<ShoppingCart sx={{ fontSize: 32 }} />}
-            growth={dashboardData?.kpis?.orderGrowth}
+            growth={dashboardData?.kpis?.orderGrowth ?? null}
             color="success"
-            subtitle="طلب مكتمل"
+            subtitle={t('dashboard:stats.totalOrders.subtitle', 'طلب مكتمل')}
+            isLoading={isOverviewLoading}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
-            title="إجمالي الإيرادات"
-            value={dashboardData?.overview?.totalRevenue?.toLocaleString('ar-YE') || 0}
+            title={t('dashboard:stats.totalRevenue.title', 'إجمالي الإيرادات')}
+            value={formatCurrency(dashboardData?.overview?.totalRevenue || 0)}
             icon={<AttachMoney sx={{ fontSize: 32 }} />}
             growth={revenueGrowth}
             color="warning"
-            subtitle="ريال يمني"
+            subtitle={t('dashboard:stats.totalRevenue.subtitle', 'USD')}
+            isLoading={isOverviewLoading}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatsCard
-            title="إجمالي المنتجات"
-            value={productsData?.count?.toLocaleString('ar-SA') || 0}
+            title={t('dashboard:stats.totalProducts.title', 'إجمالي المنتجات')}
+            value={formatNumber(productsData?.count)}
             icon={<Inventory sx={{ fontSize: 32 }} />}
-            growth={dashboardData?.kpis?.conversionRate}
+            growth={dashboardData?.kpis?.conversionRate ?? null}
             color="info"
-            subtitle="منتج متاح"
+            subtitle={t('dashboard:stats.totalProducts.subtitle', 'منتج متاح')}
+            isLoading={isOverviewLoading}
           />
         </Grid>
       </Grid>
@@ -197,7 +217,7 @@ export const DashboardPage: React.FC = () => {
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
           <QuickStatsWidget
-            title="إحصائيات الأداء"
+            title={t('dashboard:quickStats.title', 'إحصائيات الأداء')}
             stats={{
               activeUsers: dashboardData?.overview?.totalUsers,
               systemHealth: performanceData?.uptime,

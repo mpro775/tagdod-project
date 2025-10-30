@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Attribute } from './schemas/attribute.schema';
+import { Attribute, AttributeType } from './schemas/attribute.schema';
 import { AttributeValue } from './schemas/attribute-value.schema';
 import { AttributeGroup } from './schemas/attribute-group.schema';
 import { slugify } from '../../shared/utils/slug.util';
@@ -9,6 +9,8 @@ import {
   DomainException,
   ErrorCode 
 } from '../../shared/exceptions';
+
+const HEX_COLOR_REGEX = /^#(?:[0-9A-F]{6})$/i;
 
 @Injectable()
 export class AttributesService {
@@ -67,9 +69,9 @@ export class AttributesService {
       throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
     }
 
-    // جلب القيم
+    // جلب القيم (تأكد من مطابقة ObjectId)
     const values = await this.valueModel
-      .find({ attributeId: id, deletedAt: null })
+      .find({ attributeId: new Types.ObjectId(id), deletedAt: null })
       .sort({ order: 1, value: 1 })
       .lean();
 
@@ -166,6 +168,23 @@ export class AttributesService {
       throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId, reason: 'not_found' });
     }
 
+    if (dto.hexCode !== undefined) {
+      const normalizedHex = dto.hexCode.trim();
+      dto.hexCode = normalizedHex ? normalizedHex.toUpperCase() : undefined;
+    }
+
+    if (attribute.type === AttributeType.COLOR) {
+      if (!dto.hexCode) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'required_for_color' });
+      }
+
+      if (!HEX_COLOR_REGEX.test(dto.hexCode)) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
+      }
+    } else if (dto.hexCode && !HEX_COLOR_REGEX.test(dto.hexCode)) {
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
+    }
+
     const slug = slugify(dto.value!);
 
     // التحقق من عدم التكرار
@@ -194,6 +213,35 @@ export class AttributesService {
 
     if (!value) {
       throw new DomainException(ErrorCode.VALIDATION_ERROR, { valueId: id, reason: 'not_found' });
+    }
+
+    if (patch.hexCode !== undefined) {
+      const normalizedHex = patch.hexCode.trim();
+      patch.hexCode = normalizedHex ? normalizedHex.toUpperCase() : undefined;
+    }
+
+    const attribute = await this.attributeModel.findById(value.attributeId);
+
+    if (!attribute) {
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: value.attributeId, reason: 'not_found' });
+    }
+
+    if (attribute.type === AttributeType.COLOR) {
+      const nextHex = patch.hexCode ?? value.hexCode;
+
+      if (!nextHex) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'required_for_color' });
+      }
+
+      if (!HEX_COLOR_REGEX.test(nextHex)) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
+      }
+
+      if (patch.hexCode) {
+        patch.hexCode = patch.hexCode.toUpperCase();
+      }
+    } else if (patch.hexCode && !HEX_COLOR_REGEX.test(patch.hexCode)) {
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
     }
 
     if (patch.value) {
@@ -228,7 +276,7 @@ export class AttributesService {
 
   async listValues(attributeId: string) {
     return this.valueModel
-      .find({ attributeId, deletedAt: null })
+      .find({ attributeId: new Types.ObjectId(attributeId), deletedAt: null })
       .sort({ order: 1, value: 1 })
       .lean();
   }
@@ -273,6 +321,12 @@ export class AttributesService {
     const typeStats: Record<string, number> = {};
     byType.forEach((item: { _id: string; count: number }) => {
       typeStats[item._id] = item.count;
+    });
+
+    Object.values(AttributeType).forEach((type) => {
+      if (!typeStats[type]) {
+        typeStats[type] = 0;
+      }
     });
 
     return {

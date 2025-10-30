@@ -22,6 +22,7 @@ import {
   Assignment,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { SupportTicket, SupportStatus, SupportPriority, SupportCategory } from '../types/support.types';
 
 interface SupportTicketCardProps {
@@ -79,55 +80,16 @@ const getPriorityColor = (priority: SupportPriority): 'default' | 'primary' | 's
   }
 };
 
-const getCategoryLabel = (category: SupportCategory): string => {
-  switch (category) {
-    case SupportCategory.TECHNICAL:
-      return 'تقني';
-    case SupportCategory.BILLING:
-      return 'الفواتير';
-    case SupportCategory.PRODUCTS:
-      return 'المنتجات';
-    case SupportCategory.SERVICES:
-      return 'الخدمات';
-    case SupportCategory.ACCOUNT:
-      return 'الحساب';
-    case SupportCategory.OTHER:
-      return 'أخرى';
-    default:
-      return 'غير محدد';
-  }
+const getCategoryLabel = (category: SupportCategory, t: any): string => {
+  return t(`category.${category}`, 'غير محدد');
 };
 
-const getPriorityLabel = (priority: SupportPriority): string => {
-  switch (priority) {
-    case SupportPriority.LOW:
-      return 'منخفضة';
-    case SupportPriority.MEDIUM:
-      return 'متوسطة';
-    case SupportPriority.HIGH:
-      return 'عالية';
-    case SupportPriority.URGENT:
-      return 'عاجلة';
-    default:
-      return 'غير محدد';
-  }
+const getPriorityLabel = (priority: SupportPriority, t: any): string => {
+  return t(`priority.${priority}`, 'غير محدد');
 };
 
-const getStatusLabel = (status: SupportStatus): string => {
-  switch (status) {
-    case SupportStatus.OPEN:
-      return 'مفتوحة';
-    case SupportStatus.IN_PROGRESS:
-      return 'قيد المعالجة';
-    case SupportStatus.WAITING_FOR_USER:
-      return 'في انتظار المستخدم';
-    case SupportStatus.RESOLVED:
-      return 'محلولة';
-    case SupportStatus.CLOSED:
-      return 'مغلقة';
-    default:
-      return 'غير محدد';
-  }
+const getStatusLabel = (status: SupportStatus, t: any): string => {
+  return t(`status.${status}`, 'غير محدد');
 };
 
 export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
@@ -135,6 +97,7 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
   onClick,
   showUser = true,
 }) => {
+  const { t } = useTranslation('support');
   const handleClick = () => {
     onClick?.(ticket);
   };
@@ -166,7 +129,7 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
             zIndex: 1,
           }}
         >
-          <Tooltip title="تم تجاوز وقت الاستجابة المتفق عليه (SLA)">
+          <Tooltip title={t('messages.slaBreachTooltip')}>
             <Badge color="error" variant="dot">
               <Warning color="error" />
             </Badge>
@@ -188,13 +151,13 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
         subheader={
           <Stack direction="row" spacing={1} alignItems="center">
             <Chip
-              label={getStatusLabel(ticket.status)}
+              label={getStatusLabel(ticket.status, t)}
               color={getStatusColor(ticket.status)}
               size="small"
               icon={getStatusIcon(ticket.status)}
             />
             <Chip
-              label={getPriorityLabel(ticket.priority)}
+              label={getPriorityLabel(ticket.priority, t)}
               color={getPriorityColor(ticket.priority)}
               size="small"
               variant="outlined"
@@ -204,7 +167,7 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
         action={
           <Stack direction="row" spacing={1} alignItems="center">
             {hasRating && (
-              <Tooltip title={`تقييم: ${ticket.rating}/5`}>
+              <Tooltip title={`${t('labels.rating')}: ${ticket.rating}/5`}>
                 <Chip
                   label={`⭐ ${ticket.rating}`}
                   size="small"
@@ -214,7 +177,7 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
               </Tooltip>
             )}
             {ticket.attachments.length > 0 && (
-              <Tooltip title={`${ticket.attachments.length} مرفق`}>
+              <Tooltip title={`${ticket.attachments.length} ${t('labels.attachments')}`}>
                 <IconButton size="small">
                   <Assignment />
                 </IconButton>
@@ -241,7 +204,7 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
 
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             <Chip
-              label={getCategoryLabel(ticket.category)}
+              label={getCategoryLabel(ticket.category, t)}
               size="small"
               variant="outlined"
             />
@@ -276,7 +239,7 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
               <Stack direction="row" spacing={1} alignItems="center">
                 <Person fontSize="small" color="action" />
                 <Typography variant="caption" color="text.secondary">
-                  المستخدم
+                  {t('labels.user')}
                 </Typography>
               </Stack>
             )}
@@ -286,7 +249,7 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
             <Stack direction="row" spacing={1} alignItems="center">
               <Schedule fontSize="small" color="action" />
               <Typography variant="caption" color="text.secondary">
-                انتهاء SLA: {format(new Date(ticket.slaDueDate), 'dd/MM/yyyy HH:mm')}
+                {t('labels.slaDueDate')}: {format(new Date(ticket.slaDueDate), 'dd/MM/yyyy HH:mm')}
               </Typography>
             </Stack>
           )}

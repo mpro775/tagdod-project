@@ -1,0 +1,87 @@
+{
+  "pageTitle": "إدارة الأخطاء والسجلات",
+  "pageSubtitle": "تتبع وإدارة أخطاء النظام",
+
+  "exportCsv": "تصدير CSV",
+  "exportJson": "تصدير JSON",
+
+  "statistics": {
+    "totalErrors": "إجمالي الأخطاء",
+    "last24Hours": "آخر 24 ساعة",
+    "errorRate": "معدل الأخطاء",
+    "last7Days": "آخر 7 أيام",
+    "increasing": "في ازدياد",
+    "decreasing": "في انخفاض",
+    "stable": "مستقر"
+  },
+
+  "filters": {
+    "title": "تصفية السجلات",
+    "search": "البحث",
+    "searchPlaceholder": "ابحث في الرسائل...",
+    "level": "المستوى",
+    "allLevels": "جميع المستويات",
+    "category": "الفئة",
+    "allCategories": "جميع الفئات",
+    "reset": "إعادة تعيين"
+  },
+
+  "levels": {
+    "fatal": "Fatal",
+    "error": "Error",
+    "warn": "Warning",
+    "debug": "Debug"
+  },
+
+  "categories": {
+    "database": "قاعدة البيانات",
+    "api": "API",
+    "authentication": "المصادقة",
+    "validation": "التحقق",
+    "business_logic": "منطق الأعمال"
+  },
+
+  "table": {
+    "level": "المستوى",
+    "category": "الفئة",
+    "message": "الرسالة",
+    "endpoint": "نقطة النهاية",
+    "occurrences": "التكرارات",
+    "lastOccurrence": "آخر ظهور",
+    "resolved": "محلول؟",
+    "actions": "الإجراءات",
+    "title": "سجلات الأخطاء",
+    "showing": "عرض {count} من إجمالي السجلات"
+  },
+
+  "actions": {
+    "view": "عرض",
+    "resolve": "حل",
+    "delete": "حذف",
+    "resolveError": "حل الخطأ",
+    "close": "إغلاق"
+  },
+
+  "details": {
+    "title": "تفاصيل الخطأ",
+    "level": "المستوى",
+    "category": "الفئة",
+    "occurrences": "التكرارات",
+    "lastOccurrence": "آخر ظهور",
+    "message": "الرسالة",
+    "endpoint": "نقطة النهاية",
+    "stackTrace": "Stack Trace",
+    "additionalInfo": "معلومات إضافية"
+  },
+
+  "messages": {
+    "loadError": "فشل في تحميل سجلات الأخطاء",
+    "resolveSuccess": "تم حل الخطأ بنجاح",
+    "resolveError": "فشل في حل الخطأ",
+    "deleteConfirm": "هل أنت متأكد من حذف هذا الخطأ؟",
+    "deleteSuccess": "تم حذف الخطأ بنجاح",
+    "deleteError": "فشل في حذف الخطأ",
+    "exportSuccess": "تم تصدير السجلات بنجاح",
+    "exportError": "فشل في تصدير السجلات"
+  }
+}

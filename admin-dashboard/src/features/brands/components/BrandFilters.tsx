@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Search, FilterList, Clear, Sort } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import type { ListBrandsParams } from '../types/brand.types';
 
 interface BrandFiltersProps {
@@ -23,21 +24,21 @@ interface BrandFiltersProps {
   loading?: boolean;
 }
 
-const sortOptions = [
-  { value: 'name', label: 'الاسم (عربي)' },
-  { value: 'nameEn', label: 'الاسم (إنجليزي)' },
-  { value: 'createdAt', label: 'تاريخ الإنشاء' },
-  { value: 'sortOrder', label: 'ترتيب العرض' },
+const createSortOptions = (t: (key: string, opts?: any) => string) => [
+  { value: 'name', label: t('filters.sortByOptions.name', { defaultValue: 'الاسم (عربي)' }) },
+  { value: 'nameEn', label: t('filters.sortByOptions.nameEn', { defaultValue: 'الاسم (إنجليزي)' }) },
+  { value: 'createdAt', label: t('filters.sortByOptions.createdAt', { defaultValue: 'تاريخ الإنشاء' }) },
+  { value: 'sortOrder', label: t('filters.sortByOptions.sortOrder', { defaultValue: 'ترتيب العرض' }) },
 ];
 
-const sortOrderOptions = [
-  { value: 'asc', label: 'تصاعدي' },
-  { value: 'desc', label: 'تنازلي' },
+const createSortOrderOptions = (t: (key: string, opts?: any) => string) => [
+  { value: 'asc', label: t('filters.sortOrderOptions.asc', { defaultValue: 'تصاعدي' }) },
+  { value: 'desc', label: t('filters.sortOrderOptions.desc', { defaultValue: 'تنازلي' }) },
 ];
 
-const languageOptions = [
-  { value: 'ar', label: 'العربية' },
-  { value: 'en', label: 'English' },
+const createLanguageOptions = (t: (key: string, opts?: any) => string) => [
+  { value: 'ar', label: t('filters.arabic', { defaultValue: 'العربية' }) },
+  { value: 'en', label: t('filters.english', { defaultValue: 'الإنجليزية' }) },
 ];
 
 export const BrandFilters: React.FC<BrandFiltersProps> = ({
@@ -46,7 +47,12 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
   onReset,
   loading = false,
 }) => {
+  const { t } = useTranslation('brands');
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const sortOptions = createSortOptions(t);
+  const sortOrderOptions = createSortOrderOptions(t);
+  const languageOptions = createLanguageOptions(t);
 
   const handleFilterChange = (key: keyof ListBrandsParams, value: any) => {
     onFiltersChange({
@@ -80,30 +86,30 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
     <Card sx={{ mb: 3 }}>
       <CardContent>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <FilterList color="primary" />
-            <Typography variant="h6">فلترة العلامات التجارية</Typography>
-            {activeFiltersCount > 0 && (
-              <Chip label={`${activeFiltersCount} فلتر نشط`} color="primary" size="small" />
-            )}
+            <Box display="flex" alignItems="center" gap={1}>
+              <FilterList color="primary" />
+              <Typography variant="h6">{t('filters.searchAndFilter', { defaultValue: 'بحث وتصفية' })}</Typography>
+              {activeFiltersCount > 0 && (
+                <Chip label={`${activeFiltersCount} ${t('filters.filterCount', { defaultValue: 'مرشّح' })}`} color="primary" size="small" />
+              )}
+            </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              startIcon={<Sort />}
+            >
+              {showAdvanced ? t('filters.hideAdvanced', { defaultValue: 'إخفاء المتقدمة' }) : t('filters.showAdvanced', { defaultValue: 'إظهار المتقدمة' })}
+            </Button>
           </Box>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            startIcon={<Sort />}
-          >
-            {showAdvanced ? 'إخفاء الفلاتر المتقدمة' : 'فلاتر متقدمة'}
-          </Button>
-        </Box>
 
         <Grid container spacing={2}>
           {/* البحث الأساسي */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
-              label="البحث في العلامات التجارية"
-              placeholder="ابحث بالاسم أو الوصف..."
+              label={t('filters.searchPlaceholder', { defaultValue: 'ابحث عن علامة تجارية' })}
+              placeholder={t('placeholders.search', { defaultValue: 'اكتب كلمات البحث' })}
               value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               InputProps={{
@@ -116,10 +122,10 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
           {/* فلتر الحالة */}
           <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>الحالة</InputLabel>
+              <InputLabel>{t('filters.status', { defaultValue: 'الحالة' })}</InputLabel>
               <Select
                 value={filters.isActive ?? ''}
-                label="الحالة"
+                label={t('filters.status', { defaultValue: 'الحالة' })}
                 onChange={(e) =>
                   handleFilterChange(
                     'isActive',
@@ -128,9 +134,9 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
                 }
                 disabled={loading}
               >
-                <MenuItem value="">جميع الحالات</MenuItem>
-                <MenuItem value="true">نشط</MenuItem>
-                <MenuItem value="false">غير نشط</MenuItem>
+                <MenuItem value="">{t('filters.allStatuses', { defaultValue: 'كل الحالات' })}</MenuItem>
+                <MenuItem value="true">{t('filters.active', { defaultValue: 'نشط' })}</MenuItem>
+                <MenuItem value="false">{t('filters.inactive', { defaultValue: 'غير نشط' })}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -138,10 +144,10 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
           {/* اللغة */}
           <Grid size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>اللغة</InputLabel>
+              <InputLabel>{t('filters.language', { defaultValue: 'اللغة' })}</InputLabel>
               <Select
                 value={filters.language || 'ar'}
-                label="اللغة"
+                label={t('filters.language', { defaultValue: 'اللغة' })}
                 onChange={(e) => handleFilterChange('language', e.target.value)}
                 disabled={loading}
               >
@@ -160,17 +166,17 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
               <Grid size={{ xs: 12 }}>
                 <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2 }}>
                   <Typography variant="subtitle1" gutterBottom>
-                    فلاتر متقدمة
+                    {t('filters.advancedFilters', { defaultValue: 'فلاتر متقدمة' })}
                   </Typography>
                 </Box>
               </Grid>
 
               <Grid size={{ xs: 12, md: 4 }}>
                 <FormControl fullWidth>
-                  <InputLabel>ترتيب حسب</InputLabel>
+                  <InputLabel>{t('filters.sortBy', { defaultValue: 'الترتيب حسب' })}</InputLabel>
                   <Select
                     value={filters.sortBy || 'name'}
-                    label="ترتيب حسب"
+                    label={t('filters.sortBy', { defaultValue: 'الترتيب حسب' })}
                     onChange={(e) => handleFilterChange('sortBy', e.target.value)}
                     disabled={loading}
                   >
@@ -185,10 +191,10 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
 
               <Grid size={{ xs: 12, md: 4 }}>
                 <FormControl fullWidth>
-                  <InputLabel>اتجاه الترتيب</InputLabel>
+                  <InputLabel>{t('filters.sortOrder', { defaultValue: 'اتجاه الترتيب' })}</InputLabel>
                   <Select
                     value={filters.sortOrder || 'asc'}
-                    label="اتجاه الترتيب"
+                    label={t('filters.sortOrder', { defaultValue: 'اتجاه الترتيب' })}
                     onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
                     disabled={loading}
                   >
@@ -204,7 +210,7 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
               <Grid size={{ xs: 12, md: 4 }}>
                 <TextField
                   fullWidth
-                  label="عدد العناصر في الصفحة"
+                  label={t('filters.itemsPerPage', { defaultValue: 'عناصر لكل صفحة' })}
                   type="number"
                   value={filters.limit || 20}
                   onChange={(e) => handleFilterChange('limit', parseInt(e.target.value) || 20)}
@@ -224,7 +230,7 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
                 onClick={handleReset}
                 disabled={loading || activeFiltersCount === 0}
               >
-                مسح الفلاتر
+                {t('filters.clearFilters', { defaultValue: 'مسح الفلاتر' })}
               </Button>
               <Button
                 variant="contained"
@@ -232,7 +238,7 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
                 onClick={handleSearch}
                 disabled={loading}
               >
-                بحث
+                {t('filters.search', { defaultValue: 'بحث' })}
               </Button>
             </Box>
           </Grid>

@@ -12,6 +12,7 @@ import {
 import { Add, Analytics, Campaign } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { BannerStatsCards } from '../components/BannerStatsCards';
 import { BannerFilters } from '../components/BannerFilters';
 import { BannerTable } from '../components/BannerTable';
@@ -32,6 +33,7 @@ import type {
 
 export const BannersListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('banners');
 
   // State management
   const [filters, setFilters] = useState<ListBannersDto>({
@@ -101,7 +103,9 @@ export const BannersListPage: React.FC = () => {
     toggleStatus(banner._id, {
       onSuccess: () => {
         refetch();
-        toast.success(banner.isActive ? 'تم تعطيل البانر' : 'تم تفعيل البانر');
+        toast.success(t('messages.toggled', {
+          action: banner.isActive ? t('messages.deactivated') : t('messages.activated')
+        }));
       },
     });
   };
@@ -156,15 +160,15 @@ export const BannersListPage: React.FC = () => {
         <Box display="flex" alignItems="center" gap={2}>
           <Campaign fontSize="large" color="primary" />
           <Typography variant="h4" component="h1">
-            إدارة البانرات
+            {t('pageTitle')}
           </Typography>
         </Box>
         <Box display="flex" gap={2}>
           <Button variant="outlined" startIcon={<Analytics />} onClick={handleViewAnalytics}>
-            الإحصائيات
+            {t('analytics')}
           </Button>
           <Button variant="contained" startIcon={<Add />} onClick={handleAddBanner}>
-            إضافة بانر
+            {t('addBanner')}
           </Button>
         </Box>
       </Box>
@@ -203,17 +207,17 @@ export const BannersListPage: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteConfirmOpen} onClose={handleCancelDelete} maxWidth="sm" fullWidth>
-        <DialogTitle>تأكيد الحذف</DialogTitle>
+        <DialogTitle>{t('confirmDelete')}</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            هل أنت متأكد من حذف البانر "{bannerToDelete?.title}"؟
+            {t('deleteConfirmation', { title: bannerToDelete?.title })}
             <br />
-            <strong>هذا الإجراء لا يمكن التراجع عنه.</strong>
+            <strong>{t('deleteWarning')}</strong>
           </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCancelDelete} disabled={deleting}>
-            إلغاء
+            {t('cancel')}
           </Button>
           <Button
             onClick={handleConfirmDelete}
@@ -221,7 +225,7 @@ export const BannersListPage: React.FC = () => {
             variant="contained"
             disabled={deleting}
           >
-            {deleting ? 'جاري الحذف...' : 'حذف'}
+            {deleting ? t('deleting') : t('delete')}
           </Button>
         </DialogActions>
       </Dialog>

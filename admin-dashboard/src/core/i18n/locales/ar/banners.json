@@ -1,0 +1,197 @@
+{
+  "pageTitle": "إدارة البانرات",
+  "pageSubtitle": "إدارة ومراقبة البانرات الإعلانية",
+  "addBanner": "إضافة بانر",
+  "analytics": "الإحصائيات",
+  "editBanner": "تعديل البانر",
+  "createBanner": "إنشاء بانر جديد",
+  "back": "العودة",
+  "cancel": "إلغاء",
+  "save": "حفظ",
+  "saving": "جاري الحفظ...",
+  "deleting": "جاري الحذف...",
+  "delete": "حذف",
+  "confirmDelete": "تأكيد الحذف",
+  "deleteConfirmation": "هل أنت متأكد من حذف البانر \"{title}\"؟",
+  "deleteWarning": "هذا الإجراء لا يمكن التراجع عنه.",
+  "softDelete": "حذف مؤقت",
+  "permanentDelete": "حذف دائم",
+
+  "basicInfo": "المعلومات الأساسية",
+  "imageAndLink": "الصورة والرابط",
+  "settings": "الإعدادات",
+  "dateRange": "نطاق التاريخ",
+
+  "form": {
+    "title": {
+      "label": "عنوان البانر",
+      "required": "عنوان البانر مطلوب"
+    },
+    "location": {
+      "label": "موقع العرض",
+      "required": "موقع العرض مطلوب"
+    },
+    "description": {
+      "label": "وصف البانر"
+    },
+    "imageUrl": {
+      "label": "رابط الصورة",
+      "required": "رابط الصورة مطلوب",
+      "helper": "رابط الصورة مطلوب",
+      "invalid": "يجب أن يكون رابط صورة صحيح"
+    },
+    "linkUrl": {
+      "label": "رابط التوجيه",
+      "helper": "اتركه فارغاً إذا لم يكن هناك رابط",
+      "invalid": "يجب أن يكون رابط صحيح"
+    },
+    "altText": {
+      "label": "نص بديل للصورة",
+      "helper": "مهم لإمكانية الوصول"
+    },
+    "promotionType": {
+      "label": "نوع الترويج"
+    },
+    "sortOrder": {
+      "label": "ترتيب العرض",
+      "helper": "رقم أقل = أولوية أعلى",
+      "min": "يجب أن يكون الترتيب أكبر من أو يساوي 0"
+    },
+    "displayDuration": {
+      "label": "مدة العرض (مللي ثانية)",
+      "helper": "مدة عرض البانر في الشرائح المتحركة",
+      "min": "يجب أن تكون المدة على الأقل 1000 مللي ثانية"
+    },
+    "isActive": {
+      "label": "نشط"
+    },
+    "startDate": {
+      "label": "تاريخ البداية"
+    },
+    "endDate": {
+      "label": "تاريخ النهاية"
+    },
+    "imagePreview": "معاينة الصورة:"
+  },
+
+  "filters": {
+    "title": "فلاتر البحث",
+    "activeFilter": "فلتر نشط",
+    "activeFilters": "الفلاتر النشطة:",
+    "search": {
+      "label": "البحث في البانرات",
+      "placeholder": "ابحث في العنوان أو الوصف..."
+    },
+    "location": {
+      "label": "موقع العرض",
+      "all": "جميع المواقع"
+    },
+    "status": {
+      "label": "الحالة",
+      "all": "جميع الحالات",
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "sortBy": {
+      "label": "ترتيب حسب",
+      "sortOrder": "ترتيب العرض",
+      "title": "العنوان",
+      "createdAt": "تاريخ الإنشاء",
+      "updatedAt": "تاريخ التحديث",
+      "viewCount": "عدد المشاهدات",
+      "clickCount": "عدد النقرات",
+      "conversionCount": "عدد التحويلات"
+    },
+    "sortOrder": {
+      "label": "اتجاه الترتيب",
+      "asc": "تصاعدي",
+      "desc": "تنازلي"
+    },
+    "limit": {
+      "label": "عدد العناصر في الصفحة"
+    },
+    "reset": "إعادة تعيين",
+    "apply": "تطبيق الفلاتر"
+  },
+
+  "table": {
+    "banner": "البانر",
+    "location": "الموقع",
+    "promotionType": "نوع الترويج",
+    "stats": "الإحصائيات",
+    "status": "الحالة",
+    "sortOrder": "الترتيب",
+    "dateRange": "نطاق التاريخ",
+    "createdAt": "تاريخ الإنشاء",
+    "actions": "الإجراءات",
+    "redirectLink": "رابط التوجيه",
+    "noTimeConstraints": "بدون قيود زمنية",
+    "from": "من:",
+    "to": "إلى:",
+    "ctr": "CTR: {rate}%",
+    "conversion": "تحويل: {rate}%"
+  },
+
+  "stats": {
+    "totalBanners": "إجمالي البانرات",
+    "totalViews": "إجمالي المشاهدات",
+    "totalClicks": "إجمالي النقرات",
+    "totalConversions": "إجمالي التحويلات",
+    "allBanners": "جميع البانرات",
+    "activeInactive": "{active} نشط، {inactive} غير نشط",
+    "clickRate": "معدل النقر: {rate}%",
+    "conversionRate": "معدل التحويل: {rate}%",
+    "statusChart": "حالة البانرات",
+    "performanceChart": "الأداء العام",
+    "activeBanners": "البانرات النشطة",
+    "clickRateLabel": "معدل النقر",
+    "conversionRateLabel": "معدل التحويل",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "fromLastMonth": "من الشهر الماضي",
+    "error": "فشل في تحميل الإحصائيات"
+  },
+
+  "analytics": {
+    "pageTitle": "تحليل البانرات",
+    "timeRange": {
+      "label": "الفترة الزمنية",
+      "7days": "آخر 7 أيام",
+      "30days": "آخر 30 يوم",
+      "90days": "آخر 90 يوم",
+      "1year": "آخر سنة"
+    },
+    "location": {
+      "label": "موقع العرض",
+      "all": "جميع المواقع"
+    },
+    "topBanners": "أفضل البانرات أداءً",
+    "banner": "البانر",
+    "views": "المشاهدات",
+    "clicks": "النقرات",
+    "conversions": "التحويلات",
+    "clickRate": "معدل النقر",
+    "conversionRate": "معدل التحويل",
+    "status": "الحالة",
+    "error": "فشل في تحميل بيانات التحليل"
+  },
+
+  "actions": {
+    "edit": "تعديل",
+    "delete": "حذف",
+    "toggleOn": "تفعيل",
+    "toggleOff": "تعطيل"
+  },
+
+  "messages": {
+    "created": "تم إنشاء البانر بنجاح",
+    "updated": "تم تحديث البانر بنجاح",
+    "deleted": "تم حذف البانر بنجاح",
+    "toggled": "تم {action} البانر",
+    "activated": "تفعيل",
+    "deactivated": "تعطيل",
+    "error": "حدث خطأ في حفظ البيانات",
+    "createError": "فشل في إنشاء البانر",
+    "updateError": "فشل في تحديث البانر"
+  }
+}

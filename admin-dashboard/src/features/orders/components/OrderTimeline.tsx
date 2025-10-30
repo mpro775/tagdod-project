@@ -24,6 +24,7 @@ import {
   AdminPanelSettings,
   Settings,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { formatDate } from '@/shared/utils/formatters';
 import type { Order, OrderStatus } from '../types/order.types';
 
@@ -54,25 +55,8 @@ const getStatusIcon = (status: OrderStatus) => {
   }
 };
 
-const getStatusLabel = (status: OrderStatus) => {
-  const labels: Record<OrderStatus, string> = {
-    draft: 'تم إنشاء الطلب',
-    pending_payment: 'انتظار الدفع',
-    confirmed: 'تم تأكيد الطلب',
-    payment_failed: 'فشل الدفع',
-    processing: 'قيد التجهيز',
-    ready_to_ship: 'جاهز للشحن',
-    shipped: 'تم الشحن',
-    out_for_delivery: 'في الطريق',
-    delivered: 'تم التسليم',
-    completed: 'مكتمل',
-    on_hold: 'معلق',
-    cancelled: 'ملغي',
-    refunded: 'مسترد',
-    partially_refunded: 'مسترد جزئياً',
-    returned: 'مرتجع',
-  };
-  return labels[status];
+const getStatusLabel = (status: OrderStatus, t: (key: string, opts?: any) => string) => {
+  return t(`orders.statusLabels.${status}`);
 };
 
 const getRoleIcon = (role: 'customer' | 'admin' | 'system') => {
@@ -86,50 +70,44 @@ const getRoleIcon = (role: 'customer' | 'admin' | 'system') => {
   }
 };
 
-const getRoleLabel = (role: 'customer' | 'admin' | 'system') => {
-  switch (role) {
-    case 'customer':
-      return 'العميل';
-    case 'admin':
-      return 'الإدارة';
-    case 'system':
-      return 'النظام';
-  }
+const getRoleLabel = (role: 'customer' | 'admin' | 'system', t: (key: string) => string) => {
+  return t(`orders.timeline.roles.${role}`);
 };
 
 export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory = true }) => {
+  const { t } = useTranslation();
   const getOrderTimeline = () => {
     const timeline = [
       {
-        label: 'تم إنشاء الطلب',
+        label: t('orders.statusLabels.draft'),
         date: order.createdAt,
         completed: true,
         icon: getStatusIcon('draft' as OrderStatus),
         status: 'draft' as OrderStatus,
       },
       {
-        label: 'تم تأكيد الطلب',
+        label: t('orders.statusLabels.confirmed'),
         date: order.confirmedAt,
         completed: !!order.confirmedAt,
         icon: getStatusIcon('confirmed' as OrderStatus),
         status: 'confirmed' as OrderStatus,
       },
       {
-        label: 'قيد التجهيز',
+        label: t('orders.statusLabels.processing'),
         date: order.processingStartedAt,
         completed: !!order.processingStartedAt,
         icon: getStatusIcon('processing' as OrderStatus),
         status: 'processing' as OrderStatus,
       },
       {
-        label: 'تم الشحن',
+        label: t('orders.statusLabels.shipped'),
         date: order.shippedAt,
         completed: !!order.shippedAt,
         icon: getStatusIcon('shipped' as OrderStatus),
         status: 'shipped' as OrderStatus,
       },
       {
-        label: 'تم التسليم',
+        label: t('orders.statusLabels.delivered'),
         date: order.deliveredAt,
         completed: !!order.deliveredAt,
         icon: getStatusIcon('delivered' as OrderStatus),
@@ -165,7 +143,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
       {/* Main Timeline */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
-          تتبع الطلب
+          {t('orders.details.timeline', { defaultValue: 'تاريخ تغيير الحالات' })}
         </Typography>
         <Stepper activeStep={getCurrentStep()} orientation="vertical">
           {getOrderTimeline().map((step, index) => (
@@ -196,7 +174,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
       {statusHistory && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            تاريخ تغيير الحالات
+              {t('orders.details.statusHistory', { defaultValue: 'تاريخ تغيير الحالات' })}    
           </Typography>
           <List>
             {statusHistory.map((entry, index) => (
@@ -207,12 +185,12 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                          {getStatusLabel(entry.status)}
+                          {getStatusLabel(entry.status, t)}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                           {getRoleIcon(entry.changedByRole)}
                           <Typography variant="caption" color="text.secondary">
-                            {getRoleLabel(entry.changedByRole)}
+                            {getRoleLabel(entry.changedByRole, t)}
                           </Typography>
                         </Box>
                       </Box>

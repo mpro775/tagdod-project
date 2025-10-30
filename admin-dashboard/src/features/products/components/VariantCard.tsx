@@ -55,7 +55,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({
       <CardContent sx={{ flexGrow: 1 }}>
         {/* Header */}
         <Box display="flex" alignItems="center" gap={2} mb={2}>
-          <Avatar src={variant.imageId} sx={{ width: 56, height: 56 }} variant="rounded">
+          <Avatar src={(variant as any).imageId?.url} sx={{ width: 56, height: 56 }} variant="rounded">
             <Image />
           </Avatar>
           <Box flexGrow={1}>
@@ -75,25 +75,12 @@ export const VariantCard: React.FC<VariantCardProps> = ({
 
         {/* Price Information */}
         <Box mb={2}>
-          <Box display="flex" alignItems="center" gap={1} mb={1}>
+          <Box display="flex" alignItems="center" gap={1}>
             <AttachMoney color="primary" fontSize="small" />
-            <Typography variant="h6" color="primary">
-              {variant.price} $
+            <Typography variant="h6" color="primary" fontWeight="bold">
+              ${variant.price}
             </Typography>
           </Box>
-          {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
-            <Typography
-              variant="body2"
-              sx={{ textDecoration: 'line-through', color: 'text.secondary' }}
-            >
-              {variant.compareAtPrice} $
-            </Typography>
-          )}
-          {variant.costPrice && (
-            <Typography variant="caption" color="text.secondary">
-              التكلفة: {variant.costPrice} $
-            </Typography>
-          )}
         </Box>
 
         {/* Stock Information */}
@@ -113,23 +100,17 @@ export const VariantCard: React.FC<VariantCardProps> = ({
           </Typography>
         </Box>
 
-        {/* Additional Information */}
-        <Grid container spacing={1} mb={2}>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              تتبع المخزون
+        {/* SKU Information */}
+        {variant.sku && (
+          <Box mb={2}>
+            <Typography variant="caption" color="text.secondary" display="block">
+              SKU
             </Typography>
-            <Typography variant="body2">{variant.trackInventory ? 'نعم' : 'لا'}</Typography>
-          </Grid>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              الطلب المسبق
+            <Typography variant="body2" fontWeight="medium">
+              {variant.sku}
             </Typography>
-            <Typography variant="body2">
-              {variant.allowBackorder ? 'مسموح' : 'غير مسموح'}
-            </Typography>
-          </Grid>
-        </Grid>
+          </Box>
+        )}
 
         {/* Statistics */}
         <Box display="flex" justifyContent="space-between" alignItems="center">

@@ -25,6 +25,7 @@ import {
   FilterList as FilterIcon,
 } from '@mui/icons-material';
 import { UserRole, UserStatus } from '../types/user.types';
+import { useTranslation } from 'react-i18next';
 
 interface AdvancedSearchFilters {
   search: string;
@@ -51,28 +52,6 @@ interface AdvancedUserSearchProps {
   loading?: boolean;
 }
 
-const ROLE_OPTIONS = [
-  { value: UserRole.USER, label: 'مستخدم' },
-  { value: UserRole.ADMIN, label: 'مدير' },
-  { value: UserRole.SUPER_ADMIN, label: 'مدير عام' },
-  { value: UserRole.MERCHANT, label: 'تاجر' },
-  { value: UserRole.ENGINEER, label: 'مهندس' },
-];
-
-const STATUS_OPTIONS = [
-  { value: UserStatus.ACTIVE, label: 'نشط' },
-  { value: UserStatus.SUSPENDED, label: 'معلق' },
-  { value: UserStatus.PENDING, label: 'قيد الانتظار' },
-  { value: UserStatus.DELETED, label: 'محذوف' },
-];
-
-const SORT_OPTIONS = [
-  { value: 'createdAt', label: 'تاريخ الإنشاء' },
-  { value: 'firstName', label: 'الاسم الأول' },
-  { value: 'lastName', label: 'الاسم الأخير' },
-  { value: 'phone', label: 'رقم الهاتف' },
-  { value: 'status', label: 'الحالة' },
-];
 
 export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
   onSearch,
@@ -85,7 +64,32 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
     sortOrder: 'desc',
   });
 
+  
+  const { t } = useTranslation(['users', 'common']);
   const [expanded, setExpanded] = useState(false);
+
+  const ROLE_OPTIONS = [
+    { value: UserRole.USER, label: t('users:roles.user', 'مستخدم') },
+    { value: UserRole.ADMIN, label: t('users:roles.admin', 'مدير') },
+    { value: UserRole.SUPER_ADMIN, label: t('users:roles.super_admin', 'مدير عام') },
+    { value: UserRole.MERCHANT, label: t('users:roles.merchant', 'تاجر') },
+    { value: UserRole.ENGINEER, label: t('users:roles.engineer', 'مهندس') },
+  ];
+
+  const STATUS_OPTIONS = [
+    { value: UserStatus.ACTIVE, label: t('users:status.active', 'نشط') },
+    { value: UserStatus.SUSPENDED, label: t('users:status.suspended', 'معلق') },
+    { value: UserStatus.PENDING, label: t('users:status.pending', 'قيد الانتظار') },
+    { value: UserStatus.DELETED, label: t('users:status.deleted', 'محذوف') },
+  ];
+
+  const SORT_OPTIONS = [
+    { value: 'createdAt', label: t('users:search.sort.createdAt', 'تاريخ الإنشاء') },
+    { value: 'firstName', label: t('users:search.sort.firstName', 'الاسم الأول') },
+    { value: 'lastName', label: t('users:search.sort.lastName', 'الاسم الأخير') },
+    { value: 'phone', label: t('users:search.sort.phone', 'رقم الهاتف') },
+    { value: 'status', label: t('users:search.sort.status', 'الحالة') },
+  ];
 
   const handleFilterChange = (key: keyof AdvancedSearchFilters, value: any) => {
     setFilters((prev) => ({
@@ -132,11 +136,11 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <FilterIcon sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6" fontWeight="bold">
-            البحث المتقدم
+            {t('users:search.advanced.title', 'البحث المتقدم')}
           </Typography>
           {activeFiltersCount > 0 && (
             <Chip
-              label={`${activeFiltersCount} فلتر نشط`}
+              label={t('users:search.advanced.activeFilters', '{{count}} فلتر نشط', { count: activeFiltersCount })}
               size="small"
               color="primary"
               sx={{ ml: 2 }}
@@ -149,8 +153,8 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
           <Grid component="div" size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
-              label="البحث في المستخدمين"
-              placeholder="رقم الهاتف، الاسم، المسمى الوظيفي..."
+              label={t('users:search.basic.searchLabel', 'البحث في المستخدمين')}
+              placeholder={t('users:search.basic.searchPlaceholder', 'رقم الهاتف، الاسم، المسمى الوظيفي...')}
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               InputProps={{
@@ -160,11 +164,11 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
           </Grid>
           <Grid component="div" size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>ترتيب حسب</InputLabel>
+              <InputLabel>{t('users:search.basic.sortBy', 'ترتيب حسب')}</InputLabel>
               <Select
                 value={filters.sortBy}
                 onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                label="ترتيب حسب"
+                label={t('users:search.basic.sortBy', 'ترتيب حسب')}
               >
                 {SORT_OPTIONS.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -176,14 +180,14 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
           </Grid>
           <Grid component="div" size={{ xs: 12, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>اتجاه الترتيب</InputLabel>
+              <InputLabel>{t('users:search.basic.sortOrder', 'اتجاه الترتيب')}</InputLabel>
               <Select
                 value={filters.sortOrder}
                 onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                label="اتجاه الترتيب"
+                label={t('users:search.basic.sortOrder', 'اتجاه الترتيب')}
               >
-                <MenuItem value="asc">تصاعدي</MenuItem>
-                <MenuItem value="desc">تنازلي</MenuItem>
+                <MenuItem value="asc">{t('users:search.basic.ascending', 'تصاعدي')}</MenuItem>
+                <MenuItem value="desc">{t('users:search.basic.descending', 'تنازلي')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -193,7 +197,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
         <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="subtitle1" fontWeight="bold">
-              خيارات البحث المتقدمة
+              {t('users:search.advanced.options', 'خيارات البحث المتقدمة')}
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -201,13 +205,13 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
               {/* الحالة والدور */}
               <Grid component="div" size={{ xs: 12, md: 4 }}>
                 <FormControl fullWidth>
-                  <InputLabel>الحالة</InputLabel>
+                  <InputLabel>{t('users:filter.status', 'الحالة')}</InputLabel>
                   <Select
                     value={filters.status || ''}
                     onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-                    label="الحالة"
+                    label={t('users:filter.status', 'الحالة')}
                   >
-                    <MenuItem value="">جميع الحالات</MenuItem>
+                    <MenuItem value="">{t('users:filter.allStatuses', 'جميع الحالات')}</MenuItem>
                     {STATUS_OPTIONS.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
                         {option.label}
@@ -218,13 +222,13 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
               </Grid>
               <Grid component="div" size={{ xs: 12, md: 4 }}>
                 <FormControl fullWidth>
-                  <InputLabel>الدور</InputLabel>
+                  <InputLabel>{t('users:filter.role', 'الدور')}</InputLabel>
                   <Select
                     value={filters.role || ''}
                     onChange={(e) => handleFilterChange('role', e.target.value || undefined)}
-                    label="الدور"
+                    label={t('users:filter.role', 'الدور')}
                   >
-                    <MenuItem value="">جميع الأدوار</MenuItem>
+                    <MenuItem value="">{t('users:filter.allRoles', 'جميع الأدوار')}</MenuItem>
                     {ROLE_OPTIONS.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
                         {option.label}
@@ -235,18 +239,18 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
               </Grid>
               <Grid component="div" size={{ xs: 12, md: 4 }}>
                 <FormControl fullWidth>
-                  <InputLabel>نوع المستخدم</InputLabel>
+                  <InputLabel>{t('users:filter.userType', 'نوع المستخدم')}</InputLabel>
                   <Select
                     value={filters.isAdmin === undefined ? '' : filters.isAdmin ? 'admin' : 'user'}
                     onChange={(e) => {
                       const value = e.target.value as '' | 'admin' | 'user';
                       handleFilterChange('isAdmin', value === '' ? undefined : value === 'admin');
                     }}
-                    label="نوع المستخدم"
+                    label={t('users:filter.userType', 'نوع المستخدم')}
                   >
-                    <MenuItem value="">جميع الأنواع</MenuItem>
-                    <MenuItem value="admin">مديرين</MenuItem>
-                    <MenuItem value="user">مستخدمين عاديين</MenuItem>
+                    <MenuItem value="">{t('users:filter.allTypes', 'جميع الأنواع')}</MenuItem>
+                    <MenuItem value="admin">{t('users:filter.admins', 'مديرين')}</MenuItem>
+                    <MenuItem value="user">{t('users:filter.regularUsers', 'مستخدمين عاديين')}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -254,7 +258,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
               {/* القدرات */}
               <Grid component="div" size={{ xs: 12 }}>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  القدرات
+                  {t('users:filter.capabilities', 'القدرات')}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   <FormControlLabel
@@ -269,7 +273,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                         }
                       />
                     }
-                    label="مهندسين"
+                    label={t('users:capabilities.engineer', 'مهندس')}
                   />
                   <FormControlLabel
                     control={
@@ -283,7 +287,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                         }
                       />
                     }
-                    label="تجار"
+                    label={t('users:capabilities.wholesale', 'تاجر جملة')}
                   />
                   <FormControlLabel
                     control={
@@ -297,7 +301,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                         }
                       />
                     }
-                    label="مديرين"
+                    label={t('users:roles.admin', 'مدير')}
                   />
                 </Box>
               </Grid>
@@ -311,7 +315,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                       onChange={(e) => handleFilterChange('includeDeleted', e.target.checked)}
                     />
                   }
-                  label="يشمل المستخدمين المحذوفين"
+                  label={t('users:filter.includeDeleted', 'يشمل المستخدمين المحذوفين')}
                 />
               </Grid>
             </Grid>
@@ -326,7 +330,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
             onClick={handleSearch}
             disabled={loading}
           >
-            {loading ? 'جاري البحث...' : 'بحث'}
+            {loading ? t('users:search.searching', 'جاري البحث...') : t('common:actions.search', 'بحث')}
           </Button>
           <Button
             variant="outlined"
@@ -334,7 +338,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
             onClick={handleClear}
             disabled={loading}
           >
-            مسح الفلاتر
+            {t('users:filter.clearFilters', 'مسح الفلاتر')}
           </Button>
         </Box>
       </CardContent>

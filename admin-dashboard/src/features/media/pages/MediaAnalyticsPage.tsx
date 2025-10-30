@@ -36,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import { apiClient } from '@/core/api/client';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -136,6 +137,7 @@ interface FileInfo {
 
 export const MediaAnalyticsPage: React.FC = () => {
   const theme = useTheme();
+  const { t } = useTranslation('media');
   const [selectedTab, setSelectedTab] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -157,7 +159,7 @@ export const MediaAnalyticsPage: React.FC = () => {
       setOverview(data);
     } catch (error) {
       console.error('Overview Error:', error);
-      toast.error('فشل تحميل الإحصائيات العامة');
+      toast.error(t('messages.overviewError'));
     } finally {
       setLoading(false);
     }
@@ -176,7 +178,7 @@ export const MediaAnalyticsPage: React.FC = () => {
       setStorage(data);
     } catch (error) {
       console.error('Storage Error:', error);
-      toast.error('فشل تحميل إحصائيات التخزين');
+      toast.error(t('messages.storageError'));
     } finally {
       setLoading(false);
     }
@@ -192,7 +194,7 @@ export const MediaAnalyticsPage: React.FC = () => {
       const data = response.data.data?.data || response.data.data;
       setLargestFiles(data || []);
     } catch  {
-      toast.error('فشل تحميل أكبر الملفات');
+      toast.error(t('messages.largestFilesError'));
     } finally {
       setLoading(false);
     }
@@ -208,7 +210,7 @@ export const MediaAnalyticsPage: React.FC = () => {
       const data = response.data.data?.data || response.data.data;
       setRecentFiles(data || []);
     } catch  {
-      toast.error('فشل تحميل الملفات الحديثة');
+      toast.error(t('messages.recentFilesError'));
     } finally {
       setLoading(false);
     }
@@ -259,7 +261,7 @@ export const MediaAnalyticsPage: React.FC = () => {
   // Doughnut chart data for file types
   const fileTypesChartData = overview && overview.filesByType
     ? {
-        labels: ['صور', 'فيديوهات', 'مستندات', 'أخرى'],
+        labels: [t('types.images'), t('types.videos'), t('types.documents'), t('types.other')],
         datasets: [
           {
             data: [
@@ -287,14 +289,14 @@ export const MediaAnalyticsPage: React.FC = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
-            إحصائيات الوسائط والملفات
+            {t('analyticsPageTitle')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            إحصائيات شاملة عن جميع الملفات والوسائط المرفوعة
+            {t('analyticsPageSubtitle')}
           </Typography>
         </Box>
         <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh} disabled={loading}>
-          تحديث
+          {t('refresh')}
         </Button>
       </Box>
 
@@ -311,11 +313,11 @@ export const MediaAnalyticsPage: React.FC = () => {
                       {(overview.totalFiles || 0).toLocaleString('ar-SA')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      إجمالي الملفات
+                      {t('stats.totalFiles')}
                     </Typography>
                   </Box>
                 </Box>
-                <Chip label={`${overview.filesToday || 0} اليوم`} size="small" color="success" />
+                <Chip label={`${overview.filesToday || 0} ${t('units.today')}`} size="small" color="success" />
               </CardContent>
             </Card>
           </Grid>
@@ -330,12 +332,12 @@ export const MediaAnalyticsPage: React.FC = () => {
                       {overview.totalSizeFormatted || '0 B'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      إجمالي المساحة
+                      {t('stats.totalSize')}
                     </Typography>
                   </Box>
                 </Box>
                 <Chip
-                  label={`${overview.storageUsagePercent || 0}% مستخدم`}
+                  label={`${overview.storageUsagePercent || 0}% ${t('stats.used')}`}
                   size="small"
                   color={(overview.storageUsagePercent || 0) > 80 ? 'error' : 'info'}
                 />
@@ -353,11 +355,11 @@ export const MediaAnalyticsPage: React.FC = () => {
                       {overview.filesThisMonth || 0}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      ملفات هذا الشهر
+                      {t('stats.filesThisMonth')}
                     </Typography>
                   </Box>
                 </Box>
-                <Chip label={`${overview.filesThisWeek || 0} هذا الأسبوع`} size="small" color="warning" />
+                <Chip label={`${overview.filesThisWeek || 0} ${t('units.thisWeek')}`} size="small" color="warning" />
               </CardContent>
             </Card>
           </Grid>
@@ -372,7 +374,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                       {overview.averageFileSizeFormatted || '0 B'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      متوسط حجم الملف
+                      {t('stats.averageFileSize')}
                     </Typography>
                   </Box>
                 </Box>
@@ -389,7 +391,7 @@ export const MediaAnalyticsPage: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  توزيع الملفات حسب النوع
+                  {t('stats.fileDistribution')}
                 </Typography>
                 <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   {fileTypesChartData && <Doughnut data={fileTypesChartData} />}
@@ -402,14 +404,14 @@ export const MediaAnalyticsPage: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  تفاصيل حسب النوع
+                  {t('stats.detailsByType')}
                 </Typography>
                 <Grid container spacing={2} sx={{ mt: 1 }}>
                     <Grid component="div" size={{ xs: 6 }}>
                     <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1, color: 'white' }}>
                       <Image />
                       <Typography variant="h6">{overview.filesByType.images || 0}</Typography>
-                      <Typography variant="caption">صور</Typography>
+                      <Typography variant="caption">{t('types.images')}</Typography>
                       <Typography variant="caption" display="block">
                         {formatFileSize(overview.sizeByType.images || 0)}
                       </Typography>
@@ -419,7 +421,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                     <Box sx={{ p: 2, bgcolor: 'secondary.light', borderRadius: 1, color: 'white' }}>
                       <VideoLibrary />
                       <Typography variant="h6">{overview.filesByType.videos || 0}</Typography>
-                      <Typography variant="caption">فيديوهات</Typography>
+                      <Typography variant="caption">{t('types.videos')}</Typography>
                       <Typography variant="caption" display="block">
                         {formatFileSize(overview.sizeByType.videos || 0)}
                       </Typography>
@@ -429,7 +431,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                     <Box sx={{ p: 2, bgcolor: 'warning.light', borderRadius: 1, color: 'white' }}>
                       <Description />
                       <Typography variant="h6">{overview.filesByType.documents || 0}</Typography>
-                      <Typography variant="caption">مستندات</Typography>
+                      <Typography variant="caption">{t('types.documents')}</Typography>
                       <Typography variant="caption" display="block">
                         {formatFileSize(overview.sizeByType.documents || 0)}
                       </Typography>
@@ -439,7 +441,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                     <Box sx={{ p: 2, bgcolor: 'grey.400', borderRadius: 1, color: 'white' }}>
                       <Folder />
                       <Typography variant="h6">{overview.filesByType.other || 0}</Typography>
-                      <Typography variant="caption">أخرى</Typography>
+                      <Typography variant="caption">{t('types.other')}</Typography>
                       <Typography variant="caption" display="block">
                         {formatFileSize(overview.sizeByType.other || 0)}
                       </Typography>
@@ -457,12 +459,12 @@ export const MediaAnalyticsPage: React.FC = () => {
         <Card sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              إحصائيات التخزين
+              {t('stats.storageStats')}
             </Typography>
             <Box sx={{ mt: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2">
-                  المستخدم: {storage.usedFormatted || '0 B'} / {storage.totalFormatted || '0 B'}
+                  {t('stats.used')}: {storage.usedFormatted || '0 B'} / {storage.totalFormatted || '0 B'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {storage.usagePercent || 0}%
@@ -477,7 +479,7 @@ export const MediaAnalyticsPage: React.FC = () => {
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    المتاح
+                    {t('stats.available')}
                   </Typography>
                   <Typography variant="h6" color="success.main">
                     {storage.availableFormatted || '0 B'}
@@ -485,7 +487,7 @@ export const MediaAnalyticsPage: React.FC = () => {
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    المستخدم
+                    {t('stats.used')}
                   </Typography>
                   <Typography variant="h6" color="primary.main">
                     {storage.usedFormatted || '0 B'}
@@ -500,15 +502,15 @@ export const MediaAnalyticsPage: React.FC = () => {
       {/* Tabs */}
       <Paper sx={{ mb: 3 }}>
         <Tabs value={selectedTab} onChange={(_, newValue) => setSelectedTab(newValue)} variant="scrollable">
-          <Tab icon={<Assessment />} label="نظرة عامة" iconPosition="start" />
-          <Tab icon={<Storage />} label="أكبر الملفات" iconPosition="start" />
-          <Tab icon={<Timeline />} label="الملفات الحديثة" iconPosition="start" />
+          <Tab icon={<Assessment />} label={t('tabs.overview')} iconPosition="start" />
+          <Tab icon={<Storage />} label={t('tabs.largestFiles')} iconPosition="start" />
+          <Tab icon={<Timeline />} label={t('tabs.recentFiles')} iconPosition="start" />
         </Tabs>
       </Paper>
 
       {/* Tab Panels */}
       <TabPanel value={selectedTab} index={0}>
-        <Alert severity="info">نظرة عامة على الإحصائيات معروضة أعلاه</Alert>
+        <Alert severity="info">{t('stats.overview')}</Alert>
       </TabPanel>
 
       <TabPanel value={selectedTab} index={1}>
@@ -521,10 +523,10 @@ export const MediaAnalyticsPage: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>اسم الملف</TableCell>
-                  <TableCell>النوع</TableCell>
-                  <TableCell align="right">الحجم</TableCell>
-                  <TableCell>تاريخ الرفع</TableCell>
+                  <TableCell>{t('table.filename')}</TableCell>
+                  <TableCell>{t('table.type')}</TableCell>
+                  <TableCell align="right">{t('table.size')}</TableCell>
+                  <TableCell>{t('table.uploadDate')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -549,7 +551,7 @@ export const MediaAnalyticsPage: React.FC = () => {
             </Table>
           </TableContainer>
         ) : (
-          <Alert severity="info">لا توجد بيانات متاحة</Alert>
+          <Alert severity="info">{t('stats.noData')}</Alert>
         )}
       </TabPanel>
 
@@ -563,10 +565,10 @@ export const MediaAnalyticsPage: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>اسم الملف</TableCell>
-                  <TableCell>النوع</TableCell>
-                  <TableCell align="right">الحجم</TableCell>
-                  <TableCell>تاريخ الرفع</TableCell>
+                  <TableCell>{t('table.filename')}</TableCell>
+                  <TableCell>{t('table.type')}</TableCell>
+                  <TableCell align="right">{t('table.size')}</TableCell>
+                  <TableCell>{t('table.uploadDate')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -589,7 +591,7 @@ export const MediaAnalyticsPage: React.FC = () => {
             </Table>
           </TableContainer>
         ) : (
-          <Alert severity="info">لا توجد بيانات متاحة</Alert>
+          <Alert severity="info">{t('stats.noData')}</Alert>
         )}
       </TabPanel>
     </Container>

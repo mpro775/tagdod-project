@@ -20,6 +20,10 @@
     "orders": "Orders",
     "ordersList": "Orders List",
     "ordersAnalytics": "Orders Analytics",
+    "cartsManagement": "Cart Management",
+    "cartsList": "Cart List",
+    "cartsAbandoned": "Abandoned Carts",
+    "cartsAnalytics": "Cart Analytics",
     "coupons": "Coupons",
     "couponsList": "Coupons List",
     "couponsAnalytics": "Coupons Analytics",
@@ -62,7 +66,8 @@
     "systemMonitoring": "Performance Monitoring",
     "errorLogs": "Error Logs",
     "i18nManagement": "Localization Texts",
-    "systemSettings": "System Settings"
+    "systemSettings": "System Settings",
+    "exchangeRates": "Exchange Rates"
   },
   "actions": {
     "title": "Actions",

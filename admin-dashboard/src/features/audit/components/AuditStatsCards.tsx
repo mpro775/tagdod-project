@@ -10,6 +10,7 @@ import {
   Dataset as DatabaseIcon,
   Settings,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { AuditStats } from '../types/audit.types';
 
 interface AuditStatsCardsProps {
@@ -18,6 +19,8 @@ interface AuditStatsCardsProps {
 }
 
 export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({ stats, isLoading }) => {
+  const { t } = useTranslation('audit');
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -40,7 +43,7 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({ stats, isLoadi
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">لا توجد بيانات متاحة</p>
+            <p className="text-muted-foreground">{t('stats.noData', { defaultValue: 'لا توجد بيانات متاحة' })}</p>
           </CardContent>
         </Card>
       </div>
@@ -49,68 +52,68 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({ stats, isLoadi
 
   const statsData = [
     {
-      title: 'إجمالي السجلات',
+      title: t('stats.totalLogs', { defaultValue: 'عدد السجلات' }),
       value: stats.totalLogs,
       icon: DatabaseIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
-      description: 'جميع سجلات التدقيق',
+      description: t('stats.totalLogsDesc', { defaultValue: 'عدد السجلات المسجلة' }),
     },
     {
-      title: 'العمليات الحساسة',
+      title: t('stats.sensitiveLogs', { defaultValue: 'عدد السجلات الحساسة' }),
       value: stats.sensitiveLogs,
       icon: Shield,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
-      description: 'عمليات تتطلب مراجعة',
+      description: t('stats.sensitiveLogsDesc', { defaultValue: 'عدد السجلات الحساسة المسجلة' }),
     },
     {
-      title: 'تغييرات الصلاحيات',
+      title: t('stats.permissionChanges', { defaultValue: 'عدد تغييرات الصلاحيات' }),
       value: stats.permissionChanges,
       icon: Key,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
-      description: 'تعديلات على الصلاحيات',
+      description: t('stats.permissionChangesDesc', { defaultValue: 'عدد تغييرات الصلاحيات المسجلة' }),
     },
     {
-      title: 'تغييرات الأدوار',
+      title: t('stats.roleChanges', { defaultValue: 'عدد تغييرات الأدوار' }),
       value: stats.roleChanges,
       icon: CrownIcon,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      description: 'تعديلات على الأدوار',
+      description: t('stats.roleChangesDesc', { defaultValue: 'عدد تغييرات الأدوار المسجلة' }),
     },
     {
-      title: 'قرارات القدرات',
+      title: t('stats.capabilityDecisions', { defaultValue: 'عدد قرارات القدرات' }),
       value: stats.capabilityDecisions,
       icon: CheckCircleIcon,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      description: 'موافقات ورفض القدرات',
+      description: t('stats.capabilityDecisionsDesc', { defaultValue: 'عدد قرارات القدرات المسجلة' }),
     },
     {
-      title: 'الإجراءات الإدارية',
+      title: t('stats.adminActions', { defaultValue: 'عدد إجراءات الإدارة' }    ),
       value: stats.adminActions,
       icon: Settings,
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
-      description: 'عمليات إدارية',
+      description: t('stats.adminActionsDesc', { defaultValue: 'عدد إجراءات الإدارة المسجلة' }),
     },
     {
-      title: 'أحداث المصادقة',
+      title: t('stats.authEvents', { defaultValue: 'عدد أحداث المصادقة' }),
       value: stats.authEvents,
       icon: Lock,
       color: 'text-cyan-600',
       bgColor: 'bg-cyan-50',
-      description: 'تسجيل دخول وخروج',
+      description: t('stats.authEventsDesc', { defaultValue: 'عدد أحداث المصادقة المسجلة' }),
     },
     {
-      title: 'نسبة الحساسية',
+      title: t('stats.sensitivityRate', { defaultValue: 'نسبة الحساسية' }),
       value: stats.totalLogs > 0 ? Math.round((stats.sensitiveLogs / stats.totalLogs) * 100) : 0,
       icon: AlertTriangle,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50',
-      description: 'نسبة العمليات الحساسة',
+      description: t('stats.sensitivityRateDesc', { defaultValue: 'نسبة الحساسية المسجلة' }),
       suffix: '%',
     },
   ];
@@ -135,14 +138,14 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({ stats, isLoadi
                 {stat.suffix}
               </div>
               <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-              {stat.title === 'نسبة الحساسية' && (
+              {stat.title === t('stats.sensitivityRate', { defaultValue: 'نسبة الحساسية' }) && (
                 <div className="mt-2">
                   <Badge
                     variant="standard"
                     color={stat.value > 20 ? 'error' : stat.value > 10 ? 'warning' : 'info'}
                     className="text-xs"
                   >
-                    {stat.value > 20 ? 'عالي' : stat.value > 10 ? 'متوسط' : 'منخفض'}
+                    {stat.value > 20 ? t('stats.highSensitivity', { defaultValue: 'عالي' }) : stat.value > 10 ? t('stats.mediumSensitivity', { defaultValue: 'متوسط' }) : t('stats.lowSensitivity', { defaultValue: 'منخفض' })}
                   </Badge>
                 </div>
               )}

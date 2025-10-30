@@ -78,7 +78,7 @@
     margin-bottom: 8px !important;
   }
   
-  .MuiButton-root:last-child {
+  .MuiButton-root:last-of-type {
     margin-bottom: 0 !important;
   }
 }

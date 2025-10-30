@@ -21,6 +21,7 @@ import {
 } from '@mui/icons-material';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { useTranslation } from 'react-i18next';
 import { BANNER_LOCATION_OPTIONS, BANNER_PROMOTION_TYPE_OPTIONS } from '../types/banner.types';
 import type { Banner } from '../types/banner.types';
 
@@ -70,10 +71,11 @@ export const BannerTable: React.FC<BannerTableProps> = ({
   paginationModel,
   onPaginationModelChange,
 }) => {
+  const { t } = useTranslation('banners');
   const columns: GridColDef[] = [
     {
       field: 'title',
-      headerName: 'البانر',
+      headerName: t('table.banner'),
       width: 300,
       renderCell: (params) => {
         const banner = params.row as Banner;
@@ -105,7 +107,7 @@ export const BannerTable: React.FC<BannerTableProps> = ({
                     color="primary"
                     sx={{ textDecoration: 'none' }}
                   >
-                    رابط التوجيه
+                    {t('table.redirectLink')}
                   </Link>
                 </Box>
               )}
@@ -116,7 +118,7 @@ export const BannerTable: React.FC<BannerTableProps> = ({
     },
     {
       field: 'location',
-      headerName: 'الموقع',
+      headerName: t('table.location'),
       width: 150,
       renderCell: (params) => (
         <Chip
@@ -129,7 +131,7 @@ export const BannerTable: React.FC<BannerTableProps> = ({
     },
     {
       field: 'promotionType',
-      headerName: 'نوع الترويج',
+      headerName: t('table.promotionType'),
       width: 150,
       renderCell: (params) => {
         if (!params.value) return '-';
@@ -145,7 +147,7 @@ export const BannerTable: React.FC<BannerTableProps> = ({
     },
     {
       field: 'stats',
-      headerName: 'الإحصائيات',
+      headerName: t('table.stats'),
       width: 200,
       renderCell: (params) => {
         const banner = params.row as Banner;
@@ -167,7 +169,7 @@ export const BannerTable: React.FC<BannerTableProps> = ({
               <Typography variant="caption">{banner.conversionCount.toLocaleString()}</Typography>
             </Box>
             <Typography variant="caption" color="text.secondary">
-              CTR: {ctr}% | تحويل: {conversionRate}%
+              {t('table.ctr', { rate: ctr })} | {t('table.conversion', { rate: conversionRate })}
             </Typography>
           </Box>
         );
@@ -175,11 +177,11 @@ export const BannerTable: React.FC<BannerTableProps> = ({
     },
     {
       field: 'isActive',
-      headerName: 'الحالة',
+      headerName: t('table.status'),
       width: 120,
       renderCell: (params) => (
         <Chip
-          label={params.value ? 'نشط' : 'غير نشط'}
+          label={params.value ? t('stats.active') : t('stats.inactive')}
           color={params.value ? 'success' : 'default'}
           size="small"
         />
@@ -187,7 +189,7 @@ export const BannerTable: React.FC<BannerTableProps> = ({
     },
     {
       field: 'sortOrder',
-      headerName: 'الترتيب',
+      headerName: t('table.sortOrder'),
       width: 100,
       align: 'center',
       renderCell: (params) => (
@@ -198,7 +200,7 @@ export const BannerTable: React.FC<BannerTableProps> = ({
     },
     {
       field: 'dateRange',
-      headerName: 'نطاق التاريخ',
+      headerName: t('table.dateRange'),
       width: 200,
       renderCell: (params) => {
         const banner = params.row as Banner;
@@ -206,17 +208,17 @@ export const BannerTable: React.FC<BannerTableProps> = ({
           <Box>
             {banner.startDate && (
               <Typography variant="caption" display="block">
-                من: {formatDate(banner.startDate)}
+                {t('table.from')}: {formatDate(banner.startDate)}
               </Typography>
             )}
             {banner.endDate && (
               <Typography variant="caption" display="block">
-                إلى: {formatDate(banner.endDate)}
+                {t('table.to')}: {formatDate(banner.endDate)}
               </Typography>
             )}
             {!banner.startDate && !banner.endDate && (
               <Typography variant="caption" color="text.secondary">
-                بدون قيود زمنية
+                {t('table.noTimeConstraints')}
               </Typography>
             )}
           </Box>
@@ -225,7 +227,7 @@ export const BannerTable: React.FC<BannerTableProps> = ({
     },
     {
       field: 'createdAt',
-      headerName: 'تاريخ الإنشاء',
+      headerName: t('table.createdAt'),
       width: 150,
       renderCell: (params) => (
         <Typography variant="caption">
@@ -235,14 +237,14 @@ export const BannerTable: React.FC<BannerTableProps> = ({
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('table.actions'),
       width: 150,
       sortable: false,
       renderCell: (params) => {
         const banner = params.row as Banner;
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title="تعديل">
+            <Tooltip title={t('actions.edit')}>
               <IconButton
                 size="small"
                 color="primary"
@@ -254,8 +256,8 @@ export const BannerTable: React.FC<BannerTableProps> = ({
                 <Edit fontSize="small" />
               </IconButton>
             </Tooltip>
-            
-            <Tooltip title={banner.isActive ? 'تعطيل' : 'تفعيل'}>
+
+            <Tooltip title={banner.isActive ? t('actions.toggleOff') : t('actions.toggleOn')}>
               <IconButton
                 size="small"
                 color={banner.isActive ? 'warning' : 'success'}
@@ -267,8 +269,8 @@ export const BannerTable: React.FC<BannerTableProps> = ({
                 {banner.isActive ? <ToggleOff fontSize="small" /> : <ToggleOn fontSize="small" />}
               </IconButton>
             </Tooltip>
-            
-            <Tooltip title="حذف">
+
+            <Tooltip title={t('actions.delete')}>
               <IconButton
                 size="small"
                 color="error"

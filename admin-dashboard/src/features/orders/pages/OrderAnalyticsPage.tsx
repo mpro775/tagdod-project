@@ -41,8 +41,10 @@ import { useOrderAnalytics, useRevenueAnalytics, usePerformanceAnalytics, useExp
 import { formatCurrency, formatDate } from '@/shared/utils/formatters';
 import type { OrderAnalyticsParams } from '../types/order.types';
 import { ar } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 export const OrderAnalyticsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [analyticsParams, setAnalyticsParams] = useState<OrderAnalyticsParams>({
     days: 7,
     groupBy: 'day',
@@ -122,7 +124,7 @@ export const OrderAnalyticsPage: React.FC = () => {
         {/* Header */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-            تحليلات الطلبات
+            {t('orders.navigation.analytics', { defaultValue: 'تحليل الطلبات' })}
           </Typography>
           <Stack direction="row" spacing={1}>
             <Button
@@ -147,41 +149,41 @@ export const OrderAnalyticsPage: React.FC = () => {
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
             <FilterList />
-            فلاتر التحليل
+            {t('orders.filters.title', { defaultValue: 'فلاتر التحليل' })}
           </Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>الفترة الزمنية</InputLabel>
+                <InputLabel>{t('orders.filters.dateRange', { defaultValue: 'الفترة الزمنية' })}</InputLabel>
                 <Select
                   value={analyticsParams.days}
                   onChange={(e) => handleParamsChange('days', e.target.value)}
-                  label="الفترة الزمنية"
+                  label={t('orders.filters.dateRange', { defaultValue: 'الفترة الزمنية' })}
                 >
-                  <MenuItem value={7}>آخر 7 أيام</MenuItem>
-                  <MenuItem value={30}>آخر 30 يوم</MenuItem>
-                  <MenuItem value={90}>آخر 3 أشهر</MenuItem>
-                  <MenuItem value={365}>آخر سنة</MenuItem>
+                  <MenuItem value={7}>{t('orders.filters.last7Days', { defaultValue: 'آخر 7 أيام' })}</MenuItem>
+                  <MenuItem value={30}>{t('orders.filters.last30Days', { defaultValue: 'آخر 30 يوم' })}</MenuItem>
+                  <MenuItem value={90}>{t('orders.filters.last3Months', { defaultValue: 'آخر 3 أشهر' })}</MenuItem>
+                  <MenuItem value={365}>{t('orders.filters.lastYear', { defaultValue: 'آخر سنة' })}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>تجميع البيانات</InputLabel>
+                <InputLabel>{t('orders.filters.dataAggregation', { defaultValue: 'تجميع البيانات' })}</InputLabel>
                 <Select
                   value={analyticsParams.groupBy}
                   onChange={(e) => handleParamsChange('groupBy', e.target.value)}
-                  label="تجميع البيانات"
+                  label={t('orders.filters.dataAggregation', { defaultValue: 'تجميع البيانات' })}
                 >
-                  <MenuItem value="day">يومي</MenuItem>
-                  <MenuItem value="week">أسبوعي</MenuItem>
-                  <MenuItem value="month">شهري</MenuItem>
+                  <MenuItem value="day">{t('orders.filters.daily', { defaultValue: 'يومي' })}</MenuItem>
+                  <MenuItem value="week">{t('orders.filters.weekly', { defaultValue: 'أسبوعي' })}</MenuItem>
+                  <MenuItem value="month">{t('orders.filters.monthly', { defaultValue: 'شهري' })}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <DatePicker
-                label="من تاريخ"
+                label={t('orders.filters.fromDate', { defaultValue: 'من تاريخ' })}
                 value={fromDate}
                 onChange={setFromDate}
                 slotProps={{ textField: { fullWidth: true } }}
@@ -189,7 +191,7 @@ export const OrderAnalyticsPage: React.FC = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <DatePicker
-                label="إلى تاريخ"
+                label={t('orders.filters.toDate', { defaultValue: 'إلى تاريخ' })}
                 value={toDate}
                 onChange={setToDate}
                 slotProps={{ textField: { fullWidth: true } }}
@@ -223,7 +225,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                     {analytics.totalOrders}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    إجمالي الطلبات
+                    {t('orders.analytics.totalOrders', { defaultValue: 'إجمالي الطلبات' })}
                   </Typography>
                 </CardContent>
               </Card>
@@ -238,7 +240,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                     {formatCurrency(analytics.totalRevenue, 'YER')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    إجمالي الإيرادات
+                    {t('orders.analytics.totalRevenue', { defaultValue: 'إجمالي الإيرادات' })}
                   </Typography>
                 </CardContent>
               </Card>
@@ -253,7 +255,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                     {formatCurrency(analytics.averageOrderValue, 'YER')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    متوسط قيمة الطلب
+                    {t('orders.analytics.averageOrderValue', { defaultValue: 'متوسط قيمة الطلب' })}
                   </Typography>
                 </CardContent>
               </Card>
@@ -268,7 +270,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                     {analytics.ordersByStatus?.find(s => s.status === 'completed')?.count || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    طلبات مكتملة
+                    {t('orders.analytics.completedOrders', { defaultValue: 'طلبات مكتملة' })}
                   </Typography>
                 </CardContent>
               </Card>
@@ -282,7 +284,7 @@ export const OrderAnalyticsPage: React.FC = () => {
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PieChart />
-                توزيع الطلبات حسب الحالة
+                {t('orders.analytics.orderDistributionByStatus', { defaultValue: 'توزيع الطلبات حسب الحالة' })}
               </Typography>
               <Grid container spacing={2}>
                 {analytics.ordersByStatus.map((statusData, index) => (
@@ -317,30 +319,30 @@ export const OrderAnalyticsPage: React.FC = () => {
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <BarChart />
-                تحليل الإيرادات
+                {t('orders.analytics.revenueAnalysis', { defaultValue: 'تحليل الإيرادات' })}
               </Typography>
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Paper sx={{ p: 2 }}>
                     <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
-                      ملخص الإيرادات
+                      {t('orders.analytics.revenueSummary', { defaultValue: 'ملخص الإيرادات' })}  
                     </Typography>
                     <List dense>
                       <ListItem>
                         <ListItemText
-                          primary="إجمالي الإيرادات"
+                          primary={t('orders.analytics.totalRevenue', { defaultValue: 'إجمالي الإيرادات' })}
                           secondary={formatCurrency(revenueAnalytics.totalRevenue, 'YER')}
                         />
                       </ListItem>
                       <ListItem>
                         <ListItemText
-                          primary="عدد الطلبات"
+                          primary={t('orders.analytics.totalOrders', { defaultValue: 'عدد الطلبات' })}
                           secondary={revenueAnalytics.totalOrders}
                         />
                       </ListItem>
                       <ListItem>
                         <ListItemText
-                          primary="متوسط قيمة الطلب"
+                          primary={t('orders.analytics.averageOrderValue', { defaultValue: 'متوسط قيمة الطلب' })}
                           secondary={formatCurrency(revenueAnalytics.averageOrderValue, 'YER')}
                         />
                       </ListItem>
@@ -350,7 +352,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Paper sx={{ p: 2 }}>
                     <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
-                      أفضل المنتجات
+                      {t('orders.analytics.bestProducts', { defaultValue: 'أفضل المنتجات' })}
                     </Typography>
                     <List dense>
                       {revenueAnalytics.topProducts && revenueAnalytics.topProducts.length > 0 ? (
@@ -361,10 +363,10 @@ export const OrderAnalyticsPage: React.FC = () => {
                               secondary={
                                 <Box>
                                   <Typography variant="body2" color="text.secondary">
-                                    الإيرادات: {formatCurrency(product.revenue, 'YER')}
+                                    {t('orders.analytics.revenue', { defaultValue: 'الإيرادات' })}: {formatCurrency(product.revenue, 'YER')}
                                   </Typography>
                                   <Typography variant="body2" color="text.secondary">
-                                    الطلبات: {product.orders}
+                                    {t('orders.analytics.orders', { defaultValue: 'الطلبات' })}: {product.orders}
                                   </Typography>
                                 </Box>
                               }
@@ -373,7 +375,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                         ))
                       ) : (
                         <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-                          لا توجد بيانات متاحة
+                          {t('orders.analytics.noDataAvailable', { defaultValue: 'لا توجد بيانات متاحة' })}
                         </Typography>
                       )}
                     </List>
@@ -396,7 +398,7 @@ export const OrderAnalyticsPage: React.FC = () => {
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Timeline />
-                تحليل الأداء
+                {t('orders.analytics.performanceAnalysis', { defaultValue: 'تحليل الأداء' })}
               </Typography>
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 4 }}>
@@ -408,7 +410,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                       {performanceAnalytics.averageProcessingTime} يوم
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      متوسط وقت التجهيز
+                      {t('orders.analytics.averageProcessingTime', { defaultValue: 'متوسط وقت التجهيز' })}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -421,7 +423,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                       {performanceAnalytics.averageShippingTime} يوم
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      متوسط وقت الشحن
+                      {t('orders.analytics.averageShippingTime', { defaultValue: 'متوسط وقت الشحن' })}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -434,7 +436,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                       {performanceAnalytics.averageDeliveryTime} يوم
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      متوسط وقت التسليم
+                      {t('orders.analytics.averageDeliveryTime', { defaultValue: 'متوسط وقت التسليم' })}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -447,7 +449,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                       {performanceAnalytics.cancellationRate}%
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      معدل الإلغاء
+                      {t('orders.analytics.cancellationRate', { defaultValue: 'معدل الإلغاء' })}    
                     </Typography>
                   </Paper>
                 </Grid>
@@ -460,7 +462,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                       {performanceAnalytics.refundRate}%
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      معدل الاسترداد
+                      {t('orders.analytics.refundRate', { defaultValue: 'معدل الاسترداد' })}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -473,7 +475,7 @@ export const OrderAnalyticsPage: React.FC = () => {
                       {performanceAnalytics.customerSatisfactionScore}/5
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      تقييم رضا العملاء
+                      {t('orders.analytics.customerSatisfactionScore', { defaultValue: 'تقييم رضا العملاء' })}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -488,7 +490,7 @@ export const OrderAnalyticsPage: React.FC = () => {
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ShoppingCart />
-                الطلبات الأخيرة
+                {t('orders.analytics.recentOrders', { defaultValue: 'الطلبات الأخيرة' })}
               </Typography>
               <List>
                 {analytics.recentOrders.slice(0, 10).map((order, index) => (
@@ -498,19 +500,19 @@ export const OrderAnalyticsPage: React.FC = () => {
                       secondary={
                         <Box>
                           <Typography variant="body2" color="text.secondary">
-                            العميل: {order.deliveryAddress.recipientName}
+                            {t('orders.analytics.client', { defaultValue: 'العميل' })}: {order.deliveryAddress.recipientName}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            المجموع: {formatCurrency(order.total, order.currency)}
+                            {t('orders.analytics.total', { defaultValue: 'المجموع' })}: {formatCurrency(order.total, order.currency)}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            التاريخ: {formatDate(order.createdAt)}
+                            {t('orders.analytics.date', { defaultValue: 'التاريخ' })}: {formatDate(order.createdAt)}
                           </Typography>
                         </Box>
                       }
                     />
                     <Chip
-                      label={order.status}
+                      label={t(`orders.status.${order.status}`, { defaultValue: order.status })}  
                       color={getStatusColor(order.status) as any}
                       size="small"
                     />

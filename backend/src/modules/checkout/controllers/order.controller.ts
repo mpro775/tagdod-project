@@ -123,7 +123,7 @@ export class OrderController {
     };
   }
 
-  @Get(':id')
+  @Get(':id([0-9a-fA-F]{24})')
   @ApiOperation({
     summary: 'تفاصيل الطلب',
     description: 'الحصول على تفاصيل طلب محدد',
@@ -143,7 +143,7 @@ export class OrderController {
     };
   }
 
-  @Get(':id/track')
+  @Get(':id([0-9a-fA-F]{24})/track')
   @ApiOperation({
     summary: 'تتبع الطلب',
     description: 'الحصول على معلومات تتبع الطلب والخط الزمني',
@@ -180,7 +180,7 @@ export class OrderController {
     };
   }
 
-  @Post(':id/cancel')
+  @Post(':id([0-9a-fA-F]{24})/cancel')
   @ApiOperation({
     summary: 'إلغاء الطلب',
     description: 'إلغاء طلب محدد من قبل العميل',
@@ -201,7 +201,7 @@ export class OrderController {
     };
   }
 
-  @Post(':id/rate')
+  @Post(':id([0-9a-fA-F]{24})/rate')
   @ApiOperation({
     summary: 'تقييم الطلب',
     description: 'تقييم طلب محدد بعد التسليم',
@@ -222,7 +222,7 @@ export class OrderController {
     };
   }
 
-  @Post(':id/notes')
+  @Post(':id([0-9a-fA-F]{24})/notes')
   @ApiOperation({
     summary: 'إضافة ملاحظات للطلب',
     description: 'إضافة ملاحظات شخصية للطلب',

@@ -24,6 +24,7 @@ import {
   Stack,
   IconButton,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { ContentCopy, CheckCircle } from '@mui/icons-material';
@@ -54,6 +55,7 @@ export const BulkGenerateDialog: React.FC<BulkGenerateDialogProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { t } = useTranslation('coupons');
   const [activeStep, setActiveStep] = useState(0);
   const [generatedCoupons, setGeneratedCoupons] = useState<string[]>([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -76,7 +78,11 @@ export const BulkGenerateDialog: React.FC<BulkGenerateDialogProps> = ({
     },
   });
 
-  const steps = ['إعدادات أساسية', 'إعدادات متقدمة', 'مراجعة وتأكيد'];
+  const steps = [
+    t('bulkGenerate.basicSettings'),
+    t('bulkGenerate.advancedSettings'),
+    t('bulkGenerate.reviewAndConfirm')
+  ];
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -129,11 +135,11 @@ export const BulkGenerateDialog: React.FC<BulkGenerateDialogProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">إنشاء كوبونات مجمعة</Typography>
+          <Typography variant="h6">{t('bulkGenerate.title')}</Typography>
           {showPreview && (
             <Chip
               icon={<CheckCircle />}
-              label={`تم إنشاء ${generatedCoupons.length} كوبون`}
+              label={t('bulkGenerate.successCount', { count: generatedCoupons.length })}
               color="success"
               variant="outlined"
             />
@@ -371,7 +377,7 @@ export const BulkGenerateDialog: React.FC<BulkGenerateDialogProps> = ({
                           قيمة الخصم
                         </Typography>
                         <Typography variant="body1">
-                          {watch('discountValue')} {watch('type') === 'percentage' ? '%' : 'ريال'}
+                          {watch('type') === 'percentage' ? `${watch('discountValue')}%` : `$${watch('discountValue')}`}
                         </Typography>
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>

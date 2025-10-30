@@ -25,6 +25,7 @@ import {
   Email,
   Assessment,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useCartDashboard } from '../hooks/useCart';
 import { CartStatsCards } from '../components';
 
@@ -54,6 +55,8 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const CartAnalyticsPage: React.FC = () => {
+  const { t } = useTranslation();
+
   // State management
   const [period, setPeriod] = useState('30');
   const [tabValue, setTabValue] = useState(0);
@@ -115,16 +118,16 @@ export const CartAnalyticsPage: React.FC = () => {
       {/* Header */}
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
         <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-          تحليلات السلة
+          {t('cart.navigation.analytics')}
         </Typography>
         <Box display="flex" gap={1}>
           <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>الفترة</InputLabel>
-            <Select value={period} onChange={(event) => handlePeriodChange(event as any)} label="الفترة">
-              <MenuItem value="7">آخر 7 أيام</MenuItem>
-              <MenuItem value="30">آخر 30 يوم</MenuItem>
-              <MenuItem value="90">آخر 90 يوم</MenuItem>
-              <MenuItem value="365">آخر سنة</MenuItem>
+            <InputLabel>{t('cart.stats.period.label')}</InputLabel>
+            <Select value={period} onChange={(event) => handlePeriodChange(event as any)} label={t('cart.stats.period.label')}>
+              <MenuItem value="7">{t('cart.stats.period.7days')}</MenuItem>
+              <MenuItem value="30">{t('cart.stats.period.30days')}</MenuItem>
+              <MenuItem value="90">{t('cart.stats.period.90days')}</MenuItem>
+              <MenuItem value="365">{t('cart.stats.period.1year')}</MenuItem>
             </Select>
           </FormControl>
           <Button
@@ -133,7 +136,7 @@ export const CartAnalyticsPage: React.FC = () => {
             onClick={handleRefresh}
             disabled={isLoading}
           >
-            تحديث
+            {t('cart.actions.refresh')}
           </Button>
         </Box>
       </Box>
@@ -163,12 +166,12 @@ export const CartAnalyticsPage: React.FC = () => {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab label="نظرة عامة" icon={<Assessment />} />
-          <Tab label="معدلات التحويل" icon={<TrendingUp />} />
-          <Tab label="السلات المتروكة" icon={<TrendingDown />} />
-          <Tab label="الإيرادات" icon={<MonetizationOn />} />
-          <Tab label="سلوك العملاء" icon={<ShoppingCart />} />
-          <Tab label="حملات الاسترداد" icon={<Email />} />
+          <Tab label={t('cart.analytics.tabs.overview', { defaultValue: 'نظرة عامة' })} icon={<Assessment />} />
+          <Tab label={t('cart.analytics.tabs.conversion', { defaultValue: 'معدل التحويل' })} icon={<TrendingUp />} />
+          <Tab label={t('cart.analytics.tabs.abandoned', { defaultValue: 'السلات المتروكة' })} icon={<TrendingDown />} />
+          <Tab label={t('cart.analytics.tabs.revenue', { defaultValue: 'الإيرادات' })} icon={<MonetizationOn />} />
+          <Tab label={t('cart.analytics.tabs.customerBehavior', { defaultValue: 'سلوك العملاء' })} icon={<ShoppingCart />} />
+          <Tab label={t('cart.analytics.tabs.recovery', { defaultValue: 'حملات الاسترداد' })} icon={<Email />} />
         </Tabs>
 
         {/* Overview Tab */}
@@ -179,7 +182,7 @@ export const CartAnalyticsPage: React.FC = () => {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    معدل التحويل اليومي
+                    {t('cart.analytics.charts.conversionRate', { defaultValue: 'معدل التحويل اليومي' })}
                   </Typography>
                   {isLoading ? (
                     <Box display="flex" justifyContent="center" p={4}>
@@ -190,12 +193,12 @@ export const CartAnalyticsPage: React.FC = () => {
                       {/* Line Chart would go here */}
                       <Box display="flex" alignItems="center" justifyContent="center" height="100%">
                         <Typography color="text.secondary">
-                          مخطط معدل التحويل (يتطلب تثبيت مكتبة الرسوم البيانية)
+                          {t('cart.analytics.charts.conversionRateChart', { defaultValue: 'مخطط معدل التحويل (يتطلب تثبيت مكتبة الرسوم البيانية)' })}
                         </Typography>
                       </Box>
                     </Box>
                   ) : (
-                    <Typography color="text.secondary">لا توجد بيانات متاحة</Typography>
+                    <Typography color="text.secondary">{t('cart.analytics.charts.noData', { defaultValue: 'لا توجد بيانات متاحة' })}</Typography>
                   )}
                 </CardContent>
               </Card>
@@ -206,12 +209,12 @@ export const CartAnalyticsPage: React.FC = () => {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    المؤشرات الرئيسية
+                    {t('cart.analytics.charts.keyMetrics', { defaultValue: 'المؤشرات الرئيسية' })}
                   </Typography>
                   <Box display="flex" flexDirection="column" gap={2}>
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        معدل التحويل الحالي
+                        {t('cart.analytics.charts.conversionRate', { defaultValue: 'معدل التحويل الحالي' })}
                       </Typography>
                       <Typography variant="h4" color="primary">
                         {statistics?.conversionRate
@@ -223,13 +226,13 @@ export const CartAnalyticsPage: React.FC = () => {
                         color={getConversionTrend() >= 0 ? 'success.main' : 'error.main'}
                       >
                         {getConversionTrend() >= 0 ? '+' : ''}
-                        {getConversionTrend().toFixed(1)}% من الأسبوع الماضي
+                        {getConversionTrend().toFixed(1)}% {t('cart.analytics.charts.fromPreviousWeek', { defaultValue: 'من الأسبوع الماضي' })}
                       </Typography>
                     </Box>
 
                     <Box>
                       <Typography variant="body2" color="text.secondary">
-                        معدل الهجر الحالي
+                        {t('cart.analytics.charts.abandonmentRate', { defaultValue: 'معدل الهجر الحالي' })}
                       </Typography>
                       <Typography variant="h4" color="warning.main">
                         {statistics?.abandonmentRate
@@ -241,7 +244,7 @@ export const CartAnalyticsPage: React.FC = () => {
                         color={getAbandonmentTrend() >= 0 ? 'error.main' : 'success.main'}
                       >
                         {getAbandonmentTrend() >= 0 ? '+' : ''}
-                        {getAbandonmentTrend().toFixed(1)}% من الأسبوع الماضي
+                        {getAbandonmentTrend().toFixed(1)}% {t('cart.analytics.charts.fromPreviousWeek', { defaultValue: 'من الأسبوع الماضي' })}
                       </Typography>
                     </Box>
                   </Box>
@@ -254,7 +257,7 @@ export const CartAnalyticsPage: React.FC = () => {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    توزيع حالة السلات
+                    {t('cart.analytics.charts.cartStatusDistribution', { defaultValue: 'توزيع حالة السلات' })}    
                   </Typography>
                   {isLoading ? (
                     <Box display="flex" justifyContent="center" p={4}>
@@ -265,12 +268,12 @@ export const CartAnalyticsPage: React.FC = () => {
                       {/* Pie Chart would go here */}
                       <Box display="flex" alignItems="center" justifyContent="center" height="100%">
                         <Typography color="text.secondary">
-                          مخطط توزيع السلات (يتطلب تثبيت مكتبة الرسوم البيانية)
+                          {t('cart.analytics.charts.cartStatusDistributionChart', { defaultValue: 'مخطط توزيع السلات (يتطلب تثبيت مكتبة الرسوم البيانية)' })}
                         </Typography>
                       </Box>
                     </Box>
                   ) : (
-                    <Typography color="text.secondary">لا توجد بيانات متاحة</Typography>
+                    <Typography color="text.secondary">{t('cart.analytics.charts.noData', { defaultValue: 'لا توجد بيانات متاحة' })}</Typography>
                   )}
                 </CardContent>
               </Card>
@@ -281,7 +284,7 @@ export const CartAnalyticsPage: React.FC = () => {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    اتجاهات الإيرادات
+                    {t('cart.analytics.charts.revenueTrends', { defaultValue: 'اتجاهات الإيرادات' })}
                   </Typography>
                   {isLoading ? (
                     <Box display="flex" justifyContent="center" p={4}>
@@ -292,7 +295,7 @@ export const CartAnalyticsPage: React.FC = () => {
                       {/* Bar Chart would go here */}
                       <Box display="flex" alignItems="center" justifyContent="center" height="100%">
                         <Typography color="text.secondary">
-                          مخطط الإيرادات (يتطلب تثبيت مكتبة الرسوم البيانية)
+                          {t('cart.analytics.charts.revenueTrendsChart', { defaultValue: 'مخطط الإيرادات (يتطلب تثبيت مكتبة الرسوم البيانية)' })}
                         </Typography>
                       </Box>
                     </Box>
@@ -310,7 +313,7 @@ export const CartAnalyticsPage: React.FC = () => {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    معدلات التحويل التفصيلية
+                    {t('cart.analytics.charts.detailedConversionRates', { defaultValue: 'معدلات التحويل التفصيلية' })}
                   </Typography>
                   {isLoading ? (
                     <Box display="flex" justifyContent="center" p={4}>
@@ -322,37 +325,37 @@ export const CartAnalyticsPage: React.FC = () => {
                         <Grid size={{ xs: 12, md: 4 }}>
                           <Paper sx={{ p: 2 }}>
                             <Typography variant="h6" color="primary">
-                              يومياً
+                              {t('cart.analytics.charts.daily', { defaultValue: 'يومياً' })}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              آخر 7 أيام: {conversionRates.daily?.slice(-7).length || 0} أيام
+                              {t('cart.analytics.charts.last7Days', { defaultValue: 'آخر 7 أيام' })}: {conversionRates.daily?.slice(-7).length || 0} {t('cart.analytics.charts.days', { defaultValue: 'أيام' })}
                             </Typography>
                           </Paper>
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
                           <Paper sx={{ p: 2 }}>
                             <Typography variant="h6" color="primary">
-                              أسبوعياً
+                              {t('cart.analytics.charts.weekly', { defaultValue: 'أسبوعياً' })}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              آخر 4 أسابيع: {conversionRates.weekly?.length || 0} أسابيع
+                              {t('cart.analytics.charts.last4Weeks', { defaultValue: 'آخر 4 أسابيع' })}: {conversionRates.weekly?.length || 0} {t('cart.analytics.charts.weeks', { defaultValue: 'أسابيع' })}
                             </Typography>
                           </Paper>
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
                           <Paper sx={{ p: 2 }}>
                             <Typography variant="h6" color="primary">
-                              شهرياً
+                              {t('cart.analytics.charts.monthly', { defaultValue: 'شهرياً' })}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              آخر 12 شهر: {conversionRates.monthly?.length || 0} أشهر
+                              {t('cart.analytics.charts.last12Months', { defaultValue: 'آخر 12 شهر' })}: {conversionRates.monthly?.length || 0} {t('cart.analytics.charts.months', { defaultValue: 'أشهر' })} 
                             </Typography>
                           </Paper>
                         </Grid>
                       </Grid>
                     </Box>
                   ) : (
-                    <Typography color="text.secondary">لا توجد بيانات متاحة</Typography>
+                    <Typography color="text.secondary">{t('cart.analytics.charts.noData', { defaultValue: 'لا توجد بيانات متاحة' })}</Typography>
                   )}
                 </CardContent>
               </Card>
@@ -362,19 +365,19 @@ export const CartAnalyticsPage: React.FC = () => {
 
         {/* Other tabs would contain similar chart components */}
         <TabPanel value={tabValue} index={2}>
-          <Typography>محتوى السلات المتروكة</Typography>
+          <Typography>{t('cart.analytics.charts.abandonedCartsContent', { defaultValue: 'محتوى السلات المتروكة' })}</Typography>
         </TabPanel>
 
         <TabPanel value={tabValue} index={3}>
-          <Typography>محتوى الإيرادات</Typography>
+          <Typography>{t('cart.analytics.charts.revenueContent', { defaultValue: 'محتوى الإيرادات' })}</Typography>
         </TabPanel>
 
         <TabPanel value={tabValue} index={4}>
-          <Typography>محتوى سلوك العملاء</Typography>
+          <Typography>{t('cart.analytics.charts.customerBehaviorContent', { defaultValue: 'محتوى سلوك العملاء' })}</Typography>
         </TabPanel>
 
         <TabPanel value={tabValue} index={5}>
-          <Typography>محتوى حملات الاسترداد</Typography>
+          <Typography>{t('cart.analytics.charts.recoveryContent', { defaultValue: 'محتوى حملات الاسترداد' })}</Typography>
         </TabPanel>
       </Paper>
 

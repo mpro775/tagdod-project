@@ -1,0 +1,119 @@
+{
+  "header": {
+    "title": "لوحة التحكم الرئيسية",
+    "subtitle": "مرحباً بك في لوحة تحكم تجدٌد",
+    "refresh": "تحديث البيانات"
+  },
+  "error": {
+    "title": "خطأ في تحميل البيانات",
+    "retry": "إعادة المحاولة"
+  },
+  "stats": {
+    "totalUsers": {
+      "title": "إجمالي المستخدمين",
+      "subtitle": "مستخدم نشط"
+    },
+    "totalOrders": {
+      "title": "إجمالي الطلبات",
+      "subtitle": "طلب مكتمل"
+    },
+    "totalRevenue": {
+      "title": "إجمالي الإيرادات",
+      "subtitle": "دولار أمريكي"
+    },
+    "totalProducts": {
+      "title": "إجمالي المنتجات",
+      "subtitle": "منتج متاح"
+    },
+    "periodComparison": "من الفترة السابقة"
+  },
+  "quickStats": {
+    "title": "إحصائيات الأداء",
+    "labels": {
+      "activeUsers": "المستخدمون النشطون",
+      "systemHealth": "صحة النظام",
+      "errorRate": "معدل الأخطاء",
+      "responseTime": "وقت الاستجابة"
+    },
+    "values": {
+      "responseTime": "{{value}} مللي ثانية"
+    }
+  },
+  "revenueChart": {
+    "title": "نظرة عامة على الإيرادات",
+    "average": "متوسط {{value}} يومياً",
+    "period": {
+      "daily": "يومي",
+      "weekly": "أسبوعي",
+      "monthly": "شهري"
+    },
+    "tooltip": {
+      "revenue": "الإيرادات"
+    },
+    "legend": {
+      "revenue": "الإيرادات"
+    }
+  },
+  "topProducts": {
+    "title": "أفضل المنتجات مبيعاً",
+    "empty": "لا توجد بيانات متاحة",
+    "unknown": "منتج",
+    "sales": "{{count}} مبيعة",
+    "revenue": "{{value}}"
+  },
+  "recentOrders": {
+    "title": "الطلبات الأخيرة",
+    "empty": "لا توجد طلبات حديثة",
+    "viewAll": "عرض الكل",
+    "defaultCustomer": "عميل",
+    "defaultInitial": "ع",
+    "orderNumber": "طلب #{{number}}",
+    "itemsCount": "{{count}} منتج",
+    "amountPlaceholder": "—",
+    "status": {
+      "completed": "مكتمل",
+      "pending": "معلق",
+      "processing": "قيد المعالجة",
+      "cancelled": "ملغي",
+      "unknown": "غير محدد"
+    }
+  },
+  "quickActions": {
+    "title": "إجراءات سريعة",
+    "addProduct": "إضافة منتج",
+    "orders": "الطلبات",
+    "discount": "كوبون خصم",
+    "newCategory": "فئة جديدة",
+    "inventory": "إدارة المخزون",
+    "reports": "التقارير"
+  },
+  "miniChart": {
+    "noData": "لا توجد بيانات"
+  },
+  "categoryDistribution": {
+    "title": "توزيع الفئات",
+    "empty": "لا توجد بيانات للفئات",
+    "tooltip": "النسبة",
+    "unknown": "غير محدد"
+  },
+  "activityTimeline": {
+    "title": "النشاط الأخير",
+    "empty": "لا توجد أنشطة حديثة",
+    "status": {
+      "completed": "طلب مكتمل",
+      "pending": "طلب جديد",
+      "cancelled": "طلب ملغي",
+      "processing": "طلب قيد المعالجة",
+      "unknown": "نشاط"
+    },
+    "description": "طلب #{{number}} بقيمة {{amount}}",
+    "amountPlaceholder": "—",
+    "time": {
+      "justNow": "منذ لحظات",
+      "minutes": "منذ {{count}} دقيقة",
+      "hours": "منذ {{count}} ساعة",
+      "days": "منذ {{count}} يوم"
+    }
+  }
+}
+

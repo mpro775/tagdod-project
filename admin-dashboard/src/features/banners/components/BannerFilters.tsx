@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Search, FilterList, Clear, ExpandMore, ExpandLess } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { BANNER_LOCATION_OPTIONS } from '../types/banner.types';
 import type { ListBannersDto, BannerLocation } from '../types/banner.types';
 
@@ -34,6 +35,7 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState<ListBannersDto>(filters);
+  const { t } = useTranslation('banners');
 
   const handleFilterChange = (key: keyof ListBannersDto, value: any) => {
     const newFilters = { ...localFilters, [key]: value };
@@ -73,10 +75,10 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
           <Box display="flex" alignItems="center" gap={1}>
             <FilterList />
-            <Typography variant="h6">فلاتر البحث</Typography>
+            <Typography variant="h6">{t('filters.title')}</Typography>
             {activeFiltersCount > 0 && (
               <Chip
-                label={`${activeFiltersCount} فلتر نشط`}
+                label={`${activeFiltersCount} ${t('filters.activeFilter')}`}
                 size="small"
                 color="primary"
                 variant="outlined"
@@ -94,8 +96,8 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 fullWidth
-                label="البحث في البانرات"
-                placeholder="ابحث في العنوان أو الوصف..."
+                label={t('filters.search.label')}
+                placeholder={t('filters.search.placeholder')}
                 value={localFilters.search || ''}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 InputProps={{
@@ -108,14 +110,14 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
             {/* Location Filter */}
             <Grid size={{ xs: 12, md: 4 }}>
               <FormControl fullWidth>
-                <InputLabel>موقع العرض</InputLabel>
+                <InputLabel>{t('filters.location.label')}</InputLabel>
                 <Select
                   value={localFilters.location || ''}
                   onChange={(e) => handleFilterChange('location', e.target.value as BannerLocation)}
-                  label="موقع العرض"
+                  label={t('filters.location.label')}
                   disabled={isLoading}
                 >
-                  <MenuItem value="">جميع المواقع</MenuItem>
+                  <MenuItem value="">{t('filters.location.all')}</MenuItem>
                   {BANNER_LOCATION_OPTIONS.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
@@ -128,19 +130,19 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
             {/* Status Filter */}
             <Grid size={{ xs: 12, md: 4 }}>
               <FormControl fullWidth>
-                <InputLabel>الحالة</InputLabel>
+                <InputLabel>{t('filters.status.label')}</InputLabel>
                 <Select
                   value={localFilters.isActive === undefined ? '' : localFilters.isActive}
                   onChange={(e) => {
                     const value = e.target.value;
                     handleFilterChange('isActive', value === '' ? undefined : value === 'true');
                   }}
-                  label="الحالة"
+                  label={t('filters.status.label')}
                   disabled={isLoading}
                 >
-                  <MenuItem value="">جميع الحالات</MenuItem>
-                  <MenuItem value="true">نشط</MenuItem>
-                  <MenuItem value="false">غير نشط</MenuItem>
+                  <MenuItem value="">{t('filters.status.all')}</MenuItem>
+                  <MenuItem value="true">{t('filters.status.active')}</MenuItem>
+                  <MenuItem value="false">{t('filters.status.inactive')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -148,20 +150,20 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
             {/* Sort Options */}
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth>
-                <InputLabel>ترتيب حسب</InputLabel>
+                <InputLabel>{t('filters.sortBy.label')}</InputLabel>
                 <Select
                   value={localFilters.sortBy || 'sortOrder'}
                   onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  label="ترتيب حسب"
+                  label={t('filters.sortBy.label')}
                   disabled={isLoading}
                 >
-                  <MenuItem value="sortOrder">ترتيب العرض</MenuItem>
-                  <MenuItem value="title">العنوان</MenuItem>
-                  <MenuItem value="createdAt">تاريخ الإنشاء</MenuItem>
-                  <MenuItem value="updatedAt">تاريخ التحديث</MenuItem>
-                  <MenuItem value="viewCount">عدد المشاهدات</MenuItem>
-                  <MenuItem value="clickCount">عدد النقرات</MenuItem>
-                  <MenuItem value="conversionCount">عدد التحويلات</MenuItem>
+                  <MenuItem value="sortOrder">{t('filters.sortBy.sortOrder')}</MenuItem>
+                  <MenuItem value="title">{t('filters.sortBy.title')}</MenuItem>
+                  <MenuItem value="createdAt">{t('filters.sortBy.createdAt')}</MenuItem>
+                  <MenuItem value="updatedAt">{t('filters.sortBy.updatedAt')}</MenuItem>
+                  <MenuItem value="viewCount">{t('filters.sortBy.viewCount')}</MenuItem>
+                  <MenuItem value="clickCount">{t('filters.sortBy.clickCount')}</MenuItem>
+                  <MenuItem value="conversionCount">{t('filters.sortBy.conversionCount')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -169,15 +171,15 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
             {/* Sort Order */}
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth>
-                <InputLabel>اتجاه الترتيب</InputLabel>
+                <InputLabel>{t('filters.sortOrder.label')}</InputLabel>
                 <Select
                   value={localFilters.sortOrder || 'asc'}
                   onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                  label="اتجاه الترتيب"
+                  label={t('filters.sortOrder.label')}
                   disabled={isLoading}
                 >
-                  <MenuItem value="asc">تصاعدي</MenuItem>
-                  <MenuItem value="desc">تنازلي</MenuItem>
+                  <MenuItem value="asc">{t('filters.sortOrder.asc')}</MenuItem>
+                  <MenuItem value="desc">{t('filters.sortOrder.desc')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -185,11 +187,11 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
             {/* Pagination */}
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth>
-                <InputLabel>عدد العناصر في الصفحة</InputLabel>
+                <InputLabel>{t('filters.limit.label')}</InputLabel>
                 <Select
                   value={localFilters.limit || 20}
                   onChange={(e) => handleFilterChange('limit', Number(e.target.value))}
-                  label="عدد العناصر في الصفحة"
+                  label={t('filters.limit.label')}
                   disabled={isLoading}
                 >
                   <MenuItem value={10}>10</MenuItem>
@@ -215,7 +217,7 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
                   onClick={handleReset}
                   disabled={isLoading}
                 >
-                  إعادة تعيين
+                  {t('filters.reset')}
                 </Button>
                 <Button
                   variant="contained"
@@ -223,7 +225,7 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
                   onClick={handleApplyFilters}
                   disabled={isLoading}
                 >
-                  تطبيق الفلاتر
+                  {t('filters.apply')}
                 </Button>
               </Box>
             </Grid>
@@ -234,19 +236,19 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
         {activeFiltersCount > 0 && (
           <Box mt={2}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              الفلاتر النشطة:
+              {t('filters.activeFilters')}:
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={1}>
               {localFilters.search && (
                 <Chip
-                  label={`البحث: ${localFilters.search}`}
+                  label={`${t('filters.search.label')}: ${localFilters.search}`}
                   onDelete={() => handleFilterChange('search', '')}
                   size="small"
                 />
               )}
               {localFilters.location && (
                 <Chip
-                  label={`الموقع: ${
+                  label={`${t('filters.location.label')}: ${
                     BANNER_LOCATION_OPTIONS.find((opt) => opt.value === localFilters.location)
                       ?.label
                   }`}
@@ -256,21 +258,21 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
               )}
               {typeof localFilters.isActive === 'boolean' && (
                 <Chip
-                  label={`الحالة: ${localFilters.isActive ? 'نشط' : 'غير نشط'}`}
+                  label={`${t('filters.status.label')}: ${localFilters.isActive ? t('filters.status.active') : t('filters.status.inactive')}`}
                   onDelete={() => handleFilterChange('isActive', undefined)}
                   size="small"
                 />
               )}
               {localFilters.sortBy && localFilters.sortBy !== 'sortOrder' && (
                 <Chip
-                  label={`الترتيب: ${localFilters.sortBy}`}
+                  label={`${t('filters.sortBy.label')}: ${localFilters.sortBy}`}
                   onDelete={() => handleFilterChange('sortBy', 'sortOrder')}
                   size="small"
                 />
               )}
               {localFilters.sortOrder && localFilters.sortOrder !== 'asc' && (
                 <Chip
-                  label={`الاتجاه: ${localFilters.sortOrder === 'desc' ? 'تنازلي' : 'تصاعدي'}`}
+                  label={`${t('filters.sortOrder.label')}: ${localFilters.sortOrder === 'desc' ? t('filters.sortOrder.desc') : t('filters.sortOrder.asc')}`}
                   onDelete={() => handleFilterChange('sortOrder', 'asc')}
                   size="small"
                 />

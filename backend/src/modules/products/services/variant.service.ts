@@ -51,6 +51,9 @@ export class VariantService {
       ...dto,
       attributeValues: enrichedAttributes,
       productId: new Types.ObjectId(dto.productId as string),
+      basePriceUSD: (dto as any).price || 0,
+      compareAtPriceUSD: (dto as any).compareAtPrice,
+      costPriceUSD: (dto as any).costPrice,
     });
 
     // تحديث عدد الـ variants
@@ -65,23 +68,27 @@ export class VariantService {
   }
 
   async findById(id: string): Promise<Variant> {
-    const variant = await this.variantModel.findById(id).populate('imageId').lean();
+    const variant = await this.variantModel.findById(id).populate('imageId');
 
     if (!variant) {
       throw new VariantNotFoundException({ variantId: id });
     }
 
-    return variant;
+    return variant.toObject();
   }
 
   async findByProductId(productId: string, includeDeleted = false): Promise<Variant[]> {
-    const filter: FilterQuery<Variant> = { productId };
+    const filter: FilterQuery<Variant> = { productId: new Types.ObjectId(productId) } as any;
 
     if (!includeDeleted) {
       filter.deletedAt = null;
     }
 
-    return this.variantModel.find(filter).populate('imageId').sort({ basePriceUSD: 1 }).lean();
+    const variants = await this.variantModel
+      .find(filter)
+      .populate('imageId')
+      .sort({ basePriceUSD: 1 });
+    return variants.map(v => v.toObject());
   }
 
   async update(id: string, dto: Partial<Variant>): Promise<Variant> {
@@ -91,7 +98,23 @@ export class VariantService {
       throw new VariantNotFoundException({ variantId: id });
     }
 
-    await this.variantModel.updateOne({ _id: id }, { $set: dto });
+    // تحويل price إلى basePriceUSD إذا كان موجوداً
+    const updateData: any = { ...dto };
+    
+    if ((dto as any).price !== undefined) {
+      updateData.basePriceUSD = (dto as any).price;
+      delete updateData.price;
+    }
+    if ((dto as any).compareAtPrice !== undefined) {
+      updateData.compareAtPriceUSD = (dto as any).compareAtPrice;
+      delete updateData.compareAtPrice;
+    }
+    if ((dto as any).costPrice !== undefined) {
+      updateData.costPriceUSD = (dto as any).costPrice;
+      delete updateData.costPrice;
+    }
+
+    await this.variantModel.updateOne({ _id: id }, { $set: updateData });
     return this.findById(id);
   }
 
@@ -194,9 +217,9 @@ export class VariantService {
 
     // تحديث عدد الـ variants
     const totalVariants = await this.variantModel.countDocuments({
-      productId,
+      productId: new Types.ObjectId(productId),
       deletedAt: null,
-    });
+    } as any);
 
     await this.productModel.updateOne(
       { _id: productId },
@@ -206,7 +229,7 @@ export class VariantService {
     return {
       generated: variants.length,
       total: totalVariants,
-      variants,
+      variants: variants.map(v => (v.toObject ? v.toObject() : v)),
     };
   }
 
@@ -258,9 +281,9 @@ export class VariantService {
 
   private async updateProductVariantCount(productId: string): Promise<void> {
     const count = await this.variantModel.countDocuments({
-      productId,
+      productId: new Types.ObjectId(productId),
       deletedAt: null,
-    });
+    } as any);
 
     await this.productModel.updateOne({ _id: productId }, { $set: { variantsCount: count } });
   }

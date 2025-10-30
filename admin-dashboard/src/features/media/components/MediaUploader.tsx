@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useUploadMedia } from '../hooks/useMedia';
+import { useTranslation } from 'react-i18next';
 import { MediaCategory } from '../types/media.types';
 
 interface MediaUploaderProps {
@@ -43,12 +44,13 @@ interface MediaUploaderProps {
   defaultCategory?: MediaCategory;
 }
 
-export const MediaUploader: React.FC<MediaUploaderProps> = ({ 
-  open, 
-  onClose, 
-  onSuccess, 
-  defaultCategory = MediaCategory.OTHER 
+export const MediaUploader: React.FC<MediaUploaderProps> = ({
+  open,
+  onClose,
+  onSuccess,
+  defaultCategory = MediaCategory.OTHER
 }) => {
+  const { t } = useTranslation('media');
   const [activeStep, setActiveStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState('');
@@ -152,7 +154,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           }, 1000);
         },
         onError: (error) => {
-          setUploadError((error as Error).message || 'حدث خطأ أثناء الرفع');
+          setUploadError((error as Error).message || t('uploader.uploadError'));
         },
       }
     );
@@ -171,7 +173,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <CloudUpload color="primary" />
-          <Typography variant="h6">رفع ملف جديد</Typography>
+          <Typography variant="h6">{t('uploadNewFile')}</Typography>
         </Box>
       </DialogTitle>
       
@@ -180,7 +182,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           <Stepper activeStep={activeStep} orientation="vertical">
             {/* Step 1: File Selection */}
             <Step>
-              <StepLabel>اختيار الملف</StepLabel>
+              <StepLabel>{t('uploader.selectFile')}</StepLabel>
               <StepContent>
                 <Paper
                   sx={{
@@ -210,7 +212,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     <Box>
                       <CheckCircle color="success" sx={{ fontSize: 48, mb: 2 }} />
                       <Typography variant="h6" gutterBottom>
-                        تم اختيار الملف
+                        {t('uploader.fileSelected')}
                       </Typography>
                       <Card sx={{ maxWidth: 300, mx: 'auto' }}>
                         {preview ? (
@@ -240,10 +242,10 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     <Box>
                       <CloudUpload sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
                       <Typography variant="h6" gutterBottom>
-                        اختر ملف للرفع
+                        {t('uploader.selectFile')}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        اسحب الملف هنا أو انقر للاختيار
+                        {t('uploader.dragDrop')}
                       </Typography>
                     </Box>
                   )}
@@ -252,7 +254,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 {file && (
                   <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                     <Button variant="contained" onClick={handleNext}>
-                      التالي
+                      {t('next')}
                     </Button>
                   </Box>
                 )}
@@ -261,32 +263,32 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
             {/* Step 2: Data Entry */}
             <Step>
-              <StepLabel>إدخال البيانات</StepLabel>
+              <StepLabel>{t('uploader.fileDetails')}</StepLabel>
               <StepContent>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
-                      label="اسم الملف *"
+                      label={`${t('uploader.fileName')} *`}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      helperText="اسم وصفي للملف"
+                      helperText={t('uploader.fileName')}
                     />
                   </Grid>
 
                   <Grid size={{ xs: 12, md: 6 }}>
                     <FormControl fullWidth>
-                      <InputLabel>الفئة</InputLabel>
+                      <InputLabel>{t('uploader.category')}</InputLabel>
                       <Select
                         value={category}
-                        label="الفئة"
+                        label={t('uploader.category')}
                         onChange={(e) => setCategory(e.target.value as MediaCategory)}
                       >
-                        <MenuItem value={MediaCategory.PRODUCT}>منتج</MenuItem>
-                        <MenuItem value={MediaCategory.CATEGORY}>فئة</MenuItem>
-                        <MenuItem value={MediaCategory.BRAND}>براند</MenuItem>
-                        <MenuItem value={MediaCategory.BANNER}>بانر</MenuItem>
-                        <MenuItem value={MediaCategory.OTHER}>أخرى</MenuItem>
+                        <MenuItem value={MediaCategory.PRODUCT}>{t('categories.product')}</MenuItem>
+                        <MenuItem value={MediaCategory.CATEGORY}>{t('categories.category')}</MenuItem>
+                        <MenuItem value={MediaCategory.BRAND}>{t('categories.brand')}</MenuItem>
+                        <MenuItem value={MediaCategory.BANNER}>{t('categories.banner')}</MenuItem>
+                        <MenuItem value={MediaCategory.OTHER}>{t('categories.other')}</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
@@ -299,26 +301,26 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                           onChange={(e) => setIsPublic(e.target.checked)}
                         />
                       }
-                      label="ملف عام"
+                      label={t('uploader.publicFile')}
                     />
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
-                      label="الوصف"
+                      label={t('uploader.description')}
                       multiline
                       rows={3}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="وصف اختياري للملف..."
+                      placeholder={t('uploader.description')}
                     />
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
-                      label="إضافة وسوم"
+                      label={t('uploader.tags')}
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyPress={(e) => {
@@ -327,8 +329,8 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                           handleAddTag();
                         }
                       }}
-                      placeholder="اكتب وسماً واضغط Enter"
-                      helperText="الوسوم تساعد في البحث والتصنيف"
+                      placeholder={t('uploader.addTag')}
+                      helperText={t('uploader.tags')}
                     />
                     {tags.length > 0 && (
                       <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>

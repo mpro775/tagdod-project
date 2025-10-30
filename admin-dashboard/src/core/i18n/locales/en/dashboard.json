@@ -1,0 +1,119 @@
+{
+  "header": {
+    "title": "Main Dashboard",
+    "subtitle": "Welcome to the Tagdod admin console",
+    "refresh": "Refresh Data"
+  },
+  "error": {
+    "title": "Unable to load data",
+    "retry": "Try Again"
+  },
+  "stats": {
+    "totalUsers": {
+      "title": "Total Users",
+      "subtitle": "Active users"
+    },
+    "totalOrders": {
+      "title": "Total Orders",
+      "subtitle": "Completed orders"
+    },
+    "totalRevenue": {
+      "title": "Total Revenue",
+      "subtitle": "Yemeni Riyal"
+    },
+    "totalProducts": {
+      "title": "Total Products",
+      "subtitle": "Available products"
+    },
+    "periodComparison": "vs previous period"
+  },
+  "quickStats": {
+    "title": "Performance Stats",
+    "labels": {
+      "activeUsers": "Active users",
+      "systemHealth": "System health",
+      "errorRate": "Error rate",
+      "responseTime": "Response time"
+    },
+    "values": {
+      "responseTime": "{{value}} ms"
+    }
+  },
+  "revenueChart": {
+    "title": "Revenue Overview",
+    "average": "Average {{value}} per day",
+    "period": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "tooltip": {
+      "revenue": "Revenue"
+    },
+    "legend": {
+      "revenue": "Revenue"
+    }
+  },
+  "topProducts": {
+    "title": "Top Selling Products",
+    "empty": "No data available",
+    "unknown": "Product",
+    "sales": "{{count}} sales",
+    "revenue": "{{value}}"
+  },
+  "recentOrders": {
+    "title": "Recent Orders",
+    "empty": "No recent orders",
+    "viewAll": "View all",
+    "defaultCustomer": "Customer",
+    "defaultInitial": "C",
+    "orderNumber": "Order #{{number}}",
+    "itemsCount": "{{count}} item(s)",
+    "amountPlaceholder": "—",
+    "status": {
+      "completed": "Completed",
+      "pending": "Pending",
+      "processing": "Processing",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    }
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "addProduct": "Add product",
+    "orders": "Orders",
+    "discount": "Discount coupon",
+    "newCategory": "New category",
+    "inventory": "Inventory management",
+    "reports": "Reports"
+  },
+  "miniChart": {
+    "noData": "No data available"
+  },
+  "categoryDistribution": {
+    "title": "Category Distribution",
+    "empty": "No category data",
+    "tooltip": "Share",
+    "unknown": "Unspecified"
+  },
+  "activityTimeline": {
+    "title": "Latest Activity",
+    "empty": "No recent activity",
+    "status": {
+      "completed": "Order completed",
+      "pending": "New order",
+      "cancelled": "Order cancelled",
+      "processing": "Order in progress",
+      "unknown": "Activity"
+    },
+    "description": "Order #{{number}} worth {{amount}}",
+    "amountPlaceholder": "—",
+    "time": {
+      "justNow": "moments ago",
+      "minutes": "{{count}} minute(s) ago",
+      "hours": "{{count}} hour(s) ago",
+      "days": "{{count}} day(s) ago"
+    }
+  }
+}
+

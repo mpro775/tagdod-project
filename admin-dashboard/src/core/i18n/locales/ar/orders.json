@@ -1,0 +1,316 @@
+{
+  "navigation": {
+    "title": "إدارة الطلبات",
+    "analytics": "تحليلات الطلبات"
+  },
+  "list": {
+    "title": "إدارة الطلبات",
+    "subtitle": "إدارة وتتبع طلبات العملاء",
+    "searchPlaceholder": "البحث برقم الطلب أو اسم العميل",
+    "columns": {
+      "orderNumber": "رقم الطلب",
+      "customerName": "العميل",
+      "items": "المنتجات",
+      "total": "المجموع",
+      "paymentMethod": "طريقة الدفع",
+      "paymentStatus": "حالة الدفع",
+      "status": "حالة الطلب",
+      "createdAt": "تاريخ الطلب",
+      "actions": "الإجراءات"
+    },
+    "user": {
+      "notSpecified": "غير محدد"
+    },
+    "items": {
+      "count": "{{count}} منتج"
+    },
+    "menu": {
+      "viewDetails": "عرض التفاصيل"
+    }
+  },
+  "status": {
+    "draft": "مسودة",
+    "pending_payment": "انتظار الدفع",
+    "confirmed": "مؤكد",
+    "payment_failed": "فشل الدفع",
+    "processing": "قيد التجهيز",
+    "ready_to_ship": "جاهز للشحن",
+    "shipped": "تم الشحن",
+    "out_for_delivery": "في الطريق",
+    "delivered": "تم التسليم",
+    "completed": "مكتمل",
+    "on_hold": "معلق",
+    "cancelled": "ملغي",
+    "refunded": "مسترد",
+    "partially_refunded": "مسترد جزئياً",
+    "returned": "مرتجع"
+  },
+  "statusLabels": {
+    "draft": "تم إنشاء الطلب",
+    "pending_payment": "انتظار الدفع",
+    "confirmed": "تم تأكيد الطلب",
+    "payment_failed": "فشل الدفع",
+    "processing": "قيد التجهيز",
+    "ready_to_ship": "جاهز للشحن",
+    "shipped": "تم الشحن",
+    "out_for_delivery": "في الطريق",
+    "delivered": "تم التسليم",
+    "completed": "مكتمل",
+    "on_hold": "معلق",
+    "cancelled": "ملغي",
+    "refunded": "مسترد",
+    "partially_refunded": "مسترد جزئياً",
+    "returned": "مرتجع"
+  },
+  "statusColors": {
+    "draft": "default",
+    "pending_payment": "warning",
+    "confirmed": "info",
+    "payment_failed": "error",
+    "processing": "primary",
+    "ready_to_ship": "secondary",
+    "shipped": "info",
+    "out_for_delivery": "primary",
+    "delivered": "success",
+    "completed": "success",
+    "on_hold": "warning",
+    "cancelled": "error",
+    "refunded": "error",
+    "partially_refunded": "warning",
+    "returned": "error"
+  },
+  "payment": {
+    "status": {
+      "pending": "معلق",
+      "authorized": "مصرح",
+      "paid": "مدفوع",
+      "failed": "فشل",
+      "refunded": "مسترد",
+      "partially_refunded": "مسترد جزئياً",
+      "cancelled": "ملغي"
+    },
+    "method": {
+      "COD": "عند الاستلام",
+      "ONLINE": "أونلاين",
+      "WALLET": "محفظة",
+      "BANK_TRANSFER": "تحويل بنكي"
+    }
+  },
+  "filters": {
+    "title": "فلاتر البحث",
+    "search": "بحث",
+    "status": {
+      "label": "حالة الطلب",
+      "all": "الكل"
+    },
+    "paymentStatus": {
+      "label": "حالة الدفع",
+      "all": "الكل"
+    },
+    "paymentMethod": {
+      "label": "طريقة الدفع",
+      "all": "الكل"
+    },
+    "dateRange": {
+      "from": "من تاريخ",
+      "to": "إلى تاريخ"
+    },
+    "sorting": {
+      "sortBy": "ترتيب حسب",
+      "sortOrder": "اتجاه الترتيب",
+      "createdAt": "تاريخ الطلب",
+      "total": "المجموع",
+      "orderNumber": "رقم الطلب",
+      "status": "حالة الطلب",
+      "descending": "تنازلي",
+      "ascending": "تصاعدي"
+    },
+    "clearFilters": "مسح الفلاتر"
+  },
+  "stats": {
+    "total": "إجمالي الطلبات",
+    "processing": "قيد التجهيز",
+    "shipped": "تم الشحن",
+    "delivered": "تم التسليم",
+    "cancelled": "ملغية"
+  },
+  "analytics": {
+    "title": "تحليلات الطلبات",
+    "subtitle": "تحليلات شاملة لأداء الطلبات",
+    "period": {
+      "label": "الفترة",
+      "7days": "آخر 7 أيام",
+      "30days": "آخر 30 يوم",
+      "90days": "آخر 90 يوم",
+      "365days": "آخر سنة"
+    },
+    "groupBy": {
+      "day": "يومي",
+      "week": "أسبوعي",
+      "month": "شهري"
+    },
+    "tabs": {
+      "overview": "نظرة عامة",
+      "revenue": "الإيرادات",
+      "performance": "الأداء",
+      "trends": "الاتجاهات"
+    },
+    "metrics": {
+      "totalOrders": "إجمالي الطلبات",
+      "totalRevenue": "إجمالي الإيرادات",
+      "averageOrderValue": "متوسط قيمة الطلب",
+      "conversionRate": "معدل التحويل",
+      "customerLifetimeValue": "قيمة عمر العميل"
+    },
+    "charts": {
+      "ordersOverTime": "الطلبات عبر الزمن",
+      "revenueTrends": "اتجاهات الإيرادات",
+      "statusDistribution": "توزيع حالات الطلبات",
+      "paymentMethods": "طرق الدفع",
+      "topProducts": "أفضل المنتجات",
+      "topCustomers": "أفضل العملاء"
+    }
+  },
+  "actions": {
+    "refresh": "تحديث",
+    "export": "تصدير",
+    "exporting": "جاري التصدير...",
+    "view": "عرض",
+    "edit": "تعديل",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "save": "حفظ",
+    "back": "العودة",
+    "updateStatus": "تحديث الحالة",
+    "shipOrder": "شحن الطلب",
+    "refundOrder": "استرداد الطلب",
+    "cancelOrder": "إلغاء الطلب",
+    "addNotes": "إضافة ملاحظات"
+  },
+  "bulk": {
+    "selected": "{{count}} طلب محدد",
+    "actions": "الإجراءات المجمعة",
+    "startProcessing": "بدء التجهيز",
+    "markAsShipped": "وضع كمُشحَن",
+    "putOnHold": "تعليق",
+    "cancelOrders": "إلغاء الطلبات"
+  },
+  "details": {
+    "title": "تفاصيل الطلب",
+    "summary": "ملخص الطلب",
+    "timeline": "الجدول الزمني",
+    "customer": "معلومات العميل",
+    "shipping": "عنوان الشحن",
+    "billing": "عنوان الفوترة",
+    "items": "منتجات الطلب",
+    "notes": "ملاحظات الطلب",
+    "history": "تاريخ الطلب"
+  },
+  "summary": {
+    "orderNumber": "طلب #{{number}}",
+    "status": "حالة الطلب:",
+    "paymentStatus": "حالة الدفع:",
+    "orderDate": "تاريخ الطلب:",
+    "customer": "العميل:",
+    "total": "المجموع:",
+    "subtotal": "المجموع الفرعي:",
+    "shipping": "الشحن:",
+    "tax": "الضريبة:",
+    "discount": "الخصم:",
+    "paymentMethod": "طريقة الدفع:",
+    "notes": "الملاحظات:"
+  },
+  "timeline": {
+    "roles": {
+      "customer": "العميل",
+      "admin": "الإدارة",
+      "system": "النظام"
+    },
+    "events": {
+      "orderCreated": "تم إنشاء الطلب",
+      "statusUpdated": "تم تحديث الحالة إلى {{status}}",
+      "paymentReceived": "تم استلام الدفعة",
+      "orderShipped": "تم شحن الطلب",
+      "orderDelivered": "تم تسليم الطلب",
+      "orderCancelled": "تم إلغاء الطلب",
+      "refundProcessed": "تم معالجة الاسترداد",
+      "notesAdded": "تم إضافة الملاحظات"
+    }
+  },
+  "dialogs": {
+    "updateStatus": {
+      "title": "تحديث حالة الطلب",
+      "currentStatus": "الحالة الحالية:",
+      "newStatus": "الحالة الجديدة:",
+      "notes": "الملاحظات (اختيارية):",
+      "confirm": "تحديث الحالة"
+    },
+    "shipOrder": {
+      "title": "شحن الطلب",
+      "trackingNumber": "رقم التتبع:",
+      "carrier": "شركة الشحن:",
+      "shippingDate": "تاريخ الشحن:",
+      "estimatedDelivery": "تاريخ التسليم المتوقع:",
+      "confirm": "شحن الطلب"
+    },
+    "refundOrder": {
+      "title": "استرداد الطلب",
+      "amount": "مبلغ الاسترداد:",
+      "reason": "سبب الاسترداد:",
+      "fullRefund": "استرداد كامل",
+      "partialRefund": "استرداد جزئي",
+      "confirm": "معالجة الاسترداد"
+    },
+    "cancelOrder": {
+      "title": "إلغاء الطلب",
+      "reason": "سبب الإلغاء:",
+      "notifyCustomer": "إشعار العميل",
+      "confirm": "إلغاء الطلب"
+    },
+    "addNotes": {
+      "title": "إضافة ملاحظات الطلب",
+      "notes": "الملاحظات:",
+      "isInternal": "ملاحظة داخلية (غير مرئية للعميل)",
+      "confirm": "إضافة الملاحظات"
+    }
+  },
+  "validation": {
+    "required": "هذا الحقل مطلوب",
+    "invalidAmount": "مبلغ غير صحيح",
+    "invalidDate": "تاريخ غير صحيح",
+    "trackingRequired": "رقم التتبع مطلوب",
+    "reasonRequired": "السبب مطلوب"
+  },
+  "messages": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ",
+    "noData": "لا توجد بيانات",
+    "success": {
+      "statusUpdated": "تم تحديث حالة الطلب بنجاح",
+      "orderShipped": "تم شحن الطلب بنجاح",
+      "refundProcessed": "تم معالجة الاسترداد بنجاح",
+      "orderCancelled": "تم إلغاء الطلب بنجاح",
+      "notesAdded": "تم إضافة الملاحظات بنجاح",
+      "bulkUpdated": "تم تحديث الطلبات بنجاح",
+      "exported": "تم تصدير البيانات بنجاح"
+    },
+    "error": {
+      "loadFailed": "فشل في تحميل الطلبات",
+      "updateFailed": "فشل في تحديث الطلب",
+      "shipFailed": "فشل في شحن الطلب",
+      "refundFailed": "فشل في معالجة الاسترداد",
+      "cancelFailed": "فشل في إلغاء الطلب",
+      "exportFailed": "فشل في تصدير البيانات"
+    },
+    "confirm": {
+      "updateStatus": "هل أنت متأكد من تحديث حالة الطلب؟",
+      "shipOrder": "هل أنت متأكد من شحن هذا الطلب؟",
+      "refundOrder": "هل أنت متأكد من معالجة هذا الاسترداد؟",
+      "cancelOrder": "هل أنت متأكد من إلغاء هذا الطلب؟"
+    }
+  },
+  "pagination": {
+    "rowsPerPage": "عدد الصفوف في الصفحة:",
+    "displayedRows": "{{from}}-{{to}} من {{count}}"
+  }
+}

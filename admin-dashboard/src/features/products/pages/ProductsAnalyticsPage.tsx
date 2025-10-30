@@ -240,6 +240,9 @@ export const ProductsAnalyticsPage: React.FC = () => {
                     <Typography variant="body1">متوفر في المخزون</Typography>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Typography variant="h6">{inventorySummary?.inStock || 0}</Typography>
+                      {typeof inventorySummary?.inStockUnits === 'number' && (
+                        <Chip label={`${inventorySummary?.inStockUnits} وحدة`} color="success" size="small" variant="outlined" />
+                      )}
                       <Chip label="متوفر" color="success" size="small" />
                     </Box>
                   </Box>
@@ -247,6 +250,9 @@ export const ProductsAnalyticsPage: React.FC = () => {
                     <Typography variant="body1">مخزون منخفض</Typography>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Typography variant="h6">{inventorySummary?.lowStock || 0}</Typography>
+                      {typeof inventorySummary?.lowStockUnits === 'number' && (
+                        <Chip label={`${inventorySummary?.lowStockUnits} وحدة`} color="warning" size="small" variant="outlined" />
+                      )}
                       <Chip label="منخفض" color="warning" size="small" />
                     </Box>
                   </Box>
@@ -254,6 +260,9 @@ export const ProductsAnalyticsPage: React.FC = () => {
                     <Typography variant="body1">نفذ من المخزون</Typography>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Typography variant="h6">{inventorySummary?.outOfStock || 0}</Typography>
+                      {typeof inventorySummary?.outOfStockUnits === 'number' && (
+                        <Chip label={`${inventorySummary?.outOfStockUnits} وحدة`} color="error" size="small" variant="outlined" />
+                      )}
                       <Chip label="نفذ" color="error" size="small" />
                     </Box>
                   </Box>
@@ -271,6 +280,52 @@ export const ProductsAnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Variants per Product (if provided) */}
+      {inventorySummary?.variantsPerProduct && inventorySummary.variantsPerProduct.length > 0 && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              إحصائيات المتغيرات لكل منتج
+            </Typography>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead
+                  sx={{
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[800]
+                        : theme.palette.grey[100],
+                  }}
+                >
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المنتج</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>عدد المتغيرات</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>إجمالي الوحدات</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {inventorySummary.variantsPerProduct.map((row) => (
+                    <TableRow key={row.productId} hover>
+                      <TableCell>{row.productName || row.productId}</TableCell>
+                      <TableCell>
+                        <Chip label={row.variantsCount} color="primary" size="small" />
+                      </TableCell>
+                      <TableCell>
+                        {typeof row.totalUnits === 'number' ? (
+                          <Chip label={row.totalUnits} color="success" size="small" variant="outlined" />
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Detailed Analytics Tabs */}
       <Card>

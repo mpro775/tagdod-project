@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -28,6 +29,7 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
   onFiltersChange,
   initialFilters = {},
 }) => {
+  const { t } = useTranslation('categories');
   const [filters, setFilters] = useState<ListCategoriesParams>({
     search: '',
     parentId: null,
@@ -78,11 +80,11 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FilterList color="primary" />
           <Typography variant="h6" fontWeight="bold">
-            فلترة الفئات
+            {t('filters.categoryFilters')}
           </Typography>
           {activeFiltersCount > 0 && (
             <Chip
-              label={`${activeFiltersCount} فلتر نشط`}
+              label={t('filters.filterCount', { count: activeFiltersCount })}
               size="small"
               color="primary"
               variant="outlined"
@@ -97,7 +99,7 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
             onClick={handleClearFilters}
             disabled={activeFiltersCount === 0}
           >
-            مسح الفلاتر
+            {t('filters.clearFilters')}
           </Button>
           <IconButton onClick={() => setExpanded(!expanded)} color="primary">
             {expanded ? <ExpandLess /> : <ExpandMore />}
@@ -112,8 +114,8 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
           <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               fullWidth
-              label="البحث في الفئات"
-              placeholder="ابحث بالاسم أو الوصف..."
+              label={t('filters.search')}
+              placeholder={t('placeholders.search')}
               value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               InputProps={{
@@ -126,17 +128,17 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
           {/* Parent Category */}
           <Grid size={{ xs: 12, md: 4 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>الفئة الأب</InputLabel>
+              <InputLabel>{t('filters.parentCategory')}</InputLabel>
               <Select
                 value={filters.parentId || ''}
                 onChange={(e) => handleFilterChange('parentId', e.target.value || null)}
-                label="الفئة الأب"
+                label={t('filters.parentCategory')}
               >
                 <MenuItem value="">
-                  <em>جميع الفئات</em>
+                  <em>{t('types.all')}</em>
                 </MenuItem>
                 <MenuItem value="null">
-                  <em>الفئات الرئيسية فقط</em>
+                  <em>{t('types.mainOnly')}</em>
                 </MenuItem>
                 {Array.isArray(categories) && categories.map((category) => (
                   <MenuItem key={category._id} value={category._id}>
@@ -150,7 +152,7 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
           {/* Status */}
           <Grid size={{ xs: 12, md: 4 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>الحالة</InputLabel>
+              <InputLabel>{t('filters.status')}</InputLabel>
               <Select
                 value={filters.isActive === undefined ? '' : filters.isActive}
                 onChange={(e) =>
@@ -159,13 +161,13 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
                     e.target.value === '' ? undefined : e.target.value === 'true'
                   )
                 }
-                label="الحالة"
+                label={t('filters.status')}
               >
                 <MenuItem value="">
-                  <em>جميع الحالات</em>
+                  <em>{t('filters.allStatuses')}</em>
                 </MenuItem>
-                <MenuItem value="true">نشط</MenuItem>
-                <MenuItem value="false">غير نشط</MenuItem>
+                <MenuItem value="true">{t('status.active')}</MenuItem>
+                <MenuItem value="false">{t('status.inactive')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -173,7 +175,7 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
           {/* Featured */}
           <Grid size={{ xs: 12, md: 4 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>المميزة</InputLabel>
+              <InputLabel>{t('filters.featured')}</InputLabel>
               <Select
                 value={filters.isFeatured === undefined ? '' : filters.isFeatured}
                 onChange={(e) =>
@@ -182,13 +184,13 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
                     e.target.value === '' ? undefined : e.target.value === 'true'
                   )
                 }
-                label="المميزة"
+                label={t('filters.featured')}
               >
                 <MenuItem value="">
-                  <em>جميع الفئات</em>
+                  <em>{t('filters.allCategories')}</em>
                 </MenuItem>
-                <MenuItem value="true">مميزة</MenuItem>
-                <MenuItem value="false">غير مميزة</MenuItem>
+                <MenuItem value="true">{t('filters.featuredYes')}</MenuItem>
+                <MenuItem value="false">{t('filters.featuredNo')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -196,14 +198,14 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
           {/* Include Deleted */}
           <Grid size={{ xs: 12, md: 4 }}>
             <FormControl fullWidth size="small">
-              <InputLabel>تضمين المحذوفة</InputLabel>
+              <InputLabel>{t('filters.includeDeleted')}</InputLabel>
               <Select
                 value={filters.includeDeleted ? 'true' : 'false'}
                 onChange={(e) => handleFilterChange('includeDeleted', e.target.value === 'true')}
-                label="تضمين المحذوفة"
+                label={t('filters.includeDeleted')}
               >
-                <MenuItem value="false">الفئات النشطة فقط</MenuItem>
-                <MenuItem value="true">تضمين المحذوفة</MenuItem>
+                <MenuItem value="false">{t('filters.activeOnly')}</MenuItem>
+                <MenuItem value="true">{t('filters.includeDeletedOption')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -213,12 +215,12 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
         {activeFiltersCount > 0 && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              الفلاتر النشطة:
+              {t('filters.activeFilters')}:
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {filters.search && (
                 <Chip
-                  label={`بحث: ${filters.search}`}
+                  label={t('filters.searchFilter', { value: filters.search })}
                   onDelete={() => handleFilterChange('search', '')}
                   size="small"
                   color="primary"
@@ -226,9 +228,7 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
               )}
               {filters.parentId && (
                 <Chip
-                  label={`فئة أب: ${
-                    categories.find((c) => c._id === filters.parentId)?.name || 'غير محدد'
-                  }`}
+                  label={t('filters.parentFilter', { value: categories.find((c) => c._id === filters.parentId)?.name || 'غير محدد' })}
                   onDelete={() => handleFilterChange('parentId', null)}
                   size="small"
                   color="secondary"
@@ -236,7 +236,7 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
               )}
               {filters.isActive !== undefined && (
                 <Chip
-                  label={`حالة: ${filters.isActive ? 'نشط' : 'غير نشط'}`}
+                  label={t('filters.statusFilter', { value: filters.isActive ? t('status.active') : t('status.inactive') })}
                   onDelete={() => handleFilterChange('isActive', undefined)}
                   size="small"
                   color="success"
@@ -244,7 +244,7 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
               )}
               {filters.isFeatured !== undefined && (
                 <Chip
-                  label={`مميزة: ${filters.isFeatured ? 'نعم' : 'لا'}`}
+                  label={t('filters.featuredFilter', { value: filters.isFeatured ? t('common.yes') : t('common.no') })}
                   onDelete={() => handleFilterChange('isFeatured', undefined)}
                   size="small"
                   color="warning"
@@ -252,7 +252,7 @@ export const CategoryFilters: React.FC<CategoryFiltersProps> = ({
               )}
               {filters.includeDeleted && (
                 <Chip
-                  label="تضمين المحذوفة"
+                  label={t('filters.includeDeletedFilter')}
                   onDelete={() => handleFilterChange('includeDeleted', false)}
                   size="small"
                   color="error"

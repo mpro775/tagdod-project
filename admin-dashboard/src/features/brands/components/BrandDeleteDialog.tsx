@@ -11,6 +11,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Delete, Cancel } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import type { Brand } from '../types/brand.types';
 
 interface BrandDeleteDialogProps {
@@ -30,6 +31,8 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
   loading = false,
   error,
 }) => {
+  const { t } = useTranslation('brands');
+
   const handleClose = () => {
     if (!loading) {
       onClose();
@@ -49,20 +52,20 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
     >
       <DialogTitle>
         <Typography variant="h6" fontWeight="bold" color="error">
-          تأكيد الحذف
+          {t('messages.deleteConfirmTitle', { defaultValue: 'تأكيد حذف العلامة التجارية' })}
         </Typography>
       </DialogTitle>
 
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error.message || 'حدث خطأ أثناء العملية'}
+            {error.message || t('messages.unknownError', { defaultValue: 'حدث خطأ غير معروف' })}
           </Alert>
         )}
 
         <Box sx={{ mb: 2 }}>
           <Typography variant="body1" gutterBottom>
-            هل أنت متأكد من أنك تريد حذف العلامة التجارية التالية؟
+            {t('messages.deleteConfirmMessage', { defaultValue: 'هل أنت متأكد من حذف هذه العلامة؟ لا يمكن التراجع.' })}
           </Typography>
         </Box>
 
@@ -98,7 +101,7 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
                   {brand.nameEn}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Slug: {brand.slug}
+                  {t('messages.slug', { defaultValue: 'المعرف (Slug)' })}: {brand.slug}
                 </Typography>
               </Box>
             </Box>
@@ -107,7 +110,7 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
 
         <Alert severity="warning" sx={{ mt: 2 }}>
           <Typography variant="body2">
-            <strong>تحذير:</strong> هذا الإجراء لا يمكن التراجع عنه. سيتم حذف العلامة التجارية نهائياً.
+            {t('messages.deleteWarning', { defaultValue: 'سيتم حذف جميع البيانات المرتبطة بهذه العلامة بشكل دائم.' })}
           </Typography>
         </Alert>
       </DialogContent>
@@ -119,7 +122,7 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
           onClick={handleClose}
           disabled={loading}
         >
-          إلغاء
+          {t('dialogs.cancel', { defaultValue: 'إلغاء' })}
         </Button>
         <Button
           variant="contained"
@@ -128,7 +131,7 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
           onClick={handleConfirm}
           disabled={loading}
         >
-          {loading ? 'جاري الحذف...' : 'حذف نهائياً'}
+          {loading ? t('dialogs.deleting', { defaultValue: 'جارٍ الحذف...' }) : t('dialogs.delete', { defaultValue: 'حذف' })}
         </Button>
       </DialogActions>
     </Dialog>

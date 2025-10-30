@@ -7,38 +7,40 @@ import {
   Delete as DeleteIcon,
   TrendingUp as TrendingIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useAddressStats } from '../hooks/useAddresses';
 
 export function AddressStatsCards() {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useAddressStats();
 
   const cards = [
     {
-      title: 'إجمالي العناوين',
+      title: t('addresses.stats.totalAddresses', { defaultValue: 'عدد العناوين الكلي' }),
       value: stats?.totalAddresses || 0,
       icon: <LocationIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       color: '#3f51b5',
     },
     {
-      title: 'العناوين النشطة',
+      title: t('addresses.stats.activeAddresses', { defaultValue: 'عدد العناوين النشطة' }),
       value: stats?.totalActiveAddresses || 0,
       icon: <ActiveIcon sx={{ fontSize: 40, color: 'success.main' }} />,
       color: '#4caf50',
     },
     {
-      title: 'المستخدمون',
+      title: t('addresses.stats.totalUsers', { defaultValue: 'عدد المستخدمين الكلي' }),
       value: stats?.totalUsers || 0,
       icon: <PeopleIcon sx={{ fontSize: 40, color: 'info.main' }} />,
       color: '#2196f3',
     },
     {
-      title: 'متوسط لكل مستخدم',
+      title: t('addresses.stats.averagePerUser', { defaultValue: 'متوسط العناوين لكل مستخدم' }),
       value: stats?.averagePerUser?.toFixed(1) || '0.0',
       icon: <TrendingIcon sx={{ fontSize: 40, color: 'warning.main' }} />,
       color: '#ff9800',
     },
     {
-      title: 'المحذوفة',
+      title: t('addresses.stats.deletedAddresses', { defaultValue: 'عدد العناوين المحذوفة' }),
       value: stats?.totalDeletedAddresses || 0,
       icon: <DeleteIcon sx={{ fontSize: 40, color: 'error.main' }} />,
       color: '#f44336',
@@ -48,7 +50,7 @@ export function AddressStatsCards() {
   if (isLoading) {
     return (
       <Grid container spacing={3}>
-        {[1, 2, 3, 4, 5].map((i) => (
+        {[1, 2, 3, 4, 5].map((i: number) => (
           <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }} key={i}>
             <Card>
               <CardContent>

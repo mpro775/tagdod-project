@@ -24,11 +24,13 @@ import {
   Security,
   Notifications,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { systemSettingsApi } from '../api/systemSettingsApi';
 import type { SystemSetting } from '../api/systemSettingsApi';
 import { toast } from 'react-hot-toast';
 
 export function SystemSettingsPage() {
+  const { t } = useTranslation('systemSettings');
   const [settings, setSettings] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,15 +40,15 @@ export function SystemSettingsPage() {
     try {
       setLoading(true);
       const allSettings = await systemSettingsApi.getAllSettings();
-      
+
       const settingsMap: Record<string, any> = {};
       allSettings.forEach((setting: SystemSetting) => {
         settingsMap[setting.key] = setting.value;
       });
-      
+
       setSettings(settingsMap);
     } catch {
-      toast.error('فشل في تحميل الإعدادات');
+      toast.error(t('messages.loadFailed', { defaultValue: 'فشل تحميل البيانات' }));
     } finally {
       setLoading(false);
     }
@@ -59,11 +61,11 @@ export function SystemSettingsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      
+
       await systemSettingsApi.bulkUpdate(settings);
-      toast.success('تم حفظ الإعدادات بنجاح');
+      toast.success(t('messages.saved', { defaultValue: 'تم حفظ البيانات' }));
     } catch {
-      toast.error('فشل في حفظ الإعدادات');
+      toast.error(t('messages.saveFailed', { defaultValue: 'فشل حفظ البيانات' }));
     } finally {
       setSaving(false);
     }
@@ -78,7 +80,7 @@ export function SystemSettingsPage() {
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 400 }}>
         <CircularProgress size={48} sx={{ mb: 2 }} />
         <Typography variant="body1" color="text.secondary">
-          جاري تحميل الإعدادات...
+          {t('messages.loading', { defaultValue: 'جاري تحميل البيانات' })}
         </Typography>
       </Box>
     );
@@ -89,21 +91,21 @@ export function SystemSettingsPage() {
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          إعدادات النظام
+          {t('systemSettings.title', { defaultValue: 'الإعدادات' })}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          إدارة جميع إعدادات النظام من مكان واحد
+          {t('systemSettings.subtitle', { defaultValue: 'الإعدادات العامة للنظام' } )}
         </Typography>
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant="scrollable" scrollButtons="auto">
-          <Tab icon={<Settings />} iconPosition="start" label="عام" />
-          <Tab icon={<Email />} iconPosition="start" label="البريد" />
-          <Tab icon={<CreditCard />} iconPosition="start" label="الدفع" />
-          <Tab icon={<LocalShipping />} iconPosition="start" label="الشحن" />
-          <Tab icon={<Security />} iconPosition="start" label="الأمان" />
-          <Tab icon={<Notifications />} iconPosition="start" label="الإشعارات" />
+          <Tab icon={<Settings />} iconPosition="start" label={t('tabs.general', { defaultValue: 'عام' }  )} />
+          <Tab icon={<Email />} iconPosition="start" label={t('tabs.email', { defaultValue: 'البريد' })} />
+          <Tab icon={<CreditCard />} iconPosition="start" label={t('tabs.payment', { defaultValue: 'الدفع' })} />
+          <Tab icon={<LocalShipping />} iconPosition="start" label={t('tabs.shipping', { defaultValue: 'الشحن' })} />
+          <Tab icon={<Security />} iconPosition="start" label={t('tabs.security', { defaultValue: 'الأمان' })} />
+          <Tab icon={<Notifications />} iconPosition="start" label={t('tabs.notifications', { defaultValue: 'الإشعارات' })} />
         </Tabs>
       </Box>
 
@@ -112,57 +114,57 @@ export function SystemSettingsPage() {
           <Card>
             <CardHeader>
               <Typography variant="h6" fontWeight="bold">
-                الإعدادات العامة
+                {t('sections.general.title', { defaultValue: 'الإعدادات العامة' })}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                إعدادات الموقع الأساسية
+                {t('sections.general.subtitle', { defaultValue: 'الإعدادات العامة للنظام' })}
               </Typography>
             </CardHeader>
             <CardContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <TextField
-                  label="اسم الموقع"
+                  label={t('sections.general.siteName', { defaultValue: 'اسم الموقع' })}
                   value={settings.site_name || ''}
                   onChange={(e) => updateSetting('site_name', e.target.value)}
-                  placeholder="TagDoD"
+                  placeholder={t('placeholders.siteName')}
                   fullWidth
                 />
 
                 <TextField
-                  label="وصف الموقع"
+                  label={t('sections.general.siteDescription', { defaultValue: 'وصف الموقع' })}
                   value={settings.site_description || ''}
                   onChange={(e) => updateSetting('site_description', e.target.value)}
-                  placeholder="منصة خدمات الطاقة الشمسية"
+                  placeholder={t('placeholders.siteDescription')}
                   fullWidth
                 />
 
                 <Grid container spacing={2}>
                   <Grid component="div" size={{ xs: 12, md: 6 }}>
                     <TextField
-                      label="اللغة الافتراضية"
+                      label={t('sections.general.defaultLanguage', { defaultValue: 'اللغة الافتراضية' })}
                       value={settings.default_language || ''}
                       onChange={(e) => updateSetting('default_language', e.target.value)}
-                      placeholder="ar"
+                      placeholder={t('placeholders.defaultLanguage')}
                       fullWidth
                     />
                   </Grid>
 
                   <Grid component="div" size={{ xs: 12, md: 6 }}>
                     <TextField
-                      label="العملة الافتراضية"
+                      label={t('sections.general.defaultCurrency', { defaultValue: 'العملة الافتراضية' })}
                       value={settings.default_currency || ''}
                       onChange={(e) => updateSetting('default_currency', e.target.value)}
-                      placeholder="YER"
+                      placeholder={t('placeholders.defaultCurrency')}
                       fullWidth
                     />
                   </Grid>
                 </Grid>
 
                 <TextField
-                  label="المنطقة الزمنية"
+                  label={t('sections.general.timezone', { defaultValue: 'الوقت المنطقي' })}
                   value={settings.timezone || ''}
                   onChange={(e) => updateSetting('timezone', e.target.value)}
-                  placeholder="Asia/Aden"
+                  placeholder={t('placeholders.timezone')}
                   fullWidth
                 />
 
@@ -176,9 +178,9 @@ export function SystemSettingsPage() {
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">وضع الصيانة</Typography>
+                        <Typography variant="body1">{t('sections.general.maintenanceMode', { defaultValue: 'الصيانة' })}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                          تفعيل وضع الصيانة للموقع
+                          {t('sections.general.maintenanceModeDesc', { defaultValue: 'الصيانة المنطقية' })}
                         </Typography>
                       </Box>
                     }
@@ -187,10 +189,10 @@ export function SystemSettingsPage() {
 
                 {settings.maintenance_mode && (
                   <TextField
-                    label="رسالة وضع الصيانة"
+                    label={t('sections.general.maintenanceMessage', { defaultValue: 'رسالة الصيانة' } )}
                     value={settings.maintenance_message || ''}
                     onChange={(e) => updateSetting('maintenance_message', e.target.value)}
-                    placeholder="الموقع تحت الصيانة..."
+                    placeholder={t('placeholders.maintenanceMessage')}
                     fullWidth
                   />
                 )}
@@ -203,7 +205,7 @@ export function SystemSettingsPage() {
                   disabled={saving}
                   startIcon={<Save />}
                 >
-                  حفظ الإعدادات
+                  {t('buttons.save', { defaultValue: 'حفظ' })}
                 </Button>
               </Box>
             </CardContent>
@@ -215,10 +217,10 @@ export function SystemSettingsPage() {
           <Card>
             <CardHeader>
               <Typography variant="h6" fontWeight="bold">
-                إعدادات البريد الإلكتروني
+                {t('sections.email.title', { defaultValue: 'الإعدادات البريدية' })}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                إعدادات SMTP والبريد
+                {t('sections.email.subtitle', { defaultValue: 'الإعدادات البريدية للنظام' })}
               </Typography>
             </CardHeader>
             <CardContent>
@@ -226,7 +228,7 @@ export function SystemSettingsPage() {
                 <Grid container spacing={2}>
                   <Grid component="div" size={{ xs: 12, md: 6 }}>
                     <TextField
-                      label="SMTP Host"
+                      label={t('sections.email.smtpHost', { defaultValue: 'SMTP Host' })}
                       value={settings.smtp_host || ''}
                       onChange={(e) => updateSetting('smtp_host', e.target.value)}
                       placeholder="smtp.gmail.com"
@@ -236,7 +238,7 @@ export function SystemSettingsPage() {
 
                   <Grid component="div" size={{ xs: 12, md: 6 }}>
                     <TextField
-                      label="SMTP Port"
+                      label={t('sections.email.smtpPort', { defaultValue: 'SMTP Port' })}
                       type="number"
                       value={settings.smtp_port || ''}
                       onChange={(e) => updateSetting('smtp_port', parseInt(e.target.value))}
@@ -247,7 +249,7 @@ export function SystemSettingsPage() {
                 </Grid>
 
                 <TextField
-                  label="SMTP User"
+                  label={t('sections.email.smtpUser', { defaultValue: 'SMTP User' })}
                   value={settings.smtp_user || ''}
                   onChange={(e) => updateSetting('smtp_user', e.target.value)}
                   placeholder="user@example.com"
@@ -255,7 +257,7 @@ export function SystemSettingsPage() {
                 />
 
                 <TextField
-                  label="SMTP Password"
+                  label={t('sections.email.smtpPassword', { defaultValue: 'SMTP Password' })}
                   type="password"
                   value={settings.smtp_password || ''}
                   onChange={(e) => updateSetting('smtp_password', e.target.value)}
@@ -266,7 +268,7 @@ export function SystemSettingsPage() {
                 <Grid container spacing={2}>
                   <Grid component="div" size={{ xs: 12, md: 6 }}>
                     <TextField
-                      label="بريد المرسل"
+                      label={t('sections.email.fromEmail', { defaultValue: 'بريد المرسل' })}
                       value={settings.from_email || ''}
                       onChange={(e) => updateSetting('from_email', e.target.value)}
                       placeholder="noreply@tagdod.com"
@@ -276,7 +278,7 @@ export function SystemSettingsPage() {
 
                   <Grid component="div" size={{ xs: 12, md: 6 }}>
                     <TextField
-                      label="اسم المرسل"
+                      label={t('sections.email.fromName', { defaultValue: 'اسم المرسل' })}
                       value={settings.from_name || ''}
                       onChange={(e) => updateSetting('from_name', e.target.value)}
                       placeholder="TagDoD"
@@ -295,9 +297,9 @@ export function SystemSettingsPage() {
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">SMTP Secure (TLS)</Typography>
+                        <Typography variant="body1">{t('sections.email.smtpSecure', { defaultValue: 'SMTP Secure (TLS)' })}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                          استخدام اتصال آمن
+                          {t('sections.email.smtpSecureDesc', { defaultValue: 'استخدام اتصال آمن' })}
                         </Typography>
                       </Box>
                     }
@@ -312,7 +314,7 @@ export function SystemSettingsPage() {
                   disabled={saving}
                   startIcon={<Save />}
                 >
-                  حفظ الإعدادات
+                  {t('buttons.save', { defaultValue: 'حفظ' }    )}
                 </Button>
               </Box>
             </CardContent>
@@ -324,10 +326,10 @@ export function SystemSettingsPage() {
           <Card>
             <CardHeader>
               <Typography variant="h6" fontWeight="bold">
-                إعدادات الدفع
+                {t('sections.payment.title')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                إعدادات طرق الدفع
+                {t('sections.payment.subtitle')}
               </Typography>
             </CardHeader>
             <CardContent>
@@ -409,7 +411,7 @@ export function SystemSettingsPage() {
                   disabled={saving}
                   startIcon={<Save />}
                 >
-                  حفظ الإعدادات
+                  {t('buttons.save', { defaultValue: 'حفظ' }    )}
                 </Button>
               </Box>
             </CardContent>
@@ -421,10 +423,10 @@ export function SystemSettingsPage() {
           <Card>
             <CardHeader>
               <Typography variant="h6" fontWeight="bold">
-                إعدادات الشحن
+                {t('sections.shipping.title', { defaultValue: 'الإعدادات الشحنية' })}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                إعدادات الشحن والتوصيل
+                {t('sections.shipping.subtitle', { defaultValue: 'الإعدادات الشحنية للنظام' })}
               </Typography>
             </CardHeader>
             <CardContent>
@@ -439,9 +441,9 @@ export function SystemSettingsPage() {
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">الشحن المجاني</Typography>
+                        <Typography variant="body1">{t('sections.shipping.freeShipping', { defaultValue: 'الشحن المجاني' })}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                          تفعيل الشحن المجاني
+                          {t('sections.shipping.freeShippingDesc', { defaultValue: 'تفعيل الشحن المجاني' })}
                         </Typography>
                       </Box>
                     }
@@ -450,7 +452,7 @@ export function SystemSettingsPage() {
 
                 {settings.free_shipping_enabled && (
                   <TextField
-                    label="الحد الأدنى للشحن المجاني (ريال)"
+                    label={t('sections.shipping.freeShippingThreshold', { defaultValue: 'الحد الأدنى للشحن المجاني (دولار)' })}
                     type="number"
                     value={settings.free_shipping_threshold || ''}
                     onChange={(e) => updateSetting('free_shipping_threshold', parseInt(e.target.value))}
@@ -460,7 +462,7 @@ export function SystemSettingsPage() {
                 )}
 
                 <TextField
-                  label="تكلفة الشحن الافتراضية (ريال)"
+                  label={t('sections.shipping.defaultShippingCost', { defaultValue: 'تكلفة الشحن الافتراضية (دولار)' })}
                   type="number"
                   value={settings.default_shipping_cost || ''}
                   onChange={(e) => updateSetting('default_shipping_cost', parseInt(e.target.value))}
@@ -469,7 +471,7 @@ export function SystemSettingsPage() {
                 />
 
                 <TextField
-                  label="مدة التوصيل المتوقعة (أيام)"
+                  label={t('sections.shipping.estimatedDeliveryDays', { defaultValue: 'مدة التوصيل المتوقعة (أيام)' })}
                   type="number"
                   value={settings.estimated_delivery_days || ''}
                   onChange={(e) => updateSetting('estimated_delivery_days', parseInt(e.target.value))}
@@ -485,7 +487,7 @@ export function SystemSettingsPage() {
                   disabled={saving}
                   startIcon={<Save />}
                 >
-                  حفظ الإعدادات
+                  {t('buttons.save', { defaultValue: 'حفظ' }    )}
                 </Button>
               </Box>
             </CardContent>
@@ -497,10 +499,10 @@ export function SystemSettingsPage() {
           <Card>
             <CardHeader>
               <Typography variant="h6" fontWeight="bold">
-                إعدادات الأمان
+                {t('sections.security.title', { defaultValue: 'الإعدادات الأمنية' })}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                إعدادات الأمان والحماية
+                {t('sections.security.subtitle', { defaultValue: 'الإعدادات الأمنية للنظام' })}
               </Typography>
             </CardHeader>
             <CardContent>
@@ -515,7 +517,7 @@ export function SystemSettingsPage() {
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">المصادقة الثنائية (2FA)</Typography>
+                        <Typography variant="body1">{t('sections.security.2fa', { defaultValue: 'المصادقة الثنائية (2FA)' })}     </Typography>
                         <Typography variant="body2" color="text.secondary">
                           إجبار المصادقة الثنائية لجميع المستخدمين
                         </Typography>
@@ -559,7 +561,7 @@ export function SystemSettingsPage() {
                   disabled={saving}
                   startIcon={<Save />}
                 >
-                  حفظ الإعدادات
+                  {t('buttons.save', { defaultValue: 'حفظ' }    )}
                 </Button>
               </Box>
             </CardContent>
@@ -571,10 +573,10 @@ export function SystemSettingsPage() {
           <Card>
             <CardHeader>
               <Typography variant="h6" fontWeight="bold">
-                إعدادات الإشعارات
+                {t('sections.notifications.title', { defaultValue: 'الإعدادات الإشعارية' })}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                إدارة الإشعارات والتنبيهات
+                {t('sections.notifications.subtitle', { defaultValue: 'الإعدادات الإشعارية للنظام' })}
               </Typography>
             </CardHeader>
             <CardContent>
@@ -589,9 +591,9 @@ export function SystemSettingsPage() {
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">إشعارات البريد الإلكتروني</Typography>
+                        <Typography variant="body1">{t('sections.notifications.emailNotifications', { defaultValue: 'إشعارات البريد الإلكتروني' })}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                          تفعيل الإشعارات عبر البريد
+                          {t('sections.notifications.emailNotificationsDesc', { defaultValue: 'تفعيل الإشعارات عبر البريد' })}
                         </Typography>
                       </Box>
                     }
@@ -608,9 +610,9 @@ export function SystemSettingsPage() {
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">إشعارات SMS</Typography>
+                        <Typography variant="body1">{t('sections.notifications.smsNotifications', { defaultValue: 'إشعارات SMS' })}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                          تفعيل الإشعارات عبر الرسائل النصية
+                          {t('sections.notifications.smsNotificationsDesc', { defaultValue: 'تفعيل الإشعارات عبر الرسائل النصية' })}
                         </Typography>
                       </Box>
                     }
@@ -627,9 +629,9 @@ export function SystemSettingsPage() {
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">إشعارات Push</Typography>
+                        <Typography variant="body1">{t('sections.notifications.pushNotifications', { defaultValue: 'إشعارات Push' })}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                          تفعيل الإشعارات الفورية
+                          {t('sections.notifications.pushNotificationsDesc', { defaultValue: 'تفعيل الإشعارات الفورية' })}
                         </Typography>
                       </Box>
                     }
@@ -646,9 +648,9 @@ export function SystemSettingsPage() {
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">إشعار الطلبات الجديدة</Typography>
+                        <Typography variant="body1">{t('sections.notifications.newOrdersNotification', { defaultValue: 'إشعار الطلبات الجديدة' })}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                          إشعار عند استلام طلب جديد
+                          {t('sections.notifications.newOrdersNotificationDesc', { defaultValue: 'إشعار عند استلام طلب جديد' })}
                         </Typography>
                       </Box>
                     }
@@ -665,9 +667,9 @@ export function SystemSettingsPage() {
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">إشعار المخزون المنخفض</Typography>
+                        <Typography variant="body1">{t('sections.notifications.lowStockNotification', { defaultValue: 'إشعار المخزون المنخفض' })} </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          إشعار عند انخفاض المخزون
+                          {t('sections.notifications.lowStockNotificationDesc', { defaultValue: 'إشعار عند انخفاض المخزون' })}
                         </Typography>
                       </Box>
                     }
@@ -682,7 +684,7 @@ export function SystemSettingsPage() {
                   disabled={saving}
                   startIcon={<Save />}
                 >
-                  حفظ الإعدادات
+                  {t('buttons.save', { defaultValue: 'حفظ' }      )}
                 </Button>
               </Box>
             </CardContent>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Card, CardContent, Typography, Box, Skeleton } from '@mui/material';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 interface MiniChartWidgetProps {
   title: string;
@@ -15,6 +16,8 @@ export const MiniChartWidget: React.FC<MiniChartWidgetProps> = ({
   color = '#1976d2',
   isLoading = false,
 }) => {
+  const { t } = useTranslation(['dashboard']);
+
   if (isLoading) {
     return (
       <Card>
@@ -22,10 +25,8 @@ export const MiniChartWidget: React.FC<MiniChartWidgetProps> = ({
           <Typography variant="h6" gutterBottom>
             {title}
           </Typography>
-          <Box sx={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              جاري التحميل...
-            </Typography>
+          <Box sx={{ height: 100, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Skeleton variant="rectangular" height={80} width="100%" sx={{ borderRadius: 1 }} />
           </Box>
         </CardContent>
       </Card>
@@ -41,7 +42,7 @@ export const MiniChartWidget: React.FC<MiniChartWidgetProps> = ({
           </Typography>
           <Box sx={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              لا توجد بيانات
+              {t('miniChart.noData', 'لا توجد بيانات')}
             </Typography>
           </Box>
         </CardContent>

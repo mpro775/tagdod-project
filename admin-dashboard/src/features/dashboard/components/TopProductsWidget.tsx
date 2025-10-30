@@ -8,9 +8,11 @@ import {
   LinearProgress,
   Chip,
   alpha,
-  useTheme
+  useTheme,
+  Skeleton
 } from '@mui/material';
 import { Star, TrendingUp } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 
 interface Product {
   id: string;
@@ -31,15 +33,37 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
   isLoading 
 }) => {
   const theme = useTheme();
+  const { t, i18n } = useTranslation(['dashboard']);
+  // Always use English numbers, regardless of language
+  const numberFormatter = React.useMemo(() => new Intl.NumberFormat('en-US'), []);
+  const currencyFormatter = React.useMemo(
+    () =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: i18n.language === 'ar' ? 'USD' : 'USD',
+        maximumFractionDigits: 0,
+      }),
+    [i18n.language]
+  );
 
   if (isLoading) {
     return (
       <Card>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            أفضل المنتجات مبيعاً
+            {t('topProducts.title', 'أفضل المنتجات مبيعاً')}
           </Typography>
-          <LinearProgress />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[1, 2, 3, 4].map((item) => (
+              <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Skeleton variant="circular" width={40} height={40} />
+                <Box sx={{ flex: 1 }}>
+                  <Skeleton variant="text" width="70%" height={18} />
+                  <Skeleton variant="text" width="50%" height={14} />
+                </Box>
+              </Box>
+            ))}
+          </Box>
         </CardContent>
       </Card>
     );
@@ -54,7 +78,7 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
   const displayProducts: Product[] = topProductsData.length > 0 
     ? topProductsData.slice(0, 5).map((p: any, index: number) => ({
         id: p.productId || p._id || `prod-${index}`,
-        name: p.productName || p.name || 'منتج',
+        name: p.productName || p.name || t('topProducts.unknown', 'منتج'),
         sales: p.totalSold || p.unitsSold || p.sales || 0,
         revenue: p.totalRevenue || p.revenue || 0,
         trend: calculateTrend(p),
@@ -77,11 +101,11 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
             <Star sx={{ color: 'warning.main' }} />
             <Typography variant="h6" fontWeight="bold">
-              أفضل المنتجات مبيعاً
+              {t('topProducts.title', 'أفضل المنتجات مبيعاً')}
             </Typography>
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-            لا توجد بيانات متاحة
+            {t('topProducts.empty', 'لا توجد بيانات متاحة')}
           </Typography>
         </CardContent>
       </Card>
@@ -96,7 +120,7 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
           <Star sx={{ color: 'warning.main' }} />
           <Typography variant="h6" fontWeight="bold">
-            أفضل المنتجات مبيعاً
+            {t('topProducts.title', 'أفضل المنتجات مبيعاً')}
           </Typography>
         </Box>
 
@@ -133,7 +157,7 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
                 <Box sx={{ flex: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                     <Typography variant="body2" fontWeight="600">
-                      {product.name}
+                      {product.name || t('topProducts.unknown', 'منتج')}
                     </Typography>
                     {product.trend !== undefined && (
                       <Chip
@@ -148,10 +172,10 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
                   
                   <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                     <Typography variant="caption" color="text.secondary">
-                      {product.sales} مبيعة
+                      {t('topProducts.sales', '{{count}} مبيعة', { count: Number(numberFormatter.format(product.sales)) })}
                     </Typography>
                     <Typography variant="caption" fontWeight="600" color="success.main">
-                      {product.revenue.toLocaleString('ar-SA')} $
+                      {t('topProducts.revenue', '{{value}}', { value: currencyFormatter.format(product.revenue) })}
                     </Typography>
                   </Box>
                 </Box>

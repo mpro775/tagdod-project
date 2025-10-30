@@ -28,6 +28,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useBannersAnalytics } from '../hooks/useBanners';
 import { BANNER_LOCATION_OPTIONS } from '../types/banner.types';
 import type { Banner } from '../types/banner.types';
@@ -143,10 +145,10 @@ const LoadingSkeleton: React.FC = () => (
   </Grid>
 );
 
-const getTopBannersColumns = (): GridColDef[] => [
+const getTopBannersColumns = (t: TFunction): GridColDef[] => [
   {
     field: 'title',
-    headerName: 'البانر',
+    headerName: t('analytics.banner'),
     width: 300,
     renderCell: (params) => {
       const banner = params.row as Banner & { imageUrl?: string };
@@ -172,28 +174,28 @@ const getTopBannersColumns = (): GridColDef[] => [
   },
   {
     field: 'viewCount',
-    headerName: 'المشاهدات',
+    headerName: t('analytics.views'),
     width: 120,
     align: 'center',
     renderCell: (params) => formatNumber(params.value as number),
   },
   {
     field: 'clickCount',
-    headerName: 'النقرات',
+    headerName: t('analytics.clicks'),
     width: 120,
     align: 'center',
     renderCell: (params) => formatNumber(params.value as number),
   },
   {
     field: 'conversionCount',
-    headerName: 'التحويلات',
+    headerName: t('analytics.conversions'),
     width: 120,
     align: 'center',
     renderCell: (params) => formatNumber(params.value as number),
   },
   {
     field: 'ctr',
-    headerName: 'معدل النقر',
+    headerName: t('analytics.clickRate'),
     width: 130,
     align: 'center',
     renderCell: (params) => {
@@ -210,7 +212,7 @@ const getTopBannersColumns = (): GridColDef[] => [
   },
   {
     field: 'conversionRate',
-    headerName: 'معدل التحويل',
+    headerName: t('analytics.conversionRate'),
     width: 140,
     align: 'center',
     renderCell: (params) => {
@@ -227,12 +229,12 @@ const getTopBannersColumns = (): GridColDef[] => [
   },
   {
     field: 'isActive',
-    headerName: 'الحالة',
+    headerName: t('analytics.status'),
     width: 100,
     align: 'center',
     renderCell: (params) => (
       <Chip
-        label={params.value ? 'نشط' : 'غير نشط'}
+        label={params.value ? t('stats.active') : t('stats.inactive')}
         size="small"
         color={params.value ? 'success' : 'default'}
       />
@@ -242,6 +244,7 @@ const getTopBannersColumns = (): GridColDef[] => [
 
 export const BannerAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('banners');
   const [timeRange, setTimeRange] = useState('30d');
   const [locationFilter, setLocationFilter] = useState('');
 
@@ -282,7 +285,7 @@ export const BannerAnalyticsPage: React.FC = () => {
           </Button>
           <Typography variant="h4">تحليل البانرات</Typography>
         </Box>
-        <Alert severity="error">فشل في تحميل بيانات التحليل</Alert>
+        <Alert severity="error">{t('analytics.error')}</Alert>
       </Box>
     );
   }
@@ -317,37 +320,37 @@ export const BannerAnalyticsPage: React.FC = () => {
             onClick={() => navigate('/banners')}
             variant="outlined"
           >
-            العودة
+            {t('back')}
           </Button>
           <Analytics fontSize="large" color="primary" />
           <Typography variant="h4" component="h1">
-            تحليل البانرات
+            {t('analytics.pageTitle')}
           </Typography>
         </Box>
 
         <Box display="flex" gap={2}>
           <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>الفترة الزمنية</InputLabel>
+            <InputLabel>{t('analytics.timeRange.label')}</InputLabel>
             <Select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              label="الفترة الزمنية"
+              label={t('analytics.timeRange.label')}
             >
-              <MenuItem value="7d">آخر 7 أيام</MenuItem>
-              <MenuItem value="30d">آخر 30 يوم</MenuItem>
-              <MenuItem value="90d">آخر 90 يوم</MenuItem>
-              <MenuItem value="1y">آخر سنة</MenuItem>
+              <MenuItem value="7d">{t('analytics.timeRange.7days')}</MenuItem>
+              <MenuItem value="30d">{t('analytics.timeRange.30days')}</MenuItem>
+              <MenuItem value="90d">{t('analytics.timeRange.90days')}</MenuItem>
+              <MenuItem value="1y">{t('analytics.timeRange.1year')}</MenuItem>
             </Select>
           </FormControl>
 
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>موقع العرض</InputLabel>
+            <InputLabel>{t('analytics.location.label')}</InputLabel>
             <Select
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
-              label="موقع العرض"
+              label={t('analytics.location.label')}
             >
-              <MenuItem value="">جميع المواقع</MenuItem>
+              <MenuItem value="">{t('analytics.location.all')}</MenuItem>
               {BANNER_LOCATION_OPTIONS.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
@@ -361,20 +364,20 @@ export const BannerAnalyticsPage: React.FC = () => {
       {/* Key Metrics */}
       <Grid container spacing={3} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title="إجمالي البانرات"
-            value={formatNumber(totalBanners)}
-            subtitle={`${activeBanners} نشط، ${inactiveBanners} غير نشط`}
-            icon={<Campaign />}
-            color="primary"
-          />
+        <StatCard
+          title={t('stats.totalBanners')}
+          value={formatNumber(totalBanners)}
+          subtitle={t('stats.activeInactive', { active: activeBanners, inactive: inactiveBanners })}
+          icon={<Campaign />}
+          color="primary"
+        />
         </Grid>
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title="إجمالي المشاهدات"
+            title={t('stats.totalViews')}
             value={formatNumber(totalViews)}
-            subtitle="جميع البانرات"
+            subtitle={t('stats.allBanners')}
             icon={<Visibility />}
             color="info"
           />
@@ -382,9 +385,9 @@ export const BannerAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title="إجمالي النقرات"
+            title={t('stats.totalClicks')}
             value={formatNumber(totalClicks)}
-            subtitle={`معدل النقر: ${formatPercentage(ctrPercentage)}`}
+            subtitle={t('stats.clickRate', { rate: formatPercentage(ctrPercentage) })}
             icon={<AdsClick />}
             color="success"
           />
@@ -392,9 +395,9 @@ export const BannerAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title="إجمالي التحويلات"
+            title={t('stats.totalConversions')}
             value={formatNumber(totalConversions)}
-            subtitle={`معدل التحويل: ${formatPercentage(conversionPercentage)}`}
+            subtitle={t('stats.conversionRate', { rate: formatPercentage(conversionPercentage) })}
             icon={<TrendingUp />}
             color="warning"
           />
@@ -406,14 +409,14 @@ export const BannerAnalyticsPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                حالة البانرات
-              </Typography>
-              <Box mb={2}>
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2">البانرات النشطة</Typography>
-                  <Typography variant="body2">{formatPercentage(activePercentage)}</Typography>
-                </Box>
+            <Typography variant="h6" gutterBottom>
+              {t('stats.statusChart')}
+            </Typography>
+            <Box mb={2}>
+              <Box display="flex" justifyContent="space-between" mb={1}>
+                <Typography variant="body2">{t('stats.activeBanners')}</Typography>
+                <Typography variant="body2">{formatPercentage(activePercentage)}</Typography>
+              </Box>
                 <LinearProgress
                   variant="determinate"
                   value={activePercentage}
@@ -421,14 +424,14 @@ export const BannerAnalyticsPage: React.FC = () => {
                   sx={{ height: 8, borderRadius: 4 }}
                 />
               </Box>
-              <Box display="flex" justifyContent="space-between">
-                <Typography variant="body2" color="success.main">
-                  {activeBanners} نشط
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {inactiveBanners} غير نشط
-                </Typography>
-              </Box>
+            <Box display="flex" justifyContent="space-between">
+              <Typography variant="body2" color="success.main">
+                {activeBanners} {t('stats.active')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {inactiveBanners} {t('stats.inactive')}
+              </Typography>
+            </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -436,14 +439,14 @@ export const BannerAnalyticsPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                الأداء العام
-              </Typography>
-              <Box mb={2}>
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2">معدل النقر</Typography>
-                  <Typography variant="body2">{formatPercentage(ctrPercentage)}</Typography>
-                </Box>
+            <Typography variant="h6" gutterBottom>
+              {t('stats.performanceChart')}
+            </Typography>
+            <Box mb={2}>
+              <Box display="flex" justifyContent="space-between" mb={1}>
+                <Typography variant="body2">{t('stats.clickRateLabel')}</Typography>
+                <Typography variant="body2">{formatPercentage(ctrPercentage)}</Typography>
+              </Box>
                 <LinearProgress
                   variant="determinate"
                   value={ctrPercentage}
@@ -451,11 +454,11 @@ export const BannerAnalyticsPage: React.FC = () => {
                   sx={{ height: 8, borderRadius: 4 }}
                 />
               </Box>
-              <Box mb={2}>
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2">معدل التحويل</Typography>
-                  <Typography variant="body2">{formatPercentage(conversionPercentage)}</Typography>
-                </Box>
+            <Box mb={2}>
+              <Box display="flex" justifyContent="space-between" mb={1}>
+                <Typography variant="body2">{t('stats.conversionRateLabel')}</Typography>
+                <Typography variant="body2">{formatPercentage(conversionPercentage)}</Typography>
+              </Box>
                 <LinearProgress
                   variant="determinate"
                   value={conversionPercentage}
@@ -470,8 +473,8 @@ export const BannerAnalyticsPage: React.FC = () => {
 
       {/* Top Performing Banners */}
       <DataTable
-        title="أفضل البانرات أداءً"
-        columns={getTopBannersColumns()}
+        title={t('analytics.topBanners')}
+        columns={getTopBannersColumns(t)}
         rows={topPerformingBanners || []}
         loading={false}
         paginationModel={{ page: 0, pageSize: 10 }}

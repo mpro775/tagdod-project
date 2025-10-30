@@ -170,7 +170,7 @@ export const formatCurrency = (amount: number, currency: string = 'YER'): string
   const symbol = currencySymbols[currency] || currency;
 
   // Format number with commas
-  const formattedAmount = new Intl.NumberFormat('ar-YE', {
+  const formattedAmount = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(amount);

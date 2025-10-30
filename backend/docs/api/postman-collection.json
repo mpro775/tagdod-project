@@ -1170,6 +1170,34 @@
           }
         },
         {
+          "name": "توليد المتغيرات تلقائياً",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/{productId}/generate-variants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "{productId}",
+                "generate-variants"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
           "name": "الحصول على متغير بالمعرف",
           "request": {
             "method": "GET",

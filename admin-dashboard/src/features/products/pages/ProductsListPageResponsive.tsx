@@ -137,9 +137,9 @@ export const ProductsListPageResponsive: React.FC = () => {
       flex: 0.7,
       renderCell: (params) => (
         <Box sx={{ fontWeight: 'medium', color: 'primary.main' }}>
-          {new Intl.NumberFormat('ar-SA', {
+          {new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'SAR',
+            currency: 'USD',
           }).format(params.row.price)}
         </Box>
       ),

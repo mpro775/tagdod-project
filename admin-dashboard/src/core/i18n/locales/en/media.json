@@ -1,0 +1,179 @@
+{
+  "pageTitle": "Media Library",
+  "pageSubtitle": "Manage and organize all files and media",
+  "analyticsPageTitle": "Media & File Statistics",
+  "analyticsPageSubtitle": "Comprehensive statistics about all uploaded files and media",
+
+  "uploadFile": "Upload File",
+  "uploadNewFile": "Upload New File",
+  "analytics": "Analytics",
+  "cleanup": "Cleanup",
+  "refresh": "Refresh",
+  "close": "Close",
+  "cancel": "Cancel",
+  "back": "Back",
+  "next": "Next",
+  "upload": "Upload",
+  "uploading": "Uploading...",
+  "delete": "Delete",
+  "restore": "Restore",
+  "edit": "Edit",
+  "copyUrl": "Copy URL",
+  "show": "Show",
+  "hide": "Hide",
+  "public": "Public",
+  "private": "Private",
+  "deleted": "Deleted",
+  "used": "Used",
+
+  "filters": {
+    "search": "Search",
+    "searchPlaceholder": "Search by name or description...",
+    "category": "Category",
+    "type": "Type",
+    "clearFilters": "Clear Filters",
+    "bulkSelect": "Bulk Select",
+    "hideBulkSelect": "Hide Bulk Select",
+    "selectAll": "Select All",
+    "unselectAll": "Unselect All",
+    "selected": "selected"
+  },
+
+  "categories": {
+    "all": "All",
+    "product": "Products",
+    "category": "Categories",
+    "brand": "Brands",
+    "banner": "Banners",
+    "other": "Other"
+  },
+
+  "types": {
+    "all": "All",
+    "image": "Images",
+    "images": "Images",
+    "video": "Videos",
+    "videos": "Videos",
+    "document": "Documents",
+    "documents": "Documents",
+    "other": "Other"
+  },
+
+  "stats": {
+    "totalFiles": "Total Files",
+    "totalSize": "Total Size",
+    "filesThisMonth": "Files This Month",
+    "filesThisWeek": "Files This Week",
+    "filesToday": "Files Today",
+    "averageFileSize": "Average File Size",
+    "used": "Used",
+    "available": "Available",
+    "storageStats": "Storage Statistics",
+    "fileDistribution": "File Distribution by Type",
+    "detailsByType": "Details by Type",
+    "byCategory": "By Category:",
+    "byType": "By Type:",
+    "overview": "Overview statistics displayed above",
+    "noData": "No data available"
+  },
+
+  "table": {
+    "filename": "Filename",
+    "type": "Type",
+    "size": "Size",
+    "uploadDate": "Upload Date",
+    "largestFiles": "Largest Files",
+    "recentFiles": "Recent Files"
+  },
+
+  "uploader": {
+    "selectFile": "Select File",
+    "fileDetails": "File Details",
+    "uploadSettings": "Upload Settings",
+    "uploadComplete": "Upload Complete",
+    "dragDrop": "Drag and drop file here or click to select",
+    "fileSelected": "File selected",
+    "fileNotSelected": "No file selected",
+    "fileName": "File Name",
+    "category": "Category",
+    "description": "Description",
+    "tags": "Tags",
+    "addTag": "Add Tag",
+    "publicFile": "Public File",
+    "privateFile": "Private File",
+    "preview": "Preview",
+    "fileSize": "File Size",
+    "fileType": "File Type",
+    "uploadError": "An error occurred during upload"
+  },
+
+  "cleanup": {
+    "title": "Cleanup Operations",
+    "description": "Choose the type of cleanup you want. These operations cannot be undone.",
+    "deletedFiles": "Clean Deleted Files",
+    "deletedDescription": "Permanently delete deleted files from storage",
+    "duplicates": "Clean Duplicate Files",
+    "duplicatesDescription": "Remove duplicate files and keep only one copy",
+    "unused": "Clean Unused Files",
+    "unusedDescription": "Delete files that haven't been used for 90 days",
+    "cleanupDeleted": "Clean Deleted",
+    "cleanupDuplicates": "Clean Duplicates",
+    "cleanupUnused": "Clean Unused"
+  },
+
+  "details": {
+    "title": "File Details",
+    "fileName": "File Name",
+    "category": "Category",
+    "type": "Type",
+    "size": "Size",
+    "dimensions": "Dimensions",
+    "url": "URL",
+    "public": "Public"
+  },
+
+  "tabs": {
+    "overview": "Overview",
+    "largestFiles": "Largest Files",
+    "recentFiles": "Recent Files"
+  },
+
+  "empty": {
+    "noFiles": "No files found",
+    "noFilesDescription": "No files match the specified criteria",
+    "startUploading": "Start uploading your first files",
+    "uploadFirst": "Upload First File"
+  },
+
+  "actions": {
+    "bulkDelete": "Delete Selected",
+    "toggleDeleted": "Show Deleted",
+    "gridView": "Grid View",
+    "listView": "List View",
+    "menu": "Menu"
+  },
+
+  "messages": {
+    "uploadSuccess": "File uploaded successfully",
+    "deleteSuccess": "File deleted successfully",
+    "restoreSuccess": "File restored successfully",
+    "updateSuccess": "File updated successfully",
+    "copyUrlSuccess": "URL copied",
+    "bulkOperationSuccess": "Operation completed successfully",
+    "cleanupSuccess": "Cleanup completed successfully",
+    "overviewError": "Failed to load overview statistics",
+    "storageError": "Failed to load storage statistics",
+    "largestFilesError": "Failed to load largest files",
+    "recentFilesError": "Failed to load recent files",
+    "uploadError": "An error occurred during upload",
+    "deleteConfirm": "Do you want to delete \"{name}\"?",
+    "confirmDelete": "Confirm Delete"
+  },
+
+  "units": {
+    "files": "files",
+    "today": "today",
+    "thisWeek": "this week",
+    "thisMonth": "this month"
+  }
+}

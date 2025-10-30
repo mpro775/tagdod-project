@@ -12,6 +12,7 @@ import {
   Tab,
   Alert,
   CircularProgress,
+  Rating,
 } from '@mui/material';
 import { ArrowBack, Edit, Inventory, Star, NewReleases } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -131,7 +132,7 @@ export const ProductViewPage: React.FC = () => {
             <Grid size={{ xs: 12, md: 4 }}>
               <Box
                 component="img"
-                src={product.mainImageId || '/placeholder-product.png'}
+                src={(product as any).mainImageId?.url || '/placeholder-product.png'}
                 alt={product.name}
                 sx={{
                   width: '100%',
@@ -182,13 +183,13 @@ export const ProductViewPage: React.FC = () => {
                   <Typography variant="body2" color="text.secondary">
                     الفئة
                   </Typography>
-                  <Typography variant="body1">{product.category?.name || 'غير محدد'}</Typography>
+                  <Typography variant="body1">{(product as any).categoryId?.name || 'غير محدد'}</Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     العلامة التجارية
                   </Typography>
-                  <Typography variant="body1">{product.brand?.name || 'غير محدد'}</Typography>
+                  <Typography variant="body1">{(product as any).brandId?.name || 'غير محدد'}</Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
@@ -199,6 +200,30 @@ export const ProductViewPage: React.FC = () => {
               </Grid>
 
               <Divider sx={{ my: 2 }} />
+
+              {/* Rating (manual vs real) */}
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    التقييم
+                  </Typography>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Rating
+                      value={product.useManualRating ? (product.manualRating || 0) : (product.averageRating || 0)}
+                      precision={0.1}
+                      readOnly
+                    />
+                    <Typography variant="body1" fontWeight="bold">
+                      {(product.useManualRating ? (product.manualRating || 0) : (product.averageRating || 0)).toFixed(1)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {product.useManualRating
+                        ? `${product.manualReviewsCount || 0} تقييم (يدوي)`
+                        : `${product.reviewsCount || 0} تقييم (حقيقي)`}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
 
               {/* Statistics */}
               <Grid container spacing={2}>

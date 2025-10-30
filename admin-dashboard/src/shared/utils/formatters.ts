@@ -9,7 +9,9 @@ export const formatDate = (
   formatStr = 'yyyy-MM-dd',
   locale: 'ar' | 'en' = 'ar'
 ): string => {
+  if (!date) return '-';
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return '-';
   const localeObj = locale === 'ar' ? ar : enUS;
   return format(dateObj, formatStr, { locale: localeObj });
 };
@@ -37,7 +39,7 @@ export const formatCurrency = (
  */
 export const formatNumber = (
   value: number,
-  locale: 'ar' | 'en' = 'ar',
+  locale: 'ar' | 'en' = 'en',
   options?: Intl.NumberFormatOptions
 ): string => {
   const localeStr = locale === 'ar' ? 'ar-SA' : 'en-US';

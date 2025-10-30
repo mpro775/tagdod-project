@@ -48,14 +48,7 @@ const userSchema = z.object({
   status: z.nativeEnum(UserStatus),
   roles: z.array(z.nativeEnum(UserRole)).min(1, 'يجب تحديد دور واحد على الأقل'),
   permissions: z.array(z.string()).optional(),
-  wholesaleDiscountPercent: z.preprocess(
-    (val) => {
-      if (val === '' || val === null || val === undefined) return undefined;
-      const num = typeof val === 'string' ? parseFloat(val) : val;
-      return isNaN(num) ? undefined : num;
-    },
-    z.number().min(0, 'النسبة يجب أن تكون 0 أو أكثر').max(100, 'النسبة يجب أن تكون 100 أو أقل').optional()
-  ),
+  wholesaleDiscountPercent: z.number().min(0, 'النسبة يجب أن تكون 0 أو أكثر').max(100, 'النسبة يجب أن تكون 100 أو أقل').optional(),
 });
 
 type UserFormData = z.infer<typeof userSchema>;

@@ -40,9 +40,11 @@ import type { ErrorLog, ErrorStatistics, ErrorTrend } from '../api/errorLogsApi'
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { toast } from 'react-hot-toast';
 import { formatRelativeTime } from '@/shared/utils/format';
+import { useTranslation } from 'react-i18next';
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 
 export function ErrorLogsPage() {
+  const { t } = useTranslation('errorLogs');
   const [errors, setErrors] = useState<ErrorLog[]>([]);
   const [statistics, setStatistics] = useState<ErrorStatistics | null>(null);
   const [trends, setTrends] = useState<ErrorTrend | null>(null);
@@ -78,7 +80,7 @@ export function ErrorLogsPage() {
       setStatistics(statsData);
       setTrends(trendsData);
     } catch {
-      toast.error('فشل في تحميل سجلات الأخطاء');
+      toast.error(t('messages.loadError'));
     } finally {
       setLoading(false);
     }
@@ -92,22 +94,22 @@ export function ErrorLogsPage() {
   const handleResolveError = async (id: string) => {
     try {
       await errorLogsApi.resolveError(id);
-      toast.success('تم حل الخطأ بنجاح');
+      toast.success(t('messages.resolveSuccess'));
       fetchData();
     } catch {
-      toast.error('فشل في حل الخطأ');
+      toast.error(t('messages.resolveError'));
     }
   };
 
   const handleDeleteError = async (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الخطأ؟')) return;
+    if (!confirm(t('messages.deleteConfirm'))) return;
 
     try {
       await errorLogsApi.deleteError(id);
-      toast.success('تم حذف الخطأ بنجاح');
+      toast.success(t('messages.deleteSuccess'));
       fetchData();
     } catch {
-      toast.error('فشل في حذف الخطأ');
+      toast.error(t('messages.deleteError'));
     }
   };
 
@@ -115,9 +117,9 @@ export function ErrorLogsPage() {
     try {
       const result = await errorLogsApi.exportLogs({ format });
       window.open(result.fileUrl, '_blank');
-      toast.success('تم تصدير السجلات بنجاح');
+      toast.success(t('messages.exportSuccess'));
     } catch {
-      toast.error('فشل في تصدير السجلات');
+      toast.error(t('messages.exportError'));
     }
   };
 
@@ -177,14 +179,14 @@ export function ErrorLogsPage() {
   const columns: GridColDef[] = [
     {
       field: 'level',
-      headerName: 'المستوى',
+      headerName: t('table.level'),
       minWidth: 120,
       flex: 0.8,
       renderCell: (params) => getLevelBadge(params.row.level),
     },
     {
       field: 'category',
-      headerName: 'الفئة',
+      headerName: t('table.category'),
       minWidth: 120,
       flex: 0.8,
       renderCell: (params) => (
@@ -193,7 +195,7 @@ export function ErrorLogsPage() {
     },
     {
       field: 'message',
-      headerName: 'الرسالة',
+      headerName: t('table.message'),
       minWidth: 300,
       flex: 2,
       renderCell: (params) => (
@@ -212,7 +214,7 @@ export function ErrorLogsPage() {
     },
     {
       field: 'endpoint',
-      headerName: 'نقطة النهاية',
+      headerName: t('table.endpoint'),
       minWidth: 150,
       flex: 1,
       renderCell: (params) => (
@@ -232,7 +234,7 @@ export function ErrorLogsPage() {
     },
     {
       field: 'occurrences',
-      headerName: 'التكرارات',
+      headerName: t('table.occurrences'),
       minWidth: 100,
       flex: 0.6,
       renderCell: (params) => (
@@ -241,14 +243,14 @@ export function ErrorLogsPage() {
     },
     {
       field: 'lastOccurrence',
-      headerName: 'آخر ظهور',
+      headerName: t('table.lastOccurrence'),
       minWidth: 150,
       flex: 1,
       valueFormatter: (value) => formatRelativeTime(value),
     },
     {
       field: 'resolved',
-      headerName: 'محلول؟',
+      headerName: t('table.resolved'),
       minWidth: 80,
       flex: 0.5,
       renderCell: (params) => (
@@ -261,7 +263,7 @@ export function ErrorLogsPage() {
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('table.actions'),
       minWidth: 200,
       flex: 1.2,
       sortable: false,
@@ -275,7 +277,7 @@ export function ErrorLogsPage() {
               setShowDetailsDialog(true);
             }}
           >
-            عرض
+            {t('actions.view')}
           </Button>
           {!params.row.resolved && (
             <Button
@@ -284,7 +286,7 @@ export function ErrorLogsPage() {
               color="success"
               onClick={() => handleResolveError(params.row.id)}
             >
-              حل
+              {t('actions.resolve')}
             </Button>
           )}
           <IconButton
@@ -305,10 +307,10 @@ export function ErrorLogsPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            إدارة الأخطاء والسجلات
+            {t('pageTitle')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            تتبع وإدارة أخطاء النظام
+            {t('pageSubtitle')}
           </Typography>
         </Box>
         
@@ -319,7 +321,7 @@ export function ErrorLogsPage() {
             onClick={() => handleExport('csv')}
             startIcon={<Download />}
           >
-            تصدير CSV
+            {t('exportCsv')}
           </Button>
           <Button
             variant="outlined"
@@ -327,7 +329,7 @@ export function ErrorLogsPage() {
             onClick={() => handleExport('json')}
             startIcon={<Download />}
           >
-            تصدير JSON
+            {t('exportJson')}
           </Button>
         </Box>
       </Box>
@@ -341,7 +343,7 @@ export function ErrorLogsPage() {
                 title={
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="body2" fontWeight="medium">
-                      إجمالي الأخطاء
+                      {t('statistics.totalErrors')}
                     </Typography>
                     <ErrorIcon color="action" />
                   </Box>
@@ -361,7 +363,7 @@ export function ErrorLogsPage() {
                 title={
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="body2" fontWeight="medium">
-                      آخر 24 ساعة
+                      {t('statistics.last24Hours')}
                     </Typography>
                     <TrendingUp color="action" />
                   </Box>
@@ -381,7 +383,7 @@ export function ErrorLogsPage() {
                 title={
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="body2" fontWeight="medium">
-                      معدل الأخطاء
+                      {t('statistics.errorRate')}
                     </Typography>
                     {getTrendIcon()}
                   </Box>
@@ -393,7 +395,7 @@ export function ErrorLogsPage() {
                 </Typography>
                 {trends && (
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    {trends.trend === 'increasing' ? 'في ازدياد' : trends.trend === 'decreasing' ? 'في انخفاض' : 'مستقر'}
+                    {trends.trend === 'increasing' ? t('statistics.increasing') : trends.trend === 'decreasing' ? t('statistics.decreasing') : t('statistics.stable')}
                     {' '}({trends.changePercentage > 0 ? '+' : ''}{trends.changePercentage.toFixed(1)}%)
                   </Typography>
                 )}
@@ -407,7 +409,7 @@ export function ErrorLogsPage() {
                 title={
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="body2" fontWeight="medium">
-                      آخر 7 أيام
+                      {t('statistics.last7Days')}
                     </Typography>
                     <Warning color="action" />
                   </Box>
@@ -428,7 +430,7 @@ export function ErrorLogsPage() {
         <CardHeader
           title={
             <Typography variant="h6" fontWeight="bold">
-              تصفية السجلات
+              {t('filters.title')}
             </Typography>
           }
         />
@@ -436,8 +438,8 @@ export function ErrorLogsPage() {
           <Grid container spacing={2}>
             <Grid component="div" size={{ xs: 12, md: 3 }}>
               <TextField
-                label="البحث"
-                placeholder="ابحث في الرسائل..."
+                label={t('filters.search')}
+                placeholder={t('filters.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 fullWidth
@@ -453,35 +455,35 @@ export function ErrorLogsPage() {
 
             <Grid component="div" size={{ xs: 12, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>المستوى</InputLabel>
+                <InputLabel>{t('filters.level')}</InputLabel>
                 <Select
                   value={level}
                   onChange={(e) => setLevel(e.target.value)}
-                  label="المستوى"
+                  label={t('filters.level')}
                 >
-                  <MenuItem value="">جميع المستويات</MenuItem>
-                  <MenuItem value="fatal">Fatal</MenuItem>
-                  <MenuItem value="error">Error</MenuItem>
-                  <MenuItem value="warn">Warning</MenuItem>
-                  <MenuItem value="debug">Debug</MenuItem>
+                  <MenuItem value="">{t('filters.allLevels')}</MenuItem>
+                  <MenuItem value="fatal">{t('levels.fatal')}</MenuItem>
+                  <MenuItem value="error">{t('levels.error')}</MenuItem>
+                  <MenuItem value="warn">{t('levels.warn')}</MenuItem>
+                  <MenuItem value="debug">{t('levels.debug')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
             <Grid component="div" size={{ xs: 12, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>الفئة</InputLabel>
+                <InputLabel>{t('filters.category')}</InputLabel>
                 <Select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  label="الفئة"
+                  label={t('filters.category')}
                 >
-                  <MenuItem value="">جميع الفئات</MenuItem>
-                  <MenuItem value="database">قاعدة البيانات</MenuItem>
-                  <MenuItem value="api">API</MenuItem>
-                  <MenuItem value="authentication">المصادقة</MenuItem>
-                  <MenuItem value="validation">التحقق</MenuItem>
-                  <MenuItem value="business_logic">منطق الأعمال</MenuItem>
+                  <MenuItem value="">{t('filters.allCategories')}</MenuItem>
+                  <MenuItem value="database">{t('categories.database')}</MenuItem>
+                  <MenuItem value="api">{t('categories.api')}</MenuItem>
+                  <MenuItem value="authentication">{t('categories.authentication')}</MenuItem>
+                  <MenuItem value="validation">{t('categories.validation')}</MenuItem>
+                  <MenuItem value="business_logic">{t('categories.business_logic')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -497,7 +499,7 @@ export function ErrorLogsPage() {
                 fullWidth
                 startIcon={<FilterList />}
               >
-                إعادة تعيين
+                {t('filters.reset')}
               </Button>
             </Grid>
           </Grid>
@@ -509,12 +511,12 @@ export function ErrorLogsPage() {
         <CardHeader
           title={
             <Typography variant="h6" fontWeight="bold">
-              سجلات الأخطاء
+              {t('table.title')}
             </Typography>
           }
           subheader={
             <Typography variant="body2" color="text.secondary">
-              عرض {errors.length} من إجمالي السجلات
+              {t('table.showing', { count: errors.length })}
             </Typography>
           }
         />
@@ -542,20 +544,20 @@ export function ErrorLogsPage() {
         maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>تفاصيل الخطأ</DialogTitle>
+        <DialogTitle>{t('details.title')}</DialogTitle>
         <DialogContent>
           {selectedError && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
               <Grid container spacing={3}>
                 <Grid component="div" size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    المستوى
+                    {t('details.level')}
                   </Typography>
                   <Box sx={{ mt: 1 }}>{getLevelBadge(selectedError.level)}</Box>
                 </Grid>
                 <Grid component="div" size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    الفئة
+                    {t('details.category')}
                   </Typography>
                   <Box sx={{ mt: 1 }}>
                     <Chip label={selectedError.category} variant="outlined" size="small" />
@@ -563,7 +565,7 @@ export function ErrorLogsPage() {
                 </Grid>
                 <Grid component="div" size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    التكرارات
+                    {t('details.occurrences')}
                   </Typography>
                   <Typography variant="h6" fontWeight="bold" sx={{ mt: 1 }}>
                     {selectedError.occurrences}
@@ -571,7 +573,7 @@ export function ErrorLogsPage() {
                 </Grid>
                 <Grid component="div" size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    آخر ظهور
+                    {t('details.lastOccurrence')}
                   </Typography>
                   <Typography variant="body1" sx={{ mt: 1 }}>
                     {new Date(selectedError.lastOccurrence).toLocaleString('ar-YE')}
@@ -581,7 +583,7 @@ export function ErrorLogsPage() {
 
               <Box>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  الرسالة
+                  {t('details.message')}
                 </Typography>
                 <Typography 
                   variant="body1" 
@@ -599,7 +601,7 @@ export function ErrorLogsPage() {
               {selectedError.endpoint && (
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    نقطة النهاية
+                    {t('details.endpoint')}
                   </Typography>
                   <Box
                     component="code"
@@ -620,7 +622,7 @@ export function ErrorLogsPage() {
               {selectedError.stack && (
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Stack Trace
+                    {t('details.stackTrace')}
                   </Typography>
                   <Box
                     component="pre"
@@ -642,7 +644,7 @@ export function ErrorLogsPage() {
               {selectedError.metadata && Object.keys(selectedError.metadata).length > 0 && (
                 <Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    معلومات إضافية
+                    {t('details.additionalInfo')}
                   </Typography>
                   <Box
                     component="pre"
@@ -674,7 +676,7 @@ export function ErrorLogsPage() {
               }}
               startIcon={<CheckCircle />}
             >
-              حل الخطأ
+              {t('actions.resolveError')}
             </Button>
           )}
           {selectedError && (
@@ -687,11 +689,11 @@ export function ErrorLogsPage() {
               }}
               startIcon={<Delete />}
             >
-              حذف
+              {t('actions.delete')}
             </Button>
           )}
           <Button variant="outlined" onClick={() => setShowDetailsDialog(false)}>
-            إغلاق
+            {t('actions.close')}
           </Button>
         </DialogActions>
       </Dialog>

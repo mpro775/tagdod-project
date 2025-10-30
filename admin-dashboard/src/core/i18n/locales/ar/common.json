@@ -54,6 +54,10 @@
     "analyticsAdvanced": "إحصائيات متقدمة",
     "analyticsExport": "تصدير البيانات",
     "analyticsReports": "إدارة التقارير",
+    "cartsManagement": "إدارة السلال",
+    "cartsList": "قائمة السلال",
+    "cartsAbandoned": "السلال المتروكة",
+    "cartsAnalytics": "تحليلات السلة",
     "audit": "السجلات والتدقيق",
     "auditLogs": "سجلات التدقيق",
     "auditMain": "نظام التدقيق الشامل",
@@ -62,7 +66,8 @@
     "systemMonitoring": "مراقبة الأداء",
     "errorLogs": "سجلات الأخطاء",
     "i18nManagement": "نصوص التعريب",
-    "systemSettings": "إعدادات النظام"
+    "systemSettings": "إعدادات النظام",
+    "exchangeRates": "أسعار الصرف"
   },
   "actions": {
     "title": "الإجراءات",

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Chip, 
-  IconButton, 
-  Tooltip, 
-  Button, 
+import {
+  Box,
+  Chip,
+  IconButton,
+  Tooltip,
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -13,17 +13,18 @@ import {
   Alert,
   Snackbar
 } from '@mui/material';
-import { 
-  Edit, 
-  Delete, 
-  ToggleOn, 
-  ToggleOff, 
-  Assessment, 
+import {
+  Edit,
+  Delete,
+  ToggleOn,
+  ToggleOff,
+  Assessment,
   Visibility,
   VisibilityOff,
   ContentCopy
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useCoupons, useDeleteCoupon, useToggleCouponStatus } from '@/features/marketing/hooks/useMarketing';
@@ -31,23 +32,24 @@ import { BulkGenerateDialog } from '../components/BulkGenerateDialog';
 import { formatDate } from '@/shared/utils/formatters';
 import { toast } from 'react-hot-toast';
 import type { Coupon } from '@/features/marketing/api/marketingApi';
+import type { TFunction } from 'i18next';
 
 // Type definitions for coupon types
 type CouponType = 'percentage' | 'fixed_amount' | 'free_shipping' | 'buy_x_get_y';
 type CouponStatus = 'active' | 'inactive' | 'expired' | 'exhausted';
 
-const couponTypeLabels: Record<CouponType, string> = {
-  percentage: 'نسبة مئوية',
-  fixed_amount: 'مبلغ ثابت',
-  free_shipping: 'شحن مجاني',
-  buy_x_get_y: 'اشتر X احصل على Y',
-};
+const createCouponTypeLabels = (t: TFunction): Record<CouponType, string> => ({
+  percentage: t('types.percentage', { defaultValue: 'نسبة الخصم' }),
+  fixed_amount: t('types.fixed_amount', { defaultValue: 'مبلغ الخصم' }),
+  free_shipping: t('types.free_shipping', { defaultValue: 'شحن مجاني' }),
+  buy_x_get_y: t('types.buy_x_get_y', { defaultValue: 'شراء X والحصول على Y' }),
+});
 
-const couponVisibilityLabels: Record<string, string> = {
-  public: 'عام',
-  private: 'خاص',
-  hidden: 'مخفي',
-};
+const createCouponVisibilityLabels = (t: TFunction): Record<string, string> => ({
+  public: t('visibility.public', { defaultValue: 'عام' }),
+  private: t('visibility.private', { defaultValue: 'خاص' }),
+  hidden: t('visibility.hidden', { defaultValue: 'مخفي' } ),
+});
 
 const couponStatusColors: Record<
   CouponStatus,
@@ -61,12 +63,16 @@ const couponStatusColors: Record<
 
 export const CouponsListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('coupons');
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
   const [bulkGenerateOpen, setBulkGenerateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [couponToDelete, setCouponToDelete] = useState<Coupon | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const couponTypeLabels = createCouponTypeLabels(t);
+  const couponVisibilityLabels = createCouponVisibilityLabels(t);
 
   const { data, isLoading } = useCoupons({
     page: paginationModel.page + 1,
@@ -85,11 +91,11 @@ export const CouponsListPage: React.FC = () => {
     if (couponToDelete) {
       deleteCoupon(couponToDelete._id, {
         onSuccess: () => {
-          setSnackbarMessage('تم حذف الكوبون بنجاح');
+          setSnackbarMessage(t('messages.deleteSuccess', { defaultValue: 'تم حذف الكوبون بنجاح' }));
           setSnackbarOpen(true);
         },
         onError: () => {
-          setSnackbarMessage('فشل في حذف الكوبون');
+          setSnackbarMessage(t('messages.deleteError', { error: 'Unknown error', defaultValue: 'حدث خطأ أثناء حذف الكوبون'     }));
           setSnackbarOpen(true);
         },
       });
@@ -101,11 +107,12 @@ export const CouponsListPage: React.FC = () => {
   const handleToggleStatus = (coupon: Coupon) => {
     toggleStatus(coupon._id, {
       onSuccess: () => {
-        setSnackbarMessage(`تم ${coupon.status === 'active' ? 'تعطيل' : 'تفعيل'} الكوبون بنجاح`);
+        const action = coupon.status === 'active' ? t('messages.toggleDeactivate') : t('messages.toggleActivate');
+        setSnackbarMessage(t('messages.toggleSuccess', { action, defaultValue: 'تم تعطيل الكوبون بنجاح' }));
         setSnackbarOpen(true);
       },
       onError: () => {
-        setSnackbarMessage('فشل في تحديث حالة الكوبون');
+        setSnackbarMessage(t('messages.updateError', { error: 'Unknown error', defaultValue: 'حدث خطأ أثناء تعطيل الكوبون' }));
         setSnackbarOpen(true);
       },
     });
@@ -113,13 +120,13 @@ export const CouponsListPage: React.FC = () => {
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast.success('تم نسخ كود الكوبون');
+    toast.success(t('messages.copySuccess', { defaultValue: 'تم النسخ بنجاح' }));
   };
 
   const columns: GridColDef[] = [
     {
       field: 'code',
-      headerName: 'كود الكوبون',
+      headerName: t('table.columns.code', { defaultValue: 'الكود' }),
       width: 180,
       renderCell: (params) => (
         <Box display="flex" alignItems="center" gap={1}>
@@ -150,7 +157,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'name',
-      headerName: 'اسم الكوبون',
+      headerName: t('table.columns.name', { defaultValue: 'الاسم' }),
       width: 200,
       renderCell: (params) => (
         <Box>
@@ -167,7 +174,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'type',
-      headerName: 'النوع',
+      headerName: t('table.columns.type', { defaultValue: 'النوع' }),
       width: 150,
       renderCell: (params) => (
         <Chip
@@ -179,7 +186,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'discount',
-      headerName: 'الخصم',
+      headerName: t('table.columns.discount', { defaultValue: 'الخصم' }),
       width: 120,
       renderCell: (params) => {
         const coupon = params.row as Coupon;
@@ -187,17 +194,17 @@ export const CouponsListPage: React.FC = () => {
           return `${coupon.discountValue}%`;
         }
         if (coupon.type === 'fixed_amount' && coupon.discountValue) {
-          return `${coupon.discountValue} ريال`;
+          return `$${coupon.discountValue}`;
         }
         if (coupon.type === 'free_shipping') {
-          return 'شحن مجاني';
+          return t('messages.freeShipping', { defaultValue: 'شحن مجاني' });
         }
         return '-';
       },
     },
     {
       field: 'usedCount',
-      headerName: 'الاستخدامات',
+      headerName: t('table.columns.usage', { defaultValue: 'الاستخدام' }),
       width: 120,
       renderCell: (params) => (
         <Box>
@@ -214,7 +221,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'validFrom',
-      headerName: 'الفترة',
+      headerName: t('table.columns.period', { defaultValue: 'الفترة' }),
       width: 180,
       renderCell: (params) => (
         <Box sx={{ fontSize: '0.85rem' }}>
@@ -222,21 +229,21 @@ export const CouponsListPage: React.FC = () => {
             {formatDate(params.row.validFrom)}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            حتى {formatDate(params.row.validUntil)}
+            {t('fields.to')} {formatDate(params.row.validUntil)}
           </Typography>
         </Box>
       ),
     },
     {
       field: 'status',
-      headerName: 'الحالة',
+      headerName: t('table.columns.status', { defaultValue: 'الحالة' }),
       width: 120,
       renderCell: (params) => {
         const statusLabels = {
-          active: 'نشط',
-          inactive: 'غير نشط',
-          expired: 'منتهي',
-          exhausted: 'مستهلك',
+          active: t('status.active', { defaultValue: 'نشط' }  ),
+          inactive: t('status.inactive', { defaultValue: 'غير نشط' }  ),
+          expired: t('status.expired', { defaultValue: 'منتهي' }    ),
+          exhausted: t('status.exhausted', { defaultValue: 'مستهلك' }    ),
         };
         return (
           <Chip
@@ -249,7 +256,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'visibility',
-      headerName: 'الرؤية',
+      headerName: t('table.columns.visibility', { defaultValue: 'الرؤية' }),
       width: 100,
       renderCell: (params) => (
         <Chip
@@ -262,14 +269,14 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('table.columns.actions', { defaultValue: 'الإجراءات' }),
       width: 200,
       sortable: false,
       renderCell: (params) => {
         const coupon = params.row as Coupon;
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title="تعديل">
+            <Tooltip title={t('tooltips.edit', { defaultValue: 'تعديل' })}>
               <IconButton
                 size="small"
                 color="primary"
@@ -282,7 +289,7 @@ export const CouponsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="الإحصائيات">
+            <Tooltip title={t('tooltips.analytics', { defaultValue: 'التحليلات' })}>
               <IconButton
                 size="small"
                 color="info"
@@ -295,7 +302,7 @@ export const CouponsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={coupon.status === 'active' ? 'تعطيل' : 'تفعيل'}>
+            <Tooltip title={coupon.status === 'active' ? t('tooltips.deactivate', { defaultValue: 'تعطيل' }) : t('tooltips.activate', { defaultValue: 'تفعيل' })}>
               <IconButton
                 size="small"
                 color={coupon.status === 'active' ? 'warning' : 'success'}
@@ -313,7 +320,7 @@ export const CouponsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="حذف">
+            <Tooltip title={t('tooltips.delete', { defaultValue: 'حذف' })}>
               <IconButton
                 size="small"
                 color="error"
@@ -335,7 +342,7 @@ export const CouponsListPage: React.FC = () => {
   return (
     <Box>
       <DataTable
-        title="إدارة الكوبونات"
+        title={t('table.title', { defaultValue: 'الكوبونات' })}
         columns={columns}
         rows={data?.data || []}
         loading={isLoading}
@@ -343,7 +350,7 @@ export const CouponsListPage: React.FC = () => {
         onPaginationModelChange={setPaginationModel}
         getRowId={(row) => (row as Coupon)._id}
         onAdd={() => navigate('/coupons/new')}
-        addButtonText="إضافة كوبون"
+        addButtonText={t('table.addButton', { defaultValue: 'إضافة كوبون' })}
         onRowClick={(params) => {
           const row = params.row as Coupon;
           navigate(`/coupons/${row._id}`);
@@ -368,18 +375,18 @@ export const CouponsListPage: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>تأكيد الحذف</DialogTitle>
+        <DialogTitle>{t('messages.deleteConfirmTitle', { defaultValue: 'تأكيد الحذف' })}</DialogTitle>
         <DialogContent>
           <Typography>
-            هل أنت متأكد من حذف الكوبون "{couponToDelete?.code}"؟
+            {t('messages.confirmDelete', { code: couponToDelete?.code, defaultValue: 'هل أنت متأكد من الحذف؟' })}
           </Typography>
           <Alert severity="warning" sx={{ mt: 2 }}>
-            هذا الإجراء لا يمكن التراجع عنه
+            {t('messages.deleteWarning', { defaultValue: 'هذا الكوبون سيتم حذفه بشكل دائم ولا يمكن التراجع عنه' } )}
           </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>
-            إلغاء
+            {t('dialogs.cancel', { defaultValue: 'إلغاء' })}
           </Button>
           <Button
             onClick={handleDeleteConfirm}
@@ -387,7 +394,7 @@ export const CouponsListPage: React.FC = () => {
             variant="contained"
             disabled={deleting}
           >
-            {deleting ? 'جاري الحذف...' : 'حذف'}
+            {deleting ? t('dialogs.deleting', { defaultValue: 'جاري الحذف...' }) : t('dialogs.delete', { defaultValue: 'حذف' }  )}
           </Button>
         </DialogActions>
       </Dialog>

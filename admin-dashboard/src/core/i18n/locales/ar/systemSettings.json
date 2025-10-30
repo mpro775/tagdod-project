@@ -1,0 +1,186 @@
+{
+  "systemSettings": {
+    "title": "إعدادات النظام",
+    "subtitle": "إدارة جميع إعدادات النظام من مكان واحد",
+    "loading": "جاري تحميل الإعدادات...",
+    "saving": "جاري الحفظ...",
+    "saveSettings": "حفظ الإعدادات",
+    "settingsSaved": "تم حفظ الإعدادات بنجاح",
+    "settingsSaveFailed": "فشل في حفظ الإعدادات",
+    "settingsLoadFailed": "فشل في تحميل الإعدادات"
+  },
+  "tabs": {
+    "general": "عام",
+    "email": "البريد",
+    "payment": "الدفع",
+    "shipping": "الشحن",
+    "security": "الأمان",
+    "notifications": "الإشعارات"
+  },
+  "sections": {
+    "general": {
+      "title": "الإعدادات العامة",
+      "subtitle": "إعدادات الموقع الأساسية",
+      "siteName": "اسم الموقع",
+      "siteDescription": "وصف الموقع",
+      "defaultLanguage": "اللغة الافتراضية",
+      "defaultCurrency": "العملة الافتراضية",
+      "timezone": "المنطقة الزمنية",
+      "maintenanceMode": "وضع الصيانة",
+      "maintenanceModeDesc": "تفعيل وضع الصيانة للموقع",
+      "maintenanceMessage": "رسالة وضع الصيانة"
+    },
+    "email": {
+      "title": "إعدادات البريد الإلكتروني",
+      "subtitle": "إعدادات SMTP والبريد",
+      "smtpHost": "SMTP Host",
+      "smtpPort": "SMTP Port",
+      "smtpUser": "SMTP User",
+      "smtpPassword": "SMTP Password",
+      "fromEmail": "بريد المرسل",
+      "fromName": "اسم المرسل",
+      "smtpSecure": "SMTP Secure (TLS)",
+      "smtpSecureDesc": "استخدام اتصال آمن"
+    },
+    "payment": {
+      "title": "إعدادات الدفع",
+      "subtitle": "إعدادات طرق الدفع",
+      "codEnabled": "الدفع عند الاستلام (COD)",
+      "codEnabledDesc": "تفعيل خيار الدفع عند الاستلام",
+      "cardEnabled": "الدفع بالبطاقات",
+      "cardEnabledDesc": "تفعيل الدفع بالبطاقات الائتمانية",
+      "stripePublicKey": "Stripe Public Key",
+      "stripeSecretKey": "Stripe Secret Key",
+      "paymentFeePercentage": "رسوم الدفع (%)"
+    },
+    "shipping": {
+      "title": "إعدادات الشحن",
+      "subtitle": "إعدادات الشحن والتوصيل",
+      "freeShippingEnabled": "الشحن المجاني",
+      "freeShippingEnabledDesc": "تفعيل الشحن المجاني",
+      "freeShippingThreshold": "الحد الأدنى للشحن المجاني (دولار)",
+      "defaultShippingCost": "تكلفة الشحن الافتراضية (دولار)",
+      "estimatedDeliveryDays": "مدة التوصيل المتوقعة (أيام)"
+    },
+    "security": {
+      "title": "إعدادات الأمان",
+      "subtitle": "إعدادات الأمان والحماية",
+      "force2FA": "المصادقة الثنائية (2FA)",
+      "force2FADesc": "إجبار المصادقة الثنائية لجميع المستخدمين",
+      "sessionTimeout": "مدة صلاحية الجلسة (دقائق)",
+      "maxLoginAttempts": "الحد الأقصى لمحاولات الدخول",
+      "lockoutDuration": "مدة الحظر بعد الفشل (دقائق)"
+    },
+    "notifications": {
+      "title": "إعدادات الإشعارات",
+      "subtitle": "إدارة الإشعارات والتنبيهات",
+      "emailNotificationsEnabled": "إشعارات البريد الإلكتروني",
+      "emailNotificationsEnabledDesc": "تفعيل الإشعارات عبر البريد",
+      "smsNotificationsEnabled": "إشعارات SMS",
+      "smsNotificationsEnabledDesc": "تفعيل الإشعارات عبر الرسائل النصية",
+      "pushNotificationsEnabled": "إشعارات Push",
+      "pushNotificationsEnabledDesc": "تفعيل الإشعارات الفورية",
+      "notifyNewOrders": "إشعار الطلبات الجديدة",
+      "notifyNewOrdersDesc": "إشعار عند استلام طلب جديد",
+      "notifyLowStock": "إشعار المخزون المنخفض",
+      "notifyLowStockDesc": "إشعار عند انخفاض المخزون"
+    }
+  },
+  "placeholders": {
+    "siteName": "TagDoD",
+    "siteDescription": "منصة خدمات الطاقة الشمسية",
+    "defaultLanguage": "ar",
+    "defaultCurrency": "YER",
+    "timezone": "Asia/Aden",
+    "maintenanceMessage": "الموقع تحت الصيانة...",
+    "smtpHost": "smtp.gmail.com",
+    "smtpPort": "587",
+    "smtpUser": "user@example.com",
+    "smtpPassword": "••••••••",
+    "fromEmail": "noreply@tagdod.com",
+    "fromName": "TagDoD",
+    "stripePublicKey": "pk_...",
+    "stripeSecretKey": "sk_...",
+    "paymentFeePercentage": "2.5",
+    "freeShippingThreshold": "100000",
+    "defaultShippingCost": "5000",
+    "estimatedDeliveryDays": "3",
+    "sessionTimeout": "60",
+    "maxLoginAttempts": "5",
+    "lockoutDuration": "15"
+  },
+  "messages": {
+    "loading": "جاري تحميل الإعدادات...",
+    "saving": "جاري حفظ الإعدادات...",
+    "saved": "تم حفظ الإعدادات بنجاح",
+    "saveFailed": "فشل في حفظ الإعدادات",
+    "loadFailed": "فشل في تحميل الإعدادات",
+    "maintenanceModeEnabled": "تم تفعيل وضع الصيانة",
+    "maintenanceModeDisabled": "تم تعطيل وضع الصيانة",
+    "smtpTestSuccess": "نجح اختبار اتصال SMTP",
+    "smtpTestFailed": "فشل اختبار اتصال SMTP",
+    "paymentMethodEnabled": "تم تفعيل طريقة الدفع",
+    "paymentMethodDisabled": "تم تعطيل طريقة الدفع",
+    "notificationEnabled": "تم تفعيل الإشعارات",
+    "notificationDisabled": "تم تعطيل الإشعارات"
+  },
+  "tooltips": {
+    "save": "حفظ جميع الإعدادات",
+    "reset": "إعادة تعيين للقيم الافتراضية",
+    "test": "اختبار الإعدادات",
+    "preview": "معاينة التغييرات",
+    "export": "تصدير الإعدادات",
+    "import": "استيراد الإعدادات"
+  },
+  "buttons": {
+    "save": "حفظ الإعدادات",
+    "reset": "إعادة تعيين",
+    "test": "اختبار",
+    "preview": "معاينة",
+    "export": "تصدير",
+    "import": "استيراد",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد"
+  },
+  "status": {
+    "enabled": "مفعل",
+    "disabled": "معطل",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "configured": "مُعد",
+    "notConfigured": "غير مُعد",
+    "testing": "جاري الاختبار...",
+    "success": "نجح",
+    "error": "خطأ"
+  },
+  "validation": {
+    "required": "هذا الحقل مطلوب",
+    "invalidEmail": "عنوان بريد إلكتروني غير صحيح",
+    "invalidUrl": "رابط غير صحيح",
+    "invalidNumber": "يجب أن يكون رقماً صحيحاً",
+    "minValue": "يجب أن يكون على الأقل {{min}}",
+    "maxValue": "يجب أن يكون على الأكثر {{max}}",
+    "positiveNumber": "يجب أن يكون رقماً موجباً",
+    "invalidPort": "رقم منفذ غير صحيح (1-65535)",
+    "invalidPercentage": "يجب أن يكون بين 0 و 100",
+    "invalidCurrency": "رمز عملة غير صحيح",
+    "invalidTimezone": "منطقة زمنية غير صحيحة"
+  },
+  "categories": {
+    "site": "الموقع",
+    "communication": "الاتصال",
+    "commerce": "التجارة",
+    "delivery": "التوصيل",
+    "protection": "الحماية",
+    "alerts": "التنبيهات"
+  },
+  "units": {
+    "minutes": "دقائق",
+    "hours": "ساعات",
+    "days": "أيام",
+    "percentage": "نسبة مئوية",
+    "usd": "دولار",
+    "yer": "ريال يمني",
+    "sar": "ريال سعودي"
+  }
+}

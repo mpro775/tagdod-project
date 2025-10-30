@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, Typography } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { systemMonitoringApi } from '../api/systemMonitoringApi';
 import { Skeleton } from '@mui/material';
 import { toast } from 'react-hot-toast';
 
 export function ApiPerformanceChart() {
+  const { t } = useTranslation();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +25,7 @@ export function ApiPerformanceChart() {
 
         setData(formattedData);
       } catch {
-        toast.error('فشل في تحميل بيانات أداء النقاط API');
+        toast.error(t('system-monitoring.charts.failed', { defaultValue: 'فشل تحميل البيانات' }));
       } finally {
         setLoading(false);
       }
@@ -39,7 +41,7 @@ export function ApiPerformanceChart() {
     return (
       <Card>
         <CardHeader>
-          <Typography variant="h6">أداء نقاط API</Typography>
+          <Typography variant="h6">{t('system-monitoring.charts.apiPerformance.title', { defaultValue: 'أداء الـ API' })}</Typography>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[300px] w-full" />
@@ -51,7 +53,7 @@ export function ApiPerformanceChart() {
   return (
     <Card>
       <CardHeader>
-        <Typography variant="h6">أبطأ نقاط API (متوسط وقت الاستجابة)</Typography>
+        <Typography variant="h6">{t('system-monitoring.charts.apiPerformance.subtitle', { defaultValue: 'أداء الـ API' })}</Typography>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -74,8 +76,8 @@ export function ApiPerformanceChart() {
               labelStyle={{ color: 'hsl(var(--foreground))' }}
             />
             <Legend />
-            <Bar dataKey="avgTime" fill="#3b82f6" name="متوسط الوقت (ms)" />
-            <Bar dataKey="maxTime" fill="#ef4444" name="أقصى وقت (ms)" />
+            <Bar dataKey="avgTime" fill="#3b82f6" name={t('system-monitoring.charts.apiPerformance.metrics.avgTime', { defaultValue: 'متوسط الوقت' })} />
+            <Bar dataKey="maxTime" fill="#ef4444" name={t('system-monitoring.charts.apiPerformance.metrics.maxTime', { defaultValue: 'الوقت الأقصى' } )} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

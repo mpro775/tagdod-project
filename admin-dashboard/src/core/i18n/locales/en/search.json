@@ -1,0 +1,48 @@
+{
+  "navigation": {
+    "title": "🔍 Search Management & Analytics",
+    "subtitle": "Comprehensive analysis of search operations and user behavior"
+  },
+  "tabs": {
+    "popularTerms": "📊 Popular Terms",
+    "zeroResults": "⚠️ Zero Results"
+  },
+  "stats": {
+    "totalSearches": "Total Searches",
+    "uniqueQueries": "Unique Queries",
+    "averageResponseTime": "Average Response Time",
+    "zeroResultsPercentage": "Zero Results"
+  },
+  "table": {
+    "title": "📈 Top Search Keywords",
+    "columns": {
+      "rank": "#",
+      "keyword": "Keyword",
+      "count": "Count",
+      "averageResults": "Average Results",
+      "status": "Status"
+    },
+    "status": {
+      "withResults": "With Results",
+      "noResults": "No Results"
+    },
+    "loading": "Loading...",
+    "noData": "No data available"
+  },
+  "placeholders": {
+    "comingSoon": {
+      "title": "Coming Soon: Zero Results Searches",
+      "subtitle": "This feature will be added when Search Logs are enabled"
+    }
+  },
+  "messages": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": {
+      "loaded": "Data loaded successfully"
+    },
+    "error": {
+      "loadFailed": "Failed to load search data"
+    }
+  }
+}

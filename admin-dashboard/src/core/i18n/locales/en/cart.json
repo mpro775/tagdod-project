@@ -1,0 +1,261 @@
+{
+  "navigation": {
+    "title": "Cart Management",
+    "abandonedCarts": "Abandoned Carts",
+    "analytics": "Cart Analytics"
+  },
+  "list": {
+    "title": "Cart Management",
+    "subtitle": "Manage customer shopping carts and abandoned purchases",
+    "searchPlaceholder": "Search carts...",
+    "columns": {
+      "user": "User",
+      "status": "Status",
+      "itemsCount": "Items Count",
+      "totalValue": "Total Value",
+      "lastActivity": "Last Activity",
+      "additionalInfo": "Additional Info",
+      "actions": "Actions"
+    },
+    "empty": {
+      "title": "No carts found",
+      "message": "No carts match the specified criteria"
+    },
+    "user": {
+      "unknown": "Unknown User",
+      "guest": "Guest",
+      "device": "Device {{id}}",
+      "noContact": "Not Available"
+    },
+    "status": {
+      "active": "Active",
+      "abandoned": "Abandoned",
+      "converted": "Converted",
+      "expired": "Expired",
+      "emailsSent": "{{count}} emails sent",
+      "convertedToOrder": "Converted to Order"
+    },
+    "items": {
+      "count": "{{count}} products",
+      "single": "1 product"
+    },
+    "menu": {
+      "viewDetails": "View Details",
+      "convertToOrder": "Convert to Order",
+      "sendReminder": "Send Reminder",
+      "deleteCart": "Delete Cart",
+      "moreActions": "More Actions"
+    }
+  },
+  "filters": {
+    "title": "Filter Carts",
+    "search": "Search",
+    "clearFilters": "Clear Filters",
+    "advanced": {
+      "show": "Show Advanced Filters",
+      "hide": "Hide Advanced Filters",
+      "clearTooltip": "Clear all filters"
+    },
+    "status": {
+      "label": "Cart Status",
+      "all": "All Statuses",
+      "active": "Active",
+      "abandoned": "Abandoned",
+      "converted": "Converted",
+      "expired": "Expired"
+    },
+    "type": {
+      "label": "Cart Type",
+      "all": "All Types",
+      "abandonedOnly": "Abandoned Only",
+      "notAbandoned": "Not Abandoned"
+    },
+    "sorting": {
+      "sortBy": "Sort By",
+      "sortOrder": "Sort Order",
+      "createdAt": "Creation Date",
+      "updatedAt": "Update Date",
+      "lastActivity": "Last Activity",
+      "total": "Total Value",
+      "ascending": "Ascending",
+      "descending": "Descending"
+    },
+    "dateRange": {
+      "from": "From Date",
+      "to": "To Date"
+    },
+    "valueRange": {
+      "minTotal": "Minimum Total",
+      "maxTotal": "Maximum Total"
+    },
+    "content": {
+      "label": "Content Status",
+      "all": "All Carts",
+      "withItems": "With Products",
+      "empty": "Empty"
+    },
+    "user": {
+      "id": "User ID",
+      "idPlaceholder": "Enter user ID",
+      "deviceId": "Device ID",
+      "deviceIdPlaceholder": "Enter device ID"
+    },
+    "activeFilters": {
+      "title": "Active Filters:",
+      "count": "{{count}} active filters",
+      "status": "Status: {{status}}",
+      "type": "Type: {{type}}",
+      "from": "From: {{date}}",
+      "to": "To: {{date}}",
+      "minTotal": "Min: ${{value}}",
+      "maxTotal": "Max: ${{value}}",
+      "content": "Content: {{content}}"
+    }
+  },
+  "stats": {
+    "title": "Cart Statistics",
+    "totalCarts": "Total Carts",
+    "activeCarts": "Active Carts",
+    "abandonedCarts": "Abandoned Carts",
+    "convertedCarts": "Converted Carts",
+    "abandonmentRate": "Abandonment Rate",
+    "conversionRate": "Conversion Rate",
+    "averageValue": "Average Cart Value",
+    "recoveryRate": "Recovery Rate",
+    "trend": {
+      "positive": "+{{value}}%",
+      "negative": "{{value}}%"
+    },
+    "period": {
+      "label": "Time Period",
+      "7days": "Last 7 Days",
+      "30days": "Last 30 Days",
+      "90days": "Last 90 Days",
+      "1year": "Last Year"
+    }
+  },
+  "analytics": {
+    "title": "Cart Analytics",
+    "subtitle": "Comprehensive analytics about cart behavior and performance",
+    "tabs": {
+      "overview": "Overview",
+      "conversion": "Conversion Analysis",
+      "recovery": "Recovery Campaigns",
+      "insights": "Insights"
+    },
+    "conversion": {
+      "title": "Conversion Rates",
+      "daily": "Daily Conversion",
+      "weekly": "Weekly Conversion",
+      "monthly": "Monthly Conversion",
+      "trend": "Conversion Trend"
+    },
+    "recovery": {
+      "title": "Recovery Campaigns",
+      "emailsSent": "Emails Sent",
+      "emailsOpened": "Emails Opened",
+      "clicks": "Clicks",
+      "conversions": "Conversions",
+      "effectiveness": "Campaign Effectiveness"
+    },
+    "insights": {
+      "title": "Key Insights",
+      "abandonmentReasons": "Abandonment Reasons",
+      "optimalTiming": "Optimal Reminder Timing",
+      "effectiveContent": "Effective Content Types",
+      "recommendations": "Recommendations"
+    }
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "convert": "Convert to Order",
+    "sendReminder": "Send Reminder",
+    "bulkDelete": "Delete Selected",
+    "bulkClear": "Clear Content",
+    "deselectAll": "Deselect All",
+    "search": "Search",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "send": "Send"
+  },
+  "dialogs": {
+    "convertToOrder": {
+      "title": "Convert Cart to Order",
+      "subtitle": "Convert this cart to a customer order",
+      "customerInfo": "Customer Information",
+      "shippingAddress": "Shipping Address",
+      "orderSummary": "Order Summary",
+      "cartItems": "Cart Items",
+      "total": "Total",
+      "confirm": "Confirm Conversion",
+      "success": "Cart successfully converted to order",
+      "error": "Failed to convert cart to order"
+    },
+    "sendReminder": {
+      "title": "Send Reminder Email",
+      "subtitle": "Send a reminder email to recover this abandoned cart",
+      "preview": "Email Preview",
+      "subject": "Email Subject",
+      "content": "Email Content",
+      "send": "Send Reminder",
+      "success": "Reminder email sent successfully",
+      "error": "Failed to send reminder email"
+    },
+    "delete": {
+      "title": "Delete Cart",
+      "message": "Are you sure you want to delete this cart? This action cannot be undone.",
+      "confirm": "Delete Cart"
+    },
+    "bulkDelete": {
+      "title": "Delete Multiple Carts",
+      "message": "Are you sure you want to delete {{count}} carts? This action cannot be undone.",
+      "confirm": "Delete Carts"
+    },
+    "bulkClear": {
+      "title": "Clear Cart Content",
+      "message": "Are you sure you want to clear the content of {{count}} carts?",
+      "confirm": "Clear Content"
+    }
+  },
+  "bulk": {
+    "selected": "{{count}} carts selected",
+    "actions": "Bulk Actions",
+    "noneSelected": "Please select at least one cart"
+  },
+  "pagination": {
+    "rowsPerPage": "Rows per page:",
+    "displayedRows": "{{from}}-{{to}} of {{count}}"
+  },
+  "validation": {
+    "customerNameRequired": "Customer name is required",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email address",
+    "phoneRequired": "Phone number is required",
+    "streetRequired": "Street address is required",
+    "cityRequired": "City is required",
+    "countryRequired": "Country is required"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "noData": "No data available",
+    "success": {
+      "converted": "Cart converted successfully",
+      "deleted": "Cart deleted successfully",
+      "reminderSent": "Reminder sent successfully",
+      "bulkDeleted": "Carts deleted successfully",
+      "bulkCleared": "Cart content cleared successfully"
+    },
+    "error": {
+      "loadFailed": "Failed to load carts",
+      "convertFailed": "Failed to convert cart",
+      "deleteFailed": "Failed to delete cart",
+      "reminderFailed": "Failed to send reminder",
+      "bulkFailed": "Bulk operation failed"
+    }
+  }
+}

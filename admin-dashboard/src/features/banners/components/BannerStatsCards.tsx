@@ -10,6 +10,7 @@ import {
   LinearProgress,
 } from '@mui/material';
 import { Visibility, TrendingUp, Campaign, AdsClick } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useBannersAnalytics } from '../hooks/useBanners';
 
 interface StatCardProps {
@@ -95,6 +96,7 @@ const LoadingSkeleton: React.FC = () => (
 );
 
 export const BannerStatsCards: React.FC = () => {
+  const { t } = useTranslation('banners');
   const { data: analytics, isLoading, error } = useBannersAnalytics();
 
   if (isLoading) {
@@ -105,7 +107,7 @@ export const BannerStatsCards: React.FC = () => {
     return (
       <Box textAlign="center" py={4}>
         <Typography variant="h6" color="error">
-          فشل في تحميل الإحصائيات
+          {t('stats.error')}
         </Typography>
       </Box>
     );
@@ -134,41 +136,41 @@ export const BannerStatsCards: React.FC = () => {
     <Grid container spacing={3}>
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
-          title="إجمالي البانرات"
+          title={t('stats.totalBanners')}
           value={totalBanners}
           icon={<Campaign />}
           color="primary"
-          subtitle={`${activeBanners} نشط، ${inactiveBanners} غير نشط`}
+          subtitle={t('stats.activeInactive', { active: activeBanners, inactive: inactiveBanners })}
         />
       </Grid>
 
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
-          title="إجمالي المشاهدات"
+          title={t('stats.totalViews')}
           value={totalViews.toLocaleString()}
           icon={<Visibility />}
           color="info"
-          subtitle="جميع البانرات"
+          subtitle={t('stats.allBanners')}
         />
       </Grid>
 
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
-          title="إجمالي النقرات"
+          title={t('stats.totalClicks')}
           value={totalClicks.toLocaleString()}
           icon={<AdsClick />}
           color="success"
-          subtitle={`معدل النقر: ${ctrPercentage.toFixed(1)}%`}
+          subtitle={t('stats.clickRate', { rate: ctrPercentage.toFixed(1) })}
         />
       </Grid>
 
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <StatCard
-          title="إجمالي التحويلات"
+          title={t('stats.totalConversions')}
           value={totalConversions.toLocaleString()}
           icon={<TrendingUp />}
           color="warning"
-          subtitle={`معدل التحويل: ${conversionPercentage.toFixed(1)}%`}
+          subtitle={t('stats.conversionRate', { rate: conversionPercentage.toFixed(1) })}
         />
       </Grid>
 
@@ -177,11 +179,11 @@ export const BannerStatsCards: React.FC = () => {
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              حالة البانرات
+              {t('stats.statusChart')}
             </Typography>
             <Box mb={2}>
               <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body2">البانرات النشطة</Typography>
+                <Typography variant="body2">{t('stats.activeBanners')}</Typography>
                 <Typography variant="body2">{activePercentage.toFixed(1)}%</Typography>
               </Box>
               <LinearProgress
@@ -193,10 +195,10 @@ export const BannerStatsCards: React.FC = () => {
             </Box>
             <Box display="flex" justifyContent="space-between">
               <Typography variant="body2" color="success.main">
-                {activeBanners} نشط
+                {activeBanners} {t('stats.active')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {inactiveBanners} غير نشط
+                {inactiveBanners} {t('stats.inactive')}
               </Typography>
             </Box>
           </CardContent>
@@ -207,11 +209,11 @@ export const BannerStatsCards: React.FC = () => {
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              الأداء العام
+              {t('stats.performanceChart')}
             </Typography>
             <Box mb={2}>
               <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body2">معدل النقر</Typography>
+                <Typography variant="body2">{t('stats.clickRateLabel')}</Typography>
                 <Typography variant="body2">{ctrPercentage.toFixed(1)}%</Typography>
               </Box>
               <LinearProgress
@@ -223,7 +225,7 @@ export const BannerStatsCards: React.FC = () => {
             </Box>
             <Box mb={2}>
               <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body2">معدل التحويل</Typography>
+                <Typography variant="body2">{t('stats.conversionRateLabel')}</Typography>
                 <Typography variant="body2">{conversionPercentage.toFixed(1)}%</Typography>
               </Box>
               <LinearProgress

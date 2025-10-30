@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Chip, IconButton, Tooltip, Typography, Alert } from '@mui/material';
 import { Edit, Delete, ToggleOn, ToggleOff, Visibility, VisibilityOff } from '@mui/icons-material';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 // import { BrandStatsCards } from '../components/BrandStatsCards'; // معطل مؤقتاً
 import { BrandFilters } from '../components/BrandFilters';
@@ -12,6 +13,8 @@ import { formatDate } from '@/shared/utils/formatters';
 import type { Brand, ListBrandsParams } from '../types/brand.types';
 
 export const BrandsListPage: React.FC = () => {
+  const { t } = useTranslation('brands');
+
   // State management
   const [filters, setFilters] = useState<ListBrandsParams>({
     page: 1,
@@ -110,7 +113,7 @@ export const BrandsListPage: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'name',
-      headerName: 'العلامة التجارية',
+      headerName: t('table.columns.brand', { defaultValue: 'العلامة التجارية' }),
       width: 300,
       renderCell: (params) => {
         const brand = params.row as Brand;
@@ -169,7 +172,7 @@ export const BrandsListPage: React.FC = () => {
     },
     {
       field: 'description',
-      headerName: 'الوصف',
+      headerName: t('table.columns.description', { defaultValue: 'الوصف' }  ),
       width: 200,
       renderCell: (params) => {
         const brand = params.row as Brand;
@@ -184,14 +187,14 @@ export const BrandsListPage: React.FC = () => {
               WebkitBoxOrient: 'vertical',
             }}
           >
-            {brand.description || brand.descriptionEn || 'لا يوجد وصف'}
+            {brand.description || brand.descriptionEn || t('messages.noDescription')}
           </Typography>
         );
       },
     },
     {
       field: 'sortOrder',
-      headerName: 'ترتيب العرض',
+      headerName: t('table.columns.sortOrder', { defaultValue: 'ترتيب العرض' }),
       width: 120,
       align: 'center',
       renderCell: (params) => (
@@ -200,14 +203,14 @@ export const BrandsListPage: React.FC = () => {
     },
     {
       field: 'isActive',
-      headerName: 'الحالة',
+      headerName: t('table.columns.status', { defaultValue: 'الحالة' }),
       width: 120,
       renderCell: (params) => {
         const brand = params.row as Brand;
         return (
           <Chip
             icon={brand.isActive ? <Visibility /> : <VisibilityOff />}
-            label={brand.isActive ? 'نشط' : 'غير نشط'}
+            label={brand.isActive ? t('status.active', { defaultValue: 'نشط' }) : t('status.inactive', { defaultValue: 'غير نشط' }  )}
             color={brand.isActive ? 'success' : 'default'}
             size="small"
           />
@@ -216,20 +219,20 @@ export const BrandsListPage: React.FC = () => {
     },
     {
       field: 'createdAt',
-      headerName: 'تاريخ الإنشاء',
+      headerName: t('table.columns.createdAt', { defaultValue: 'تاريخ الإنشاء' }),
       width: 150,
       valueFormatter: (value) => formatDate(value as Date),
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('table.columns.actions', { defaultValue: 'الإجراءات' }),
       width: 200,
       sortable: false,
       renderCell: (params) => {
         const brand = params.row as Brand;
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title="تعديل">
+            <Tooltip title={t('tooltips.edit')}>
               <IconButton
                 size="small"
                 color="primary"
@@ -243,7 +246,7 @@ export const BrandsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={brand.isActive ? 'إيقاف' : 'تفعيل'}>
+            <Tooltip title={brand.isActive ? t('tooltips.deactivate') : t('tooltips.activate')}>
               <IconButton
                 size="small"
                 color={brand.isActive ? 'warning' : 'success'}
@@ -257,7 +260,7 @@ export const BrandsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="حذف">
+            <Tooltip title={t('tooltips.delete')}>
               <IconButton
                 size="small"
                 color="error"
@@ -292,20 +295,20 @@ export const BrandsListPage: React.FC = () => {
       {/* رسالة الخطأ */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error.message || 'فشل في تحميل العلامات التجارية'}
+          {error.message || t('messages.loadError', { defaultValue: 'حدث خطأ في تحميل البيانات' })}
         </Alert>
       )}
 
       {/* جدول العلامات التجارية */}
       <DataTable
-        title="إدارة العلامات التجارية"
+        title={t('table.title', { defaultValue: 'قائمة العلامات التجارية' })}
         columns={columns}
         rows={brands}
         loading={isLoading}
         paginationModel={paginationModel}
         onPaginationModelChange={handlePaginationModelChange}
         onAdd={handleAddBrand}
-        addButtonText="إضافة علامة تجارية"
+        addButtonText={t('table.addButton', { defaultValue: 'إضافة علامة تجارية' }    )}
         getRowId={(row) => (row as Brand)._id}
         onRowClick={(params) => {
           const row = params.row as Brand;

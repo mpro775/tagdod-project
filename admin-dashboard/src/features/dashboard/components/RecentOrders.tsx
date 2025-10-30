@@ -7,11 +7,12 @@ import {
   Chip,
   Avatar,
   IconButton,
-  LinearProgress,
   alpha,
-  useTheme
+  useTheme,
+  Skeleton
 } from '@mui/material';
 import { Visibility } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 
 interface Order {
   id: string;
@@ -38,20 +39,34 @@ interface RecentOrdersProps {
 
 export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading }) => {
   const theme = useTheme();
+  const { t, i18n } = useTranslation(['dashboard']);
+  // Always use English numbers, regardless of language
+  const locale = React.useMemo(() => (i18n.language === 'ar' ? 'ar-SA' : 'en-US'), [i18n.language]);
+  const currencyFormatter = React.useMemo(
+    () =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: i18n.language === 'ar' ? 'YER' : 'USD',
+        maximumFractionDigits: 0,
+      }),
+    [i18n.language]
+  );
 
   const getStatusConfig = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return { label: 'مكتمل', color: 'success' as const };
-      case 'pending':
-        return { label: 'معلق', color: 'warning' as const };
-      case 'processing':
-        return { label: 'قيد المعالجة', color: 'info' as const };
-      case 'cancelled':
-        return { label: 'ملغي', color: 'error' as const };
-      default:
-        return { label: status, color: 'default' as const };
-    }
+    const normalized = status?.toLowerCase();
+    const statusMap: Record<string, { key: string; color: 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning' }> = {
+      completed: { key: 'completed', color: 'success' },
+      pending: { key: 'pending', color: 'warning' },
+      processing: { key: 'processing', color: 'info' },
+      cancelled: { key: 'cancelled', color: 'error' },
+    };
+
+    const fallback = { key: normalized || 'unknown', color: 'default' as const };
+    const config = statusMap[normalized || ''] || fallback;
+    return {
+      label: t(`recentOrders.status.${config.key}`, status),
+      color: config.color,
+    };
   };
 
   if (isLoading) {
@@ -59,9 +74,20 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
       <Card>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            الطلبات الأخيرة
+            {t('recentOrders.title', 'الطلبات الأخيرة')}
           </Typography>
-          <LinearProgress />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[1, 2, 3, 4].map((item) => (
+              <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Skeleton variant="circular" width={48} height={48} />
+                <Box sx={{ flex: 1 }}>
+                  <Skeleton variant="text" width="60%" height={18} />
+                  <Skeleton variant="text" width="40%" height={14} />
+                </Box>
+                <Skeleton variant="text" width={80} height={20} />
+              </Box>
+            ))}
+          </Box>
         </CardContent>
       </Card>
     );
@@ -75,11 +101,11 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
       <Card>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            الطلبات الأخيرة
+            {t('recentOrders.title', 'الطلبات الأخيرة')}
           </Typography>
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="body2" color="text.secondary">
-              لا توجد طلبات حديثة
+              {t('recentOrders.empty', 'لا توجد طلبات حديثة')}
             </Typography>
           </Box>
         </CardContent>
@@ -90,7 +116,7 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' });
+    return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
   };
 
   return (
@@ -98,20 +124,23 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h6" fontWeight="bold">
-            الطلبات الأخيرة
+            {t('recentOrders.title', 'الطلبات الأخيرة')}
           </Typography>
           <Typography variant="caption" color="primary" sx={{ cursor: 'pointer', fontWeight: 600 }}>
-            عرض الكل
+            {t('recentOrders.viewAll', 'عرض الكل')}
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {ordersList.map((order, index) => {
-            const customerName = order.customer?.name || order.guestInfo?.name || 'عميل';
+            const customerName = order.customer?.name || order.guestInfo?.name || t('recentOrders.defaultCustomer', 'عميل');
             const itemsCount = order.items?.length || 0;
             const orderDate = order.createdAt ? formatDate(order.createdAt) : '';
             const statusConfig = getStatusConfig(order.status);
             const orderKey = order._id || order.id || `order-${index}`;
+            const orderTotalLabel = order.total !== undefined && order.total !== null
+              ? currencyFormatter.format(order.total)
+              : t('recentOrders.amountPlaceholder', '—');
             
             return (
             <Box
@@ -137,13 +166,15 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
                     height: 48,
                   }}
                 >
-                  {customerName?.charAt(0) || 'ع'}
+                  {customerName?.charAt(0) || t('recentOrders.defaultInitial', 'ع')}
                 </Avatar>
 
                 <Box sx={{ flex: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                     <Typography variant="body2" fontWeight="600">
-                      طلب #{order.orderNumber || (order._id || order.id).slice(-6)}
+                      {t('recentOrders.orderNumber', 'طلب #{{number}}', {
+                        number: order.orderNumber || (order._id || order.id || '').slice(-6),
+                      })}
                     </Typography>
                     <Chip
                       label={statusConfig.label}
@@ -155,13 +186,13 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
                   
                   <Typography variant="caption" color="text.secondary" display="block">
                     {customerName}
-                    {itemsCount > 0 && ` • ${itemsCount} منتج`}
+                    {itemsCount > 0 && ` • ${t('recentOrders.itemsCount', '{{count}} منتج', { count: itemsCount })}`}
                   </Typography>
                 </Box>
 
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="h6" fontWeight="bold" color="success.main">
-                    {order.total?.toLocaleString('ar-SA') || 0} $
+                    {orderTotalLabel}
                   </Typography>
                   {orderDate && (
                     <Typography variant="caption" color="text.secondary">

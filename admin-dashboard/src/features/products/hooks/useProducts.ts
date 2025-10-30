@@ -130,7 +130,7 @@ export const useUpdateVariant = () => {
       productId: string;
       variantId: string;
       data: UpdateVariantDto;
-    }) => productsApi.updateVariant(productId, variantId, data),
+    }) => productsApi.updateVariant(variantId, data),
     onSuccess: (_, variables) => {
       toast.success('تم تحديث الخيار بنجاح');
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, variables.productId] });
@@ -145,7 +145,7 @@ export const useDeleteVariant = () => {
 
   return useMutation({
     mutationFn: ({ productId, variantId }: { productId: string; variantId: string }) =>
-      productsApi.deleteVariant(productId, variantId),
+      productsApi.deleteVariant(variantId),
     onSuccess: (_, variables) => {
       toast.success('تم حذف الخيار بنجاح');
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, variables.productId] });
@@ -161,9 +161,10 @@ export const useGenerateVariants = () => {
   return useMutation({
     mutationFn: ({ productId, data }: { productId: string; data: GenerateVariantsDto }) =>
       productsApi.generateVariants(productId, data),
-    onSuccess: (_, variables) => {
-      toast.success('تم إنشاء الخيارات بنجاح');
+    onSuccess: (result, variables) => {
+      toast.success(`تم توليد ${result.generated} متغير من أصل ${result.total} بنجاح`);
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, variables.productId] });
+      queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY] });
     },
     onError: ErrorHandler.showError,
   });

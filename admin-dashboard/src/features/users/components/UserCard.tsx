@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { User, UserStatus, UserRole } from '../types/user.types';
 import { formatDate } from '@/shared/utils/formatters';
+import { useTranslation } from 'react-i18next';
 
 interface UserCardProps {
   user: User;
@@ -43,26 +44,11 @@ const STATUS_ICONS: Record<UserStatus, React.ReactNode> = {
   [UserStatus.DELETED]: <DeleteIcon color="error" />,
 };
 
-const STATUS_LABELS: Record<UserStatus, string> = {
-  [UserStatus.ACTIVE]: 'نشط',
-  [UserStatus.SUSPENDED]: 'معلق',
-  [UserStatus.PENDING]: 'قيد الانتظار',
-  [UserStatus.DELETED]: 'محذوف',
-};
-
 const STATUS_COLORS: Record<UserStatus, 'success' | 'error' | 'warning' | 'default'> = {
   [UserStatus.ACTIVE]: 'success',
   [UserStatus.SUSPENDED]: 'error',
   [UserStatus.PENDING]: 'warning',
   [UserStatus.DELETED]: 'default',
-};
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  [UserRole.USER]: 'مستخدم',
-  [UserRole.ADMIN]: 'مدير',
-  [UserRole.SUPER_ADMIN]: 'مدير عام',
-  [UserRole.MERCHANT]: 'تاجر',
-  [UserRole.ENGINEER]: 'مهندس',
 };
 
 const ROLE_COLORS: Record<
@@ -84,9 +70,25 @@ export const UserCard: React.FC<UserCardProps> = ({
   onStatusToggle,
   showActions = true,
 }) => {
+  const { t } = useTranslation(['users', 'common']);
   const isDeleted = !!user.deletedAt;
-  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'غير محدد';
+  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || t('users:card.unknown', 'غير محدد');
   const primaryRole = user.roles?.[0] || UserRole.USER;
+
+  const STATUS_LABELS: Record<UserStatus, string> = {
+    [UserStatus.ACTIVE]: t('users:status.active', 'نشط'),
+    [UserStatus.SUSPENDED]: t('users:status.suspended', 'معلق'),
+    [UserStatus.PENDING]: t('users:status.pending', 'قيد الانتظار'),
+    [UserStatus.DELETED]: t('users:status.deleted', 'محذوف'),
+  };
+
+  const ROLE_LABELS: Record<UserRole, string> = {
+    [UserRole.USER]: t('users:roles.user', 'مستخدم'),
+    [UserRole.ADMIN]: t('users:roles.admin', 'مدير'),
+    [UserRole.SUPER_ADMIN]: t('users:roles.super_admin', 'مدير عام'),
+    [UserRole.MERCHANT]: t('users:roles.merchant', 'تاجر'),
+    [UserRole.ENGINEER]: t('users:roles.engineer', 'مهندس'),
+  };
 
   const getCapabilityIcons = () => {
     const icons = [];
@@ -153,7 +155,7 @@ export const UserCard: React.FC<UserCardProps> = ({
         {user.capabilities && (
           <Box sx={{ mb: 2 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              القدرات:
+              {t('users:card.capabilities', 'القدرات:')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <PersonIcon color="primary" />
@@ -167,7 +169,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           {user.jobTitle && (
             <Grid component="div" size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary">
-                <strong>الوظيفة:</strong> {user.jobTitle}
+                <strong>{t('users:card.jobTitle', 'الوظيفة:')}</strong> {user.jobTitle}
               </Typography>
             </Grid>
           )}
@@ -175,13 +177,13 @@ export const UserCard: React.FC<UserCardProps> = ({
             user.capabilities.wholesale_discount_percent > 0 && (
               <Grid component="div" size={{ xs: 12 }}>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>خصم الجملة:</strong> {user.capabilities.wholesale_discount_percent}%
+                  <strong>{t('users:card.wholesaleDiscount', 'خصم الجملة:')}</strong> {user.capabilities.wholesale_discount_percent}%
                 </Typography>
               </Grid>
             )}
           <Grid component="div" size={{ xs: 12 }}>
             <Typography variant="body2" color="text.secondary">
-              <strong>تاريخ الإنشاء:</strong> {formatDate(user.createdAt)}
+              <strong>{t('users:card.createdAt', 'تاريخ الإنشاء:')}</strong> {formatDate(user.createdAt)}
             </Typography>
           </Grid>
         </Grid>
@@ -194,7 +196,7 @@ export const UserCard: React.FC<UserCardProps> = ({
             <Box sx={{ display: 'flex', gap: 1 }}>
               {isDeleted ? (
                 onRestore && (
-                  <Tooltip title="استعادة">
+                  <Tooltip title={t('users:actions.restore', 'استعادة')}>
                     <IconButton size="small" color="primary" onClick={() => onRestore(user)}>
                       <RestoreIcon />
                     </IconButton>
@@ -202,12 +204,12 @@ export const UserCard: React.FC<UserCardProps> = ({
                 )
               ) : (
                 <>
-                  <Tooltip title="تعديل">
+                  <Tooltip title={t('users:actions.edit', 'تعديل')}>
                     <IconButton size="small" color="primary" onClick={() => onEdit(user)}>
                       <EditIcon />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="حذف">
+                  <Tooltip title={t('users:actions.delete', 'حذف')}>
                     <IconButton size="small" color="error" onClick={() => onDelete(user)}>
                       <DeleteIcon />
                     </IconButton>
@@ -218,7 +220,7 @@ export const UserCard: React.FC<UserCardProps> = ({
 
             {onStatusToggle && !isDeleted && (
               <Chip
-                label={user.status === UserStatus.ACTIVE ? 'نشط' : 'موقوف'}
+                label={user.status === UserStatus.ACTIVE ? t('users:status.active', 'نشط') : t('users:status.suspended', 'موقوف')}
                 color={user.status === UserStatus.ACTIVE ? 'success' : 'error'}
                 size="small"
                 clickable

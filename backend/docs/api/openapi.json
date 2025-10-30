@@ -1994,6 +1994,45 @@
         ]
       }
     },
+    "/api/v1/admin/products/{productId}/generate-variants": {
+      "post": {
+        "operationId": "generateVariants",
+        "summary": "توليد المتغيرات تلقائياً",
+        "parameters": [
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateVariantsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Variants generated successfully"
+          }
+        },
+        "tags": [
+          "إدارة-المنتجات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/products/variants/{id}": {
       "get": {
         "operationId": "getVariant",
@@ -4023,7 +4062,8 @@
                               "multiselect",
                               "text",
                               "number",
-                              "boolean"
+                              "boolean",
+                              "color"
                             ],
                             "example": "select"
                           },
@@ -4123,7 +4163,8 @@
                               "multiselect",
                               "text",
                               "number",
-                              "boolean"
+                              "boolean",
+                              "color"
                             ],
                             "example": "select"
                           },
@@ -4296,7 +4337,8 @@
                             "multiselect",
                             "text",
                             "number",
-                            "boolean"
+                            "boolean",
+                            "color"
                           ],
                           "example": "select"
                         },
@@ -25676,6 +25718,10 @@
         "type": "object",
         "properties": {}
       },
+      "GenerateVariantsDto": {
+        "type": "object",
+        "properties": {}
+      },
       "UpdateVariantDto": {
         "type": "object",
         "properties": {}
@@ -25688,7 +25734,8 @@
           "multiselect",
           "text",
           "number",
-          "boolean"
+          "boolean",
+          "color"
         ]
       },
       "CreateAttributeDto": {

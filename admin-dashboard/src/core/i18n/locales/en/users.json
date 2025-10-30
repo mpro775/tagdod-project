@@ -1,0 +1,332 @@
+{
+  "list": {
+    "title": "User Management",
+    "searchPlaceholder": "Search users...",
+    "columns": {
+      "phone": "Phone",
+      "name": "Name",
+      "role": "Role",
+      "status": "Status",
+      "capabilities": "Capabilities",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    }
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "admin": "Admin",
+    "merchant": "Merchant",
+    "engineer": "Engineer",
+    "user": "User"
+  },
+  "status": {
+    "active": "Active",
+    "suspended": "Suspended",
+    "pending": "Pending",
+    "deleted": "Deleted"
+  },
+  "capabilities": {
+    "engineer": "Engineer",
+    "wholesale": "Wholesale",
+    "customer": "Customer"
+  },
+  "actions": {
+    "addUser": "Add User / Admin",
+    "edit": "Edit",
+    "delete": "Delete",
+    "restore": "Restore",
+    "suspend": "Suspend",
+    "activate": "Activate"
+  },
+  "dialog": {
+    "delete": {
+      "title": "Delete User",
+      "message": "Are you sure you want to delete user {{name}}?",
+      "note": "You can restore the user later from deleted users."
+    }
+  },
+  "suspend": {
+    "reason": "Suspended from admin panel"
+  },
+  "analytics": {
+    "title": "User Analytics",
+    "subtitle": "Comprehensive analytics about user behavior and performance on the platform",
+    "errors": {
+      "loadOverview": "Failed to load overview statistics",
+      "loadRankings": "Failed to load customer rankings",
+      "loadSegments": "Failed to load customer segments",
+      "loadAlerts": "Failed to load risk alerts"
+    },
+    "kpi": {
+      "totalUsers": "Total Users",
+      "activeUsers": "{{count}} Active",
+      "customerLifetimeValue": "Customer Lifetime Value",
+      "averageOrderValue": "Average Order: {{value}} $",
+      "newUsersThisMonth": "New Users This Month",
+      "topSpenders": "Top Customers: {{count}}"
+    },
+    "tabs": {
+      "rankings": "Customer Rankings",
+      "topCustomers": "Top Customers",
+      "segments": "Customer Segments",
+      "alerts": "Risk Alerts"
+    },
+    "table": {
+      "rank": "Rank",
+      "customer": "Customer",
+      "email": "Email",
+      "tier": "Tier",
+      "totalSpent": "Total Spent",
+      "orderCount": "Order Count",
+      "averageOrder": "Average Order"
+    },
+    "tiers": {
+      "vip": "VIP",
+      "premium": "Premium",
+      "regular": "Regular",
+      "new": "New"
+    },
+    "segments": {
+      "vip": "VIP Customers",
+      "premium": "Premium Customers",
+      "regular": "Regular Customers",
+      "new": "New Customers",
+      "range": {
+        "vip": "More than 5,000 $",
+        "premium": "2,000 - 5,000 $",
+        "regular": "500 - 2,000 $",
+        "new": "Less than 500 $"
+      }
+    },
+    "churnRisk": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "lastOrder": "Last order {{days}} days ago",
+      "recommendedAction": "Recommended Action:",
+      "totalSpent": "Total Spent:"
+    },
+    "recommendations": {
+      "title": "Recommendations"
+    },
+    "unknown": "Unknown",
+    "noData": "No data available",
+    "noAlerts": "No alerts at the moment",
+    "component": {
+      "title": "User Analytics"
+    },
+    "period": {
+      "label": "Time Period",
+      "7d": "Last 7 Days",
+      "30d": "Last 30 Days",
+      "90d": "Last 90 Days",
+      "1y": "Last Year"
+    },
+    "newUsers": "New Users",
+    "rolesDistribution": "Roles Distribution",
+    "userCount": "{{count}} users ({{percentage}}%)"
+  },
+  "search": {
+    "advanced": {
+      "title": "Advanced Search",
+      "activeFilters": "{{count}} active filter",
+      "options": "Advanced Search Options"
+    },
+    "basic": {
+      "searchLabel": "Search Users",
+      "searchPlaceholder": "Phone number, name, job title...",
+      "sortBy": "Sort By",
+      "sortOrder": "Sort Order",
+      "ascending": "Ascending",
+      "descending": "Descending"
+    },
+    "sort": {
+      "createdAt": "Created Date",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "phone": "Phone Number",
+      "status": "Status"
+    },
+    "searching": "Searching..."
+  },
+  "filter": {
+    "status": "Status",
+    "role": "Role",
+    "userType": "User Type",
+    "capabilities": "Capabilities",
+    "allStatuses": "All Statuses",
+    "allRoles": "All Roles",
+    "allTypes": "All Types",
+    "admins": "Admins",
+    "regularUsers": "Regular Users",
+    "includeDeleted": "Include Deleted Users",
+    "clearFilters": "Clear Filters",
+    "title": "Search Filters",
+    "activeFilters": "{{count}} active filter",
+    "searchLabel": "Search Users",
+    "searchPlaceholder": "Phone number, name...",
+    "activeFiltersLabel": "Active Filters:",
+    "search": "Search",
+    "statusLabel": "Status:",
+    "roleLabel": "Role:",
+    "typeLabel": "Type:"
+  },
+  "stats": {
+    "title": "User Statistics",
+    "total": "Total Users",
+    "active": "Active Users",
+    "suspended": "Suspended Users",
+    "deleted": "Deleted Users",
+    "admins": "Admins",
+    "engineers": "Engineers",
+    "merchants": "Merchants",
+    "users": "Regular Users",
+    "percentageOfTotal": "{{percentage}}% of Total"
+  },
+  "card": {
+    "unknown": "Not Specified",
+    "capabilities": "Capabilities:",
+    "jobTitle": "Job Title:",
+    "wholesaleDiscount": "Wholesale Discount:",
+    "createdAt": "Created At:"
+  },
+  "permissions": {
+    "selectedCount": "{{selected}} selected from {{total}} permissions",
+    "description": "Select the appropriate permissions for the admin. You can select/deselect entire categories or individual permissions.",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "actions": {
+      "read": "View",
+      "create": "Create",
+      "update": "Update",
+      "delete": "Delete",
+      "suspend": "Suspend",
+      "activate": "Activate",
+      "restore": "Restore",
+      "assign": "Assign",
+      "revoke": "Revoke",
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "cancel": "Cancel",
+      "refund": "Refund",
+      "statusUpdate": "Update Status",
+      "convertToOrder": "Convert to Order",
+      "sendReminders": "Send Reminders",
+      "bulkActions": "Bulk Actions",
+      "close": "Close",
+      "analyze": "Analyze",
+      "export": "Export",
+      "generateReports": "Generate Reports",
+      "scheduleReports": "Schedule Reports",
+      "manageMedia": "Manage Media",
+      "deleteMedia": "Delete Media",
+      "manageUpload": "Manage Upload",
+      "deleteUpload": "Delete Uploads",
+      "send": "Send",
+      "manageFull": "Full Management",
+      "approve": "Approve",
+      "reject": "Reject",
+      "manage": "Manage",
+      "analytics": "Analytics",
+      "manualUpdate": "Manual Update",
+      "readSettings": "View Settings",
+      "updateSettings": "Update Settings",
+      "systemMaintenance": "System Maintenance",
+      "systemBackup": "System Backup",
+      "systemLogs": "System Logs"
+    },
+    "categories": {
+      "users": {
+        "title": "Users",
+        "description": "Manage users and accounts"
+      },
+      "roles": {
+        "title": "Roles & Permissions",
+        "description": "Manage system roles and permissions"
+      },
+      "products": {
+        "title": "Products",
+        "description": "Manage products and catalog"
+      },
+      "categories": {
+        "title": "Categories",
+        "description": "Manage product categories"
+      },
+      "brands": {
+        "title": "Brands",
+        "description": "Manage product brands"
+      },
+      "attributes": {
+        "title": "Attributes",
+        "description": "Manage product attributes and specifications"
+      },
+      "orders": {
+        "title": "Orders",
+        "description": "Manage customer orders"
+      },
+      "carts": {
+        "title": "Shopping Carts",
+        "description": "Manage customer carts and abandoned purchases"
+      },
+      "services": {
+        "title": "Services",
+        "description": "Manage service requests and engineers"
+      },
+      "support": {
+        "title": "Technical Support",
+        "description": "Manage support tickets"
+      },
+      "marketing": {
+        "title": "Marketing & Offers",
+        "description": "Manage marketing campaigns and coupons"
+      },
+      "analytics": {
+        "title": "Analytics & Reports",
+        "description": "View and export data and reports"
+      },
+      "media": {
+        "title": "Media & Uploads",
+        "description": "Manage files and images"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Manage system notifications"
+      },
+      "capabilities": {
+        "title": "Capabilities & Approval",
+        "description": "Approve engineer and merchant capabilities"
+      },
+      "favorites": {
+        "title": "Favorites",
+        "description": "Manage user favorites"
+      },
+      "addresses": {
+        "title": "Addresses",
+        "description": "Manage customer addresses"
+      },
+      "exchangeRates": {
+        "title": "Exchange Rates",
+        "description": "Manage currency rates"
+      },
+      "audit": {
+        "title": "Audit & Review",
+        "description": "View system logs and audit records"
+      },
+      "settings": {
+        "title": "System Settings",
+        "description": "Manage system settings and maintenance"
+      }
+    },
+    "descriptions": {
+      "users": {
+        "read": "View user list",
+        "create": "Create new users",
+        "update": "Update user data",
+        "delete": "Delete users",
+        "suspend": "Suspend accounts",
+        "activate": "Activate suspended accounts",
+        "restore": "Restore deleted users"
+      }
+    }
+  }
+}

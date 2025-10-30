@@ -1,0 +1,114 @@
+{
+  "navigation": {
+    "title": "System Monitoring",
+    "subtitle": "Real-time performance and resource monitoring"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "enableAutoRefresh": "Enable Auto Refresh",
+    "disableAutoRefresh": "Disable Auto Refresh",
+    "lastUpdated": "Last updated: {{time}}"
+  },
+  "loading": {
+    "message": "Loading monitoring data...",
+    "failed": "Failed to load monitoring data"
+  },
+  "systemHealth": {
+    "title": "System Status",
+    "subtitle": "Overview of system health",
+    "status": {
+      "healthy": "Healthy",
+      "warning": "Warning",
+      "critical": "Critical"
+    },
+    "metrics": {
+      "uptime": "Uptime",
+      "avgResponseTime": "Avg Response Time",
+      "errorRate": "Error Rate",
+      "activeRequests": "Active Requests"
+    },
+    "units": {
+      "milliseconds": "{{value}}ms",
+      "percentage": "{{value}}%"
+    }
+  },
+  "tabs": {
+    "resources": "Resources",
+    "database": "Database",
+    "cache": "Cache"
+  },
+  "resources": {
+    "cpu": {
+      "title": "Processor (CPU)",
+      "cores": "{{count}} cores"
+    },
+    "memory": {
+      "title": "Memory (RAM)",
+      "usage": "{{used}} / {{total}}"
+    },
+    "disk": {
+      "title": "Disk",
+      "usage": "{{used}} / {{total}}"
+    }
+  },
+  "database": {
+    "title": "MongoDB",
+    "metrics": {
+      "status": "Status",
+      "responseTime": "Response Time",
+      "collections": "Collections Count",
+      "totalSize": "Total Size"
+    },
+    "status": {
+      "connected": "Connected",
+      "disconnected": "Disconnected"
+    },
+    "units": {
+      "milliseconds": "{{value}}ms"
+    }
+  },
+  "cache": {
+    "title": "Redis Cache",
+    "metrics": {
+      "status": "Status",
+      "responseTime": "Response Time",
+      "hitRate": "Hit Rate",
+      "memoryUsage": "Memory Usage"
+    },
+    "status": {
+      "connected": "Connected",
+      "disconnected": "Disconnected"
+    },
+    "units": {
+      "milliseconds": "{{value}}ms",
+      "percentage": "{{value}}%"
+    }
+  },
+  "charts": {
+    "title": "Charts - Last 24 Hours",
+    "metrics": {
+      "cpu": "CPU Usage",
+      "memory": "Memory Usage (RAM)",
+      "disk": "Disk Usage",
+      "usage": "Usage %"
+    },
+    "apiPerformance": {
+      "title": "API Endpoints Performance",
+      "subtitle": "Slowest API Endpoints (Average Response Time)",
+      "metrics": {
+        "avgTime": "Average Time (ms)",
+        "maxTime": "Max Time (ms)"
+      }
+    },
+    "failed": "Failed to load API performance data"
+  },
+  "messages": {
+    "error": {
+      "loadFailed": "Failed to load monitoring data",
+      "apiPerformanceFailed": "Failed to load API performance data"
+    },
+    "success": {
+      "loaded": "Data loaded successfully"
+    }
+  }
+}

@@ -7,14 +7,42 @@ import { DEFAULT_LANGUAGE, API_BASE_URL } from '@/config/constants';
 // استيراد الترجمات المحلية كاحتياطي
 import arCommon from './locales/ar/common.json';
 import enCommon from './locales/en/common.json';
+import arDashboard from './locales/ar/dashboard.json';
+import enDashboard from './locales/en/dashboard.json';
+import arUsers from './locales/ar/users.json';
+import enUsers from './locales/en/users.json';
+import arAttributes from './locales/ar/attributes.json';
+import enAttributes from './locales/en/attributes.json';
+import arCategories from './locales/ar/categories.json';
+import enCategories from './locales/en/categories.json';
+import arBanners from './locales/ar/banners.json';
+import enBanners from './locales/en/banners.json';
+import arMedia from './locales/ar/media.json';
+import enMedia from './locales/en/media.json';
+import arErrorLogs from './locales/ar/errorLogs.json';
+import enErrorLogs from './locales/en/errorLogs.json';
 
 // الترجمات المحلية
 const resources = {
   ar: {
     common: arCommon,
+    dashboard: arDashboard,
+    users: arUsers,
+    attributes: arAttributes,
+    categories: arCategories,
+    banners: arBanners,
+    media: arMedia,
+    errorLogs: arErrorLogs,
   },
   en: {
     common: enCommon,
+    dashboard: enDashboard,
+    users: enUsers,
+    attributes: enAttributes,
+    categories: enCategories,
+    banners: enBanners,
+    media: enMedia,
+    errorLogs: enErrorLogs,
   },
 };
 
@@ -49,7 +77,7 @@ i18n
     
     fallbackLng: DEFAULT_LANGUAGE,
     defaultNS: 'common',
-    ns: ['common', 'auth', 'products', 'orders', 'services', 'users', 'settings', 'validation', 'notifications'],
+    ns: ['common', 'auth', 'products', 'orders', 'services', 'users', 'settings', 'validation', 'notifications', 'dashboard', 'attributes', 'categories', 'banners', 'media', 'errorLogs'],
     
     interpolation: {
       escapeValue: false, // React already escapes

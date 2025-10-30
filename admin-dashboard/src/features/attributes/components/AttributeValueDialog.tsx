@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -17,7 +18,9 @@ import {
   Stack,
 } from '@mui/material';
 import { Add, Edit, ColorLens, Image, Save, Cancel } from '@mui/icons-material';
-import type { AttributeValue, AttributeValueFormData } from '../types/attribute.types';
+import { AttributeType, type AttributeValue, type AttributeValueFormData } from '../types/attribute.types';
+
+const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
 interface AttributeValueDialogProps {
   open: boolean;
@@ -25,7 +28,7 @@ interface AttributeValueDialogProps {
   onSave: (data: AttributeValueFormData) => void;
   editingValue?: AttributeValue | null;
   isLoading?: boolean;
-  attributeType?: string;
+  attributeType?: AttributeType;
 }
 
 const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
@@ -34,8 +37,9 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
   onSave,
   editingValue,
   isLoading = false,
-  attributeType = 'select',
+  attributeType = AttributeType.SELECT,
 }) => {
+  const { t } = useTranslation('attributes');
   const [formData, setFormData] = useState<AttributeValueFormData>({
     value: '',
     valueEn: '',
@@ -49,12 +53,23 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const supportsVisualFields = [AttributeType.SELECT, AttributeType.MULTISELECT, AttributeType.COLOR].includes(
+    attributeType
+  );
+  const requiresHexCode = attributeType === AttributeType.COLOR;
+  const showImageFields = supportsVisualFields;
+  const validHexCode =
+    formData.hexCode && HEX_COLOR_REGEX.test(formData.hexCode)
+      ? formData.hexCode.toUpperCase()
+      : undefined;
+  const colorPickerValue = validHexCode ?? '#000000';
+
   useEffect(() => {
     if (editingValue) {
       setFormData({
         value: editingValue.value,
         valueEn: editingValue.valueEn || '',
-        hexCode: editingValue.hexCode || '',
+        hexCode: editingValue.hexCode?.toUpperCase() || '',
         imageUrl: editingValue.imageUrl || '',
         imageId: editingValue.imageId || '',
         description: editingValue.description || '',
@@ -80,19 +95,23 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.value.trim()) {
-      newErrors.value = 'القيمة مطلوبة';
+      newErrors.value = t('validation.valueRequired');
     }
 
-    if (formData.hexCode && !/^#[0-9A-Fa-f]{6}$/.test(formData.hexCode)) {
-      newErrors.hexCode = 'كود اللون يجب أن يكون بصيغة HEX صحيحة (مثل #FF0000)';
+    if (formData.hexCode) {
+      if (!HEX_COLOR_REGEX.test(formData.hexCode)) {
+        newErrors.hexCode = t('validation.hexInvalid');
+      }
+    } else if (requiresHexCode) {
+      newErrors.hexCode = t('validation.hexRequired');
     }
 
     if (formData.imageUrl && !/^https?:\/\/.+/.test(formData.imageUrl)) {
-      newErrors.imageUrl = 'رابط الصورة يجب أن يكون صحيحاً';
+      newErrors.imageUrl = t('validation.imageUrlInvalid');
     }
 
     if (formData.order !== undefined && formData.order < 0) {
-      newErrors.order = 'الترتيب يجب أن يكون أكبر من أو يساوي 0';
+      newErrors.order = t('validation.orderMin');
     }
 
     setErrors(newErrors);
@@ -101,7 +120,17 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
 
   const handleSave = () => {
     if (validateForm()) {
-      onSave(formData);
+      const payload: AttributeValueFormData = {
+        ...formData,
+        value: formData.value.trim(),
+        valueEn: formData.valueEn?.trim() || undefined,
+        hexCode: formData.hexCode ? formData.hexCode.trim().toUpperCase() : undefined,
+        imageUrl: formData.imageUrl?.trim() || undefined,
+        imageId: formData.imageId?.trim() || undefined,
+        description: formData.description?.trim() || undefined,
+      };
+
+      onSave(payload);
     }
   };
 
@@ -120,9 +149,6 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
     onClose();
   };
 
-  const isColorAttribute = attributeType === 'select' || attributeType === 'multiselect';
-  const showImageFields = isColorAttribute;
-
   return (
     <Dialog
       open={open}
@@ -136,15 +162,15 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {editingValue ? <Edit color="primary" /> : <Add color="primary" />}
-          <Typography variant="h6">{editingValue ? 'تعديل القيمة' : 'إضافة قيمة جديدة'}</Typography>
+          <Typography variant="h6">{editingValue ? t('valueDialog.editValue') : t('valueDialog.addValue')}</Typography>
         </Box>
       </DialogTitle>
 
       <DialogContent>
         <Alert severity="info" sx={{ mb: 3 }}>
           {editingValue
-            ? 'قم بتعديل معلومات القيمة حسب الحاجة.'
-            : 'أدخل معلومات القيمة الجديدة. يمكنك إضافة كود لون أو صورة للقيمة.'}
+            ? t('valueDialog.editDesc')
+            : t('valueDialog.addDesc')}
         </Alert>
 
         <Grid container spacing={3}>
@@ -152,11 +178,11 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
-              label="القيمة (عربي) *"
+              label={t('fields.valueAr')}
               value={formData.value}
               onChange={(e) => setFormData({ ...formData, value: e.target.value })}
               error={!!errors.value}
-              helperText={errors.value || 'الاسم الذي سيظهر للمستخدمين'}
+              helperText={errors.value || t('placeholders.valueAr')}
               required
             />
           </Grid>
@@ -164,43 +190,82 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
-              label="Value (English)"
+              label={t('fields.valueEn')}
               value={formData.valueEn}
               onChange={(e) => setFormData({ ...formData, valueEn: e.target.value })}
-              helperText="English name for the value"
+              helperText={t('placeholders.valueEn')}
             />
           </Grid>
 
-          {/* كود اللون - للألوان فقط */}
-          {isColorAttribute && (
+          {/* كود اللون - للسمات التي تدعم الألوان */}
+          {supportsVisualFields && (
             <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="كود اللون (Hex Code)"
-                placeholder="#FF0000"
-                value={formData.hexCode}
-                onChange={(e) => setFormData({ ...formData, hexCode: e.target.value })}
-                error={!!errors.hexCode}
-                helperText={errors.hexCode || 'كود اللون بصيغة HEX (مثل #FF0000)'}
-                InputProps={{
-                  startAdornment: <ColorLens sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
-              />
-              {formData.hexCode && (
-                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2">معاينة اللون:</Typography>
-                  <Box
-                    sx={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      bgcolor: formData.hexCode,
-                      border: '1px solid #ddd',
-                    }}
-                  />
-                  <Chip label={formData.hexCode} size="small" />
-                </Box>
-              )}
+              <Stack spacing={requiresHexCode ? 1.5 : 1}>
+                <TextField
+                  fullWidth
+                  label={`${t('fields.hexCode')}${requiresHexCode ? t('fields.hexCodeRequired').slice(-2) : ''}`}
+                  placeholder={t('valueDialog.hexPlaceholder')}
+                  value={formData.hexCode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, hexCode: e.target.value.toUpperCase() })
+                  }
+                  error={!!errors.hexCode}
+                  helperText={
+                    errors.hexCode ||
+                    (requiresHexCode
+                      ? t('valueDialog.hexRequired')
+                      : t('valueDialog.hexOptional'))
+                  }
+                  required={requiresHexCode}
+                  InputProps={{
+                    startAdornment: <ColorLens sx={{ mr: 1, color: 'text.secondary' }} />,
+                  }}
+                />
+
+                {requiresHexCode && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <input
+                      type="color"
+                      value={colorPickerValue}
+                      onChange={(e) =>
+                        setFormData({ ...formData, hexCode: e.target.value.toUpperCase() })
+                      }
+                      style={{
+                        width: 48,
+                        height: 32,
+                        border: 'none',
+                        background: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                      }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      {t('valueDialog.colorPicker')}
+                    </Typography>
+                  </Box>
+                )}
+
+                {(validHexCode || requiresHexCode) && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Typography variant="body2">{t('valueDialog.colorPreview')}:</Typography>
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        bgcolor: validHexCode || colorPickerValue,
+                        border: '1px solid #ddd',
+                      }}
+                    />
+                    <Chip
+                      label={(validHexCode || t('valueDialog.chooseColor')).toString()}
+                      color={validHexCode ? 'default' : 'warning'}
+                      variant={validHexCode ? 'filled' : 'outlined'}
+                      size="small"
+                    />
+                  </Box>
+                )}
+              </Stack>
             </Grid>
           )}
 
@@ -210,12 +275,12 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="رابط الصورة"
-                  placeholder="https://example.com/image.jpg"
+                  label={t('fields.imageUrl')}
+                  placeholder={t('valueDialog.imageUrlPlaceholder')}
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                   error={!!errors.imageUrl}
-                  helperText={errors.imageUrl || 'رابط الصورة (اختياري)'}
+                  helperText={errors.imageUrl || t('valueDialog.imageUrlHelper')}
                   InputProps={{
                     startAdornment: <Image sx={{ mr: 1, color: 'text.secondary' }} />,
                   }}
@@ -225,11 +290,11 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="معرف الصورة"
-                  placeholder="img_123456789"
+                  label={t('fields.imageId')}
+                  placeholder={t('valueDialog.imageIdPlaceholder')}
                   value={formData.imageId}
                   onChange={(e) => setFormData({ ...formData, imageId: e.target.value })}
-                  helperText="معرف الصورة في النظام (اختياري)"
+                  helperText={t('valueDialog.imageIdHelper')}
                 />
               </Grid>
             </>
@@ -240,11 +305,11 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
             <TextField
               fullWidth
               type="number"
-              label="الترتيب"
+              label={t('fields.order')}
               value={formData.order}
               onChange={(e) => setFormData({ ...formData, order: Number(e.target.value) })}
               error={!!errors.order}
-              helperText={errors.order || 'ترتيب عرض القيمة (الأقل يظهر أولاً)'}
+              helperText={errors.order || t('valueDialog.orderHelper')}
               inputProps={{ min: 0 }}
             />
           </Grid>
@@ -253,12 +318,12 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
           <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
-              label="الوصف"
+              label={t('fields.description')}
               multiline
               rows={2}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              helperText="وصف إضافي للقيمة (اختياري)"
+              helperText={t('valueDialog.descriptionHelper')}
             />
           </Grid>
 
@@ -271,7 +336,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                 />
               }
-              label="نشط - القيمة متاحة للاستخدام"
+              label={t('valueDialog.activeLabel')}
             />
           </Grid>
         </Grid>
@@ -280,7 +345,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
         {formData.value && (
           <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              معاينة القيمة:
+              {t('valueDialog.valuePreview')}:
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center">
               {formData.hexCode && (
@@ -305,7 +370,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
                 )}
               </Box>
               <Chip
-                label={formData.isActive ? 'نشط' : 'غير نشط'}
+                label={formData.isActive ? t('status.active') : t('status.inactive')}
                 color={formData.isActive ? 'success' : 'default'}
                 size="small"
               />
@@ -316,7 +381,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
 
       <DialogActions sx={{ p: 3 }}>
         <Button onClick={handleClose} startIcon={<Cancel />} disabled={isLoading}>
-          إلغاء
+          {t('actions.cancel')}
         </Button>
         <Button
           variant="contained"
@@ -324,7 +389,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
           disabled={isLoading || !formData.value.trim()}
           startIcon={isLoading ? <CircularProgress size={20} /> : <Save />}
         >
-          {editingValue ? 'تحديث' : 'إضافة'}
+          {editingValue ? t('actions.save') : t('actions.add')}
         </Button>
       </DialogActions>
     </Dialog>

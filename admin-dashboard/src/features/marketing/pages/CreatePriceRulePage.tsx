@@ -16,10 +16,12 @@ import {
 } from '@mui/material';
 import { Save, Cancel } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCreatePriceRule } from '../hooks/useMarketing';
 
 const CreatePriceRulePage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('marketing');
   const createPriceRule = useCreatePriceRule();
 
   const [formData, setFormData] = useState({
@@ -32,7 +34,7 @@ const CreatePriceRulePage: React.FC = () => {
       productId: '',
       variantId: '',
       brandId: '',
-      currency: 'SAR',
+      currency: 'USD',
       minQty: 1,
       accountType: '',
     },
@@ -87,7 +89,7 @@ const CreatePriceRulePage: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        إنشاء قاعدة سعر جديدة
+        {t('dialogs.createTitle', { defaultValue: 'إنشاء قاعدة الأسعار' })}
       </Typography>
 
       <form onSubmit={handleSubmit}>
@@ -97,13 +99,13 @@ const CreatePriceRulePage: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  المعلومات الأساسية
+                  {t('form.basicInfo', { defaultValue: 'المعلومات الأساسية' })}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="العنوان"
+                      label={t('form.basicInfo.title', { defaultValue: 'العنوان' })}
                       value={formData.metadata.title}
                       onChange={(e) => handleNestedChange('metadata', 'title', e.target.value)}
                       required
@@ -112,7 +114,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="الأولوية"
+                      label={t('form.basicInfo.priority', { defaultValue: 'الأولوية' })}
                       type="number"
                       value={formData.priority}
                       onChange={(e) => handleInputChange('priority', parseInt(e.target.value))}
@@ -122,7 +124,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="تاريخ البداية"
+                      label={t('form.basicInfo.startAt', { defaultValue: 'تاريخ البداية' })}
                       type="datetime-local"
                       value={formData.startAt}
                       onChange={(e) => handleInputChange('startAt', e.target.value)}
@@ -133,7 +135,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="تاريخ النهاية"
+                      label={t('form.basicInfo.endAt', { defaultValue: 'تاريخ النهاية' })}
                       type="datetime-local"
                       value={formData.endAt}
                       onChange={(e) => handleInputChange('endAt', e.target.value)}
@@ -144,7 +146,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
-                      label="الوصف"
+                      label={t('form.basicInfo.description', { defaultValue: 'الوصف' })}
                       multiline
                       rows={3}
                       value={formData.metadata.description}
@@ -161,7 +163,7 @@ const CreatePriceRulePage: React.FC = () => {
                           onChange={(e) => handleInputChange('active', e.target.checked)}
                         />
                       }
-                      label="نشط"
+                      label={t('form.basicInfo.active', { defaultValue: 'نشط' })}
                     />
                   </Grid>
                 </Grid>
@@ -174,13 +176,13 @@ const CreatePriceRulePage: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  الشروط
+                  {t('form.conditions', { defaultValue: 'الشروط' })}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="معرف الفئة"
+                      label={t('form.conditions.categoryId', { defaultValue: 'معرف الفئة' })}
                       value={formData.conditions.categoryId}
                       onChange={(e) =>
                         handleNestedChange('conditions', 'categoryId', e.target.value)
@@ -190,7 +192,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="معرف المنتج"
+                      label={t('form.conditions.productId', { defaultValue: 'معرف المنتج' })}
                       value={formData.conditions.productId}
                       onChange={(e) =>
                         handleNestedChange('conditions', 'productId', e.target.value)
@@ -200,7 +202,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="معرف المتغير"
+                          label={t('form.conditions.variantId', { defaultValue: 'معرف المتغير' })}
                       value={formData.conditions.variantId}
                       onChange={(e) =>
                         handleNestedChange('conditions', 'variantId', e.target.value)
@@ -210,23 +212,23 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="معرف الماركة"
+                      label={t('form.conditions.brandId', { defaultValue: 'معرف الماركة' })}
                       value={formData.conditions.brandId}
                       onChange={(e) => handleNestedChange('conditions', 'brandId', e.target.value)}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <FormControl fullWidth>
-                      <InputLabel>العملة</InputLabel>
+                      <InputLabel>{t('form.conditions.currency', { defaultValue: 'العملة' })}</InputLabel>
                       <Select
                         value={formData.conditions.currency}
                         onChange={(e) =>
                           handleNestedChange('conditions', 'currency', e.target.value)
                         }
-                        label="العملة"
+                        label={t('form.conditions.currency', { defaultValue: 'العملة' })}
                       >
-                        <MenuItem value="SAR">ريال سعودي</MenuItem>
-                        <MenuItem value="USD">دولار أمريكي</MenuItem>
+                        <MenuItem value="USD">دولار أمريكي (USD)</MenuItem>
+                        <MenuItem value="SAR">ريال سعودي (SAR)</MenuItem>
                         <MenuItem value="EUR">يورو</MenuItem>
                       </Select>
                     </FormControl>
@@ -234,7 +236,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="الحد الأدنى للكمية"
+                      label={t('form.conditions.minQty', { defaultValue: 'الحد الأدنى للكمية' })}
                       type="number"
                       value={formData.conditions.minQty}
                       onChange={(e) =>
@@ -252,13 +254,13 @@ const CreatePriceRulePage: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  التأثيرات
+                  {t('form.effects', { defaultValue: 'التأثيرات' })}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="نسبة الخصم (%)"
+                      label={t('form.effects.percentOff', { defaultValue: 'نسبة الخصم (%)' })}
                       type="number"
                       value={formData.effects.percentOff}
                       onChange={(e) =>
@@ -269,7 +271,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="مبلغ الخصم"
+                      label={t('form.effects.amountOff', { defaultValue: 'مبلغ الخصم' })}
                       type="number"
                       value={formData.effects.amountOff}
                       onChange={(e) =>
@@ -280,7 +282,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="السعر الخاص"
+                      label={t('form.effects.specialPrice', { defaultValue: 'السعر الخاص' })}
                       type="number"
                       value={formData.effects.specialPrice}
                       onChange={(e) =>
@@ -291,7 +293,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="الشارة"
+                      label={t('form.effects.badge', { defaultValue: 'الشارة' })}
                       value={formData.effects.badge}
                       onChange={(e) => handleNestedChange('effects', 'badge', e.target.value)}
                     />
@@ -299,7 +301,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
-                      label="رمز المنتج المجاني"
+                      label={t('form.effects.giftSku', { defaultValue: 'رمز المنتج المجاني' })}
                       value={formData.effects.giftSku}
                       onChange={(e) => handleNestedChange('effects', 'giftSku', e.target.value)}
                     />
@@ -314,13 +316,13 @@ const CreatePriceRulePage: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  حدود الاستخدام
+                  {t('form.usageLimits', { defaultValue: 'حدود الاستخدام' })}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="الحد الأقصى للاستخدام"
+                        label={t('form.usageLimits.maxUses', { defaultValue: 'الحد الأقصى للاستخدام' })}
                       type="number"
                       value={formData.usageLimits.maxUses}
                       onChange={(e) =>
@@ -331,7 +333,7 @@ const CreatePriceRulePage: React.FC = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="الحد الأقصى لكل مستخدم"
+                      label={t('form.usageLimits.maxUsesPerUser', { defaultValue: 'الحد الأقصى لكل مستخدم' })}
                       type="number"
                       value={formData.usageLimits.maxUsesPerUser}
                       onChange={(e) =>
@@ -356,7 +358,7 @@ const CreatePriceRulePage: React.FC = () => {
                 startIcon={<Cancel />}
                 onClick={() => navigate('/marketing/price-rules')}
               >
-                إلغاء
+                {t('form.actions.cancel', { defaultValue: 'إلغاء' })}
               </Button>
               <Button
                 type="submit"
@@ -364,7 +366,7 @@ const CreatePriceRulePage: React.FC = () => {
                 startIcon={<Save />}
                 disabled={createPriceRule.isPending}
               >
-                {createPriceRule.isPending ? 'جاري الحفظ...' : 'حفظ'}
+                {createPriceRule.isPending ? t('form.actions.saving', { defaultValue: 'جاري الحفظ...' }) : t('form.actions.save', { defaultValue: 'حفظ' })}
               </Button>
             </Box>
           </Grid>

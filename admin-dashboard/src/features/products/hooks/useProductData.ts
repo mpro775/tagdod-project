@@ -50,7 +50,9 @@ export const useCategories = () => {
     queryKey: [CATEGORIES_KEY],
     queryFn: async (): Promise<Category[]> => {
       const response = await apiClient.get<ApiResponse<Category[]>>('/admin/categories');
-      return response.data.data;
+      // تحقق من التنسيق
+      const data = response.data.data;
+      return Array.isArray(data) ? data : [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -62,8 +64,9 @@ export const useBrands = () => {
   return useQuery({
     queryKey: [BRANDS_KEY],
     queryFn: async (): Promise<Brand[]> => {
-      const response = await apiClient.get<ApiResponse<Brand[]>>('/admin/brands');
-      return response.data.data;
+      const response = await apiClient.get<ApiResponse<{ brands: Brand[]; pagination: any }>>('/admin/brands');
+      // Backend يرجع { brands: [...], pagination: {...} }
+      return response.data.data.brands || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -76,7 +79,9 @@ export const useAttributes = () => {
     queryKey: [ATTRIBUTES_KEY],
     queryFn: async (): Promise<Attribute[]> => {
       const response = await apiClient.get<ApiResponse<Attribute[]>>('/admin/attributes');
-      return response.data.data;
+      // تحقق من التنسيق
+      const data = response.data.data;
+      return Array.isArray(data) ? data : [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -92,22 +97,28 @@ export const useProductFormData = () => {
   const isLoading = categoriesLoading || brandsLoading || attributesLoading;
 
   // Transform data for form select options
-  const categoryOptions = (Array.isArray(categories) ? categories : []).map((cat) => ({
-    value: cat._id,
-    label: `${cat.name} (${cat.nameEn})`,
-  }));
+  const categoryOptions = (Array.isArray(categories) ? categories : [])
+    .filter(cat => cat.isActive) // فقط الفئات النشطة
+    .map((cat) => ({
+      value: cat._id,
+      label: `${cat.name} (${cat.nameEn})`,
+    }));
 
-  const brandOptions = (Array.isArray(brands) ? brands : []).map((brand) => ({
-    value: brand._id,
-    label: `${brand.name} (${brand.nameEn})`,
-  }));
+  const brandOptions = (Array.isArray(brands) ? brands : [])
+    .filter(brand => brand.isActive) // فقط العلامات النشطة
+    .map((brand) => ({
+      value: brand._id,
+      label: `${brand.name} (${brand.nameEn})`,
+    }));
 
-  const attributeOptions = (Array.isArray(attributes) ? attributes : []).map((attr) => ({
-    value: attr._id,
-    label: `${attr.name} (${attr.nameEn})`,
-    type: attr.type,
-    values: attr.values,
-  }));
+  const attributeOptions = (Array.isArray(attributes) ? attributes : [])
+    .filter(attr => attr.isActive) // فقط السمات النشطة
+    .map((attr) => ({
+      value: attr._id,
+      label: `${attr.name} (${attr.nameEn})`,
+      type: attr.type,
+      values: attr.values,
+    }));
 
   return {
     categories,

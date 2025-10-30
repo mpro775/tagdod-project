@@ -1,18 +1,25 @@
 import { Card, CardContent, Typography, Box, Skeleton } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { useTopCities } from '../hooks/useAddresses';
 
 const COLORS = ['#3f51b5', '#2196f3', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
 
 export function TopCitiesChart() {
-  const { data: cities, isLoading } = useTopCities(10);
+  const { t } = useTranslation();
+  const { data: citiesResponse, isLoading } = useTopCities(10);
+  const cities = Array.isArray(citiesResponse)
+    ? citiesResponse
+    : Array.isArray((citiesResponse as any)?.data)
+    ? (citiesResponse as any).data
+    : [];
 
   if (isLoading) {
     return (
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            المدن الأكثر استخداماً
+            {t('addresses.chart.title', { defaultValue: 'أكثر المدن مستخدمة للعناوين' })}
           </Typography>
           <Skeleton variant="rectangular" height={400} />
         </CardContent>
@@ -25,10 +32,10 @@ export function TopCitiesChart() {
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            المدن الأكثر استخداماً
+            {t('addresses.chart.title', { defaultValue: 'أكثر المدن مستخدمة للعناوين' })}
           </Typography>
           <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography color="text.secondary">لا توجد بيانات</Typography>
+            <Typography color="text.secondary">{t('addresses.chart.noData', { defaultValue: 'لا يوجد بيانات' })}</Typography>
           </Box>
         </CardContent>
       </Card>
@@ -39,7 +46,7 @@ export function TopCitiesChart() {
     <Card>
       <CardContent>
         <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-          🏙️ المدن الأكثر استخداماً
+          {t('addresses.chart.title', { defaultValue: 'أكثر المدن مستخدمة للعناوين' })}
         </Typography>
 
         <ResponsiveContainer width="100%" height={400}>
@@ -72,13 +79,13 @@ export function TopCitiesChart() {
                         {data.city}
                       </Typography>
                       <Typography variant="body2">
-                        العناوين: {data.count}
+                        {t('addresses.chart.tooltip.addresses', { defaultValue: 'عدد العناوين', count: data.count })}
                       </Typography>
                       <Typography variant="body2">
-                        النسبة: {data.percentage}%
+                        {t('addresses.chart.tooltip.percentage', { defaultValue: 'النسبة المئوية', percentage: data.percentage })}
                       </Typography>
                       <Typography variant="body2">
-                        الاستخدام: {data.totalUsage}
+                        {t('addresses.chart.tooltip.usage', { defaultValue: 'الاستخدام', usage: data.totalUsage })}
                       </Typography>
                     </Box>
                   );
@@ -87,7 +94,7 @@ export function TopCitiesChart() {
               }}
             />
             <Bar dataKey="count" fill="#3f51b5">
-              {cities.map((_, index) => (
+              {cities.map((_: any, index: number) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Bar>
@@ -96,7 +103,7 @@ export function TopCitiesChart() {
 
         {/* Legend */}
         <Box sx={{ mt: 3 }}>
-          {cities.slice(0, 5).map((city, index) => (
+          {cities.slice(0, 5).map((city: any, index: number) => (
             <Box
               key={city.city}
               sx={{
@@ -122,7 +129,10 @@ export function TopCitiesChart() {
               </Box>
               <Box sx={{ display: 'flex', gap: 3 }}>
                 <Typography variant="body2" color="text.secondary">
-                  {city.count} عنوان
+                  {city.count === 1
+                    ? t('addresses.chart.legend.address', { defaultValue: 'عنوان', count: city.count })
+                    : t('addresses.chart.legend.addresses', { defaultValue: 'عناوين',   count: city.count })
+                  }
                 </Typography>
                 <Typography variant="body2" fontWeight="bold" color="primary">
                   {city.percentage}%

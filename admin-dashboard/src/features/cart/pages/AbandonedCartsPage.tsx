@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Refresh, Send, Email, TrendingDown, MonetizationOn, Schedule } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { CartFilters, Cart } from '../types/cart.types';
 import {
   useAbandonedCarts,
@@ -25,6 +26,7 @@ import { ConvertToOrderDialog } from './ConvertToOrderDialog';
 
 export const AbandonedCartsPage: React.FC = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation();
 
   // State management
   const [selectedCart, setSelectedCart] = useState<Cart | null>(null);
@@ -80,9 +82,9 @@ export const AbandonedCartsPage: React.FC = () => {
   };
 
   const handleDeleteCart = (cart: Cart) => {
-    if (window.confirm(`هل أنت متأكد من حذف السلة ${cart._id}؟`)) {
+      if (window.confirm(`${t('cart.actions.deleteCart', { defaultValue: 'هل أنت متأكد من حذف السلة' })} ${cart._id}؟`)) {
       // Implement delete functionality
-      enqueueSnackbar('تم حذف السلة بنجاح', { variant: 'success' });
+      enqueueSnackbar(t('cart.actions.deleteCartSuccess', { defaultValue: 'تم حذف السلة بنجاح' }) , { variant: 'success' });
     }
   };
 
@@ -139,7 +141,7 @@ export const AbandonedCartsPage: React.FC = () => {
       {/* Header */}
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
         <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-          السلات المتروكة
+          {t('cart.navigation.abandonedCarts', { defaultValue: 'السلات المتروكة' })}
         </Typography>
         <Box display="flex" gap={1}>
           <Button
@@ -148,7 +150,7 @@ export const AbandonedCartsPage: React.FC = () => {
             onClick={handleRefresh}
             disabled={isLoading}
           >
-            تحديث
+            {t('cart.actions.refresh', { defaultValue: 'تحديث' })}
           </Button>
           <Button
             variant="contained"
@@ -156,7 +158,7 @@ export const AbandonedCartsPage: React.FC = () => {
             onClick={handleSendAllReminders}
             disabled={isLoading || sendAllRemindersMutation.isPending}
           >
-            إرسال جميع التذكيرات
+            {t('cart.actions.sendAllReminders', { defaultValue: 'إرسال جميع التذكيرات' })}
           </Button>
         </Box>
       </Box>
@@ -176,10 +178,10 @@ export const AbandonedCartsPage: React.FC = () => {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h4" component="div" color="warning.main">
-                    {total.toLocaleString('ar-YE')}
+                    {total.toLocaleString('en-US')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    إجمالي السلات المتروكة
+                    {t('cart.stats.totalAbandonedCarts', { defaultValue: 'إجمالي السلات المتروكة' })}
                   </Typography>
                 </Box>
                 <TrendingDown color="warning" sx={{ fontSize: 40 }} />
@@ -194,10 +196,10 @@ export const AbandonedCartsPage: React.FC = () => {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h4" component="div" color="error.main">
-                    {totalAbandonedValue.toLocaleString('ar-YE')} $
+                    {totalAbandonedValue.toLocaleString('en-US')} $
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    إجمالي القيمة المتروكة
+                    {t('cart.stats.totalAbandonedValue', { defaultValue: 'إجمالي القيمة المتروكة' })}
                   </Typography>
                 </Box>
                 <MonetizationOn color="error" sx={{ fontSize: 40 }} />
@@ -212,10 +214,10 @@ export const AbandonedCartsPage: React.FC = () => {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h4" component="div" color="info.main">
-                    {averageAbandonedValue.toLocaleString('ar-YE')} $
+                    {averageAbandonedValue.toLocaleString('en-US')} $
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    متوسط قيمة السلة المتروكة
+                    {t('cart.stats.averageAbandonedValue', { defaultValue: 'متوسط قيمة السلة المتروكة' })}
                   </Typography>
                 </Box>
                 <MonetizationOn color="info" sx={{ fontSize: 40 }} />
@@ -233,7 +235,7 @@ export const AbandonedCartsPage: React.FC = () => {
                     {cartsWithEmails}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    سلات تم إرسال تذكيرات لها
+                    {t('cart.stats.cartsWithEmails', { defaultValue: 'سلات تم إرسال تذكيرات لها' })}
                   </Typography>
                 </Box>
                 <Email color="primary" sx={{ fontSize: 40 }} />
@@ -247,7 +249,7 @@ export const AbandonedCartsPage: React.FC = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            إجراءات سريعة
+            {t('cart.actions.quickActions', { defaultValue: 'إجراءات سريعة' })}
           </Typography>
           <Box display="flex" gap={2} flexWrap="wrap">
             <Button
@@ -259,7 +261,7 @@ export const AbandonedCartsPage: React.FC = () => {
                   (cart) => (cart.abandonmentEmailsSent || 0) === 0
                 );
                 if (cartsToRemind.length === 0) {
-                  enqueueSnackbar('جميع السلات المتروكة تم إرسال تذكيرات لها', { variant: 'info' });
+                  enqueueSnackbar(t('cart.actions.allCartsReminded', { defaultValue: 'جميع السلات المتروكة تم إرسال تذكيرات لها' }), { variant: 'info' });
                 } else {
                   enqueueSnackbar(`سيتم إرسال تذكيرات لـ ${cartsToRemind.length} سلة`, {
                     variant: 'info',
@@ -286,7 +288,7 @@ export const AbandonedCartsPage: React.FC = () => {
                 });
               }}
             >
-              عرض السلات التي تحتاج متابعة
+              {t('cart.actions.viewFollowUpCarts', { defaultValue: 'عرض السلات التي تحتاج متابعة' })}
             </Button>
           </Box>
         </CardContent>
