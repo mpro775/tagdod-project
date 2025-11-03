@@ -1,141 +1,108 @@
 {
   "exchangeRates": {
-    "title": "إدارة أسعار الصرف",
-    "subtitle": "إدارة وتحديث أسعار صرف العملات في النظام",
-    "currentRates": "الأسعار الحالية",
-    "updateRates": "تحديث الأسعار",
-    "currencyConverter": "محول العملات",
-    "statistics": "الإحصائيات",
-    "lastUpdated": "آخر تحديث",
-    "rate": "السعر",
-    "currency": "العملة",
-    "amount": "المبلغ",
-    "convert": "تحويل",
-    "swap": "تبديل",
-    "from": "من",
-    "to": "إلى",
-    "result": "النتيجة",
-    "baseCurrency": "العملة الأساسية",
-    "targetCurrency": "العملة المستهدفة"
-  },
-  "currencies": {
-    "USD": "دولار أمريكي",
-    "YER": "ريال يمني",
-    "SAR": "ريال سعودي",
-    "usd": "USD",
-    "yer": "YER",
-    "sar": "SAR"
-  },
-  "form": {
-    "usdToYer": "سعر USD إلى YER",
-    "usdToSar": "سعر USD إلى SAR",
-    "notes": "ملاحظات",
-    "updateRates": "تحديث أسعار الصرف",
-    "save": "حفظ الأسعار",
-    "cancel": "إلغاء",
-    "reset": "إعادة تعيين",
-    "currentRate": "السعر الحالي",
-    "newRate": "السعر الجديد",
-    "change": "التغيير",
-    "percentageChange": "نسبة التغيير"
-  },
-  "converter": {
-    "title": "محول العملات",
-    "subtitle": "تحويل المبالغ بين العملات المختلفة",
-    "amountToConvert": "المبلغ المراد تحويله",
-    "fromCurrency": "العملة المصدر",
-    "toCurrency": "العملة الهدف",
-    "convertCurrency": "تحويل العملة",
-    "conversionResult": "نتيجة التحويل",
-    "exchangeRate": "سعر الصرف",
-    "convertedAmount": "المبلغ المحول",
-    "lastUpdated": "آخر تحديث"
-  },
-  "stats": {
-    "title": "إحصائيات أسعار الصرف",
-    "subtitle": "إحصائيات وتحليلات أسعار الصرف",
-    "totalConversions": "إجمالي التحويلات",
-    "mostConvertedCurrency": "الأكثر تحويلاً",
-    "averageRateChange": "متوسط تغيير السعر",
-    "rateStability": "استقرار السعر",
-    "conversionTrends": "اتجاهات التحويل",
-    "popularPairs": "أزواج العملات الشائعة",
-    "dailyConversions": "التحويلات اليومية",
-    "monthlyConversions": "التحويلات الشهرية"
-  },
-  "validation": {
-    "amountRequired": "المبلغ مطلوب",
-    "amountPositive": "يجب أن يكون المبلغ موجباً",
-    "amountMax": "لا يمكن أن يتجاوز المبلغ {{max}}",
-    "rateRequired": "سعر الصرف مطلوب",
-    "ratePositive": "يجب أن يكون سعر الصرف موجباً",
-    "rateMax": "لا يمكن أن يتجاوز سعر الصرف {{max}}",
-    "currencyRequired": "العملة مطلوبة",
-    "invalidCurrency": "العملة المحددة غير صحيحة",
-    "notesMaxLength": "لا يمكن أن تتجاوز الملاحظات {{max}} حرف"
-  },
-  "messages": {
-    "ratesUpdated": "تم تحديث أسعار الصرف بنجاح",
-    "ratesUpdateFailed": "فشل في تحديث أسعار الصرف",
-    "conversionSuccess": "تم تحويل العملة بنجاح",
-    "conversionFailed": "فشل في تحويل العملة",
-    "conversionResult": "تم التحويل بنجاح: {{result}}",
-    "dataRefreshed": "تم تحديث البيانات بنجاح",
-    "dataRefreshFailed": "فشل في تحديث البيانات",
-    "loading": "جاري تحميل أسعار الصرف...",
-    "error": "حدث خطأ",
-    "noData": "لا توجد أسعار صرف متاحة",
-    "rateNotFound": "لم يتم العثور على سعر الصرف",
-    "invalidAmount": "يرجى إدخال مبلغ صحيح",
-    "invalidCurrency": "يرجى اختيار عملات صحيحة",
-    "networkError": "حدث خطأ في الشبكة",
-    "serverError": "حدث خطأ في الخادم"
-  },
-  "tooltips": {
-    "refresh": "تحديث البيانات",
-    "update": "تحديث الأسعار",
-    "convert": "تحويل العملة",
-    "swap": "تبديل العملات",
-    "viewStats": "عرض الإحصائيات",
-    "editRate": "تعديل السعر",
-    "copyRate": "نسخ السعر",
-    "viewHistory": "عرض تاريخ السعر"
-  },
-  "placeholders": {
-    "amount": "أدخل المبلغ",
-    "notes": "ملاحظات اختيارية حول تحديث السعر",
-    "search": "البحث في العملات..."
-  },
-  "table": {
     "title": "أسعار الصرف",
-    "columns": {
-      "currency": "العملة",
-      "rate": "السعر",
-      "lastUpdated": "آخر تحديث",
-      "change": "التغيير",
-      "actions": "الإجراءات"
-    }
+    "subtitle": "أسعار الصرف الحالية للعملات المدعومة",
+    "usdToYerTitle": "الدولار الأمريكي إلى الريال اليمني",
+    "usdToSarTitle": "الدولار الأمريكي إلى الريال السعودي",
+    "usd": "دولار",
+    "yer": "ريال يمني",
+    "sar": "ريال سعودي"
   },
   "tabs": {
     "currentRates": "الأسعار الحالية",
-    "updateRates": "تحديث الأسعار",
+    "currentRatesDesc": "عرض أسعار الصرف الحالية للعملات المدعومة",
+    "updateRates": "تحديث أسعار الصرف",
+    "updateRatesDesc": "قم بتحديث أسعار الصرف للعملات المدعومة",
     "converter": "محول العملات",
-    "statistics": "الإحصائيات"
+    "converterDesc": "تحويل العملات باستخدام الأسعار الحالية",
+    "statistics": "إحصائيات أسعار الصرف",
+    "statisticsDesc": "معلومات تفصيلية عن أسعار الصرف الحالية"
   },
-  "status": {
+  "infoCard": {
+    "title": "معلومات مهمة",
+    "item1": "جميع المنتجات في النظام تسعر بالدولار الأمريكي",
+    "item2": "سيتم تحويل الأسعار تلقائياً للعملاء حسب العملة المختارة",
+    "item3": "تحديث الأسعار يؤثر على جميع المنتجات والفواتير فوراً",
+    "item4": "تأكد من صحة الأسعار قبل الحفظ"
+  },
+  "messages": {
+    "ratesUpdated": "تم تحديث الأسعار بنجاح",
+    "ratesUpdateFailed": "فشل في تحديث الأسعار",
+    "conversionResult": "تم تحويل العملة بنجاح",
+    "conversionFailed": "فشل في تحويل العملة",
+    "invalidAmount": "يرجى إدخال مبلغ صحيح"
+  },
+  "loading": {
+    "loadingRates": "جاري تحميل أسعار الصرف..."
+  },
+  "exchangeRateCard": {
+    "againstUSD": "مقابل الدولار الأمريكي",
+    "lastUpdate": "آخر تحديث",
+    "by": "بواسطة"
+  },
+  "form": {
+    "title": "تحديث أسعار الصرف",
+    "subtitle": "قم بتحديث أسعار الصرف للعملات المدعومة",
+    "usdToYer": "الدولار الأمريكي إلى الريال اليمني",
+    "usdToSar": "الدولار الأمريكي إلى الريال السعودي",
+    "notes": "ملاحظات (اختياري)",
+    "notesPlaceholder": "أضف ملاحظات حول تحديث أسعار الصرف...",
+    "cancel": "إلغاء",
+    "save": "حفظ التغييرات",
+    "saving": "جاري الحفظ...",
+    "oneUSDEquals": "{{amount}} = {{usd}}"
+  },
+  "validation": {
+    "ratePositive": "يجب أن يكون سعر الصرف موجباً",
+    "rateMax": "لا يمكن أن يتجاوز سعر الصرف {{max}}"
+  },
+  "converter": {
+    "title": "محول العملات",
+    "subtitle": "تحويل العملات باستخدام الأسعار الحالية",
+    "amount": "المبلغ",
+    "amountPlaceholder": "أدخل المبلغ المراد تحويله",
+    "fromCurrency": "من العملة",
+    "toCurrency": "إلى العملة",
+    "swap": "تبديل",
+    "convert": "تحويل العملة",
+    "converting": "جاري التحويل...",
+    "usd": "USD - دولار أمريكي",
+    "yer": "YER - ريال يمني",
+    "sar": "SAR - ريال سعودي",
+    "resultAmount": "المبلغ: {{amount}} {{currency}}",
+    "resultRate": "السعر: {{rate}}"
+  },
+  "stats": {
+    "title": "إحصائيات أسعار الصرف",
+    "subtitle": "معلومات تفصيلية عن أسعار الصرف الحالية",
+    "currentRates": "الأسعار الحالية",
+    "updateInfo": "معلومات التحديث",
+    "notes": "ملاحظات",
+    "noData": "لا توجد بيانات",
+    "noDataAvailable": "لا توجد بيانات أسعار صرف متاحة",
+    "oneUSDEqualsYER": "{{amount}} = {{usd}} {{yer}}",
+    "oneUSDEqualsSAR": "{{amount}} = {{usd}} {{sar}}"
+  },
+  "list": {
+    "title": "قائمة أسعار الصرف",
+    "subtitle": "عرض جميع أسعار الصرف المتاحة",
+    "refresh": "تحديث البيانات",
+    "retry": "إعادة المحاولة",
+    "viewDetails": "عرض التفاصيل",
+    "errorLoading": "خطأ في تحميل أسعار الصرف: {{error}}",
+    "noDataAvailable": "لا توجد بيانات أسعار صرف متاحة",
     "active": "نشط",
     "inactive": "غير نشط",
-    "loading": "جاري التحميل...",
-    "updating": "جاري التحديث...",
-    "converting": "جاري التحويل...",
-    "success": "نجح",
-    "error": "خطأ"
+    "sourceCurrency": "العملة المصدر",
+    "targetCurrency": "العملة الهدف",
+    "rate": "السعر",
+    "status": "الحالة",
+    "lastUpdate": "آخر تحديث",
+    "actions": "الإجراءات",
+    "oneEquals": "1 {{from}} = {{rate}} {{to}}",
+    "oneUSDEquals": "{{amount}} = {{usd}}"
   },
-  "units": {
-    "currency": "عملة",
-    "rate": "سعر",
-    "percentage": "نسبة مئوية",
-    "amount": "مبلغ",
-    "change": "تغيير"
+  "loadingTexts": {
+    "notSpecified": "غير محدد"
   }
 }

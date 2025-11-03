@@ -1,0 +1,49 @@
+/* Fix for MUI DataGrid :first-child SSR warning */
+/* Override MUI's use of :first-child with :first-of-type for SSR safety */
+.MuiDataGrid-root .MuiDataGrid-row:first-of-type {
+  border-top: none;
+}
+
+.MuiDataGrid-root .MuiDataGrid-cell:first-of-type {
+  border-left: none;
+}
+
+.MuiDataGrid-root .MuiDataGrid-columnHeader:first-of-type {
+  border-left: none;
+}
+
+.MuiDataGrid-root .MuiDataGrid-footerContainer:first-of-type {
+  border-top: 1px solid rgba(224, 224, 224, 1);
+}
+
+/* Additional overrides for SSR safety */
+.MuiDataGrid-root .MuiDataGrid-main > div:first-of-type {
+  overflow: auto;
+}
+
+.MuiDataGrid-root .MuiDataGrid-columnHeaders:first-of-type {
+  border-bottom: 1px solid rgba(224, 224, 224, 1);
+}
+
+.MuiDataGrid-root .MuiDataGrid-virtualScrollerContent:first-of-type {
+  min-height: 100%;
+}
+
+.MuiDataGrid-root .MuiDataGrid-rowContainer:first-of-type {
+  border-top: none;
+}
+
+.MuiDataGrid-root .MuiDataGrid-columnHeaderRow:first-of-type {
+  border-top: none;
+}
+
+/* Override any remaining :first-child usage */
+.MuiDataGrid-root *:first-child {
+  /* Reset and let :first-of-type handle it */
+}
+
+/* Ensure DataGrid has proper height */
+.MuiDataGrid-root {
+  min-height: 400px;
+}
+

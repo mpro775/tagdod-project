@@ -20,6 +20,7 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  Stack,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -32,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   useProductStats,
   useInventorySummary,
@@ -56,7 +58,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`analytics-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: { xs: 2, sm: 3 } }}>{children}</Box>}
     </div>
   );
 }
@@ -64,7 +66,8 @@ function TabPanel(props: TabPanelProps) {
 export const ProductsAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
-  const { t } = useTranslation('products');
+  const { t } = useTranslation(['products', 'common']);
+  const { isMobile } = useBreakpoint();
 
   const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useProductStats();
   const { data: inventorySummary, isLoading: loadingInventory } = useInventorySummary();
@@ -92,7 +95,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
   };
 
   const handleExportData = () => {
-    alert(t('analytics.exportSoon', { defaultValue: 'ميزة التصدير ستكون متاحة قريباً' }));
+    alert(t('products:stats.exportSoon', 'ميزة التصدير ستكون متاحة قريباً'));
   };
 
   if (loadingStats) {
@@ -106,36 +109,61 @@ export const ProductsAnalyticsPage: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate('/products')}>
-          {t('analytics.backToProducts', { defaultValue: 'العودة للمنتجات' })}
+      <Box
+        display="flex"
+        flexDirection={isMobile ? 'column' : 'row'}
+        alignItems={isMobile ? 'stretch' : 'center'}
+        gap={2}
+        mb={3}
+      >
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/products')}
+          fullWidth={isMobile}
+        >
+          {t('products:stats.backToProducts', 'العودة للمنتجات')}
         </Button>
-        <Typography variant="h4" component="h1">
-          {t('analytics.title', { defaultValue: 'إحصائيات المنتجات' })}
+        <Typography variant={isMobile ? 'h5' : 'h4'} component="h1" sx={{ flex: 1 }}>
+          {t('products:stats.title', 'إحصائيات المنتجات')}
         </Typography>
-        <Box ml="auto" display="flex" gap={1}>
-          <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh}>
-            {t('analytics.refresh', { defaultValue: 'تحديث' })}
+        <Stack
+          direction={isMobile ? 'column' : 'row'}
+          spacing={1}
+          sx={{ width: isMobile ? '100%' : 'auto', ml: isMobile ? 0 : 'auto' }}
+        >
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={handleRefresh}
+            fullWidth={isMobile}
+          >
+            {t('common:actions.refresh', 'تحديث')}
           </Button>
-          <Button variant="contained" startIcon={<Download />} onClick={handleExportData}>
-            {t('analytics.export', { defaultValue: 'تصدير البيانات' })}
+          <Button
+            variant="contained"
+            startIcon={<Download />}
+            onClick={handleExportData}
+            fullWidth={isMobile}
+          >
+            {t('products:stats.export', 'تصدير البيانات')}
           </Button>
-        </Box>
+        </Stack>
       </Box>
 
-      {/* Overview Cards */}
+      {/* Overview Cards - 2 cards per row on mobile */}
       <Grid container spacing={3} mb={3}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <Inventory color="primary" sx={{ fontSize: 40 }} />
-                <Box>
-                  <Typography variant="h4" component="div">
+              <Box display="flex" alignItems="center" gap={1} flexDirection={isMobile ? 'column' : 'row'}>
+                <Inventory color="primary" sx={{ fontSize: isMobile ? 32 : 40 }} />
+                <Box sx={{ textAlign: isMobile ? 'center' : 'left' }}>
+                  <Typography variant={isMobile ? 'h5' : 'h4'} component="div">
                     {stats?.total || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('analytics.totalProducts', { defaultValue: 'إجمالي المنتجات' })}
+                    {t('products:stats.total', 'إجمالي المنتجات')}
                   </Typography>
                 </Box>
               </Box>
@@ -143,17 +171,17 @@ export const ProductsAnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <TrendingUp color="success" sx={{ fontSize: 40 }} />
-                <Box>
-                  <Typography variant="h4" component="div">
+              <Box display="flex" alignItems="center" gap={1} flexDirection={isMobile ? 'column' : 'row'}>
+                <TrendingUp color="success" sx={{ fontSize: isMobile ? 32 : 40 }} />
+                <Box sx={{ textAlign: isMobile ? 'center' : 'left' }}>
+                  <Typography variant={isMobile ? 'h5' : 'h4'} component="div">
                     {stats?.active || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('analytics.activeProducts', { defaultValue: 'منتجات نشطة' })}
+                    {t('products:stats.active', 'منتجات نشطة')}
                   </Typography>
                 </Box>
               </Box>
@@ -161,17 +189,17 @@ export const ProductsAnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <Star color="warning" sx={{ fontSize: 40 }} />
-                <Box>
-                  <Typography variant="h4" component="div">
+              <Box display="flex" alignItems="center" gap={1} flexDirection={isMobile ? 'column' : 'row'}>
+                <Star color="warning" sx={{ fontSize: isMobile ? 32 : 40 }} />
+                <Box sx={{ textAlign: isMobile ? 'center' : 'left' }}>
+                  <Typography variant={isMobile ? 'h5' : 'h4'} component="div">
                     {stats?.featured || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('analytics.featuredProducts', { defaultValue: 'منتجات مميزة' })}
+                    {t('products:stats.featured', 'منتجات مميزة')}
                   </Typography>
                 </Box>
               </Box>
@@ -179,17 +207,17 @@ export const ProductsAnalyticsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
-              <Box display="flex" alignItems="center" gap={2}>
-                <NewReleases color="info" sx={{ fontSize: 40 }} />
-                <Box>
-                  <Typography variant="h4" component="div">
+              <Box display="flex" alignItems="center" gap={1} flexDirection={isMobile ? 'column' : 'row'}>
+                <NewReleases color="info" sx={{ fontSize: isMobile ? 32 : 40 }} />
+                <Box sx={{ textAlign: isMobile ? 'center' : 'left' }}>
+                  <Typography variant={isMobile ? 'h5' : 'h4'} component="div">
                     {stats?.new || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('analytics.newProducts', { defaultValue: 'منتجات جديدة' })}
+                    {t('products:stats.new', 'منتجات جديدة')}
                   </Typography>
                 </Box>
               </Box>
@@ -203,29 +231,29 @@ export const ProductsAnalyticsPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                {t('analytics.byStatus', { defaultValue: 'توزيع المنتجات حسب الحالة' })}
+              <Typography variant={isMobile ? 'subtitle1' : 'h6'} gutterBottom>
+                {t('products:stats.byStatus', 'توزيع المنتجات حسب الحالة')}
               </Typography>
               <Box display="flex" flexDirection="column" gap={2}>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body1">{t('status.active', { defaultValue: 'نشط' })}</Typography>
+                <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                  <Typography variant="body1">{t('products:status.active', 'نشط')}</Typography>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="h6">{stats?.active || 0}</Typography>
-                    <Chip label="نشط" color="success" size="small" />
+                    <Chip label={t('products:status.active', 'نشط')} color="success" size="small" />
                   </Box>
                 </Box>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body1">{t('status.draft', { defaultValue: 'مسودة' })}</Typography>
+                <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                  <Typography variant="body1">{t('products:status.draft', 'مسودة')}</Typography>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="h6">{stats?.draft || 0}</Typography>
-                    <Chip label="مسودة" color="default" size="small" />
+                    <Chip label={t('products:status.draft', 'مسودة')} color="default" size="small" />
                   </Box>
                 </Box>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body1">{t('status.archived', { defaultValue: 'مؤرشف' })}</Typography>
+                <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                  <Typography variant="body1">{t('products:status.archived', 'مؤرشف')}</Typography>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="h6">{stats?.archived || 0}</Typography>
-                    <Chip label="مؤرشف" color="warning" size="small" />
+                    <Chip label={t('products:status.archived', 'مؤرشف')} color="warning" size="small" />
                   </Box>
                 </Box>
               </Box>
@@ -236,8 +264,8 @@ export const ProductsAnalyticsPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                {t('analytics.inventoryStats', { defaultValue: 'إحصائيات المخزون' })}
+              <Typography variant={isMobile ? 'subtitle1' : 'h6'} gutterBottom>
+                {t('products:stats.inventoryStats', 'إحصائيات المخزون')}
               </Typography>
               {loadingInventory ? (
                 <Box display="flex" justifyContent="center" p={2}>
@@ -245,43 +273,43 @@ export const ProductsAnalyticsPage: React.FC = () => {
                 </Box>
               ) : (
                 <Box display="flex" flexDirection="column" gap={2}>
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1">{t('analytics.totalVariants', { defaultValue: 'إجمالي المتغيرات' })}</Typography>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                    <Typography variant="body1">{t('products:stats.totalVariants', 'إجمالي المتغيرات')}</Typography>
                     <Typography variant="h6">{inventorySummary?.totalVariants || 0}</Typography>
                   </Box>
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1">{t('analytics.inStock', { defaultValue: 'متوفر في المخزون' })}</Typography>
-                    <Box display="flex" alignItems="center" gap={1}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                    <Typography variant="body1">{t('products:stats.inStock', 'متوفر في المخزون')}</Typography>
+                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                       <Typography variant="h6">{inventorySummary?.inStock || 0}</Typography>
                       {typeof inventorySummary?.inStockUnits === 'number' && (
-                      <Chip label={`${inventorySummary?.inStockUnits} ${t('analytics.unit', { defaultValue: 'وحدة' })}`} color="success" size="small" variant="outlined" />
+                      <Chip label={`${inventorySummary?.inStockUnits} ${t('products:stats.unit', 'وحدة')}`} color="success" size="small" variant="outlined" />
                       )}
-                      <Chip label={t('analytics.available', { defaultValue: 'متوفر' })} color="success" size="small" />
+                      <Chip label={t('products:stats.available', 'متوفر')} color="success" size="small" />
                     </Box>
                   </Box>
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1">{t('analytics.lowStock', { defaultValue: 'مخزون منخفض' })}</Typography>
-                    <Box display="flex" alignItems="center" gap={1}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                    <Typography variant="body1">{t('products:stats.lowStock', 'مخزون منخفض')}</Typography>
+                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                       <Typography variant="h6">{inventorySummary?.lowStock || 0}</Typography>
                       {typeof inventorySummary?.lowStockUnits === 'number' && (
-                      <Chip label={`${inventorySummary?.lowStockUnits} ${t('analytics.unit', { defaultValue: 'وحدة' })}`} color="warning" size="small" variant="outlined" />
+                      <Chip label={`${inventorySummary?.lowStockUnits} ${t('products:stats.unit', 'وحدة')}`} color="warning" size="small" variant="outlined" />
                       )}
-                      <Chip label={t('analytics.low', { defaultValue: 'منخفض' })} color="warning" size="small" />
+                      <Chip label={t('products:stats.low', 'منخفض')} color="warning" size="small" />
                     </Box>
                   </Box>
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body1">{t('analytics.outOfStock', { defaultValue: 'نفذ من المخزون' })}</Typography>
-                    <Box display="flex" alignItems="center" gap={1}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                    <Typography variant="body1">{t('products:stats.outOfStock', 'نفذ من المخزون')}</Typography>
+                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                       <Typography variant="h6">{inventorySummary?.outOfStock || 0}</Typography>
                       {typeof inventorySummary?.outOfStockUnits === 'number' && (
-                      <Chip label={`${inventorySummary?.outOfStockUnits} ${t('analytics.unit', { defaultValue: 'وحدة' })}`} color="error" size="small" variant="outlined" />
+                      <Chip label={`${inventorySummary?.outOfStockUnits} ${t('products:stats.unit', 'وحدة')}`} color="error" size="small" variant="outlined" />
                       )}
-                      <Chip label={t('analytics.soldOut', { defaultValue: 'نفذ' })} color="error" size="small" />
+                      <Chip label={t('products:stats.soldOut', 'نفذ')} color="error" size="small" />
                     </Box>
                   </Box>
                   {inventorySummary?.totalValue && (
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="body1">{t('analytics.totalInventoryValue', { defaultValue: 'إجمالي قيمة المخزون' })}</Typography>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                      <Typography variant="body1">{t('products:stats.totalInventoryValue', 'إجمالي قيمة المخزون')}</Typography>
                       <Typography variant="h6" color="primary">
                         {inventorySummary.totalValue.toLocaleString()} $
                       </Typography>
@@ -298,11 +326,11 @@ export const ProductsAnalyticsPage: React.FC = () => {
       {inventorySummary?.variantsPerProduct && inventorySummary.variantsPerProduct.length > 0 && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              {t('analytics.variantsPerProduct', { defaultValue: 'إحصائيات المتغيرات لكل منتج' })}
+            <Typography variant={isMobile ? 'subtitle1' : 'h6'} gutterBottom>
+              {t('products:stats.variantsPerProduct', 'إحصائيات المتغيرات لكل منتج')}
             </Typography>
-            <TableContainer component={Paper}>
-              <Table>
+            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+              <Table size={isMobile ? 'small' : 'medium'}>
                 <TableHead
                   sx={{
                     backgroundColor: (theme) =>
@@ -312,9 +340,9 @@ export const ProductsAnalyticsPage: React.FC = () => {
                   }}
                 >
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('analytics.product', { defaultValue: 'المنتج' })}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('analytics.variantsCount', { defaultValue: 'عدد المتغيرات' })}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('analytics.totalUnits', { defaultValue: 'إجمالي الوحدات' })}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.product', 'المنتج')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.variantsCount', 'عدد المتغيرات')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.totalUnits', 'إجمالي الوحدات')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -343,16 +371,22 @@ export const ProductsAnalyticsPage: React.FC = () => {
       {/* Detailed Analytics Tabs */}
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label={`${t('analytics.lowStock', { defaultValue: 'مخزون منخفض' })} (${lowStockVariants.length})`} />
-            <Tab label={`${t('analytics.outOfStock', { defaultValue: 'نفذ من المخزون' })} (${outOfStockVariants.length})`} />
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            variant={isMobile ? 'scrollable' : 'standard'}
+            scrollButtons={isMobile ? 'auto' : false}
+            allowScrollButtonsMobile
+          >
+            <Tab label={`${t('products:stats.lowStock', 'مخزون منخفض')} (${lowStockVariants.length})`} />
+            <Tab label={`${t('products:stats.outOfStock', 'نفذ من المخزون')} (${outOfStockVariants.length})`} />
           </Tabs>
         </Box>
 
         <TabPanel value={activeTab} index={0}>
           {lowStockVariants && lowStockVariants.length > 0 ? (
-            <TableContainer component={Paper}>
-              <Table>
+            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+              <Table size={isMobile ? 'small' : 'medium'}>
                 <TableHead
                   sx={{
                     backgroundColor: (theme) =>
@@ -362,30 +396,30 @@ export const ProductsAnalyticsPage: React.FC = () => {
                   }}
                 >
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>SKU</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المنتج</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المخزون الحالي</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحد الأدنى</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>السعر</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:variants.form.sku', 'SKU')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.product', 'المنتج')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.currentStock', 'المخزون الحالي')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.minimumStock', 'الحد الأدنى')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.price', 'السعر')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.actions', 'الإجراءات')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {lowStockVariants.map((variant: any) => (
-                    <TableRow key={variant._id}>
-                      <TableCell>{variant.sku || '-'}</TableCell>
-                      <TableCell>منتج {variant.productId}</TableCell>
+                    <TableRow key={variant.variantId || variant._id} hover>
+                      <TableCell>{variant.variantName || variant.sku || '-'}</TableCell>
+                      <TableCell>{variant.productName || variant.productId}</TableCell>
                       <TableCell>
                         <Chip
-                          label={variant.stock}
-                          color={variant.stock === 0 ? 'error' : 'warning'}
+                          label={variant.currentStock ?? variant.stock ?? 0}
+                          color={(variant.currentStock ?? variant.stock ?? 0) === 0 ? 'error' : 'warning'}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>{variant.minStock}</TableCell>
-                      <TableCell>{variant.price} $</TableCell>
+                      <TableCell>{variant.minStock ?? '-'}</TableCell>
+                      <TableCell>-</TableCell>
                       <TableCell>
-                        <Tooltip title={t('analytics.viewDetails', { defaultValue: 'عرض التفاصيل' })}>
+                        <Tooltip title={t('products:stats.viewDetails', 'عرض التفاصيل')}>
                           <IconButton
                             size="small"
                             onClick={() => navigate(`/products/${variant.productId}`)}
@@ -400,14 +434,14 @@ export const ProductsAnalyticsPage: React.FC = () => {
               </Table>
             </TableContainer>
           ) : (
-            <Alert severity="success">{t('analytics.noLowStock', { defaultValue: 'لا توجد منتجات بمخزون منخفض حالياً' })}</Alert>
+            <Alert severity="success">{t('products:stats.noLowStock', 'لا توجد منتجات بمخزون منخفض حالياً')}</Alert>
           )}
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
           {outOfStockVariants && outOfStockVariants.length > 0 ? (
-            <TableContainer component={Paper}>
-              <Table>
+            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+              <Table size={isMobile ? 'small' : 'medium'}>
                 <TableHead
                   sx={{
                     backgroundColor: (theme) =>
@@ -417,26 +451,26 @@ export const ProductsAnalyticsPage: React.FC = () => {
                   }}
                 >
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>SKU</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المنتج</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المخزون</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الحد الأدنى</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>السعر</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:variants.form.sku', 'SKU')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.product', 'المنتج')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.currentStock', 'المخزون')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.minimumStock', 'الحد الأدنى')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.price', 'السعر')}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.actions', 'الإجراءات')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {outOfStockVariants.map((variant: any) => (
-                    <TableRow key={variant._id}>
-                      <TableCell>{variant.sku || '-'}</TableCell>
-                      <TableCell>منتج {variant.productId}</TableCell>
+                    <TableRow key={variant.variantId || variant._id} hover>
+                      <TableCell>{variant.variantName || variant.sku || '-'}</TableCell>
+                      <TableCell>{variant.productName || variant.productId}</TableCell>
                       <TableCell>
-                        <Chip label={variant.stock} color="error" size="small" />
+                        <Chip label="0" color="error" size="small" />
                       </TableCell>
-                      <TableCell>{variant.minStock}</TableCell>
-                      <TableCell>{variant.price} $</TableCell>
+                      <TableCell>-</TableCell>
+                      <TableCell>-</TableCell>
                       <TableCell>
-                        <Tooltip title={t('analytics.viewDetails', { defaultValue: 'عرض التفاصيل' })}>
+                        <Tooltip title={t('products:stats.viewDetails', 'عرض التفاصيل')}>
                           <IconButton
                             size="small"
                             onClick={() => navigate(`/products/${variant.productId}`)}
@@ -451,7 +485,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
               </Table>
             </TableContainer>
           ) : (
-            <Alert severity="success">{t('analytics.allInStock', { defaultValue: 'جميع المنتجات متوفرة في المخزون' })}</Alert>
+            <Alert severity="success">{t('products:stats.allInStock', 'جميع المنتجات متوفرة في المخزون')}</Alert>
           )}
         </TabPanel>
       </Card>

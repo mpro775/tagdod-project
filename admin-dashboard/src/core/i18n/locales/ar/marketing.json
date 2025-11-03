@@ -1,24 +1,22 @@
 {
-  "marketing": {
-    "title": "إدارة التسويق",
-    "subtitle": "أدوات وإستراتيجيات التسويق الشاملة",
-    "dashboard": "لوحة تحكم التسويق",
-    "priceRules": "قواعد الأسعار",
-    "coupons": "الكوبونات",
-    "banners": "البانرات",
-    "campaigns": "الحملات",
-    "analytics": "التحليلات",
-    "reports": "التقارير"
-  },
+  "title": "إدارة التسويق",
+  "subtitle": "أدوات وإستراتيجيات التسويق الشاملة",
+  "dashboard": "لوحة تحكم التسويق",
+  "priceRulesTitle": "قواعد الأسعار",
+  "coupons": "الكوبونات",
+  "banners": "البانرات",
+  "campaigns": "الحملات",
+  "analytics": "التحليلات",
+  "reports": "التقارير",
   "priceRules": {
     "title": "إدارة قواعد الأسعار",
     "subtitle": "إنشاء وإدارة قواعد التسعير الديناميكية",
     "addNew": "إضافة قاعدة سعر جديدة",
-    "createNew": "إنشاء قاعدة سعر جديدة",
+    "createNew": "إنشاء قاعدة الأسعار",
     "editRule": "تعديل قاعدة السعر",
     "deleteRule": "حذف قاعدة السعر",
     "viewRule": "عرض تفاصيل قاعدة السعر",
-    "noTitle": "قاعدة سعر بدون عنوان",
+    "noTitle": "لا يوجد عنوان",
     "activeRules": "القواعد النشطة",
     "inactiveRules": "القواعد غير النشطة",
     "totalRules": "إجمالي القواعد"
@@ -30,11 +28,10 @@
     "createPriceRule": "إنشاء قاعدة سعر",
     "createCoupon": "إنشاء كوبون",
     "createBanner": "إنشاء بانر",
-    "viewAnalytics": "عرض التحليلات",
-    "active": "نشط",
     "viewAll": "عرض الكل",
+    "active": "نشط",
     "stats": {
-      "priceRules": "قواعد الأسعار",
+      "priceRules": "قاعدة الأسعار",
       "coupons": "الكوبونات",
       "banners": "البانرات"
     }
@@ -149,10 +146,10 @@
   "tooltips": {
     "edit": "تعديل",
     "delete": "حذف",
-    "view": "عرض التفاصيل",
+    "view": "عرض",
     "toggle": "تبديل الحالة",
-    "activate": "تفعيل القاعدة",
-    "deactivate": "تعطيل القاعدة",
+    "activate": "تفعيل",
+    "deactivate": "تعطيل",
     "analytics": "عرض التحليلات"
   },
   "placeholders": {

@@ -1,13 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {  Model, Types } from 'mongoose';
-import { Variant } from '../schemas/variant.schema';
+import { Variant, VariantAttribute } from '../schemas/variant.schema';
 import { 
   VariantNotFoundException,
  
 } from '../../../shared/exceptions';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
+
+interface PopulatedProduct {
+  _id: Types.ObjectId | string;
+  name?: string;
+  nameEn?: string;
+}
+
+function isPopulatedProduct(product: unknown): product is PopulatedProduct {
+  return typeof product === 'object' && product !== null && ('name' in product || 'nameEn' in product);
+}
 
 @Injectable()
 export class InventoryService {
@@ -243,6 +253,9 @@ export class InventoryService {
   async getLowStockVariants(threshold?: number): Promise<Array<{
     variantId: string;
     productId: string;
+    productName?: string;
+    productNameEn?: string;
+    variantName?: string;
     sku?: string;
     currentStock: number;
     minStock: number;
@@ -256,7 +269,8 @@ export class InventoryService {
           deletedAt: null,
           isActive: true,
         })
-        .select('_id productId sku stock minStock')
+        .select('_id productId sku stock minStock attributeValues')
+        .populate('productId', 'name nameEn')
         .lean();
 
       // تصفية في JavaScript لتجنب مشاكل NaN
@@ -284,14 +298,41 @@ export class InventoryService {
         }
       });
 
-      return validVariants.map(variant => ({
-        variantId: variant._id.toString(),
-        productId: variant.productId.toString(),
-        sku: variant.sku,
-        currentStock: variant.stock,
-        minStock: variant.minStock,
-        difference: variant.minStock - variant.stock
-      }));
+      return validVariants.map(variant => {
+        const product = variant.productId;
+        const productName = isPopulatedProduct(product) ? product.name : undefined;
+        const productNameEn = isPopulatedProduct(product) ? product.nameEn : undefined;
+        
+        // بناء اسم الـ variant من سمات المنتج + سمات الـ variant
+        let variantName = productName || '';
+        if (variant.attributeValues && variant.attributeValues.length > 0) {
+          const attributeStr = variant.attributeValues
+            .map((attr: VariantAttribute) => `${attr.name || ''}: ${attr.value || ''}`)
+            .filter(Boolean)
+            .join(', ');
+          if (attributeStr) {
+            variantName = variantName ? `${variantName} - ${attributeStr}` : attributeStr;
+          }
+        }
+
+        const productIdStr = isPopulatedProduct(product) 
+          ? product._id.toString() 
+          : (typeof product === 'object' && product !== null 
+              ? (product as Types.ObjectId).toString() 
+              : String(product));
+
+        return {
+          variantId: variant._id.toString(),
+          productId: productIdStr,
+          productName,
+          productNameEn,
+          variantName: variantName || variant.sku || undefined,
+          sku: variant.sku,
+          currentStock: variant.stock,
+          minStock: variant.minStock,
+          difference: variant.minStock - variant.stock
+        };
+      });
     } catch (error) {
       this.logger.error('Error getting low stock variants:', error);
       
@@ -304,6 +345,9 @@ export class InventoryService {
   async getOutOfStockVariants(): Promise<Array<{
     variantId: string;
     productId: string;
+    productName?: string;
+    productNameEn?: string;
+    variantName?: string;
     sku?: string;
   }>> {
     try {
@@ -314,7 +358,8 @@ export class InventoryService {
           deletedAt: null,
           isActive: true,
         })
-        .select('_id productId sku stock')
+        .select('_id productId sku stock attributeValues')
+        .populate('productId', 'name nameEn')
         .lean();
 
       // تصفية في JavaScript لتجنب مشاكل NaN
@@ -325,11 +370,38 @@ export class InventoryService {
                               isFinite(variant.stock);
           return stockIsValid && variant.stock === 0;
         })
-        .map(variant => ({
-          variantId: variant._id.toString(),
-          productId: variant.productId.toString(),
-          sku: variant.sku
-        }));
+        .map(variant => {
+          const product = variant.productId;
+          const productName = isPopulatedProduct(product) ? product.name : undefined;
+          const productNameEn = isPopulatedProduct(product) ? product.nameEn : undefined;
+          
+          // بناء اسم الـ variant من سمات المنتج + سمات الـ variant
+          let variantName = productName || '';
+          if (variant.attributeValues && variant.attributeValues.length > 0) {
+            const attributeStr = variant.attributeValues
+              .map((attr: VariantAttribute) => `${attr.name || ''}: ${attr.value || ''}`)
+              .filter(Boolean)
+              .join(', ');
+            if (attributeStr) {
+              variantName = variantName ? `${variantName} - ${attributeStr}` : attributeStr;
+            }
+          }
+
+          const productIdStr = isPopulatedProduct(product) 
+            ? product._id.toString() 
+            : (typeof product === 'object' && product !== null 
+                ? (product as Types.ObjectId).toString() 
+                : String(product));
+
+          return {
+            variantId: variant._id.toString(),
+            productId: productIdStr,
+            productName,
+            productNameEn,
+            variantName: variantName || variant.sku || undefined,
+            sku: variant.sku
+          };
+        });
     } catch (error) {
       this.logger.error('Error getting out of stock variants:', error);
       
@@ -347,6 +419,9 @@ export class InventoryService {
     lowStockVariants: Array<{
       variantId: string;
       productId: string;
+      productName?: string;
+      productNameEn?: string;
+      variantName?: string;
       sku?: string;
       currentStock: number;
       minStock: number;
@@ -355,6 +430,9 @@ export class InventoryService {
     outOfStockVariants: Array<{
       variantId: string;
       productId: string;
+      productName?: string;
+      productNameEn?: string;
+      variantName?: string;
       sku?: string;
     }>;
   }> {

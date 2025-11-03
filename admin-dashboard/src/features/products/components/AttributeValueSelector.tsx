@@ -10,6 +10,7 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useProductFormData } from '../hooks/useProductData';
 import type { VariantAttribute } from '../types/product.types';
 
@@ -29,18 +30,19 @@ export const AttributeValueSelector: React.FC<AttributeValueSelectorProps> = ({
   helperText,
   productAttributes = [],
 }) => {
+  const { t } = useTranslation(['attributes', 'common']);
   const { attributes, isLoading } = useProductFormData();
 
   if (isLoading) {
     return (
       <Box>
         <Typography variant="subtitle2" gutterBottom>
-          قيم السمات
+          {t('attributes:valueDialog.editValue', 'قيم السمات')}
         </Typography>
         <Box display="flex" alignItems="center" gap={1}>
           <CircularProgress size={20} />
           <Typography variant="body2" color="text.secondary">
-            جاري تحميل السمات...
+            {t('common:common.loading', 'جارٍ التحميل...')}
           </Typography>
         </Box>
       </Box>
@@ -90,12 +92,12 @@ export const AttributeValueSelector: React.FC<AttributeValueSelectorProps> = ({
   return (
     <Box>
       <Typography variant="subtitle2" gutterBottom>
-        قيم السمات
+        {t('attributes:valueDialog.editValue', 'قيم السمات')}
       </Typography>
       
       {availableAttributes.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
-          لا توجد سمات محددة لهذا المنتج
+          {t('attributes:attributes.noAttributesAssigned', 'لا توجد سمات محددة لهذا المنتج')}
         </Typography>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

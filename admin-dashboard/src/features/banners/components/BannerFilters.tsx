@@ -17,8 +17,8 @@ import {
 } from '@mui/material';
 import { Search, FilterList, Clear, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { BANNER_LOCATION_OPTIONS } from '../types/banner.types';
-import type { ListBannersDto, BannerLocation } from '../types/banner.types';
+import { BannerLocation } from '../types/banner.types';
+import type { ListBannersDto } from '../types/banner.types';
 
 interface BannerFiltersProps {
   filters: ListBannersDto;
@@ -36,6 +36,19 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
   const [expanded, setExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState<ListBannersDto>(filters);
   const { t } = useTranslation('banners');
+
+  // Location options with translations
+  const locationOptions = [
+    { value: BannerLocation.HOME_TOP },
+    { value: BannerLocation.HOME_MIDDLE },
+    { value: BannerLocation.HOME_BOTTOM },
+    { value: BannerLocation.CATEGORY_TOP },
+    { value: BannerLocation.PRODUCT_PAGE },
+    { value: BannerLocation.CART_PAGE },
+    { value: BannerLocation.CHECKOUT_PAGE },
+    { value: BannerLocation.SIDEBAR },
+    { value: BannerLocation.FOOTER },
+  ];
 
   const handleFilterChange = (key: keyof ListBannersDto, value: any) => {
     const newFilters = { ...localFilters, [key]: value };
@@ -118,9 +131,9 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
                   disabled={isLoading}
                 >
                   <MenuItem value="">{t('filters.location.all')}</MenuItem>
-                  {BANNER_LOCATION_OPTIONS.map((option) => (
+                  {locationOptions.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
-                      {option.label}
+                      {t(`form.location.${option.value}`)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -248,10 +261,7 @@ export const BannerFilters: React.FC<BannerFiltersProps> = ({
               )}
               {localFilters.location && (
                 <Chip
-                  label={`${t('filters.location.label')}: ${
-                    BANNER_LOCATION_OPTIONS.find((opt) => opt.value === localFilters.location)
-                      ?.label
-                  }`}
+                  label={`${t('filters.location.label')}: ${t(`form.location.${localFilters.location}`)}`}
                   onDelete={() => handleFilterChange('location', undefined)}
                   size="small"
                 />

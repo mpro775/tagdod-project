@@ -106,15 +106,7 @@ export const useMediaStats = () => {
   return useQuery({
     queryKey: [MEDIA_KEY, 'stats'],
     queryFn: () => mediaApi.getStats(),
-    placeholderData: {
-      total: 0,
-      byCategory: {},
-      byType: {},
-      totalSize: 0,
-      totalSizeMB: '0',
-      averageSize: 0,
-      recentlyAdded: [],
-    },
+    placeholderData: (previousData) => previousData,
   });
 };
 

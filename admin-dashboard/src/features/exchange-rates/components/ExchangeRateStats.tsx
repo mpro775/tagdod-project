@@ -10,6 +10,7 @@ import {
   Skeleton,
   Alert,
   Divider,
+  useTheme,
 } from '@mui/material';
 import { TrendingUp, Schedule, Person, Note } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -22,21 +23,22 @@ interface ExchangeRateStatsProps {
 }
 
 export const ExchangeRateStats: React.FC<ExchangeRateStatsProps> = ({ rates, loading, error }) => {
-  const { t } = useTranslation('exchangeRates');
+  const { t, i18n } = useTranslation('exchangeRates');
+  const theme = useTheme();
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return t('messages.noData');
-    return new Date(dateString).toLocaleString('ar-SA', {
+    if (!dateString) return t('stats.noData');
+    return new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    });
+    }).format(new Date(dateString));
   };
 
   const formatRate = (rate: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 4,
     }).format(rate);
@@ -73,32 +75,41 @@ export const ExchangeRateStats: React.FC<ExchangeRateStatsProps> = ({ rates, loa
     return (
       <Card>
         <CardContent>
-          <Alert severity="info">لا توجد بيانات أسعار صرف متاحة</Alert>
+          <Alert severity="info">{t('stats.noDataAvailable')}</Alert>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card sx={{ borderRadius: { xs: 1, sm: 2 } }}>
       <CardHeader
         title={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TrendingUp color="primary" />
-            <Typography variant="h6" component="div">
-              إحصائيات أسعار الصرف
+            <TrendingUp color="primary" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
+            <Typography 
+              variant="h6" 
+              component="div"
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
+              {t('stats.title')}
             </Typography>
           </Box>
         }
-        subheader="معلومات تفصيلية عن أسعار الصرف الحالية"
+        subheader={
+          <Typography sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
+            {t('stats.subtitle')}
+          </Typography>
+        }
+        sx={{ px: { xs: 1.5, sm: 2 }, pt: { xs: 1.5, sm: 2 } }}
       />
-      <CardContent>
-        <Grid container spacing={3}>
+      <CardContent sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {/* Current Rates */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                الأسعار الحالية
+                {t('stats.currentRates')}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Box
@@ -125,7 +136,7 @@ export const ExchangeRateStats: React.FC<ExchangeRateStatsProps> = ({ rates, loa
           <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                معلومات التحديث
+                {t('stats.updateInfo')}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {rates.lastUpdatedAt && (
@@ -155,16 +166,16 @@ export const ExchangeRateStats: React.FC<ExchangeRateStatsProps> = ({ rates, loa
                   sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
                 >
                   <Note sx={{ fontSize: 16 }} />
-                  ملاحظات
+                  {t('stats.notes')}
                 </Typography>
                 <Typography
                   variant="body2"
                   sx={{
                     p: 2,
-                    backgroundColor: 'grey.50',
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
                     borderRadius: 1,
                     border: '1px solid',
-                    borderColor: 'grey.200',
+                    borderColor: 'divider',
                   }}
                 >
                   {rates.notes}
@@ -175,19 +186,29 @@ export const ExchangeRateStats: React.FC<ExchangeRateStatsProps> = ({ rates, loa
 
           {/* Quick Stats */}
           <Grid size={{ xs: 12 }}>
-            <Divider sx={{ my: 1 }} />
+            <Divider sx={{ my: { xs: 1, sm: 1.5 } }} />
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
               <Chip
-                icon={<TrendingUp />}
-                label={`1 دولار = ${formatRate(rates.usdToYer)} ريال يمني`}
+                icon={<TrendingUp sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />}
+                label={t('stats.oneUSDEqualsYER', { 
+                  amount: formatRate(rates.usdToYer),
+                  usd: t('exchangeRates.usd'),
+                  yer: t('exchangeRates.yer')
+                })}
                 color="primary"
                 variant="outlined"
+                sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
               />
               <Chip
-                icon={<TrendingUp />}
-                label={`1 دولار = ${formatRate(rates.usdToSar)} ريال سعودي`}
+                icon={<TrendingUp sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />}
+                label={t('stats.oneUSDEqualsSAR', { 
+                  amount: formatRate(rates.usdToSar),
+                  usd: t('exchangeRates.usd'),
+                  sar: t('exchangeRates.sar')
+                })}
                 color="secondary"
                 variant="outlined"
+                sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
               />
             </Box>
           </Grid>

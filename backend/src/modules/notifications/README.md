@@ -181,28 +181,180 @@ MONGO_URI=mongodb://localhost:27017/tagadodo
 # إعدادات Redis للـ Cache
 REDIS_URL=redis://localhost:6379
 
-# إعدادات FCM للإشعارات الدفع (اختياري)
-FCM_SERVER_KEY=your_fcm_server_key
+# إعدادات FCM للإشعارات الدفع (مطلوبة لتشغيل Push Notifications)
+# يمكن الحصول على هذه المعلومات من Firebase Console > Project Settings > Service Accounts
+FCM_PROJECT_ID=your-firebase-project-id
+FCM_PRIVATE_KEY_ID=your-private-key-id
+FCM_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour-Private-Key\n-----END PRIVATE KEY-----\n"
+FCM_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+FCM_CLIENT_ID=your-client-id
 
-# إعدادات SMS (اختياري)
-SMS_API_KEY=your_sms_api_key
-SMS_SENDER_ID=your_sender_id
+# إعدادات SMTP للبريد الإلكتروني (مطلوبة لتشغيل Email Notifications)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=noreply@yourdomain.com
+FRONTEND_URL=https://yourdomain.com
+
+# إعدادات Twilio للرسائل النصية SMS (مطلوبة لتشغيل SMS Notifications)
+TWILIO_ACCOUNT_SID=your-twilio-account-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_PHONE_NUMBER=+1234567890
+TWILIO_WHATSAPP_NUMBER=+14155238886  # اختياري
+```
+
+### تكوين Email (SMTP)
+
+**Email مربوط تلقائياً!** ✅
+
+تم ربط EmailAdapter مع `EmailNotificationAdapter` بشكل تلقائي. النظام يعمل على النحو التالي:
+
+1. **إذا تم تكوين متغيرات البيئة**: يستخدم SMTP لإرسال Emails الحقيقية
+2. **إذا لم يتم تكوينها**: يستخدم Mock implementation (للتطوير والاختبار)
+
+#### خطوات إعداد Email:
+
+1. **الحصول على SMTP Credentials:**
+   - **Gmail**: استخدم App Password (لا كلمة المرور العادية)
+   - **SendGrid**: احصل على API Key من SendGrid Dashboard
+   - **AWS SES**: استخدم SMTP credentials من AWS Console
+   - **أي SMTP Provider**: استخدم معلومات SMTP من مزودك
+
+2. **إضافة المتغيرات إلى `.env`:**
+   ```env
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=your-email@gmail.com
+   SMTP_PASS=your-app-password
+   SMTP_FROM=noreply@yourdomain.com
+   FRONTEND_URL=https://yourdomain.com
+   ```
+
+3. **إعادة تشغيل السيرفر:**
+   - النظام سيتحقق من التكوين تلقائياً عند البدء
+   - إذا تم التكوين بشكل صحيح، ستظهر رسالة: "Email transporter initialized successfully"
+   - إذا لم يتم التكوين، سيستخدم Mock mode تلقائياً
+
+#### استخدام Email مباشرة:
+```typescript
+constructor(private emailAdapter: EmailAdapter) {}
+
+async sendEmail() {
+  const result = await this.emailAdapter.sendEmail({
+    to: 'user@example.com',
+    subject: 'مرحباً بك',
+    html: '<h1>مرحباً</h1><p>شكراً لك على التسجيل</p>',
+    text: 'مرحباً. شكراً لك على التسجيل'
+  });
+}
+```
+
+### تكوين SMS (Twilio)
+
+**SMS مربوط تلقائياً!** ✅
+
+تم ربط SMSAdapter مع `SmsNotificationAdapter` بشكل تلقائي. النظام يعمل على النحو التالي:
+
+1. **إذا تم تكوين متغيرات البيئة**: يستخدم Twilio لإرسال SMS الحقيقية
+2. **إذا لم يتم تكوينها**: يستخدم Mock implementation (للتطوير والاختبار)
+
+#### خطوات إعداد SMS:
+
+1. **إنشاء حساب Twilio:**
+   - افتح [Twilio Console](https://www.twilio.com/console)
+   - سجّل حساب جديد أو استخدم حساب موجود
+   - احصل على Account SID و Auth Token
+
+2. **الحصول على رقم Twilio:**
+   - من Twilio Console، احصل على رقم هاتف للرسائل النصية
+   - أو استخدم رقمك الموجود
+
+3. **إضافة المتغيرات إلى `.env`:**
+   ```env
+   TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   TWILIO_AUTH_TOKEN=your-auth-token
+   TWILIO_PHONE_NUMBER=+1234567890
+   TWILIO_WHATSAPP_NUMBER=+14155238886  # اختياري للواتساب
+   ```
+
+4. **إعادة تشغيل السيرفر:**
+   - النظام سيتحقق من التكوين تلقائياً عند البدء
+   - إذا تم التكوين بشكل صحيح، ستظهر رسالة: "Twilio client initialized successfully"
+   - إذا لم يتم التكوين، سيستخدم Mock mode تلقائياً
+
+#### استخدام SMS مباشرة:
+```typescript
+constructor(private smsAdapter: SMSAdapter) {}
+
+async sendSMS() {
+  const result = await this.smsAdapter.sendSMS({
+    to: '+966501234567',
+    message: 'مرحباً! هذا إشعار من تطبيقنا',
+    from: '+1234567890'  // اختياري، سيستخدم TWILIO_PHONE_NUMBER
+  });
+}
 ```
 
 ### تكوين FCM (Firebase Cloud Messaging)
-```typescript
-// في notifications.module.ts
-providers: [
-  { provide: PUSH_PORT, useClass: FCMAdapter }, // بدلاً من NullPushAdapter
-]
-```
 
-### تكوين SMS
+**FCM مربوط تلقائياً!** ✅
+
+تم ربط FCM مع `PushNotificationAdapter` بشكل تلقائي في `NotificationsCompleteModule`. النظام يعمل على النحو التالي:
+
+1. **إذا تم تكوين متغيرات البيئة**: يستخدم FCM لإرسال Push Notifications الحقيقية
+2. **إذا لم يتم تكوينها**: يستخدم Mock implementation (للتطوير والاختبار)
+
+#### خطوات إعداد FCM:
+
+1. **الحصول على Service Account Key:**
+   - افتح [Firebase Console](https://console.firebase.google.com/)
+   - اذهب إلى Project Settings > Service Accounts
+   - اضغط "Generate new private key"
+   - حمّل ملف JSON
+
+2. **استخراج المعلومات من ملف JSON:**
+   ```json
+   {
+     "project_id": "your-project-id",
+     "private_key_id": "...",
+     "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+     "client_email": "firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com",
+     "client_id": "..."
+   }
+   ```
+
+3. **إضافة المتغيرات إلى `.env`:**
+   ```env
+   FCM_PROJECT_ID=your-project-id
+   FCM_PRIVATE_KEY_ID=your-private-key-id
+   FCM_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+   FCM_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+   FCM_CLIENT_ID=your-client-id
+   ```
+
+4. **إعادة تشغيل السيرفر:**
+   - النظام سيتحقق من التكوين تلقائياً عند البدء
+   - إذا تم التكوين بشكل صحيح، ستظهر رسالة: "Firebase Admin SDK initialized successfully"
+   - إذا لم يتم التكوين، سيستخدم Mock mode تلقائياً
+
+#### استخدام FCM مباشرة:
 ```typescript
-// في notifications.module.ts
-providers: [
-  { provide: SMS_PORT, useClass: YourSMSAdapter }, // بدلاً من NullSmsAdapter
-]
+// يمكنك استخدام FCMAdapter مباشرة إذا لزم الأمر
+constructor(private fcmAdapter: FCMAdapter) {}
+
+async sendPushNotification() {
+  const success = await this.fcmAdapter.sendToDevice(
+    'device-token',
+    {
+      title: 'عنوان الإشعار',
+      body: 'محتوى الإشعار',
+      data: { orderId: '123' }
+    }
+  );
+}
 ```
 
 ## الأمان

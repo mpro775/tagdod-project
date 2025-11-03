@@ -15,14 +15,8 @@ import {
   CircularProgress,
   TextField,
   IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Tooltip,
+  Stack,
 } from '@mui/material';
 import { ArrowBack, Add, Save, Cancel, Edit, Delete, Check, Close } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -31,6 +25,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import {
   useProduct,
   useProductVariants,
@@ -39,13 +34,18 @@ import {
   useDeleteVariant,
 } from '../hooks/useProducts';
 import { FormInput } from '@/shared/components/Form/FormInput';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { VariantCard } from '../components/VariantCard';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
+import { ConfirmDialog } from '@/shared/components';
 import type { Variant, CreateVariantDto, UpdateVariantDto } from '../types/product.types';
 
 // Validation Schema for Variant (مبسط - فقط الأساسيات)
 const variantSchema = z.object({
   sku: z.string().optional(),
-  price: z.number().min(0, 'السعر يجب أن يكون أكبر من أو يساوي صفر'),
-  stock: z.number().min(0, 'الكمية يجب أن تكون أكبر من أو يساوي صفر'),
+  price: z.number().min(0),
+  stock: z.number().min(0),
 });
 
 type VariantFormData = z.infer<typeof variantSchema>;
@@ -54,11 +54,18 @@ export const ProductVariantsPage: React.FC = () => {
   const { t } = useTranslation(['products', 'common']);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isMobile } = useBreakpoint();
+  const { confirmDialog, dialogProps } = useConfirmDialog();
   const [variantDialogOpen, setVariantDialogOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<{ price: number; stock: number }>({ price: 0, stock: 0 });
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 20,
+  });
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   // Form
   const methods = useForm<VariantFormData>({
@@ -98,18 +105,23 @@ export const ProductVariantsPage: React.FC = () => {
     setVariantDialogOpen(true);
   };
 
-  const handleDeleteVariant = (variant: Variant) => {
-    if (
-      window.confirm(
-        `${t('products:variants.deleteConfirm', 'هل أنت متأكد من حذف المتغير')} "${
-          variant.sku || variant._id
-        }"؟`
-      )
-    ) {
+  const handleDeleteVariant = async (variant: Variant) => {
+    const confirmed = await confirmDialog({
+      title: t('products:variants.deleteTitle', 'تأكيد حذف المتغير'),
+      message: `${t('products:variants.deleteConfirm', 'هل أنت متأكد من حذف المتغير')} "${
+        variant.sku || variant._id
+      }"؟`,
+      type: 'warning',
+      confirmColor: 'error',
+    });
+    if (confirmed) {
       deleteVariant(
         { productId: id!, variantId: variant._id },
         {
-          onSuccess: () => refetch(),
+          onSuccess: () => {
+            toast.success(t('products:messages.deleteSuccess', 'تم الحذف بنجاح'));
+            refetch();
+          },
         }
       );
     }
@@ -130,7 +142,7 @@ export const ProductVariantsPage: React.FC = () => {
 
   const handleSaveEdit = (variantId: string) => {
     if (editingData.price < 0 || editingData.stock < 0) {
-      toast.error(t('products:messages.priceStockRequired'));
+      toast.error(t('products:messages.priceStockRequired', 'السعر والكمية يجب أن تكون أكبر من أو تساوي صفر'));
       return;
     }
 
@@ -145,7 +157,7 @@ export const ProductVariantsPage: React.FC = () => {
       },
       {
         onSuccess: () => {
-          toast.success(t('products:messages.updateSuccess'));
+          toast.success(t('products:messages.updateSuccess', 'تم التحديث بنجاح'));
           refetch();
           handleCancelEdit();
         },
@@ -166,6 +178,7 @@ export const ProductVariantsPage: React.FC = () => {
         { productId: id!, variantId: selectedVariant._id, data: updateData },
         {
           onSuccess: () => {
+            toast.success(t('products:messages.updateSuccess', 'تم التحديث بنجاح'));
             refetch();
             setVariantDialogOpen(false);
             setSelectedVariant(null);
@@ -183,6 +196,7 @@ export const ProductVariantsPage: React.FC = () => {
 
       addVariant(createData, {
         onSuccess: () => {
+          toast.success(t('products:messages.createSuccess', 'تم الإنشاء بنجاح'));
           refetch();
           setVariantDialogOpen(false);
         },
@@ -204,18 +218,223 @@ export const ProductVariantsPage: React.FC = () => {
     );
   }
 
+  // Prepare data for DataTable
+  const getAttributeDisplay = (variant: Variant) => {
+    if (!variant.attributeValues || variant.attributeValues.length === 0) {
+      return t('products:variants.noAttributes', 'بدون سمات');
+    }
+    return variant.attributeValues.map((attr) => {
+      if (attr.name?.toLowerCase().includes('لون') || attr.name?.toLowerCase().includes('color')) {
+        return (
+          <Box key={attr.valueId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box 
+              sx={{ 
+                width: 20, 
+                height: 20, 
+                borderRadius: '50%', 
+                bgcolor: attr.value, 
+                border: '1px solid',
+                borderColor: 'divider'
+              }} 
+            />
+            <Typography variant="body2">{attr.value}</Typography>
+          </Box>
+        );
+      }
+      return `${attr.name}: ${attr.value}`;
+    });
+  };
+
+  const getStockChip = (variant: Variant) => {
+    if (variant.stock === 0) {
+      return (
+        <Chip
+          label={t('products:variants.status.outOfStock', 'غير متوفر')}
+          color="error"
+          size="small"
+        />
+      );
+    } else if (variant.stock <= (variant.minStock || 0)) {
+      return (
+        <Chip
+          label={t('products:variants.status.low', 'منخفض')}
+          color="warning"
+          size="small"
+        />
+      );
+    } else {
+      return (
+        <Chip
+          label={t('products:variants.status.available', 'متوفر')}
+          color="success"
+          size="small"
+        />
+      );
+    }
+  };
+
+  const columns: GridColDef[] = [
+    {
+      field: 'attributes',
+      headerName: t('products:variants.columns.attributes', 'السمات'),
+      flex: 1,
+      minWidth: 200,
+      renderCell: (params) => (
+        <Box>
+          {getAttributeDisplay(params.row)}
+          {params.row.sku && (
+            <Typography variant="caption" color="text.secondary" display="block">
+              SKU: {params.row.sku}
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
+    {
+      field: 'price',
+      headerName: t('products:variants.columns.price', 'السعر'),
+      width: 150,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const isEditing = editingId === params.row._id;
+        return isEditing ? (
+          <TextField
+            type="number"
+            size="small"
+            value={editingData.price}
+            onChange={(e) => setEditingData({ ...editingData, price: Number(e.target.value) })}
+            sx={{ width: 100 }}
+            inputProps={{ min: 0, step: 0.01 }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <Typography variant="h6" color="primary">
+            ${params.row.price}
+          </Typography>
+        );
+      },
+    },
+    {
+      field: 'stock',
+      headerName: t('products:variants.columns.stock', 'المخزون'),
+      width: 150,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const isEditing = editingId === params.row._id;
+        return isEditing ? (
+          <TextField
+            type="number"
+            size="small"
+            value={editingData.stock}
+            onChange={(e) => setEditingData({ ...editingData, stock: Number(e.target.value) })}
+            sx={{ width: 100 }}
+            inputProps={{ min: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <Typography variant="body1">{params.row.stock}</Typography>
+        );
+      },
+    },
+    {
+      field: 'status',
+      headerName: t('products:variants.columns.status', 'الحالة'),
+      width: 130,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => getStockChip(params.row),
+    },
+    {
+      field: 'actions',
+      headerName: t('products:variants.columns.actions', 'الإجراءات'),
+      width: 180,
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+      renderCell: (params) => {
+        const variant = params.row;
+        const isEditing = editingId === variant._id;
+        return isEditing ? (
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+            <Tooltip title={t('common:actions.save', 'حفظ')}>
+              <IconButton 
+                color="success" 
+                size="small"
+                onClick={() => handleSaveEdit(variant._id)}
+                disabled={updatingVariant}
+              >
+                <Check />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('common:actions.cancel', 'إلغاء')}>
+              <IconButton 
+                color="error" 
+                size="small"
+                onClick={handleCancelEdit}
+              >
+                <Close />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+            <Tooltip title={t('products:variants.edit', 'تعديل متغير')}>
+              <IconButton 
+                color="primary" 
+                size="small"
+                onClick={() => handleEditVariant(variant)}
+              >
+                <Edit />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('products:variants.form.quickEdit', 'تعديل سريع')}>
+              <IconButton 
+                color="primary" 
+                size="small"
+                onClick={() => handleStartEdit(variant)}
+              >
+                <Edit />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('common:actions.delete', 'حذف')}>
+              <IconButton 
+                color="error" 
+                size="small"
+                onClick={() => handleDeleteVariant(variant)}
+              >
+                <Delete />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        );
+      },
+    },
+  ];
+
+  // Prepare rows for DataTable
+  const rows = variants || [];
+
   return (
     <Box>
       {/* Header */}
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
+      <Box
+        display="flex"
+        flexDirection={isMobile ? 'column' : 'row'}
+        alignItems={isMobile ? 'stretch' : 'center'}
+        gap={2}
+        mb={3}
+      >
         <Button
           variant="outlined"
           startIcon={<ArrowBack />}
           onClick={() => navigate(`/products/${id}`)}
+          fullWidth={isMobile}
         >
           {t('products:variants.backToProduct', 'العودة إلى المنتج')}
         </Button>
-        <Typography variant="h4" component="h1">
+        <Typography variant={isMobile ? 'h5' : 'h4'} component="h1" sx={{ flex: 1 }}>
           {t('products:variants.manage', 'إدارة المتغيرات')}
         </Typography>
       </Box>
@@ -224,215 +443,139 @@ export const ProductVariantsPage: React.FC = () => {
       {product && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h5" gutterBottom>
+            <Typography variant={isMobile ? 'h6' : 'h5'} gutterBottom>
               {product.name}
             </Typography>
             <Typography variant="body1" color="text.secondary">
               {product.nameEn}
             </Typography>
-            <Box display="flex" gap={1} mt={1}>
-              <Chip label={product.status} color="primary" size="small" />
-              {product.isFeatured && <Chip label="مميز" color="warning" size="small" />}
-              {product.isNew && <Chip label="جديد" color="success" size="small" />}
+            <Box display="flex" gap={1} mt={1} flexWrap="wrap">
+              <Chip label={t(`products:status.${product.status}`, product.status)} color="primary" size="small" />
+              {product.isFeatured && (
+                <Chip label={t('products:badges.featured', 'مميز')} color="warning" size="small" />
+              )}
+              {product.isNew && (
+                <Chip label={t('products:badges.new', 'جديد')} color="success" size="small" />
+              )}
             </Box>
           </CardContent>
         </Card>
       )}
 
       {/* Actions */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h6">
+      <Box
+        display="flex"
+        flexDirection={isMobile ? 'column' : 'row'}
+        justifyContent="space-between"
+        alignItems={isMobile ? 'stretch' : 'center'}
+        gap={2}
+        mb={3}
+      >
+        <Typography variant={isMobile ? 'body1' : 'h6'}>
           {t('products:variants.count', {
             count: variants?.length || 0,
             defaultValue: 'عدد المتغيرات: {{count}}',
           })}
         </Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={handleAddVariant}>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={handleAddVariant}
+          fullWidth={isMobile}
+        >
           {t('products:variants.add', 'إضافة متغير')}
         </Button>
       </Box>
 
-      {/* Variants Table */}
+      {/* Variants Display */}
       {loadingVariants ? (
         <Box display="flex" justifyContent="center" p={4}>
           <CircularProgress />
         </Box>
       ) : variants && variants.length > 0 ? (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: 'primary.50' }}>
-                <TableCell><strong>{t('products:variants.columns.attributes', 'السمات')}</strong></TableCell>
-                <TableCell align="center"><strong>{t('products:variants.columns.price', 'السعر')}</strong></TableCell>
-                <TableCell align="center"><strong>{t('products:variants.columns.stock', 'المخزون')}</strong></TableCell>
-                <TableCell align="center"><strong>{t('products:variants.columns.status', 'الحالة')}</strong></TableCell>
-                <TableCell align="center"><strong>{t('products:variants.columns.actions', 'الإجراءات')}</strong></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+        <>
+          {isMobile ? (
+            /* Mobile Card Layout - 2 cards per row */
+            <Grid container spacing={2}>
               {variants.map((variant) => {
                 const isEditing = editingId === variant._id;
-                const getAttributeDisplay = () => {
-                  if (!variant.attributeValues || variant.attributeValues.length === 0) {
-                    return '⚪ ' + t('products:variants.noAttributes', 'لا توجد سمات');
-                  }
-                  return variant.attributeValues.map((attr) => {
-                    // عرض اللون كنقطة ملونة إذا كان اللون
-                    if (attr.name?.toLowerCase().includes('لون') || attr.name?.toLowerCase().includes('color')) {
-                      return (
-                        <Box key={attr.valueId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box 
-                            sx={{ 
-                              width: 20, 
-                              height: 20, 
-                              borderRadius: '50%', 
-                              bgcolor: attr.value, 
-                              border: '1px solid #ccc' 
-                            }} 
-                          />
-                          <Typography>{attr.value}</Typography>
-                        </Box>
-                      );
-                    }
-                    return `${attr.name}: ${attr.value}`;
-                  });
-                };
-
-                const getStockChip = () => {
-                  if (variant.stock === 0) {
-                    return (
-                      <Chip
-                        label={t('products:variants.status.outOfStock', 'غير متوفر')}
-                        color="error"
-                        size="small"
-                      />
-                    );
-                  } else if (variant.stock <= variant.minStock) {
-                    return (
-                      <Chip
-                        label={t('products:variants.status.low', 'منخفض')}
-                        color="warning"
-                        size="small"
-                      />
-                    );
-                  } else {
-                    return (
-                      <Chip
-                        label={t('products:variants.status.available', 'متوفر')}
-                        color="success"
-                        size="small"
-                      />
-                    );
-                  }
-                };
-
                 return (
-                  <TableRow key={variant._id} hover>
-                    <TableCell>
-                      {getAttributeDisplay()}
-                      {variant.sku && (
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          SKU: {variant.sku}
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell align="center">
-                      {isEditing ? (
-                        <TextField
-                          type="number"
-                          size="small"
-                          value={editingData.price}
-                          onChange={(e) => setEditingData({ ...editingData, price: Number(e.target.value) })}
-                          sx={{ width: 100 }}
-                          inputProps={{ min: 0, step: 0.01 }}
-                        />
-                      ) : (
-                        <Typography variant="h6" color="primary">
-                          ${variant.price}
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell align="center">
-                      {isEditing ? (
-                        <TextField
-                          type="number"
-                          size="small"
-                          value={editingData.stock}
-                          onChange={(e) => setEditingData({ ...editingData, stock: Number(e.target.value) })}
-                          sx={{ width: 100 }}
-                          inputProps={{ min: 0 }}
-                        />
-                      ) : (
-                        <Typography variant="h6">{variant.stock}</Typography>
-                      )}
-                    </TableCell>
-                    <TableCell align="center">
-                      {getStockChip()}
-                    </TableCell>
-                    <TableCell align="center">
-                      {isEditing ? (
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Tooltip title={t('common:actions.save', 'حفظ')}>
-                            <IconButton 
-                              color="success" 
+                  <Grid size={{ xs: 6 }} key={variant._id}>
+                    <VariantCard
+                      variant={variant}
+                      onEdit={handleEditVariant}
+                      onDelete={handleDeleteVariant}
+                      showActions={true}
+                    />
+                    {isEditing && (
+                      <Card sx={{ mt: 2, p: 2 }}>
+                        <Stack spacing={2}>
+                          <TextField
+                            label={t('products:variants.form.price', 'السعر')}
+                            type="number"
+                            size="small"
+                            value={editingData.price}
+                            onChange={(e) => setEditingData({ ...editingData, price: Number(e.target.value) })}
+                            inputProps={{ min: 0, step: 0.01 }}
+                            fullWidth
+                          />
+                          <TextField
+                            label={t('products:variants.form.stock', 'المخزون')}
+                            type="number"
+                            size="small"
+                            value={editingData.stock}
+                            onChange={(e) => setEditingData({ ...editingData, stock: Number(e.target.value) })}
+                            inputProps={{ min: 0 }}
+                            fullWidth
+                          />
+                          <Stack direction="row" spacing={1}>
+                            <Button
+                              variant="contained"
+                              color="success"
                               size="small"
+                              startIcon={<Check />}
                               onClick={() => handleSaveEdit(variant._id)}
                               disabled={updatingVariant}
+                              fullWidth
                             >
-                              <Check />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title={t('common:actions.cancel', 'إلغاء')}>
-                            <IconButton 
-                              color="error" 
+                              {t('common:actions.save', 'حفظ')}
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="error"
                               size="small"
+                              startIcon={<Close />}
                               onClick={handleCancelEdit}
+                              fullWidth
                             >
-                              <Close />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      ) : (
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Tooltip title={t('products:variants.edit', 'تعديل متغير')}>
-                            <IconButton 
-                              color="primary" 
-                              size="small"
-                              onClick={() => handleEditVariant(variant)}
-                            >
-                              <Edit />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title={t('products:variants.form.quickEdit', 'تعديل سريع')}>
-                            <IconButton 
-                              color="primary" 
-                              size="small"
-                              onClick={() => handleStartEdit(variant)}
-                            >
-                              <Edit />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title={t('common:actions.delete', 'حذف')}>
-                            <IconButton 
-                              color="error" 
-                              size="small"
-                              onClick={() => handleDeleteVariant(variant)}
-                            >
-                              <Delete />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                              {t('common:actions.cancel', 'إلغاء')}
+                            </Button>
+                          </Stack>
+                        </Stack>
+                      </Card>
+                    )}
+                  </Grid>
                 );
               })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            </Grid>
+          ) : (
+            /* Desktop DataTable Layout */
+            <DataTable
+              columns={columns}
+              rows={rows}
+              loading={loadingVariants}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              sortModel={sortModel}
+              onSortModelChange={setSortModel}
+              getRowId={(row: unknown) => (row as Variant)?._id || ''}
+              height={600}
+            />
+          )}
+        </>
       ) : (
         <Alert severity="info" sx={{ mt: 3 }}>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant={isMobile ? 'body1' : 'h6'} gutterBottom>
             {t('products:variants.empty', 'لا توجد متغيرات بعد')}
           </Typography>
           <Typography variant="body2">
@@ -442,7 +585,13 @@ export const ProductVariantsPage: React.FC = () => {
       )}
 
       {/* Variant Form Dialog */}
-      <Dialog open={variantDialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={variantDialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+        fullScreen={isMobile}
+      >
         <DialogTitle>
           {isEditMode
             ? t('products:variants.edit', 'تعديل متغير')
@@ -495,8 +644,8 @@ export const ProductVariantsPage: React.FC = () => {
             </form>
           </FormProvider>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} startIcon={<Cancel />}>
+        <DialogActions sx={{ p: { xs: 2, sm: 3 } }}>
+          <Button onClick={handleCloseDialog} startIcon={<Cancel />} fullWidth={isMobile}>
             {t('products:variants.form.cancel', 'إلغاء')}
           </Button>
           <Button
@@ -504,11 +653,15 @@ export const ProductVariantsPage: React.FC = () => {
             variant="contained"
             startIcon={addingVariant || updatingVariant ? <CircularProgress size={20} /> : <Save />}
             disabled={addingVariant || updatingVariant}
+            fullWidth={isMobile}
           >
             {isEditMode ? t('common:actions.edit', 'تعديل') : t('common:actions.add', 'إضافة')}
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog {...dialogProps} />
     </Box>
   );
 };

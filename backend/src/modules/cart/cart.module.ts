@@ -12,6 +12,8 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 import { AdminCartController } from './admin-cart.controller';
 import { CartCronService } from './cart.cron';
 import { SharedModule } from '../../shared/shared.module';
+import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
+import { MarketingModule } from '../marketing/marketing.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { SharedModule } from '../../shared/shared.module';
       { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => AuthModule),
+    forwardRef(() => ExchangeRatesModule),
+    MarketingModule,
     SharedModule,
   ],
   controllers: [CartController, GuestCartController, AdminCartController],

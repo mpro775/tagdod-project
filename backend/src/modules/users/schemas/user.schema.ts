@@ -26,6 +26,7 @@ export enum UserRole {
 
 export enum CapabilityStatus {
   NONE = 'none',
+  UNVERIFIED = 'unverified',
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
@@ -76,10 +77,17 @@ export class User {
 
   // Soft Delete
   @Prop({ type: Date, default: null }) deletedAt?: Date | null;
-  @Prop() deletedBy?: string; // userId of admin who deleted
+  @Prop() deletedBy?: string; // userId of admin who deleted (or self if user deleted own account)
+  @Prop() deletionReason?: string; // سبب الحذف (ملاحظة من المستخدم)
   @Prop() suspendedReason?: string; // سبب الإيقاف
   @Prop() suspendedBy?: string; // userId of admin who suspended
   @Prop({ type: Date }) suspendedAt?: Date;
+
+  // حقول التحقق (Verification)
+  @Prop() cvFileUrl?: string; // رابط ملف السيرة الذاتية للمهندس (URL من Bunny.net)
+  @Prop() storePhotoUrl?: string; // رابط صورة المحل للتاجر (URL من Bunny.net)
+  @Prop() storeName?: string; // اسم المحل للتاجر
+  @Prop() verificationNote?: string; // ملاحظة التحقق (اختياري)
 
   // Helper methods
   isAdmin(): boolean {
@@ -123,12 +131,20 @@ export class User {
     return this.engineer_status === CapabilityStatus.PENDING;
   }
 
+  isEngineerUnverified(): boolean {
+    return this.engineer_capable === true && this.engineer_status === CapabilityStatus.UNVERIFIED;
+  }
+
   isWholesale(): boolean {
     return this.wholesale_capable === true && this.wholesale_status === CapabilityStatus.APPROVED;
   }
 
   isWholesalePending(): boolean {
     return this.wholesale_status === CapabilityStatus.PENDING;
+  }
+
+  isWholesaleUnverified(): boolean {
+    return this.wholesale_capable === true && this.wholesale_status === CapabilityStatus.UNVERIFIED;
   }
 
   isAdminCapability(): boolean {

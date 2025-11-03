@@ -328,5 +328,82 @@
         "restore": "Restore deleted users"
       }
     }
+  },
+  "form": {
+    "title": {
+      "create": "Add New User or Admin",
+      "edit": "Edit User"
+    },
+    "description": "You can create any type of user: regular user, engineer, merchant, admin, or super admin - all from one unified form",
+    "defaultCity": "Sana'a",
+    "sections": {
+      "basicInfo": "Basic Information",
+      "rolesPermissions": "Roles and Permissions",
+      "engineerInfo": "Engineer Information",
+      "merchantInfo": "Merchant Information"
+    },
+    "fields": {
+      "phone": "Phone Number *",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "gender": "Gender",
+      "city": "City",
+      "password": "Password",
+      "primaryRole": "Primary Role *",
+      "status": "Status *",
+      "jobTitle": "Job Title / Specialty",
+      "discountPercent": "Merchant Discount Percentage (%)"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "placeholders": {
+      "phone": "+967XXXXXXXXX",
+      "password": "At least 8 characters (optional)",
+      "jobTitle": "Electrical engineer, Mechanical, Solar energy...",
+      "discount": "0-100"
+    },
+    "helpers": {
+      "password": "If not specified, a password will be generated automatically",
+      "city": {
+        "user": "User's city",
+        "engineer": "City where the engineer works"
+      },
+      "jobTitle": "Engineer's specialty and field of expertise",
+      "discount": "The percentage discount the merchant will receive on all products"
+    },
+    "selectedRole": "Selected Role:",
+    "permissionPresets": {
+      "title": "Permission Presets",
+      "description": "Choose a preset template or customize permissions manually below",
+      "productManager": "Product Manager",
+      "salesManager": "Sales Manager",
+      "supportManager": "Support Manager",
+      "marketingManager": "Marketing Manager",
+      "contentManager": "Content Manager",
+      "viewOnly": "View Only",
+      "fullAdmin": "Full Admin"
+    },
+    "customPermissions": {
+      "title": "Custom Permissions",
+      "description": "Select the permissions this admin will have in the system"
+    },
+    "capabilities": {
+      "autoAssigned": "Capabilities are automatically assigned:",
+      "autoAssignedDesc": "The selected role ({role}) does not require administrative permissions.",
+      "merchant": {
+        "capable": "Will automatically get \"wholesale\" capability (wholesale_capable)",
+        "discount": "You can specify their discount percentage below"
+      },
+      "engineer": {
+        "capable": "Will automatically get \"engineer\" capability (engineer_capable)",
+        "approval": "Capability requests will need approval from management"
+      },
+      "user": {
+        "capable": "Will automatically get \"customer\" capability (customer_capable)"
+      }
+    }
   }
 }

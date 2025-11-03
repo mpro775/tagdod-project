@@ -13,9 +13,9 @@
 - `userId: ObjectId` (فريد، مفهرس) — مرجع إلى `User`.
 - `customer_capable: boolean` (افتراضي: true) — مستخدم عميل.
 - `engineer_capable: boolean` (افتراضي: false)
-- `engineer_status: 'none'|'pending'|'approved'|'rejected'` (افتراضي: 'none')
+- `engineer_status: 'none'|'unverified'|'pending'|'approved'|'rejected'` (افتراضي: 'none')
 - `wholesale_capable: boolean` (افتراضي: false)
-- `wholesale_status: 'none'|'pending'|'approved'|'rejected'` (افتراضي: 'none')
+- `wholesale_status: 'none'|'unverified'|'pending'|'approved'|'rejected'` (افتراضي: 'none')
 - `wholesale_discount_percent: number` (0..100، افتراضي: 0) — نسبة خصم التاجر عند الموافقة.
 - `admin_capable: boolean` (افتراضي: false)
 - `admin_status: 'none'|'pending'|'approved'|'rejected'` (افتراضي: 'none')
@@ -23,7 +23,8 @@
 
 ## التكامل مع `auth`
 - عند التحقق من OTP لأول مرة، يُنشأ سجل قدرات للمستخدم مع `customer_capable=true`.
-- يمكن إرسال طلب قدرات `engineer` أو `wholesale` ليتم وضع الحالة `pending`.
+- يمكن إرسال طلب قدرات `engineer` أو `wholesale` ليتم وضع الحالة `unverified` (غير موثق).
+- عند رفع الوثائق المطلوبة (CV للمهندس، صورة المحل للتاجر)، تتغير الحالة إلى `pending` (قيد المراجعة).
 - مسارات الأدمن في `auth`:
   - `GET /auth/admin/pending`: يسرد طلبات `engineer`/`wholesale` المعلقة.
   - `POST /auth/admin/approve`: يعتمد/يرفض القدرة ويضبط `wholesale_discount_percent` عند الموافقة على التاجر.

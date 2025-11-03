@@ -73,13 +73,14 @@ export const errorLogsApi = {
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<ErrorLog>> => {
-    const response = await apiClient.get<ApiResponse<ErrorLog[]> & { meta: any }>(
+    const response = await apiClient.get<ApiResponse<{ data: ErrorLog[]; meta: any }>>(
       '/error-logs',
       { params }
     );
+    // Response structure: { success: true, data: { data: [...], meta: {...} }, requestId: "..." }
     return {
-      data: response.data.data,
-      meta: response.data.meta,
+      data: response.data.data.data,
+      meta: response.data.data.meta,
     };
   },
 
@@ -153,13 +154,14 @@ export const errorLogsApi = {
     page?: number;
     limit?: number;
   }) => {
-    const response = await apiClient.get<ApiResponse<any> & { meta: any }>(
+    const response = await apiClient.get<ApiResponse<{ data: any[]; meta: any }>>(
       '/error-logs/system-logs',
       { params }
     );
+    // Response structure: { success: true, data: { data: [...], meta: {...} }, requestId: "..." }
     return {
-      data: response.data.data,
-      meta: response.data.meta,
+      data: response.data.data.data,
+      meta: response.data.data.meta,
     };
   },
 

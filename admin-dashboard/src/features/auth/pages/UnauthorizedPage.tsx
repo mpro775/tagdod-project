@@ -14,17 +14,24 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress
+  CircularProgress,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Security, Home, ArrowBack, ContactSupport } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { useCreateSupportTicket } from '@/features/support/hooks/useSupport';
 import { SupportCategory, SupportPriority } from '@/features/support/types/support.types';
+import toast from 'react-hot-toast';
 
 const UnauthorizedPage: React.FC = () => {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { user } = useAuthStore();
 
   // Support ticket dialog state
@@ -63,7 +70,7 @@ const UnauthorizedPage: React.FC = () => {
 
   const handleSubmitSupportTicket = async () => {
     if (!supportTicket.title.trim() || !supportTicket.description.trim()) {
-      alert('يرجى ملء العنوان والوصف');
+      toast.error(t('unauthorized.contactDialog.fillRequired'));
       return;
     }
 
@@ -102,7 +109,7 @@ const UnauthorizedPage: React.FC = () => {
       <Paper
         elevation={3}
         sx={{
-          p: 6,
+          p: { xs: 3, sm: 4, md: 6 },
           maxWidth: 600,
           width: '100%',
           textAlign: 'center',
@@ -110,78 +117,118 @@ const UnauthorizedPage: React.FC = () => {
       >
         <Security
           sx={{
-            fontSize: 80,
+            fontSize: { xs: 60, sm: 80 },
             color: 'error.main',
-            mb: 3,
+            mb: { xs: 2, sm: 3 },
           }}
         />
 
-        <Typography variant="h4" component="h1" gutterBottom color="error">
-          الوصول غير مسموح
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          gutterBottom 
+          color="error"
+          sx={{ fontSize: { xs: '1.75rem', sm: '2rem', md: '2.125rem' } }}
+        >
+          {t('unauthorized.title')}
         </Typography>
 
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-          عذراً، ليس لديك الصلاحيات اللازمة للوصول إلى هذه الصفحة
+        <Typography 
+          variant="h6" 
+          color="text.secondary" 
+          sx={{ 
+            mb: { xs: 2, sm: 3 },
+            fontSize: { xs: '1rem', sm: '1.25rem' },
+          }}
+        >
+          {t('unauthorized.description')}
         </Typography>
 
         {user && (
-          <Alert severity="info" sx={{ mb: 3, textAlign: 'left' }}>
-            <Typography variant="body2">
-              <strong>المستخدم الحالي:</strong> {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.email}
+          <Alert severity="info" sx={{ mb: { xs: 2, sm: 3 }, textAlign: 'left' }}>
+            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9375rem' } }}>
+              <strong>{t('unauthorized.currentUser')}:</strong> {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.email}
             </Typography>
-            <Typography variant="body2">
-              <strong>الأدوار:</strong> {user.roles?.join(', ') || 'غير محدد'}
+            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9375rem' } }}>
+              <strong>{t('unauthorized.roles')}:</strong> {user.roles?.join(', ') || t('unauthorized.notSpecified')}
             </Typography>
             {user.permissions && (
-              <Typography variant="body2">
-                <strong>الصلاحيات:</strong> {user.permissions.join(', ')}
+              <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9375rem' } }}>
+                <strong>{t('unauthorized.permissions')}:</strong> {user.permissions.join(', ')}
               </Typography>
             )}
           </Alert>
         )}
 
-        <Alert severity="warning" sx={{ mb: 4, textAlign: 'left' }}>
-          <Typography variant="body2">
-            <strong>سبب الرفض:</strong>
+        <Alert severity="warning" sx={{ mb: { xs: 3, sm: 4 }, textAlign: 'left' }}>
+          <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9375rem' } }}>
+            <strong>{t('unauthorized.rejectionReasons')}:</strong>
           </Typography>
-          <Typography variant="body2" component="ul" sx={{ mt: 1, pl: 2 }}>
-            <li>قد تحتاج إلى صلاحيات إدارية أعلى</li>
-            <li>قد تكون الصفحة مخصصة لأدوار معينة فقط</li>
-            <li>قد تكون جلسة المستخدم منتهية الصلاحية</li>
+          <Typography 
+            variant="body2" 
+            component="ul" 
+            sx={{ 
+              mt: 1, 
+              pl: 2,
+              fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+            }}
+          >
+            <li>{t('unauthorized.reason1')}</li>
+            <li>{t('unauthorized.reason2')}</li>
+            <li>{t('unauthorized.reason3')}</li>
           </Typography>
         </Alert>
 
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            gap: { xs: 1, sm: 2 }, 
+            justifyContent: 'center', 
+            flexWrap: 'wrap',
+            flexDirection: { xs: 'column', sm: 'row' },
+          }}
+        >
           <Button
             variant="contained"
             startIcon={<Home />}
             onClick={handleGoHome}
-            size="large"
+            size={isMobile ? 'medium' : 'large'}
+            fullWidth={isMobile}
           >
-            العودة للرئيسية
+            {t('unauthorized.goHome')}
           </Button>
 
           <Button
             variant="outlined"
             startIcon={<ArrowBack />}
             onClick={handleGoBack}
-            size="large"
+            size={isMobile ? 'medium' : 'large'}
+            fullWidth={isMobile}
           >
-            العودة للصفحة السابقة
+            {t('unauthorized.goBack')}
           </Button>
 
           <Button
             variant="text"
             startIcon={<ContactSupport />}
             onClick={handleContactAdmin}
-            size="large"
+            size={isMobile ? 'medium' : 'large'}
+            fullWidth={isMobile}
           >
-            التواصل مع الإدارة
+            {t('unauthorized.contactAdmin')}
           </Button>
         </Box>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 4 }}>
-          إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع مدير النظام
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          sx={{ 
+            mt: { xs: 3, sm: 4 },
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            px: { xs: 2, sm: 0 },
+          }}
+        >
+          {t('unauthorized.errorNote')}
         </Typography>
       </Paper>
 
@@ -195,93 +242,111 @@ const UnauthorizedPage: React.FC = () => {
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ContactSupport color="primary" />
-            <Typography variant="h6">التواصل مع الإدارة</Typography>
+            <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+              {t('unauthorized.contactDialog.title')}
+            </Typography>
           </Box>
         </DialogTitle>
 
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            يرجى وصف المشكلة التي تواجهها. سيتم إرسال هذا الطلب إلى فريق الدعم الفني.
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              mb: { xs: 2, sm: 3 },
+              fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+            }}
+          >
+            {t('unauthorized.contactDialog.description')}
           </Typography>
 
           <TextField
             fullWidth
-            label="عنوان المشكلة *"
-            placeholder="مثال: لا أستطيع الوصول إلى صفحة المنتجات"
+            label={t('unauthorized.contactDialog.problemTitle')}
+            placeholder={t('unauthorized.contactDialog.problemTitlePlaceholder')}
             value={supportTicket.title}
             onChange={(e) => setSupportTicket(prev => ({ ...prev, title: e.target.value }))}
             sx={{ mb: 2 }}
+            size={isMobile ? 'small' : 'medium'}
           />
 
           <TextField
             fullWidth
             multiline
-            rows={4}
-            label="وصف المشكلة *"
-            placeholder="يرجى وصف المشكلة بالتفصيل..."
+            rows={isMobile ? 3 : 4}
+            label={t('unauthorized.contactDialog.problemDescription')}
+            placeholder={t('unauthorized.contactDialog.problemDescriptionPlaceholder')}
             value={supportTicket.description}
             onChange={(e) => setSupportTicket(prev => ({ ...prev, description: e.target.value }))}
             sx={{ mb: 2 }}
+            size={isMobile ? 'small' : 'medium'}
           />
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <FormControl fullWidth>
-              <InputLabel>تصنيف المشكلة</InputLabel>
+          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+              <InputLabel>{t('unauthorized.contactDialog.problemCategory')}</InputLabel>
               <Select
                 value={supportTicket.category}
-                label="تصنيف المشكلة"
+                label={t('unauthorized.contactDialog.problemCategory')}
                 onChange={(e) => setSupportTicket(prev => ({
                   ...prev,
                   category: e.target.value as SupportCategory
                 }))}
               >
-                <MenuItem value={SupportCategory.ACCOUNT}>حساب المستخدم</MenuItem>
-                <MenuItem value={SupportCategory.TECHNICAL}>مشاكل فنية</MenuItem>
-                <MenuItem value={SupportCategory.PRODUCTS}>المنتجات</MenuItem>
-                <MenuItem value={SupportCategory.BILLING}>الفوترة والدفع</MenuItem>
-                <MenuItem value={SupportCategory.SERVICES}>الخدمات</MenuItem>
-                <MenuItem value={SupportCategory.OTHER}>أخرى</MenuItem>
+                <MenuItem value={SupportCategory.ACCOUNT}>{t('unauthorized.categories.account')}</MenuItem>
+                <MenuItem value={SupportCategory.TECHNICAL}>{t('unauthorized.categories.technical')}</MenuItem>
+                <MenuItem value={SupportCategory.PRODUCTS}>{t('unauthorized.categories.products')}</MenuItem>
+                <MenuItem value={SupportCategory.BILLING}>{t('unauthorized.categories.billing')}</MenuItem>
+                <MenuItem value={SupportCategory.SERVICES}>{t('unauthorized.categories.services')}</MenuItem>
+                <MenuItem value={SupportCategory.OTHER}>{t('unauthorized.categories.other')}</MenuItem>
               </Select>
             </FormControl>
 
-            <FormControl fullWidth>
-              <InputLabel>أولوية المشكلة</InputLabel>
+            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+              <InputLabel>{t('unauthorized.contactDialog.priority')}</InputLabel>
               <Select
                 value={supportTicket.priority}
-                label="أولوية المشكلة"
+                label={t('unauthorized.contactDialog.priority')}
                 onChange={(e) => setSupportTicket(prev => ({
                   ...prev,
                   priority: e.target.value as SupportPriority
                 }))}
               >
-                <MenuItem value={SupportPriority.LOW}>منخفضة</MenuItem>
-                <MenuItem value={SupportPriority.MEDIUM}>متوسطة</MenuItem>
-                <MenuItem value={SupportPriority.HIGH}>عالية</MenuItem>
-                <MenuItem value={SupportPriority.URGENT}>عاجلة</MenuItem>
+                <MenuItem value={SupportPriority.LOW}>{t('unauthorized.priorities.low')}</MenuItem>
+                <MenuItem value={SupportPriority.MEDIUM}>{t('unauthorized.priorities.medium')}</MenuItem>
+                <MenuItem value={SupportPriority.HIGH}>{t('unauthorized.priorities.high')}</MenuItem>
+                <MenuItem value={SupportPriority.URGENT}>{t('unauthorized.priorities.urgent')}</MenuItem>
               </Select>
             </FormControl>
           </Box>
 
           {user && (
             <Alert severity="info" sx={{ mt: 2 }}>
-              <Typography variant="body2">
-                سيتم تضمين معلومات حسابك (الاسم والبريد الإلكتروني) مع الطلب لمساعدة فريق الدعم.
+              <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '0.9375rem' } }}>
+                {t('unauthorized.contactDialog.accountInfo')}
               </Typography>
             </Alert>
           )}
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleCloseContactDialog} color="inherit">
-            إلغاء
+        <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+          <Button 
+            onClick={handleCloseContactDialog} 
+            color="inherit"
+            size={isMobile ? 'medium' : 'large'}
+          >
+            {t('unauthorized.contactDialog.cancel')}
           </Button>
           <Button
             onClick={handleSubmitSupportTicket}
             variant="contained"
             disabled={createSupportTicket.isPending}
             startIcon={createSupportTicket.isPending ? <CircularProgress size={16} /> : null}
+            size={isMobile ? 'medium' : 'large'}
           >
-            {createSupportTicket.isPending ? 'جاري الإرسال...' : 'إرسال الطلب'}
+            {createSupportTicket.isPending 
+              ? t('unauthorized.contactDialog.sending') 
+              : t('unauthorized.contactDialog.send')}
           </Button>
         </DialogActions>
       </Dialog>

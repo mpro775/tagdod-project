@@ -7,6 +7,8 @@ import {
   Grid,
   LinearProgress,
   Chip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -27,6 +29,9 @@ interface UserStatsCardsProps {
 
 export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading = false }) => {
   const { t } = useTranslation(['users', 'common']);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const statsData = [
     {
       title: t('users:stats.total', 'إجمالي المستخدمين'),
@@ -87,69 +92,123 @@ export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading =
   ];
 
   return (
-    <Box sx={{ mb: 3 }}>
-      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+    <Box sx={{ mb: { xs: 2, sm: 3 }, px: { xs: 1, sm: 0 } }}>
+      <Typography
+        variant="h6"
+        fontWeight="bold"
+        sx={{
+          mb: { xs: 2, sm: 2 },
+          fontSize: { xs: '1rem', sm: '1.125rem' },
+          color: 'text.primary',
+        }}
+      >
         {t('users:stats.title', 'إحصائيات المستخدمين')}
       </Typography>
-      
-      <Grid container spacing={2}>
+
+      <Grid container spacing={{ xs: 2, sm: 2 }}>
         {statsData.map((stat, index) => (
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={index}>
-            <Card 
-              sx={{ 
+          <Grid component="div" size={{ xs: 6, sm: 6, md: 4, lg: 3 }} key={index}>
+            <Card
+              sx={{
                 height: '100%',
-                transition: 'transform 0.2s ease-in-out',
+                transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                bgcolor: 'background.paper',
+                backgroundImage: 'none',
+                boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
                 '&:hover': {
                   transform: 'translateY(-2px)',
-                  boxShadow: 3,
-                }
+                  boxShadow: theme.palette.mode === 'dark' ? 4 : 3,
+                },
               }}
             >
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    mb: { xs: 1.5, sm: 2 },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 1, sm: 0 },
+                  }}
+                >
                   <Box
                     sx={{
-                      p: 1,
+                      p: { xs: 0.75, sm: 1 },
                       borderRadius: 1,
-                      backgroundColor: `${stat.color}.light`,
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? `${stat.color}.dark`
+                        : `${stat.color}.light`,
                       color: `${stat.color}.main`,
-                      mr: 2,
+                      mr: { xs: 0, sm: 2 },
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    {stat.icon}
+                    {React.cloneElement(stat.icon as React.ReactElement, {
+                      sx: { fontSize: { xs: 20, sm: 24 } },
+                    })}
                   </Box>
-                  <Typography variant="subtitle2" color="text.secondary">
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      textAlign: { xs: 'center', sm: 'left' },
+                    }}
+                  >
                     {stat.title}
                   </Typography>
                 </Box>
-                
-                <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
+
+                <Typography
+                  variant="h4"
+                  fontWeight="bold"
+                  sx={{
+                    mb: 1,
+                    fontSize: { xs: '1.75rem', sm: '2rem' },
+                    color: 'text.primary',
+                  }}
+                >
                   {loading ? '...' : stat.value.toLocaleString('en-US')}
                 </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
                   <LinearProgress
                     variant="determinate"
                     value={stat.percentage}
-                    sx={{ 
-                      flexGrow: 1, 
-                      mr: 1,
-                      backgroundColor: `${stat.color}.light`,
+                    sx={{
+                      flexGrow: 1,
+                      height: { xs: 6, sm: 8 },
+                      borderRadius: 1,
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? `${stat.color}.dark`
+                        : `${stat.color}.light`,
                       '& .MuiLinearProgress-bar': {
                         backgroundColor: `${stat.color}.main`,
-                      }
+                      },
                     }}
                   />
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, minWidth: 40 }}
+                  >
                     {stat.percentage.toFixed(1)}%
                   </Typography>
                 </Box>
-                
+
                 <Chip
-                  label={t('users:stats.percentageOfTotal', '{{percentage}}% من الإجمالي', { percentage: stat.percentage.toFixed(1) })}
+                  label={t('users:stats.percentageOfTotal', '{{percentage}}% من الإجمالي', {
+                    percentage: stat.percentage.toFixed(1),
+                  })}
                   size="small"
                   color={stat.color as any}
                   variant="outlined"
+                  sx={{
+                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                    height: { xs: 20, sm: 24 },
+                  }}
                 />
               </CardContent>
             </Card>

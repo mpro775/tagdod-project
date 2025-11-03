@@ -8,6 +8,7 @@ import {
   Grid,
   Card,
   CardContent,
+  CardActions,
   Typography,
   IconButton,
   Dialog,
@@ -23,6 +24,11 @@ import {
   Tooltip,
   Avatar,
   Stack,
+  useTheme,
+  useMediaQuery,
+  Divider,
+  Pagination,
+  Collapse,
 } from '@mui/material';
 import {
   Search,
@@ -40,6 +46,8 @@ import {
   Error,
   Warning,
   LocationCity,
+  ExpandMore,
+  ExpandLess,
 } from '@mui/icons-material';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -90,6 +98,15 @@ const statusIcons: Record<ServiceStatus, React.ReactNode> = {
 
 export const ServicesListPage: React.FC = () => {
   const { t } = useTranslation('services');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [filtersExpanded, setFiltersExpanded] = useState(!isMobile);
+  
+  // Update filtersExpanded when screen size changes
+  React.useEffect(() => {
+    setFiltersExpanded(!isMobile);
+  }, [isMobile]);
+  
   const [filters, setFilters] = useState({
     status: undefined as ServiceStatus | undefined,
     type: '',
@@ -230,6 +247,216 @@ export const ServicesListPage: React.FC = () => {
     setDialogData((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Render service card for mobile view
+  const renderServiceCard = (service: any) => (
+    <Card
+      key={service._id}
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: theme.palette.mode === 'dark' 
+          ? theme.palette.background.paper 
+          : undefined,
+        boxShadow: theme.palette.mode === 'dark'
+          ? '0 2px 8px rgba(0,0,0,0.3)'
+          : '0 1px 3px rgba(0,0,0,0.12)',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 4px 12px rgba(0,0,0,0.4)'
+            : '0 4px 12px rgba(0,0,0,0.15)',
+        },
+      }}
+    >
+      <CardContent sx={{ flexGrow: 1, p: 2 }}>
+        {/* Header with title and status */}
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
+          <Box display="flex" alignItems="center" gap={1} flex={1}>
+            <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40 }}>
+              <Assignment fontSize="small" />
+            </Avatar>
+            <Box flex={1} minWidth={0}>
+              <Typography 
+                variant="subtitle2" 
+                fontWeight="600"
+                sx={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  mb: 0.5,
+                }}
+              >
+                {service.title}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {service.type}
+              </Typography>
+            </Box>
+          </Box>
+          <Chip
+            icon={statusIcons[service.status as ServiceStatus] as React.ReactElement}
+            label={getStatusLabel(service.status as ServiceStatus, t)}
+            color={statusColors[service.status as ServiceStatus]}
+            size="small"
+            sx={{ ml: 1 }}
+          />
+        </Box>
+
+        <Divider sx={{ my: 1.5 }} />
+
+        {/* Customer Info */}
+        <Box mb={1.5}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+            {t('labels.customer')}
+          </Typography>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Avatar sx={{ bgcolor: 'info.main', width: 28, height: 28 }}>
+              {service.user?.firstName?.charAt(0) || '?'}
+            </Avatar>
+            <Box flex={1} minWidth={0}>
+              <Typography variant="body2" fontWeight="medium" noWrap>
+                {service.user?.firstName} {service.user?.lastName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {service.user?.phone}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* City */}
+        <Box mb={1.5}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+            {t('labels.city')}
+          </Typography>
+          <Chip
+            icon={<LocationCity fontSize="small" />}
+            label={`${getCityEmoji(service.city || 'صنعاء')} ${service.city || 'صنعاء'}`}
+            size="small"
+            variant="outlined"
+            sx={{ height: 24 }}
+          />
+        </Box>
+
+        {/* Engineer Info */}
+        <Box mb={1.5}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+            {t('labels.engineer')}
+          </Typography>
+          {service.engineer ? (
+            <Box display="flex" alignItems="center" gap={1}>
+              <Avatar sx={{ bgcolor: 'success.main', width: 28, height: 28 }}>
+                <Engineering fontSize="small" />
+              </Avatar>
+              <Box flex={1} minWidth={0}>
+                <Typography variant="body2" fontWeight="medium" noWrap>
+                  {service.engineer.firstName} {service.engineer.lastName}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {service.engineer.phone}
+                </Typography>
+              </Box>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              {t('messages.unassigned')}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Amount */}
+        {service.acceptedOffer && (
+          <Box mb={1.5}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              {t('labels.amount')}
+            </Typography>
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <AttachMoney sx={{ color: 'success.main', fontSize: '1rem' }} />
+              <Typography variant="body2" fontWeight="medium" color="success.main">
+                {formatCurrency(service.acceptedOffer.amount)}
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
+        {/* Created Date */}
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            {formatDate(service.createdAt)}
+          </Typography>
+        </Box>
+      </CardContent>
+
+      {/* Actions */}
+      <CardActions sx={{ px: 2, pb: 2, pt: 0, gap: 0.5 }}>
+        <Tooltip title={t('messages.viewDetails')}>
+          <IconButton
+            size="small"
+            onClick={() => handleAction('view', service)}
+            color="primary"
+            sx={{
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(25,118,210,0.1)'
+                : 'rgba(25,118,210,0.08)',
+            }}
+          >
+            <Visibility fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('messages.editStatus')}>
+          <IconButton
+            size="small"
+            onClick={() => handleAction('edit', service)}
+            color="info"
+            sx={{
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(33,150,243,0.1)'
+                : 'rgba(33,150,243,0.08)',
+            }}
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        {service.status !== 'COMPLETED' && service.status !== 'CANCELLED' && (
+          <>
+            <Tooltip title={t('messages.assignEngineer')}>
+              <IconButton
+                size="small"
+                onClick={() => handleAction('assign', service)}
+                color="success"
+                sx={{
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(46,125,50,0.1)'
+                    : 'rgba(46,125,50,0.08)',
+                }}
+              >
+                <PersonAdd fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('messages.cancelRequest')}>
+              <IconButton
+                size="small"
+                onClick={() => handleAction('cancel', service)}
+                color="error"
+                sx={{
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(211,47,47,0.1)'
+                    : 'rgba(211,47,47,0.08)',
+                }}
+              >
+                <Cancel fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        )}
+      </CardActions>
+    </Card>
+  );
+
   const columns: GridColDef[] = [
     {
       field: 'title',
@@ -310,7 +537,7 @@ export const ServicesListPage: React.FC = () => {
               <Engineering />
             </Avatar>
             <Typography variant="body2" color="text.secondary">
-              غير مُعيَّن
+              {t('messages.unassigned')}
             </Typography>
           </Box>
         ),
@@ -404,12 +631,26 @@ export const ServicesListPage: React.FC = () => {
   if (isLoading) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          {t('services.servicesList', { defaultValue: 'إدارة الخدمات' })}
+        <Typography 
+          variant={isMobile ? 'h5' : 'h4'} 
+          gutterBottom
+          sx={{ mb: 2 }}
+        >
+          {t('titles.servicesManagement')}
         </Typography>
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Skeleton variant="text" width="30%" height={40} />
+        <Card 
+          sx={{ 
+            mb: 3,
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? theme.palette.background.paper 
+              : undefined,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 2px 8px rgba(0,0,0,0.3)'
+              : undefined,
+          }}
+        >
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Skeleton variant="text" width={isMobile ? '60%' : '30%'} height={40} />
             <Box sx={{ mt: 2 }}>
               <Grid container spacing={2}>
                 {[1, 2, 3, 4].map((i) => (
@@ -421,9 +662,18 @@ export const ServicesListPage: React.FC = () => {
             </Box>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent>
-            <Skeleton variant="rectangular" height={400} />
+        <Card
+          sx={{
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? theme.palette.background.paper 
+              : undefined,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 2px 8px rgba(0,0,0,0.3)'
+              : undefined,
+          }}
+        >
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <Skeleton variant="rectangular" height={isMobile ? 300 : 400} />
           </CardContent>
         </Card>
       </Box>
@@ -434,15 +684,31 @@ export const ServicesListPage: React.FC = () => {
   if (error) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          {t('services.servicesList', { defaultValue: 'إدارة الخدمات' })}
+        <Typography 
+          variant={isMobile ? 'h5' : 'h4'} 
+          gutterBottom
+          sx={{ mb: 2 }}
+        >
+          {t('titles.servicesManagement')}
         </Typography>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {t('services.errorLoadingData', { defaultValue: 'فشل في تحميل البيانات:' })}{' '}
-          {error.message}
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3,
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(211,47,47,0.1)'
+              : undefined,
+          }}
+        >
+          {t('messages.failedToLoadData')}: {error.message}
         </Alert>
-        <Button variant="contained" startIcon={<Refresh />} onClick={() => refetch()}>
-          {t('services.retry', { defaultValue: 'إعادة المحاولة' })}
+        <Button 
+          variant="contained" 
+          startIcon={<Refresh />} 
+          onClick={() => refetch()}
+          size={isMobile ? 'medium' : 'large'}
+        >
+          {t('messages.retry')}
         </Button>
       </Box>
     );
@@ -450,39 +716,103 @@ export const ServicesListPage: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        {t('services.servicesList', { defaultValue: 'إدارة الخدمات' })}
+      <Typography 
+        variant={isMobile ? 'h5' : 'h4'} 
+        gutterBottom
+        sx={{ mb: 2 }}
+      >
+        {t('titles.servicesManagement')}
       </Typography>
 
       {/* الفلاتر */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            {t('services.searchFilters', { defaultValue: 'فلاتر البحث' })}
-          </Typography>
-          <Grid container spacing={2} alignItems="center">
+      <Card 
+        sx={{ 
+          mb: 3,
+          backgroundColor: theme.palette.mode === 'dark' 
+            ? theme.palette.background.paper 
+            : undefined,
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 2px 8px rgba(0,0,0,0.3)'
+            : undefined,
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, sm: 3 }, pb: isMobile ? 1 : 3 }}>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ 
+              mb: filtersExpanded || !isMobile ? 2 : 0,
+              cursor: isMobile ? 'pointer' : 'default',
+            }}
+            onClick={() => isMobile && setFiltersExpanded(!filtersExpanded)}
+          >
+            <Typography 
+              variant={isMobile ? 'subtitle1' : 'h6'} 
+              sx={{ fontWeight: 600 }}
+            >
+              {t('filters.title')}
+            </Typography>
+            {isMobile && (
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFiltersExpanded(!filtersExpanded);
+                }}
+                sx={{
+                  color: theme.palette.mode === 'dark' 
+                    ? theme.palette.text.secondary 
+                    : theme.palette.text.primary,
+                }}
+              >
+                {filtersExpanded ? <ExpandLess /> : <ExpandMore />}
+              </IconButton>
+            )}
+          </Box>
+          
+          <Collapse in={filtersExpanded || !isMobile} timeout="auto" unmountOnExit>
+            <Grid container spacing={{ xs: 2, sm: 2 }} alignItems="center">
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
-                label={t('services.search', { defaultValue: 'البحث' })}
+                label={t('filters.searchLabel')}
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
+                size={isMobile ? 'small' : 'medium'}
                 InputProps={{
                   startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255,255,255,0.05)'
+                      : 'rgba(0,0,0,0.02)',
+                  },
                 }}
               />
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>{t('services.status', { defaultValue: 'الحالة' })}</InputLabel>
+              <FormControl 
+                fullWidth
+                size={isMobile ? 'small' : 'medium'}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255,255,255,0.05)'
+                      : 'rgba(0,0,0,0.02)',
+                  },
+                }}
+              >
+                <InputLabel>{t('filters.statusLabel')}</InputLabel>
                 <Select
                   value={filters.status || ''}
-                  label={t('services.status', { defaultValue: 'الحالة' })}
+                  label={t('filters.statusLabel')}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
                 >
                   <MenuItem value="">
-                    {t('services.allStatuses', { defaultValue: 'جميع الحالات' })}
+                    {t('filters.statusOptions.all')}
                   </MenuItem>
                   {Object.keys(statusColors).map((value) => (
                     <MenuItem key={value} value={value}>
@@ -496,21 +826,34 @@ export const ServicesListPage: React.FC = () => {
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
-                label={t('services.serviceType', { defaultValue: 'نوع الخدمة' })}
+                label={t('filters.typeLabel')}
                 value={filters.type}
                 onChange={(e) => handleFilterChange('type', e.target.value)}
+                size={isMobile ? 'small' : 'medium'}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255,255,255,0.05)'
+                      : 'rgba(0,0,0,0.02)',
+                  },
+                }}
               />
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <Stack direction="row" spacing={1}>
+              <Stack 
+                direction={{ xs: 'column', sm: 'row' }} 
+                spacing={1}
+                sx={{ width: '100%' }}
+              >
                 <Button
                   variant="contained"
                   startIcon={<FilterList />}
                   onClick={() => refetch()}
-                  fullWidth
+                  fullWidth={isMobile}
+                  size={isMobile ? 'small' : 'medium'}
                 >
-                  {t('services.applyFilters', { defaultValue: 'تطبيق الفلاتر' })}
+                  {t('filters.applyFilters')}
                 </Button>
                 <Button
                   variant="outlined"
@@ -525,169 +868,321 @@ export const ServicesListPage: React.FC = () => {
                     });
                     refetch();
                   }}
+                  fullWidth={isMobile}
+                  size={isMobile ? 'small' : 'medium'}
                 >
-                  {t('services.resetFilters', { defaultValue: 'إعادة تعيين' })}
+                  {t('filters.clearFilters')}
                 </Button>
               </Stack>
             </Grid>
           </Grid>
+          </Collapse>
         </CardContent>
       </Card>
 
-      {/* جدول البيانات */}
-      <DataTable
-        title={t('services.servicesRequests', { defaultValue: 'طلبات الخدمات' })}
-        columns={columns}
-        rows={services}
-        loading={isLoading}
-        paginationModel={{ page: filters.page - 1, pageSize: filters.limit }}
-        onPaginationModelChange={(model) => {
-          setFilters((prev) => ({ ...prev, page: model.page + 1 }));
-        }}
-        getRowId={(row) => (row as any)._id}
-        height="calc(100vh - 300px)"
-      />
+      {/* جدول البيانات - للشاشات الكبيرة */}
+      {!isMobile && (
+        <DataTable
+          title={t('titles.serviceRequests')}
+          columns={columns}
+          rows={services}
+          loading={isLoading}
+          paginationModel={{ page: filters.page - 1, pageSize: filters.limit }}
+          onPaginationModelChange={(model) => {
+            setFilters((prev) => ({ ...prev, page: model.page + 1 }));
+          }}
+          getRowId={(row) => (row as any)._id}
+          height="calc(100vh - 300px)"
+        />
+      )}
+
+      {/* عرض الكاردات - للشاشات الصغيرة */}
+      {isMobile && (
+        <Box>
+          <Typography 
+            variant="h6" 
+            gutterBottom 
+            sx={{ mb: 2, fontWeight: 600 }}
+          >
+            {t('titles.serviceRequests')}
+          </Typography>
+          
+          {isLoading ? (
+            <Grid container spacing={2}>
+              {[1, 2, 3, 4].map((i) => (
+                <Grid key={i} size={{ xs: 6 }}>
+                  <Card>
+                    <CardContent>
+                      <Skeleton variant="rectangular" height={200} />
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          ) : services.length === 0 ? (
+            <Card
+              sx={{
+                p: 4,
+                textAlign: 'center',
+                backgroundColor: theme.palette.mode === 'dark' 
+                  ? theme.palette.background.paper 
+                  : undefined,
+              }}
+            >
+              <Typography variant="body1" color="text.secondary">
+                {t('messages.noData') || t('labels.noData', { ns: 'common' }) || 'لا توجد بيانات متاحة'}
+              </Typography>
+            </Card>
+          ) : (
+            <>
+              <Grid container spacing={2}>
+                {services.map((service: any) => (
+                  <Grid key={service._id} size={{ xs: 6 }}>
+                    {renderServiceCard(service)}
+                  </Grid>
+                ))}
+              </Grid>
+              
+              {/* Pagination */}
+              {servicesData?.meta && servicesData.meta.total > filters.limit && (
+                <Box 
+                  display="flex" 
+                  justifyContent="center" 
+                  alignItems="center"
+                  mt={3}
+                  gap={2}
+                  flexWrap="wrap"
+                >
+                  <Pagination
+                    count={Math.ceil((servicesData.meta.total || 0) / filters.limit)}
+                    page={filters.page}
+                    onChange={(_event, value) => {
+                      setFilters((prev) => ({ ...prev, page: value }));
+                    }}
+                    color="primary"
+                    size="small"
+                    showFirstButton
+                    showLastButton
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {t('labels.showing', { 
+                      from: (filters.page - 1) * filters.limit + 1,
+                      to: Math.min(filters.page * filters.limit, servicesData.meta.total || 0),
+                      total: servicesData.meta.total || 0
+                    })}
+                  </Typography>
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
+      )}
 
       {/* حوار التفاصيل */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {dialogType === 'view' && t('services.viewDetails', { defaultValue: 'تفاصيل الطلب' })}
-          {dialogType === 'edit' && t('services.editStatus', { defaultValue: 'تعديل حالة الطلب' })}
-          {dialogType === 'cancel' && t('services.cancelRequest', { defaultValue: 'إلغاء الطلب' })}
-          {dialogType === 'assign' && t('services.assignEngineer', { defaultValue: 'تعيين مهندس' })}
+      <Dialog 
+        open={dialogOpen} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? theme.palette.background.paper 
+              : undefined,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 8px 32px rgba(0,0,0,0.5)'
+              : undefined,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            pb: isMobile ? 1 : 2,
+          }}
+        >
+          <Typography 
+            variant={isMobile ? 'h6' : 'h6'}
+            sx={{
+              fontSize: isMobile ? '1rem' : undefined,
+            }}
+          >
+            {dialogType === 'view' && t('messages.viewDetails')}
+            {dialogType === 'edit' && t('messages.editStatus')}
+            {dialogType === 'cancel' && t('messages.cancelRequest')}
+            {dialogType === 'assign' && t('messages.assignEngineer')}
+          </Typography>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent
+          sx={{
+            padding: isMobile ? 2 : 3,
+            '&.MuiDialogContent-root': {
+              paddingTop: isMobile ? 2 : 3,
+            },
+          }}
+        >
           {selectedService && (
             <Box>
               {dialogType === 'view' && (
-                <Grid container spacing={2}>
+                <Grid container spacing={{ xs: 2, sm: 2 }}>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {t('services.requestDetails', { defaultValue: 'معلومات الطلب' })}
+                    <Typography 
+                      variant={isMobile ? 'subtitle1' : 'h6'} 
+                      gutterBottom
+                      sx={{ fontWeight: 600, mb: 1.5 }}
+                    >
+                      {t('messages.requestDetails')}
                     </Typography>
-                    <Typography>
-                      <strong>{t('services.title', { defaultValue: 'العنوان' })}:</strong>{' '}
-                      {selectedService.title}
-                    </Typography>
-                    <Typography>
-                      <strong>{t('services.type', { defaultValue: 'النوع' })}:</strong>{' '}
-                      {selectedService.type}
-                    </Typography>
-                    <Typography>
-                      <strong>{t('services.description', { defaultValue: 'الوصف' })}:</strong>{' '}
-                      {selectedService.description}
-                    </Typography>
-                    <Typography>
-                      <strong>{t('services.city', { defaultValue: 'المدينة' })}:</strong>{' '}
-                      <Chip
-                        label={`${getCityEmoji(selectedService.city || 'صنعاء')} ${
-                          selectedService.city || 'صنعاء'
-                        }`}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    </Typography>
-                    <Typography>
-                      <strong>{t('services.status', { defaultValue: 'الحالة' })}:</strong>{' '}
-                      {getStatusLabel(selectedService.status as ServiceStatus, t)}
-                    </Typography>
+                    <Stack spacing={1.5}>
+                      <Typography variant="body2">
+                        <strong>{t('labels.title')}:</strong> {selectedService.title}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>{t('labels.type')}:</strong> {selectedService.type}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>{t('labels.description')}:</strong> {selectedService.description}
+                      </Typography>
+                      <Box>
+                        <strong>{t('labels.city')}:</strong>{' '}
+                        <Chip
+                          label={`${getCityEmoji(selectedService.city || 'صنعاء')} ${
+                            selectedService.city || 'صنعاء'
+                          }`}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ mt: 0.5 }}
+                        />
+                      </Box>
+                      <Typography variant="body2">
+                        <strong>{t('labels.status')}:</strong>{' '}
+                        {getStatusLabel(selectedService.status as ServiceStatus, t)}
+                      </Typography>
+                    </Stack>
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {t('services.clientDetails', { defaultValue: 'معلومات العميل' })}
+                    <Typography 
+                      variant={isMobile ? 'subtitle1' : 'h6'} 
+                      gutterBottom
+                      sx={{ fontWeight: 600, mb: 1.5 }}
+                    >
+                      {t('messages.customerInfo')}
                     </Typography>
-                    <Typography>
-                      <strong>{t('services.name', { defaultValue: 'الاسم' })} :</strong>{' '}
-                      {selectedService.user?.firstName} {selectedService.user?.lastName}
-                    </Typography>
-                    <Typography>
-                      <strong>{t('services.phone', { defaultValue: 'الهاتف' })}:</strong>{' '}
-                      {selectedService.user?.phone}
-                    </Typography>
-                    <Typography>
-                      <strong>{t('services.email', { defaultValue: 'البريد' })}:</strong>{' '}
-                      {selectedService.user?.email}
-                    </Typography>
+                    <Stack spacing={1.5}>
+                      <Typography variant="body2">
+                        <strong>{t('labels.customer')}:</strong>{' '}
+                        {selectedService.user?.firstName} {selectedService.user?.lastName}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>{t('labels.phone')}:</strong> {selectedService.user?.phone}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>{t('labels.email')}:</strong> {selectedService.user?.email}
+                      </Typography>
+                    </Stack>
                   </Grid>
                   {selectedService.engineer && (
                     <Grid size={{ xs: 12 }}>
-                      <Typography variant="h6" gutterBottom>
-                        {t('services.engineerDetails', { defaultValue: 'معلومات المهندس' })}
+                      <Typography 
+                        variant={isMobile ? 'subtitle1' : 'h6'} 
+                        gutterBottom
+                        sx={{ fontWeight: 600, mb: 1.5 }}
+                      >
+                        {t('messages.engineerInfo')}
                       </Typography>
-                      <Typography>
-                        <strong>{t('services.name', { defaultValue: 'الاسم' })}:</strong>{' '}
-                        {selectedService.engineer.firstName} {selectedService.engineer.lastName}
-                      </Typography>
-                      <Typography>
-                        <strong>{t('services.phone', { defaultValue: 'الهاتف' })}:</strong>{' '}
-                        {selectedService.engineer.phone}
-                      </Typography>
-                      <Typography>
-                        <strong>{t('services.email', { defaultValue: 'البريد' })}:</strong>{' '}
-                        {selectedService.engineer.email || 'غير محدد'}
-                      </Typography>
-                      <Typography>
-                        <strong>
-                          {t('services.jobTitle', { defaultValue: 'المسمى الوظيفي' })}:
-                        </strong>{' '}
-                        {selectedService.engineer.jobTitle || 'غير محدد'}
-                      </Typography>
+                      <Stack spacing={1.5}>
+                        <Typography variant="body2">
+                          <strong>{t('labels.engineer')}:</strong>{' '}
+                          {selectedService.engineer.firstName} {selectedService.engineer.lastName}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>{t('labels.phone')}:</strong> {selectedService.engineer.phone}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>{t('labels.email')}:</strong>{' '}
+                          {selectedService.engineer.email || t('labels.notSpecified')}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>{t('labels.jobTitle')}:</strong>{' '}
+                          {selectedService.engineer.jobTitle || t('labels.notSpecified')}
+                        </Typography>
+                      </Stack>
                     </Grid>
                   )}
                   {selectedService.acceptedOffer && (
                     <Grid size={{ xs: 12 }}>
-                      <Typography variant="h6" gutterBottom>
-                        {t('services.acceptedOfferDetails', {
-                          defaultValue: 'معلومات العرض المقبول',
-                        })}
+                      <Typography 
+                        variant={isMobile ? 'subtitle1' : 'h6'} 
+                        gutterBottom
+                        sx={{ fontWeight: 600, mb: 1.5 }}
+                      >
+                        {t('messages.acceptedOfferInfo')}
                       </Typography>
-                      <Typography>
-                        <strong>{t('services.amount', { defaultValue: 'المبلغ' })}:</strong>{' '}
-                        {formatCurrency(selectedService.acceptedOffer.amount)}
-                      </Typography>
-                      <Typography>
-                        <strong>{t('services.note', { defaultValue: 'الملاحظة' })}:</strong>{' '}
-                        {selectedService.acceptedOffer.note}
-                      </Typography>
+                      <Stack spacing={1.5}>
+                        <Typography variant="body2">
+                          <strong>{t('labels.amount')}:</strong>{' '}
+                          {formatCurrency(selectedService.acceptedOffer.amount)}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>{t('labels.note')}:</strong>{' '}
+                          {selectedService.acceptedOffer.note}
+                        </Typography>
+                      </Stack>
                     </Grid>
                   )}
                   {selectedService.rating && (
                     <Grid size={{ xs: 12 }}>
-                      <Typography variant="h6" gutterBottom>
-                        {t('services.serviceRating', { defaultValue: 'تقييم الخدمة' })}
+                      <Typography 
+                        variant={isMobile ? 'subtitle1' : 'h6'} 
+                        gutterBottom
+                        sx={{ fontWeight: 600, mb: 1.5 }}
+                      >
+                        {t('messages.serviceRating')}
                       </Typography>
-                      <Typography>
-                        <strong>
-                          {t('services.score', { defaultValue: 'النتيجة' })}{' '}
-                          {t('services.outOf', { defaultValue: 'من 5' })}:
-                        </strong>{' '}
-                        {selectedService.rating.score} / 5
-                      </Typography>
-                      {selectedService.rating.comment && (
-                        <Typography>
-                          <strong>{t('services.comment', { defaultValue: 'التعليق' })}:</strong>{' '}
-                          {selectedService.rating.comment}
+                      <Stack spacing={1.5}>
+                        <Typography variant="body2">
+                          <strong>{t('labels.rating')}:</strong> {selectedService.rating.score} / 5
                         </Typography>
-                      )}
-                      <Typography variant="caption" color="text.secondary">
-                        {formatDate(selectedService.rating.at)}
-                      </Typography>
+                        {selectedService.rating.comment && (
+                          <Typography variant="body2">
+                            <strong>{t('labels.comment')}:</strong> {selectedService.rating.comment}
+                          </Typography>
+                        )}
+                        <Typography variant="caption" color="text.secondary">
+                          {formatDate(selectedService.rating.at)}
+                        </Typography>
+                      </Stack>
                     </Grid>
                   )}
                   {selectedService.adminNotes && selectedService.adminNotes.length > 0 && (
                     <Grid size={{ xs: 12 }}>
-                      <Typography variant="h6" gutterBottom>
-                        {t('services.adminNotes', { defaultValue: 'ملاحظات إدارية' })}
+                      <Typography 
+                        variant={isMobile ? 'subtitle1' : 'h6'} 
+                        gutterBottom
+                        sx={{ fontWeight: 600, mb: 1.5 }}
+                      >
+                        {t('messages.adminNotes')}
                       </Typography>
-                      {selectedService.adminNotes.map((note: any, index: number) => (
-                        <Box key={index} sx={{ mb: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-                          <Typography variant="body2">{note.note}</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {formatDate(note.at)}
-                          </Typography>
-                        </Box>
-                      ))}
+                      <Stack spacing={2}>
+                        {selectedService.adminNotes.map((note: any, index: number) => (
+                          <Box 
+                            key={index} 
+                            sx={{ 
+                              p: 2, 
+                              bgcolor: theme.palette.mode === 'dark' 
+                                ? 'rgba(255,255,255,0.05)' 
+                                : 'grey.100', 
+                              borderRadius: 1 
+                            }}
+                          >
+                            <Typography variant="body2">{note.note}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                              {formatDate(note.at)}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
                     </Grid>
                   )}
                 </Grid>
@@ -695,16 +1190,29 @@ export const ServicesListPage: React.FC = () => {
 
               {dialogType === 'edit' && (
                 <Box>
-                  <Typography variant="h6" gutterBottom>
-                    {t('services.editStatus', { defaultValue: 'تغيير حالة الطلب' })}
+                  <Typography 
+                    variant={isMobile ? 'subtitle1' : 'h6'} 
+                    gutterBottom
+                    sx={{ fontWeight: 600, mb: 2 }}
+                  >
+                    {t('messages.changeStatus')}
                   </Typography>
-                  <FormControl fullWidth sx={{ mt: 2 }}>
-                    <InputLabel>
-                      {t('services.newStatus', { defaultValue: 'الحالة الجديدة' })}
-                    </InputLabel>
+                  <FormControl 
+                    fullWidth 
+                    size={isMobile ? 'small' : 'medium'}
+                    sx={{
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'rgba(0,0,0,0.02)',
+                      },
+                    }}
+                  >
+                    <InputLabel>{t('messages.newStatus')}</InputLabel>
                     <Select
                       value={dialogData.status}
-                      label={t('services.newStatus', { defaultValue: 'الحالة الجديدة' })}
+                      label={t('messages.newStatus')}
                       onChange={(e) => handleDialogDataChange('status', e.target.value)}
                     >
                       {Object.keys(statusColors).map((value) => (
@@ -716,62 +1224,113 @@ export const ServicesListPage: React.FC = () => {
                   </FormControl>
                   <TextField
                     fullWidth
-                    label={t('services.note', { defaultValue: 'ملاحظة (اختيارية)' })}
+                    label={t('messages.optionalNote')}
                     multiline
-                    rows={3}
+                    rows={isMobile ? 3 : 4}
                     value={dialogData.note}
                     onChange={(e) => handleDialogDataChange('note', e.target.value)}
-                    sx={{ mt: 2 }}
+                    size={isMobile ? 'small' : 'medium'}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'rgba(0,0,0,0.02)',
+                      },
+                    }}
                   />
                 </Box>
               )}
 
               {dialogType === 'cancel' && (
                 <Box>
-                  <Typography variant="h6" gutterBottom>
-                    {t('services.cancelRequest', { defaultValue: 'إلغاء الطلب' })}
+                  <Typography 
+                    variant={isMobile ? 'subtitle1' : 'h6'} 
+                    gutterBottom
+                    sx={{ fontWeight: 600, mb: 2 }}
+                  >
+                    {t('messages.cancelRequest')}
                   </Typography>
                   <TextField
                     fullWidth
-                    label={t('services.cancelReason', { defaultValue: 'سبب الإلغاء' })}
+                    label={t('messages.cancellationReason')}
                     multiline
-                    rows={3}
+                    rows={isMobile ? 3 : 4}
                     value={dialogData.reason}
                     onChange={(e) => handleDialogDataChange('reason', e.target.value)}
-                    sx={{ mt: 2 }}
+                    size={isMobile ? 'small' : 'medium'}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'rgba(0,0,0,0.02)',
+                      },
+                    }}
                   />
                 </Box>
               )}
 
               {dialogType === 'assign' && (
                 <Box>
-                  <Typography variant="h6" gutterBottom>
-                    {t('services.assignEngineer', { defaultValue: 'تعيين مهندس' })}
+                  <Typography 
+                    variant={isMobile ? 'subtitle1' : 'h6'} 
+                    gutterBottom
+                    sx={{ fontWeight: 600, mb: 2 }}
+                  >
+                    {t('messages.assignEngineer')}
                   </Typography>
                   <TextField
                     fullWidth
-                    label={t('services.engineerId', { defaultValue: 'معرف المهندس' })}
+                    label={t('labels.engineerId')}
                     value={dialogData.engineerId}
                     onChange={(e) => handleDialogDataChange('engineerId', e.target.value)}
-                    sx={{ mt: 2 }}
+                    size={isMobile ? 'small' : 'medium'}
+                    sx={{
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'rgba(0,0,0,0.02)',
+                      },
+                    }}
                   />
                   <TextField
                     fullWidth
-                    label={t('services.note', { defaultValue: 'ملاحظة (اختيارية)' })}
+                    label={t('messages.optionalNote')}
                     multiline
-                    rows={3}
+                    rows={isMobile ? 3 : 4}
                     value={dialogData.note}
                     onChange={(e) => handleDialogDataChange('note', e.target.value)}
-                    sx={{ mt: 2 }}
+                    size={isMobile ? 'small' : 'medium'}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'rgba(0,0,0,0.02)',
+                      },
+                    }}
                   />
                 </Box>
               )}
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>
-            {t('services.cancel', { defaultValue: 'إلغاء' })}{' '}
+        <DialogActions
+          sx={{
+            padding: isMobile ? 2 : 3,
+            flexDirection: isMobile ? 'column-reverse' : 'row',
+            gap: isMobile ? 1 : 0,
+            '& .MuiButton-root': {
+              width: isMobile ? '100%' : 'auto',
+              margin: isMobile ? '0 !important' : undefined,
+            },
+          }}
+        >
+          <Button 
+            onClick={handleCloseDialog}
+            size={isMobile ? 'medium' : 'medium'}
+            variant={isMobile ? 'outlined' : 'text'}
+          >
+            {t('labels.cancel')}
           </Button>
           {dialogType !== 'view' && (
             <Button
@@ -789,8 +1348,9 @@ export const ServicesListPage: React.FC = () => {
                 (dialogType === 'edit' && !dialogData.status) ||
                 (dialogType === 'assign' && !dialogData.engineerId)
               }
+              size={isMobile ? 'medium' : 'medium'}
             >
-              حفظ
+              {t('labels.save')}
             </Button>
           )}
         </DialogActions>

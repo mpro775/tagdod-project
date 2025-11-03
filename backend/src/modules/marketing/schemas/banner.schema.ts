@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { UserRole } from '../../users/schemas/user.schema';
 
 export enum BannerLocation {
   HOME_TOP = 'home_top',
@@ -49,6 +50,9 @@ export class Banner {
   // Targeting
   @Prop({ type: [String], default: [] })
   targetAudiences!: string[];
+  
+  @Prop({ type: [String], enum: Object.values(UserRole), default: [] })
+  targetUserTypes!: UserRole[];
   
   @Prop({ type: [String], default: [] })
   targetCategories!: string[];

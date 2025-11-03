@@ -70,10 +70,13 @@ import { MediaUploader } from '../components/MediaUploader';
 import { MediaListItem } from '../components/MediaListItem';
 import { formatFileSize } from '@/shared/utils/formatters';
 import { useTranslation } from 'react-i18next';
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
+import { ConfirmDialog } from '@/shared/components';
 import type { Media, MediaCategory, MediaType } from '../types/media.types';
 
 export const MediaLibraryPage: React.FC = () => {
   const { t } = useTranslation('media');
+  const { confirmDialog, dialogProps } = useConfirmDialog();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<MediaCategory | ''>('');
@@ -210,21 +213,23 @@ export const MediaLibraryPage: React.FC = () => {
 
   return (
     <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 3, gap: 2 }}>
           <Box>
-            <Typography variant="h5" fontWeight="bold">
+            <Typography variant="h5" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
               {t('pageTitle')}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
               {t('stats.totalFiles')}: {safeStats.total} | {t('stats.totalSize')}: {safeStats.totalSizeMB} MB
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
             <Button
               variant="outlined"
               startIcon={<Analytics />}
               onClick={() => setStatsDialogOpen(true)}
+              size="medium"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
             >
               {t('analytics')}
             </Button>
@@ -232,6 +237,8 @@ export const MediaLibraryPage: React.FC = () => {
               variant="outlined"
               startIcon={<CleanHands />}
               onClick={() => setCleanupDialogOpen(true)}
+              size="medium"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
             >
               {t('cleanup.title', { defaultValue: 'تنظيف' })}
             </Button>
@@ -239,6 +246,8 @@ export const MediaLibraryPage: React.FC = () => {
               variant="outlined"
               startIcon={<Refresh />}
               onClick={() => refetch()}
+              size="medium"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
             >
               {t('refresh')}
             </Button>
@@ -246,6 +255,8 @@ export const MediaLibraryPage: React.FC = () => {
               variant="contained"
               startIcon={<CloudUpload />}
               onClick={() => setUploadDialogOpen(true)}
+              size="medium"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, flex: { xs: '1 1 auto', sm: '0 0 auto' }, minWidth: { xs: 'auto', sm: '120px' } }}
             >
               {t('uploadFile')}
             </Button>
@@ -321,13 +332,14 @@ export const MediaLibraryPage: React.FC = () => {
         </Grid>
 
         {/* Controls */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 2, gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
             <Button
               variant="outlined"
               size="small"
               startIcon={<FilterList />}
               onClick={handleClearFilters}
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
             >
               {t('filters.clearFilters')}
             </Button>
@@ -335,6 +347,7 @@ export const MediaLibraryPage: React.FC = () => {
               variant="outlined"
               size="small"
               onClick={() => setShowBulkActions(!showBulkActions)}
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
             >
               {showBulkActions ? t('filters.hideBulkSelect') : t('filters.bulkSelect')}
             </Button>
@@ -343,6 +356,7 @@ export const MediaLibraryPage: React.FC = () => {
                 variant="outlined"
                 size="small"
                 onClick={handleBulkSelectAll}
+                sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
               >
                 {selectedMediaIds.length === (data?.data?.length || 0) ? t('filters.unselectAll') : t('filters.selectAll')}
               </Button>
@@ -352,6 +366,8 @@ export const MediaLibraryPage: React.FC = () => {
                 label={`${selectedMediaIds.length} ${t('filters.selected')}`}
                 color="primary"
                 onDelete={() => setSelectedMediaIds([])}
+                size="small"
+                sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
               />
             )}
             {selectedMediaIds.length > 0 && (
@@ -361,6 +377,7 @@ export const MediaLibraryPage: React.FC = () => {
                 startIcon={<Delete />}
                 onClick={() => handleBulkOperation('delete')}
                 color="error"
+                sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
               >
                 {t('actions.bulkDelete')}
               </Button>
@@ -400,13 +417,16 @@ export const MediaLibraryPage: React.FC = () => {
         {!isLoading && viewMode === 'grid' && (
           <Grid container spacing={2}>
             {(Array.isArray(data?.data) ? data.data : [])?.map((media) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={media._id}>
+              <Grid size={{ xs: 6, sm: 6, md: 4, lg: 3 }} key={media._id}>
                 <Card 
                   sx={{ 
                     opacity: media.deletedAt ? 0.6 : 1,
                     border: showBulkActions && selectedMediaIds.includes(media._id) ? 2 : 0,
                     borderColor: 'primary.main',
-                    cursor: showBulkActions ? 'pointer' : 'default'
+                    cursor: showBulkActions ? 'pointer' : 'default',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%'
                   }}
                   onClick={() => showBulkActions && handleBulkSelect(media._id)}
                 >
@@ -416,54 +436,56 @@ export const MediaLibraryPage: React.FC = () => {
                     image={media.url}
                     alt={media.name}
                     sx={{ 
-                      objectFit: 'cover', 
+                      objectFit: 'contain', 
                       bgcolor: 'grey.100',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      height: { xs: '150px', sm: '200px' }
                     }}
                     onClick={() => {
                       setSelectedMedia(media);
                       setDetailsDialogOpen(true);
                     }}
                   />
-                  <CardContent>
+                  <CardContent sx={{ flex: 1, pb: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="body2" fontWeight="medium" noWrap>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight="medium" noWrap sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                           {media.name}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" display="block">
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                           {formatFileSize(media.size)}
                         </Typography>
                         {media.width && media.height && (
-                          <Typography variant="caption" color="text.secondary" display="block">
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                             {media.width} × {media.height}
                           </Typography>
                         )}
                         <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                          <Chip label={media.category} size="small" variant="outlined" />
+                          <Chip label={media.category} size="small" variant="outlined" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: '20px', sm: '24px' } }} />
                           <Chip
                             label={media.isPublic ? t('public') : t('private')}
                             size="small"
                             color={media.isPublic ? 'success' : 'warning'}
                             variant="outlined"
+                            sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: '20px', sm: '24px' } }}
                           />
                           {media.deletedAt && (
-                            <Chip label={t('deleted')} size="small" color="error" variant="outlined" />
+                            <Chip label={t('deleted')} size="small" color="error" variant="outlined" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: '20px', sm: '24px' } }} />
                           )}
                         </Box>
                       </Box>
                       {media.usageCount > 0 && (
                         <Badge badgeContent={media.usageCount} color="primary">
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                             {t('used')}
                           </Typography>
                         </Badge>
                       )}
                     </Box>
                   </CardContent>
-                  <CardActions>
+                  <CardActions sx={{ pt: 0, pb: 1, px: 1 }}>
                     <Tooltip title={t('copyUrl')}>
-                      <IconButton size="small" onClick={() => handleCopyUrl(media.url)}>
+                      <IconButton size="small" onClick={() => handleCopyUrl(media.url)} sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}>
                         <ContentCopy fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -472,6 +494,7 @@ export const MediaLibraryPage: React.FC = () => {
                         size="small"
                         color={media.isPublic ? 'success' : 'default'}
                         onClick={() => handleTogglePublic(media)}
+                        sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}
                       >
                         {media.isPublic ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
                       </IconButton>
@@ -482,6 +505,7 @@ export const MediaLibraryPage: React.FC = () => {
                           size="small"
                           color="primary"
                           onClick={() => restoreMedia(media._id, { onSuccess: () => refetch() })}
+                          sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}
                         >
                           <Restore fontSize="small" />
                         </IconButton>
@@ -496,6 +520,7 @@ export const MediaLibraryPage: React.FC = () => {
                               setSelectedMedia(media);
                               setDetailsDialogOpen(true);
                             }}
+                            sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}
                           >
                             <Edit fontSize="small" />
                           </IconButton>
@@ -504,18 +529,25 @@ export const MediaLibraryPage: React.FC = () => {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => {
-                              if (window.confirm(t('messages.deleteConfirm', { name: media.name }))) {
+                            onClick={async () => {
+                              const confirmed = await confirmDialog({
+                                title: t('messages.deleteTitle', 'تأكيد الحذف'),
+                                message: t('messages.deleteConfirm', { name: media.name }),
+                                type: 'warning',
+                                confirmColor: 'error',
+                              });
+                              if (confirmed) {
                                 deleteMedia(media._id, { onSuccess: () => refetch() });
                               }
                             }}
+                            sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}
                           >
                             <Delete fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       </>
                     )}
-                    <IconButton size="small" onClick={(e) => handleMenuOpen(e, media)}>
+                    <IconButton size="small" onClick={(e) => handleMenuOpen(e, media)} sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}>
                       <MoreVert fontSize="small" />
                     </IconButton>
                   </CardActions>
@@ -849,6 +881,9 @@ export const MediaLibraryPage: React.FC = () => {
           <Button onClick={() => setCleanupDialogOpen(false)}>{t('cancel')}</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog {...dialogProps} />
     </Box>
   );
 };

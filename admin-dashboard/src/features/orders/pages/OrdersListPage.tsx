@@ -17,6 +17,12 @@ import {
   Stack,
   Paper,
   Alert,
+  useTheme,
+  alpha,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Skeleton,
 } from '@mui/material';
 import {
   Visibility,
@@ -30,6 +36,7 @@ import {
   LocalShipping,
   CheckCircle,
   Cancel,
+  ExpandMore,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -37,6 +44,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useOrders, useOrderStats, useBulkUpdateOrderStatus, useExportOrders } from '../hooks/useOrders';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 import { useTranslation } from 'react-i18next';
@@ -73,8 +81,10 @@ const orderStatusColors: Record<
 };
 
 export const OrdersListPage: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation('orders');
+  const { isMobile } = useBreakpoint();
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
   const [filters, setFilters] = useState<ListOrdersParams>({
     page: 1,
@@ -83,9 +93,10 @@ export const OrdersListPage: React.FC = () => {
     sortOrder: 'desc',
   });
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   const { data, isLoading, error, refetch } = useOrders(filters);
-  const { data: stats } = useOrderStats();
+  const { data: stats, isLoading: statsLoading } = useOrderStats();
   const bulkUpdateMutation = useBulkUpdateOrderStatus();
   const exportMutation = useExportOrders();
 
@@ -124,7 +135,7 @@ export const OrdersListPage: React.FC = () => {
       await bulkUpdateMutation.mutateAsync({
         orderIds: selectedOrders,
         status,
-        notes: `تم تحديث ${selectedOrders.length} طلب إلى حالة ${t(`orders.status.${status}`)}`,
+        notes: `تم تحديث ${selectedOrders.length} طلب إلى حالة ${t(`status.${status}`)}`,
       });
       setSelectedOrders([]);
     } catch {
@@ -147,7 +158,7 @@ export const OrdersListPage: React.FC = () => {
     () => [
       {
         field: 'orderNumber',
-        headerName: t('orders.list.columns.orderNumber', { defaultValue: 'رقم الطلب' }  ),
+        headerName: t('list.columns.orderNumber'),
         width: 150,
         renderCell: (params) => (
           <Box sx={{ fontFamily: 'monospace', fontWeight: 'bold', color: 'primary.main' }}>
@@ -157,28 +168,28 @@ export const OrdersListPage: React.FC = () => {
       },
       {
         field: 'customerName',
-        headerName: t('orders.list.columns.customerName', { defaultValue: 'اسم العميل' }  ),
+        headerName: t('list.columns.customerName'),
         width: 180,
-        valueGetter: (_value, row) => row.deliveryAddress?.recipientName || t('orders.list.user.notSpecified'),
+        valueGetter: (_value, row) => row.deliveryAddress?.recipientName || t('list.user.notSpecified'),
       },
       {
         field: 'items',
-        headerName: t('orders.list.columns.items', { defaultValue: 'المنتجات' }  ),
+        headerName: t('list.columns.items'),
         width: 100,
         align: 'center',
         valueGetter: (_value, row) => row.items?.length || 0,
         renderCell: (params) => (
           <Typography variant="body2">
             {params.value === 1
-              ? t('orders.list.items.single')
-              : t('orders.list.items.count', { count: params.value })
+              ? t('list.items.single')
+              : t('list.items.count', { count: params.value })
             }
           </Typography>
         ),
       },
       {
         field: 'total',
-        headerName: t('orders.list.columns.total', { defaultValue: 'المجموع' }  ),
+        headerName: t('list.columns.total'),
         width: 130,
         renderCell: (params) => (
           <Box sx={{ fontWeight: 'bold' }}>
@@ -188,11 +199,11 @@ export const OrdersListPage: React.FC = () => {
       },
       {
         field: 'paymentMethod',
-        headerName: t('orders.list.columns.paymentMethod', { defaultValue: 'طريقة الدفع' }  ),
+        headerName: t('list.columns.paymentMethod'),
         width: 120,
         renderCell: (params) => (
           <Chip
-            label={t(`orders.payment.method.${params.row.paymentMethod as PaymentMethod}`) || params.row.paymentMethod}
+            label={t(`payment.method.${params.row.paymentMethod as PaymentMethod}`) || params.row.paymentMethod}
             size="small"
             variant="outlined"
           />
@@ -200,11 +211,11 @@ export const OrdersListPage: React.FC = () => {
       },
       {
         field: 'paymentStatus',
-        headerName: t('orders.list.columns.paymentStatus', { defaultValue: 'حالة الدفع' }  ),
+        headerName: t('list.columns.paymentStatus'),
         width: 120,
         renderCell: (params) => (
           <Chip
-            label={t(`orders.payment.status.${params.row.paymentStatus as PaymentStatus}`)}
+            label={t(`payment.status.${params.row.paymentStatus as PaymentStatus}`)}
             color={params.row.paymentStatus === 'paid' ? 'success' : 'warning'}
             size="small"
           />
@@ -212,11 +223,11 @@ export const OrdersListPage: React.FC = () => {
       },
       {
         field: 'status',
-        headerName: t('orders.list.columns.status', { defaultValue: 'حالة الطلب' }  ),
+        headerName: t('list.columns.status'),
         width: 140,
         renderCell: (params) => (
           <Chip
-            label={t(`orders.status.${params.row.status as OrderStatus}`)}
+            label={t(`status.${params.row.status as OrderStatus}`)}
             color={orderStatusColors[params.row.status as OrderStatus]}
             size="small"
           />
@@ -224,20 +235,20 @@ export const OrdersListPage: React.FC = () => {
       },
       {
         field: 'createdAt',
-        headerName: t('orders.list.columns.createdAt', { defaultValue: 'تاريخ الطلب' }  ),
+        headerName: t('list.columns.createdAt'),
         width: 140,
         valueFormatter: (value) => formatDate(value as Date),
       },
       {
         field: 'actions',
-        headerName: t('orders.list.columns.actions', { defaultValue: 'الإجراءات' }  ),
+        headerName: t('list.columns.actions'),
         width: 120,
         sortable: false,
         renderCell: (params) => {
           const order = params.row as Order;
           return (
             <Box display="flex" gap={0.5}>
-              <Tooltip title={t('orders.list.menu.viewDetails')}>
+              <Tooltip title={t('list.menu.viewDetails')}>
                 <IconButton
                   size="small"
                   color="primary"
@@ -254,7 +265,7 @@ export const OrdersListPage: React.FC = () => {
         },
       },
     ],
-    [navigate]
+    [navigate, t]
   );
 
   const statsCards = useMemo(() => {
@@ -262,80 +273,118 @@ export const OrdersListPage: React.FC = () => {
 
     const statsData = [
       {
-        title: t('orders.stats.total', { defaultValue: 'إجمالي الطلبات' }  ),
-        value: stats.total,
+        title: t('stats.total'),
+        value: stats.total || 0,
         icon: <Assignment color="primary" />,
-        color: 'primary',
+        color: 'primary' as const,
       },
       {
-        title: t('orders.stats.processing', { defaultValue: 'طلبات قيد التجهيز' }  ),
-        value: stats.processing,
+        title: t('stats.processing'),
+        value: stats.processing || 0,
         icon: <TrendingUp color="warning" />,
-        color: 'warning',
+        color: 'warning' as const,
       },
       {
-        title: t('orders.stats.shipped', { defaultValue: 'طلبات تم شحنها' }  ),
-        value: stats.shipped,
+        title: t('stats.shipped'),
+        value: stats.shipped || 0,
         icon: <LocalShipping color="info" />,
-        color: 'info',
+        color: 'info' as const,
       },
       {
-        title: t('orders.stats.delivered', { defaultValue: 'طلبات تم تسليمها' }   ),
-        value: stats.delivered,
+        title: t('stats.delivered'),
+        value: stats.delivered || 0,
         icon: <CheckCircle color="success" />,
-        color: 'success',
+        color: 'success' as const,
       },
       {
-        title: t('orders.stats.cancelled', { defaultValue: 'طلبات ملغية' }  ),
-        value: stats.cancelled,
+        title: t('stats.cancelled'),
+        value: stats.cancelled || 0,
         icon: <Cancel color="error" />,
-        color: 'error',
+        color: 'error' as const,
       },
     ];
 
     return statsData;
-  }, [stats]);
+  }, [stats, t]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ar}>
-      <Box sx={{ p: 3 }}>
+      <Box
+        sx={{
+          p: isMobile ? 1.5 : 3,
+          bgcolor: 'background.default',
+          minHeight: '100vh',
+        }}
+      >
         {/* Header */}
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-            {t('orders.navigation.title', { defaultValue: 'لوحة التحكم في الطلبات' }  )}
+        <Box sx={{ mb: isMobile ? 2 : 3, display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 2 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: isMobile ? '1.5rem' : undefined }}>
+            {t('navigation.title')}
           </Typography>
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ width: isMobile ? '100%' : 'auto' }}>
             <Button
               variant="outlined"
               startIcon={<Refresh />}
               onClick={() => refetch()}
               disabled={isLoading}
+              size={isMobile ? 'small' : 'medium'}
+              fullWidth={isMobile}
             >
-              {t('orders.actions.refresh', { defaultValue: 'تحديث' }  )}
+              {t('actions.refresh')}
             </Button>
             <Button
               variant="contained"
               startIcon={<Download />}
               onClick={handleExportOrders}
               disabled={exportMutation.isPending}
+              size={isMobile ? 'small' : 'medium'}
+              fullWidth={isMobile}
             >
-              {exportMutation.isPending ? t('orders.actions.exporting', { defaultValue: 'جاري التصدير' }  ) : t('orders.actions.export', { defaultValue: 'تصدير' }  )}
+              {exportMutation.isPending ? t('actions.exporting') : t('actions.export')}
             </Button>
           </Stack>
         </Box>
 
         {/* Stats Cards */}
-        {statsCards && (
-          <Grid container spacing={3} sx={{ mb: 3 }}>
+        {statsLoading ? (
+          <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
+            {[...Array(5)].map((_, index) => (
+              <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index}>
+                <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
+                  <CardContent sx={{ textAlign: 'center', p: isMobile ? 1.5 : 3 }}>
+                    <Skeleton variant="circular" width={40} height={40} sx={{ mx: 'auto', mb: 1 }} />
+                    <Skeleton variant="text" height={40} sx={{ mb: 1 }} />
+                    <Skeleton variant="text" height={20} width="60%" sx={{ mx: 'auto' }} />
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        ) : statsCards ? (
+          <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
             {statsCards.map((stat, index) => (
-              <Grid size={{ xs: 12, sm: 6, md: 2.4 }} key={index}>
-                <Card component="div">
-                  <CardContent sx={{ textAlign: 'center' }}>
-                    <Box sx={{ color: `${stat.color}.main`, mb: 1 }}>{stat.icon}</Box>
-                    <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+              <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index}>
+                <Card
+                  component="div"
+                  sx={{
+                    bgcolor: 'background.paper',
+                    border: `1px solid ${alpha(theme.palette[stat.color].main, theme.palette.mode === 'dark' ? 0.3 : 0.2)}`,
+                    height: '100%',
+                    '&:hover': {
+                      boxShadow: theme.shadows[4],
+                      transform: 'translateY(-2px)',
+                      transition: 'all 0.2s ease-in-out',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ textAlign: 'center', p: isMobile ? 1.5 : 3 }}>
+                    <Box sx={{ color: `${stat.color}.main`, mb: 1, display: 'flex', justifyContent: 'center', fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+                      {stat.icon}
+                    </Box>
+                    <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: isMobile ? '1.5rem' : undefined }}>
                       {stat.value}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
                       {stat.title}
                     </Typography>
                   </CardContent>
@@ -343,20 +392,33 @@ export const OrdersListPage: React.FC = () => {
               </Grid>
             ))}
           </Grid>
-        )}
+        ) : null}
 
         {/* Filters */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FilterList />
-            {t('orders.filters.title', { defaultValue: 'فلترة الطلبات' }  )}
-          </Typography>
-          <Grid container spacing={2}>
+        <Paper
+          sx={{
+            mb: isMobile ? 2 : 3,
+            bgcolor: 'background.paper',
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          }}
+        >
+          <Accordion expanded={filtersExpanded} onChange={() => setFiltersExpanded(!filtersExpanded)}>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Typography
+                variant="h6"
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.primary', fontSize: isMobile ? '1rem' : undefined }}
+              >
+                <FilterList />
+                {t('filters.title')}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={isMobile ? 1.5 : 2}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
-                label={t('orders.filters.search', { defaultValue: 'بحث' }  )}
-                placeholder={t('orders.list.searchPlaceholder')}
+                label={t('filters.search')}
+                placeholder={t('list.searchPlaceholder')}
                 value={filters.search || ''}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 InputProps={{
@@ -366,16 +428,16 @@ export const OrdersListPage: React.FC = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>{t('orders.filters.status.label', { defaultValue: 'حالة الطلب' }  )}</InputLabel>
+                <InputLabel>{t('filters.status.label')}</InputLabel>
                 <Select
                   value={filters.status || ''}
                   onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-                  label={t('orders.filters.status.label', { defaultValue: 'حالة الطلب' }      )}
+                  label={t('filters.status.label')}
                 >
-                  <MenuItem value="">{t('orders.filters.status.all', { defaultValue: 'جميع الحالات' }  )}</MenuItem>
+                  <MenuItem value="">{t('filters.status.all')}</MenuItem>
                   {Object.keys(orderStatusColors).map((key) => (
                     <MenuItem key={key} value={key}>
-                      {t(`orders.status.${key}`, { defaultValue: key }  )}
+                      {t(`status.${key}`)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -383,42 +445,42 @@ export const OrdersListPage: React.FC = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>{t('orders.filters.paymentStatus.label', { defaultValue: 'حالة الدفع' }  )}</InputLabel>
+                <InputLabel>{t('filters.paymentStatus.label')}</InputLabel>
                 <Select
                   value={filters.paymentStatus || ''}
                   onChange={(e) => handleFilterChange('paymentStatus', e.target.value || undefined)}
-                  label={t('orders.filters.paymentStatus.label', { defaultValue: 'حالة الدفع' }  )}
+                  label={t('filters.paymentStatus.label')}
                 >
-                  <MenuItem value="">{t('orders.filters.paymentStatus.all', { defaultValue: 'جميع الحالات' }  )}</MenuItem>
-                  <MenuItem value="pending">{t('orders.payment.status.pending', { defaultValue: 'معلق' }  )}</MenuItem>
-                  <MenuItem value="authorized">{t('orders.payment.status.authorized')}</MenuItem>
-                  <MenuItem value="paid">{t('orders.payment.status.paid', { defaultValue: 'مدفوع' }  )}</MenuItem>
-                  <MenuItem value="failed">{t('orders.payment.status.failed', { defaultValue: 'فشل' }  )}</MenuItem>
-                  <MenuItem value="refunded">{t('orders.payment.status.refunded', { defaultValue: 'مسترد' }  )}</MenuItem>
-                  <MenuItem value="partially_refunded">{t('orders.payment.status.partially_refunded', { defaultValue: 'مسترد جزئياً' }  )}</MenuItem>
-                  <MenuItem value="cancelled">{t('orders.payment.status.cancelled', { defaultValue: 'ملغي' }  )}</MenuItem>
+                  <MenuItem value="">{t('filters.paymentStatus.all')}</MenuItem>
+                  <MenuItem value="pending">{t('payment.status.pending')}</MenuItem>
+                  <MenuItem value="authorized">{t('payment.status.authorized')}</MenuItem>
+                  <MenuItem value="paid">{t('payment.status.paid')}</MenuItem>
+                  <MenuItem value="failed">{t('payment.status.failed')}</MenuItem>
+                  <MenuItem value="refunded">{t('payment.status.refunded')}</MenuItem>
+                  <MenuItem value="partially_refunded">{t('payment.status.partially_refunded')}</MenuItem>
+                  <MenuItem value="cancelled">{t('payment.status.cancelled')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>{t('orders.filters.paymentMethod.label', { defaultValue: 'طريقة الدفع' }    )}</InputLabel>
+                <InputLabel>{t('filters.paymentMethod.label')}</InputLabel>
                 <Select
                   value={filters.paymentMethod || ''}
                   onChange={(e) => handleFilterChange('paymentMethod', e.target.value || undefined)}
-                  label={t('orders.filters.paymentMethod.label', { defaultValue: 'طريقة الدفع' }    )}
+                  label={t('filters.paymentMethod.label')}
                 >
-                  <MenuItem value="">{t('orders.filters.paymentMethod.all', { defaultValue: 'جميع الطرق' }    )}</MenuItem>
-                  <MenuItem value="COD">{t('orders.payment.method.COD', { defaultValue: 'عند الاستلام' }    )}</MenuItem>
-                  <MenuItem value="ONLINE">{t('orders.payment.method.ONLINE', { defaultValue: 'أونلاين' }    )}</MenuItem>
-                  <MenuItem value="WALLET">{t('orders.payment.method.WALLET', { defaultValue: 'محفظة' }    )}</MenuItem>
-                  <MenuItem value="BANK_TRANSFER">{t('orders.payment.method.BANK_TRANSFER', { defaultValue: 'تحويل بنكي' }    )}</MenuItem>
+                  <MenuItem value="">{t('filters.paymentMethod.all')}</MenuItem>
+                  <MenuItem value="COD">{t('payment.method.COD')}</MenuItem>
+                  <MenuItem value="ONLINE">{t('payment.method.ONLINE')}</MenuItem>
+                  <MenuItem value="WALLET">{t('payment.method.WALLET')}</MenuItem>
+                  <MenuItem value="BANK_TRANSFER">{t('payment.method.BANK_TRANSFER')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <DatePicker
-                label={t('orders.filters.dateRange.from', { defaultValue: 'من تاريخ' }    )}
+                label={t('filters.dateRange.from')}
                 value={filters.fromDate ? new Date(filters.fromDate) : null}
                 onChange={(date) => handleFilterChange('fromDate', date?.toISOString())}
                 slotProps={{ textField: { fullWidth: true } }}
@@ -426,7 +488,7 @@ export const OrdersListPage: React.FC = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <DatePicker
-                label={t('orders.filters.dateRange.to', { defaultValue: 'إلى تاريخ' }    )}
+                label={t('filters.dateRange.to')}
                 value={filters.toDate ? new Date(filters.toDate) : null}
                 onChange={(date) => handleFilterChange('toDate', date?.toISOString())}
                 slotProps={{ textField: { fullWidth: true } }}
@@ -434,51 +496,63 @@ export const OrdersListPage: React.FC = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>{t('orders.filters.sorting.sortBy', { defaultValue: 'ترتيب التصفية' }    )}</InputLabel>
+                <InputLabel>{t('filters.sorting.sortBy')}</InputLabel>
                 <Select
                   value={filters.sortBy || 'createdAt'}
                   onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  label={t('orders.filters.sorting.sortBy', { defaultValue: 'ترتيب التصفية' }    )}
+                  label={t('filters.sorting.sortBy')}
                 >
-                  <MenuItem value="createdAt">{t('orders.filters.sorting.createdAt', { defaultValue: 'تاريخ الطلب' }    )}</MenuItem>
-                  <MenuItem value="total">{t('orders.filters.sorting.total', { defaultValue: 'المجموع' }    )}</MenuItem>
-                  <MenuItem value="orderNumber">{t('orders.filters.sorting.orderNumber', { defaultValue: 'رقم الطلب' }    )}</MenuItem>
-                  <MenuItem value="status">{t('orders.filters.sorting.status', { defaultValue: 'حالة الطلب' }    )}</MenuItem>
+                  <MenuItem value="createdAt">{t('filters.sorting.createdAt')}</MenuItem>
+                  <MenuItem value="total">{t('filters.sorting.total')}</MenuItem>
+                  <MenuItem value="orderNumber">{t('filters.sorting.orderNumber')}</MenuItem>
+                  <MenuItem value="status">{t('filters.sorting.status')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>{t('orders.filters.sorting.sortOrder', { defaultValue: 'ترتيب التصفية' }    )}</InputLabel>
+                <InputLabel>{t('filters.sorting.sortOrder')}</InputLabel>
                 <Select
                   value={filters.sortOrder || 'desc'}
                   onChange={(e) =>
                     handleFilterChange('sortOrder', e.target.value as 'asc' | 'desc')
                   }
-                  label={t('orders.filters.sorting.sortOrder', { defaultValue: 'ترتيب التصفية' }        )}
+                  label={t('filters.sorting.sortOrder')}
                 >
-                  <MenuItem value="desc">{t('orders.filters.sorting.descending', { defaultValue: 'تنازلي' }    )}</MenuItem>
-                  <MenuItem value="asc">{t('orders.filters.sorting.ascending', { defaultValue: 'تصاعدي' }    )}</MenuItem>
+                  <MenuItem value="desc">{t('filters.sorting.descending')}</MenuItem>
+                  <MenuItem value="asc">{t('filters.sorting.ascending')}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Stack direction="row" spacing={1}>
                 <Button variant="outlined" startIcon={<Clear />} onClick={handleClearFilters}>
-                  {t('orders.filters.clearFilters', { defaultValue: 'مسح الفلاتر' }    )}
+                  {t('filters.clearFilters')}
                 </Button>
               </Stack>
             </Grid>
-          </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
         </Paper>
 
         {/* Bulk Actions */}
         {selectedOrders.length > 0 && (
-          <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
-            <Typography variant="subtitle1" sx={{ mb: 2 }}>
-              {t('orders.bulk.selected', { count: selectedOrders.length })}
+          <Paper
+            sx={{
+              p: isMobile ? 1.5 : 2,
+              mb: isMobile ? 2 : 3,
+              bgcolor: theme.palette.mode === 'dark' 
+                ? alpha(theme.palette.primary.main, 0.2)
+                : alpha(theme.palette.primary.light, 0.3),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+              color: 'primary.contrastText',
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ mb: 2, color: 'text.primary', fontSize: isMobile ? '0.875rem' : undefined }}>
+              {t('bulk.selected', { count: selectedOrders.length })}
             </Typography>
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
               <Button
                 variant="contained"
                 color="success"
@@ -486,7 +560,7 @@ export const OrdersListPage: React.FC = () => {
                 onClick={() => handleBulkStatusUpdate('processing' as OrderStatus)}
                 disabled={bulkUpdateMutation.isPending}
               >
-                {t('orders.bulk.startProcessing', { defaultValue: 'بدء التجهيز' }    )}
+                {t('bulk.startProcessing')}
               </Button>
               <Button
                 variant="contained"
@@ -495,7 +569,7 @@ export const OrdersListPage: React.FC = () => {
                 onClick={() => handleBulkStatusUpdate('shipped' as OrderStatus)}
                 disabled={bulkUpdateMutation.isPending}
               >
-                {t('orders.bulk.markAsShipped', { defaultValue: 'تم الشحن' }    )}
+                {t('bulk.markAsShipped')}
               </Button>
               <Button
                 variant="contained"
@@ -504,7 +578,7 @@ export const OrdersListPage: React.FC = () => {
                 onClick={() => handleBulkStatusUpdate('on_hold' as OrderStatus)}
                 disabled={bulkUpdateMutation.isPending}
               >
-                {t('orders.bulk.putOnHold', { defaultValue: 'وضع على الاحتياط' }    )}
+                {t('bulk.putOnHold')}
               </Button>
               <Button
                 variant="contained"
@@ -513,7 +587,7 @@ export const OrdersListPage: React.FC = () => {
                 onClick={() => handleBulkStatusUpdate('cancelled' as OrderStatus)}
                 disabled={bulkUpdateMutation.isPending}
               >
-                {t('orders.bulk.cancelOrders', { defaultValue: 'إلغاء الطلبات' }    )}
+                {t('bulk.cancelOrders')}
               </Button>
             </Stack>
           </Paper>
@@ -521,16 +595,21 @@ export const OrdersListPage: React.FC = () => {
 
         {/* Error Alert */}
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {t('orders.messages.error.loadFailed', { defaultValue: 'فشل تحميل البيانات' }    )}
+          <Alert severity="error" sx={{ mb: isMobile ? 2 : 3, bgcolor: 'background.paper' }}>
+            {t('messages.error.loadFailed')}
           </Alert>
         )}
 
         {/* Data Table */}
-        <Card>
+        <Card
+          sx={{
+            bgcolor: 'background.paper',
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          }}
+        >
           <CardContent>
             <DataTable
-              title={t('orders.list.title', { defaultValue: 'قائمة الطلبات' }       )}
+              title={t('list.title')}
               columns={columns}
               rows={data?.data || []}
               loading={isLoading}
@@ -545,7 +624,7 @@ export const OrdersListPage: React.FC = () => {
               onRowSelectionModelChange={(newSelection) => {
                 setSelectedOrders(newSelection as unknown as string[]);
               }}
-              height="calc(100vh - 400px)"
+              height={isMobile ? 'calc(100vh - 600px)' : 'calc(100vh - 400px)'}
             />
           </CardContent>
         </Card>

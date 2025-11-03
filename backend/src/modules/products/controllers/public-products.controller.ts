@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseInterceptors, Req } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -7,8 +7,11 @@ import {
   ApiOkResponse,
   ApiNotFoundResponse,
   ApiResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
-import { Types } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model , Types } from 'mongoose';
+
 import { ProductService } from '../services/product.service';
 import { VariantService } from '../services/variant.service';
 import { PricingService } from '../services/pricing.service';
@@ -18,8 +21,19 @@ import {
   CacheResponse,
 } from '../../../shared/interceptors/response-cache.interceptor';
 import { ProductStatus } from '../schemas/product.schema';
+import { User } from '../../users/schemas/user.schema';
+import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
 
 type WithId = { _id: Types.ObjectId | string };
+
+interface RequestWithUser {
+  user?: {
+    sub: string;
+    phone: string;
+    roles?: string[];
+    preferredCurrency?: string;
+  };
+}
 
 @ApiTags('المنتجات')
 @Controller('products')
@@ -30,7 +44,37 @@ export class PublicProductsController {
     private variantService: VariantService,
     private pricingService: PricingService,
     private inventoryService: InventoryService,
+    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Capabilities.name) private capabilitiesModel: Model<Capabilities>,
   ) {}
+
+  /**
+   * جلب نسبة خصم التاجر للمستخدم
+   */
+  private async getUserWholesaleDiscount(userId?: string): Promise<number> {
+    if (!userId) {
+      return 0;
+    }
+
+    try {
+      // محاولة جلب من Capabilities أولاً (النظام القديم)
+      const caps = await this.capabilitiesModel.findOne({ userId }).lean();
+      if (caps && caps.wholesale_capable && caps.wholesale_status === 'approved' && caps.wholesale_discount_percent > 0) {
+        return caps.wholesale_discount_percent;
+      }
+
+      // إذا لم يوجد في Capabilities، جلب من User مباشرة
+      const user = await this.userModel.findById(userId).lean();
+      if (user && user.wholesale_capable && user.wholesale_status === 'approved' && user.wholesale_discount_percent > 0) {
+        return user.wholesale_discount_percent;
+      }
+    } catch (error) {
+      // في حالة حدوث خطأ، إرجاع 0 (لا خصم)
+      console.error('Error fetching user wholesale discount:', error);
+    }
+
+    return 0;
+  }
 
   // ==================== Products List ====================
 
@@ -173,32 +217,65 @@ export class PublicProductsController {
     },
   })
   @ApiNotFoundResponse({ description: 'Product not found' })
+  @ApiBearerAuth()
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getProduct(@Param('id') id: string, @Query('currency') currency?: string) {
+  async getProduct(
+    @Param('id') id: string,
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
+  ) {
     const product = await this.productService.findById(id);
     const variants = await this.variantService.findByProductId(id);
 
     // زيادة المشاهدات
     await this.productService.incrementViews(id);
 
-    // جلب الأسعار إذا تم تحديد عملة
+    // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
+    const userId = req?.user?.sub;
+    const discountPercent = await this.getUserWholesaleDiscount(userId);
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    // جلب الأسعار مع خصم التاجر
     let variantsWithPrices = variants;
-    if (currency && currency !== 'USD') {
-      const prices = await this.pricingService.getProductPrices(id, currency);
-      variantsWithPrices = variants.map((variant) => {
-        const variantWithId = variant as unknown as WithId;
-        const price = prices.find((p) => p.variantId === variantWithId._id.toString());
+    const pricesWithDiscount = await this.pricingService.getProductPricesWithDiscount(
+      id,
+      selectedCurrency,
+      discountPercent,
+    );
+
+    variantsWithPrices = variants.map((variant) => {
+      const variantWithId = variant as unknown as WithId;
+      const priceData = pricesWithDiscount.find((p) => p.variantId === variantWithId._id.toString());
+      
+      if (priceData) {
         return {
           ...variant,
-          ...price,
+          pricing: {
+            basePrice: priceData.basePrice,
+            compareAtPrice: priceData.compareAtPrice,
+            discountPercent: priceData.discountPercent,
+            discountAmount: priceData.discountAmount,
+            finalPrice: priceData.finalPrice,
+            currency: priceData.currency,
+            exchangeRate: priceData.exchangeRate,
+            formattedPrice: priceData.formattedPrice,
+            formattedFinalPrice: priceData.formattedFinalPrice,
+          },
         };
-      });
-    }
+      }
+      
+      // Fallback للحالات القديمة
+      return variant;
+    });
 
     return {
       product,
       variants: variantsWithPrices,
-      currency: currency || 'USD',
+      currency: selectedCurrency,
+      userDiscount: {
+        isWholesale: discountPercent > 0,
+        discountPercent,
+      },
     };
   }
 
@@ -208,8 +285,13 @@ export class PublicProductsController {
     description: 'Retrieves product information using URL slug',
   })
   @ApiParam({ name: 'slug', description: 'Product slug', example: 'solar-panel-300w' })
+  @ApiBearerAuth()
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getProductBySlug(@Param('slug') slug: string, @Query('currency') currency?: string) {
+  async getProductBySlug(
+    @Param('slug') slug: string,
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
+  ) {
     const product = await this.productService.findBySlug(slug);
     const productWithId = product as unknown as WithId;
     const productId = productWithId._id.toString();
@@ -218,24 +300,52 @@ export class PublicProductsController {
     // زيادة المشاهدات
     await this.productService.incrementViews(productId);
 
-    // جلب الأسعار إذا تم تحديد عملة
+    // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
+    const userId = req?.user?.sub;
+    const discountPercent = await this.getUserWholesaleDiscount(userId);
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    // جلب الأسعار مع خصم التاجر
     let variantsWithPrices = variants;
-    if (currency && currency !== 'USD') {
-      const prices = await this.pricingService.getProductPrices(productId, currency);
-      variantsWithPrices = variants.map((variant) => {
-        const variantWithId = variant as unknown as WithId;
-        const price = prices.find((p) => p.variantId === variantWithId._id.toString());
+    const pricesWithDiscount = await this.pricingService.getProductPricesWithDiscount(
+      productId,
+      selectedCurrency,
+      discountPercent,
+    );
+
+    variantsWithPrices = variants.map((variant) => {
+      const variantWithId = variant as unknown as WithId;
+      const priceData = pricesWithDiscount.find((p) => p.variantId === variantWithId._id.toString());
+      
+      if (priceData) {
         return {
           ...variant,
-          ...price,
+          pricing: {
+            basePrice: priceData.basePrice,
+            compareAtPrice: priceData.compareAtPrice,
+            discountPercent: priceData.discountPercent,
+            discountAmount: priceData.discountAmount,
+            finalPrice: priceData.finalPrice,
+            currency: priceData.currency,
+            exchangeRate: priceData.exchangeRate,
+            formattedPrice: priceData.formattedPrice,
+            formattedFinalPrice: priceData.formattedFinalPrice,
+          },
         };
-      });
-    }
+      }
+      
+      // Fallback للحالات القديمة
+      return variant;
+    });
 
     return {
       product,
       variants: variantsWithPrices,
-      currency: currency || 'USD',
+      currency: selectedCurrency,
+      userDiscount: {
+        isWholesale: discountPercent > 0,
+        discountPercent,
+      },
     };
   }
 
@@ -270,37 +380,91 @@ export class PublicProductsController {
   @Get(':id/variants')
   @ApiOperation({ summary: 'الحصول على متغيرات المنتج' })
   @ApiResponse({ status: 200, description: 'Variants retrieved successfully' })
+  @ApiBearerAuth()
   @CacheResponse({ ttl: 300 }) // 5 minutes
-  async getVariants(@Param('id') productId: string, @Query('currency') currency?: string) {
+  async getVariants(
+    @Param('id') productId: string,
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
+  ) {
     const variants = await this.variantService.findByProductId(productId);
 
-    // جلب الأسعار إذا تم تحديد عملة
+    // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
+    const userId = req?.user?.sub;
+    const discountPercent = await this.getUserWholesaleDiscount(userId);
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    // جلب الأسعار مع خصم التاجر
     let variantsWithPrices = variants;
-    if (currency && currency !== 'USD') {
-      const prices = await this.pricingService.getProductPrices(productId, currency);
-      variantsWithPrices = variants.map((variant) => {
-        const variantWithId = variant as unknown as WithId;
-        const price = prices.find((p) => p.variantId === variantWithId._id.toString());
+    const pricesWithDiscount = await this.pricingService.getProductPricesWithDiscount(
+      productId,
+      selectedCurrency,
+      discountPercent,
+    );
+
+    variantsWithPrices = variants.map((variant) => {
+      const variantWithId = variant as unknown as WithId;
+      const priceData = pricesWithDiscount.find((p) => p.variantId === variantWithId._id.toString());
+      
+      if (priceData) {
         return {
           ...variant,
-          ...price,
+          pricing: {
+            basePrice: priceData.basePrice,
+            compareAtPrice: priceData.compareAtPrice,
+            discountPercent: priceData.discountPercent,
+            discountAmount: priceData.discountAmount,
+            finalPrice: priceData.finalPrice,
+            currency: priceData.currency,
+            exchangeRate: priceData.exchangeRate,
+            formattedPrice: priceData.formattedPrice,
+            formattedFinalPrice: priceData.formattedFinalPrice,
+          },
         };
-      });
-    }
+      }
+      
+      return variant;
+    });
 
     return {
       data: variantsWithPrices,
-      currency: currency || 'USD',
+      currency: selectedCurrency,
+      userDiscount: {
+        isWholesale: discountPercent > 0,
+        discountPercent,
+      },
     };
   }
 
   @Get('variants/:id/price')
   @ApiOperation({ summary: 'الحصول على سعر المتغير' })
   @ApiResponse({ status: 200, description: 'Price retrieved successfully' })
+  @ApiBearerAuth()
   @CacheResponse({ ttl: 300 }) // 5 minutes
-  async getVariantPrice(@Param('id') variantId: string, @Query('currency') currency?: string) {
-    const price = await this.pricingService.getVariantPrice(variantId, currency);
-    return price;
+  async getVariantPrice(
+    @Param('id') variantId: string,
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
+  ) {
+    // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
+    const userId = req?.user?.sub;
+    const discountPercent = await this.getUserWholesaleDiscount(userId);
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    // جلب السعر مع خصم التاجر
+    const priceWithDiscount = await this.pricingService.getVariantPriceWithDiscount(
+      variantId,
+      selectedCurrency,
+      discountPercent,
+    );
+
+    return {
+      ...priceWithDiscount,
+      userDiscount: {
+        isWholesale: discountPercent > 0,
+        discountPercent,
+      },
+    };
   }
 
   @Get('variants/:id/availability')

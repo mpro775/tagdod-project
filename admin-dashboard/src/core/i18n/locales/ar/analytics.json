@@ -1,0 +1,494 @@
+{
+  "title": "التحليلات المتقدمة",
+  "subtitle": "تحليلات متخصصة وتقارير مفصلة لجميع جوانب النظام",
+  "tabs": {
+    "sales": "المبيعات",
+    "products": "المنتجات",
+    "customers": "العملاء",
+    "inventory": "المخزون",
+    "financial": "المالية",
+    "marketing": "التسويق",
+    "realtime": "الوقت الفعلي",
+    "reports": "التقارير"
+  },
+  "header": {
+    "category": "الفئة",
+    "newReport": "تقرير جديد"
+  },
+  "reports": {
+    "management": "إدارة التقارير",
+    "newReport": "تقرير جديد",
+    "title": "عنوان التقرير",
+    "description": "وصف التقرير",
+    "category": "فئة التقرير",
+    "format": "تنسيق التقرير",
+    "includeCharts": "تضمين الرسوم البيانية",
+    "includeRawData": "تضمين البيانات الأولية",
+    "createTitle": "إنشاء تقرير جديد",
+    "generatedAt": "تاريخ الإنشاء",
+    "archived": "مؤرشف",
+    "actions": {
+      "view": "عرض",
+      "exportPdf": "تصدير PDF",
+      "archive": "أرشفة",
+      "delete": "حذف"
+    }
+  },
+  "form": {
+    "cancel": "إلغاء",
+    "create": "إنشاء التقرير",
+    "creating": "جاري الإنشاء...",
+    "titleRequired": "عنوان التقرير مطلوب"
+  },
+  "categories": {
+    "SALES": "المبيعات",
+    "PRODUCTS": "المنتجات",
+    "CUSTOMERS": "العملاء",
+    "INVENTORY": "المخزون",
+    "FINANCIAL": "المالية",
+    "MARKETING": "التسويق"
+  },
+  "formats": {
+    "PDF": "PDF",
+    "EXCEL": "Excel",
+    "CSV": "CSV"
+  },
+  "messages": {
+    "generateError": "خطأ في إنشاء التقرير",
+    "exportError": "خطأ في تصدير التقرير",
+    "deleteError": "خطأ في حذف التقرير",
+    "archiveError": "خطأ في أرشفة التقرير"
+  },
+  "filters": {
+    "title": "الفلاتر المتقدمة",
+    "activeFilters": "فلتر نشط",
+    "activeFiltersCount": "{{count}} فلاتر نشطة",
+    "activeFiltersLabel": "الفلاتر النشطة:",
+    "clearAll": "مسح الكل",
+    "reset": "إعادة تعيين",
+    "apply": "تطبيق الفلاتر",
+    "search": "بحث",
+    "saveFilters": "حفظ الفلاتر",
+    "savedFilters": "الفلاتر المحفوظة",
+    "saveFilterTitle": "حفظ الفلاتر الحالية للاستخدام المستقبلي:",
+    "filterName": "اسم الفلتر",
+    "save": "حفظ",
+    "all": "الكل",
+    "selectMultiple": "اختر متعدد",
+    "from": "من",
+    "to": "إلى",
+    "yes": "نعم",
+    "no": "لا"
+  },
+  "dashboard": {
+    "title": "لوحة التحليلات",
+    "subtitle": "تحليلات شاملة لأداء النظام والمؤشرات الرئيسية",
+    "period": "الفترة",
+    "periodTypes": {
+      "DAILY": "يومي",
+      "WEEKLY": "أسبوعي",
+      "MONTHLY": "شهري",
+      "QUARTERLY": "ربعي",
+      "YEARLY": "سنوي"
+    },
+    "refresh": "تحديث البيانات",
+    "advancedFilters": "فلاتر متقدمة",
+    "totalUsers": "إجمالي المستخدمين",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "revenue": "الإيرادات",
+      "users": "المستخدمين",
+      "products": "المنتجات",
+      "services": "الخدمات",
+      "support": "الدعم"
+    },
+    "sections": {
+      "kpis": "المؤشرات الرئيسية",
+      "revenueTrends": "اتجاهات الإيرادات",
+      "systemPerformance": "أداء النظام",
+      "detailedData": "البيانات التفصيلية"
+    },
+    "tableColumns": {
+      "product": "المنتج",
+      "sales": "المبيعات",
+      "revenue": "الإيرادات"
+    },
+    "errors": {
+      "loadError": "حدث خطأ في تحميل البيانات التحليلية. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "table": {
+    "title": "جدول البيانات",
+    "search": "البحث...",
+    "export": "تصدير البيانات",
+    "actions": "الإجراءات",
+    "all": "الكل",
+    "loading": "جاري التحميل...",
+    "noData": "لا توجد بيانات للعرض",
+    "rowsPerPage": "عدد الصفوف في الصفحة:",
+    "displayedRows": "{{from}}-{{to}} من {{count}}",
+    "displayedRowsMore": "{{from}}-{{to}} من أكثر من {{to}}",
+    "exportError": "حدث خطأ أثناء تصدير البيانات",
+    "exportNoData": "لا توجد بيانات للتصدير"
+  },
+  "errorBoundary": {
+    "title": "خطأ في التحليلات",
+    "unexpectedError": "حدث خطأ غير متوقع",
+    "description": "حدث خطأ أثناء تحميل أو عرض البيانات التحليلية. يرجى المحاولة مرة أخرى.",
+    "retry": "إعادة المحاولة",
+    "goHome": "العودة للوحة التحكم",
+    "tips": "نصائح لحل المشكلة:",
+    "tip1": "تأكد من اتصالك بالإنترنت",
+    "tip2": "تحقق من صلاحياتك للوصول للتحليلات",
+    "tip3": "جرب تحديث الصفحة",
+    "tip4": "إذا استمر الخطأ، يرجى التواصل مع الدعم الفني"
+  },
+  "charts": {
+    "noData": "لا توجد بيانات للعرض",
+    "defaultValue": "القيمة",
+    "productPerformance": "أداء المنتجات",
+    "revenueTrends": "اتجاهات الإيرادات",
+    "serviceAnalytics": "تحليلات الخدمات",
+    "supportAnalytics": "تحليلات الدعم",
+    "userAnalytics": "تحليلات المستخدمين",
+    "sales": "المبيعات",
+    "revenue": "الإيرادات"
+  },
+  "customerAnalytics": {
+    "title": "تحليلات العملاء",
+    "comprehensiveAnalysis": "تحليل شامل",
+    "totalCustomers": "إجمالي العملاء",
+    "newCustomers": "عملاء جدد",
+    "activeCustomers": "عملاء نشطون",
+    "customerValue": "قيمة العميل",
+    "fromPreviousPeriod": "من الفترة السابقة",
+    "customerSegments": "شرائح العملاء",
+    "topCustomers": "أفضل العملاء",
+    "orders": "الطلبات",
+    "totalSpending": "إجمالي الإنفاق",
+    "loadError": "حدث خطأ في تحميل بيانات تحليلات العملاء"
+  },
+  "financialReport": {
+    "title": "التقرير المالي",
+    "comprehensiveAnalysis": "تحليل شامل",
+    "loadError": "حدث خطأ في تحميل التقرير المالي",
+    "totalRevenue": "إجمالي الإيرادات",
+    "fromPreviousPeriod": "من الفترة السابقة",
+    "dailyRevenue": "الإيرادات اليومية",
+    "cumulativeBalance": "الرصيد التراكمي",
+    "revenueBySource": "الإيرادات حسب المصدر"
+  },
+  "inventoryReport": {
+    "title": "تقرير المخزون",
+    "comprehensiveAnalysis": "تحليل شامل",
+    "loadError": "حدث خطأ في تحميل تقرير المخزون",
+    "totalProducts": "إجمالي المنتجات",
+    "inStock": "متوفر في المخزون",
+    "outOfStock": "نفد من المخزون",
+    "inventoryValue": "قيمة المخزون",
+    "fromPreviousPeriod": "من الفترة السابقة",
+    "byCategory": "المخزون حسب الفئة",
+    "movements": "حركات المخزون",
+    "incoming": "وارد",
+    "outgoing": "صادر"
+  },
+  "kpi": {
+    "progressToTarget": "التقدم نحو الهدف"
+  },
+  "marketingReport": {
+    "title": "تقرير التسويق",
+    "comprehensiveAnalysis": "تحليل شامل",
+    "loadError": "حدث خطأ في تحميل تقرير التسويق",
+    "totalCoupons": "إجمالي الكوبونات",
+    "activeCoupons": "الكوبونات النشطة",
+    "totalDiscounts": "إجمالي الخصومات",
+    "roi": "عائد الاستثمار",
+    "fromPreviousPeriod": "من الفترة السابقة",
+    "ofTotal": "من إجمالي {{total}} كوبون",
+    "campaignPerformance": "أداء الحملات",
+    "topCoupons": "أفضل الكوبونات",
+    "marketingMetrics": "مؤشرات التسويق",
+    "campaignDetails": "تفاصيل أداء الحملات",
+    "conversionRate": "معدل التحويل",
+    "noCouponsUsed": "لا توجد كوبونات مستخدمة بعد",
+    "usage": "الاستخدام",
+    "discount": "خصم",
+    "reach": "الوصول",
+    "conversions": "التحويلات",
+    "revenue": "الإيرادات"
+  },
+  "performanceMetrics": {
+    "title": "مقاييس الأداء",
+    "systemPerformance": "أداء النظام",
+    "loadError": "حدث خطأ في تحميل مقاييس الأداء",
+    "refresh": "تحديث البيانات",
+    "responseTime": "وقت الاستجابة",
+    "errorRate": "معدل الأخطاء",
+    "uptime": "وقت التشغيل",
+    "memoryUsage": "استخدام الذاكرة",
+    "cpuUsage": "المعالج",
+    "diskUsage": "التخزين",
+    "performanceStatus": {
+      "excellent": "ممتاز",
+      "good": "جيد",
+      "needsImprovement": "يحتاج تحسين"
+    },
+    "systemPerformance24h": "أداء النظام على مدار 24 ساعة",
+    "responseTimeMs": "وقت الاستجابة (ms)",
+    "memoryUsagePercent": "استخدام الذاكرة (%)",
+    "resourceUsage": "استخدام الموارد",
+    "databaseStats": "إحصائيات قاعدة البيانات",
+    "collections": "المجموعات",
+    "documents": "المستندات",
+    "databaseSize": "حجم قاعدة البيانات",
+    "indexSize": "حجم الفهارس",
+    "slowestEndpoints": "أبطأ نقاط النهاية",
+    "calls": "المكالمات",
+    "maxTime": "أقصى وقت"
+  },
+  "productPerformance": {
+    "title": "أداء المنتجات",
+    "comprehensiveAnalysis": "تحليل شامل",
+    "loadError": "حدث خطأ في تحميل بيانات أداء المنتجات. الرجاء المحاولة مرة أخرى.",
+    "timePeriod": "الفترة الزمنية",
+    "refresh": "تحديث البيانات",
+    "totalProducts": "إجمالي المنتجات",
+    "totalSales": "إجمالي المبيعات",
+    "averageRating": "متوسط التقييم",
+    "inventoryAlerts": "تنبيهات المخزون",
+    "fromPreviousPeriod": "من الفترة السابقة",
+    "topProducts": "أفضل المنتجات",
+    "categoryDistribution": "التوزيع حسب الفئة",
+    "lowStockProducts": "منتجات مخزون منخفض",
+    "topProductsList": "قائمة أفضل المنتجات",
+    "sales": "المبيعات",
+    "rating": "التقييم",
+    "units": "وحدة",
+    "unit": "وحدة"
+  },
+  "salesAnalytics": {
+    "title": "تحليلات المبيعات",
+    "comprehensiveAnalysis": "تحليل شامل",
+    "loadError": "حدث خطأ في تحميل بيانات المبيعات",
+    "totalRevenue": "إجمالي الإيرادات",
+    "totalOrders": "إجمالي الطلبات",
+    "averageOrderValue": "متوسط قيمة الطلب",
+    "salesGrowthRate": "معدل نمو المبيعات",
+    "fromPreviousPeriod": "من الفترة السابقة",
+    "orders": "طلب",
+    "noData": "لا توجد بيانات",
+    "positiveGrowth": "نمو إيجابي",
+    "decline": "انخفاض",
+    "salesTrends": "اتجاهات المبيعات",
+    "revenue": "الإيرادات",
+    "salesByCategory": "المبيعات حسب الفئة",
+    "paymentMethods": "طرق الدفع",
+    "topProducts": "أفضل المنتجات",
+    "ofTotal": "من إجمالي"
+  },
+  "realTimeMetrics": {
+    "title": "المقاييس الفورية",
+    "loadError": "حدث خطأ في تحميل المقاييس الفورية",
+    "lastUpdate": "آخر تحديث",
+    "refresh": "تحديث البيانات",
+    "systemStatus": "حالة النظام",
+    "healthy": "صحي",
+    "warning": "تحذير",
+    "critical": "حرج",
+    "unknown": "غير معروف",
+    "apiResponseTime": "وقت استجابة API",
+    "errorRate": "معدل الأخطاء",
+    "uptime": "وقت التشغيل",
+    "activeConnections": "الاتصالات النشطة",
+    "activeUsers": "المستخدمون النشطون",
+    "currentlyActive": "مستخدمون نشطون حالياً",
+    "todaySales": "مبيعات اليوم",
+    "totalTodaySales": "إجمالي مبيعات اليوم",
+    "todayOrders": "طلبات اليوم",
+    "totalTodayOrders": "إجمالي طلبات اليوم",
+    "supportTickets": "تذاكر الدعم",
+    "pendingTickets": "تذاكر قيد المعالجة",
+    "resourceUsage": "استخدام الموارد",
+    "memory": "الذاكرة",
+    "cpu": "المعالج",
+    "storage": "التخزين",
+    "liveActivity": "النشاط الفوري",
+    "inventoryAlerts": "تنبيهات المخزون",
+    "productsNeedRestock": "منتجات تحتاج إعادة تموين",
+    "activeOrders": "الطلبات النشطة",
+    "ordersInProcessing": "طلبات قيد المعالجة",
+    "todayNewCustomers": "عملاء جدد اليوم",
+    "newRegistrations": "تسجيلات جديدة",
+    "abandonedCarts": "سلات مهجورة",
+    "incompleteCarts": "سلات لم تكتمل",
+    "systemHealthy": "سليم",
+    "systemUnderMaintenance": "تحت الصيانة"
+  },
+  "advancedDashboard": {
+    "title": "لوحة التحليلات المتقدمة",
+    "subtitle": "تحليل شامل لجميع جوانب الأعمال مع تقارير مفصلة وتوصيات",
+    "loadingAnalytics": "جاري تحميل بيانات التحليلات...",
+    "refresh": "تحديث البيانات",
+    "exportReport": "تصدير التقرير",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "sales": "المبيعات",
+      "products": "المنتجات",
+      "customers": "العملاء",
+      "financial": "المالية",
+      "marketing": "التسويق",
+      "inventory": "المخزون"
+    },
+    "realTimeStatus": {
+      "activeUsers": "المستخدمون النشطون",
+      "todaySales": "المبيعات اليوم",
+      "systemStatus": "حالة النظام"
+    }
+  },
+  "mainPage": {
+    "title": "نظام التحليلات المتقدم",
+    "subtitle": "تحليلات شاملة ومؤشرات أداء متقدمة لإدارة أفضل",
+    "lastUpdate": "آخر تحديث",
+    "tabs": {
+      "dashboard": {
+        "label": "لوحة التحليلات",
+        "description": "نظرة عامة على المؤشرات الرئيسية والأداء"
+      },
+      "advanced": {
+        "label": "التحليلات المتقدمة",
+        "description": "تحليلات متخصصة وتقارير مفصلة"
+      },
+      "reports": {
+        "label": "إدارة التقارير",
+        "description": "إنشاء وإدارة التقارير التحليلية"
+      },
+      "export": {
+        "label": "تصدير البيانات",
+        "description": "تصدير البيانات بصيغ مختلفة"
+      }
+    }
+  },
+  "export": {
+    "title": "تصدير البيانات",
+    "description": "تصدير البيانات التحليلية بصيغ مختلفة",
+    "startExport": "بدء التصدير",
+    "exportData": "تصدير البيانات",
+    "instructions": {
+      "title": "كيفية التصدير",
+      "description": "استخدم معالج التصدير لتصدير البيانات بصيغ مختلفة (PDF، Excel، CSV، JSON). يمكنك اختيار نوع البيانات والفترة الزمنية والفلاتر المطلوبة."
+    },
+    "quickActions": "إجراءات سريعة",
+    "steps": {
+      "dataType": "اختيار نوع البيانات",
+      "formatAndPeriod": "تحديد التنسيق والفترة",
+      "filters": "إعداد الفلاتر",
+      "export": "تصدير البيانات"
+    },
+    "dataType": {
+      "label": "نوع البيانات",
+      "sales": "بيانات المبيعات والإيرادات",
+      "products": "بيانات المنتجات والمخزون",
+      "customers": "بيانات العملاء والمستخدمين",
+      "custom": "بيانات مخصصة",
+      "info": "اختر نوع البيانات التي تريد تصديرها. يمكنك تصدير بيانات المبيعات، المنتجات، العملاء، أو بيانات مخصصة."
+    },
+    "format": {
+      "label": "تنسيق الملف",
+      "PDF": "PDF",
+      "EXCEL": "Excel",
+      "CSV": "CSV",
+      "JSON": "JSON"
+    },
+    "dateRange": {
+      "startDate": "تاريخ البداية",
+      "endDate": "تاريخ النهاية",
+      "from": "من",
+      "to": "إلى"
+    },
+    "filters": {
+      "includeCharts": "تضمين الرسوم البيانية",
+      "includeRawData": "تضمين البيانات الأولية",
+      "groupBy": "تجميع البيانات",
+      "groupByPlaceholder": "مثال: يومي، أسبوعي، شهري",
+      "category": "فلترة حسب الفئة",
+      "categoryPlaceholder": "مثال: الطاقة الشمسية، الإضاءة"
+    },
+    "summary": {
+      "title": "ملخص التصدير",
+      "charts": "الرسوم البيانية",
+      "chartsIncluded": "مضمنة",
+      "chartsNotIncluded": "غير مضمونة",
+      "rawData": "البيانات الأولية",
+      "rawDataIncluded": "مضمنة",
+      "rawDataNotIncluded": "غير مضمونة"
+    },
+    "status": {
+      "exporting": "جاري تصدير البيانات...",
+      "completed": "تم تصدير البيانات بنجاح! يمكنك تحميل الملف من الرابط أدناه.",
+      "error": "حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.",
+      "downloadFile": "تحميل الملف",
+      "startExport": "بدء التصدير",
+      "exportingText": "جاري التصدير...",
+      "unsupportedType": "نوع التصدير غير مدعوم"
+    },
+    "actions": {
+      "next": "التالي",
+      "previous": "السابق",
+      "cancel": "إلغاء",
+      "reset": "إعادة تعيين",
+      "close": "إغلاق"
+    }
+  },
+  "reportsManagement": {
+    "title": "إدارة التقارير",
+    "subtitle": "إنشاء وإدارة التقارير التحليلية المتقدمة",
+    "newReport": "تقرير جديد",
+    "exportData": "تصدير البيانات",
+    "refresh": "تحديث",
+    "searchPlaceholder": "البحث في التقارير...",
+    "categoryLabel": "الفئة",
+    "allCategories": "جميع الفئات",
+    "sortBy": "ترتيب حسب",
+    "sortByDate": "التاريخ",
+    "sortByTitle": "العنوان",
+    "sortByCategory": "الفئة",
+    "sortAscending": "تصاعدي",
+    "sortDescending": "تنازلي",
+    "tabs": {
+      "all": "جميع التقارير",
+      "sales": "المبيعات",
+      "products": "المنتجات",
+      "customers": "العملاء",
+      "inventory": "المخزون",
+      "financial": "المالية",
+      "marketing": "التسويق"
+    },
+    "allReports": "جميع التقارير",
+    "total": "إجمالي",
+    "archived": "مؤرشف",
+    "archivedLabel": "مؤرشف",
+    "unarchive": "إلغاء الأرشفة",
+    "by": "بواسطة",
+    "actions": {
+      "view": "عرض",
+      "edit": "تحرير",
+      "exportPdf": "تصدير PDF",
+      "archive": "أرشفة",
+      "delete": "حذف"
+    },
+    "createDialog": {
+      "title": "إنشاء تقرير جديد",
+      "reportTitle": "عنوان التقرير",
+      "reportDescription": "وصف التقرير",
+      "reportCategory": "فئة التقرير",
+      "reportFormat": "تنسيق التقرير",
+      "creating": "جاري الإنشاء...",
+      "create": "إنشاء التقرير",
+      "cancel": "إلغاء"
+    },
+    "deleteConfirm": "هل أنت متأكد من حذف هذا التقرير؟",
+    "reportsCategory": "تقارير {category}",
+    "loadError": "حدث خطأ في تحميل التقارير. يرجى المحاولة مرة أخرى."
+  }
+}
+

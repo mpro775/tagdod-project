@@ -2,8 +2,10 @@
   "pageTitle": "إدارة البانرات",
   "pageSubtitle": "إدارة ومراقبة البانرات الإعلانية",
   "addBanner": "إضافة بانر",
-  "analytics": "الإحصائيات",
+  "viewAnalytics": "الإحصائيات",
   "editBanner": "تعديل البانر",
+  "noBanners": "لا توجد بانرات",
+  "noBannersDescription": "لم يتم العثور على أي بانرات. قم بإضافة بانر جديد للبدء.",
   "createBanner": "إنشاء بانر جديد",
   "back": "العودة",
   "cancel": "إلغاء",
@@ -29,7 +31,16 @@
     },
     "location": {
       "label": "موقع العرض",
-      "required": "موقع العرض مطلوب"
+      "required": "موقع العرض مطلوب",
+      "home_top": "أعلى الصفحة الرئيسية",
+      "home_middle": "وسط الصفحة الرئيسية",
+      "home_bottom": "أسفل الصفحة الرئيسية",
+      "category_top": "أعلى صفحة الفئة",
+      "product_page": "صفحة المنتج",
+      "cart_page": "صفحة سلة المشتريات",
+      "checkout_page": "صفحة الدفع",
+      "sidebar": "الشريط الجانبي",
+      "footer": "أسفل الصفحة"
     },
     "description": {
       "label": "وصف البانر"
@@ -37,8 +48,8 @@
     "imageUrl": {
       "label": "رابط الصورة",
       "required": "رابط الصورة مطلوب",
-      "helper": "رابط الصورة مطلوب",
-      "invalid": "يجب أن يكون رابط صورة صحيح"
+      "helper": "أدخل رابط الصورة (URL)",
+      "invalid": "يجب أن يكون رابط صورة صحيح (يبدأ بـ http:// أو https://)"
     },
     "linkUrl": {
       "label": "رابط التوجيه",
@@ -50,7 +61,13 @@
       "helper": "مهم لإمكانية الوصول"
     },
     "promotionType": {
-      "label": "نوع الترويج"
+      "label": "نوع الترويج",
+      "discount": "خصم",
+      "free_shipping": "شحن مجاني",
+      "new_arrival": "منتج جديد",
+      "sale": "تخفيض",
+      "seasonal": "موسمي",
+      "brand_promotion": "ترويج العلامة التجارية"
     },
     "sortOrder": {
       "label": "ترتيب العرض",
@@ -84,7 +101,16 @@
     },
     "location": {
       "label": "موقع العرض",
-      "all": "جميع المواقع"
+      "all": "جميع المواقع",
+      "home_top": "أعلى الصفحة الرئيسية",
+      "home_middle": "وسط الصفحة الرئيسية",
+      "home_bottom": "أسفل الصفحة الرئيسية",
+      "category_top": "أعلى صفحة الفئة",
+      "product_page": "صفحة المنتج",
+      "cart_page": "صفحة سلة المشتريات",
+      "checkout_page": "صفحة الدفع",
+      "sidebar": "الشريط الجانبي",
+      "footer": "أسفل الصفحة"
     },
     "status": {
       "label": "الحالة",

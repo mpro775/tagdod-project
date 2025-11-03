@@ -90,8 +90,9 @@ export const mediaApi = {
    * Get media statistics
    */
   getStats: async (): Promise<MediaStats> => {
-    const response = await apiClient.get<ApiResponse<MediaStats>>('/admin/media/stats/summary');
-    return response.data.data;
+    const response = await apiClient.get('/admin/media/stats/summary');
+    // Handle nested data structure: response.data.data.data or response.data.data
+    return response.data.data?.data || response.data.data;
   },
 
   /**

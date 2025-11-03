@@ -21,6 +21,7 @@ import {
   IconButton,
   Skeleton,
   Alert,
+  useTheme,
 } from '@mui/material';
 import {
   Close,
@@ -30,6 +31,8 @@ import {
   Email,
   ShoppingCartCheckout,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { Cart, CartStatus } from '../types/cart.types';
 import {
   formatCurrency,
@@ -56,6 +59,10 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
   onSendReminder,
   isLoading = false,
 }) => {
+  const { t } = useTranslation('cart');
+  const theme = useTheme();
+  const { isMobile } = useBreakpoint();
+
   if (!cart && !isLoading) {
     return null;
   }
@@ -70,16 +77,18 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
 
   const getUserDisplayName = () => {
     if (cart?.user) {
-      return cart.user.name || cart.user.email || 'مستخدم غير معروف';
+      return cart.user.name || cart.user.email || t('list.user.unknown');
     }
-    return cart?.deviceId ? `جهاز ${cart.deviceId.slice(-8)}` : 'ضيف';
+    return cart?.deviceId 
+      ? t('list.user.device', { id: cart.deviceId.slice(-8) })
+      : t('list.user.guest');
   };
 
   const getUserContact = () => {
     if (cart?.user) {
-      return cart.user.email || cart.user.phone || 'لا يوجد';
+      return cart.user.email || cart.user.phone || t('list.user.noContact');
     }
-    return 'غير متاح';
+    return t('list.user.noContact');
   };
 
   const getLastActivity = () => {
@@ -110,78 +119,182 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          minHeight: '60vh',
+          borderRadius: isMobile ? 0 : 2,
+          minHeight: isMobile ? '100vh' : '60vh',
+          bgcolor: 'background.paper',
         },
       }}
     >
-      <DialogTitle>
+      <DialogTitle
+        sx={{
+          fontWeight: 'bold',
+          fontSize: { xs: '1.125rem', sm: '1.25rem' },
+          color: 'text.primary',
+          pb: 1,
+        }}
+      >
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
-            <ShoppingCart />
-            <Typography variant="h6">تفاصيل السلة</Typography>
+            <ShoppingCart sx={{ color: 'primary.main', fontSize: { xs: '1.125rem', sm: '1.25rem' } }} />
+            <Typography 
+              variant="h6"
+              sx={{ 
+                fontSize: { xs: '1.125rem', sm: '1.25rem' },
+                fontWeight: 'bold',
+              }}
+            >
+              {t('details.title')}
+            </Typography>
           </Box>
-          <IconButton onClick={onClose} size="small">
+          <IconButton 
+            onClick={onClose} 
+            size="small"
+            sx={{ 
+              color: 'text.secondary',
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+            }}
+          >
             <Close />
           </IconButton>
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent 
+        dividers
+        sx={{ 
+          borderColor: 'divider',
+          p: { xs: 2, sm: 3 },
+        }}
+      >
         {isLoading ? (
           <Box>
-            <Skeleton variant="rectangular" height={200} />
+            <Skeleton 
+              variant="rectangular" 
+              sx={{ 
+                height: { xs: 150, sm: 200 },
+                borderRadius: 2,
+              }} 
+            />
             <Box mt={2}>
-              <Skeleton variant="text" height={32} />
-              <Skeleton variant="text" height={24} />
-              <Skeleton variant="text" height={24} />
+              <Skeleton 
+                variant="text" 
+                sx={{ 
+                  height: { xs: 28, sm: 32 },
+                  mb: 1,
+                }} 
+              />
+              <Skeleton 
+                variant="text" 
+                sx={{ 
+                  height: { xs: 20, sm: 24 },
+                  mb: 0.5,
+                }} 
+              />
+              <Skeleton 
+                variant="text" 
+                sx={{ 
+                  height: { xs: 20, sm: 24 },
+                }} 
+              />
             </Box>
           </Box>
         ) : !cart ? (
-          <Alert severity="error">لا يمكن تحميل تفاصيل السلة</Alert>
+          <Alert severity="error">{t('details.loadError')}</Alert>
         ) : (
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {/* Cart Overview */}
             <Grid size={{ xs: 12 }}>
-              <Paper sx={{ p: 2, mb: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  نظرة عامة على السلة
+              <Paper 
+                sx={{ 
+                  p: { xs: 1.5, sm: 2 }, 
+                  mb: 2,
+                  bgcolor: 'background.paper',
+                  border: 1,
+                  borderColor: 'divider',
+                }}
+              >
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    fontWeight: 'bold',
+                    color: 'text.primary',
+                    mb: 2,
+                  }}
+                >
+                  {t('details.overview')}
                 </Typography>
-                <Grid container spacing={2}>
+                <Grid container spacing={{ xs: 2, sm: 2 }}>
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Chip
                         label={formatCartStatus(cart.status)}
                         size="small"
                         sx={{
-                          backgroundColor: `${getStatusColor(cart.status)}20`,
+                          backgroundColor: theme.palette.mode === 'dark' 
+                            ? `${getStatusColor(cart.status)}30` 
+                            : `${getStatusColor(cart.status)}20`,
                           color: getStatusColor(cart.status),
-                          border: `1px solid ${getStatusColor(cart.status)}40`,
+                          border: `1px solid ${getStatusColor(cart.status)}${theme.palette.mode === 'dark' ? '60' : '40'}`,
+                          fontSize: { xs: '0.65rem', sm: '0.75rem' },
                         }}
                       />
                     </Box>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      عدد المنتجات
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                    >
+                      {t('details.itemsCount')}
                     </Typography>
-                    <Typography variant="h6">{getCartItemsCount()}</Typography>
+                    <Typography 
+                      variant="h6"
+                      sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                    >
+                      {getCartItemsCount()}
+                    </Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      القيمة الإجمالية
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                    >
+                      {t('details.totalValue')}
                     </Typography>
-                    <Typography variant="h6" color="primary">
+                    <Typography 
+                      variant="h6" 
+                      color="primary.main"
+                      sx={{ 
+                        fontSize: { xs: '1rem', sm: '1.25rem' },
+                        fontWeight: 'bold',
+                      }}
+                    >
                       {formatCurrency(getCartTotal(), cart.currency)}
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      آخر نشاط
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                    >
+                      {t('details.lastActivity')}
                     </Typography>
-                    <Typography variant="body2">{getLastActivity()}</Typography>
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {getLastActivity()}
+                    </Typography>
                   </Grid>
                 </Grid>
               </Paper>
@@ -189,42 +302,103 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
 
             {/* User Information */}
             <Grid size={{ xs: 12, md: 6 }}>
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  معلومات المستخدم
+              <Paper 
+                sx={{ 
+                  p: { xs: 1.5, sm: 2 },
+                  height: '100%',
+                  bgcolor: 'background.paper',
+                  border: 1,
+                  borderColor: 'divider',
+                }}
+              >
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    fontWeight: 'bold',
+                    color: 'text.primary',
+                    mb: 2,
+                  }}
+                >
+                  {t('details.userInfo')}
                 </Typography>
                 <Box display="flex" alignItems="center" gap={2} mb={2}>
                   {cart.user ? (
-                    <Avatar sx={{ width: 48, height: 48 }}>
+                    <Avatar 
+                      sx={{ 
+                        width: { xs: 40, sm: 48 }, 
+                        height: { xs: 40, sm: 48 },
+                        bgcolor: theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.light',
+                        color: 'primary.contrastText',
+                      }}
+                    >
                       <Person />
                     </Avatar>
                   ) : (
-                    <Avatar sx={{ width: 48, height: 48 }}>
+                    <Avatar 
+                      sx={{ 
+                        width: { xs: 40, sm: 48 }, 
+                        height: { xs: 40, sm: 48 },
+                        bgcolor: theme.palette.mode === 'dark' ? 'grey.700' : 'grey.300',
+                      }}
+                    >
                       <DeviceUnknown />
                     </Avatar>
                   )}
                   <Box>
-                    <Typography variant="h6">{getUserDisplayName()}</Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography 
+                      variant="h6"
+                      sx={{ 
+                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                        fontWeight: 'bold',
+                        color: 'text.primary',
+                      }}
+                    >
+                      {getUserDisplayName()}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
                       {getUserContact()}
                     </Typography>
                   </Box>
                 </Box>
 
-                <Divider sx={{ my: 2 }} />
+                <Divider sx={{ my: 2, borderColor: 'divider' }} />
 
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 6 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      نوع الحساب
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                    >
+                      {t('details.accountType')}
                     </Typography>
-                    <Typography variant="body2">{cart.accountType || 'تجزئة'}</Typography>
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {cart.accountType || t('details.retail')}
+                    </Typography>
                   </Grid>
                   <Grid size={{ xs: 6 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      العملة
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                    >
+                      {t('details.currency')}
                     </Typography>
-                    <Typography variant="body2">{cart.currency}</Typography>
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {cart.currency}
+                    </Typography>
                   </Grid>
                 </Grid>
               </Paper>
@@ -232,36 +406,87 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
 
             {/* Cart Details */}
             <Grid size={{ xs: 12, md: 6 }}>
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  تفاصيل السلة
+              <Paper 
+                sx={{ 
+                  p: { xs: 1.5, sm: 2 },
+                  height: '100%',
+                  bgcolor: 'background.paper',
+                  border: 1,
+                  borderColor: 'divider',
+                }}
+              >
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    fontWeight: 'bold',
+                    color: 'text.primary',
+                    mb: 2,
+                  }}
+                >
+                  {t('details.cartDetails')}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 6 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      تاريخ الإنشاء
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                    >
+                      {t('details.createdAt')}
                     </Typography>
-                    <Typography variant="body2">{formatDate(cart.createdAt)}</Typography>
-                  </Grid>
-                  <Grid size={{ xs: 6 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      آخر تحديث
-                    </Typography>
-                    <Typography variant="body2">{formatDate(cart.updatedAt)}</Typography>
-                  </Grid>
-                  <Grid size={{ xs: 6 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      حالة الهجر
-                    </Typography>
-                    <Typography variant="body2">
-                      {cart.isAbandoned ? 'متروكة' : 'غير متروكة'}
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {formatDate(cart.createdAt)}
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 6 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      الإيميلات المرسلة
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                    >
+                      {t('details.updatedAt')}
                     </Typography>
-                    <Typography variant="body2">{cart.abandonmentEmailsSent || 0}</Typography>
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {formatDate(cart.updatedAt)}
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                    >
+                      {t('details.abandonmentStatus')}
+                    </Typography>
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {cart.isAbandoned ? t('details.abandoned') : t('details.notAbandoned')}
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                    >
+                      {t('details.emailsSent')}
+                    </Typography>
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {cart.abandonmentEmailsSent || 0}
+                    </Typography>
                   </Grid>
                 </Grid>
               </Paper>
@@ -270,25 +495,72 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
             {/* Cart Items */}
             {cart.items && cart.items.length > 0 && (
               <Grid size={{ xs: 12 }}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    منتجات السلة ({cart.items.length})
+                <Paper 
+                  sx={{ 
+                    p: { xs: 1.5, sm: 2 },
+                    bgcolor: 'background.paper',
+                    border: 1,
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography 
+                    variant="h6" 
+                    gutterBottom
+                    sx={{ 
+                      fontSize: { xs: '1rem', sm: '1.25rem' },
+                      fontWeight: 'bold',
+                      color: 'text.primary',
+                      mb: 2,
+                    }}
+                  >
+                    {t('details.cartItems', { count: cart.items.length })}
                   </Typography>
                   <TableContainer>
-                    <Table size="small">
+                    <Table size={isMobile ? 'small' : 'medium'}>
                       <TableHead
                         sx={{
-                          backgroundColor: (theme) =>
-                            theme.palette.mode === 'dark'
-                              ? theme.palette.grey[800]
-                              : theme.palette.grey[100],
+                          backgroundColor: theme.palette.mode === 'dark'
+                            ? 'rgba(255, 255, 255, 0.05)'
+                            : 'grey.50',
                         }}
                       >
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>المنتج</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الكمية</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>السعر</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجمالي</TableCell>
+                          <TableCell 
+                            sx={{ 
+                              fontWeight: 'bold', 
+                              color: 'text.primary',
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            }}
+                          >
+                            {t('details.itemsTable.product')}
+                          </TableCell>
+                          <TableCell 
+                            sx={{ 
+                              fontWeight: 'bold', 
+                              color: 'text.primary',
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            }}
+                          >
+                            {t('details.itemsTable.quantity')}
+                          </TableCell>
+                          <TableCell 
+                            sx={{ 
+                              fontWeight: 'bold', 
+                              color: 'text.primary',
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            }}
+                          >
+                            {t('details.itemsTable.price')}
+                          </TableCell>
+                          <TableCell 
+                            sx={{ 
+                              fontWeight: 'bold', 
+                              color: 'text.primary',
+                              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            }}
+                          >
+                            {t('details.itemsTable.total')}
+                          </TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -296,19 +568,41 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                           <TableRow key={index}>
                             <TableCell>
                               <Box>
-                                <Typography variant="body2" fontWeight="medium">
-                                  {item.productSnapshot?.name || 'منتج غير معروف'}
+                                <Typography 
+                                  variant="body2" 
+                                  fontWeight="medium"
+                                  sx={{ 
+                                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                    color: 'text.primary',
+                                  }}
+                                >
+                                  {item.productSnapshot?.name || t('details.itemsTable.unknownProduct')}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {item.productSnapshot?.brandName || 'علامة تجارية غير معروفة'}
+                                <Typography 
+                                  variant="caption" 
+                                  color="text.secondary"
+                                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                                >
+                                  {item.productSnapshot?.brandName || t('details.itemsTable.unknownBrand')}
                                 </Typography>
                               </Box>
                             </TableCell>
-                            <TableCell>{item.qty}</TableCell>
-                            <TableCell>
+                            <TableCell
+                              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                            >
+                              {item.qty}
+                            </TableCell>
+                            <TableCell
+                              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                            >
                               {formatCurrency(item.pricing?.finalPrice || 0, cart.currency)}
                             </TableCell>
-                            <TableCell>
+                            <TableCell
+                              sx={{ 
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                fontWeight: 'medium',
+                              }}
+                            >
                               {formatCurrency(
                                 (item.pricing?.finalPrice || 0) * item.qty,
                                 cart.currency
@@ -326,40 +620,88 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
             {/* Pricing Summary */}
             {cart.pricingSummary && (
               <Grid size={{ xs: 12 }}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    ملخص التسعير
+                <Paper 
+                  sx={{ 
+                    p: { xs: 1.5, sm: 2 },
+                    bgcolor: 'background.paper',
+                    border: 1,
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography 
+                    variant="h6" 
+                    gutterBottom
+                    sx={{ 
+                      fontSize: { xs: '1rem', sm: '1.25rem' },
+                      fontWeight: 'bold',
+                      color: 'text.primary',
+                      mb: 2,
+                    }}
+                  >
+                    {t('details.pricingSummary')}
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        المجموع الفرعي
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                      >
+                        {t('details.subtotal')}
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography 
+                        variant="body2"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      >
                         {formatCurrency(cart.pricingSummary.subtotal, cart.currency)}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        خصم الترويج
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                      >
+                        {t('details.promotionDiscount')}
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography 
+                        variant="body2"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      >
                         {formatCurrency(cart.pricingSummary.promotionDiscount, cart.currency)}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        خصم الكوبون
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                      >
+                        {t('details.couponDiscount')}
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography 
+                        variant="body2"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      >
                         {formatCurrency(cart.pricingSummary.couponDiscount, cart.currency)}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 6 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        الإجمالي النهائي
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+                      >
+                        {t('details.finalTotal')}
                       </Typography>
-                      <Typography variant="h6" color="primary">
+                      <Typography 
+                        variant="h6" 
+                        color="primary.main"
+                        sx={{ 
+                          fontSize: { xs: '1rem', sm: '1.25rem' },
+                          fontWeight: 'bold',
+                        }}
+                      >
                         {formatCurrency(cart.pricingSummary.total, cart.currency)}
                       </Typography>
                     </Grid>
@@ -371,11 +713,39 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
         )}
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={onClose}>إغلاق</Button>
+      <DialogActions
+        sx={{ 
+          p: { xs: 1.5, sm: 2, md: 3 },
+          borderTop: 1,
+          borderColor: 'divider',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1, sm: 0 },
+        }}
+      >
+        <Button 
+          onClick={onClose}
+          fullWidth={isMobile}
+          size={isMobile ? 'medium' : 'large'}
+          sx={{ 
+            order: { xs: 3, sm: 1 },
+            minWidth: { xs: '100%', sm: 'auto' },
+          }}
+        >
+          {t('actions.close')}
+        </Button>
         {cart && canSendReminder && (
-          <Button variant="outlined" startIcon={<Email />} onClick={handleSendReminder}>
-            إرسال تذكير
+          <Button 
+            variant="outlined" 
+            startIcon={<Email />} 
+            onClick={handleSendReminder}
+            fullWidth={isMobile}
+            size={isMobile ? 'medium' : 'large'}
+            sx={{ 
+              order: { xs: 2, sm: 2 },
+              minWidth: { xs: '100%', sm: 'auto' },
+            }}
+          >
+            {t('actions.sendReminder')}
           </Button>
         )}
         {cart && canConvert && (
@@ -383,8 +753,14 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
             variant="contained"
             startIcon={<ShoppingCartCheckout />}
             onClick={handleConvertToOrder}
+            fullWidth={isMobile}
+            size={isMobile ? 'medium' : 'large'}
+            sx={{ 
+              order: { xs: 1, sm: 3 },
+              minWidth: { xs: '100%', sm: 'auto' },
+            }}
           >
-            تحويل إلى طلب
+            {t('actions.convert')}
           </Button>
         )}
       </DialogActions>

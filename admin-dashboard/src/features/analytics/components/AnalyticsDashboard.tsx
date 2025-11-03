@@ -15,8 +15,11 @@ import {
   Skeleton,
   Fade,
   useTheme,
-  useMediaQuery,
+  Stack,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { getCardPadding, getCardSpacing } from '../utils/responsive';
 import {
   Dashboard as DashboardIcon,
   TrendingUp as TrendingUpIcon,
@@ -48,6 +51,8 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
+  const breakpoint = useBreakpoint();
+  const cardPadding = getCardPadding(breakpoint);
 
   return (
     <div
@@ -57,7 +62,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`analytics-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: cardPadding }}>{children}</Box>}
     </div>
   );
 }
@@ -72,7 +77,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   showAdvancedFilters = true,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { t } = useTranslation('analytics');
+  const breakpoint = useBreakpoint();
+  const cardPadding = getCardPadding(breakpoint);
+  const cardSpacing = getCardSpacing(breakpoint);
 
   const [selectedTab, setSelectedTab] = useState(0);
   const [period] = useState<PeriodType>(initialPeriod);
@@ -106,95 +114,115 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
 
   const tabs = [
-    { label: 'نظرة عامة', icon: <DashboardIcon />, value: 0 },
-    { label: 'الإيرادات', icon: <TrendingUpIcon />, value: 1 },
-    { label: 'المستخدمين', icon: <PeopleIcon />, value: 2 },
-    { label: 'المنتجات', icon: <ShoppingCartIcon />, value: 3 },
-    { label: 'الخدمات', icon: <SupportIcon />, value: 4 },
-    { label: 'الدعم', icon: <AssessmentIcon />, value: 5 },
+    { label: t('dashboard.tabs.overview'), icon: <DashboardIcon />, value: 0 },
+    { label: t('dashboard.tabs.revenue'), icon: <TrendingUpIcon />, value: 1 },
+    { label: t('dashboard.tabs.users'), icon: <PeopleIcon />, value: 2 },
+    { label: t('dashboard.tabs.products'), icon: <ShoppingCartIcon />, value: 3 },
+    { label: t('dashboard.tabs.services'), icon: <SupportIcon />, value: 4 },
+    { label: t('dashboard.tabs.support'), icon: <AssessmentIcon />, value: 5 },
   ];
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ m: 2 }}>
-        حدث خطأ في تحميل البيانات التحليلية. يرجى المحاولة مرة أخرى.
+      <Alert severity="error" sx={{ m: breakpoint.isXs ? 1 : 2 }}>
+        {t('dashboard.errors.loadError')}
       </Alert>
     );
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%', px: breakpoint.isXs ? 1 : 0 }}>
       {/* Header */}
       <Paper
         elevation={1}
         sx={{
-          p: 2,
-          mb: 3,
-          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          p: cardPadding,
+          mb: cardSpacing,
+          background: theme.palette.mode === 'dark'
+            ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`
+            : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           color: 'white',
         }}
       >
-        <Box
+        <Stack
+          direction={breakpoint.isXs ? 'column' : 'row'}
+          spacing={cardSpacing}
           sx={{
-            display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 2,
+            alignItems: breakpoint.isXs ? 'flex-start' : 'center',
           }}
         >
           <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              لوحة التحليلات
+            <Typography 
+              variant={breakpoint.isXs ? 'h5' : 'h4'} 
+              component="h1" 
+              gutterBottom
+              sx={{ fontSize: breakpoint.isXs ? '1.5rem' : undefined }}
+            >
+              {t('dashboard.title')}
             </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.9 }}>
-              تحليلات شاملة لأداء النظام والمؤشرات الرئيسية
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                opacity: 0.9,
+                fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+              }}
+            >
+              {t('dashboard.subtitle')}
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Stack 
+              direction={breakpoint.isXs ? 'column' : 'row'} 
+            spacing={1} 
+            sx={{ 
+              alignItems: breakpoint.isXs ? 'stretch' : 'center',
+              width: breakpoint.isXs ? '100%' : 'auto',
+            }}
+          >
             <Chip
               icon={<DateRangeIcon />}
-              label={`الفترة: ${
-                period === PeriodType.DAILY
-                  ? 'يومي'
-                  : period === PeriodType.WEEKLY
-                  ? 'أسبوعي'
-                  : period === PeriodType.MONTHLY
-                  ? 'شهري'
-                  : period === PeriodType.QUARTERLY
-                  ? 'ربعي'
-                  : 'سنوي'
-              }`}
+              label={`${t('dashboard.period')}: ${t(`dashboard.periodTypes.${period}`)}`}
               variant="outlined"
-              sx={{ color: 'white', borderColor: 'white' }}
+              sx={{ 
+                color: 'white', 
+                borderColor: 'white',
+                fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+              }}
             />
 
-            <Tooltip title="تحديث البيانات">
-              <IconButton
-                onClick={handleRefresh}
-                disabled={refreshAnalytics.isPending}
-                sx={{ color: 'white' }}
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
-
-            {showAdvancedFilters && (
-              <Tooltip title="فلاتر متقدمة">
-                <IconButton onClick={() => setShowFilters(!showFilters)} sx={{ color: 'white' }}>
-                  <FilterListIcon />
+            <Stack direction="row" spacing={1}>
+              <Tooltip title={t('dashboard.refresh')}>
+                <IconButton
+                  onClick={handleRefresh}
+                  disabled={refreshAnalytics.isPending}
+                  sx={{ color: 'white' }}
+                  size={breakpoint.isXs ? 'medium' : 'small'}
+                >
+                  <RefreshIcon fontSize={breakpoint.isXs ? 'small' : 'medium'} />
                 </IconButton>
               </Tooltip>
-            )}
-          </Box>
-        </Box>
+
+              {showAdvancedFilters && (
+                <Tooltip title={t('dashboard.advancedFilters')}>
+                  <IconButton 
+                    onClick={() => setShowFilters(!showFilters)} 
+                    sx={{ color: 'white' }}
+                    size={breakpoint.isXs ? 'medium' : 'small'}
+                  >
+                    <FilterListIcon fontSize={breakpoint.isXs ? 'small' : 'medium'} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Stack>
+          </Stack>
+        </Stack>
       </Paper>
 
       {/* Advanced Filters */}
       {showAdvancedFilters && showFilters && (
         <Fade in={showFilters}>
-          <Paper elevation={2} sx={{ mb: 3 }}>
+          <Paper elevation={2} sx={{ mb: breakpoint.isXs ? 2 : 3 }}>
             <AdvancedFilters
               filters={[]}
               values={{}}
@@ -205,27 +233,46 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       )}
 
       {/* Tabs */}
-      <Paper elevation={1} sx={{ mb: 3 }}>
+      <Paper 
+        elevation={1} 
+        sx={{ 
+          mb: breakpoint.isXs ? 2 : 3,
+          backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+        }}
+      >
         <Tabs
           value={selectedTab}
           onChange={handleTabChange}
-          variant={isMobile ? 'scrollable' : 'standard'}
+          variant={breakpoint.isXs ? 'scrollable' : 'standard'}
           scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             '& .MuiTab-root': {
-              minHeight: 64,
+                minHeight: breakpoint.isXs ? 56 : 64,
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+              px: breakpoint.isXs ? 1.5 : 2,
+              color: theme.palette.mode === 'dark' ? theme.palette.text.primary : undefined,
+              '&.Mui-selected': {
+                color: theme.palette.primary.main,
+              },
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: theme.palette.primary.main,
             },
           }}
         >
           {tabs.map((tab) => (
             <Tab
               key={tab.value}
-              label={tab.label}
+              label={breakpoint.isXs && !breakpoint.isXs ? undefined : tab.label}
               icon={tab.icon}
-              iconPosition="start"
-              sx={{ minWidth: isMobile ? 120 : 160 }}
+              iconPosition={breakpoint.isXs && !breakpoint.isXs ? 'top' : 'start'}
+              sx={{ 
+                minWidth: breakpoint.isXs ? (breakpoint.isXs ? 80 : 64) : 160,
+              }}
+              aria-label={tab.label}
             />
           ))}
         </Tabs>
@@ -234,25 +281,32 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       {/* Tab Panels */}
       <TabPanel value={selectedTab} index={0}>
         {/* Overview Tab */}
-        <Grid container spacing={3}>
+          <Grid container spacing={cardSpacing}>
           {/* KPIs */}
           <Grid size={{ xs: 12 }}>
-            <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
-              المؤشرات الرئيسية
+            <Typography 
+              variant={breakpoint.isXs ? 'h6' : 'h5'} 
+              gutterBottom 
+              sx={{ 
+                mb: breakpoint.isXs ? 1.5 : 2,
+                fontSize: breakpoint.isXs ? '1.25rem' : undefined,
+              }}
+            >
+              {t('dashboard.sections.kpis')}
             </Typography>
             {isLoading ? (
-              <Grid container spacing={2}>
+              <Grid container spacing={cardSpacing}>
                 {[...Array(6)].map((_, index) => (
                   <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={index}>
-                    <Skeleton variant="rectangular" height={120} />
+                    <Skeleton variant="rectangular" height={breakpoint.isXs ? 100 : 120} />
                   </Grid>
                 ))}
               </Grid>
             ) : (
-              <Grid container spacing={2}>
+              <Grid container spacing={cardSpacing}>
                 {dashboardData?.kpis &&
                   Object.entries(dashboardData.kpis).map(([key, value]) => (
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={key}>
+                    <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }} key={key}>
                       <KPICard title={key} value={value} />
                     </Grid>
                   ))}
@@ -263,12 +317,16 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           {/* Charts Grid */}
           <Grid size={{ xs: 12, lg: 8 }}>
             <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  اتجاهات الإيرادات
+              <CardContent sx={{ p: cardPadding }}>
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+                  gutterBottom
+                  sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+                >
+                  {t('dashboard.sections.revenueTrends')}
                 </Typography>
                 {isLoading ? (
-                  <Skeleton variant="rectangular" height={300} />
+                  <Skeleton variant="rectangular" height={breakpoint.isXs ? 250 : 300} />
                 ) : (
                   <RevenueChart data={dashboardData?.revenueCharts} />
                 )}
@@ -278,12 +336,16 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
           <Grid size={{ xs: 12, lg: 4 }}>
             <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  أداء النظام
+              <CardContent sx={{ p: cardPadding }}>
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+                  gutterBottom
+                  sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+                >
+                  {t('dashboard.sections.systemPerformance')}
                 </Typography>
                 {isLoading ? (
-                  <Skeleton variant="rectangular" height={300} />
+                  <Skeleton variant="rectangular" height={breakpoint.isXs ? 250 : 300} />
                 ) : (
                   <PerformanceMetricsCard />
                 )}
@@ -295,7 +357,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
       <TabPanel value={selectedTab} index={1}>
         {/* Revenue Tab */}
-        <Grid container spacing={3}>
+        <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
             <RevenueChart data={dashboardData?.revenueCharts} />
           </Grid>
@@ -304,7 +366,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
       <TabPanel value={selectedTab} index={2}>
         {/* Users Tab */}
-        <Grid container spacing={3}>
+          <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
             <UserAnalyticsChart data={dashboardData?.userCharts} />
           </Grid>
@@ -313,7 +375,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
       <TabPanel value={selectedTab} index={3}>
         {/* Products Tab */}
-        <Grid container spacing={3}>
+        <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
             <ProductPerformanceChart data={dashboardData?.productCharts} />
           </Grid>
@@ -322,7 +384,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
       <TabPanel value={selectedTab} index={4}>
         {/* Services Tab */}
-        <Grid container spacing={3}>
+        <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
             <ServiceAnalyticsChart data={dashboardData?.serviceCharts} />
           </Grid>
@@ -331,7 +393,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
       <TabPanel value={selectedTab} index={5}>
         {/* Support Tab */}
-        <Grid container spacing={3}>
+          <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
             <SupportAnalyticsChart data={dashboardData?.supportCharts} />
           </Grid>
@@ -339,19 +401,23 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       </TabPanel>
 
       {/* Data Table - Using existing data from charts */}
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          البيانات التفصيلية
+      <Box sx={{ mt: breakpoint.isXs ? 2 : 4 }}>
+        <Typography 
+          variant={breakpoint.isXs ? 'h6' : 'h5'} 
+          gutterBottom
+          sx={{ fontSize: breakpoint.isXs ? '1.25rem' : undefined }}
+        >
+          {t('dashboard.sections.detailedData')}
         </Typography>
         {isLoading ? (
-          <Skeleton variant="rectangular" height={400} />
+          <Skeleton variant="rectangular" height={breakpoint.isXs ? 300 : 400} />
         ) : (
           <AnalyticsDataTable 
             data={dashboardData?.productCharts?.topSelling || []} 
             columns={[
-              { id: 'product', label: 'المنتج', minWidth: 200 },
-              { id: 'sales', label: 'المبيعات', minWidth: 120 },
-              { id: 'revenue', label: 'الإيرادات', minWidth: 120 },
+              { id: 'product', label: t('dashboard.tableColumns.product'), minWidth: 200 },
+              { id: 'sales', label: t('dashboard.tableColumns.sales'), minWidth: 120 },
+              { id: 'revenue', label: t('dashboard.tableColumns.revenue'), minWidth: 120 },
             ]} 
           />
         )}

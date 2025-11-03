@@ -11,7 +11,6 @@ import {
   Alert,
   Paper,
   Chip,
-
   Dialog,
   DialogTitle,
   DialogContent,
@@ -19,7 +18,7 @@ import {
   Grid,
   TextField,
   CardContent,
- 
+  useTheme,
 } from '@mui/material';
 import {
   CloudUpload,
@@ -35,6 +34,8 @@ import { MediaPicker } from './MediaPicker';
 import { MediaUploader } from './MediaUploader';
 import type { Media } from '../types/media.types';
 import { MediaType, MediaCategory } from '../types/media.types';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { useTranslation } from 'react-i18next';
 
 interface ImageFieldProps {
   label?: string;
@@ -68,6 +69,10 @@ export const ImageField: React.FC<ImageFieldProps> = ({
   size = 'medium',
   variant = 'card',
 }) => {
+  const theme = useTheme();
+  const { isMobile } = useBreakpoint();
+  const { t } = useTranslation('media');
+  
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<Media | Media[] | null>(null);
@@ -76,7 +81,6 @@ export const ImageField: React.FC<ImageFieldProps> = ({
 
   // تحويل value إلى Media object أو استخدام selectedMedia
   const currentMedia = useMemo(() => {
-    // إذا كان هناك صورة مختارة، استخدمها
     if (selectedMedia && !Array.isArray(selectedMedia)) {
       return selectedMedia;
     }
@@ -146,11 +150,11 @@ export const ImageField: React.FC<ImageFieldProps> = ({
   const getSizeStyles = useCallback(() => {
     switch (size) {
       case 'small':
-        return { width: 120, height: 80 };
+        return { width: { xs: 80, sm: 120 }, height: { xs: 60, sm: 80 } };
       case 'large':
-        return { width: 300, height: 200 };
+        return { width: { xs: 200, sm: 300 }, height: { xs: 150, sm: 200 } };
       default:
-        return { width: 200, height: 150 };
+        return { width: { xs: 150, sm: 200 }, height: { xs: 120, sm: 150 } };
     }
   }, [size]);
 
@@ -158,7 +162,11 @@ export const ImageField: React.FC<ImageFieldProps> = ({
     return (
       <Box>
         {label && (
-          <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+          <Typography 
+            variant="body2" 
+            fontWeight="medium" 
+            sx={{ mb: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+          >
             {label}
             {required && <span style={{ color: 'red' }}> *</span>}
           </Typography>
@@ -179,11 +187,23 @@ export const ImageField: React.FC<ImageFieldProps> = ({
                 borderColor: 'divider',
               }}
             />
-            <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+            <Typography 
+              variant="body2" 
+              noWrap 
+              sx={{ 
+                flex: 1,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}
+            >
               {currentMedia.name}
             </Typography>
-            <IconButton size="small" onClick={handleRemoveImage} disabled={disabled}>
-              <Delete fontSize="small" />
+            <IconButton 
+              size="small" 
+              onClick={handleRemoveImage} 
+              disabled={disabled}
+              sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+            >
+              <Delete fontSize="inherit" />
             </IconButton>
           </Box>
         ) : (
@@ -193,8 +213,9 @@ export const ImageField: React.FC<ImageFieldProps> = ({
             startIcon={<Add />}
             onClick={() => setPickerOpen(true)}
             disabled={disabled}
+            fullWidth={isMobile}
           >
-            اختيار صورة
+            {t('empty.selectImage')}
           </Button>
         )}
 
@@ -203,7 +224,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
           onClose={() => setPickerOpen(false)}
           onSelect={handleSelectMedia}
           category={category}
-          title={`اختيار صورة - ${label}`}
+          title={`${t('empty.selectImage')} - ${label}`}
           acceptTypes={[MediaType.IMAGE]}
           showFilters={false}
           showUpload={false}
@@ -216,21 +237,31 @@ export const ImageField: React.FC<ImageFieldProps> = ({
     return (
       <Box>
         {label && (
-          <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+          <Typography 
+            variant="body2" 
+            fontWeight="medium" 
+            sx={{ mb: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+          >
             {label}
             {required && <span style={{ color: 'red' }}> *</span>}
           </Typography>
         )}
 
         {currentMedia ? (
-          <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Paper sx={{ 
+            p: 2, 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 2,
+            bgcolor: 'background.paper',
+          }}>
             <Box
               component="img"
               src={currentMedia.url}
               alt={currentMedia.name}
               sx={{
-                width: 60,
-                height: 60,
+                width: { xs: 50, sm: 60 },
+                height: { xs: 50, sm: 60 },
                 objectFit: 'cover',
                 borderRadius: 1,
                 border: '1px solid',
@@ -238,10 +269,18 @@ export const ImageField: React.FC<ImageFieldProps> = ({
               }}
             />
             <Box sx={{ flex: 1 }}>
-              <Typography variant="body2" fontWeight="medium">
+              <Typography 
+                variant="body2" 
+                fontWeight="medium"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
                 {currentMedia.name}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography 
+                variant="caption" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+              >
                 {formatFileSize(currentMedia.size)}
                 {currentMedia.width && currentMedia.height && 
                   ` • ${currentMedia.width} × ${currentMedia.height}`
@@ -249,28 +288,34 @@ export const ImageField: React.FC<ImageFieldProps> = ({
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="معاينة">
-                <IconButton size="small" onClick={handlePreviewImage}>
-                  <Visibility fontSize="small" />
+              <Tooltip title={t('details.preview')}>
+                <IconButton 
+                  size="small" 
+                  onClick={handlePreviewImage}
+                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                >
+                  <Visibility fontSize="inherit" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="تغيير">
+              <Tooltip title={t('details.change')}>
                 <IconButton 
                   size="small" 
                   onClick={() => setPickerOpen(true)}
                   disabled={disabled}
+                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
                 >
-                  <Edit fontSize="small" />
+                  <Edit fontSize="inherit" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="حذف">
+              <Tooltip title={t('details.delete')}>
                 <IconButton 
                   size="small" 
                   color="error" 
                   onClick={handleRemoveImage}
                   disabled={disabled}
+                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
                 >
-                  <Delete fontSize="small" />
+                  <Delete fontSize="inherit" />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -280,18 +325,28 @@ export const ImageField: React.FC<ImageFieldProps> = ({
             sx={{
               border: 2,
               borderStyle: 'dashed',
-              borderColor: error ? 'error.main' : 'grey.300',
+              borderColor: error ? 'error.main' : 'divider',
               borderRadius: 2,
-              p: 3,
+              p: { xs: 2, sm: 3 },
               textAlign: 'center',
-              bgcolor: 'grey.50',
+              bgcolor: 'background.paper',
               cursor: disabled ? 'not-allowed' : 'pointer',
               opacity: disabled ? 0.6 : 1,
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                borderColor: error ? 'error.main' : 'primary.main',
+                bgcolor: disabled ? undefined : (theme.palette.mode === 'dark' ? 'action.hover' : 'primary.light'),
+              },
             }}
           >
-            <Image sx={{ fontSize: 32, color: 'grey.400', mb: 1 }} />
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {required ? 'الصورة مطلوبة' : 'لا توجد صورة مختارة'}
+            <Image sx={{ fontSize: { xs: 28, sm: 32 }, color: 'text.disabled', mb: 1 }} />
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              gutterBottom
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
+            >
+              {required ? t('empty.imageRequired') : t('empty.noImageSelected')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mt: 1 }}>
               <Button
@@ -300,21 +355,24 @@ export const ImageField: React.FC<ImageFieldProps> = ({
                 startIcon={<Image />}
                 onClick={() => setPickerOpen(true)}
                 disabled={disabled}
+                fullWidth={isMobile}
               >
-                اختيار
+                {t('empty.selectImage')}
               </Button>
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<CloudUpload />}
-                onClick={() => {
-                  setUploaderOpen(true);
-                  setIsLoading(true);
-                }}
-                disabled={disabled || isLoading}
-              >
-                {isLoading ? 'جاري...' : 'رفع'}
-              </Button>
+              {!isMobile && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<CloudUpload />}
+                  onClick={() => {
+                    setUploaderOpen(true);
+                    setIsLoading(true);
+                  }}
+                  disabled={disabled || isLoading}
+                >
+                  {isLoading ? t('empty.uploadingProgress') : t('upload')}
+                </Button>
+              )}
             </Box>
           </Box>
         )}
@@ -330,7 +388,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
           onClose={() => setPickerOpen(false)}
           onSelect={handleSelectMedia}
           category={category}
-          title={`اختيار صورة - ${label}`}
+          title={`${t('empty.selectImage')} - ${label}`}
           acceptTypes={[MediaType.IMAGE]}
         />
 
@@ -345,82 +403,134 @@ export const ImageField: React.FC<ImageFieldProps> = ({
   }
 
   // Card variant (default)
+  const sizeStyles = getSizeStyles();
+  
   return (
     <Box>
       {label && (
-        <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+        <Typography 
+          variant="body2" 
+          fontWeight="medium" 
+          sx={{ mb: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+        >
           {label}
           {required && <span style={{ color: 'red' }}> *</span>}
         </Typography>
       )}
 
       {currentMedia ? (
-        <Card sx={{ maxWidth: getSizeStyles().width }}>
+        <Card sx={{ 
+          maxWidth: sizeStyles.width,
+          bgcolor: 'background.paper',
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            boxShadow: theme.palette.mode === 'dark' ? 8 : 3,
+            transform: 'translateY(-2px)',
+          },
+        }}>
           <CardMedia
             component="img"
-            height={getSizeStyles().height}
+            height={sizeStyles.height[isMobile ? 'xs' : 'sm']}
             image={currentMedia.url}
             alt={currentMedia.name}
             sx={{ objectFit: 'cover' }}
           />
-          <CardContent sx={{ p: 1.5 }}>
-            <Typography variant="body2" fontWeight="medium" noWrap gutterBottom>
+          <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
+            <Typography 
+              variant="body2" 
+              fontWeight="medium" 
+              noWrap 
+              gutterBottom
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+            >
               {currentMedia.name}
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-              <Chip label={currentMedia.category} size="small" variant="outlined" />
               <Chip 
-                label={currentMedia.isPublic ? 'عام' : 'خاص'} 
+                label={currentMedia.category} 
+                size="small" 
+                variant="outlined"
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
+              />
+              <Chip 
+                label={currentMedia.isPublic ? t('public') : t('private')} 
                 size="small" 
                 color={currentMedia.isPublic ? 'success' : 'warning'}
                 variant="outlined"
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
               />
             </Box>
-            <Typography variant="caption" color="text.secondary">
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+            >
               {formatFileSize(currentMedia.size)}
               {currentMedia.width && currentMedia.height && 
                 ` • ${currentMedia.width} × ${currentMedia.height}`
               }
             </Typography>
           </CardContent>
-          <CardActions sx={{ justifyContent: 'space-between', px: 1.5, pb: 1.5 }}>
+          <CardActions 
+            sx={{ 
+              justifyContent: 'space-between', 
+              px: { xs: 1, sm: 1.5 }, 
+              pb: { xs: 1, sm: 1.5 },
+              flexWrap: 'wrap',
+              gap: 0.5,
+            }}
+          >
             <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="معاينة">
-                <IconButton size="small" onClick={handlePreviewImage}>
-                  <Visibility fontSize="small" />
+              <Tooltip title={t('details.preview')}>
+                <IconButton 
+                  size="small" 
+                  onClick={handlePreviewImage}
+                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                >
+                  <Visibility fontSize="inherit" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="تحميل">
-                <IconButton size="small" onClick={handleDownloadImage}>
-                  <Download fontSize="small" />
+              <Tooltip title={t('details.download')}>
+                <IconButton 
+                  size="small" 
+                  onClick={handleDownloadImage}
+                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                >
+                  <Download fontSize="inherit" />
                 </IconButton>
               </Tooltip>
               {showDetails && (
-                <Tooltip title="تفاصيل">
-                  <IconButton size="small" onClick={() => setDetailsOpen(true)}>
-                    <Info fontSize="small" />
+                <Tooltip title={t('details.title')}>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => setDetailsOpen(true)}
+                    sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                  >
+                    <Info fontSize="inherit" />
                   </IconButton>
                 </Tooltip>
               )}
             </Box>
             <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="تغيير الصورة">
+              <Tooltip title={t('details.changeImage')}>
                 <IconButton 
                   size="small" 
                   onClick={() => setPickerOpen(true)}
                   disabled={disabled}
+                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
                 >
-                  <Edit fontSize="small" />
+                  <Edit fontSize="inherit" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="حذف الصورة">
+              <Tooltip title={t('details.remove')}>
                 <IconButton 
                   size="small" 
                   color="error" 
                   onClick={handleRemoveImage}
                   disabled={disabled}
+                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
                 >
-                  <Delete fontSize="small" />
+                  <Delete fontSize="inherit" />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -431,23 +541,28 @@ export const ImageField: React.FC<ImageFieldProps> = ({
           sx={{
             border: 2,
             borderStyle: 'dashed',
-            borderColor: error ? 'error.main' : 'grey.300',
+            borderColor: error ? 'error.main' : 'divider',
             borderRadius: 2,
-            p: 4,
+            p: { xs: 3, sm: 4 },
             textAlign: 'center',
-            bgcolor: 'grey.50',
+            bgcolor: 'background.paper',
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.6 : 1,
             transition: 'all 0.3s ease',
             '&:hover': {
-              borderColor: 'primary.main',
-              bgcolor: 'primary.light',
+              borderColor: error ? 'error.main' : 'primary.main',
+              bgcolor: disabled ? undefined : (theme.palette.mode === 'dark' ? 'action.hover' : 'primary.light'),
             },
           }}
         >
-          <Image sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {required ? 'الصورة مطلوبة' : 'لا توجد صورة مختارة'}
+          <Image sx={{ fontSize: { xs: 40, sm: 48 }, color: 'text.disabled', mb: 2 }} />
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            gutterBottom
+            sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
+          >
+            {required ? t('empty.imageRequired') : t('empty.noImageSelected')}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mt: 2 }}>
             <Button
@@ -456,21 +571,24 @@ export const ImageField: React.FC<ImageFieldProps> = ({
               startIcon={<Image />}
               onClick={() => setPickerOpen(true)}
               disabled={disabled}
+              fullWidth={isMobile}
             >
-              اختيار من المكتبة
+              {isMobile ? t('empty.selectImage') : t('empty.selectFromLibrary')}
             </Button>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<CloudUpload />}
-              onClick={() => {
-                setUploaderOpen(true);
-                setIsLoading(true);
-              }}
-              disabled={disabled || isLoading}
-            >
-              {isLoading ? 'جاري الرفع...' : 'رفع صورة جديدة'}
-            </Button>
+            {!isMobile && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<CloudUpload />}
+                onClick={() => {
+                  setUploaderOpen(true);
+                  setIsLoading(true);
+                }}
+                disabled={disabled || isLoading}
+              >
+                {isLoading ? t('empty.uploadingNew') : t('empty.uploadNew')}
+              </Button>
+            )}
           </Box>
         </Box>
       )}
@@ -487,7 +605,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
         onClose={() => setPickerOpen(false)}
         onSelect={handleSelectMedia}
         category={category}
-        title={`اختيار صورة - ${label}`}
+        title={`${t('empty.selectImage')} - ${label}`}
         acceptTypes={[MediaType.IMAGE]}
         multiple={multiple}
         maxSelections={maxSelections}
@@ -503,8 +621,16 @@ export const ImageField: React.FC<ImageFieldProps> = ({
 
       {/* Details Dialog */}
       {showDetails && currentMedia && (
-        <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>تفاصيل الصورة</DialogTitle>
+        <Dialog 
+          open={detailsOpen} 
+          onClose={() => setDetailsOpen(false)} 
+          maxWidth="sm" 
+          fullWidth
+          fullScreen={isMobile}
+        >
+          <DialogTitle sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+            {t('details.imageDetails')}
+          </DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid size={{ xs: 12 }}>
@@ -514,7 +640,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
                   alt={currentMedia.name}
                   sx={{
                     width: '100%',
-                    maxHeight: 300,
+                    maxHeight: { xs: 200, sm: 300 },
                     objectFit: 'contain',
                     borderRadius: 1,
                     border: '1px solid',
@@ -525,56 +651,70 @@ export const ImageField: React.FC<ImageFieldProps> = ({
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="اسم الملف"
+                  label={t('details.fileName')}
                   value={currentMedia.name}
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
+                  size={isMobile ? 'small' : 'medium'}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="الفئة"
+                  label={t('details.category')}
                   value={currentMedia.category}
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
+                  size={isMobile ? 'small' : 'medium'}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="الحجم"
+                  label={t('details.size')}
                   value={formatFileSize(currentMedia.size)}
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
+                  size={isMobile ? 'small' : 'medium'}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label="الأبعاد"
+                  label={t('details.dimensions')}
                   value={currentMedia.width && currentMedia.height ? 
-                    `${currentMedia.width} × ${currentMedia.height}` : 'غير محدد'
+                    `${currentMedia.width} × ${currentMedia.height}` : t('empty.notSpecified')
                   }
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
+                  size={isMobile ? 'small' : 'medium'}
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
-                  label="الرابط"
+                  label={t('details.url')}
                   value={currentMedia.url}
                   sx={{ mb: 2 }}
                   InputProps={{ readOnly: true }}
+                  size={isMobile ? 'small' : 'medium'}
                 />
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDetailsOpen(false)}>إغلاق</Button>
-            <Button variant="contained" onClick={handlePreviewImage}>
-              معاينة
+          <DialogActions sx={{ p: { xs: 1, sm: 2 } }}>
+            <Button 
+              onClick={() => setDetailsOpen(false)}
+              fullWidth={isMobile}
+            >
+              {t('close')}
+            </Button>
+            <Button 
+              variant="contained" 
+              onClick={handlePreviewImage}
+              fullWidth={isMobile}
+            >
+              {t('details.preview')}
             </Button>
           </DialogActions>
         </Dialog>

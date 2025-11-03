@@ -8,6 +8,7 @@
     "users": "Users",
     "usersList": "Users List",
     "usersAnalytics": "Users Analytics",
+    "usersDeleted": "Deleted Accounts",
     "catalog": "Catalog",
     "products": "Products",
     "productsList": "Products List",
@@ -67,9 +68,12 @@
     "errorLogs": "Error Logs",
     "i18nManagement": "Localization Texts",
     "systemSettings": "System Settings",
-    "exchangeRates": "Exchange Rates"
-  },
-  "actions": {
+         "exchangeRates": "Exchange Rates",
+     "adminManagement": "Admin Management",
+     "addresses": "Addresses",
+     "search": "Search"
+   },
+   "actions": {
     "title": "Actions",
     "add": "Add",
     "edit": "Edit",
@@ -86,7 +90,8 @@
     "view": "View",
     "submit": "Submit",
     "activate": "Activate",
-    "suspend": "Suspend"
+    "suspend": "Suspend",
+    "retry": "Retry"
   },
   "status": {
     "active": "Active",
@@ -115,7 +120,13 @@
     "user": "User",
     "profile": "Profile",
     "logout": "Logout",
-    "refresh_profile": "Refresh Profile"
+    "refresh_profile": "Refresh Profile",
+    "currency": "Currency",
+    "currencies": {
+      "usd": "US Dollar",
+      "yer": "Yemeni Rial",
+      "sar": "Saudi Riyal"
+    }
   },
   "validation": {
     "required": "This field is required",

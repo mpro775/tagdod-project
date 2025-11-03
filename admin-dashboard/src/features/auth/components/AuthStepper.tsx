@@ -19,22 +19,25 @@ const StyledStepper = styled(Stepper)(({ theme }) => ({
     fontWeight: 500,
     fontFamily: 'Cairo',
     color: theme.palette.text.secondary,
+    [theme.breakpoints.down('sm')]: {
+      fontSize: '0.7rem',
+    },
   },
   '& .MuiStepLabel-label.Mui-active': {
-    color: '#667eea',
+    color: theme.palette.mode === 'dark' ? '#8b9aff' : '#667eea',
     fontWeight: 600,
   },
   '& .MuiStepLabel-label.Mui-completed': {
-    color: '#667eea',
+    color: theme.palette.mode === 'dark' ? '#8b9aff' : '#667eea',
     fontWeight: 600,
   },
   '& .MuiStepIcon-root': {
     color: theme.palette.grey[300],
     '&.Mui-active': {
-      color: '#667eea',
+      color: theme.palette.mode === 'dark' ? '#8b9aff' : '#667eea',
     },
     '&.Mui-completed': {
-      color: '#667eea',
+      color: theme.palette.mode === 'dark' ? '#8b9aff' : '#667eea',
     },
   },
   '& .MuiStepConnector-line': {
@@ -42,10 +45,16 @@ const StyledStepper = styled(Stepper)(({ theme }) => ({
     borderTopWidth: 2,
   },
   '& .MuiStepConnector-root.Mui-active .MuiStepConnector-line': {
-    borderColor: '#667eea',
+    borderColor: theme.palette.mode === 'dark' ? '#8b9aff' : '#667eea',
   },
   '& .MuiStepConnector-root.Mui-completed .MuiStepConnector-line': {
-    borderColor: '#667eea',
+    borderColor: theme.palette.mode === 'dark' ? '#8b9aff' : '#667eea',
+  },
+  [theme.breakpoints.down('sm')]: {
+    '& .MuiStepIcon-root': {
+      width: 28,
+      height: 28,
+    },
   },
 }));
 
@@ -68,12 +77,18 @@ export const AuthStepper: React.FC<AuthStepperProps> = ({
   }
 
   return (
-    <Box sx={{ mb: 4 }}>
+    <Box sx={{ mb: { xs: 2, sm: 4 } }}>
       <StyledStepper activeStep={activeStep} alternativeLabel>
         {steps.map((label) => (
           <Step key={label}>
             <StepLabel>
-              <Typography variant="caption" sx={{ fontSize: '0.75rem', fontFamily: 'Cairo' }}>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' }, 
+                  fontFamily: 'Cairo' 
+                }}
+              >
                 {label}
               </Typography>
             </StepLabel>

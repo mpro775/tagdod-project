@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { TokenService } from '@/core/auth/tokenService';
 import { STORAGE_KEYS } from '@/config/constants';
+import { setUser as setSentryUser, clearUser as clearSentryUser } from '@/core/sentry';
 
 interface User {
   _id: string;
@@ -39,17 +40,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     TokenService.setRefreshToken(refreshToken);
     localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
     set({ user, isAuthenticated: true });
+    
+    // Set user context in Sentry
+    setSentryUser({
+      id: user._id,
+      email: user.email,
+      username: user.firstName && user.lastName 
+        ? `${user.firstName} ${user.lastName}` 
+        : user.firstName || user.phone,
+    });
   },
 
   logout: () => {
     TokenService.clearTokens();
     localStorage.removeItem(STORAGE_KEYS.USER_DATA);
     set({ user: null, isAuthenticated: false });
+    
+    // Clear user context in Sentry
+    clearSentryUser();
   },
 
   updateUser: (user) => {
     localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
     set({ user });
+    
+    // Update user context in Sentry
+    setSentryUser({
+      id: user._id,
+      email: user.email,
+      username: user.firstName && user.lastName 
+        ? `${user.firstName} ${user.lastName}` 
+        : user.firstName || user.phone,
+    });
   },
 
   hasRole: (roles) => {
@@ -81,6 +103,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));
         set({ user: updatedUser });
+        
+        // Update user context in Sentry
+        setSentryUser({
+          id: updatedUser._id,
+          email: updatedUser.email,
+          username: updatedUser.firstName && updatedUser.lastName 
+            ? `${updatedUser.firstName} ${updatedUser.lastName}` 
+            : updatedUser.firstName || updatedUser.phone,
+        });
       }
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -111,10 +142,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
           localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));
           set({ user: updatedUser, isAuthenticated: true });
+          
+          // Set user context in Sentry
+          setSentryUser({
+            id: updatedUser._id,
+            email: updatedUser.email,
+            username: updatedUser.firstName && updatedUser.lastName 
+              ? `${updatedUser.firstName} ${updatedUser.lastName}` 
+              : updatedUser.firstName || updatedUser.phone,
+          });
         } catch (profileError) {
           // If API call fails, try to use cached data if it has roles/permissions
           if (user.roles && user.roles.length > 0 && user.permissions && user.permissions.length > 0) {
             set({ user, isAuthenticated: true });
+            
+            // Set user context in Sentry with cached data
+            setSentryUser({
+              id: user._id,
+              email: user.email,
+              username: user.firstName && user.lastName 
+                ? `${user.firstName} ${user.lastName}` 
+                : user.firstName || user.phone,
+            });
           } else {
             // Cached data is incomplete, logout user
             get().logout();
@@ -122,6 +171,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       } else {
         set({ user: null, isAuthenticated: false });
+        // Clear user context in Sentry if not authenticated
+        clearSentryUser();
       }
     } catch (error) {
       // eslint-disable-next-line no-console

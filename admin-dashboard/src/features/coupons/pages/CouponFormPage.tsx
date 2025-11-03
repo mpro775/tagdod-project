@@ -21,6 +21,7 @@ import { Save, ArrowBack, Preview } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   useCreateCoupon,
   useUpdateCoupon,
@@ -33,29 +34,29 @@ import type { TFunction } from 'i18next';
 type CouponFormData = CreateCouponDto | UpdateCouponDto;
 
 const createCouponTypeOptions = (t: TFunction) => [
-  { value: 'percentage', label: t('types.percentage', { defaultValue: 'نسبة الخصم' }) },
-  { value: 'fixed_amount', label: t('types.fixed_amount', { defaultValue: 'مبلغ الخصم' }) },
-  { value: 'free_shipping', label: t('types.free_shipping', { defaultValue: 'شحن مجاني' }) },
-  { value: 'buy_x_get_y', label: t('types.buy_x_get_y', { defaultValue: 'شراء X والحصول على Y' }) },
+  { value: 'percentage', label: t('types.percentage') },
+  { value: 'fixed_amount', label: t('types.fixed_amount') },
+  { value: 'free_shipping', label: t('types.free_shipping') },
+  { value: 'buy_x_get_y', label: t('types.buy_x_get_y') },
 ];
 
 const createCouponStatusOptions = (t: TFunction) => [
-  { value: 'active', label: t('status.active', { defaultValue: 'نشط' }) },
-  { value: 'inactive', label: t('status.inactive', { defaultValue: 'غير نشط' }) },
+  { value: 'active', label: t('status.active') },
+  { value: 'inactive', label: t('status.inactive') },
 ];
 
 const createVisibilityOptions = (t: TFunction) => [
-  { value: 'public', label: t('visibility.public', { defaultValue: 'عام' }) },
-  { value: 'private', label: t('visibility.private', { defaultValue: 'خاص' }) },
-  { value: 'hidden', label: t('visibility.hidden', { defaultValue: 'مخفي' }) },
+  { value: 'public', label: t('visibility.public') },
+  { value: 'private', label: t('visibility.private') },
+  { value: 'hidden', label: t('visibility.hidden') },
 ];
 
 const createAppliesToOptions = (t: TFunction) => [
-  { value: 'all_products', label: t('appliesTo.all_products', { defaultValue: 'جميع المنتجات' }) },
-  { value: 'specific_products', label: t('appliesTo.specific_products', { defaultValue: 'منتجات محددة' }) },
-  { value: 'specific_categories', label: t('appliesTo.specific_categories', { defaultValue: 'فئات محددة' }) },
-  { value: 'specific_brands', label: t('appliesTo.specific_brands', { defaultValue: 'علامات محددة' }) },
-  { value: 'minimum_order_amount', label: t('appliesTo.minimum_order_amount', { defaultValue: 'مبلغ الطلب الأدنى' }) },
+  { value: 'all_products', label: t('appliesTo.all_products') },
+  { value: 'specific_products', label: t('appliesTo.specific_products') },
+  { value: 'specific_categories', label: t('appliesTo.specific_categories') },
+  { value: 'specific_brands', label: t('appliesTo.specific_brands') },
+  { value: 'minimum_order_amount', label: t('appliesTo.minimum_order_amount') },
 ];
 
 // Helper function to generate random coupon code
@@ -71,6 +72,7 @@ const generateCouponCode = (prefix: string = 'COUPON', length: number = 8): stri
 export const CouponFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('coupons');
+  const { isMobile } = useBreakpoint();
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
   const [showPreview, setShowPreview] = useState(false);
@@ -157,23 +159,23 @@ export const CouponFormPage: React.FC = () => {
       updateCoupon(
         { id: id!, data },
         {
-          onSuccess: () => {
-            toast.success(t('messages.updateSuccess', { defaultValue: 'تم تحديث الكوبون بنجاح' }));
-            navigate('/coupons');
-          },
-          onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || t('messages.updateError', { defaultValue: 'فشل في تحديث الكوبون' }));
-          },
+        onSuccess: () => {
+          toast.success(t('messages.updateSuccess'));
+          navigate('/coupons');
+        },
+        onError: (error: any) => {
+          toast.error(error.response?.data?.error?.message || t('messages.updateError'));
+        },
         }
       );
     } else {
       createCoupon(data as CreateCouponDto, {
         onSuccess: () => {
-          toast.success(t('messages.createSuccess', { defaultValue: 'تم إنشاء الكوبون بنجاح' }));
+          toast.success(t('messages.createSuccess'));
           navigate('/coupons');
         },
         onError: (error: any) => {
-          toast.error(error.response?.data?.error?.message || t('messages.createError', { defaultValue: 'فشل في إنشاء الكوبون' }));
+          toast.error(error.response?.data?.error?.message || t('messages.createError'));
         },
       });
     }
@@ -188,18 +190,26 @@ export const CouponFormPage: React.FC = () => {
   }
 
   return (
-    <Box p={3}>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+    <Box p={{ xs: 2, sm: 3 }}>
+      <Box 
+        display="flex" 
+        alignItems="center" 
+        justifyContent="space-between" 
+        mb={3}
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        gap={{ xs: 2, sm: 0 }}
+      >
         <Box display="flex" alignItems="center" gap={2}>
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate('/coupons')}
             variant="outlined"
+            size={isMobile ? 'small' : 'medium'}
           >
-            {t('buttons.back', { defaultValue: 'العودة' })}
+            {t('buttons.back')}
           </Button>
-          <Typography variant="h4" component="h1">
-            {isEditing ? t('buttons.edit', { defaultValue: 'تعديل الكوبون' }) : t('buttons.create', { defaultValue: 'إنشاء كوبون جديد' })}
+          <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+            {isEditing ? t('buttons.edit') : t('buttons.create')}
           </Typography>
         </Box>
         <Button
@@ -207,18 +217,20 @@ export const CouponFormPage: React.FC = () => {
           onClick={handlePreviewToggle}
           variant="outlined"
           color="info"
+          fullWidth={isMobile}
+          size={isMobile ? 'small' : 'medium'}
         >
-          {showPreview ? t('buttons.hidePreview', { defaultValue: 'إخفاء المعاينة' }) : t('buttons.preview', { defaultValue: 'معاينة الكوبون' })}
+          {showPreview ? t('buttons.hidePreview') : t('buttons.preview')}
         </Button>
       </Box>
 
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {/* Basic Information */}
             <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom>
-                {t('form.basicInformation', { defaultValue: 'المعلومات الأساسية' })}
+              <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                {t('form.basicInformation')}
               </Typography>
             </Grid>
 
@@ -229,9 +241,11 @@ export const CouponFormPage: React.FC = () => {
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={t('form.code', { defaultValue: 'كود الكوبون' })}
+                    label={t('form.code')}
                     error={!!error}
                     helperText={error?.message}
+                    fullWidth
+                    size={isMobile ? 'small' : 'medium'}
                   />
                 )}
               />
@@ -244,9 +258,11 @@ export const CouponFormPage: React.FC = () => {
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={t('form.name', { defaultValue: 'اسم الكوبون' })}
+                    label={t('form.name')}
                     error={!!error}
                     helperText={error?.message}
+                    fullWidth
+                    size={isMobile ? 'small' : 'medium'}
                   />
                 )}
               />
@@ -259,11 +275,13 @@ export const CouponFormPage: React.FC = () => {
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={t('form.description', { defaultValue: 'وصف الكوبون' })}
+                    label={t('form.description')}
                     multiline
                     rows={3}
                     error={!!error}
                     helperText={error?.message}
+                    fullWidth
+                    size={isMobile ? 'small' : 'medium'}
                   />
                 )}
               />
@@ -273,11 +291,11 @@ export const CouponFormPage: React.FC = () => {
               <Controller
                 name="type"
                 control={control}
-                rules={{ required: t('validation.typeRequired', { defaultValue: 'نوع الكوبون مطلوب' })     }}
+                rules={{ required: t('validation.typeRequired') }}
                 render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error}>
-                    <InputLabel>{t('form.type', { defaultValue: 'نوع الكوبون' })}</InputLabel>
-                    <Select {...field} label={t('form.type', { defaultValue: 'نوع الكوبون' })}>
+                  <FormControl fullWidth error={!!error} size={isMobile ? 'small' : 'medium'}>
+                    <InputLabel>{t('form.type')}</InputLabel>
+                    <Select {...field} label={t('form.type')}>
                       {couponTypeOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
@@ -295,9 +313,9 @@ export const CouponFormPage: React.FC = () => {
                 name="status"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error}>
-                    <InputLabel>{t('form.status', { defaultValue: 'الحالة' })}</InputLabel>
-                    <Select {...field} label={t('form.status', { defaultValue: 'الحالة' })}>
+                  <FormControl fullWidth error={!!error} size={isMobile ? 'small' : 'medium'}>
+                    <InputLabel>{t('form.status')}</InputLabel>
+                    <Select {...field} label={t('form.status')}>
                       {couponStatusOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
@@ -315,9 +333,9 @@ export const CouponFormPage: React.FC = () => {
                 name="visibility"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error}>
-                    <InputLabel>{t('form.visibility', { defaultValue: 'الظهور' })}</InputLabel>
-                    <Select {...field} label={t('form.visibility', { defaultValue: 'الظهور' })}>
+                  <FormControl fullWidth error={!!error} size={isMobile ? 'small' : 'medium'}>
+                    <InputLabel>{t('form.visibility')}</InputLabel>
+                    <Select {...field} label={t('form.visibility')}>
                       {visibilityOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
@@ -333,8 +351,8 @@ export const CouponFormPage: React.FC = () => {
             {/* Discount Configuration */}
             {(couponType === 'percentage' || couponType === 'fixed_amount') && (
               <Grid size={{ xs: 12 }}>
-                <Typography variant="h6" gutterBottom>
-                  {t('form.discountSettings', { defaultValue: 'إعدادات الخصم' })}
+                <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  {t('form.discountSettings')}
                 </Typography>
               </Grid>
             )}
@@ -345,17 +363,19 @@ export const CouponFormPage: React.FC = () => {
                   name="discountValue"
                   control={control}
                   rules={{
-                    required: t('validation.discountValueRequired', { defaultValue: 'نسبة الخصم مطلوبة' }),
-                    min: { value: 0, message: t('validation.discountValueMin', { defaultValue: 'يجب أن تكون النسبة أكبر من أو تساوي 0' }) },
-                    max: { value: 100, message: t('validation.discountValueMax', { defaultValue: 'يجب أن تكون النسبة أقل من أو تساوي 100' }) },
+                    required: t('validation.discountValueRequired'),
+                    min: { value: 0, message: t('validation.discountValueMin') },
+                    max: { value: 100, message: t('validation.discountValueMax') },
                   }}
                   render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
-                      label={t('form.discountValue', { defaultValue: 'نسبة الخصم (%)' })}
+                      label={t('form.discountValue')}
                       type="number"
                       error={!!error}
                       helperText={error?.message}
+                      fullWidth
+                      size={isMobile ? 'small' : 'medium'}
                     />
                   )}
                 />
@@ -368,16 +388,18 @@ export const CouponFormPage: React.FC = () => {
                   name="discountValue"
                   control={control}
                   rules={{
-                    required: t('validation.discountValueRequired', { defaultValue: 'مبلغ الخصم مطلوب' }) ,
-                    min: { value: 0, message: t('validation.discountValueMin', { defaultValue: 'يجب أن يكون المبلغ أكبر من أو يساوي 0' }) },
+                    required: t('validation.discountValueRequired'),
+                    min: { value: 0, message: t('validation.discountValueMin') },
                   }}
                   render={({ field, fieldState: { error } }) => (
                     <TextField
                       {...field}
-                      label={t('form.discountValue', { defaultValue: 'مبلغ الخصم' })}
+                      label={t('form.discountValue')}
                       type="number"
                       error={!!error}
                       helperText={error?.message}
+                      fullWidth
+                      size={isMobile ? 'small' : 'medium'}
                     />
                   )}
                 />
@@ -391,15 +413,17 @@ export const CouponFormPage: React.FC = () => {
                     name="minimumOrderAmount"
                     control={control}
                     rules={{
-                      min: { value: 0, message: t('validation.minimumOrderAmountMin', { defaultValue: 'يجب أن يكون المبلغ أكبر من أو يساوي 0' }) },
+                      min: { value: 0, message: t('validation.minimumOrderAmountMin') },
                     }}
                     render={({ field, fieldState: { error } }) => (
                       <TextField
                         {...field}
-                        label={t('form.minimumOrderAmount', { defaultValue: 'الحد الأدنى للطلب' })}
+                        label={t('form.minimumOrderAmount')}
                         type="number"
                         error={!!error}
                         helperText={error?.message}
+                        fullWidth
+                        size={isMobile ? 'small' : 'medium'}
                       />
                     )}
                   />
@@ -411,15 +435,17 @@ export const CouponFormPage: React.FC = () => {
                       name="maximumDiscountAmount"
                       control={control}
                       rules={{
-                        min: { value: 0, message: t('validation.maximumDiscountAmountMin', { defaultValue: 'يجب أن يكون المبلغ أكبر من أو يساوي 0' }) },
+                        min: { value: 0, message: t('validation.maximumDiscountAmountMin') },
                       }}
                       render={({ field, fieldState: { error } }) => (
                         <TextField
                           {...field}
-                          label={t('form.maximumDiscountAmount', { defaultValue: 'الحد الأقصى للخصم' })}
+                          label={t('form.maximumDiscountAmount')}
                           type="number"
                           error={!!error}
                           helperText={error?.message}
+                          fullWidth
+                          size={isMobile ? 'small' : 'medium'}
                         />
                       )}
                     />
@@ -432,8 +458,8 @@ export const CouponFormPage: React.FC = () => {
             {couponType === 'buy_x_get_y' && (
               <>
               <Grid size={{ xs: 12 }}>
-                <Typography variant="h6" gutterBottom>
-                  {t('form.buyXGetYSettings', { defaultValue: 'إعدادات الشراء X والحصول على Y' })}
+                <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  {t('form.buyXGetYSettings')}
                 </Typography>
               </Grid>
 
@@ -442,16 +468,18 @@ export const CouponFormPage: React.FC = () => {
                     name="buyXQuantity"
                     control={control}
                     rules={{
-                      required: t('validation.buyXQuantityRequired', { defaultValue: 'كمية الشراء مطلوبة' }),
+                      required: t('validation.buyXQuantityRequired'),
                       min: { value: 1, message: t('validation.buyXQuantityMin') },
                     }}
                     render={({ field, fieldState: { error } }) => (
                       <TextField
                         {...field}
-                        label={t('form.buyXQuantity', { defaultValue: 'كمية الشراء' }   )}
+                        label={t('form.buyXQuantity')}
                         type="number"
                         error={!!error}
                         helperText={error?.message}
+                        fullWidth
+                        size={isMobile ? 'small' : 'medium'}
                       />
                     )}
                   />
@@ -462,16 +490,18 @@ export const CouponFormPage: React.FC = () => {
                     name="getYQuantity"
                     control={control}
                     rules={{
-                      required: t('validation.getYQuantityRequired', { defaultValue: 'كمية الهدية مطلوبة' })    ,
-                      min: { value: 1, message: t('validation.getYQuantityMin', { defaultValue: 'يجب أن تكون الكمية أكبر من 0' }) },
+                      required: t('validation.getYQuantityRequired'),
+                      min: { value: 1, message: t('validation.getYQuantityMin') },
                     }}
                     render={({ field, fieldState: { error } }) => (
                       <TextField
                         {...field}
-                        label={t('form.getYQuantity', { defaultValue: 'كمية الهدية' })}
+                        label={t('form.getYQuantity')}
                         type="number"
                         error={!!error}
                         helperText={error?.message}
+                        fullWidth
+                        size={isMobile ? 'small' : 'medium'}
                       />
                     )}
                   />
@@ -481,8 +511,8 @@ export const CouponFormPage: React.FC = () => {
 
             {/* Usage Limits */}
             <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom>
-                {t('form.usageLimits', { defaultValue: 'حدود الاستخدام' })}
+              <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                {t('form.usageLimits')}
               </Typography>
             </Grid>
 
@@ -491,15 +521,17 @@ export const CouponFormPage: React.FC = () => {
                 name="usageLimit"
                 control={control}
                 rules={{
-                  min: { value: 0, message: t('validation.usageLimitMin', { defaultValue: 'يجب أن يكون العدد أكبر من أو يساوي 0' }) },
+                  min: { value: 0, message: t('validation.usageLimitMin') },
                 }}
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={t('form.usageLimit', { defaultValue: 'الحد الأقصى للاستخدام' })}
+                    label={t('form.usageLimit')}
                     type="number"
                     error={!!error}
                     helperText={error?.message}
+                    fullWidth
+                    size={isMobile ? 'small' : 'medium'}
                   />
                 )}
               />
@@ -510,15 +542,17 @@ export const CouponFormPage: React.FC = () => {
                 name="usageLimitPerUser"
                 control={control}
                 rules={{
-                  min: { value: 0, message: t('validation.usageLimitPerUserMin', { defaultValue: 'يجب أن يكون العدد أكبر من أو يساوي 0' }) },
+                  min: { value: 0, message: t('validation.usageLimitPerUserMin') },
                 }}
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={t('form.usageLimitPerUser', { defaultValue: 'الحد الأقصى لكل مستخدم' })}
+                    label={t('form.usageLimitPerUser')}
                     type="number"
                     error={!!error}
                     helperText={error?.message}
+                    fullWidth
+                    size={isMobile ? 'small' : 'medium'}
                   />
                 )}
               />
@@ -526,8 +560,8 @@ export const CouponFormPage: React.FC = () => {
 
             {/* Validity Period */}
             <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom>
-                {t('form.validityPeriod', { defaultValue: 'فترة الصلاحية' })}
+              <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                {t('form.validityPeriod')}
               </Typography>
             </Grid>
 
@@ -535,15 +569,17 @@ export const CouponFormPage: React.FC = () => {
               <Controller
                 name="validFrom"
                 control={control}
-                rules={{ required: t('validation.validFromRequired', { defaultValue: 'تاريخ البداية مطلوب' }) }}
+                rules={{ required: t('validation.validFromRequired') }}
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={t('form.validFrom', { defaultValue: 'تاريخ البداية' })}
+                    label={t('form.validFrom')}
                     type="date"
                     error={!!error}
                     helperText={error?.message}
                     InputLabelProps={{ shrink: true }}
+                    fullWidth
+                    size={isMobile ? 'small' : 'medium'}
                   />
                 )}
               />
@@ -553,15 +589,17 @@ export const CouponFormPage: React.FC = () => {
               <Controller
                 name="validUntil"
                 control={control}
-                rules={{ required: t('validation.validUntilRequired', { defaultValue: 'تاريخ النهاية مطلوب' }) }}
+                rules={{ required: t('validation.validUntilRequired') }}
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                        label={t('form.validUntil', { defaultValue: 'تاريخ النهاية' })}
+                    label={t('form.validUntil')}
                     type="date"
                     error={!!error}
                     helperText={error?.message}
                     InputLabelProps={{ shrink: true }}
+                    fullWidth
+                    size={isMobile ? 'small' : 'medium'}
                   />
                 )}
               />
@@ -569,8 +607,8 @@ export const CouponFormPage: React.FC = () => {
 
             {/* Applicability */}
             <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom>
-                {t('form.applicability', { defaultValue: 'تطبيق الكوبون' })}
+              <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                {t('form.applicability')}
               </Typography>
             </Grid>
 
@@ -579,9 +617,9 @@ export const CouponFormPage: React.FC = () => {
                 name="appliesTo"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error}>
-                    <InputLabel>{t('form.appliesTo', { defaultValue: 'ينطبق على' })}</InputLabel>
-                    <Select {...field} label={t('form.appliesTo', { defaultValue: 'ينطبق على' })}>
+                  <FormControl fullWidth error={!!error} size={isMobile ? 'small' : 'medium'}>
+                    <InputLabel>{t('form.appliesTo')}</InputLabel>
+                    <Select {...field} label={t('form.appliesTo')}>
                       {appliesToOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
@@ -596,21 +634,25 @@ export const CouponFormPage: React.FC = () => {
 
             {/* Submit Button */}
             <Grid size={{ xs: 12 }}>
-              <Box display="flex" gap={2} justifyContent="flex-end">
+              <Box display="flex" gap={2} justifyContent="flex-end" flexDirection={{ xs: 'column', sm: 'row' }}>
                 <Button
                   variant="outlined"
                   onClick={() => navigate('/coupons')}
                   disabled={creating || updating}
+                  fullWidth={isMobile}
+                  size={isMobile ? 'medium' : 'large'}
                 >
-                  {t('buttons.cancel', { defaultValue: 'إلغاء' })}
+                  {t('buttons.cancel')}
                 </Button>
                 <Button
                   type="submit"
                   variant="contained"
                   startIcon={creating || updating ? <CircularProgress size={20} /> : <Save />}
                   disabled={creating || updating}
+                  fullWidth={isMobile}
+                  size={isMobile ? 'medium' : 'large'}
                 >
-                  {creating || updating ? t('buttons.saving', { defaultValue: 'جاري الحفظ...' }) : t('buttons.save', { defaultValue: 'حفظ' })}
+                  {creating || updating ? t('buttons.saving') : t('buttons.save')}
                 </Button>
               </Box>
             </Grid>
@@ -620,16 +662,16 @@ export const CouponFormPage: React.FC = () => {
 
       {/* Coupon Preview */}
       {showPreview && (
-        <Paper sx={{ p: 3, mt: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            {t('form.preview', { defaultValue: 'معاينة الكوبون' })}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+            {t('form.preview')}
           </Typography>
           <Card variant="outlined">
             <CardContent>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    {t('form.code', { defaultValue: 'كود الكوبون' })}
+                    {t('form.code')}
                   </Typography>
                   <Typography variant="h6" sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
                     {watch('code')}
@@ -637,19 +679,19 @@ export const CouponFormPage: React.FC = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    {t('form.name', { defaultValue: 'اسم الكوبون' })}
+                    {t('form.name')}
                   </Typography>
-                  <Typography variant="body1">{watch('name') || t('form.undefined', { defaultValue: 'غير محدد' })}</Typography>
+                  <Typography variant="body1">{watch('name') || t('form.undefined')}</Typography>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    {t('form.description', { defaultValue: 'الوصف' })}
+                    {t('form.description')}
                   </Typography>
                   <Typography variant="body2">{watch('description') || 'لا يوجد وصف'}</Typography>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    {t('form.type', { defaultValue: 'النوع' })}
+                    {t('form.type')}
                   </Typography>
                   <Chip
                     label={couponTypeOptions.find((opt) => opt.value === watch('type'))?.label}
@@ -659,7 +701,7 @@ export const CouponFormPage: React.FC = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    {t('form.status', { defaultValue: 'الحالة' })}
+                    {t('form.status')}
                   </Typography>
                   <Chip
                     label={couponStatusOptions.find((opt) => opt.value === watch('status'))?.label}
@@ -669,7 +711,7 @@ export const CouponFormPage: React.FC = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    {t('form.visibility', { defaultValue: 'الرؤية' })}    
+                    {t('form.visibility')}
                   </Typography>
                   <Chip
                     label={
@@ -682,7 +724,7 @@ export const CouponFormPage: React.FC = () => {
                 {watch('type') === 'percentage' && (
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary">
-                      {t('form.discountValue', { defaultValue: 'نسبة الخصم' })}
+                      {t('form.discountValue')}
                     </Typography>
                     <Typography variant="h6" color="primary">
                       {watch('discountValue')}%
@@ -692,7 +734,7 @@ export const CouponFormPage: React.FC = () => {
                 {watch('type') === 'fixed_amount' && (
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="subtitle2" color="text.secondary">
-                      {t('form.discountValue', { defaultValue: 'مبلغ الخصم' })}
+                      {t('form.discountValue')}
                     </Typography>
                     <Typography variant="h6" color="primary">
                       ${watch('discountValue')}
@@ -701,12 +743,12 @@ export const CouponFormPage: React.FC = () => {
                 )}
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
-                    {t('form.validityPeriod', { defaultValue: 'فترة الصلاحية' })} 
+                    {t('form.validityPeriod')}
                   </Typography>
                   <Typography variant="body2">
                     {watch('validFrom') && watch('validUntil')
                       ? `${watch('validFrom')} - ${watch('validUntil')}`
-                      : t('form.undefined', { defaultValue: 'غير محدد' })}
+                      : t('form.undefined')}
                   </Typography>
                 </Grid>
               </Grid>

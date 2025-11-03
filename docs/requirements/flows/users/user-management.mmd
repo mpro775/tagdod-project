@@ -18,6 +18,12 @@ flowchart TD
   B7 --> B8[معلومات كاملة]
   B8 --> B9[Capabilities وصلاحيات]
 
+  %% View Deleted Accounts
+  B --> B10[GET /admin/users/deleted]
+  B10 --> B11[عرض الحسابات المحذوفة]
+  B11 --> B12[سبب الحذف + تفاصيل]
+  B12 --> B13[deletedAt, deletedBy, deletionReason]
+
   %% Create Users
   C --> C1[POST /admin/users/create-admin]
   C1 --> C2[إنشاء مدير جديد]
@@ -49,6 +55,14 @@ flowchart TD
   E1 --> E2[Soft Delete]
   E2 --> E3[deletedAt, deletedBy]
 
+  %% User Self Delete
+  E --> E8[DELETE /auth/me]
+  E8 --> E9[حذف الحساب من قبل المستخدم]
+  E9 --> E10[إدخال سبب الحذف]
+  E10 --> E11[reason: string]
+  E11 --> E12[Soft Delete مع deletionReason]
+  E12 --> E13[deletedAt, deletedBy = userId, deletionReason]
+
   E3 --> E4[POST /admin/users/:id/restore]
   E4 --> E5[إعادة التفعيل]
 
@@ -61,6 +75,31 @@ flowchart TD
   F2 --> F3[حسب الدور والحالة]
   F3 --> F4[نشاط الحسابات]
 
+  %% Verification System
+  V[نظام التحقق] --> V1[التسجيل]
+  V1 --> V2[حالة UNVERIFIED]
+  V2 --> V3[رفع الوثائق]
+  V3 --> V31[المهندس: CV + ملاحظة]
+  V3 --> V32[التاجر: صورة المحل + اسم المحل + ملاحظة]
+  V31 --> V4[POST /users/verification/submit]
+  V32 --> V4
+  V4 --> V5[حالة PENDING]
+  V5 --> V6[GET /admin/users/verification/pending]
+  V6 --> V7[مراجعة من المدير]
+  V7 --> V8[GET /admin/users/verification/:userId]
+  V8 --> V9[عرض الوثائق والملاحظات]
+  V9 --> V10[اتخاذ قرار]
+  V10 --> V11[POST /admin/users/verification/:userId/approve]
+  V10 --> V12[POST /admin/users/verification/:userId/reject]
+  V11 --> V13[حالة APPROVED]
+  V12 --> V14[حالة REJECTED]
+  V13 --> V15[إضافة الدور للمستخدم]
+  V14 --> V16[حذف الوثائق]
+
   %% End points
-  E7 --> G[نهاية - إدارة شاملة]
+  E7 --> G[نهاية - إدارة مكتملة]
+  E13 --> G
   F4 --> G
+  V15 --> G
+  V16 --> G
+  B13 --> G

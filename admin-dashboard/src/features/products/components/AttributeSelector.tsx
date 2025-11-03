@@ -12,6 +12,7 @@ import {
   ListItemText,
   FormHelperText,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useProductFormData } from '../hooks/useProductData';
 
 interface AttributeSelectorProps {
@@ -28,16 +29,36 @@ export const AttributeSelector: React.FC<AttributeSelectorProps> = ({
   error = false,
   helperText,
 }) => {
+  const { t } = useTranslation(['attributes', 'common']);
   const { attributes, isLoading } = useProductFormData();
+
+  const getAttributeTypeLabel = (type: string): string => {
+    switch (type) {
+      case 'text':
+        return t('attributes:typeLabels.text', 'نص');
+      case 'select':
+        return t('attributes:typeLabels.select', 'قائمة منسدلة');
+      case 'multiselect':
+        return t('attributes:typeLabels.multiselect', 'قائمة متعددة');
+      case 'number':
+        return t('attributes:typeLabels.number', 'رقم');
+      case 'boolean':
+        return t('attributes:typeLabels.boolean', 'نعم/لا');
+      case 'color':
+        return t('attributes:typeLabels.color', 'لون');
+      default:
+        return type;
+    }
+  };
 
   if (isLoading) {
     return (
       <Box>
         <Typography variant="subtitle2" gutterBottom>
-          السمات
+          {t('attributes:fields.name', 'السمات')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          جاري تحميل السمات...
+          {t('common:common.loading', 'جارٍ التحميل...')}
         </Typography>
       </Box>
     );
@@ -45,13 +66,13 @@ export const AttributeSelector: React.FC<AttributeSelectorProps> = ({
 
   return (
     <FormControl fullWidth error={error}>
-      <InputLabel id="attributes-label">السمات</InputLabel>
+      <InputLabel id="attributes-label">{t('attributes:fields.name', 'السمات')}</InputLabel>
       <Select
         labelId="attributes-label"
         multiple
         value={value}
         onChange={(e) => onChange(e.target.value as string[])}
-        input={<OutlinedInput label="السمات" />}
+        input={<OutlinedInput label={t('attributes:fields.name', 'السمات')} />}
         renderValue={(selected) => (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
             {selected.map((attributeId) => {
@@ -72,7 +93,7 @@ export const AttributeSelector: React.FC<AttributeSelectorProps> = ({
             <Checkbox checked={value.indexOf(attribute._id) > -1} />
             <ListItemText
               primary={`${attribute.name} (${attribute.nameEn})`}
-              secondary={`نوع: ${getAttributeTypeLabel(attribute.type)}`}
+              secondary={`${t('attributes:fields.type', 'النوع')}: ${getAttributeTypeLabel(attribute.type)}`}
             />
           </MenuItem>
         ))}
@@ -80,23 +101,4 @@ export const AttributeSelector: React.FC<AttributeSelectorProps> = ({
       {helperText && <FormHelperText>{helperText}</FormHelperText>}
     </FormControl>
   );
-};
-
-const getAttributeTypeLabel = (type: string) => {
-  switch (type) {
-    case 'text':
-      return 'نص';
-    case 'select':
-      return 'قائمة منسدلة';
-    case 'multiselect':
-      return 'قائمة متعددة';
-    case 'number':
-      return 'رقم';
-    case 'boolean':
-      return 'نعم/لا';
-    case 'color':
-      return 'لون';
-    default:
-      return type;
-  }
 };

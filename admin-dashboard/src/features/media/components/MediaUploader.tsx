@@ -23,6 +23,7 @@ import {
   CardMedia,
   CardContent,
   Skeleton,
+  useTheme,
 } from '@mui/material';
 import {
   CloudUpload,
@@ -34,6 +35,7 @@ import {
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useUploadMedia } from '../hooks/useMedia';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { MediaCategory } from '../types/media.types';
 
 interface MediaUploaderProps {
@@ -51,6 +53,9 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   defaultCategory = MediaCategory.OTHER
 }) => {
   const { t } = useTranslation('media');
+  const theme = useTheme();
+  const { isMobile } = useBreakpoint();
+  
   const [activeStep, setActiveStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState('');
@@ -64,8 +69,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const { mutate: upload, isPending } = useUploadMedia();
-
-
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -93,7 +96,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     if (file.type.startsWith('video/')) return <VideoFile />;
     return <Description />;
   };
-
 
   const handleAddTag = useCallback(() => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -158,7 +160,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         },
       }
     );
-  }, [file, name, category, description, tags, isPublic, upload, onSuccess, handleClose]);
+  }, [file, name, category, description, tags, isPublic, upload, onSuccess, handleClose, t]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -169,33 +171,54 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="lg" 
+      fullWidth
+      fullScreen={isMobile}
+    >
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <CloudUpload color="primary" />
-          <Typography variant="h6">{t('uploadNewFile')}</Typography>
+          <Typography 
+            variant="h6"
+            sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+          >
+            {t('uploadNewFile')}
+          </Typography>
         </Box>
       </DialogTitle>
       
-      <DialogContent sx={{ p: 0 }}>
-        <Box sx={{ p: 3 }}>
-          <Stepper activeStep={activeStep} orientation="vertical">
+      <DialogContent sx={{ p: { xs: 1, sm: 3 } }}>
+        <Box>
+          <Stepper 
+            activeStep={activeStep} 
+            orientation={isMobile ? 'vertical' : 'horizontal'}
+            sx={{ mb: 3 }}
+          >
             {/* Step 1: File Selection */}
             <Step>
               <StepLabel>{t('uploader.selectFile')}</StepLabel>
               <StepContent>
                 <Paper
                   sx={{
-                    p: 3,
+                    p: { xs: 2, sm: 3 },
                     border: '2px dashed',
-                    borderColor: file ? 'success.main' : 'grey.300',
-                    bgcolor: file ? 'success.light' : 'grey.50',
+                    borderColor: file ? 'success.main' : 'divider',
+                    bgcolor: file 
+                      ? theme.palette.mode === 'dark' 
+                        ? 'success.dark' 
+                        : 'success.light' 
+                      : 'background.paper',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       borderColor: 'primary.main',
-                      bgcolor: 'primary.light',
+                      bgcolor: theme.palette.mode === 'dark' 
+                        ? 'action.hover' 
+                        : 'primary.light',
                     },
                   }}
                   onClick={() => document.getElementById('file-input')?.click()}
@@ -210,11 +233,15 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                   
                   {file ? (
                     <Box>
-                      <CheckCircle color="success" sx={{ fontSize: 48, mb: 2 }} />
-                      <Typography variant="h6" gutterBottom>
+                      <CheckCircle color="success" sx={{ fontSize: { xs: 40, sm: 48 }, mb: 2 }} />
+                      <Typography 
+                        variant="h6" 
+                        gutterBottom
+                        sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                      >
                         {t('uploader.fileSelected')}
                       </Typography>
-                      <Card sx={{ maxWidth: 300, mx: 'auto' }}>
+                      <Card sx={{ maxWidth: { xs: 200, sm: 300 }, mx: 'auto' }}>
                         {preview ? (
                           <CardMedia
                             component="img"
@@ -229,10 +256,19 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                           </Box>
                         )}
                         <CardContent>
-                          <Typography variant="body2" fontWeight="medium" noWrap>
+                          <Typography 
+                            variant="body2" 
+                            fontWeight="medium" 
+                            noWrap
+                            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                          >
                             {file.name}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography 
+                            variant="caption" 
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                          >
                             {formatFileSize(file.size)}
                           </Typography>
                         </CardContent>
@@ -240,11 +276,19 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     </Box>
                   ) : (
                     <Box>
-                      <CloudUpload sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
-                      <Typography variant="h6" gutterBottom>
+                      <CloudUpload sx={{ fontSize: { xs: 40, sm: 48 }, color: 'text.disabled', mb: 2 }} />
+                      <Typography 
+                        variant="h6" 
+                        gutterBottom
+                        sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                      >
                         {t('uploader.selectFile')}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
+                      >
                         {t('uploader.dragDrop')}
                       </Typography>
                     </Box>
@@ -253,7 +297,12 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 
                 {file && (
                   <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button variant="contained" onClick={handleNext}>
+                    <Button 
+                      variant="contained" 
+                      onClick={handleNext}
+                      fullWidth={isMobile}
+                      size={isMobile ? 'medium' : 'small'}
+                    >
                       {t('next')}
                     </Button>
                   </Box>
@@ -273,6 +322,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       helperText={t('uploader.fileName')}
+                      size={isMobile ? 'small' : 'medium'}
                     />
                   </Grid>
 
@@ -283,6 +333,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         value={category}
                         label={t('uploader.category')}
                         onChange={(e) => setCategory(e.target.value as MediaCategory)}
+                        size={isMobile ? 'small' : 'medium'}
                       >
                         <MenuItem value={MediaCategory.PRODUCT}>{t('categories.product')}</MenuItem>
                         <MenuItem value={MediaCategory.CATEGORY}>{t('categories.category')}</MenuItem>
@@ -299,6 +350,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         <Switch
                           checked={isPublic}
                           onChange={(e) => setIsPublic(e.target.checked)}
+                          size={isMobile ? 'small' : 'medium'}
                         />
                       }
                       label={t('uploader.publicFile')}
@@ -314,6 +366,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder={t('uploader.description')}
+                      size={isMobile ? 'small' : 'medium'}
                     />
                   </Grid>
 
@@ -331,6 +384,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                       }}
                       placeholder={t('uploader.addTag')}
                       helperText={t('uploader.tags')}
+                      size={isMobile ? 'small' : 'medium'}
                     />
                     {tags.length > 0 && (
                       <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
@@ -349,10 +403,22 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                   </Grid>
                 </Grid>
 
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-                  <Button onClick={handleBack}>السابق</Button>
-                  <Button variant="contained" onClick={handleNext} disabled={!name}>
-                    التالي
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                  <Button 
+                    onClick={handleBack}
+                    fullWidth={isMobile}
+                    size={isMobile ? 'medium' : 'small'}
+                  >
+                    {t('form.back')}
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    onClick={handleNext} 
+                    disabled={!name}
+                    fullWidth={isMobile}
+                    size={isMobile ? 'medium' : 'small'}
+                  >
+                    {t('form.next')}
                   </Button>
                 </Box>
               </StepContent>
@@ -360,17 +426,21 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
             {/* Step 3: Review and Upload */}
             <Step>
-              <StepLabel>مراجعة الرفع</StepLabel>
+              <StepLabel>{t('review')}</StepLabel>
               <StepContent>
-                <Paper sx={{ p: 2, mb: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    مراجعة البيانات
+                <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
+                  <Typography 
+                    variant="h6" 
+                    gutterBottom
+                    sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                  >
+                    {t('dataReview')}
                   </Typography>
                   
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Typography variant="body2" color="text.secondary">
-                        اسم الملف:
+                        {t('fileName')}:
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
                         {name}
@@ -379,7 +449,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Typography variant="body2" color="text.secondary">
-                        الفئة:
+                        {t('category')}:
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
                         {category}
@@ -388,10 +458,10 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Typography variant="body2" color="text.secondary">
-                        الحالة:
+                        {t('status')}:
                       </Typography>
                       <Chip 
-                        label={isPublic ? 'عام' : 'خاص'} 
+                        label={isPublic ? t('public') : t('private')} 
                         color={isPublic ? 'success' : 'warning'} 
                         size="small" 
                       />
@@ -399,17 +469,17 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Typography variant="body2" color="text.secondary">
-                        الحجم:
+                        {t('size')}:
                       </Typography>
                       <Typography variant="body1" fontWeight="medium">
-                        {file ? formatFileSize(file.size) : 'غير محدد'}
+                        {file ? formatFileSize(file.size) : '-'}
                       </Typography>
                     </Grid>
                     
                     {description && (
                       <Grid size={{ xs: 12 }}>
                         <Typography variant="body2" color="text.secondary">
-                          الوصف:
+                          {t('description')}:
                         </Typography>
                         <Typography variant="body1">
                           {description}
@@ -420,7 +490,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     {tags.length > 0 && (
                       <Grid size={{ xs: 12 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          الوسوم:
+                          {t('tags')}:
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                           {tags.map((tag) => (
@@ -436,7 +506,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 {isPending && (
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" gutterBottom>
-                      جاري الرفع...
+                      {t('uploading')}
                     </Typography>
                     <LinearProgress variant="determinate" value={uploadProgress} />
                   </Box>
@@ -449,17 +519,24 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                   </Alert>
                 )}
 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Button onClick={handleBack} disabled={isPending}>
-                    السابق
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                  <Button 
+                    onClick={handleBack} 
+                    disabled={isPending}
+                    fullWidth={isMobile}
+                    size={isMobile ? 'medium' : 'small'}
+                  >
+                    {t('form.back')}
                   </Button>
                   <Button 
                     variant="contained" 
                     onClick={handleUpload} 
                     disabled={!file || !name || isPending}
                     startIcon={isPending ? <Skeleton width={20} height={20} /> : <CloudUpload />}
+                    fullWidth={isMobile}
+                    size={isMobile ? 'medium' : 'small'}
                   >
-                    {isPending ? 'جاري الرفع...' : 'رفع الملف'}
+                    {isPending ? t('uploading') : t('uploadFile')}
                   </Button>
                 </Box>
               </StepContent>
@@ -468,9 +545,14 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         </Box>
       </DialogContent>
       
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={handleClose} disabled={isPending}>
-          إلغاء
+      <DialogActions sx={{ p: { xs: 1, sm: 2 } }}>
+        <Button 
+          onClick={handleClose} 
+          disabled={isPending}
+          fullWidth={isMobile}
+          size={isMobile ? 'medium' : 'small'}
+        >
+          {t('form.cancel')}
         </Button>
       </DialogActions>
     </Dialog>

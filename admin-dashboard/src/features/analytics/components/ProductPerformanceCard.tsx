@@ -16,7 +16,11 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Stack,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { getCardPadding, getCardSpacing, getChartHeight, getChartMargin, getChartLabelFontSize, getChartTooltipFontSize, getYAxisWidth, getXAxisHeight } from '../utils/responsive';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -49,6 +53,16 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
   initialPeriod = PeriodType.MONTHLY,
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation('analytics');
+  const breakpoint = useBreakpoint();
+  const cardPadding = getCardPadding(breakpoint);
+  const cardSpacing = getCardSpacing(breakpoint);
+  const chartHeight = getChartHeight(breakpoint, 200);
+  const chartMargin = getChartMargin(breakpoint);
+  const labelFontSize = getChartLabelFontSize(breakpoint);
+  const tooltipFontSize = getChartTooltipFontSize(breakpoint);
+  const yAxisWidth = getYAxisWidth(breakpoint);
+  const xAxisHeight = getXAxisHeight(breakpoint, true);
   const [period, setPeriod] = useState<PeriodType>(initialPeriod);
 
   const { data, isLoading, error, refetch } = useProductPerformance({ period });
@@ -63,12 +77,19 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
 
   if (error) {
     return (
-      <Alert severity="error" action={
-        <IconButton size="small" onClick={handleRefresh}>
-          <RefreshIcon />
-        </IconButton>
-      }>
-        حدث خطأ في تحميل بيانات أداء المنتجات. الرجاء المحاولة مرة أخرى.
+      <Alert 
+        severity="error" 
+        action={
+          <IconButton 
+            size={breakpoint.isXs ? 'medium' : 'small'} 
+            onClick={handleRefresh}
+          >
+            <RefreshIcon fontSize={breakpoint.isXs ? 'small' : 'medium'} />
+          </IconButton>
+        }
+        sx={{ m: breakpoint.isXs ? 1 : 2 }}
+      >
+        {t('productPerformance.loadError')}
       </Alert>
     );
   }
@@ -76,14 +97,18 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
   if (isLoading) {
     return (
       <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            أداء المنتجات
+        <CardContent sx={{ p: cardPadding }}>
+          <Typography 
+            variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+            gutterBottom
+            sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+          >
+            {t('productPerformance.title')}
           </Typography>
-          <Grid container spacing={2}>
+          <Grid container spacing={cardSpacing}>
             {[...Array(4)].map((_, index) => (
               <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-                <Skeleton variant="rectangular" height={100} />
+                <Skeleton variant="rectangular" height={breakpoint.isXs ? 90 : 100} />
               </Grid>
             ))}
           </Grid>
@@ -131,65 +156,117 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
   const formatGrowth = (growth?: number) => {
     if (!growth && growth !== 0) return '0%';
     const sign = growth >= 0 ? '+' : '';
-    return `${sign}${growth.toFixed(1)}% من الفترة السابقة`;
+    return `${sign}${growth.toFixed(1)}% ${t('productPerformance.fromPreviousPeriod')}`;
   };
 
   return (
     <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h5" component="h2">
-              أداء المنتجات
+      <CardContent sx={{ p: breakpoint.isXs ? 1.5 : 2 }}>
+        <Stack
+          direction={breakpoint.isXs ? 'column' : 'row'}
+          spacing={cardSpacing}
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: breakpoint.isXs ? 'flex-start' : 'center',
+            mb: breakpoint.isXs ? 2 : 3,
+            flexWrap: 'wrap',
+            gap: breakpoint.isXs ? 1.5 : 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+            <Typography 
+              variant={breakpoint.isXs ? 'h6' : 'h5'} 
+              component="h2"
+              sx={{ fontSize: breakpoint.isXs ? '1.25rem' : undefined }}
+            >
+              {t('productPerformance.title')}
             </Typography>
-            <Chip icon={<AssessmentIcon />} label="تحليل شامل" color="primary" variant="outlined" />
+            <Chip 
+              icon={<AssessmentIcon />} 
+              label={t('productPerformance.comprehensiveAnalysis')} 
+              color="primary" 
+              variant="outlined"
+              size={breakpoint.isXs ? 'small' : 'medium'}
+              sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+            />
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>الفترة الزمنية</InputLabel>
+          <Stack 
+            direction={breakpoint.isXs ? 'column' : 'row'} 
+            spacing={1.5} 
+            sx={{ alignItems: 'center', width: breakpoint.isXs ? '100%' : 'auto' }}
+          >
+            <FormControl 
+              size={breakpoint.isXs ? 'medium' : 'small'} 
+              sx={{ minWidth: breakpoint.isXs ? '100%' : 150 }}
+              fullWidth={breakpoint.isXs}
+            >
+              <InputLabel>{t('productPerformance.timePeriod')}</InputLabel>
               <Select
                 value={period}
-                label="الفترة الزمنية"
+                label={t('productPerformance.timePeriod')}
                 onChange={(e) => handlePeriodChange(e.target.value as PeriodType)}
               >
-                <MenuItem value={PeriodType.DAILY}>يومي</MenuItem>
-                <MenuItem value={PeriodType.WEEKLY}>أسبوعي</MenuItem>
-                <MenuItem value={PeriodType.MONTHLY}>شهري</MenuItem>
-                <MenuItem value={PeriodType.QUARTERLY}>ربع سنوي</MenuItem>
-                <MenuItem value={PeriodType.YEARLY}>سنوي</MenuItem>
+                <MenuItem value={PeriodType.DAILY}>{t('dashboard.periodTypes.DAILY')}</MenuItem>
+                <MenuItem value={PeriodType.WEEKLY}>{t('dashboard.periodTypes.WEEKLY')}</MenuItem>
+                <MenuItem value={PeriodType.MONTHLY}>{t('dashboard.periodTypes.MONTHLY')}</MenuItem>
+                <MenuItem value={PeriodType.QUARTERLY}>{t('dashboard.periodTypes.QUARTERLY')}</MenuItem>
+                <MenuItem value={PeriodType.YEARLY}>{t('dashboard.periodTypes.YEARLY')}</MenuItem>
               </Select>
             </FormControl>
-            <MuiTooltip title="تحديث البيانات">
-              <IconButton onClick={handleRefresh} size="small">
-                <RefreshIcon />
+            <MuiTooltip title={t('productPerformance.refresh')}>
+              <IconButton 
+                onClick={handleRefresh} 
+                size={breakpoint.isXs ? 'medium' : 'small'}
+              >
+                <RefreshIcon fontSize={breakpoint.isXs ? 'small' : 'medium'} />
               </IconButton>
             </MuiTooltip>
-          </Box>
-        </Box>
+          </Stack>
+        </Stack>
 
         {/* Key Metrics */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={cardSpacing} sx={{ mb: breakpoint.isXs ? 2 : 4 }}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
-                p: 2,
+                p: cardPadding,
                 borderRadius: 2,
                 background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}05)`,
                 border: `1px solid ${theme.palette.primary.main}20`,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <ShoppingCartIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                <Typography variant="h6" color="primary">
-                  إجمالي المنتجات
+                <ShoppingCartIcon 
+                  sx={{ 
+                    color: theme.palette.primary.main, 
+                    mr: 1,
+                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
+                  }} 
+                />
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
+                  color="primary"
+                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
+                >
+                  {t('productPerformance.totalProducts')}
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography 
+                variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
+                }}
+              >
                 {formatNumber(data?.totalProducts || 0)}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getTrendIcon(data?.totalProductsGrowth)}
-                <Typography variant="body2" color={getTrendColor(data?.totalProductsGrowth)}>
+                <Typography 
+                  variant="body2" 
+                  color={getTrendColor(data?.totalProductsGrowth)}
+                  sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+                >
                   {formatGrowth(data?.totalProductsGrowth)}
                 </Typography>
               </Box>
@@ -199,24 +276,44 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
-                p: 2,
+                p: cardPadding,
                 borderRadius: 2,
                 background: `linear-gradient(135deg, ${theme.palette.secondary.main}15, ${theme.palette.secondary.main}05)`,
                 border: `1px solid ${theme.palette.secondary.main}20`,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <TrendingUpIcon sx={{ color: theme.palette.secondary.main, mr: 1 }} />
-                <Typography variant="h6" color="secondary">
-                  إجمالي المبيعات
+                <TrendingUpIcon 
+                  sx={{ 
+                    color: theme.palette.secondary.main, 
+                    mr: 1,
+                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
+                  }} 
+                />
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
+                  color="secondary"
+                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
+                >
+                  {t('productPerformance.totalSales')}
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography 
+                variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
+                }}
+              >
                 {formatNumber(data?.totalSales || 0)}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getTrendIcon(data?.totalSalesGrowth)}
-                <Typography variant="body2" color={getTrendColor(data?.totalSalesGrowth)}>
+                <Typography 
+                  variant="body2" 
+                  color={getTrendColor(data?.totalSalesGrowth)}
+                  sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+                >
                   {formatGrowth(data?.totalSalesGrowth)}
                 </Typography>
               </Box>
@@ -226,24 +323,44 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
-                p: 2,
+                p: cardPadding,
                 borderRadius: 2,
                 background: `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}05)`,
                 border: `1px solid ${theme.palette.success.main}20`,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <StarIcon sx={{ color: theme.palette.success.main, mr: 1 }} />
-                <Typography variant="h6" color="success.main">
-                  متوسط التقييم
+                <StarIcon 
+                  sx={{ 
+                    color: theme.palette.success.main, 
+                    mr: 1,
+                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
+                  }} 
+                />
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
+                  color="success.main"
+                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
+                >
+                  {t('productPerformance.averageRating')}
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography 
+                variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
+                }}
+              >
                 {data?.averageRating?.toFixed(1) || '0.0'}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getTrendIcon(data?.averageRatingGrowth)}
-                <Typography variant="body2" color={getTrendColor(data?.averageRatingGrowth)}>
+                <Typography 
+                  variant="body2" 
+                  color={getTrendColor(data?.averageRatingGrowth)}
+                  sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+                >
                   {formatGrowth(data?.averageRatingGrowth)}
                 </Typography>
               </Box>
@@ -253,24 +370,44 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
-                p: 2,
+                p: cardPadding,
                 borderRadius: 2,
                 background: `linear-gradient(135deg, ${theme.palette.warning.main}15, ${theme.palette.warning.main}05)`,
                 border: `1px solid ${theme.palette.warning.main}20`,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <InventoryIcon sx={{ color: theme.palette.warning.main, mr: 1 }} />
-                <Typography variant="h6" color="warning.main">
-                  تنبيهات المخزون
+                <InventoryIcon 
+                  sx={{ 
+                    color: theme.palette.warning.main, 
+                    mr: 1,
+                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
+                  }} 
+                />
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
+                  color="warning.main"
+                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
+                >
+                  {t('productPerformance.inventoryAlerts')}
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography 
+                variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
+                }}
+              >
                 {data?.lowStockProducts?.length || 0}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getTrendIcon(data?.lowStockGrowth)}
-                <Typography variant="body2" color={getTrendColor(data?.lowStockGrowth)}>
+                <Typography 
+                  variant="body2" 
+                  color={getTrendColor(data?.lowStockGrowth)}
+                  sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+                >
                   {formatGrowth(data?.lowStockGrowth)}
                 </Typography>
               </Box>
@@ -279,23 +416,48 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
         </Grid>
 
         {/* Charts */}
-        <Grid container spacing={3}>
+        <Grid container spacing={cardSpacing}>
           {/* Top Products Chart */}
           <Grid size={{ xs: 12, lg: 8 }}>
-            <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                أفضل المنتجات
+            <Box 
+              sx={{ 
+                p: cardPadding, 
+                border: `1px solid ${theme.palette.divider}`, 
+                borderRadius: 2 
+              }}
+            >
+              <Typography 
+                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+                gutterBottom
+                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+              >
+                {t('productPerformance.topProducts')}
               </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data?.topProducts || []}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <BarChart 
+                  data={data?.topProducts || []}
+                  margin={chartMargin}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: labelFontSize }}
+                    angle={breakpoint.isXs ? -45 : 0}
+                    textAnchor={breakpoint.isXs ? 'end' : 'middle'}
+                    height={xAxisHeight}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: labelFontSize }}
+                    width={yAxisWidth}
+                  />
                   <Tooltip
                     formatter={(value: number, name: string) => [
                       name === 'sales' ? formatNumber(value) : formatCurrency(value),
-                      name === 'sales' ? 'المبيعات' : 'الإيرادات',
+                      name === 'sales' ? t('productPerformance.sales') : t('productPerformance.revenue') || t('charts.revenue'),
                     ]}
+                    contentStyle={{
+                      fontSize: `${tooltipFontSize}px`,
+                    }}
                   />
                   <Bar dataKey="sales" fill={theme.palette.primary.main} />
                 </BarChart>
@@ -305,11 +467,21 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
 
           {/* Category Distribution */}
           <Grid size={{ xs: 12, lg: 4 }}>
-            <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                التوزيع حسب الفئة
+            <Box 
+              sx={{ 
+                p: cardPadding, 
+                border: `1px solid ${theme.palette.divider}`, 
+                borderRadius: 2 
+              }}
+            >
+              <Typography 
+                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+                gutterBottom
+                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+              >
+                {t('productPerformance.categoryDistribution')}
               </Typography>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <PieChart>
                   <Pie
                     data={data?.byCategory || []}
@@ -317,7 +489,7 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                     cy="50%"
                     labelLine={false}
                     label={({ category, count }) => `${category}: ${count}`}
-                    outerRadius={80}
+                    outerRadius={breakpoint.isXs ? 60 : 80}
                     fill="#8884d8"
                     dataKey="count"
                   >
@@ -325,7 +497,11 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{
+                      fontSize: `${tooltipFontSize}px`,
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </Box>
@@ -333,11 +509,21 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
 
           {/* Low Stock Products */}
           <Grid size={{ xs: 12, lg: 6 }}>
-            <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                منتجات مخزون منخفض
+            <Box 
+              sx={{ 
+                p: cardPadding, 
+                border: `1px solid ${theme.palette.divider}`, 
+                borderRadius: 2 
+              }}
+            >
+              <Typography 
+                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+                gutterBottom
+                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+              >
+                {t('productPerformance.lowStockProducts')}
               </Typography>
-              <Box sx={{ maxHeight: 250, overflowY: 'auto' }}>
+              <Box sx={{ maxHeight: breakpoint.isXs ? 200 : 250, overflowY: 'auto' }}>
                 {(data?.lowStockProducts || []).map((product, index) => (
                   <Box key={index} sx={{ mb: 2 }}>
                     <Box
@@ -348,18 +534,28 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                         mb: 1,
                       }}
                     >
-                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 'bold',
+                          fontSize: breakpoint.isXs ? '0.8125rem' : undefined,
+                        }}
+                      >
                         {product.name}
                       </Typography>
-                      <Typography variant="body2" color="warning.main">
-                        {product.stock} وحدة
+                      <Typography 
+                        variant="body2" 
+                        color="warning.main"
+                        sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                      >
+                        {product.stock} {t('productPerformance.unit')}
                       </Typography>
                     </Box>
                     <LinearProgress
                       variant="determinate"
                       value={(product.stock / 100) * 100}
                       color="warning"
-                      sx={{ height: 4, borderRadius: 2 }}
+                      sx={{ height: breakpoint.isXs ? 3 : 4, borderRadius: 2 }}
                     />
                   </Box>
                 ))}
@@ -369,11 +565,21 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
 
           {/* Top Products List */}
           <Grid size={{ xs: 12, lg: 6 }}>
-            <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                قائمة أفضل المنتجات
+            <Box 
+              sx={{ 
+                p: cardPadding, 
+                border: `1px solid ${theme.palette.divider}`, 
+                borderRadius: 2 
+              }}
+            >
+              <Typography 
+                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+                gutterBottom
+                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+              >
+                {t('productPerformance.topProductsList')}
               </Typography>
-              <Box sx={{ maxHeight: 250, overflowY: 'auto' }}>
+              <Box sx={{ maxHeight: breakpoint.isXs ? 200 : 250, overflowY: 'auto' }}>
                 {(data?.topProducts || []).map((product, index) => (
                   <Box key={index} sx={{ mb: 2 }}>
                     <Box
@@ -384,10 +590,20 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                         mb: 1,
                       }}
                     >
-                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 'bold',
+                          fontSize: breakpoint.isXs ? '0.8125rem' : undefined,
+                        }}
+                      >
                         {product.name}
                       </Typography>
-                      <Typography variant="body2" color="primary">
+                      <Typography 
+                        variant="body2" 
+                        color="primary"
+                        sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                      >
                         {formatCurrency(product.revenue)}
                       </Typography>
                     </Box>
@@ -399,17 +615,25 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                         mb: 0.5,
                       }}
                     >
-                      <Typography variant="caption" color="text.secondary">
-                        المبيعات: {formatNumber(product.sales)}
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
+                      >
+                        {t('productPerformance.sales')}: {formatNumber(product.sales)}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        التقييم: {product.rating}/5
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
+                      >
+                        {t('productPerformance.rating')}: {product.rating}/5
                       </Typography>
                     </Box>
                     <LinearProgress
                       variant="determinate"
                       value={(product.sales / (data?.totalSales || 1)) * 100}
-                      sx={{ height: 4, borderRadius: 2 }}
+                      sx={{ height: breakpoint.isXs ? 3 : 4, borderRadius: 2 }}
                     />
                   </Box>
                 ))}

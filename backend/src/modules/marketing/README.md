@@ -25,7 +25,8 @@ This module provides a comprehensive solution for all marketing-related function
 ### Banners
 - **Multiple Locations**: Home, category, product pages, sidebar, footer
 - **Promotion Types**: Discount, free shipping, new arrivals, sales, seasonal
-- **Targeting**: Audience, category, and product-specific targeting
+- **Targeting**: User type, audience, category, and product-specific targeting
+- **User Type Targeting**: Display banners to specific user roles (user, engineer, merchant, admin, super_admin) or to everyone
 - **Scheduling**: Start and end dates with display duration
 - **Analytics**: View and click tracking
 - **Sorting**: Custom sort order for banner display
@@ -73,7 +74,7 @@ This module provides a comprehensive solution for all marketing-related function
 - `GET /marketing/coupons/validate` - Validate a coupon code
 
 #### Banners
-- `GET /marketing/banners` - Get active banners (optionally filtered by location)
+- `GET /marketing/banners` - Get active banners (optionally filtered by location and user type). Returns banners matching user's roles or general banners if not authenticated
 - `GET /marketing/banners/:id/view` - Track banner view
 - `GET /marketing/banners/:id/click` - Track banner click
 
@@ -170,6 +171,7 @@ This module provides a comprehensive solution for all marketing-related function
   endDate?: Date,
   displayDuration?: number,
   targetAudiences: string[],
+  targetUserTypes: string[], // 'user' | 'engineer' | 'merchant' | 'admin' | 'super_admin'
   targetCategories: string[],
   targetProducts: string[],
   viewCount: number,
@@ -232,7 +234,24 @@ POST /admin/marketing/banners
   "isActive": true,
   "sortOrder": 1,
   "startDate": "2024-06-01T00:00:00Z",
-  "endDate": "2024-08-31T23:59:59Z"
+  "endDate": "2024-08-31T23:59:59Z",
+  "targetUserTypes": []  // Empty array = visible to everyone
+}
+```
+
+### Create a banner targeting specific user types (e.g., engineers only)
+```json
+POST /admin/marketing/banners
+{
+  "title": "عرض خاص للمهندسين",
+  "description": "معدات خاصة للمهندسين",
+  "imageUrl": "https://example.com/engineers-sale.jpg",
+  "linkUrl": "/engineers-sale",
+  "location": "home_top",
+  "promotionType": "discount",
+  "isActive": true,
+  "sortOrder": 2,
+  "targetUserTypes": ["engineer"]  // Visible only to engineers
 }
 ```
 

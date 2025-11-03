@@ -20,6 +20,8 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Error as ErrorIcon,
@@ -45,6 +47,8 @@ import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 
 export function ErrorLogsPage() {
   const { t } = useTranslation('errorLogs');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [errors, setErrors] = useState<ErrorLog[]>([]);
   const [statistics, setStatistics] = useState<ErrorStatistics | null>(null);
   const [trends, setTrends] = useState<ErrorTrend | null>(null);
@@ -302,99 +306,108 @@ export function ErrorLogsPage() {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            {t('pageTitle')}
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {t('pageSubtitle')}
-          </Typography>
-        </Box>
-        
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => handleExport('csv')}
-            startIcon={<Download />}
-          >
-            {t('exportCsv')}
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => handleExport('json')}
-            startIcon={<Download />}
-          >
-            {t('exportJson')}
-          </Button>
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-start' }, gap: 2, mb: 2 }}>
+          <Box>
+            <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+              {t('pageTitle')}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+              {t('pageSubtitle')}
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleExport('csv')}
+              startIcon={<Download />}
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 } }}
+            >
+              {t('exportCsv')}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleExport('json')}
+              startIcon={<Download />}
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, px: { xs: 1, sm: 2 } }}
+            >
+              {t('exportJson')}
+            </Button>
+          </Box>
         </Box>
       </Box>
 
       {/* Statistics */}
       {statistics && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-            <Card>
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid component="div" size={{ xs: 6, sm: 6, lg: 3 }}>
+            <Card sx={{ height: '100%' }}>
               <CardHeader
                 title={
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" fontWeight="medium">
+                    <Typography variant="body2" fontWeight="medium" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       {t('statistics.totalErrors')}
                     </Typography>
-                    <ErrorIcon color="action" />
+                    <ErrorIcon color="action" sx={{ fontSize: { xs: 18, sm: 20 } }} />
                   </Box>
                 }
+                sx={{ pb: 1 }}
               />
-              <CardContent>
-                <Typography variant="h4" fontWeight="bold">
+              <CardContent sx={{ pt: 0 }}>
+                <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' } }}>
                   {statistics.totalErrors.toLocaleString()}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
 
-          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-            <Card>
+          <Grid component="div" size={{ xs: 6, sm: 6, lg: 3 }}>
+            <Card sx={{ height: '100%' }}>
               <CardHeader
                 title={
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" fontWeight="medium">
+                    <Typography variant="body2" fontWeight="medium" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       {t('statistics.last24Hours')}
                     </Typography>
-                    <TrendingUp color="action" />
+                    <TrendingUp color="action" sx={{ fontSize: { xs: 18, sm: 20 } }} />
                   </Box>
                 }
+                sx={{ pb: 1 }}
               />
-              <CardContent>
-                <Typography variant="h4" fontWeight="bold">
+              <CardContent sx={{ pt: 0 }}>
+                <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' } }}>
                   {statistics.last24Hours.toLocaleString()}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
 
-          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-            <Card>
+          <Grid component="div" size={{ xs: 6, sm: 6, lg: 3 }}>
+            <Card sx={{ height: '100%' }}>
               <CardHeader
                 title={
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" fontWeight="medium">
+                    <Typography variant="body2" fontWeight="medium" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       {t('statistics.errorRate')}
                     </Typography>
-                    {getTrendIcon()}
+                    <Box sx={{ fontSize: { xs: 18, sm: 20 } }}>
+                      {getTrendIcon()}
+                    </Box>
                   </Box>
                 }
+                sx={{ pb: 1 }}
               />
-              <CardContent>
-                <Typography variant="h4" fontWeight="bold">
+              <CardContent sx={{ pt: 0 }}>
+                <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' } }}>
                   {statistics.errorRate.toFixed(2)}%
                 </Typography>
                 {trends && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                     {trends.trend === 'increasing' ? t('statistics.increasing') : trends.trend === 'decreasing' ? t('statistics.decreasing') : t('statistics.stable')}
                     {' '}({trends.changePercentage > 0 ? '+' : ''}{trends.changePercentage.toFixed(1)}%)
                   </Typography>
@@ -403,20 +416,21 @@ export function ErrorLogsPage() {
             </Card>
           </Grid>
 
-          <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-            <Card>
+          <Grid component="div" size={{ xs: 6, sm: 6, lg: 3 }}>
+            <Card sx={{ height: '100%' }}>
               <CardHeader
                 title={
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" fontWeight="medium">
+                    <Typography variant="body2" fontWeight="medium" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                       {t('statistics.last7Days')}
                     </Typography>
-                    <Warning color="action" />
+                    <Warning color="action" sx={{ fontSize: { xs: 18, sm: 20 } }} />
                   </Box>
                 }
+                sx={{ pb: 1 }}
               />
-              <CardContent>
-                <Typography variant="h4" fontWeight="bold">
+              <CardContent sx={{ pt: 0 }}>
+                <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' } }}>
                   {statistics.last7Days.toLocaleString()}
                 </Typography>
               </CardContent>
@@ -429,32 +443,34 @@ export function ErrorLogsPage() {
       <Card sx={{ mb: 3 }}>
         <CardHeader
           title={
-            <Typography variant="h6" fontWeight="bold">
+            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               {t('filters.title')}
             </Typography>
           }
+          sx={{ pb: { xs: 1, sm: 2 } }}
         />
-        <CardContent>
+        <CardContent sx={{ pt: { xs: 1, sm: 2 } }}>
           <Grid container spacing={2}>
-            <Grid component="div" size={{ xs: 12, md: 3 }}>
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 label={t('filters.search')}
                 placeholder={t('filters.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 fullWidth
+                size="small"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search />
+                      <Search fontSize="small" />
                     </InputAdornment>
                   ),
                 }}
               />
             </Grid>
 
-            <Grid component="div" size={{ xs: 12, md: 3 }}>
-              <FormControl fullWidth>
+            <Grid component="div" size={{ xs: 6, sm: 6, md: 3 }}>
+              <FormControl fullWidth size="small">
                 <InputLabel>{t('filters.level')}</InputLabel>
                 <Select
                   value={level}
@@ -470,8 +486,8 @@ export function ErrorLogsPage() {
               </FormControl>
             </Grid>
 
-            <Grid component="div" size={{ xs: 12, md: 3 }}>
-              <FormControl fullWidth>
+            <Grid component="div" size={{ xs: 6, sm: 6, md: 3 }}>
+              <FormControl fullWidth size="small">
                 <InputLabel>{t('filters.category')}</InputLabel>
                 <Select
                   value={category}
@@ -488,7 +504,7 @@ export function ErrorLogsPage() {
               </FormControl>
             </Grid>
 
-            <Grid component="div" size={{ xs: 12, md: 3 }} sx={{ display: 'flex', alignItems: 'flex-end' }}>
+            <Grid component="div" size={{ xs: 12, sm: 12, md: 3 }} sx={{ display: 'flex', alignItems: { xs: 'stretch', sm: 'flex-end' } }}>
               <Button
                 variant="outlined"
                 onClick={() => {
@@ -497,7 +513,9 @@ export function ErrorLogsPage() {
                   setSearch('');
                 }}
                 fullWidth
+                size="small"
                 startIcon={<FilterList />}
+                sx={{ height: { xs: '100%', sm: 'auto' } }}
               >
                 {t('filters.reset')}
               </Button>
@@ -543,12 +561,13 @@ export function ErrorLogsPage() {
         onClose={() => setShowDetailsDialog(false)}
         maxWidth="lg"
         fullWidth
+        fullScreen={isMobile}
       >
-        <DialogTitle>{t('details.title')}</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{t('details.title')}</DialogTitle>
+        <DialogContent sx={{ px: { xs: 1.5, sm: 3 } }}>
           {selectedError && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
-              <Grid container spacing={3}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, pt: 1 }}>
+              <Grid container spacing={2}>
                 <Grid component="div" size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     {t('details.level')}

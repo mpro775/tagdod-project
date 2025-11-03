@@ -24,7 +24,7 @@ export const formatCurrency = (
   currency = 'USD',
   locale: 'ar' | 'en' = 'ar'
 ): string => {
-  const localeStr = locale === 'ar' ? 'ar-SA' : 'en-US';
+  const localeStr = locale === 'ar' ? 'en-US' : 'en-US';
 
   return new Intl.NumberFormat(localeStr, {
     style: 'currency',
@@ -42,7 +42,7 @@ export const formatNumber = (
   locale: 'ar' | 'en' = 'en',
   options?: Intl.NumberFormatOptions
 ): string => {
-  const localeStr = locale === 'ar' ? 'ar-SA' : 'en-US';
+  const localeStr = locale === 'ar' ? 'en-US' : 'en-US';
   return new Intl.NumberFormat(localeStr, options).format(value);
 };
 

@@ -4,12 +4,16 @@ import {
   ExceptionFilter, 
   HttpException, 
   HttpStatus,
-  Logger 
+  Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { AppException } from '../exceptions/app.exception';
 import { DomainException } from '../exceptions/domain.exceptions';
 import { Request, Response } from 'express';
 import { ErrorCode } from '../constants/error-codes';
+import { ErrorLogsService } from '../../modules/error-logs/error-logs.service';
+import { ErrorLevel, ErrorCategory } from '../../modules/error-logs/dto/error-logs.dto';
 
 interface RequestWithId extends Request {
   requestId?: string;
@@ -28,6 +32,78 @@ interface RequestWithId extends Request {
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
+  constructor(
+    @Inject(forwardRef(() => ErrorLogsService))
+    private readonly errorLogsService?: ErrorLogsService,
+  ) {}
+
+  private determineCategory(exception: Error | HttpException | AppException | DomainException): ErrorCategory {
+    if (exception instanceof DomainException) {
+      const code = exception.code || '';
+      if (code.includes('AUTH') || code.includes('TOKEN') || code.includes('PERMISSION')) {
+        return ErrorCategory.AUTHENTICATION;
+      }
+      if (code.includes('VALIDATION') || code.includes('FORMAT')) {
+        return ErrorCategory.VALIDATION;
+      }
+      if (code.includes('DATABASE') || code.includes('MONGO')) {
+        return ErrorCategory.DATABASE;
+      }
+      if (code.includes('BUSINESS') || code.includes('LOGIC')) {
+        return ErrorCategory.BUSINESS_LOGIC;
+      }
+    }
+    
+    // Default based on status code
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      if (status >= 400 && status < 500) {
+        return ErrorCategory.VALIDATION;
+      }
+    }
+    
+    return ErrorCategory.API;
+  }
+
+  private async logErrorToDatabase(
+    exception: Error | HttpException | AppException | DomainException,
+    req: RequestWithId,
+    status: number,
+  ) {
+    // Only log to database if service is available and error is significant
+    if (!this.errorLogsService || status < 500) {
+      return;
+    }
+
+    try {
+      const level = status >= 500 ? ErrorLevel.ERROR : ErrorLevel.WARN;
+      const category = this.determineCategory(exception);
+
+      await this.errorLogsService.createErrorLog({
+        level,
+        category,
+        message: exception?.message || 'Unknown error',
+        stack: exception?.stack,
+        endpoint: req.url,
+        method: req.method,
+        statusCode: status,
+        userId: req.user?.userId,
+        metadata: {
+          requestId: req.requestId,
+          userAgent: req.headers['user-agent'],
+          ip: req.ip,
+          headers: {
+            'content-type': req.headers['content-type'],
+            'accept': req.headers['accept'],
+          },
+        },
+      });
+    } catch (logError) {
+      // Fallback to console if database logging fails
+      this.logger.error('Failed to log error to database', logError);
+    }
+  }
+
   catch(exception: Error | HttpException | AppException | DomainException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
@@ -35,7 +111,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const status =
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    // Log critical errors
+    // Log critical errors to console
     if (status >= 500) {
       this.logger.error(
         `[${status}] ${exception.message}`,
@@ -48,6 +124,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         }
       );
     }
+
+    // Log to database asynchronously (don't block response)
+    this.logErrorToDatabase(exception, req, status).catch((err) => {
+      this.logger.error('Error logging to database failed', err);
+    });
 
     // Handle DomainException (new unified system)
     if (exception instanceof DomainException) {

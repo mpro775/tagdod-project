@@ -1,11 +1,24 @@
 import React, { useState } from 'react';
-import { Box, Chip, IconButton, Tooltip, Typography, Alert } from '@mui/material';
-import { Edit, Delete, ToggleOn, ToggleOff, Visibility, VisibilityOff } from '@mui/icons-material';
+import {
+  Box,
+  Chip,
+  IconButton,
+  Tooltip,
+  Typography,
+  Alert,
+  Grid,
+  Button,
+  Stack,
+  Pagination,
+} from '@mui/material';
+import { Edit, Delete, ToggleOn, ToggleOff, Visibility, VisibilityOff, Add, Business } from '@mui/icons-material';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-// import { BrandStatsCards } from '../components/BrandStatsCards'; // معطل مؤقتاً
+import { BrandStatsCards } from '../components/BrandStatsCards';
 import { BrandFilters } from '../components/BrandFilters';
+import { BrandCard } from '../components/BrandCard';
 import { BrandFormDialog } from '../components/BrandFormDialog';
 import { BrandDeleteDialog } from '../components/BrandDeleteDialog';
 import { useBrands, useDeleteBrand, useToggleBrandStatus } from '../hooks/useBrands';
@@ -14,6 +27,7 @@ import type { Brand, ListBrandsParams } from '../types/brand.types';
 
 export const BrandsListPage: React.FC = () => {
   const { t } = useTranslation('brands');
+  const { isMobile } = useBreakpoint();
 
   // State management
   const [filters, setFilters] = useState<ListBrandsParams>({
@@ -50,6 +64,7 @@ export const BrandsListPage: React.FC = () => {
   const { mutate: toggleStatus, isPending: isToggling } = useToggleBrandStatus();
 
   const brands = brandsResponse?.data || [];
+  const pagination = brandsResponse?.pagination;
 
   // Event handlers
   const handleFiltersChange = (newFilters: ListBrandsParams) => {
@@ -113,7 +128,7 @@ export const BrandsListPage: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'name',
-      headerName: t('table.columns.brand', { defaultValue: 'العلامة التجارية' }),
+      headerName: t('table.columns.brand'),
       width: 300,
       renderCell: (params) => {
         const brand = params.row as Brand;
@@ -172,7 +187,7 @@ export const BrandsListPage: React.FC = () => {
     },
     {
       field: 'description',
-      headerName: t('table.columns.description', { defaultValue: 'الوصف' }  ),
+      headerName: t('table.columns.description'),
       width: 200,
       renderCell: (params) => {
         const brand = params.row as Brand;
@@ -194,7 +209,7 @@ export const BrandsListPage: React.FC = () => {
     },
     {
       field: 'sortOrder',
-      headerName: t('table.columns.sortOrder', { defaultValue: 'ترتيب العرض' }),
+      headerName: t('table.columns.sortOrder'),
       width: 120,
       align: 'center',
       renderCell: (params) => (
@@ -203,14 +218,14 @@ export const BrandsListPage: React.FC = () => {
     },
     {
       field: 'isActive',
-      headerName: t('table.columns.status', { defaultValue: 'الحالة' }),
+      headerName: t('table.columns.status'),
       width: 120,
       renderCell: (params) => {
         const brand = params.row as Brand;
         return (
           <Chip
             icon={brand.isActive ? <Visibility /> : <VisibilityOff />}
-            label={brand.isActive ? t('status.active', { defaultValue: 'نشط' }) : t('status.inactive', { defaultValue: 'غير نشط' }  )}
+            label={brand.isActive ? t('status.active') : t('status.inactive')}
             color={brand.isActive ? 'success' : 'default'}
             size="small"
           />
@@ -219,13 +234,13 @@ export const BrandsListPage: React.FC = () => {
     },
     {
       field: 'createdAt',
-      headerName: t('table.columns.createdAt', { defaultValue: 'تاريخ الإنشاء' }),
+      headerName: t('table.columns.createdAt'),
       width: 150,
       valueFormatter: (value) => formatDate(value as Date),
     },
     {
       field: 'actions',
-      headerName: t('table.columns.actions', { defaultValue: 'الإجراءات' }),
+      headerName: t('table.columns.actions'),
       width: 200,
       sortable: false,
       renderCell: (params) => {
@@ -281,8 +296,40 @@ export const BrandsListPage: React.FC = () => {
 
   return (
     <Box>
-      {/* إحصائيات العلامات التجارية - معطلة مؤقتاً حتى تطوير API */}
-      {/* <BrandStatsCards /> */}
+      {/* Header */}
+      <Box mb={3}>
+        <Box 
+          display="flex" 
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          justifyContent="space-between"
+          gap={2}
+          mb={2}
+        >
+          <Box display="flex" alignItems="center" gap={2}>
+            <Business fontSize={isMobile ? 'medium' : 'large'} color="primary" />
+            <Typography 
+              variant="h4" 
+              component="h1"
+              sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+            >
+              {t('pageTitle')}
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleAddBrand}
+            fullWidth={isMobile}
+            size={isMobile ? 'medium' : 'large'}
+          >
+            {t('table.addButton')}
+          </Button>
+        </Box>
+      </Box>
+
+      {/* إحصائيات العلامات التجارية */}
+      <BrandStatsCards />
 
       {/* فلاتر البحث */}
       <BrandFilters
@@ -295,28 +342,103 @@ export const BrandsListPage: React.FC = () => {
       {/* رسالة الخطأ */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error.message || t('messages.loadError', { defaultValue: 'حدث خطأ في تحميل البيانات' })}
+          {error.message || t('messages.loadError')}
         </Alert>
       )}
 
-      {/* جدول العلامات التجارية */}
-      <DataTable
-        title={t('table.title', { defaultValue: 'قائمة العلامات التجارية' })}
-        columns={columns}
-        rows={brands}
-        loading={isLoading}
-        paginationModel={paginationModel}
-        onPaginationModelChange={handlePaginationModelChange}
-        onAdd={handleAddBrand}
-        addButtonText={t('table.addButton', { defaultValue: 'إضافة علامة تجارية' }    )}
-        getRowId={(row) => (row as Brand)._id}
-        onRowClick={(params) => {
-          const row = params.row as Brand;
-          handleEditBrand(row);
-        }}
-        height="calc(100vh - 400px)"
-        rowHeight={80}
-      />
+      {/* جدول أو كاردات العلامات التجارية */}
+      {isMobile ? (
+        <Box>
+          {isLoading ? (
+            <Grid container spacing={2}>
+              {[...Array(6)].map((_, index) => (
+                <Grid size={{ xs: 12 }} key={index}>
+                  <Box
+                    sx={{
+                      height: 400,
+                      borderRadius: 2,
+                      bgcolor: 'background.paper',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                      '@keyframes pulse': {
+                        '0%, 100%': { opacity: 1 },
+                        '50%': { opacity: 0.5 },
+                      },
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          ) : brands.length === 0 ? (
+            <Box
+              textAlign="center"
+              py={8}
+              sx={{
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                border: '1px dashed',
+                borderColor: 'divider',
+              }}
+            >
+              <Business sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                {t('noBrands')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mb={3}>
+                {t('noBrandsDescription')}
+              </Typography>
+              <Button variant="contained" startIcon={<Add />} onClick={handleAddBrand}>
+                {t('table.addButton')}
+              </Button>
+            </Box>
+          ) : (
+            <>
+              <Grid container spacing={2}>
+                {brands.map((brand) => (
+                  <Grid size={{ xs: 6, sm: 6, md: 4, lg: 3 }} key={brand._id}>
+                    <BrandCard
+                      brand={brand}
+                      onEdit={handleEditBrand}
+                      onDelete={handleDeleteBrand}
+                      onToggleStatus={handleToggleStatus}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+              {pagination && pagination.totalPages > 1 && (
+                <Box display="flex" justifyContent="center" mt={4}>
+                  <Pagination
+                    count={pagination.totalPages}
+                    page={filters.page || 1}
+                    onChange={(_, page) => {
+                      handlePaginationModelChange({ page: page - 1, pageSize: filters.limit || 20 });
+                    }}
+                    color="primary"
+                    size={isMobile ? 'small' : 'medium'}
+                  />
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
+      ) : (
+        <DataTable
+          title={t('table.title')}
+          columns={columns}
+          rows={brands}
+          loading={isLoading}
+          paginationModel={paginationModel}
+          onPaginationModelChange={handlePaginationModelChange}
+          onAdd={handleAddBrand}
+          addButtonText={t('table.addButton')}
+          getRowId={(row) => (row as Brand)._id}
+          onRowClick={(params) => {
+            const row = params.row as Brand;
+            handleEditBrand(row);
+          }}
+          height="calc(100vh - 400px)"
+          rowHeight={80}
+        />
+      )}
 
       {/* نافذة إضافة/تعديل العلامة التجارية */}
       <BrandFormDialog

@@ -41,8 +41,8 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
   const { t } = useTranslation('exchangeRates');
   const [formData, setFormData] = useState({
     amount: '',
-    fromCurrency: 'USD' as 'USD',
-    toCurrency: 'YER' as 'YER' | 'SAR',
+    fromCurrency: 'USD' as 'USD' | 'YER' | 'SAR',
+    toCurrency: 'YER' as 'USD' | 'YER' | 'SAR',
   });
 
   const [result, setResult] = useState<ConvertCurrencyResponse | null>(null);
@@ -67,13 +67,27 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
   };
 
   const handleSwapCurrencies = () => {
-    // Swap is not supported since API only accepts USD as source currency
-    // This function is kept for UI consistency but does nothing
+    if (formData.fromCurrency === formData.toCurrency) {
+      return; // Cannot swap if same currency
+    }
+    setFormData(prev => ({
+      ...prev,
+      fromCurrency: prev.toCurrency,
+      toCurrency: prev.fromCurrency,
+      amount: result ? result.result.toString() : prev.amount, // Swap amounts if result exists
+    }));
+    setResult(null);
+    setConvertError(null);
   };
 
   const handleConvert = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       setConvertError(t('messages.invalidAmount'));
+      return;
+    }
+
+    if (formData.fromCurrency === formData.toCurrency) {
+      setConvertError(t('messages.sameCurrency', { defaultValue: 'لا يمكن تحويل العملة إلى نفسها' }));
       return;
     }
 
@@ -97,7 +111,7 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
   };
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 4,
     }).format(amount);
@@ -113,31 +127,40 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
   };
 
   return (
-    <Card>
+    <Card sx={{ borderRadius: { xs: 1, sm: 2 } }}>
       <CardHeader
         title={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Calculate color="primary" />
-            <Typography variant="h6" component="div">
-              محول العملات
+            <Calculate color="primary" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
+            <Typography 
+              variant="h6" 
+              component="div"
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
+              {t('converter.title')}
             </Typography>
           </Box>
         }
-        subheader="تحويل العملات باستخدام الأسعار الحالية"
+        subheader={
+          <Typography sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
+            {t('converter.subtitle')}
+          </Typography>
+        }
+        sx={{ px: { xs: 1.5, sm: 2 }, pt: { xs: 1.5, sm: 2 } }}
       />
-      <CardContent>
+      <CardContent sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}>
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert severity="error" sx={{ mb: { xs: 2, sm: 3 } }}>
             {error}
           </Alert>
         )}
 
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {/* Amount Input */}
           <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
-              label="المبلغ"
+              label={t('converter.amount')}
               type="number"
               value={formData.amount}
               onChange={handleInputChange('amount')}
@@ -159,20 +182,22 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
                 step: '0.01',
                 min: '0.01',
               }}
-              placeholder="أدخل المبلغ المراد تحويله"
+              placeholder={t('converter.amountPlaceholder')}
             />
           </Grid>
 
           {/* From Currency */}
           <Grid size={{ xs: 12, sm: 5 }}>
             <FormControl fullWidth>
-              <InputLabel>من العملة</InputLabel>
+              <InputLabel>{t('converter.fromCurrency')}</InputLabel>
               <Select
                 value={formData.fromCurrency}
                 onChange={handleInputChange('fromCurrency')}
-                label="من العملة"
+                label={t('converter.fromCurrency')}
               >
-                <MenuItem value="USD">USD - دولار أمريكي</MenuItem>
+                <MenuItem value="USD">{t('converter.usd')}</MenuItem>
+                <MenuItem value="YER">{t('converter.yer')}</MenuItem>
+                <MenuItem value="SAR">{t('converter.sar')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -182,8 +207,9 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
              <Button
                variant="outlined"
                onClick={handleSwapCurrencies}
-               disabled={true}
+               disabled={formData.fromCurrency === formData.toCurrency}
                sx={{ minWidth: 'auto', p: 1 }}
+               title={formData.fromCurrency === formData.toCurrency ? t('converter.cannotSwapSameCurrency') : t('converter.swapCurrencies')}
              >
               <SwapHoriz />
             </Button>
@@ -192,14 +218,15 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
           {/* To Currency */}
           <Grid size={{ xs: 12, sm: 5 }}>
             <FormControl fullWidth>
-              <InputLabel>إلى العملة</InputLabel>
+              <InputLabel>{t('converter.toCurrency')}</InputLabel>
               <Select
                 value={formData.toCurrency}
                 onChange={handleInputChange('toCurrency')}
-                label="إلى العملة"
+                label={t('converter.toCurrency')}
               >
-                <MenuItem value="YER">YER - ريال يمني</MenuItem>
-                <MenuItem value="SAR">SAR - ريال سعودي</MenuItem>
+                <MenuItem value="USD" disabled={formData.fromCurrency === 'USD'}>{t('converter.usd')}</MenuItem>
+                <MenuItem value="YER" disabled={formData.fromCurrency === 'YER'}>{t('converter.yer')}</MenuItem>
+                <MenuItem value="SAR" disabled={formData.fromCurrency === 'SAR'}>{t('converter.sar')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -210,11 +237,11 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
               fullWidth
               variant="contained"
               onClick={handleConvert}
-              disabled={isConverting || loading || !formData.amount || parseFloat(formData.amount) <= 0}
+              disabled={isConverting || loading || !formData.amount || parseFloat(formData.amount) <= 0 || formData.fromCurrency === formData.toCurrency}
               startIcon={isConverting ? <CircularProgress size={20} /> : <TrendingUp />}
               size="large"
             >
-              {isConverting ? 'جاري التحويل...' : 'تحويل العملة'}
+              {isConverting ? t('converter.converting') : t('converter.convert')}
             </Button>
           </Grid>
 
@@ -230,29 +257,46 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
           {/* Result Display */}
           {result && (
             <Grid size={{ xs: 12 }}>
-              <Divider sx={{ my: 2 }} />
+              <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
               <Box sx={{ 
-                p: 3, 
+                p: { xs: 2, sm: 3 }, 
                 backgroundColor: 'primary.light', 
-                borderRadius: 2,
+                borderRadius: { xs: 1, sm: 2 },
                 textAlign: 'center',
               }}>
-                <Typography variant="h4" component="div" sx={{ fontWeight: 700, mb: 1 }}>
+                <Typography 
+                  variant="h4" 
+                  component="div" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    mb: 1,
+                    fontSize: { xs: '1.75rem', sm: '2.125rem' }
+                  }}
+                >
                   {formatAmount(result.result)} {getCurrencySymbol(result.toCurrency)}
                 </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                <Typography 
+                  variant="body1" 
+                  color="text.secondary" 
+                  sx={{ 
+                    mb: 2,
+                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                  }}
+                >
                   {result.formatted}
                 </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}>
                   <Chip 
-                    label={`المبلغ: ${formatAmount(result.amount)} ${getCurrencySymbol(result.fromCurrency)}`}
+                    label={t('converter.resultAmount', { amount: formatAmount(result.amount), currency: getCurrencySymbol(result.fromCurrency) })}
                     size="small"
                     variant="outlined"
+                    sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                   />
                   <Chip 
-                    label={`السعر: ${formatAmount(result.rate)}`}
+                    label={t('converter.resultRate', { rate: formatAmount(result.rate) })}
                     size="small"
                     variant="outlined"
+                    sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' } }}
                   />
                 </Box>
               </Box>

@@ -107,3 +107,119 @@ export const systemSettingsApi = {
   },
 };
 
+// ==================== Local Payment Accounts ====================
+
+export interface LocalPaymentAccount {
+  _id: string;
+  providerName: string;
+  iconUrl?: string;
+  accountNumber: string;
+  type: 'bank' | 'wallet';
+  currency: 'YER' | 'SAR' | 'USD';
+  isActive: boolean;
+  notes?: string;
+  displayOrder: number;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface GroupedPaymentAccount {
+  providerName: string;
+  iconUrl?: string;
+  type: 'bank' | 'wallet';
+  accounts: Array<{
+    id: string;
+    accountNumber: string;
+    currency: 'YER' | 'SAR' | 'USD';
+    isActive: boolean;
+    displayOrder: number;
+  }>;
+}
+
+export interface CreatePaymentAccountDto {
+  providerName: string;
+  iconUrl?: string;
+  accountNumber: string;
+  type: 'bank' | 'wallet';
+  currency: 'YER' | 'SAR' | 'USD';
+  isActive?: boolean;
+  notes?: string;
+  displayOrder?: number;
+}
+
+export interface UpdatePaymentAccountDto {
+  providerName?: string;
+  iconUrl?: string;
+  accountNumber?: string;
+  type?: 'bank' | 'wallet';
+  currency?: 'YER' | 'SAR' | 'USD';
+  isActive?: boolean;
+  notes?: string;
+  displayOrder?: number;
+}
+
+export const localPaymentAccountsApi = {
+  /**
+   * Get all payment accounts
+   */
+  getAllAccounts: async (activeOnly?: boolean): Promise<LocalPaymentAccount[]> => {
+    const response = await apiClient.get<ApiResponse<LocalPaymentAccount[]>>(
+      '/system-settings/payment-accounts',
+      { params: { activeOnly: activeOnly ? 'true' : undefined } }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Get grouped payment accounts
+   */
+  getGroupedAccounts: async (activeOnly?: boolean): Promise<GroupedPaymentAccount[]> => {
+    const response = await apiClient.get<ApiResponse<GroupedPaymentAccount[]>>(
+      '/system-settings/payment-accounts/grouped',
+      { params: { activeOnly: activeOnly ? 'true' : undefined } }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Get public payment accounts (for customers)
+   */
+  getPublicAccounts: async (currency?: string): Promise<GroupedPaymentAccount[]> => {
+    const response = await apiClient.get<ApiResponse<GroupedPaymentAccount[]>>(
+      '/system-settings/payment-accounts/public',
+      { params: { currency } }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Create payment account
+   */
+  createAccount: async (data: CreatePaymentAccountDto): Promise<LocalPaymentAccount> => {
+    const response = await apiClient.post<ApiResponse<LocalPaymentAccount>>(
+      '/system-settings/payment-accounts',
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Update payment account
+   */
+  updateAccount: async (id: string, data: UpdatePaymentAccountDto): Promise<LocalPaymentAccount> => {
+    const response = await apiClient.put<ApiResponse<LocalPaymentAccount>>(
+      `/system-settings/payment-accounts/${id}`,
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Delete payment account
+   */
+  deleteAccount: async (id: string): Promise<void> => {
+    await apiClient.delete(`/system-settings/payment-accounts/${id}`);
+  },
+};
+

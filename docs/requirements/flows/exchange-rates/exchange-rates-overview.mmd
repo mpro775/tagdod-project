@@ -14,9 +14,14 @@ flowchart TD
   C4 --> C5[إدارة الأسعار مكتملة]
 
   %% Currency Conversion
-  D --> D1[تحويل USD إلى YER]
-  D1 --> D2[تحويل USD إلى SAR]
-  D2 --> D3[تنسيق النتائج]
+  D --> D1[تحويل شامل بين جميع العملات]
+  D1 --> D1A[USD → YER/SAR]
+  D1 --> D1B[YER/SAR → USD]
+  D1 --> D1C[YER ↔ SAR]
+  D1A --> D2[تنسيق النتائج]
+  D1B --> D2
+  D1C --> D2
+  D2 --> D3[حساب الإجماليات بالعملات الثلاث]
   D3 --> D4[تحويل العملات مكتمل]
 
   %% System Management

@@ -16,9 +16,12 @@
 - **إدارة الملاحظات:** إضافة ملاحظات لكل تحديث
 
 ### 2. تحويل العملات (Currency Conversion)
-- **تحويل بسيط:** تحويل مبلغ من الدولار إلى الريال اليمني أو السعودي
+- **تحويل شامل:** تحويل بين جميع العملات (USD, YER, SAR)
+- **التحويل المباشر:** تحويل من USD إلى YER/SAR
+- **التحويل العكسي:** تحويل من YER/SAR إلى USD
+- **التحويل المتقاطع:** تحويل بين YER و SAR (عبر USD)
 - **تنسيق النتائج:** تنسيق تلقائي للنتائج حسب العملة
-- **تحويل فردي:** معالجة طلب تحويل واحد في كل مرة
+- **حساب الإجماليات:** حساب الإجماليات بالعملات الثلاث تلقائياً
 
 ### 3. إدارة النظام (System Management)
 - **مراقبة الأداء:** مراقبة أداء عمليات التحويل
@@ -40,17 +43,31 @@
   - وقت آخر تحديث (updatedAt)
 
 ### 2. تحويل العملات (Currency Conversion)
-- **التحويل البسيط:**
+- **التحويل الشامل:**
   - الحصول على سعر الصرف الحالي
-  - حساب التحويل الأساسي
+  - حساب التحويل حسب نوع العملة
+  - التحويل المباشر أو العكسي أو المتقاطع
   - تقريب النتيجة حسب العملة
   - تنسيق النتيجة للعرض
 - **العملات المدعومة:**
-  - الدولار الأمريكي (USD) إلى الريال اليمني (YER)
-  - الدولار الأمريكي (USD) إلى الريال السعودي (SAR)
+  - **USD → YER/SAR:** التحويل المباشر من الدولار
+  - **YER/SAR → USD:** التحويل العكسي إلى الدولار
+  - **YER ↔ SAR:** التحويل المتقاطع (عبر USD)
+- **الاتجاهات المدعومة (6 اتجاهات):**
+  1. USD → YER
+  2. USD → SAR
+  3. YER → USD
+  4. SAR → USD
+  5. YER → SAR
+  6. SAR → YER
+- **حساب الإجماليات بالعملات الثلاث:**
+  - تحويل جميع المبالغ إلى USD أولاً
+  - حساب الإجماليات بالعملات الثلاث تلقائياً
+  - يُستخدم في السلة والطلبات
 - **تنسيق النتائج:**
-  - تنسيق الريال اليمني مع الفواصل
+  - تنسيق الريال اليمني مع الفواصل (بدون أرقام عشرية)
   - تنسيق الريال السعودي مع رقمين عشريين
+  - تنسيق الدولار مع رقمين عشريين
 
 ### 3. إدارة النظام (System Management)
 - **الأسعار الافتراضية:**
@@ -70,9 +87,13 @@
 - **الريال اليمني (YER):** العملة المحلية اليمنية
 - **الريال السعودي (SAR):** العملة السعودية
 
-### أزواج العملات المدعومة
-- **USD إلى YER:** الدولار الأمريكي إلى الريال اليمني
-- **USD إلى SAR:** الدولار الأمريكي إلى الريال السعودي
+### أزواج العملات المدعومة (6 اتجاهات)
+- **USD → YER:** الدولار الأمريكي إلى الريال اليمني
+- **USD → SAR:** الدولار الأمريكي إلى الريال السعودي
+- **YER → USD:** الريال اليمني إلى الدولار الأمريكي (التحويل العكسي)
+- **SAR → USD:** الريال السعودي إلى الدولار الأمريكي (التحويل العكسي)
+- **YER → SAR:** الريال اليمني إلى الريال السعودي (عبر USD)
+- **SAR → YER:** الريال السعودي إلى الريال اليمني (عبر USD)
 
 ## مصادر أسعار الصرف
 
@@ -93,18 +114,75 @@
 result = amount * exchangeRate
 ```
 
-### التحويل للريال اليمني
+### التحويل المباشر (USD → YER/SAR)
 ```typescript
 // USD إلى YER
 yerResult = usdAmount * usdToYerRate
 formattedResult = Math.round(yerResult).toLocaleString() + " $"
-```
 
-### التحويل للريال السعودي
-```typescript
 // USD إلى SAR
 sarResult = usdAmount * usdToSarRate
 formattedResult = sarResult.toFixed(2) + " $"
+```
+
+### التحويل العكسي (YER/SAR → USD)
+```typescript
+// YER إلى USD
+usdResult = yerAmount * (1 / usdToYerRate)
+formattedResult = "$" + usdResult.toFixed(2)
+
+// SAR إلى USD
+usdResult = sarAmount * (1 / usdToSarRate)
+formattedResult = "$" + usdResult.toFixed(2)
+```
+
+### التحويل المتقاطع (YER ↔ SAR)
+```typescript
+// YER إلى SAR (عبر USD)
+usdAmount = yerAmount / usdToYerRate
+sarResult = usdAmount * usdToSarRate
+rate = usdToSarRate / usdToYerRate
+formattedResult = sarResult.toFixed(2) + " $"
+
+// SAR إلى YER (عبر USD)
+usdAmount = sarAmount / usdToSarRate
+yerResult = usdAmount * usdToYerRate
+rate = usdToYerRate / usdToSarRate
+formattedResult = Math.round(yerResult).toLocaleString() + " $"
+```
+
+### حساب الإجماليات بالعملات الثلاث
+```typescript
+// تحويل جميع المبالغ إلى USD أولاً
+usdSubtotal = convertToUSD(subtotal, currency)
+usdShipping = convertToUSD(shipping, currency)
+usdTax = convertToUSD(tax, currency)
+usdDiscount = convertToUSD(discount, currency)
+
+// حساب الإجماليات بالعملات الثلاث
+totalsInAllCurrencies = {
+  USD: {
+    subtotal: usdSubtotal,
+    shippingCost: usdShipping,
+    tax: usdTax,
+    totalDiscount: usdDiscount,
+    total: usdSubtotal + usdShipping + usdTax - usdDiscount
+  },
+  YER: {
+    subtotal: convertFromUSDToYER(usdSubtotal),
+    shippingCost: convertFromUSDToYER(usdShipping),
+    tax: convertFromUSDToYER(usdTax),
+    totalDiscount: convertFromUSDToYER(usdDiscount),
+    total: convertFromUSDToYER(usdTotal)
+  },
+  SAR: {
+    subtotal: convertFromUSDToSAR(usdSubtotal),
+    shippingCost: convertFromUSDToSAR(usdShipping),
+    tax: convertFromUSDToSAR(usdTax),
+    totalDiscount: convertFromUSDToSAR(usdDiscount),
+    total: convertFromUSDToSAR(usdTotal)
+  }
+}
 ```
 
 ### التقريب التلقائي
@@ -114,6 +192,9 @@ yerRounded = Math.round(yerResult)
 
 // الريال السعودي - تقريب لرقمين عشريين
 sarRounded = Math.round(sarResult * 100) / 100
+
+// الدولار - تقريب لرقمين عشريين
+usdRounded = Math.round(usdResult * 100) / 100
 ```
 
 ## قواعد التحقق
@@ -121,7 +202,9 @@ sarRounded = Math.round(sarResult * 100) / 100
 ### التحقق من صحة البيانات
 - **قيمة السعر:** التحقق من أن السعر موجب ورقمي (أكبر من 0.01)
 - **المبلغ المراد تحويله:** التحقق من أن المبلغ موجب (أكبر من أو يساوي 0)
-- **رموز العملات:** التحقق من دعم العملة المطلوبة (USD إلى YER أو SAR)
+- **رموز العملات:** التحقق من دعم العملة المطلوبة (USD, YER, SAR)
+- **الاتجاهات المدعومة:** التحقق من دعم اتجاه التحويل (6 اتجاهات)
+- **منع التحويل لنفس العملة:** منع التحويل من عملة إلى نفسها
 
 ### التحقق من دقة التحويل
 - **دقة الحساب:** التحقق من دقة العمليات الحسابية الأساسية
@@ -155,12 +238,22 @@ sarRounded = Math.round(sarResult * 100) / 100
 ## التكامل مع الأنظمة الأخرى
 
 ### تكامل مع نظام المنتجات
+- **اعتماد USD كعملة أساسية:** جميع المنتجات تُخزن بالدولار الأمريكي
 - **تحويل أسعار المنتجات:** تحويل أسعار المنتجات من الدولار إلى العملات المحلية
-- **عرض الأسعار:** عرض أسعار المنتجات بالعملة المفضلة للمستخدم
+- **استخدام العملة المفضلة:** عرض أسعار المنتجات بالعملة المفضلة للمستخدم تلقائياً
+- **Fallback إلى USD:** استخدام USD كافتراضي عند عدم وجود عملة مفضلة
+
+### تكامل مع نظام السلة (Cart)
+- **حساب إجماليات السلة:** تحويل إجماليات السلة بين العملات
+- **الإجماليات بالعملات الثلاث:** إرجاع الإجماليات بالعملات الثلاث في preview السلة
+- **تطبيق الخصومات:** تحويل قيم الخصومات (wholesale, coupons) حسب العملة
+- **استخدام العملة المفضلة:** حساب السلة بالعملة المفضلة للمستخدم
 
 ### تكامل مع نظام الطلبات
 - **حساب إجماليات الطلبات:** تحويل إجماليات الطلبات بين العملات
+- **الإجماليات بالعملات الثلاث:** حفظ وإرجاع الإجماليات بالعملات الثلاث في كل طلب
 - **تطبيق الخصومات:** تحويل قيم الخصومات حسب العملة
+- **حفظ في Order Schema:** حقل `totalsInAllCurrencies` يحفظ الإجماليات بالعملات الثلاث
 
 ### تكامل مع نظام التسويق
 - **تحويل أسعار التسويق:** تحويل أسعار العروض والتسويقات
@@ -169,11 +262,14 @@ sarRounded = Math.round(sarResult * 100) / 100
 - **بيانات موحدة:** استخدام أسعار صرف موحدة في جميع التقارير
 
 ## نقاط مهمة
-- **نظام بسيط وفعال:** إدارة مباشرة لأسعار الصرف الأساسية
-- **تحويل دقيق:** تحويل دقيق بين الدولار والعملات المحلية
+- **نظام شامل ومتكامل:** إدارة شاملة لأسعار الصرف مع دعم التحويل الكامل
+- **الدولار كعملة أساسية:** جميع المنتجات والعروض تُخزن بالدولار الأمريكي
+- **تحويل شامل:** تحويل دقيق بين جميع العملات (6 اتجاهات)
+- **العملة المفضلة:** استخدام العملة المفضلة للمستخدم تلقائياً
+- **الإجماليات بالعملات الثلاث:** إرجاع الإجماليات بالعملات الثلاث في السلة والطلبات
 - **تحديث يدوي:** تحديث الأسعار يدوياً من قبل المديرين
 - **أمان عالي:** حماية من الاستخدام المفرط وتسجيل العمليات
-- **قابلية التوسع:** أساس قوي للتطوير المستقبلي
+- **قابلية التوسع:** أساس قوي للتطوير المستقبلي (caching, history, notifications)
 - **سهولة الصيانة:** صيانة مباشرة وبسيطة
 
 ## APIs المتاحة
@@ -208,6 +304,10 @@ POST /exchange-rates/convert
 }
 ```
 
+**ملاحظة:** يدعم جميع الاتجاهات:
+- `fromCurrency`: "USD" | "YER" | "SAR"
+- `toCurrency`: "USD" | "YER" | "SAR"
+
 **Response:**
 ```json
 {
@@ -218,6 +318,25 @@ POST /exchange-rates/convert
   "result": 25000,
   "formatted": "25,000 $"
 }
+```
+
+**أمثلة أخرى:**
+```json
+// YER إلى USD
+{
+  "amount": 25000,
+  "fromCurrency": "YER",
+  "toCurrency": "USD"
+}
+// Response: { "result": 100, "rate": 0.004, ... }
+
+// SAR إلى YER
+{
+  "amount": 375,
+  "fromCurrency": "SAR",
+  "toCurrency": "YER"
+}
+// Response: { "result": 25000, "rate": 66.67, ... }
 ```
 
 #### الحصول على سعر الدولار للريال اليمني

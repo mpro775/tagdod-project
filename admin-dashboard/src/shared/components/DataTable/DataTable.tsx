@@ -8,6 +8,7 @@ import {
 } from '@mui/x-data-grid';
 import { Box, Paper, TextField, InputAdornment, Button } from '@mui/material';
 import { Search, Add } from '@mui/icons-material';
+import './DataTable.css';
 
 export interface DataTableProps {
   columns: GridColDef[];
@@ -78,8 +79,15 @@ export const DataTable: React.FC<DataTableProps> = ({
     onSearch?.(value);
   };
 
+  // Calculate actual height - ensure it's a valid value
+  const actualHeight = typeof height === 'string' && height === '100%' 
+    ? '100%' 
+    : typeof height === 'number' 
+      ? `${height}px` 
+      : height || '600px';
+
   return (
-    <Paper sx={{ width: '100%', height }}>
+    <Paper sx={{ width: '100%', height: actualHeight, display: 'flex', flexDirection: 'column', minHeight: typeof height === 'string' && height === '100%' ? 600 : undefined }}>
       {/* Toolbar */}
       {(title || onSearch || onAdd) && (
         <Box
@@ -147,38 +155,49 @@ export const DataTable: React.FC<DataTableProps> = ({
         </Box>
       )}
 
-      {/* Data Grid */}
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        loading={loading}
-        // Row ID
-        getRowId={getRowId}
-        // Row height
-        rowHeight={rowHeight}
-        // Pagination
-        paginationMode="client"
-        paginationModel={paginationModel}
-        onPaginationModelChange={onPaginationModelChange}
-        pageSizeOptions={[5, 10, 20, 25, 50]}
-        // Sorting
-        sortingMode="client"
-        sortModel={sortModel}
-        onSortModelChange={onSortModelChange}
-        // Selection
-        checkboxSelection={selectable}
-        onRowSelectionModelChange={(selection) => {
-          onRowSelectionModelChange?.(selection as unknown as string[]);
-        }}
-        // Row click
-        onRowClick={onRowClick}
-        // Style
-        disableRowSelectionOnClick
-        sx={{
-          border: 'none',
-          '& .MuiDataGrid-cell:focus': {
-            outline: 'none',
-          },
+      {/* Data Execution Grid */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative', height: '100%' }}>
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          loading={loading}
+          // Row ID
+          getRowId={getRowId}
+          // Row height
+          rowHeight={rowHeight}
+          // Pagination
+          paginationMode="client"
+          paginationModel={paginationModel}
+          onPaginationModelChange={onPaginationModelChange}
+          pageSizeOptions={[5, 10, 20, 25, 50]}
+          // Sorting
+          sortingMode="client"
+          sortModel={sortModel}
+          onSortModelChange={onSortModelChange}
+          // Selection
+          checkboxSelection={selectable}
+          onRowSelectionModelChange={(selection) => {
+            onRowSelectionModelChange?.(selection as unknown as string[]);
+          }}
+          // Row click
+          onRowClick={onRowClick}
+          // Style
+          disableRowSelectionOnClick
+          autoHeight={false}
+          sx={{
+            flex: 1,
+            border: 'none',
+            height: '100%',
+            width: '100%',
+            '& .MuiDataGrid-root': {
+              height: '100%',
+            },
+            '& .MuiDataGrid-main': {
+              height: '100%',
+            },
+            '& .MuiDataGrid-cell:focus': {
+              outline: 'none',
+            },
           '& .MuiDataGrid-row:hover': {
             cursor: onRowClick ? 'pointer' : 'default',
           },
@@ -200,13 +219,36 @@ export const DataTable: React.FC<DataTableProps> = ({
             fontSize: { xs: '0.75rem', sm: '0.875rem' },
             padding: { xs: '4px 8px', sm: '8px 16px' },
           },
+          // Use :first-of-type instead of :first-child for SSR safety
+          '& .MuiDataGrid-row:first-of-type': {
+            borderTop: 'none',
+          },
+          '& .MuiDataGrid-cell:first-of-type': {
+            borderLeft: 'none',
+          },
+          '& .MuiDataGrid-columnHeader:first-of-type': {
+            borderLeft: 'none',
+          },
+          '& .MuiDataGrid-footerContainer:first-of-type': {
+            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+          },
+          // Additional overrides for any MUI internal :first-child usage
+          '& .MuiDataGrid-main > div:first-of-type': {
+            overflow: 'auto',
+          },
+          '& .MuiDataGrid-columnHeaders:first-of-type': {
+            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+          },
+          '& .MuiDataGrid-virtualScrollerContent:first-of-type': {
+            minHeight: '100%',
+          },
         }}
         // Responsive settings
-        autoHeight={false}
         disableColumnMenu={false}
         disableColumnFilter={false}
         disableColumnSelector={false}
-      />
+        />
+      </Box>
     </Paper>
   );
 };

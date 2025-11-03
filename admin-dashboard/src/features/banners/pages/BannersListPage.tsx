@@ -8,14 +8,19 @@ import {
   DialogContent,
   DialogActions,
   Alert,
+  Grid,
+  Pagination,
+  Stack,
 } from '@mui/material';
 import { Add, Analytics, Campaign } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { BannerStatsCards } from '../components/BannerStatsCards';
 import { BannerFilters } from '../components/BannerFilters';
 import { BannerTable } from '../components/BannerTable';
+import { BannerCard } from '../components/BannerCard';
 import { BannerDialog } from '../components/BannerDialog';
 import {
   useBanners,
@@ -34,6 +39,7 @@ import type {
 export const BannersListPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('banners');
+  const { isMobile } = useBreakpoint();
 
   // State management
   const [filters, setFilters] = useState<ListBannersDto>({
@@ -156,20 +162,49 @@ export const BannersListPage: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-        <Box display="flex" alignItems="center" gap={2}>
-          <Campaign fontSize="large" color="primary" />
-          <Typography variant="h4" component="h1">
-            {t('pageTitle')}
-          </Typography>
-        </Box>
-        <Box display="flex" gap={2}>
-          <Button variant="outlined" startIcon={<Analytics />} onClick={handleViewAnalytics}>
-            {t('analytics')}
-          </Button>
-          <Button variant="contained" startIcon={<Add />} onClick={handleAddBanner}>
-            {t('addBanner')}
-          </Button>
+      <Box mb={3}>
+        <Box 
+          display="flex" 
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          justifyContent="space-between"
+          gap={2}
+          mb={2}
+        >
+          <Box display="flex" alignItems="center" gap={2}>
+            <Campaign fontSize={isMobile ? 'medium' : 'large'} color="primary" />
+            <Typography 
+              variant="h4" 
+              component="h1"
+              sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+            >
+              {t('pageTitle')}
+            </Typography>
+          </Box>
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.5}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            <Button 
+              variant="outlined" 
+              startIcon={<Analytics />} 
+              onClick={handleViewAnalytics}
+              fullWidth={isMobile}
+              size={isMobile ? 'medium' : 'large'}
+            >
+              {t('viewAnalytics')}
+            </Button>
+            <Button 
+              variant="contained" 
+              startIcon={<Add />} 
+              onClick={handleAddBanner}
+              fullWidth={isMobile}
+              size={isMobile ? 'medium' : 'large'}
+            >
+              {t('addBanner')}
+            </Button>
+          </Stack>
         </Box>
       </Box>
 
@@ -184,17 +219,92 @@ export const BannersListPage: React.FC = () => {
         isLoading={isLoading}
       />
 
-      {/* Banners Table */}
-      <BannerTable
-        banners={banners}
-        isLoading={isLoading}
-        onEdit={handleEditBanner}
-        onDelete={handleDeleteBanner}
-        onToggleStatus={handleToggleStatus}
-        paginationModel={paginationModel}
-        onPaginationModelChange={handlePaginationModelChange}
-        rowCount={pagination?.total || 0}
-      />
+      {/* Banners Table or Cards */}
+      {isMobile ? (
+        <Box>
+          {isLoading ? (
+            <Grid container spacing={2}>
+              {[...Array(6)].map((_, index) => (
+                <Grid size={{ xs: 12 }} key={index}>
+                  <Box
+                    sx={{
+                      height: 400,
+                      borderRadius: 2,
+                      bgcolor: 'background.paper',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                      '@keyframes pulse': {
+                        '0%, 100%': { opacity: 1 },
+                        '50%': { opacity: 0.5 },
+                      },
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          ) : banners.length === 0 ? (
+            <Box
+              textAlign="center"
+              py={8}
+              sx={{
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                border: '1px dashed',
+                borderColor: 'divider',
+              }}
+            >
+              <Campaign sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                {t('noBanners')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mb={3}>
+                {t('noBannersDescription')}
+              </Typography>
+              <Button variant="contained" startIcon={<Add />} onClick={handleAddBanner}>
+                {t('addBanner')}
+              </Button>
+            </Box>
+          ) : (
+            <>
+              <Grid container spacing={2}>
+                {banners.map((banner) => (
+                  <Grid size={{ xs: 12 }} key={banner._id}>
+                    <BannerCard
+                      banner={banner}
+                      onEdit={handleEditBanner}
+                      onDelete={handleDeleteBanner}
+                      onToggleStatus={handleToggleStatus}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+              {pagination && pagination.pages > 1 && (
+                <Box display="flex" justifyContent="center" mt={4}>
+                  <Pagination
+                    count={pagination.pages}
+                    page={filters.page || 1}
+                    onChange={(_, page) => {
+                      handlePaginationModelChange({ page: page - 1, pageSize: filters.limit || 20 });
+                    }}
+                    color="primary"
+                    size={isMobile ? 'small' : 'medium'}
+                  />
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
+      ) : (
+        <BannerTable
+          banners={banners}
+          isLoading={isLoading}
+          onEdit={handleEditBanner}
+          onDelete={handleDeleteBanner}
+          onToggleStatus={handleToggleStatus}
+          paginationModel={paginationModel}
+          onPaginationModelChange={handlePaginationModelChange}
+          rowCount={pagination?.total || 0}
+        />
+      )}
 
       {/* Banner Dialog */}
       <BannerDialog
@@ -206,9 +316,16 @@ export const BannersListPage: React.FC = () => {
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onClose={handleCancelDelete} maxWidth="sm" fullWidth>
-        <DialogTitle>{t('confirmDelete')}</DialogTitle>
-        <DialogContent>
+      <Dialog 
+        open={deleteConfirmOpen} 
+        onClose={handleCancelDelete} 
+        maxWidth="sm" 
+        fullWidth
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">{t('confirmDelete')}</DialogTitle>
+        <DialogContent id="delete-dialog-description">
           <Alert severity="warning" sx={{ mb: 2 }}>
             {t('deleteConfirmation', { title: bannerToDelete?.title })}
             <br />

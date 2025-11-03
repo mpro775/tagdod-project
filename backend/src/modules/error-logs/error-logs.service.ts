@@ -98,13 +98,18 @@ export class ErrorLogsService {
 
     const skip = (page - 1) * limit;
 
+    // Build MongoDB query
+    const mongoQuery = this.errorLogModel.find(filter);
+
+    // When using text search, sort by text score first, then by createdAt
+    if (filter.$text) {
+      mongoQuery.sort({ score: { $meta: 'textScore' }, createdAt: -1 });
+    } else {
+      mongoQuery.sort({ createdAt: -1 });
+    }
+
     const [logs, total] = await Promise.all([
-      this.errorLogModel
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      mongoQuery.skip(skip).limit(limit).lean(),
       this.errorLogModel.countDocuments(filter),
     ]);
 

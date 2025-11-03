@@ -1,0 +1,494 @@
+{
+  "title": "Advanced Analytics",
+  "subtitle": "Specialized analytics and detailed reports for all aspects of the system",
+  "tabs": {
+    "sales": "Sales",
+    "products": "Products",
+    "customers": "Customers",
+    "inventory": "Inventory",
+    "financial": "Financial",
+    "marketing": "Marketing",
+    "realtime": "Real-time",
+    "reports": "Reports"
+  },
+  "header": {
+    "category": "Category",
+    "newReport": "New Report"
+  },
+  "reports": {
+    "management": "Reports Management",
+    "newReport": "New Report",
+    "title": "Report Title",
+    "description": "Report Description",
+    "category": "Report Category",
+    "format": "Report Format",
+    "includeCharts": "Include Charts",
+    "includeRawData": "Include Raw Data",
+    "createTitle": "Create New Report",
+    "generatedAt": "Generated At",
+    "archived": "Archived",
+    "actions": {
+      "view": "View",
+      "exportPdf": "Export PDF",
+      "archive": "Archive",
+      "delete": "Delete"
+    }
+  },
+  "form": {
+    "cancel": "Cancel",
+    "create": "Create Report",
+    "creating": "Creating...",
+    "titleRequired": "Report title is required"
+  },
+  "categories": {
+    "SALES": "Sales",
+    "PRODUCTS": "Products",
+    "CUSTOMERS": "Customers",
+    "INVENTORY": "Inventory",
+    "FINANCIAL": "Financial",
+    "MARKETING": "Marketing"
+  },
+  "formats": {
+    "PDF": "PDF",
+    "EXCEL": "Excel",
+    "CSV": "CSV"
+  },
+  "messages": {
+    "generateError": "Error generating report",
+    "exportError": "Error exporting report",
+    "deleteError": "Error deleting report",
+    "archiveError": "Error archiving report"
+  },
+  "filters": {
+    "title": "Advanced Filters",
+    "activeFilters": "active filter",
+    "activeFiltersCount": "{{count}} active filters",
+    "activeFiltersLabel": "Active Filters:",
+    "clearAll": "Clear All",
+    "reset": "Reset",
+    "apply": "Apply Filters",
+    "search": "Search",
+    "saveFilters": "Save Filters",
+    "savedFilters": "Saved Filters",
+    "saveFilterTitle": "Save current filters for future use:",
+    "filterName": "Filter Name",
+    "save": "Save",
+    "all": "All",
+    "selectMultiple": "Select multiple",
+    "from": "From",
+    "to": "To",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "dashboard": {
+    "title": "Analytics Dashboard",
+    "subtitle": "Comprehensive analytics for system performance and key indicators",
+    "period": "Period",
+    "periodTypes": {
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly",
+      "QUARTERLY": "Quarterly",
+      "YEARLY": "Yearly"
+    },
+    "refresh": "Refresh Data",
+    "advancedFilters": "Advanced Filters",
+    "totalUsers": "Total Users",
+    "tabs": {
+      "overview": "Overview",
+      "revenue": "Revenue",
+      "users": "Users",
+      "products": "Products",
+      "services": "Services",
+      "support": "Support"
+    },
+    "sections": {
+      "kpis": "Key Performance Indicators",
+      "revenueTrends": "Revenue Trends",
+      "systemPerformance": "System Performance",
+      "detailedData": "Detailed Data"
+    },
+    "tableColumns": {
+      "product": "Product",
+      "sales": "Sales",
+      "revenue": "Revenue"
+    },
+    "errors": {
+      "loadError": "An error occurred while loading analytics data. Please try again."
+    }
+  },
+  "table": {
+    "title": "Data Table",
+    "search": "Search...",
+    "export": "Export Data",
+    "actions": "Actions",
+    "all": "All",
+    "loading": "Loading...",
+    "noData": "No data to display",
+    "rowsPerPage": "Rows per page:",
+    "displayedRows": "{{from}}-{{to}} of {{count}}",
+    "displayedRowsMore": "{{from}}-{{to}} of more than {{to}}",
+    "exportError": "An error occurred while exporting data",
+    "exportNoData": "No data to export"
+  },
+  "errorBoundary": {
+    "title": "Analytics Error",
+    "unexpectedError": "An unexpected error occurred",
+    "description": "An error occurred while loading or displaying analytics data. Please try again.",
+    "retry": "Retry",
+    "goHome": "Return to Dashboard",
+    "tips": "Tips to resolve the issue:",
+    "tip1": "Make sure you are connected to the internet",
+    "tip2": "Check your permissions to access analytics",
+    "tip3": "Try refreshing the page",
+    "tip4": "If the error persists, please contact technical support"
+  },
+  "charts": {
+    "noData": "No data to display",
+    "defaultValue": "Value",
+    "productPerformance": "Product Performance",
+    "revenueTrends": "Revenue Trends",
+    "serviceAnalytics": "Service Analytics",
+    "supportAnalytics": "Support Analytics",
+    "userAnalytics": "User Analytics",
+    "sales": "Sales",
+    "revenue": "Revenue"
+  },
+  "customerAnalytics": {
+    "title": "Customer Analytics",
+    "comprehensiveAnalysis": "Comprehensive Analysis",
+    "totalCustomers": "Total Customers",
+    "newCustomers": "New Customers",
+    "activeCustomers": "Active Customers",
+    "customerValue": "Customer Value",
+    "fromPreviousPeriod": "from previous period",
+    "customerSegments": "Customer Segments",
+    "topCustomers": "Top Customers",
+    "orders": "Orders",
+    "totalSpending": "Total Spending",
+    "loadError": "An error occurred while loading customer analytics data"
+  },
+  "financialReport": {
+    "title": "Financial Report",
+    "comprehensiveAnalysis": "Comprehensive Analysis",
+    "loadError": "An error occurred while loading the financial report",
+    "totalRevenue": "Total Revenue",
+    "fromPreviousPeriod": "from previous period",
+    "dailyRevenue": "Daily Revenue",
+    "cumulativeBalance": "Cumulative Balance",
+    "revenueBySource": "Revenue by Source"
+  },
+  "inventoryReport": {
+    "title": "Inventory Report",
+    "comprehensiveAnalysis": "Comprehensive Analysis",
+    "loadError": "An error occurred while loading the inventory report",
+    "totalProducts": "Total Products",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock",
+    "inventoryValue": "Inventory Value",
+    "fromPreviousPeriod": "from previous period",
+    "byCategory": "Inventory by Category",
+    "movements": "Inventory Movements",
+    "incoming": "Incoming",
+    "outgoing": "Outgoing"
+  },
+  "kpi": {
+    "progressToTarget": "Progress to Target"
+  },
+  "marketingReport": {
+    "title": "Marketing Report",
+    "comprehensiveAnalysis": "Comprehensive Analysis",
+    "loadError": "An error occurred while loading the marketing report",
+    "totalCoupons": "Total Coupons",
+    "activeCoupons": "Active Coupons",
+    "totalDiscounts": "Total Discounts",
+    "roi": "Return on Investment",
+    "fromPreviousPeriod": "from previous period",
+    "ofTotal": "of total {{total}} coupons",
+    "campaignPerformance": "Campaign Performance",
+    "topCoupons": "Top Coupons",
+    "marketingMetrics": "Marketing Metrics",
+    "campaignDetails": "Campaign Performance Details",
+    "conversionRate": "Conversion Rate",
+    "noCouponsUsed": "No coupons used yet",
+    "usage": "Usage",
+    "discount": "Discount",
+    "reach": "Reach",
+    "conversions": "Conversions",
+    "revenue": "Revenue"
+  },
+  "performanceMetrics": {
+    "title": "Performance Metrics",
+    "systemPerformance": "System Performance",
+    "loadError": "An error occurred while loading performance metrics",
+    "refresh": "Refresh Data",
+    "responseTime": "Response Time",
+    "errorRate": "Error Rate",
+    "uptime": "Uptime",
+    "memoryUsage": "Memory Usage",
+    "cpuUsage": "CPU",
+    "diskUsage": "Storage",
+    "performanceStatus": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "needsImprovement": "Needs Improvement"
+    },
+    "systemPerformance24h": "System Performance Over 24 Hours",
+    "responseTimeMs": "Response Time (ms)",
+    "memoryUsagePercent": "Memory Usage (%)",
+    "resourceUsage": "Resource Usage",
+    "databaseStats": "Database Statistics",
+    "collections": "Collections",
+    "documents": "Documents",
+    "databaseSize": "Database Size",
+    "indexSize": "Index Size",
+    "slowestEndpoints": "Slowest Endpoints",
+    "calls": "Calls",
+    "maxTime": "Max Time"
+  },
+  "productPerformance": {
+    "title": "Product Performance",
+    "comprehensiveAnalysis": "Comprehensive Analysis",
+    "loadError": "An error occurred while loading product performance data. Please try again.",
+    "timePeriod": "Time Period",
+    "refresh": "Refresh Data",
+    "totalProducts": "Total Products",
+    "totalSales": "Total Sales",
+    "averageRating": "Average Rating",
+    "inventoryAlerts": "Inventory Alerts",
+    "fromPreviousPeriod": "from previous period",
+    "topProducts": "Top Products",
+    "categoryDistribution": "Category Distribution",
+    "lowStockProducts": "Low Stock Products",
+    "topProductsList": "Top Products List",
+    "sales": "Sales",
+    "rating": "Rating",
+    "units": "units",
+    "unit": "unit"
+  },
+  "salesAnalytics": {
+    "title": "Sales Analytics",
+    "comprehensiveAnalysis": "Comprehensive Analysis",
+    "loadError": "An error occurred while loading sales data",
+    "totalRevenue": "Total Revenue",
+    "totalOrders": "Total Orders",
+    "averageOrderValue": "Average Order Value",
+    "salesGrowthRate": "Sales Growth Rate",
+    "fromPreviousPeriod": "from previous period",
+    "orders": "orders",
+    "noData": "No data available",
+    "positiveGrowth": "Positive growth",
+    "decline": "Decline",
+    "salesTrends": "Sales Trends",
+    "revenue": "Revenue",
+    "salesByCategory": "Sales by Category",
+    "paymentMethods": "Payment Methods",
+    "topProducts": "Top Products",
+    "ofTotal": "of total"
+  },
+  "realTimeMetrics": {
+    "title": "Real-Time Metrics",
+    "loadError": "An error occurred while loading real-time metrics",
+    "lastUpdate": "Last Update",
+    "refresh": "Refresh Data",
+    "systemStatus": "System Status",
+    "healthy": "Healthy",
+    "warning": "Warning",
+    "critical": "Critical",
+    "unknown": "Unknown",
+    "apiResponseTime": "API Response Time",
+    "errorRate": "Error Rate",
+    "uptime": "Uptime",
+    "activeConnections": "Active Connections",
+    "activeUsers": "Active Users",
+    "currentlyActive": "Currently active users",
+    "todaySales": "Today's Sales",
+    "totalTodaySales": "Total sales for today",
+    "todayOrders": "Today's Orders",
+    "totalTodayOrders": "Total orders for today",
+    "supportTickets": "Support Tickets",
+    "pendingTickets": "Tickets pending processing",
+    "resourceUsage": "Resource Usage",
+    "memory": "Memory",
+    "cpu": "CPU",
+    "storage": "Storage",
+    "liveActivity": "Live Activity",
+    "inventoryAlerts": "Inventory Alerts",
+    "productsNeedRestock": "Products need restocking",
+    "activeOrders": "Active Orders",
+    "ordersInProcessing": "Orders in processing",
+    "todayNewCustomers": "New Customers Today",
+    "newRegistrations": "New registrations",
+    "abandonedCarts": "Abandoned Carts",
+    "incompleteCarts": "Incomplete carts",
+    "systemHealthy": "Healthy",
+    "systemUnderMaintenance": "Under Maintenance"
+  },
+  "advancedDashboard": {
+    "title": "Advanced Analytics Dashboard",
+    "subtitle": "Comprehensive analysis of all business aspects with detailed reports and recommendations",
+    "loadingAnalytics": "Loading analytics data...",
+    "refresh": "Refresh Data",
+    "exportReport": "Export Report",
+    "tabs": {
+      "overview": "Overview",
+      "sales": "Sales",
+      "products": "Products",
+      "customers": "Customers",
+      "financial": "Financial",
+      "marketing": "Marketing",
+      "inventory": "Inventory"
+    },
+    "realTimeStatus": {
+      "activeUsers": "Active Users",
+      "todaySales": "Today's Sales",
+      "systemStatus": "System Status"
+    }
+  },
+  "mainPage": {
+    "title": "Advanced Analytics System",
+    "subtitle": "Comprehensive analytics and advanced performance indicators for better management",
+    "lastUpdate": "Last Update",
+    "tabs": {
+      "dashboard": {
+        "label": "Analytics Dashboard",
+        "description": "Overview of key indicators and performance"
+      },
+      "advanced": {
+        "label": "Advanced Analytics",
+        "description": "Specialized analytics and detailed reports"
+      },
+      "reports": {
+        "label": "Reports Management",
+        "description": "Create and manage analytical reports"
+      },
+      "export": {
+        "label": "Data Export",
+        "description": "Export data in different formats"
+      }
+    }
+  },
+  "export": {
+    "title": "Export Data",
+    "description": "Export analytical data in different formats",
+    "startExport": "Start Export",
+    "exportData": "Export Data",
+    "instructions": {
+      "title": "How to Export",
+      "description": "Use the export wizard to export data in different formats (PDF, Excel, CSV, JSON). You can select the data type, time period, and required filters."
+    },
+    "quickActions": "Quick Actions",
+    "steps": {
+      "dataType": "Select Data Type",
+      "formatAndPeriod": "Select Format and Period",
+      "filters": "Configure Filters",
+      "export": "Export Data"
+    },
+    "dataType": {
+      "label": "Data Type",
+      "sales": "Sales and Revenue Data",
+      "products": "Products and Inventory Data",
+      "customers": "Customers and Users Data",
+      "custom": "Custom Data",
+      "info": "Select the type of data you want to export. You can export sales, products, customers, or custom data."
+    },
+    "format": {
+      "label": "File Format",
+      "PDF": "PDF",
+      "EXCEL": "Excel",
+      "CSV": "CSV",
+      "JSON": "JSON"
+    },
+    "dateRange": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "from": "From",
+      "to": "To"
+    },
+    "filters": {
+      "includeCharts": "Include Charts",
+      "includeRawData": "Include Raw Data",
+      "groupBy": "Group Data",
+      "groupByPlaceholder": "e.g., daily, weekly, monthly",
+      "category": "Filter by Category",
+      "categoryPlaceholder": "e.g., Solar Energy, Lighting"
+    },
+    "summary": {
+      "title": "Export Summary",
+      "charts": "Charts",
+      "chartsIncluded": "Included",
+      "chartsNotIncluded": "Not Included",
+      "rawData": "Raw Data",
+      "rawDataIncluded": "Included",
+      "rawDataNotIncluded": "Not Included"
+    },
+    "status": {
+      "exporting": "Exporting data...",
+      "completed": "Data exported successfully! You can download the file from the link below.",
+      "error": "An error occurred while exporting data. Please try again.",
+      "downloadFile": "Download File",
+      "startExport": "Start Export",
+      "exportingText": "Exporting...",
+      "unsupportedType": "Unsupported export type"
+    },
+    "actions": {
+      "next": "Next",
+      "previous": "Previous",
+      "cancel": "Cancel",
+      "reset": "Reset",
+      "close": "Close"
+    }
+  },
+  "reportsManagement": {
+    "title": "Reports Management",
+    "subtitle": "Create and manage advanced analytical reports",
+    "newReport": "New Report",
+    "exportData": "Export Data",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search reports...",
+    "categoryLabel": "Category",
+    "allCategories": "All Categories",
+    "sortBy": "Sort By",
+    "sortByDate": "Date",
+    "sortByTitle": "Title",
+    "sortByCategory": "Category",
+    "sortAscending": "Ascending",
+    "sortDescending": "Descending",
+    "tabs": {
+      "all": "All Reports",
+      "sales": "Sales",
+      "products": "Products",
+      "customers": "Customers",
+      "inventory": "Inventory",
+      "financial": "Financial",
+      "marketing": "Marketing"
+    },
+    "allReports": "All Reports",
+    "total": "Total",
+    "archived": "Archived",
+    "archivedLabel": "Archived",
+    "unarchive": "Unarchive",
+    "by": "By",
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "exportPdf": "Export PDF",
+      "archive": "Archive",
+      "delete": "Delete"
+    },
+    "createDialog": {
+      "title": "Create New Report",
+      "reportTitle": "Report Title",
+      "reportDescription": "Report Description",
+      "reportCategory": "Report Category",
+      "reportFormat": "Report Format",
+      "creating": "Creating...",
+      "create": "Create Report",
+      "cancel": "Cancel"
+    },
+    "deleteConfirm": "Are you sure you want to delete this report?",
+    "reportsCategory": "{category} Reports",
+    "loadError": "An error occurred while loading reports. Please try again."
+  }
+}
+

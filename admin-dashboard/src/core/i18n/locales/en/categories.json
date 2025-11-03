@@ -152,8 +152,21 @@
     "inactive": "Inactive",
     "reload": "Reload"
   },
+  "dialogs": {
+    "deleteTitle": "Delete Category",
+    "permanentDeleteTitle": "Permanent Delete",
+    "permanentDelete": "Delete Permanently",
+    "temporaryDelete": "Delete Temporarily"
+  },
   "placeholders": {
     "search": "Search by name or description...",
     "order": "0"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "cancel": "Cancel"
   }
 }

@@ -10,6 +10,19 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import {
+  getChartHeight,
+  getChartMargin,
+  getChartLabelFontSize,
+  getChartTooltipFontSize,
+  shouldHideLegend,
+  getLegendPosition,
+  getYAxisWidth,
+  getXAxisHeight,
+  getCardPadding,
+} from '../utils/responsive';
 
 interface DataPoint {
   name: string;
@@ -38,21 +51,42 @@ export const AreaChartComponent: React.FC<AreaChartComponentProps> = ({
   data,
   title,
   height = 350,
-  areas = [
-    { dataKey: 'value', stroke: '#8884d8', fill: '#8884d8', name: 'القيمة' }
-  ],
+  areas,
   showGrid = true,
   showLegend = true,
   xAxisKey = 'name',
   yAxisLabel,
   stacked = false,
 }) => {
+  const { t } = useTranslation('analytics');
+  const breakpoint = useBreakpoint();
+  
+  const defaultAreas = areas || [
+    { dataKey: 'value', stroke: '#8884d8', fill: '#8884d8', name: t('charts.defaultValue') }
+  ];
+  
+  const chartHeight = getChartHeight(breakpoint, height);
+  const chartMargin = getChartMargin(breakpoint);
+  const labelFontSize = getChartLabelFontSize(breakpoint);
+  const tooltipFontSize = getChartTooltipFontSize(breakpoint);
+  const yAxisWidth = getYAxisWidth(breakpoint);
+  const xAxisHeight = getXAxisHeight(breakpoint, true);
+  const hideLegend = shouldHideLegend(breakpoint) && breakpoint.isXs;
+  const legendPosition = getLegendPosition(breakpoint);
+  const cardPadding = getCardPadding(breakpoint);
+  const needsRotation = breakpoint.isXs || breakpoint.isSm;
+
   if (!data || data.length === 0) {
     return (
       <Card>
-        <CardContent>
-          <Typography variant="body2" color="text.secondary" textAlign="center">
-            لا توجد بيانات للعرض
+        <CardContent sx={{ p: cardPadding }}>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            textAlign="center"
+            sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+          >
+            {t('charts.noData')}
           </Typography>
         </CardContent>
       </Card>
@@ -62,37 +96,66 @@ export const AreaChartComponent: React.FC<AreaChartComponentProps> = ({
   return (
     <Card>
       {title && (
-        <CardContent sx={{ pb: 1 }}>
-          <Typography variant="h6" gutterBottom>
+        <CardContent sx={{ pb: 1, p: cardPadding }}>
+          <Typography 
+            variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+            gutterBottom
+            sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+          >
             {title}
           </Typography>
         </CardContent>
       )}
-      <CardContent sx={{ pt: 0 }}>
-        <ResponsiveContainer width="100%" height={height}>
-          <AreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+      <CardContent sx={{ pt: 0, p: cardPadding }}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
+          <AreaChart 
+            data={data} 
+            margin={chartMargin}
+          >
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
             <XAxis
               dataKey={xAxisKey}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: labelFontSize }}
               tickLine={false}
+              angle={needsRotation ? -45 : 0}
+              textAnchor={needsRotation ? 'end' : 'middle'}
+              height={xAxisHeight}
+              interval={breakpoint.isXs ? 'preserveStartEnd' : 0}
             />
             <YAxis
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: labelFontSize }}
               tickLine={false}
-              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft' } : undefined}
+              width={yAxisWidth}
+              label={yAxisLabel ? { 
+                value: yAxisLabel, 
+                angle: -90, 
+                position: 'insideLeft',
+                style: { fontSize: `${labelFontSize}px` }
+              } : undefined}
             />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#fff',
                 border: '1px solid #ccc',
                 borderRadius: 8,
-                fontSize: '14px',
+                fontSize: `${tooltipFontSize}px`,
+                padding: breakpoint.isXs ? '8px' : '12px',
               }}
-              formatter={(value: number) => [value.toLocaleString('ar-SA'), '']}
+              formatter={(value: number) => [value.toLocaleString(), '']}
+              position={{ x: breakpoint.isXs ? 10 : undefined, y: breakpoint.isXs ? -10 : undefined }}
             />
-            {showLegend && <Legend />}
-            {areas.map((area, index) => (
+            {showLegend && !hideLegend && (
+              <Legend 
+                wrapperStyle={{ 
+                  fontSize: `${tooltipFontSize}px`,
+                  paddingTop: breakpoint.isXs || breakpoint.isSm ? '16px' : '0',
+                }}
+                iconSize={breakpoint.isXs ? 10 : breakpoint.isSm ? 12 : 16}
+                verticalAlign={legendPosition === 'bottom' ? 'bottom' : 'top'}
+                height={breakpoint.isXs || breakpoint.isSm ? 36 : undefined}
+              />
+            )}
+            {defaultAreas.map((area, index) => (
               <Area
                 key={index}
                 type="monotone"
@@ -101,7 +164,7 @@ export const AreaChartComponent: React.FC<AreaChartComponentProps> = ({
                 stroke={area.stroke}
                 fill={area.fill}
                 name={area.name}
-                strokeWidth={2}
+                strokeWidth={breakpoint.isXs ? 1.5 : breakpoint.isSm ? 1.8 : 2}
               />
             ))}
           </AreaChart>

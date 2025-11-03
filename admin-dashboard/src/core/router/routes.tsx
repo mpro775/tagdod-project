@@ -37,6 +37,16 @@ const UserAnalyticsPage = lazy(() =>
     default: m.UserAnalyticsPage,
   }))
 );
+const DeletedUsersPage = lazy(() =>
+  import('@/features/users/pages/DeletedUsersPage').then((m) => ({
+    default: m.DeletedUsersPage,
+  }))
+);
+const VerificationRequestsPage = lazy(() =>
+  import('@/features/users/pages/VerificationRequestsPage').then((m) => ({
+    default: m.VerificationRequestsPage,
+  }))
+);
 const ProductsListPage = lazy(() =>
   import('@/features/products/pages/ProductsListPage').then((m) => ({
     default: m.ProductsListPage,
@@ -289,11 +299,12 @@ const CartAnalyticsPage = lazy(() =>
 );
 const NotFoundPage = lazy(() => import('@/features/auth/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const ExchangeRatesPage = lazy(() => import('@/features/exchange-rates/pages/ExchangeRatesPage').then((m) => ({ default: m.default })));
-const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage').then((m) => ({ default: m.default })));
 const SystemMonitoringPage = lazy(() => import('@/features/system-monitoring/pages/SystemMonitoringPage').then((m) => ({ default: m.SystemMonitoringPage })));
 const ErrorLogsPage = lazy(() => import('@/features/error-logs/pages/ErrorLogsPage').then((m) => ({ default: m.ErrorLogsPage })));
-const I18nManagementPage = lazy(() => import('@/features/i18n-management/pages/I18nManagementPage').then((m) => ({ default: m.I18nManagementPage })));
 const SystemSettingsPage = lazy(() => import('@/features/system-settings/pages/SystemSettingsPage').then((m) => ({ default: m.SystemSettingsPage })));
+
+// Policies
+const PoliciesManagementPage = lazy(() => import('@/features/policies/pages/PoliciesManagementPage').then((m) => ({ default: m.PoliciesManagementPage })));
 
 // Addresses Admin
 const AddressesDashboardPage = lazy(() => import('@/features/addresses/pages/AddressesDashboardPage').then((m) => ({ default: m.AddressesDashboardPage })));
@@ -352,6 +363,14 @@ export const routes: RouteObject[] = [
       {
         path: 'users/new',
         element: <UserFormPage />,
+      },
+      {
+        path: 'users/deleted',
+        element: <DeletedUsersPage />,
+      },
+      {
+        path: 'users/verification-requests',
+        element: <VerificationRequestsPage />,
       },
       {
         path: 'users/:id',
@@ -656,11 +675,7 @@ export const routes: RouteObject[] = [
         element: <ExchangeRatesPage />,
       },
 
-      // Settings
-      {
-        path: 'settings',
-        element: <SettingsPage />,
-      },
+     
 
       // ===========================================
       // SYSTEM MANAGEMENT (NEW)
@@ -678,16 +693,16 @@ export const routes: RouteObject[] = [
         element: <ErrorLogsPage />,
       },
 
-      // i18n Management
-      {
-        path: 'system/i18n',
-        element: <I18nManagementPage />,
-      },
+     
 
       // System Settings
       {
         path: 'system/settings',
         element: <SystemSettingsPage />,
+      },
+      {
+        path: 'policies',
+        element: <PoliciesManagementPage />,
       },
 
       // ===========================================

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '../api/authApi';
 import { useAuthStore } from '@/store/authStore';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
@@ -8,6 +9,7 @@ import { AuthLayout, PhoneInputStep, OtpInputStep, AuthStepper, DevLoginStep, Pa
 import toast from 'react-hot-toast';
 
 export const LoginPage: React.FC = () => {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const { login } = useAuthStore();
 
@@ -20,7 +22,7 @@ export const LoginPage: React.FC = () => {
   const [devLoginError, setDevLoginError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  const steps = ['إدخال رقم الهاتف', 'التحقق من الرمز'];
+  const steps = [t('steps.enterPhone'), t('steps.verifyCode')];
 
   // Send OTP Mutation
   const sendOtpMutation = useMutation({
@@ -29,10 +31,10 @@ export const LoginPage: React.FC = () => {
       setDevCode(data.devCode || '');
       setStep('otp');
       setPhoneError('');
-      toast.success('تم إرسال رمز التحقق بنجاح');
+      toast.success(t('messages.otpSent'));
     },
     onError: (error) => {
-      setPhoneError('فشل في إرسال رمز التحقق. يرجى المحاولة مرة أخرى.');
+      setPhoneError(t('messages.otpSendFailed'));
       ErrorHandler.showError(error);
     },
   });
@@ -81,11 +83,11 @@ export const LoginPage: React.FC = () => {
         ],
       });
 
-      toast.success('تم تسجيل الدخول بنجاح');
+      toast.success(t('messages.loginSuccess'));
       navigate('/dashboard');
     },
     onError: (error) => {
-      setOtpError('رمز التحقق غير صحيح. يرجى المحاولة مرة أخرى.');
+      setOtpError(t('messages.otpInvalid'));
       ErrorHandler.showError(error);
     },
   });
@@ -154,11 +156,11 @@ export const LoginPage: React.FC = () => {
         permissions: data.me.permissions || [],
       });
 
-      toast.success('تم تسجيل الدخول بنجاح');
+      toast.success(t('messages.loginSuccess'));
       navigate('/dashboard');
     },
     onError: (error) => {
-      setPasswordError('رقم الهاتف أو كلمة المرور غير صحيحة');
+      setPasswordError(t('messages.loginFailed'));
       ErrorHandler.showError(error);
     },
   });
@@ -199,11 +201,11 @@ export const LoginPage: React.FC = () => {
         ],
       });
 
-      toast.success('تم تسجيل الدخول بنجاح');
+      toast.success(t('messages.loginSuccess'));
       navigate('/dashboard');
     },
     onError: (error) => {
-      setDevLoginError('فشل في تسجيل الدخول. تحقق من البيانات.');
+      setDevLoginError(t('messages.devLoginFailed'));
       ErrorHandler.showError(error);
     },
   });
@@ -222,13 +224,13 @@ export const LoginPage: React.FC = () => {
 
   return (
     <AuthLayout
-      title="لوحة التحكم"
+      title={t('title')}
       subtitle={
         loginMethod === 'password'
-          ? 'سجل دخول باستخدام رقم الهاتف وكلمة المرور'
+          ? t('subtitle.password')
           : step === 'phone'
-          ? 'أدخل رقم هاتفك للمتابعة'
-          : 'أدخل رمز التحقق المرسل'
+          ? t('subtitle.phone')
+          : t('subtitle.otp')
       }
       showLogo={true}
     >

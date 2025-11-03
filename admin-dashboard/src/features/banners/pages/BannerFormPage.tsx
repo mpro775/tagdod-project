@@ -21,8 +21,7 @@ import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useCreateBanner, useUpdateBanner, useBanner } from '../hooks/useBanners';
 import {
-  BANNER_LOCATION_OPTIONS,
-  BANNER_PROMOTION_TYPE_OPTIONS,
+  BannerLocation,
   BannerPromotionType,
 } from '../types/banner.types';
 import type { CreateBannerDto, UpdateBannerDto } from '../types/banner.types';
@@ -36,6 +35,29 @@ export const BannerFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
   const { t } = useTranslation('banners');
+
+  // Location options with translations
+  const locationOptions = [
+    { value: BannerLocation.HOME_TOP },
+    { value: BannerLocation.HOME_MIDDLE },
+    { value: BannerLocation.HOME_BOTTOM },
+    { value: BannerLocation.CATEGORY_TOP },
+    { value: BannerLocation.PRODUCT_PAGE },
+    { value: BannerLocation.CART_PAGE },
+    { value: BannerLocation.CHECKOUT_PAGE },
+    { value: BannerLocation.SIDEBAR },
+    { value: BannerLocation.FOOTER },
+  ];
+
+  // Promotion type options with translations
+  const promotionTypeOptions = [
+    { value: BannerPromotionType.DISCOUNT },
+    { value: BannerPromotionType.FREE_SHIPPING },
+    { value: BannerPromotionType.NEW_ARRIVAL },
+    { value: BannerPromotionType.SALE },
+    { value: BannerPromotionType.SEASONAL },
+    { value: BannerPromotionType.BRAND_PROMOTION },
+  ];
 
   const { data: banner, isLoading: loadingBanner } = useBanner(id!, {
     enabled: isEditing,
@@ -58,7 +80,7 @@ export const BannerFormPage: React.FC = () => {
       imageUrl: '',
       linkUrl: '',
       altText: '',
-      location: BANNER_LOCATION_OPTIONS[0].value,
+      location: BannerLocation.HOME_TOP,
       promotionType: BannerPromotionType.DISCOUNT,
       isActive: true,
       sortOrder: 0,
@@ -176,13 +198,21 @@ export const BannerFormPage: React.FC = () => {
                 name="location"
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label={t('form.location.label')}
-                    error={!!errors.location}
-                    helperText={errors.location?.message}
-                  />
+                  <FormControl fullWidth error={!!errors.location}>
+                    <InputLabel>{t('form.location.label')}</InputLabel>
+                    <Select {...field} label={t('form.location.label')}>
+                      {locationOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {t(`form.location.${option.value}`)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.location && (
+                      <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                        {errors.location.message}
+                      </Typography>
+                    )}
+                  </FormControl>
                 )}
               />
             </Grid>
@@ -311,9 +341,9 @@ export const BannerFormPage: React.FC = () => {
                       label={t('form.promotionType.label')}
                       value={field.value || ''}
                     >
-                      {BANNER_PROMOTION_TYPE_OPTIONS.map((option) => (
+                      {promotionTypeOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
-                          {option.label}
+                          {t(`form.promotionType.${option.value}`)}
                         </MenuItem>
                       ))}
                     </Select>

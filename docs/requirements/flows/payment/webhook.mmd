@@ -4,6 +4,11 @@ flowchart TD
   A[استقبال Webhook من Payment Provider] --> B[استخراج البيانات من الطلب]
   B --> C{التحقق من التوقيع?}
   C -->|توقيع غير صحيح| D[إرجاع خطأ 401 - توقيع غير صحيح]
+  
+  %% Note: BANK_TRANSFER لا يستخدم webhooks
+  AA[ملاحظة: الدفع المحلي BANK_TRANSFER] --> AB[لا يستخدم webhooks]
+  AB --> AC[يتم المطابقة يدوياً من لوحة التحكم]
+  AC --> AD[انظر: Local Payment Verification Flow]
 
   C -->|توقيع صحيح| E[البحث عن الطلب بـ paymentIntentId]
   E --> F{وجد الطلب?}

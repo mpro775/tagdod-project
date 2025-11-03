@@ -21,7 +21,7 @@ export const MainLayout: React.FC = () => {
         width={DRAWER_WIDTH}
         open={sidebarOpen}
         onClose={toggleSidebar}
-        variant={isMobile ? 'temporary' : 'permanent'}
+        variant={isMobile ? 'temporary' : 'persistent'}
       />
 
       {/* Main Content */}
@@ -31,7 +31,11 @@ export const MainLayout: React.FC = () => {
           flexGrow: 1,
           width: {
             xs: '100%',
-            md: `calc(100% - ${sidebarOpen ? DRAWER_WIDTH : 0}px)`,
+            md: sidebarOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
+          },
+          ml: {
+            xs: 0,
+            md: sidebarOpen ? `${DRAWER_WIDTH}px` : 0,
           },
           transition: (theme) =>
             theme.transitions.create(['width', 'margin'], {

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, SortOrder } from 'mongoose';
 import { Brand } from './schemas/brand.schema';
+import { Product } from '../products/schemas/product.schema';
 import { CreateBrandDto, UpdateBrandDto, ListBrandsDto } from './dto/brand.dto';
 import { 
   BrandNotFoundException,
@@ -12,7 +13,10 @@ import { slugify } from '../../shared/utils/slug.util';
 
 @Injectable()
 export class BrandsService {
-  constructor(@InjectModel(Brand.name) private brandModel: Model<Brand>) {}
+  constructor(
+    @InjectModel(Brand.name) private brandModel: Model<Brand>,
+    @InjectModel(Product.name) private productModel: Model<Product>,
+  ) {}
 
   /**
    * Create a new brand
@@ -180,5 +184,27 @@ export class BrandsService {
 
     brand.isActive = !brand.isActive;
     return await brand.save();
+  }
+
+  /**
+   * Get brand statistics
+   */
+  async getStats() {
+    const [total, active, inactive, brandsWithProducts] = await Promise.all([
+      this.brandModel.countDocuments({}),
+      this.brandModel.countDocuments({ isActive: true }),
+      this.brandModel.countDocuments({ isActive: false }),
+      this.productModel.distinct('brandId', {
+        brandId: { $ne: null },
+        deletedAt: null,
+      }),
+    ]);
+
+    return {
+      total,
+      active,
+      inactive,
+      withProducts: brandsWithProducts.length,
+    };
   }
 }

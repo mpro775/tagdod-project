@@ -32,6 +32,9 @@ import {
   NotificationAdapterFactory,
   MockNotificationAdapter,
 } from './adapters/notification.adapters';
+import { FCMAdapter } from './adapters/fcm.adapter';
+import { EmailAdapter } from './adapters/email.adapter';
+import { SMSAdapter } from './adapters/sms.adapter';
 
 // Ports
 import {} from './ports/notification.ports';
@@ -59,10 +62,13 @@ import { SharedModule } from '../../shared/shared.module';
     NotificationPreferenceService,
 
     // Adapters
+    FCMAdapter, // FCM Adapter for push notifications
+    EmailAdapter, // Email Adapter for email notifications
+    SMSAdapter, // SMS Adapter for SMS notifications
     InAppNotificationAdapter,
-    PushNotificationAdapter,
-    EmailNotificationAdapter,
-    SmsNotificationAdapter,
+    PushNotificationAdapter, // Uses FCMAdapter internally
+    EmailNotificationAdapter, // Uses EmailAdapter internally
+    SmsNotificationAdapter, // Uses SMSAdapter internally
     NotificationAdapterFactory,
     MockNotificationAdapter,
 
@@ -96,6 +102,9 @@ import { SharedModule } from '../../shared/shared.module';
 
     // Adapters
     NotificationAdapterFactory,
+    FCMAdapter, // Export FCMAdapter for direct use if needed
+    EmailAdapter, // Export EmailAdapter for direct use if needed
+    SMSAdapter, // Export SMSAdapter for direct use if needed
     InAppNotificationAdapter,
     PushNotificationAdapter,
     EmailNotificationAdapter,

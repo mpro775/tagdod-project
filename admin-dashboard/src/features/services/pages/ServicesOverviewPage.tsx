@@ -14,7 +14,7 @@ import {
   Stack,
   Paper,
   Avatar,
- 
+  useTheme,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -31,6 +31,7 @@ import {
   Timeline,
   Speed,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useOverviewStatistics } from '../hooks/useServices';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
 
@@ -45,77 +46,113 @@ const StatCard: React.FC<{
   };
   subtitle?: string;
   loading?: boolean;
-}> = ({ title, value, icon, color, trend, subtitle, loading = false }) => (
-  <Card sx={{ height: '100%', position: 'relative', overflow: 'visible' }}>
-    <CardContent>
-      <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Box flex={1}>
-          <Typography color="text.secondary" gutterBottom variant="body2" sx={{ mb: 1 }}>
-            {title}
-          </Typography>
-          {loading ? (
-            <Skeleton variant="text" width="60%" height={40} />
-          ) : (
-            <Typography variant="h4" component="h2" sx={{ mb: 1 }}>
-              {value}
+}> = ({ title, value, icon, color, trend, subtitle, loading = false }) => {
+  const theme = useTheme();
+  
+  return (
+    <Card 
+      sx={{ 
+        height: '100%', 
+        position: 'relative', 
+        overflow: 'visible',
+        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+      }}
+    >
+      <CardContent>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Box flex={1}>
+            <Typography color="text.secondary" gutterBottom variant="body2" sx={{ mb: 1 }}>
+              {title}
             </Typography>
-          )}
-          {subtitle && (
-            <Typography color="text.secondary" variant="body2" sx={{ mb: 1 }}>
-              {subtitle}
-            </Typography>
-          )}
-          {trend && !loading && (
-            <Box display="flex" alignItems="center" mt={1}>
-              {trend.isPositive ? (
-                <TrendingUp color="success" fontSize="small" />
-              ) : (
-                <TrendingDown color="error" fontSize="small" />
-              )}
-              <Typography
-                variant="body2"
-                color={trend.isPositive ? 'success.main' : 'error.main'}
-                ml={0.5}
-                fontWeight="medium"
+            {loading ? (
+              <Skeleton variant="text" width="60%" height={40} />
+            ) : (
+              <Typography 
+                variant="h4" 
+                component="h2" 
+                sx={{ 
+                  mb: 1,
+                  fontFeatureSettings: '"tnum"',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
               >
-                {Math.abs(trend.value)}%
+                {value}
               </Typography>
-            </Box>
-          )}
+            )}
+            {subtitle && (
+              <Typography color="text.secondary" variant="body2" sx={{ mb: 1 }}>
+                {subtitle}
+              </Typography>
+            )}
+            {trend && !loading && (
+              <Box display="flex" alignItems="center" mt={1}>
+                {trend.isPositive ? (
+                  <TrendingUp color="success" fontSize="small" />
+                ) : (
+                  <TrendingDown color="error" fontSize="small" />
+                )}
+                <Typography
+                  variant="body2"
+                  color={trend.isPositive ? 'success.main' : 'error.main'}
+                  ml={0.5}
+                  fontWeight="medium"
+                  sx={{
+                    fontFeatureSettings: '"tnum"',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {formatNumber(Math.abs(trend.value), 'en')}%
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          <Avatar
+            sx={{
+              backgroundColor: color,
+              width: { xs: 48, sm: 56 },
+              height: { xs: 48, sm: 56 },
+              boxShadow: 2,
+            }}
+          >
+            {icon}
+          </Avatar>
         </Box>
-        <Avatar
-          sx={{
-            backgroundColor: color,
-            width: 56,
-            height: 56,
-            boxShadow: 2,
-          }}
-        >
-          {icon}
-        </Avatar>
-      </Box>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+    </Card>
+  );
+};
 
 export const ServicesOverviewPage: React.FC = () => {
+  const { t } = useTranslation('services');
+  const theme = useTheme();
   const { data: stats, isLoading, error, refetch } = useOverviewStatistics();
 
   if (isLoading) {
     return (
       <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4">
-            نظرة عامة على الخدمات
-          </Typography>
-          <Skeleton variant="rectangular" width={120} height={36} />
+        <Box 
+          display="flex" 
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between" 
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          gap={2}
+          mb={3}
+        >
+          <Box>
+            <Skeleton variant="text" width={200} height={40} />
+            <Skeleton variant="text" width={300} height={24} sx={{ mt: 1 }} />
+          </Box>
+          <Stack direction="row" spacing={1}>
+            <Skeleton variant="rectangular" width={100} height={36} />
+            <Skeleton variant="rectangular" width={140} height={36} />
+          </Stack>
         </Box>
         
         <Grid container spacing={3} sx={{ mb: 3 }}>
           {[1, 2, 3, 4].map((i) => (
-            <Grid key={i} component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid key={i} size={{ xs: 6, md: 6 }}>
               <StatCard
-                title="جاري التحميل..."
+                title={t('messages.loading')}
                 value=""
                 icon={<RequestQuote />}
                 color="grey.300"
@@ -125,24 +162,140 @@ export const ServicesOverviewPage: React.FC = () => {
           ))}
         </Grid>
         
-        <Grid container spacing={3}>
-          <Grid component="div" size={{ xs: 12, md: 6 }}>
-            <Card>
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid size={{ xs: 6, md: 6 }}>
+            <Card 
+              sx={{ 
+                height: '100%',
+                backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+              }}
+            >
               <CardContent>
-                <Skeleton variant="text" width="40%" height={32} />
-                <Skeleton variant="rectangular" height={200} sx={{ mt: 2 }} />
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                  <Skeleton variant="text" width="60%" height={28} />
+                  <Skeleton variant="circular" width={40} height={40} />
+                </Box>
+                <Box display="flex" alignItems="center" mb={2} gap={1}>
+                  <Skeleton variant="text" width={80} height={48} />
+                  <Skeleton variant="rounded" width={120} height={24} />
+                </Box>
+                <Skeleton variant="rounded" height={12} sx={{ mb: 1, borderRadius: 6 }} />
+                <Skeleton variant="text" width="70%" height={20} />
               </CardContent>
             </Card>
           </Grid>
-          <Grid component="div" size={{ xs: 12, md: 6 }}>
-            <Card>
+          <Grid size={{ xs: 6, md: 6 }}>
+            <Card 
+              sx={{ 
+                height: '100%',
+                backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+              }}
+            >
               <CardContent>
-                <Skeleton variant="text" width="40%" height={32} />
-                <Skeleton variant="rectangular" height={200} sx={{ mt: 2 }} />
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                  <Skeleton variant="text" width="60%" height={28} />
+                  <Skeleton variant="circular" width={40} height={40} />
+                </Box>
+                <Box display="flex" alignItems="center" mb={2} gap={1}>
+                  <Skeleton variant="text" width={60} height={48} />
+                  <Stack direction="row" spacing={0.5}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Skeleton key={star} variant="circular" width={20} height={20} />
+                    ))}
+                  </Stack>
+                </Box>
+                <Skeleton variant="rounded" height={12} sx={{ mb: 1, borderRadius: 6 }} />
+                <Skeleton variant="text" width="70%" height={20} />
               </CardContent>
             </Card>
           </Grid>
         </Grid>
+
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card 
+              sx={{ 
+                height: '100%',
+                backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+              }}
+            >
+              <CardContent>
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                  <Skeleton variant="text" width="50%" height={28} />
+                  <Skeleton variant="circular" width={40} height={40} />
+                </Box>
+                <Skeleton variant="text" width={100} height={48} sx={{ mb: 1 }} />
+                <Skeleton variant="text" width="70%" height={20} />
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card 
+              sx={{ 
+                height: '100%',
+                backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+              }}
+            >
+              <CardContent>
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                  <Skeleton variant="text" width="50%" height={28} />
+                  <Skeleton variant="circular" width={40} height={40} />
+                </Box>
+                <Skeleton variant="text" width={100} height={48} sx={{ mb: 1 }} />
+                <Skeleton variant="text" width="70%" height={20} />
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card 
+              sx={{ 
+                height: '100%',
+                backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+              }}
+            >
+              <CardContent>
+                <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                  <Skeleton variant="text" width="50%" height={28} />
+                  <Skeleton variant="circular" width={40} height={40} />
+                </Box>
+                <Skeleton variant="text" width={100} height={48} sx={{ mb: 1 }} />
+                <Skeleton variant="text" width="70%" height={20} />
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        <Paper 
+          sx={{ 
+            mt: 3, 
+            p: { xs: 2, sm: 3 },
+            backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+          }}
+        >
+          <Box 
+            display="flex" 
+            flexDirection={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between" 
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            gap={2}
+            mb={2}
+          >
+            <Skeleton variant="text" width={150} height={28} />
+            <Skeleton variant="rectangular" width={120} height={32} />
+          </Box>
+          <Divider sx={{ mb: 2 }} />
+          <Grid container spacing={2}>
+            {[1, 2, 3, 4].map((i) => (
+              <Grid key={i} size={{ xs: 12, sm: 6 }}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Skeleton variant="circular" width={24} height={24} />
+                  <Skeleton variant="text" width={100} height={24} />
+                  <Skeleton variant="text" width={60} height={28} />
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
       </Box>
     );
   }
@@ -150,16 +303,23 @@ export const ServicesOverviewPage: React.FC = () => {
   if (error) {
     return (
       <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Box 
+          display="flex" 
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between" 
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          gap={2}
+          mb={3}
+        >
           <Typography variant="h4">
-            نظرة عامة على الخدمات
+            {t('titles.servicesOverview')}
           </Typography>
           <Button variant="outlined" startIcon={<Refresh />} onClick={() => refetch()}>
-            إعادة المحاولة
+            {t('messages.retry')}
           </Button>
         </Box>
         <Alert severity="error">
-          فشل في تحميل البيانات: {error.message}
+          {t('messages.failedToLoadData')}: {error.message}
         </Alert>
       </Box>
     );
@@ -169,101 +329,119 @@ export const ServicesOverviewPage: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box 
+        display="flex" 
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between" 
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        gap={2}
+        mb={3}
+      >
         <Box>
           <Typography variant="h4" gutterBottom>
-            نظرة عامة على الخدمات
+            {t('titles.servicesOverview')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            إحصائيات شاملة عن أداء النظام والخدمات
+            {t('stats.comprehensiveStats')}
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
           <Button
             variant="outlined"
             startIcon={<Refresh />}
             onClick={() => refetch()}
             size="small"
           >
-            تحديث
+            {t('labels.refresh')}
           </Button>
           <Button
             variant="contained"
             startIcon={<Assessment />}
             size="small"
           >
-            تقرير مفصل
+            {t('actions.detailedReport')}
           </Button>
         </Stack>
       </Box>
       
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        {/* إحصائيات عامة */}
-        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, md: 6 }}>
           <StatCard
-            title="إجمالي الطلبات"
-            value={formatNumber(stats.totalRequests)}
+            title={t('stats.totalRequests')}
+            value={formatNumber(stats.totalRequests, 'en')}
             icon={<RequestQuote sx={{ color: 'white', fontSize: '1.5rem' }} />}
             color="primary.main"
-            subtitle="جميع الطلبات المقدمة"
-            trend={{ value: 12, isPositive: true }}
+            subtitle={t('stats.allRequestsSubmitted')}
+            trend={stats.trends?.requests}
           />
         </Grid>
         
-        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, md: 6 }}>
           <StatCard
-            title="إجمالي العروض"
-            value={formatNumber(stats.totalOffers)}
+            title={t('stats.totalOffers')}
+            value={formatNumber(stats.totalOffers, 'en')}
             icon={<Engineering sx={{ color: 'white', fontSize: '1.5rem' }} />}
             color="info.main"
-            subtitle="عروض المهندسين"
-            trend={{ value: 8, isPositive: true }}
+            subtitle={t('stats.engineersOffers')}
+            trend={stats.trends?.offers}
           />
         </Grid>
         
-        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, md: 6 }}>
           <StatCard
-            title="المهندسين النشطين"
-            value={formatNumber(stats.totalEngineers)}
+            title={t('stats.totalEngineers')}
+            value={formatNumber(stats.totalEngineers, 'en')}
             icon={<People sx={{ color: 'white', fontSize: '1.5rem' }} />}
             color="success.main"
-            subtitle="مهندسين مسجلين"
-            trend={{ value: 5, isPositive: true }}
+            subtitle={t('stats.registeredEngineers')}
+            trend={stats.trends?.engineers}
           />
         </Grid>
         
-        <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, md: 6 }}>
           <StatCard
-            title="إجمالي الإيرادات"
-            value={formatCurrency(stats.totalRevenue)}
+            title={t('stats.totalRevenue')}
+            value={formatCurrency(stats.totalRevenue, 'USD', 'en')}
             icon={<AttachMoney sx={{ color: 'white', fontSize: '1.5rem' }} />}
             color="warning.main"
-            subtitle="إجمالي الأرباح"
-            trend={{ value: 15, isPositive: true }}
+            subtitle={t('stats.totalProfits')}
+            trend={stats.trends?.revenue}
           />
         </Grid>
       </Grid>
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        {/* معدلات الإنجاز */}
-        <Grid component="div" size={{ xs: 12, md: 6 }}>
-          <Card sx={{ height: '100%' }}>
+        <Grid size={{ xs: 6, md: 6 }}>
+          <Card 
+            sx={{ 
+              height: '100%',
+              backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+            }}
+          >
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                 <Typography variant="h6">
-                  معدل إنجاز الطلبات
+                  {t('stats.completionRateTitle')}
                 </Typography>
                 <Avatar sx={{ bgcolor: 'success.main' }}>
                   <Speed />
                 </Avatar>
               </Box>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Typography variant="h3" color="primary" sx={{ mr: 2 }}>
-                  {stats.completionRate}%
+              <Box display="flex" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
+                <Typography 
+                  variant="h3" 
+                  color="primary" 
+                  sx={{ 
+                    mr: 2,
+                    fontFeatureSettings: '"tnum"',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {formatNumber(Number(stats.completionRate), 'en')}%
                 </Typography>
                 <Chip
                   icon={<CheckCircle />}
-                  label={`${stats.completedRequests} مكتمل`}
+                  label={`${formatNumber(stats.completedRequests, 'en')} ${t('stats.completed')}`}
                   color="success"
                   size="small"
                 />
@@ -275,27 +453,39 @@ export const ServicesOverviewPage: React.FC = () => {
                 color="success"
               />
               <Typography variant="body2" color="text.secondary">
-                من أصل {stats.totalRequests} طلب
+                {t('stats.fromTotal')} {formatNumber(stats.totalRequests, 'en')} {t('stats.requests')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* التقييم المتوسط */}
-        <Grid component="div" size={{ xs: 12, md: 6 }}>
-          <Card sx={{ height: '100%' }}>
+        <Grid size={{ xs: 6, md: 6 }}>
+          <Card 
+            sx={{ 
+              height: '100%',
+              backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+            }}
+          >
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                 <Typography variant="h6">
-                  التقييم المتوسط
+                  {t('stats.averageRatingTitle')}
                 </Typography>
                 <Avatar sx={{ bgcolor: 'warning.main' }}>
                   <Star />
                 </Avatar>
               </Box>
-              <Box display="flex" alignItems="center" mb={2}>
-                <Typography variant="h3" color="warning.main" sx={{ mr: 2 }}>
-                  {stats.averageRating}
+              <Box display="flex" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
+                <Typography 
+                  variant="h3" 
+                  color="warning.main" 
+                  sx={{ 
+                    mr: 2,
+                    fontFeatureSettings: '"tnum"',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {formatNumber(stats.averageRating, 'en')}
                 </Typography>
                 <Stack direction="row" spacing={0.5}>
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -316,7 +506,7 @@ export const ServicesOverviewPage: React.FC = () => {
                 color="warning"
               />
               <Typography variant="body2" color="text.secondary">
-                بناءً على تقييمات العملاء
+                {t('stats.basedOnCustomerRatings')}
               </Typography>
             </CardContent>
           </Card>
@@ -324,123 +514,202 @@ export const ServicesOverviewPage: React.FC = () => {
       </Grid>
 
       <Grid container spacing={3}>
-        {/* الطلبات حسب الفترة */}
-        <Grid component="div" size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: '100%' }}>
+        <Grid size={{ xs: 6, md: 6 }}>
+          <Card 
+            sx={{ 
+              height: '100%',
+              backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+            }}
+          >
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                 <Typography variant="h6">
-                  الطلبات اليوم
+                  {t('stats.todayRequests')}
                 </Typography>
                 <Avatar sx={{ bgcolor: 'primary.main' }}>
                   <Timeline />
                 </Avatar>
               </Box>
-              <Typography variant="h3" color="primary" sx={{ mb: 1 }}>
-                {formatNumber(stats.dailyRequests)}
+              <Typography 
+                variant="h3" 
+                color="primary" 
+                sx={{ 
+                  mb: 1,
+                  fontFeatureSettings: '"tnum"',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {formatNumber(stats.dailyRequests, 'en')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                طلبات جديدة اليوم
+                {t('stats.newRequestsToday')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid component="div" size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: '100%' }}>
+        <Grid size={{ xs: 6, md: 6 }}>
+          <Card 
+            sx={{ 
+              height: '100%',
+              backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+            }}
+          >
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                 <Typography variant="h6">
-                  الطلبات هذا الأسبوع
+                  {t('stats.thisWeekRequests')}
                 </Typography>
                 <Avatar sx={{ bgcolor: 'info.main' }}>
                   <Timeline />
                 </Avatar>
               </Box>
-              <Typography variant="h3" color="info.main" sx={{ mb: 1 }}>
-                {formatNumber(stats.weeklyRequests)}
+              <Typography 
+                variant="h3" 
+                color="info.main" 
+                sx={{ 
+                  mb: 1,
+                  fontFeatureSettings: '"tnum"',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {formatNumber(stats.weeklyRequests, 'en')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                طلبات جديدة هذا الأسبوع
+                {t('stats.newRequestsThisWeek')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-          <Grid component="div" size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: '100%' }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card 
+            sx={{ 
+              height: '100%',
+              backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+            }}
+          >
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
                 <Typography variant="h6">
-                  الطلبات هذا الشهر
+                  {t('stats.thisMonthRequests')}
                 </Typography>
                 <Avatar sx={{ bgcolor: 'success.main' }}>
                   <Timeline />
                 </Avatar>
               </Box>
-              <Typography variant="h3" color="success.main" sx={{ mb: 1 }}>
-                {formatNumber(stats.monthlyRequests)}
+              <Typography 
+                variant="h3" 
+                color="success.main" 
+                sx={{ 
+                  mb: 1,
+                  fontFeatureSettings: '"tnum"',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {formatNumber(stats.monthlyRequests, 'en')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                طلبات جديدة هذا الشهر
+                {t('stats.newRequestsThisMonth')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      <Paper sx={{ mt: 3, p: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Paper 
+        sx={{ 
+          mt: 3, 
+          p: { xs: 2, sm: 3 },
+          backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+        }}
+      >
+        <Box 
+          display="flex" 
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between" 
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          gap={2}
+          mb={2}
+        >
           <Typography variant="h6">
-            ملخص الحالات
+            {t('stats.statusSummary')}
           </Typography>
           <Button variant="outlined" size="small" startIcon={<Assessment />}>
-            عرض التفاصيل
+            {t('actions.viewDetails')}
           </Button>
         </Box>
         <Divider sx={{ mb: 2 }} />
         <Grid container spacing={2}>
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box display="flex" alignItems="center" gap={1}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
               <CheckCircle color="success" />
               <Typography variant="body2" color="text.secondary">
-                مكتمل:
+                {t('stats.completed')}:
               </Typography>
-              <Typography variant="h6" color="success.main">
-                {stats.completedRequests}
+              <Typography 
+                variant="h6" 
+                color="success.main"
+                sx={{
+                  fontFeatureSettings: '"tnum"',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {formatNumber(stats.completedRequests, 'en')}
               </Typography>
             </Box>
           </Grid>
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box display="flex" alignItems="center" gap={1}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
               <Cancel color="error" />
               <Typography variant="body2" color="text.secondary">
-                ملغي:
+                {t('stats.cancelled')}:
               </Typography>
-              <Typography variant="h6" color="error.main">
-                {stats.cancelledRequests}
+              <Typography 
+                variant="h6" 
+                color="error.main"
+                sx={{
+                  fontFeatureSettings: '"tnum"',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {formatNumber(stats.cancelledRequests, 'en')}
               </Typography>
             </Box>
           </Grid>
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box display="flex" alignItems="center" gap={1}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
               <Engineering color="primary" />
               <Typography variant="body2" color="text.secondary">
-                المهندسين:
+                {t('stats.engineers')}:
               </Typography>
-              <Typography variant="h6" color="primary.main">
-                {stats.totalEngineers}
+              <Typography 
+                variant="h6" 
+                color="primary.main"
+                sx={{
+                  fontFeatureSettings: '"tnum"',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {formatNumber(stats.totalEngineers, 'en')}
               </Typography>
             </Box>
           </Grid>
-            <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box display="flex" alignItems="center" gap={1}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
               <AttachMoney color="warning" />
               <Typography variant="body2" color="text.secondary">
-                الإيرادات:
+                {t('stats.revenue')}:
               </Typography>
-              <Typography variant="h6" color="warning.main">
-                {formatCurrency(stats.totalRevenue)}
+              <Typography 
+                variant="h6" 
+                color="warning.main"
+                sx={{
+                  fontFeatureSettings: '"tnum"',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {formatCurrency(stats.totalRevenue, 'USD', 'en')}
               </Typography>
             </Box>
           </Grid>

@@ -28,6 +28,7 @@ export {
 // Components
 export { BrandStatsCards } from './components/BrandStatsCards';
 export { BrandFilters } from './components/BrandFilters';
+export { BrandCard } from './components/BrandCard';
 export { BrandFormDialog } from './components/BrandFormDialog';
 export { BrandDeleteDialog } from './components/BrandDeleteDialog';
 

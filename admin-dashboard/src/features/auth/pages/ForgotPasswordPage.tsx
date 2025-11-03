@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '../api/authApi';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
 import { AuthLayout, PhoneInputStep, OtpInputStep, AuthStepper } from '../components';
 import toast from 'react-hot-toast';
 
 export const ForgotPasswordPage: React.FC = () => {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
 
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -15,7 +17,7 @@ export const ForgotPasswordPage: React.FC = () => {
   const [phoneError, setPhoneError] = useState('');
   const [otpError, setOtpError] = useState('');
 
-  const steps = ['إدخال رقم الهاتف', 'التحقق من الرمز'];
+  const steps = [t('steps.enterPhone'), t('steps.verifyCode')];
 
   // Send OTP Mutation
   const sendOtpMutation = useMutation({
@@ -24,10 +26,10 @@ export const ForgotPasswordPage: React.FC = () => {
       setDevCode(data.devCode || '');
       setStep('otp');
       setPhoneError('');
-      toast.success('تم إرسال رمز التحقق بنجاح');
+      toast.success(t('messages.otpSent'));
     },
     onError: (error) => {
-      setPhoneError('فشل في إرسال رمز التحقق. يرجى المحاولة مرة أخرى.');
+      setPhoneError(t('messages.otpSendFailed'));
       ErrorHandler.showError(error);
     },
   });
@@ -37,12 +39,12 @@ export const ForgotPasswordPage: React.FC = () => {
     mutationFn: authApi.verifyOtp,
     onSuccess: async () => {
       setOtpError('');
-      toast.success('تم التحقق من الرمز بنجاح');
+      toast.success(t('forgotPassword.verifySuccess'));
       // يمكن إضافة خطوة إعادة تعيين كلمة المرور هنا
       navigate('/login');
     },
     onError: (error) => {
-      setOtpError('رمز التحقق غير صحيح. يرجى المحاولة مرة أخرى.');
+      setOtpError(t('messages.otpInvalid'));
       ErrorHandler.showError(error);
     },
   });
@@ -83,11 +85,11 @@ export const ForgotPasswordPage: React.FC = () => {
 
   return (
     <AuthLayout
-      title="إعادة تعيين كلمة المرور"
+      title={t('forgotPassword.title')}
       subtitle={
         step === 'phone' 
-          ? 'أدخل رقم هاتفك لإعادة تعيين كلمة المرور' 
-          : 'أدخل رمز التحقق المرسل'
+          ? t('forgotPassword.subtitle.phone') 
+          : t('forgotPassword.subtitle.otp')
       }
       showLogo={true}
     >

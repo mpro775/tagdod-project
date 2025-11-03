@@ -1,141 +1,108 @@
 {
   "exchangeRates": {
-    "title": "Exchange Rates Management",
-    "subtitle": "Manage and update currency exchange rates in the system",
-    "currentRates": "Current Rates",
-    "updateRates": "Update Rates",
-    "currencyConverter": "Currency Converter",
-    "statistics": "Statistics",
-    "lastUpdated": "Last Updated",
-    "rate": "Rate",
-    "currency": "Currency",
-    "amount": "Amount",
-    "convert": "Convert",
-    "swap": "Swap",
-    "from": "From",
-    "to": "To",
-    "result": "Result",
-    "baseCurrency": "Base Currency",
-    "targetCurrency": "Target Currency"
-  },
-  "currencies": {
-    "USD": "US Dollar",
-    "YER": "Yemeni Riyal",
-    "SAR": "Saudi Riyal",
-    "usd": "USD",
-    "yer": "YER",
-    "sar": "SAR"
-  },
-  "form": {
-    "usdToYer": "USD to YER Rate",
-    "usdToSar": "USD to SAR Rate",
-    "notes": "Notes",
-    "updateRates": "Update Exchange Rates",
-    "save": "Save Rates",
-    "cancel": "Cancel",
-    "reset": "Reset",
-    "currentRate": "Current Rate",
-    "newRate": "New Rate",
-    "change": "Change",
-    "percentageChange": "Percentage Change"
-  },
-  "converter": {
-    "title": "Currency Converter",
-    "subtitle": "Convert amounts between different currencies",
-    "amountToConvert": "Amount to Convert",
-    "fromCurrency": "From Currency",
-    "toCurrency": "To Currency",
-    "convertCurrency": "Convert Currency",
-    "conversionResult": "Conversion Result",
-    "exchangeRate": "Exchange Rate",
-    "convertedAmount": "Converted Amount",
-    "lastUpdated": "Last Updated"
-  },
-  "stats": {
-    "title": "Exchange Rates Statistics",
-    "subtitle": "Statistics and analytics for exchange rates",
-    "totalConversions": "Total Conversions",
-    "mostConvertedCurrency": "Most Converted Currency",
-    "averageRateChange": "Average Rate Change",
-    "rateStability": "Rate Stability",
-    "conversionTrends": "Conversion Trends",
-    "popularPairs": "Popular Currency Pairs",
-    "dailyConversions": "Daily Conversions",
-    "monthlyConversions": "Monthly Conversions"
-  },
-  "validation": {
-    "amountRequired": "Amount is required",
-    "amountPositive": "Amount must be positive",
-    "amountMax": "Amount cannot exceed {{max}}",
-    "rateRequired": "Exchange rate is required",
-    "ratePositive": "Exchange rate must be positive",
-    "rateMax": "Exchange rate cannot exceed {{max}}",
-    "currencyRequired": "Currency is required",
-    "invalidCurrency": "Invalid currency selected",
-    "notesMaxLength": "Notes cannot exceed {{max}} characters"
-  },
-  "messages": {
-    "ratesUpdated": "Exchange rates updated successfully",
-    "ratesUpdateFailed": "Failed to update exchange rates",
-    "conversionSuccess": "Currency converted successfully",
-    "conversionFailed": "Failed to convert currency",
-    "conversionResult": "Conversion successful: {{result}}",
-    "dataRefreshed": "Data refreshed successfully",
-    "dataRefreshFailed": "Failed to refresh data",
-    "loading": "Loading exchange rates...",
-    "error": "An error occurred",
-    "noData": "No exchange rates available",
-    "rateNotFound": "Exchange rate not found",
-    "invalidAmount": "Please enter a valid amount",
-    "invalidCurrency": "Please select valid currencies",
-    "networkError": "Network error occurred",
-    "serverError": "Server error occurred"
-  },
-  "tooltips": {
-    "refresh": "Refresh data",
-    "update": "Update rates",
-    "convert": "Convert currency",
-    "swap": "Swap currencies",
-    "viewStats": "View statistics",
-    "editRate": "Edit rate",
-    "copyRate": "Copy rate",
-    "viewHistory": "View rate history"
-  },
-  "placeholders": {
-    "amount": "Enter amount",
-    "notes": "Optional notes about the rate update",
-    "search": "Search currencies..."
-  },
-  "table": {
     "title": "Exchange Rates",
-    "columns": {
-      "currency": "Currency",
-      "rate": "Rate",
-      "lastUpdated": "Last Updated",
-      "change": "Change",
-      "actions": "Actions"
-    }
+    "subtitle": "Current exchange rates for supported currencies",
+    "usdToYerTitle": "US Dollar to Yemeni Riyal",
+    "usdToSarTitle": "US Dollar to Saudi Riyal",
+    "usd": "Dollar",
+    "yer": "Yemeni Riyal",
+    "sar": "Saudi Riyal"
   },
   "tabs": {
     "currentRates": "Current Rates",
-    "updateRates": "Update Rates",
+    "currentRatesDesc": "View current exchange rates for supported currencies",
+    "updateRates": "Update Exchange Rates",
+    "updateRatesDesc": "Update exchange rates for supported currencies",
     "converter": "Currency Converter",
-    "statistics": "Statistics"
+    "converterDesc": "Convert currencies using current rates",
+    "statistics": "Exchange Rate Statistics",
+    "statisticsDesc": "Detailed information about current exchange rates"
   },
-  "status": {
+  "infoCard": {
+    "title": "Important Information",
+    "item1": "All products in the system are priced in US Dollars",
+    "item2": "Prices will be automatically converted for customers based on selected currency",
+    "item3": "Updating rates affects all products and invoices immediately",
+    "item4": "Make sure rates are correct before saving"
+  },
+  "messages": {
+    "ratesUpdated": "Rates updated successfully",
+    "ratesUpdateFailed": "Failed to update rates",
+    "conversionResult": "Currency converted successfully",
+    "conversionFailed": "Failed to convert currency",
+    "invalidAmount": "Please enter a valid amount"
+  },
+  "loading": {
+    "loadingRates": "Loading exchange rates..."
+  },
+  "exchangeRateCard": {
+    "againstUSD": "Against US Dollar",
+    "lastUpdate": "Last updated",
+    "by": "By"
+  },
+  "form": {
+    "title": "Update Exchange Rates",
+    "subtitle": "Update exchange rates for supported currencies",
+    "usdToYer": "US Dollar to Yemeni Riyal",
+    "usdToSar": "US Dollar to Saudi Riyal",
+    "notes": "Notes (Optional)",
+    "notesPlaceholder": "Add notes about the exchange rate update...",
+    "cancel": "Cancel",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "oneUSDEquals": "{{amount}} = {{usd}}"
+  },
+  "validation": {
+    "ratePositive": "Exchange rate must be positive",
+    "rateMax": "Exchange rate cannot exceed {{max}}"
+  },
+  "converter": {
+    "title": "Currency Converter",
+    "subtitle": "Convert currencies using current rates",
+    "amount": "Amount",
+    "amountPlaceholder": "Enter amount to convert",
+    "fromCurrency": "From Currency",
+    "toCurrency": "To Currency",
+    "swap": "Swap",
+    "convert": "Convert Currency",
+    "converting": "Converting...",
+    "usd": "USD - US Dollar",
+    "yer": "YER - Yemeni Riyal",
+    "sar": "SAR - Saudi Riyal",
+    "resultAmount": "Amount: {{amount}} {{currency}}",
+    "resultRate": "Rate: {{rate}}"
+  },
+  "stats": {
+    "title": "Exchange Rate Statistics",
+    "subtitle": "Detailed information about current exchange rates",
+    "currentRates": "Current Rates",
+    "updateInfo": "Update Information",
+    "notes": "Notes",
+    "noData": "No data",
+    "noDataAvailable": "No exchange rate data available",
+    "oneUSDEqualsYER": "{{amount}} = {{usd}} {{yer}}",
+    "oneUSDEqualsSAR": "{{amount}} = {{usd}} {{sar}}"
+  },
+  "list": {
+    "title": "Exchange Rates List",
+    "subtitle": "View all available exchange rates",
+    "refresh": "Refresh Data",
+    "retry": "Retry",
+    "viewDetails": "View Details",
+    "errorLoading": "Error loading exchange rates: {{error}}",
+    "noDataAvailable": "No exchange rate data available",
     "active": "Active",
     "inactive": "Inactive",
-    "loading": "Loading...",
-    "updating": "Updating...",
-    "converting": "Converting...",
-    "success": "Success",
-    "error": "Error"
-  },
-  "units": {
-    "currency": "Currency",
+    "sourceCurrency": "Source Currency",
+    "targetCurrency": "Target Currency",
     "rate": "Rate",
-    "percentage": "Percentage",
-    "amount": "Amount",
-    "change": "Change"
+    "status": "Status",
+    "lastUpdate": "Last Update",
+    "actions": "Actions",
+    "oneEquals": "1 {{from}} = {{rate}} {{to}}",
+    "oneUSDEquals": "{{amount}} = {{usd}}"
+  },
+  "loadingTexts": {
+    "notSpecified": "Not specified"
   }
 }

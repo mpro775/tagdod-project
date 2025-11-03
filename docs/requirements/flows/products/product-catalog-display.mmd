@@ -19,8 +19,18 @@ flowchart TD
   D1 --> D2[التحقق من الحالة ACTIVE]
   D2 --> D3[تحميل التنويعات النشطة]
   D3 --> D4[تحميل الصور من مكتبة الوسائط]
-  D4 --> D5[حساب نطاق الأسعار]
-  D5 --> D6[إرجاع تفاصيل شاملة]
+  D4 --> D5{المستخدم مسجل?}
+  D5 -->|نعم| D6[جلب نسبة خصم التاجر]
+  D5 -->|لا| D7[تعيين نسبة الخصم = 0]
+  D6 --> D8{هل هو تاجر موافق?}
+  D8 -->|نعم| D9[استخدام نسبة الخصم]
+  D8 -->|لا| D7
+  D9 --> D10[جلب العملة المفضلة من المستخدم]
+  D7 --> D11[استخدام العملة المطلوبة أو USD]
+  D10 --> D12[حساب الأسعار مع خصم التاجر]
+  D11 --> D12
+  D12 --> D13[حساب نطاق الأسعار مع الخصم]
+  D13 --> D14[إرجاع تفاصيل شاملة مع pricing information]
 
   %% Featured Products
   E --> E1[فلترة المنتجات حيث isFeatured = true]
@@ -60,18 +70,48 @@ flowchart TD
   J3 --> J4[total: إجمالي عدد النتائج]
 
   %% Response Structure
-  K[هيكل الاستجابة] --> K1[products: مصفوفة المنتجات]
-  K1 --> K2[pagination: معلومات الصفحات]
-  K2 --> K3[filters: الفلاتر المتاحة]
-  K3 --> K4[totalCount: إجمالي العدد]
+  K[هيكل الاستجابة] --> K1[product: بيانات المنتج]
+  K1 --> K2[variants: مصفوفة التنويعات مع pricing]
+  K2 --> K3[pagination: معلومات الصفحات - في القوائم]
+  K3 --> K4[currency: العملة المستخدمة]
+  K4 --> K5[userDiscount: معلومات خصم التاجر]
+  K5 --> K6[totalCount: إجمالي العدد - في القوائم]
+  
+  %% Pricing Structure in Variant
+  P[هيكل pricing في Variant] --> P1[basePrice: السعر الأصلي]
+  P1 --> P2[compareAtPrice: سعر المقارنة]
+  P2 --> P3[discountPercent: نسبة الخصم]
+  P3 --> P4[discountAmount: مبلغ الخصم]
+  P4 --> P5[finalPrice: السعر النهائي]
+  P5 --> P6[currency: العملة]
+  P6 --> P7[exchangeRate: سعر الصرف]
+  P7 --> P8[formattedPrice: السعر المنسق]
+  P8 --> P9[formattedFinalPrice: السعر النهائي المنسق]
 
   %% Performance Optimization
   L[تحسين الأداء] --> L1[indexes محسنة للبحث]
   L1 --> L2[تخزين مؤقت للاستعلامات الشائعة]
   L2 --> L3[تحميل الصور عند الحاجة]
 
+  %% User Discount Info
+  U[معلومات خصم المستخدم] --> U1[isWholesale: boolean]
+  U1 --> U2[discountPercent: number]
+  
+  %% Currency Selection
+  V[اختيار العملة] --> V1[قراءة currency من query parameter]
+  V1 --> V2{currency موجود?}
+  V2 -->|نعم| V3[استخدام العملة المحددة]
+  V2 -->|لا| V4{المستخدم مسجل?}
+  V4 -->|نعم| V5[استخدام preferredCurrency من JWT]
+  V4 -->|لا| V6[استخدام USD كافتراضي]
+  V5 --> V3
+  V6 --> V3
+
   %% End points
   C5 --> M[نهاية - قائمة المنتجات]
-  D6 --> M
+  D14 --> M
   E4 --> M
   F4 --> M
+  P9 --> M
+  U2 --> M
+  V3 --> M

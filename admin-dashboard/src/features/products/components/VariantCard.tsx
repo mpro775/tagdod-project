@@ -12,6 +12,7 @@ import {
   Button,
 } from '@mui/material';
 import { Edit, Delete, Visibility, Inventory, AttachMoney, Image } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { formatDate } from '@/shared/utils/formatters';
 import type { Variant } from '../types/product.types';
 
@@ -30,13 +31,15 @@ export const VariantCard: React.FC<VariantCardProps> = ({
   onView,
   showActions = true,
 }) => {
+  const { t } = useTranslation(['products', 'common']);
+
   const getStockStatus = () => {
     if (variant.stock === 0) {
-      return { label: 'نفذ', color: 'error' as const };
+      return { label: t('products:variants.stockStatus.outOfStock', 'نفذ'), color: 'error' as const };
     } else if (variant.stock <= variant.minStock) {
-      return { label: 'مخزون منخفض', color: 'warning' as const };
+      return { label: t('products:variants.stockStatus.lowStock', 'مخزون منخفض'), color: 'warning' as const };
     } else {
-      return { label: 'متوفر', color: 'success' as const };
+      return { label: t('products:variants.stockStatus.inStock', 'متوفر'), color: 'success' as const };
     }
   };
 
@@ -44,7 +47,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({
 
   const getAttributeDisplay = () => {
     if (!variant.attributeValues || variant.attributeValues.length === 0) {
-      return 'بدون سمات';
+      return t('products:variants.noAttributes', 'بدون سمات');
     }
     return variant.attributeValues.map((attr) => `${attr.name}: ${attr.value}`).join(', ');
   };
@@ -59,14 +62,14 @@ export const VariantCard: React.FC<VariantCardProps> = ({
           </Avatar>
           <Box flexGrow={1}>
             <Typography variant="h6" component="div" noWrap>
-              {variant.sku || 'بدون SKU'}
+              {variant.sku || t('products:variants.noSku', 'بدون SKU')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {getAttributeDisplay()}
             </Typography>
           </Box>
           <Chip
-            label={variant.isActive ? 'نشط' : 'غير نشط'}
+            label={variant.isActive ? t('products:status.active', 'نشط') : t('products:status.inactive', 'غير نشط')}
             color={variant.isActive ? 'success' : 'default'}
             size="small"
           />
@@ -86,7 +89,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({
         <Box mb={2}>
           <Box display="flex" alignItems="center" gap={1} mb={1}>
             <Inventory color="primary" fontSize="small" />
-            <Typography variant="body1">{variant.stock} وحدة</Typography>
+            <Typography variant="body1">{variant.stock} {t('products:variants.unit', 'وحدة')}</Typography>
           </Box>
           <Chip
             label={stockStatus.label}
@@ -95,7 +98,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({
             variant="outlined"
           />
           <Typography variant="caption" display="block" color="text.secondary">
-            الحد الأدنى: {variant.minStock}
+            {t('products:variants.minimum', 'الحد الأدنى')}: {variant.minStock}
           </Typography>
         </Box>
 
@@ -114,7 +117,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({
         {/* Statistics */}
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="caption" color="text.secondary">
-            المبيعات: {variant.salesCount}
+            {t('products:variants.sales', 'المبيعات')}: {variant.salesCount}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {formatDate(variant.createdAt)}
@@ -126,24 +129,24 @@ export const VariantCard: React.FC<VariantCardProps> = ({
       {showActions && (
         <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
           <Box>
-            <Tooltip title="عرض التفاصيل">
+            <Tooltip title={t('products:variants.actions.view', 'عرض التفاصيل')}>
               <IconButton size="small" onClick={() => onView?.(variant)} color="info">
                 <Visibility fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title="تعديل">
+            <Tooltip title={t('common:actions.edit', 'تعديل')}>
               <IconButton size="small" onClick={() => onEdit?.(variant)} color="primary">
                 <Edit fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title="حذف">
+            <Tooltip title={t('common:actions.delete', 'حذف')}>
               <IconButton size="small" onClick={() => onDelete?.(variant)} color="error">
                 <Delete fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>
           <Button variant="outlined" size="small" onClick={() => onView?.(variant)}>
-            عرض التفاصيل
+            {t('products:variants.actions.view', 'عرض التفاصيل')}
           </Button>
         </CardActions>
       )}

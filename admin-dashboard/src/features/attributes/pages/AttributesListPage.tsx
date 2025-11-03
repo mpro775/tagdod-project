@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -10,11 +10,18 @@ import {
   Button,
   Alert,
   Snackbar,
+  Stack,
+  Skeleton,
+  Pagination,
 } from '@mui/material';
 import { Edit, Delete, Restore, AddCircle, Add } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { GridColDef } from '@mui/x-data-grid';
+import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
+import { ConfirmDialog } from '@/shared/components';
+import { AttributeCard } from '../components/AttributeCard';
 import {
   useAttributes,
   useDeleteAttribute,
@@ -26,6 +33,7 @@ import { AttributeStatsCards } from '../components/AttributeStatsCards';
 import AttributeFilters from '../components/AttributeFilters';
 import type { Attribute, AttributeType, ListAttributesParams } from '../types/attribute.types';
 
+// eslint-disable-next-line no-unused-vars
 const getAttributeTypeLabels = (t: (key: string) => string): Record<AttributeType, string> => ({
   select: t('typeLabels.select'),
   multiselect: t('typeLabels.multiselect'),
@@ -50,7 +58,13 @@ const attributeTypeColors: Record<
 export const AttributesListPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('attributes');
+  const breakpoint = useBreakpoint();
+  const { confirmDialog, dialogProps } = useConfirmDialog();
   const [filters, setFilters] = useState<ListAttributesParams>({});
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 25,
+  });
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -76,11 +90,11 @@ export const AttributesListPage: React.FC = () => {
     setFilters({});
   };
 
-  const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+  const showSnackbar = useCallback((message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
     setSnackbar({ open: true, message, severity });
-  };
+  }, []);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = useCallback((id: string) => {
     deleteAttribute(id, {
       onSuccess: () => {
         showSnackbar(t('messages.deleteSuccess', { item: t('messages.attribute') }), 'success');
@@ -96,9 +110,9 @@ export const AttributesListPage: React.FC = () => {
         );
       },
     });
-  };
+  }, [deleteAttribute, showSnackbar, t, refetch]);
 
-  const handleRestore = (id: string) => {
+  const handleRestore = useCallback((id: string) => {
     restoreAttribute(id, {
       onSuccess: () => {
         showSnackbar(t('messages.restoreSuccess', { item: t('messages.attribute') }), 'success');
@@ -114,11 +128,12 @@ export const AttributesListPage: React.FC = () => {
         );
       },
     });
-  };
+  }, [restoreAttribute, showSnackbar, t, refetch]);
 
   const attributeTypeLabels = getAttributeTypeLabels(t);
+  const attributeTypeColorsMemo = useMemo(() => attributeTypeColors, []);
 
-  const columns: GridColDef[] = [
+  const columns: GridColDef[] = useMemo(() => [
     {
       field: 'name',
       headerName: t('fields.name'),
@@ -242,12 +257,18 @@ export const AttributesListPage: React.FC = () => {
               <IconButton
                 size="small"
                 color="error"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(t('messages.deleteConfirm', { name: attr.name }))) {
-                    handleDelete(attr._id);
-                  }
-                }}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const confirmed = await confirmDialog({
+                      title: t('messages.deleteTitle', 'تأكيد الحذف'),
+                      message: t('messages.deleteConfirm', { name: attr.name }),
+                      type: 'warning',
+                      confirmColor: 'error',
+                    });
+                    if (confirmed) {
+                      handleDelete(attr._id);
+                    }
+                  }}
               >
                 <Delete fontSize="small" />
               </IconButton>
@@ -256,18 +277,34 @@ export const AttributesListPage: React.FC = () => {
         );
       },
     },
-  ];
+  ], [t, attributeTypeLabels, navigate, handleRestore, handleDelete]);
+
+  // Calculate total pages for mobile pagination
+  const totalPages = attributesResponse?.meta ? Math.ceil(attributesResponse.meta.total / paginationModel.pageSize) : 0;
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header Section */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <Box sx={{ px: { xs: 1, sm: 2, md: 3 }, pb: { xs: 2, sm: 3 } }}>
+      {/* Header Section - Responsive */}
+      <Box sx={{ mb: { xs: 2, sm: 3, md: 4 }, mt: { xs: 1, sm: 2 } }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', gap: 2 }}>
           <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
+            <Typography
+              variant={breakpoint.isMobile ? 'h5' : 'h4'}
+              component="h1"
+              gutterBottom
+              fontWeight="bold"
+              sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' } }}
+            >
               {t('attributes.title')}
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+                display: { xs: 'none', sm: 'block' },
+              }}
+            >
               {t('attributes.subtitle')}
             </Typography>
           </Box>
@@ -275,44 +312,125 @@ export const AttributesListPage: React.FC = () => {
             variant="contained"
             startIcon={<Add />}
             onClick={() => navigate('/attributes/new')}
-            size="large"
+            size={breakpoint.isMobile ? 'medium' : 'large'}
+            fullWidth={breakpoint.isMobile}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: 'auto', sm: 120 },
+            }}
           >
             {t('attributes.addNew')}
           </Button>
         </Box>
       </Box>
 
-      {/* Statistics Cards */}
-      <Box sx={{ mb: 4 }}>
+      {/* Statistics Cards - Enhanced */}
+      <Box sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
         <AttributeStatsCards stats={stats} isLoading={statsLoading} />
       </Box>
 
       {/* Filters */}
-      <AttributeFilters
-        onFiltersChange={handleFiltersChange}
-        onClearFilters={handleClearFilters}
-        initialFilters={filters}
-      />
-
-      {/* Data Table */}
-      <Paper sx={{ height: 'calc(100vh - 400px)' }}>
-        <DataTable
-          title=""
-          columns={columns}
-          rows={attributes}
-          loading={isLoading}
-          paginationModel={{ page: 0, pageSize: 25 }}
-          onPaginationModelChange={() => {}}
-          onAdd={() => navigate('/attributes/new')}
-          addButtonText={t('attributes.addNew')}
-          onRowClick={(params) => {
-            const row = params.row as Attribute;
-            navigate(`/attributes/${row._id}`);
-          }}
-          height="100%"
-          getRowId={(row) => (row as Attribute)._id}
+      <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+        <AttributeFilters
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+          initialFilters={filters}
         />
-      </Paper>
+      </Box>
+
+      {/* Desktop View - Table */}
+      <Box sx={{ display: { xs: 'none', md: 'block' }, height: 'calc(100vh - 400px)', minHeight: 600, width: '100%' }}>
+        <Paper sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative', height: '100%' }}>
+            <DataTable
+              title=""
+              columns={columns}
+              rows={attributes}
+              loading={isLoading}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              onAdd={() => navigate('/attributes/new')}
+              addButtonText={t('attributes.addNew')}
+              onRowClick={(params) => {
+                const row = params.row as Attribute;
+                navigate(`/attributes/${row._id}`);
+              }}
+              height="100%"
+              getRowId={(row) => (row as Attribute)._id}
+            />
+          </Box>
+        </Paper>
+      </Box>
+
+      {/* Mobile/Tablet View - Cards */}
+      <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+        {isLoading ? (
+          <Stack spacing={2}>
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
+            ))}
+          </Stack>
+        ) : attributes && attributes.length > 0 ? (
+          <>
+            <Stack spacing={2}>
+              {attributes.map((attribute: Attribute) => (
+                <AttributeCard
+                  key={attribute._id}
+                  attribute={attribute}
+                  attributeTypeLabels={attributeTypeLabels}
+                  attributeTypeColors={attributeTypeColorsMemo}
+                  onEdit={() => navigate(`/attributes/${attribute._id}`)}
+                  onDelete={async () => {
+                    const confirmed = await confirmDialog({
+                      title: t('messages.deleteTitle', 'تأكيد الحذف'),
+                      message: t('messages.deleteConfirm', { name: attribute.name }),
+                      type: 'warning',
+                      confirmColor: 'error',
+                    });
+                    if (confirmed) {
+                      handleDelete(attribute._id);
+                    }
+                  }}
+                  onRestore={attribute.deletedAt ? () => handleRestore(attribute._id) : undefined}
+                  onManageValues={() => navigate(`/attributes/${attribute._id}/values`)}
+                />
+              ))}
+            </Stack>
+
+            {/* Mobile Pagination */}
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+                <Pagination
+                  count={totalPages}
+                  page={paginationModel.page + 1}
+                  onChange={(_, page) => {
+                    setPaginationModel((prev) => ({ ...prev, page: page - 1 }));
+                  }}
+                  color="primary"
+                  size={breakpoint.isXs ? 'small' : 'medium'}
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
+            )}
+          </>
+        ) : (
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: 8,
+              px: 2,
+            }}
+          >
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              {t('messages.noAttributes', { defaultValue: 'لا توجد خصائص' })}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('messages.noAttributesDesc', { defaultValue: 'ابدأ بإضافة خاصية جديدة' })}
+            </Typography>
+          </Box>
+        )}
+      </Box>
 
       {/* Snackbar for notifications */}
       <Snackbar
@@ -329,6 +447,9 @@ export const AttributesListPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog {...dialogProps} />
     </Box>
   );
 };

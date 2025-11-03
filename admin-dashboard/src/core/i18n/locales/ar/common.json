@@ -8,6 +8,7 @@
     "users": "المستخدمون",
     "usersList": "قائمة المستخدمين",
     "usersAnalytics": "تحليلات المستخدمين",
+    "usersDeleted": "الحسابات المحذوفة",
     "catalog": "الكتالوج",
     "products": "المنتجات",
     "productsList": "قائمة المنتجات",
@@ -67,9 +68,12 @@
     "errorLogs": "سجلات الأخطاء",
     "i18nManagement": "نصوص التعريب",
     "systemSettings": "إعدادات النظام",
-    "exchangeRates": "أسعار الصرف"
-  },
-  "actions": {
+         "exchangeRates": "أسعار الصرف",
+     "adminManagement": "إدارة الأدمن",
+     "addresses": "العناوين",
+     "search": "البحث"
+   },
+   "actions": {
     "title": "الإجراءات",
     "add": "إضافة",
     "edit": "تعديل",
@@ -86,7 +90,8 @@
     "view": "عرض",
     "submit": "إرسال",
     "activate": "تفعيل",
-    "suspend": "تعليق"
+    "suspend": "تعليق",
+    "retry": "إعادة المحاولة"
   },
   "status": {
     "active": "نشط",
@@ -115,7 +120,16 @@
     "user": "المستخدم",
     "profile": "الملف الشخصي",
     "logout": "تسجيل الخروج",
-    "refresh_profile": "تحديث البيانات"
+    "refresh_profile": "تحديث البيانات",
+    "previous": "السابق",
+    "next": "التالي",
+    "of": "من",
+    "currency": "العملة",
+    "currencies": {
+      "usd": "دولار أمريكي",
+      "yer": "ريال يمني",
+      "sar": "ريال سعودي"
+    }
   },
   "validation": {
     "required": "هذا الحقل مطلوب",

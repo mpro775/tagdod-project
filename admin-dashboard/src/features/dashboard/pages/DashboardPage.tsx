@@ -153,7 +153,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatsCard
             title={t('dashboard:stats.totalUsers.title', 'إجمالي المستخدمين')}
             value={formatNumber(dashboardData?.overview?.totalUsers)}
@@ -164,7 +164,7 @@ export const DashboardPage: React.FC = () => {
             isLoading={isOverviewLoading}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatsCard
             title={t('dashboard:stats.totalOrders.title', 'إجمالي الطلبات')}
             value={formatNumber(dashboardData?.overview?.totalOrders)}
@@ -175,7 +175,7 @@ export const DashboardPage: React.FC = () => {
             isLoading={isOverviewLoading}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatsCard
             title={t('dashboard:stats.totalRevenue.title', 'إجمالي الإيرادات')}
             value={formatCurrency(dashboardData?.overview?.totalRevenue || 0)}
@@ -186,7 +186,7 @@ export const DashboardPage: React.FC = () => {
             isLoading={isOverviewLoading}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatsCard
             title={t('dashboard:stats.totalProducts.title', 'إجمالي المنتجات')}
             value={formatNumber(productsData?.count)}

@@ -15,6 +15,8 @@ import {
   Tooltip,
   Collapse,
   Typography,
+  useTheme,
+  Divider,
 } from '@mui/material';
 import { FilterList, Clear, ExpandMore, ExpandLess, Search, DateRange } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -36,7 +38,8 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
   onClear,
   isLoading = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('cart');
+  const theme = useTheme();
   const [expanded, setExpanded] = React.useState(false);
 
   const handleFilterChange = (key: keyof CartFiltersType, value: any) => {
@@ -66,52 +69,70 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
   const activeFiltersCount = getActiveFiltersCount();
 
   const statusOptions = [
-    { value: '', label: t('cart.filters.status.all', { defaultValue: 'الكل' }) },
-    { value: CartStatus.ACTIVE, label: t('cart.filters.status.active', { defaultValue: 'نشط' }) },
-    { value: CartStatus.ABANDONED, label: t('cart.filters.status.abandoned', { defaultValue: 'مهمل' }) },
-    { value: CartStatus.CONVERTED, label: t('cart.filters.status.converted', { defaultValue: 'محول' }) },
-    { value: CartStatus.EXPIRED, label: t('cart.filters.status.expired', { defaultValue: 'منتهي' }) },
+    { value: '', label: t('filters.status.all') },
+    { value: CartStatus.ACTIVE, label: t('filters.status.active') },
+    { value: CartStatus.ABANDONED, label: t('filters.status.abandoned') },
+    { value: CartStatus.CONVERTED, label: t('filters.status.converted') },
+    { value: CartStatus.EXPIRED, label: t('filters.status.expired') },
   ];
 
   const sortOptions = [
-    { value: 'createdAt', label: t('cart.filters.sorting.createdAt', { defaultValue: 'تاريخ الإنشاء' }) },
-    { value: 'updatedAt', label: t('cart.filters.sorting.updatedAt', { defaultValue: 'تاريخ التحديث' }) },
-    { value: 'lastActivityAt', label: t('cart.filters.sorting.lastActivity', { defaultValue: 'تاريخ النشاط الأخير' }) },
-    { value: 'total', label: t('cart.filters.sorting.total', { defaultValue: 'المجموع' }) },
+    { value: 'createdAt', label: t('filters.sorting.createdAt') },
+    { value: 'updatedAt', label: t('filters.sorting.updatedAt') },
+    { value: 'lastActivityAt', label: t('filters.sorting.lastActivity') },
+    { value: 'total', label: t('filters.sorting.total') },
   ];
 
   const sortOrderOptions = [
-    { value: 'desc', label: t('cart.filters.sorting.descending', { defaultValue: 'تنازلي' }) },
-    { value: 'asc', label: t('cart.filters.sorting.ascending', { defaultValue: 'تصاعدي' }) },
+    { value: 'desc', label: t('filters.sorting.descending') },
+    { value: 'asc', label: t('filters.sorting.ascending') },
   ];
 
   return (
-    <Card sx={{ mb: 3 }}>
+    <Card sx={{ mb: 3, bgcolor: 'background.paper' }}>
       <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <FilterList />
-            <Typography variant="h6">{t('cart.filters.title', { defaultValue: 'فلاتر البحث' })}</Typography>
+        <Box 
+          display="flex" 
+          alignItems="center" 
+          justifyContent="space-between" 
+          mb={2}
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          gap={{ xs: 1, sm: 0 }}
+        >
+          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+            <FilterList color="primary" />
+            <Typography variant="h6" color="text.primary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+              {t('filters.title')}
+            </Typography>
             {activeFiltersCount > 0 && (
-              <Chip label={t('cart.filters.activeFilters.count', { count: activeFiltersCount })} size="small" color="primary" variant="outlined" />
+              <Chip 
+                label={t('filters.activeFilters.count', { count: activeFiltersCount })} 
+                size="small" 
+                color="primary" 
+                variant="outlined"
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+              />
             )}
           </Box>
-          <Box display="flex" alignItems="center" gap={1}>
+          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
             <Button
               variant="outlined"
               startIcon={<Search />}
               onClick={onSearch}
               disabled={isLoading}
+              size="small"
             >
-              {t('cart.filters.search', { defaultValue: 'بحث' })}
+              {t('filters.search')}
             </Button>
-            <Tooltip title={t('cart.filters.advanced.clearTooltip', { defaultValue: 'مسح الفلاتر' })}>
-              <IconButton onClick={handleClearFilters} disabled={isLoading}>
-                <Clear />
-              </IconButton>
+            <Tooltip title={t('filters.advanced.clearTooltip')}>
+              <span>
+                <IconButton onClick={handleClearFilters} disabled={isLoading} size="small">
+                  <Clear />
+                </IconButton>
+              </span>
             </Tooltip>
-            <Tooltip title={expanded ? t('cart.filters.advanced.hide', { defaultValue: 'إخفاء الفلاتر' }) : t('cart.filters.advanced.show', { defaultValue: 'عرض الفلاتر' })}>
-              <IconButton onClick={() => setExpanded(!expanded)}>
+            <Tooltip title={expanded ? t('filters.advanced.hide') : t('filters.advanced.show')}>
+              <IconButton onClick={() => setExpanded(!expanded)} size="small">
                 {expanded ? <ExpandLess /> : <ExpandMore />}
               </IconButton>
             </Tooltip>
@@ -122,11 +143,12 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
           {/* Basic Filters */}
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>{t('cart.filters.status.label', { defaultValue: 'حالة السلة' })}</InputLabel>
+              <InputLabel>{t('filters.status.label')}</InputLabel>
               <Select
                 value={filters.status || ''}
                 onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-                label={t('cart.filters.status.label', { defaultValue: 'حالة السلة' }    )}
+                label={t('filters.status.label')}
+                disabled={isLoading}
               >
                 {statusOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -139,7 +161,7 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
 
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>{t('cart.filters.type.label', { defaultValue: 'نوع السلة' }    )}</InputLabel>
+              <InputLabel>{t('filters.type.label')}</InputLabel>
               <Select
                 value={filters.isAbandoned === undefined ? '' : filters.isAbandoned}
                 onChange={(e) =>
@@ -148,24 +170,24 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
                     e.target.value === '' ? undefined : e.target.value
                   )
                 }
-                label={t('cart.filters.type.label', { defaultValue: 'نوع السلة' }    )}
+                label={t('filters.type.label')}
+                disabled={isLoading}
               >
-                <MenuItem value="">{t('cart.filters.type.all', { defaultValue: 'الكل' }    )}</MenuItem>
-                <MenuItem value="true">{t('cart.filters.type.abandonedOnly', { defaultValue: 'مهمل' }    )}</MenuItem>
-                <MenuItem value="false">{t('cart.filters.type.notAbandoned', { defaultValue: 'غير مهمل' }    
-                  
-                )}</MenuItem>
+                <MenuItem value="">{t('filters.type.all')}</MenuItem>
+                <MenuItem value="true">{t('filters.type.abandonedOnly')}</MenuItem>
+                <MenuItem value="false">{t('filters.type.notAbandoned')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>{t('cart.filters.sorting.sortBy', { defaultValue: 'ترتيب التصفية' }    )}</InputLabel>
+              <InputLabel>{t('filters.sorting.sortBy')}</InputLabel>
               <Select
                 value={filters.sortBy || 'createdAt'}
                 onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                label={t('cart.filters.sorting.sortBy', { defaultValue: 'ترتيب التصفية' }    )}
+                label={t('filters.sorting.sortBy')}
+                disabled={isLoading}
               >
                 {sortOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -178,11 +200,12 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
 
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth>
-              <InputLabel>{t('cart.filters.sorting.sortOrder', { defaultValue: 'ترتيب التصفية' }    )}</InputLabel>
+              <InputLabel>{t('filters.sorting.sortOrder')}</InputLabel>
               <Select
                 value={filters.sortOrder || 'desc'}
                 onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
-                label={t('cart.filters.sorting.sortOrder', { defaultValue: 'ترتيب التصفية' }    )}
+                label={t('filters.sorting.sortOrder')}
+                disabled={isLoading}
               >
                 {sortOrderOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -195,11 +218,19 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
 
           {/* Advanced Filters */}
           <Collapse in={expanded} timeout="auto" unmountOnExit>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Divider sx={{ my: 2, borderColor: 'divider' }} />
+            <Typography 
+              variant="subtitle1" 
+              gutterBottom
+              sx={{ mb: 2, color: 'text.primary', fontSize: { xs: '0.875rem', sm: '1rem' } }}
+            >
+              {t('filters.advanced.title')}
+            </Typography>
+            <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
-                  label={t('cart.filters.dateRange.from', { defaultValue: 'من تاريخ' }    )}
+                  label={t('filters.dateRange.from')}
                   type="date"
                   value={filters.dateFrom || ''}
                   onChange={(e) => handleFilterChange('dateFrom', e.target.value || undefined)}
@@ -207,13 +238,14 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
                   InputProps={{
                     startAdornment: <DateRange sx={{ mr: 1, color: 'text.secondary' }} />,
                   }}
+                  disabled={isLoading}
                 />
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
-                  label={t('cart.filters.dateRange.to', { defaultValue: 'إلى تاريخ' }    )}
+                  label={t('filters.dateRange.to')}
                   type="date"
                   value={filters.dateTo || ''}
                   onChange={(e) => handleFilterChange('dateTo', e.target.value || undefined)}
@@ -221,13 +253,14 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
                   InputProps={{
                     startAdornment: <DateRange sx={{ mr: 1, color: 'text.secondary' }} />,
                   }}
+                  disabled={isLoading}
                 />
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
-                  label={t('cart.filters.valueRange.minTotal', { defaultValue: 'الحد الأدنى للمجموع' }    )}
+                  label={t('filters.valueRange.minTotal')}
                   type="number"
                   value={filters.minTotal || ''}
                   onChange={(e) =>
@@ -238,18 +271,19 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
                   }
                   InputProps={{
                     startAdornment: (
-                      <Box component="span" sx={{ mr: 1 }}>
+                      <Box component="span" sx={{ mr: 1, color: 'text.secondary' }}>
                         $
                       </Box>
                     ),
                   }}
+                  disabled={isLoading}
                 />
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
-                  label={t('cart.filters.valueRange.maxTotal', { defaultValue: 'الحد الأعلى للمجموع' }    )}
+                  label={t('filters.valueRange.maxTotal')}
                   type="number"
                   value={filters.maxTotal || ''}
                   onChange={(e) =>
@@ -260,17 +294,18 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
                   }
                   InputProps={{
                     startAdornment: (
-                      <Box component="span" sx={{ mr: 1 }}>
+                      <Box component="span" sx={{ mr: 1, color: 'text.secondary' }}>
                         $
                       </Box>
                     ),
                   }}
+                  disabled={isLoading}
                 />
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('cart.filters.content.label', { defaultValue: 'المحتوى' }    )}</InputLabel>
+                  <InputLabel>{t('filters.content.label')}</InputLabel>
                   <Select
                     value={filters.hasItems === undefined ? '' : filters.hasItems}
                     onChange={(e) =>
@@ -279,11 +314,12 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
                         e.target.value === '' ? undefined : e.target.value
                       )
                     }
-                    label={t('cart.filters.content.label', { defaultValue: 'المحتوى' }      )}
+                    label={t('filters.content.label')}
+                    disabled={isLoading}
                   >
-                    <MenuItem value="">{t('cart.filters.content.all', { defaultValue: 'الكل' }    )}</MenuItem>
-                    <MenuItem value="true">{t('cart.filters.content.withItems', { defaultValue: 'مع المنتجات' }    )}</MenuItem>
-                    <MenuItem value="false">{t('cart.filters.content.empty', { defaultValue: 'فارغ' }    )}</MenuItem>
+                    <MenuItem value="">{t('filters.content.all')}</MenuItem>
+                    <MenuItem value="true">{t('filters.content.withItems')}</MenuItem>
+                    <MenuItem value="false">{t('filters.content.empty')}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -291,20 +327,22 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
-                  label={t('cart.filters.user.id', { defaultValue: 'رقم المستخدم' }    )}
+                  label={t('filters.user.id')}
                   value={filters.userId || ''}
                   onChange={(e) => handleFilterChange('userId', e.target.value || undefined)}
-                  placeholder={t('cart.filters.user.idPlaceholder', { defaultValue: 'رقم المستخدم' }    )}
+                  placeholder={t('filters.user.idPlaceholder')}
+                  disabled={isLoading}
                 />
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
-                  label={t('cart.filters.user.deviceId', { defaultValue: 'رقم الجهاز' }    )}
+                  label={t('filters.user.deviceId')}
                   value={filters.deviceId || ''}
                   onChange={(e) => handleFilterChange('deviceId', e.target.value || undefined)}
-                  placeholder={t('cart.filters.user.deviceIdPlaceholder', { defaultValue: 'رقم الجهاز' }    )}
+                  placeholder={t('filters.user.deviceIdPlaceholder')}
+                  disabled={isLoading}
                 />
               </Grid>
             </Grid>
@@ -314,63 +352,71 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
         {/* Active Filters Display */}
         {activeFiltersCount > 0 && (
           <Box mt={2}>
+            <Divider sx={{ mb: 2, borderColor: 'divider' }} />
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              {t('cart.filters.activeFilters.title', { defaultValue: 'الفلاتر النشطة' }    )}
+              {t('filters.activeFilters.title')}
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={1}>
               {filters.status && (
                 <Chip
-                  label={t('cart.filters.activeFilters.status', {
+                  label={t('filters.activeFilters.status', {
                     status: statusOptions.find((opt) => opt.value === filters.status)?.label
                   })}
                   onDelete={() => handleFilterChange('status', undefined)}
                   size="small"
+                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                 />
               )}
               {filters.isAbandoned !== undefined && (
                 <Chip
-                  label={t('cart.filters.activeFilters.type', {
-                    type: filters.isAbandoned ? t('cart.filters.type.abandonedOnly', { defaultValue: 'مهمل' }) : t('cart.filters.type.notAbandoned', { defaultValue: 'غير مهمل' }    )
+                  label={t('filters.activeFilters.type', {
+                    type: filters.isAbandoned ? t('filters.type.abandonedOnly') : t('filters.type.notAbandoned')
                   })}
                   onDelete={() => handleFilterChange('isAbandoned', undefined)}
                   size="small"
+                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                 />
               )}
               {filters.dateFrom && (
                 <Chip
-                    label={t('cart.filters.activeFilters.from', { date: formatDate(filters.dateFrom) })}
+                  label={t('filters.activeFilters.from', { date: formatDate(filters.dateFrom) })}
                   onDelete={() => handleFilterChange('dateFrom', undefined)}
                   size="small"
+                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                 />
               )}
               {filters.dateTo && (
                 <Chip
-                  label={t('cart.filters.activeFilters.to', { date: formatDate(filters.dateTo) })}
+                  label={t('filters.activeFilters.to', { date: formatDate(filters.dateTo) })}
                   onDelete={() => handleFilterChange('dateTo', undefined)}
                   size="small"
+                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                 />
               )}
               {filters.minTotal && (
                 <Chip
-                  label={t('cart.filters.activeFilters.minTotal', { value: filters.minTotal })}
+                  label={t('filters.activeFilters.minTotal', { value: filters.minTotal })}
                   onDelete={() => handleFilterChange('minTotal', undefined)}
                   size="small"
+                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                 />
               )}
               {filters.maxTotal && (
                 <Chip
-                  label={t('cart.filters.activeFilters.maxTotal', { value: filters.maxTotal })}
+                  label={t('filters.activeFilters.maxTotal', { value: filters.maxTotal })}
                   onDelete={() => handleFilterChange('maxTotal', undefined)}
                   size="small"
+                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                 />
               )}
               {filters.hasItems !== undefined && (
                 <Chip
-                  label={t('cart.filters.activeFilters.content', {
-                    content: filters.hasItems ? t('cart.filters.content.withItems', { defaultValue: 'مع المنتجات' }) : t('cart.filters.content.empty', { defaultValue: 'فارغ' }       )
+                  label={t('filters.activeFilters.content', {
+                    content: filters.hasItems ? t('filters.content.withItems') : t('filters.content.empty')
                   })}
                   onDelete={() => handleFilterChange('hasItems', undefined)}
                   size="small"
+                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                 />
               )}
             </Box>

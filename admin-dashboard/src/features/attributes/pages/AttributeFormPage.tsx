@@ -23,8 +23,11 @@ import {
   Chip,
   Stack,
   IconButton,
+  Tooltip,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import { Save, Cancel, ArrowBack, Info, Settings, Warning, CheckCircle } from '@mui/icons-material';
+import { Save, Cancel, ArrowBack, ArrowForward, Info, Settings, Warning, CheckCircle, Refresh } from '@mui/icons-material';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
 import { useAttribute, useCreateAttribute, useUpdateAttribute } from '../hooks/useAttributes';
@@ -53,9 +56,15 @@ const createSteps = (t: (key: string) => string) => [
 export const AttributeFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation('attributes');
+  const { t, i18n } = useTranslation('attributes');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down(400));
   const isEditMode = id !== 'new' && !!id;
   const [activeStep, setActiveStep] = React.useState(0);
+  
+  // تحديد اتجاه السهم حسب اللغة: العربية = ArrowForward، الإنجليزية = ArrowBack
+  const PreviousIcon = i18n.language === 'ar' ? ArrowForward : ArrowBack;
 
   const attributeSchema = createAttributeSchema(t);
   type AttributeSchemaType = z.infer<typeof attributeSchema>;
@@ -154,9 +163,9 @@ export const AttributeFormPage: React.FC = () => {
     switch (step) {
       case 0:
         return (
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             <Grid size={{ xs: 12 }}>
-              <Alert severity="info" icon={<Info />} sx={{ mb: 3 }}>
+              <Alert severity="info" icon={<Info />} sx={{ mb: { xs: 2, sm: 3 } }}>
                 {t('form.basicInfoDesc')}
               </Alert>
             </Grid>
@@ -190,9 +199,9 @@ export const AttributeFormPage: React.FC = () => {
         );
       case 1:
         return (
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             <Grid size={{ xs: 12 }}>
-              <Alert severity="warning" icon={<Settings />} sx={{ mb: 3 }}>
+              <Alert severity="warning" icon={<Settings />} sx={{ mb: { xs: 2, sm: 3 } }}>
                 {t('form.settingsDesc')}
               </Alert>
             </Grid>
@@ -272,14 +281,14 @@ export const AttributeFormPage: React.FC = () => {
         const errors = methods.formState.errors;
         const hasErrors = Object.keys(errors).length > 0;
         return (
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             <Grid size={{ xs: 12 }}>
               {hasErrors ? (
-                <Alert severity="error" icon={<Warning />} sx={{ mb: 3 }}>
+                <Alert severity="error" icon={<Warning />} sx={{ mb: { xs: 2, sm: 3 } }}>
                   {t('form.reviewError')}
                 </Alert>
               ) : (
-                <Alert severity="success" icon={<CheckCircle />} sx={{ mb: 3 }}>
+                <Alert severity="success" icon={<CheckCircle />} sx={{ mb: { xs: 2, sm: 3 } }}>
                   {t('form.reviewSuccess')}
                 </Alert>
               )}
@@ -372,25 +381,57 @@ export const AttributeFormPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-        <IconButton onClick={() => navigate('/attributes')} sx={{ mr: 2 }}>
+    <Box sx={{ px: { xs: 1, sm: 2, md: 3 }, py: { xs: 2, sm: 3 }, pb: { xs: 4, sm: 3 } }}>
+      {/* Header - Responsive */}
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: { xs: 2, sm: 3, md: 4 }, gap: 1 }}>
+        <IconButton 
+          onClick={() => navigate('/attributes')} 
+          sx={{ 
+            mr: { xs: 0, sm: 2 },
+            flexShrink: 0,
+          }}
+        >
           <ArrowBack />
         </IconButton>
-        <Box>
-          <Typography variant="h4" fontWeight="bold">
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography 
+            variant="h4" 
+            fontWeight="bold"
+            sx={{ 
+              fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
+              mb: { xs: 0.5, sm: 1 },
+            }}
+          >
             {isEditMode ? t('attributes.editAttribute') : t('attributes.createAttribute')}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography 
+            variant="body1" 
+            color="text.secondary"
+            sx={{ 
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              display: { xs: 'none', sm: 'block' },
+            }}
+          >
             {isEditMode ? 'تعديل معلومات السمة الموجودة' : 'إنشاء سمة جديدة للمنتجات'}
           </Typography>
         </Box>
       </Box>
 
-      {/* Stepper */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Stepper activeStep={activeStep} alternativeLabel>
+      {/* Stepper - Responsive */}
+      <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 }, overflowX: 'auto' }}>
+        <Stepper 
+          activeStep={activeStep} 
+          alternativeLabel={false}
+          orientation="horizontal"
+          sx={{
+            '& .MuiStepLabel-root': {
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            },
+            '& .MuiStepLabel-label': {
+              fontSize: { xs: '0.7rem', sm: '0.875rem' },
+            },
+          }}
+        >
           {steps.map((label) => (
             <Step key={label}>
               <StepLabel>{label}</StepLabel>
@@ -402,57 +443,145 @@ export const AttributeFormPage: React.FC = () => {
       {/* Form Content */}
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
-          <Paper sx={{ p: 3, mb: 3 }}>{renderStepContent(activeStep)}</Paper>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>{renderStepContent(activeStep)}</Paper>
 
-          {/* Navigation Buttons */}
-          <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Button
-                type="button"
-                disabled={activeStep === 0}
-                onClick={handleBack}
-                startIcon={<ArrowBack />}
-              >
-                {t('form.previous')}
-              </Button>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  startIcon={<Cancel />}
-                  onClick={() => navigate('/attributes')}
-                >
-                  {t('form.cancel')}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  color="secondary"
-                  onClick={handleReset}
-                >
-                  {t('form.reset')}
-                </Button>
-                {activeStep === steps.length - 1 ? (
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
-                    disabled={isCreating || isUpdating}
-                  >
-                    {isEditMode ? t('form.update') : t('form.create')}
-                  </Button>
-                ) : (
+          {/* Navigation Buttons - Responsive */}
+          <Paper sx={{ p: { xs: 1.5, sm: 2, md: 2.5 } }}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={{ xs: 1.5, sm: 2 }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+            >
+              {/* Previous Button */}
+              <Tooltip title={t('form.previous')} arrow placement="top">
+                <span>
                   <Button
                     type="button"
-                    variant="contained"
-                    onClick={handleNext}
-                    startIcon={<CheckCircle />}
+                    disabled={activeStep === 0}
+                    onClick={handleBack}
+                    startIcon={<PreviousIcon />}
+                    fullWidth={isMobile}
+                    size={isMobile ? 'small' : 'medium'}
+                    sx={{
+                      minWidth: isSmallMobile ? 'auto' : { xs: '120px', sm: 'auto' },
+                      '& .MuiButton-startIcon': {
+                        marginLeft: isSmallMobile ? 0 : undefined,
+                        marginRight: isSmallMobile ? 0 : undefined,
+                      },
+                    }}
                   >
-                    {t('form.next')}
+                    {!isSmallMobile && t('form.previous')}
                   </Button>
+                </span>
+              </Tooltip>
+
+              {/* Action Buttons Group */}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={{ xs: 1, sm: 1.5 }}
+                sx={{ 
+                  width: { xs: '100%', sm: 'auto' },
+                  '& > *': {
+                    width: { xs: '100%', sm: 'auto' },
+                  },
+                }}
+              >
+                {/* Cancel Button */}
+                <Tooltip title={t('form.cancel')} arrow placement="top">
+                  <span>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      startIcon={<Cancel />}
+                      onClick={() => navigate('/attributes')}
+                      fullWidth={isMobile}
+                      size={isMobile ? 'small' : 'medium'}
+                      sx={{
+                        minWidth: isSmallMobile ? 'auto' : { xs: '100px', sm: 'auto' },
+                        '& .MuiButton-startIcon': {
+                          marginLeft: isSmallMobile ? 0 : undefined,
+                          marginRight: isSmallMobile ? 0 : undefined,
+                        },
+                      }}
+                    >
+                      {!isSmallMobile && t('form.cancel')}
+                    </Button>
+                  </span>
+                </Tooltip>
+
+                {/* Reset Button */}
+                <Tooltip title={t('form.reset')} arrow placement="top">
+                  <span>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      color="secondary"
+                      onClick={handleReset}
+                      startIcon={<Refresh />}
+                      fullWidth={isMobile}
+                      size={isMobile ? 'small' : 'medium'}
+                      sx={{
+                        minWidth: isSmallMobile ? 'auto' : { xs: '100px', sm: 'auto' },
+                        '& .MuiButton-startIcon': {
+                          marginLeft: isSmallMobile ? 0 : undefined,
+                          marginRight: isSmallMobile ? 0 : undefined,
+                        },
+                      }}
+                    >
+                      {!isSmallMobile && t('form.reset')}
+                    </Button>
+                  </span>
+                </Tooltip>
+
+                {/* Submit/Next Button */}
+                {activeStep === steps.length - 1 ? (
+                  <Tooltip title={isEditMode ? t('form.update') : t('form.create')} arrow placement="top">
+                    <span>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        startIcon={isCreating || isUpdating ? <CircularProgress size={isMobile ? 16 : 20} /> : <Save />}
+                        disabled={isCreating || isUpdating}
+                        fullWidth={isMobile}
+                        size={isMobile ? 'small' : 'medium'}
+                        sx={{
+                          minWidth: isSmallMobile ? 'auto' : { xs: '140px', sm: 'auto' },
+                          '& .MuiButton-startIcon': {
+                            marginLeft: isSmallMobile ? 0 : undefined,
+                            marginRight: isSmallMobile ? 0 : undefined,
+                          },
+                        }}
+                      >
+                        {!isSmallMobile && (isEditMode ? t('form.update') : t('form.create'))}
+                      </Button>
+                    </span>
+                  </Tooltip>
+                ) : (
+                  <Tooltip title={t('form.next')} arrow placement="top">
+                    <span>
+                      <Button
+                        type="button"
+                        variant="contained"
+                        onClick={handleNext}
+                        startIcon={<CheckCircle />}
+                        fullWidth={isMobile}
+                        size={isMobile ? 'small' : 'medium'}
+                        sx={{
+                          minWidth: isSmallMobile ? 'auto' : { xs: '100px', sm: 'auto' },
+                          '& .MuiButton-startIcon': {
+                            marginLeft: isSmallMobile ? 0 : undefined,
+                            marginRight: isSmallMobile ? 0 : undefined,
+                          },
+                        }}
+                      >
+                        {!isSmallMobile && t('form.next')}
+                      </Button>
+                    </span>
+                  </Tooltip>
                 )}
-              </Box>
-            </Box>
+              </Stack>
+            </Stack>
           </Paper>
         </form>
       </FormProvider>

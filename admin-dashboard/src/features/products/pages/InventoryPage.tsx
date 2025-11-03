@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, useTheme } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { InventoryDashboard } from '../components/InventoryDashboard';
 import { VariantCard } from '../components/VariantCard';
 import { StockManager } from '../components/StockManager';
@@ -10,6 +12,9 @@ import type { Variant } from '../types/product.types';
 
 export const InventoryPage: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const { t } = useTranslation(['products', 'common']);
+  const { isMobile } = useBreakpoint();
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
@@ -30,16 +35,50 @@ export const InventoryPage: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
+      <Box 
+        display="flex" 
+        alignItems="center" 
+        gap={2} 
+        mb={3}
+        flexDirection={isMobile ? 'column' : 'row'}
+        sx={{ 
+          alignItems: isMobile ? 'stretch' : 'center',
+        }}
+      >
         <Button
           variant="outlined"
           startIcon={<ArrowBack />}
           onClick={() => navigate('/products')}
+          fullWidth={isMobile}
+          sx={{
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? theme.palette.grey[800] 
+              : theme.palette.background.paper,
+            borderColor: theme.palette.mode === 'dark' 
+              ? theme.palette.grey[700] 
+              : theme.palette.divider,
+            '&:hover': {
+              backgroundColor: theme.palette.mode === 'dark' 
+                ? theme.palette.grey[700] 
+                : theme.palette.action.hover,
+              borderColor: theme.palette.mode === 'dark' 
+                ? theme.palette.grey[600] 
+                : theme.palette.primary.main,
+            },
+          }}
         >
-          العودة للمنتجات
+          {t('products:inventory.backToProducts', 'العودة للمنتجات')}
         </Button>
-        <Typography variant="h4" component="h1">
-          إدارة المخزون
+        <Typography 
+          variant={isMobile ? 'h5' : 'h4'} 
+          component="h1"
+          sx={{ 
+            flex: isMobile ? 'none' : 1,
+            textAlign: isMobile ? 'center' : 'right',
+            color: theme.palette.text.primary,
+          }}
+        >
+          {t('products:inventory.title', 'إدارة المخزون')}
         </Typography>
       </Box>
 
@@ -52,16 +91,53 @@ export const InventoryPage: React.FC = () => {
         onClose={handleCloseDialog}
         maxWidth="lg"
         fullWidth
+        fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? theme.palette.grey[900] 
+              : theme.palette.background.paper,
+          },
+        }}
       >
-        <DialogTitle>
-          تفاصيل المتغير
+        <DialogTitle
+          sx={{
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? theme.palette.grey[800] 
+              : theme.palette.grey[50],
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            pb: 2,
+          }}
+        >
+          <Typography 
+            variant={isMobile ? 'h6' : 'h5'} 
+            sx={{ 
+              color: theme.palette.text.primary,
+              mb: selectedVariant ? 1 : 0,
+            }}
+          >
+            {t('products:inventory.variantDetails', 'تفاصيل المتغير')}
+          </Typography>
           {selectedVariant && (
-            <Typography variant="subtitle1" color="text.secondary">
-              {selectedVariant.sku || 'بدون SKU'}
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                color: theme.palette.text.secondary,
+                fontSize: isMobile ? '0.875rem' : '1rem',
+              }}
+            >
+              {selectedVariant.sku || t('products:variants.noSku', 'بدون SKU')}
             </Typography>
           )}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent
+          sx={{
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? theme.palette.grey[900] 
+              : theme.palette.background.paper,
+            pt: 3,
+          }}
+        >
           {selectedVariant && (
             <Box display="flex" flexDirection="column" gap={3}>
               {/* Variant Card */}
@@ -71,7 +147,13 @@ export const InventoryPage: React.FC = () => {
               />
 
               {/* Management Components */}
-              <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3}>
+              <Box 
+                display="grid" 
+                gap={2}
+                sx={{
+                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                }}
+              >
                 <StockManager
                   variant={selectedVariant}
                   onStockUpdate={handleStockUpdate}
@@ -84,9 +166,35 @@ export const InventoryPage: React.FC = () => {
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>
-            إغلاق
+        <DialogActions
+          sx={{
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? theme.palette.grey[800] 
+              : theme.palette.grey[50],
+            borderTop: `1px solid ${theme.palette.divider}`,
+            pt: 2,
+            px: 3,
+            pb: 2,
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? 1 : 0,
+          }}
+        >
+          <Button 
+            onClick={handleCloseDialog}
+            variant="contained"
+            fullWidth={isMobile}
+            sx={{
+              backgroundColor: theme.palette.mode === 'dark' 
+                ? theme.palette.primary.dark 
+                : theme.palette.primary.main,
+              '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark' 
+                  ? theme.palette.primary.main 
+                  : theme.palette.primary.dark,
+              },
+            }}
+          >
+            {t('common:actions.close', 'إغلاق')}
           </Button>
         </DialogActions>
       </Dialog>

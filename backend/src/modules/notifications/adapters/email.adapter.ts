@@ -28,7 +28,7 @@ export interface EmailResult {
 @Injectable()
 export class EmailAdapter {
   private readonly logger = new Logger(EmailAdapter.name);
-  private transporter!: nodemailer.Transporter;
+  private transporter?: nodemailer.Transporter;
   private templateCache = new Map<string, HandlebarsTemplateDelegate>();
 
   constructor(private configService: ConfigService) {
@@ -37,13 +37,27 @@ export class EmailAdapter {
 
   private initializeTransporter() {
     try {
+      const smtpHost = this.configService.get('SMTP_HOST');
+      const smtpUser = this.configService.get('SMTP_USER');
+      const smtpPass = this.configService.get('SMTP_PASS');
+
+      // Check if required environment variables are set
+      if (!smtpHost || !smtpUser || !smtpPass) {
+        this.logger.warn(
+          'SMTP environment variables are not fully configured. ' +
+          'Required: SMTP_HOST, SMTP_USER, SMTP_PASS. ' +
+          'Email notifications will be disabled.'
+        );
+        return;
+      }
+
       const smtpConfig = {
-        host: this.configService.get('SMTP_HOST'),
+        host: smtpHost,
         port: parseInt(this.configService.get('SMTP_PORT') || '587'),
         secure: this.configService.get('SMTP_SECURE') === 'true',
         auth: {
-          user: this.configService.get('SMTP_USER'),
-          pass: this.configService.get('SMTP_PASS'),
+          user: smtpUser,
+          pass: smtpPass,
         },
         tls: {
           rejectUnauthorized: false,
@@ -54,20 +68,30 @@ export class EmailAdapter {
       this.logger.log('Email transporter initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize email transporter:', error);
+      this.transporter = undefined as unknown as nodemailer.Transporter;
     }
+  }
+
+  /**
+   * Check if email transporter is properly initialized
+   */
+  public isInitialized(): boolean {
+    return this.transporter !== undefined && this.transporter !== null;
   }
 
   /**
    * Send email notification
    */
   async sendEmail(notification: EmailNotification): Promise<EmailResult> {
+    if (!this.isInitialized()) {
+      this.logger.warn('Email transporter is not initialized. Cannot send email.');
+      return {
+        success: false,
+        error: 'Email transporter not initialized',
+      };
+    }
+
     try {
-      if (!this.transporter) {
-        return {
-          success: false,
-          error: 'Email transporter not initialized',
-        };
-      }
 
       let html = notification.html;
       let text = notification.text;
@@ -88,7 +112,7 @@ export class EmailAdapter {
         attachments: notification.attachments,
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
+      const info = await this.transporter!.sendMail(mailOptions);
 
       this.logger.log(`Email sent successfully to ${notification.to}: ${info.messageId}`);
 
@@ -198,14 +222,15 @@ export class EmailAdapter {
    * Send welcome email
    */
   async sendWelcomeEmail(to: string, userName: string): Promise<EmailResult> {
+    const appDeepLink = this.configService.get<string>('MOBILE_APP_DEEP_LINK_SCHEME', 'tagdodapp://');
     return this.sendEmail({
       to,
-      subject: 'مرحباً بك في Solar Commerce',
+      subject: 'مرحباً بك في تجدٌد',
       template: 'welcome',
       data: {
         userName,
-        siteName: 'Solar Commerce',
-        loginUrl: `${this.configService.get('FRONTEND_URL')}/login`,
+        siteName: 'تجدٌد',
+        loginUrl: `${appDeepLink}login`,
       },
     });
   }
@@ -217,14 +242,15 @@ export class EmailAdapter {
     to: string,
     orderData: Record<string, unknown>,
   ): Promise<EmailResult> {
+    const appDeepLink = this.configService.get<string>('MOBILE_APP_DEEP_LINK_SCHEME', 'tagdodapp://');
     return this.sendEmail({
       to,
       subject: `تأكيد الطلب #${orderData.orderNumber}`,
       template: 'order-confirmation',
       data: {
         ...orderData,
-        siteName: 'Solar Commerce',
-        orderUrl: `${this.configService.get('FRONTEND_URL')}/orders/${orderData.id}`,
+        siteName: 'تجدٌد',
+        orderUrl: `${appDeepLink}orders/${orderData.id}`,
       },
     });
   }
@@ -233,13 +259,17 @@ export class EmailAdapter {
    * Send password reset email
    */
   async sendPasswordReset(to: string, resetToken: string): Promise<EmailResult> {
+    // الحصول على رابط Deep Link للتطبيق
+    const appDeepLink = this.configService.get<string>('MOBILE_APP_DEEP_LINK_SCHEME', 'tagdodapp://');
+    const resetUrl = `${appDeepLink}reset-password?token=${resetToken}`;
+    
     return this.sendEmail({
       to,
       subject: 'إعادة تعيين كلمة المرور',
       template: 'password-reset',
       data: {
-        resetUrl: `${this.configService.get('FRONTEND_URL')}/reset-password?token=${resetToken}`,
-        siteName: 'Solar Commerce',
+        resetUrl,
+        siteName: 'تجدٌد',
       },
     });
   }
@@ -248,14 +278,15 @@ export class EmailAdapter {
    * Send stock alert email
    */
   async sendStockAlert(to: string, productData: Record<string, unknown>): Promise<EmailResult> {
+    const appDeepLink = this.configService.get<string>('MOBILE_APP_DEEP_LINK_SCHEME', 'tagdodapp://');
     return this.sendEmail({
       to,
       subject: `تنبيه: مخزون منخفض - ${productData.name}`,
       template: 'stock-alert',
       data: {
         ...productData,
-        siteName: 'Solar Commerce',
-        productUrl: `${this.configService.get('FRONTEND_URL')}/products/${productData.id}`,
+          siteName: 'تجدٌد',
+        productUrl: `${appDeepLink}products/${productData.id}`,
       },
     });
   }
@@ -264,12 +295,12 @@ export class EmailAdapter {
    * Verify email configuration
    */
   async verifyConfiguration(): Promise<boolean> {
-    try {
-      if (!this.transporter) {
-        return false;
-      }
+    if (!this.isInitialized()) {
+      return false;
+    }
 
-      await this.transporter.verify();
+    try {
+      await this.transporter!.verify();
       this.logger.log('Email configuration verified successfully');
       return true;
     } catch (error) {

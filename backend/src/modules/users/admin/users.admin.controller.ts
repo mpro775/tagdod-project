@@ -39,6 +39,7 @@ import { CreateAdminDto, CreateRoleBasedAdminDto } from './dto/create-admin.dto'
 import { UpdateUserAdminDto } from './dto/update-user-admin.dto';
 import { ListUsersDto } from './dto/list-users.dto';
 import { SuspendUserDto } from './dto/suspend-user.dto';
+import { ApproveVerificationDto } from '../dto/approve-verification.dto';
 
 @ApiTags('إدارة-المستخدمين')
 @ApiBearerAuth()
@@ -122,11 +123,18 @@ export class UsersAdminController {
 
     // البحث
     if (search) {
-      query.$or = [
+      const searchConditions: FilterQuery<User>[] = [
         { phone: { $regex: search, $options: 'i' } },
         { firstName: { $regex: search, $options: 'i' } },
         { lastName: { $regex: search, $options: 'i' } },
       ];
+      
+      // إضافة البحث في سبب الحذف إذا كان البحث عن المحذوفين
+      if (includeDeleted) {
+        searchConditions.push({ deletionReason: { $regex: search, $options: 'i' } });
+      }
+      
+      query.$or = searchConditions;
     }
 
     // فلترة الحالة
@@ -175,6 +183,135 @@ export class UsersAdminController {
       totalPages: Math.ceil(total / limit),
       hasNextPage: page < Math.ceil(total / limit),
       hasPrevPage: page > 1,
+    };
+  }
+
+  // ==================== قائمة الحسابات المحذوفة مع السبب ====================
+  @RequirePermissions('users.read', 'admin.access')
+  @Get('deleted')
+  @ApiOperation({
+    summary: 'الحسابات المحذوفة',
+    description: 'استرداد قائمة بجميع الحسابات المحذوفة مع سبب الحذف',
+  })
+  @ApiQuery({ type: ListUsersDto })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد الحسابات المحذوفة بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        deletedUsers: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'user123', description: 'معرف المستخدم' },
+              phone: { type: 'string', example: '+967771234567', description: 'رقم الهاتف' },
+              firstName: { type: 'string', example: 'أحمد', description: 'الاسم الأول' },
+              lastName: { type: 'string', example: 'محمد', description: 'الاسم الأخير' },
+              deletionReason: { type: 'string', example: 'لا أستخدم التطبيق بعد الآن', description: 'سبب الحذف' },
+              deletedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z', description: 'تاريخ الحذف' },
+              deletedBy: { type: 'string', example: 'user456', description: 'معرف من قام بالحذف (null إذا حذف المستخدم حسابه بنفسه)' },
+              createdAt: { type: 'string', format: 'date-time', example: '2023-01-01T10:00:00Z', description: 'تاريخ الإنشاء' },
+            },
+          },
+        },
+        pagination: {
+          type: 'object',
+          properties: {
+            page: { type: 'number', example: 1 },
+            limit: { type: 'number', example: 20 },
+            total: { type: 'number', example: 50 },
+            totalPages: { type: 'number', example: 3 },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'غير مصرح لك بالوصول إلى الحسابات المحذوفة',
+  })
+  async getDeletedUsers(@Query() dto: ListUsersDto) {
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      sortBy = 'deletedAt',
+      sortOrder = 'desc',
+    } = dto;
+
+    const skip = (page - 1) * limit;
+    
+    // بناء query للحسابات المحذوفة
+    const baseQuery: FilterQuery<User>[] = [
+      { deletedAt: { $ne: null } },
+      { status: UserStatus.DELETED },
+    ];
+
+    const query: FilterQuery<User> = {
+      $or: baseQuery,
+    };
+
+    // البحث في الحسابات المحذوفة
+    if (search) {
+      const searchConditions = [
+        { phone: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+        { deletionReason: { $regex: search, $options: 'i' } },
+      ];
+
+      // دمج شروط البحث مع شروط الحذف
+      query.$and = [
+        { $or: baseQuery },
+        { $or: searchConditions },
+      ];
+      delete query.$or; // إزالة $or لأننا استخدمنا $and
+    }
+
+    // الترتيب - افتراضي حسب تاريخ الحذف
+    const sort: Record<string, SortOrder> = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // جلب الحسابات المحذوفة مع الحقول المهمة
+    const [deletedUsers, total] = await Promise.all([
+      this.userModel
+        .find(query)
+        .select('-passwordHash')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.userModel.countDocuments(query),
+    ]);
+
+    // تنسيق البيانات مع التأكد من إظهار سبب الحذف
+    const formattedUsers = deletedUsers.map((user) => {
+      const userWithTimestamps = user as typeof user & { createdAt: Date };
+      return {
+        id: user._id,
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        deletionReason: user.deletionReason || 'لم يتم تحديد السبب',
+        deletedAt: user.deletedAt,
+        deletedBy: user.deletedBy, // null إذا حذف المستخدم حسابه بنفسه
+        createdAt: userWithTimestamps.createdAt,
+        status: user.status,
+      };
+    });
+
+    return {
+      deletedUsers: formattedUsers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1,
+      },
     };
   }
 
@@ -701,6 +838,266 @@ export class UsersAdminController {
       engineers,
       merchants,
       users: regularUsers,
+    };
+  }
+
+  // ==================== قائمة طلبات التحقق قيد المراجعة ====================
+  @RequirePermissions('users.read', 'admin.access')
+  @Get('verification/pending')
+  @ApiOperation({
+    summary: 'قائمة طلبات التحقق قيد المراجعة',
+    description: 'عرض جميع طلبات التحقق للمهندسين والتجار التي في حالة PENDING'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد قائمة طلبات التحقق بنجاح',
+  })
+  async getPendingVerifications() {
+    const pendingUsers = await this.userModel
+      .find({
+        $or: [
+          { engineer_status: CapabilityStatus.PENDING },
+          { wholesale_status: CapabilityStatus.PENDING },
+        ],
+        deletedAt: null,
+      })
+      .select('phone firstName lastName engineer_status wholesale_status cvFileUrl storePhotoUrl storeName verificationNote createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const formatted = pendingUsers.map(user => {
+      const userWithTimestamps = user as typeof user & { createdAt: Date };
+      return {
+        id: user._id,
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        verificationType: user.engineer_status === CapabilityStatus.PENDING ? 'engineer' : 'merchant',
+        cvFileUrl: user.cvFileUrl,
+        storePhotoUrl: user.storePhotoUrl,
+        storeName: user.storeName,
+        verificationNote: user.verificationNote,
+        createdAt: userWithTimestamps.createdAt,
+      };
+    });
+
+    return {
+      data: formatted,
+      total: formatted.length,
+    };
+  }
+
+  // ==================== تفاصيل طلب التحقق ====================
+  @RequirePermissions('users.read', 'admin.access')
+  @Get('verification/:userId')
+  @ApiOperation({
+    summary: 'تفاصيل طلب التحقق',
+    description: 'عرض تفاصيل كاملة لطلب التحقق لمستخدم محدد'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد تفاصيل طلب التحقق بنجاح',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'المستخدم غير موجود أو ليس لديه طلب تحقق قيد المراجعة',
+  })
+  async getVerificationDetails(@Param('userId') userId: string) {
+    const user = await this.userModel.findById(userId).select('-passwordHash').lean();
+    if (!user) {
+      throw new UserNotFoundException({ userId });
+    }
+
+    // التحقق من وجود طلب تحقق قيد المراجعة
+    const hasPendingVerification = 
+      user.engineer_status === CapabilityStatus.PENDING ||
+      user.wholesale_status === CapabilityStatus.PENDING;
+
+    if (!hasPendingVerification) {
+      throw new UserNotFoundException({
+        userId,
+        message: 'المستخدم ليس لديه طلب تحقق قيد المراجعة',
+      });
+    }
+
+    const userWithTimestamps = user as typeof user & { createdAt: Date; updatedAt: Date };
+    return {
+      data: {
+        id: user._id,
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        jobTitle: user.jobTitle,
+        verificationType: user.engineer_status === CapabilityStatus.PENDING ? 'engineer' : 'merchant',
+        cvFileUrl: user.cvFileUrl,
+        storePhotoUrl: user.storePhotoUrl,
+        storeName: user.storeName,
+        verificationNote: user.verificationNote,
+        engineerStatus: user.engineer_status,
+        wholesaleStatus: user.wholesale_status,
+        createdAt: userWithTimestamps.createdAt,
+        updatedAt: userWithTimestamps.updatedAt,
+      },
+    };
+  }
+
+  // ==================== الموافقة على التحقق ====================
+  @RequirePermissions('users.update', 'admin.access')
+  @Post('verification/:userId/approve')
+  @ApiOperation({
+    summary: 'الموافقة على التحقق',
+    description: 'الموافقة على طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى APPROVED'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تمت الموافقة على التحقق بنجاح',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'المستخدم غير موجود أو ليس لديه طلب تحقق قيد المراجعة',
+  })
+  async approveVerification(
+    @Param('userId') userId: string,
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new UserNotFoundException({ userId });
+    }
+
+    // التحقق من وجود طلب قيد المراجعة
+    const isEngineerPending = user.engineer_status === CapabilityStatus.PENDING;
+    const isMerchantPending = user.wholesale_status === CapabilityStatus.PENDING;
+
+    if (!isEngineerPending && !isMerchantPending) {
+      throw new UserNotFoundException({
+        userId,
+        message: 'المستخدم ليس لديه طلب تحقق قيد المراجعة',
+      });
+    }
+
+    // الموافقة على التحقق
+    if (isEngineerPending) {
+      user.engineer_status = CapabilityStatus.APPROVED;
+      if (!user.roles.includes(UserRole.ENGINEER)) {
+        user.roles.push(UserRole.ENGINEER);
+      }
+    }
+
+    if (isMerchantPending) {
+      user.wholesale_status = CapabilityStatus.APPROVED;
+      if (!user.roles.includes(UserRole.MERCHANT)) {
+        user.roles.push(UserRole.MERCHANT);
+      }
+    }
+
+    await user.save();
+
+    // تحديث Capabilities في الجدول المنفصل
+    const caps = await this.capsModel.findOne({ userId });
+    if (caps) {
+      if (isEngineerPending) {
+        caps.engineer_status = CapabilityStatus.APPROVED;
+        caps.engineer_capable = true;
+      }
+      if (isMerchantPending) {
+        caps.wholesale_status = CapabilityStatus.APPROVED;
+        caps.wholesale_capable = true;
+      }
+      await caps.save();
+    }
+
+    return {
+      success: true,
+      message: 'تمت الموافقة على التحقق بنجاح',
+      data: {
+        userId: user._id,
+        verificationType: isEngineerPending ? 'engineer' : 'merchant',
+        status: 'approved',
+      },
+    };
+  }
+
+  // ==================== رفض التحقق ====================
+  @RequirePermissions('users.update', 'admin.access')
+  @Post('verification/:userId/reject')
+  @ApiOperation({
+    summary: 'رفض التحقق',
+    description: 'رفض طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى REJECTED'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم رفض التحقق بنجاح',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'المستخدم غير موجود أو ليس لديه طلب تحقق قيد المراجعة',
+  })
+  async rejectVerification(
+    @Param('userId') userId: string,
+    @Body() dto: ApproveVerificationDto,
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new UserNotFoundException({ userId });
+    }
+
+    // التحقق من وجود طلب قيد المراجعة
+    const isEngineerPending = user.engineer_status === CapabilityStatus.PENDING;
+    const isMerchantPending = user.wholesale_status === CapabilityStatus.PENDING;
+
+    if (!isEngineerPending && !isMerchantPending) {
+      throw new UserNotFoundException({
+        userId,
+        message: 'المستخدم ليس لديه طلب تحقق قيد المراجعة',
+      });
+    }
+
+    // رفض التحقق
+    if (isEngineerPending) {
+      user.engineer_status = CapabilityStatus.REJECTED;
+      user.roles = user.roles.filter(role => role !== UserRole.ENGINEER);
+      // مسح ملف السيرة الذاتية
+      user.cvFileUrl = undefined;
+    }
+
+    if (isMerchantPending) {
+      user.wholesale_status = CapabilityStatus.REJECTED;
+      user.roles = user.roles.filter(role => role !== UserRole.MERCHANT);
+      // مسح صورة المحل واسم المحل
+      user.storePhotoUrl = undefined;
+      user.storeName = undefined;
+    }
+
+    // حفظ سبب الرفض في الملاحظة
+    if (dto.reason) {
+      user.verificationNote = dto.reason;
+    }
+
+    await user.save();
+
+    // تحديث Capabilities في الجدول المنفصل
+    const caps = await this.capsModel.findOne({ userId });
+    if (caps) {
+      if (isEngineerPending) {
+        caps.engineer_status = CapabilityStatus.REJECTED;
+        caps.engineer_capable = false;
+      }
+      if (isMerchantPending) {
+        caps.wholesale_status = CapabilityStatus.REJECTED;
+        caps.wholesale_capable = false;
+      }
+      await caps.save();
+    }
+
+    return {
+      success: true,
+      message: 'تم رفض التحقق بنجاح',
+      data: {
+        userId: user._id,
+        verificationType: isEngineerPending ? 'engineer' : 'merchant',
+        status: 'rejected',
+        reason: dto.reason,
+      },
     };
   }
 }

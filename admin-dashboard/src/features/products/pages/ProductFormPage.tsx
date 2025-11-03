@@ -369,7 +369,7 @@ export const ProductFormPage: React.FC = () => {
                           borderRadius: 1,
                           fontSize: '0.65rem'
                         }}>
-                          يدوي
+                          {t('products:stats.manual', 'يدوي')}
                         </Box>
                       )}
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -389,8 +389,8 @@ export const ProductFormPage: React.FC = () => {
                       />
                       <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
                         {product.useManualRating 
-                          ? `${product.manualReviewsCount || 0} تقييم (يدوي)`
-                          : `${product.reviewsCount || 0} تقييم (حقيقي)`
+                          ? `${product.manualReviewsCount || 0} ${t('products:stats.reviewsManual', 'تقييم (يدوي)')}`
+                          : `${product.reviewsCount || 0} ${t('products:stats.reviewsReal', 'تقييم (حقيقي)')}`
                         }
                       </Typography>
                     </CardContent>
@@ -406,7 +406,7 @@ export const ProductFormPage: React.FC = () => {
                         </Typography>
                       </Box>
                       <Typography variant="caption" color="text.secondary">
-                        مشاهدة
+                        {t('products:stats.view', 'مشاهدة')}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -421,7 +421,7 @@ export const ProductFormPage: React.FC = () => {
                         </Typography>
                       </Box>
                       <Typography variant="caption" color="text.secondary">
-                        مبيعات
+                        {t('products:stats.sales', 'مبيعات')}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -447,7 +447,9 @@ export const ProductFormPage: React.FC = () => {
                         </Typography>
                       </Box>
                       <Typography variant="caption" color="text.secondary">
-                        {product.variantsCount > 0 ? '🔗 متغير (اضغط للإدارة)' : '⚠️ لا توجد متغيرات'}
+                        {product.variantsCount > 0 
+                          ? `🔗 ${t('products:stats.variantClickToManage', 'متغير (اضغط للإدارة)')}` 
+                          : `⚠️ ${t('products:stats.noVariants', 'لا توجد متغيرات')}`}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -768,41 +770,26 @@ export const ProductFormPage: React.FC = () => {
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  {t('products:form.defaultPrice', 'السعر الافتراضي')} *
-                </Typography>
-                <input
+                <TextField
+                  label={t('products:form.defaultPrice', 'السعر الافتراضي') + ' *'}
                   type="number"
                   value={defaultPrice}
                   onChange={(e) => setDefaultPrice(Number(e.target.value))}
                   placeholder="0.00"
-                  min="0"
-                  step="0.01"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                  }}
+                  fullWidth
+                  inputProps={{ min: 0, step: '0.01' }}
                 />
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  {t('products:form.defaultStock', 'المخزون الافتراضي')} *
-                </Typography>
-                <input
+                <TextField
+                  label={t('products:form.defaultStock', 'المخزون الافتراضي') + ' *'}
                   type="number"
                   value={defaultStock}
                   onChange={(e) => setDefaultStock(Number(e.target.value))}
                   placeholder="0"
-                  min="0"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                  }}
+                  fullWidth
+                  inputProps={{ min: 0 }}
                 />
               </Grid>
 
@@ -812,7 +799,7 @@ export const ProductFormPage: React.FC = () => {
                   <Card variant="outlined" sx={{ bgcolor: 'primary.50', borderColor: 'primary.main' }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Box sx={{ flex: 1, minWidth: 200 }}>
+                        <Box sx={{ flex: 1, minWidth: { xs: '100%', sm: 200 } }}>
                           <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                             💡 {t('products:form.generateVariantsAuto', 'توليد المتغيرات تلقائياً')}
                           </Typography>
@@ -828,7 +815,10 @@ export const ProductFormPage: React.FC = () => {
                           size="large"
                           disabled={defaultPrice <= 0 || defaultStock < 0 || isGeneratingVariants || isCreating}
                           onClick={() => setConfirmGenerateOpen(true)}
-                          sx={{ minWidth: 150 }}
+                          sx={{ 
+                            minWidth: { xs: '100%', sm: 150 },
+                            width: { xs: '100%', sm: 'auto' }
+                          }}
                         >
                           {isGeneratingVariants || isCreating
                             ? '⏳ ' + t('common:common.loading', 'جارٍ التحميل')
@@ -862,11 +852,8 @@ export const ProductFormPage: React.FC = () => {
               </Grid>
 
               <Grid size={{ xs: 12 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  {t('products:form.metaKeywords')}
-                </Typography>
-                <input
-                  type="text"
+                <TextField
+                  label={t('products:form.metaKeywords')}
                   placeholder={t('products:form.metaKeywordsHelp', 'أدخل كلمات مفتاحية مفصولة بفواصل')}
                   value={metaKeywords.join(', ')}
                   onChange={(e) => {
@@ -876,27 +863,21 @@ export const ProductFormPage: React.FC = () => {
                       .filter((k) => k.length > 0);
                     setMetaKeywords(keywords);
                   }}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                  }}
+                  fullWidth
+                  helperText={t('products:form.metaKeywordsPlaceholder', 'مثال: كهرباء, قاطع, منزل')}
                 />
-                <Typography variant="caption" color="text.secondary">
-                  {t('products:form.metaKeywordsPlaceholder', 'مثال: كهرباء, قاطع, منزل')}
-                </Typography>
               </Grid>
 
               {/* Actions */}
               <Grid size={{ xs: 12 }}>
                 <Divider sx={{ my: 2 }} />
-                <Box display="flex" gap={2}>
+                <Box display="flex" gap={2} flexWrap="wrap">
                   <Button
                     type="submit"
                     variant="contained"
                     startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
+                    sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >
                     {t('products:form.save', 'حفظ')}
                   </Button>
@@ -904,6 +885,7 @@ export const ProductFormPage: React.FC = () => {
                     variant="outlined"
                     startIcon={<Cancel />}
                     onClick={() => navigate('/products')}
+                    sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >
                     {t('products:form.cancel', 'إلغاء')}
                   </Button>
@@ -957,7 +939,7 @@ export const ProductFormPage: React.FC = () => {
                   </Grid>
                   <Grid size={{ xs: 12 }}>
                     <Typography variant="body2" color="text.secondary">
-                      {t('products:form.attributes', 'عدد السمات')}
+                      {t('products:form.attributesCount', 'عدد السمات')}
                     </Typography>
                     <Typography variant="h6">{selectedAttributes.length}</Typography>
                   </Grid>
@@ -966,8 +948,12 @@ export const ProductFormPage: React.FC = () => {
             </Card>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmGenerateOpen(false)} startIcon={<Cancel />}>
+        <DialogActions sx={{ flexWrap: 'wrap', gap: 1 }}>
+          <Button 
+            onClick={() => setConfirmGenerateOpen(false)} 
+            startIcon={<Cancel />}
+            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: '100%', sm: 100 } }}
+          >
             {t('common:actions.cancel', 'إلغاء')}
           </Button>
           <Button
@@ -978,6 +964,7 @@ export const ProductFormPage: React.FC = () => {
             variant="contained"
             startIcon={<Save />}
             disabled={defaultPrice <= 0 || defaultStock < 0 || isGeneratingVariants || isCreating}
+            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: '100%', sm: 150 } }}
           >
             {t('products:form.generateVariants', 'توليد المتغيرات')}
           </Button>

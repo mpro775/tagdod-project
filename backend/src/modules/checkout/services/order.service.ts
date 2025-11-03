@@ -7,11 +7,12 @@ import {
   OrderRatingNotAllowedException,
   OrderException,
   AddressNotFoundException,
-  ErrorCode
+  ErrorCode,
+  DomainException
 } from '../../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { User } from '../../users/schemas/user.schema';
+import { User , UserRole } from '../../users/schemas/user.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
@@ -20,15 +21,19 @@ import {
   Order, 
   OrderDocument, 
   OrderStatus, 
-  PaymentStatus, 
+  PaymentStatus,
+  PaymentMethod,
   OrderStateMachine 
 } from '../schemas/order.schema';
 import { Inventory } from '../schemas/inventory.schema';
 import { Reservation } from '../schemas/reservation.schema';
 import { InventoryLedger } from '../schemas/inventory-ledger.schema';
+import { Cart } from '../../cart/schemas/cart.schema';
 import { CartService } from '../../cart/cart.service';
 import { MarketingService } from '../../marketing/marketing.service';
 import { AddressesService } from '../../addresses/addresses.service';
+import { LocalPaymentAccountService } from '../../system-settings/services/local-payment-account.service';
+import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.service';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -39,7 +44,8 @@ import {
   RateOrderDto,
   ListOrdersDto,
   OrderAnalyticsDto,
-  AddOrderNotesDto
+  AddOrderNotesDto,
+  VerifyPaymentDto
 } from '../dto/order.dto';
 
 interface CartLine {
@@ -67,9 +73,12 @@ export class OrderService {
     @InjectModel(Reservation.name) private reservationModel: Model<Reservation>,
     @InjectModel(InventoryLedger.name) private ledgerModel: Model<InventoryLedger>,
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Cart.name) private cartModel: Model<Cart>,
     private cartService: CartService,
     private marketingService: MarketingService,
     private addressesService: AddressesService,
+    private localPaymentAccountService: LocalPaymentAccountService,
+    private exchangeRatesService: ExchangeRatesService,
   ) {}
 
   // ===== Helper Methods =====
@@ -120,38 +129,123 @@ export class OrderService {
     });
   }
 
+  /**
+   * التحقق من صلاحية استخدام الدفع عند الاستلام (COD)
+   * يجب أن يكون لدى المستخدم 3 طلبات مكتملة (DELIVERED) على الأقل
+   * المستخدمون الذين لديهم صلاحيات Admin مستثنون من هذا التقييد
+   */
+  async checkCODEligibility(userId: string): Promise<{
+    eligible: boolean;
+    completedOrders: number;
+    requiredOrders: number;
+    progress: string; // مثل "2/3"
+    message?: string;
+  }> {
+    const requiredOrders = 3;
+    
+    // التحقق من أن المستخدم ليس Admin
+    const user = await this.userModel.findById(userId).lean();
+    if (!user) {
+      return {
+        eligible: false,
+        completedOrders: 0,
+        requiredOrders,
+        progress: '0/3',
+        message: 'المستخدم غير موجود'
+      };
+    }
+
+    // إذا كان المستخدم Admin، فهو مؤهل دائماً
+    const isAdmin = user.roles?.includes(UserRole.ADMIN) || user.roles?.includes(UserRole.SUPER_ADMIN);
+    if (isAdmin) {
+      return {
+        eligible: true,
+        completedOrders: requiredOrders, // يعتبر أنه مؤهل دائماً
+        requiredOrders,
+        progress: `${requiredOrders}/${requiredOrders}`,
+        message: 'المستخدم له صلاحيات إدارية'
+      };
+    }
+
+    // حساب عدد الطلبات المكتملة (DELIVERED)
+    const completedOrdersCount = await this.orderModel.countDocuments({
+      userId: new Types.ObjectId(userId),
+      status: OrderStatus.DELIVERED
+    });
+
+    const eligible = completedOrdersCount >= requiredOrders;
+    const progress = `${completedOrdersCount}/${requiredOrders}`;
+
+    return {
+      eligible,
+      completedOrders: completedOrdersCount,
+      requiredOrders,
+      progress,
+      message: eligible 
+        ? undefined 
+        : `يجب إكمال ${requiredOrders} طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك ${completedOrdersCount} طلب مكتمل`
+    };
+  }
+
   // ===== Checkout Methods =====
 
   /**
-   * معاينة الطلب قبل التأكيد
+   * معاينة الطلب قبل التأكيد - دعم كوبونات متعددة
    */
-  async previewCheckout(userId: string, currency: string, couponCode?: string) {
+  async previewCheckout(userId: string, currency: string, couponCode?: string, couponCodes?: string[]) {
     try {
       const data = await this.cartService.previewUser(userId, currency, 'any');
       
-      let couponDiscount = 0;
-      let appliedCoupon = null;
-
-      // تطبيق الكوبون إذا تم توفيره
+      // Get coupon codes from cart or from parameters
+      // We need to get cart to access appliedCouponCodes
+      const cart = await this.cartModel.findOne({ userId: new Types.ObjectId(userId) }).lean();
+      const cartCouponCodes: string[] = cart?.appliedCouponCodes || [];
+      
+      // Combine coupon codes: from cart, single couponCode, or array couponCodes
+      const allCouponCodes = new Set<string>();
+      if (cartCouponCodes.length > 0) {
+        cartCouponCodes.forEach((code: string) => allCouponCodes.add(code));
+      }
       if (couponCode) {
+        allCouponCodes.add(couponCode);
+      }
+      if (couponCodes && couponCodes.length > 0) {
+        couponCodes.forEach(code => allCouponCodes.add(code));
+      }
+      
+      const couponCodesArray = Array.from(allCouponCodes);
+      
+      // Calculate discounts for all coupons cumulatively
+      let totalCouponDiscount = 0;
+      const appliedCoupons: Array<{
+        code: string;
+        name: string;
+        discountValue: number;
+        type: string;
+        discount: number;
+      }> = [];
+      
+      let remainingSubtotal = data.subtotal;
+      
+      // Extract product IDs from cart items
+      const productIds = data.items.map(item => item.variantId);
+      
+      // Apply each coupon one by one
+      for (const code of couponCodesArray) {
         try {
           const couponValidation = await this.marketingService.validateCoupon({
-            code: couponCode,
+            code: code,
             userId: userId,
-            orderAmount: data.subtotal
+            orderAmount: remainingSubtotal,
+            productIds: productIds
           });
 
           if (couponValidation.valid && couponValidation.coupon) {
-            appliedCoupon = {
-              code: couponCode,
-              name: couponValidation.coupon.name,
-              discountValue: couponValidation.coupon.discountValue,
-              type: couponValidation.coupon.type
-            };
-
-            // حساب الخصم
+            let couponDiscount = 0;
+            
+            // Calculate discount based on type
             if (couponValidation.coupon.type === 'percentage' && couponValidation.coupon.discountValue) {
-              couponDiscount = (data.subtotal * couponValidation.coupon.discountValue) / 100;
+              couponDiscount = (remainingSubtotal * couponValidation.coupon.discountValue) / 100;
               if (couponValidation.coupon.maximumDiscountAmount) {
                 couponDiscount = Math.min(couponDiscount, couponValidation.coupon.maximumDiscountAmount);
               }
@@ -159,20 +253,41 @@ export class OrderService {
               couponDiscount = couponValidation.coupon.discountValue;
             }
 
-            // التأكد من ألا يتجاوز الخصم قيمة الطلب
-            couponDiscount = Math.min(couponDiscount, data.subtotal);
+            // Ensure discount doesn't exceed remaining subtotal
+            couponDiscount = Math.min(couponDiscount, remainingSubtotal);
             
-            this.logger.log(`Applied coupon: ${couponCode}, discount: ${couponDiscount}`);
+            totalCouponDiscount += couponDiscount;
+            remainingSubtotal = Math.max(0, remainingSubtotal - couponDiscount);
+            
+            appliedCoupons.push({
+              code: code,
+              name: couponValidation.coupon.name,
+              discountValue: couponValidation.coupon.discountValue || 0,
+              type: couponValidation.coupon.type,
+              discount: couponDiscount
+            });
+            
+            this.logger.log(`Applied coupon: ${code}, discount: ${couponDiscount}`);
           } else {
-            this.logger.warn(`Invalid coupon: ${couponCode} - ${couponValidation.message}`);
+            this.logger.warn(`Invalid coupon: ${code} - ${couponValidation.message}`);
           }
         } catch (error) {
-          this.logger.error(`Error applying coupon ${couponCode}:`, error);
+          this.logger.error(`Error applying coupon ${code}:`, error);
         }
       }
 
+      // Calculate items discount (from promotions)
+      const itemsDiscount = data.items.reduce((sum, item) => {
+        const itemDiscount = (item.unit.base - item.unit.final) * item.qty;
+        return sum + itemDiscount;
+      }, 0);
+
       const shipping = 0; // رسوم الشحن تأتي من لوحة التحكم لكل طلب على حدى (افتراضي صفر)
-      const total = data.subtotal - couponDiscount + shipping;
+      const totalDiscount = itemsDiscount + totalCouponDiscount;
+      const total = data.subtotal - totalDiscount + shipping;
+
+      // التحقق من صلاحية COD
+      const codEligibility = await this.checkCODEligibility(userId);
 
       return {
         success: true,
@@ -183,8 +298,24 @@ export class OrderService {
           total,
           currency,
           deliveryOptions: [], // خيارات التوصيل فارغة مؤقتاً حتى توقيع العقود
-          appliedCoupon,
-          couponDiscount
+          // Detailed discounts breakdown
+          discounts: {
+            itemsDiscount: itemsDiscount, // خصومات المنتجات من العروض الترويجية
+            couponDiscount: totalCouponDiscount, // إجمالي خصم الكوبونات
+            totalDiscount: totalDiscount, // إجمالي الخصومات
+            appliedCoupons: appliedCoupons, // تفاصيل جميع الكوبونات المطبقة
+          },
+          // COD Eligibility
+          codEligibility: {
+            eligible: codEligibility.eligible,
+            completedOrders: codEligibility.completedOrders,
+            requiredOrders: codEligibility.requiredOrders,
+            progress: codEligibility.progress,
+            message: codEligibility.message
+          },
+          // Backward compatibility
+          appliedCoupon: appliedCoupons.length > 0 ? appliedCoupons[0] : null,
+          couponDiscount: totalCouponDiscount
         }
       };
     } catch (error) {
@@ -210,9 +341,76 @@ export class OrderService {
       // جلب تفاصيل العنوان
       const address = await this.addressesService.getAddressById(dto.deliveryAddressId);
 
-      // إعادة حساب من السلة
-      const quote = await this.previewCheckout(userId, dto.currency, dto.couponCode) as { data: { total: number; subtotal: number; items: CartLine[] } };
+      // التحقق من صلاحية COD إذا كان المستخدم يريد استخدام الدفع عند الاستلام
+      if (dto.paymentMethod === PaymentMethod.COD) {
+        const codEligibility = await this.checkCODEligibility(userId);
+        if (!codEligibility.eligible) {
+          throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+            reason: 'cod_not_eligible',
+            message: codEligibility.message || 'غير مؤهل لاستخدام الدفع عند الاستلام',
+            codEligibility: {
+              completedOrders: codEligibility.completedOrders,
+              requiredOrders: codEligibility.requiredOrders,
+              progress: codEligibility.progress
+            }
+          });
+        }
+      }
+
+      // إعادة حساب من السلة - دعم كوبونات متعددة
+      const quote = await this.previewCheckout(userId, dto.currency, dto.couponCode, dto.couponCodes) as { data: { total: number; subtotal: number; shipping: number; couponDiscount: number; itemsDiscount?: number; discounts?: { itemsDiscount: number; couponDiscount: number; totalDiscount: number; appliedCoupons: Array<{ code: string; name: string; discountValue: number; type: string; discount: number }> }; items: CartLine[] } };
       const total = quote.data.total;
+      const subtotal = quote.data.subtotal;
+      const shipping = quote.data.shipping || 0;
+      const couponDiscount = quote.data.discounts?.couponDiscount || quote.data.couponDiscount || 0;
+      const itemsDiscount = quote.data.discounts?.itemsDiscount || quote.data.itemsDiscount || 0;
+      const totalDiscount = quote.data.discounts?.totalDiscount || (itemsDiscount + couponDiscount);
+      const appliedCoupons = quote.data.discounts?.appliedCoupons || [];
+      const tax = 0; // الضريبة حالياً صفر
+
+      // 🆕 حساب الإجماليات بالعملات الثلاث
+      let totalsInAllCurrencies;
+      if (this.exchangeRatesService) {
+        // تحويل جميع المبالغ إلى USD أولاً
+        const usdSubtotal = await this.exchangeRatesService.convertToUSD(subtotal, dto.currency);
+        const usdShipping = await this.exchangeRatesService.convertToUSD(shipping, dto.currency);
+        const usdTax = await this.exchangeRatesService.convertToUSD(tax, dto.currency);
+        const usdDiscount = await this.exchangeRatesService.convertToUSD(couponDiscount, dto.currency);
+
+        totalsInAllCurrencies = await this.exchangeRatesService.calculateTotalsInAllCurrencies(
+          usdSubtotal,
+          usdShipping,
+          usdTax,
+          usdDiscount,
+        );
+      }
+
+      // التحقق من الحساب المحلي إذا تم اختياره
+      if (dto.paymentMethod === PaymentMethod.BANK_TRANSFER && dto.localPaymentAccountId) {
+        const account = await this.localPaymentAccountService.findById(dto.localPaymentAccountId);
+        if (!account || !account.isActive) {
+          throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+            reason: 'invalid_payment_account',
+            message: 'الحساب المحدد غير موجود أو غير مفعل'
+          });
+        }
+
+        // التحقق من تطابق العملة
+        if (account.currency !== dto.currency) {
+          throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+            reason: 'currency_mismatch',
+            message: `العملة المحددة (${dto.currency}) لا تطابق عملة الحساب (${account.currency})`
+          });
+        }
+
+        // التحقق من وجود رقم الحوالة
+        if (!dto.paymentReference || dto.paymentReference.trim().length === 0) {
+          throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+            reason: 'payment_reference_required',
+            message: 'يجب إدخال رقم الحوالة أو المرجع'
+          });
+        }
+      }
 
       // إنشاء الطلب
       const order = new this.orderModel({
@@ -243,13 +441,42 @@ export class OrderService {
           }
         })),
         currency: dto.currency,
-        subtotal: quote.data.subtotal,
+        subtotal: subtotal,
         total,
+        shippingCost: shipping,
+        itemsDiscount: itemsDiscount,
+        couponDiscount: couponDiscount,
+        tax: tax,
+        totalDiscount: totalDiscount,
+        // Multiple coupons support
+        appliedCouponCodes: appliedCoupons.map(c => c.code),
+        appliedCoupons: appliedCoupons.map(c => ({
+          code: c.code,
+          discount: c.discount,
+          details: {
+            code: c.code,
+            title: c.name,
+            type: c.type,
+            discountPercentage: c.type === 'percentage' ? c.discountValue : undefined,
+            discountAmount: c.type === 'fixed_amount' ? c.discountValue : undefined,
+          }
+        })),
+        // Backward compatibility
+        appliedCouponCode: appliedCoupons.length > 0 ? appliedCoupons[0].code : dto.couponCode,
+        couponDetails: appliedCoupons.length > 0 ? {
+          code: appliedCoupons[0].code,
+          title: appliedCoupons[0].name,
+          type: appliedCoupons[0].type,
+          discountPercentage: appliedCoupons[0].type === 'percentage' ? appliedCoupons[0].discountValue : undefined,
+          discountAmount: appliedCoupons[0].type === 'fixed_amount' ? appliedCoupons[0].discountValue : undefined,
+        } : undefined,
         paymentMethod: dto.paymentMethod,
         paymentProvider: dto.paymentProvider,
+        localPaymentAccountId: dto.localPaymentAccountId ? new Types.ObjectId(dto.localPaymentAccountId) : undefined,
+        paymentReference: dto.paymentReference,
         shippingMethod: dto.shippingMethod,
         customerNotes: dto.customerNotes,
-        appliedCouponCode: dto.couponCode,
+        totalsInAllCurrencies,
         source: 'web'
       });
 
@@ -264,8 +491,14 @@ export class OrderService {
         'تم إنشاء الطلب'
       );
 
-      // إذا كان الدفع عند الاستلام، تأكيد فوري
-      if (dto.paymentMethod === 'COD') {
+      // إذا كان الدفع عند الاستلام، تأكيد فوري وتحديث حالة الدفع
+      if (dto.paymentMethod === PaymentMethod.COD) {
+        // تحديث حالة الدفع أولاً
+        order.paymentStatus = PaymentStatus.PAID;
+        order.paidAt = new Date();
+        await order.save();
+        
+        // ثم تحديث حالة الطلب
         await this.updateOrderStatus(
           order._id.toString(),
           OrderStatus.CONFIRMED,
@@ -403,6 +636,29 @@ export class OrderService {
     // التحقق من صحة الانتقال
     if (!OrderStateMachine.canTransition(order.status, newStatus)) {
       throw new OrderException(ErrorCode.ORDER_INVALID_STATUS, { from: order.status, to: newStatus });
+    }
+
+    // التحقق من الدفع قبل السماح بتغيير الحالة
+    // الحالات الممنوعة بدون دفع: CONFIRMED, PROCESSING, READY_TO_SHIP, SHIPPED, OUT_FOR_DELIVERY, DELIVERED
+    // استثناء CANCELLED من هذا التحقق
+    const statusesRequiringPayment = [
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.READY_TO_SHIP,
+      OrderStatus.SHIPPED,
+      OrderStatus.OUT_FOR_DELIVERY,
+      OrderStatus.DELIVERED
+    ];
+
+    if (statusesRequiringPayment.includes(newStatus) && newStatus !== OrderStatus.CANCELLED) {
+      if (order.paymentStatus !== PaymentStatus.PAID) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+          reason: 'payment_required',
+          message: `لا يمكن تغيير حالة الطلب إلى ${newStatus} بدون إتمام الدفع. حالة الدفع الحالية: ${order.paymentStatus}`,
+          currentPaymentStatus: order.paymentStatus,
+          requiredPaymentStatus: PaymentStatus.PAID
+        });
+      }
     }
 
     // تحديث الحالة
@@ -1261,6 +1517,83 @@ export class OrderService {
         },
       }
     };
+  }
+
+  /**
+   * مطابقة الدفع المحلي
+   */
+  async verifyLocalPayment(
+    orderId: string,
+    dto: VerifyPaymentDto,
+    adminId: string
+  ): Promise<Order> {
+    const order = await this.orderModel.findById(orderId);
+    
+    if (!order) {
+      throw new OrderNotFoundException();
+    }
+
+    if (!order.localPaymentAccountId) {
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+        reason: 'not_local_payment_order',
+        message: 'هذا الطلب لا يستخدم الدفع المحلي'
+      });
+    }
+
+    // التحقق من العملة (يمكن إضافة تحويل عملة هنا إذا لزم الأمر)
+    if (dto.verifiedCurrency !== order.currency) {
+      // في هذه الحالة، قد نحتاج إلى تحويل العملة أو رفضها
+      // لأغراض بسيطة، سنرفض إذا كانت العملة مختلفة
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+        reason: 'currency_mismatch',
+        message: `عملة المطابقة (${dto.verifiedCurrency}) لا تطابق عملة الطلب (${order.currency})`
+      });
+    }
+
+    // مقارنة المبلغ
+    const isAmountSufficient = dto.verifiedAmount >= order.total;
+
+    // تحديث معلومات المطابقة
+    order.verifiedPaymentAmount = dto.verifiedAmount;
+    order.verifiedPaymentCurrency = dto.verifiedCurrency;
+    order.paymentVerifiedAt = new Date();
+    order.paymentVerifiedBy = new Types.ObjectId(adminId);
+    order.paymentVerificationNotes = dto.notes;
+
+    if (isAmountSufficient) {
+      order.paymentStatus = PaymentStatus.PAID;
+      order.paidAt = new Date();
+      
+      // تحديث حالة الطلب إذا كان في انتظار الدفع
+      if (order.status === OrderStatus.PENDING_PAYMENT) {
+        order.status = OrderStatus.CONFIRMED;
+        order.confirmedAt = new Date();
+      }
+
+      // إضافة إلى سجل الحالات
+      await this.addStatusHistory(
+        order,
+        order.status,
+        new Types.ObjectId(adminId),
+        'admin',
+        `تم قبول الدفع - المبلغ: ${dto.verifiedAmount} ${dto.verifiedCurrency}${dto.notes ? ` - ${dto.notes}` : ''}`
+      );
+    } else {
+      order.paymentStatus = PaymentStatus.FAILED;
+      
+      // إضافة إلى سجل الحالات
+      await this.addStatusHistory(
+        order,
+        OrderStatus.PAYMENT_FAILED,
+        new Types.ObjectId(adminId),
+        'admin',
+        `تم رفض الدفع - المبلغ غير كافٍ: ${dto.verifiedAmount} ${dto.verifiedCurrency} (المطلوب: ${order.total} ${order.currency})${dto.notes ? ` - ${dto.notes}` : ''}`
+      );
+    }
+
+    await order.save();
+    this.logger.log(`Payment verification for order ${order.orderNumber}: ${isAmountSufficient ? 'APPROVED' : 'REJECTED'}`);
+    return order;
   }
 
   /**

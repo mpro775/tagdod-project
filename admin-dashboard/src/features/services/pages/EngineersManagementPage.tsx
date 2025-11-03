@@ -19,6 +19,8 @@ import {
   Stack,
   Tooltip,
   TextField,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Engineering,
@@ -41,8 +43,15 @@ import { useEngineers, useEngineersOverviewStatistics } from '../hooks/useServic
 import { useSuspendUser, useActivateUser } from '../../users/hooks/useUsers';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
 import { getCityEmoji } from '@/shared/constants/yemeni-cities';
+import { useTranslation } from 'react-i18next';
+import { EngineerCard } from '../components/EngineerCard';
 
 export const EngineersManagementPage: React.FC = () => {
+  const { t } = useTranslation(['services', 'common']);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEngineer, setSelectedEngineer] = useState<any>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -82,7 +91,7 @@ export const EngineersManagementPage: React.FC = () => {
         // Suspend the engineer
         await suspendUserMutation.mutateAsync({
           id: engineer._id || engineer.id,
-          data: { reason: 'تعليق من قبل المسؤول' },
+          data: { reason: t('services:engineers.suspendedByAdmin') },
         });
         refetch();
       }
@@ -107,7 +116,7 @@ export const EngineersManagementPage: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'engineerName',
-      headerName: 'المهندس',
+      headerName: t('services:engineers.engineer'),
       minWidth: 200,
       flex: 1.5,
       renderCell: (params) => (
@@ -124,7 +133,7 @@ export const EngineersManagementPage: React.FC = () => {
             </Typography>
             <Box display="flex" alignItems="center" mt={0.5}>
               <Chip 
-                label={params.row.specialization || 'عام'} 
+                label={params.row.specialization || t('services:engineers.general')} 
                 size="small" 
                 color="info" 
                 variant="outlined"
@@ -136,7 +145,7 @@ export const EngineersManagementPage: React.FC = () => {
     },
     {
       field: 'totalRequests',
-      headerName: 'الطلبات',
+      headerName: t('services:engineers.requests'),
       minWidth: 120,
       flex: 0.8,
       renderCell: (params) => (
@@ -145,14 +154,14 @@ export const EngineersManagementPage: React.FC = () => {
             {formatNumber(params.row.totalRequests)}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {formatNumber(params.row.completedRequests)} مكتمل
+            {formatNumber(params.row.completedRequests)} {t('services:engineers.completed')}
           </Typography>
         </Box>
       ),
     },
     {
       field: 'completionRate',
-      headerName: 'معدل الإنجاز',
+      headerName: t('services:engineers.completionRate'),
       minWidth: 150,
       flex: 1,
       renderCell: (params) => (
@@ -171,7 +180,7 @@ export const EngineersManagementPage: React.FC = () => {
     },
     {
       field: 'city',
-      headerName: 'المدينة',
+      headerName: t('services:engineers.city'),
       minWidth: 130,
       flex: 0.9,
       renderCell: (params) => (
@@ -186,7 +195,7 @@ export const EngineersManagementPage: React.FC = () => {
     },
     {
       field: 'averageRating',
-      headerName: 'التقييم',
+      headerName: t('services:engineers.rating'),
       minWidth: 100,
       flex: 0.8,
       renderCell: (params) => (
@@ -208,7 +217,7 @@ export const EngineersManagementPage: React.FC = () => {
     },
     {
       field: 'totalRevenue',
-      headerName: 'الإيرادات',
+      headerName: t('services:engineers.revenue'),
       minWidth: 120,
       flex: 0.8,
       renderCell: (params) => (
@@ -219,12 +228,12 @@ export const EngineersManagementPage: React.FC = () => {
     },
     {
       field: 'isActive',
-      headerName: 'الحالة',
+      headerName: t('services:engineers.status'),
       minWidth: 100,
       flex: 0.8,
       renderCell: (params) => (
         <Chip
-          label={params.row.isActive ? 'نشط' : 'غير نشط'}
+          label={params.row.isActive ? t('common:status.active') : t('common:status.inactive')}
           color={params.row.isActive ? 'success' : 'default'}
           size="small"
           icon={params.row.isActive ? <CheckCircle /> : <Cancel />}
@@ -233,13 +242,13 @@ export const EngineersManagementPage: React.FC = () => {
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('common:actions.title'),
       minWidth: 150,
       flex: 1,
       sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
-          <Tooltip title="عرض التفاصيل">
+          <Tooltip title={t('common:actions.view')}>
             <IconButton
               size="small"
               onClick={() => handleViewDetails(params.row)}
@@ -248,7 +257,7 @@ export const EngineersManagementPage: React.FC = () => {
               <Visibility />
             </IconButton>
           </Tooltip>
-          <Tooltip title="تعديل">
+          <Tooltip title={t('common:actions.edit')}>
             <IconButton
               size="small"
               onClick={() => handleEditEngineer(params.row)}
@@ -257,7 +266,7 @@ export const EngineersManagementPage: React.FC = () => {
               <Edit />
             </IconButton>
           </Tooltip>
-          <Tooltip title={params.row.isActive ? 'إيقاف' : 'تفعيل'}>
+          <Tooltip title={params.row.isActive ? t('services:engineers.suspend') : t('services:engineers.activate')}>
             <IconButton
               size="small"
               onClick={() => handleToggleStatus(params.row)}
@@ -276,15 +285,15 @@ export const EngineersManagementPage: React.FC = () => {
       <Box>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4">
-            إدارة المهندسين
+            {t('services:engineers.title')}
           </Typography>
           <Skeleton variant="rectangular" width={120} height={36} />
         </Box>
         
         <Grid container spacing={3} sx={{ mb: 3 }}>
           {[1, 2, 3, 4].map((i) => (
-            <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-              <Card>
+            <Grid key={i} size={{ xs: 6, sm: 6, md: 3 }}>
+              <Card sx={{ bgcolor: 'background.paper' }}>
                 <CardContent>
                   <Skeleton variant="text" width="60%" />
                   <Skeleton variant="text" width="40%" />
@@ -295,7 +304,7 @@ export const EngineersManagementPage: React.FC = () => {
           ))}
         </Grid>
         
-        <Card>
+        <Card sx={{ bgcolor: 'background.paper' }}>
           <CardContent>
             <Skeleton variant="rectangular" height={400} />
           </CardContent>
@@ -309,14 +318,14 @@ export const EngineersManagementPage: React.FC = () => {
       <Box>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4">
-            إدارة المهندسين
+            {t('services:engineers.title')}
           </Typography>
-          <Button variant="outlined" startIcon={<Refresh />}>
-            إعادة المحاولة
+          <Button variant="outlined" startIcon={<Refresh />} onClick={() => refetch()}>
+            {t('common:actions.retry')}
           </Button>
         </Box>
         <Alert severity="error">
-          فشل في تحميل البيانات: {engineersError?.message || statsError?.message}
+          {t('services:engineers.loadError')}: {engineersError?.message || statsError?.message}
         </Alert>
       </Box>
     );
@@ -324,43 +333,66 @@ export const EngineersManagementPage: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box 
+        display="flex" 
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between" 
+        alignItems={{ xs: 'flex-start', sm: 'center' }} 
+        gap={{ xs: 2, sm: 0 }}
+        mb={3}
+      >
         <Box>
           <Typography variant="h4" gutterBottom>
-            إدارة المهندسين
+            {t('services:engineers.title')}
           </Typography>
-          <Typography variant="body1" color="textSecondary">
-            إدارة وتتبع أداء المهندسين في النظام
+          <Typography variant="body1" color="text.secondary">
+            {t('services:engineers.description')}
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={1}
+          width={{ xs: '100%', sm: 'auto' }}
+        >
           <TextField
-            label="البحث عن مهندس"
+            label={t('services:engineers.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
               startAdornment: <Engineering sx={{ mr: 1, color: 'text.secondary' }} />,
             }}
             size="small"
+            fullWidth={isMobile}
           />
-          <Button variant="outlined" startIcon={<Refresh />} size="small">
-            تحديث
+          <Button 
+            variant="outlined" 
+            startIcon={<Refresh />} 
+            size="small"
+            onClick={() => refetch()}
+            fullWidth={isMobile}
+          >
+            {t('common:actions.refresh')}
           </Button>
-          <Button variant="contained" startIcon={<Download />} size="small">
-            تصدير
+          <Button 
+            variant="contained" 
+            startIcon={<Download />} 
+            size="small"
+            fullWidth={isMobile}
+          >
+            {t('common:actions.export')}
           </Button>
         </Stack>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* إحصائيات سريعة */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+          <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    إجمالي المهندسين
+                    {t('services:engineers.totalEngineers')}
                   </Typography>
                   <Typography variant="h4">
                     {formatNumber((stats as any).totalEngineers || 0)}
@@ -374,13 +406,13 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+          <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    متوسط التقييم
+                    {t('services:engineers.averageRating')}
                   </Typography>
                   <Typography variant="h4">
                     {(stats as any).averageRating?.toFixed(1) || '0.0'}
@@ -394,13 +426,13 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+          <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    متوسط معدل الإنجاز
+                    {t('services:engineers.averageCompletionRate')}
                   </Typography>
                   <Typography variant="h4">
                     {(stats as any).averageCompletionRate?.toFixed(1) || '0.0'}%
@@ -414,13 +446,13 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+          <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    إجمالي الإيرادات
+                    {t('services:engineers.totalRevenue')}
                   </Typography>
                   <Typography variant="h4">
                     {formatCurrency((stats as any).totalRevenue || 0)}
@@ -435,36 +467,77 @@ export const EngineersManagementPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* جدول المهندسين */}
+      {/* جدول المهندسين / كروت المهندسين */}
       <Box sx={{ mb: 2 }}>
-        <DataTable
-          title={`قائمة المهندسين (${engineers.length} مهندس • ${engineers.filter((e: any) => e.isActive).length} نشط)`}
-          columns={columns}
-          rows={engineers}
-          loading={isEngineersLoading}
-          searchPlaceholder="البحث عن مهندس..."
-          onSearch={setSearchTerm}
-          getRowId={(row: any) => row.engineerId}
-          height="calc(100vh - 450px)"
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-        />
+        {isMobile || isTablet ? (
+          // عرض الكروت على الشاشات الصغيرة
+          <Box>
+            <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+              {t('services:engineers.listTitle', {
+                total: engineers.length,
+                active: engineers.filter((e: any) => e.isActive).length,
+              })}
+            </Typography>
+            {engineers.length === 0 ? (
+              <Alert severity="info">{t('services:engineers.noEngineers')}</Alert>
+            ) : (
+              <Box>
+                {engineers.map((engineer: any) => (
+                  <EngineerCard
+                    key={engineer.engineerId || engineer._id}
+                    engineer={engineer}
+                    onView={handleViewDetails}
+                    onEdit={handleEditEngineer}
+                    onToggleStatus={handleToggleStatus}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
+        ) : (
+          // عرض الجدول على الشاشات الكبيرة
+          <DataTable
+            title={t('services:engineers.listTitle', {
+              total: engineers.length,
+              active: engineers.filter((e: any) => e.isActive).length,
+            })}
+            columns={columns}
+            rows={engineers}
+            loading={isEngineersLoading}
+            searchPlaceholder={t('services:engineers.searchPlaceholder')}
+            onSearch={setSearchTerm}
+            getRowId={(row: any) => row.engineerId}
+            height="calc(100vh - 450px)"
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+          />
+        )}
       </Box>
 
       {/* حوار تفاصيل المهندس */}
-      <Dialog open={detailsDialogOpen} onClose={() => setDetailsDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog 
+        open={detailsDialogOpen} 
+        onClose={() => setDetailsDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: 'background.paper',
+          },
+        }}
+      >
         <DialogTitle>
-          تفاصيل المهندس
+          {t('services:engineers.detailsTitle')}
         </DialogTitle>
         <DialogContent>
           {selectedEngineer && (
             <Box>
               <Grid container spacing={3}>
-                <Grid  size={{ xs: 12, md: 6 }}>
-                  <Card>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        معلومات شخصية
+                        {t('services:engineers.personalInfo')}
                       </Typography>
                       <Box display="flex" alignItems="center" mb={2}>
                         <Avatar sx={{ mr: 2, bgcolor: 'primary.main', width: 56, height: 56 }}>
@@ -494,50 +567,50 @@ export const EngineersManagementPage: React.FC = () => {
                   </Card>
                 </Grid>
 
-                <Grid  size={{ xs: 12, md: 6 }}>
-                  <Card>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        الإحصائيات
+                        {t('services:engineers.statistics')}
                       </Typography>
                       <Grid container spacing={2}>
-                        <Grid  size={{ xs: 6 }}>
+                        <Grid size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="primary">
                               {formatNumber(selectedEngineer.totalRequests)}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              إجمالي الطلبات
+                              {t('services:engineers.totalRequests')}
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid  size={{ xs: 6 }}>
+                        <Grid size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="success.main">
                               {formatNumber(selectedEngineer.completedRequests)}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              مكتمل
+                              {t('services:engineers.completed')}
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid  size={{ xs: 6 }}>
+                        <Grid size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="warning.main">
-                              {selectedEngineer.averageRating.toFixed(1)}
+                              {selectedEngineer.averageRating?.toFixed(1) || '0.0'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              التقييم المتوسط
+                              {t('services:engineers.averageRating')}
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid  size={{ xs: 6 }}>
+                        <Grid size={{ xs: 6 }}>
                           <Box textAlign="center">
                             <Typography variant="h4" color="info.main">
                               {formatCurrency(selectedEngineer.totalRevenue)}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              إجمالي الإيرادات
+                              {t('services:engineers.totalRevenue')}
                             </Typography>
                           </Box>
                         </Grid>
@@ -546,25 +619,28 @@ export const EngineersManagementPage: React.FC = () => {
                   </Card>
                 </Grid>
 
-                <Grid  size={{ xs: 12 }}>
-                  <Card>
+                <Grid size={{ xs: 12 }}>
+                  <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        معدل الإنجاز
+                        {t('services:engineers.completionRate')}
                       </Typography>
                       <Box display="flex" alignItems="center">
                         <Typography variant="h3" color="primary" sx={{ mr: 2 }}>
-                          {selectedEngineer.completionRate.toFixed(1)}%
+                          {selectedEngineer.completionRate?.toFixed(1) || 0}%
                         </Typography>
                         <LinearProgress
                           variant="determinate"
-                          value={selectedEngineer.completionRate}
-                          color={getCompletionRateColor(selectedEngineer.completionRate)}
+                          value={selectedEngineer.completionRate || 0}
+                          color={getCompletionRateColor(selectedEngineer.completionRate || 0) as any}
                           sx={{ flexGrow: 1, height: 12, borderRadius: 6 }}
                         />
                       </Box>
                       <Typography variant="body2" color="text.secondary" mt={1}>
-                        {selectedEngineer.completedRequests} من أصل {selectedEngineer.totalRequests} طلب
+                        {t('services:engineers.completionDetails', {
+                          completed: selectedEngineer.completedRequests,
+                          total: selectedEngineer.totalRequests,
+                        })}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -575,7 +651,7 @@ export const EngineersManagementPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailsDialogOpen(false)}>
-            إغلاق
+            {t('common:actions.close')}
           </Button>
         </DialogActions>
       </Dialog>

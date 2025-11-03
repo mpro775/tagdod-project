@@ -45,7 +45,7 @@ function TabPanel(props: TabPanelProps) {
       {...other}
     >
       {value === index && (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
           {children}
         </Box>
       )}
@@ -145,53 +145,78 @@ export default function ExchangeRatesPage() {
   // };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3, md: 4 }, px: { xs: 1.5, sm: 2 } }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+      <Box sx={{ mb: { xs: 2, sm: 3, md: 4 } }}>
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 700,
+            fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+          }}
+        >
           {t('exchangeRates.title', { defaultValue: 'أسعار الصرف' })}
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography 
+          variant="body1" 
+          color="text.secondary"
+          sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+        >
           {t('exchangeRates.subtitle', { defaultValue: 'أسعار الصرف الحالية للعملات المدعومة' })}
         </Typography>
       </Box>
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => window.location.reload()}>
+        <Alert 
+          severity="error" 
+          sx={{ mb: { xs: 2, sm: 3 } }} 
+          onClose={() => window.location.reload()}
+        >
           {error}
         </Alert>
       )}
 
       {/* Main Content */}
-      <Paper sx={{ width: '100%' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Paper sx={{ width: '100%', borderRadius: { xs: 1, sm: 2 } }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', overflow: 'auto' }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
             aria-label="exchange rates tabs"
-            variant="fullWidth"
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              '& .MuiTab-root': {
+                minWidth: { xs: 'auto', sm: 120 },
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                px: { xs: 1, sm: 2 }
+              }
+            }}
           >
             <Tab
-              icon={<TrendingUp />}
+              icon={<TrendingUp sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} />}
               label={t('tabs.currentRates', { defaultValue: 'الأسعار الحالية' })}
               iconPosition="start"
               {...a11yProps(0)}
             />
             <Tab
-              icon={<AttachMoney />}
+              icon={<AttachMoney sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} />}
               label={t('tabs.updateRates', { defaultValue: 'تحديث أسعار الصرف' })}
               iconPosition="start"
               {...a11yProps(1)}
             />
             <Tab
-              icon={<Calculate />}
+              icon={<Calculate sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} />}
               label={t('tabs.converter', { defaultValue: 'محول العملات' })}
               iconPosition="start"
               {...a11yProps(2)}
             />
             <Tab
-              icon={<Assessment />}
+              icon={<Assessment sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} />}
               label={t('tabs.statistics', { defaultValue: 'إحصائيات أسعار الصرف' })}
               iconPosition="start"
               {...a11yProps(3)}
@@ -201,34 +226,42 @@ export default function ExchangeRatesPage() {
 
         {/* Current Rates Tab */}
         <TabPanel value={activeTab} index={0}>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+            <Typography 
+              variant="h6" 
+              gutterBottom
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
               {t('tabs.currentRates', { defaultValue: 'الأسعار الحالية' })}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+            >
               {t('tabs.currentRatesDesc', { defaultValue: 'عرض أسعار الصرف الحالية للعملات المدعومة' })}
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-            <Box sx={{ flex: '1 1 300px', minWidth: 300 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, sm: 3 } }}>
+            <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 300px' }, minWidth: { xs: 0, sm: 300 } }}>
               <ExchangeRateCard
                 rates={rates}
                 loading={loading}
                 error={error}
-                title={t('exchangeRates.title', { defaultValue: 'الدولار الأمريكي إلى الريال اليمني' })}
+                title={t('exchangeRates.usdToYerTitle')}
                 currency="YER"
                 rate={rates?.usdToYer || 0}
                 icon={<TrendingUp />}
                 color="primary"
               />
             </Box>
-            <Box sx={{ flex: '1 1 300px', minWidth: 300 }}>
+            <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 300px' }, minWidth: { xs: 0, sm: 300 } }}>
               <ExchangeRateCard
                 rates={rates}
                 loading={loading}
                 error={error}
-                title={t('exchangeRates.title', { defaultValue: 'الدولار الأمريكي إلى الريال السعودي' })}
+                title={t('exchangeRates.usdToSarTitle')}
                 currency="SAR"
                 rate={rates?.usdToSar || 0}
                 icon={<TrendingUp />}
@@ -240,11 +273,19 @@ export default function ExchangeRatesPage() {
 
         {/* Update Rates Tab */}
         <TabPanel value={activeTab} index={1}>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+            <Typography 
+              variant="h6" 
+              gutterBottom
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
               {t('tabs.updateRates', { defaultValue: 'تحديث أسعار الصرف' })}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+            >
               {t('tabs.updateRatesDesc', { defaultValue: 'قم بتحديث أسعار الصرف للعملات المدعومة' })}   
             </Typography>
           </Box>
@@ -263,11 +304,19 @@ export default function ExchangeRatesPage() {
 
         {/* Currency Converter Tab */}
         <TabPanel value={activeTab} index={2}>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+            <Typography 
+              variant="h6" 
+              gutterBottom
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
               {t('tabs.converter', { defaultValue: 'محول العملات' })}
           </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+            >
               {t('tabs.converterDesc', { defaultValue: 'تحويل العملات باستخدام الأسعار الحالية' })}
               </Typography>
           </Box>
@@ -281,11 +330,19 @@ export default function ExchangeRatesPage() {
 
         {/* Statistics Tab */}
         <TabPanel value={activeTab} index={3}>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+            <Typography 
+              variant="h6" 
+              gutterBottom
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
               {t('tabs.statistics', { defaultValue: 'إحصائيات أسعار الصرف' })}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+            >
               {t('tabs.statisticsDesc', { defaultValue: 'معلومات تفصيلية عن أسعار الصرف الحالية' })}
               </Typography>
           </Box>
@@ -299,22 +356,51 @@ export default function ExchangeRatesPage() {
       </Paper>
 
       {/* Info Card */}
-      <Paper sx={{ mt: 3, p: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AttachMoney color="primary" />
+      <Paper sx={{ mt: { xs: 2, sm: 3 }, p: { xs: 2, sm: 3 }, borderRadius: { xs: 1, sm: 2 } }}>
+        <Typography 
+          variant="h6" 
+          gutterBottom 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1,
+            fontSize: { xs: '1rem', sm: '1.25rem' }
+          }}
+        >
+          <AttachMoney color="primary" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
           {t('infoCard.title', { defaultValue: 'معلومات مهمة' })}
         </Typography>
-        <Box component="ul" sx={{ m: 0, pl: 2 }}>
-          <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        <Box component="ul" sx={{ m: 0, pl: { xs: 2, sm: 3 } }}>
+          <Typography 
+            component="li" 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ mb: 1, fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+          >
             {t('infoCard.item1', { defaultValue: 'جميع المنتجات في النظام تسعر بالدولار الأمريكي' })}
           </Typography>
-          <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          <Typography 
+            component="li" 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ mb: 1, fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+          >
             {t('infoCard.item2', { defaultValue: 'سيتم تحويل الأسعار تلقائياً للعملاء حسب العملة المختارة' })}
           </Typography>
-          <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          <Typography 
+            component="li" 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ mb: 1, fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+          >
             {t('infoCard.item3', { defaultValue: 'تحديث الأسعار يؤثر على جميع المنتجات والفواتير فوراً' })}
           </Typography>
-          <Typography component="li" variant="body2" color="text.secondary">
+          <Typography 
+            component="li" 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+          >
             {t('infoCard.item4', { defaultValue: 'تأكد من صحة الأسعار قبل الحفظ' })}
           </Typography>
         </Box>

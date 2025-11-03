@@ -26,3 +26,5 @@ export { UserCard, ProductCard, OrderCard } from './Cards';
 // Utility Components
 export { default as CurrencySelector } from './CurrencySelector';
 export { default as PriceDisplay } from './PriceDisplay';
+export { default as ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmDialogProps, ConfirmDialogType } from './ConfirmDialog';

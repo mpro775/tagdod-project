@@ -11,7 +11,7 @@ import {
   Typography,
   Button,
   Grid,
-    CircularProgress,
+  CircularProgress,
   FormControlLabel,
   Switch,
   Alert,
@@ -23,12 +23,14 @@ import {
   Chip,
   IconButton,
   Skeleton,
+  useTheme,
 } from '@mui/material';
 import { 
   Save, 
   Cancel, 
   ArrowBack, 
 } from '@mui/icons-material';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
 import { ImageField } from '@/features/media';
@@ -61,6 +63,8 @@ export const CategoryFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation('categories');
+  const theme = useTheme();
+  const { isMobile, isXs } = useBreakpoint();
   const isEditMode = id !== 'new' && !!id;
 
   const categorySchema = createCategorySchema(t);
@@ -194,8 +198,23 @@ export const CategoryFormPage: React.FC = () => {
   if (isEditMode && isLoading) {
     return (
       <Box>
-        <Skeleton variant="rectangular" height={60} sx={{ mb: 2 }} />
-        <Skeleton variant="rectangular" height={400} />
+        <Skeleton 
+          variant="rectangular" 
+          height={{ xs: 50, sm: 60 }} 
+          sx={{ 
+            mb: 2,
+            borderRadius: 2,
+            bgcolor: 'background.paper',
+          }} 
+        />
+        <Skeleton 
+          variant="rectangular" 
+          height={{ xs: 300, sm: 400 }}
+          sx={{
+            borderRadius: 2,
+            bgcolor: 'background.paper',
+          }}
+        />
       </Box>
     );
   }
@@ -203,26 +222,61 @@ export const CategoryFormPage: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={() => navigate('/categories')} sx={{ mr: 2 }}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h4" fontWeight="bold">
-          {isEditMode ? t('categories.editCategory') : t('categories.createCategory')}
-        </Typography>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: { xs: 2, sm: 0 },
+          mb: 3 
+        }}
+      >
+        <Box display="flex" alignItems="center" gap={2} flex={1}>
+          <IconButton 
+            onClick={() => navigate('/categories')} 
+            sx={{ 
+              fontSize: { xs: 'medium', sm: 'large' },
+            }}
+            size={isMobile ? 'medium' : 'large'}
+          >
+            <ArrowBack />
+          </IconButton>
+          <Typography 
+            variant="h4" 
+            fontWeight="bold"
+            sx={{ 
+              fontSize: { xs: '1.5rem', sm: '2rem' },
+              color: 'text.primary',
+            }}
+          >
+            {isEditMode ? t('categories.editCategory') : t('categories.createCategory')}
+          </Typography>
+        </Box>
         {isEditMode && category && (
           <Chip
             label={category.isActive ? t('status.active') : t('status.inactive')}
             color={category.isActive ? 'success' : 'default'}
-            sx={{ ml: 2 }}
+            sx={{ 
+              ml: { xs: 0, sm: 2 },
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            }}
           />
         )}
       </Box>
 
       {/* Stepper */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Stepper activeStep={activeStep} alternativeLabel>
+      <Card sx={{ mb: 3, bgcolor: 'background.paper' }}>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Stepper 
+            activeStep={activeStep} 
+            alternativeLabel={!isXs}
+            orientation={isXs ? 'vertical' : 'horizontal'}
+            sx={{
+              '& .MuiStepLabel-label': {
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              },
+            }}
+          >
             {steps.map((label) => (
               <Step key={label}>
                 <StepLabel>{label}</StepLabel>
@@ -239,15 +293,28 @@ export const CategoryFormPage: React.FC = () => {
             toast.error(t('validation.fillRequiredFields'));
           }
         )}>
-          <Paper sx={{ p: 3 }}>
+          <Paper 
+            sx={{ 
+              p: { xs: 2, sm: 3 },
+              bgcolor: 'background.paper',
+            }}
+          >
             {/* Step 1: Basic Information */}
             {activeStep === 0 && (
               <Box>
-                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom 
+                  sx={{ 
+                    mb: { xs: 2, sm: 3 },
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    color: 'text.primary',
+                  }}
+                >
                   {t('form.basicInfo')}
                 </Typography>
                 
-                <Grid container spacing={3}>
+                <Grid container spacing={{ xs: 2, sm: 3 }}>
                   <Grid size={{ xs: 12 }}>
                     <FormInput name="name" label={t('form.categoryNameAr')} />
                   </Grid>
@@ -290,28 +357,49 @@ export const CategoryFormPage: React.FC = () => {
             {/* Step 2: Images and Media */}
             {activeStep === 1 && (
               <Box>
-                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom 
+                  sx={{ 
+                    mb: { xs: 2, sm: 3 },
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    color: 'text.primary',
+                  }}
+                >
                   {t('form.imagesMedia')}
                 </Typography>
 
-                <Grid container spacing={3}>
+                <Grid container spacing={{ xs: 2, sm: 3 }}>
                   <Grid size={{ xs: 12 }}>
-                    <ImageField
-                      label={t('form.categoryImage')}
-                      value={selectedImage}
-                      onChange={(media: any) => {
-                        // eslint-disable-next-line no-console
-                        console.log('🖼️ ImageField onChange - media:', media);
-                        setSelectedImage(media);
-                        // استخراج ID من Media object (قد يكون _id أو id)
-                        const mediaId = media?._id || media?.id || '';
-                        // eslint-disable-next-line no-console
-                        console.log('🆔 Extracted mediaId:', mediaId);
-                        methods.setValue('imageId', mediaId);
+                    <Box
+                      sx={{
+                        p: { xs: 1.5, sm: 2 },
+                        borderRadius: 2,
+                        bgcolor: theme.palette.mode === 'dark' 
+                          ? 'rgba(255, 255, 255, 0.05)' 
+                          : 'grey.50',
+                        border: 1,
+                        borderColor: 'divider',
+                        mb: 2,
                       }}
-                      category={MediaCategory.CATEGORY}
-                      helperText={t('form.imageHelper')}
-                    />
+                    >
+                      <ImageField
+                        label={t('form.categoryImage')}
+                        value={selectedImage}
+                        onChange={(media: any) => {
+                          // eslint-disable-next-line no-console
+                          console.log('🖼️ ImageField onChange - media:', media);
+                          setSelectedImage(media);
+                          // استخراج ID من Media object (قد يكون _id أو id)
+                          const mediaId = media?._id || media?.id || '';
+                          // eslint-disable-next-line no-console
+                          console.log('🆔 Extracted mediaId:', mediaId);
+                          methods.setValue('imageId', mediaId);
+                        }}
+                        category={MediaCategory.CATEGORY}
+                        helperText={t('form.imageHelper')}
+                      />
+                    </Box>
                   </Grid>
                 </Grid>
               </Box>
@@ -320,11 +408,19 @@ export const CategoryFormPage: React.FC = () => {
             {/* Step 3: SEO */}
             {activeStep === 2 && (
               <Box>
-                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom 
+                  sx={{ 
+                    mb: { xs: 2, sm: 3 },
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    color: 'text.primary',
+                  }}
+                >
                   {t('form.seo')}
                 </Typography>
 
-                <Grid container spacing={3}>
+                <Grid container spacing={{ xs: 2, sm: 3 }}>
                   <Grid size={{ xs: 12 }}>
                     <FormInput name="metaTitle" label={t('form.metaTitle')} />
                   </Grid>
@@ -339,8 +435,22 @@ export const CategoryFormPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
-                    <Alert severity="info" sx={{ mt: 2 }}>
-                      <Typography variant="body2">
+                    <Alert 
+                      severity="info" 
+                      sx={{ 
+                        mt: { xs: 1, sm: 2 },
+                        bgcolor: theme.palette.mode === 'dark' 
+                          ? 'rgba(33, 150, 243, 0.1)' 
+                          : undefined,
+                      }}
+                    >
+                      <Typography 
+                        variant="body2"
+                        sx={{ 
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          color: 'text.primary',
+                        }}
+                      >
                         {t('form.seoHelper')}
                       </Typography>
                     </Alert>
@@ -352,11 +462,19 @@ export const CategoryFormPage: React.FC = () => {
             {/* Step 4: Settings */}
             {activeStep === 3 && (
               <Box>
-                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom 
+                  sx={{ 
+                    mb: { xs: 2, sm: 3 },
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    color: 'text.primary',
+                  }}
+                >
                   {t('form.settings')}
                 </Typography>
 
-                <Grid container spacing={3}>
+                <Grid container spacing={{ xs: 2, sm: 3 }}>
                   <Grid size={{ xs: 12 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <FormControlLabel
@@ -366,7 +484,16 @@ export const CategoryFormPage: React.FC = () => {
                             defaultChecked={methods.getValues('isActive')}
                           />
                         }
-                        label={t('form.isActive')}
+                        label={
+                          <Typography
+                            sx={{
+                              fontSize: { xs: '0.875rem', sm: '1rem' },
+                              color: 'text.primary',
+                            }}
+                          >
+                            {t('form.isActive')}
+                          </Typography>
+                        }
                       />
 
                       <FormControlLabel
@@ -376,14 +503,36 @@ export const CategoryFormPage: React.FC = () => {
                             defaultChecked={methods.getValues('isFeatured')}
                           />
                         }
-                        label={t('form.isFeatured')}
+                        label={
+                          <Typography
+                            sx={{
+                              fontSize: { xs: '0.875rem', sm: '1rem' },
+                              color: 'text.primary',
+                            }}
+                          >
+                            {t('form.isFeatured')}
+                          </Typography>
+                        }
                       />
                     </Box>
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
-                    <Alert severity="warning">
-                      <Typography variant="body2">
+                    <Alert 
+                      severity="warning"
+                      sx={{
+                        bgcolor: theme.palette.mode === 'dark' 
+                          ? 'rgba(237, 108, 2, 0.1)' 
+                          : undefined,
+                      }}
+                    >
+                      <Typography 
+                        variant="body2"
+                        sx={{ 
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          color: 'text.primary',
+                        }}
+                      >
                         {t('form.inactiveWarning')}
                       </Typography>
                     </Alert>
@@ -393,26 +542,54 @@ export const CategoryFormPage: React.FC = () => {
             )}
 
             {/* Navigation Buttons */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: { xs: 'column-reverse', sm: 'row' },
+                justifyContent: 'space-between', 
+                alignItems: { xs: 'stretch', sm: 'center' },
+                mt: { xs: 3, sm: 4 },
+                gap: { xs: 2, sm: 0 },
+              }}
+            >
               <Box>
                 {activeStep > 0 && (
-                  <Button onClick={handleBack} startIcon={<ArrowBack />}>
+                  <Button 
+                    onClick={handleBack} 
+                    startIcon={<ArrowBack />}
+                    fullWidth={isMobile}
+                    size={isMobile ? 'medium' : 'large'}
+                  >
                     {t('form.previous')}
                   </Button>
                 )}
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  gap: { xs: 1, sm: 2 },
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  width: { xs: '100%', sm: 'auto' },
+                }}
+              >
                 <Button
                   variant="outlined"
                   startIcon={<Cancel />}
                   onClick={() => navigate('/categories')}
+                  fullWidth={isMobile}
+                  size={isMobile ? 'medium' : 'large'}
                 >
                   {t('form.cancel')}
                 </Button>
 
                 {activeStep < steps.length - 1 ? (
-                  <Button variant="contained" onClick={handleNext}>
+                  <Button 
+                    variant="contained" 
+                    onClick={handleNext}
+                    fullWidth={isMobile}
+                    size={isMobile ? 'medium' : 'large'}
+                  >
                     {t('form.next')}
                   </Button>
                 ) : (
@@ -421,6 +598,8 @@ export const CategoryFormPage: React.FC = () => {
                     variant="contained"
                     startIcon={isCreating || isUpdating ? <CircularProgress size={20} /> : <Save />}
                     disabled={isCreating || isUpdating}
+                    fullWidth={isMobile}
+                    size={isMobile ? 'medium' : 'large'}
                   >
                     {isEditMode ? t('form.update') : t('form.create')}
                   </Button>

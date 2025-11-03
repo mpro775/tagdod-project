@@ -10,9 +10,15 @@ flowchart TD
   B --> G[SUPER_ADMIN - مدير عام]
 
   C --> C1[Capabilities: customer_capable = true]
+  C1 --> C2[Status: ACTIVE - موثق مباشرة]
+  
   D --> D1[Capabilities: engineer_capable = true]
+  D1 --> D2[Status: UNVERIFIED - يحتاج تحقق]
+  D2 --> D3[رفع CV → PENDING]
+  
   E --> E1[Capabilities: wholesale_capable = true]
-  F --> F1[Capabilities: admin_capable = true]
+  E1 --> E2[Status: UNVERIFIED - يحتاج تحقق]
+  E2 --> E3[رفع صورة المحل + اسم المحل → PENDING]
 
   C1 --> H[نظام الصلاحيات]
   D1 --> H
@@ -25,13 +31,19 @@ flowchart TD
 
   H3 --> I[Capabilities Status]
   I --> I1[NONE - غير محدد]
-  I --> I2[PENDING - قيد المراجعة]
-  I --> I3[APPROVED - مقبول]
-  I --> I4[REJECTED - مرفوض]
+  I --> I2[UNVERIFIED - غير موثق]
+  I --> I3[PENDING - قيد المراجعة]
+  I --> I4[APPROVED - مقبول]
+  I --> I5[REJECTED - مرفوض]
 
-  I4 --> J[إدارة الحسابات]
+  I5 --> V[نظام التحقق]
+  V --> V1[رفع الوثائق]
+  V1 --> V2[مراجعة الأدمن]
+  V2 --> V3[الموافقة/الرفض]
+  
+  V3 --> J[إدارة الحسابات]
   J --> J1[Status: active/suspended/pending/deleted]
-  J --> J2[Soft Delete: deletedAt, deletedBy]
+  J --> J2[Soft Delete: deletedAt, deletedBy, deletionReason]
   J --> J3[Suspension: suspendedReason, suspendedBy, suspendedAt]
 
   J3 --> K[تحليلات المستخدمين]
@@ -44,6 +56,8 @@ flowchart TD
   L --> L2[Services: ربط مع الخدمات]
   L --> L3[Support: ربط مع الدعم]
   L --> L4[Analytics: تحليلات شاملة]
+  L --> L5[Verification: نظام التحقق]
 
   %% End points
   L4 --> M[نهاية - نظام متكامل]
+  L5 --> M

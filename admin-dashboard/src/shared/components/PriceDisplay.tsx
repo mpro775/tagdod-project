@@ -6,7 +6,7 @@ interface PriceDisplayProps {
   amountUSD: number;
   className?: string;
   showOriginal?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   variant?: 'default' | 'highlight' | 'muted';
 }
 
@@ -22,6 +22,7 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
   const priceInfo = convertPrice(amountUSD, selectedCurrency);
 
   const sizeClasses = {
+    xs: 'text-xs',
     sm: 'text-sm',
     md: 'text-base',
     lg: 'text-lg',

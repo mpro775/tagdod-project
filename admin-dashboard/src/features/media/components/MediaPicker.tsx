@@ -33,6 +33,7 @@ import {
   ListItemSecondaryAction,
   FormControlLabel,
   Switch,
+  useTheme,
 } from '@mui/material';
 import {
   CloudUpload,
@@ -43,12 +44,13 @@ import {
   Description,
   ViewModule,
   ViewList,
-  Sort,
   Refresh,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useMedia } from '../hooks/useMedia';
 import { MediaUploader } from './MediaUploader';
 import { formatFileSize } from '@/shared/utils/formatters';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import type { Media, MediaCategory, MediaType } from '../types/media.types';
 
 interface MediaPickerProps {
@@ -71,19 +73,25 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
   onSelect,
   category,
   multiple = false,
-  title = 'اختيار وسائط',
+  title,
   acceptTypes = ['image'],
   showFilters = true,
   showUpload = true,
   maxSelections,
 }) => {
+  const { t } = useTranslation('media');
+  const theme = useTheme();
+  const { isMobile } = useBreakpoint();
+  
+  const defaultTitle = title || t('picker.title');
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<MediaCategory | ''>(category || '');
   const [typeFilter, setTypeFilter] = useState<MediaType | ''>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedMedia, setSelectedMedia] = useState<Media[]>([]);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(isMobile ? 'list' : 'grid');
   const [sortBy, setSortBy] = useState<'createdAt' | 'name' | 'size'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showDeleted, setShowDeleted] = useState(false);
@@ -185,24 +193,47 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
+      <Dialog 
+        open={open} 
+        onClose={onClose} 
+        maxWidth="xl" 
+        fullWidth
+        fullScreen={isMobile}
+      >
         <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">{title}</Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}>
+            <Typography 
+              variant="h6"
+              sx={{ fontSize: { xs: '0.875rem', sm: '1.25rem' } }}
+            >
+              {defaultTitle}
+            </Typography>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               {showUpload && (
                 <Button
                   variant="outlined"
                   startIcon={<CloudUpload />}
                   onClick={() => setUploadDialogOpen(true)}
+                  size={isMobile ? 'small' : 'medium'}
+                  fullWidth={isMobile}
                 >
-                  رفع جديد
+                  {isMobile ? t('picker.upload') : t('picker.uploadNew')}
                 </Button>
               )}
               {multiple && selectedMedia.length > 0 && (
                 <Badge badgeContent={selectedMedia.length} color="primary">
-                  <Button variant="contained" onClick={handleConfirmSelection}>
-                    تأكيد الاختيار ({selectedMedia.length})
+                  <Button 
+                    variant="contained" 
+                    onClick={handleConfirmSelection}
+                    size={isMobile ? 'small' : 'medium'}
+                  >
+                    {isMobile ? `${selectedMedia.length}` : t('picker.confirmMultiple', { count: selectedMedia.length })}
                   </Button>
                 </Badge>
               )}
@@ -212,26 +243,31 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
 
         <DialogContent sx={{ p: 0 }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={activeTab} onChange={handleTabChange}>
-              <Tab label="جميع الوسائط" />
-              <Tab label="الصور" />
-              <Tab label="الفيديوهات" />
-              <Tab label="المستندات" />
+            <Tabs 
+              value={activeTab} 
+              onChange={handleTabChange}
+              variant={isMobile ? 'scrollable' : 'standard'}
+              scrollButtons="auto"
+            >
+              <Tab label={t('picker.allMedia')} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }} />
+              <Tab label={t('picker.images')} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }} />
+              <Tab label={t('picker.videos')} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }} />
+              <Tab label={t('picker.documents')} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }} />
             </Tabs>
           </Box>
 
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: { xs: 1, sm: 3 } }}>
             {/* Filters and Controls */}
             {showFilters && (
-              <Paper sx={{ p: 2, mb: 3 }}>
+              <Paper sx={{ p: { xs: 1, sm: 2 }, mb: 3, bgcolor: 'background.paper' }}>
                 <Grid container spacing={2} alignItems="center">
-                  <Grid size={{ xs: 12, md: 3 }}>
+                  <Grid size={{ xs: 12, md: 4 }}>
                     <TextField
                       fullWidth
-                      label="البحث"
+                      label={t('filters.search')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="ابحث بالاسم أو الوصف..."
+                      placeholder={t('filters.searchPlaceholder')}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
@@ -239,87 +275,103 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                           </InputAdornment>
                         ),
                       }}
+                      size={isMobile ? 'small' : 'medium'}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, md: 2 }}>
-                    <FormControl fullWidth>
-                      <InputLabel>الفئة</InputLabel>
+                  <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+                    <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                      <InputLabel>{t('filters.category')}</InputLabel>
                       <Select
                         value={categoryFilter}
-                        label="الفئة"
+                        label={t('filters.category')}
                         onChange={(e) => setCategoryFilter(e.target.value as MediaCategory | '')}
                       >
-                        <MenuItem value="">الكل</MenuItem>
-                        <MenuItem value="product">منتجات</MenuItem>
-                        <MenuItem value="category">فئات</MenuItem>
-                        <MenuItem value="brand">براندات</MenuItem>
-                        <MenuItem value="banner">بانرات</MenuItem>
-                        <MenuItem value="other">أخرى</MenuItem>
+                        <MenuItem value="">{t('categories.all')}</MenuItem>
+                        <MenuItem value="product">{t('categories.product')}</MenuItem>
+                        <MenuItem value="category">{t('categories.category')}</MenuItem>
+                        <MenuItem value="brand">{t('categories.brand')}</MenuItem>
+                        <MenuItem value="banner">{t('categories.banner')}</MenuItem>
+                        <MenuItem value="other">{t('categories.other')}</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid size={{ xs: 12, md: 2 }}>
-                    <FormControl fullWidth>
-                      <InputLabel>النوع</InputLabel>
+                  <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+                    <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                      <InputLabel>{t('filters.type')}</InputLabel>
                       <Select
                         value={typeFilter}
-                        label="النوع"
+                        label={t('filters.type')}
                         onChange={(e) => setTypeFilter(e.target.value as MediaType | '')}
                       >
-                        <MenuItem value="">الكل</MenuItem>
-                        <MenuItem value="image">صور</MenuItem>
-                        <MenuItem value="video">فيديوهات</MenuItem>
-                        <MenuItem value="document">مستندات</MenuItem>
+                        <MenuItem value="">{t('types.all')}</MenuItem>
+                        <MenuItem value="image">{t('types.images')}</MenuItem>
+                        <MenuItem value="video">{t('types.videos')}</MenuItem>
+                        <MenuItem value="document">{t('types.documents')}</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid size={{ xs: 12, md: 2 }}>
+                  <Grid size={{ xs: 6, md: 1.5 }}>
                     <FormControlLabel
                       control={
                         <Switch
                           checked={showDeleted}
                           onChange={(e) => setShowDeleted(e.target.checked)}
+                          size={isMobile ? 'small' : 'medium'}
                         />
                       }
-                      label="المحذوفة"
+                      label={t('picker.showDeleted')}
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, md: 3 }}>
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                      <Tooltip title="عرض شبكي">
-                        <IconButton
-                          size="small"
-                          color={viewMode === 'grid' ? 'primary' : 'default'}
-                          onClick={() => setViewMode('grid')}
-                        >
-                          <ViewModule />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="عرض قائمة">
-                        <IconButton
-                          size="small"
-                          color={viewMode === 'list' ? 'primary' : 'default'}
-                          onClick={() => setViewMode('list')}
-                        >
-                          <ViewList />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="ترتيب حسب التاريخ">
-                        <IconButton
-                          size="small"
-                          color={sortBy === 'createdAt' ? 'primary' : 'default'}
-                          onClick={() => handleSortChange('createdAt')}
-                        >
-                          <Sort />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="تحديث">
+                  <Grid size={{ xs: 6, md: 2.5 }}>
+                    <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                      <InputLabel>{t('picker.sortBy')}</InputLabel>
+                      <Select
+                        value={sortBy}
+                        label={t('picker.sortBy')}
+                        onChange={(e) => handleSortChange(e.target.value as 'createdAt' | 'name' | 'size')}
+                      >
+                        <MenuItem value="createdAt">{t('picker.sortDate')}</MenuItem>
+                        <MenuItem value="name">{t('picker.sortName')}</MenuItem>
+                        <MenuItem value="size">{t('picker.sortSize')}</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 12 }}>
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                      {!isMobile && (
+                        <>
+                          <Tooltip title={t('picker.gridView')}>
+                            <IconButton
+                              size="small"
+                              color={viewMode === 'grid' ? 'primary' : 'default'}
+                              onClick={() => setViewMode('grid')}
+                            >
+                              <ViewModule />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={t('picker.listView')}>
+                            <IconButton
+                              size="small"
+                              color={viewMode === 'list' ? 'primary' : 'default'}
+                              onClick={() => setViewMode('list')}
+                            >
+                              <ViewList />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                      <Tooltip title={t('picker.refresh')}>
                         <IconButton size="small" onClick={() => refetch()}>
                           <Refresh />
                         </IconButton>
                       </Tooltip>
-                      <Button size="small" onClick={handleClearFilters}>
-                        مسح الفلاتر
+                      <Button 
+                        size="small" 
+                        onClick={handleClearFilters}
+                        fullWidth={isMobile}
+                      >
+                        {t('picker.clear')}
                       </Button>
                     </Box>
                   </Grid>
@@ -342,8 +394,9 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                         borderColor: isSelected(media) ? 'primary.main' : 'divider',
                         position: 'relative',
                         transition: 'all 0.3s ease',
+                        bgcolor: 'background.paper',
                         '&:hover': {
-                          boxShadow: 3,
+                          boxShadow: theme.palette.mode === 'dark' ? 8 : 3,
                           transform: 'translateY(-2px)',
                         },
                       }}
@@ -372,7 +425,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
 
                       {/* Status Indicators */}
                       <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}>
-                        {media.deletedAt && <Chip label="محذوف" size="small" color="error" />}
+                        {media.deletedAt && <Chip label={t('deleted')} size="small" color="error" />}
                         {media.usageCount > 0 && (
                           <Chip
                             label={`${media.usageCount}`}
@@ -398,7 +451,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            bgcolor: 'grey.100',
+                            bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
                           }}
                         >
                           <Avatar sx={{ width: 60, height: 60, fontSize: 24 }}>
@@ -407,25 +460,46 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                         </Box>
                       )}
 
-                      <CardContent sx={{ p: 1.5 }}>
-                        <Typography variant="body2" fontWeight="medium" noWrap>
+                      <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
+                        <Typography 
+                          variant="body2" 
+                          fontWeight="medium" 
+                          noWrap
+                          sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        >
                           {media.name}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" display="block">
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary" 
+                          display="block"
+                          sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                        >
                           {formatFileSize(media.size)}
                         </Typography>
                         {media.width && media.height && (
-                          <Typography variant="caption" color="text.secondary" display="block">
+                          <Typography 
+                            variant="caption" 
+                            color="text.secondary" 
+                            display="block"
+                            sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                          >
                             {media.width} × {media.height}
                           </Typography>
                         )}
                         <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                          <Chip label={media.category} size="small" variant="outlined" />
+                          <Chip 
+                            label={media.category} 
+                            size="small" 
+                            variant="outlined"
+                            sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
+                          />
                           <Chip
-                            label={media.isPublic ? 'عام' : 'خاص'}
+                            label={media.isPublic ? t('public') : t('private')}
                             size="small"
                             color={media.isPublic ? 'success' : 'warning'}
                             variant="outlined"
+                            sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
                           />
                         </Box>
                       </CardContent>
@@ -447,9 +521,15 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                       borderRadius: 1,
                       mb: 1,
                       cursor: 'pointer',
-                      bgcolor: isSelected(media) ? 'primary.light' : 'transparent',
+                      bgcolor: isSelected(media) 
+                        ? (theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.light') 
+                        : 'transparent',
+                      transition: 'all 0.3s ease',
                       '&:hover': {
-                        bgcolor: isSelected(media) ? 'primary.light' : 'grey.50',
+                        bgcolor: isSelected(media) 
+                          ? (theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.light') 
+                          : 'action.hover',
+                        boxShadow: 2,
                       },
                     }}
                     onClick={() => handleSelectMedia(media)}
@@ -460,20 +540,39 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={media.name}
+                      primary={
+                        <Typography 
+                          sx={{ 
+                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            fontWeight: 'medium',
+                          }}
+                        >
+                          {media.name}
+                        </Typography>
+                      }
                       secondary={
                         <Box>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary"
+                            sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                          >
                             {formatFileSize(media.size)}
                             {media.width && media.height && ` • ${media.width} × ${media.height}`}
                           </Typography>
                           <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                            <Chip label={media.category} size="small" variant="outlined" />
+                            <Chip 
+                              label={media.category} 
+                              size="small" 
+                              variant="outlined"
+                              sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
+                            />
                             <Chip
-                              label={media.isPublic ? 'عام' : 'خاص'}
+                              label={media.isPublic ? t('public') : t('private')}
                               size="small"
                               color={media.isPublic ? 'success' : 'warning'}
                               variant="outlined"
+                              sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
                             />
                           </Box>
                         </Box>
@@ -489,23 +588,33 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
 
             {/* Empty State */}
             {!isLoading && filteredMedia.length === 0 && (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Image sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  لا توجد وسائط
+              <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 8 } }}>
+                <Image sx={{ fontSize: { xs: 48, sm: 64 }, color: 'text.secondary', mb: 2 }} />
+                <Typography 
+                  variant="h6" 
+                  color="text.secondary" 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                >
+                  {t('picker.noMedia')}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  sx={{ mb: 3, fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
+                >
                   {searchTerm || categoryFilter || typeFilter
-                    ? 'لم يتم العثور على وسائط تطابق المعايير المحددة'
-                    : 'ابدأ برفع وسائطك الأولى'}
+                    ? t('picker.noMediaDescription')
+                    : t('picker.noMediaDefault')}
                 </Typography>
                 {showUpload && (
                   <Button
                     variant="contained"
                     startIcon={<CloudUpload />}
                     onClick={() => setUploadDialogOpen(true)}
+                    size={isMobile ? 'medium' : 'large'}
                   >
-                    رفع وسائط جديدة
+                    {t('empty.uploadMediaNew')}
                   </Button>
                 )}
               </Box>
@@ -513,15 +622,23 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={onClose}>إلغاء</Button>
+        <DialogActions sx={{ p: { xs: 1, sm: 2 } }}>
+          <Button 
+            onClick={onClose}
+            fullWidth={isMobile}
+            size={isMobile ? 'medium' : 'small'}
+          >
+            {t('picker.cancel')}
+          </Button>
           {multiple && (
             <Button
               variant="contained"
               disabled={selectedMedia.length === 0}
               onClick={handleConfirmSelection}
+              fullWidth={isMobile}
+              size={isMobile ? 'medium' : 'small'}
             >
-              اختيار ({selectedMedia.length})
+              {t('picker.selectMultiple', { count: selectedMedia.length })}
             </Button>
           )}
         </DialogActions>

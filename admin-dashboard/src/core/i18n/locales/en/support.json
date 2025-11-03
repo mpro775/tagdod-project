@@ -124,7 +124,7 @@
     "day": "day"
   },
   "pagination": {
-    "showing": "Showing",
+    "showing": "Showing {count} of {total} tickets",
     "of": "of",
     "total": "total",
     "tickets": "tickets"
@@ -135,12 +135,44 @@
     "markResolved": "Mark as Resolved",
     "markClosed": "Mark as Closed",
     "assignToMe": "Assign to Me",
-    "escalate": "Escalate"
+    "escalate": "Escalate",
+    "viewStats": "View Statistics"
   },
   "validation": {
     "titleRequired": "Title is required",
     "descriptionRequired": "Description is required",
     "categoryRequired": "Category is required",
     "priorityRequired": "Priority is required"
+  },
+  "cannedResponses": {
+    "title": "Manage Canned Responses",
+    "searchPlaceholder": "Search in canned responses...",
+    "results": "Showing {current} of {total} canned responses",
+    "noResults": "No canned responses found",
+    "noResultsDesc": "No canned responses match the specified criteria",
+    "dialog": {
+      "createTitle": "Add New Canned Response",
+      "editTitle": "Edit Canned Response",
+      "titleLabel": "Title",
+      "contentArLabel": "Content (Arabic)",
+      "contentEnLabel": "Content (English)",
+      "categoryLabel": "Category",
+      "tagsLabel": "Tags (comma-separated)",
+      "tagsPlaceholder": "Example: welcome, help, technical",
+      "shortcutLabel": "Shortcut",
+      "shortcutPlaceholder": "Example: welcome",
+      "save": "Save",
+      "saveChanges": "Save Changes",
+      "cancel": "Cancel"
+    },
+    "card": {
+      "usage": "Uses {count}",
+      "created": "Created: {date}",
+      "updated": "Last update: {date}",
+      "copy": "Copy Content",
+      "use": "Use Response",
+      "edit": "Edit",
+      "delete": "Delete"
+    }
   }
 }

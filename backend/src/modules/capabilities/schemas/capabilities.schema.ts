@@ -7,9 +7,9 @@ export class Capabilities {
   userId!: string;
   @Prop({ default: true }) customer_capable!: boolean;
   @Prop({ default: false }) engineer_capable!: boolean;
-  @Prop({ default: 'none' }) engineer_status!: string; // none|pending|approved|rejected
+  @Prop({ default: 'none' }) engineer_status!: string; // none|unverified|pending|approved|rejected
   @Prop({ default: false }) wholesale_capable!: boolean;
-  @Prop({ default: 'none' }) wholesale_status!: string; // none|pending|approved|rejected
+  @Prop({ default: 'none' }) wholesale_status!: string; // none|unverified|pending|approved|rejected
   @Prop({ default: 0, min: 0, max: 100 }) wholesale_discount_percent!: number; // خصم التاجر بالنسبة المئوية
   @Prop({ default: false }) admin_capable!: boolean;
   @Prop({ default: 'none' }) admin_status!: string; // none|pending|approved|rejected

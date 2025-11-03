@@ -2,6 +2,7 @@
 export { BannerStatsCards } from './components/BannerStatsCards';
 export { BannerFilters } from './components/BannerFilters';
 export { BannerTable } from './components/BannerTable';
+export { BannerCard } from './components/BannerCard';
 export { BannerDialog } from './components/BannerDialog';
 
 // Pages

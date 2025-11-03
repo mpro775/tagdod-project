@@ -44,42 +44,42 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
     {
       title: t('stats.totalCategories'),
       value: stats?.totalCategories || 0,
-      icon: <Category sx={{ fontSize: 40, color: 'primary.main' }} />,
+      icon: <Category sx={{ fontSize: 32, color: 'primary.main' }} />,
       color: 'primary',
       description: t('stats.totalDesc'),
     },
     {
       title: t('stats.activeCategories'),
       value: stats?.activeCategories || 0,
-      icon: <Visibility sx={{ fontSize: 40, color: 'success.main' }} />,
+      icon: <Visibility sx={{ fontSize: 32, color: 'success.main' }} />,
       color: 'success',
       description: t('stats.activeDesc'),
     },
     {
       title: t('stats.featuredCategories'),
       value: stats?.featuredCategories || 0,
-      icon: <Star sx={{ fontSize: 40, color: 'warning.main' }} />,
+      icon: <Star sx={{ fontSize: 32, color: 'warning.main' }} />,
       color: 'warning',
       description: t('stats.featuredDesc'),
     },
     {
       title: t('stats.totalProducts'),
       value: stats?.totalProducts || 0,
-      icon: <TrendingUp sx={{ fontSize: 40, color: 'info.main' }} />,
+      icon: <TrendingUp sx={{ fontSize: 32, color: 'info.main' }} />,
       color: 'info',
       description: t('stats.totalProductsDesc'),
     },
     {
       title: t('stats.categoriesWithProducts'),
       value: stats?.categoriesWithProducts || 0,
-      icon: <TrendingUp sx={{ fontSize: 40, color: 'secondary.main' }} />,
+      icon: <TrendingUp sx={{ fontSize: 32, color: 'secondary.main' }} />,
       color: 'secondary',
       description: t('stats.categoriesWithProductsDesc'),
     },
     {
       title: t('stats.averageProducts'),
       value: stats?.averageProductsPerCategory || 0,
-      icon: <TrendingUp sx={{ fontSize: 40, color: 'error.main' }} />,
+      icon: <TrendingUp sx={{ fontSize: 32, color: 'error.main' }} />,
       color: 'error',
       description: t('stats.averageProductsDesc'),
       isDecimal: true,
@@ -94,21 +94,23 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Tooltip title={t('stats.refreshStats')}>
-            <IconButton
-              size="small"
-              onClick={handleRefreshStats}
-              disabled={isUpdating}
-              color="primary"
-            >
-              <Refresh />
-            </IconButton>
+            <span>
+              <IconButton
+                size="small"
+                onClick={handleRefreshStats}
+                disabled={isUpdating}
+                color="primary"
+              >
+                <Refresh />
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
       </Box>
 
       <Grid container spacing={2}>
         {statsCards.map((card, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={index}>
+          <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }} key={index}>
             <Card
               sx={{
                 height: '100%',
@@ -121,22 +123,17 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
                 },
               }}
             >
-              <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  {isLoading ? <Skeleton variant="circular" width={40} height={40} /> : card.icon}
-                  <Box sx={{ ml: 1, flexGrow: 1 }}>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                      {card.title}
-                    </Typography>
-                  </Box>
+              <CardContent sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                  {isLoading ? <Skeleton variant="circular" width={32} height={32} /> : card.icon}
                 </Box>
 
                 <Box sx={{ mb: 1 }}>
                   {isLoading ? (
-                    <Skeleton variant="text" width="60%" height={32} />
+                    <Skeleton variant="text" width="60%" height={24} />
                   ) : (
                     <Typography
-                      variant="h4"
+                      variant="h6"
                       fontWeight="bold"
                       color={`${card.color}.main`}
                       sx={{ lineHeight: 1 }}
@@ -146,23 +143,13 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
                   )}
                 </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                   {isLoading ? (
-                    <Skeleton variant="text" width="80%" height={20} />
+                    <Skeleton variant="text" width="80%" height={16} />
                   ) : (
-                    <>
-                      <Typography variant="caption" color="text.secondary">
-                        {card.description}
-                      </Typography>
-                      {card.value > 0 && (
-                        <Chip
-                          label={t('stats.active')}
-                          size="small"
-                          color={card.color as any}
-                          variant="outlined"
-                        />
-                      )}
-                    </>
+                    <Typography variant="caption" color="text.secondary" textAlign="center">
+                      {card.description}
+                    </Typography>
                   )}
                 </Box>
               </CardContent>
@@ -172,7 +159,14 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
       </Grid>
 
       {stats && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+        <Box sx={{ 
+          mt: 2, 
+          p: 2, 
+          bgcolor: 'background.default', 
+          borderRadius: 1,
+          border: 1,
+          borderColor: 'divider',
+        }}>
           <Typography variant="body2" color="text.secondary">
             {t('stats.lastUpdate')} {new Date().toLocaleString('ar-SA')}
           </Typography>

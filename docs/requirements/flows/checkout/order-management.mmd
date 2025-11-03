@@ -7,6 +7,7 @@ flowchart TD
   B -->|Refund| E[Process Refund]
   B -->|Rating| F[Process Rating]
   B -->|Cancel| G[Process Cancellation]
+  B -->|Verify Payment| AA[Verify Local Payment]
   
   %% Status Update Flow
   C --> C1[Validate new status]
@@ -64,6 +65,37 @@ flowchart TD
   G7 --> G8[End - Order Cancelled]
   G4 --> G9[End - Cannot Cancel]
   
+  %% Local Payment Verification Flow
+  AA --> AA1[Check if order uses BANK_TRANSFER]
+  AA1 --> AA2{Is local payment order?}
+  AA2 -->|No| AA3[Return not local payment error]
+  AA2 -->|Yes| AA4[Check if payment status is PENDING]
+  AA4 --> AA5{Payment pending?}
+  AA5 -->|No| AA6[Return already verified error]
+  AA5 -->|Yes| AA7[Validate verified amount and currency]
+  AA7 --> AA8{Currency matches order?}
+  AA8 -->|No| AA9[Return currency mismatch error]
+  AA8 -->|Yes| AA10{Amount >= Order total?}
+  AA10 -->|Yes| AA11[Accept payment]
+  AA10 -->|No| AA12[Reject payment]
+  AA11 --> AA13[Set paymentStatus to PAID]
+  AA13 --> AA14[Set order status to CONFIRMED]
+  AA14 --> AA15[Save verification details]
+  AA15 --> AA16[Update inventory]
+  AA16 --> AA17[Add status history entry]
+  AA17 --> AA18[Send payment accepted notification]
+  AA12 --> AA19[Set paymentStatus to FAILED]
+  AA19 --> AA20[Set order status to PAYMENT_FAILED]
+  AA20 --> AA21[Save verification details]
+  AA21 --> AA22[Keep inventory reserved]
+  AA22 --> AA23[Add status history entry]
+  AA23 --> AA24[Send payment rejected notification]
+  AA18 --> AA25[End - Payment Verified Successfully]
+  AA24 --> AA26[End - Payment Rejected]
+  AA3 --> AA27[End - Invalid Order Type]
+  AA6 --> AA28[End - Already Verified]
+  AA9 --> AA29[End - Currency Mismatch]
+  
   %% Inventory Management
   H[Inventory Update] --> I[Check order status]
   I --> J{Status requires inventory change?}
@@ -96,3 +128,8 @@ flowchart TD
   O --> Y
   P --> Y
   X --> Y
+  AA25 --> Y
+  AA26 --> Y
+  AA27 --> Y
+  AA28 --> Y
+  AA29 --> Y

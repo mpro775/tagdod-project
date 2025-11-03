@@ -15,7 +15,8 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
-  ApiQuery
+  ApiQuery,
+  ApiBody
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
@@ -33,7 +34,9 @@ import {
   AddOrderNotesDto,
   OrderAnalyticsDto,
   BulkOrderUpdateDto,
+  VerifyPaymentDto,
 } from '../dto/order.dto';
+import { PaymentStatus } from '../schemas/order.schema';
 
 /**
  * Controller للطلبات - للإدارة
@@ -193,6 +196,38 @@ export class AdminOrderController {
     return {
       order,
       message: 'تم إضافة الملاحظات الإدارية'
+    };
+  }
+
+  @Post(':id([0-9a-fA-F]{24})/verify-payment')
+  @ApiOperation({ 
+    summary: 'مطابقة الدفع المحلي',
+    description: 'مطابقة الدفع للطلبات المحلية (إدخال المبلغ والعملة)'
+  })
+  @ApiParam({ name: 'id', description: 'معرف الطلب' })
+  @ApiBody({ type: VerifyPaymentDto })
+  @ApiResponse({ status: 200, description: 'تم مطابقة الدفع بنجاح' })
+  @ApiResponse({ status: 400, description: 'فشل في مطابقة الدفع' })
+  async verifyPayment(
+    @Req() req: ExpressRequest,
+    @Param('id') orderId: string,
+    @Body() dto: VerifyPaymentDto
+  ) {
+    const order = await this.orderService.verifyLocalPayment(
+      orderId,
+      dto,
+      this.getUserId(req)
+    );
+
+    return {
+      order,
+      message: order.paymentStatus === PaymentStatus.PAID 
+        ? 'تم قبول الدفع بنجاح' 
+        : 'تم رفض الدفع - المبلغ غير كافٍ',
+      paymentStatus: order.paymentStatus,
+      verifiedAmount: order.verifiedPaymentAmount,
+      orderAmount: order.total,
+      currency: order.currency
     };
   }
 

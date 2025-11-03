@@ -22,7 +22,6 @@ import { PricingService } from '../services/pricing.service';
 import { InventoryService } from '../services/inventory.service';
 import { CreateProductDto, UpdateProductDto, ListProductsDto, CreateVariantDto, UpdateVariantDto, GenerateVariantsDto } from '../dto/product.dto';
 import { Product } from '../schemas/product.schema';
-import { Variant } from '../schemas/variant.schema';
 
 @ApiTags('إدارة-المنتجات')
 @ApiBearerAuth()

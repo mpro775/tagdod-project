@@ -29,6 +29,14 @@
 - **التحقق:** التحقق من توقيع الطلب
 - **المعالجة:** تحديث حالة الطلب حسب نتيجة الدفع
 - **الأحداث:** معالجة SUCCESS و FAILED
+- **ملاحظة:** BANK_TRANSFER لا يستخدم webhooks - يتم المطابقة يدوياً
+
+### 4.1. الدفع المحلي (Local Payment - BANK_TRANSFER)
+- **اختيار الحساب:** العميل يختار حساب بنكي/محفظة محلية
+- **إدخال المرجع:** العميل يدخل رقم الحوالة/المرجع
+- **التحقق:** النظام يتحقق من صحة الحساب وتطابق العملة
+- **المطابقة:** الإدارة تطابق الدفع يدوياً من لوحة التحكم
+- **القبول/الرفض:** نظام تلقائي يقارن المبلغ المطابق مع المطلوب
 
 ### 5. إدارة حالة الطلبات (Order Status Management)
 - **نجح الدفع:** تحديث حالة الطلب إلى CONFIRMED
@@ -48,8 +56,15 @@
 - `status`: حالة الطلب (enum: OrderStatus) - افتراضي DRAFT
 - `paymentMethod`: طريقة الدفع (enum: PaymentMethod) - مطلوب عند التأكيد
 - `paymentStatus`: حالة الدفع (enum: PaymentStatus) - افتراضي PENDING
-- `paymentIntentId`: معرف نية الدفع (string) - للدفع الإلكتروني
+- `paymentIntentId`: معرف نية الدفع (string) - للدفع الإلكتروني (ONLINE)
 - `paymentProvider`: مقدم خدمة الدفع (string) - اختياري
+- `localPaymentAccountId`: معرف حساب الدفع المحلي (ObjectId) - للدفع المحلي (BANK_TRANSFER)
+- `paymentReference`: رقم الحوالة/المرجع (string) - للدفع المحلي
+- `verifiedPaymentAmount`: المبلغ المطابق (number) - بعد المطابقة اليدوية
+- `verifiedPaymentCurrency`: العملة المطابقة (string) - بعد المطابقة اليدوية
+- `paymentVerifiedAt`: تاريخ المطابقة (Date) - بعد المطابقة اليدوية
+- `paymentVerifiedBy`: من قام بالمطابقة (ObjectId) - بعد المطابقة اليدوية
+- `paymentVerificationNotes`: ملاحظات المطابقة (string) - اختياري
 - `currency`: العملة (string) - مطلوب
 - `subtotal`: المجموع الفرعي (number) - مطلوب
 - `taxAmount`: مبلغ الضريبة (number) - مطلوب
@@ -93,9 +108,9 @@
 
 ### طرق الدفع المتاحة (PaymentMethod)
 - **COD** - الدفع عند الاستلام
-- **ONLINE** - الدفع الإلكتروني
+- **ONLINE** - الدفع الإلكتروني (يستخدم Payment Intent و Webhooks)
 - **WALLET** - المحفظة
-- **BANK_TRANSFER** - التحويل البنكي
+- **BANK_TRANSFER** - التحويل البنكي (الدفع المحلي - يتطلب مطابقة يدوية)
 
 ### حالات الدفع المتاحة (PaymentStatus)
 - **PENDING** - في الانتظار
@@ -154,9 +169,17 @@
   - `currency`: العملة (required)
   - `paymentMethod`: طريقة الدفع (COD/ONLINE/WALLET/BANK_TRANSFER) (required)
   - `paymentProvider`: مقدم خدمة الدفع (optional)
+  - `localPaymentAccountId`: معرف حساب الدفع المحلي (required إذا paymentMethod = BANK_TRANSFER)
+  - `paymentReference`: رقم الحوالة/المرجع (required إذا paymentMethod = BANK_TRANSFER)
   - `billingAddressId`: معرف عنوان الفوترة (optional)
   - `couponCode`: كود الكوبون (optional)
   - `notes`: ملاحظات العميل (optional)
+
+### مطابقة الدفع المحلي (Payment Verification DTOs)
+- `VerifyPaymentDto`: مطابقة الدفع المحلي
+  - `verifiedAmount`: المبلغ المطابق (required)
+  - `verifiedCurrency`: العملة المطابقة (YER/SAR/USD) (required)
+  - `notes`: ملاحظات المطابقة (optional)
 
 ### إدارة الطلبات (Order DTOs)
 - `ListOrdersDto`: قائمة الطلبات
@@ -187,12 +210,17 @@
 
 ## نقاط مهمة
 - **نظام طلبات موحد:** إدارة شاملة لحالة الطلبات مع State Machine
-- **دعم طرق دفع متعددة:** COD، Online، Wallet، Bank Transfer
+- **دعم طرق دفع متعددة:** COD، Online، Wallet، Bank Transfer (محلي)
+- **الدفع المحلي:** نظام كامل لإدارة حسابات البنوك والمحافظ المحلية
+- **مطابقة يدوية:** نظام مطابقة الدفع المحلي من لوحة التحكم
+- **قبول/رفض تلقائي:** مقارنة تلقائية للمبلغ المطابق مع المطلوب
 - **توقيع أمني:** توقيع HMAC للتحقق من الدفع الإلكتروني
 - **تتبع حالة شامل:** 15 حالة مختلفة للطلبات مع انتقالات منطقية
-- **معالجة webhooks:** استقبال ومعالجة تأكيدات الدفع الإلكتروني
+- **معالجة webhooks:** استقبال ومعالجة تأكيدات الدفع الإلكتروني (لـ ONLINE فقط)
 - **تكامل المخزون:** تحديث تلقائي للمخزون عند تأكيد الطلبات
 - **إشعارات ذكية:** إشعارات تلقائية لجميع تغييرات حالة الطلب
 - **إدارة العملات:** دعم YER، SAR، USD مع حسابات دقيقة
+- **حسابات متعددة:** دعم عدة حسابات لنفس البنك (كل حساب بعملة)
+- **عرض مجمع:** عرض الحسابات مجمعة حسب اسم البنك/المحفظة
 - **نظام تقييم:** تقييم الطلبات بعد التسليم
 - **تتبع شامل:** حفظ جميع التواريخ والملاحظات والتغييرات

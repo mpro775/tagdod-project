@@ -11,4 +11,7 @@ export * from './schemas/notification-preference.schema';
 export * from './schemas/device-token.schema';
 export * from './schemas/notification-log.schema';
 export * from './adapters/notification.adapters';
+export * from './adapters/fcm.adapter';
+export * from './adapters/email.adapter';
+export * from './adapters/sms.adapter';
 export * from './templates';

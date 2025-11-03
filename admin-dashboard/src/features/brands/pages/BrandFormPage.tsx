@@ -16,41 +16,44 @@ import {
   FormControlLabel,
   Switch,
   Alert,
-  Breadcrumbs,
-  Link,
 } from '@mui/material';
-import { Save, Cancel, Home, Business } from '@mui/icons-material';
+import { Save, Cancel, Business, ArrowBack } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { ImageField } from '@/features/media';
 import { useBrand, useCreateBrand, useUpdateBrand } from '../hooks/useBrands';
 import type { CreateBrandDto, UpdateBrandDto } from '../types/brand.types';
 import { MediaCategory } from '@/features/media/types/media.types';
 
-const brandSchema = z.object({
+const createBrandSchema = (t: (key: string, opts?: any) => string) => z.object({
   name: z
     .string()
-    .min(2, 'الاسم يجب أن يكون حرفين على الأقل')
-    .max(100, 'الاسم لا يجب أن يتجاوز 100 حرف'),
+    .min(2, t('validation.nameMinLength'))
+    .max(100, t('validation.nameMaxLength')),
   nameEn: z
     .string()
-    .min(2, 'الاسم بالإنجليزية مطلوب')
-    .max(100, 'الاسم بالإنجليزية لا يجب أن يتجاوز 100 حرف'),
-  image: z.string().min(1, 'صورة العلامة التجارية مطلوبة'),
-  description: z.string().max(500, 'الوصف لا يجب أن يتجاوز 500 حرف').optional(),
-  descriptionEn: z.string().max(500, 'الوصف بالإنجليزية لا يجب أن يتجاوز 500 حرف').optional(),
+    .min(2, t('validation.nameEnRequired'))
+    .max(100, t('validation.nameMaxLength')),
+  image: z.string().min(1, t('validation.imageRequired')),
+  description: z.string().max(500, t('validation.descriptionMaxLength')).optional(),
+  descriptionEn: z.string().max(500, t('validation.descriptionMaxLength')).optional(),
   isActive: z.boolean().optional(),
-  sortOrder: z.number().min(0, 'ترتيب العرض يجب أن يكون أكبر من أو يساوي 0').optional(),
+  sortOrder: z.number().min(0, t('validation.sortOrderMin')).optional(),
 });
 
-type BrandFormData = z.infer<typeof brandSchema>;
+type BrandFormData = z.infer<ReturnType<typeof createBrandSchema>>;
 
 export const BrandFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('brands');
+  const { isMobile } = useBreakpoint();
   const isEditMode = id !== 'new' && !!id;
   const [activeTab, setActiveTab] = useState(0);
   const [selectedImage, setSelectedImage] = useState<any>(null);
 
+  const brandSchema = createBrandSchema(t);
   const methods = useForm<BrandFormData>({
     resolver: zodResolver(brandSchema),
     defaultValues: {
@@ -128,10 +131,17 @@ export const BrandFormPage: React.FC = () => {
 
   if (isEditMode && error) {
     return (
-      <Box p={3}>
-        <Alert severity="error">{error.message || 'فشل في تحميل بيانات العلامة التجارية'}</Alert>
-        <Button variant="outlined" onClick={() => navigate('/brands')} sx={{ mt: 2 }}>
-          العودة للقائمة
+      <Box p={{ xs: 2, sm: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error.message || t('messages.loadError')}
+        </Alert>
+        <Button 
+          variant="outlined" 
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/brands')}
+          fullWidth={isMobile}
+        >
+          {t('back')}
         </Button>
       </Box>
     );
@@ -139,76 +149,87 @@ export const BrandFormPage: React.FC = () => {
 
   return (
     <Box>
-      {/* Breadcrumbs */}
-      <Breadcrumbs sx={{ mb: 3 }}>
-        <Link
-          color="inherit"
-          href="/"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate('/');
-          }}
-          sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-        >
-          <Home fontSize="small" />
-          الرئيسية
-        </Link>
-        <Link
-          color="inherit"
-          href="/brands"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate('/brands');
-          }}
-          sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-        >
-          <Business fontSize="small" />
-          العلامات التجارية
-        </Link>
-        <Typography color="text.primary">
-          {isEditMode ? 'تعديل العلامة التجارية' : 'إضافة علامة تجارية جديدة'}
-        </Typography>
-      </Breadcrumbs>
+      {/* Header */}
+      <Box 
+        display="flex" 
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        gap={2}
+        mb={3}
+      >
+        <Box display="flex" alignItems="center" gap={2} flex={1}>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/brands')}
+            size={isMobile ? 'medium' : 'large'}
+          >
+            {t('back')}
+          </Button>
+          <Business fontSize={isMobile ? 'medium' : 'large'} color="primary" />
+          <Typography 
+            variant="h4" 
+            component="h1"
+            fontWeight="bold"
+            sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+          >
+            {isEditMode ? t('brands.editBrand') : t('brands.createBrand')}
+          </Typography>
+        </Box>
+      </Box>
 
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          {isEditMode ? 'تعديل العلامة التجارية' : 'إضافة علامة تجارية جديدة'}
+      <Paper 
+        sx={{ 
+          p: { xs: 2, sm: 3, md: 4 },
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Typography 
+          variant="h5" 
+          fontWeight="bold" 
+          gutterBottom
+          sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' }, mb: 1 }}
+        >
+          {isEditMode ? t('brands.editBrand') : t('brands.createBrand')}
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          {isEditMode
-            ? 'قم بتعديل بيانات العلامة التجارية أدناه'
-            : 'أدخل بيانات العلامة التجارية الجديدة أدناه'}
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          sx={{ mb: { xs: 3, sm: 4 } }}
+        >
+          {isEditMode ? t('form.settingsDesc') : t('form.basicInfoDesc')}
         </Typography>
 
-        <Divider sx={{ mb: 4 }} />
+        <Divider sx={{ mb: { xs: 3, sm: 4 } }} />
 
         {/* رسائل الخطأ */}
         {submitError && (
           <Alert severity="error" sx={{ mb: 3 }}>
-            {submitError.message || 'حدث خطأ أثناء حفظ البيانات'}
+            {submitError.message || t('messages.unknownError')}
           </Alert>
         )}
 
         <Tabs
           value={activeTab}
           onChange={(_, value) => setActiveTab(value)}
-          sx={{ mb: 4 }}
-          variant="fullWidth"
+          sx={{ mb: { xs: 3, sm: 4 } }}
+          variant={isMobile ? 'scrollable' : 'fullWidth'}
+          scrollButtons="auto"
         >
-          <Tab label="العربية 🇸🇦" />
-          <Tab label="English 🇬🇧" />
+          <Tab label={t('form.tabs.arabic')} />
+          <Tab label={t('form.tabs.english')} />
         </Tabs>
 
         <FormProvider {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)}>
-            <Grid container spacing={4}>
+            <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
               {/* المحتوى العربي */}
               {activeTab === 0 && (
                 <>
                   <Grid size={{ xs: 12 }}>
                     <FormInput
                       name="name"
-                      label="اسم العلامة التجارية (عربي) *"
+                      label={t('form.brandNameAr')}
                       fullWidth
                       disabled={isSubmitting}
                     />
@@ -216,9 +237,9 @@ export const BrandFormPage: React.FC = () => {
                   <Grid size={{ xs: 12 }}>
                     <FormInput
                       name="description"
-                      label="وصف العلامة التجارية (عربي)"
+                      label={t('form.brandDescriptionAr')}
                       multiline
-                      rows={4}
+                      rows={isMobile ? 3 : 4}
                       fullWidth
                       disabled={isSubmitting}
                     />
@@ -232,7 +253,7 @@ export const BrandFormPage: React.FC = () => {
                   <Grid size={{ xs: 12 }}>
                     <FormInput
                       name="nameEn"
-                      label="Brand Name (English) *"
+                      label={t('form.brandNameEn')}
                       fullWidth
                       disabled={isSubmitting}
                     />
@@ -240,9 +261,9 @@ export const BrandFormPage: React.FC = () => {
                   <Grid size={{ xs: 12 }}>
                     <FormInput
                       name="descriptionEn"
-                      label="Brand Description (English)"
+                      label={t('form.brandDescriptionEn')}
                       multiline
-                      rows={4}
+                      rows={isMobile ? 3 : 4}
                       fullWidth
                       disabled={isSubmitting}
                     />
@@ -252,35 +273,43 @@ export const BrandFormPage: React.FC = () => {
 
               {/* صورة العلامة التجارية */}
               <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 3 }} />
-                <Typography variant="h6" gutterBottom>
-                  صورة العلامة التجارية
+                <Divider sx={{ my: { xs: 2, sm: 3 } }} />
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                >
+                  {t('form.brandImage')}
                 </Typography>
                 <ImageField
-                  label="شعار العلامة التجارية *"
+                  label={t('form.brandLogo')}
                   value={selectedImage}
                   onChange={(media) => {
                     setSelectedImage(media);
                     methods.setValue('image', media?.url || '');
                   }}
                   category={MediaCategory.BRAND}
-                  helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
+                  helperText={t('form.imageHelper')}
                   disabled={isSubmitting}
                 />
               </Grid>
 
               {/* إعدادات إضافية */}
               <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 3 }} />
-                <Typography variant="h6" gutterBottom>
-                  الإعدادات
+                <Divider sx={{ my: { xs: 2, sm: 3 } }} />
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                >
+                  {t('form.settings')}
                 </Typography>
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
                 <FormInput
                   name="sortOrder"
-                  label="ترتيب العرض"
+                  label={t('form.sortOrder')}
                   type="number"
                   fullWidth
                   disabled={isSubmitting}
@@ -288,35 +317,50 @@ export const BrandFormPage: React.FC = () => {
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', height: '100%' }}>
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    gap: { xs: 2, sm: 3 }, 
+                    alignItems: 'center', 
+                    height: '100%',
+                    pt: { xs: 1, md: 0 },
+                  }}
+                >
                   <FormControlLabel
                     control={<Switch {...methods.register('isActive')} disabled={isSubmitting} />}
-                    label="نشط"
+                    label={t('form.isActive')}
                   />
                 </Box>
               </Grid>
 
               {/* أزرار التحكم */}
               <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 3 }} />
-                <Box display="flex" gap={2} justifyContent="flex-end">
+                <Divider sx={{ my: { xs: 2, sm: 3 } }} />
+                <Box 
+                  display="flex" 
+                  gap={2} 
+                  justifyContent={{ xs: 'stretch', sm: 'flex-end' }}
+                  flexDirection={{ xs: 'column', sm: 'row' }}
+                >
                   <Button
                     variant="outlined"
                     startIcon={<Cancel />}
                     onClick={handleCancel}
                     disabled={isSubmitting}
-                    size="large"
+                    size={isMobile ? 'medium' : 'large'}
+                    fullWidth={isMobile}
                   >
-                    إلغاء
+                    {t('form.cancel')}
                   </Button>
                   <Button
                     type="submit"
                     variant="contained"
                     startIcon={isSubmitting ? <CircularProgress size={20} /> : <Save />}
                     disabled={isSubmitting}
-                    size="large"
+                    size={isMobile ? 'medium' : 'large'}
+                    fullWidth={isMobile}
                   >
-                    {isEditMode ? 'حفظ التغييرات' : 'إنشاء العلامة التجارية'}
+                    {isEditMode ? t('form.update') : t('form.create')}
                   </Button>
                 </Box>
               </Grid>

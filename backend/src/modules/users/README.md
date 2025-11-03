@@ -142,7 +142,8 @@ Authorization: Bearer <admin_token>
 - `limit`: عدد النتائج (افتراضي: 20)
 - `status`: حالة المستخدم (active, suspended, pending, deleted)
 - `role`: الدور (user, admin, super_admin, merchant, engineer)
-- `search`: نص البحث (الاسم أو رقم الهاتف)
+- `search`: نص البحث (الاسم أو رقم الهاتف أو سبب الحذف إذا كان includeDeleted=true)
+- `includeDeleted`: عرض الحسابات المحذوفة (افتراضي: false)
 
 **Response:**
 ```json
@@ -272,6 +273,83 @@ Authorization: Bearer <admin_token>
 ```
 
 **ملاحظة:** الحذف يكون Soft Delete ويمكن استعادة المستخدم لاحقاً.
+
+### حذف الحساب من قبل المستخدم
+
+```http
+DELETE /auth/me
+Authorization: Bearer <user_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "reason": "لا أستخدم التطبيق بعد الآن"
+}
+```
+
+**Response:**
+```json
+{
+  "deleted": true,
+  "message": "تم حذف حسابك بنجاح"
+}
+```
+
+**ملاحظات:**
+- المستخدم يحذف حسابه بنفسه
+- يجب إدخال السبب (reason) كحقل إلزامي (5-500 حرف)
+- الحذف يكون Soft Delete (حالة DELETED + deletedAt + deletionReason)
+- يتم حذف capabilities أيضاً
+
+### الحسابات المحذوفة مع السبب
+
+```http
+GET /admin/users/deleted?page=1&limit=20&search=سبب
+Authorization: Bearer <admin_token>
+```
+
+**Query Parameters:**
+- `page`: رقم الصفحة (افتراضي: 1)
+- `limit`: عدد النتائج (افتراضي: 20)
+- `search`: نص البحث (الاسم، رقم الهاتف، أو سبب الحذف)
+- `sortBy`: حقل الترتيب (افتراضي: deletedAt)
+- `sortOrder`: اتجاه الترتيب (asc/desc، افتراضي: desc)
+
+**Response:**
+```json
+{
+  "deletedUsers": [
+    {
+      "id": "user_123",
+      "phone": "+966501234567",
+      "firstName": "أحمد",
+      "lastName": "محمد",
+      "deletionReason": "لا أستخدم التطبيق بعد الآن",
+      "deletedAt": "2024-01-15T10:30:00Z",
+      "deletedBy": "user_123",
+      "createdAt": "2023-10-01T10:00:00Z",
+      "status": "deleted"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 50,
+    "totalPages": 3,
+    "hasNextPage": true,
+    "hasPrevPage": false
+  }
+}
+```
+
+**ملاحظات:**
+- يعرض فقط الحسابات المحذوفة (Soft Delete)
+- يظهر `deletionReason` (سبب الحذف) لكل حساب محذوف
+- `deletedBy` يكون `null` إذا حذف المستخدم حسابه بنفسه
+- يمكن البحث في سبب الحذف أيضاً
+- الافتراضي الترتيب حسب تاريخ الحذف (الأحدث أولاً)
 
 ## الخدمات (Services)
 

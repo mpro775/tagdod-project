@@ -12,7 +12,11 @@ import {
   useTheme,
   Tooltip,
   IconButton,
+  Stack,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { getCardPadding, getCardSpacing } from '../utils/responsive';
 import {
   Speed as SpeedIcon,
   Memory as MemoryIcon,
@@ -48,22 +52,34 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
   onRefresh,
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation('analytics');
+  const breakpoint = useBreakpoint();
+  const cardPadding = getCardPadding(breakpoint);
+  const cardSpacing = getCardSpacing(breakpoint);
 
   if (error) {
-    return <Alert severity="error">حدث خطأ في تحميل مقاييس الأداء</Alert>;
+    return (
+      <Alert severity="error" sx={{ m: breakpoint.isXs ? 1 : 2 }}>
+        {t('performanceMetrics.loadError')}
+      </Alert>
+    );
   }
 
   if (isLoading) {
     return (
       <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            مقاييس الأداء
+        <CardContent sx={{ p: cardPadding }}>
+          <Typography 
+            variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+            gutterBottom
+            sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+          >
+            {t('performanceMetrics.title')}
           </Typography>
-          <Grid container spacing={2}>
+          <Grid container spacing={cardSpacing}>
             {[...Array(4)].map((_, index) => (
               <Grid size={{ xs: 12, sm: 6 }} key={index}>
-                <Skeleton variant="rectangular" height={100} />
+                <Skeleton variant="rectangular" height={breakpoint.isXs ? 90 : breakpoint.isSm ? 95 : 100} />
               </Grid>
             ))}
           </Grid>
@@ -104,53 +120,104 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
     },
   ];
 
+  const getPerformanceStatus = (value: number, thresholds: { good: number; warning: number }, isUptime?: boolean) => {
+    if (isUptime) {
+      if (value >= 99.9) return t('performanceMetrics.performanceStatus.excellent');
+      if (value >= 99.0) return t('performanceMetrics.performanceStatus.good');
+      return t('performanceMetrics.performanceStatus.needsImprovement');
+    }
+    if (value <= thresholds.good) return t('performanceMetrics.performanceStatus.excellent');
+    if (value <= thresholds.warning) return t('performanceMetrics.performanceStatus.good');
+    return t('performanceMetrics.performanceStatus.needsImprovement');
+  };
+
   return (
     <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" component="h2">
-            مقاييس الأداء
+      <CardContent sx={{ p: breakpoint.isXs ? 1.5 : 2 }}>
+        <Stack
+          direction={breakpoint.isXs ? 'column' : 'row'}
+          spacing={breakpoint.isXs ? 1.5 : 0}
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: breakpoint.isXs ? 'flex-start' : 'center',
+            mb: breakpoint.isXs ? 2 : 3,
+          }}
+        >
+          <Typography 
+            variant={breakpoint.isXs ? 'h6' : 'h5'} 
+            component="h2"
+            sx={{ fontSize: breakpoint.isXs ? '1.25rem' : undefined }}
+          >
+            {t('performanceMetrics.title')}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Chip icon={<SpeedIcon />} label="أداء النظام" color="primary" variant="outlined" />
+            <Chip 
+              icon={<SpeedIcon />} 
+              label={t('performanceMetrics.systemPerformance')} 
+              color="primary" 
+              variant="outlined"
+              size={breakpoint.isXs ? 'small' : 'medium'}
+              sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+            />
             {onRefresh && (
-              <Tooltip title="تحديث البيانات">
-                <IconButton size="small" onClick={onRefresh}>
-                  <RefreshIcon />
+              <Tooltip title={t('performanceMetrics.refresh')}>
+                <IconButton 
+                  size={breakpoint.isXs ? 'medium' : 'small'} 
+                  onClick={onRefresh}
+                >
+                  <RefreshIcon fontSize={breakpoint.isXs ? 'small' : 'medium'} />
                 </IconButton>
               </Tooltip>
             )}
           </Box>
-        </Box>
+        </Stack>
 
         {/* Key Performance Metrics */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={cardSpacing} sx={{ mb: breakpoint.isXs ? 2 : 4 }}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
-                p: 2,
+                p: breakpoint.isXs ? 1.5 : 2,
                 borderRadius: 2,
                 background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}05)`,
                 border: `1px solid ${theme.palette.primary.main}20`,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <SpeedIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                <Typography variant="h6" color="primary">
-                  وقت الاستجابة
+                <SpeedIcon 
+                  sx={{ 
+                    color: theme.palette.primary.main, 
+                    mr: 1,
+                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
+                  }} 
+                />
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
+                  color="primary"
+                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
+                >
+                  {t('performanceMetrics.responseTime')}
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography 
+                variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
+                }}
+              >
                 {formatTime(data?.averageApiResponseTime || 0)}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getPerformanceIcon(data?.averageApiResponseTime || 0, { good: 200, warning: 500 })}
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  {data?.averageApiResponseTime && data.averageApiResponseTime <= 200
-                    ? 'ممتاز'
-                    : data?.averageApiResponseTime && data.averageApiResponseTime <= 500
-                    ? 'جيد'
-                    : 'يحتاج تحسين'}
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    ml: 1,
+                    fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+                  }}
+                >
+                  {getPerformanceStatus(data?.averageApiResponseTime || 0, { good: 200, warning: 500 })}
                 </Typography>
               </Box>
             </Box>
@@ -159,29 +226,47 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
-                p: 2,
+                p: breakpoint.isXs ? 1.5 : 2,
                 borderRadius: 2,
                 background: `linear-gradient(135deg, ${theme.palette.secondary.main}15, ${theme.palette.secondary.main}05)`,
                 border: `1px solid ${theme.palette.secondary.main}20`,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <ErrorIcon sx={{ color: theme.palette.secondary.main, mr: 1 }} />
-                <Typography variant="h6" color="secondary">
-                  معدل الأخطاء
+                <ErrorIcon 
+                  sx={{ 
+                    color: theme.palette.secondary.main, 
+                    mr: 1,
+                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
+                  }} 
+                />
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
+                  color="secondary"
+                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
+                >
+                  {t('performanceMetrics.errorRate')}
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography 
+                variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
+                }}
+              >
                 {(data?.errorRate || 0).toFixed(2)}%
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getPerformanceIcon((data?.errorRate || 0) * 100, { good: 1, warning: 5 })}
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  {data?.errorRate && data.errorRate <= 0.01
-                    ? 'ممتاز'
-                    : data?.errorRate && data.errorRate <= 0.05
-                    ? 'جيد'
-                    : 'يحتاج تحسين'}
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    ml: 1,
+                    fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+                  }}
+                >
+                  {getPerformanceStatus((data?.errorRate || 0) * 100, { good: 1, warning: 5 })}
                 </Typography>
               </Box>
             </Box>
@@ -190,29 +275,47 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
-                p: 2,
+                p: breakpoint.isXs ? 1.5 : 2,
                 borderRadius: 2,
                 background: `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}05)`,
                 border: `1px solid ${theme.palette.success.main}20`,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <NetworkCheckIcon sx={{ color: theme.palette.success.main, mr: 1 }} />
-                <Typography variant="h6" color="success.main">
-                  وقت التشغيل
+                <NetworkCheckIcon 
+                  sx={{ 
+                    color: theme.palette.success.main, 
+                    mr: 1,
+                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
+                  }} 
+                />
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
+                  color="success.main"
+                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
+                >
+                  {t('performanceMetrics.uptime')}
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography 
+                variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
+                }}
+              >
                 {(data?.uptime || 0).toFixed(1)}%
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getPerformanceIcon(100 - (data?.uptime || 0), { good: 1, warning: 5 })}
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  {data?.uptime && data.uptime >= 99.9
-                    ? 'ممتاز'
-                    : data?.uptime && data.uptime >= 99.0
-                    ? 'جيد'
-                    : 'يحتاج تحسين'}
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    ml: 1,
+                    fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+                  }}
+                >
+                  {getPerformanceStatus(data?.uptime || 0, { good: 99.9, warning: 99.0 }, true)}
                 </Typography>
               </Box>
             </Box>
@@ -221,29 +324,47 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
-                p: 2,
+                p: breakpoint.isXs ? 1.5 : 2,
                 borderRadius: 2,
                 background: `linear-gradient(135deg, ${theme.palette.warning.main}15, ${theme.palette.warning.main}05)`,
                 border: `1px solid ${theme.palette.warning.main}20`,
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <MemoryIcon sx={{ color: theme.palette.warning.main, mr: 1 }} />
-                <Typography variant="h6" color="warning.main">
-                  استخدام الذاكرة
+                <MemoryIcon 
+                  sx={{ 
+                    color: theme.palette.warning.main, 
+                    mr: 1,
+                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
+                  }} 
+                />
+                <Typography 
+                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
+                  color="warning.main"
+                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
+                >
+                  {t('performanceMetrics.memoryUsage')}
                 </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              <Typography 
+                variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
+                }}
+              >
                 {(data?.memoryUsage || 0).toFixed(1)}%
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {getPerformanceIcon(data?.memoryUsage || 0, { good: 70, warning: 85 })}
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  {data?.memoryUsage && data.memoryUsage <= 70
-                    ? 'ممتاز'
-                    : data?.memoryUsage && data.memoryUsage <= 85
-                    ? 'جيد'
-                    : 'يحتاج تحسين'}
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    ml: 1,
+                    fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+                  }}
+                >
+                  {getPerformanceStatus(data?.memoryUsage || 0, { good: 70, warning: 85 })}
                 </Typography>
               </Box>
             </Box>
@@ -251,18 +372,41 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
         </Grid>
 
         {/* Performance Charts */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={breakpoint.isXs ? 2 : 3} sx={{ mb: breakpoint.isXs ? 2 : 4 }}>
           <Grid size={{ xs: 12, lg: 8 }}>
-            <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                أداء النظام على مدار 24 ساعة
+            <Box 
+              sx={{ 
+                p: breakpoint.isXs ? 1.5 : 2, 
+                border: `1px solid ${theme.palette.divider}`, 
+                borderRadius: 2 
+              }}
+            >
+              <Typography 
+                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+                gutterBottom
+                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+              >
+                {t('performanceMetrics.systemPerformance24h')}
               </Typography>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={breakpoint.isXs ? 250 : 300}>
                 <AreaChart data={performanceData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" />
-                  <YAxis />
-                  <RechartsTooltip />
+                  <XAxis 
+                    dataKey="time" 
+                    tick={{ fontSize: breakpoint.isXs ? 10 : 12 }}
+                    angle={breakpoint.isXs ? -45 : 0}
+                    textAnchor={breakpoint.isXs ? 'end' : 'middle'}
+                    height={breakpoint.isXs ? 60 : undefined}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: breakpoint.isXs ? 10 : 12 }}
+                    width={breakpoint.isXs ? 40 : undefined}
+                  />
+                  <RechartsTooltip 
+                    contentStyle={{
+                      fontSize: breakpoint.isXs ? '12px' : '14px',
+                    }}
+                  />
                   <Area
                     type="monotone"
                     dataKey="responseTime"
@@ -270,7 +414,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                     stroke={theme.palette.primary.main}
                     fill={theme.palette.primary.main}
                     fillOpacity={0.3}
-                    name="وقت الاستجابة (ms)"
+                    name={t('performanceMetrics.responseTimeMs')}
                   />
                   <Area
                     type="monotone"
@@ -279,7 +423,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                     stroke={theme.palette.secondary.main}
                     fill={theme.palette.secondary.main}
                     fillOpacity={0.3}
-                    name="استخدام الذاكرة (%)"
+                    name={t('performanceMetrics.memoryUsagePercent')}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -287,9 +431,19 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
           </Grid>
 
           <Grid size={{ xs: 12, lg: 4 }}>
-            <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                استخدام الموارد
+            <Box 
+              sx={{ 
+                p: breakpoint.isXs ? 1.5 : 2, 
+                border: `1px solid ${theme.palette.divider}`, 
+                borderRadius: 2 
+              }}
+            >
+              <Typography 
+                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+                gutterBottom
+                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+              >
+                {t('performanceMetrics.resourceUsage')}
               </Typography>
 
               <Box sx={{ mb: 2 }}>
@@ -302,17 +456,32 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <MemoryIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-                    <Typography variant="body2">الذاكرة</Typography>
+                    <MemoryIcon 
+                      sx={{ 
+                        mr: 1, 
+                        color: theme.palette.primary.main,
+                        fontSize: breakpoint.isXs ? '1.125rem' : undefined,
+                      }} 
+                    />
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                    >
+                      {t('performanceMetrics.memoryUsage')}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" color="primary">
+                  <Typography 
+                    variant="body2" 
+                    color="primary"
+                    sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                  >
                     {(data?.memoryUsage || 0).toFixed(1)}%
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
                   value={data?.memoryUsage || 0}
-                  sx={{ height: 8, borderRadius: 4 }}
+                  sx={{ height: breakpoint.isXs ? 6 : 8, borderRadius: 4 }}
                 />
               </Box>
 
@@ -326,10 +495,25 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <SpeedIcon sx={{ mr: 1, color: theme.palette.secondary.main }} />
-                    <Typography variant="body2">المعالج</Typography>
+                    <SpeedIcon 
+                      sx={{ 
+                        mr: 1, 
+                        color: theme.palette.secondary.main,
+                        fontSize: breakpoint.isXs ? '1.125rem' : undefined,
+                      }} 
+                    />
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                    >
+                      {t('performanceMetrics.cpuUsage')}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" color="secondary">
+                  <Typography 
+                    variant="body2" 
+                    color="secondary"
+                    sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                  >
                     {(data?.cpuUsage || 0).toFixed(1)}%
                   </Typography>
                 </Box>
@@ -337,7 +521,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   variant="determinate"
                   value={data?.cpuUsage || 0}
                   color="secondary"
-                  sx={{ height: 8, borderRadius: 4 }}
+                  sx={{ height: breakpoint.isXs ? 6 : 8, borderRadius: 4 }}
                 />
               </Box>
 
@@ -351,10 +535,25 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <StorageIcon sx={{ mr: 1, color: theme.palette.success.main }} />
-                    <Typography variant="body2">التخزين</Typography>
+                    <StorageIcon 
+                      sx={{ 
+                        mr: 1, 
+                        color: theme.palette.success.main,
+                        fontSize: breakpoint.isXs ? '1.125rem' : undefined,
+                      }} 
+                    />
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                    >
+                      {t('performanceMetrics.diskUsage')}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" color="success.main">
+                  <Typography 
+                    variant="body2" 
+                    color="success.main"
+                    sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                  >
                     {(data?.diskUsage || 0).toFixed(1)}%
                   </Typography>
                 </Box>
@@ -362,7 +561,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   variant="determinate"
                   value={data?.diskUsage || 0}
                   color="success"
-                  sx={{ height: 8, borderRadius: 4 }}
+                  sx={{ height: breakpoint.isXs ? 6 : 8, borderRadius: 4 }}
                 />
               </Box>
             </Box>
@@ -371,48 +570,91 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
 
         {/* Database Stats */}
         {data?.databaseStats && (
-          <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              إحصائيات قاعدة البيانات
+          <Box 
+            sx={{ 
+              p: breakpoint.isXs ? 1.5 : 2, 
+              border: `1px solid ${theme.palette.divider}`, 
+              borderRadius: 2,
+              mt: breakpoint.isXs ? 2 : 0,
+            }}
+          >
+            <Typography 
+              variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+              gutterBottom
+              sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+            >
+              {t('performanceMetrics.databaseStats')}
             </Typography>
-            <Grid container spacing={2}>
+            <Grid container spacing={breakpoint.isXs ? 1.5 : 2}>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="primary">
+                  <Typography 
+                    variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                    color="primary"
+                    sx={{ fontSize: breakpoint.isXs ? '1.5rem' : undefined }}
+                  >
                     {data.databaseStats.totalCollections}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    المجموعات
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+                  >
+                    {t('performanceMetrics.collections')}
                   </Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="secondary">
+                  <Typography 
+                    variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                    color="secondary"
+                    sx={{ fontSize: breakpoint.isXs ? '1.5rem' : undefined }}
+                  >
                     {formatBytes(data.databaseStats.totalDocuments)}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    المستندات
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+                  >
+                    {t('performanceMetrics.documents')}
                   </Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="success.main">
+                  <Typography 
+                    variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                    color="success.main"
+                    sx={{ fontSize: breakpoint.isXs ? '1.5rem' : undefined }}
+                  >
                     {formatBytes(data.databaseStats.databaseSize)}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    حجم قاعدة البيانات
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+                  >
+                    {t('performanceMetrics.databaseSize')}
                   </Typography>
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="warning.main">
+                  <Typography 
+                    variant={breakpoint.isXs ? 'h5' : 'h4'} 
+                    color="warning.main"
+                    sx={{ fontSize: breakpoint.isXs ? '1.5rem' : undefined }}
+                  >
                     {formatBytes(data.databaseStats.indexSize)}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    حجم الفهارس
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+                  >
+                    {t('performanceMetrics.indexSize')}
                   </Typography>
                 </Box>
               </Grid>
@@ -422,11 +664,15 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
 
         {/* Slowest Endpoints */}
         {data?.slowestEndpoints && data.slowestEndpoints.length > 0 && (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              أبطأ نقاط النهاية
+          <Box sx={{ mt: breakpoint.isXs ? 2 : 3 }}>
+            <Typography 
+              variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+              gutterBottom
+              sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+            >
+              {t('performanceMetrics.slowestEndpoints')}
             </Typography>
-            <Box sx={{ maxHeight: 200, overflowY: 'auto' }}>
+            <Box sx={{ maxHeight: breakpoint.isXs ? 180 : 200, overflowY: 'auto' }}>
               {data.slowestEndpoints.map((endpoint, index) => (
                 <Box key={index} sx={{ mb: 2 }}>
                   <Box
@@ -437,10 +683,20 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                       mb: 1,
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        fontSize: breakpoint.isXs ? '0.8125rem' : undefined,
+                      }}
+                    >
                       {endpoint.method} {endpoint.endpoint}
                     </Typography>
-                    <Typography variant="body2" color="primary">
+                    <Typography 
+                      variant="body2" 
+                      color="primary"
+                      sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                    >
                       {formatTime(endpoint.averageTime)}
                     </Typography>
                   </Box>
@@ -452,17 +708,25 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                       mb: 0.5,
                     }}
                   >
-                    <Typography variant="caption" color="text.secondary">
-                      المكالمات: {endpoint.callCount}
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary"
+                      sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
+                    >
+                      {t('performanceMetrics.calls')}: {endpoint.callCount}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      أقصى وقت: {formatTime(endpoint.maxTime)}
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary"
+                      sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
+                    >
+                      {t('performanceMetrics.maxTime')}: {formatTime(endpoint.maxTime)}
                     </Typography>
                   </Box>
                   <LinearProgress
                     variant="determinate"
                     value={(endpoint.averageTime / 1000) * 100}
-                    sx={{ height: 4, borderRadius: 2 }}
+                    sx={{ height: breakpoint.isXs ? 3 : 4, borderRadius: 2 }}
                   />
                 </Box>
               ))}

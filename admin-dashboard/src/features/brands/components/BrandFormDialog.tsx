@@ -16,6 +16,7 @@ import {
   Alert,
   Tabs,
   Tab,
+  useTheme,
 } from '@mui/material';
 import { Save, Cancel } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -30,17 +31,17 @@ import { MediaCategory } from '@/features/media/types/media.types';
 const createBrandSchema = (t: (key: string, opts?: any) => string) => z.object({
   name: z
     .string()
-    .min(2, t('validation.nameMinLength', { defaultValue: 'يجب أن يكون الاسم بالعربية 2 أحرف على الأقل' }))
-    .max(100, t('validation.nameMaxLength', { defaultValue: 'يجب ألا يتجاوز الاسم 100 حرف' })),
+    .min(2, t('validation.nameMinLength'))
+    .max(100, t('validation.nameMaxLength')),
   nameEn: z
     .string()
-    .min(2, t('validation.nameEnRequired', { defaultValue: 'يجب إدخال الاسم بالإنجليزية (2 أحرف على الأقل)' }))
-    .max(100, t('validation.nameMaxLength', { defaultValue: 'يجب ألا يتجاوز الاسم 100 حرف' })),
-  image: z.string().min(1, t('validation.imageRequired', { defaultValue: 'الصورة مطلوبة' })),
-  description: z.string().max(500, t('validation.descriptionMaxLength', { defaultValue: 'الوصف لا يجب أن يتجاوز 500 حرف' })).optional(),
-  descriptionEn: z.string().max(500, t('validation.descriptionMaxLength', { defaultValue: 'الوصف لا يجب أن يتجاوز 500 حرف' })).optional(),
+    .min(2, t('validation.nameEnRequired'))
+    .max(100, t('validation.nameMaxLength')),
+  image: z.string().min(1, t('validation.imageRequired')),
+  description: z.string().max(500, t('validation.descriptionMaxLength')).optional(),
+  descriptionEn: z.string().max(500, t('validation.descriptionMaxLength')).optional(),
   isActive: z.boolean().optional(),
-  sortOrder: z.number().min(0, t('validation.sortOrderMin', { defaultValue: 'ترتيب العرض يجب أن يكون رقمًا موجبًا' })).optional(),
+  sortOrder: z.number().min(0, t('validation.sortOrderMin')).optional(),
 });
 
 type BrandFormData = z.infer<ReturnType<typeof createBrandSchema>>;
@@ -54,6 +55,7 @@ interface BrandFormDialogProps {
 
 export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose, brand, mode }) => {
   const { t } = useTranslation('brands');
+  const theme = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [selectedImage, setSelectedImage] = useState<any>(null);
 
@@ -138,25 +140,26 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: { minHeight: '70vh' },
-      }}
-    >
-      <DialogTitle>
-        <Typography variant="h6" fontWeight="bold">
-          {mode === 'create' ? t('dialogs.createTitle', { defaultValue: 'إضافة علامة تجارية' }) : t('dialogs.editTitle', { defaultValue: 'تعديل علامة تجارية' })}
-        </Typography>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { 
+            minHeight: '70vh',
+            bgcolor: 'background.paper',
+          },
+        }}
+      >
+      <DialogTitle sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+        {mode === 'create' ? t('dialogs.createTitle') : t('dialogs.editTitle')}
       </DialogTitle>
 
       <DialogContent dividers>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error.message || t('messages.unknownError', { defaultValue: 'حدث خطأ غير معروف' })}
+            {error.message || t('messages.unknownError')}
           </Alert>
         )}
 
@@ -168,8 +171,8 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
               sx={{ mb: 3 }}
               variant="fullWidth"
             >
-              <Tab label={t('form.tabs.arabic', { defaultValue: 'العربية' })} />
-              <Tab label={t('form.tabs.english', { defaultValue: 'الإنجليزية' })} />
+              <Tab label={t('form.tabs.arabic')} />
+              <Tab label={t('form.tabs.english')} />
             </Tabs>
 
             <Grid container spacing={3}>
@@ -179,7 +182,7 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
                   <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
-                      label={t('form.brandNameAr', { defaultValue: 'اسم العلامة (عربي)' })}
+                      label={t('form.brandNameAr')}
                       {...methods.register('name')}
                       error={!!methods.formState.errors.name}
                       helperText={methods.formState.errors.name?.message}
@@ -189,7 +192,7 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
                   <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
-                      label={t('form.brandDescriptionAr', { defaultValue: 'وصف العلامة (عربي)' })}
+                      label={t('form.brandDescriptionAr')}
                       multiline
                       rows={3}
                       {...methods.register('description')}
@@ -207,7 +210,7 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
                   <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
-                      label={t('form.brandNameEn', { defaultValue: 'اسم العلامة (إنجليزي)' })}
+                      label={t('form.brandNameEn')}
                       {...methods.register('nameEn')}
                       error={!!methods.formState.errors.nameEn}
                       helperText={methods.formState.errors.nameEn?.message}
@@ -217,7 +220,7 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
                   <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
-                      label={t('form.brandDescriptionEn', { defaultValue: 'وصف العلامة (إنجليزي)' })}
+                      label={t('form.brandDescriptionEn')}
                       multiline
                       rows={3}
                       {...methods.register('descriptionEn')}
@@ -231,35 +234,83 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
 
               {/* صورة العلامة التجارية */}
               <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  {t('form.brandImage', { defaultValue: 'صورة العلامة التجارية' })}
-                </Typography>
-                <ImageField
-                  label={t('form.brandLogo', { defaultValue: 'شعار العلامة' })}
-                  value={selectedImage}
-                  onChange={(media) => {
-                    setSelectedImage(media);
-                    methods.setValue('image', media?.url || '');
-                  }}
-                  category={MediaCategory.BRAND}
-                  helperText={t('form.imageHelper', { defaultValue: 'اختر صورة مناسبة للشعار' })}
-                  disabled={isLoading}
+                <Divider 
+                  sx={{ 
+                    my: 2,
+                    borderColor: 'divider',
+                  }} 
                 />
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{
+                    color: 'text.primary',
+                    fontWeight: 'bold',
+                    mb: 2,
+                  }}
+                >
+                  {t('form.brandImage')}
+                </Typography>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: theme.palette.mode === 'dark' 
+                      ? 'rgba(255, 255, 255, 0.05)' 
+                      : 'grey.50',
+                    border: 1,
+                    borderColor: 'divider',
+                  }}
+                >
+                  <ImageField
+                    label={t('form.brandLogo')}
+                    value={selectedImage}
+                    onChange={(media) => {
+                      setSelectedImage(media);
+                      methods.setValue('image', media?.url || '');
+                    }}
+                    category={MediaCategory.BRAND}
+                    helperText={t('form.imageHelper')}
+                    disabled={isLoading}
+                    error={!!methods.formState.errors.image}
+                  />
+                  {methods.formState.errors.image && (
+                    <Typography 
+                      variant="caption" 
+                      color="error" 
+                      sx={{ mt: 1, display: 'block' }}
+                    >
+                      {methods.formState.errors.image.message}
+                    </Typography>
+                  )}
+                </Box>
               </Grid>
 
               {/* إعدادات إضافية */}
               <Grid size={{ xs: 12 }}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  {t('form.settings', { defaultValue: 'إعدادات' })}
+                <Divider 
+                  sx={{ 
+                    my: 2,
+                    borderColor: 'divider',
+                  }} 
+                />
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{
+                    color: 'text.primary',
+                    fontWeight: 'bold',
+                    mb: 2,
+                  }}
+                >
+                  {t('form.settings')}
                 </Typography>
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   fullWidth
-                  label={t('form.sortOrder', { defaultValue: 'ترتيب العرض' })}
+                    label={t('form.sortOrder')}
                   type="number"
                   {...methods.register('sortOrder', { valueAsNumber: true })}
                   error={!!methods.formState.errors.sortOrder}
@@ -272,7 +323,7 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', height: '100%' }}>
                   <FormControlLabel
                     control={<Switch {...methods.register('isActive')} disabled={isLoading} />}
-                    label={t('form.isActive', { defaultValue: 'نشط' })}
+                    label={t('form.isActive')}
                   />
                 </Box>
               </Grid>
@@ -288,7 +339,7 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
           onClick={handleClose}
           disabled={isLoading}
         >
-          {t('form.cancel', { defaultValue: 'إلغاء' })}
+          {t('form.cancel')}
         </Button>
         <Button
           variant="contained"
@@ -296,7 +347,7 @@ export const BrandFormDialog: React.FC<BrandFormDialogProps> = ({ open, onClose,
           onClick={methods.handleSubmit(onSubmit)}
           disabled={isLoading}
         >
-          {mode === 'create' ? t('form.create', { defaultValue: 'حفظ' }) : t('form.update', { defaultValue: 'تحديث' })}
+          {mode === 'create' ? t('form.create') : t('form.update')}
         </Button>
       </DialogActions>
     </Dialog>

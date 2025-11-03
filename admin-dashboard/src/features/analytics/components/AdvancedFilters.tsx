@@ -19,6 +19,7 @@ import {
   Slider,
   Switch,
   FormControlLabel,
+  Stack,
 } from '@mui/material';
 import {
   FilterList,
@@ -29,6 +30,8 @@ import {
   Save,
   BookmarkBorder,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 
 export interface FilterOption {
   key: string;
@@ -69,7 +72,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   onChange,
   onApply,
   onReset,
-  title = 'الفلاتر المتقدمة',
+  title,
   collapsible = true,
   defaultExpanded = true,
   showSaveFilters = true,
@@ -77,9 +80,13 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   onSaveFilter,
   onLoadFilter,
 }) => {
+  const { t } = useTranslation('analytics');
+  const { isMobile } = useBreakpoint();
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [newFilterName, setNewFilterName] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  
+  const filterTitle = title || t('filters.title');
 
   const handleFilterChange = (key: string, value: any) => {
     const newValues = { ...values, [key]: value };
@@ -152,7 +159,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               onChange={(e) => handleFilterChange(filter.key, e.target.value)}
             >
               <MenuItem value="">
-                <em>الكل</em>
+                <em>{t('filters.all')}</em>
               </MenuItem>
               {filter.options?.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -180,7 +187,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               );
             }}
             renderInput={(params) => (
-              <TextField {...params} label={filter.label} placeholder="اختر متعدد" />
+              <TextField {...params} label={filter.label} placeholder={t('filters.selectMultiple')} />
             )}
             renderTags={(value, getTagProps) =>
               value.map((option, index) => (
@@ -210,11 +217,11 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
       case 'daterange':
         return (
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
             <TextField
               size="small"
               type="date"
-              label="من"
+              label={t('filters.from')}
               value={(currentValue as { start: string; end: string })?.start || ''}
               onChange={(e) =>
                 handleFilterChange(filter.key, {
@@ -228,7 +235,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <TextField
               size="small"
               type="date"
-              label="إلى"
+              label={t('filters.to')}
               value={(currentValue as { start: string; end: string })?.end || ''}
               onChange={(e) =>
                 handleFilterChange(filter.key, {
@@ -239,7 +246,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               InputLabelProps={{ shrink: true }}
               sx={{ flex: 1 }}
             />
-          </Box>
+          </Stack>
         );
 
       case 'number':
@@ -296,29 +303,63 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
   return (
     <Card>
-      <CardContent>
+      <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FilterList />
-            <Typography variant="h6">{title}</Typography>
+        <Stack
+          direction={isMobile ? 'column' : 'row'}
+          spacing={isMobile ? 2 : 0}
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            mb: 2,
+          }}
+        >
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+            <FilterList fontSize={isMobile ? 'small' : 'medium'} />
+            <Typography 
+              variant="h6"
+              sx={{ fontSize: isMobile ? '1.1rem' : undefined }}
+            >
+              {filterTitle}
+            </Typography>
             {activeFilters.length > 0 && (
-              <Chip label={`${activeFilters.length} فلتر نشط`} size="small" color="primary" />
+              <Chip 
+                label={t('filters.activeFiltersCount', { count: activeFilters.length })} 
+                size="small" 
+                color="primary"
+                sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
+              />
             )}
-          </Box>
+          </Stack>
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Stack 
+            direction={isMobile ? 'column' : 'row'} 
+            spacing={1}
+            sx={{ 
+              width: isMobile ? '100%' : 'auto',
+              alignItems: isMobile ? 'stretch' : 'center',
+            }}
+          >
             {showSaveFilters && (
               <>
-                <Button size="small" startIcon={<Save />}>
-                  حفظ الفلاتر
+                <Button 
+                  size={isMobile ? 'medium' : 'small'} 
+                  startIcon={<Save />}
+                  fullWidth={isMobile}
+                  variant="outlined"
+                >
+                  {t('filters.saveFilters')}
                 </Button>
                 {savedFilters.length > 0 && (
-                  <FormControl size="small" sx={{ minWidth: 150 }}>
-                    <InputLabel>الفلاتر المحفوظة</InputLabel>
+                  <FormControl 
+                    size={isMobile ? 'medium' : 'small'} 
+                    sx={{ minWidth: isMobile ? '100%' : 150 }}
+                    fullWidth={isMobile}
+                  >
+                    <InputLabel>{t('filters.savedFilters')}</InputLabel>
                     <Select
                       value=""
-                      label="الفلاتر المحفوظة"
+                      label={t('filters.savedFilters')}
                       onChange={(e) => {
                         const filter = savedFilters.find((f) => f.id === e.target.value);
                         if (filter && onLoadFilter) {
@@ -339,20 +380,28 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             )}
 
             {collapsible && (
-              <IconButton onClick={() => setExpanded(!expanded)}>
+              <IconButton 
+                onClick={() => setExpanded(!expanded)}
+                size={isMobile ? 'medium' : 'small'}
+                sx={{ alignSelf: isMobile ? 'flex-end' : 'auto' }}
+              >
                 {expanded ? <ExpandLess /> : <ExpandMore />}
               </IconButton>
             )}
-          </Box>
-        </Box>
+          </Stack>
+        </Stack>
 
         {/* Active Filters */}
         {activeFilters.length > 0 && (
           <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" gutterBottom>
-              الفلاتر النشطة:
+            <Typography 
+              variant="body2" 
+              gutterBottom
+              sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
+            >
+              {t('filters.activeFiltersLabel')}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
               {activeFilters.map((filterKey) => {
                 const filter = filters.find((f) => f.key === filterKey);
                 const value = values[filterKey];
@@ -365,85 +414,136 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                         ? value.join(', ')
                         : filter?.type === 'boolean'
                         ? value
-                          ? 'نعم'
-                          : 'لا'
+                          ? t('filters.yes')
+                          : t('filters.no')
                         : value
                     }`}
                     size="small"
                     onDelete={() => handleFilterChange(filterKey, '')}
                     color="primary"
                     variant="outlined"
+                    sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
                   />
                 );
               })}
               <Chip
-                label="مسح الكل"
+                label={t('filters.clearAll')}
                 size="small"
                 onClick={handleResetFilters}
                 color="error"
                 variant="outlined"
+                sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
               />
-            </Box>
+            </Stack>
           </Box>
         )}
 
         {/* Filters Content */}
         <Collapse in={expanded}>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: isMobile ? 2 : 3 }}>
             {filters.map((filter) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={filter.key}>
+              <Grid 
+                size={{ 
+                  xs: 12, 
+                  sm: isMobile ? 12 : 6, 
+                  md: 4, 
+                  lg: 3 
+                }} 
+                key={filter.key}
+              >
                 {renderFilter(filter)}
               </Grid>
             ))}
           </Grid>
 
-          <Divider sx={{ my: 2 }} />
+          <Divider sx={{ my: isMobile ? 1.5 : 2 }} />
 
           {/* Actions */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Button variant="outlined" startIcon={<Refresh />} onClick={handleResetFilters}>
-              إعادة تعيين
+          <Stack
+            direction={isMobile ? 'column' : 'row'}
+            spacing={isMobile ? 1.5 : 1}
+            sx={{ 
+              justifyContent: 'space-between', 
+              alignItems: isMobile ? 'stretch' : 'center',
+            }}
+          >
+            <Button 
+              variant="outlined" 
+              startIcon={<Refresh />} 
+              onClick={handleResetFilters}
+              size={isMobile ? 'medium' : 'small'}
+              fullWidth={isMobile}
+            >
+              {t('filters.reset')}
             </Button>
 
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button variant="outlined" onClick={() => onApply?.()}>
-                تطبيق الفلاتر
+            <Stack 
+              direction={isMobile ? 'column' : 'row'} 
+              spacing={1}
+              sx={{ width: isMobile ? '100%' : 'auto' }}
+            >
+              <Button 
+                variant="outlined" 
+                onClick={() => onApply?.()}
+                size={isMobile ? 'medium' : 'small'}
+                fullWidth={isMobile}
+              >
+                {t('filters.apply')}
               </Button>
               <Button
                 variant="contained"
                 onClick={handleApplyFilters}
                 disabled={activeFilters.length === 0}
+                size={isMobile ? 'medium' : 'small'}
+                fullWidth={isMobile}
               >
-                بحث
+                {t('filters.search')}
               </Button>
-            </Box>
-          </Box>
+            </Stack>
+          </Stack>
         </Collapse>
 
         {/* Save Filter Dialog */}
         {showSaveFilters && (
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-            <Typography variant="body2" gutterBottom>
-              حفظ الفلاتر الحالية للاستخدام المستقبلي:
+          <Box 
+            sx={{ 
+              mt: isMobile ? 1.5 : 2, 
+              p: isMobile ? 1.5 : 2, 
+              bgcolor: 'background.paper', 
+              borderRadius: 1 
+            }}
+          >
+            <Typography 
+              variant="body2" 
+              gutterBottom
+              sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
+            >
+              {t('filters.saveFilterTitle')}
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Stack 
+              direction={isMobile ? 'column' : 'row'} 
+              spacing={1}
+              sx={{ width: '100%' }}
+            >
               <TextField
-                size="small"
-                placeholder="اسم الفلتر"
+                size={isMobile ? 'medium' : 'small'}
+                placeholder={t('filters.filterName')}
                 value={newFilterName}
                 onChange={(e) => setNewFilterName(e.target.value)}
                 sx={{ flex: 1 }}
+                fullWidth={isMobile}
               />
               <Button
-                size="small"
+                size={isMobile ? 'medium' : 'small'}
                 variant="outlined"
                 startIcon={<BookmarkBorder />}
                 onClick={handleSaveFilter}
                 disabled={!newFilterName}
+                fullWidth={isMobile}
               >
-                حفظ
+                {t('filters.save')}
               </Button>
-            </Box>
+            </Stack>
           </Box>
         )}
       </CardContent>

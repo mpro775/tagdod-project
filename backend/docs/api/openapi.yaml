@@ -255,10 +255,33 @@ paths:
         - bearer: []
     delete:
       operationId: deleteMe
+      summary: حذف الحساب
+      description: حذف حساب المستخدم (Soft Delete) مع إدخال السبب
       parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountDto'
       responses:
         '200':
-          description: ''
+          description: تم حذف الحساب بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: تم حذف حسابك بنجاح
+        '400':
+          description: بيانات غير صحيحة أو السبب مفقود
+        '401':
+          description: غير مصرح لك
       tags:
         - المصادقة
       security:
@@ -1761,6 +1784,8 @@ paths:
           description: Product not found
       tags:
         - المنتجات
+      security:
+        - bearer: []
   /api/v1/products/slug/{slug}:
     get:
       operationId: getProductBySlug
@@ -1784,6 +1809,8 @@ paths:
           description: ''
       tags:
         - المنتجات
+      security:
+        - bearer: []
   /api/v1/products/featured/list:
     get:
       operationId: getFeatured
@@ -1824,6 +1851,8 @@ paths:
           description: Variants retrieved successfully
       tags:
         - المنتجات
+      security:
+        - bearer: []
   /api/v1/products/variants/{id}/price:
     get:
       operationId: getVariantPrice
@@ -1844,6 +1873,8 @@ paths:
           description: Price retrieved successfully
       tags:
         - المنتجات
+      security:
+        - bearer: []
   /api/v1/products/variants/{id}/availability:
     get:
       operationId: checkVariantAvailability
@@ -4830,6 +4861,42 @@ paths:
         - تحليلات-المستخدمين
       security:
         - bearer: []
+  /api/v1/users/verification/submit:
+    post:
+      operationId: submitVerification
+      summary: رفع وثائق التحقق
+      description: رفع ملف السيرة الذاتية للمهندس أو صورة المحل للتاجر مع ملاحظة اختيارية
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: الملف المطلوب رفعه (CV للمهندس، صورة المحل للتاجر)
+                storeName:
+                  type: string
+                  description: اسم المحل (مطلوب للتاجر فقط)
+                  example: محل الأجهزة الكهربائية
+                note:
+                  type: string
+                  description: ملاحظة اختيارية
+                  example: ملاحظة إضافية حول طلب التحقق
+      responses:
+        '201':
+          description: تم رفع الوثائق بنجاح وتم تحديث الحالة إلى قيد المراجعة
+        '400':
+          description: بيانات غير صحيحة أو نوع الملف غير مدعوم
+        '403':
+          description: المستخدم ليس مهندساً أو تاجراً أو تم التحقق مسبقاً
+      tags:
+        - تحقق-المستخدمين
+      security:
+        - bearer: []
   /api/v1/orders/checkout/preview:
     post:
       operationId: previewCheckout
@@ -5322,6 +5389,33 @@ paths:
       responses:
         '200':
           description: تم إضافة الملاحظات بنجاح
+      tags:
+        - إدارة-الطلبات
+      security:
+        - bearer: []
+  /api/v1/admin/orders/{id}/verify-payment:
+    post:
+      operationId: verifyPayment
+      summary: مطابقة الدفع المحلي
+      description: مطابقة الدفع للطلبات المحلية (إدخال المبلغ والعملة)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الطلب
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPaymentDto'
+      responses:
+        '200':
+          description: تم مطابقة الدفع بنجاح
+        '400':
+          description: فشل في مطابقة الدفع
       tags:
         - إدارة-الطلبات
       security:
@@ -7583,7 +7677,9 @@ paths:
     post:
       operationId: createBanner
       summary: إنشاء بانر
-      description: إنشاء بانر إعلاني جديد
+      description: >-
+        إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin).
+        إذا تركت فارغاً، سيظهر البانر للجميع.
       parameters: []
       requestBody:
         required: true
@@ -7898,7 +7994,9 @@ paths:
     get:
       operationId: getActiveBanners
       summary: الحصول على البانرات النشطة
-      description: استرداد قائمة البانرات الإعلانية النشطة حسب الموقع
+      description: >-
+        استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. إذا كان المستخدم مسجل دخول، سيتم عرض البانرات
+        المتوافقة مع أدواره. للمستخدمين غير المسجلين، سيتم عرض البانرات العامة فقط.
       parameters:
         - name: location
           required: false
@@ -8782,6 +8880,342 @@ paths:
                         example: 10
       tags:
         - إدارة-العناوين
+      security:
+        - bearer: []
+  /api/v1/system-settings/public:
+    get:
+      operationId: getPublicSettings
+      summary: الحصول على الإعدادات العامة (عام)
+      description: إعدادات النظام المتاحة للعموم
+      parameters:
+        - name: category
+          required: false
+          in: query
+          schema:
+            enum:
+              - general
+              - email
+              - payment
+              - shipping
+              - security
+              - notifications
+              - seo
+              - advanced
+            type: string
+      responses:
+        '200':
+          description: تم استرداد الإعدادات العامة بنجاح
+      tags:
+        - إعدادات النظام
+  /api/v1/system-settings:
+    post:
+      operationId: createSetting
+      summary: إنشاء إعداد جديد
+      description: إضافة إعداد جديد للنظام
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSettingDto'
+      responses:
+        '201':
+          description: تم إنشاء الإعداد بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingDto'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+    get:
+      operationId: getAllSettings
+      summary: الحصول على جميع الإعدادات
+      description: استرداد جميع إعدادات النظام
+      parameters:
+        - name: category
+          required: false
+          in: query
+          schema:
+            enum:
+              - general
+              - email
+              - payment
+              - shipping
+              - security
+              - notifications
+              - seo
+              - advanced
+            type: string
+      responses:
+        '200':
+          description: تم استرداد الإعدادات بنجاح
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SettingDto'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+  /api/v1/system-settings/category/{category}:
+    get:
+      operationId: getSettingsByCategory
+      summary: الحصول على إعدادات فئة معينة
+      description: استرداد الإعدادات حسب الفئة كـ key-value pairs
+      parameters:
+        - name: category
+          required: true
+          in: path
+          schema:
+            enum:
+              - general
+              - email
+              - payment
+              - shipping
+              - security
+              - notifications
+              - seo
+              - advanced
+            type: string
+      responses:
+        '200':
+          description: تم استرداد إعدادات الفئة بنجاح
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+  /api/v1/system-settings/bulk:
+    put:
+      operationId: bulkUpdate
+      summary: تحديث عدة إعدادات
+      description: تحديث إعدادات متعددة دفعة واحدة
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkUpdateSettingsDto'
+      responses:
+        '200':
+          description: تم تحديث الإعدادات بنجاح
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+  /api/v1/system-settings/{key}:
+    get:
+      operationId: getSetting
+      summary: الحصول على إعداد بالمفتاح
+      description: استرداد إعداد معين
+      parameters:
+        - name: key
+          required: true
+          in: path
+          description: مفتاح الإعداد
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم استرداد الإعداد بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingDto'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+    put:
+      operationId: updateSetting
+      summary: تحديث إعداد
+      description: تعديل قيمة إعداد موجود
+      parameters:
+        - name: key
+          required: true
+          in: path
+          description: مفتاح الإعداد
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingDto'
+      responses:
+        '200':
+          description: تم تحديث الإعداد بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingDto'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+    delete:
+      operationId: deleteSetting
+      summary: حذف إعداد
+      description: حذف إعداد من النظام
+      parameters:
+        - name: key
+          required: true
+          in: path
+          description: مفتاح الإعداد
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم حذف الإعداد بنجاح
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+  /api/v1/system-settings/payment-accounts:
+    get:
+      operationId: getAllPaymentAccounts
+      summary: جميع حسابات الدفع المحلية
+      description: الحصول على جميع الحسابات المحلية (مفصلة)
+      parameters:
+        - name: activeOnly
+          required: false
+          in: query
+          description: عرض الحسابات المفعلة فقط
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم الحصول على الحسابات بنجاح
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocalPaymentAccount'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+    post:
+      operationId: createPaymentAccount
+      summary: إنشاء حساب دفع محلي
+      description: إضافة حساب دفع محلي جديد
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLocalPaymentAccountDto'
+      responses:
+        '201':
+          description: تم إنشاء الحساب بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalPaymentAccount'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+  /api/v1/system-settings/payment-accounts/grouped:
+    get:
+      operationId: getGroupedPaymentAccounts
+      summary: حسابات الدفع المحلية مجمعة
+      description: الحصول على الحسابات المحلية مجمعة حسب اسم البنك
+      parameters:
+        - name: activeOnly
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم الحصول على الحسابات المجمعة بنجاح
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupedPaymentAccountDto'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+  /api/v1/system-settings/payment-accounts/public:
+    get:
+      operationId: getPublicPaymentAccounts
+      summary: حسابات الدفع المتاحة (عام)
+      description: عرض حسابات الدفع المحلية للعملاء - مجمعة حسب البنك
+      parameters:
+        - name: currency
+          required: false
+          in: query
+          description: فلترة حسب العملة
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم الحصول على الحسابات العامة بنجاح
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupedPaymentAccountDto'
+      tags:
+        - إعدادات النظام
+  /api/v1/system-settings/payment-accounts/{id}:
+    put:
+      operationId: updatePaymentAccount
+      summary: تحديث حساب دفع محلي
+      description: تعديل حساب دفع محلي موجود
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الحساب
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLocalPaymentAccountDto'
+      responses:
+        '200':
+          description: تم تحديث الحساب بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalPaymentAccount'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+    delete:
+      operationId: deletePaymentAccount
+      summary: حذف حساب دفع محلي
+      description: حذف حساب دفع محلي من النظام
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الحساب
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم حذف الحساب بنجاح
+      tags:
+        - إعدادات النظام
       security:
         - bearer: []
   /api/v1/support/tickets:
@@ -9979,6 +10413,80 @@ paths:
         - إدارة-المستخدمين
       security:
         - bearer: []
+  /api/v1/admin/users/deleted:
+    get:
+      operationId: getDeletedUsers
+      summary: الحسابات المحذوفة
+      description: استرداد قائمة بجميع الحسابات المحذوفة مع سبب الحذف
+      parameters: []
+      responses:
+        '200':
+          description: تم استرداد الحسابات المحذوفة بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deletedUsers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: user123
+                          description: معرف المستخدم
+                        phone:
+                          type: string
+                          example: '+967771234567'
+                          description: رقم الهاتف
+                        firstName:
+                          type: string
+                          example: أحمد
+                          description: الاسم الأول
+                        lastName:
+                          type: string
+                          example: محمد
+                          description: الاسم الأخير
+                        deletionReason:
+                          type: string
+                          example: لا أستخدم التطبيق بعد الآن
+                          description: سبب الحذف
+                        deletedAt:
+                          type: string
+                          format: date-time
+                          example: '2024-01-15T10:30:00Z'
+                          description: تاريخ الحذف
+                        deletedBy:
+                          type: string
+                          example: user456
+                          description: معرف من قام بالحذف (null إذا حذف المستخدم حسابه بنفسه)
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: '2023-01-01T10:00:00Z'
+                          description: تاريخ الإنشاء
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: number
+                        example: 1
+                      limit:
+                        type: number
+                        example: 20
+                      total:
+                        type: number
+                        example: 50
+                      totalPages:
+                        type: number
+                        example: 3
+        '403':
+          description: غير مصرح لك بالوصول إلى الحسابات المحذوفة
+      tags:
+        - إدارة-المستخدمين
+      security:
+        - bearer: []
   /api/v1/admin/users/{id}:
     get:
       operationId: getUser
@@ -10144,6 +10652,1068 @@ paths:
           description: ''
       tags:
         - إدارة-المستخدمين
+      security:
+        - bearer: []
+  /api/v1/admin/users/verification/pending:
+    get:
+      operationId: getPendingVerifications
+      summary: قائمة طلبات التحقق قيد المراجعة
+      description: عرض جميع طلبات التحقق للمهندسين والتجار التي في حالة PENDING
+      parameters: []
+      responses:
+        '200':
+          description: تم استرداد قائمة طلبات التحقق بنجاح
+      tags:
+        - إدارة-المستخدمين
+      security:
+        - bearer: []
+  /api/v1/admin/users/verification/{userId}:
+    get:
+      operationId: getVerificationDetails
+      summary: تفاصيل طلب التحقق
+      description: عرض تفاصيل كاملة لطلب التحقق لمستخدم محدد
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم استرداد تفاصيل طلب التحقق بنجاح
+        '404':
+          description: المستخدم غير موجود أو ليس لديه طلب تحقق قيد المراجعة
+      tags:
+        - إدارة-المستخدمين
+      security:
+        - bearer: []
+  /api/v1/admin/users/verification/{userId}/approve:
+    post:
+      operationId: approveVerification
+      summary: الموافقة على التحقق
+      description: الموافقة على طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى APPROVED
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تمت الموافقة على التحقق بنجاح
+        '404':
+          description: المستخدم غير موجود أو ليس لديه طلب تحقق قيد المراجعة
+      tags:
+        - إدارة-المستخدمين
+      security:
+        - bearer: []
+  /api/v1/admin/users/verification/{userId}/reject:
+    post:
+      operationId: rejectVerification
+      summary: رفض التحقق
+      description: رفض طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى REJECTED
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveVerificationDto'
+      responses:
+        '200':
+          description: تم رفض التحقق بنجاح
+        '404':
+          description: المستخدم غير موجود أو ليس لديه طلب تحقق قيد المراجعة
+      tags:
+        - إدارة-المستخدمين
+      security:
+        - bearer: []
+  /api/v1/upload/file:
+    post:
+      operationId: uploadFile
+      summary: رفع ملف واحد
+      description: رفع ملف واحد مع إمكانية تحديد المجلد والاسم المخصص
+      parameters:
+        - name: folder
+          required: false
+          in: query
+          description: المجلد المراد رفع الملف إليه
+          schema:
+            example: products
+            type: string
+        - name: filename
+          required: false
+          in: query
+          description: اسم مخصص للملف
+          schema:
+            example: product-image-001.jpg
+            type: string
+      requestBody:
+        required: true
+        description: رفع ملف
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadFileDto'
+      responses:
+        '201':
+          description: تم رفع الملف بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      fileName:
+                        type: string
+                        example: product-image-001.jpg
+                        description: اسم الملف
+                      filePath:
+                        type: string
+                        example: products/product-image-001.jpg
+                        description: مسار الملف
+                      fileUrl:
+                        type: string
+                        example: https://cdn.example.com/products/product-image-001.jpg
+                        description: رابط الملف
+                      fileSize:
+                        type: number
+                        example: 1024000
+                        description: حجم الملف بالبايت
+                      mimeType:
+                        type: string
+                        example: image/jpeg
+                        description: نوع الملف
+                      uploadedAt:
+                        type: string
+                        format: date-time
+                        example: '2024-01-15T10:30:00Z'
+        '400':
+          description: خطأ في البيانات أو نوع الملف غير مدعوم
+        '401':
+          description: غير مصرح لك بالوصول
+        '413':
+          description: حجم الملف كبير جداً
+      tags:
+        - رفع-الملفات
+      security:
+        - bearer: []
+    delete:
+      operationId: deleteFile
+      summary: حذف ملف
+      description: حذف ملف مرفوع من خلال مساره
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteFileDto'
+      responses:
+        '200':
+          description: تم حذف الملف بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: File deleted successfully
+        '403':
+          description: غير مصرح لك بحذف هذا الملف
+        '404':
+          description: الملف غير موجود
+      tags:
+        - رفع-الملفات
+      security:
+        - bearer: []
+  /api/v1/upload/files:
+    post:
+      operationId: uploadFiles
+      summary: رفع ملفات متعددة
+      description: رفع عدة ملفات في وقت واحد (حتى 10 ملفات) مع إمكانية تحديد المجلد
+      parameters:
+        - name: folder
+          required: false
+          in: query
+          description: المجلد المراد رفع الملفات إليه
+          schema:
+            example: gallery
+            type: string
+      requestBody:
+        required: true
+        description: رفع ملفات متعددة
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                folder:
+                  type: string
+                  description: المجلد المراد رفع الملفات إليه
+      responses:
+        '201':
+          description: تم رفع الملفات بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fileName:
+                          type: string
+                          example: image1.jpg
+                          description: اسم الملف
+                        filePath:
+                          type: string
+                          example: gallery/image1.jpg
+                          description: مسار الملف
+                        fileUrl:
+                          type: string
+                          example: https://cdn.example.com/gallery/image1.jpg
+                          description: رابط الملف
+                        fileSize:
+                          type: number
+                          example: 512000
+                          description: حجم الملف بالبايت
+                        mimeType:
+                          type: string
+                          example: image/jpeg
+                          description: نوع الملف
+                        uploadedAt:
+                          type: string
+                          format: date-time
+                          example: '2024-01-15T10:30:00Z'
+        '400':
+          description: خطأ في البيانات أو نوع أحد الملفات غير مدعوم
+        '401':
+          description: غير مصرح لك بالوصول
+        '413':
+          description: حجم إحدى الملفات كبير جداً
+      tags:
+        - رفع-الملفات
+      security:
+        - bearer: []
+  /api/v1/upload/file/{filePath}:
+    get:
+      operationId: getFileInfo
+      summary: معلومات الملف
+      description: الحصول على معلومات مفصلة عن ملف مرفوع
+      parameters:
+        - name: filePath
+          required: true
+          in: path
+          description: مسار الملف
+          schema:
+            example: products/image.jpg
+            type: string
+      responses:
+        '200':
+          description: تم استرجاع معلومات الملف بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      fileName:
+                        type: string
+                        example: image.jpg
+                        description: اسم الملف
+                      filePath:
+                        type: string
+                        example: products/image.jpg
+                        description: مسار الملف
+                      fileUrl:
+                        type: string
+                        example: https://cdn.example.com/products/image.jpg
+                        description: رابط الملف
+                      fileSize:
+                        type: number
+                        example: 1024000
+                        description: حجم الملف بالبايت
+                      mimeType:
+                        type: string
+                        example: image/jpeg
+                        description: نوع الملف
+                      uploadedAt:
+                        type: string
+                        format: date-time
+                        example: '2024-01-15T10:30:00Z'
+                      lastModified:
+                        type: string
+                        format: date-time
+                        example: '2024-01-15T11:00:00Z'
+        '403':
+          description: غير مصرح لك بالوصول إلى معلومات هذا الملف
+        '404':
+          description: الملف غير موجود
+      tags:
+        - رفع-الملفات
+      security:
+        - bearer: []
+  /api/v1/upload/public/*:
+    get:
+      operationId: serveFile
+      summary: عرض ملف عام
+      description: عرض ملف مرفوع بشكل عام (يُستخدم للاختبار - في الإنتاج يُفضل استخدام CDN مباشرة)
+      parameters: []
+      responses:
+        '200':
+          description: تم استرجاع الملف بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: معلومات الملف أو محتواه حسب النوع
+        '404':
+          description: الملف غير موجود
+      tags:
+        - رفع-الملفات
+      security:
+        - bearer: []
+  /api/v1/admin/media/upload:
+    post:
+      operationId: uploadMedia
+      summary: رفع وسائط إلى المكتبة
+      description: رفع ملف وسائط (صور، فيديوهات، مستندات) إلى مكتبة الوسائط مع إمكانية إضافة بيانات وصفية
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadMediaDto'
+      responses:
+        '201':
+          description: تم رفع الوسائط بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: media123
+                        description: معرف الوسائط
+                      fileName:
+                        type: string
+                        example: product-image.jpg
+                        description: اسم الملف
+                      filePath:
+                        type: string
+                        example: media/product-image.jpg
+                        description: مسار الملف
+                      fileUrl:
+                        type: string
+                        example: https://cdn.example.com/media/product-image.jpg
+                        description: رابط الملف
+                      fileSize:
+                        type: number
+                        example: 1024000
+                        description: حجم الملف بالبايت
+                      mimeType:
+                        type: string
+                        example: image/jpeg
+                        description: نوع الملف
+                      alt:
+                        type: string
+                        example: صورة منتج رائع
+                        description: النص البديل
+                      title:
+                        type: string
+                        example: هاتف ذكي سامسونج
+                        description: عنوان الوسائط
+                      tags:
+                        type: array
+                        items:
+                          type: string
+                          example: product
+                        description: العلامات
+                      uploadedBy:
+                        type: string
+                        example: admin123
+                        description: معرف المستخدم الذي رفع الملف
+                      uploadedAt:
+                        type: string
+                        format: date-time
+                        example: '2024-01-15T10:30:00Z'
+                  meta:
+                    type: object
+                    properties:
+                      isDuplicate:
+                        type: boolean
+                        example: false
+                        description: هل الملف مكرر
+                  message:
+                    type: string
+                    example: Media uploaded successfully
+        '400':
+          description: خطأ في البيانات أو نوع الملف غير مدعوم
+        '401':
+          description: غير مصرح لك بالوصول
+        '413':
+          description: حجم الملف كبير جداً
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media:
+    get:
+      operationId: listMedia
+      summary: قائمة الوسائط
+      description: استرداد قائمة بجميع الوسائط في المكتبة مع إمكانية التصفية والترقيم
+      parameters: []
+      responses:
+        '200':
+          description: تم استرداد قائمة الوسائط بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: media123
+                          description: معرف الوسائط
+                        fileName:
+                          type: string
+                          example: product-image.jpg
+                          description: اسم الملف
+                        filePath:
+                          type: string
+                          example: media/product-image.jpg
+                          description: مسار الملف
+                        fileUrl:
+                          type: string
+                          example: https://cdn.example.com/media/product-image.jpg
+                          description: رابط الملف
+                        fileSize:
+                          type: number
+                          example: 1024000
+                          description: حجم الملف بالبايت
+                        mimeType:
+                          type: string
+                          example: image/jpeg
+                          description: نوع الملف
+                        alt:
+                          type: string
+                          example: صورة منتج رائع
+                          description: النص البديل
+                        title:
+                          type: string
+                          example: هاتف ذكي سامسونج
+                          description: عنوان الوسائط
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                            example: product
+                          description: العلامات
+                        uploadedBy:
+                          type: string
+                          example: admin123
+                          description: معرف المستخدم الذي رفع الملف
+                        uploadedAt:
+                          type: string
+                          format: date-time
+                          example: '2024-01-15T10:30:00Z'
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: '2024-01-15T11:00:00Z'
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                        example: 150
+                        description: إجمالي العناصر
+                      page:
+                        type: number
+                        example: 1
+                        description: الصفحة الحالية
+                      limit:
+                        type: number
+                        example: 20
+                        description: عدد العناصر في الصفحة
+                      totalPages:
+                        type: number
+                        example: 8
+                        description: إجمالي الصفحات
+        '401':
+          description: غير مصرح لك بالوصول
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media/{id}:
+    get:
+      operationId: getMedia
+      summary: تفاصيل الوسائط
+      description: استرداد تفاصيل وسائط محددة من المكتبة
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الوسائط
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم استرداد تفاصيل الوسائط بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: media123
+                    description: معرف الوسائط
+                  fileName:
+                    type: string
+                    example: product-image.jpg
+                    description: اسم الملف
+                  filePath:
+                    type: string
+                    example: media/product-image.jpg
+                    description: مسار الملف
+                  fileUrl:
+                    type: string
+                    example: https://cdn.example.com/media/product-image.jpg
+                    description: رابط الملف
+                  fileSize:
+                    type: number
+                    example: 1024000
+                    description: حجم الملف بالبايت
+                  mimeType:
+                    type: string
+                    example: image/jpeg
+                    description: نوع الملف
+                  alt:
+                    type: string
+                    example: صورة منتج رائع
+                    description: النص البديل
+                  title:
+                    type: string
+                    example: هاتف ذكي سامسونج
+                    description: عنوان الوسائط
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                      example: product
+                    description: العلامات
+                  uploadedBy:
+                    type: string
+                    example: admin123
+                    description: معرف المستخدم الذي رفع الملف
+                  uploadedAt:
+                    type: string
+                    format: date-time
+                    example: '2024-01-15T10:30:00Z'
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    example: '2024-01-15T11:00:00Z'
+        '401':
+          description: غير مصرح لك بالوصول
+        '404':
+          description: الوسائط غير موجودة
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+    patch:
+      operationId: updateMedia
+      summary: تحديث الوسائط
+      description: تحديث البيانات الوصفية لملف وسائط في المكتبة
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الوسائط
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMediaDto'
+      responses:
+        '200':
+          description: تم تحديث الوسائط بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: media123
+                    description: معرف الوسائط
+                  alt:
+                    type: string
+                    example: صورة منتج محدثة
+                    description: النص البديل المحدث
+                  title:
+                    type: string
+                    example: هاتف ذكي سامسونج جالاكسي
+                    description: العنوان المحدث
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                      example: product
+                    description: العلامات المحدثة
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    example: '2024-01-15T12:00:00Z'
+        '400':
+          description: بيانات غير صحيحة
+        '401':
+          description: غير مصرح لك بالوصول
+        '404':
+          description: الوسائط غير موجودة
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+    delete:
+      operationId: deleteMedia
+      summary: حذف الوسائط
+      description: حذف ملف وسائط من المكتبة (حذف مؤقت - يمكن الاستعادة)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الوسائط
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم حذف الوسائط بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Media deleted successfully
+                  deletedAt:
+                    type: string
+                    format: date-time
+                    example: '2024-01-15T13:00:00Z'
+        '403':
+          description: غير مصرح لك بحذف هذه الوسائط
+        '404':
+          description: الوسائط غير موجودة
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media/{id}/restore:
+    post:
+      operationId: restoreMedia
+      summary: استعادة الوسائط
+      description: استعادة ملف وسائط محذوف مؤقتاً إلى المكتبة
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الوسائط
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم استعادة الوسائط بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: media123
+                    description: معرف الوسائط
+                  status:
+                    type: string
+                    example: active
+                    description: حالة الوسائط بعد الاستعادة
+                  restoredAt:
+                    type: string
+                    format: date-time
+                    example: '2024-01-15T14:00:00Z'
+        '403':
+          description: غير مصرح لك باستعادة هذه الوسائط
+        '404':
+          description: الوسائط غير موجودة أو غير محذوفة
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media/{id}/permanent:
+    delete:
+      operationId: permanentDeleteMedia
+      summary: حذف الوسائط نهائياً
+      description: حذف ملف وسائط نهائياً من المكتبة والتخزين (متاح للمشرفين الفائقين فقط)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الوسائط
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم حذف الوسائط نهائياً بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Media permanently deleted successfully
+                  deletedFiles:
+                    type: array
+                    items:
+                      type: string
+                      example: media/product-image.jpg
+                    description: قائمة الملفات المحذوفة
+        '403':
+          description: غير مصرح لك بالحذف النهائي (يتطلب صلاحيات مشرف فائق)
+        '404':
+          description: الوسائط غير موجودة
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media/stats/summary:
+    get:
+      operationId: getStats
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media/cleanup/deleted:
+    post:
+      operationId: cleanupDeletedFiles
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media/cleanup/duplicates:
+    post:
+      operationId: cleanupDuplicateFiles
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media/cleanup/unused:
+    post:
+      operationId: cleanupUnusedFiles
+      parameters:
+        - name: days
+          required: true
+          in: query
+          schema:
+            type: number
+      responses:
+        '201':
+          description: ''
+      tags:
+        - إدارة-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media-analytics/overview:
+    get:
+      operationId: getOverview
+      summary: الإحصائيات العامة للوسائط
+      description: يعرض إحصائيات شاملة عن جميع الملفات والوسائط في النظام
+      parameters: []
+      responses:
+        '200':
+          description: تم جلب الإحصائيات العامة بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      totalFiles:
+                        type: number
+                        example: 1250
+                        description: إجمالي عدد الملفات
+                      totalSize:
+                        type: number
+                        example: 5242880000
+                        description: إجمالي حجم الملفات بالبايت
+                      totalSizeFormatted:
+                        type: string
+                        example: 5.24 GB
+                        description: إجمالي الحجم منسق
+                      filesThisMonth:
+                        type: number
+                        example: 156
+                        description: عدد الملفات المرفوعة هذا الشهر
+                      filesThisWeek:
+                        type: number
+                        example: 42
+                        description: عدد الملفات المرفوعة هذا الأسبوع
+                      filesToday:
+                        type: number
+                        example: 8
+                        description: عدد الملفات المرفوعة اليوم
+                      averageFileSize:
+                        type: number
+                        example: 419430
+                        description: متوسط حجم الملف
+                      averageFileSizeFormatted:
+                        type: string
+                        example: 419.43 KB
+                      filesByType:
+                        type: object
+                        properties:
+                          images:
+                            type: number
+                            example: 850
+                          videos:
+                            type: number
+                            example: 120
+                          documents:
+                            type: number
+                            example: 200
+                          other:
+                            type: number
+                            example: 80
+                      sizeByType:
+                        type: object
+                        properties:
+                          images:
+                            type: number
+                            example: 2147483648
+                          videos:
+                            type: number
+                            example: 2684354560
+                          documents:
+                            type: number
+                            example: 314572800
+                          other:
+                            type: number
+                            example: 96468992
+                      storageUsagePercent:
+                        type: number
+                        example: 52.4
+                        description: نسبة استخدام التخزين
+                      topUploaders:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            userId:
+                              type: string
+                            name:
+                              type: string
+                            uploadCount:
+                              type: number
+                            totalSize:
+                              type: number
+      tags:
+        - إحصائيات-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media-analytics/by-type:
+    get:
+      operationId: getStatsByType
+      summary: إحصائيات الوسائط حسب النوع
+      description: يعرض توزيع الملفات حسب أنواعها المختلفة
+      parameters: []
+      responses:
+        '200':
+          description: تم جلب الإحصائيات بنجاح
+      tags:
+        - إحصائيات-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media-analytics/upload-timeline:
+    get:
+      operationId: getUploadTimeline
+      summary: إحصائيات الرفع حسب الفترة الزمنية
+      description: يعرض توزيع عمليات الرفع خلال فترة زمنية محددة
+      parameters:
+        - name: period
+          required: false
+          in: query
+          description: الفترة الزمنية للإحصائيات
+          schema:
+            enum:
+              - day
+              - week
+              - month
+              - year
+            type: string
+      responses:
+        '200':
+          description: تم جلب الإحصائيات بنجاح
+      tags:
+        - إحصائيات-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media-analytics/largest-files:
+    get:
+      operationId: getLargestFiles
+      summary: قائمة أكبر الملفات
+      description: يعرض الملفات الأكبر حجماً في النظام
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: عدد الملفات المراد عرضها
+          schema:
+            type: number
+      responses:
+        '200':
+          description: تم جلب القائمة بنجاح
+      tags:
+        - إحصائيات-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media-analytics/recent-uploads:
+    get:
+      operationId: getRecentUploads
+      summary: أحدث الملفات المرفوعة
+      description: يعرض آخر الملفات التي تم رفعها
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: عدد الملفات المراد عرضها
+          schema:
+            type: number
+      responses:
+        '200':
+          description: تم جلب القائمة بنجاح
+      tags:
+        - إحصائيات-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media-analytics/storage:
+    get:
+      operationId: getStorageStats
+      summary: إحصائيات التخزين
+      description: يعرض معلومات عن مساحة التخزين المستخدمة والمتاحة
+      parameters: []
+      responses:
+        '200':
+          description: تم جلب إحصائيات التخزين بنجاح
+      tags:
+        - إحصائيات-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media-analytics/by-user:
+    get:
+      operationId: getStatsByUser
+      summary: إحصائيات الرفع حسب المستخدم
+      description: يعرض إحصائيات عمليات الرفع لكل مستخدم
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: عدد المستخدمين المراد عرضهم
+          schema:
+            type: number
+      responses:
+        '200':
+          description: تم جلب الإحصائيات بنجاح
+      tags:
+        - إحصائيات-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media-analytics/unused-files:
+    get:
+      operationId: getUnusedFiles
+      summary: الملفات غير المستخدمة
+      description: يعرض الملفات التي لم يتم استخدامها في أي مكان
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: عدد الملفات المراد عرضها
+          schema:
+            type: number
+      responses:
+        '200':
+          description: تم جلب القائمة بنجاح
+      tags:
+        - إحصائيات-الوسائط
+      security:
+        - bearer: []
+  /api/v1/admin/media-analytics/full-report:
+    get:
+      operationId: getFullReport
+      summary: تقرير شامل عن الوسائط
+      description: يولد تقرير شامل يحتوي على جميع الإحصائيات
+      parameters: []
+      responses:
+        '200':
+          description: تم توليد التقرير بنجاح
+      tags:
+        - إحصائيات-الوسائط
       security:
         - bearer: []
   /api/v1/analytics/dashboard:
@@ -14464,6 +16034,47 @@ paths:
           description: تم الحصول على قائمة العلامات التجارية بنجاح
       security:
         - bearer: []
+  /api/v1/admin/brands/stats/summary:
+    get:
+      operationId: getStats
+      summary: إحصائيات العلامات التجارية
+      description: الحصول على إحصائيات شاملة عن العلامات التجارية في النظام. يتطلب صلاحيات إدارية.
+      tags:
+        - إدارة-العلامات-التجارية
+      parameters: []
+      responses:
+        '200':
+          description: تم الحصول على الإحصائيات بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                        example: 50
+                        description: إجمالي عدد العلامات التجارية
+                      active:
+                        type: number
+                        example: 45
+                        description: عدد العلامات التجارية النشطة
+                      inactive:
+                        type: number
+                        example: 5
+                        description: عدد العلامات التجارية غير النشطة
+                      withProducts:
+                        type: number
+                        example: 35
+                        description: عدد العلامات التجارية التي لديها منتجات
+        '401':
+          description: غير مصرح - مطلوب تسجيل دخول
+        '403':
+          description: ممنوع - مطلوب صلاحيات إدارية
+      security:
+        - bearer: []
   /api/v1/admin/brands/{id}:
     get:
       operationId: getBrand
@@ -14909,989 +16520,6 @@ paths:
                   message:
                     type: string
                     example: العلامة التجارية غير موجودة
-  /api/v1/upload/file:
-    post:
-      operationId: uploadFile
-      summary: رفع ملف واحد
-      description: رفع ملف واحد مع إمكانية تحديد المجلد والاسم المخصص
-      parameters:
-        - name: folder
-          required: false
-          in: query
-          description: المجلد المراد رفع الملف إليه
-          schema:
-            example: products
-            type: string
-        - name: filename
-          required: false
-          in: query
-          description: اسم مخصص للملف
-          schema:
-            example: product-image-001.jpg
-            type: string
-      requestBody:
-        required: true
-        description: رفع ملف
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UploadFileDto'
-      responses:
-        '201':
-          description: تم رفع الملف بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      fileName:
-                        type: string
-                        example: product-image-001.jpg
-                        description: اسم الملف
-                      filePath:
-                        type: string
-                        example: products/product-image-001.jpg
-                        description: مسار الملف
-                      fileUrl:
-                        type: string
-                        example: https://cdn.example.com/products/product-image-001.jpg
-                        description: رابط الملف
-                      fileSize:
-                        type: number
-                        example: 1024000
-                        description: حجم الملف بالبايت
-                      mimeType:
-                        type: string
-                        example: image/jpeg
-                        description: نوع الملف
-                      uploadedAt:
-                        type: string
-                        format: date-time
-                        example: '2024-01-15T10:30:00Z'
-        '400':
-          description: خطأ في البيانات أو نوع الملف غير مدعوم
-        '401':
-          description: غير مصرح لك بالوصول
-        '413':
-          description: حجم الملف كبير جداً
-      tags:
-        - رفع-الملفات
-      security:
-        - bearer: []
-    delete:
-      operationId: deleteFile
-      summary: حذف ملف
-      description: حذف ملف مرفوع من خلال مساره
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeleteFileDto'
-      responses:
-        '200':
-          description: تم حذف الملف بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: File deleted successfully
-        '403':
-          description: غير مصرح لك بحذف هذا الملف
-        '404':
-          description: الملف غير موجود
-      tags:
-        - رفع-الملفات
-      security:
-        - bearer: []
-  /api/v1/upload/files:
-    post:
-      operationId: uploadFiles
-      summary: رفع ملفات متعددة
-      description: رفع عدة ملفات في وقت واحد (حتى 10 ملفات) مع إمكانية تحديد المجلد
-      parameters:
-        - name: folder
-          required: false
-          in: query
-          description: المجلد المراد رفع الملفات إليه
-          schema:
-            example: gallery
-            type: string
-      requestBody:
-        required: true
-        description: رفع ملفات متعددة
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                files:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                folder:
-                  type: string
-                  description: المجلد المراد رفع الملفات إليه
-      responses:
-        '201':
-          description: تم رفع الملفات بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        fileName:
-                          type: string
-                          example: image1.jpg
-                          description: اسم الملف
-                        filePath:
-                          type: string
-                          example: gallery/image1.jpg
-                          description: مسار الملف
-                        fileUrl:
-                          type: string
-                          example: https://cdn.example.com/gallery/image1.jpg
-                          description: رابط الملف
-                        fileSize:
-                          type: number
-                          example: 512000
-                          description: حجم الملف بالبايت
-                        mimeType:
-                          type: string
-                          example: image/jpeg
-                          description: نوع الملف
-                        uploadedAt:
-                          type: string
-                          format: date-time
-                          example: '2024-01-15T10:30:00Z'
-        '400':
-          description: خطأ في البيانات أو نوع أحد الملفات غير مدعوم
-        '401':
-          description: غير مصرح لك بالوصول
-        '413':
-          description: حجم إحدى الملفات كبير جداً
-      tags:
-        - رفع-الملفات
-      security:
-        - bearer: []
-  /api/v1/upload/file/{filePath}:
-    get:
-      operationId: getFileInfo
-      summary: معلومات الملف
-      description: الحصول على معلومات مفصلة عن ملف مرفوع
-      parameters:
-        - name: filePath
-          required: true
-          in: path
-          description: مسار الملف
-          schema:
-            example: products/image.jpg
-            type: string
-      responses:
-        '200':
-          description: تم استرجاع معلومات الملف بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      fileName:
-                        type: string
-                        example: image.jpg
-                        description: اسم الملف
-                      filePath:
-                        type: string
-                        example: products/image.jpg
-                        description: مسار الملف
-                      fileUrl:
-                        type: string
-                        example: https://cdn.example.com/products/image.jpg
-                        description: رابط الملف
-                      fileSize:
-                        type: number
-                        example: 1024000
-                        description: حجم الملف بالبايت
-                      mimeType:
-                        type: string
-                        example: image/jpeg
-                        description: نوع الملف
-                      uploadedAt:
-                        type: string
-                        format: date-time
-                        example: '2024-01-15T10:30:00Z'
-                      lastModified:
-                        type: string
-                        format: date-time
-                        example: '2024-01-15T11:00:00Z'
-        '403':
-          description: غير مصرح لك بالوصول إلى معلومات هذا الملف
-        '404':
-          description: الملف غير موجود
-      tags:
-        - رفع-الملفات
-      security:
-        - bearer: []
-  /api/v1/upload/public/*:
-    get:
-      operationId: serveFile
-      summary: عرض ملف عام
-      description: عرض ملف مرفوع بشكل عام (يُستخدم للاختبار - في الإنتاج يُفضل استخدام CDN مباشرة)
-      parameters: []
-      responses:
-        '200':
-          description: تم استرجاع الملف بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    description: معلومات الملف أو محتواه حسب النوع
-        '404':
-          description: الملف غير موجود
-      tags:
-        - رفع-الملفات
-      security:
-        - bearer: []
-  /api/v1/admin/media/upload:
-    post:
-      operationId: uploadMedia
-      summary: رفع وسائط إلى المكتبة
-      description: رفع ملف وسائط (صور، فيديوهات، مستندات) إلى مكتبة الوسائط مع إمكانية إضافة بيانات وصفية
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UploadMediaDto'
-      responses:
-        '201':
-          description: تم رفع الوسائط بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        example: media123
-                        description: معرف الوسائط
-                      fileName:
-                        type: string
-                        example: product-image.jpg
-                        description: اسم الملف
-                      filePath:
-                        type: string
-                        example: media/product-image.jpg
-                        description: مسار الملف
-                      fileUrl:
-                        type: string
-                        example: https://cdn.example.com/media/product-image.jpg
-                        description: رابط الملف
-                      fileSize:
-                        type: number
-                        example: 1024000
-                        description: حجم الملف بالبايت
-                      mimeType:
-                        type: string
-                        example: image/jpeg
-                        description: نوع الملف
-                      alt:
-                        type: string
-                        example: صورة منتج رائع
-                        description: النص البديل
-                      title:
-                        type: string
-                        example: هاتف ذكي سامسونج
-                        description: عنوان الوسائط
-                      tags:
-                        type: array
-                        items:
-                          type: string
-                          example: product
-                        description: العلامات
-                      uploadedBy:
-                        type: string
-                        example: admin123
-                        description: معرف المستخدم الذي رفع الملف
-                      uploadedAt:
-                        type: string
-                        format: date-time
-                        example: '2024-01-15T10:30:00Z'
-                  meta:
-                    type: object
-                    properties:
-                      isDuplicate:
-                        type: boolean
-                        example: false
-                        description: هل الملف مكرر
-                  message:
-                    type: string
-                    example: Media uploaded successfully
-        '400':
-          description: خطأ في البيانات أو نوع الملف غير مدعوم
-        '401':
-          description: غير مصرح لك بالوصول
-        '413':
-          description: حجم الملف كبير جداً
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media:
-    get:
-      operationId: listMedia
-      summary: قائمة الوسائط
-      description: استرداد قائمة بجميع الوسائط في المكتبة مع إمكانية التصفية والترقيم
-      parameters: []
-      responses:
-        '200':
-          description: تم استرداد قائمة الوسائط بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          example: media123
-                          description: معرف الوسائط
-                        fileName:
-                          type: string
-                          example: product-image.jpg
-                          description: اسم الملف
-                        filePath:
-                          type: string
-                          example: media/product-image.jpg
-                          description: مسار الملف
-                        fileUrl:
-                          type: string
-                          example: https://cdn.example.com/media/product-image.jpg
-                          description: رابط الملف
-                        fileSize:
-                          type: number
-                          example: 1024000
-                          description: حجم الملف بالبايت
-                        mimeType:
-                          type: string
-                          example: image/jpeg
-                          description: نوع الملف
-                        alt:
-                          type: string
-                          example: صورة منتج رائع
-                          description: النص البديل
-                        title:
-                          type: string
-                          example: هاتف ذكي سامسونج
-                          description: عنوان الوسائط
-                        tags:
-                          type: array
-                          items:
-                            type: string
-                            example: product
-                          description: العلامات
-                        uploadedBy:
-                          type: string
-                          example: admin123
-                          description: معرف المستخدم الذي رفع الملف
-                        uploadedAt:
-                          type: string
-                          format: date-time
-                          example: '2024-01-15T10:30:00Z'
-                        updatedAt:
-                          type: string
-                          format: date-time
-                          example: '2024-01-15T11:00:00Z'
-                  meta:
-                    type: object
-                    properties:
-                      total:
-                        type: number
-                        example: 150
-                        description: إجمالي العناصر
-                      page:
-                        type: number
-                        example: 1
-                        description: الصفحة الحالية
-                      limit:
-                        type: number
-                        example: 20
-                        description: عدد العناصر في الصفحة
-                      totalPages:
-                        type: number
-                        example: 8
-                        description: إجمالي الصفحات
-        '401':
-          description: غير مصرح لك بالوصول
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media/{id}:
-    get:
-      operationId: getMedia
-      summary: تفاصيل الوسائط
-      description: استرداد تفاصيل وسائط محددة من المكتبة
-      parameters:
-        - name: id
-          required: true
-          in: path
-          description: معرف الوسائط
-          schema:
-            type: string
-      responses:
-        '200':
-          description: تم استرداد تفاصيل الوسائط بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    example: media123
-                    description: معرف الوسائط
-                  fileName:
-                    type: string
-                    example: product-image.jpg
-                    description: اسم الملف
-                  filePath:
-                    type: string
-                    example: media/product-image.jpg
-                    description: مسار الملف
-                  fileUrl:
-                    type: string
-                    example: https://cdn.example.com/media/product-image.jpg
-                    description: رابط الملف
-                  fileSize:
-                    type: number
-                    example: 1024000
-                    description: حجم الملف بالبايت
-                  mimeType:
-                    type: string
-                    example: image/jpeg
-                    description: نوع الملف
-                  alt:
-                    type: string
-                    example: صورة منتج رائع
-                    description: النص البديل
-                  title:
-                    type: string
-                    example: هاتف ذكي سامسونج
-                    description: عنوان الوسائط
-                  tags:
-                    type: array
-                    items:
-                      type: string
-                      example: product
-                    description: العلامات
-                  uploadedBy:
-                    type: string
-                    example: admin123
-                    description: معرف المستخدم الذي رفع الملف
-                  uploadedAt:
-                    type: string
-                    format: date-time
-                    example: '2024-01-15T10:30:00Z'
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    example: '2024-01-15T11:00:00Z'
-        '401':
-          description: غير مصرح لك بالوصول
-        '404':
-          description: الوسائط غير موجودة
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-    patch:
-      operationId: updateMedia
-      summary: تحديث الوسائط
-      description: تحديث البيانات الوصفية لملف وسائط في المكتبة
-      parameters:
-        - name: id
-          required: true
-          in: path
-          description: معرف الوسائط
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateMediaDto'
-      responses:
-        '200':
-          description: تم تحديث الوسائط بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    example: media123
-                    description: معرف الوسائط
-                  alt:
-                    type: string
-                    example: صورة منتج محدثة
-                    description: النص البديل المحدث
-                  title:
-                    type: string
-                    example: هاتف ذكي سامسونج جالاكسي
-                    description: العنوان المحدث
-                  tags:
-                    type: array
-                    items:
-                      type: string
-                      example: product
-                    description: العلامات المحدثة
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    example: '2024-01-15T12:00:00Z'
-        '400':
-          description: بيانات غير صحيحة
-        '401':
-          description: غير مصرح لك بالوصول
-        '404':
-          description: الوسائط غير موجودة
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-    delete:
-      operationId: deleteMedia
-      summary: حذف الوسائط
-      description: حذف ملف وسائط من المكتبة (حذف مؤقت - يمكن الاستعادة)
-      parameters:
-        - name: id
-          required: true
-          in: path
-          description: معرف الوسائط
-          schema:
-            type: string
-      responses:
-        '200':
-          description: تم حذف الوسائط بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Media deleted successfully
-                  deletedAt:
-                    type: string
-                    format: date-time
-                    example: '2024-01-15T13:00:00Z'
-        '403':
-          description: غير مصرح لك بحذف هذه الوسائط
-        '404':
-          description: الوسائط غير موجودة
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media/{id}/restore:
-    post:
-      operationId: restoreMedia
-      summary: استعادة الوسائط
-      description: استعادة ملف وسائط محذوف مؤقتاً إلى المكتبة
-      parameters:
-        - name: id
-          required: true
-          in: path
-          description: معرف الوسائط
-          schema:
-            type: string
-      responses:
-        '200':
-          description: تم استعادة الوسائط بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    example: media123
-                    description: معرف الوسائط
-                  status:
-                    type: string
-                    example: active
-                    description: حالة الوسائط بعد الاستعادة
-                  restoredAt:
-                    type: string
-                    format: date-time
-                    example: '2024-01-15T14:00:00Z'
-        '403':
-          description: غير مصرح لك باستعادة هذه الوسائط
-        '404':
-          description: الوسائط غير موجودة أو غير محذوفة
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media/{id}/permanent:
-    delete:
-      operationId: permanentDeleteMedia
-      summary: حذف الوسائط نهائياً
-      description: حذف ملف وسائط نهائياً من المكتبة والتخزين (متاح للمشرفين الفائقين فقط)
-      parameters:
-        - name: id
-          required: true
-          in: path
-          description: معرف الوسائط
-          schema:
-            type: string
-      responses:
-        '200':
-          description: تم حذف الوسائط نهائياً بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Media permanently deleted successfully
-                  deletedFiles:
-                    type: array
-                    items:
-                      type: string
-                      example: media/product-image.jpg
-                    description: قائمة الملفات المحذوفة
-        '403':
-          description: غير مصرح لك بالحذف النهائي (يتطلب صلاحيات مشرف فائق)
-        '404':
-          description: الوسائط غير موجودة
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media/stats/summary:
-    get:
-      operationId: getStats
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media/cleanup/deleted:
-    post:
-      operationId: cleanupDeletedFiles
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media/cleanup/duplicates:
-    post:
-      operationId: cleanupDuplicateFiles
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media/cleanup/unused:
-    post:
-      operationId: cleanupUnusedFiles
-      parameters:
-        - name: days
-          required: true
-          in: query
-          schema:
-            type: number
-      responses:
-        '201':
-          description: ''
-      tags:
-        - إدارة-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media-analytics/overview:
-    get:
-      operationId: getOverview
-      summary: الإحصائيات العامة للوسائط
-      description: يعرض إحصائيات شاملة عن جميع الملفات والوسائط في النظام
-      parameters: []
-      responses:
-        '200':
-          description: تم جلب الإحصائيات العامة بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      totalFiles:
-                        type: number
-                        example: 1250
-                        description: إجمالي عدد الملفات
-                      totalSize:
-                        type: number
-                        example: 5242880000
-                        description: إجمالي حجم الملفات بالبايت
-                      totalSizeFormatted:
-                        type: string
-                        example: 5.24 GB
-                        description: إجمالي الحجم منسق
-                      filesThisMonth:
-                        type: number
-                        example: 156
-                        description: عدد الملفات المرفوعة هذا الشهر
-                      filesThisWeek:
-                        type: number
-                        example: 42
-                        description: عدد الملفات المرفوعة هذا الأسبوع
-                      filesToday:
-                        type: number
-                        example: 8
-                        description: عدد الملفات المرفوعة اليوم
-                      averageFileSize:
-                        type: number
-                        example: 419430
-                        description: متوسط حجم الملف
-                      averageFileSizeFormatted:
-                        type: string
-                        example: 419.43 KB
-                      filesByType:
-                        type: object
-                        properties:
-                          images:
-                            type: number
-                            example: 850
-                          videos:
-                            type: number
-                            example: 120
-                          documents:
-                            type: number
-                            example: 200
-                          other:
-                            type: number
-                            example: 80
-                      sizeByType:
-                        type: object
-                        properties:
-                          images:
-                            type: number
-                            example: 2147483648
-                          videos:
-                            type: number
-                            example: 2684354560
-                          documents:
-                            type: number
-                            example: 314572800
-                          other:
-                            type: number
-                            example: 96468992
-                      storageUsagePercent:
-                        type: number
-                        example: 52.4
-                        description: نسبة استخدام التخزين
-                      topUploaders:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            userId:
-                              type: string
-                            name:
-                              type: string
-                            uploadCount:
-                              type: number
-                            totalSize:
-                              type: number
-      tags:
-        - إحصائيات-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media-analytics/by-type:
-    get:
-      operationId: getStatsByType
-      summary: إحصائيات الوسائط حسب النوع
-      description: يعرض توزيع الملفات حسب أنواعها المختلفة
-      parameters: []
-      responses:
-        '200':
-          description: تم جلب الإحصائيات بنجاح
-      tags:
-        - إحصائيات-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media-analytics/upload-timeline:
-    get:
-      operationId: getUploadTimeline
-      summary: إحصائيات الرفع حسب الفترة الزمنية
-      description: يعرض توزيع عمليات الرفع خلال فترة زمنية محددة
-      parameters:
-        - name: period
-          required: false
-          in: query
-          description: الفترة الزمنية للإحصائيات
-          schema:
-            enum:
-              - day
-              - week
-              - month
-              - year
-            type: string
-      responses:
-        '200':
-          description: تم جلب الإحصائيات بنجاح
-      tags:
-        - إحصائيات-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media-analytics/largest-files:
-    get:
-      operationId: getLargestFiles
-      summary: قائمة أكبر الملفات
-      description: يعرض الملفات الأكبر حجماً في النظام
-      parameters:
-        - name: limit
-          required: false
-          in: query
-          description: عدد الملفات المراد عرضها
-          schema:
-            type: number
-      responses:
-        '200':
-          description: تم جلب القائمة بنجاح
-      tags:
-        - إحصائيات-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media-analytics/recent-uploads:
-    get:
-      operationId: getRecentUploads
-      summary: أحدث الملفات المرفوعة
-      description: يعرض آخر الملفات التي تم رفعها
-      parameters:
-        - name: limit
-          required: false
-          in: query
-          description: عدد الملفات المراد عرضها
-          schema:
-            type: number
-      responses:
-        '200':
-          description: تم جلب القائمة بنجاح
-      tags:
-        - إحصائيات-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media-analytics/storage:
-    get:
-      operationId: getStorageStats
-      summary: إحصائيات التخزين
-      description: يعرض معلومات عن مساحة التخزين المستخدمة والمتاحة
-      parameters: []
-      responses:
-        '200':
-          description: تم جلب إحصائيات التخزين بنجاح
-      tags:
-        - إحصائيات-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media-analytics/by-user:
-    get:
-      operationId: getStatsByUser
-      summary: إحصائيات الرفع حسب المستخدم
-      description: يعرض إحصائيات عمليات الرفع لكل مستخدم
-      parameters:
-        - name: limit
-          required: false
-          in: query
-          description: عدد المستخدمين المراد عرضهم
-          schema:
-            type: number
-      responses:
-        '200':
-          description: تم جلب الإحصائيات بنجاح
-      tags:
-        - إحصائيات-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media-analytics/unused-files:
-    get:
-      operationId: getUnusedFiles
-      summary: الملفات غير المستخدمة
-      description: يعرض الملفات التي لم يتم استخدامها في أي مكان
-      parameters:
-        - name: limit
-          required: false
-          in: query
-          description: عدد الملفات المراد عرضها
-          schema:
-            type: number
-      responses:
-        '200':
-          description: تم جلب القائمة بنجاح
-      tags:
-        - إحصائيات-الوسائط
-      security:
-        - bearer: []
-  /api/v1/admin/media-analytics/full-report:
-    get:
-      operationId: getFullReport
-      summary: تقرير شامل عن الوسائط
-      description: يولد تقرير شامل يحتوي على جميع الإحصائيات
-      parameters: []
-      responses:
-        '200':
-          description: تم توليد التقرير بنجاح
-      tags:
-        - إحصائيات-الوسائط
-      security:
-        - bearer: []
   /api/v1/admin/audit/logs:
     get:
       operationId: getAuditLogs
@@ -16225,201 +16853,180 @@ paths:
         - إدارة نصوص التعريب
       security:
         - bearer: []
-  /api/v1/system-settings/public:
+  /api/v1/admin/policies:
     get:
-      operationId: getPublicSettings
-      summary: الحصول على الإعدادات العامة (عام)
-      description: إعدادات النظام المتاحة للعموم
-      parameters:
-        - name: category
-          required: false
-          in: query
-          schema:
-            enum:
-              - general
-              - email
-              - payment
-              - shipping
-              - security
-              - notifications
-              - seo
-              - advanced
-            type: string
-      responses:
-        '200':
-          description: تم استرداد الإعدادات العامة بنجاح
-      tags:
-        - إعدادات النظام
-  /api/v1/system-settings:
-    post:
-      operationId: createSetting
-      summary: إنشاء إعداد جديد
-      description: إضافة إعداد جديد للنظام
+      operationId: getAllPolicies
+      summary: جلب جميع السياسات
+      description: الحصول على جميع السياسات (للأدمن)
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateSettingDto'
-      responses:
-        '201':
-          description: تم إنشاء الإعداد بنجاح
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SettingDto'
-      tags:
-        - إعدادات النظام
-      security:
-        - bearer: []
-    get:
-      operationId: getAllSettings
-      summary: الحصول على جميع الإعدادات
-      description: استرداد جميع إعدادات النظام
-      parameters:
-        - name: category
-          required: false
-          in: query
-          schema:
-            enum:
-              - general
-              - email
-              - payment
-              - shipping
-              - security
-              - notifications
-              - seo
-              - advanced
-            type: string
       responses:
         '200':
-          description: تم استرداد الإعدادات بنجاح
+          description: تم جلب السياسات بنجاح
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SettingDto'
+                  $ref: '#/components/schemas/PolicyResponseDto'
       tags:
-        - إعدادات النظام
+        - إدارة-السياسات
       security:
         - bearer: []
-  /api/v1/system-settings/category/{category}:
+  /api/v1/admin/policies/{type}:
     get:
-      operationId: getSettingsByCategory
-      summary: الحصول على إعدادات فئة معينة
-      description: استرداد الإعدادات حسب الفئة كـ key-value pairs
+      operationId: getPolicyByType
+      summary: جلب سياسة حسب النوع
+      description: الحصول على سياسة معينة حسب النوع (terms أو privacy)
       parameters:
-        - name: category
+        - name: type
           required: true
           in: path
+          description: نوع السياسة
           schema:
             enum:
-              - general
-              - email
-              - payment
-              - shipping
-              - security
-              - notifications
-              - seo
-              - advanced
+              - terms
+              - privacy
             type: string
       responses:
         '200':
-          description: تم استرداد إعدادات الفئة بنجاح
+          description: تم جلب السياسة بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponseDto'
+        '404':
+          description: السياسة غير موجودة
       tags:
-        - إعدادات النظام
+        - إدارة-السياسات
       security:
         - bearer: []
-  /api/v1/system-settings/bulk:
     put:
-      operationId: bulkUpdate
-      summary: تحديث عدة إعدادات
-      description: تحديث إعدادات متعددة دفعة واحدة
-      parameters: []
+      operationId: updatePolicy
+      summary: تحديث سياسة
+      description: تحديث سياسة معينة حسب النوع
+      parameters:
+        - name: type
+          required: true
+          in: path
+          description: نوع السياسة
+          schema:
+            enum:
+              - terms
+              - privacy
+            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BulkUpdateSettingsDto'
+              $ref: '#/components/schemas/UpdatePolicyDto'
       responses:
         '200':
-          description: تم تحديث الإعدادات بنجاح
+          description: تم تحديث السياسة بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponseDto'
+        '404':
+          description: السياسة غير موجودة
       tags:
-        - إعدادات النظام
+        - إدارة-السياسات
       security:
         - bearer: []
-  /api/v1/system-settings/{key}:
+  /api/v1/admin/policies/{type}/toggle:
+    post:
+      operationId: togglePolicy
+      summary: تفعيل/تعطيل سياسة
+      description: تفعيل أو تعطيل سياسة معينة
+      parameters:
+        - name: type
+          required: true
+          in: path
+          description: نوع السياسة
+          schema:
+            enum:
+              - terms
+              - privacy
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TogglePolicyDto'
+      responses:
+        '200':
+          description: تم تحديث حالة السياسة بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponseDto'
+        '404':
+          description: السياسة غير موجودة
+      tags:
+        - إدارة-السياسات
+      security:
+        - bearer: []
+  /api/v1/policies/public/terms:
     get:
-      operationId: getSetting
-      summary: الحصول على إعداد بالمفتاح
-      description: استرداد إعداد معين
-      parameters:
-        - name: key
-          required: true
-          in: path
-          description: مفتاح الإعداد
-          schema:
-            type: string
+      operationId: getTermsAndConditions
+      summary: جلب الأحكام والشروط
+      description: الحصول على سياسة الأحكام والشروط النشطة (عام - بدون مصادقة)
+      parameters: []
       responses:
         '200':
-          description: تم استرداد الإعداد بنجاح
+          description: تم جلب الأحكام والشروط بنجاح
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SettingDto'
+                $ref: '#/components/schemas/PolicyResponseDto'
+        '404':
+          description: لا توجد سياسة نشطة
       tags:
-        - إعدادات النظام
-      security:
-        - bearer: []
-    put:
-      operationId: updateSetting
-      summary: تحديث إعداد
-      description: تعديل قيمة إعداد موجود
-      parameters:
-        - name: key
-          required: true
-          in: path
-          description: مفتاح الإعداد
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateSettingDto'
+        - السياسات-العامة
+  /api/v1/policies/public/privacy:
+    get:
+      operationId: getPrivacyPolicy
+      summary: جلب سياسة الخصوصية
+      description: الحصول على سياسة الخصوصية النشطة (عام - بدون مصادقة)
+      parameters: []
       responses:
         '200':
-          description: تم تحديث الإعداد بنجاح
+          description: تم جلب سياسة الخصوصية بنجاح
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SettingDto'
+                $ref: '#/components/schemas/PolicyResponseDto'
+        '404':
+          description: لا توجد سياسة نشطة
       tags:
-        - إعدادات النظام
-      security:
-        - bearer: []
-    delete:
-      operationId: deleteSetting
-      summary: حذف إعداد
-      description: حذف إعداد من النظام
+        - السياسات-العامة
+  /api/v1/policies/public/{type}:
+    get:
+      operationId: getPolicyByType
+      summary: جلب سياسة حسب النوع
+      description: الحصول على سياسة معينة حسب النوع (عام - بدون مصادقة)
       parameters:
-        - name: key
+        - name: type
           required: true
           in: path
-          description: مفتاح الإعداد
+          description: نوع السياسة
           schema:
+            enum:
+              - terms
+              - privacy
             type: string
       responses:
         '200':
-          description: تم حذف الإعداد بنجاح
+          description: تم جلب السياسة بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponseDto'
+        '404':
+          description: لا توجد سياسة نشطة
       tags:
-        - إعدادات النظام
-      security:
-        - bearer: []
+        - السياسات-العامة
   /api/v1/health:
     get:
       operationId: check
@@ -16856,6 +17463,17 @@ components:
         - phone
         - code
         - newPassword
+    DeleteAccountDto:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: سبب حذف الحساب (ملاحظة)
+          example: لا أستخدم التطبيق بعد الآن
+          minLength: 5
+          maxLength: 500
+      required:
+        - reason
     AdminLoginDto:
       type: object
       properties:
@@ -17545,6 +18163,15 @@ components:
             - USD
         couponCode:
           type: string
+          description: كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)
+        couponCodes:
+          description: مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)
+          example:
+            - COUPON10
+            - COUPON5
+          type: array
+          items:
+            type: string
       required:
         - currency
     CheckoutConfirmDto:
@@ -17566,6 +18193,10 @@ components:
             - BANK_TRANSFER
         paymentProvider:
           type: string
+        localPaymentAccountId:
+          type: string
+        paymentReference:
+          type: string
         shippingMethod:
           type: string
           example: standard
@@ -17578,6 +18209,15 @@ components:
           type: string
         couponCode:
           type: string
+          description: كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)
+        couponCodes:
+          description: مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)
+          example:
+            - COUPON10
+            - COUPON5
+          type: array
+          items:
+            type: string
       required:
         - deliveryAddressId
         - currency
@@ -17672,6 +18312,27 @@ components:
       required:
         - amount
         - reason
+    VerifyPaymentDto:
+      type: object
+      properties:
+        verifiedAmount:
+          type: number
+          example: 50000
+          description: المبلغ المطابق
+        verifiedCurrency:
+          type: string
+          example: YER
+          enum:
+            - YER
+            - SAR
+            - USD
+          description: العملة المطابقة
+        notes:
+          type: string
+          description: ملاحظات المطابقة
+      required:
+        - verifiedAmount
+        - verifiedCurrency
     BulkOrderUpdateDto:
       type: object
       properties:
@@ -17949,6 +18610,222 @@ components:
           type: boolean
         isActive:
           type: boolean
+    CreateSettingDto:
+      type: object
+      properties:
+        key:
+          type: string
+          description: مفتاح الإعداد
+          example: site_name
+        value:
+          type: object
+          description: قيمة الإعداد
+        category:
+          type: string
+          description: الفئة
+          enum:
+            - general
+            - email
+            - payment
+            - shipping
+            - security
+            - notifications
+            - seo
+            - advanced
+          default: general
+        type:
+          type: string
+          description: نوع البيانات
+          enum:
+            - string
+            - number
+            - boolean
+            - object
+            - array
+        description:
+          type: string
+          description: وصف الإعداد
+        isPublic:
+          type: boolean
+          description: هل هذا الإعداد عام (يمكن للمستخدمين رؤيته)؟
+      required:
+        - key
+        - value
+        - category
+    SettingDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: معرف الإعداد
+        key:
+          type: string
+          description: مفتاح الإعداد
+        value:
+          type: object
+          description: قيمة الإعداد
+        category:
+          type: string
+          description: الفئة
+          enum:
+            - general
+            - email
+            - payment
+            - shipping
+            - security
+            - notifications
+            - seo
+            - advanced
+        type:
+          type: string
+          description: نوع البيانات
+        description:
+          type: string
+          description: الوصف
+        isPublic:
+          type: boolean
+          description: هل عام؟
+        updatedAt:
+          format: date-time
+          type: string
+          description: آخر تحديث
+        updatedBy:
+          type: string
+          description: آخر من قام بالتحديث
+      required:
+        - id
+        - key
+        - value
+        - category
+        - type
+        - description
+        - isPublic
+        - updatedAt
+        - updatedBy
+    BulkUpdateSettingsDto:
+      type: object
+      properties:
+        settings:
+          type: object
+          description: الإعدادات المراد تحديثها
+          example:
+            site_name: TagDoD
+            site_description: منصة الطاقة الشمسية
+            maintenance_mode: false
+      required:
+        - settings
+    UpdateSettingDto:
+      type: object
+      properties:
+        value:
+          type: object
+          description: قيمة الإعداد
+        description:
+          type: string
+          description: الوصف
+      required:
+        - value
+    LocalPaymentAccount:
+      type: object
+      properties: {}
+    GroupedPaymentAccountDto:
+      type: object
+      properties:
+        providerName:
+          type: string
+          example: الكريمي
+        iconUrl:
+          type: string
+        type:
+          type: string
+          enum:
+            - bank
+            - wallet
+        accounts:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              accountNumber:
+                type: string
+              currency:
+                type: string
+              isActive:
+                type: boolean
+              displayOrder:
+                type: number
+      required:
+        - providerName
+        - type
+        - accounts
+    CreateLocalPaymentAccountDto:
+      type: object
+      properties:
+        providerName:
+          type: string
+          example: الكريمي
+          description: اسم البنك أو المحفظة
+        iconUrl:
+          type: string
+          example: https://example.com/icon.png
+        accountNumber:
+          type: string
+          example: '1234567890'
+          description: رقم الحساب
+        type:
+          type: string
+          enum:
+            - bank
+            - wallet
+          example: bank
+        currency:
+          type: string
+          enum:
+            - YER
+            - SAR
+            - USD
+          example: YER
+        isActive:
+          type: boolean
+          default: true
+        notes:
+          type: string
+        displayOrder:
+          type: number
+          default: 0
+      required:
+        - providerName
+        - accountNumber
+        - type
+        - currency
+    UpdateLocalPaymentAccountDto:
+      type: object
+      properties:
+        providerName:
+          type: string
+        iconUrl:
+          type: string
+        accountNumber:
+          type: string
+        type:
+          type: string
+          enum:
+            - bank
+            - wallet
+        currency:
+          type: string
+          enum:
+            - YER
+            - SAR
+            - USD
+        isActive:
+          type: boolean
+        notes:
+          type: string
+        displayOrder:
+          type: number
     CreateSupportTicketDto:
       type: object
       properties:
@@ -18386,6 +19263,46 @@ components:
       type: object
       properties: {}
     SuspendUserDto:
+      type: object
+      properties: {}
+    ApproveVerificationDto:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: سبب الرفض (اختياري - يظهر فقط عند الرفض)
+          example: الوثائق غير واضحة أو غير مكتملة
+          maxLength: 500
+    UploadFileDto:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          description: File to upload
+        folder:
+          type: string
+          description: Folder to upload to
+          example: products
+        customFilename:
+          type: string
+          description: Custom filename (optional)
+          example: my-image.jpg
+      required:
+        - file
+    DeleteFileDto:
+      type: object
+      properties:
+        filePath:
+          type: string
+          description: Path of the file to delete
+          example: uploads/my-image.jpg
+      required:
+        - filePath
+    UploadMediaDto:
+      type: object
+      properties: {}
+    UpdateMediaDto:
       type: object
       properties: {}
     PerformanceMetricsDto:
@@ -19154,38 +20071,6 @@ components:
           example: 0
         metadata:
           type: object
-    UploadFileDto:
-      type: object
-      properties:
-        file:
-          type: string
-          format: binary
-          description: File to upload
-        folder:
-          type: string
-          description: Folder to upload to
-          example: products
-        customFilename:
-          type: string
-          description: Custom filename (optional)
-          example: my-image.jpg
-      required:
-        - file
-    DeleteFileDto:
-      type: object
-      properties:
-        filePath:
-          type: string
-          description: Path of the file to delete
-          example: uploads/my-image.jpg
-      required:
-        - filePath
-    UploadMediaDto:
-      type: object
-      properties: {}
-    UpdateMediaDto:
-      type: object
-      properties: {}
     CreateTranslationDto:
       type: object
       properties:
@@ -19367,118 +20252,68 @@ components:
         description:
           type: string
           description: وصف/ملاحظة
-    CreateSettingDto:
+    PolicyResponseDto:
       type: object
       properties:
-        key:
+        _id:
           type: string
-          description: مفتاح الإعداد
-          example: site_name
-        value:
-          type: object
-          description: قيمة الإعداد
-        category:
-          type: string
-          description: الفئة
-          enum:
-            - general
-            - email
-            - payment
-            - shipping
-            - security
-            - notifications
-            - seo
-            - advanced
-          default: general
         type:
           type: string
-          description: نوع البيانات
           enum:
-            - string
-            - number
-            - boolean
-            - object
-            - array
-        description:
+            - terms
+            - privacy
+        titleAr:
           type: string
-          description: وصف الإعداد
-        isPublic:
+        titleEn:
+          type: string
+        contentAr:
+          type: string
+        contentEn:
+          type: string
+        isActive:
           type: boolean
-          description: هل هذا الإعداد عام (يمكن للمستخدمين رؤيته)؟
-      required:
-        - key
-        - value
-        - category
-    SettingDto:
-      type: object
-      properties:
-        id:
+        lastUpdatedBy:
           type: string
-          description: معرف الإعداد
-        key:
+        createdAt:
+          format: date-time
           type: string
-          description: مفتاح الإعداد
-        value:
-          type: object
-          description: قيمة الإعداد
-        category:
-          type: string
-          description: الفئة
-          enum:
-            - general
-            - email
-            - payment
-            - shipping
-            - security
-            - notifications
-            - seo
-            - advanced
-        type:
-          type: string
-          description: نوع البيانات
-        description:
-          type: string
-          description: الوصف
-        isPublic:
-          type: boolean
-          description: هل عام؟
         updatedAt:
           format: date-time
           type: string
-          description: آخر تحديث
-        updatedBy:
-          type: string
-          description: آخر من قام بالتحديث
       required:
-        - id
-        - key
-        - value
-        - category
+        - _id
         - type
-        - description
-        - isPublic
+        - titleAr
+        - titleEn
+        - contentAr
+        - contentEn
+        - isActive
+        - lastUpdatedBy
+        - createdAt
         - updatedAt
-        - updatedBy
-    BulkUpdateSettingsDto:
+    UpdatePolicyDto:
       type: object
       properties:
-        settings:
-          type: object
-          description: الإعدادات المراد تحديثها
-          example:
-            site_name: TagDoD
-            site_description: منصة الطاقة الشمسية
-            maintenance_mode: false
-      required:
-        - settings
-    UpdateSettingDto:
-      type: object
-      properties:
-        value:
-          type: object
-          description: قيمة الإعداد
-        description:
+        titleAr:
           type: string
-          description: الوصف
+          description: العنوان بالعربية
+        titleEn:
+          type: string
+          description: العنوان بالإنجليزية
+        contentAr:
+          type: string
+          description: المحتوى بالعربية (HTML)
+        contentEn:
+          type: string
+          description: المحتوى بالإنجليزية (HTML)
+        isActive:
+          type: boolean
+          description: حالة النشر
+    TogglePolicyDto:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+          description: حالة النشر
       required:
-        - value
+        - isActive

@@ -24,10 +24,11 @@ import { Close, Save, Image, Link as LinkIcon, Campaign } from '@mui/icons-mater
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { BANNER_LOCATION_OPTIONS, BANNER_PROMOTION_TYPE_OPTIONS } from '../types/banner.types';
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
+import { ConfirmDialog } from '@/shared/components';
+import { BannerLocation, BannerPromotionType } from '../types/banner.types';
 import type {
   Banner,
-  BannerPromotionType,
   CreateBannerDto,
   UpdateBannerDto,
 } from '../types/banner.types';
@@ -54,8 +55,34 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
   isLoading = false,
 }) => {
   const { t } = useTranslation('banners');
+  const { confirmDialog, dialogProps } = useConfirmDialog();
   const isEditing = !!banner;
   const title = isEditing ? t('editBanner') : t('createBanner');
+  const titleId = `banner-dialog-title-${banner?._id || 'new'}`;
+  const descriptionId = `banner-dialog-description-${banner?._id || 'new'}`;
+
+  // Location options with translations
+  const locationOptions = [
+    { value: BannerLocation.HOME_TOP },
+    { value: BannerLocation.HOME_MIDDLE },
+    { value: BannerLocation.HOME_BOTTOM },
+    { value: BannerLocation.CATEGORY_TOP },
+    { value: BannerLocation.PRODUCT_PAGE },
+    { value: BannerLocation.CART_PAGE },
+    { value: BannerLocation.CHECKOUT_PAGE },
+    { value: BannerLocation.SIDEBAR },
+    { value: BannerLocation.FOOTER },
+  ];
+
+  // Promotion type options with translations
+  const promotionTypeOptions = [
+    { value: BannerPromotionType.DISCOUNT },
+    { value: BannerPromotionType.FREE_SHIPPING },
+    { value: BannerPromotionType.NEW_ARRIVAL },
+    { value: BannerPromotionType.SALE },
+    { value: BannerPromotionType.SEASONAL },
+    { value: BannerPromotionType.BRAND_PROMOTION },
+  ];
 
   const {
     control,
@@ -134,9 +161,14 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
     }
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
     if (isDirty) {
-      if (window.confirm('هل تريد إلغاء التغييرات غير المحفوظة؟')) {
+      const confirmed = await confirmDialog({
+        title: t('messages.unsavedChanges', 'تغييرات غير محفوظة'),
+        message: 'هل تريد إلغاء التغييرات غير المحفوظة؟',
+        type: 'warning',
+      });
+      if (confirmed) {
         onClose();
       }
     } else {
@@ -150,11 +182,13 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
       onClose={handleClose}
       maxWidth="md"
       fullWidth
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       PaperProps={{
         sx: { minHeight: '80vh' },
       }}
     >
-      <DialogTitle>
+      <DialogTitle id={titleId}>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
             <Campaign />
@@ -166,7 +200,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent dividers id={descriptionId}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={3}>
             {/* Basic Information */}
@@ -203,9 +237,9 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                   <FormControl fullWidth error={!!errors.location}>
                     <InputLabel>{t('form.location.label')}</InputLabel>
                     <Select {...field} label={t('form.location.label')} disabled={isLoading}>
-                      {BANNER_LOCATION_OPTIONS.map((option) => (
+                      {locationOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
-                          {option.label}
+                          {t(`form.location.${option.value}`)}
                         </MenuItem>
                       ))}
                     </Select>
@@ -350,9 +384,9 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                   <FormControl fullWidth>
                     <InputLabel>{t('form.promotionType.label')}</InputLabel>
                     <Select {...field} label={t('form.promotionType.label')} disabled={isLoading}>
-                      {BANNER_PROMOTION_TYPE_OPTIONS.map((option) => (
+                      {promotionTypeOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
-                          {option.label}
+                          {t(`form.promotionType.${option.value}`)}
                         </MenuItem>
                       ))}
                     </Select>
@@ -484,6 +518,9 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
           {isLoading ? t('saving') : t('save')}
         </Button>
       </DialogActions>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog {...dialogProps} />
     </Dialog>
   );
 };

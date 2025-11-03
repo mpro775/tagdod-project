@@ -10,6 +10,8 @@ import {
   Avatar,
   Divider,
   Grid,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -71,8 +73,12 @@ export const UserCard: React.FC<UserCardProps> = ({
   showActions = true,
 }) => {
   const { t } = useTranslation(['users', 'common']);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isDeleted = !!user.deletedAt;
-  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || t('users:card.unknown', 'غير محدد');
+  const fullName =
+    `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+    t('users:card.unknown', 'غير محدد');
   const primaryRole = user.roles?.[0] || UserRole.USER;
 
   const STATUS_LABELS: Record<UserStatus, string> = {
@@ -93,13 +99,23 @@ export const UserCard: React.FC<UserCardProps> = ({
   const getCapabilityIcons = () => {
     const icons = [];
     if (user.capabilities?.engineer_capable) {
-      icons.push(<EngineeringIcon key="engineer" color="success" />);
+      icons.push(
+        <EngineeringIcon
+          key="engineer"
+          color="success"
+          sx={{ fontSize: { xs: 16, sm: 20 } }}
+        />
+      );
     }
     if (user.capabilities?.wholesale_capable) {
-      icons.push(<StoreIcon key="wholesale" color="info" />);
+      icons.push(
+        <StoreIcon key="wholesale" color="info" sx={{ fontSize: { xs: 16, sm: 20 } }} />
+      );
     }
     if (user.capabilities?.admin_capable) {
-      icons.push(<AdminIcon key="admin" color="warning" />);
+      icons.push(
+        <AdminIcon key="admin" color="warning" sx={{ fontSize: { xs: 16, sm: 20 } }} />
+      );
     }
     return icons;
   };
@@ -109,31 +125,77 @@ export const UserCard: React.FC<UserCardProps> = ({
       sx={{
         height: '100%',
         transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+        bgcolor: 'background.paper',
+        backgroundImage: 'none',
+        boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
         '&:hover': {
           transform: 'translateY(-2px)',
-          boxShadow: 3,
+          boxShadow: theme.palette.mode === 'dark' ? 4 : 3,
         },
         opacity: isDeleted ? 0.7 : 1,
       }}
     >
-      <CardContent>
+      <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
-            {fullName.charAt(0).toUpperCase()}
-          </Avatar>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" fontWeight="bold" noWrap>
-              {fullName}
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-              <PhoneIcon sx={{ mr: 0.5, fontSize: '0.875rem', color: 'text.secondary' }} />
-              <Typography variant="body2" color="text.secondary">
-                {user.phone}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            mb: 2,
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1, sm: 0 },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, width: '100%' }}>
+            <Avatar
+              sx={{
+                mr: { xs: 1, sm: 2 },
+                bgcolor: 'primary.main',
+                width: { xs: 40, sm: 48 },
+                height: { xs: 40, sm: 48 },
+                fontSize: { xs: '1rem', sm: '1.25rem' },
+              }}
+            >
+              {fullName.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                noWrap
+                sx={{
+                  fontSize: { xs: '1rem', sm: '1.125rem' },
+                  color: 'text.primary',
+                }}
+              >
+                {fullName}
               </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                <PhoneIcon
+                  sx={{
+                    mr: 0.5,
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    color: 'text.secondary',
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  }}
+                  noWrap
+                >
+                  {user.phone}
+                </Typography>
+              </Box>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>{STATUS_ICONS[user.status]}</Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {React.cloneElement(STATUS_ICONS[user.status] as React.ReactElement, {
+              sx: { fontSize: { xs: 20, sm: 24 } },
+            })}
+          </Box>
         </Box>
 
         {/* Status and Role */}
@@ -142,23 +204,41 @@ export const UserCard: React.FC<UserCardProps> = ({
             label={STATUS_LABELS[user.status]}
             color={STATUS_COLORS[user.status]}
             size="small"
+            sx={{
+              fontSize: { xs: '0.7rem', sm: '0.75rem' },
+              height: { xs: 22, sm: 24 },
+            }}
           />
           <Chip
             label={ROLE_LABELS[primaryRole]}
             color={ROLE_COLORS[primaryRole]}
             size="small"
             variant="outlined"
+            sx={{
+              fontSize: { xs: '0.7rem', sm: '0.75rem' },
+              height: { xs: 22, sm: 24 },
+            }}
           />
         </Box>
 
         {/* Capabilities */}
         {user.capabilities && (
           <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                mb: 1,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              }}
+            >
               {t('users:card.capabilities', 'القدرات:')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <PersonIcon color="primary" />
+              <PersonIcon
+                color="primary"
+                sx={{ fontSize: { xs: 16, sm: 20 } }}
+              />
               {getCapabilityIcons()}
             </Box>
           </Box>
@@ -168,7 +248,13 @@ export const UserCard: React.FC<UserCardProps> = ({
         <Grid container spacing={1} sx={{ mb: 2 }}>
           {user.jobTitle && (
             <Grid component="div" size={{ xs: 12 }}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                }}
+              >
                 <strong>{t('users:card.jobTitle', 'الوظيفة:')}</strong> {user.jobTitle}
               </Typography>
             </Grid>
@@ -176,42 +262,85 @@ export const UserCard: React.FC<UserCardProps> = ({
           {user.capabilities?.wholesale_discount_percent &&
             user.capabilities.wholesale_discount_percent > 0 && (
               <Grid component="div" size={{ xs: 12 }}>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>{t('users:card.wholesaleDiscount', 'خصم الجملة:')}</strong> {user.capabilities.wholesale_discount_percent}%
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  }}
+                >
+                  <strong>{t('users:card.wholesaleDiscount', 'خصم الجملة:')}</strong>{' '}
+                  {user.capabilities.wholesale_discount_percent}%
                 </Typography>
               </Grid>
             )}
           <Grid component="div" size={{ xs: 12 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>{t('users:card.createdAt', 'تاريخ الإنشاء:')}</strong> {formatDate(user.createdAt)}
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              }}
+            >
+              <strong>{t('users:card.createdAt', 'تاريخ الإنشاء:')}</strong>{' '}
+              {formatDate(user.createdAt)}
             </Typography>
           </Grid>
         </Grid>
 
-        <Divider sx={{ my: 2 }} />
+        <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
 
         {/* Actions */}
         {showActions && (
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1.5, sm: 1 },
+            }}
+          >
+            <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
               {isDeleted ? (
                 onRestore && (
                   <Tooltip title={t('users:actions.restore', 'استعادة')}>
-                    <IconButton size="small" color="primary" onClick={() => onRestore(user)}>
-                      <RestoreIcon />
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => onRestore(user)}
+                      sx={{
+                        p: { xs: 0.75, sm: 1 },
+                      }}
+                    >
+                      <RestoreIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 )
               ) : (
                 <>
                   <Tooltip title={t('users:actions.edit', 'تعديل')}>
-                    <IconButton size="small" color="primary" onClick={() => onEdit(user)}>
-                      <EditIcon />
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => onEdit(user)}
+                      sx={{
+                        p: { xs: 0.75, sm: 1 },
+                      }}
+                    >
+                      <EditIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title={t('users:actions.delete', 'حذف')}>
-                    <IconButton size="small" color="error" onClick={() => onDelete(user)}>
-                      <DeleteIcon />
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => onDelete(user)}
+                      sx={{
+                        p: { xs: 0.75, sm: 1 },
+                      }}
+                    >
+                      <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 </>
@@ -220,11 +349,20 @@ export const UserCard: React.FC<UserCardProps> = ({
 
             {onStatusToggle && !isDeleted && (
               <Chip
-                label={user.status === UserStatus.ACTIVE ? t('users:status.active', 'نشط') : t('users:status.suspended', 'موقوف')}
+                label={
+                  user.status === UserStatus.ACTIVE
+                    ? t('users:status.active', 'نشط')
+                    : t('users:status.suspended', 'موقوف')
+                }
                 color={user.status === UserStatus.ACTIVE ? 'success' : 'error'}
                 size="small"
                 clickable
                 onClick={() => onStatusToggle(user, user.status !== UserStatus.ACTIVE)}
+                sx={{
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                  height: { xs: 24, sm: 28 },
+                  width: { xs: '100%', sm: 'auto' },
+                }}
               />
             )}
           </Box>

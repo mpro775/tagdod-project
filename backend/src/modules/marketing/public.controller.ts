@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param } from '@nestjs/common';
+import { Controller, Get, Query, Param, Req } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -92,7 +92,7 @@ export class MarketingPublicController {
   @Get('banners')
   @ApiOperation({
     summary: 'الحصول على البانرات النشطة',
-    description: 'استرداد قائمة البانرات الإعلانية النشطة حسب الموقع'
+    description: 'استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. إذا كان المستخدم مسجل دخول، سيتم عرض البانرات المتوافقة مع أدواره. للمستخدمين غير المسجلين، سيتم عرض البانرات العامة فقط.'
   })
   @ApiQuery({
     name: 'location',
@@ -124,8 +124,12 @@ export class MarketingPublicController {
       }
     }
   })
-  async getActiveBanners(@Query('location') location?: BannerLocation) {
-    const banners = await this.svc.getActiveBanners(location);
+  async getActiveBanners(
+    @Query('location') location?: BannerLocation,
+    @Req() req?: { user?: { roles?: string[] } }
+  ) {
+    const userRoles = req?.user?.roles;
+    const banners = await this.svc.getActiveBanners(location, userRoles);
     return banners;
   }
 

@@ -18,8 +18,11 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { Inventory, Edit, Save, Cancel, Warning, CheckCircle } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useUpdateStock, useCheckAvailability } from '../hooks/useProducts';
 import type { Variant, StockUpdateRequest } from '../types/product.types';
 
@@ -29,6 +32,9 @@ interface StockManagerProps {
 }
 
 export const StockManager: React.FC<StockManagerProps> = ({ variant, onStockUpdate }) => {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [open, setOpen] = useState(false);
   const [quantity, setQuantity] = useState('');
   const [operation, setOperation] = useState<'add' | 'subtract' | 'set'>('set');
@@ -67,11 +73,11 @@ export const StockManager: React.FC<StockManagerProps> = ({ variant, onStockUpda
 
   const getStockStatus = () => {
     if (variant.stock === 0) {
-      return { label: 'نفذ', color: 'error' as const, icon: <Warning /> };
+      return { label: t('products:variants.status.outOfStock', 'نفذ'), color: 'error' as const, icon: <Warning /> };
     } else if (variant.stock <= variant.minStock) {
-      return { label: 'مخزون منخفض', color: 'warning' as const, icon: <Warning /> };
+      return { label: t('products:variants.status.low', 'مخزون منخفض'), color: 'warning' as const, icon: <Warning /> };
     } else {
-      return { label: 'متوفر', color: 'success' as const, icon: <CheckCircle /> };
+      return { label: t('products:variants.status.available', 'متوفر'), color: 'success' as const, icon: <CheckCircle /> };
     }
   };
 
@@ -83,46 +89,48 @@ export const StockManager: React.FC<StockManagerProps> = ({ variant, onStockUpda
         <Box display="flex" alignItems="center" gap={1} mb={2}>
           <Inventory color="primary" />
           <Typography variant="h6" component="div">
-            إدارة المخزون
+            {t('products:inventory.title', 'إدارة المخزون')}
           </Typography>
         </Box>
 
-        <Box display="flex" alignItems="center" gap={2} mb={2}>
-          <Typography variant="body1">المخزون الحالي:</Typography>
+        <Box display="flex" alignItems="center" gap={2} mb={2} flexWrap="wrap">
+          <Typography variant={isMobile ? 'body2' : 'body1'}>
+            {t('products:inventory.currentStock', 'المخزون الحالي')}:
+          </Typography>
           <Chip
-            label={`${variant.stock} وحدة`}
+            label={t('products:inventory.units', '{{count}} وحدة', { count: variant.stock })}
             color={stockStatus.color}
             icon={stockStatus.icon}
             variant="outlined"
           />
         </Box>
 
-        <Box display="flex" alignItems="center" gap={2} mb={2}>
+        <Box display="flex" alignItems="center" gap={2} mb={2} flexWrap="wrap">
           <Typography variant="body2" color="text.secondary">
-            الحد الأدنى:
+            {t('products:inventory.minimum', 'الحد الأدنى')}:
           </Typography>
           <Typography variant="body2" fontWeight="medium">
-            {variant.minStock} وحدة
+            {t('products:inventory.units', '{{count}} وحدة', { count: variant.minStock })}
           </Typography>
         </Box>
 
-        <Box display="flex" alignItems="center" gap={2} mb={2}>
+        <Box display="flex" alignItems="center" gap={2} mb={2} flexWrap="wrap">
           <Typography variant="body2" color="text.secondary">
-            تتبع المخزون:
+            {t('products:inventory.trackInventory', 'تتبع المخزون')}:
           </Typography>
           <Chip
-            label={variant.trackInventory ? 'مفعل' : 'معطل'}
+            label={variant.trackInventory ? t('common:status.active', 'مفعل') : t('products:inventory.disabled', 'معطل')}
             color={variant.trackInventory ? 'success' : 'default'}
             size="small"
           />
         </Box>
 
-        <Box display="flex" alignItems="center" gap={2} mb={3}>
+        <Box display="flex" alignItems="center" gap={2} mb={3} flexWrap="wrap">
           <Typography variant="body2" color="text.secondary">
-            السماح بالطلب المسبق:
+            {t('products:inventory.allowBackorder', 'السماح بالطلب المسبق')}:
           </Typography>
           <Chip
-            label={variant.allowBackorder ? 'مسموح' : 'غير مسموح'}
+            label={variant.allowBackorder ? t('products:inventory.allowed', 'مسموح') : t('products:inventory.notAllowed', 'غير مسموح')}
             color={variant.allowBackorder ? 'success' : 'default'}
             size="small"
           />
@@ -133,9 +141,9 @@ export const StockManager: React.FC<StockManagerProps> = ({ variant, onStockUpda
         {/* Availability Check */}
         <Box mb={2}>
           <Typography variant="subtitle2" gutterBottom>
-            فحص التوفر
+            {t('products:inventory.checkAvailability', 'فحص التوفر')}
           </Typography>
-          <Box display="flex" gap={1} alignItems="center">
+          <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
             <TextField
               size="small"
               type="number"
@@ -144,12 +152,12 @@ export const StockManager: React.FC<StockManagerProps> = ({ variant, onStockUpda
               sx={{ width: 100 }}
               inputProps={{ min: 1 }}
             />
-            <Typography variant="body2">وحدة</Typography>
+            <Typography variant="body2">{t('products:inventory.unit', 'وحدة')}</Typography>
             {checkingAvailability ? (
               <CircularProgress size={20} />
             ) : availability ? (
               <Chip
-                label={availability.available ? 'متوفر' : 'غير متوفر'}
+                label={availability.available ? t('products:variants.status.available', 'متوفر') : t('products:variants.status.unavailable', 'غير متوفر')}
                 color={availability.available ? 'success' : 'error'}
                 size="small"
               />
@@ -158,7 +166,7 @@ export const StockManager: React.FC<StockManagerProps> = ({ variant, onStockUpda
         </Box>
 
         <Button variant="contained" startIcon={<Edit />} onClick={() => setOpen(true)} fullWidth>
-          تحديث المخزون
+          {t('products:inventory.updateStock', 'تحديث المخزون')}
         </Button>
       </CardContent>
 

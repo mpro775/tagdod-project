@@ -30,6 +30,7 @@ import {
   AccordionDetails,
   LinearProgress,
   Paper,
+  useTheme,
 } from '@mui/material';
 import {
   Send,
@@ -55,7 +56,9 @@ import {
   ExpandMore,
 } from '@mui/icons-material';
 import { GridColDef } from '@mui/x-data-grid';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   useNotifications,
   useSendNotification,
@@ -85,6 +88,10 @@ import {
 } from '../types/notification.types';
 
 export const NotificationsListPage: React.FC = () => {
+  const theme = useTheme();
+  const { t } = useTranslation('notifications');
+  const { isMobile } = useBreakpoint();
+  const { confirmDialog, dialogProps } = useConfirmDialog();
   const [filters, setFilters] = useState<ListNotificationsParams>({
     search: '',
     channel: undefined,
@@ -156,35 +163,47 @@ export const NotificationsListPage: React.FC = () => {
       { id: notification._id, data: {} },
       {
         onSuccess: () => {
-          showSnackbar('تم إرسال التنبيه بنجاح', 'success');
+          showSnackbar(t('messages.sendSuccess'), 'success');
           refetch();
         },
-        onError: () => showSnackbar('فشل في إرسال التنبيه', 'error'),
+        onError: () => showSnackbar(t('messages.sendError'), 'error'),
       }
     );
   };
 
-  const handleDelete = (notification: Notification) => {
-    if (window.confirm('هل تريد حذف التنبيه؟')) {
+  const handleDelete = async (notification: Notification) => {
+    const confirmed = await confirmDialog({
+      title: t('messages.deleteTitle', 'تأكيد الحذف'),
+      message: t('messages.deleteConfirm'),
+      type: 'warning',
+      confirmColor: 'error',
+    });
+    if (confirmed) {
       deleteNotification(notification._id, {
         onSuccess: () => {
-          showSnackbar('تم حذف التنبيه بنجاح', 'success');
+          showSnackbar(t('messages.deleteSuccess'), 'success');
           refetch();
         },
-        onError: () => showSnackbar('فشل في حذف التنبيه', 'error'),
+        onError: () => showSnackbar(t('messages.deleteError'), 'error'),
       });
     }
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedNotifications.length === 0) {
-      showSnackbar('يرجى تحديد التنبيهات المراد حذفها', 'warning');
+      showSnackbar(t('messages.bulkDeleteWarning'), 'warning');
       return;
     }
 
-    if (window.confirm(`هل تريد حذف ${selectedNotifications.length} تنبيه؟`)) {
+    const confirmed = await confirmDialog({
+      title: t('messages.bulkDeleteTitle', 'تأكيد الحذف الجماعي'),
+      message: t('messages.bulkDeleteConfirm', { count: selectedNotifications.length }),
+      type: 'warning',
+      confirmColor: 'error',
+    });
+    if (confirmed) {
       // Implement bulk delete logic
-      showSnackbar('تم حذف التنبيهات المحددة', 'success');
+      showSnackbar(t('messages.bulkDeleteSuccess'), 'success');
       setSelectedNotifications([]);
       refetch();
     }
@@ -198,10 +217,10 @@ export const NotificationsListPage: React.FC = () => {
           onSuccess: () => {
             setEditDialogOpen(false);
             setSelectedNotification(null);
-            showSnackbar('تم تحديث التنبيه بنجاح', 'success');
+            showSnackbar(t('messages.updateSuccess'), 'success');
             refetch();
           },
-          onError: () => showSnackbar('فشل في تحديث التنبيه', 'error'),
+          onError: () => showSnackbar(t('messages.updateError'), 'error'),
         }
       );
     }
@@ -211,10 +230,10 @@ export const NotificationsListPage: React.FC = () => {
     createNotification(data, {
       onSuccess: () => {
         setCreateDialogOpen(false);
-        showSnackbar('تم إنشاء التنبيه بنجاح', 'success');
+        showSnackbar(t('messages.createSuccess'), 'success');
         refetch();
       },
-      onError: () => showSnackbar('فشل في إنشاء التنبيه', 'error'),
+      onError: () => showSnackbar(t('messages.createError'), 'error'),
     });
   };
 
@@ -222,10 +241,10 @@ export const NotificationsListPage: React.FC = () => {
     bulkSendNotification(data, {
       onSuccess: () => {
         setBulkSendDialogOpen(false);
-        showSnackbar('تم إرسال التنبيهات بنجاح', 'success');
+        showSnackbar(t('messages.bulkSendSuccess'), 'success');
         refetch();
       },
-      onError: () => showSnackbar('فشل في إرسال التنبيهات', 'error'),
+      onError: () => showSnackbar(t('messages.bulkSendError'), 'error'),
     });
   };
 
@@ -235,16 +254,16 @@ export const NotificationsListPage: React.FC = () => {
       {
         onSuccess: () => {
           setTestDialogOpen(false);
-          showSnackbar('تم إرسال تنبيه الاختبار بنجاح', 'success');
+          showSnackbar(t('messages.testSuccess'), 'success');
         },
-        onError: () => showSnackbar('فشل في إرسال تنبيه الاختبار', 'error'),
+        onError: () => showSnackbar(t('messages.testError'), 'error'),
       }
     );
   };
 
   const handleRefresh = () => {
     refetch();
-    showSnackbar('تم تحديث البيانات', 'info');
+    showSnackbar(t('messages.refreshSuccess'), 'info');
   };
 
   const getStatusColor = (status: NotificationStatus) => {
@@ -279,27 +298,27 @@ export const NotificationsListPage: React.FC = () => {
   const getStatusLabel = (status: NotificationStatus) => {
     switch (status) {
       case NotificationStatus.SENT:
-        return 'مرسل';
+        return t('statuses.sent');
       case NotificationStatus.DELIVERED:
-        return 'تم التسليم';
+        return t('statuses.delivered');
       case NotificationStatus.READ:
-        return 'مقروء';
+        return t('statuses.read');
       case NotificationStatus.CLICKED:
-        return 'تم النقر';
+        return t('statuses.clicked');
       case NotificationStatus.FAILED:
-        return 'فشل';
+        return t('statuses.failed');
       case NotificationStatus.BOUNCED:
-        return 'مرفوض';
+        return t('statuses.bounced');
       case NotificationStatus.REJECTED:
-        return 'مرفوض';
+        return t('statuses.rejected');
       case NotificationStatus.CANCELLED:
-        return 'ملغي';
+        return t('statuses.cancelled');
       case NotificationStatus.PENDING:
-        return 'معلق';
+        return t('statuses.pending');
       case NotificationStatus.QUEUED:
-        return 'قيد الانتظار';
+        return t('statuses.queued');
       case NotificationStatus.SENDING:
-        return 'جاري الإرسال';
+        return t('statuses.sending');
       default:
         return status;
     }
@@ -332,15 +351,15 @@ export const NotificationsListPage: React.FC = () => {
   const getChannelLabel = (channel: NotificationChannel) => {
     switch (channel) {
       case NotificationChannel.IN_APP:
-        return 'داخل التطبيق';
+        return t('channels.IN_APP');
       case NotificationChannel.PUSH:
-        return 'إشعار دفع';
+        return t('channels.PUSH');
       case NotificationChannel.SMS:
-        return 'رسالة نصية';
+        return t('channels.SMS');
       case NotificationChannel.EMAIL:
-        return 'بريد إلكتروني';
+        return t('channels.EMAIL');
       case NotificationChannel.DASHBOARD:
-        return 'لوحة التحكم';
+        return t('channels.DASHBOARD');
       default:
         return channel;
     }
@@ -381,13 +400,13 @@ export const NotificationsListPage: React.FC = () => {
   const getPriorityLabel = (priority: NotificationPriority) => {
     switch (priority) {
       case NotificationPriority.URGENT:
-        return 'عاجل';
+        return t('priorities.urgent');
       case NotificationPriority.HIGH:
-        return 'عالي';
+        return t('priorities.high');
       case NotificationPriority.MEDIUM:
-        return 'متوسط';
+        return t('priorities.medium');
       case NotificationPriority.LOW:
-        return 'منخفض';
+        return t('priorities.low');
       default:
         return priority;
     }
@@ -396,41 +415,42 @@ export const NotificationsListPage: React.FC = () => {
   const getCategoryLabel = (category: NotificationCategory) => {
     switch (category) {
       case NotificationCategory.ORDER:
-        return 'الطلبات';
+        return t('categories.ORDER');
       case NotificationCategory.PRODUCT:
-        return 'المنتجات';
+        return t('categories.PRODUCT');
       case NotificationCategory.SERVICE:
-        return 'الخدمات';
+        return t('categories.SERVICE');
       case NotificationCategory.PROMOTION:
-        return 'العروض';
+        return t('categories.PROMOTION');
       case NotificationCategory.ACCOUNT:
-        return 'الحساب';
+        return t('categories.ACCOUNT');
       case NotificationCategory.SYSTEM:
-        return 'النظام';
+        return t('categories.SYSTEM');
       case NotificationCategory.SUPPORT:
-        return 'الدعم';
+        return t('categories.SUPPORT');
       case NotificationCategory.PAYMENT:
-        return 'الدفع';
+        return t('categories.PAYMENT');
       case NotificationCategory.MARKETING:
-        return 'التسويق';
+        return t('categories.MARKETING');
       default:
         return category;
     }
   };
 
-  const columns: GridColDef[] = [
+  const baseColumns: GridColDef[] = [
     {
       field: 'title',
-      headerName: 'العنوان',
-      width: 250,
-      renderCell: (params) => (
+      headerName: t('columns.title'),
+      width: isMobile ? 200 : 250,
+      flex: 2,
+      renderCell: (params: any) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
             {getChannelIcon(params.row.channel)}
           </Avatar>
           <Box>
             <Typography variant="body2" noWrap title={params.value} sx={{ fontWeight: 'medium' }}>
-          {params.value || 'بدون عنوان'}
+          {params.value || t('placeholders.noTitle')}
         </Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
               {params.row.message?.substring(0, 50)}...
@@ -441,9 +461,10 @@ export const NotificationsListPage: React.FC = () => {
     },
     {
       field: 'type',
-      headerName: 'النوع',
+      headerName: t('columns.type'),
       width: 150,
-      renderCell: (params) => (
+      flex: 1,
+      renderCell: (params: any) => (
         <Chip
           label={getCategoryLabel(params.row.category)}
           size="small"
@@ -454,9 +475,10 @@ export const NotificationsListPage: React.FC = () => {
     },
     {
       field: 'channel',
-      headerName: 'القناة',
+      headerName: t('columns.channel'),
       width: 120,
-      renderCell: (params) => (
+      flex: 0.8,
+      renderCell: (params: any) => (
         <Chip
           label={getChannelLabel(params.value)}
           size="small"
@@ -467,9 +489,10 @@ export const NotificationsListPage: React.FC = () => {
     },
     {
       field: 'status',
-      headerName: 'الحالة',
-      width: 140,
-      renderCell: (params) => (
+      headerName: t('columns.status'),
+      width: isMobile ? 100 : 140,
+      flex: 1,
+      renderCell: (params: any) => (
         <Chip
           label={getStatusLabel(params.value)}
           color={getStatusColor(params.value) as any}
@@ -480,9 +503,10 @@ export const NotificationsListPage: React.FC = () => {
     },
     {
       field: 'priority',
-      headerName: 'الأولوية',
+      headerName: t('columns.priority'),
       width: 100,
-      renderCell: (params) => (
+      flex: 0.8,
+      renderCell: (params: any) => (
         <Chip
           label={getPriorityLabel(params.value)}
           color={getPriorityColor(params.value) as any}
@@ -493,9 +517,10 @@ export const NotificationsListPage: React.FC = () => {
     },
     {
       field: 'user',
-      headerName: 'المستخدم',
-      width: 180,
-      renderCell: (params) => {
+      headerName: t('columns.user'),
+      width: isMobile ? 120 : 180,
+      flex: 1.2,
+      renderCell: (params: any) => {
         const user = params.row.user;
         return user ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -515,27 +540,29 @@ export const NotificationsListPage: React.FC = () => {
           </Box>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            غير محدد
+            {t('placeholders.notSpecified')}
           </Typography>
         );
       },
     },
     {
       field: 'createdAt',
-      headerName: 'تاريخ الإنشاء',
-      width: 140,
-      valueFormatter: (value) => formatDate(value as Date),
+      headerName: t('columns.createdAt'),
+      width: isMobile ? 100 : 140,
+      flex: 1,
+      valueFormatter: (value: any) => formatDate(value as Date),
     },
     {
       field: 'sentAt',
-      headerName: 'تاريخ الإرسال',
-      width: 140,
-      valueFormatter: (value) => (value ? formatDate(value as Date) : '-'),
+      headerName: t('columns.sentAt'),
+      width: isMobile ? 100 : 140,
+      flex: 1,
+      valueFormatter: (value: any) => (value ? formatDate(value as Date) : '-'),
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
-      width: 200,
+      headerName: t('columns.actions'),
+      width: isMobile ? 150 : 200,
       sortable: false,
       renderCell: (params) => {
         const notif = params.row as Notification;
@@ -546,7 +573,7 @@ export const NotificationsListPage: React.FC = () => {
 
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title="عرض التفاصيل">
+            <Tooltip title={t('actions.viewDetails')}>
               <IconButton
                 size="small"
                 color="info"
@@ -560,7 +587,7 @@ export const NotificationsListPage: React.FC = () => {
             </Tooltip>
 
             {canEdit && (
-            <Tooltip title="تعديل">
+            <Tooltip title={t('actions.edit')}>
               <IconButton
                 size="small"
                 color="primary"
@@ -575,7 +602,7 @@ export const NotificationsListPage: React.FC = () => {
             )}
 
             {canSend && (
-              <Tooltip title="إرسال">
+              <Tooltip title={t('actions.send')}>
                 <IconButton
                   size="small"
                   color="success"
@@ -590,7 +617,7 @@ export const NotificationsListPage: React.FC = () => {
               </Tooltip>
             )}
 
-            <Tooltip title="حذف">
+            <Tooltip title={t('actions.delete')}>
               <IconButton
                 size="small"
                 color="error"
@@ -609,6 +636,13 @@ export const NotificationsListPage: React.FC = () => {
     },
   ];
 
+  const columns: GridColDef[] = React.useMemo(() => {
+    if (isMobile) {
+      return [baseColumns[0], baseColumns[3], baseColumns[8]];
+    }
+    return baseColumns;
+  }, [isMobile, baseColumns]);
+
   return (
     <Box>
       {/* Loading State */}
@@ -620,20 +654,20 @@ export const NotificationsListPage: React.FC = () => {
 
       {/* Error State */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          حدث خطأ في تحميل البيانات: {error.message}
+        <Alert severity="error" sx={{ mb: isMobile ? 2 : 3 }}>
+          {t('messages.loadingErrorWithDetails', { error: error.message || t('messages.loadingError') })}
         </Alert>
       )}
 
       {/* Statistics Cards */}
       {statsLoading ? (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: isMobile ? 2 : 3 }}>
           {[...Array(6)].map((_, index) => (
-            <Grid key={index} size={{ xs: 12, sm: 6, md: 2 }}>
-            <Card>
-              <CardContent>
-                  <Skeleton variant="text" height={40} />
-                  <Skeleton variant="text" height={20} />
+            <Grid key={index} size={{ xs: 6, sm: 4, md: 2 }}>
+              <Card sx={{ bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default' }}>
+                <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+                  <Skeleton variant="text" height={isMobile ? 30 : 40} />
+                  <Skeleton variant="text" height={isMobile ? 16 : 20} />
                 </CardContent>
               </Card>
             </Grid>
@@ -641,200 +675,188 @@ export const NotificationsListPage: React.FC = () => {
         </Grid>
       ) : (
         stats && (
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <Card
-                sx={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                }}
-              >
-                <CardContent>
+          <Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: isMobile ? 2 : 3 }}>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Notifications sx={{ mr: 1 }} />
-                <Typography variant="h6">{stats.total}</Typography>
+                    <Notifications sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem', color: theme.palette.primary.main }} />
+                    <Typography variant={isMobile ? 'body1' : 'h6'} sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}>
+                      {stats.total || 0}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  إجمالي التنبيهات
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <Card
-                sx={{
-                  background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                  color: 'white',
-                }}
-              >
-              <CardContent>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                    {t('stats.total')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <CheckCircle sx={{ mr: 1 }} />
-                    <Typography variant="h6">{stats.byStatus?.sent || 0}</Typography>
+                    <CheckCircle sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem', color: theme.palette.success.main }} />
+                    <Typography variant={isMobile ? 'body1' : 'h6'} sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}>
+                      {stats.byStatus?.sent || 0}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    مرسل بنجاح
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <Card
-                sx={{
-                  background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                  color: 'white',
-                }}
-              >
-              <CardContent>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                    {t('stats.sent')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Pending sx={{ mr: 1 }} />
-                    <Typography variant="h6">{stats.byStatus?.queued || 0}</Typography>
+                    <Pending sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem', color: theme.palette.warning.main }} />
+                    <Typography variant={isMobile ? 'body1' : 'h6'} sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}>
+                      {stats.byStatus?.queued || 0}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  قيد الانتظار
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <Card
-                sx={{
-                  background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
-                  color: 'white',
-                }}
-              >
-              <CardContent>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                    {t('stats.queued')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Error sx={{ mr: 1 }} />
-                    <Typography variant="h6">{stats.byStatus?.failed || 0}</Typography>
+                    <Error sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem', color: theme.palette.error.main }} />
+                    <Typography variant={isMobile ? 'body1' : 'h6'} sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}>
+                      {stats.byStatus?.failed || 0}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    فشل في الإرسال
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <Card
-                sx={{
-                  background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-                  color: '#333',
-                }}
-              >
-              <CardContent>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                    {t('stats.failed')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <CheckCircle sx={{ mr: 1 }} />
-                    <Typography variant="h6">{stats.byStatus?.read || 0}</Typography>
+                    <CheckCircle sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem', color: theme.palette.info.main }} />
+                    <Typography variant={isMobile ? 'body1' : 'h6'} sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}>
+                      {stats.byStatus?.read || 0}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                    تم القراءة
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <Card
-                sx={{
-                  background: 'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)',
-                  color: '#333',
-                }}
-              >
-              <CardContent>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                    {t('stats.read')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <TrendingUp sx={{ mr: 1 }} />
-                    <Typography variant="h6">{stats.unreadCount || 0}</Typography>
+                    <TrendingUp sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem', color: theme.palette.secondary.main }} />
+                    <Typography variant={isMobile ? 'body1' : 'h6'} sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}>
+                      {stats.unreadCount || 0}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                    غير مقروء
-                </Typography>
-              </CardContent>
-            </Card>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                    {t('stats.unread')}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
-        </Grid>
         )
       )}
 
       {/* Filters and Actions */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
-        <TextField
-          size="small"
-            placeholder="البحث في العنوان أو المحتوى..."
+      <Paper 
+        sx={{ 
+          p: isMobile ? 1.5 : 2, 
+          mb: isMobile ? 1.5 : 2,
+          bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default'
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: isMobile ? 1.5 : 2, flexWrap: 'wrap', alignItems: 'center', mb: isMobile ? 1.5 : 2 }}>
+          <TextField
+            size="small"
+            placeholder={t('filters.search')}
             value={filters.search || ''}
-          onChange={(e) => handleFilterChange('search', e.target.value)}
-          InputProps={{
-            startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-          }}
-            sx={{ minWidth: 250 }}
-        />
+            onChange={(e) => handleFilterChange('search', e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+            }}
+            sx={{ minWidth: isMobile ? '100%' : 250, flex: isMobile ? '1 1 100%' : undefined }}
+          />
 
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>القناة</InputLabel>
-          <Select
+          <FormControl size="small" sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}>
+            <InputLabel>{t('filters.channel')}</InputLabel>
+            <Select
               value={filters.channel || ''}
               onChange={(e) => handleFilterChange('channel', e.target.value || undefined)}
-            label="القناة"
-          >
-            <MenuItem value="">الكل</MenuItem>
-              <MenuItem value={NotificationChannel.IN_APP}>داخل التطبيق</MenuItem>
-              <MenuItem value={NotificationChannel.PUSH}>إشعار دفع</MenuItem>
-              <MenuItem value={NotificationChannel.SMS}>رسالة نصية</MenuItem>
-              <MenuItem value={NotificationChannel.EMAIL}>بريد إلكتروني</MenuItem>
-              <MenuItem value={NotificationChannel.DASHBOARD}>لوحة التحكم</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>الحالة</InputLabel>
-          <Select
-              value={filters.status || ''}
-              onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-            label="الحالة"
-          >
-            <MenuItem value="">الكل</MenuItem>
-              <MenuItem value={NotificationStatus.SENT}>مرسل</MenuItem>
-              <MenuItem value={NotificationStatus.DELIVERED}>تم التسليم</MenuItem>
-              <MenuItem value={NotificationStatus.READ}>مقروء</MenuItem>
-              <MenuItem value={NotificationStatus.CLICKED}>تم النقر</MenuItem>
-              <MenuItem value={NotificationStatus.FAILED}>فشل</MenuItem>
-              <MenuItem value={NotificationStatus.QUEUED}>قيد الانتظار</MenuItem>
-              <MenuItem value={NotificationStatus.PENDING}>معلق</MenuItem>
-              <MenuItem value={NotificationStatus.CANCELLED}>ملغي</MenuItem>
-          </Select>
-        </FormControl>
-
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>الفئة</InputLabel>
-            <Select
-              value={filters.category || ''}
-              onChange={(e) => handleFilterChange('category', e.target.value || undefined)}
-              label="الفئة"
+              label={t('filters.channel')}
             >
-              <MenuItem value="">الكل</MenuItem>
-              <MenuItem value={NotificationCategory.ORDER}>الطلبات</MenuItem>
-              <MenuItem value={NotificationCategory.PRODUCT}>المنتجات</MenuItem>
-              <MenuItem value={NotificationCategory.SERVICE}>الخدمات</MenuItem>
-              <MenuItem value={NotificationCategory.PROMOTION}>العروض</MenuItem>
-              <MenuItem value={NotificationCategory.ACCOUNT}>الحساب</MenuItem>
-              <MenuItem value={NotificationCategory.SYSTEM}>النظام</MenuItem>
-              <MenuItem value={NotificationCategory.SUPPORT}>الدعم</MenuItem>
-              <MenuItem value={NotificationCategory.PAYMENT}>الدفع</MenuItem>
-              <MenuItem value={NotificationCategory.MARKETING}>التسويق</MenuItem>
+              <MenuItem value="">{t('filters.all')}</MenuItem>
+              <MenuItem value={NotificationChannel.IN_APP}>{t('channels.IN_APP')}</MenuItem>
+              <MenuItem value={NotificationChannel.PUSH}>{t('channels.PUSH')}</MenuItem>
+              <MenuItem value={NotificationChannel.SMS}>{t('channels.SMS')}</MenuItem>
+              <MenuItem value={NotificationChannel.EMAIL}>{t('channels.EMAIL')}</MenuItem>
+              <MenuItem value={NotificationChannel.DASHBOARD}>{t('channels.DASHBOARD')}</MenuItem>
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>الأولوية</InputLabel>
+          <FormControl size="small" sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}>
+            <InputLabel>{t('filters.status')}</InputLabel>
+            <Select
+              value={filters.status || ''}
+              onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
+              label={t('filters.status')}
+            >
+              <MenuItem value="">{t('filters.all')}</MenuItem>
+              <MenuItem value={NotificationStatus.SENT}>{t('statuses.sent')}</MenuItem>
+              <MenuItem value={NotificationStatus.DELIVERED}>{t('statuses.delivered')}</MenuItem>
+              <MenuItem value={NotificationStatus.READ}>{t('statuses.read')}</MenuItem>
+              <MenuItem value={NotificationStatus.CLICKED}>{t('statuses.clicked')}</MenuItem>
+              <MenuItem value={NotificationStatus.FAILED}>{t('statuses.failed')}</MenuItem>
+              <MenuItem value={NotificationStatus.QUEUED}>{t('statuses.queued')}</MenuItem>
+              <MenuItem value={NotificationStatus.PENDING}>{t('statuses.pending')}</MenuItem>
+              <MenuItem value={NotificationStatus.CANCELLED}>{t('statuses.cancelled')}</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}>
+            <InputLabel>{t('filters.category')}</InputLabel>
+            <Select
+              value={filters.category || ''}
+              onChange={(e) => handleFilterChange('category', e.target.value || undefined)}
+              label={t('filters.category')}
+            >
+              <MenuItem value="">{t('filters.all')}</MenuItem>
+              <MenuItem value={NotificationCategory.ORDER}>{t('categories.ORDER')}</MenuItem>
+              <MenuItem value={NotificationCategory.PRODUCT}>{t('categories.PRODUCT')}</MenuItem>
+              <MenuItem value={NotificationCategory.SERVICE}>{t('categories.SERVICE')}</MenuItem>
+              <MenuItem value={NotificationCategory.PROMOTION}>{t('categories.PROMOTION')}</MenuItem>
+              <MenuItem value={NotificationCategory.ACCOUNT}>{t('categories.ACCOUNT')}</MenuItem>
+              <MenuItem value={NotificationCategory.SYSTEM}>{t('categories.SYSTEM')}</MenuItem>
+              <MenuItem value={NotificationCategory.SUPPORT}>{t('categories.SUPPORT')}</MenuItem>
+              <MenuItem value={NotificationCategory.PAYMENT}>{t('categories.PAYMENT')}</MenuItem>
+              <MenuItem value={NotificationCategory.MARKETING}>{t('categories.MARKETING')}</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}>
+            <InputLabel>{t('filters.priority')}</InputLabel>
             <Select
               value={filters.priority || ''}
               onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
-              label="الأولوية"
+              label={t('filters.priority')}
             >
-              <MenuItem value="">الكل</MenuItem>
-              <MenuItem value={NotificationPriority.URGENT}>عاجل</MenuItem>
-              <MenuItem value={NotificationPriority.HIGH}>عالي</MenuItem>
-              <MenuItem value={NotificationPriority.MEDIUM}>متوسط</MenuItem>
-              <MenuItem value={NotificationPriority.LOW}>منخفض</MenuItem>
+              <MenuItem value="">{t('filters.all')}</MenuItem>
+              <MenuItem value={NotificationPriority.URGENT}>{t('priorities.urgent')}</MenuItem>
+              <MenuItem value={NotificationPriority.HIGH}>{t('priorities.high')}</MenuItem>
+              <MenuItem value={NotificationPriority.MEDIUM}>{t('priorities.medium')}</MenuItem>
+              <MenuItem value={NotificationPriority.LOW}>{t('priorities.low')}</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -845,17 +867,21 @@ export const NotificationsListPage: React.FC = () => {
             startIcon={<Add />}
             onClick={() => setCreateDialogOpen(true)}
             disabled={isCreating}
+            size={isMobile ? 'small' : 'medium'}
+            fullWidth={isMobile}
           >
-          إضافة تنبيه
-        </Button>
+            {t('actions.add')}
+          </Button>
 
           <Button
             variant="outlined"
             startIcon={<Send />}
             onClick={() => setBulkSendDialogOpen(true)}
             disabled={isBulkSending}
+            size={isMobile ? 'small' : 'medium'}
+            fullWidth={isMobile}
           >
-            إرسال مجمع
+            {t('actions.bulkSend')}
           </Button>
 
           <Button
@@ -863,8 +889,10 @@ export const NotificationsListPage: React.FC = () => {
             startIcon={<Analytics />}
             onClick={() => setTestDialogOpen(true)}
             disabled={isTesting}
+            size={isMobile ? 'small' : 'medium'}
+            fullWidth={isMobile}
           >
-            اختبار قالب
+            {t('actions.testTemplate')}
           </Button>
 
           <Button
@@ -872,15 +900,17 @@ export const NotificationsListPage: React.FC = () => {
             startIcon={<Refresh />}
             onClick={handleRefresh}
             disabled={isLoading}
+            size={isMobile ? 'small' : 'medium'}
+            fullWidth={isMobile}
           >
-            تحديث
+            {t('actions.refresh')}
           </Button>
 
           {selectedNotifications.length > 0 && (
             <>
-              <Divider orientation="vertical" flexItem />
-              <Typography variant="body2" color="text.secondary">
-                {selectedNotifications.length} محدد
+              <Divider orientation="vertical" flexItem sx={{ display: isMobile ? 'none' : 'block' }} />
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.8rem' : undefined }}>
+                {selectedNotifications.length} {t('actions.selected')}
               </Typography>
               <Button
                 variant="outlined"
@@ -888,34 +918,41 @@ export const NotificationsListPage: React.FC = () => {
                 startIcon={<Delete />}
                 onClick={handleBulkDelete}
                 disabled={isDeleting}
+                size={isMobile ? 'small' : 'medium'}
+                fullWidth={isMobile}
               >
-                حذف المحدد
+                {t('actions.bulkDelete')}
               </Button>
             </>
           )}
-      </Box>
+        </Box>
       </Paper>
 
       {/* Data Table */}
-      <Paper sx={{ height: 'calc(100vh - 500px)' }}>
-      <DataTable
-        title="إدارة التنبيهات"
-        columns={columns}
-        rows={notifications}
-        loading={isLoading}
+      <Paper 
+        sx={{ 
+          height: isMobile ? 'auto' : 'calc(100vh - 500px)',
+          bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default'
+        }}
+      >
+        <DataTable
+          title={t('listTitle')}
+          columns={columns}
+          rows={notifications}
+          loading={isLoading}
           paginationModel={{ page: (filters.page || 1) - 1, pageSize: filters.limit || 20 }}
-        onPaginationModelChange={(model) => {
-          setFilters((prev) => ({
-            ...prev,
+          onPaginationModelChange={(model) => {
+            setFilters((prev) => ({
+              ...prev,
               page: model.page + 1,
               limit: model.pageSize,
-          }));
-        }}
-        getRowId={(row) => (row as Notification)._id}
-        selectable
-        onRowSelectionModelChange={(newSelection) => {
-          setSelectedNotifications(newSelection as string[]);
-        }}
+            }));
+          }}
+          getRowId={(row) => (row as Notification)._id}
+          selectable
+          onRowSelectionModelChange={(newSelection) => {
+            setSelectedNotifications(newSelection as string[]);
+          }}
         />
       </Paper>
 
@@ -941,10 +978,11 @@ export const NotificationsListPage: React.FC = () => {
         onClose={() => setViewDialogOpen(false)}
         maxWidth="lg"
         fullWidth
+        fullScreen={isMobile}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: isMobile ? '1.125rem' : undefined }}>
           <Visibility />
-          تفاصيل التنبيه
+          {t('dialogs.viewTitle')}
         </DialogTitle>
         <DialogContent>
           {selectedNotification && (
@@ -990,11 +1028,11 @@ export const NotificationsListPage: React.FC = () => {
 
               {/* Content */}
               <Box>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
-                  المحتوى:
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}>
+                  {t('dialogs.content')}
                 </Typography>
-                <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                <Paper sx={{ p: isMobile ? 1.5 : 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50' }}>
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontSize: isMobile ? '0.875rem' : undefined }}>
                     {selectedNotification.message}
                   </Typography>
                 </Paper>
@@ -1003,34 +1041,34 @@ export const NotificationsListPage: React.FC = () => {
               {/* User Info */}
               {selectedNotification.user && (
               <Box>
-                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
-                    المستخدم:
+                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}>
+                    {t('dialogs.user')}
                 </Typography>
                   <Box
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 2,
-                      p: 2,
-                      bgcolor: 'grey.50',
+                      gap: isMobile ? 1 : 2,
+                      p: isMobile ? 1.5 : 2,
+                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
                       borderRadius: 1,
                     }}
                   >
-                    <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                    <Avatar sx={{ bgcolor: 'secondary.main', width: isMobile ? 40 : 56, height: isMobile ? 40 : 56 }}>
                       {selectedNotification.user.name?.charAt(0) ||
                         selectedNotification.user.email?.charAt(0)}
                     </Avatar>
               <Box>
-                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}>
                         {selectedNotification.user.name || selectedNotification.user.email}
                 </Typography>
                       {selectedNotification.user.email && selectedNotification.user.name && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
                           {selectedNotification.user.email}
                         </Typography>
                       )}
                       {selectedNotification.user.phone && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
                           {selectedNotification.user.phone}
                         </Typography>
                       )}
@@ -1041,27 +1079,27 @@ export const NotificationsListPage: React.FC = () => {
 
               {/* Timestamps */}
                 <Box>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
-                  التواريخ:
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}>
+                  {t('dialogs.dates')}
                 </Typography>
-                <Grid container spacing={2}>
+                <Grid container spacing={isMobile ? 1.5 : 2}>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        تاريخ الإنشاء:
+                    <Box sx={{ p: isMobile ? 1.5 : 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50', borderRadius: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                        {t('dialogs.createdAt')}
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography variant="body1" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
                         {formatDate(selectedNotification.createdAt)}
                   </Typography>
                 </Box>
                   </Grid>
                   {selectedNotification.sentAt && (
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          تاريخ الإرسال:
+                      <Box sx={{ p: isMobile ? 1.5 : 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50', borderRadius: 1 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                          {t('dialogs.sentAt')}
                         </Typography>
-                        <Typography variant="body1">
+                        <Typography variant="body1" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
                           {formatDate(selectedNotification.sentAt)}
                         </Typography>
                       </Box>
@@ -1069,11 +1107,11 @@ export const NotificationsListPage: React.FC = () => {
                   )}
                   {selectedNotification.readAt && (
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          تاريخ القراءة:
+                      <Box sx={{ p: isMobile ? 1.5 : 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50', borderRadius: 1 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                          {t('dialogs.readAt')}
                         </Typography>
-                        <Typography variant="body1">
+                        <Typography variant="body1" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
                           {formatDate(selectedNotification.readAt)}
                         </Typography>
                       </Box>
@@ -1085,12 +1123,18 @@ export const NotificationsListPage: React.FC = () => {
               {/* Action URL */}
               {selectedNotification.actionUrl && (
                 <Box>
-                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
-                    رابط الإجراء:
+                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}>
+                    {t('dialogs.actionUrl')}
                   </Typography>
                   <Typography
                     variant="body2"
-                    sx={{ wordBreak: 'break-all', bgcolor: 'grey.50', p: 1, borderRadius: 1 }}
+                    sx={{ 
+                      wordBreak: 'break-all', 
+                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50', 
+                      p: 1, 
+                      borderRadius: 1,
+                      fontSize: isMobile ? '0.75rem' : undefined
+                    }}
                   >
                     {selectedNotification.actionUrl}
                   </Typography>
@@ -1099,14 +1143,16 @@ export const NotificationsListPage: React.FC = () => {
 
               {/* Error Information */}
               {selectedNotification.errorMessage && (
-                <Alert severity="error">
+                <Alert severity="error" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    رسالة الخطأ:
+                    {t('fields.errorMessage')}
                   </Typography>
-                  <Typography variant="body2">{selectedNotification.errorMessage}</Typography>
+                  <Typography variant="body2" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+                    {selectedNotification.errorMessage}
+                  </Typography>
                   {selectedNotification.errorCode && (
-                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                      كود الخطأ: {selectedNotification.errorCode}
+                    <Typography variant="caption" display="block" sx={{ mt: 1, fontSize: isMobile ? '0.7rem' : undefined }}>
+                      {t('fields.errorCode')} {selectedNotification.errorCode}
                     </Typography>
                   )}
                 </Alert>
@@ -1117,17 +1163,20 @@ export const NotificationsListPage: React.FC = () => {
                 Object.keys(selectedNotification.metadata).length > 0 && (
                   <Accordion>
                     <AccordionSummary expandIcon={<ExpandMore />}>
-                      <Typography variant="subtitle1">معلومات إضافية</Typography>
+                      <Typography variant="subtitle1" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+                        {t('dialogs.errorInfo')}
+                      </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                       <pre
                         style={{
-                          background: '#f5f5f5',
-                          padding: '12px',
+                          background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5',
+                          padding: isMobile ? '8px' : '12px',
                           borderRadius: '4px',
                           overflow: 'auto',
-                          fontSize: '12px',
+                          fontSize: isMobile ? '10px' : '12px',
                           fontFamily: 'monospace',
+                          color: theme.palette.text.primary,
                         }}
                       >
                         {JSON.stringify(selectedNotification.metadata, null, 2)}
@@ -1138,8 +1187,10 @@ export const NotificationsListPage: React.FC = () => {
             </Stack>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>إغلاق</Button>
+        <DialogActions sx={{ px: isMobile ? 2 : 3, pb: isMobile ? 2 : 3 }}>
+          <Button onClick={() => setViewDialogOpen(false)} size={isMobile ? 'small' : 'medium'}>
+            {t('dialogs.close')}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -1149,10 +1200,11 @@ export const NotificationsListPage: React.FC = () => {
         onClose={() => setEditDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        fullScreen={isMobile}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: isMobile ? '1.125rem' : undefined }}>
           <Edit />
-          تعديل التنبيه
+          {t('dialogs.editTitle')}
         </DialogTitle>
         <DialogContent>
           {selectedNotification && (
@@ -1172,10 +1224,11 @@ export const NotificationsListPage: React.FC = () => {
         onClose={() => setCreateDialogOpen(false)}
         maxWidth="lg"
         fullWidth
+        fullScreen={isMobile}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: isMobile ? '1.125rem' : undefined }}>
           <Add />
-          إضافة تنبيه جديد
+          {t('dialogs.createTitle')}
         </DialogTitle>
         <DialogContent>
           <NotificationCreateForm
@@ -1193,10 +1246,11 @@ export const NotificationsListPage: React.FC = () => {
         onClose={() => setBulkSendDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        fullScreen={isMobile}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: isMobile ? '1.125rem' : undefined }}>
           <Send />
-          إرسال مجمع
+          {t('dialogs.bulkSendTitle')}
         </DialogTitle>
         <DialogContent>
           <BulkSendForm
@@ -1214,10 +1268,11 @@ export const NotificationsListPage: React.FC = () => {
         onClose={() => setTestDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: isMobile ? '1.125rem' : undefined }}>
           <Analytics />
-          اختبار قالب
+          {t('dialogs.testTitle')}
         </DialogTitle>
         <DialogContent>
           <TestNotificationForm
@@ -1239,6 +1294,8 @@ const NotificationEditForm: React.FC<{
   onCancel: () => void;
   isLoading: boolean;
 }> = ({ notification, onSave, onCancel, isLoading }) => {
+  const { t } = useTranslation('notifications');
+  const { isMobile } = useBreakpoint();
   const [formData, setFormData] = useState({
     title: notification.title || '',
     message: notification.message || '',
@@ -1258,18 +1315,19 @@ const NotificationEditForm: React.FC<{
       <Stack spacing={3}>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
-        <TextField
-          fullWidth
-          label="العنوان"
-          value={formData.title}
-          onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-          required
+            <TextField
+              fullWidth
+              label={t('forms.title')}
+              value={formData.title}
+              onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+              required
               disabled={isLoading}
+              size={isMobile ? 'small' : 'medium'}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth>
-              <InputLabel>الأولوية</InputLabel>
+              <InputLabel>{t('forms.priority')}</InputLabel>
               <Select
                 value={formData.priority}
                 onChange={(e) =>
@@ -1278,13 +1336,14 @@ const NotificationEditForm: React.FC<{
                     priority: e.target.value as NotificationPriority,
                   }))
                 }
-                label="الأولوية"
+                label={t('forms.priority')}
                 disabled={isLoading}
+                size={isMobile ? 'small' : 'medium'}
               >
-                <MenuItem value={NotificationPriority.LOW}>منخفض</MenuItem>
-                <MenuItem value={NotificationPriority.MEDIUM}>متوسط</MenuItem>
-                <MenuItem value={NotificationPriority.HIGH}>عالي</MenuItem>
-                <MenuItem value={NotificationPriority.URGENT}>عاجل</MenuItem>
+                <MenuItem value={NotificationPriority.LOW}>{t('priorities.low')}</MenuItem>
+                <MenuItem value={NotificationPriority.MEDIUM}>{t('priorities.medium')}</MenuItem>
+                <MenuItem value={NotificationPriority.HIGH}>{t('priorities.high')}</MenuItem>
+                <MenuItem value={NotificationPriority.URGENT}>{t('priorities.urgent')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -1292,39 +1351,42 @@ const NotificationEditForm: React.FC<{
 
         <TextField
           fullWidth
-          label="المحتوى (عربي)"
+          label={t('forms.message')}
           value={formData.message}
           onChange={(e) => setFormData((prev) => ({ ...prev, message: e.target.value }))}
           multiline
-          rows={4}
+          rows={isMobile ? 3 : 4}
           required
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <TextField
           fullWidth
-          label="المحتوى (إنجليزي)"
+          label={t('forms.messageEn')}
           value={formData.messageEn}
           onChange={(e) => setFormData((prev) => ({ ...prev, messageEn: e.target.value }))}
           multiline
-          rows={4}
+          rows={isMobile ? 3 : 4}
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <TextField
           fullWidth
-          label="رابط الإجراء (اختياري)"
+          label={t('forms.actionUrl')}
           value={formData.actionUrl}
           onChange={(e) => setFormData((prev) => ({ ...prev, actionUrl: e.target.value }))}
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-          <Button onClick={onCancel} disabled={isLoading}>
-            إلغاء
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+          <Button onClick={onCancel} disabled={isLoading} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
+            {t('templates.actions.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
-            {isLoading ? 'جاري الحفظ...' : 'حفظ'}
+          <Button type="submit" variant="contained" disabled={isLoading} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
+            {isLoading ? t('forms.saving') : t('forms.save')}
           </Button>
         </Box>
       </Stack>
@@ -1339,19 +1401,31 @@ const NotificationCreateForm: React.FC<{
   onCancel: () => void;
   isLoading: boolean;
 }> = ({ templates, onSave, onCancel, isLoading }) => {
+  const { t } = useTranslation('notifications');
+  const { isMobile } = useBreakpoint();
   const getCategoryLabel = (category: NotificationCategory) => {
-    const labels: Record<NotificationCategory, string> = {
-      [NotificationCategory.ORDER]: 'الطلبات',
-      [NotificationCategory.PRODUCT]: 'المنتجات',
-      [NotificationCategory.SERVICE]: 'الخدمات',
-      [NotificationCategory.PROMOTION]: 'العروض',
-      [NotificationCategory.ACCOUNT]: 'الحساب',
-      [NotificationCategory.SYSTEM]: 'النظام',
-      [NotificationCategory.SUPPORT]: 'الدعم',
-      [NotificationCategory.PAYMENT]: 'الدفع',
-      [NotificationCategory.MARKETING]: 'التسويق',
-    };
-    return labels[category] || category;
+    switch (category) {
+      case NotificationCategory.ORDER:
+        return t('categories.ORDER');
+      case NotificationCategory.PRODUCT:
+        return t('categories.PRODUCT');
+      case NotificationCategory.SERVICE:
+        return t('categories.SERVICE');
+      case NotificationCategory.PROMOTION:
+        return t('categories.PROMOTION');
+      case NotificationCategory.ACCOUNT:
+        return t('categories.ACCOUNT');
+      case NotificationCategory.SYSTEM:
+        return t('categories.SYSTEM');
+      case NotificationCategory.SUPPORT:
+        return t('categories.SUPPORT');
+      case NotificationCategory.PAYMENT:
+        return t('categories.PAYMENT');
+      case NotificationCategory.MARKETING:
+        return t('categories.MARKETING');
+      default:
+        return category;
+    }
   };
   const [formData, setFormData] = useState({
     type: NotificationType.ORDER_CONFIRMED,
@@ -1394,14 +1468,15 @@ const NotificationCreateForm: React.FC<{
         {/* Template Selection */}
         {templates.length > 0 && (
           <FormControl fullWidth>
-            <InputLabel>القالب</InputLabel>
+            <InputLabel>{t('forms.template')}</InputLabel>
             <Select
               value={formData.templateKey}
               onChange={(e) => handleTemplateChange(e.target.value)}
-              label="القالب"
+              label={t('forms.template')}
               disabled={isLoading}
+              size={isMobile ? 'small' : 'medium'}
             >
-              <MenuItem value="">بدون قالب</MenuItem>
+              <MenuItem value="">{t('forms.noTemplate')}</MenuItem>
               {templates.map((template) => (
                 <MenuItem key={template.key} value={template.key}>
                   {template.name} - {template.title}
@@ -1414,14 +1489,15 @@ const NotificationCreateForm: React.FC<{
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth required>
-              <InputLabel>نوع التنبيه</InputLabel>
+              <InputLabel>{t('forms.type')}</InputLabel>
               <Select
                 value={formData.type}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, type: e.target.value as NotificationType }))
                 }
-                label="نوع التنبيه"
+                label={t('forms.type')}
                 disabled={isLoading}
+                size={isMobile ? 'small' : 'medium'}
               >
                 {Object.values(NotificationType).map((type) => (
                   <MenuItem key={type} value={type}>
@@ -1432,33 +1508,34 @@ const NotificationCreateForm: React.FC<{
             </FormControl>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-        <FormControl fullWidth required>
-          <InputLabel>القناة</InputLabel>
-          <Select
-            value={formData.channel}
-            onChange={(e) =>
+            <FormControl fullWidth required>
+              <InputLabel>{t('forms.channel')}</InputLabel>
+              <Select
+                value={formData.channel}
+                onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
                     channel: e.target.value as NotificationChannel,
                   }))
-            }
-            label="القناة"
+                }
+                label={t('forms.channel')}
                 disabled={isLoading}
+                size={isMobile ? 'small' : 'medium'}
               >
-                <MenuItem value={NotificationChannel.IN_APP}>داخل التطبيق</MenuItem>
-                <MenuItem value={NotificationChannel.PUSH}>إشعار دفع</MenuItem>
-                <MenuItem value={NotificationChannel.SMS}>رسالة نصية</MenuItem>
-                <MenuItem value={NotificationChannel.EMAIL}>بريد إلكتروني</MenuItem>
-                <MenuItem value={NotificationChannel.DASHBOARD}>لوحة التحكم</MenuItem>
-          </Select>
-        </FormControl>
+                <MenuItem value={NotificationChannel.IN_APP}>{t('channels.IN_APP')}</MenuItem>
+                <MenuItem value={NotificationChannel.PUSH}>{t('channels.PUSH')}</MenuItem>
+                <MenuItem value={NotificationChannel.SMS}>{t('channels.SMS')}</MenuItem>
+                <MenuItem value={NotificationChannel.EMAIL}>{t('channels.EMAIL')}</MenuItem>
+                <MenuItem value={NotificationChannel.DASHBOARD}>{t('channels.DASHBOARD')}</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
         </Grid>
 
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth required>
-              <InputLabel>الفئة</InputLabel>
+              <InputLabel>{t('forms.category')}</InputLabel>
               <Select
                 value={formData.category}
                 onChange={(e) =>
@@ -1467,8 +1544,9 @@ const NotificationCreateForm: React.FC<{
                     category: e.target.value as NotificationCategory,
                   }))
                 }
-                label="الفئة"
+                label={t('forms.category')}
                 disabled={isLoading}
+                size={isMobile ? 'small' : 'medium'}
               >
                 {Object.values(NotificationCategory).map((category) => (
                   <MenuItem key={category} value={category}>
@@ -1479,23 +1557,24 @@ const NotificationCreateForm: React.FC<{
             </FormControl>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-          <FormControl fullWidth>
-              <InputLabel>الأولوية</InputLabel>
-            <Select
+            <FormControl fullWidth>
+              <InputLabel>{t('forms.priority')}</InputLabel>
+              <Select
                 value={formData.priority}
                 onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
+                  setFormData((prev) => ({
+                    ...prev,
                     priority: e.target.value as NotificationPriority,
                   }))
                 }
-                label="الأولوية"
+                label={t('forms.priority')}
                 disabled={isLoading}
+                size={isMobile ? 'small' : 'medium'}
               >
-                <MenuItem value={NotificationPriority.LOW}>منخفض</MenuItem>
-                <MenuItem value={NotificationPriority.MEDIUM}>متوسط</MenuItem>
-                <MenuItem value={NotificationPriority.HIGH}>عالي</MenuItem>
-                <MenuItem value={NotificationPriority.URGENT}>عاجل</MenuItem>
+                <MenuItem value={NotificationPriority.LOW}>{t('priorities.low')}</MenuItem>
+                <MenuItem value={NotificationPriority.MEDIUM}>{t('priorities.medium')}</MenuItem>
+                <MenuItem value={NotificationPriority.HIGH}>{t('priorities.high')}</MenuItem>
+                <MenuItem value={NotificationPriority.URGENT}>{t('priorities.urgent')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -1503,79 +1582,86 @@ const NotificationCreateForm: React.FC<{
 
         <TextField
           fullWidth
-          label="العنوان"
+          label={t('forms.title')}
           value={formData.title}
           onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
           required
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <TextField
           fullWidth
-          label="المحتوى (عربي)"
+          label={t('forms.message')}
           value={formData.message}
           onChange={(e) => setFormData((prev) => ({ ...prev, message: e.target.value }))}
           multiline
-          rows={4}
+          rows={isMobile ? 3 : 4}
           required
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <TextField
           fullWidth
-          label="المحتوى (إنجليزي)"
+          label={t('forms.messageEn')}
           value={formData.messageEn}
           onChange={(e) => setFormData((prev) => ({ ...prev, messageEn: e.target.value }))}
           multiline
-          rows={4}
+          rows={isMobile ? 3 : 4}
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <TextField
           fullWidth
-          label="رابط الإجراء (اختياري)"
+          label={t('forms.actionUrl')}
           value={formData.actionUrl}
           onChange={(e) => setFormData((prev) => ({ ...prev, actionUrl: e.target.value }))}
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
               fullWidth
-              label="معرف المستخدم"
+              label={t('forms.recipientId')}
               value={formData.recipientId}
               onChange={(e) => setFormData((prev) => ({ ...prev, recipientId: e.target.value }))}
               disabled={isLoading}
+              size={isMobile ? 'small' : 'medium'}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
               fullWidth
-              label="البريد الإلكتروني"
+              label={t('forms.recipientEmail')}
               value={formData.recipientEmail}
               onChange={(e) => setFormData((prev) => ({ ...prev, recipientEmail: e.target.value }))}
               type="email"
               disabled={isLoading}
+              size={isMobile ? 'small' : 'medium'}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
               fullWidth
-              label="رقم الهاتف"
+              label={t('forms.recipientPhone')}
               value={formData.recipientPhone}
               onChange={(e) => setFormData((prev) => ({ ...prev, recipientPhone: e.target.value }))}
               disabled={isLoading}
+              size={isMobile ? 'small' : 'medium'}
             />
           </Grid>
         </Grid>
 
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-          <Button onClick={onCancel} disabled={isLoading}>
-            إلغاء
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+          <Button onClick={onCancel} disabled={isLoading} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
+            {t('templates.actions.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
-            {isLoading ? 'جاري الإنشاء...' : 'إنشاء'}
+          <Button type="submit" variant="contained" disabled={isLoading} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
+            {isLoading ? t('forms.creating') : t('forms.create')}
           </Button>
         </Box>
       </Stack>
@@ -1590,6 +1676,8 @@ const BulkSendForm: React.FC<{
   onCancel: () => void;
   isLoading: boolean;
 }> = ({ onSave, onCancel, isLoading }) => {
+  const { t } = useTranslation('notifications');
+  const { isMobile } = useBreakpoint();
   const [formData, setFormData] = useState({
     type: NotificationType.ORDER_CONFIRMED,
     title: '',
@@ -1612,31 +1700,34 @@ const BulkSendForm: React.FC<{
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
       <Stack spacing={3}>
-        <Alert severity="info">سيتم إرسال التنبيه لجميع المستخدمين المحددين</Alert>
+        <Alert severity="info" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+          {t('forms.bulkSendInfo')}
+        </Alert>
 
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth required>
-              <InputLabel>نوع التنبيه</InputLabel>
+              <InputLabel>{t('forms.type')}</InputLabel>
               <Select
                 value={formData.type}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, type: e.target.value as NotificationType }))
                 }
-                label="نوع التنبيه"
+                label={t('forms.type')}
                 disabled={isLoading}
+                size={isMobile ? 'small' : 'medium'}
               >
                 {Object.values(NotificationType).map((type) => (
                   <MenuItem key={type} value={type}>
                     {type}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth required>
-              <InputLabel>القناة</InputLabel>
+              <InputLabel>{t('forms.channel')}</InputLabel>
               <Select
                 value={formData.channel}
                 onChange={(e) =>
@@ -1645,14 +1736,15 @@ const BulkSendForm: React.FC<{
                     channel: e.target.value as NotificationChannel,
                   }))
                 }
-                label="القناة"
+                label={t('forms.channel')}
                 disabled={isLoading}
+                size={isMobile ? 'small' : 'medium'}
               >
-                <MenuItem value={NotificationChannel.IN_APP}>داخل التطبيق</MenuItem>
-                <MenuItem value={NotificationChannel.PUSH}>إشعار دفع</MenuItem>
-                <MenuItem value={NotificationChannel.SMS}>رسالة نصية</MenuItem>
-                <MenuItem value={NotificationChannel.EMAIL}>بريد إلكتروني</MenuItem>
-                <MenuItem value={NotificationChannel.DASHBOARD}>لوحة التحكم</MenuItem>
+                <MenuItem value={NotificationChannel.IN_APP}>{t('channels.IN_APP')}</MenuItem>
+                <MenuItem value={NotificationChannel.PUSH}>{t('channels.PUSH')}</MenuItem>
+                <MenuItem value={NotificationChannel.SMS}>{t('channels.SMS')}</MenuItem>
+                <MenuItem value={NotificationChannel.EMAIL}>{t('channels.EMAIL')}</MenuItem>
+                <MenuItem value={NotificationChannel.DASHBOARD}>{t('channels.DASHBOARD')}</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -1660,37 +1752,40 @@ const BulkSendForm: React.FC<{
 
         <TextField
           fullWidth
-          label="العنوان"
+          label={t('forms.title')}
           value={formData.title}
           onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
           required
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <TextField
           fullWidth
-          label="المحتوى (عربي)"
+          label={t('forms.message')}
           value={formData.message}
           onChange={(e) => setFormData((prev) => ({ ...prev, message: e.target.value }))}
           multiline
-          rows={4}
+          rows={isMobile ? 3 : 4}
           required
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <TextField
           fullWidth
-          label="المحتوى (إنجليزي)"
+          label={t('forms.messageEn')}
           value={formData.messageEn}
           onChange={(e) => setFormData((prev) => ({ ...prev, messageEn: e.target.value }))}
           multiline
-          rows={4}
+          rows={isMobile ? 3 : 4}
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <TextField
           fullWidth
-          label="معرفات المستخدمين (مفصولة بفواصل)"
+          label={t('forms.targetUserIds')}
           value={formData.targetUserIds.join(', ')}
           onChange={(e) =>
             setFormData((prev) => ({
@@ -1701,18 +1796,19 @@ const BulkSendForm: React.FC<{
                 .filter((id) => id),
             }))
           }
-          placeholder="user1, user2, user3"
+          placeholder={t('placeholders.userIds')}
           required
           disabled={isLoading}
-          helperText="أدخل معرفات المستخدمين مفصولة بفواصل"
+          helperText={t('forms.targetUserIdsHelper')}
+          size={isMobile ? 'small' : 'medium'}
         />
 
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-          <Button onClick={onCancel} disabled={isLoading}>
-            إلغاء
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+          <Button onClick={onCancel} disabled={isLoading} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
+            {t('templates.actions.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
-            {isLoading ? 'جاري الإرسال...' : 'إرسال مجمع'}
+          <Button type="submit" variant="contained" disabled={isLoading} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
+            {isLoading ? t('forms.sending') : t('forms.sendBulk')}
           </Button>
         </Box>
       </Stack>
@@ -1727,6 +1823,8 @@ const TestNotificationForm: React.FC<{
   onCancel: () => void;
   isLoading: boolean;
 }> = ({ templates, onTest, onCancel, isLoading }) => {
+  const { t } = useTranslation('notifications');
+  const { isMobile } = useBreakpoint();
   const [formData, setFormData] = useState({
     userId: '',
     templateKey: '',
@@ -1741,24 +1839,28 @@ const TestNotificationForm: React.FC<{
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
       <Stack spacing={3}>
-        <Alert severity="warning">سيتم إرسال تنبيه تجريبي للمستخدم المحدد</Alert>
+        <Alert severity="warning" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+          {t('forms.testWarning')}
+        </Alert>
 
         <TextField
           fullWidth
-          label="معرف المستخدم"
+          label={t('forms.userId')}
           value={formData.userId}
           onChange={(e) => setFormData((prev) => ({ ...prev, userId: e.target.value }))}
           required
           disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
         />
 
         <FormControl fullWidth required>
-          <InputLabel>القالب</InputLabel>
+          <InputLabel>{t('forms.template')}</InputLabel>
           <Select
             value={formData.templateKey}
             onChange={(e) => setFormData((prev) => ({ ...prev, templateKey: e.target.value }))}
-            label="القالب"
+            label={t('forms.template')}
             disabled={isLoading}
+            size={isMobile ? 'small' : 'medium'}
           >
             {templates.map((template) => (
               <MenuItem key={template.key} value={template.key}>
@@ -1770,7 +1872,7 @@ const TestNotificationForm: React.FC<{
 
         <TextField
           fullWidth
-          label="بيانات الاختبار (JSON)"
+          label={t('forms.testData')}
           value={JSON.stringify(formData.payload, null, 2)}
           onChange={(e) => {
             try {
@@ -1781,17 +1883,18 @@ const TestNotificationForm: React.FC<{
             }
           }}
           multiline
-          rows={6}
+          rows={isMobile ? 4 : 6}
           disabled={isLoading}
-          helperText="أدخل البيانات كـ JSON صحيح"
+          helperText={t('forms.testDataHelper')}
+          size={isMobile ? 'small' : 'medium'}
         />
 
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-          <Button onClick={onCancel} disabled={isLoading}>
-            إلغاء
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+          <Button onClick={onCancel} disabled={isLoading} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
+            {t('templates.actions.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isLoading}>
-            {isLoading ? 'جاري الإرسال...' : 'إرسال اختبار'}
+          <Button type="submit" variant="contained" disabled={isLoading} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
+            {isLoading ? t('forms.sending') : t('templates.actions.sendTest')}
           </Button>
         </Box>
       </Stack>

@@ -9,7 +9,8 @@
     "manageAttributeValues": "إدارة قيم السمة: {{name}}",
     "addValue": "إضافة قيمة جديدة",
     "editValue": "تعديل القيمة",
-    "createValue": "إضافة قيمة جديدة"
+    "createValue": "إضافة قيمة جديدة",
+    "noAttributesAssigned": "لا توجد سمات محددة لهذا المنتج"
   },
   "form": {
     "basicInfo": "المعلومات الأساسية",
@@ -163,6 +164,10 @@
     "attribute": "السمة",
     "value": "القيمة",
     "unknownError": "حدث خطأ غير معروف"
+  },
+  "status": {
+    "active": "نشط",
+    "inactive": "غير نشط"
   },
   "tooltips": {
     "edit": "تعديل",

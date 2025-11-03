@@ -11,8 +11,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { Add, Delete, Edit } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { ImageField, MediaCategory } from '@/features/media';
 
 interface MediaItem {
@@ -33,8 +36,12 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
   value = [],
   onChange,
   maxImages = 10,
-  label = 'صور المنتج',
+  label,
 }) => {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
 
@@ -61,7 +68,7 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
       newImages[editingIndex] = {
         _id: media._id,
         url: media.url,
-        name: media.name || `صورة ${editingIndex + 1}`,
+        name: media.name || t('products:form.imageDefault', 'صورة {{number}}', { number: editingIndex + 1 }),
       };
       onChange(newImages);
     } else {
@@ -69,7 +76,7 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
       const newImage = {
         _id: media._id,
         url: media.url,
-        name: media.name || `صورة ${value.length + 1}`,
+        name: media.name || t('products:form.imageDefault', 'صورة {{number}}', { number: value.length + 1 }),
       };
       onChange([...value, newImage]);
     }
@@ -79,20 +86,35 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
 
   const canAddMore = value.length < maxImages;
 
+  // Determine grid size based on screen size
+  const getGridSize = () => {
+    if (isMobile) return { xs: 12 };
+    if (isTablet) return { xs: 6 };
+    return { xs: 12, sm: 6, md: 4, lg: 3 };
+  };
+
   return (
     <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+      <Box 
+        display="flex" 
+        alignItems="center" 
+        justifyContent="space-between" 
+        mb={2}
+        flexDirection={isMobile ? 'column' : 'row'}
+        gap={isMobile ? 1 : 0}
+      >
         <Typography variant="subtitle1" fontWeight="medium">
-          {label}
+          {label || t('products:form.images', 'صور المنتج')}
         </Typography>
         {canAddMore && (
           <Button
             variant="outlined"
             startIcon={<Add />}
             onClick={handleAddImage}
-            size="small"
+            size={isMobile ? 'medium' : 'small'}
+            fullWidth={isMobile}
           >
-            إضافة صورة
+            {t('products:form.addImage', 'إضافة صورة')}
           </Button>
         )}
       </Box>
@@ -100,15 +122,17 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
       {value.length === 0 ? (
         <Box
           sx={{
-            border: '2px dashed #ccc',
+            border: 2,
+            borderStyle: 'dashed',
+            borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : '#ccc',
             borderRadius: 2,
             p: 4,
             textAlign: 'center',
-            backgroundColor: '#fafafa',
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : '#fafafa',
           }}
         >
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            لا توجد صور مضافة
+            {t('products:form.noImagesAdded', 'لا توجد صور مضافة')}
           </Typography>
           <Button
             variant="contained"
@@ -116,17 +140,17 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
             onClick={handleAddImage}
             disabled={!canAddMore}
           >
-            إضافة أول صورة
+            {t('products:form.addFirstImage', 'إضافة أول صورة')}
           </Button>
         </Box>
       ) : (
         <Grid container spacing={2}>
           {value.map((image, index) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={index}>
+            <Grid size={getGridSize()} key={index}>
               <Card sx={{ position: 'relative' }}>
                 <CardMedia
                   component="img"
-                  height="200"
+                  height={isMobile ? '200' : '200'}
                   image={image.url}
                   alt={image.name}
                   sx={{ objectFit: 'cover' }}
@@ -144,7 +168,10 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
                     size="small"
                     color="primary"
                     onClick={() => handleEditImage(index)}
-                    sx={{ backgroundColor: 'white', '&:hover': { backgroundColor: '#f5f5f5' } }}
+                    sx={{ 
+                      backgroundColor: 'background.paper', 
+                      '&:hover': { backgroundColor: 'action.hover' } 
+                    }}
                   >
                     <Edit fontSize="small" />
                   </IconButton>
@@ -152,7 +179,10 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
                     size="small"
                     color="error"
                     onClick={() => handleDeleteImage(index)}
-                    sx={{ backgroundColor: 'white', '&:hover': { backgroundColor: '#f5f5f5' } }}
+                    sx={{ 
+                      backgroundColor: 'background.paper', 
+                      '&:hover': { backgroundColor: 'action.hover' } 
+                    }}
                   >
                     <Delete fontSize="small" />
                   </IconButton>
@@ -174,24 +204,34 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
             variant="outlined"
             startIcon={<Add />}
             onClick={handleAddImage}
+            fullWidth={isMobile}
           >
-            إضافة صورة أخرى
+            {t('products:form.addAnotherImage', 'إضافة صورة أخرى')}
           </Button>
         </Box>
       )}
 
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-        {value.length} من {maxImages} صور ({canAddMore ? 'يمكن إضافة المزيد' : 'الحد الأقصى'})
+      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
+        {t('products:form.imagesCount', '{{current}} من {{max}} صورة', { 
+          current: value.length, 
+          max: maxImages
+        })}
       </Typography>
 
       {/* Image Selection Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog 
+        open={dialogOpen} 
+        onClose={() => setDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        fullScreen={isMobile}
+      >
         <DialogTitle>
-          {editingIndex !== null ? 'تعديل الصورة' : 'اختيار صورة'}
+          {editingIndex !== null ? t('products:form.editImage', 'تعديل الصورة') : t('media:empty.selectImage', 'اختيار صورة')}
         </DialogTitle>
         <DialogContent>
           <ImageField
-            label={editingIndex !== null ? 'اختر صورة جديدة' : 'اختر صورة'}
+            label={editingIndex !== null ? t('products:form.selectNewImage', 'اختر صورة جديدة') : t('media:empty.selectImage', 'اختيار صورة')}
             value={
               editingIndex !== null && value[editingIndex]
                 ? value[editingIndex].url
@@ -199,12 +239,12 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
             }
             onChange={handleImageSelect}
             category={MediaCategory.PRODUCT}
-            helperText="يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة"
+            helperText={t('media:uploader.selectFile', 'يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة')}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>
-            إلغاء
+            {t('common:actions.cancel', 'إلغاء')}
           </Button>
         </DialogActions>
       </Dialog>

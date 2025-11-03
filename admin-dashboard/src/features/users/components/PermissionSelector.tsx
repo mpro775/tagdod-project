@@ -11,6 +11,9 @@ import {
   Button,
   Stack,
   Alert,
+  IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { ExpandMore, CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import { PERMISSIONS } from '@/shared/constants/permissions';
@@ -33,13 +36,48 @@ const getPermissionCategories = (t: any): PermissionCategory[] => [
     title: t('users:permissions.categories.users.title', 'المستخدمون'),
     description: t('users:permissions.categories.users.description', 'إدارة المستخدمين والحسابات'),
     permissions: [
-      { key: 'USERS_READ', label: t('users:permissions.actions.read', 'عرض'), value: PERMISSIONS.USERS_READ, description: t('users:permissions.descriptions.users.read', 'عرض قائمة المستخدمين') },
-      { key: 'USERS_CREATE', label: t('users:permissions.actions.create', 'إنشاء'), value: PERMISSIONS.USERS_CREATE, description: t('users:permissions.descriptions.users.create', 'إنشاء مستخدمين جدد') },
-      { key: 'USERS_UPDATE', label: t('users:permissions.actions.update', 'تعديل'), value: PERMISSIONS.USERS_UPDATE, description: t('users:permissions.descriptions.users.update', 'تعديل بيانات المستخدمين') },
-      { key: 'USERS_DELETE', label: t('users:permissions.actions.delete', 'حذف'), value: PERMISSIONS.USERS_DELETE, description: t('users:permissions.descriptions.users.delete', 'حذف المستخدمين') },
-      { key: 'USERS_SUSPEND', label: t('users:permissions.actions.suspend', 'تعليق'), value: PERMISSIONS.USERS_SUSPEND, description: t('users:permissions.descriptions.users.suspend', 'تعليق الحسابات') },
-      { key: 'USERS_ACTIVATE', label: t('users:permissions.actions.activate', 'تفعيل'), value: PERMISSIONS.USERS_ACTIVATE, description: t('users:permissions.descriptions.users.activate', 'تفعيل الحسابات المعلقة') },
-      { key: 'USERS_RESTORE', label: t('users:permissions.actions.restore', 'استرجاع'), value: PERMISSIONS.USERS_RESTORE, description: t('users:permissions.descriptions.users.restore', 'استرجاع المستخدمين المحذوفين') },
+      {
+        key: 'USERS_READ',
+        label: t('users:permissions.actions.read', 'عرض'),
+        value: PERMISSIONS.USERS_READ,
+        description: t('users:permissions.descriptions.users.read', 'عرض قائمة المستخدمين'),
+      },
+      {
+        key: 'USERS_CREATE',
+        label: t('users:permissions.actions.create', 'إنشاء'),
+        value: PERMISSIONS.USERS_CREATE,
+        description: t('users:permissions.descriptions.users.create', 'إنشاء مستخدمين جدد'),
+      },
+      {
+        key: 'USERS_UPDATE',
+        label: t('users:permissions.actions.update', 'تعديل'),
+        value: PERMISSIONS.USERS_UPDATE,
+        description: t('users:permissions.descriptions.users.update', 'تعديل بيانات المستخدمين'),
+      },
+      {
+        key: 'USERS_DELETE',
+        label: t('users:permissions.actions.delete', 'حذف'),
+        value: PERMISSIONS.USERS_DELETE,
+        description: t('users:permissions.descriptions.users.delete', 'حذف المستخدمين'),
+      },
+      {
+        key: 'USERS_SUSPEND',
+        label: t('users:permissions.actions.suspend', 'تعليق'),
+        value: PERMISSIONS.USERS_SUSPEND,
+        description: t('users:permissions.descriptions.users.suspend', 'تعليق الحسابات'),
+      },
+      {
+        key: 'USERS_ACTIVATE',
+        label: t('users:permissions.actions.activate', 'تفعيل'),
+        value: PERMISSIONS.USERS_ACTIVATE,
+        description: t('users:permissions.descriptions.users.activate', 'تفعيل الحسابات المعلقة'),
+      },
+      {
+        key: 'USERS_RESTORE',
+        label: t('users:permissions.actions.restore', 'استرجاع'),
+        value: PERMISSIONS.USERS_RESTORE,
+        description: t('users:permissions.descriptions.users.restore', 'استرجاع المستخدمين المحذوفين'),
+      },
     ],
   },
   {
@@ -253,6 +291,8 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
   disabled = false,
 }) => {
   const { t } = useTranslation(['users', 'common']);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [expandedCategory, setExpandedCategory] = useState<string | false>(false);
 
   const PERMISSION_CATEGORIES: PermissionCategory[] = getPermissionCategories(t);
@@ -263,25 +303,27 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
 
   const handlePermissionToggle = (permissionValue: string) => {
     const isSelected = selectedPermissions.includes(permissionValue);
-    
+
     if (isSelected) {
-      onChange(selectedPermissions.filter(p => p !== permissionValue));
+      onChange(selectedPermissions.filter((p) => p !== permissionValue));
     } else {
       onChange([...selectedPermissions, permissionValue]);
     }
   };
 
   const handleCategorySelectAll = (category: PermissionCategory) => {
-    const categoryPermissionValues = category.permissions.map(p => p.value);
-    const allSelected = categoryPermissionValues.every(p => selectedPermissions.includes(p));
+    const categoryPermissionValues = category.permissions.map((p) => p.value);
+    const allSelected = categoryPermissionValues.every((p) =>
+      selectedPermissions.includes(p)
+    );
 
     if (allSelected) {
       // Deselect all from this category
-      onChange(selectedPermissions.filter(p => !categoryPermissionValues.includes(p)));
+      onChange(selectedPermissions.filter((p) => !categoryPermissionValues.includes(p)));
     } else {
       // Select all from this category
       const newPermissions = [...selectedPermissions];
-      categoryPermissionValues.forEach(p => {
+      categoryPermissionValues.forEach((p) => {
         if (!newPermissions.includes(p)) {
           newPermissions.push(p);
         }
@@ -291,71 +333,197 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
   };
 
   const isCategoryFullySelected = (category: PermissionCategory) => {
-    return category.permissions.every(p => selectedPermissions.includes(p.value));
+    return category.permissions.every((p) => selectedPermissions.includes(p.value));
   };
 
   const isCategoryPartiallySelected = (category: PermissionCategory) => {
-    const selectedCount = category.permissions.filter(p => selectedPermissions.includes(p.value)).length;
+    const selectedCount = category.permissions.filter((p) =>
+      selectedPermissions.includes(p.value)
+    ).length;
     return selectedCount > 0 && selectedCount < category.permissions.length;
   };
 
-  const totalPermissions = PERMISSION_CATEGORIES.reduce((sum, cat) => sum + cat.permissions.length, 0);
+  const totalPermissions = PERMISSION_CATEGORIES.reduce(
+    (sum, cat) => sum + cat.permissions.length,
+    0
+  );
 
   return (
     <Box>
-      <Alert severity="info" sx={{ mb: 2 }}>
-        <Typography variant="body2" fontWeight="bold" gutterBottom>
-          {t('users:permissions.selectedCount', '{{selected}} صلاحية محددة من {{total}} صلاحية', { selected: selectedPermissions.length, total: totalPermissions })}
+      <Alert
+        severity="info"
+        sx={{
+          mb: 2,
+          bgcolor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.1)' : undefined,
+        }}
+      >
+        <Typography
+          variant="body2"
+          fontWeight="bold"
+          gutterBottom
+          sx={{
+            fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+            color: 'text.primary',
+          }}
+        >
+          {t('users:permissions.selectedCount', '{{selected}} صلاحية محددة من {{total}} صلاحية', {
+            selected: selectedPermissions.length,
+            total: totalPermissions,
+          })}
         </Typography>
-        <Typography variant="caption">
-          {t('users:permissions.description', 'اختر الصلاحيات المناسبة للأدمن. يمكنك تحديد/إلغاء تحديد فئات كاملة أو صلاحيات فردية.')}
+        <Typography
+          variant="caption"
+          sx={{
+            fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+            color: 'text.secondary',
+          }}
+        >
+          {t(
+            'users:permissions.description',
+            'اختر الصلاحيات المناسبة للأدمن. يمكنك تحديد/إلغاء تحديد فئات كاملة أو صلاحيات فردية.'
+          )}
         </Typography>
       </Alert>
 
       {PERMISSION_CATEGORIES.map((category, index) => {
         const fullySelected = isCategoryFullySelected(category);
         const partiallySelected = isCategoryPartiallySelected(category);
-        
+
         return (
           <Accordion
             key={index}
             expanded={expandedCategory === `panel${index}`}
             onChange={() => handleCategoryToggle(`panel${index}`)}
             disabled={disabled}
-            sx={{ mb: 1 }}
+            sx={{
+              mb: 1,
+              bgcolor: 'background.paper',
+              backgroundImage: 'none',
+              boxShadow: theme.palette.mode === 'dark' ? 1 : 0,
+              '&:before': {
+                display: 'none',
+              },
+            }}
           >
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" fontWeight="bold">
+            <AccordionSummary
+              expandIcon={<ExpandMore />}
+              sx={{
+                '& .MuiAccordionSummary-content': {
+                  my: { xs: 1, sm: 1.5 },
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: '100%',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: { xs: 1, sm: 0 },
+                }}
+              >
+                <Box sx={{ flex: 1, width: '100%' }}>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight="bold"
+                    sx={{
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                      color: 'text.primary',
+                      mb: 0.5,
+                    }}
+                  >
                     {category.title}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                      display: { xs: 'none', sm: 'block' },
+                    }}
+                  >
                     {category.description}
                   </Typography>
                 </Box>
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{
+                    width: { xs: '100%', sm: 'auto' },
+                    justifyContent: { xs: 'space-between', sm: 'flex-end' },
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Chip
                     size="small"
-                    label={`${category.permissions.filter(p => selectedPermissions.includes(p.value)).length}/${category.permissions.length}`}
+                    label={`${category.permissions.filter((p) => selectedPermissions.includes(p.value)).length}/${category.permissions.length}`}
                     color={fullySelected ? 'primary' : partiallySelected ? 'warning' : 'default'}
+                    sx={{
+                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                      height: { xs: 22, sm: 24 },
+                    }}
                   />
-                  <Button
-                    size="small"
-                    variant={fullySelected ? 'outlined' : 'contained'}
+                  <Box
+                    component="div"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleCategorySelectAll(category);
+                      if (!disabled) {
+                        handleCategorySelectAll(category);
+                      }
                     }}
-                    disabled={disabled}
+                    sx={{
+                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                      px: { xs: 1.5, sm: 2 },
+                      py: { xs: 0.5, sm: 0.75 },
+                      minWidth: { xs: 'auto', sm: 100 },
+                      flex: { xs: 1, sm: 'none' },
+                      borderRadius: 1,
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: `1px solid ${fullySelected ? theme.palette.primary.main : 'transparent'}`,
+                      bgcolor: fullySelected 
+                        ? 'transparent' 
+                        : disabled 
+                          ? theme.palette.action.disabledBackground
+                          : theme.palette.primary.main,
+                      color: fullySelected
+                        ? theme.palette.primary.main
+                        : disabled
+                          ? theme.palette.action.disabled
+                          : theme.palette.primary.contrastText,
+                      '&:hover': {
+                        bgcolor: disabled
+                          ? theme.palette.action.disabledBackground
+                          : fullySelected
+                            ? theme.palette.primary.light + '20'
+                            : theme.palette.primary.dark,
+                        opacity: disabled ? 1 : 0.9,
+                      },
+                      transition: 'all 0.2s ease-in-out',
+                    }}
                   >
-                    {fullySelected ? t('users:permissions.deselectAll', 'إلغاء الكل') : t('users:permissions.selectAll', 'تحديد الكل')}
-                  </Button>
+                    {fullySelected
+                      ? t('users:permissions.deselectAll', 'إلغاء الكل')
+                      : t('users:permissions.selectAll', 'تحديد الكل')}
+                  </Box>
                 </Stack>
               </Box>
             </AccordionSummary>
             <AccordionDetails>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 1 }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(3, 1fr)',
+                  },
+                  gap: { xs: 1, sm: 1.5 },
+                }}
+              >
                 {category.permissions.map((permission) => (
                   <FormControlLabel
                     key={permission.key}
@@ -366,18 +534,45 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({
                         disabled={disabled}
                         icon={<RadioButtonUnchecked />}
                         checkedIcon={<CheckCircle />}
+                        size={isMobile ? 'small' : 'medium'}
+                        sx={{
+                          color: theme.palette.mode === 'dark' ? 'text.secondary' : undefined,
+                        }}
                       />
                     }
                     label={
                       <Box>
-                        <Typography variant="body2">{permission.label}</Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                            color: 'text.primary',
+                          }}
+                        >
+                          {permission.label}
+                        </Typography>
                         {permission.description && (
-                          <Typography variant="caption" color="text.secondary" display="block">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                            sx={{
+                              fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                              mt: 0.25,
+                            }}
+                          >
                             {permission.description}
                           </Typography>
                         )}
                       </Box>
                     }
+                    sx={{
+                      m: 0,
+                      alignItems: 'flex-start',
+                      '& .MuiFormControlLabel-label': {
+                        flex: 1,
+                      },
+                    }}
                   />
                 ))}
               </Box>
