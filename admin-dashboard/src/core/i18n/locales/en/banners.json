@@ -2,8 +2,10 @@
   "pageTitle": "Banner Management",
   "pageSubtitle": "Manage and monitor advertising banners",
   "addBanner": "Add Banner",
-  "analytics": "Analytics",
+  "viewAnalytics": "Analytics",
   "editBanner": "Edit Banner",
+  "noBanners": "No Banners",
+  "noBannersDescription": "No banners found. Add a new banner to get started.",
   "createBanner": "Create New Banner",
   "back": "Back",
   "cancel": "Cancel",
@@ -29,7 +31,16 @@
     },
     "location": {
       "label": "Display Location",
-      "required": "Display location is required"
+      "required": "Display location is required",
+      "home_top": "Home Top",
+      "home_middle": "Home Middle",
+      "home_bottom": "Home Bottom",
+      "category_top": "Category Top",
+      "product_page": "Product Page",
+      "cart_page": "Cart Page",
+      "checkout_page": "Checkout Page",
+      "sidebar": "Sidebar",
+      "footer": "Footer"
     },
     "description": {
       "label": "Banner Description"
@@ -37,8 +48,8 @@
     "imageUrl": {
       "label": "Image URL",
       "required": "Image URL is required",
-      "helper": "Image URL is required",
-      "invalid": "Must be a valid image URL"
+      "helper": "Enter the image URL (http:// or https://)",
+      "invalid": "Must be a valid image URL (starting with http:// or https://)"
     },
     "linkUrl": {
       "label": "Redirect URL",
@@ -50,7 +61,13 @@
       "helper": "Important for accessibility"
     },
     "promotionType": {
-      "label": "Promotion Type"
+      "label": "Promotion Type",
+      "discount": "Discount",
+      "free_shipping": "Free Shipping",
+      "new_arrival": "New Arrival",
+      "sale": "Sale",
+      "seasonal": "Seasonal",
+      "brand_promotion": "Brand Promotion"
     },
     "sortOrder": {
       "label": "Display Order",
@@ -84,7 +101,16 @@
     },
     "location": {
       "label": "Display Location",
-      "all": "All Locations"
+      "all": "All Locations",
+      "home_top": "Home Top",
+      "home_middle": "Home Middle",
+      "home_bottom": "Home Bottom",
+      "category_top": "Category Top",
+      "product_page": "Product Page",
+      "cart_page": "Cart Page",
+      "checkout_page": "Checkout Page",
+      "sidebar": "Sidebar",
+      "footer": "Footer"
     },
     "status": {
       "label": "Status",

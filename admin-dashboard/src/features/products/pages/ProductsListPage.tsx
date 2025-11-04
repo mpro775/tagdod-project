@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Chip, IconButton, Tooltip, Button, Menu, MenuItem, Alert } from '@mui/material';
+import { Box, Chip, IconButton, Tooltip, Button, Menu, MenuItem, Alert, Grid, Skeleton, Paper, Typography } from '@mui/material';
 import {
   Edit,
   Delete,
@@ -12,15 +12,23 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { ProductCard } from '@/shared/components/Cards/ProductCard';
 import { useProducts, useDeleteProduct, useRestoreProduct } from '../hooks/useProducts';
 import { formatDate } from '@/shared/utils/formatters';
 import { CurrencySelector } from '@/shared/components/CurrencySelector';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
+import { ConfirmDialog } from '@/shared/components';
 import type { Product } from '../types/product.types';
 import { ProductStatus } from '../types/product.types';
 
 export const ProductsListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('products');
+  const { isMobile } = useBreakpoint();
+  const { confirmDialog, dialogProps } = useConfirmDialog();
 
   // State
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -48,16 +56,27 @@ export const ProductsListPage: React.FC = () => {
   const { mutate: restoreProduct } = useRestoreProduct();
 
   // Actions
-  const handleDelete = (product: Product) => {
-    if (window.confirm(`هل أنت متأكد من حذف المنتج "${product.name}"؟`)) {
+  const handleDelete = async (product: Product) => {
+    const confirmed = await confirmDialog({
+      title: t('messages.deleteTitle', 'تأكيد الحذف'),
+      message: t('messages.confirmDelete', { name: product.name }),
+      type: 'warning',
+      confirmColor: 'error',
+    });
+    if (confirmed) {
       deleteProduct(product._id, {
         onSuccess: () => refetch(),
       });
     }
   };
 
-  const handleRestore = (product: Product) => {
-    if (window.confirm(`هل تريد استعادة المنتج "${product.name}"؟`)) {
+  const handleRestore = async (product: Product) => {
+    const confirmed = await confirmDialog({
+      title: t('messages.restoreTitle', 'تأكيد الاستعادة'),
+      message: t('messages.confirmRestore', { name: product.name }),
+      type: 'question',
+    });
+    if (confirmed) {
       restoreProduct(product._id, {
         onSuccess: () => refetch(),
       });
@@ -85,65 +104,73 @@ export const ProductsListPage: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'name',
-      headerName: 'المنتج',
-      width: 250,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {params.row.mainImage && (
-            <Box
-              component="img"
-              src={params.row.mainImage}
-              alt={params.row.name}
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 1,
-                objectFit: 'cover',
-              }}
-            />
-          )}
-          <Box>
-            <Box sx={{ fontWeight: 'medium' }}>{params.row.name}</Box>
-            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{params.row.nameEn}</Box>
+      headerName: t('list.columns.product'),
+      width: isMobile ? 150 : 250,
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => {
+        const imageUrl = params.row.mainImage || 
+          (typeof params.row.mainImageId === 'object' ? params.row.mainImageId?.url : null) ||
+          params.row.images?.[0];
+        
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {imageUrl && (
+              <Box
+                component="img"
+                src={imageUrl}
+                alt={params.row.name}
+                sx={{
+                  width: { xs: 30, sm: 40 },
+                  height: { xs: 30, sm: 40 },
+                  borderRadius: 1,
+                  objectFit: 'cover',
+                }}
+              />
+            )}
+            <Box>
+              <Box sx={{ fontWeight: 'medium', fontSize: { xs: '0.875rem', sm: '1rem' } }}>{params.row.name}</Box>
+              <Box sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' }, color: 'text.secondary' }}>{params.row.nameEn}</Box>
+            </Box>
           </Box>
-        </Box>
-      ),
+        );
+      },
     },
     {
       field: 'sku',
-      headerName: 'رقم المنتج',
+      headerName: t('list.columns.sku'),
       width: 120,
     },
     {
       field: 'category',
-      headerName: 'الفئة',
+      headerName: t('list.columns.category'),
       width: 150,
       valueGetter: (_value, row) => (typeof row.categoryId === 'object' ? row.categoryId?.name : '-') || '-',
     },
     {
       field: 'brand',
-      headerName: 'العلامة',
+      headerName: t('list.columns.brand'),
       width: 130,
       valueGetter: (_value, row) => (typeof row.brandId === 'object' ? row.brandId?.name : '-') || '-',
     },
     {
       field: 'variantsCount',
-      headerName: 'الخيارات',
+      headerName: t('list.columns.variants'),
       width: 100,
       align: 'center',
     },
     {
       field: 'status',
-      headerName: 'الحالة',
+      headerName: t('list.columns.status'),
       width: 130,
       renderCell: (params) => {
         const statusMap: Record<
           ProductStatus,
           { label: string; color: 'success' | 'warning' | 'error' | 'default' }
         > = {
-          active: { label: 'نشط', color: 'success' },
-          draft: { label: 'مسودة', color: 'default' },
-          archived: { label: 'مؤرشف', color: 'warning' },
+          active: { label: t('status.active'), color: 'success' },
+          draft: { label: t('status.draft'), color: 'default' },
+          archived: { label: t('status.archived'), color: 'warning' },
         };
         const status = statusMap[params.row.status as ProductStatus];
         return <Chip label={status.label} color={status.color} size="small" />;
@@ -151,19 +178,19 @@ export const ProductsListPage: React.FC = () => {
     },
     {
       field: 'badges',
-      headerName: 'الشارات',
+      headerName: t('list.columns.badges'),
       width: 120,
       sortable: false,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           {params.row.isFeatured && (
-            <Tooltip title="مميز">
-              <Star sx={{ fontSize: 18, color: 'warning.main' }} />
+            <Tooltip title={t('badges.featured')}>
+              <Star sx={{ fontSize: { xs: 16, sm: 18 }, color: 'warning.main' }} />
             </Tooltip>
           )}
           {params.row.isNew && (
-            <Tooltip title="جديد">
-              <NewReleases sx={{ fontSize: 18, color: 'info.main' }} />
+            <Tooltip title={t('badges.new')}>
+              <NewReleases sx={{ fontSize: { xs: 16, sm: 18 }, color: 'info.main' }} />
             </Tooltip>
           )}
         </Box>
@@ -171,19 +198,19 @@ export const ProductsListPage: React.FC = () => {
     },
     {
       field: 'salesCount',
-      headerName: 'المبيعات',
+      headerName: t('list.columns.sales'),
       width: 100,
       align: 'center',
     },
     {
       field: 'createdAt',
-      headerName: 'تاريخ الإنشاء',
+      headerName: t('list.columns.createdAt'),
       width: 140,
       valueFormatter: (value) => formatDate(value as Date),
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('list.columns.actions'),
       width: 220,
       sortable: false,
       renderCell: (params) => {
@@ -193,7 +220,7 @@ export const ProductsListPage: React.FC = () => {
         if (isDeleted) {
           return (
             <Box display="flex" gap={0.5}>
-              <Tooltip title="استعادة">
+              <Tooltip title={t('actions.restore')}>
                 <IconButton
                   size="small"
                   color="primary"
@@ -211,7 +238,7 @@ export const ProductsListPage: React.FC = () => {
 
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title="عرض">
+            <Tooltip title={t('actions.view')}>
               <IconButton
                 size="small"
                 color="info"
@@ -224,7 +251,7 @@ export const ProductsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="المتغيرات">
+            <Tooltip title={t('actions.variants')}>
               <IconButton
                 size="small"
                 color="secondary"
@@ -237,7 +264,7 @@ export const ProductsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="تعديل">
+            <Tooltip title={t('actions.edit')}>
               <IconButton
                 size="small"
                 color="primary"
@@ -250,7 +277,7 @@ export const ProductsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="حذف">
+            <Tooltip title={t('actions.delete')}>
               <IconButton
                 size="small"
                 color="error"
@@ -271,23 +298,24 @@ export const ProductsListPage: React.FC = () => {
   return (
     <Box>
       {/* Header with filters */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box display="flex" gap={2} alignItems="center">
-          <Button variant="outlined" startIcon={<FilterList />} onClick={handleMenuOpen}>
-            الفلاتر
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
+        <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+          <Button variant="outlined" startIcon={<FilterList />} onClick={handleMenuOpen} size={isMobile ? 'small' : 'medium'}>
+            {t('list.filters')}
           </Button>
           <Button
             variant="outlined"
             startIcon={<Inventory />}
             onClick={() => navigate('/products/inventory')}
+            size={isMobile ? 'small' : 'medium'}
           >
-            إدارة المخزون
+            {t('list.inventoryManagement')}
           </Button>
         </Box>
         <Box display="flex" gap={1} alignItems="center">
-          <CurrencySelector size="sm" showLabel={false} />
-          <Button variant="contained" onClick={() => navigate('/products/new')}>
-            إضافة منتج
+          <CurrencySelector size="small" showLabel={false} />
+          <Button variant="contained" onClick={() => navigate('/products/new')} size={isMobile ? 'small' : 'medium'}>
+            {t('list.addNew')}
           </Button>
         </Box>
       </Box>
@@ -296,12 +324,10 @@ export const ProductsListPage: React.FC = () => {
       {(statusFilter !== 'all' || featuredFilter !== 'all') && (
         <Box mb={2}>
           <Alert severity="info">
-            الفلاتر النشطة:
+            {t('list.activeFilters')}
             {statusFilter !== 'all' && (
               <Chip
-                label={`الحالة: ${
-                  statusFilter === 'active' ? 'نشط' : statusFilter === 'draft' ? 'مسودة' : 'مؤرشف'
-                }`}
+                label={`${t('list.statusColon')} ${t(`status.${statusFilter}`)}`}
                 size="small"
                 onDelete={() => setStatusFilter('all')}
                 sx={{ ml: 1 }}
@@ -309,7 +335,7 @@ export const ProductsListPage: React.FC = () => {
             )}
             {featuredFilter !== 'all' && (
               <Chip
-                label={`مميز: ${featuredFilter ? 'نعم' : 'لا'}`}
+                label={`${t('list.filters.featured')}: ${featuredFilter ? t('common.yes', { ns: 'common' }) : t('common.no', { ns: 'common' })}`}
                 size="small"
                 onDelete={() => setFeaturedFilter('all')}
                 sx={{ ml: 1 }}
@@ -319,35 +345,119 @@ export const ProductsListPage: React.FC = () => {
         </Box>
       )}
 
-      <DataTable
-        title="إدارة المنتجات"
-        columns={columns}
-        rows={data?.data || []}
-        loading={isLoading}
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        sortModel={sortModel}
-        onSortModelChange={setSortModel}
-        searchPlaceholder="البحث في المنتجات..."
-        onSearch={setSearch}
-        getRowId={(row) => (row as Product)._id}
-        onRowClick={(params) => {
-          navigate(`/products/${(params.row as Product)._id}`);
-        }}
-        height="calc(100vh - 200px)"
-      />
+      {/* Display based on screen size */}
+      {isMobile ? (
+        /* Mobile Card Layout */
+        <Box>
+          {isLoading ? (
+            /* Loading Skeleton */
+            <Box>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Paper key={index} sx={{ p: 2, mb: 2 }}>
+                  <Box display="flex" gap={2}>
+                    <Skeleton variant="rounded" width={80} height={80} />
+                    <Box flex={1}>
+                      <Skeleton variant="text" width="80%" height={28} />
+                      <Skeleton variant="text" width="60%" height={20} />
+                      <Skeleton variant="text" width="40%" height={20} />
+                    </Box>
+                  </Box>
+                  <Box mt={2} display="flex" gap={1}>
+                    <Skeleton variant="text" width="60%" height={32} />
+                    <Skeleton variant="text" width="30%" height={32} />
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
+          ) : !data?.data || data.data.length === 0 ? (
+            /* Empty State */
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Inventory sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                {t('list.empty')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('list.emptyDescription')}
+              </Typography>
+            </Paper>
+          ) : (
+            /* Products Grid */
+            <Grid container spacing={2}>
+              {data.data.map((product) => (
+                <Grid size={{ xs: 12 }} key={product._id}>
+                  <ProductCard
+                    product={product}
+                    onView={(p) => navigate(`/products/${p._id}/view`)}
+                    onEdit={(p) => navigate(`/products/${p._id}`)}
+                    onDelete={handleDelete}
+                    onToggleStatus={product.deletedAt ? handleRestore : undefined}
+                    showActions={true}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+
+          {/* Mobile Pagination */}
+          {data?.meta && data.meta.total > paginationModel.pageSize && (
+            <Box mt={3} display="flex" justifyContent="center" alignItems="center" gap={1}>
+              <Button
+                variant="outlined"
+                disabled={paginationModel.page === 0}
+                onClick={() => setPaginationModel({ ...paginationModel, page: paginationModel.page - 1 })}
+                size="small"
+              >
+                {t('common.previous', { ns: 'common' })}
+              </Button>
+              <Typography variant="body2">
+                {t('common.of', { ns: 'common' })} {Math.ceil((data.meta.total || 0) / paginationModel.pageSize)}
+              </Typography>
+              <Button
+                variant="outlined"
+                disabled={(paginationModel.page + 1) * paginationModel.pageSize >= (data.meta.total || 0)}
+                onClick={() => setPaginationModel({ ...paginationModel, page: paginationModel.page + 1 })}
+                size="small"
+              >
+                {t('common.next', { ns: 'common' })}
+              </Button>
+            </Box>
+          )}
+        </Box>
+      ) : (
+        /* Desktop Table Layout */
+        <DataTable
+          title={t('list.title')}
+          columns={columns}
+          rows={data?.data || []}
+          loading={isLoading}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+          sortModel={sortModel}
+          onSortModelChange={setSortModel}
+          searchPlaceholder={t('list.search')}
+          onSearch={setSearch}
+          getRowId={(row) => (row as Product)._id}
+          onRowClick={(params) => {
+            navigate(`/products/${(params.row as Product)._id}`);
+          }}
+          height="calc(100vh - 200px)"
+        />
+      )}
 
       {/* Filter Menu */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={() => handleFilterChange('status', 'all')}>جميع الحالات</MenuItem>
-        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ACTIVE)}>نشط</MenuItem>
-        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.DRAFT)}>مسودة</MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', 'all')}>{t('list.allStatuses')}</MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ACTIVE)}>{t('status.active')}</MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.DRAFT)}>{t('status.draft')}</MenuItem>
         <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ARCHIVED)}>
-          مؤرشف
+          {t('status.archived')}
         </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('featured', true)}>منتجات مميزة</MenuItem>
-        <MenuItem onClick={() => handleFilterChange('featured', false)}>منتجات عادية</MenuItem>
+        <MenuItem onClick={() => handleFilterChange('featured', true)}>{t('list.featuredProducts')}</MenuItem>
+        <MenuItem onClick={() => handleFilterChange('featured', false)}>{t('list.normalProducts')}</MenuItem>
       </Menu>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog {...dialogProps} />
     </Box>
   );
 };

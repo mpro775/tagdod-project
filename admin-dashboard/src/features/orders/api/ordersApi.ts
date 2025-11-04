@@ -15,6 +15,7 @@ import type {
   OrderTracking,
   RevenueAnalytics,
   PerformanceAnalytics,
+  VerifyPaymentDto,
 } from '../types/order.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
@@ -194,6 +195,14 @@ export const ordersApi = {
    */
   getStats: async (): Promise<OrderStats> => {
     const response = await apiClient.get<ApiResponse<OrderStats>>('/admin/orders/stats');
+    return response.data.data;
+  },
+
+  /**
+   * Verify local payment
+   */
+  verifyPayment: async (id: string, data: VerifyPaymentDto): Promise<Order> => {
+    const response = await apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/verify-payment`, data);
     return response.data.data;
   },
 };

@@ -51,6 +51,7 @@ export class OrderController {
       this.getUserId(req),
       dto.currency,
       dto.couponCode,
+      dto.couponCodes,
     );
 
     return {

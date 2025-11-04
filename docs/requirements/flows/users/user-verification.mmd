@@ -1,0 +1,106 @@
+%% User Verification Flow
+%% View at https://mermaid.live
+flowchart TD
+  Start[بدء التسجيل] --> CheckRole{نوع المستخدم?}
+  
+  CheckRole -->|مستخدم عادي| NormalUser[مستخدم عادي]
+  NormalUser --> NormalActive[حالة: ACTIVE]
+  NormalActive --> NormalDone[✅ موثق مباشرة]
+  
+  CheckRole -->|مهندس| Engineer[مهندس]
+  CheckRole -->|تاجر| Merchant[تاجر]
+  
+  %% Engineer Flow
+  Engineer --> EngineerSignup[تسجيل حساب مهندس]
+  EngineerSignup --> EngineerUnverified[حالة: UNVERIFIED]
+  EngineerUnverified --> EngineerPrompt[عرض: حساب غير موثق]
+  EngineerPrompt --> EngineerUpload[رفع السيرة الذاتية]
+  EngineerUpload --> EngineerFileCheck{ملف صحيح?}
+  
+  EngineerFileCheck -->|لا| EngineerFileError[خطأ: نوع ملف غير مدعوم]
+  EngineerFileError --> EngineerUpload
+  
+  EngineerFileCheck -->|نعم| EngineerUploadFile[رفع ملف PDF/DOC/DOCX]
+  EngineerUploadFile --> EngineerNote[ملاحظة اختيارية]
+  EngineerNote --> EngineerSubmit[POST /users/verification/submit]
+  EngineerSubmit --> EngineerPending[حالة: PENDING]
+  EngineerPending --> EngineerNotify[إشعار الأدمن]
+  
+  %% Merchant Flow
+  Merchant --> MerchantSignup[تسجيل حساب تاجر]
+  MerchantSignup --> MerchantUnverified[حالة: UNVERIFIED]
+  MerchantUnverified --> MerchantPrompt[عرض: حساب غير موثق]
+  MerchantPrompt --> MerchantUpload[رفع صورة المحل]
+  MerchantUpload --> MerchantFileCheck{صورة صحيحة?}
+  
+  MerchantFileCheck -->|لا| MerchantFileError[خطأ: يجب أن تكون صورة]
+  MerchantFileError --> MerchantUpload
+  
+  MerchantFileCheck -->|نعم| MerchantUploadPhoto[رفع صورة المحل]
+  MerchantUploadPhoto --> MerchantStoreName[إدخال اسم المحل]
+  MerchantStoreName --> MerchantStoreCheck{اسم المحل موجود?}
+  
+  MerchantStoreCheck -->|لا| MerchantStoreError[خطأ: اسم المحل مطلوب]
+  MerchantStoreError --> MerchantStoreName
+  
+  MerchantStoreCheck -->|نعم| MerchantNote[ملاحظة اختيارية]
+  MerchantNote --> MerchantSubmit[POST /users/verification/submit]
+  MerchantSubmit --> MerchantPending[حالة: PENDING]
+  MerchantPending --> MerchantNotify[إشعار الأدمن]
+  
+  %% Admin Review Flow
+  EngineerNotify --> AdminReview[مراجعة الأدمن]
+  MerchantNotify --> AdminReview
+  
+  AdminReview --> AdminList[GET /admin/users/verification/pending]
+  AdminList --> AdminSelect[اختيار طلب]
+  AdminSelect --> AdminDetails[GET /admin/users/verification/:userId]
+  AdminDetails --> AdminView[عرض التفاصيل]
+  AdminView --> AdminViewFiles[عرض الملفات المرفوعة]
+  AdminViewFiles --> AdminViewNotes[عرض الملاحظات]
+  AdminViewNotes --> AdminDecision{قرار الأدمن?}
+  
+  %% Approve Flow
+  AdminDecision -->|موافقة| AdminApprove[POST /admin/users/verification/:userId/approve]
+  AdminApprove --> StatusApproved[حالة: APPROVED]
+  StatusApproved --> AddRole[إضافة الدور]
+  AddRole --> AddEngineerRole[إضافة ENGINEER role]
+  AddRole --> AddMerchantRole[إضافة MERCHANT role]
+  AddEngineerRole --> NotifyUserApproved[إشعار المستخدم: تمت الموافقة]
+  AddMerchantRole --> NotifyUserApproved
+  NotifyUserApproved --> ApprovedDone[✅ حساب موثق]
+  
+  %% Reject Flow
+  AdminDecision -->|رفض| AdminRejectReason[سبب الرفض اختياري]
+  AdminRejectReason --> AdminReject[POST /admin/users/verification/:userId/reject]
+  AdminReject --> StatusRejected[حالة: REJECTED]
+  StatusRejected --> RemoveRole[إزالة الدور]
+  StatusRejected --> RemoveFiles[مسح الملفات المرفوعة]
+  RemoveRole --> RemoveEngineerRole[إزالة ENGINEER role]
+  RemoveRole --> RemoveMerchantRole[إزالة MERCHANT role]
+  RemoveEngineerRole --> NotifyUserRejected[إشعار المستخدم: تم الرفض]
+  RemoveMerchantRole --> NotifyUserRejected
+  NotifyUserRejected --> RejectedDone[❌ حساب مرفوض]
+  
+  %% Re-apply Flow
+  RejectedDone --> Reapply{إعادة الطلب?}
+  Reapply -->|نعم| EngineerUpload
+  Reapply -->|نعم| MerchantUpload
+  Reapply -->|لا| EndRejected[نهاية - مرفوض]
+  
+  %% End States
+  NormalDone --> End[✅ نهاية - حساب موثق]
+  ApprovedDone --> End
+  EndRejected --> End
+
+  %% Styling
+  classDef unverified fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+  classDef pending fill:#cfe2ff,stroke:#0d6efd,stroke-width:2px
+  classDef approved fill:#d1e7dd,stroke:#198754,stroke-width:2px
+  classDef rejected fill:#f8d7da,stroke:#dc3545,stroke-width:2px
+  
+  class EngineerUnverified,MerchantUnverified unverified
+  class EngineerPending,MerchantPending,AdminReview,AdminList,AdminSelect,AdminDetails,AdminView,AdminViewFiles,AdminViewNotes pending
+  class StatusApproved,AddRole,AddEngineerRole,AddMerchantRole,NotifyUserApproved,ApprovedDone approved
+  class StatusRejected,RemoveRole,RemoveEngineerRole,RemoveMerchantRole,NotifyUserRejected,RejectedDone,EndRejected rejected
+

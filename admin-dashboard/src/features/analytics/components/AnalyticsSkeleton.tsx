@@ -6,6 +6,7 @@ import {
   Skeleton,
   Grid,
 } from '@mui/material';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 
 interface AnalyticsSkeletonProps {
   variant?: 'dashboard' | 'chart' | 'table' | 'card';
@@ -16,23 +17,42 @@ export const AnalyticsSkeleton: React.FC<AnalyticsSkeletonProps> = ({
   variant = 'dashboard',
   count = 1,
 }) => {
+  const { isMobile } = useBreakpoint();
 
   const renderDashboardSkeleton = () => (
     <Box>
       {/* Header Skeleton */}
-      <Box sx={{ mb: 3 }}>
-        <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+      <Box sx={{ mb: isMobile ? 2 : 3 }}>
+        <Skeleton 
+          variant="rectangular" 
+          height={isMobile ? 100 : 120} 
+          sx={{ borderRadius: 2 }} 
+        />
       </Box>
 
       {/* KPIs Skeleton */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: isMobile ? 2 : 3 }}>
         {[...Array(6)].map((_, index) => (
           <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={index}>
             <Card>
-              <CardContent>
-                <Skeleton variant="text" width="60%" height={24} />
-                <Skeleton variant="text" width="40%" height={32} sx={{ mt: 1 }} />
-                <Skeleton variant="text" width="50%" height={16} sx={{ mt: 1 }} />
+              <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+                <Skeleton 
+                  variant="text" 
+                  width="60%" 
+                  height={isMobile ? 20 : 24} 
+                />
+                <Skeleton 
+                  variant="text" 
+                  width="40%" 
+                  height={isMobile ? 28 : 32} 
+                  sx={{ mt: 1 }} 
+                />
+                <Skeleton 
+                  variant="text" 
+                  width="50%" 
+                  height={isMobile ? 14 : 16} 
+                  sx={{ mt: 1 }} 
+                />
               </CardContent>
             </Card>
           </Grid>
@@ -40,20 +60,30 @@ export const AnalyticsSkeleton: React.FC<AnalyticsSkeletonProps> = ({
       </Grid>
 
       {/* Charts Skeleton */}
-      <Grid container spacing={3}>
+      <Grid container spacing={isMobile ? 2 : 3}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <Card>
-            <CardContent>
-              <Skeleton variant="text" width="30%" height={24} sx={{ mb: 2 }} />
-              <Skeleton variant="rectangular" height={300} />
+            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+              <Skeleton 
+                variant="text" 
+                width="30%" 
+                height={isMobile ? 20 : 24} 
+                sx={{ mb: 2 }} 
+              />
+              <Skeleton variant="rectangular" height={isMobile ? 250 : 300} />
             </CardContent>
           </Card>
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
           <Card>
-            <CardContent>
-              <Skeleton variant="text" width="40%" height={24} sx={{ mb: 2 }} />
-              <Skeleton variant="rectangular" height={300} />
+            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+              <Skeleton 
+                variant="text" 
+                width="40%" 
+                height={isMobile ? 20 : 24} 
+                sx={{ mb: 2 }} 
+              />
+              <Skeleton variant="rectangular" height={isMobile ? 250 : 300} />
             </CardContent>
           </Card>
         </Grid>
@@ -63,23 +93,33 @@ export const AnalyticsSkeleton: React.FC<AnalyticsSkeletonProps> = ({
 
   const renderChartSkeleton = () => (
     <Card>
-      <CardContent>
-        <Skeleton variant="text" width="40%" height={24} sx={{ mb: 2 }} />
-        <Skeleton variant="rectangular" height={300} />
+      <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+        <Skeleton 
+          variant="text" 
+          width="40%" 
+          height={isMobile ? 20 : 24} 
+          sx={{ mb: 2 }} 
+        />
+        <Skeleton variant="rectangular" height={isMobile ? 250 : 300} />
       </CardContent>
     </Card>
   );
 
   const renderTableSkeleton = () => (
     <Card>
-      <CardContent>
-        <Skeleton variant="text" width="30%" height={24} sx={{ mb: 2 }} />
+      <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+        <Skeleton 
+          variant="text" 
+          width="30%" 
+          height={isMobile ? 20 : 24} 
+          sx={{ mb: 2 }} 
+        />
         <Box sx={{ mb: 2 }}>
-          <Skeleton variant="rectangular" height={40} />
+          <Skeleton variant="rectangular" height={isMobile ? 35 : 40} />
         </Box>
         {[...Array(5)].map((_, index) => (
           <Box key={index} sx={{ mb: 1 }}>
-            <Skeleton variant="rectangular" height={60} />
+            <Skeleton variant="rectangular" height={isMobile ? 50 : 60} />
           </Box>
         ))}
       </CardContent>
@@ -87,15 +127,33 @@ export const AnalyticsSkeleton: React.FC<AnalyticsSkeletonProps> = ({
   );
 
   const renderCardSkeleton = () => (
-    <Grid container spacing={2}>
+    <Grid container spacing={isMobile ? 1.5 : 2}>
       {[...Array(count)].map((_, index) => (
         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
           <Card>
-            <CardContent>
-              <Skeleton variant="text" width="60%" height={24} />
-              <Skeleton variant="text" width="40%" height={32} sx={{ mt: 1 }} />
-              <Skeleton variant="text" width="50%" height={16} sx={{ mt: 1 }} />
-              <Skeleton variant="rectangular" height={100} sx={{ mt: 2 }} />
+            <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+              <Skeleton 
+                variant="text" 
+                width="60%" 
+                height={isMobile ? 20 : 24} 
+              />
+              <Skeleton 
+                variant="text" 
+                width="40%" 
+                height={isMobile ? 28 : 32} 
+                sx={{ mt: 1 }} 
+              />
+              <Skeleton 
+                variant="text" 
+                width="50%" 
+                height={isMobile ? 14 : 16} 
+                sx={{ mt: 1 }} 
+              />
+              <Skeleton 
+                variant="rectangular" 
+                height={isMobile ? 80 : 100} 
+                sx={{ mt: 2 }} 
+              />
             </CardContent>
           </Card>
         </Grid>

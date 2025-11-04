@@ -47,11 +47,46 @@
       "moreActions": "More Actions"
     }
   },
+  "details": {
+    "title": "Cart Details",
+    "loadError": "Unable to load cart details",
+    "overview": "Cart Overview",
+    "itemsCount": "Items Count",
+    "totalValue": "Total Value",
+    "lastActivity": "Last Activity",
+    "userInfo": "User Information",
+    "accountType": "Account Type",
+    "retail": "Retail",
+    "currency": "Currency",
+    "cartDetails": "Cart Details",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "abandonmentStatus": "Abandonment Status",
+    "abandoned": "Abandoned",
+    "notAbandoned": "Not Abandoned",
+    "emailsSent": "Emails Sent",
+    "cartItems": "Cart Items ({{count}})",
+    "cartItems_plural": "Cart Items ({{count}})",
+    "itemsTable": {
+      "product": "Product",
+      "quantity": "Quantity",
+      "price": "Price",
+      "total": "Total",
+      "unknownProduct": "Unknown Product",
+      "unknownBrand": "Unknown Brand"
+    },
+    "pricingSummary": "Pricing Summary",
+    "subtotal": "Subtotal",
+    "promotionDiscount": "Promotion Discount",
+    "couponDiscount": "Coupon Discount",
+    "finalTotal": "Final Total"
+  },
   "filters": {
     "title": "Filter Carts",
     "search": "Search",
     "clearFilters": "Clear Filters",
     "advanced": {
+      "title": "Advanced Filters",
       "show": "Show Advanced Filters",
       "hide": "Hide Advanced Filters",
       "clearTooltip": "Clear all filters"
@@ -120,8 +155,13 @@
     "convertedCarts": "Converted Carts",
     "abandonmentRate": "Abandonment Rate",
     "conversionRate": "Conversion Rate",
+    "totalValue": "Total Value",
     "averageValue": "Average Cart Value",
     "recoveryRate": "Recovery Rate",
+    "totalAbandonedCarts": "Total Abandoned Carts",
+    "totalAbandonedValue": "Total Abandoned Value",
+    "averageAbandonedValue": "Average Abandoned Value",
+    "cartsWithEmails": "Carts with Reminders Sent",
     "trend": {
       "positive": "+{{value}}%",
       "negative": "{{value}}%"
@@ -140,8 +180,38 @@
     "tabs": {
       "overview": "Overview",
       "conversion": "Conversion Analysis",
+      "abandoned": "Abandoned Carts",
+      "revenue": "Revenue",
+      "customerBehavior": "Customer Behavior",
       "recovery": "Recovery Campaigns",
       "insights": "Insights"
+    },
+    "charts": {
+      "conversionRate": "Daily Conversion Rate",
+      "conversionRateChart": "Conversion Rate Chart (requires charting library installation)",
+      "currentConversionRate": "Current Conversion Rate",
+      "currentAbandonmentRate": "Current Abandonment Rate",
+      "fromPreviousWeek": "from previous week",
+      "keyMetrics": "Key Metrics",
+      "cartStatusDistribution": "Cart Status Distribution",
+      "cartStatusDistributionChart": "Cart Status Distribution Chart (requires charting library installation)",
+      "revenueTrends": "Revenue Trends",
+      "revenueTrendsChart": "Revenue Trends Chart (requires charting library installation)",
+      "detailedConversionRates": "Detailed Conversion Rates",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "last7Days": "Last 7 days",
+      "last4Weeks": "Last 4 weeks",
+      "last12Months": "Last 12 months",
+      "days": "days",
+      "weeks": "weeks",
+      "months": "months",
+      "noData": "No data available",
+      "abandonedCartsContent": "Abandoned Carts Content",
+      "revenueContent": "Revenue Content",
+      "customerBehaviorContent": "Customer Behavior Content",
+      "recoveryContent": "Recovery Campaigns Content"
     },
     "conversion": {
       "title": "Conversion Rates",
@@ -178,9 +248,17 @@
     "deselectAll": "Deselect All",
     "search": "Search",
     "cancel": "Cancel",
+    "back": "Back",
     "confirm": "Confirm",
     "save": "Save",
-    "send": "Send"
+    "send": "Send",
+    "sendAllReminders": "Send All Reminders",
+    "quickActions": "Quick Actions",
+    "sendRemindersToNewCarts": "Send Reminders to New Carts ({{count}})",
+    "viewFollowUpCarts": "View Carts Needing Follow-up",
+    "allCartsReminded": "All abandoned carts have been sent reminders",
+    "remindersWillBeSent": "Reminders will be sent to {{count}} carts",
+    "followUpCartsCount": "There are {{count}} carts needing follow-up"
   },
   "dialogs": {
     "convertToOrder": {
@@ -189,21 +267,75 @@
       "customerInfo": "Customer Information",
       "shippingAddress": "Shipping Address",
       "orderSummary": "Order Summary",
+      "cartSummary": "Cart Summary",
       "cartItems": "Cart Items",
       "total": "Total",
       "confirm": "Confirm Conversion",
       "success": "Cart successfully converted to order",
-      "error": "Failed to convert cart to order"
+      "error": "Failed to convert cart to order",
+      "defaultCountry": "Yemen",
+      "fields": {
+        "customerName": "Customer Name",
+        "email": "Email",
+        "phone": "Phone Number",
+        "street": "Street Address",
+        "city": "City",
+        "state": "State/Province",
+        "postalCode": "Postal Code",
+        "country": "Country"
+      },
+      "countries": {
+        "yemen": "Yemen",
+        "saudi": "Saudi Arabia",
+        "uae": "United Arab Emirates",
+        "qatar": "Qatar",
+        "kuwait": "Kuwait",
+        "bahrain": "Bahrain",
+        "oman": "Oman"
+      }
     },
     "sendReminder": {
       "title": "Send Reminder Email",
       "subtitle": "Send a reminder email to recover this abandoned cart",
       "preview": "Email Preview",
-      "subject": "Email Subject",
+      "subject": "Reminder - You have products in your cart",
+      "subjectLabel": "Subject",
       "content": "Email Content",
       "send": "Send Reminder",
+      "sending": "Sending...",
       "success": "Reminder email sent successfully",
-      "error": "Failed to send reminder email"
+      "error": "Failed to send reminder email",
+      "cartInfo": "Cart Information",
+      "cartInfoItems": "{{count}} item",
+      "cartInfoItems_plural": "{{count}} items",
+      "cartInfoAge": "{{hours}} hours",
+      "cartInfoEmailsSent": "{{count}} email sent",
+      "customerInfo": "Customer Information",
+      "noContactInfo": "No contact information available",
+      "customerName": "Name: {{name}}",
+      "type": "Reminder Type",
+      "selectType": "Select Reminder Type",
+      "customMessage": "Custom Message (Optional)",
+      "customMessagePlaceholder": "Add a custom reminder message...",
+      "charactersCount": "{{count}}/500 characters",
+      "greeting": "Hello {{name}},",
+      "guest": "Dear Customer",
+      "noticeMessage": "We noticed you have {{itemsCount}} item(s) in your cart worth {{total}}.",
+      "callToAction": "Don't miss out! Complete your order now.",
+      "types": {
+        "first": "First Reminder",
+        "second": "Second Reminder",
+        "final": "Final Reminder",
+        "firstDesc": "Sent after 1 hour of inactivity",
+        "secondDesc": "Sent after 24 hours with a discount coupon",
+        "finalDesc": "Sent after 72 hours with a larger discount",
+        "required": "Reminder type is required",
+        "messageTooLong": "Message is too long (maximum 500 characters)"
+      },
+      "fields": {
+        "reminderType": "Reminder Type",
+        "customMessage": "Custom Message (Optional)"
+      }
     },
     "delete": {
       "title": "Delete Cart",

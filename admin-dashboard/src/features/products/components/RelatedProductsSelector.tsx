@@ -9,6 +9,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Link as LinkIcon } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { productsApi } from '../api/productsApi';
 import type { Product } from '../types/product.types';
 
@@ -23,6 +24,7 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
   onChange,
   currentProductId,
 }) => {
+  const { t } = useTranslation(['products', 'common']);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,7 +66,7 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
       
       setProducts(filteredProducts || []);
     } catch (err) {
-      setError('فشل تحميل المنتجات');
+      setError(t('products:messages.loadProductsFailed', 'فشل تحميل المنتجات'));
       console.error('Error loading products:', err);
       setProducts([]); // تعيين array فارغ عند الخطأ
     } finally {
@@ -92,12 +94,12 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
         <LinkIcon color="primary" />
         <Typography variant="h6">
-          المنتجات الشبيهة
+          {t('products:form.relatedProducts', 'المنتجات الشبيهة')}
         </Typography>
       </Box>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        اختر المنتجات المشابهة التي تريد عرضها في صفحة تفاصيل هذا المنتج
+        {t('products:form.relatedProductsHelp', 'اختر المنتجات المشابهة التي تريد عرضها في صفحة تفاصيل هذا المنتج')}
       </Typography>
 
       {error && (
@@ -118,8 +120,8 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
         renderInput={(params) => (
           <TextField
             {...params}
-            label="ابحث واختر المنتجات"
-            placeholder="ابحث عن منتج..."
+            label={t('products:form.searchAndSelectProducts', 'ابحث واختر المنتجات')}
+            placeholder={t('products:form.searchProduct', 'ابحث عن منتج...')}
             InputProps={{
               ...params.InputProps,
               endAdornment: (
@@ -155,8 +157,8 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
             </Box>
           </li>
         )}
-        noOptionsText="لا توجد منتجات متاحة"
-        loadingText="جاري التحميل..."
+        noOptionsText={t('products:form.noProductsAvailable', 'لا توجد منتجات متاحة')}
+        loadingText={t('common:common.loading', 'جاري التحميل...')}
         sx={{
           '& .MuiOutlinedInput-root': {
             minHeight: '56px',
@@ -167,7 +169,7 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
       {selectedProducts.length > 0 && (
         <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
           <Typography variant="caption" color="text.secondary" gutterBottom>
-            المنتجات المحددة ({selectedProducts.length}):
+            {t('products:form.selectedProducts', 'المنتجات المحددة')} ({selectedProducts.length}):
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
             {selectedProducts.map((product: Product) => (

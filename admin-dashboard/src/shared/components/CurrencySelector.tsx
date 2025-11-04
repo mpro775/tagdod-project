@@ -1,20 +1,29 @@
 import React from 'react';
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
+} from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { Currency } from '../types/currency.types';
 import { useCurrency } from '../hooks/useCurrency';
 
 interface CurrencySelectorProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'small' | 'medium';
   showLabel?: boolean;
   showCurrentInfo?: boolean;
 }
 
 export const CurrencySelector: React.FC<CurrencySelectorProps> = ({
   className = '',
-  size = 'md',
+  size = 'medium',
   showLabel = true,
   showCurrentInfo = false,
 }) => {
+  const { t } = useTranslation('common');
   const {
     selectedCurrency,
     changeCurrency,
@@ -25,73 +34,38 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({
   const currencies = getSupportedCurrencies();
   const currentInfo = getCurrentCurrencyInfo();
 
-  const sizeClasses = {
-    sm: 'text-sm px-2 py-1.5 min-w-[140px]',
-    md: 'text-base px-3 py-2',
-    lg: 'text-lg px-4 py-3',
+  const handleChange = (event: SelectChangeEvent<string>) => {
+    changeCurrency(event.target.value as Currency);
   };
 
-  const iconSizeClasses = {
-    sm: 'w-3.5 h-3.5',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5',
-  };
-
-  const labelSizeClasses = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base',
+  // Get translated currency name
+  const getCurrencyName = (code: string) => {
+    return t(`common.currencies.${code.toLowerCase()}`);
   };
 
   return (
     <div className={`currency-selector ${className}`}>
-      {showLabel && (
-        <label 
-          htmlFor="currency-select" 
-          className={`block font-medium text-gray-700 mb-1 ${labelSizeClasses[size]}`}
-        >
-          العملة
-        </label>
-      )}
-      
-      <div className="relative">
-        <select
-          id="currency-select"
+      <FormControl size={size} sx={{ minWidth: 140 }}>
+        {showLabel && <InputLabel>{t('common.currency')}</InputLabel>}
+        <Select
           value={selectedCurrency}
-          onChange={(e) => changeCurrency(e.target.value as Currency)}
-          className={`
-            w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            bg-white appearance-none cursor-pointer
-            ${sizeClasses[size]}
-          `}
+          onChange={handleChange}
+          label={showLabel ? t('common.currency') : undefined}
+          sx={{
+            backgroundColor: 'background.paper',
+          }}
         >
           {currencies.map((currency) => (
-            <option key={currency.code} value={currency.code}>
-              {currency.symbol} - {currency.name}
-            </option>
+            <MenuItem key={currency.code} value={currency.code}>
+              {currency.symbol} {getCurrencyName(currency.code)}
+            </MenuItem>
           ))}
-        </select>
-        
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-          <svg
-            className={`${iconSizeClasses[size]} text-gray-400`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </div>
-      </div>
+        </Select>
+      </FormControl>
       
       {showCurrentInfo && (
         <div className="mt-1 text-xs text-gray-500">
-          العملة الحالية: {currentInfo.symbol} {currentInfo.name}
+          {t('common.currency')}: {currentInfo.symbol} {getCurrencyName(currentInfo.code)}
         </div>
       )}
     </div>

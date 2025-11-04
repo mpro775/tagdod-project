@@ -1,10 +1,11 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable, Optional, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cart, CartItem, CartStatus } from './schemas/cart.schema';
 import { Variant } from '../products/schemas/variant.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { MarketingService } from '../marketing/marketing.service';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 
 type ItemView = { itemId: string; variantId: string; qty: number };
 
@@ -40,6 +41,8 @@ export class CartService {
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     @Optional() private promotions?: PromotionsLike,
     @Optional() private marketingService?: MarketingService,
+    @Inject(forwardRef(() => ExchangeRatesService))
+    private exchangeRatesService?: ExchangeRatesService,
   ) {}
 
   // ---------- helpers
@@ -115,6 +118,16 @@ export class CartService {
   async applyCoupon(userId: string, couponCode: string) {
     const cart = await this.getOrCreateUserCart(userId);
 
+    // Initialize appliedCouponCodes array if not exists
+    if (!cart.appliedCouponCodes) {
+      cart.appliedCouponCodes = [];
+    }
+
+    // Check if coupon already applied
+    if (cart.appliedCouponCodes.includes(couponCode)) {
+      throw new Error('هذا الكوبون مطبق بالفعل');
+    }
+
     // Validate coupon code with marketing service
     if (this.marketingService) {
       const validation = await this.marketingService.validateCoupon({
@@ -127,17 +140,27 @@ export class CartService {
         throw new Error(validation.message || 'Invalid coupon code');
       }
 
-      // Store coupon details for discount calculation
-      cart.appliedCouponCode = couponCode;
+      // Add coupon to array
+      cart.appliedCouponCodes.push(couponCode);
       cart.lastActivityAt = new Date();
+
+      // Backward compatibility: keep old field for now
+      if (!cart.appliedCouponCode) {
+        cart.appliedCouponCode = couponCode;
+      }
 
       // Recalculate pricing with validated coupon
       await this.recalculatePricing(cart);
       await cart.save();
     } else {
       // Fallback if marketing service is not available
-      cart.appliedCouponCode = couponCode;
+      cart.appliedCouponCodes.push(couponCode);
       cart.lastActivityAt = new Date();
+
+      // Backward compatibility
+      if (!cart.appliedCouponCode) {
+        cart.appliedCouponCode = couponCode;
+      }
 
       await this.recalculatePricing(cart);
       await cart.save();
@@ -146,11 +169,32 @@ export class CartService {
     return { items: this.toView(cart) };
   }
 
-  async removeCoupon(userId: string) {
+  async removeCoupon(userId: string, couponCode?: string) {
     const cart = await this.getOrCreateUserCart(userId);
 
-    cart.appliedCouponCode = undefined;
-    cart.couponDiscount = 0;
+    // Initialize appliedCouponCodes array if not exists
+    if (!cart.appliedCouponCodes) {
+      cart.appliedCouponCodes = [];
+    }
+
+    if (couponCode) {
+      // Remove specific coupon
+      const index = cart.appliedCouponCodes.indexOf(couponCode);
+      if (index > -1) {
+        cart.appliedCouponCodes.splice(index, 1);
+      }
+    } else {
+      // Remove all coupons
+      cart.appliedCouponCodes = [];
+    }
+
+    // Backward compatibility: clear old field if no coupons left
+    if (cart.appliedCouponCodes.length === 0) {
+      cart.appliedCouponCode = undefined;
+    } else {
+      cart.appliedCouponCode = cart.appliedCouponCodes[0]; // Keep first for backward compatibility
+    }
+
     cart.lastActivityAt = new Date();
 
     // Recalculate pricing
@@ -181,23 +225,50 @@ export class CartService {
       }
     }
 
-    // Apply coupon discount if exists
-    if (cart.appliedCouponCode && this.marketingService) {
-      // Calculate actual coupon discount
-      const couponDiscount = await this.calculateCouponDiscount(
-        cart.appliedCouponCode,
-        pricingSummary.subtotal,
-      );
-      pricingSummary.couponDiscount = couponDiscount;
-    } else if (cart.appliedCouponCode) {
-      // Fallback calculation if marketing service is not available
-      pricingSummary.couponDiscount = pricingSummary.subtotal * 0.1; // 10% example
+    // Initialize appliedCouponCodes if not exists
+    if (!cart.appliedCouponCodes) {
+      cart.appliedCouponCodes = [];
+      // Backward compatibility: migrate from old field
+      if (cart.appliedCouponCode) {
+        cart.appliedCouponCodes.push(cart.appliedCouponCode);
+      }
     }
 
+    // Calculate coupon discounts cumulatively (multiple coupons support)
+    let cumulativeCouponDiscount = 0;
+    let remainingSubtotal = pricingSummary.subtotal;
+
+    if (cart.appliedCouponCodes.length > 0 && this.marketingService) {
+      // Apply coupons one by one, each on the remaining amount after previous discounts
+      for (const couponCode of cart.appliedCouponCodes) {
+        const couponDiscount = await this.calculateCouponDiscount(
+          couponCode,
+          remainingSubtotal,
+        );
+        cumulativeCouponDiscount += couponDiscount;
+        remainingSubtotal = Math.max(0, remainingSubtotal - couponDiscount);
+      }
+      pricingSummary.couponDiscount = cumulativeCouponDiscount;
+    } else if (cart.appliedCouponCodes.length > 0) {
+      // Fallback calculation if marketing service is not available
+      // Apply 10% discount for each coupon (cumulative)
+      let remaining = pricingSummary.subtotal;
+      for (let i = 0; i < cart.appliedCouponCodes.length; i++) {
+        const discount = remaining * 0.1; // 10% example
+        cumulativeCouponDiscount += discount;
+        remaining = Math.max(0, remaining - discount);
+      }
+      pricingSummary.couponDiscount = cumulativeCouponDiscount;
+    }
+
+    // Ensure total discount doesn't exceed subtotal
     pricingSummary.totalDiscount =
       pricingSummary.promotionDiscount +
       pricingSummary.couponDiscount +
       pricingSummary.autoDiscount;
+    
+    // Ensure total discount doesn't exceed subtotal
+    pricingSummary.totalDiscount = Math.min(pricingSummary.totalDiscount, pricingSummary.subtotal);
     pricingSummary.total = pricingSummary.subtotal - pricingSummary.totalDiscount;
 
     cart.pricingSummary = pricingSummary;
@@ -368,8 +439,8 @@ export class CartService {
       let appliedRule = null;
 
       // تطبيق العروض الترويجية أولاً
-      if (this.promotions && typeof this.promotions.preview === 'function') {
-        const res = await this.promotions.preview({
+      if (this.marketingService && typeof this.marketingService.preview === 'function') {
+        const res = await this.marketingService.preview({
           variantId: String(it.variantId),
           currency,
           qty: it.qty,
@@ -408,6 +479,26 @@ export class CartService {
       wholesaleDiscountAmount = subtotalBeforeWholesaleDiscount - subtotal;
     }
 
+    // 🆕 تحويل الإجماليات إلى USD أولاً ثم حسابها بالعملات الثلاث
+    let totalsInAllCurrencies;
+    if (this.exchangeRatesService) {
+      // تحويل subtotal إلى USD
+      const usdSubtotal = await this.exchangeRatesService.convertToUSD(subtotal, currency);
+      const usdShipping = 0; // يمكن إضافة حساب الشحن لاحقاً
+      const usdTax = 0; // يمكن إضافة حساب الضريبة لاحقاً
+      const usdDiscount = await this.exchangeRatesService.convertToUSD(
+        wholesaleDiscountAmount,
+        currency,
+      );
+
+      totalsInAllCurrencies = await this.exchangeRatesService.calculateTotalsInAllCurrencies(
+        usdSubtotal,
+        usdShipping,
+        usdTax,
+        usdDiscount,
+      );
+    }
+
     return {
       currency,
       subtotal,
@@ -417,6 +508,7 @@ export class CartService {
         wholesaleDiscountPercent,
         wholesaleDiscountAmount: Math.round(wholesaleDiscountAmount * 100) / 100,
       },
+      ...(totalsInAllCurrencies && { totalsInAllCurrencies }),
     };
   }
 

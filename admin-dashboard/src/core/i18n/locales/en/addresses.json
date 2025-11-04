@@ -4,8 +4,8 @@
     "subtitle": "Comprehensive overview of user addresses and geographic analytics"
   },
   "tabs": {
-    "statistics": "📊 Statistics",
-    "list": "📋 Address List"
+    "statistics": " Statistics",
+    "list": " Address List"
   },
   "stats": {
     "totalAddresses": "Total Addresses",
@@ -49,19 +49,19 @@
     "status": {
       "active": "Active",
       "inactive": "Inactive",
-      "default": "⭐ Default"
+      "default": " Default"
     },
     "usage": {
       "times": "{{count}} times"
     },
     "address": {
-      "notes": "📝 {{notes}}"
+      "notes": " {{notes}}"
     },
     "loading": "Loading...",
     "noResults": "No results found"
   },
   "chart": {
-    "title": "🏙️ Top Cities",
+    "title": " Top Cities",
     "subtitle": "Most Used Cities",
     "noData": "No data available",
     "tooltip": {

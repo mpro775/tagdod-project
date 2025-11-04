@@ -155,6 +155,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
       onClose={handleClose}
       maxWidth="md"
       fullWidth
+      disableEnforceFocus={false}
       PaperProps={{
         sx: { minHeight: '500px' },
       }}
@@ -381,7 +382,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
 
       <DialogActions sx={{ p: 3 }}>
         <Button onClick={handleClose} startIcon={<Cancel />} disabled={isLoading}>
-          {t('actions.cancel')}
+          {t('form.cancel')}
         </Button>
         <Button
           variant="contained"
@@ -389,7 +390,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
           disabled={isLoading || !formData.value.trim()}
           startIcon={isLoading ? <CircularProgress size={20} /> : <Save />}
         >
-          {editingValue ? t('actions.save') : t('actions.add')}
+          {editingValue ? t('form.save') : t('form.create')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Button, alpha, useTheme } from '@mui/material';
+import { Card, CardContent, Typography, Box, Button, alpha, useTheme, Grid } from '@mui/material';
 import { 
   Add, 
   Inventory, 
@@ -69,32 +69,33 @@ export const QuickActions: React.FC = () => {
           {t('quickActions.title', 'إجراءات سريعة')}
         </Typography>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2 }}>
+        <Grid container spacing={1.5} sx={{ mt: 2 }}>
           {actions.map((action, index) => (
-            <Button
-              key={index}
-              variant="outlined"
-              fullWidth
-              startIcon={action.icon}
-              onClick={action.onClick}
-              sx={{
-                justifyContent: 'flex-start',
-                py: 1.5,
-                px: 2,
-                borderColor: alpha(action.color, 0.3),
-                color: action.color,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: action.color,
-                  bgcolor: alpha(action.color, 0.08),
-                  transform: 'translateX(-4px)',
-                },
-              }}
-            >
-              {action.label}
-            </Button>
+            <Grid size={{ xs: 6, sm: 12 }} key={index}>
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={action.icon}
+                onClick={action.onClick}
+                sx={{
+                  justifyContent: 'flex-start',
+                  py: 1.5,
+                  px: 2,
+                  borderColor: alpha(action.color, 0.3),
+                  color: action.color,
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: action.color,
+                    bgcolor: alpha(action.color, 0.08),
+                    transform: 'translateX(-4px)',
+                  },
+                }}
+              >
+                {action.label}
+              </Button>
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       </CardContent>
     </Card>
   );

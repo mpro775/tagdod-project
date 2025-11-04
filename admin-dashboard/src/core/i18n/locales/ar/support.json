@@ -124,7 +124,7 @@
     "day": "يوم"
   },
   "pagination": {
-    "showing": "عرض",
+    "showing": "عرض {count} من {total} تذاكر",
     "of": "من",
     "total": "إجمالي",
     "tickets": "تذاكر"
@@ -135,12 +135,44 @@
     "markResolved": "تحديد كمحلولة",
     "markClosed": "تحديد كمغلقة",
     "assignToMe": "تخصيص لي",
-    "escalate": "تصعيد"
+    "escalate": "تصعيد",
+    "viewStats": "عرض الإحصائيات"
   },
   "validation": {
     "titleRequired": "العنوان مطلوب",
     "descriptionRequired": "الوصف مطلوب",
     "categoryRequired": "الفئة مطلوبة",
     "priorityRequired": "الأولوية مطلوبة"
+  },
+  "cannedResponses": {
+    "title": "إدارة الردود الجاهزة",
+    "searchPlaceholder": "البحث في الردود الجاهزة...",
+    "results": "عرض {current} من {total} رد جاهز",
+    "noResults": "لا توجد ردود جاهزة",
+    "noResultsDesc": "لم يتم العثور على أي ردود جاهزة تطابق المعايير المحددة",
+    "dialog": {
+      "createTitle": "إضافة رد جاهز جديد",
+      "editTitle": "تعديل الرد الجاهز",
+      "titleLabel": "العنوان",
+      "contentArLabel": "المحتوى (عربي)",
+      "contentEnLabel": "المحتوى (إنجليزي)",
+      "categoryLabel": "الفئة",
+      "tagsLabel": "الوسوم (مفصولة بفواصل)",
+      "tagsPlaceholder": "مثال: ترحيب، مساعدة، تقني",
+      "shortcutLabel": "الاختصار",
+      "shortcutPlaceholder": "مثال: welcome",
+      "save": "حفظ",
+      "saveChanges": "حفظ التغييرات",
+      "cancel": "إلغاء"
+    },
+    "card": {
+      "usage": "استخدام {count}",
+      "created": "تم الإنشاء: {date}",
+      "updated": "آخر تحديث: {date}",
+      "copy": "نسخ المحتوى",
+      "use": "استخدام الرد",
+      "edit": "تعديل",
+      "delete": "حذف"
+    }
   }
 }

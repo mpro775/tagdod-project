@@ -18,6 +18,8 @@ import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
 import { UsersAdminModule } from './admin/users.admin.module';
 import { CapabilitiesModule } from '../capabilities/capabilities.module';
+import { UserVerificationController } from './controllers/user-verification.controller';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
@@ -35,8 +37,9 @@ import { CapabilitiesModule } from '../capabilities/capabilities.module';
     SharedModule,
     UsersAdminModule,
     CapabilitiesModule,
+    UploadModule,
   ],
-  controllers: [UserAnalyticsController],
+  controllers: [UserAnalyticsController, UserVerificationController],
   providers: [UserAnalyticsService, UserScoringService, UserBehaviorService, UserCacheService, UserErrorService, UserQueryService],
   exports: [
     MongooseModule,

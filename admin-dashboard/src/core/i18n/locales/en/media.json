@@ -104,7 +104,11 @@
     "preview": "Preview",
     "fileSize": "File Size",
     "fileType": "File Type",
-    "uploadError": "An error occurred during upload"
+    "uploadError": "An error occurred during upload",
+    "uploadFile": "Upload File",
+    "review": "Review Upload",
+    "dataReview": "Review Data",
+    "saving": "Saving..."
   },
 
   "cleanup": {
@@ -129,7 +133,14 @@
     "size": "Size",
     "dimensions": "Dimensions",
     "url": "URL",
-    "public": "Public"
+    "public": "Public",
+    "imageDetails": "Image Details",
+    "preview": "Preview",
+    "download": "Download",
+    "change": "Change",
+    "delete": "Delete",
+    "remove": "Remove Image",
+    "changeImage": "Change Image"
   },
 
   "tabs": {
@@ -142,7 +153,60 @@
     "noFiles": "No files found",
     "noFilesDescription": "No files match the specified criteria",
     "startUploading": "Start uploading your first files",
-    "uploadFirst": "Upload First File"
+    "uploadFirst": "Upload First File",
+    "noMedia": "No media found",
+    "selectImage": "Select Image",
+    "selectFromLibrary": "Select from Library",
+    "uploadNew": "Upload New Image",
+    "uploadMediaNew": "Upload New Media",
+    "imageRequired": "Image Required",
+    "noImageSelected": "No image selected",
+    "uploadingProgress": "Uploading...",
+    "uploadingFile": "Uploading...",
+    "uploadingNew": "Uploading...",
+    "fileNameLabel": "File Name:",
+    "categoryLabel": "Category:",
+    "statusLabel": "Status:",
+    "sizeLabel": "Size:",
+    "dimensionsLabel": "Dimensions:",
+    "descriptionLabel": "Description:",
+    "tagsLabel": "Tags:",
+    "urlLabel": "URL",
+    "notSpecified": "Not specified",
+    "allMedia": "All Media",
+    "allImages": "Images",
+    "allVideos": "Videos",
+    "allDocuments": "Documents",
+    "deleted": "Deleted"
+  },
+
+  "picker": {
+    "title": "Select Media",
+    "upload": "Upload",
+    "uploadNew": "Upload New",
+    "confirm": "Confirm Selection",
+    "confirmMultiple": "Confirm Selection ({{count}})",
+    "cancel": "Cancel",
+    "select": "Select",
+    "selectMultiple": "Select ({{count}})",
+    "selected": "selected",
+    "clear": "Clear",
+    "refresh": "Refresh",
+    "gridView": "Grid View",
+    "listView": "List View",
+    "sortBy": "Sort By",
+    "sortDate": "Upload Date",
+    "sortName": "Name",
+    "sortSize": "Size",
+    "allMedia": "All Media",
+    "images": "Images",
+    "videos": "Videos",
+    "documents": "Documents",
+    "deleted": "Deleted",
+    "showDeleted": "Deleted",
+    "noMedia": "No media found",
+    "noMediaDescription": "No media match the specified criteria",
+    "noMediaDefault": "Start uploading your first media"
   },
 
   "actions": {

@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import toast from 'react-hot-toast';
+import * as Sentry from '@sentry/react';
 import { STORAGE_KEYS } from '@/config/constants';
 
 // Create axios instance with environment configuration
@@ -97,6 +98,46 @@ http.interceptors.response.use(
       // eslint-disable-next-line no-console
       console.error('❌ Server error:', err.message);
       toast.error('حدث خطأ في الخادم، يرجى المحاولة مرة أخرى');
+      
+      // Send server errors to Sentry
+      Sentry.withScope((scope) => {
+        scope.setTag('error_type', 'server_error');
+        scope.setLevel('error');
+        scope.setContext('http_request', {
+          url: originalRequest?.url,
+          method: originalRequest?.method,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+        });
+        Sentry.captureException(error);
+      });
+    } else if (error.response?.status && error.response.status >= 400) {
+      // Send client errors (400-499) to Sentry as warnings, except 401 and 403
+      if (error.response.status !== 401 && error.response.status !== 403) {
+        Sentry.withScope((scope) => {
+          scope.setTag('error_type', 'client_error');
+          scope.setLevel('warning');
+          scope.setContext('http_request', {
+            url: originalRequest?.url,
+            method: originalRequest?.method,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+          });
+          Sentry.captureException(error);
+        });
+      }
+    } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+      // Send network errors to Sentry
+      Sentry.withScope((scope) => {
+        scope.setTag('error_type', 'network_error');
+        scope.setLevel('warning');
+        scope.setContext('http_request', {
+          url: originalRequest?.url,
+          method: originalRequest?.method,
+          code: error.code,
+        });
+        Sentry.captureException(error);
+      });
     }
 
     // Show unified error toast for other errors

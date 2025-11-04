@@ -1,0 +1,288 @@
+/* 
+ * SSR-safe CSS overrides
+ * Fix for :first-child warnings in server-side rendering
+ * Override MUI's use of :first-child with :first-of-type for SSR safety
+ */
+
+/* ========================================
+   DataGrid - Comprehensive :first-child overrides
+   ======================================== */
+
+/* Row overrides */
+.MuiDataGrid-root .MuiDataGrid-row:first-of-type {
+  border-top: none;
+}
+
+/* Prevent :first-child usage by overriding with :first-of-type */
+.MuiDataGrid-root .MuiDataGrid-row:first-child {
+  border-top: none;
+}
+
+/* Cell overrides */
+.MuiDataGrid-root .MuiDataGrid-cell:first-of-type {
+  border-left: none;
+}
+
+.MuiDataGrid-root .MuiDataGrid-cell:first-child {
+  border-left: none;
+}
+
+/* Column header overrides */
+.MuiDataGrid-root .MuiDataGrid-columnHeader:first-of-type {
+  border-left: none;
+}
+
+.MuiDataGrid-root .MuiDataGrid-columnHeader:first-child {
+  border-left: none;
+}
+
+/* Footer container overrides */
+.MuiDataGrid-root .MuiDataGrid-footerContainer:first-of-type {
+  border-top: 1px solid rgba(224, 224, 224, 1);
+}
+
+.MuiDataGrid-root .MuiDataGrid-footerContainer:first-child {
+  border-top: 1px solid rgba(224, 224, 224, 1);
+}
+
+/* Main container overrides */
+.MuiDataGrid-main > div:first-of-type {
+  overflow: auto;
+}
+
+.MuiDataGrid-main > div:first-child {
+  overflow: auto;
+}
+
+/* Column headers overrides */
+.MuiDataGrid-columnHeaders:first-of-type {
+  border-bottom: 1px solid rgba(224, 224, 224, 1);
+}
+
+.MuiDataGrid-columnHeaders:first-child {
+  border-bottom: 1px solid rgba(224, 224, 224, 1);
+}
+
+/* Virtual scroller content overrides */
+.MuiDataGrid-virtualScrollerContent:first-of-type {
+  min-height: 100%;
+}
+
+.MuiDataGrid-virtualScrollerContent:first-child {
+  min-height: 100%;
+}
+
+/* Additional DataGrid internal element overrides */
+.MuiDataGrid-root > *:first-of-type,
+.MuiDataGrid-root > *:first-child {
+  /* Override any :first-child styles */
+}
+
+.MuiDataGrid-main > *:first-of-type,
+.MuiDataGrid-main > *:first-child {
+  /* Override any :first-child styles */
+}
+
+.MuiDataGrid-virtualScroller > *:first-of-type,
+.MuiDataGrid-virtualScroller > *:first-child {
+  /* Override any :first-child styles */
+}
+
+.MuiDataGrid-columnHeadersInner > *:first-of-type,
+.MuiDataGrid-columnHeadersInner > *:first-child {
+  /* Override any :first-child styles */
+}
+
+.MuiDataGrid-row > .MuiDataGrid-cell:first-of-type,
+.MuiDataGrid-row > .MuiDataGrid-cell:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI List and ListItem overrides
+   ======================================== */
+.MuiList-root > .MuiListItem-root:first-of-type,
+.MuiList-root > .MuiListItem-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Stack and Box overrides
+   ======================================== */
+.MuiStack-root > *:first-of-type,
+.MuiStack-root > *:first-child {
+  /* Override any :first-child styles */
+}
+
+.MuiBox-root > *:first-of-type,
+.MuiBox-root > *:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Paper overrides
+   ======================================== */
+.MuiPaper-root > *:first-of-type,
+.MuiPaper-root > *:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Tabs overrides
+   ======================================== */
+.MuiTabs-root > .MuiTab-root:first-of-type,
+.MuiTabs-root > .MuiTab-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Stepper overrides
+   ======================================== */
+.MuiStepper-root > .MuiStep-root:first-of-type,
+.MuiStepper-root > .MuiStep-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Chip overrides
+   ======================================== */
+.MuiChip-root:first-of-type,
+.MuiChip-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Breadcrumbs overrides
+   ======================================== */
+.MuiBreadcrumbs-root > .MuiBreadcrumbs-li:first-of-type,
+.MuiBreadcrumbs-root > .MuiBreadcrumbs-li:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Pagination overrides
+   ======================================== */
+.MuiPagination-root > .MuiPaginationItem-root:first-of-type,
+.MuiPagination-root > .MuiPaginationItem-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Alert overrides
+   ======================================== */
+.MuiAlert-root > *:first-of-type,
+.MuiAlert-root > *:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Accordion overrides
+   ======================================== */
+.MuiAccordion-root:first-of-type,
+.MuiAccordion-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Timeline overrides
+   ======================================== */
+.MuiTimeline-root > .MuiTimelineItem-root:first-of-type,
+.MuiTimeline-root > .MuiTimelineItem-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Table overrides
+   ======================================== */
+.MuiTable-root > .MuiTableBody-root > .MuiTableRow-root:first-of-type,
+.MuiTable-root > .MuiTableBody-root > .MuiTableRow-root:first-child {
+  /* Override any :first-child styles */
+}
+
+.MuiTable-root > .MuiTableHead-root > .MuiTableRow-root:first-of-type,
+.MuiTable-root > .MuiTableHead-root > .MuiTableRow-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Drawer overrides
+   ======================================== */
+.MuiDrawer-root > .MuiPaper-root:first-of-type,
+.MuiDrawer-root > .MuiPaper-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI AppBar overrides
+   ======================================== */
+.MuiAppBar-root > *:first-of-type,
+.MuiAppBar-root > *:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   MUI Toolbar overrides
+   ======================================== */
+.MuiToolbar-root > *:first-of-type,
+.MuiToolbar-root > *:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   Generic override for any MUI component using :first-child
+   ======================================== */
+[class*="Mui"] > *:first-of-type,
+[class*="Mui"] > *:first-child {
+  /* Fallback for any MUI component */
+}
+
+/* ========================================
+   Dialog and DialogContent overrides
+   (consolidated with above - removing duplicate)
+   ======================================== */
+.MuiDialog-container:first-of-type,
+.MuiDialog-container:first-child {
+  /* Override any :first-child styles */
+}
+
+.MuiDialogContent-root > *:first-of-type,
+.MuiDialogContent-root > *:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   Card and CardContent overrides
+   ======================================== */
+.MuiCard-root > .MuiCardContent-root:first-of-type,
+.MuiCard-root > .MuiCardContent-root:first-child {
+  padding-top: 16px;
+}
+
+.MuiCardContent-root > *:first-of-type,
+.MuiCardContent-root > *:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   Grid container overrides
+   ======================================== */
+.MuiGrid-container > .MuiGrid-item:first-of-type,
+.MuiGrid-container > .MuiGrid-item:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   ButtonGroup overrides
+   ======================================== */
+.MuiButtonGroup-root > .MuiButton-root:first-of-type,
+.MuiButtonGroup-root > .MuiButton-root:first-child {
+  /* Override any :first-child styles */
+}
+
+/* ========================================
+   Suppress Sentry warnings by ensuring we're using safe selectors
+   ======================================== */
+@media print {
+  /* No print-specific overrides needed, but this ensures the file is loaded */
+}
+

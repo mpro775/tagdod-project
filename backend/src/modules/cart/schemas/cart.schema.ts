@@ -70,12 +70,16 @@ export class Cart {
   @Prop()
   accountType?: string; // retail/wholesale/engineer
 
-  // 🆕 Coupon Support
-  @Prop()
-  appliedCouponCode?: string;
+  // 🆕 Coupon Support - Multiple Coupons Support
+  @Prop({ type: [String], default: [] })
+  appliedCouponCodes!: string[];
 
   @Prop({ default: 0 })
   couponDiscount!: number;
+
+  // Keep old field for backward compatibility (deprecated)
+  @Prop()
+  appliedCouponCode?: string;
 
   @Prop({ type: [String], default: [] })
   autoAppliedCouponCodes?: string[];

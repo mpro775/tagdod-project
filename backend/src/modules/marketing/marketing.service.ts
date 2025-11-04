@@ -5,6 +5,7 @@ import { PriceRule, PriceRuleDocument } from './schemas/price-rule.schema';
 import { Coupon, CouponDocument, CouponStatus } from './schemas/coupon.schema';
 import { Banner, BannerDocument, BannerLocation } from './schemas/banner.schema';
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
+import { Product, ProductDocument } from '../products/schemas/product.schema';
 
 // DTOs
 import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto, PricingQueryDto } from './dto/price-rule.dto';
@@ -23,6 +24,7 @@ export class MarketingService {
     @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
     @InjectModel(Banner.name) private bannerModel: Model<BannerDocument>,
     @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
+    @InjectModel(Product.name) private productModel: Model<ProductDocument>,
   ) {}
 
   // ==================== PRICE RULES ====================
@@ -90,6 +92,38 @@ export class MarketingService {
     };
   }
 
+  /**
+   * Preview method for CartService - matches PromotionsLike interface
+   */
+  async preview(input: {
+    variantId: string;
+    currency: string;
+    qty: number;
+    accountType: 'any' | 'customer' | 'engineer' | 'wholesale';
+  }): Promise<{
+    finalPrice: number;
+    basePrice: number;
+    appliedRule: unknown;
+  } | null> {
+    try {
+      const result = await this.calculateEffectivePrice({
+        variantId: input.variantId,
+        currency: input.currency,
+        qty: input.qty,
+        accountType: input.accountType,
+      });
+
+      return {
+        finalPrice: result.effectivePrice,
+        basePrice: result.originalPrice,
+        appliedRule: result.appliedRule,
+      };
+    } catch (error) {
+      this.logger.error('Error in preview:', error);
+      return null;
+    }
+  }
+
   async calculateEffectivePrice(dto: PricingQueryDto): Promise<EffectivePriceResult> {
     const now = new Date();
     const { variantId, currency = 'YER', qty = 1, accountType } = dto;
@@ -98,6 +132,17 @@ export class MarketingService {
     const originalPrice = await this.getBasePrice(variantId, currency);
     if (originalPrice === null) {
       throw new Error(`Price not found for variant ${variantId} in currency ${currency}`);
+    }
+
+    // Get variant and product info for category/product/brand checks
+    const variant = await this.variantModel.findById(variantId).lean();
+    if (!variant) {
+      return { originalPrice, effectivePrice: originalPrice };
+    }
+
+    const product = await this.productModel.findById(variant.productId).lean();
+    if (!product) {
+      return { originalPrice, effectivePrice: originalPrice };
     }
 
     // Find applicable rules
@@ -110,10 +155,28 @@ export class MarketingService {
     // Filter rules based on conditions
     const matchingRules = applicableRules.filter(rule => {
       const cond = rule.conditions;
+      
+      // Variant check
       if (cond.variantId && cond.variantId !== variantId) return false;
+      
+      // Product check
+      if (cond.productId && cond.productId !== String(variant.productId)) return false;
+      
+      // Category check
+      if (cond.categoryId && cond.categoryId !== String(product.categoryId)) return false;
+      
+      // Brand check
+      if (cond.brandId && product.brandId && cond.brandId !== String(product.brandId)) return false;
+      
+      // Currency check
       if (cond.currency && cond.currency !== currency) return false;
+      
+      // Min quantity check
       if (cond.minQty && qty < cond.minQty) return false;
+      
+      // Account type check
       if (cond.accountType && cond.accountType !== accountType) return false;
+      
       return true;
     });
 
@@ -210,8 +273,10 @@ export class MarketingService {
   }
 
   async validateCoupon(dto: ValidateCouponDto) {
+    const { code, userId, orderAmount, productIds } = dto;
+    
     const coupon = await this.couponModel.findOne({
-      code: dto.code.toUpperCase(),
+      code: code.toUpperCase(),
       status: CouponStatus.ACTIVE,
       deletedAt: null,
     });
@@ -220,13 +285,84 @@ export class MarketingService {
       return { valid: false, message: 'Invalid coupon code' };
     }
 
+    // Check expiry
     const now = new Date();
     if (now < coupon.validFrom || now > coupon.validUntil) {
       return { valid: false, message: 'Coupon has expired' };
     }
 
+    // Check usage limit
     if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
       return { valid: false, message: 'Coupon usage limit exceeded' };
+    }
+
+    // Check minimum order amount
+    if (coupon.minimumOrderAmount && orderAmount && orderAmount < coupon.minimumOrderAmount) {
+      return { 
+        valid: false, 
+        message: `Minimum order amount is ${coupon.minimumOrderAmount}` 
+      };
+    }
+
+    // Check user restrictions
+    if (userId) {
+      // Check if user is excluded
+      if (coupon.excludedUserIds && coupon.excludedUserIds.includes(userId)) {
+        return { valid: false, message: 'This coupon is not available for your account' };
+      }
+
+      // Check if coupon is restricted to specific users
+      if (coupon.applicableUserIds && coupon.applicableUserIds.length > 0) {
+        if (!coupon.applicableUserIds.includes(userId)) {
+          return { valid: false, message: 'This coupon is not available for your account' };
+        }
+      }
+    }
+
+    // Check product restrictions if productIds are provided (productIds are actually variantIds)
+    if (productIds && productIds.length > 0 && coupon.appliesTo !== 'all_products' && coupon.appliesTo !== 'minimum_order_amount') {
+      let isValidForProducts = false;
+
+      if (coupon.appliesTo === 'specific_products' && coupon.applicableProductIds && coupon.applicableProductIds.length > 0) {
+        // Get variants to find their products
+        const variants = await this.variantModel.find({
+          _id: { $in: productIds }
+        }).select('productId').lean();
+        
+        const productIdsFromVariants = variants.map(v => String(v.productId));
+        // Check if at least one product in cart matches
+        isValidForProducts = productIdsFromVariants.some(id => coupon.applicableProductIds.includes(id));
+      } else if (coupon.appliesTo === 'specific_categories' && coupon.applicableCategoryIds && coupon.applicableCategoryIds.length > 0) {
+        // Get variants and their products to check categories
+        const variants = await this.variantModel.find({
+          _id: { $in: productIds }
+        }).select('productId').lean();
+        
+        const productIdsFromVariants = variants.map(v => String(v.productId));
+        const products = await this.productModel.find({
+          _id: { $in: productIdsFromVariants }
+        }).select('categoryId').lean();
+        
+        const categoryIds = products.map(p => String(p.categoryId));
+        isValidForProducts = categoryIds.some(catId => coupon.applicableCategoryIds.includes(catId));
+      } else if (coupon.appliesTo === 'specific_brands' && coupon.applicableBrandIds && coupon.applicableBrandIds.length > 0) {
+        // Get variants and their products to check brands
+        const variants = await this.variantModel.find({
+          _id: { $in: productIds }
+        }).select('productId').lean();
+        
+        const productIdsFromVariants = variants.map(v => String(v.productId));
+        const products = await this.productModel.find({
+          _id: { $in: productIdsFromVariants }
+        }).select('brandId').lean();
+        
+        const brandIds = products.map(p => p.brandId).filter(Boolean).map(String);
+        isValidForProducts = brandIds.some(brandId => coupon.applicableBrandIds.includes(brandId));
+      }
+
+      if (!isValidForProducts) {
+        return { valid: false, message: 'This coupon is not applicable to the products in your cart' };
+      }
     }
 
     return { valid: true, coupon };
@@ -398,7 +534,7 @@ export class MarketingService {
     return !!result;
   }
 
-  async getActiveBanners(location?: BannerLocation): Promise<Banner[]> {
+  async getActiveBanners(location?: BannerLocation, userRoles?: string[]): Promise<Banner[]> {
     const now = new Date();
     const query: Record<string, unknown> = {
       isActive: true,
@@ -411,7 +547,25 @@ export class MarketingService {
 
     if (location) query.location = location;
 
-    return this.bannerModel.find(query).sort({ sortOrder: 1 });
+    // Get all banners that match the query
+    const allBanners = await this.bannerModel.find(query).sort({ sortOrder: 1 });
+
+    // Filter by user types if provided
+    if (userRoles && userRoles.length > 0) {
+      return allBanners.filter(banner => {
+        // If banner has no targetUserTypes, it's visible to everyone
+        if (!banner.targetUserTypes || banner.targetUserTypes.length === 0) {
+          return true;
+        }
+        // Check if user's roles match any of the banner's targetUserTypes
+        return banner.targetUserTypes.some(targetType => userRoles.includes(targetType));
+      });
+    }
+
+    // If no user roles provided, only return banners visible to everyone
+    return allBanners.filter(banner => 
+      !banner.targetUserTypes || banner.targetUserTypes.length === 0
+    );
   }
 
   async incrementBannerView(id: string): Promise<void> {

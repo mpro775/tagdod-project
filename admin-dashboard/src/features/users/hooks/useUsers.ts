@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '../api/usersApi';
+import { verificationApi } from '../api/verificationApi';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
 import toast from 'react-hot-toast';
 import type {
@@ -7,10 +8,13 @@ import type {
   CreateUserDto,
   UpdateUserDto,
   SuspendUserDto,
+  ListDeletedUsersParams,
+  ApproveVerificationDto,
 } from '../types/user.types';
 
 // Query Keys
 const USERS_KEY = 'users';
+const VERIFICATION_KEY = 'verification';
 
 // List users
 export const useUsers = (params: ListUsersParams) => {
@@ -152,5 +156,64 @@ export const useUserStats = () => {
   return useQuery({
     queryKey: [USERS_KEY, 'stats'],
     queryFn: () => usersApi.getStats(),
+  });
+};
+
+// Get deleted users
+export const useDeletedUsers = (params: ListDeletedUsersParams) => {
+  return useQuery({
+    queryKey: [USERS_KEY, 'deleted', params],
+    queryFn: () => usersApi.getDeletedUsers(params),
+    placeholderData: (previousData) => previousData,
+  });
+};
+
+// ==================== Verification Requests Hooks ====================
+
+// Get pending verification requests
+export const usePendingVerifications = () => {
+  return useQuery({
+    queryKey: [VERIFICATION_KEY, 'pending'],
+    queryFn: () => verificationApi.getPendingRequests(),
+  });
+};
+
+// Get verification details
+export const useVerificationDetails = (userId: string) => {
+  return useQuery({
+    queryKey: [VERIFICATION_KEY, 'details', userId],
+    queryFn: () => verificationApi.getVerificationDetails(userId),
+    enabled: !!userId,
+  });
+};
+
+// Approve verification
+export const useApproveVerification = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) => verificationApi.approveVerification(userId),
+    onSuccess: () => {
+      toast.success('تمت الموافقة على التحقق بنجاح');
+      queryClient.invalidateQueries({ queryKey: [VERIFICATION_KEY] });
+      queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Reject verification
+export const useRejectVerification = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data?: ApproveVerificationDto }) =>
+      verificationApi.rejectVerification(userId, data),
+    onSuccess: () => {
+      toast.success('تم رفض التحقق بنجاح');
+      queryClient.invalidateQueries({ queryKey: [VERIFICATION_KEY] });
+      queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
+    },
+    onError: ErrorHandler.showError,
   });
 };

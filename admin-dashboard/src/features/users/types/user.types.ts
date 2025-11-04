@@ -31,6 +31,8 @@ export enum CapabilityStatus {
   // eslint-disable-next-line no-unused-vars
   NONE = 'none',
   // eslint-disable-next-line no-unused-vars
+  UNVERIFIED = 'unverified',
+  // eslint-disable-next-line no-unused-vars
   PENDING = 'pending',
   // eslint-disable-next-line no-unused-vars
   APPROVED = 'approved',
@@ -90,12 +92,19 @@ export interface User extends BaseEntity {
   // Soft Delete
   deletedAt?: Date | null;
   deletedBy?: string;
+  deletionReason?: string; // سبب الحذف
   suspendedReason?: string;
   suspendedBy?: string;
   suspendedAt?: Date;
 
   // Relations
   capabilities?: UserCapabilities | null;
+
+  // حقول التحقق (Verification)
+  cvFileUrl?: string; // رابط ملف السيرة الذاتية للمهندس
+  storePhotoUrl?: string; // رابط صورة المحل للتاجر
+  storeName?: string; // اسم المحل للتاجر
+  verificationNote?: string; // ملاحظة التحقق
 }
 
 // DTOs - متطابقة مع الباك إند
@@ -136,6 +145,25 @@ export interface ListUsersParams extends ListParams {
   includeDeleted?: boolean;
 }
 
+// Deleted User - للعرض في صفحة الحسابات المحذوفة
+export interface DeletedUser {
+  id: string;
+  phone: string;
+  firstName?: string;
+  lastName?: string;
+  deletionReason: string;
+  deletedAt: Date | string;
+  deletedBy?: string | null;
+  createdAt: Date | string;
+  status: UserStatus;
+}
+
+export interface ListDeletedUsersParams extends ListParams {
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 export interface SuspendUserDto {
   reason?: string;
 }
@@ -150,4 +178,29 @@ export interface UserStats {
   engineers: number;
   merchants: number;
   users: number;
+}
+
+// Verification Request Types
+export interface VerificationRequest {
+  id: string;
+  phone: string;
+  firstName?: string;
+  lastName?: string;
+  verificationType: 'engineer' | 'merchant';
+  cvFileUrl?: string;
+  storePhotoUrl?: string;
+  storeName?: string;
+  verificationNote?: string;
+  createdAt: Date | string;
+}
+
+export interface VerificationDetails extends VerificationRequest {
+  jobTitle?: string;
+  engineerStatus?: CapabilityStatus;
+  wholesaleStatus?: CapabilityStatus;
+  updatedAt?: Date | string;
+}
+
+export interface ApproveVerificationDto {
+  reason?: string;
 }

@@ -1,5 +1,6 @@
-import  { Component, ErrorInfo, ReactNode } from 'react';
-import { Box, Typography, Button, Alert } from '@mui/material';
+import { Component, ErrorInfo, ReactNode } from 'react';
+import * as Sentry from '@sentry/react';
+import { ErrorFallback } from './ErrorFallback';
 
 interface Props {
   children: ReactNode;
@@ -26,6 +27,16 @@ export class ErrorBoundary extends Component<Props, State> {
     // eslint-disable-next-line no-console
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ error, errorInfo });
+
+    // Send error to Sentry
+    Sentry.withScope((scope) => {
+      scope.setTag('error_boundary', 'main');
+      scope.setLevel('error');
+      scope.setContext('react_error_boundary', {
+        componentStack: errorInfo.componentStack,
+      });
+      Sentry.captureException(error);
+    });
   }
 
   handleReset = () => {
@@ -39,35 +50,10 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            p: 3,
-          }}
-        >
-          <Alert severity="error" sx={{ mb: 2, maxWidth: 600 }}>
-            <Typography variant="h6" gutterBottom>
-              حدث خطأ غير متوقع
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              نعتذر عن هذا الخطأ. يرجى المحاولة مرة أخرى أو تحديث الصفحة.
-            </Typography>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-                <Typography variant="caption" component="pre" sx={{ fontSize: '0.75rem' }}>
-                  {this.state.error.toString()}
-                </Typography>
-              </Box>
-            )}
-          </Alert>
-          <Button variant="contained" onClick={this.handleReset}>
-            المحاولة مرة أخرى
-          </Button>
-        </Box>
+        <ErrorFallback
+          error={this.state.error}
+          onReset={this.handleReset}
+        />
       );
     }
 

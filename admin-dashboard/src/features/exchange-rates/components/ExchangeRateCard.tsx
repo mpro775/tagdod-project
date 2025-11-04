@@ -13,6 +13,7 @@ import {
   AttachMoney,
   Schedule,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { ExchangeRatesData } from '../api/exchangeRatesApi';
 
 interface ExchangeRateCardProps {
@@ -36,11 +37,22 @@ export const ExchangeRateCard: React.FC<ExchangeRateCardProps> = ({
   icon,
   color,
 }) => {
+  const { t, i18n } = useTranslation('exchangeRates');
   const formatRate = (value: number) => {
-    return new Intl.NumberFormat('ar-SA', {
+    return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 4,
     }).format(value);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(dateString));
   };
 
   const getCurrencySymbol = (curr: string) => {
@@ -82,9 +94,10 @@ export const ExchangeRateCard: React.FC<ExchangeRateCardProps> = ({
         display: 'flex',
         flexDirection: 'column',
         transition: 'all 0.3s ease',
+        borderRadius: { xs: 1, sm: 2 },
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 4,
+          transform: { xs: 'none', sm: 'translateY(-4px)' },
+          boxShadow: { xs: 1, sm: 4 },
         },
       }}
     >
@@ -95,8 +108,8 @@ export const ExchangeRateCard: React.FC<ExchangeRateCardProps> = ({
               backgroundColor: `${color}.light`,
               color: `${color}.contrastText`,
               borderRadius: '50%',
-              width: 48,
-              height: 48,
+              width: { xs: 40, sm: 48 },
+              height: { xs: 40, sm: 48 },
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -106,13 +119,24 @@ export const ExchangeRateCard: React.FC<ExchangeRateCardProps> = ({
           </Box>
         }
         title={
-          <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+          <Typography 
+            variant="h6" 
+            component="div" 
+            sx={{ 
+              fontWeight: 600,
+              fontSize: { xs: '1rem', sm: '1.25rem' }
+            }}
+          >
             {title}
           </Typography>
         }
         subheader={
-          <Typography variant="body2" color="text.secondary">
-            مقابل الدولار الأمريكي
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+          >
+            {t('exchangeRateCard.againstUSD')}
           </Typography>
         }
         action={
@@ -121,16 +145,36 @@ export const ExchangeRateCard: React.FC<ExchangeRateCardProps> = ({
             size="small"
             color={color}
             variant="outlined"
-            icon={<AttachMoney />}
+            icon={<AttachMoney sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} />}
+            sx={{ 
+              fontSize: { xs: '0.7rem', sm: '0.8125rem' },
+              height: { xs: 24, sm: 28 }
+            }}
           />
         }
+        sx={{ px: { xs: 1.5, sm: 2 }, pt: { xs: 1.5, sm: 2 } }}
       />
-      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="h4" component="div" sx={{ fontWeight: 700, color: `${color}.main` }}>
+      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+          <Typography 
+            variant="h4" 
+            component="div" 
+            sx={{ 
+              fontWeight: 700, 
+              color: `${color}.main`,
+              fontSize: { xs: '1.75rem', sm: '2.125rem' }
+            }}
+          >
             {formatRate(rate)}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            sx={{ 
+              mt: 0.5,
+              fontSize: { xs: '0.75rem', sm: '0.875rem' }
+            }}
+          >
             {getCurrencySymbol(currency)}
           </Typography>
         </Box>
@@ -138,16 +182,24 @@ export const ExchangeRateCard: React.FC<ExchangeRateCardProps> = ({
         <Box sx={{ mt: 'auto' }}>
           {rates?.lastUpdatedAt && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Schedule sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="caption" color="text.secondary">
-                آخر تحديث: {new Date(rates.lastUpdatedAt).toLocaleString('ar-SA')}
+              <Schedule sx={{ fontSize: { xs: 14, sm: 16 }, color: 'text.secondary' }} />
+              <Typography 
+                variant="caption" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+              >
+                {t('exchangeRateCard.lastUpdate')}: {formatDate(rates.lastUpdatedAt)}
               </Typography>
             </Box>
           )}
           
           {rates?.lastUpdatedBy && (
-            <Typography variant="caption" color="text.secondary">
-              بواسطة: {rates.lastUpdatedBy}
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+            >
+              {t('exchangeRateCard.by')}: {rates.lastUpdatedBy}
             </Typography>
           )}
         </Box>

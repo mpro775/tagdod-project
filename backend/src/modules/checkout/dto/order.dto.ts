@@ -25,10 +25,16 @@ export class CheckoutPreviewDto {
   @IsString()
   currency!: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)' })
   @IsOptional()
   @IsString()
   couponCode?: string;
+
+  @ApiPropertyOptional({ description: 'مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)', type: [String], example: ['COUPON10', 'COUPON5'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  couponCodes?: string[];
 }
 
 export class CheckoutConfirmDto {
@@ -49,6 +55,16 @@ export class CheckoutConfirmDto {
   @IsString()
   paymentProvider?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  localPaymentAccountId?: string; // معرف الحساب المحلي
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  paymentReference?: string; // رقم الحوالة (يُطلب عند اختيار حساب محلي)
+
   @ApiPropertyOptional({ example: 'standard', enum: Object.values(ShippingMethod) })
   @IsOptional()
   @IsEnum(ShippingMethod)
@@ -59,10 +75,16 @@ export class CheckoutConfirmDto {
   @IsString()
   customerNotes?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)' })
   @IsOptional()
   @IsString()
   couponCode?: string;
+
+  @ApiPropertyOptional({ description: 'مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)', type: [String], example: ['COUPON10', 'COUPON5'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  couponCodes?: string[];
 }
 
 export class WebhookDto {
@@ -103,6 +125,16 @@ export class CreateOrderDto {
   @IsString()
   paymentProvider?: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  localPaymentAccountId?: string; // معرف الحساب المحلي
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  paymentReference?: string; // رقم الحوالة (يُطلب عند اختيار حساب محلي)
+
   @ApiPropertyOptional({ enum: Object.values(ShippingMethod) })
   @IsOptional()
   @IsEnum(ShippingMethod)
@@ -113,10 +145,16 @@ export class CreateOrderDto {
   @IsString()
   customerNotes?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)' })
   @IsOptional()
   @IsString()
   couponCode?: string;
+
+  @ApiPropertyOptional({ description: 'مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)', type: [String], example: ['COUPON10', 'COUPON5'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  couponCodes?: string[];
 }
 
 export class UpdateOrderStatusDto {
@@ -423,6 +461,22 @@ export class BulkOrderUpdateDto {
   status!: OrderStatus;
 
   @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class VerifyPaymentDto {
+  @ApiProperty({ example: 50000, description: 'المبلغ المطابق' })
+  @IsNumber()
+  @Min(0)
+  verifiedAmount!: number;
+
+  @ApiProperty({ example: 'YER', enum: ['YER', 'SAR', 'USD'], description: 'العملة المطابقة' })
+  @IsString()
+  verifiedCurrency!: string;
+
+  @ApiPropertyOptional({ description: 'ملاحظات المطابقة' })
   @IsOptional()
   @IsString()
   notes?: string;

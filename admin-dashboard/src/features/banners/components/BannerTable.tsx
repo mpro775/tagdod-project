@@ -7,7 +7,6 @@ import {
   Typography,
   Avatar,
   Link,
-  Skeleton,
 } from '@mui/material';
 import {
   Edit,
@@ -22,7 +21,6 @@ import {
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useTranslation } from 'react-i18next';
-import { BANNER_LOCATION_OPTIONS, BANNER_PROMOTION_TYPE_OPTIONS } from '../types/banner.types';
 import type { Banner } from '../types/banner.types';
 
 interface BannerTableProps {
@@ -35,14 +33,6 @@ interface BannerTableProps {
   onPaginationModelChange: (model: { page: number; pageSize: number }) => void;
   rowCount: number;
 }
-
-const getLocationLabel = (location: string) => {
-  return BANNER_LOCATION_OPTIONS.find(opt => opt.value === location)?.label || location;
-};
-
-const getPromotionTypeLabel = (type: string) => {
-  return BANNER_PROMOTION_TYPE_OPTIONS.find(opt => opt.value === type)?.label || type;
-};
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ar-SA', {
@@ -72,6 +62,15 @@ export const BannerTable: React.FC<BannerTableProps> = ({
   onPaginationModelChange,
 }) => {
   const { t } = useTranslation('banners');
+
+  const getLocationLabel = (location: string) => {
+    return t(`form.location.${location}`, { defaultValue: location });
+  };
+
+  const getPromotionTypeLabel = (type: string) => {
+    return t(`form.promotionType.${type}`, { defaultValue: type });
+  };
+
   const columns: GridColDef[] = [
     {
       field: 'title',
@@ -287,27 +286,6 @@ export const BannerTable: React.FC<BannerTableProps> = ({
       },
     },
   ];
-
-  const LoadingSkeleton = () => (
-    <Box>
-      {[...Array(5)].map((_, index) => (
-        <Box key={index} display="flex" alignItems="center" p={2} borderBottom="1px solid #e0e0e0">
-          <Skeleton variant="rectangular" width={60} height={40} sx={{ mr: 2 }} />
-          <Box flex={1}>
-            <Skeleton variant="text" width="60%" height={20} />
-            <Skeleton variant="text" width="40%" height={16} />
-          </Box>
-          <Skeleton variant="rectangular" width={80} height={24} sx={{ mr: 2 }} />
-          <Skeleton variant="rectangular" width={60} height={24} sx={{ mr: 2 }} />
-          <Skeleton variant="circular" width={32} height={32} />
-        </Box>
-      ))}
-    </Box>
-  );
-
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
 
   return (
     <DataTable

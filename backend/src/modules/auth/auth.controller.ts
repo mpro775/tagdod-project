@@ -18,13 +18,14 @@ import { SetPasswordDto } from './dto/set-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdatePreferredCurrencyDto } from './dto/update-preferred-currency.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 import { AdminLoginDto } from './dto/admin-login.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 
 import { UserSignupDto } from './dto/user-signup.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserRole, UserStatus } from '../users/schemas/user.schema';
+import { User, UserRole, UserStatus, CapabilityStatus } from '../users/schemas/user.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
@@ -156,36 +157,51 @@ export class AuthController {
 
     let user = await this.userModel.findOne({ phone: dto.phone });
     if (!user) {
-      user = await this.userModel.create({
+      const userData: {
+        phone: string;
+        firstName?: string;
+        lastName?: string;
+        gender?: 'male' | 'female' | 'other';
+        jobTitle?: string;
+        engineer_capable?: boolean;
+        engineer_status?: string;
+        wholesale_capable?: boolean;
+        wholesale_status?: string;
+      } = {
         phone: dto.phone,
         firstName: dto.firstName,
         lastName: dto.lastName,
         gender: dto.gender,
         jobTitle: dto.capabilityRequest === 'engineer' ? dto.jobTitle : undefined,
+      };
+
+      // تحديث User model مباشرة إذا طلب المستخدم أن يكون مهندساً أو تاجراً
+      if (dto.capabilityRequest) {
+        if (dto.capabilityRequest === 'engineer') {
+          userData.engineer_capable = true;
+          userData.engineer_status = 'unverified';
+        } else if (dto.capabilityRequest === 'wholesale') {
+          userData.wholesale_capable = true;
+          userData.wholesale_status = 'unverified';
+        }
+      }
+
+      user = await this.userModel.create(userData);
+      
+      // إنشاء capabilities للمستخدم
+      await this.capsModel.create({
+        userId: user._id,
+        customer_capable: true,
+        engineer_capable: user.engineer_capable || false,
+        engineer_status: user.engineer_status || 'none',
+        wholesale_capable: user.wholesale_capable || false,
+        wholesale_status: user.wholesale_status || 'none',
+        wholesale_discount_percent: 0,
       });
-      await this.capsModel.create({ userId: user._id, customer_capable: true });
     } else if (dto.capabilityRequest === 'engineer' && dto.jobTitle && !user.jobTitle) {
       // تحديث المسمى الوظيفي إذا كان المستخدم موجوداً ولكن ليس لديه مسمى
       user.jobTitle = dto.jobTitle;
       await user.save();
-    }
-    if (dto.capabilityRequest) {
-      const caps = await this.capsModel.findOne({ userId: user._id });
-      if (caps) {
-        if (
-          dto.capabilityRequest === 'engineer' &&
-          caps.engineer_status !== 'pending' &&
-          !caps.engineer_capable
-        )
-          caps.engineer_status = 'pending';
-        if (
-          dto.capabilityRequest === 'wholesale' &&
-          caps.wholesale_status !== 'pending' &&
-          !caps.wholesale_capable
-        )
-          caps.wholesale_status = 'pending';
-        await caps.save();
-      }
     }
 
     // مزامنة المفضلات تلقائياً عند التسجيل
@@ -350,10 +366,55 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Delete('me')
-  async deleteMe(@Req() req: { user: { sub: string } }) {
-    await this.userModel.deleteOne({ _id: req.user.sub });
-    await this.capsModel.deleteOne({ userId: req.user.sub });
-    return { deleted: true };
+  @ApiOperation({
+    summary: 'حذف الحساب',
+    description: 'حذف حساب المستخدم (Soft Delete) مع إدخال السبب',
+  })
+  @ApiBody({ type: DeleteAccountDto })
+  @ApiOkResponse({
+    description: 'تم حذف الحساب بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        deleted: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'تم حذف حسابك بنجاح' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'بيانات غير صحيحة أو السبب مفقود' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح لك' })
+  async deleteMe(
+    @Req() req: { user: { sub: string } },
+    @Body() deleteAccountDto: DeleteAccountDto,
+  ) {
+    const userId = req.user.sub;
+
+    // التحقق من وجود المستخدم
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new UserNotFoundException({ userId });
+    }
+
+    // التحقق من أن الحساب لم يتم حذفه مسبقاً
+    if (user.deletedAt || user.status === UserStatus.DELETED) {
+      throw new AuthException(ErrorCode.AUTH_USER_DELETED, { userId });
+    }
+
+    // Soft Delete - تحديث البيانات بدلاً من الحذف الفعلي
+    user.deletedAt = new Date();
+    user.deletedBy = userId; // المستخدم حذف حسابه بنفسه
+    user.deletionReason = deleteAccountDto.reason;
+    user.status = UserStatus.DELETED;
+
+    await user.save();
+
+    // حذف capabilities أيضاً
+    await this.capsModel.deleteOne({ userId });
+
+    return {
+      deleted: true,
+      message: 'تم حذف حسابك بنجاح',
+    };
   }
 
   @ApiBearerAuth()
@@ -361,9 +422,17 @@ export class AuthController {
   @RequirePermissions('capabilities.read', 'admin.access')
   @Get('admin/pending')
   async pending() {
-    const list = await this.capsModel
-      .find({ $or: [{ engineer_status: 'pending' }, { wholesale_status: 'pending' }] })
-      .populate('userId', 'phone firstName lastName')
+    // البحث في User model مباشرة للحصول على الطلبات قيد المراجعة
+    const list = await this.userModel
+      .find({
+        $or: [
+          { engineer_status: 'pending' },
+          { wholesale_status: 'pending' },
+        ],
+        deletedAt: null,
+      })
+      .select('phone firstName lastName engineer_status wholesale_status cvFileUrl storePhotoUrl storeName verificationNote createdAt')
+      .sort({ createdAt: -1 })
       .lean();
     return { items: list };
   }
@@ -681,26 +750,28 @@ export class AuthController {
       passwordHash: hashedPassword,
     });
 
-    // إنشاء capabilities للمستخدم
-    const caps = await this.capsModel.create({
-      userId: user._id,
-      customer_capable: true,
-      engineer_capable: false,
-      engineer_status: 'none',
-      wholesale_capable: false,
-      wholesale_status: 'none',
-      wholesale_discount_percent: 0,
-    });
-
-    // تحديث capabilities إذا طلب المستخدم أن يكون مهندساً أو تاجراً
+    // تحديث User model مباشرة إذا طلب المستخدم أن يكون مهندساً أو تاجراً
     if (dto.capabilityRequest) {
       if (dto.capabilityRequest === 'engineer') {
-        caps.engineer_status = 'pending';
+        user.engineer_capable = true;
+        user.engineer_status = CapabilityStatus.UNVERIFIED;
       } else if (dto.capabilityRequest === 'wholesale') {
-        caps.wholesale_status = 'pending';
+        user.wholesale_capable = true;
+        user.wholesale_status = CapabilityStatus.UNVERIFIED;
       }
-      await caps.save();
+      await user.save();
     }
+
+    // إنشاء capabilities للمستخدم
+    await this.capsModel.create({
+      userId: user._id,
+      customer_capable: true,
+      engineer_capable: user.engineer_capable || false,
+      engineer_status: user.engineer_status || 'none',
+      wholesale_capable: user.wholesale_capable || false,
+      wholesale_status: user.wholesale_status || 'none',
+      wholesale_discount_percent: 0,
+    });
 
     // مزامنة المفضلات تلقائياً عند التسجيل
     if (dto.deviceId) {

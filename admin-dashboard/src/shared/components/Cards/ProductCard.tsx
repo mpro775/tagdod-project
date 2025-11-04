@@ -6,15 +6,11 @@ import {
   Typography,
   Box,
   IconButton,
-  Menu,
-  MenuItem,
-  Button,
   Chip,
   Avatar,
-  Rating,
+  Tooltip,
 } from '@mui/material';
 import {
-  MoreVert,
   Edit,
   Delete,
   Visibility,
@@ -22,9 +18,13 @@ import {
   AttachMoney,
   Category,
   Store,
+  Star,
+  NewReleases,
+  Restore,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { Product, ProductStatus } from '@/features/products/types/product.types';
-import { STATUS_COLORS } from '@/config/constants';
+import { formatDate } from '@/shared/utils/formatters';
 
 interface ProductCardProps {
   product: Product;
@@ -47,258 +47,171 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onToggleStatus,
   showActions = true,
 }) => {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const handleAction = (action: (product: Product) => void) => {
-    action(product);
-    handleMenuClose();
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
-  };
-
-  const formatDate = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  const { t } = useTranslation('products');
 
   const getStatusColor = (status: ProductStatus | string) => {
-    return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || 'default';
+    const statusMap: Record<string, 'success' | 'warning' | 'error' | 'default'> = {
+      [ProductStatus.ACTIVE]: 'success',
+      [ProductStatus.DRAFT]: 'default',
+      [ProductStatus.ARCHIVED]: 'warning',
+    };
+    return statusMap[status] || 'default';
   };
 
+  const isDeleted = !!product.deletedAt;
+
   return (
-    <Card sx={{ mb: 2, position: 'relative' }}>
+    <Card sx={{ mb: 2, position: 'relative', cursor: 'pointer' }} onClick={() => onView?.(product)}>
       <CardContent>
-        {/* Header with Image and Status */}
-        <Box sx={{ display: 'flex', mb: 2 }}>
+        {/* Header with Image and Badges */}
+        <Box sx={{ display: 'flex', mb: 2, gap: 1.5 }}>
           <Avatar
-            src={product.images?.[0] || product.mainImage}
+            src={
+              product.mainImage || 
+              (typeof product.mainImageId === 'object' ? product.mainImageId?.url : null) ||
+              product.images?.[0]
+            }
             variant="rounded"
-            sx={{ width: 80, height: 80, mr: 2 }}
+            sx={{ width: 80, height: 80 }}
           >
             <Inventory />
           </Avatar>
           
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" component="div" noWrap>
-              {product.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
-              {product.sku || 'بدون كود'}
-            </Typography>
-            
-            {product.averageRating && product.averageRating > 0 && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                <Rating 
-                  value={product.averageRating} 
-                  size="small" 
-                  readOnly 
-                />
-                <Typography variant="caption" sx={{ ml: 1 }}>
-                  ({product.reviewsCount || 0})
-                </Typography>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <Typography variant="h6" component="div" noWrap sx={{ flex: 1 }}>
+                {product.name}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {product.isFeatured && (
+                  <Tooltip title={t('badges.featured')}>
+                    <Star sx={{ fontSize: 18, color: 'warning.main' }} />
+                  </Tooltip>
+                )}
+                {product.isNew && (
+                  <Tooltip title={t('badges.new')}>
+                    <NewReleases sx={{ fontSize: 18, color: 'info.main' }} />
+                  </Tooltip>
+                )}
               </Box>
+            </Box>
+            {product.nameEn && (
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {product.nameEn}
+              </Typography>
             )}
+            <Typography variant="body2" color="text.secondary" noWrap>
+              {product.sku || `-`}
+            </Typography>
           </Box>
-
-          {showActions && (
-            <IconButton
-              size="small"
-              onClick={handleMenuClick}
-              sx={{ ml: 1 }}
-            >
-              <MoreVert />
-            </IconButton>
-          )}
         </Box>
 
         {/* Product Info */}
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <AttachMoney sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-            <Typography variant="body2" color="text.secondary">
-              السعر: {product.variants && product.variants.length > 0 
-                ? formatPrice(product.variants[0].price)
-                : 'غير محدد'
-              }
-            </Typography>
-            {product.variants && product.variants.length > 0 && product.variants[0].compareAtPrice && (
-              <Typography 
-                variant="body2" 
-                color="text.disabled" 
-                sx={{ textDecoration: 'line-through', ml: 1 }}
-              >
-                {formatPrice(product.variants[0].compareAtPrice)}
-              </Typography>
-            )}
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <Inventory sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-            <Typography variant="body2" color="text.secondary">
-              المخزون: {product.variants && product.variants.length > 0 
-                ? product.variants.reduce((total, variant) => total + variant.stock, 0)
-                : 0
-              } وحدة
-            </Typography>
-          </Box>
-
-          {product.category && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {(typeof product.categoryId === 'object' && product.categoryId?.name) && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Category sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
               <Typography variant="body2" color="text.secondary">
-                {product.category.name}
+                {product.categoryId.name}
               </Typography>
             </Box>
           )}
 
-          {product.brand && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          {(typeof product.brandId === 'object' && product.brandId?.name) && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Store sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
               <Typography variant="body2" color="text.secondary">
-                {product.brand.name}
+                {product.brandId.name}
               </Typography>
             </Box>
           )}
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Inventory sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" color="text.secondary">
+              {t('list.columns.variants')}: {product.variantsCount || 0}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AttachMoney sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" color="text.secondary">
+              {t('list.columns.sales')}: {product.salesCount || 0}
+            </Typography>
+          </Box>
         </Box>
 
-        {/* Tags and Categories */}
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+        {/* Footer with Status and Date */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
           <Chip
-            label={product.status || 'غير محدد'}
-            color={getStatusColor(product.status || ProductStatus.DRAFT) as any}
+            label={t(`status.${product.status}`)}
+            color={getStatusColor(product.status) as any}
             size="small"
-            variant="outlined"
           />
-          
-          {product.attributes && product.attributes.length > 0 && (
-            product.attributes.slice(0, 2).map((attribute: string) => (
-              <Chip
-                key={attribute}
-                label={attribute}
-                size="small"
-                variant="outlined"
-              />
-            ))
-          )}
-          
-          {product.attributes && product.attributes.length > 2 && (
-            <Chip
-              label={`+${product.attributes.length - 2}`}
-              size="small"
-              variant="outlined"
-            />
-          )}
-        </Box>
-
-        {/* Footer */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="caption" color="text.secondary">
-            تم الإنشاء: {formatDate(product.createdAt)}
+            {formatDate(product.createdAt)}
           </Typography>
-          
-          {product.isFeatured && (
-            <Chip
-              label="مميز"
-              color="warning"
-              size="small"
-            />
-          )}
         </Box>
       </CardContent>
 
       {showActions && (
-        <CardActions>
-          <Button
-            size="small"
-            startIcon={<Visibility />}
-            onClick={() => handleAction(onView || (() => {}))}
-          >
-            عرض
-          </Button>
-          <Button
-            size="small"
-            startIcon={<Edit />}
-            onClick={() => handleAction(onEdit || (() => {}))}
-          >
-            تعديل
-          </Button>
-          {onToggleStatus && (
-            <Button
-              size="small"
-              color={product.isActive ? 'warning' : 'success'}
-              onClick={() => handleAction(onToggleStatus)}
-            >
-              {product.isActive ? 'إيقاف' : 'تفعيل'}
-            </Button>
+        <CardActions sx={{ justifyContent: 'flex-end', gap: 0.5 }}>
+          {isDeleted && onToggleStatus && (
+            <Tooltip title={t('actions.restore')}>
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleStatus(product);
+                }}
+              >
+                <Restore fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {!isDeleted && (
+            <>
+              <Tooltip title={t('actions.view')}>
+                <IconButton
+                  size="small"
+                  color="info"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onView?.(product);
+                  }}
+                >
+                  <Visibility fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={t('actions.edit')}>
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.(product);
+                  }}
+                >
+                  <Edit fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={t('actions.delete')}>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.(product);
+                  }}
+                >
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </>
           )}
         </CardActions>
       )}
-
-      {/* Context Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-      >
-        {onView && (
-          <MenuItem onClick={() => handleAction(onView)}>
-            <Visibility sx={{ mr: 1 }} fontSize="small" />
-            عرض التفاصيل
-          </MenuItem>
-        )}
-        {onEdit && (
-          <MenuItem onClick={() => handleAction(onEdit)}>
-            <Edit sx={{ mr: 1 }} fontSize="small" />
-            تعديل
-          </MenuItem>
-        )}
-        {onToggleStatus && (
-          <MenuItem onClick={() => handleAction(onToggleStatus)}>
-            <Chip
-              label={product.isActive ? 'إيقاف' : 'تفعيل'}
-              color={product.isActive ? 'warning' : 'success'}
-              size="small"
-              sx={{ mr: 1 }}
-            />
-          </MenuItem>
-        )}
-        {onDelete && (
-          <MenuItem 
-            onClick={() => handleAction(onDelete)}
-            sx={{ color: 'error.main' }}
-          >
-            <Delete sx={{ mr: 1 }} fontSize="small" />
-            حذف
-          </MenuItem>
-        )}
-      </Menu>
     </Card>
   );
 };

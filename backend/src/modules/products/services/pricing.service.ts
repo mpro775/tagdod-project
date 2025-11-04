@@ -9,6 +9,23 @@ import {
 } from '../../../shared/exceptions';
 import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.service';
 
+export interface PriceWithDiscount {
+  basePrice: number;
+  compareAtPrice?: number;
+  costPrice?: number;
+  discountPercent: number;
+  discountAmount: number;
+  finalPrice: number;
+  currency: string;
+  exchangeRate?: number;
+  formattedPrice?: string;
+  formattedFinalPrice?: string;
+}
+
+export interface PriceWithDiscountAndVariantId extends PriceWithDiscount {
+  variantId: string;
+}
+
 @Injectable()
 export class PricingService {
   private readonly logger = new Logger(PricingService.name);
@@ -265,5 +282,160 @@ export class PricingService {
     }
 
     return { updated, errors };
+  }
+
+  // ==================== Price with Discount ====================
+
+  /**
+   * حساب السعر مع خصم التاجر
+   * @param basePrice السعر الأصلي
+   * @param discountPercent نسبة الخصم (0-100)
+   * @returns السعر بعد الخصم
+   */
+  private calculatePriceWithDiscount(basePrice: number, discountPercent: number): number {
+    if (!discountPercent || discountPercent <= 0) {
+      return basePrice;
+    }
+    return basePrice * (1 - discountPercent / 100);
+  }
+
+  /**
+   * جلب سعر المتغير مع خصم التاجر
+   */
+  async getVariantPriceWithDiscount(
+    variantId: string,
+    currency: string = 'USD',
+    discountPercent: number = 0
+  ): Promise<PriceWithDiscount> {
+    const priceData = await this.getVariantPrice(variantId, currency);
+    
+    const discountAmount = discountPercent > 0 
+      ? priceData.basePrice * (discountPercent / 100)
+      : 0;
+    
+    const finalPrice = this.calculatePriceWithDiscount(priceData.basePrice, discountPercent);
+
+    // تنسيق السعر النهائي
+    let formattedFinalPrice: string | undefined;
+    if (currency !== 'USD' && priceData.formattedPrice) {
+      // استخدام نفس التنسيق مع السعر النهائي
+      const formattedBase = priceData.formattedPrice.replace(
+        priceData.basePrice.toFixed(2),
+        finalPrice.toFixed(2)
+      );
+      formattedFinalPrice = formattedBase;
+    }
+
+    return {
+      basePrice: priceData.basePrice,
+      compareAtPrice: priceData.compareAtPrice,
+      costPrice: priceData.costPrice,
+      discountPercent,
+      discountAmount,
+      finalPrice,
+      currency,
+      exchangeRate: priceData.exchangeRate,
+      formattedPrice: priceData.formattedPrice,
+      formattedFinalPrice,
+    };
+  }
+
+  /**
+   * جلب أسعار جميع متغيرات المنتج مع خصم التاجر
+   */
+  async getProductPricesWithDiscount(
+    productId: string,
+    currency: string = 'USD',
+    discountPercent: number = 0
+  ): Promise<PriceWithDiscountAndVariantId[]> {
+    const variants = await this.variantModel
+      .find({ productId, deletedAt: null, isActive: true })
+      .select('_id basePriceUSD compareAtPriceUSD costPriceUSD')
+      .lean();
+
+    if (variants.length === 0) {
+      return [];
+    }
+
+    if (currency === 'USD') {
+      return variants.map(variant => {
+        const discountAmount = discountPercent > 0 
+          ? variant.basePriceUSD * (discountPercent / 100)
+          : 0;
+        const finalPrice = this.calculatePriceWithDiscount(variant.basePriceUSD, discountPercent);
+
+        return {
+          variantId: variant._id.toString(),
+          basePrice: variant.basePriceUSD,
+          compareAtPrice: variant.compareAtPriceUSD,
+          costPrice: variant.costPriceUSD,
+          discountPercent,
+          discountAmount,
+          finalPrice,
+          currency: 'USD',
+        };
+      });
+    }
+
+    try {
+      const pricesWithDiscount = await Promise.all(
+        variants.map(async (variant) => {
+          const converted = await this.exchangeRatesService.convertCurrency({
+            amount: variant.basePriceUSD,
+            fromCurrency: 'USD',
+            toCurrency: currency,
+          });
+
+          let compareAtPriceConverted;
+          if (variant.compareAtPriceUSD) {
+            compareAtPriceConverted = await this.exchangeRatesService.convertCurrency({
+              amount: variant.compareAtPriceUSD,
+              fromCurrency: 'USD',
+              toCurrency: currency,
+            });
+          }
+
+          let costPriceConverted;
+          if (variant.costPriceUSD) {
+            costPriceConverted = await this.exchangeRatesService.convertCurrency({
+              amount: variant.costPriceUSD,
+              fromCurrency: 'USD',
+              toCurrency: currency,
+            });
+          }
+
+          const basePrice = converted.result;
+          const discountAmount = discountPercent > 0 
+            ? basePrice * (discountPercent / 100)
+            : 0;
+          const finalPrice = this.calculatePriceWithDiscount(basePrice, discountPercent);
+
+          // تنسيق السعر النهائي
+          const formattedFinalPrice = converted.formatted.replace(
+            basePrice.toFixed(2),
+            finalPrice.toFixed(2)
+          );
+
+          return {
+            variantId: variant._id.toString(),
+            basePrice,
+            compareAtPrice: compareAtPriceConverted?.result,
+            costPrice: costPriceConverted?.result,
+            discountPercent,
+            discountAmount,
+            finalPrice,
+            currency,
+            exchangeRate: converted.rate,
+            formattedPrice: converted.formatted,
+            formattedFinalPrice,
+          };
+        })
+      );
+
+      return pricesWithDiscount;
+    } catch (error) {
+      this.logger.error(`Error converting product prices with discount for ${productId}:`, error);
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, { productId, error: error instanceof Error ? error.message : String(error) });
+    }
   }
 }

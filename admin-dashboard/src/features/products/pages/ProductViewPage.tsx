@@ -13,12 +13,15 @@ import {
   Alert,
   CircularProgress,
   Rating,
+  Stack,
 } from '@mui/material';
 import { ArrowBack, Edit, Inventory, Star, NewReleases } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useProduct, useProductVariants } from '../hooks/useProducts';
 import { formatDate } from '@/shared/utils/formatters';
 import { VariantCard } from '../components/VariantCard';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -37,7 +40,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`product-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: { xs: 2, sm: 3 } }}>{children}</Box>}
     </div>
   );
 }
@@ -45,6 +48,8 @@ function TabPanel(props: TabPanelProps) {
 export const ProductViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation(['products', 'common']);
+  const { isMobile } = useBreakpoint();
   const [activeTab, setActiveTab] = useState(0);
 
   const { data: product, isLoading: loadingProduct } = useProduct(id!);
@@ -68,16 +73,7 @@ export const ProductViewPage: React.FC = () => {
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'نشط';
-      case 'draft':
-        return 'مسودة';
-      case 'archived':
-        return 'مؤرشف';
-      default:
-        return status;
-    }
+    return t(`status.${status}`, status);
   };
 
   if (loadingProduct) {
@@ -91,7 +87,7 @@ export const ProductViewPage: React.FC = () => {
   if (!product) {
     return (
       <Box>
-        <Alert severity="error">المنتج غير موجود أو تم حذفه</Alert>
+        <Alert severity="error">{t('view.productNotFound')}</Alert>
       </Box>
     );
   }
@@ -99,29 +95,46 @@ export const ProductViewPage: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Button variant="outlined" startIcon={<ArrowBack />} onClick={() => navigate('/products')}>
-          العودة للمنتجات
+      <Box
+        display="flex"
+        flexDirection={isMobile ? 'column' : 'row'}
+        alignItems={isMobile ? 'stretch' : 'center'}
+        gap={2}
+        mb={3}
+      >
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/products')}
+          fullWidth={isMobile}
+        >
+          {t('view.backToProducts')}
         </Button>
-        <Typography variant="h4" component="h1">
-          عرض المنتج
+        <Typography variant={isMobile ? 'h5' : 'h4'} component="h1" sx={{ flex: 1 }}>
+          {t('view.title')}
         </Typography>
-        <Box ml="auto" display="flex" gap={1}>
+        <Stack
+          direction={isMobile ? 'column' : 'row'}
+          spacing={1}
+          sx={{ width: isMobile ? '100%' : 'auto', ml: isMobile ? 0 : 'auto' }}
+        >
           <Button
             variant="contained"
             startIcon={<Edit />}
             onClick={() => navigate(`/products/${id}/edit`)}
+            fullWidth={isMobile}
           >
-            تعديل
+            {t('view.edit')}
           </Button>
           <Button
             variant="outlined"
             startIcon={<Inventory />}
             onClick={() => navigate(`/products/${id}/variants`)}
+            fullWidth={isMobile}
           >
-            إدارة المتغيرات
+            {t('view.manageVariants')}
           </Button>
-        </Box>
+        </Stack>
       </Box>
 
       {/* Product Info Card */}
@@ -136,7 +149,7 @@ export const ProductViewPage: React.FC = () => {
                 alt={product.name}
                 sx={{
                   width: '100%',
-                  height: 300,
+                  height: isMobile ? 250 : 300,
                   objectFit: 'cover',
                   borderRadius: 2,
                   border: '1px solid',
@@ -147,25 +160,38 @@ export const ProductViewPage: React.FC = () => {
 
             {/* Product Details */}
             <Grid size={{ xs: 12, md: 8 }}>
-              <Typography variant="h4" gutterBottom>
+              <Typography variant={isMobile ? 'h5' : 'h4'} gutterBottom>
                 {product.name}
               </Typography>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+              <Typography variant={isMobile ? 'body1' : 'h6'} color="text.secondary" gutterBottom>
                 {product.nameEn}
               </Typography>
 
               {/* Status and Badges */}
-              <Box display="flex" gap={1} mb={2}>
+              <Box display="flex" gap={1} mb={2} flexWrap="wrap">
                 <Chip
                   label={getStatusLabel(product.status)}
                   color={getStatusColor(product.status) as any}
                   variant="outlined"
+                  size={isMobile ? 'small' : 'medium'}
                 />
                 {product.isFeatured && (
-                  <Chip label="مميز" color="warning" icon={<Star />} variant="outlined" />
+                  <Chip
+                    label={t('badges.featured')}
+                    color="warning"
+                    icon={<Star />}
+                    variant="outlined"
+                    size={isMobile ? 'small' : 'medium'}
+                  />
                 )}
                 {product.isNew && (
-                  <Chip label="جديد" color="success" icon={<NewReleases />} variant="outlined" />
+                  <Chip
+                    label={t('badges.new')}
+                    color="success"
+                    icon={<NewReleases />}
+                    variant="outlined"
+                    size={isMobile ? 'small' : 'medium'}
+                  />
                 )}
               </Box>
 
@@ -175,25 +201,29 @@ export const ProductViewPage: React.FC = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    رقم المنتج (SKU)
+                    {t('view.sku')}
                   </Typography>
-                  <Typography variant="body1">{product.sku || 'غير محدد'}</Typography>
+                  <Typography variant="body1">{product.sku || t('view.skuNotSpecified')}</Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    الفئة
+                    {t('view.category')}
                   </Typography>
-                  <Typography variant="body1">{(product as any).categoryId?.name || 'غير محدد'}</Typography>
+                  <Typography variant="body1">
+                    {(product as any).categoryId?.name || t('view.skuNotSpecified')}
+                  </Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    العلامة التجارية
+                    {t('view.brand')}
                   </Typography>
-                  <Typography variant="body1">{(product as any).brandId?.name || 'غير محدد'}</Typography>
+                  <Typography variant="body1">
+                    {(product as any).brandId?.name || t('view.skuNotSpecified')}
+                  </Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    عدد المتغيرات
+                    {t('view.variantsCount')}
                   </Typography>
                   <Typography variant="body1">{product.variantsCount || 0}</Typography>
                 </Grid>
@@ -205,21 +235,22 @@ export const ProductViewPage: React.FC = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    التقييم
+                    {t('view.rating')}
                   </Typography>
-                  <Box display="flex" alignItems="center" gap={1}>
+                  <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                     <Rating
                       value={product.useManualRating ? (product.manualRating || 0) : (product.averageRating || 0)}
                       precision={0.1}
                       readOnly
+                      size={isMobile ? 'small' : 'medium'}
                     />
                     <Typography variant="body1" fontWeight="bold">
                       {(product.useManualRating ? (product.manualRating || 0) : (product.averageRating || 0)).toFixed(1)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {product.useManualRating
-                        ? `${product.manualReviewsCount || 0} تقييم (يدوي)`
-                        : `${product.reviewsCount || 0} تقييم (حقيقي)`}
+                        ? `${product.manualReviewsCount || 0} ${t('view.reviewsManual')}`
+                        : `${product.reviewsCount || 0} ${t('view.reviewsReal')}`}
                     </Typography>
                   </Box>
                 </Grid>
@@ -229,7 +260,7 @@ export const ProductViewPage: React.FC = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    عدد المشاهدات
+                    {t('view.viewsCount')}
                   </Typography>
                   <Typography variant="h6" color="primary">
                     {product.viewsCount || 0}
@@ -237,7 +268,7 @@ export const ProductViewPage: React.FC = () => {
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    عدد المبيعات
+                    {t('view.salesCount')}
                   </Typography>
                   <Typography variant="h6" color="success.main">
                     {product.salesCount || 0}
@@ -245,13 +276,13 @@ export const ProductViewPage: React.FC = () => {
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    عدد التقييمات
+                    {t('view.reviewsCount')}
                   </Typography>
                   <Typography variant="h6">{product.reviewsCount || 0}</Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    متوسط التقييم
+                    {t('view.averageRating')}
                   </Typography>
                   <Typography variant="h6">
                     {product.averageRating ? product.averageRating.toFixed(1) : '0.0'}
@@ -265,13 +296,13 @@ export const ProductViewPage: React.FC = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    تاريخ الإنشاء
+                    {t('view.createdAt')}
                   </Typography>
                   <Typography variant="body1">{formatDate(product.createdAt)}</Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
-                    آخر تحديث
+                    {t('view.updatedAt')}
                   </Typography>
                   <Typography variant="body1">{formatDate(product.updatedAt)}</Typography>
                 </Grid>
@@ -284,26 +315,32 @@ export const ProductViewPage: React.FC = () => {
       {/* Tabs */}
       <Card>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label={`الوصف`} />
-            <Tab label={`المتغيرات (${variants?.length || 0})`} />
-            <Tab label={`SEO`} />
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            variant={isMobile ? 'scrollable' : 'standard'}
+            scrollButtons={isMobile ? 'auto' : false}
+            allowScrollButtonsMobile
+          >
+            <Tab label={t('view.tabs.description')} />
+            <Tab label={`${t('view.tabs.variants')} (${variants?.length || 0})`} />
+            <Tab label={t('view.tabs.seo')} />
           </Tabs>
         </Box>
 
         <TabPanel value={activeTab} index={0}>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 6 }}>
-              <Typography variant="h6" gutterBottom>
-                الوصف بالعربية
+              <Typography variant={isMobile ? 'subtitle1' : 'h6'} gutterBottom>
+                {t('view.descriptionAr')}
               </Typography>
               <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                 {product.description}
               </Typography>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
-              <Typography variant="h6" gutterBottom>
-                English Description
+              <Typography variant={isMobile ? 'subtitle1' : 'h6'} gutterBottom>
+                {t('view.descriptionEn')}
               </Typography>
               <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                 {product.descriptionEn}
@@ -326,41 +363,43 @@ export const ProductViewPage: React.FC = () => {
               ))}
             </Grid>
           ) : (
-            <Alert severity="info">لا توجد متغيرات لهذا المنتج</Alert>
+            <Alert severity="info">{t('variants.empty')}</Alert>
           )}
         </TabPanel>
 
         <TabPanel value={activeTab} index={2}>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom>
-                معلومات SEO
+              <Typography variant={isMobile ? 'subtitle1' : 'h6'} gutterBottom>
+                {t('view.seo.title')}
               </Typography>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary">
-                عنوان الصفحة (Meta Title)
+                {t('view.seo.metaTitle')}
               </Typography>
-              <Typography variant="body1">{product.metaTitle || 'غير محدد'}</Typography>
+              <Typography variant="body1">{product.metaTitle || t('view.seo.notSpecified')}</Typography>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary">
-                وصف الصفحة (Meta Description)
+                {t('view.seo.metaDescription')}
               </Typography>
-              <Typography variant="body1">{product.metaDescription || 'غير محدد'}</Typography>
+              <Typography variant="body1">
+                {product.metaDescription || t('view.seo.notSpecified')}
+              </Typography>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary">
-                الكلمات المفتاحية
+                {t('view.seo.keywords')}
               </Typography>
-              <Box display="flex" gap={1} flexWrap="wrap">
+              <Box display="flex" gap={1} flexWrap="wrap" mt={1}>
                 {product.metaKeywords && product.metaKeywords.length > 0 ? (
                   product.metaKeywords.map((keyword, index) => (
                     <Chip key={index} label={keyword} size="small" />
                   ))
                 ) : (
                   <Typography variant="body1" color="text.secondary">
-                    لا توجد كلمات مفتاحية
+                    {t('view.seo.noKeywords')}
                   </Typography>
                 )}
               </Box>

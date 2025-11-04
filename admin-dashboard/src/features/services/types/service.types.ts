@@ -115,6 +115,18 @@ export interface EngineersOverviewStatistics {
 }
 
 // === إحصائيات ===
+export interface Trend {
+  value: number;
+  isPositive: boolean;
+}
+
+export interface OverviewStatisticsTrends {
+  requests: Trend;
+  offers: Trend;
+  engineers: Trend;
+  revenue: Trend;
+}
+
 export interface OverviewStatistics {
   totalRequests: number;
   totalOffers: number;
@@ -127,6 +139,7 @@ export interface OverviewStatistics {
   completionRate: string;
   averageRating: number;
   totalRevenue: number;
+  trends?: OverviewStatisticsTrends;
 }
 
 export interface RequestsStatisticsParams {

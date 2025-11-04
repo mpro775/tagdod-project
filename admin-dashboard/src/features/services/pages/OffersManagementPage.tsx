@@ -18,6 +18,9 @@ import {
   Snackbar,
   Button,
   Alert,
+  useTheme,
+  useMediaQuery,
+  Divider,
 } from '@mui/material';
 import {
   RequestQuote,
@@ -41,6 +44,7 @@ import {
   useRejectOffer,
 } from '../hooks/useServices';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
+import { useTranslation } from 'react-i18next';
 
 const statusColors = {
   OFFERED: 'warning',
@@ -49,14 +53,11 @@ const statusColors = {
   CANCELLED: 'default',
 } as const;
 
-const statusLabels = {
-  OFFERED: 'مُقدم',
-  ACCEPTED: 'مقبول',
-  REJECTED: 'مرفوض',
-  CANCELLED: 'ملغي',
-} as const;
-
 export const OffersManagementPage: React.FC = () => {
+  const { t } = useTranslation(['services', 'common']);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const [filters, setFilters] = useState({
     status: '',
     search: '',
@@ -85,7 +86,16 @@ export const OffersManagementPage: React.FC = () => {
   };
 
   const getStatusColor = (status: keyof typeof statusColors) => statusColors[status];
-  const getStatusLabel = (status: keyof typeof statusLabels) => statusLabels[status];
+  
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      OFFERED: t('services:offers.status.offered'),
+      ACCEPTED: t('services:offers.status.accepted'),
+      REJECTED: t('services:offers.status.rejected'),
+      CANCELLED: t('services:offers.status.cancelled'),
+    };
+    return statusMap[status] || status;
+  };
 
   const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => {
     setSnackbarMessage(message);
@@ -104,7 +114,7 @@ export const OffersManagementPage: React.FC = () => {
       const requestId = offer.requestId || offer.request?._id;
       
       if (!requestId) {
-        showSnackbar('معرف الطلب غير موجود', 'error');
+        showSnackbar(t('services:offers.requestIdNotFound'), 'error');
         return;
       }
       
@@ -121,7 +131,7 @@ export const OffersManagementPage: React.FC = () => {
     try {
       await rejectOfferMutation.mutateAsync({
         offerId: offer._id,
-        reason: 'تم الرفض من قبل الإدارة',
+        reason: t('services:offers.rejectedByAdmin'),
       });
     } catch {
       // الخطأ يتم معالجته في الـ mutation
@@ -132,7 +142,7 @@ export const OffersManagementPage: React.FC = () => {
   const columns: GridColDef[] = [
     {
       field: 'amount',
-      headerName: 'العرض',
+      headerName: t('services:offers.offer'),
       minWidth: 150,
       flex: 1,
       renderCell: (params) => (
@@ -153,7 +163,7 @@ export const OffersManagementPage: React.FC = () => {
     },
     {
       field: 'engineer',
-      headerName: 'المهندس',
+      headerName: t('services:offers.engineer'),
       minWidth: 180,
       flex: 1.2,
       renderCell: (params) => (
@@ -174,7 +184,7 @@ export const OffersManagementPage: React.FC = () => {
     },
     {
       field: 'request',
-      headerName: 'الطلب',
+      headerName: t('services:offers.request'),
       minWidth: 150,
       flex: 1,
       renderCell: (params) => (
@@ -190,25 +200,25 @@ export const OffersManagementPage: React.FC = () => {
     },
     {
       field: 'distanceKm',
-      headerName: 'المسافة',
+      headerName: t('services:offers.distance'),
       minWidth: 100,
       flex: 0.7,
       renderCell: (params) => (
         <Box display="flex" alignItems="center">
           <Typography variant="body2">
-            {params.row.distanceKm ? `${params.row.distanceKm} كم` : '-'}
+            {params.row.distanceKm ? `${params.row.distanceKm} ${t('services:offers.distanceKm')}` : '-'}
           </Typography>
         </Box>
       ),
     },
     {
       field: 'status',
-      headerName: 'الحالة',
+      headerName: t('services:labels.status'),
       minWidth: 100,
       flex: 0.8,
       renderCell: (params) => (
         <Chip
-          label={getStatusLabel(params.row.status as keyof typeof statusLabels)}
+          label={getStatusLabel(params.row.status)}
           color={getStatusColor(params.row.status as keyof typeof statusColors) as any}
           size="small"
         />
@@ -216,20 +226,20 @@ export const OffersManagementPage: React.FC = () => {
     },
     {
       field: 'createdAt',
-      headerName: 'التاريخ',
+      headerName: t('services:offers.date'),
       minWidth: 120,
       flex: 0.8,
       valueFormatter: (value) => formatDate(value as Date),
     },
     {
       field: 'actions',
-      headerName: 'الإجراءات',
+      headerName: t('services:labels.actions'),
       minWidth: 180,
       flex: 1.2,
       sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={0.5}>
-          <Tooltip title="عرض التفاصيل">
+          <Tooltip title={t('services:offers.viewDetails')}>
             <IconButton
               size="small"
               onClick={() => handleViewDetails(params.row)}
@@ -240,7 +250,7 @@ export const OffersManagementPage: React.FC = () => {
           </Tooltip>
           {params.row.status === 'OFFERED' && (
             <>
-              <Tooltip title="قبول العرض">
+              <Tooltip title={t('services:offers.acceptOffer')}>
                 <IconButton
                   size="small"
                   onClick={() => handleAcceptOffer(params.row)}
@@ -249,7 +259,7 @@ export const OffersManagementPage: React.FC = () => {
                   <CheckCircle fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="رفض العرض">
+              <Tooltip title={t('services:offers.rejectOffer')}>
                 <IconButton
                   size="small"
                   onClick={() => handleRejectOffer(params.row)}
@@ -268,13 +278,13 @@ export const OffersManagementPage: React.FC = () => {
   if (isLoading) {
     return (
       <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
           <Box>
             <Typography variant="h4" gutterBottom>
-              إدارة العروض
+              {t('services:offers.title')}
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              إدارة وتتبع عروض المهندسين
+              {t('services:offers.subtitle')}
             </Typography>
           </Box>
           <Skeleton variant="rectangular" width={120} height={36} />
@@ -282,7 +292,7 @@ export const OffersManagementPage: React.FC = () => {
         
         <Grid container spacing={3} sx={{ mb: 3 }}>
           {[1, 2, 3, 4, 5].map((i) => (
-            <Grid key={i} size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Grid key={i} size={{ xs: 6, sm: 6, md: 2.4 }}>
               <Card>
                 <CardContent>
                   <Skeleton variant="text" width="60%" />
@@ -312,40 +322,47 @@ export const OffersManagementPage: React.FC = () => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box 
+        display="flex" 
+        justifyContent="space-between" 
+        alignItems="center" 
+        mb={3}
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        gap={2}
+      >
         <Box>
           <Typography variant="h4" gutterBottom>
-            إدارة العروض
+            {t('services:offers.title')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            إدارة وتتبع عروض المهندسين
+            {t('services:offers.subtitle')}
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
           <Button variant="outlined" startIcon={<Refresh />} size="small">
-            تحديث
+            {t('services:offers.refresh')}
           </Button>
           <Button variant="contained" startIcon={<Download />} size="small">
-            تصدير
+            {t('services:offers.export')}
           </Button>
         </Stack>
       </Box>
 
       {/* إحصائيات سريعة */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 2.4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="center" justifyContent="space-between" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    إجمالي العروض
+                    {t('services:offers.totalOffers')}
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1 }}>
                     {totalOffers}
                   </Typography>
                   <Typography color="text.secondary" variant="body2">
-                    جميع العروض
+                    {t('services:offers.allOffers')}
                   </Typography>
                 </Box>
                 <Avatar sx={{ backgroundColor: 'primary.main', width: 56, height: 56 }}>
@@ -356,19 +373,19 @@ export const OffersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 2.4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="center" justifyContent="space-between" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    العروض المقبولة
+                    {t('services:offers.acceptedOffers')}
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1, color: 'success.main' }}>
                     {acceptedOffers}
                   </Typography>
                   <Typography color="text.secondary" variant="body2">
-                    تم قبولها
+                    {t('services:offers.accepted')}
                   </Typography>
                 </Box>
                 <Avatar sx={{ backgroundColor: 'success.main', width: 56, height: 56 }}>
@@ -379,19 +396,19 @@ export const OffersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 2.4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="center" justifyContent="space-between" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    العروض المعلقة
+                    {t('services:offers.pendingOffers')}
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1, color: 'warning.main' }}>
                     {pendingOffers}
                   </Typography>
                   <Typography color="text.secondary" variant="body2">
-                    في الانتظار
+                    {t('services:offers.pending')}
                   </Typography>
                 </Box>
                 <Avatar sx={{ backgroundColor: 'warning.main', width: 56, height: 56 }}>
@@ -402,19 +419,19 @@ export const OffersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 2.4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="center" justifyContent="space-between" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    إجمالي قيمة العروض
+                    {t('services:offers.totalValue')}
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1, color: 'info.main' }}>
                     {formatCurrency(totalValue)}
                   </Typography>
                   <Typography color="text.secondary" variant="body2">
-                    القيمة الإجمالية
+                    {t('services:offers.totalValueLabel')}
                   </Typography>
                 </Box>
                 <Avatar sx={{ backgroundColor: 'info.main', width: 56, height: 56 }}>
@@ -425,19 +442,19 @@ export const OffersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 2.4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="center" justifyContent="space-between" flexDirection={{ xs: 'column', sm: 'row' }} gap={1}>
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
-                    متوسط قيمة العرض
+                    {t('services:offers.averageOffer')}
                   </Typography>
                   <Typography variant="h4" component="h2" sx={{ mb: 1, color: 'secondary.main' }}>
                     {formatCurrency(averageOffer)}
                   </Typography>
                   <Typography color="text.secondary" variant="body2">
-                    المتوسط
+                    {t('services:offers.average')}
                   </Typography>
                 </Box>
                 <Avatar sx={{ backgroundColor: 'secondary.main', width: 56, height: 56 }}>
@@ -449,26 +466,164 @@ export const OffersManagementPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* جدول العروض */}
-      <Box sx={{ mb: 2 }}>
-        <DataTable
-          title={`قائمة العروض (${offers.length} عرض • ${offers.filter((o: any) => o.status === 'OFFERED').length} معلق)`}
-          columns={columns}
-          rows={offers}
-          loading={isOffersLoading}
-          searchPlaceholder="البحث في العروض..."
-          onSearch={(search) => handleFilterChange('search', search)}
-          getRowId={(row: any) => row._id}
-          height="calc(100vh - 450px)"
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-        />
-      </Box>
+      {/* جدول العروض أو عرض الكاردات للشاشات الصغيرة */}
+      {isMobile ? (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+            {t('services:offers.listTitle')} ({offers.length} {t('services:offers.offer')} • {offers.filter((o: any) => o.status === 'OFFERED').length} {t('services:offers.pendingCount')})
+          </Typography>
+          <Grid container spacing={2}>
+            {offers.map((offer: any) => (
+              <Grid key={offer._id} size={{ xs: 12 }}>
+                <Card>
+                  <CardContent>
+                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                      <Box flex={1}>
+                        <Typography variant="h6" gutterBottom>
+                          {formatCurrency(offer.amount)}
+                        </Typography>
+                        <Chip
+                          label={getStatusLabel(offer.status)}
+                          color={getStatusColor(offer.status as keyof typeof statusColors) as any}
+                          size="small"
+                          sx={{ mb: 1 }}
+                        />
+                      </Box>
+                    </Box>
+                    
+                    <Divider sx={{ my: 2 }} />
+                    
+                    <Box mb={2}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        {t('services:offers.engineer')}
+                      </Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+                          {offer.engineer?.firstName?.charAt(0) || '?'}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">
+                            {offer.engineer?.firstName} {offer.engineer?.lastName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {offer.engineer?.phone}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    
+                    <Box mb={2}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        {t('services:offers.request')}
+                      </Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {offer.request?.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {offer.request?.type}
+                      </Typography>
+                    </Box>
+                    
+                    {offer.distanceKm && (
+                      <Box mb={2}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {t('services:offers.distance')}
+                        </Typography>
+                        <Typography variant="body2">
+                          {offer.distanceKm} {t('services:offers.distanceKm')}
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    <Box mb={2}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        {t('services:offers.date')}
+                      </Typography>
+                      <Typography variant="body2">
+                        {formatDate(offer.createdAt)}
+                      </Typography>
+                    </Box>
+                    
+                    {offer.note && (
+                      <Box mb={2}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {t('services:offers.notes')}
+                        </Typography>
+                        <Typography variant="body2">
+                          {offer.note}
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    <Divider sx={{ my: 2 }} />
+                    
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      <Tooltip title={t('services:offers.viewDetails')}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleViewDetails(offer)}
+                          color="primary"
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {offer.status === 'OFFERED' && (
+                        <>
+                          <Tooltip title={t('services:offers.acceptOffer')}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleAcceptOffer(offer)}
+                              color="success"
+                            >
+                              <CheckCircle fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={t('services:offers.rejectOffer')}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleRejectOffer(offer)}
+                              color="error"
+                            >
+                              <Cancel fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+          {offers.length === 0 && (
+            <Box textAlign="center" py={4}>
+              <Typography variant="body1" color="text.secondary">
+                {t('messages.noData')}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      ) : (
+        <Box sx={{ mb: 2 }}>
+          <DataTable
+            title={`${t('services:offers.listTitle')} (${offers.length} ${t('services:offers.offer')} • ${offers.filter((o: any) => o.status === 'OFFERED').length} ${t('services:offers.pendingCount')})`}
+            columns={columns}
+            rows={offers}
+            loading={isOffersLoading}
+            searchPlaceholder={t('services:offers.searchPlaceholder')}
+            onSearch={(search) => handleFilterChange('search', search)}
+            getRowId={(row: any) => row._id}
+            height="calc(100vh - 450px)"
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+          />
+        </Box>
+      )}
 
       {/* حوار تفاصيل العرض */}
       <Dialog open={detailsDialogOpen} onClose={() => setDetailsDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>
-          تفاصيل العرض
+          {t('services:offers.offerDetails')}
         </DialogTitle>
         <DialogContent>
           {selectedOffer && (
@@ -478,7 +633,7 @@ export const OffersManagementPage: React.FC = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        معلومات العرض
+                        {t('services:offers.offerInfo')}
                       </Typography>
                       <Box display="flex" alignItems="center" mb={2}>
                         <Avatar sx={{ mr: 2, bgcolor: 'primary.main', width: 56, height: 56 }}>
@@ -489,14 +644,14 @@ export const OffersManagementPage: React.FC = () => {
                             {formatCurrency(selectedOffer.amount)}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            قيمة العرض
+                            {t('services:offers.offerValue')}
                           </Typography>
                         </Box>
                       </Box>
                       {selectedOffer.note && (
                         <Box>
                           <Typography variant="body2" color="text.secondary" gutterBottom>
-                            ملاحظات:
+                            {t('services:offers.notes')}:
                           </Typography>
                           <Typography variant="body2">
                             {selectedOffer.note}
@@ -511,7 +666,7 @@ export const OffersManagementPage: React.FC = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        معلومات المهندس
+                        {t('services:offers.engineerInfo')}
                       </Typography>
                       <Box display="flex" alignItems="center" mb={2}>
                         <Avatar sx={{ mr: 2, bgcolor: 'success.main', width: 56, height: 56 }}>
@@ -534,7 +689,7 @@ export const OffersManagementPage: React.FC = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        معلومات الطلب
+                        {t('services:offers.requestInfo')}
                       </Typography>
                       <Box display="flex" alignItems="center">
                         <Avatar sx={{ mr: 2, bgcolor: 'info.main', width: 56, height: 56 }}>
@@ -558,7 +713,7 @@ export const OffersManagementPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailsDialogOpen(false)}>
-            إغلاق
+            {t('services:offers.close')}
           </Button>
         </DialogActions>
       </Dialog>

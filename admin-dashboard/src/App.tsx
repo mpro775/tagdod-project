@@ -1,17 +1,42 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 import { ThemeProvider } from './core/theme/ThemeProvider';
 import { Toaster, ToastBar, resolveValue } from 'react-hot-toast';
+import * as Sentry from '@sentry/react';
 import { useAuthStore } from './store/authStore';
 import { AppRouter } from './core/router/AppRouter';
 import { ErrorBoundary } from './core/error/ErrorBoundary';
-import { initializeGA4, setupScrollTracking } from './lib/analytics';
 import { initSentry } from './core/sentry';
 import './core/i18n/config';
 import './assets/toast-fix.css';
+import './core/styles/ssr-safe.css';
+
+const queryCache = new QueryCache({
+  onError: (error) => {
+    Sentry.withScope((scope) => {
+      scope.setTag('error_source', 'react_query');
+      scope.setTag('error_type', 'query_error');
+      scope.setLevel('error');
+      Sentry.captureException(error);
+    });
+  },
+});
+
+const mutationCache = new MutationCache({
+  onError: (error) => {
+    Sentry.withScope((scope) => {
+      scope.setTag('error_source', 'react_query');
+      scope.setTag('error_type', 'mutation_error');
+      scope.setLevel('error');
+      Sentry.captureException(error);
+    });
+  },
+});
 
 const queryClient = new QueryClient({
+  queryCache,
+  mutationCache,
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
@@ -36,12 +61,7 @@ const App: React.FC = () => {
     initSentry();
 
     // Initialize analytics
-    initializeGA4();
-    const cleanupScrollTracking = setupScrollTracking();
 
-    return () => {
-      cleanupScrollTracking();
-    };
   }, []);
 
   return (

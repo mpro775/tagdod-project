@@ -1,24 +1,22 @@
 {
-  "marketing": {
-    "title": "Marketing Management",
-    "subtitle": "Comprehensive marketing tools and strategies",
-    "dashboard": "Marketing Dashboard",
-    "priceRules": "Price Rules",
-    "coupons": "Coupons",
-    "banners": "Banners",
-    "campaigns": "Campaigns",
-    "analytics": "Analytics",
-    "reports": "Reports"
-  },
+  "title": "Marketing Management",
+  "subtitle": "Comprehensive marketing tools and strategies",
+  "dashboard": "Marketing Dashboard",
+  "priceRulesTitle": "Price Rules",
+  "coupons": "Coupons",
+  "banners": "Banners",
+  "campaigns": "Campaigns",
+  "analytics": "Analytics",
+  "reports": "Reports",
   "priceRules": {
     "title": "Price Rules Management",
     "subtitle": "Create and manage dynamic pricing rules",
     "addNew": "Add New Price Rule",
-    "createNew": "Create New Price Rule",
+    "createNew": "Create Price Rule",
     "editRule": "Edit Price Rule",
     "deleteRule": "Delete Price Rule",
     "viewRule": "View Price Rule Details",
-    "noTitle": "Price rule without title",
+    "noTitle": "No title",
     "activeRules": "Active Rules",
     "inactiveRules": "Inactive Rules",
     "totalRules": "Total Rules"
@@ -30,9 +28,8 @@
     "createPriceRule": "Create Price Rule",
     "createCoupon": "Create Coupon",
     "createBanner": "Create Banner",
-    "viewAnalytics": "View Analytics",
-    "active": "Active",
     "viewAll": "View All",
+    "active": "Active",
     "stats": {
       "priceRules": "Price Rules",
       "coupons": "Coupons",
@@ -149,10 +146,10 @@
   "tooltips": {
     "edit": "Edit",
     "delete": "Delete",
-    "view": "View Details",
+    "view": "View",
     "toggle": "Toggle Status",
-    "activate": "Activate Rule",
-    "deactivate": "Deactivate Rule",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
     "analytics": "View Analytics"
   },
   "placeholders": {

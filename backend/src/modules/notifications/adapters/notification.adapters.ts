@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
   INotificationPort,
   IInAppNotificationPort,
@@ -23,6 +23,9 @@ import {
   SmsDeliveryStatus
 } from '../ports/notification.ports';
 import { NotificationChannel } from '../enums/notification.enums';
+import { FCMAdapter, FCMNotification } from './fcm.adapter';
+import { EmailAdapter, EmailNotification } from './email.adapter';
+import { SMSAdapter, SMSNotification } from './sms.adapter';
 
 // ===== Base Notification Adapter =====
 @Injectable()
@@ -128,28 +131,104 @@ export class InAppNotificationAdapter extends BaseNotificationAdapter implements
 // ===== Push Notification Adapter =====
 @Injectable()
 export class PushNotificationAdapter extends BaseNotificationAdapter implements IPushNotificationPort {
+  private readonly fcmEnabled: boolean;
+
+  constructor(@Optional() private readonly fcmAdapter?: FCMAdapter) {
+    super();
+    this.fcmEnabled = !!fcmAdapter;
+    if (!this.fcmEnabled) {
+      this.logger.warn('FCMAdapter is not available. Push notifications will use mock implementation.');
+    }
+  }
+
+  /**
+   * Convert PushNotificationData to FCMNotification format
+   */
+  private toFCMNotification(data: PushNotificationData): FCMNotification {
+    return {
+      title: data.title,
+      body: data.message,
+      data: this.convertDataToStrings(data.data || {}),
+      imageUrl: data.imageUrl,
+      clickAction: data.actionUrl,
+    };
+  }
+
+  /**
+   * Convert data object to string key-value pairs for FCM
+   */
+  private convertDataToStrings(data: Record<string, unknown>): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(data)) {
+      result[key] = typeof value === 'string' ? value : JSON.stringify(value);
+    }
+    return result;
+  }
+
   async send(notification: PushNotificationData): Promise<PushNotificationResult> {
     this.logger.log(`Sending push notification: ${notification.id}`);
     
-    // Implementation for push notifications
-    // This would integrate with FCM, APNs, or other push services
-    
+    // Check if FCM is enabled and device token is provided
+    if (this.fcmEnabled && notification.deviceToken) {
+      try {
+        const fcmNotification = this.toFCMNotification(notification);
+        const success = await this.fcmAdapter!.sendToDevice(
+          notification.deviceToken,
+          fcmNotification
+        );
+
+        if (success) {
+          return {
+            success: true,
+            notificationId: notification.id,
+            externalId: `fcm_${Date.now()}`,
+            deliveredAt: new Date(),
+            platform: this.detectPlatform(notification.deviceToken),
+            metadata: { 
+              adapter: 'PushNotificationAdapter',
+              provider: 'FCM',
+              channel: 'push',
+              deviceToken: notification.deviceToken.substring(0, 20) + '...' // Mask token
+            }
+          };
+        } else {
+          throw new Error('FCM send failed');
+        }
+      } catch (error) {
+        this.logger.error(`Failed to send FCM notification: ${error instanceof Error ? error.message : String(error)}`);
+        return {
+          success: false,
+          notificationId: notification.id,
+          error: error instanceof Error ? error.message : 'Unknown FCM error',
+          metadata: { 
+            adapter: 'PushNotificationAdapter',
+            provider: 'FCM',
+            channel: 'push'
+          }
+        };
+      }
+    }
+
+    // Fallback to mock implementation if FCM is not available or no device token
+    this.logger.warn(`FCM not available or no device token provided. Using mock implementation for notification ${notification.id}`);
     return {
       success: true,
       notificationId: notification.id,
-      externalId: `push_${Date.now()}`,
+      externalId: `push_mock_${Date.now()}`,
       deliveredAt: new Date(),
-      platform: 'android', // or 'ios', 'web'
+      platform: 'unknown',
       metadata: { 
         adapter: 'PushNotificationAdapter',
+        provider: 'mock',
         channel: 'push',
-        deviceToken: notification.deviceToken
+        deviceToken: notification.deviceToken || 'none'
       }
     };
   }
 
   async sendToDevice(deviceToken: string, notification: PushNotificationData): Promise<PushNotificationResult> {
-    this.logger.log(`Sending push notification to device: ${deviceToken}`);
+    const tokenPreview = deviceToken ? `${deviceToken.substring(0, 20)}...` : 'none';
+    this.logger.log(`Sending push notification to device: ${tokenPreview}`);
     
     const notificationWithToken = { ...notification, deviceToken };
     return this.send(notificationWithToken);
@@ -158,30 +237,175 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
   async sendToTopic(topic: string, notification: PushNotificationData): Promise<PushNotificationResult> {
     this.logger.log(`Sending push notification to topic: ${topic}`);
     
-    const notificationWithTopic = { ...notification, topic };
-    return this.send(notificationWithTopic);
+    if (this.fcmEnabled) {
+      try {
+        const fcmNotification = this.toFCMNotification(notification);
+        const success = await this.fcmAdapter!.sendToTopic(topic, fcmNotification);
+
+        if (success) {
+          return {
+            success: true,
+            notificationId: notification.id,
+            externalId: `fcm_topic_${Date.now()}`,
+            deliveredAt: new Date(),
+            platform: 'all',
+            metadata: { 
+              adapter: 'PushNotificationAdapter',
+              provider: 'FCM',
+              channel: 'push',
+              topic
+            }
+          };
+        } else {
+          throw new Error('FCM topic send failed');
+        }
+      } catch (error) {
+        this.logger.error(`Failed to send FCM topic notification: ${error instanceof Error ? error.message : String(error)}`);
+        return {
+          success: false,
+          notificationId: notification.id,
+          error: error instanceof Error ? error.message : 'Unknown FCM error',
+          metadata: { 
+            adapter: 'PushNotificationAdapter',
+            provider: 'FCM',
+            channel: 'push',
+            topic
+          }
+        };
+      }
+    }
+
+    // Fallback
+    this.logger.warn(`FCM not available. Using mock implementation for topic ${topic}`);
+    return {
+      success: true,
+      notificationId: notification.id,
+      externalId: `push_topic_mock_${Date.now()}`,
+      deliveredAt: new Date(),
+      platform: 'all',
+      metadata: { 
+        adapter: 'PushNotificationAdapter',
+        provider: 'mock',
+        channel: 'push',
+        topic
+      }
+    };
+  }
+
+  /**
+   * Detect platform from device token (basic detection)
+   */
+  private detectPlatform(token: string): string {
+    // FCM tokens don't have clear platform indicators, but we can guess based on length
+    // This is a basic implementation - in production, you should store platform with token
+    if (token.length > 150) {
+      return 'ios'; // iOS tokens are typically longer
+    }
+    return 'android'; // Default to android
   }
 }
 
 // ===== Email Notification Adapter =====
 @Injectable()
 export class EmailNotificationAdapter extends BaseNotificationAdapter implements IEmailNotificationPort {
+  private readonly emailEnabled: boolean;
+
+  constructor(@Optional() private readonly emailAdapter?: EmailAdapter) {
+    super();
+    this.emailEnabled = !!emailAdapter;
+    if (!this.emailEnabled) {
+      this.logger.warn('EmailAdapter is not available. Email notifications will use mock implementation.');
+    }
+  }
+
+  /**
+   * Convert EmailNotificationData to EmailNotification format
+   */
+  private toEmailNotification(data: EmailNotificationData): EmailNotification {
+    return {
+      to: data.recipientEmail,
+      subject: data.subject,
+      html: data.htmlContent,
+      text: data.textContent || this.htmlToText(data.htmlContent || ''),
+      template: data.templateId,
+      data: data.data as Record<string, unknown>,
+      attachments: data.attachments?.map(att => ({
+        filename: att.filename,
+        content: typeof att.content === 'string' ? Buffer.from(att.content) : att.content,
+        contentType: att.contentType,
+      })),
+    };
+  }
+
+  /**
+   * Convert HTML to text
+   */
+  private htmlToText(html: string): string {
+    return html
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .trim();
+  }
+
   async send(notification: EmailNotificationData): Promise<EmailNotificationResult> {
     this.logger.log(`Sending email notification: ${notification.id} to: ${notification.recipientEmail}`);
     
-    // Implementation for email notifications
-    // This would integrate with SendGrid, AWS SES, or other email services
-    
+    if (this.emailEnabled && notification.recipientEmail) {
+      try {
+        const emailNotification = this.toEmailNotification(notification);
+        const result = await this.emailAdapter!.sendEmail(emailNotification);
+
+        if (result.success) {
+          return {
+            success: true,
+            notificationId: notification.id,
+            externalId: result.messageId || `email_${Date.now()}`,
+            deliveredAt: new Date(),
+            provider: 'smtp',
+            metadata: { 
+              adapter: 'EmailNotificationAdapter',
+              provider: 'SMTP',
+              channel: 'email',
+              recipientEmail: notification.recipientEmail
+            }
+          };
+        } else {
+          throw new Error(result.error || 'Email send failed');
+        }
+      } catch (error) {
+        this.logger.error(`Failed to send email notification: ${error instanceof Error ? error.message : String(error)}`);
+        return {
+          success: false,
+          notificationId: notification.id,
+          error: error instanceof Error ? error.message : 'Unknown email error',
+          metadata: { 
+            adapter: 'EmailNotificationAdapter',
+            provider: 'SMTP',
+            channel: 'email',
+            recipientEmail: notification.recipientEmail
+          }
+        };
+      }
+    }
+
+    // Fallback to mock implementation
+    this.logger.warn(`Email adapter not available or no recipient email. Using mock implementation for notification ${notification.id}`);
     return {
       success: true,
       notificationId: notification.id,
-      externalId: `email_${Date.now()}`,
+      externalId: `email_mock_${Date.now()}`,
       deliveredAt: new Date(),
-      provider: 'sendgrid', // or 'ses', 'mailgun', etc.
+      provider: 'mock',
       metadata: { 
         adapter: 'EmailNotificationAdapter',
+        provider: 'mock',
         channel: 'email',
-        recipientEmail: notification.recipientEmail
+        recipientEmail: notification.recipientEmail || 'none'
       }
     };
   }
@@ -189,24 +413,47 @@ export class EmailNotificationAdapter extends BaseNotificationAdapter implements
   async sendBulk(notifications: EmailNotificationData[]): Promise<BulkEmailNotificationResult> {
     this.logger.log(`Sending ${notifications.length} email notifications in bulk`);
     
+    if (this.emailEnabled) {
+      try {
+        const emailNotifications = notifications.map(n => this.toEmailNotification(n));
+        const bulkResult = await this.emailAdapter!.sendBulkEmail(emailNotifications);
+
+        const results: EmailNotificationResult[] = bulkResult.results.map((result, index) => ({
+          success: result.success,
+          notificationId: notifications[index].id,
+          externalId: result.messageId,
+          error: result.error,
+          deliveredAt: result.success ? new Date() : undefined,
+          provider: 'smtp',
+          metadata: {
+            adapter: 'EmailNotificationAdapter',
+            provider: 'SMTP',
+            channel: 'email'
+          }
+        }));
+
+        return {
+          success: bulkResult.failureCount === 0,
+          total: notifications.length,
+          sent: bulkResult.successCount,
+          failed: bulkResult.failureCount,
+          results
+        };
+      } catch (error) {
+        this.logger.error(`Failed to send bulk emails: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    // Fallback to individual sends
     const results: EmailNotificationResult[] = [];
     let sent = 0;
     let failed = 0;
 
     for (const notification of notifications) {
-      try {
-        const result = await this.send(notification);
-        results.push(result);
-        if (result.success) sent++;
-        else failed++;
-      } catch (error) {
-        results.push({
-          success: false,
-          notificationId: notification.id,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-        failed++;
-      }
+      const result = await this.send(notification);
+      results.push(result);
+      if (result.success) sent++;
+      else failed++;
     }
 
     return {
@@ -231,23 +478,83 @@ export class EmailNotificationAdapter extends BaseNotificationAdapter implements
 // ===== SMS Notification Adapter =====
 @Injectable()
 export class SmsNotificationAdapter extends BaseNotificationAdapter implements ISmsNotificationPort {
+  private readonly smsEnabled: boolean;
+
+  constructor(@Optional() private readonly smsAdapter?: SMSAdapter) {
+    super();
+    this.smsEnabled = !!smsAdapter;
+    if (!this.smsEnabled) {
+      this.logger.warn('SMSAdapter is not available. SMS notifications will use mock implementation.');
+    }
+  }
+
+  /**
+   * Convert SmsNotificationData to SMSNotification format
+   */
+  private toSMSNotification(data: SmsNotificationData): SMSNotification {
+    return {
+      to: data.recipientPhone,
+      message: data.message,
+      from: data.senderId,
+    };
+  }
+
   async send(notification: SmsNotificationData): Promise<SmsNotificationResult> {
     this.logger.log(`Sending SMS notification: ${notification.id} to: ${notification.recipientPhone}`);
     
-    // Implementation for SMS notifications
-    // This would integrate with Twilio, AWS SNS, or other SMS services
-    
+    if (this.smsEnabled && notification.recipientPhone) {
+      try {
+        const smsNotification = this.toSMSNotification(notification);
+        const result = await this.smsAdapter!.sendSMS(smsNotification);
+
+        if (result.success) {
+          return {
+            success: true,
+            notificationId: notification.id,
+            externalId: result.messageId || `sms_${Date.now()}`,
+            deliveredAt: new Date(),
+            provider: 'twilio',
+            cost: result.cost,
+            metadata: { 
+              adapter: 'SmsNotificationAdapter',
+              provider: 'Twilio',
+              channel: 'sms',
+              recipientPhone: notification.recipientPhone
+            }
+          };
+        } else {
+          throw new Error(result.error || 'SMS send failed');
+        }
+      } catch (error) {
+        this.logger.error(`Failed to send SMS notification: ${error instanceof Error ? error.message : String(error)}`);
+        return {
+          success: false,
+          notificationId: notification.id,
+          error: error instanceof Error ? error.message : 'Unknown SMS error',
+          metadata: { 
+            adapter: 'SmsNotificationAdapter',
+            provider: 'Twilio',
+            channel: 'sms',
+            recipientPhone: notification.recipientPhone
+          }
+        };
+      }
+    }
+
+    // Fallback to mock implementation
+    this.logger.warn(`SMS adapter not available or no recipient phone. Using mock implementation for notification ${notification.id}`);
     return {
       success: true,
       notificationId: notification.id,
-      externalId: `sms_${Date.now()}`,
+      externalId: `sms_mock_${Date.now()}`,
       deliveredAt: new Date(),
-      provider: 'twilio', // or 'sns', 'nexmo', etc.
-      cost: 0.01, // Cost per SMS
+      provider: 'mock',
+      cost: 0,
       metadata: { 
         adapter: 'SmsNotificationAdapter',
+        provider: 'mock',
         channel: 'sms',
-        recipientPhone: notification.recipientPhone
+        recipientPhone: notification.recipientPhone || 'none'
       }
     };
   }
@@ -255,27 +562,54 @@ export class SmsNotificationAdapter extends BaseNotificationAdapter implements I
   async sendBulk(notifications: SmsNotificationData[]): Promise<BulkSmsNotificationResult> {
     this.logger.log(`Sending ${notifications.length} SMS notifications in bulk`);
     
+    if (this.smsEnabled) {
+      try {
+        const smsNotifications = notifications.map(n => this.toSMSNotification(n));
+        const bulkResult = await this.smsAdapter!.sendBulkSMS(smsNotifications);
+
+        const results: SmsNotificationResult[] = bulkResult.results.map((result, index) => ({
+          success: result.success,
+          notificationId: notifications[index].id,
+          externalId: result.messageId,
+          error: result.error,
+          deliveredAt: result.success ? new Date() : undefined,
+          provider: 'twilio',
+          cost: result.cost,
+          metadata: {
+            adapter: 'SmsNotificationAdapter',
+            provider: 'Twilio',
+            channel: 'sms'
+          }
+        }));
+
+        const totalCost = results.reduce((sum, r) => sum + (r.cost || 0), 0);
+
+        return {
+          success: bulkResult.failureCount === 0,
+          total: notifications.length,
+          sent: bulkResult.successCount,
+          failed: bulkResult.failureCount,
+          results,
+          totalCost
+        };
+      } catch (error) {
+        this.logger.error(`Failed to send bulk SMS: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    // Fallback to individual sends
     const results: SmsNotificationResult[] = [];
     let sent = 0;
     let failed = 0;
     let totalCost = 0;
 
     for (const notification of notifications) {
-      try {
-        const result = await this.send(notification);
-        results.push(result);
-        if (result.success) {
-          sent++;
-          totalCost += result.cost || 0;
-        } else {
-          failed++;
-        }
-      } catch (error) {
-        results.push({
-          success: false,
-          notificationId: notification.id,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
+      const result = await this.send(notification);
+      results.push(result);
+      if (result.success) {
+        sent++;
+        totalCost += result.cost || 0;
+      } else {
         failed++;
       }
     }
@@ -292,11 +626,30 @@ export class SmsNotificationAdapter extends BaseNotificationAdapter implements I
 
   async getDeliveryStatus(messageId: string): Promise<SmsDeliveryStatus> {
     this.logger.log(`Getting delivery status for SMS: ${messageId}`);
+    
+    if (this.smsEnabled) {
+      try {
+        const status = await this.smsAdapter!.getDeliveryStatus(messageId);
+        if (status) {
+          const statusData = status as { status: string; dateSent?: Date; price?: string };
+          return {
+            messageId,
+            status: statusData.status as 'sent' | 'delivered' | 'failed',
+            deliveredAt: statusData.dateSent,
+            cost: statusData.price ? parseFloat(statusData.price) : undefined
+          };
+        }
+      } catch (error) {
+        this.logger.error(`Failed to get SMS delivery status: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    // Fallback
     return {
       messageId,
       status: 'delivered',
       deliveredAt: new Date(),
-      cost: 0.01
+      cost: 0
     };
   }
 }

@@ -104,7 +104,11 @@
     "preview": "معاينة",
     "fileSize": "حجم الملف",
     "fileType": "نوع الملف",
-    "uploadError": "حدث خطأ أثناء الرفع"
+    "uploadError": "حدث خطأ أثناء الرفع",
+    "uploadFile": "رفع الملف",
+    "review": "مراجعة الرفع",
+    "dataReview": "مراجعة البيانات",
+    "saving": "جاري الحفظ..."
   },
 
   "cleanup": {
@@ -129,7 +133,14 @@
     "size": "الحجم",
     "dimensions": "الأبعاد",
     "url": "الرابط",
-    "public": "عام"
+    "public": "عام",
+    "imageDetails": "تفاصيل الصورة",
+    "preview": "معاينة",
+    "download": "تحميل",
+    "change": "تغيير",
+    "delete": "حذف",
+    "remove": "حذف الصورة",
+    "changeImage": "تغيير الصورة"
   },
 
   "tabs": {
@@ -142,7 +153,60 @@
     "noFiles": "لا توجد ملفات",
     "noFilesDescription": "لم يتم العثور على ملفات تطابق المعايير المحددة",
     "startUploading": "ابدأ برفع ملفاتك الأولى",
-    "uploadFirst": "رفع أول ملف"
+    "uploadFirst": "رفع أول ملف",
+    "noMedia": "لا توجد وسائط",
+    "selectImage": "اختيار صورة",
+    "selectFromLibrary": "اختيار من المكتبة",
+    "uploadNew": "رفع صورة جديدة",
+    "uploadMediaNew": "رفع وسائط جديدة",
+    "imageRequired": "الصورة مطلوبة",
+    "noImageSelected": "لا توجد صورة مختارة",
+    "uploadingProgress": "جاري...",
+    "uploadingFile": "جاري الرفع...",
+    "uploadingNew": "جاري الرفع...",
+    "fileNameLabel": "اسم الملف:",
+    "categoryLabel": "الفئة:",
+    "statusLabel": "الحالة:",
+    "sizeLabel": "الحجم:",
+    "dimensionsLabel": "الأبعاد:",
+    "descriptionLabel": "الوصف:",
+    "tagsLabel": "الوسوم:",
+    "urlLabel": "الرابط",
+    "notSpecified": "غير محدد",
+    "allMedia": "جميع الوسائط",
+    "allImages": "الصور",
+    "allVideos": "الفيديوهات",
+    "allDocuments": "المستندات",
+    "deleted": "المحذوفة"
+  },
+
+  "picker": {
+    "title": "اختيار وسائط",
+    "upload": "رفع",
+    "uploadNew": "رفع جديد",
+    "confirm": "تأكيد الاختيار",
+    "confirmMultiple": "تأكيد الاختيار ({{count}})",
+    "cancel": "إلغاء",
+    "select": "اختيار",
+    "selectMultiple": "اختيار ({{count}})",
+    "selected": "مختار",
+    "clear": "مسح",
+    "refresh": "تحديث",
+    "gridView": "عرض شبكي",
+    "listView": "عرض قائمة",
+    "sortBy": "ترتيب حسب",
+    "sortDate": "تاريخ الرفع",
+    "sortName": "الاسم",
+    "sortSize": "الحجم",
+    "allMedia": "جميع الوسائط",
+    "images": "الصور",
+    "videos": "الفيديوهات",
+    "documents": "المستندات",
+    "deleted": "المحذوفة",
+    "showDeleted": "المحذوفة",
+    "noMedia": "لا توجد وسائط",
+    "noMediaDescription": "لم يتم العثور على وسائط تطابق المعايير المحددة",
+    "noMediaDefault": "ابدأ برفع وسائطك الأولى"
   },
 
   "actions": {

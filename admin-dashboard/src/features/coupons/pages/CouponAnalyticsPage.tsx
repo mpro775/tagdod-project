@@ -39,6 +39,7 @@ import {
   VisibilityOff,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   useCouponAnalytics,
   useCouponStatistics,
@@ -63,13 +64,13 @@ const StatCard: React.FC<StatCardProps> = ({
   color = 'primary',
 }) => (
   <Card>
-    <CardContent>
+    <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
       <Box display="flex" alignItems="center" justifyContent="space-between">
         <Box>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
             {title}
           </Typography>
-          <Typography variant="h4" component="div" fontWeight="bold">
+          <Typography variant="h4" component="div" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '2rem' } }}>
             {value}
           </Typography>
           {change !== undefined && (
@@ -82,7 +83,7 @@ const StatCard: React.FC<StatCardProps> = ({
               <Typography
                 variant="body2"
                 color={change >= 0 ? 'success.main' : 'error.main'}
-                sx={{ ml: 0.5 }}
+                sx={{ ml: 0.5, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
               >
                 {Math.abs(change)}%
               </Typography>
@@ -91,13 +92,13 @@ const StatCard: React.FC<StatCardProps> = ({
         </Box>
         <Box
           sx={{
-            p: 2,
+            p: { xs: 1, sm: 2 },
             borderRadius: '50%',
             backgroundColor: `${color}.light`,
             color: `${color}.main`,
           }}
         >
-          <Icon />
+          <Icon sx={{ fontSize: { xs: 24, sm: 32 } }} />
         </Box>
       </Box>
     </CardContent>
@@ -106,6 +107,7 @@ const StatCard: React.FC<StatCardProps> = ({
 
 export const CouponAnalyticsPage: React.FC = () => {
   const { t } = useTranslation('coupons');
+  const { isMobile } = useBreakpoint();
   const [analyticsPeriod, setAnalyticsPeriod] = useState(30);
   const [showDetailedView, setShowDetailedView] = useState(false);
 
@@ -123,16 +125,16 @@ export const CouponAnalyticsPage: React.FC = () => {
   const exportMutation = useExportCouponsData();
 
   const periodOptions = [
-    { value: 7, label: t('analytics.last7Days', { defaultValue: 'آخر 7 أيام' }) },
-    { value: 30, label: t('analytics.last30Days', { defaultValue: 'آخر 30 يوم' }) },
-    { value: 90, label: t('analytics.last3Months', { defaultValue: 'آخر 3 أشهر' }) },
-    { value: 365, label: t('analytics.lastYear', { defaultValue: 'آخر 365 يوم' }) },
+    { value: 7, label: t('analytics.last7Days') },
+    { value: 30, label: t('analytics.last30Days') },
+    { value: 90, label: t('analytics.last3Months') },
+    { value: 365, label: t('analytics.lastYear') },
   ];
 
   const handleRefresh = () => {
     refetchAnalytics();
     refetchStats();
-    toast.success(t('messages.dataRefreshed', { defaultValue: 'تم تحديث البيانات بنجاح' }));
+    toast.success(t('messages.dataRefreshed'));
   };
 
   const handleExportData = async () => {
@@ -148,12 +150,12 @@ export const CouponAnalyticsPage: React.FC = () => {
 
   if (analyticsLoading || statsLoading) {
     return (
-      <Box p={3}>
+      <Box p={{ xs: 2, sm: 3 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
           <Box textAlign="center">
             <CircularProgress size={60} />
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              {t('analytics.loading', { defaultValue: 'جاري التحميل...' })}
+            <Typography variant="h6" sx={{ mt: 2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+              {t('analytics.loading')}
             </Typography>
           </Box>
         </Box>
@@ -162,18 +164,25 @@ export const CouponAnalyticsPage: React.FC = () => {
   }
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          {t('analytics.title', { defaultValue: 'تحليلات الكوبونات' })}
+    <Box p={{ xs: 2, sm: 3 }}>
+      <Box 
+        display="flex" 
+        justifyContent="space-between" 
+        alignItems="center" 
+        mb={3}
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        gap={{ xs: 2, sm: 0 }}
+      >
+        <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+          {t('analytics.title')}
         </Typography>
 
-        <Box display="flex" gap={2} alignItems="center">
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>{t('analytics.timePeriod', { defaultValue: 'فترة الوقت' })}</InputLabel>
+        <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+          <FormControl size="small" sx={{ minWidth: { xs: 120, sm: 150 } }}>
+            <InputLabel>{t('analytics.timePeriod')}</InputLabel>
             <Select
               value={analyticsPeriod}
-              label={t('analytics.timePeriod', { defaultValue: 'فترة الوقت' } )}
+              label={t('analytics.timePeriod')}
               onChange={(e) => setAnalyticsPeriod(Number(e.target.value))}
             >
               {periodOptions.map((option) => (
@@ -184,13 +193,13 @@ export const CouponAnalyticsPage: React.FC = () => {
             </Select>
           </FormControl>
 
-          <Tooltip title={t('analytics.refreshData', { defaultValue: 'تحديث البيانات' })}>
+          <Tooltip title={t('analytics.refreshData')}>
             <IconButton onClick={handleRefresh} color="primary">
               <Refresh />
             </IconButton>
           </Tooltip>
 
-          <Tooltip title={t('analytics.exportData', { defaultValue: 'تصدير البيانات' })}>
+          <Tooltip title={t('analytics.exportData')}>
             <IconButton
               onClick={handleExportData}
               color="secondary"
@@ -203,8 +212,8 @@ export const CouponAnalyticsPage: React.FC = () => {
           <Tooltip
             title={
               showDetailedView
-                ? t('analytics.simpleView', { defaultValue: 'عرض مبسط' })
-                : t('analytics.detailedView', { defaultValue: 'عرض مفصل' })
+                ? t('analytics.simpleView')
+                : t('analytics.detailedView')
             }
           >
             <IconButton onClick={() => setShowDetailedView(!showDetailedView)} color="info">
@@ -215,10 +224,10 @@ export const CouponAnalyticsPage: React.FC = () => {
       </Box>
 
       {/* Statistics Cards */}
-      <Grid container spacing={3} mb={4}>
+      <Grid container spacing={{ xs: 2, sm: 3 }} mb={4}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title={t('analytics.totalCoupons', { defaultValue: 'إجمالي الكوبونات' })}
+            title={t('analytics.totalCoupons')}
             value={analytics?.totalCoupons || 0}
             icon={ConfirmationNumber}
             color="primary"
@@ -227,7 +236,7 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title={t('analytics.activeCoupons', { defaultValue: 'الكوبونات النشطة' })}
+            title={t('analytics.activeCoupons')}
             value={analytics?.activeCoupons || 0}
             icon={TrendingUp}
             color="success"
@@ -236,7 +245,7 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title={t('analytics.totalRedemptions', { defaultValue: 'إجمالي الاستخدامات' })}
+            title={t('analytics.totalRedemptions')}
             value={statistics?.totalRedemptions || 0}
             icon={People}
             color="info"
@@ -245,7 +254,7 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title={t('analytics.totalSavings', { defaultValue: 'إجمالي التوفير' })}
+            title={t('analytics.totalSavings')}
             value={formatCurrency(statistics?.totalSavings || 0)}
             icon={AttachMoney}
             color="warning"
@@ -254,15 +263,15 @@ export const CouponAnalyticsPage: React.FC = () => {
       </Grid>
 
       {/* Detailed Analytics */}
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
-            <CardHeader>
-              <Typography variant="h6">
-                {t('analytics.couponTypePerformance', { defaultValue: 'أداء الكوبونات حسب النوع' })}
+            <CardHeader sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1, sm: 1.5 } }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                {t('analytics.couponTypePerformance')}
               </Typography>
             </CardHeader>
-            <CardContent>
+            <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1.5 } }}>
               {statistics?.couponTypePerformance?.length > 0 ? (
                 <Stack spacing={2}>
                   {statistics.couponTypePerformance.map((item: any) => (
@@ -271,22 +280,23 @@ export const CouponAnalyticsPage: React.FC = () => {
                       display="flex"
                       justifyContent="space-between"
                       alignItems="center"
+                      flexWrap={{ xs: 'wrap', sm: 'nowrap' }}
+                      gap={1}
                     >
                       <Box>
-                        <Typography variant="body1" fontWeight="medium">
+                        <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                           {item.type}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {item.usageCount} {t('analytics.usageCount', { defaultValue: 'استخدام' })}
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {item.usageCount} {t('analytics.usageCount')}
                         </Typography>
                       </Box>
                       <Box textAlign="right">
-                        <Typography variant="body1" fontWeight="medium">
+                        <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                           {formatCurrency(item.totalDiscount)}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {item.conversionRate}%{' '}
-                          {t('analytics.conversionRate', { defaultValue: 'معدل التحويل' })}
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {item.conversionRate}% {t('analytics.conversionRate')}
                         </Typography>
                       </Box>
                     </Box>
@@ -294,7 +304,7 @@ export const CouponAnalyticsPage: React.FC = () => {
                 </Stack>
               ) : (
                 <Alert severity="info">
-                  {t('analytics.noDataAvailable', { defaultValue: 'لا توجد بيانات متاحة' })}{' '}
+                  {t('analytics.noData')}
                 </Alert>
               )}
             </CardContent>
@@ -303,12 +313,12 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Card>
-            <CardHeader>
-              <Typography variant="h6">
-                {t('analytics.topCoupons', { defaultValue: 'الكوبونات الأكثر استخداماً' })}
+            <CardHeader sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1, sm: 1.5 } }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                {t('analytics.topCoupons')}
               </Typography>
             </CardHeader>
-            <CardContent>
+            <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1.5 } }}>
               {statistics?.topCoupons?.length > 0 ? (
                 <Stack spacing={2}>
                   {statistics.topCoupons.slice(0, 5).map((coupon: any, index: number) => (
@@ -317,24 +327,25 @@ export const CouponAnalyticsPage: React.FC = () => {
                       display="flex"
                       justifyContent="space-between"
                       alignItems="center"
+                      flexWrap={{ xs: 'wrap', sm: 'nowrap' }}
+                      gap={1}
                     >
                       <Box display="flex" alignItems="center" gap={2}>
-                        <Chip label={index + 1} size="small" color="primary" variant="outlined" />
+                        <Chip label={index + 1} size="small" color="primary" variant="outlined" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }} />
                         <Box>
-                          <Typography variant="body1" fontWeight="medium">
+                          <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                             {coupon.name}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                             {coupon.code}
                           </Typography>
                         </Box>
                       </Box>
                       <Box textAlign="right">
-                        <Typography variant="body1" fontWeight="medium">
-                          {coupon.usageCount}{' '}
-                          {t('analytics.usageCount', { defaultValue: 'استخدام' })}
+                        <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                          {coupon.usageCount} {t('analytics.usageCount')}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                           {formatCurrency(coupon.totalDiscount)}
                         </Typography>
                       </Box>
@@ -343,7 +354,7 @@ export const CouponAnalyticsPage: React.FC = () => {
                 </Stack>
               ) : (
                 <Alert severity="info">
-                  {t('analytics.noDataAvailable', { defaultValue: 'لا توجد بيانات متاحة' })}
+                  {t('analytics.noData')}
                 </Alert>
               )}
             </CardContent>
@@ -353,14 +364,14 @@ export const CouponAnalyticsPage: React.FC = () => {
         {showDetailedView && (
           <Grid size={{ xs: 12 }}>
             <Card>
-              <CardHeader>
-                <Typography variant="h6">
-                  {t('analytics.detailedPerformance', { defaultValue: 'تحليل مفصل للأداء' })}
+              <CardHeader sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1, sm: 1.5 } }}>
+                <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  {t('analytics.detailedPerformance')}
                 </Typography>
               </CardHeader>
-              <CardContent>
-                <TableContainer component={Paper}>
-                  <Table>
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1.5 } }}>
+                <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+                  <Table size={isMobile ? 'small' : 'medium'}>
                     <TableHead
                       sx={{
                         backgroundColor: (theme) =>
@@ -370,26 +381,26 @@ export const CouponAnalyticsPage: React.FC = () => {
                       }}
                     >
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                          {t('analytics.index', { defaultValue: 'المؤشر' })}
+                        <TableCell sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.index')}
                         </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                          {t('analytics.value', { defaultValue: 'القيمة' })}
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.value')}
                         </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                          {t('analytics.change', { defaultValue: 'التغيير' })}
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.change')}
                         </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                          {t('analytics.percentage', { defaultValue: 'النسبة' })}
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.percentage')}
                         </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       <TableRow>
-                        <TableCell>
-                          {t('analytics.conversionRate', { defaultValue: 'معدل التحويل' })}
+                        <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.conversionRate')}
                         </TableCell>
-                        <TableCell align="right">{statistics?.conversionRate || 0}%</TableCell>
+                        <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{statistics?.conversionRate || 0}%</TableCell>
                         <TableCell align="right">
                           {statistics?.conversionRateChange !== undefined ? (
                             <Box display="flex" alignItems="center" justifyContent="flex-end">
@@ -401,27 +412,28 @@ export const CouponAnalyticsPage: React.FC = () => {
                               <Typography
                                 variant="body2"
                                 color={statistics.conversionRateChange >= 0 ? 'success.main' : 'error.main'}
+                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                               >
                                 {`${Math.abs(statistics.conversionRateChange)}%`}
                               </Typography>
                             </Box>
                           ) : (
-                            <Typography variant="body2" color="text.secondary">—</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
                           )}
                         </TableCell>
                         <TableCell align="right">
                           <LinearProgress
                             variant="determinate"
                             value={statistics?.conversionRate || 0}
-                            sx={{ width: 100 }}
+                            sx={{ width: { xs: 60, sm: 100 } }}
                           />
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell>
-                          {t('analytics.averageOrderValue', { defaultValue: 'متوسط قيمة الطلب' })}
+                        <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.averageOrderValue')}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                           {formatCurrency(statistics?.averageOrderValue || 0)}
                         </TableCell>
                         <TableCell align="right">
@@ -435,23 +447,24 @@ export const CouponAnalyticsPage: React.FC = () => {
                               <Typography
                                 variant="body2"
                                 color={statistics.averageOrderValueChange >= 0 ? 'success.main' : 'error.main'}
+                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                               >
                                 {`${Math.abs(statistics.averageOrderValueChange)}%`}
                               </Typography>
                             </Box>
                           ) : (
-                            <Typography variant="body2" color="text.secondary">—</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
                           )}
                         </TableCell>
                         <TableCell align="right">
-                          <Typography variant="body2" color="text.secondary">—</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell>
-                          {t('analytics.totalRevenue', { defaultValue: 'إجمالي الإيرادات' })}
+                        <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.totalRevenue')}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                           {formatCurrency(statistics?.totalRevenue || 0)}
                         </TableCell>
                         <TableCell align="right">
@@ -465,16 +478,17 @@ export const CouponAnalyticsPage: React.FC = () => {
                               <Typography
                                 variant="body2"
                                 color={statistics.totalRevenueChange >= 0 ? 'success.main' : 'error.main'}
+                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                               >
                                 {`${Math.abs(statistics.totalRevenueChange)}%`}
                               </Typography>
                             </Box>
                           ) : (
-                            <Typography variant="body2" color="text.secondary">—</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
                           )}
                         </TableCell>
                         <TableCell align="right">
-                          <Typography variant="body2" color="text.secondary">—</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -487,12 +501,12 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12 }}>
           <Card>
-            <CardHeader>
-              <Typography variant="h6">
-                {t('analytics.usageTrends', { defaultValue: 'اتجاهات الاستخدام' })}
+            <CardHeader sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1, sm: 1.5 } }}>
+              <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                {t('analytics.usageTrends')}
               </Typography>
             </CardHeader>
-            <CardContent>
+            <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1.5 } }}>
               <Box
                 display="flex"
                 alignItems="center"
@@ -501,16 +515,12 @@ export const CouponAnalyticsPage: React.FC = () => {
                 textAlign="center"
               >
                 <Box>
-                  <BarChart sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary">
-                    {t('analytics.usageTrendsChart', {
-                      defaultValue: 'مخطط اتجاهات الاستخدام قيد التطوير',
-                    })}
+                  <BarChart sx={{ fontSize: { xs: 36, sm: 48 }, color: 'text.secondary', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1.25rem' } }}>
+                    {t('analytics.usageTrendsChart')}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    {t('analytics.usageTrendsChartDescription', {
-                      defaultValue: 'سيتم عرض الرسوم البيانية لاتجاهات استخدام الكوبونات هنا',
-                    })}
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                    {t('analytics.usageTrendsChartDescription')}
                   </Typography>
                 </Box>
               </Box>

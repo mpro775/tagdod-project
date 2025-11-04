@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '@/store/themeStore';
 
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -33,6 +34,10 @@ const StyledCard = styled(Card)(({ theme }) => ({
     ? '0 4px 20px rgba(0, 0, 0, 0.5)'
     : '0 4px 20px rgba(0, 0, 0, 0.1)',
   borderRadius: 12,
+  [theme.breakpoints.down('sm')]: {
+    maxWidth: '100%',
+    borderRadius: 8,
+  },
 }));
 
 const HeaderSection = styled(Box)(({ theme }) => ({
@@ -73,6 +78,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
   children,
   showLogo = true,
 }) => {
+  const { t } = useTranslation('auth');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { mode, toggleMode } = useThemeStore();
@@ -80,9 +86,15 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
   return (
     <StyledContainer maxWidth={false}>
       {/* زر تبديل الوضع */}
-      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-        <Tooltip title={mode === 'dark' ? 'الوضع النهاري' : 'الوضع الليلي'}>
-          <IconButton onClick={toggleMode} color="primary">
+      <Box
+        sx={{
+          position: 'absolute',
+          top: { xs: 8, sm: 16 },
+          [theme.direction === 'rtl' ? 'right' : 'left']: { xs: 8, sm: 16 },
+        }}
+      >
+        <Tooltip title={mode === 'dark' ? t('theme.light') : t('theme.dark')}>
+          <IconButton onClick={toggleMode} color="primary" size={isMobile ? 'small' : 'medium'}>
             {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
           </IconButton>
         </Tooltip>

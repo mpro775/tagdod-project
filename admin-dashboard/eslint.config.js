@@ -32,7 +32,11 @@ export default [
     },
     rules: {
       // Basic rules
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'off', // Turn off base rule as it conflicts with @typescript-eslint/no-unused-vars
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+      }],
       'no-console': 'warn',
       
       // React rules

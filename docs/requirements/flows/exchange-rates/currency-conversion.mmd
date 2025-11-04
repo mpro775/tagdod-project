@@ -2,18 +2,49 @@
 %% View at https://mermaid.live
 flowchart TD
   A[تحويل العملات] --> B{نوع التحويل?}
-  B -->|تحويل بسيط| C[تحويل بسيط]
+  B -->|تحويل شامل| C[تحويل العملات]
+  B -->|حساب الإجماليات| E[حساب الإجماليات بالعملات الثلاث]
   B -->|عرض الأسعار| D[عرض الأسعار الحالية]
 
-  %% Simple Conversion
+  %% Currency Conversion
   C --> C1[استلام البيانات]
-  C1 --> C2{العملة المستهدفة?}
-  C2 -->|YER| C3[ضرب في سعر YER]
-  C2 -->|SAR| C4[ضرب في سعر SAR]
-  C3 --> C5[تقريب حسب العملة]
-  C4 --> C5
-  C5 --> C6[تنسيق النتيجة]
-  C6 --> C7[إرجاع النتيجة]
+  C1 --> C2{اتجاه التحويل?}
+  
+  %% Direct Conversion (USD → YER/SAR)
+  C2 -->|USD → YER| C3[ضرب في سعر YER]
+  C2 -->|USD → SAR| C4[ضرب في سعر SAR]
+  
+  %% Reverse Conversion (YER/SAR → USD)
+  C2 -->|YER → USD| C5[ضرب في 1/سعر YER]
+  C2 -->|SAR → USD| C6[ضرب في 1/سعر SAR]
+  
+  %% Cross Conversion (YER ↔ SAR)
+  C2 -->|YER → SAR| C7[تحويل YER → USD ثم USD → SAR]
+  C2 -->|SAR → YER| C8[تحويل SAR → USD ثم USD → YER]
+  
+  %% Same Currency
+  C2 -->|نفس العملة| C9[rate = 1]
+  
+  C3 --> C10[تقريب حسب العملة]
+  C4 --> C10
+  C5 --> C10
+  C6 --> C10
+  C7 --> C10
+  C8 --> C10
+  C9 --> C10
+  
+  C10 --> C11[تنسيق النتيجة]
+  C11 --> C12[إرجاع النتيجة]
+
+  %% Calculate Totals in All Currencies
+  E --> E1[تحويل جميع المبالغ إلى USD]
+  E1 --> E2[حساب الإجماليات بالعملات الثلاث]
+  E2 --> E3[USD: القيم الأصلية]
+  E2 --> E4[YER: تحويل من USD]
+  E2 --> E5[SAR: تحويل من USD]
+  E3 --> E6[إرجاع totalsInAllCurrencies]
+  E4 --> E6
+  E5 --> E6
 
   %% Display Rates
   D --> D1[استلام طلب الأسعار]
@@ -21,5 +52,6 @@ flowchart TD
   D2 --> D3[إرجاع الأسعار]
 
   %% Rounding Rules
-  C5 --> C5A[الريال اليمني: Math.round]
-  C5 --> C5B[الريال السعودي: toFixed(2)]
+  C10 --> C10A[USD: toFixed(2)]
+  C10 --> C10B[YER: Math.round]
+  C10 --> C10C[SAR: toFixed(2)]

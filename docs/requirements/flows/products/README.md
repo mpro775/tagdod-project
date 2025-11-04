@@ -30,6 +30,11 @@
 - **الأسعار المقارنة:** سعر قبل التخفيض اختيارياً
 - **سعر التكلفة:** تتبع سعر التكلفة للحسابات
 - **التحويل:** تحويل الأسعار حسب أسعار الصرف
+- **خصم التاجر (Wholesale Discount):** نظام خصم موحد للتجار
+  - يتم تحديد نسبة خصم لكل تاجر عند إنشاء حسابه أو الموافقة عليه
+  - الخصم يطبق تلقائياً على جميع المنتجات عند تسجيل دخول التاجر
+  - الأسعار تعرض مع السعر الأصلي ونسبة الخصم والسعر النهائي
+  - يعمل مع جميع العملات مع تحويل العملات تلقائياً
 
 ### 4. إدارة الوسائط (Media Management)
 - **الصور:** ربط المنتجات بالصور من مكتبة الوسائط
@@ -48,6 +53,15 @@
 - **تفاصيل المنتج:** عرض معلومات شاملة للمنتج
 - **المنتجات المميزة:** عرض المنتجات المميزة والجديدة
 - **التنويعات:** عرض variants المتاحة للمنتج
+- **عرض الأسعار مع خصم التاجر:**
+  - عند تسجيل دخول تاجر، جميع الأسعار تعرض مع:
+    - السعر الأصلي (basePrice)
+    - نسبة الخصم (discountPercent)
+    - مبلغ الخصم (discountAmount)
+    - السعر النهائي (finalPrice)
+    - الأسعار المنسقة (formattedPrice, formattedFinalPrice)
+  - إذا لم يكن المستخدم تاجراً، تعرض الأسعار العادية فقط
+  - يعمل مع جميع العملات (USD, YER, SAR, إلخ)
 
 ### 7. إدارة حالة المنتج (Product Status Management)
 - **الحالات:** مسودة، نشط، مؤرشف
@@ -159,15 +173,20 @@
 
 ### عرض المنتجات العام (Public Products Controller)
 - **GET /products** - قائمة المنتجات العامة مع فلترة وبحث
-- **GET /products/:id** - تفاصيل منتج عام
-- **GET /products/slug/:slug** - المنتج حسب الـ slug
+- **GET /products/:id** - تفاصيل منتج عام (يدعم خصم التاجر عند تسجيل الدخول)
+- **GET /products/slug/:slug** - المنتج حسب الـ slug (يدعم خصم التاجر عند تسجيل الدخول)
 - **GET /products/featured/list** - قائمة المنتجات المميزة
 - **GET /products/new/list** - قائمة المنتجات الجديدة
-- **GET /products/:id/variants** - تنويعات المنتج
-- **GET /products/variants/:id/price** - سعر التنويعة
+- **GET /products/:id/variants** - تنويعات المنتج (يدعم خصم التاجر عند تسجيل الدخول)
+- **GET /products/variants/:id/price** - سعر التنويعة (يدعم خصم التاجر عند تسجيل الدخول)
 - **GET /products/variants/:id/availability** - توفر التنويعة
 - **GET /products/:id/price-range** - نطاق أسعار المنتج
 - **GET /products/stats/count** - عدد المنتجات
+
+**ملاحظة:** جميع endpoints التي تعرض الأسعار تدعم خصم التاجر تلقائياً عند:
+- تسجيل دخول المستخدم (JWT Bearer Token)
+- كون المستخدم تاجر موافق عليه (wholesale_status = 'approved')
+- وجود نسبة خصم محدد للمستخدم (wholesale_discount_percent > 0)
 
 ## نقاط مهمة
 - **دعم ثنائي اللغة:** المحتوى بالعربية والإنجليزية
@@ -179,3 +198,60 @@
 - **فهرسة محسنة:** indexes للبحث والفلترة السريعة
 - **SEO جاهز:** حقول meta لمحركات البحث
 - **إدارة الصور:** ربط بالنظام الوسائط
+- **نظام خصم التاجر:** خصم موحد يطبق تلقائياً على جميع المنتجات عند تسجيل دخول التاجر
+
+## هيكل بيانات السعر مع خصم التاجر
+
+عندما يكون المستخدم تاجراً، ترجع جميع endpoints الخاصة بالأسعار الهيكل التالي:
+
+```typescript
+{
+  variant: {
+    // بيانات التنويعة
+    ...
+    pricing: {
+      basePrice: number,           // السعر الأصلي
+      compareAtPrice?: number,     // سعر المقارنة (إن وجد)
+      discountPercent: number,     // نسبة الخصم (0 للعملاء العاديين)
+      discountAmount: number,      // مبلغ الخصم بالعملة
+      finalPrice: number,          // السعر النهائي بعد الخصم
+      currency: string,            // العملة (USD, YER, SAR, إلخ)
+      exchangeRate?: number,       // سعر الصرف المستخدم (إذا تم التحويل)
+      formattedPrice: string,      // السعر الأصلي منسق (مثل "100 YER")
+      formattedFinalPrice: string, // السعر النهائي منسق (مثل "90 YER")
+    }
+  },
+  userDiscount: {
+    isWholesale: boolean,          // هل المستخدم تاجر؟
+    discountPercent: number        // نسبة الخصم المطبقة
+  }
+}
+```
+
+### مثال على الاستجابة:
+```json
+{
+  "product": {...},
+  "variants": [
+    {
+      "_id": "...",
+      "sku": "PROD-001",
+      "pricing": {
+        "basePrice": 100,
+        "compareAtPrice": 120,
+        "discountPercent": 10,
+        "discountAmount": 10,
+        "finalPrice": 90,
+        "currency": "YER",
+        "exchangeRate": 250,
+        "formattedPrice": "100.00 YER",
+        "formattedFinalPrice": "90.00 YER"
+      }
+    }
+  ],
+  "userDiscount": {
+    "isWholesale": true,
+    "discountPercent": 10
+  }
+}
+```

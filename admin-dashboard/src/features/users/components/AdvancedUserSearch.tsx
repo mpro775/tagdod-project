@@ -17,6 +17,8 @@ import {
   AccordionDetails,
   FormControlLabel,
   Switch,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -52,21 +54,20 @@ interface AdvancedUserSearchProps {
   loading?: boolean;
 }
 
-
 export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
   onSearch,
   onClear,
   loading = false,
 }) => {
+  const { t } = useTranslation(['users', 'common']);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [expanded, setExpanded] = useState(false);
   const [filters, setFilters] = useState<AdvancedSearchFilters>({
     search: '',
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
-
-  
-  const { t } = useTranslation(['users', 'common']);
-  const [expanded, setExpanded] = useState(false);
 
   const ROLE_OPTIONS = [
     { value: UserRole.USER, label: t('users:roles.user', 'مستخدم') },
@@ -131,39 +132,86 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
   const activeFiltersCount = getActiveFiltersCount();
 
   return (
-    <Card sx={{ mb: 3 }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <FilterIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6" fontWeight="bold">
-            {t('users:search.advanced.title', 'البحث المتقدم')}
-          </Typography>
+    <Card
+      sx={{
+        mb: { xs: 2, sm: 3 },
+        bgcolor: 'background.paper',
+        backgroundImage: 'none',
+        boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
+      }}
+    >
+      <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            mb: 2,
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <FilterIcon
+              sx={{
+                mr: 1,
+                color: 'primary.main',
+                fontSize: { xs: 20, sm: 24 },
+              }}
+            />
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{
+                fontSize: { xs: '1rem', sm: '1.125rem' },
+                color: 'text.primary',
+              }}
+            >
+              {t('users:search.advanced.title', 'البحث المتقدم')}
+            </Typography>
+          </Box>
           {activeFiltersCount > 0 && (
             <Chip
-              label={t('users:search.advanced.activeFilters', '{{count}} فلتر نشط', { count: activeFiltersCount })}
+              label={t('users:search.advanced.activeFilters', '{{count}} فلتر نشط', {
+                count: activeFiltersCount,
+              })}
               size="small"
               color="primary"
-              sx={{ ml: 2 }}
+              sx={{
+                fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                height: { xs: 24, sm: 28 },
+              }}
             />
           )}
         </Box>
 
         {/* البحث الأساسي */}
-        <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid container spacing={{ xs: 2, sm: 2 }} sx={{ mb: 2 }}>
           <Grid component="div" size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
+              size={isMobile ? 'small' : 'medium'}
               label={t('users:search.basic.searchLabel', 'البحث في المستخدمين')}
-              placeholder={t('users:search.basic.searchPlaceholder', 'رقم الهاتف، الاسم، المسمى الوظيفي...')}
+              placeholder={t(
+                'users:search.basic.searchPlaceholder',
+                'رقم الهاتف، الاسم، المسمى الوظيفي...'
+              )}
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               InputProps={{
-                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                startAdornment: (
+                  <SearchIcon
+                    sx={{
+                      mr: 1,
+                      color: 'text.secondary',
+                      fontSize: { xs: 18, sm: 20 },
+                    }}
+                  />
+                ),
               }}
             />
           </Grid>
-          <Grid component="div" size={{ xs: 12, md: 3 }}>
-            <FormControl fullWidth>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
               <InputLabel>{t('users:search.basic.sortBy', 'ترتيب حسب')}</InputLabel>
               <Select
                 value={filters.sortBy}
@@ -178,8 +226,8 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
               </Select>
             </FormControl>
           </Grid>
-          <Grid component="div" size={{ xs: 12, md: 3 }}>
-            <FormControl fullWidth>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
               <InputLabel>{t('users:search.basic.sortOrder', 'اتجاه الترتيب')}</InputLabel>
               <Select
                 value={filters.sortOrder}
@@ -194,17 +242,40 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
         </Grid>
 
         {/* البحث المتقدم */}
-        <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1" fontWeight="bold">
+        <Accordion
+          expanded={expanded}
+          onChange={() => setExpanded(!expanded)}
+          sx={{
+            bgcolor: 'background.paper',
+            '&:before': {
+              display: 'none',
+            },
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            sx={{
+              '& .MuiAccordionSummary-content': {
+                my: 1,
+              },
+            }}
+          >
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              sx={{
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                color: 'text.primary',
+              }}
+            >
               {t('users:search.advanced.options', 'خيارات البحث المتقدمة')}
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <Grid container spacing={2}>
+            <Grid container spacing={{ xs: 2, sm: 2 }}>
               {/* الحالة والدور */}
-              <Grid component="div" size={{ xs: 12, md: 4 }}>
-                <FormControl fullWidth>
+              <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }}>
+                <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
                   <InputLabel>{t('users:filter.status', 'الحالة')}</InputLabel>
                   <Select
                     value={filters.status || ''}
@@ -220,8 +291,8 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid component="div" size={{ xs: 12, md: 4 }}>
-                <FormControl fullWidth>
+              <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }}>
+                <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
                   <InputLabel>{t('users:filter.role', 'الدور')}</InputLabel>
                   <Select
                     value={filters.role || ''}
@@ -237,30 +308,44 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid component="div" size={{ xs: 12, md: 4 }}>
-                <FormControl fullWidth>
+              <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }}>
+                <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
                   <InputLabel>{t('users:filter.userType', 'نوع المستخدم')}</InputLabel>
                   <Select
-                    value={filters.isAdmin === undefined ? '' : filters.isAdmin ? 'admin' : 'user'}
+                    value={
+                      filters.isAdmin === undefined ? '' : filters.isAdmin ? 'admin' : 'user'
+                    }
                     onChange={(e) => {
                       const value = e.target.value as '' | 'admin' | 'user';
-                      handleFilterChange('isAdmin', value === '' ? undefined : value === 'admin');
+                      handleFilterChange(
+                        'isAdmin',
+                        value === '' ? undefined : value === 'admin'
+                      );
                     }}
                     label={t('users:filter.userType', 'نوع المستخدم')}
                   >
                     <MenuItem value="">{t('users:filter.allTypes', 'جميع الأنواع')}</MenuItem>
                     <MenuItem value="admin">{t('users:filter.admins', 'مديرين')}</MenuItem>
-                    <MenuItem value="user">{t('users:filter.regularUsers', 'مستخدمين عاديين')}</MenuItem>
+                    <MenuItem value="user">
+                      {t('users:filter.regularUsers', 'مستخدمين عاديين')}
+                    </MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
 
               {/* القدرات */}
               <Grid component="div" size={{ xs: 12 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    mb: 1,
+                    fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+                    color: 'text.primary',
+                  }}
+                >
                   {t('users:filter.capabilities', 'القدرات')}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap' }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -271,9 +356,15 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                             engineer: e.target.checked,
                           })
                         }
+                        size={isMobile ? 'small' : 'medium'}
                       />
                     }
                     label={t('users:capabilities.engineer', 'مهندس')}
+                    sx={{
+                      '& .MuiFormControlLabel-label': {
+                        fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+                      },
+                    }}
                   />
                   <FormControlLabel
                     control={
@@ -285,9 +376,15 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                             wholesale: e.target.checked,
                           })
                         }
+                        size={isMobile ? 'small' : 'medium'}
                       />
                     }
                     label={t('users:capabilities.wholesale', 'تاجر جملة')}
+                    sx={{
+                      '& .MuiFormControlLabel-label': {
+                        fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+                      },
+                    }}
                   />
                   <FormControlLabel
                     control={
@@ -299,9 +396,15 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                             admin: e.target.checked,
                           })
                         }
+                        size={isMobile ? 'small' : 'medium'}
                       />
                     }
                     label={t('users:roles.admin', 'مدير')}
+                    sx={{
+                      '& .MuiFormControlLabel-label': {
+                        fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+                      },
+                    }}
                   />
                 </Box>
               </Grid>
@@ -313,9 +416,15 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                     <Switch
                       checked={filters.includeDeleted || false}
                       onChange={(e) => handleFilterChange('includeDeleted', e.target.checked)}
+                      size={isMobile ? 'small' : 'medium'}
                     />
                   }
                   label={t('users:filter.includeDeleted', 'يشمل المستخدمين المحذوفين')}
+                  sx={{
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+                    },
+                  }}
                 />
               </Grid>
             </Grid>
@@ -323,20 +432,33 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
         </Accordion>
 
         {/* أزرار الإجراءات */}
-        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            mt: 2,
+            flexDirection: { xs: 'column', sm: 'row' },
+          }}
+        >
           <Button
             variant="contained"
             startIcon={<SearchIcon />}
             onClick={handleSearch}
             disabled={loading}
+            fullWidth={isMobile}
+            size={isMobile ? 'medium' : 'large'}
           >
-            {loading ? t('users:search.searching', 'جاري البحث...') : t('common:actions.search', 'بحث')}
+            {loading
+              ? t('users:search.searching', 'جاري البحث...')
+              : t('common:actions.search', 'بحث')}
           </Button>
           <Button
             variant="outlined"
             startIcon={<ClearIcon />}
             onClick={handleClear}
             disabled={loading}
+            fullWidth={isMobile}
+            size={isMobile ? 'medium' : 'large'}
           >
             {t('users:filter.clearFilters', 'مسح الفلاتر')}
           </Button>

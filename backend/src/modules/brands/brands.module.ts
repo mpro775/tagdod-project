@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Brand, BrandSchema } from './schemas/brand.schema';
+import { Product, ProductSchema } from '../products/schemas/product.schema';
 import { BrandsService } from './brands.service';
 import { BrandsAdminController } from './brands.admin.controller';
 import { BrandsPublicController } from './brands.public.controller';
@@ -12,6 +13,7 @@ import { SharedModule } from '../../shared/shared.module';
   imports: [
     MongooseModule.forFeature([
       { name: Brand.name, schema: BrandSchema },
+      { name: Product.name, schema: ProductSchema },
       { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => AuthModule),

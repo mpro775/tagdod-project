@@ -19,7 +19,7 @@ export interface FCMToken {
 @Injectable()
 export class FCMAdapter {
   private readonly logger = new Logger(FCMAdapter.name);
-  private firebaseApp!: admin.app.App;
+  private firebaseApp?: admin.app.App;
 
   constructor(private configService: ConfigService) {
     this.initializeFirebase();
@@ -27,34 +27,68 @@ export class FCMAdapter {
 
   private initializeFirebase() {
     try {
+      const projectId = this.configService.get('FCM_PROJECT_ID');
+      const privateKey = this.configService.get('FCM_PRIVATE_KEY');
+      const clientEmail = this.configService.get('FCM_CLIENT_EMAIL');
+
+      // Check if required environment variables are set
+      if (!projectId || !privateKey || !clientEmail) {
+        this.logger.warn(
+          'FCM environment variables are not fully configured. ' +
+          'Required: FCM_PROJECT_ID, FCM_PRIVATE_KEY, FCM_CLIENT_EMAIL. ' +
+          'Push notifications will be disabled.'
+        );
+        return;
+      }
+
       const serviceAccount = {
         type: 'service_account',
-        project_id: this.configService.get('FCM_PROJECT_ID'),
+        project_id: projectId,
         private_key_id: this.configService.get('FCM_PRIVATE_KEY_ID'),
-        private_key: this.configService.get('FCM_PRIVATE_KEY')?.replace(/\\n/g, '\n'),
-        client_email: this.configService.get('FCM_CLIENT_EMAIL'),
+        private_key: privateKey.replace(/\\n/g, '\n'),
+        client_email: clientEmail,
         client_id: this.configService.get('FCM_CLIENT_ID'),
         auth_uri: 'https://accounts.google.com/o/oauth2/auth',
         token_uri: 'https://oauth2.googleapis.com/token',
         auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-        client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${this.configService.get('FCM_CLIENT_EMAIL')}`,
+        client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${clientEmail}`,
       };
 
-      this.firebaseApp = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-        projectId: this.configService.get('FCM_PROJECT_ID'),
-      });
-
-      this.logger.log('Firebase Admin SDK initialized successfully');
+      // Check if Firebase is already initialized
+      try {
+        this.firebaseApp = admin.app();
+        this.logger.log('Using existing Firebase Admin SDK instance');
+      } catch {
+        // Initialize new instance
+        this.firebaseApp = admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+          projectId: projectId,
+        });
+        this.logger.log('Firebase Admin SDK initialized successfully');
+      }
     } catch (error) {
       this.logger.error('Failed to initialize Firebase Admin SDK:', error);
+      // Firebase app will remain uninitialized (checked via isInitialized())
+      this.firebaseApp = undefined;
     }
+  }
+
+  /**
+   * Check if Firebase is properly initialized
+   */
+  public isInitialized(): boolean {
+    return this.firebaseApp !== undefined && this.firebaseApp !== null;
   }
 
   /**
    * Send notification to single device
    */
   async sendToDevice(token: string, notification: FCMNotification): Promise<boolean> {
+    if (!this.isInitialized()) {
+      this.logger.warn('FCM is not initialized. Cannot send notification.');
+      return false;
+    }
+
     try {
       const message: admin.messaging.Message = {
         token,
@@ -94,11 +128,18 @@ export class FCMAdapter {
         },
       };
 
-      const response = await admin.messaging().send(message);
+      const response = await this.firebaseApp!.messaging().send(message);
       this.logger.log(`FCM notification sent successfully: ${response}`);
       return true;
-    } catch (error) {
-      this.logger.error(`Failed to send FCM notification to token ${token}:`, error);
+    } catch (error: unknown) {
+      // Handle invalid token errors
+      const firebaseError = error as { code?: string; message?: string };
+      if (firebaseError?.code === 'messaging/invalid-registration-token' || 
+          firebaseError?.code === 'messaging/registration-token-not-registered') {
+        this.logger.warn(`Invalid or unregistered FCM token: ${token.substring(0, 20)}...`);
+      } else {
+        this.logger.error(`Failed to send FCM notification:`, error);
+      }
       return false;
     }
   }
@@ -135,6 +176,11 @@ export class FCMAdapter {
    * Send notification to topic
    */
   async sendToTopic(topic: string, notification: FCMNotification): Promise<boolean> {
+    if (!this.isInitialized()) {
+      this.logger.warn('FCM is not initialized. Cannot send topic notification.');
+      return false;
+    }
+
     try {
       const message: admin.messaging.Message = {
         topic,
@@ -146,7 +192,7 @@ export class FCMAdapter {
         data: notification.data,
       };
 
-      const response = await admin.messaging().send(message);
+      const response = await this.firebaseApp!.messaging().send(message);
       this.logger.log(`FCM topic notification sent successfully: ${response}`);
       return true;
     } catch (error) {
@@ -159,8 +205,13 @@ export class FCMAdapter {
    * Subscribe device to topic
    */
   async subscribeToTopic(tokens: string[], topic: string): Promise<boolean> {
+    if (!this.isInitialized()) {
+      this.logger.warn('FCM is not initialized. Cannot subscribe to topic.');
+      return false;
+    }
+
     try {
-      const response = await admin.messaging().subscribeToTopic(tokens, topic);
+      const response = await this.firebaseApp!.messaging().subscribeToTopic(tokens, topic);
       this.logger.log(`Successfully subscribed ${response.successCount} tokens to topic ${topic}`);
       return true;
     } catch (error) {
@@ -173,8 +224,13 @@ export class FCMAdapter {
    * Unsubscribe device from topic
    */
   async unsubscribeFromTopic(tokens: string[], topic: string): Promise<boolean> {
+    if (!this.isInitialized()) {
+      this.logger.warn('FCM is not initialized. Cannot unsubscribe from topic.');
+      return false;
+    }
+
     try {
-      const response = await admin.messaging().unsubscribeFromTopic(tokens, topic);
+      const response = await this.firebaseApp!.messaging().unsubscribeFromTopic(tokens, topic);
       this.logger.log(`Successfully unsubscribed ${response.successCount} tokens from topic ${topic}`);
       return true;
     } catch (error) {
@@ -187,6 +243,11 @@ export class FCMAdapter {
    * Validate FCM token
    */
   async validateToken(token: string): Promise<boolean> {
+    if (!this.isInitialized()) {
+      this.logger.warn('FCM is not initialized. Cannot validate token.');
+      return false;
+    }
+
     try {
       // Send a test message to validate token
       const message: admin.messaging.Message = {
@@ -196,10 +257,16 @@ export class FCMAdapter {
         apns: { payload: { aps: { contentAvailable: true } } },
       };
 
-      await admin.messaging().send(message);
+      await this.firebaseApp!.messaging().send(message);
       return true;
-    } catch (error) {
-      this.logger.warn(`FCM token validation failed for ${token}:`, error);
+    } catch (error: unknown) {
+      const firebaseError = error as { code?: string; message?: string };
+      if (firebaseError?.code === 'messaging/invalid-registration-token' || 
+          firebaseError?.code === 'messaging/registration-token-not-registered') {
+        this.logger.warn(`FCM token is invalid or not registered: ${token.substring(0, 20)}...`);
+      } else {
+        this.logger.warn(`FCM token validation failed:`, error);
+      }
       return false;
     }
   }

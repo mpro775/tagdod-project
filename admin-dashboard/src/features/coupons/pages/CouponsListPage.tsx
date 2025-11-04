@@ -11,7 +11,14 @@ import {
   DialogActions,
   Typography,
   Alert,
-  Snackbar
+  Snackbar,
+  Card,
+  CardContent,
+  Grid,
+  CircularProgress,
+  Divider,
+  Fab,
+  useTheme,
 } from '@mui/material';
 import {
   Edit,
@@ -21,12 +28,14 @@ import {
   Assessment,
   Visibility,
   VisibilityOff,
-  ContentCopy
+  ContentCopy,
+  Add,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useCoupons, useDeleteCoupon, useToggleCouponStatus } from '@/features/marketing/hooks/useMarketing';
 import { BulkGenerateDialog } from '../components/BulkGenerateDialog';
 import { formatDate } from '@/shared/utils/formatters';
@@ -39,16 +48,16 @@ type CouponType = 'percentage' | 'fixed_amount' | 'free_shipping' | 'buy_x_get_y
 type CouponStatus = 'active' | 'inactive' | 'expired' | 'exhausted';
 
 const createCouponTypeLabels = (t: TFunction): Record<CouponType, string> => ({
-  percentage: t('types.percentage', { defaultValue: 'نسبة الخصم' }),
-  fixed_amount: t('types.fixed_amount', { defaultValue: 'مبلغ الخصم' }),
-  free_shipping: t('types.free_shipping', { defaultValue: 'شحن مجاني' }),
-  buy_x_get_y: t('types.buy_x_get_y', { defaultValue: 'شراء X والحصول على Y' }),
+  percentage: t('types.percentage'),
+  fixed_amount: t('types.fixed_amount'),
+  free_shipping: t('types.free_shipping'),
+  buy_x_get_y: t('types.buy_x_get_y'),
 });
 
 const createCouponVisibilityLabels = (t: TFunction): Record<string, string> => ({
-  public: t('visibility.public', { defaultValue: 'عام' }),
-  private: t('visibility.private', { defaultValue: 'خاص' }),
-  hidden: t('visibility.hidden', { defaultValue: 'مخفي' } ),
+  public: t('visibility.public'),
+  private: t('visibility.private'),
+  hidden: t('visibility.hidden'),
 });
 
 const couponStatusColors: Record<
@@ -64,6 +73,8 @@ const couponStatusColors: Record<
 export const CouponsListPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('coupons');
+  const theme = useTheme();
+  const { isMobile, isXs } = useBreakpoint();
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
   const [bulkGenerateOpen, setBulkGenerateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -91,11 +102,11 @@ export const CouponsListPage: React.FC = () => {
     if (couponToDelete) {
       deleteCoupon(couponToDelete._id, {
         onSuccess: () => {
-          setSnackbarMessage(t('messages.deleteSuccess', { defaultValue: 'تم حذف الكوبون بنجاح' }));
+          setSnackbarMessage(t('messages.deleteSuccess'));
           setSnackbarOpen(true);
         },
         onError: () => {
-          setSnackbarMessage(t('messages.deleteError', { error: 'Unknown error', defaultValue: 'حدث خطأ أثناء حذف الكوبون'     }));
+          setSnackbarMessage(t('messages.deleteError', { error: 'Unknown error' }));
           setSnackbarOpen(true);
         },
       });
@@ -108,11 +119,11 @@ export const CouponsListPage: React.FC = () => {
     toggleStatus(coupon._id, {
       onSuccess: () => {
         const action = coupon.status === 'active' ? t('messages.toggleDeactivate') : t('messages.toggleActivate');
-        setSnackbarMessage(t('messages.toggleSuccess', { action, defaultValue: 'تم تعطيل الكوبون بنجاح' }));
+        setSnackbarMessage(t('messages.toggleSuccess', { action }));
         setSnackbarOpen(true);
       },
       onError: () => {
-        setSnackbarMessage(t('messages.updateError', { error: 'Unknown error', defaultValue: 'حدث خطأ أثناء تعطيل الكوبون' }));
+        setSnackbarMessage(t('messages.updateError', { error: 'Unknown error' }));
         setSnackbarOpen(true);
       },
     });
@@ -120,13 +131,13 @@ export const CouponsListPage: React.FC = () => {
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast.success(t('messages.copySuccess', { defaultValue: 'تم النسخ بنجاح' }));
+    toast.success(t('messages.copySuccess'));
   };
 
   const columns: GridColDef[] = [
     {
       field: 'code',
-      headerName: t('table.columns.code', { defaultValue: 'الكود' }),
+      headerName: t('table.columns.code'),
       width: 180,
       renderCell: (params) => (
         <Box display="flex" alignItems="center" gap={1}>
@@ -157,7 +168,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'name',
-      headerName: t('table.columns.name', { defaultValue: 'الاسم' }),
+      headerName: t('table.columns.name'),
       width: 200,
       renderCell: (params) => (
         <Box>
@@ -174,7 +185,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'type',
-      headerName: t('table.columns.type', { defaultValue: 'النوع' }),
+      headerName: t('table.columns.type'),
       width: 150,
       renderCell: (params) => (
         <Chip
@@ -186,7 +197,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'discount',
-      headerName: t('table.columns.discount', { defaultValue: 'الخصم' }),
+      headerName: t('table.columns.discount'),
       width: 120,
       renderCell: (params) => {
         const coupon = params.row as Coupon;
@@ -197,14 +208,14 @@ export const CouponsListPage: React.FC = () => {
           return `$${coupon.discountValue}`;
         }
         if (coupon.type === 'free_shipping') {
-          return t('messages.freeShipping', { defaultValue: 'شحن مجاني' });
+          return t('messages.freeShipping');
         }
         return '-';
       },
     },
     {
       field: 'usedCount',
-      headerName: t('table.columns.usage', { defaultValue: 'الاستخدام' }),
+      headerName: t('table.columns.usage'),
       width: 120,
       renderCell: (params) => (
         <Box>
@@ -221,7 +232,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'validFrom',
-      headerName: t('table.columns.period', { defaultValue: 'الفترة' }),
+      headerName: t('table.columns.period'),
       width: 180,
       renderCell: (params) => (
         <Box sx={{ fontSize: '0.85rem' }}>
@@ -236,14 +247,14 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'status',
-      headerName: t('table.columns.status', { defaultValue: 'الحالة' }),
+      headerName: t('table.columns.status'),
       width: 120,
       renderCell: (params) => {
         const statusLabels = {
-          active: t('status.active', { defaultValue: 'نشط' }  ),
-          inactive: t('status.inactive', { defaultValue: 'غير نشط' }  ),
-          expired: t('status.expired', { defaultValue: 'منتهي' }    ),
-          exhausted: t('status.exhausted', { defaultValue: 'مستهلك' }    ),
+          active: t('status.active'),
+          inactive: t('status.inactive'),
+          expired: t('status.expired'),
+          exhausted: t('status.exhausted'),
         };
         return (
           <Chip
@@ -256,7 +267,7 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'visibility',
-      headerName: t('table.columns.visibility', { defaultValue: 'الرؤية' }),
+      headerName: t('table.columns.visibility'),
       width: 100,
       renderCell: (params) => (
         <Chip
@@ -269,14 +280,14 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'actions',
-      headerName: t('table.columns.actions', { defaultValue: 'الإجراءات' }),
+      headerName: t('table.columns.actions'),
       width: 200,
       sortable: false,
       renderCell: (params) => {
         const coupon = params.row as Coupon;
         return (
           <Box display="flex" gap={0.5}>
-            <Tooltip title={t('tooltips.edit', { defaultValue: 'تعديل' })}>
+            <Tooltip title={t('tooltips.edit')}>
               <IconButton
                 size="small"
                 color="primary"
@@ -289,7 +300,7 @@ export const CouponsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={t('tooltips.analytics', { defaultValue: 'التحليلات' })}>
+            <Tooltip title={t('tooltips.analytics')}>
               <IconButton
                 size="small"
                 color="info"
@@ -302,7 +313,7 @@ export const CouponsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={coupon.status === 'active' ? t('tooltips.deactivate', { defaultValue: 'تعطيل' }) : t('tooltips.activate', { defaultValue: 'تفعيل' })}>
+            <Tooltip title={coupon.status === 'active' ? t('tooltips.deactivate') : t('tooltips.activate')}>
               <IconButton
                 size="small"
                 color={coupon.status === 'active' ? 'warning' : 'success'}
@@ -320,7 +331,7 @@ export const CouponsListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={t('tooltips.delete', { defaultValue: 'حذف' })}>
+            <Tooltip title={t('tooltips.delete')}>
               <IconButton
                 size="small"
                 color="error"
@@ -339,24 +350,249 @@ export const CouponsListPage: React.FC = () => {
     },
   ];
 
+  const coupons = data?.data || [];
+
   return (
     <Box>
-      <DataTable
-        title={t('table.title', { defaultValue: 'الكوبونات' })}
-        columns={columns}
-        rows={data?.data || []}
-        loading={isLoading}
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        getRowId={(row) => (row as Coupon)._id}
-        onAdd={() => navigate('/coupons/new')}
-        addButtonText={t('table.addButton', { defaultValue: 'إضافة كوبون' })}
-        onRowClick={(params) => {
-          const row = params.row as Coupon;
-          navigate(`/coupons/${row._id}`);
-        }}
-        height="calc(100vh - 200px)"
-      />
+      {/* Desktop View */}
+      {!isXs ? (
+        <DataTable
+          title={t('table.title')}
+          columns={columns}
+          rows={coupons}
+          loading={isLoading}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+          getRowId={(row) => (row as Coupon)._id}
+          onAdd={() => navigate('/coupons/new')}
+          addButtonText={t('table.addButton')}
+          onRowClick={(params) => {
+            const row = params.row as Coupon;
+            navigate(`/coupons/${row._id}`);
+          }}
+          height="calc(100vh - 200px)"
+        />
+      ) : (
+        /* Card View - Mobile */
+        <Box>
+          {isLoading ? (
+            <Box display="flex" justifyContent="center" p={4}>
+              <CircularProgress />
+            </Box>
+          ) : coupons.length === 0 ? (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              {t('messages.noData')}
+            </Alert>
+          ) : (
+            <Grid container spacing={2}>
+              {coupons.map((coupon) => (
+                <Grid key={coupon._id} size={{ xs: 6 }}>
+                  <Card
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        boxShadow: theme.shadows[4],
+                        transform: 'translateY(-2px)',
+                      },
+                    }}
+                    onClick={() => navigate(`/coupons/${coupon._id}`)}
+                  >
+                    <CardContent sx={{ flex: 1, p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {/* Code */}
+                      <Box display="flex" alignItems="center" justifyContent="space-between">
+                        <Box
+                          sx={{
+                            fontFamily: 'monospace',
+                            fontWeight: 'bold',
+                            color: 'primary.main',
+                            bgcolor: theme.palette.mode === 'dark' 
+                              ? 'rgba(25, 118, 210, 0.15)' 
+                              : 'rgba(25, 118, 210, 0.1)',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          {coupon.code}
+                        </Box>
+                        <Tooltip title={t('messages.copySuccess')}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyCode(coupon.code);
+                            }}
+                          >
+                            <ContentCopy fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+
+                      {/* Name */}
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        sx={{
+                          fontSize: '0.85rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {coupon.name}
+                      </Typography>
+
+                      <Divider sx={{ my: 0.5 }} />
+
+                      {/* Discount */}
+                      <Box>
+                        {coupon.type === 'percentage' && coupon.discountValue && (
+                          <Typography variant="h6" color="primary.main" fontWeight="bold">
+                            {coupon.discountValue}%
+                          </Typography>
+                        )}
+                        {coupon.type === 'fixed_amount' && coupon.discountValue && (
+                          <Typography variant="h6" color="primary.main" fontWeight="bold">
+                            ${coupon.discountValue}
+                          </Typography>
+                        )}
+                        {coupon.type === 'free_shipping' && (
+                          <Chip
+                            label={t('messages.freeShipping')}
+                            size="small"
+                            color="success"
+                            sx={{ fontSize: '0.7rem' }}
+                          />
+                        )}
+                      </Box>
+
+                      {/* Type */}
+                      <Chip
+                        label={couponTypeLabels[coupon.type as CouponType]}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: '0.7rem', width: 'fit-content' }}
+                      />
+
+                      {/* Usage */}
+                      <Box display="flex" alignItems="center" gap={0.5}>
+                        <Typography variant="body2" fontWeight="medium">
+                          {coupon.usedCount}
+                        </Typography>
+                        {coupon.usageLimit && (
+                          <Typography variant="caption" color="text.secondary">
+                            / {coupon.usageLimit}
+                          </Typography>
+                        )}
+                      </Box>
+
+                      {/* Status and Visibility */}
+                      <Box display="flex" gap={0.5} flexWrap="wrap">
+                        <Chip
+                          label={couponStatusColors[coupon.status as CouponStatus] === 'success' 
+                            ? t('status.active') 
+                            : coupon.status === 'expired' 
+                            ? t('status.expired')
+                            : coupon.status === 'exhausted'
+                            ? t('status.exhausted')
+                            : t('status.inactive')}
+                          color={couponStatusColors[coupon.status as CouponStatus] as any}
+                          size="small"
+                          sx={{ fontSize: '0.65rem' }}
+                        />
+                        <Chip
+                          label={couponVisibilityLabels[coupon.visibility]}
+                          variant="outlined"
+                          size="small"
+                          icon={coupon.visibility === 'public' ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
+                          sx={{ fontSize: '0.65rem' }}
+                        />
+                      </Box>
+
+                      {/* Period */}
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDate(coupon.validFrom)} - {formatDate(coupon.validUntil)}
+                      </Typography>
+                    </CardContent>
+
+                    {/* Actions */}
+                    <Box
+                      display="flex"
+                      justifyContent="center"
+                      gap={0.5}
+                      p={1}
+                      borderTop={1}
+                      borderColor="divider"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Tooltip title={t('tooltips.edit')}>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/coupons/${coupon._id}`);
+                          }}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t('tooltips.analytics')}>
+                        <IconButton
+                          size="small"
+                          color="info"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/coupons/${coupon._id}/analytics`);
+                          }}
+                        >
+                          <Assessment fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={coupon.status === 'active' ? t('tooltips.deactivate') : t('tooltips.activate')}>
+                        <IconButton
+                          size="small"
+                          color={coupon.status === 'active' ? 'warning' : 'success'}
+                          disabled={toggling}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleStatus(coupon);
+                          }}
+                        >
+                          {coupon.status === 'active' ? (
+                            <ToggleOff fontSize="small" />
+                          ) : (
+                            <ToggleOn fontSize="small" />
+                          )}
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t('tooltips.delete')}>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          disabled={deleting}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(coupon);
+                          }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+      )}
 
       <BulkGenerateDialog
         open={bulkGenerateOpen}
@@ -374,27 +610,56 @@ export const CouponsListPage: React.FC = () => {
         onClose={() => setDeleteDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 2,
+            bgcolor: 'background.paper',
+          },
+        }}
       >
-        <DialogTitle>{t('messages.deleteConfirmTitle', { defaultValue: 'تأكيد الحذف' })}</DialogTitle>
+        <DialogTitle>{t('messages.deleteConfirmTitle')}</DialogTitle>
         <DialogContent>
           <Typography>
-            {t('messages.confirmDelete', { code: couponToDelete?.code, defaultValue: 'هل أنت متأكد من الحذف؟' })}
+            {t('messages.confirmDelete', { code: couponToDelete?.code })}
           </Typography>
           <Alert severity="warning" sx={{ mt: 2 }}>
-            {t('messages.deleteWarning', { defaultValue: 'هذا الكوبون سيتم حذفه بشكل دائم ولا يمكن التراجع عنه' } )}
+            {t('messages.deleteWarning')}
           </Alert>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>
-            {t('dialogs.cancel', { defaultValue: 'إلغاء' })}
+        <DialogActions
+          sx={{
+            p: { xs: 1.5, sm: 2 },
+            borderTop: 1,
+            borderColor: 'divider',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1, sm: 0 },
+          }}
+        >
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            fullWidth={isMobile}
+            size={isMobile ? 'medium' : 'large'}
+            sx={{ 
+              order: { xs: 2, sm: 1 },
+              minWidth: { xs: '100%', sm: 'auto' },
+            }}
+          >
+            {t('dialogs.cancel')}
           </Button>
           <Button
             onClick={handleDeleteConfirm}
             color="error"
             variant="contained"
             disabled={deleting}
+            fullWidth={isMobile}
+            size={isMobile ? 'medium' : 'large'}
+            sx={{ 
+              order: { xs: 1, sm: 2 },
+              minWidth: { xs: '100%', sm: 'auto' },
+            }}
           >
-            {deleting ? t('dialogs.deleting', { defaultValue: 'جاري الحذف...' }) : t('dialogs.delete', { defaultValue: 'حذف' }  )}
+            {deleting ? t('dialogs.deleting') : t('dialogs.delete')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -414,6 +679,24 @@ export const CouponsListPage: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      {/* Floating Action Button - Mobile Only */}
+      {isMobile && (
+        <Fab
+          color="primary"
+          aria-label="add coupon"
+          sx={{ 
+            position: 'fixed', 
+            bottom: 16, 
+            right: 16,
+            display: { xs: 'flex', sm: 'none' },
+          }}
+          onClick={() => navigate('/coupons/new')}
+          size="medium"
+        >
+          <Add />
+        </Fab>
+      )}
     </Box>
   );
 };

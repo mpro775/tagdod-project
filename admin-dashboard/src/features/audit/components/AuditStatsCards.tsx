@@ -43,7 +43,7 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({ stats, isLoadi
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">{t('stats.noData', { defaultValue: 'لا توجد بيانات متاحة' })}</p>
+            <p className="text-muted-foreground">{t('messages.noData')}</p>
           </CardContent>
         </Card>
       </div>
@@ -52,68 +52,68 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({ stats, isLoadi
 
   const statsData = [
     {
-      title: t('stats.totalLogs', { defaultValue: 'عدد السجلات' }),
+      title: t('stats.totalLogs'),
       value: stats.totalLogs,
       icon: DatabaseIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
-      description: t('stats.totalLogsDesc', { defaultValue: 'عدد السجلات المسجلة' }),
+      description: t('stats.totalLogsDesc'),
     },
     {
-      title: t('stats.sensitiveLogs', { defaultValue: 'عدد السجلات الحساسة' }),
+      title: t('stats.sensitiveLogs'),
       value: stats.sensitiveLogs,
       icon: Shield,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
-      description: t('stats.sensitiveLogsDesc', { defaultValue: 'عدد السجلات الحساسة المسجلة' }),
+      description: t('stats.sensitiveLogsDesc'),
     },
     {
-      title: t('stats.permissionChanges', { defaultValue: 'عدد تغييرات الصلاحيات' }),
+      title: t('stats.permissionChanges'),
       value: stats.permissionChanges,
       icon: Key,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
-      description: t('stats.permissionChangesDesc', { defaultValue: 'عدد تغييرات الصلاحيات المسجلة' }),
+      description: t('stats.permissionChangesDesc'),
     },
     {
-      title: t('stats.roleChanges', { defaultValue: 'عدد تغييرات الأدوار' }),
+      title: t('stats.roleChanges'),
       value: stats.roleChanges,
       icon: CrownIcon,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      description: t('stats.roleChangesDesc', { defaultValue: 'عدد تغييرات الأدوار المسجلة' }),
+      description: t('stats.roleChangesDesc'),
     },
     {
-      title: t('stats.capabilityDecisions', { defaultValue: 'عدد قرارات القدرات' }),
+      title: t('stats.capabilityDecisions'),
       value: stats.capabilityDecisions,
       icon: CheckCircleIcon,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      description: t('stats.capabilityDecisionsDesc', { defaultValue: 'عدد قرارات القدرات المسجلة' }),
+      description: t('stats.capabilityDecisionsDesc'),
     },
     {
-      title: t('stats.adminActions', { defaultValue: 'عدد إجراءات الإدارة' }    ),
+      title: t('stats.adminActions'),
       value: stats.adminActions,
       icon: Settings,
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
-      description: t('stats.adminActionsDesc', { defaultValue: 'عدد إجراءات الإدارة المسجلة' }),
+      description: t('stats.adminActionsDesc'),
     },
     {
-      title: t('stats.authEvents', { defaultValue: 'عدد أحداث المصادقة' }),
+      title: t('stats.authEvents'),
       value: stats.authEvents,
       icon: Lock,
       color: 'text-cyan-600',
       bgColor: 'bg-cyan-50',
-      description: t('stats.authEventsDesc', { defaultValue: 'عدد أحداث المصادقة المسجلة' }),
+      description: t('stats.authEventsDesc'),
     },
     {
-      title: t('stats.sensitivityRate', { defaultValue: 'نسبة الحساسية' }),
+      title: t('stats.sensitivityRate'),
       value: stats.totalLogs > 0 ? Math.round((stats.sensitiveLogs / stats.totalLogs) * 100) : 0,
       icon: AlertTriangle,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50',
-      description: t('stats.sensitivityRateDesc', { defaultValue: 'نسبة الحساسية المسجلة' }),
+      description: t('stats.sensitivityRateDesc'),
       suffix: '%',
     },
   ];
@@ -138,14 +138,14 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({ stats, isLoadi
                 {stat.suffix}
               </div>
               <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-              {stat.title === t('stats.sensitivityRate', { defaultValue: 'نسبة الحساسية' }) && (
+              {stat.title === t('stats.sensitivityRate') && (
                 <div className="mt-2">
                   <Badge
                     variant="standard"
                     color={stat.value > 20 ? 'error' : stat.value > 10 ? 'warning' : 'info'}
                     className="text-xs"
                   >
-                    {stat.value > 20 ? t('stats.highSensitivity', { defaultValue: 'عالي' }) : stat.value > 10 ? t('stats.mediumSensitivity', { defaultValue: 'متوسط' }) : t('stats.lowSensitivity', { defaultValue: 'منخفض' })}
+                    {stat.value > 20 ? t('stats.highSensitivity') : stat.value > 10 ? t('stats.mediumSensitivity') : t('stats.lowSensitivity')}
                   </Badge>
                 </div>
               )}

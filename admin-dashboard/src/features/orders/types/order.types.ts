@@ -179,8 +179,16 @@ export interface Order extends BaseEntity {
   currency: string;
   subtotal: number;
   itemsDiscount: number;
-  appliedCouponCode?: string;
+  // Multiple Coupons Support
+  appliedCouponCodes?: string[];
+  appliedCoupons?: Array<{
+    code: string;
+    discount: number;
+    details: CouponDetails;
+  }>;
   couponDiscount: number;
+  // Backward compatibility (deprecated)
+  appliedCouponCode?: string;
   couponDetails?: CouponDetails;
   autoAppliedCoupons?: Array<{
     code: string;
@@ -200,6 +208,15 @@ export interface Order extends BaseEntity {
   paymentIntentId?: string;
   paymentTransactionId?: string;
   paidAt?: Date;
+
+  // Local Payment
+  localPaymentAccountId?: string;
+  paymentReference?: string;
+  verifiedPaymentAmount?: number;
+  verifiedPaymentCurrency?: string;
+  paymentVerifiedAt?: Date;
+  paymentVerifiedBy?: string;
+  paymentVerificationNotes?: string;
 
   // Shipping
   shippingMethod: ShippingMethod;
@@ -279,6 +296,12 @@ export interface CancelOrderDto {
 export interface AddOrderNotesDto {
   notes: string;
   type?: 'customer' | 'admin' | 'internal';
+}
+
+export interface VerifyPaymentDto {
+  verifiedAmount: number;
+  verifiedCurrency: 'YER' | 'SAR' | 'USD';
+  notes?: string;
 }
 
 export interface BulkOrderUpdateDto {

@@ -7,6 +7,8 @@ import type {
   UpdateUserDto,
   SuspendUserDto,
   UserStats,
+  DeletedUser,
+  ListDeletedUsersParams,
 } from '../types/user.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
@@ -128,5 +130,39 @@ export const usersApi = {
       '/admin/users/stats/summary'
     );
     return data.data;
+  },
+
+  /**
+   * Get deleted users with deletion reason
+   */
+  getDeletedUsers: async (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<PaginatedResponse<DeletedUser>> => {
+    const { data } = await apiClient.get<ApiResponse<{
+      deletedUsers: DeletedUser[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasNextPage: boolean;
+        hasPrevPage: boolean;
+      };
+    }>>('/admin/users/deleted', {
+      params: sanitizePaginationParams(params),
+    });
+    return {
+      data: data.data.deletedUsers,
+      meta: {
+        page: data.data.pagination.page,
+        limit: data.data.pagination.limit,
+        total: data.data.pagination.total,
+        totalPages: data.data.pagination.totalPages,
+      },
+    };
   },
 };

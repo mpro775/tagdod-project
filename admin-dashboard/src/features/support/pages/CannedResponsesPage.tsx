@@ -15,6 +15,8 @@ import {
   Select,
   MenuItem,
   Skeleton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Add,
@@ -23,6 +25,7 @@ import {
   Search,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   CannedResponseCard,
 } from '../components';
@@ -35,7 +38,12 @@ import {
 import { SupportCategory } from '../types/support.types';
 
 export const CannedResponsesPage: React.FC = () => {
+  const { t } = useTranslation('support');
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<SupportCategory | ''>('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -125,63 +133,88 @@ export const CannedResponsesPage: React.FC = () => {
   };
 
   const getCategoryLabel = (category: SupportCategory): string => {
-    switch (category) {
-      case SupportCategory.TECHNICAL:
-        return 'تقني';
-      case SupportCategory.BILLING:
-        return 'الفواتير';
-      case SupportCategory.PRODUCTS:
-        return 'المنتجات';
-      case SupportCategory.SERVICES:
-        return 'الخدمات';
-      case SupportCategory.ACCOUNT:
-        return 'الحساب';
-      case SupportCategory.OTHER:
-        return 'أخرى';
-      default:
-        return 'عام';
-    }
+    return t(`category.${category}` as any);
   };
 
   const renderSkeletons = () => (
-    <Grid container spacing={3}>
+    <Grid container spacing={{ xs: 2, sm: 3 }}>
       {[...Array(6)].map((_, index) => (
         <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={index}>
-          <Skeleton variant="rectangular" height={200} />
+          <Skeleton 
+            variant="rectangular" 
+            height={isMobile ? 250 : 200}
+            sx={{ borderRadius: 2 }}
+          />
         </Grid>
       ))}
     </Grid>
   );
 
   return (
-    <Box>
+    <Box sx={{ px: { xs: 1, sm: 2, md: 3 }, py: { xs: 2, sm: 3 } }}>
       {/* Header */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold">
-          إدارة الردود الجاهزة
+      <Stack 
+        direction={{ xs: 'column', sm: 'row' }} 
+        justifyContent="space-between" 
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        spacing={{ xs: 2, sm: 0 }}
+        mb={3}
+      >
+        <Typography 
+          variant={isMobile ? 'h5' : 'h4'} 
+          fontWeight="bold"
+          sx={{ color: 'text.primary' }}
+        >
+          {t('cannedResponses.title')}
         </Typography>
-        <Stack direction="row" spacing={2}>
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={2}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           <Button
             variant="outlined"
             startIcon={<ArrowBack />}
             onClick={() => navigate('/support')}
+            fullWidth={isMobile}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{
+              color: 'text.primary',
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'primary.main',
+                backgroundColor: 'action.hover',
+              },
+            }}
           >
-            العودة للتذاكر
+            {t('messages.backToTickets')}
           </Button>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
             onClick={handleRefresh}
             disabled={isLoading}
+            fullWidth={isMobile}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{
+              color: 'text.primary',
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'primary.main',
+                backgroundColor: 'action.hover',
+              },
+            }}
           >
-            تحديث
+            {t('labels.refresh')}
           </Button>
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={handleCreateResponse}
+            fullWidth={isMobile}
+            size={isMobile ? 'small' : 'medium'}
           >
-            إضافة رد جاهز
+            {t('labels.add')} {t('titles.cannedResponses')}
           </Button>
         </Stack>
       </Stack>
@@ -189,22 +222,32 @@ export const CannedResponsesPage: React.FC = () => {
       {/* Filters */}
       <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <TextField
-          placeholder="البحث في الردود الجاهزة..."
+          placeholder={t('cannedResponses.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
             startAdornment: <Search sx={{ mr: 1, color: 'action.active' }} />,
           }}
-          sx={{ minWidth: 300 }}
+          sx={{ 
+            minWidth: isMobile ? '100%' : 300,
+            flex: { xs: '1 1 100%', sm: '0 1 auto' }
+          }}
+          size={isMobile ? 'small' : 'medium'}
         />
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>الفئة</InputLabel>
+        <FormControl 
+          sx={{ 
+            minWidth: isMobile ? '100%' : 200,
+            flex: { xs: '1 1 100%', sm: '0 1 auto' }
+          }}
+        >
+          <InputLabel>{t('filters.categoryLabel')}</InputLabel>
           <Select
             value={categoryFilter}
-            label="الفئة"
+            label={t('filters.categoryLabel')}
             onChange={(e) => setCategoryFilter(e.target.value as SupportCategory)}
+            size={isMobile ? 'small' : 'medium'}
           >
-            <MenuItem value="">جميع الفئات</MenuItem>
+            <MenuItem value="">{t('category.all')}</MenuItem>
             {Object.values(SupportCategory).map((category) => (
               <MenuItem key={category} value={category}>
                 {getCategoryLabel(category)}
@@ -217,8 +260,14 @@ export const CannedResponsesPage: React.FC = () => {
       {/* Results Summary */}
       {responsesData?.data && (
         <Box sx={{ mb: 3 }}>
-          <Typography variant="body1">
-            عرض {responsesData.data.length} من أصل {responsesData.meta?.total || 0} رد جاهز
+          <Typography 
+            variant="body1"
+            sx={{ color: 'text.secondary' }}
+          >
+            {t('cannedResponses.results', {
+              current: responsesData.data.length,
+              total: responsesData.meta?.total || 0
+            })}
           </Typography>
         </Box>
       )}
@@ -227,7 +276,7 @@ export const CannedResponsesPage: React.FC = () => {
       {isLoading ? (
         renderSkeletons()
       ) : responsesData?.data && responsesData.data.length > 0 ? (
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {responsesData.data.map((response) => (
             <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={response._id}>
               <CannedResponseCard
@@ -244,50 +293,62 @@ export const CannedResponsesPage: React.FC = () => {
       ) : (
         <Box textAlign="center" py={4}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            لا توجد ردود جاهزة
+            {t('cannedResponses.noResults')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            لم يتم العثور على أي ردود جاهزة تطابق المعايير المحددة
+            {t('cannedResponses.noResultsDesc')}
           </Typography>
         </Box>
       )}
 
       {/* Create Dialog */}
-      <Dialog open={isCreateDialogOpen} onClose={() => setIsCreateDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>إضافة رد جاهز جديد</DialogTitle>
+      <Dialog 
+        open={isCreateDialogOpen} 
+        onClose={() => setIsCreateDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        fullScreen={isMobile}
+      >
+        <DialogTitle sx={{ color: 'text.primary' }}>
+          {t('cannedResponses.dialog.createTitle')}
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             <TextField
-              label="العنوان"
+              label={t('cannedResponses.dialog.titleLabel')}
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               fullWidth
               required
+              size={isMobile ? 'small' : 'medium'}
             />
             <TextField
-              label="المحتوى (عربي)"
+              label={t('cannedResponses.dialog.contentArLabel')}
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               multiline
               rows={4}
               fullWidth
               required
+              size={isMobile ? 'small' : 'medium'}
             />
             <TextField
-              label="المحتوى (إنجليزي)"
+              label={t('cannedResponses.dialog.contentEnLabel')}
               value={formData.contentEn}
               onChange={(e) => setFormData({ ...formData, contentEn: e.target.value })}
               multiline
               rows={4}
               fullWidth
               required
+              size={isMobile ? 'small' : 'medium'}
             />
             <FormControl fullWidth>
-              <InputLabel>الفئة</InputLabel>
+              <InputLabel>{t('cannedResponses.dialog.categoryLabel')}</InputLabel>
               <Select
                 value={formData.category}
-                label="الفئة"
+                label={t('cannedResponses.dialog.categoryLabel')}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                size={isMobile ? 'small' : 'medium'}
               >
                 {Object.values(SupportCategory).map((category) => (
                   <MenuItem key={category} value={category}>
@@ -297,69 +358,88 @@ export const CannedResponsesPage: React.FC = () => {
               </Select>
             </FormControl>
             <TextField
-              label="الوسوم (مفصولة بفواصل)"
+              label={t('cannedResponses.dialog.tagsLabel')}
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
               fullWidth
-              placeholder="مثال: ترحيب، مساعدة، تقني"
+              placeholder={t('cannedResponses.dialog.tagsPlaceholder')}
+              size={isMobile ? 'small' : 'medium'}
             />
             <TextField
-              label="الاختصار"
+              label={t('cannedResponses.dialog.shortcutLabel')}
               value={formData.shortcut}
               onChange={(e) => setFormData({ ...formData, shortcut: e.target.value })}
               fullWidth
-              placeholder="مثال: welcome"
+              placeholder={t('cannedResponses.dialog.shortcutPlaceholder')}
+              size={isMobile ? 'small' : 'medium'}
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsCreateDialogOpen(false)}>إلغاء</Button>
+        <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+          <Button 
+            onClick={() => setIsCreateDialogOpen(false)}
+            sx={{ color: 'text.secondary' }}
+          >
+            {t('cannedResponses.dialog.cancel')}
+          </Button>
           <Button 
             onClick={handleSaveResponse}
             variant="contained"
             disabled={!formData.title || !formData.content || !formData.contentEn}
           >
-            حفظ
+            {t('cannedResponses.dialog.save')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>تعديل الرد الجاهز</DialogTitle>
+      <Dialog 
+        open={isEditDialogOpen} 
+        onClose={() => setIsEditDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        fullScreen={isMobile}
+      >
+        <DialogTitle sx={{ color: 'text.primary' }}>
+          {t('cannedResponses.dialog.editTitle')}
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             <TextField
-              label="العنوان"
+              label={t('cannedResponses.dialog.titleLabel')}
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               fullWidth
               required
+              size={isMobile ? 'small' : 'medium'}
             />
             <TextField
-              label="المحتوى (عربي)"
+              label={t('cannedResponses.dialog.contentArLabel')}
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               multiline
               rows={4}
               fullWidth
               required
+              size={isMobile ? 'small' : 'medium'}
             />
             <TextField
-              label="المحتوى (إنجليزي)"
+              label={t('cannedResponses.dialog.contentEnLabel')}
               value={formData.contentEn}
               onChange={(e) => setFormData({ ...formData, contentEn: e.target.value })}
               multiline
               rows={4}
               fullWidth
               required
+              size={isMobile ? 'small' : 'medium'}
             />
             <FormControl fullWidth>
-              <InputLabel>الفئة</InputLabel>
+              <InputLabel>{t('cannedResponses.dialog.categoryLabel')}</InputLabel>
               <Select
                 value={formData.category}
-                label="الفئة"
+                label={t('cannedResponses.dialog.categoryLabel')}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                size={isMobile ? 'small' : 'medium'}
               >
                 {Object.values(SupportCategory).map((category) => (
                   <MenuItem key={category} value={category}>
@@ -369,29 +449,36 @@ export const CannedResponsesPage: React.FC = () => {
               </Select>
             </FormControl>
             <TextField
-              label="الوسوم (مفصولة بفواصل)"
+              label={t('cannedResponses.dialog.tagsLabel')}
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
               fullWidth
-              placeholder="مثال: ترحيب، مساعدة، تقني"
+              placeholder={t('cannedResponses.dialog.tagsPlaceholder')}
+              size={isMobile ? 'small' : 'medium'}
             />
             <TextField
-              label="الاختصار"
+              label={t('cannedResponses.dialog.shortcutLabel')}
               value={formData.shortcut}
               onChange={(e) => setFormData({ ...formData, shortcut: e.target.value })}
               fullWidth
-              placeholder="مثال: welcome"
+              placeholder={t('cannedResponses.dialog.shortcutPlaceholder')}
+              size={isMobile ? 'small' : 'medium'}
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsEditDialogOpen(false)}>إلغاء</Button>
+        <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+          <Button 
+            onClick={() => setIsEditDialogOpen(false)}
+            sx={{ color: 'text.secondary' }}
+          >
+            {t('cannedResponses.dialog.cancel')}
+          </Button>
           <Button 
             onClick={handleSaveResponse}
             variant="contained"
             disabled={!formData.title || !formData.content || !formData.contentEn}
           >
-            حفظ التغييرات
+            {t('cannedResponses.dialog.saveChanges')}
           </Button>
         </DialogActions>
       </Dialog>

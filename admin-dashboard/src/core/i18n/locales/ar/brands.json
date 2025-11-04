@@ -85,6 +85,7 @@
     "showAdvanced": "إظهار الفلاتر المتقدمة",
     "hideAdvanced": "إخفاء الفلاتر المتقدمة",
     "clearFilters": "مسح الفلاتر",
+    "search": "بحث",
     "activeFilters": "الفلاتر النشطة",
     "filterCount": "{{count}} فلتر نشط",
     "searchFilter": "البحث: \"{{value}}\"",
@@ -153,6 +154,10 @@
     "description": "وصف العلامة التجارية (اختياري)",
     "sortOrder": "0"
   },
+  "pageTitle": "إدارة العلامات التجارية",
+  "back": "العودة",
+  "noBrands": "لا توجد علامات تجارية",
+  "noBrandsDescription": "ابدأ بإضافة علامة تجارية جديدة",
   "table": {
     "title": "إدارة العلامات التجارية",
     "addButton": "إضافة علامة تجارية",

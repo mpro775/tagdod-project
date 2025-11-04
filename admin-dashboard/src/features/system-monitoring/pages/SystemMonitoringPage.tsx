@@ -12,6 +12,9 @@ import {
   CircularProgress,
   Grid,
   LinearProgress,
+  useTheme,
+  useMediaQuery,
+  Stack,
 } from '@mui/material';
 import {
   Speed,
@@ -31,7 +34,9 @@ import { MetricsChart } from '../components/MetricsChart';
 import { ApiPerformanceChart } from '../components/ApiPerformanceChart';
 
 export function SystemMonitoringPage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('system-monitoring');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [resources, setResources] = useState<ResourceUsage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +53,7 @@ export function SystemMonitoringPage() {
       setHealth(healthData);
       setResources(resourcesData);
     } catch {
-      toast.error(t('system-monitoring.messages.error.loadFailed'));
+      toast.error(t('messages.error.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -90,60 +95,141 @@ export function SystemMonitoringPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 400 }}>
-        <CircularProgress size={48} sx={{ mb: 2 }} />
-        <Typography variant="body1" color="text.secondary">
-          {t('system-monitoring.loading.message', { defaultValue: 'جاري تحميل البيانات...' })}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: { xs: 300, sm: 400 },
+          bgcolor: 'background.default',
+        }}
+      >
+        <CircularProgress 
+          size={isMobile ? 40 : 48} 
+          sx={{ mb: 2 }} 
+        />
+        <Typography 
+          variant="body1" 
+          color="text.secondary"
+          sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+        >
+          {t('loading.message')}
         </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box 
+      sx={{ 
+        width: '100%',
+        bgcolor: 'background.default',
+        minHeight: '100vh',
+        px: { xs: 1.5, sm: 2, md: 3 },
+        py: { xs: 2, sm: 3, md: 4 },
+      }}
+    >
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            {t('system-monitoring.navigation.title', { defaultValue: 'مراقبة النظام' })}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'flex-start' },
+          mb: { xs: 2, sm: 3, md: 4 },
+          gap: { xs: 2, sm: 0 },
+        }}
+      >
+        <Box sx={{ flex: 1 }}>
+          <Typography 
+            variant={isMobile ? 'h5' : 'h4'} 
+            fontWeight="bold" 
+            gutterBottom
+            sx={{ color: 'text.primary', mb: { xs: 0.5, sm: 1 } }}
+          >
+            {t('navigation.title')}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {t('system-monitoring.navigation.subtitle', { defaultValue: 'مراقبة النظام' })}
+          <Typography 
+            variant="body1" 
+            color="text.secondary"
+            sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+          >
+            {t('navigation.subtitle')}
           </Typography>
         </Box>
         
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           <Button
             variant="outlined"
-            size="small"
+            size={isMobile ? 'small' : 'medium'}
             onClick={() => setAutoRefresh(!autoRefresh)}
+            fullWidth={isMobile}
+            sx={{
+              minWidth: { xs: '100%', sm: 'auto' },
+            }}
           >
-            {autoRefresh ? t('system-monitoring.actions.disableAutoRefresh', { defaultValue: 'تعطيل التحديث التلقائي' }) : t('system-monitoring.actions.enableAutoRefresh', { defaultValue: 'تمكين التحديث التلقائي' })}
+            {autoRefresh ? t('actions.disableAutoRefresh') : t('actions.enableAutoRefresh')}
           </Button>
           <Button
             variant="contained"
-            size="small"
+            size={isMobile ? 'small' : 'medium'}
             onClick={fetchData}
             disabled={loading}
             startIcon={<Refresh />}
+            fullWidth={isMobile}
+            sx={{
+              minWidth: { xs: '100%', sm: 'auto' },
+            }}
           >
-            {t('system-monitoring.actions.refresh', { defaultValue: 'تحديث' })}
+            {t('actions.refresh')}
           </Button>
-        </Box>
+        </Stack>
       </Box>
 
       {/* System Status */}
       {health && (
-        <Card sx={{ mb: 3 }}>
+        <Card 
+          sx={{ 
+            mb: { xs: 2, sm: 3 },
+            bgcolor: 'background.paper',
+            boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
+          }}
+        >
           <CardHeader
+            sx={{ 
+              pb: { xs: 1, sm: 2 },
+              px: { xs: 2, sm: 3 },
+              pt: { xs: 2, sm: 3 },
+            }}
             title={
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  justifyContent: 'space-between', 
+                  alignItems: { xs: 'flex-start', sm: 'center' },
+                  gap: { xs: 1, sm: 0 },
+                }}
+              >
                 <Box>
-                  <Typography variant="h6" fontWeight="bold">
-                    {t('system-monitoring.systemHealth.title', { defaultValue: 'صحة النظام' })}
+                  <Typography 
+                    variant={isMobile ? 'subtitle1' : 'h6'} 
+                    fontWeight="bold"
+                    sx={{ color: 'text.primary' }}
+                  >
+                    {t('systemHealth.title')}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {t('system-monitoring.systemHealth.subtitle', { defaultValue: 'صحة النظام' })}
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                  >
+                    {t('systemHealth.subtitle')}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -153,61 +239,93 @@ export function SystemMonitoringPage() {
                       height: 12,
                       borderRadius: '50%',
                       bgcolor: getStatusColor(health.status),
+                      flexShrink: 0,
                     }}
                   />
                   <Chip
-                    label={t(`system-monitoring.systemHealth.status.${health.status}`, { defaultValue: 'صحة النظام' })}
-                    color={health.status === 'healthy' ? 'success' : 'error'}
-                    size="small"
+                    label={t(`systemHealth.status.${health.status}`)}
+                    color={health.status === 'healthy' ? 'success' : health.status === 'warning' ? 'warning' : 'error'}
+                    size={isMobile ? 'small' : 'medium'}
                   />
                 </Box>
               </Box>
             }
           />
-          <CardContent>
-            <Grid container spacing={3}>
+          <CardContent sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+            <Grid container spacing={{ xs: 2, sm: 3 }}>
               <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {t('system-monitoring.systemHealth.metrics.uptime', { defaultValue: 'وقت التشغيل' })}
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                >
+                  {t('systemHealth.metrics.uptime')}
                 </Typography>
-                <Typography variant="h5" fontWeight="bold">
+                <Typography 
+                  variant={isMobile ? 'h6' : 'h5'} 
+                  fontWeight="bold"
+                  sx={{ color: 'text.primary' }}
+                >
                   {formatUptime(health.uptime)}
                 </Typography>
               </Grid>
 
               <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {t('system-monitoring.systemHealth.metrics.avgResponseTime', { defaultValue: 'متوسط وقت الاستجابة' })}
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                >
+                  {t('systemHealth.metrics.avgResponseTime')}
                 </Typography>
-                <Typography variant="h5" fontWeight="bold">
-                  {t('system-monitoring.systemHealth.units.milliseconds', {
-                    defaultValue: 'مللي ثانية',
+                <Typography 
+                  variant={isMobile ? 'h6' : 'h5'} 
+                  fontWeight="bold"
+                  sx={{ color: 'text.primary' }}
+                >
+                  {t('systemHealth.units.milliseconds', {
                     value: health.avgApiResponseTime.toFixed(2),
                   })}
                 </Typography>
               </Grid>
 
               <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {t('system-monitoring.systemHealth.metrics.errorRate', { defaultValue: 'معدل الأخطاء' })}
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                >
+                  {t('systemHealth.metrics.errorRate')}
                 </Typography>
-                <Typography variant="h5" fontWeight="bold" sx={{ color: getUsageColor(health.errorRate) }}>
-                  {t('system-monitoring.systemHealth.units.percentage', {
-                    defaultValue: 'نسبة الأخطاء',
+                <Typography 
+                  variant={isMobile ? 'h6' : 'h5'} 
+                  fontWeight="bold" 
+                  sx={{ color: getUsageColor(health.errorRate) }}
+                >
+                  {t('systemHealth.units.percentage', {
                     value: health.errorRate.toFixed(2),
                   })}
                 </Typography>
               </Grid>
 
               <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {t('system-monitoring.systemHealth.metrics.activeRequests', { defaultValue: 'عدد الطلبات النشطة' }    )}
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                >
+                  {t('systemHealth.metrics.activeRequests')}
                 </Typography>
-                <Typography variant="h5" fontWeight="bold">
-                  {t('system-monitoring.systemHealth.metrics.activeRequests', {
-                    defaultValue: 'عدد الطلبات النشطة',
-                    value: health.activeRequests,
-                  })}
+                <Typography 
+                  variant={isMobile ? 'h6' : 'h5'} 
+                  fontWeight="bold"
+                  sx={{ color: 'text.primary' }}
+                >
+                  {health.activeRequests}
                 </Typography>
               </Grid>
             </Grid>
@@ -217,32 +335,106 @@ export function SystemMonitoringPage() {
 
       {/* Resources */}
       {resources && (
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-            <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-              <Tab icon={<Speed />} iconPosition="start" label={t('system-monitoring.tabs.resources', { defaultValue: 'الموارد' })} />
-              <Tab icon={<Storage />} iconPosition="start" label={t('system-monitoring.tabs.database', { defaultValue: 'القاعدة البيانية' })} />
-              <Tab icon={<Cloud />} iconPosition="start" label={t('system-monitoring.tabs.cache', { defaultValue: 'الذاكرة المؤقتة' })} />
+        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+          <Box 
+            sx={{ 
+              borderBottom: 1, 
+              borderColor: 'divider', 
+              mb: { xs: 2, sm: 3 },
+              overflowX: 'auto',
+              '& .MuiTabs-root': {
+                minHeight: { xs: 48, sm: 48 },
+              },
+              '& .MuiTab-root': {
+                minWidth: { xs: 100, sm: 140 },
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                px: { xs: 1, sm: 2 },
+                textTransform: 'none',
+                fontWeight: 500,
+              },
+            }}
+          >
+            <Tabs 
+              value={activeTab} 
+              onChange={(_, newValue) => setActiveTab(newValue)}
+              variant={isMobile ? 'scrollable' : 'standard'}
+              scrollButtons={isMobile ? 'auto' : false}
+              allowScrollButtonsMobile={isMobile}
+              sx={{
+                '& .MuiTabs-indicator': {
+                  bgcolor: 'primary.main',
+                  height: 3,
+                },
+                '& .MuiTab-root': {
+                  color: 'text.secondary',
+                  '&.Mui-selected': {
+                    color: 'primary.main',
+                  },
+                  '&:hover': {
+                    bgcolor: theme.palette.mode === 'dark' 
+                      ? 'rgba(255, 255, 255, 0.05)' 
+                      : 'rgba(0, 0, 0, 0.04)',
+                  },
+                },
+              }}
+            >
+              <Tab 
+                icon={isMobile ? <Speed fontSize="small" /> : <Speed />} 
+                iconPosition="start" 
+                label={t('tabs.resources')}
+              />
+              <Tab 
+                icon={isMobile ? <Storage fontSize="small" /> : <Storage />} 
+                iconPosition="start" 
+                label={t('tabs.database')}
+              />
+              <Tab 
+                icon={isMobile ? <Cloud fontSize="small" /> : <Cloud />} 
+                iconPosition="start" 
+                label={t('tabs.cache')}
+              />
             </Tabs>
           </Box>
 
           {activeTab === 0 && (
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 2, sm: 3 }}>
               {/* CPU */}
               <Grid component="div" size={{ xs: 12, md: 4 }}>
-                <Card>
+                <Card
+                  sx={{
+                    bgcolor: 'background.paper',
+                    boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
+                    height: '100%',
+                  }}
+                >
                   <CardHeader
+                    sx={{ 
+                      pb: { xs: 1, sm: 2 },
+                      px: { xs: 2, sm: 3 },
+                      pt: { xs: 2, sm: 3 },
+                    }}
                     title={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body1" fontWeight="medium">
-                          {t('system-monitoring.resources.cpu.title', { defaultValue: 'المعالج' })}
+                        <Typography 
+                          variant={isMobile ? 'body2' : 'body1'} 
+                          fontWeight="medium"
+                          sx={{ color: 'text.primary' }}
+                        >
+                          {t('resources.cpu.title')}
                         </Typography>
-                        <Speed color="action" />
+                        <Speed 
+                          color="action" 
+                          sx={{ fontSize: { xs: 20, sm: 24 } }}
+                        />
                       </Box>
                     }
                   />
-                  <CardContent>
-                    <Typography variant="h4" fontWeight="bold" sx={{ color: getUsageColor(resources.cpu.usage) }}>
+                  <CardContent sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+                    <Typography 
+                      variant={isMobile ? 'h5' : 'h4'} 
+                      fontWeight="bold" 
+                      sx={{ color: getUsageColor(resources.cpu.usage) }}
+                    >
                       {resources.cpu.usage.toFixed(1)}%
                     </Typography>
                     <Box sx={{ mt: 2 }}>
@@ -250,12 +442,18 @@ export function SystemMonitoringPage() {
                         variant="determinate"
                         value={resources.cpu.usage}
                         color={getProgressColor(resources.cpu.usage)}
-                        sx={{ height: 8, borderRadius: 1 }}
+                        sx={{ height: { xs: 6, sm: 8 }, borderRadius: 1 }}
                       />
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      {t('system-monitoring.resources.cpu.cores', {
-                        defaultValue: 'عدد المعالجات',
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        mt: 2,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      }}
+                    >
+                      {t('resources.cpu.cores', {
                         count: resources.cpu.cores,
                       })}
                     </Typography>
@@ -265,19 +463,41 @@ export function SystemMonitoringPage() {
 
               {/* Memory */}
               <Grid component="div" size={{ xs: 12, md: 4 }}>
-                <Card>
+                <Card
+                  sx={{
+                    bgcolor: 'background.paper',
+                    boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
+                    height: '100%',
+                  }}
+                >
                   <CardHeader
+                    sx={{ 
+                      pb: { xs: 1, sm: 2 },
+                      px: { xs: 2, sm: 3 },
+                      pt: { xs: 2, sm: 3 },
+                    }}
                     title={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body1" fontWeight="medium">
-                          {t('system-monitoring.resources.memory.title', { defaultValue: 'الذاكرة' })}
+                        <Typography 
+                          variant={isMobile ? 'body2' : 'body1'} 
+                          fontWeight="medium"
+                          sx={{ color: 'text.primary' }}
+                        >
+                          {t('resources.memory.title')}
                         </Typography>
-                        <Memory color="action" />
+                        <Memory 
+                          color="action" 
+                          sx={{ fontSize: { xs: 20, sm: 24 } }}
+                        />
                       </Box>
                     }
                   />
-                  <CardContent>
-                    <Typography variant="h4" fontWeight="bold" sx={{ color: getUsageColor(resources.memory.usagePercentage) }}>
+                  <CardContent sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+                    <Typography 
+                      variant={isMobile ? 'h5' : 'h4'} 
+                      fontWeight="bold" 
+                      sx={{ color: getUsageColor(resources.memory.usagePercentage) }}
+                    >
                       {resources.memory.usagePercentage.toFixed(1)}%
                     </Typography>
                     <Box sx={{ mt: 2 }}>
@@ -285,12 +505,18 @@ export function SystemMonitoringPage() {
                         variant="determinate"
                         value={resources.memory.usagePercentage}
                         color={getProgressColor(resources.memory.usagePercentage)}
-                        sx={{ height: 8, borderRadius: 1 }}
+                        sx={{ height: { xs: 6, sm: 8 }, borderRadius: 1 }}
                       />
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      {t('system-monitoring.resources.memory.usage', {
-                        defaultValue: 'استخدام الذاكرة',
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        mt: 2,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      }}
+                    >
+                      {t('resources.memory.usage', {
                         used: formatBytes(resources.memory.used),
                         total: formatBytes(resources.memory.total),
                       })}
@@ -301,19 +527,41 @@ export function SystemMonitoringPage() {
 
               {/* Disk */}
               <Grid component="div" size={{ xs: 12, md: 4 }}>
-                <Card>
+                <Card
+                  sx={{
+                    bgcolor: 'background.paper',
+                    boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
+                    height: '100%',
+                  }}
+                >
                   <CardHeader
+                    sx={{ 
+                      pb: { xs: 1, sm: 2 },
+                      px: { xs: 2, sm: 3 },
+                      pt: { xs: 2, sm: 3 },
+                    }}
                     title={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body1" fontWeight="medium">
-                          {t('system-monitoring.resources.disk.title', { defaultValue: 'القرص' })}
+                        <Typography 
+                          variant={isMobile ? 'body2' : 'body1'} 
+                          fontWeight="medium"
+                          sx={{ color: 'text.primary' }}
+                        >
+                          {t('resources.disk.title')}
                         </Typography>
-                        <Storage color="action" />
+                        <Storage 
+                          color="action" 
+                          sx={{ fontSize: { xs: 20, sm: 24 } }}
+                        />
                       </Box>
                     }
                   />
-                  <CardContent>
-                    <Typography variant="h4" fontWeight="bold" sx={{ color: getUsageColor(resources.disk.usagePercentage) }}>
+                  <CardContent sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+                    <Typography 
+                      variant={isMobile ? 'h5' : 'h4'} 
+                      fontWeight="bold" 
+                      sx={{ color: getUsageColor(resources.disk.usagePercentage) }}
+                    >
                       {resources.disk.usagePercentage.toFixed(1)}%
                     </Typography>
                     <Box sx={{ mt: 2 }}>
@@ -321,12 +569,18 @@ export function SystemMonitoringPage() {
                         variant="determinate"
                         value={resources.disk.usagePercentage}
                         color={getProgressColor(resources.disk.usagePercentage)}
-                        sx={{ height: 8, borderRadius: 1 }}
+                        sx={{ height: { xs: 6, sm: 8 }, borderRadius: 1 }}
                       />
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      {t('system-monitoring.resources.disk.usage', {
-                        defaultValue: 'استخدام القرص',
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        mt: 2,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      }}
+                    >
+                      {t('resources.disk.usage', {
                         used: formatBytes(resources.disk.used),
                         total: formatBytes(resources.disk.total),
                       })}
@@ -338,63 +592,113 @@ export function SystemMonitoringPage() {
           )}
 
           {activeTab === 1 && health && (
-            <Card>
+            <Card
+              sx={{
+                bgcolor: 'background.paper',
+                boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
+              }}
+            >
               <CardHeader
+                sx={{ 
+                  pb: { xs: 1, sm: 2 },
+                  px: { xs: 2, sm: 3 },
+                  pt: { xs: 2, sm: 3 },
+                }}
                 title={
-                  <Typography variant="h6" fontWeight="bold">
-                    {t('system-monitoring.database.title', { defaultValue: 'القاعدة البيانية' })}
+                  <Typography 
+                    variant={isMobile ? 'subtitle1' : 'h6'} 
+                    fontWeight="bold"
+                    sx={{ color: 'text.primary' }}
+                  >
+                    {t('database.title')}
                   </Typography>
                 }
               />
-              <CardContent>
-                <Grid container spacing={3}>
+              <CardContent sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+                <Grid container spacing={{ xs: 2, sm: 3 }}>
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {t('system-monitoring.database.metrics.status', { defaultValue: 'الحالة' })}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      gutterBottom
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {t('database.metrics.status')}
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {health.databaseStatus.connected ? (
-                        <CheckCircle color="success" />
+                        <CheckCircle 
+                          color="success" 
+                          sx={{ fontSize: { xs: 20, sm: 24 } }}
+                        />
                       ) : (
-                        <Cancel color="error" />
+                        <Cancel 
+                          color="error" 
+                          sx={{ fontSize: { xs: 20, sm: 24 } }}
+                        />
                       )}
-                      <Typography variant="body1" fontWeight="medium">
-                        {t(`system-monitoring.database.status.${health.databaseStatus.connected ? 'connected' : 'disconnected'}`, {
-                          defaultValue: health.databaseStatus.connected ? 'متصل' : 'غير متصل',
-                        })}
+                      <Typography 
+                        variant="body1" 
+                        fontWeight="medium"
+                        sx={{ color: 'text.primary' }}
+                      >
+                        {t(`database.status.${health.databaseStatus.connected ? 'connected' : 'disconnected'}`)}
                       </Typography>
                     </Box>
                   </Grid>
 
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {t('system-monitoring.database.metrics.responseTime', { defaultValue: 'وقت الاستجابة' })}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      gutterBottom
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {t('database.metrics.responseTime')}
                     </Typography>
-                    <Typography variant="h6" fontWeight="bold">
-                      {t('system-monitoring.database.units.milliseconds', {
-                        defaultValue: 'مللي ثانية',
+                    <Typography 
+                      variant={isMobile ? 'body1' : 'h6'} 
+                      fontWeight="bold"
+                      sx={{ color: 'text.primary' }}
+                    >
+                      {t('database.units.milliseconds', {
                         value: health.databaseStatus.responseTime,
                       })}
                     </Typography>
                   </Grid>
 
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {t('system-monitoring.database.metrics.collections', { defaultValue: 'عدد المجموعات' })}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      gutterBottom
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {t('database.metrics.collections')}
                     </Typography>
-                    <Typography variant="h6" fontWeight="bold">
-                      {t('system-monitoring.database.metrics.collections', {
-                        defaultValue: 'عدد المجموعات',
-                        value: health.databaseStatus.collections,
-                      })}
+                    <Typography 
+                      variant={isMobile ? 'body1' : 'h6'} 
+                      fontWeight="bold"
+                      sx={{ color: 'text.primary' }}
+                    >
+                      {health.databaseStatus.collections}
                     </Typography>
                   </Grid>
 
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {t('system-monitoring.database.metrics.totalSize', { defaultValue: 'حجم القاعدة البيانية' })}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      gutterBottom
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {t('database.metrics.totalSize')}
                     </Typography>
-                    <Typography variant="h6" fontWeight="bold">
+                    <Typography 
+                      variant={isMobile ? 'body1' : 'h6'} 
+                      fontWeight="bold"
+                      sx={{ color: 'text.primary' }}
+                    >
                       {formatBytes(health.databaseStatus.totalSize)}
                     </Typography>
                   </Grid>
@@ -404,65 +708,116 @@ export function SystemMonitoringPage() {
           )}
 
           {activeTab === 2 && health && (
-            <Card>
+            <Card
+              sx={{
+                bgcolor: 'background.paper',
+                boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
+              }}
+            >
               <CardHeader
+                sx={{ 
+                  pb: { xs: 1, sm: 2 },
+                  px: { xs: 2, sm: 3 },
+                  pt: { xs: 2, sm: 3 },
+                }}
                 title={
-                  <Typography variant="h6" fontWeight="bold">
-                    {t('system-monitoring.cache.title', { defaultValue: 'الذاكرة المؤقتة' })}
+                  <Typography 
+                    variant={isMobile ? 'subtitle1' : 'h6'} 
+                    fontWeight="bold"
+                    sx={{ color: 'text.primary' }}
+                  >
+                    {t('cache.title')}
                   </Typography>
                 }
               />
-              <CardContent>
-                <Grid container spacing={3}>
+              <CardContent sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+                <Grid container spacing={{ xs: 2, sm: 3 }}>
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {t('system-monitoring.cache.metrics.status', { defaultValue: 'الحالة' })}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      gutterBottom
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {t('cache.metrics.status')}
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {health.redisStatus.connected ? (
-                        <CheckCircle color="success" />
+                        <CheckCircle 
+                          color="success" 
+                          sx={{ fontSize: { xs: 20, sm: 24 } }}
+                        />
                       ) : (
-                        <Cancel color="error" />
+                        <Cancel 
+                          color="error" 
+                          sx={{ fontSize: { xs: 20, sm: 24 } }}
+                        />
                       )}
-                      <Typography variant="body1" fontWeight="medium">
-                          {t(`system-monitoring.cache.status.${health.redisStatus.connected ? 'connected' : 'disconnected'}`, {
-                          defaultValue: health.redisStatus.connected ? 'متصل' : 'غير متصل',
-                        })}
+                      <Typography 
+                        variant="body1" 
+                        fontWeight="medium"
+                        sx={{ color: 'text.primary' }}
+                      >
+                        {t(`cache.status.${health.redisStatus.connected ? 'connected' : 'disconnected'}`)}
                       </Typography>
                     </Box>
                   </Grid>
 
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {t('system-monitoring.cache.metrics.responseTime', { defaultValue: 'وقت الاستجابة' })}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      gutterBottom
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {t('cache.metrics.responseTime')}
                     </Typography>
-                    <Typography variant="h6" fontWeight="bold"  >
-                      {t('system-monitoring.cache.units.milliseconds', {
-                        defaultValue: 'مللي ثانية',
+                    <Typography 
+                      variant={isMobile ? 'body1' : 'h6'} 
+                      fontWeight="bold"
+                      sx={{ color: 'text.primary' }}
+                    >
+                      {t('cache.units.milliseconds', {
                         value: health.redisStatus.responseTime,
                       })}
                     </Typography>
                   </Grid>
 
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {t('system-monitoring.cache.metrics.hitRate', { defaultValue: 'معدل الإصابة' })}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      gutterBottom
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {t('cache.metrics.hitRate')}
                     </Typography>
-                    <Typography variant="h6" fontWeight="bold" color="success.main">
-                      {t('system-monitoring.cache.units.percentage', {
-                        defaultValue: 'نسبة الإصابة',
+                    <Typography 
+                      variant={isMobile ? 'body1' : 'h6'} 
+                      fontWeight="bold" 
+                      color="success.main"
+                    >
+                      {t('cache.units.percentage', {
                         value: health.redisStatus.hitRate.toFixed(1),
                       })}
                     </Typography>
                   </Grid>
 
                   <Grid component="div" size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {t('system-monitoring.cache.metrics.memoryUsage', { defaultValue: 'استخدام الذاكرة' })}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      gutterBottom
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {t('cache.metrics.memoryUsage')}
                     </Typography>
-                    <Typography variant="h6" fontWeight="bold">
-                      {t('system-monitoring.cache.units.percentage', {
-                        defaultValue: 'نسبة الاستخدام',
+                    <Typography 
+                      variant={isMobile ? 'body1' : 'h6'} 
+                      fontWeight="bold"
+                      sx={{ color: 'text.primary' }}
+                    >
+                      {t('cache.units.percentage', {
                         value: health.redisStatus.memoryUsage.toFixed(1),
                       })}
                     </Typography>
@@ -475,32 +830,39 @@ export function SystemMonitoringPage() {
       )}
 
       {/* Charts Section */}
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" fontWeight="bold" sx={{ mb: 3 }}>
-          {t('system-monitoring.charts.title', { defaultValue: 'الرسوم البيانية' }  )}
+      <Box sx={{ mt: { xs: 3, sm: 4 } }}>
+        <Typography 
+          variant={isMobile ? 'subtitle1' : 'h6'} 
+          fontWeight="bold" 
+          sx={{ 
+            mb: { xs: 2, sm: 3 },
+            color: 'text.primary',
+          }}
+        >
+          {t('charts.title')}
         </Typography>
 
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 2, sm: 3 } }}>
           <Grid component="div" size={{ xs: 12, lg: 6 }}>
             <MetricsChart
               metricType="cpu"
-              title={t('system-monitoring.charts.metrics.cpu', { defaultValue: 'المعالج' })}
+              title={t('charts.metrics.cpu')}
               color="#3b82f6"
             />
           </Grid>
           <Grid component="div" size={{ xs: 12, lg: 6 }}>
             <MetricsChart
               metricType="memory"
-              title={t('system-monitoring.charts.metrics.memory', { defaultValue: 'الذاكرة' })}
+              title={t('charts.metrics.memory')}
               color="#10b981"
             />
           </Grid>
         </Grid>
 
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
           <MetricsChart
             metricType="disk"
-            title={t('system-monitoring.charts.metrics.disk', { defaultValue: 'القرص' } )}
+            title={t('charts.metrics.disk')}
             color="#f59e0b"
           />
         </Box>
@@ -510,9 +872,16 @@ export function SystemMonitoringPage() {
 
       {/* Last Updated */}
       {health && (
-        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
-          {t('system-monitoring.actions.lastUpdated', {
-            defaultValue: 'تم التحديث في',
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          align="center" 
+          sx={{ 
+            mt: { xs: 3, sm: 4 },
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+          }}
+        >
+          {t('actions.lastUpdated', {
             time: new Date(health.lastUpdated).toLocaleString('ar-YE'),
           })}
         </Typography>

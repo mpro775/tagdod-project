@@ -14,6 +14,7 @@ import { AttributesModule } from '../attributes/attributes.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabilities.schema';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { SharedModule } from '../../shared/shared.module';
@@ -24,6 +25,7 @@ import { SharedModule } from '../../shared/shared.module';
       { name: Product.name, schema: ProductSchema },
       { name: Variant.name, schema: VariantSchema },
       { name: User.name, schema: UserSchema },
+      { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
     CacheModule,
     AttributesModule,

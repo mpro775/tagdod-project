@@ -144,27 +144,36 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
     Object.values(errors).every((error) => error === '');
 
   return (
-    <Card>
+    <Card sx={{ borderRadius: { xs: 1, sm: 2 } }}>
       <CardHeader
         title={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TrendingUp color="primary" />
-            <Typography variant="h6" component="div">
-              تحديث أسعار الصرف
+            <TrendingUp color="primary" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
+            <Typography 
+              variant="h6" 
+              component="div"
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
+              {t('form.title')}
             </Typography>
           </Box>
         }
-        subheader="قم بتحديث أسعار الصرف للعملات المدعومة"
+        subheader={
+          <Typography sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
+            {t('form.subtitle')}
+          </Typography>
+        }
+        sx={{ px: { xs: 1.5, sm: 2 }, pt: { xs: 1.5, sm: 2 } }}
       />
-      <CardContent>
+      <CardContent sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}>
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert severity="error" sx={{ mb: { xs: 2, sm: 3 } }}>
             {error}
           </Alert>
         )}
 
         <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {/* USD to YER */}
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl
@@ -172,7 +181,7 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
                 error={touched.usdToYer && !!errors.usdToYer}
                 variant="outlined"
               >
-                <InputLabel htmlFor="usdToYer">الدولار الأمريكي إلى الريال اليمني</InputLabel>
+                <InputLabel htmlFor="usdToYer">{t('form.usdToYer')}</InputLabel>
                 <OutlinedInput
                   id="usdToYer"
                   type="number"
@@ -195,12 +204,15 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
                     min: '0.01',
                     max: '10000',
                   }}
-                  label="الدولار الأمريكي إلى الريال اليمني"
+                  label={t('form.usdToYer')}
                 />
                 {touched.usdToYer && errors.usdToYer && (
                   <FormHelperText>{errors.usdToYer}</FormHelperText>
                 )}
-                <FormHelperText>1 دولار = {formData.usdToYer} ريال يمني</FormHelperText>
+                <FormHelperText>{t('form.oneUSDEquals', { 
+                  amount: formData.usdToYer, 
+                  usd: t('exchangeRates.usd') 
+                })}</FormHelperText>
               </FormControl>
             </Grid>
 
@@ -211,7 +223,7 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
                 error={touched.usdToSar && !!errors.usdToSar}
                 variant="outlined"
               >
-                <InputLabel htmlFor="usdToSar">الدولار الأمريكي إلى الريال السعودي</InputLabel>
+                <InputLabel htmlFor="usdToSar">{t('form.usdToSar')}</InputLabel>
                 <OutlinedInput
                   id="usdToSar"
                   type="number"
@@ -234,12 +246,15 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
                     min: '0.01',
                     max: '10000',
                   }}
-                  label="الدولار الأمريكي إلى الريال السعودي"
+                  label={t('form.usdToSar')}
                 />
                 {touched.usdToSar && errors.usdToSar && (
                   <FormHelperText>{errors.usdToSar}</FormHelperText>
                 )}
-                <FormHelperText>1 دولار = {formData.usdToSar} ريال سعودي</FormHelperText>
+                <FormHelperText>{t('form.oneUSDEquals', { 
+                  amount: formData.usdToSar, 
+                  usd: t('exchangeRates.usd') 
+                })}</FormHelperText>
               </FormControl>
             </Grid>
 
@@ -249,26 +264,34 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
                 fullWidth
                 multiline
                 rows={3}
-                label="ملاحظات (اختياري)"
+                label={t('form.notes')}
                 value={formData.notes}
                 onChange={handleInputChange('notes')}
-                placeholder="أضف ملاحظات حول تحديث أسعار الصرف..."
+                placeholder={t('form.notesPlaceholder')}
                 variant="outlined"
               />
             </Grid>
           </Grid>
 
-          <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: { xs: 2, sm: 3 } }} />
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column-reverse', sm: 'row' },
+            justifyContent: 'flex-end', 
+            gap: 2 
+          }}>
             {onCancel && (
               <Button
                 variant="outlined"
                 onClick={onCancel}
                 disabled={loading}
-                sx={{ minWidth: 120 }}
+                sx={{ 
+                  minWidth: { xs: 'auto', sm: 120 },
+                  width: { xs: '100%', sm: 'auto' }
+                }}
               >
-                إلغاء
+                {t('form.cancel')}
               </Button>
             )}
             <Button
@@ -276,9 +299,12 @@ export const ExchangeRateForm: React.FC<ExchangeRateFormProps> = ({
               variant="contained"
               disabled={loading || !isFormValid}
               startIcon={loading ? <CircularProgress size={20} /> : <Save />}
-              sx={{ minWidth: 120 }}
+              sx={{ 
+                minWidth: { xs: 'auto', sm: 120 },
+                width: { xs: '100%', sm: 'auto' }
+              }}
             >
-              {loading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+              {loading ? t('form.saving') : t('form.save')}
             </Button>
           </Box>
         </form>

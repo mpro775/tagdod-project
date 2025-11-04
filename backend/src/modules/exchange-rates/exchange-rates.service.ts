@@ -77,12 +77,38 @@ export class ExchangeRatesService {
       let rate: number;
       let formatted: string;
 
+      // التحويل من USD
       if (convertDto.fromCurrency === 'USD' && convertDto.toCurrency === 'YER') {
         rate = rates.usdToYer;
         formatted = `${Math.round(convertDto.amount * rate).toLocaleString()} $`;
       } else if (convertDto.fromCurrency === 'USD' && convertDto.toCurrency === 'SAR') {
         rate = rates.usdToSar;
         formatted = `${(convertDto.amount * rate).toFixed(2)} $`;
+      } 
+      // التحويل العكسي إلى USD
+      else if (convertDto.fromCurrency === 'YER' && convertDto.toCurrency === 'USD') {
+        rate = 1 / rates.usdToYer;
+        formatted = `$${(convertDto.amount * rate).toFixed(2)}`;
+      } else if (convertDto.fromCurrency === 'SAR' && convertDto.toCurrency === 'USD') {
+        rate = 1 / rates.usdToSar;
+        formatted = `$${(convertDto.amount * rate).toFixed(2)}`;
+      }
+      // التحويل بين YER و SAR (عبر USD)
+      else if (convertDto.fromCurrency === 'YER' && convertDto.toCurrency === 'SAR') {
+        // أولاً تحويل YER إلى USD ثم USD إلى SAR
+        rate = rates.usdToSar / rates.usdToYer;
+        formatted = `${(convertDto.amount * rate).toFixed(2)} $`;
+      } else if (convertDto.fromCurrency === 'SAR' && convertDto.toCurrency === 'YER') {
+        // أولاً تحويل SAR إلى USD ثم USD إلى YER
+        rate = rates.usdToYer / rates.usdToSar;
+        formatted = `${Math.round(convertDto.amount * rate).toLocaleString()} $`;
+      }
+      // نفس العملة
+      else if (convertDto.fromCurrency === convertDto.toCurrency) {
+        rate = 1;
+        const symbol = convertDto.fromCurrency === 'USD' ? '$' : '$';
+        const decimals = convertDto.fromCurrency === 'USD' ? 2 : (convertDto.fromCurrency === 'SAR' ? 2 : 0);
+        formatted = `${symbol}${(convertDto.amount * rate).toFixed(decimals)}`;
       } else {
         throw new CurrencyNotSupportedException({ from: convertDto.fromCurrency, to: convertDto.toCurrency });
       }
@@ -143,5 +169,76 @@ export class ExchangeRatesService {
   async getUSDToSARRate(): Promise<number> {
     const rates = await this.getCurrentRates();
     return rates.usdToSar;
+  }
+
+  /**
+   * تحويل مبلغ من أي عملة إلى الدولار
+   */
+  async convertToUSD(amount: number, fromCurrency: string): Promise<number> {
+    if (fromCurrency === 'USD') {
+      return amount;
+    }
+    
+    const result = await this.convertCurrency({
+      amount,
+      fromCurrency,
+      toCurrency: 'USD',
+    });
+    
+    return result.result;
+  }
+
+  /**
+   * حساب الإجماليات بالعملات الثلاث (USD, YER, SAR)
+   */
+  async calculateTotalsInAllCurrencies(
+    usdSubtotal: number,
+    usdShipping: number = 0,
+    usdTax: number = 0,
+    usdDiscount: number = 0,
+  ): Promise<{
+    USD: { subtotal: number; shippingCost: number; tax: number; totalDiscount: number; total: number };
+    YER: { subtotal: number; shippingCost: number; tax: number; totalDiscount: number; total: number };
+    SAR: { subtotal: number; shippingCost: number; tax: number; totalDiscount: number; total: number };
+  }> {
+    const usdTotal = usdSubtotal + usdShipping + usdTax - usdDiscount;
+
+    // تحويل إلى YER
+    const yerSubtotal = await this.convertFromUSDToYER(usdSubtotal);
+    const yerShipping = usdShipping > 0 ? await this.convertFromUSDToYER(usdShipping) : { result: 0 } as CurrencyConversionResult;
+    const yerTax = usdTax > 0 ? await this.convertFromUSDToYER(usdTax) : { result: 0 } as CurrencyConversionResult;
+    const yerDiscount = usdDiscount > 0 ? await this.convertFromUSDToYER(usdDiscount) : { result: 0 } as CurrencyConversionResult;
+    const yerTotal = await this.convertFromUSDToYER(usdTotal);
+
+    // تحويل إلى SAR
+    const sarSubtotal = await this.convertFromUSDToSAR(usdSubtotal);
+    const sarShipping = usdShipping > 0 ? await this.convertFromUSDToSAR(usdShipping) : { result: 0 } as CurrencyConversionResult;
+    const sarTax = usdTax > 0 ? await this.convertFromUSDToSAR(usdTax) : { result: 0 } as CurrencyConversionResult;
+    const sarDiscount = usdDiscount > 0 ? await this.convertFromUSDToSAR(usdDiscount) : { result: 0 } as CurrencyConversionResult;
+    const sarTotal = await this.convertFromUSDToSAR(usdTotal);
+
+    return {
+      USD: {
+        subtotal: Math.round(usdSubtotal * 100) / 100,
+        shippingCost: Math.round(usdShipping * 100) / 100,
+        tax: Math.round(usdTax * 100) / 100,
+        totalDiscount: Math.round(usdDiscount * 100) / 100,
+        total: Math.round(usdTotal * 100) / 100,
+      },
+      YER: {
+        subtotal: Math.round(yerSubtotal.result),
+        shippingCost: Math.round(yerShipping.result),
+        tax: Math.round(yerTax.result),
+        totalDiscount: Math.round(yerDiscount.result),
+        total: Math.round(yerTotal.result),
+      },
+      SAR: {
+        subtotal: Math.round(sarSubtotal.result * 100) / 100,
+        shippingCost: Math.round(sarShipping.result * 100) / 100,
+        tax: Math.round(sarTax.result * 100) / 100,
+        totalDiscount: Math.round(sarDiscount.result * 100) / 100,
+        total: Math.round(sarTotal.result * 100) / 100,
+      },
+    };
   }
 }

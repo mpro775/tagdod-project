@@ -335,12 +335,23 @@ export class Order {
   @Prop({ default: 0 })
   itemsDiscount!: number; // خصم المنتجات (من العروض)
 
-  // الكوبون
-  @Prop()
-  appliedCouponCode?: string;
+  // الكوبون - Multiple Coupons Support
+  @Prop({ type: [String], default: [] })
+  appliedCouponCodes!: string[];
+
+  @Prop({ type: [Object], default: [] })
+  appliedCoupons!: Array<{
+    code: string;
+    discount: number;
+    details: CouponDetails;
+  }>;
 
   @Prop({ default: 0 })
   couponDiscount!: number;
+
+  // Keep old fields for backward compatibility (deprecated)
+  @Prop()
+  appliedCouponCode?: string;
 
   @Prop({ type: CouponDetailsSchema })
   couponDetails?: CouponDetails;
@@ -397,6 +408,32 @@ export class Order {
   @Prop({ required: true })
   total!: number; // المجموع النهائي
 
+  // 🆕 إجماليات بالعملات الثلاث (USD, YER, SAR)
+  @Prop({ type: Object })
+  totalsInAllCurrencies?: {
+    USD: {
+      subtotal: number;
+      shippingCost: number;
+      tax: number;
+      totalDiscount: number;
+      total: number;
+    };
+    YER: {
+      subtotal: number;
+      shippingCost: number;
+      tax: number;
+      totalDiscount: number;
+      total: number;
+    };
+    SAR: {
+      subtotal: number;
+      shippingCost: number;
+      tax: number;
+      totalDiscount: number;
+      total: number;
+    };
+  };
+
   // ===== الدفع =====
   @Prop({ type: String, enum: Object.values(PaymentMethod), default: PaymentMethod.COD })
   paymentMethod!: PaymentMethod;
@@ -412,6 +449,29 @@ export class Order {
 
   @Prop({ type: Date })
   paidAt?: Date;
+
+  // ===== الدفع المحلي =====
+  @Prop({ type: Types.ObjectId, ref: 'LocalPaymentAccount' })
+  localPaymentAccountId?: Types.ObjectId; // معرف الحساب المحلي المختار
+
+  @Prop()
+  paymentReference?: string; // رقم الحوالة/المرجع من العميل
+
+  // معلومات المطابقة من الإدارة
+  @Prop()
+  verifiedPaymentAmount?: number; // المبلغ المطابق
+
+  @Prop()
+  verifiedPaymentCurrency?: string; // العملة المطابقة
+
+  @Prop({ type: Date })
+  paymentVerifiedAt?: Date; // تاريخ المطابقة
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  paymentVerifiedBy?: Types.ObjectId; // من قام بالمطابقة
+
+  @Prop()
+  paymentVerificationNotes?: string; // ملاحظات المطابقة
 
   // ===== الإرجاع والاسترداد =====
   @Prop({ type: ReturnInfoSchema, default: {} })

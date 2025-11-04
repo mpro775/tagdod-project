@@ -1,5 +1,6 @@
 import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsArray, IsBoolean, IsUrl } from 'class-validator';
 import { BannerLocation, BannerPromotionType } from '../schemas/banner.schema';
+import { UserRole } from '../../users/schemas/user.schema';
 
 export class CreateBannerDto {
   @IsString() title!: string;
@@ -19,6 +20,7 @@ export class CreateBannerDto {
   @IsNumber() @IsOptional() displayDuration?: number;
   
   @IsArray() @IsOptional() targetAudiences?: string[];
+  @IsArray() @IsEnum(UserRole, { each: true }) @IsOptional() targetUserTypes?: UserRole[];
   @IsArray() @IsOptional() targetCategories?: string[];
   @IsArray() @IsOptional() targetProducts?: string[];
 }
@@ -41,6 +43,7 @@ export class UpdateBannerDto {
   @IsNumber() @IsOptional() displayDuration?: number;
   
   @IsArray() @IsOptional() targetAudiences?: string[];
+  @IsArray() @IsEnum(UserRole, { each: true }) @IsOptional() targetUserTypes?: UserRole[];
   @IsArray() @IsOptional() targetCategories?: string[];
   @IsArray() @IsOptional() targetProducts?: string[];
 }

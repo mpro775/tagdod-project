@@ -34,20 +34,44 @@ flowchart TD
 
   F --> F1{القناة?}
   F1 -->|IN_APP| F2[حفظ في قاعدة البيانات فقط]
-  F1 -->|PUSH| F3[إرسال عبر FCM]
-  F1 -->|SMS| F4[إرسال عبر SMS Gateway]
-  F1 -->|EMAIL| F5[إرسال عبر Email Service]
+  F1 -->|PUSH| F3[PushNotificationAdapter]
+  F1 -->|SMS| F4[SmsNotificationAdapter]
+  F1 -->|EMAIL| F5[EmailNotificationAdapter]
   F1 -->|DASHBOARD| F6[حفظ في لوحة التحكم]
 
-  F2 --> F7[تحديث الحالة إلى SENT]
-  F3 --> F8[تحديث الحالة حسب النتيجة]
-  F4 --> F8
-  F5 --> F8
-  F6 --> F7
+  %% Push Notifications Flow
+  F3 --> F3A{FCM مهيأ?}
+  F3A -->|نعم| F3B[FCMAdapter.sendToDevice]
+  F3A -->|لا| F3C[Mock Implementation]
+  F3B --> F3D[Firebase Cloud Messaging]
+  F3D --> F3E{نجح الإرسال?}
+  F3E -->|نعم| F8
+  F3E -->|لا| F11
+  F3C --> F8
 
-  F8 --> F9{نجح الإرسال?}
-  F9 -->|نعم| F10[تحديث الحالة إلى DELIVERED]
-  F9 -->|لا| F11[تحديث الحالة إلى FAILED]
+  %% Email Flow
+  F5 --> F5A{SMTP مهيأ?}
+  F5A -->|نعم| F5B[EmailAdapter.sendEmail]
+  F5A -->|لا| F5C[Mock Implementation]
+  F5B --> F5D[SMTP Server]
+  F5D --> F5E{نجح الإرسال?}
+  F5E -->|نعم| F8
+  F5E -->|لا| F11
+  F5C --> F8
+
+  %% SMS Flow
+  F4 --> F4A{Twilio مهيأ?}
+  F4A -->|نعم| F4B[SMSAdapter.sendSMS]
+  F4A -->|لا| F4C[Mock Implementation]
+  F4B --> F4D[Twilio API]
+  F4D --> F4E{نجح الإرسال?}
+  F4E -->|نعم| F8
+  F4E -->|لا| F11
+  F4C --> F8
+
+  F2 --> F7[تحديث الحالة إلى SENT]
+  F6 --> F7
+  F8 --> F10[تحديث الحالة إلى DELIVERED]
   F11 --> F12[زيادة retryCount]
   F12 --> F13{retryCount < 5?}
   F13 -->|نعم| F14[جدولة إعادة المحاولة]
@@ -63,6 +87,8 @@ flowchart TD
   G --> M[استيقاظ الجدولة]
   M --> N[فحص الإشعارات المجدولة]
   N --> O[إرسال الإشعارات المستحقة]
+  O --> F
+  F14 --> F
 
   %% Error Handling
   P[خطأ في الإرسال] --> Q[حفظ errorMessage و errorCode]
@@ -75,4 +101,4 @@ flowchart TD
   J --> Z
   K --> Z
   L --> Z
-  O --> Z
+  F14 --> F

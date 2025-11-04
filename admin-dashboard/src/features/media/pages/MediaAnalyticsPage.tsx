@@ -8,20 +8,14 @@ import {
   Tab,
   Tabs,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
-  CircularProgress,
   Alert,
   Chip,
   LinearProgress,
   useTheme,
   Grid,
 } from '@mui/material';
+import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import {
   CloudUpload,
   Storage,
@@ -37,6 +31,7 @@ import {
 import { apiClient } from '@/core/api/client';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { DataTable } from '@/shared/components';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -145,6 +140,16 @@ export const MediaAnalyticsPage: React.FC = () => {
   const [storage, setStorage] = useState<StorageStats | null>(null);
   const [largestFiles, setLargestFiles] = useState<FileInfo[]>([]);
   const [recentFiles, setRecentFiles] = useState<FileInfo[]>([]);
+  
+  // Pagination state for DataTables
+  const [largestFilesPagination, setLargestFilesPagination] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 10,
+  });
+  const [recentFilesPagination, setRecentFilesPagination] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 10,
+  });
 
   const fetchOverview = async () => {
     try {
@@ -222,9 +227,9 @@ export const MediaAnalyticsPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedTab === 1) {
+    if (selectedTab === 0) {
       fetchLargestFiles();
-    } else if (selectedTab === 2) {
+    } else if (selectedTab === 1) {
       fetchRecentFiles();
     }
   }, [selectedTab]);
@@ -232,8 +237,8 @@ export const MediaAnalyticsPage: React.FC = () => {
   const handleRefresh = () => {
     fetchOverview();
     fetchStorage();
-    if (selectedTab === 1) fetchLargestFiles();
-    if (selectedTab === 2) fetchRecentFiles();
+    if (selectedTab === 0) fetchLargestFiles();
+    if (selectedTab === 1) fetchRecentFiles();
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -252,11 +257,102 @@ export const MediaAnalyticsPage: React.FC = () => {
   };
 
   const getTypeIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) return <Image />;
-    if (mimeType.startsWith('video/')) return <VideoLibrary />;
-    if (mimeType.includes('pdf') || mimeType.includes('document')) return <Description />;
-    return <Folder />;
+    if (mimeType.startsWith('image/')) return <Image sx={{ fontSize: { xs: 18, sm: 24 } }} />;
+    if (mimeType.startsWith('video/')) return <VideoLibrary sx={{ fontSize: { xs: 18, sm: 24 } }} />;
+    if (mimeType.includes('pdf') || mimeType.includes('document')) return <Description sx={{ fontSize: { xs: 18, sm: 24 } }} />;
+    return <Folder sx={{ fontSize: { xs: 18, sm: 24 } }} />;
   };
+
+  // Columns for DataTables
+  const largestFilesColumns: GridColDef[] = [
+    {
+      field: 'filename',
+      headerName: t('table.filename'),
+      flex: 1,
+      minWidth: 200,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+          {getTypeIcon(params.row.mimeType)}
+          <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {params.row.filename}
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      field: 'mimeType',
+      headerName: t('table.type'),
+      width: 150,
+      renderCell: (params) => (
+        <Chip 
+          label={params.row.mimeType} 
+          size="small" 
+          color={getTypeColor(params.row.mimeType)} 
+          sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }} 
+        />
+      ),
+    },
+    {
+      field: 'size',
+      headerName: t('table.size'),
+      width: 120,
+      align: 'right',
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="bold">
+          {formatFileSize(params.row.size)}
+        </Typography>
+      ),
+    },
+    {
+      field: 'createdAt',
+      headerName: t('table.uploadDate'),
+      width: 150,
+      renderCell: (params) => new Date(params.row.createdAt).toLocaleDateString('ar-SA'),
+    },
+  ];
+
+  const recentFilesColumns: GridColDef[] = [
+    {
+      field: 'filename',
+      headerName: t('table.filename'),
+      flex: 1,
+      minWidth: 200,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+          {getTypeIcon(params.row.mimeType)}
+          <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {params.row.filename}
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      field: 'mimeType',
+      headerName: t('table.type'),
+      width: 150,
+      renderCell: (params) => (
+        <Chip 
+          label={params.row.mimeType} 
+          size="small" 
+          color={getTypeColor(params.row.mimeType)} 
+          sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }} 
+        />
+      ),
+    },
+    {
+      field: 'size',
+      headerName: t('table.size'),
+      width: 120,
+      align: 'right',
+      renderCell: (params) => formatFileSize(params.row.size),
+    },
+    {
+      field: 'createdAt',
+      headerName: t('table.uploadDate'),
+      width: 150,
+      renderCell: (params) => new Date(params.row.createdAt).toLocaleDateString('ar-SA'),
+    },
+  ];
 
   // Doughnut chart data for file types
   const fileTypesChartData = overview && overview.filesByType
@@ -284,54 +380,54 @@ export const MediaAnalyticsPage: React.FC = () => {
     : null;
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3 } }}>
       {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ mb: { xs: 2, sm: 4 }, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2 }}>
         <Box>
-          <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom>
+          <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             {t('analyticsPageTitle')}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
             {t('analyticsPageSubtitle')}
           </Typography>
         </Box>
-        <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh} disabled={loading}>
+        <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh} disabled={loading} sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
           {t('refresh')}
         </Button>
       </Box>
 
       {/* KPI Cards */}
       {overview && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 2, sm: 4 } }}>
+            <Grid component="div" size={{ xs: 6, sm: 6, md: 3 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <CloudUpload sx={{ fontSize: 40, color: theme.palette.primary.main, mr: 2 }} />
+                  <CloudUpload sx={{ fontSize: { xs: 30, sm: 40 }, color: theme.palette.primary.main, mr: { xs: 1, sm: 2 } }} />
                   <Box>
-                    <Typography variant="h4" fontWeight="bold">
-                      {(overview.totalFiles || 0).toLocaleString('ar-SA')}
+                    <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
+                      {(overview.totalFiles || 0).toLocaleString('en-US')}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                       {t('stats.totalFiles')}
                     </Typography>
                   </Box>
                 </Box>
-                <Chip label={`${overview.filesToday || 0} ${t('units.today')}`} size="small" color="success" />
+                <Chip label={`${overview.filesToday || 0} ${t('units.today')}`} size="small" color="success" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }} />
               </CardContent>
             </Card>
           </Grid>
 
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid component="div" size={{ xs: 6, sm: 6, md: 3 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Storage sx={{ fontSize: 40, color: theme.palette.success.main, mr: 2 }} />
+                  <Storage sx={{ fontSize: { xs: 30, sm: 40 }, color: theme.palette.success.main, mr: { xs: 1, sm: 2 } }} />
                   <Box>
-                    <Typography variant="h4" fontWeight="bold">
+                    <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.2rem', sm: '2.125rem' } }}>
                       {overview.totalSizeFormatted || '0 B'}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                       {t('stats.totalSize')}
                     </Typography>
                   </Box>
@@ -340,40 +436,41 @@ export const MediaAnalyticsPage: React.FC = () => {
                   label={`${overview.storageUsagePercent || 0}% ${t('stats.used')}`}
                   size="small"
                   color={(overview.storageUsagePercent || 0) > 80 ? 'error' : 'info'}
+                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                 />
               </CardContent>
             </Card>
           </Grid>
 
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid component="div" size={{ xs: 6, sm: 6, md: 3 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <TrendingUp sx={{ fontSize: 40, color: theme.palette.warning.main, mr: 2 }} />
+                  <TrendingUp sx={{ fontSize: { xs: 30, sm: 40 }, color: theme.palette.warning.main, mr: { xs: 1, sm: 2 } }} />
                   <Box>
-                    <Typography variant="h4" fontWeight="bold">
-                      {overview.filesThisMonth || 0}
+                    <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
+                      {(overview.filesThisMonth || 0).toLocaleString('en-US')}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                       {t('stats.filesThisMonth')}
                     </Typography>
                   </Box>
                 </Box>
-                <Chip label={`${overview.filesThisWeek || 0} ${t('units.thisWeek')}`} size="small" color="warning" />
+                <Chip label={`${overview.filesThisWeek || 0} ${t('units.thisWeek')}`} size="small" color="warning" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }} />
               </CardContent>
             </Card>
           </Grid>
 
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid component="div" size={{ xs: 6, sm: 6, md: 3 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Assessment sx={{ fontSize: 40, color: theme.palette.info.main, mr: 2 }} />
+                  <Assessment sx={{ fontSize: { xs: 30, sm: 40 }, color: theme.palette.info.main, mr: { xs: 1, sm: 2 } }} />
                   <Box>
-                    <Typography variant="h4" fontWeight="bold">
+                    <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.2rem', sm: '2.125rem' } }}>
                       {overview.averageFileSizeFormatted || '0 B'}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
                       {t('stats.averageFileSize')}
                     </Typography>
                   </Box>
@@ -386,14 +483,14 @@ export const MediaAnalyticsPage: React.FC = () => {
 
       {/* File Types Distribution */}
       {overview && overview.filesByType && overview.sizeByType && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 2, sm: 4 } }}>
           <Grid component="div" size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   {t('stats.fileDistribution')}
                 </Typography>
-                <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Box sx={{ height: { xs: 250, sm: 300 }, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   {fileTypesChartData && <Doughnut data={fileTypesChartData} />}
                 </Box>
               </CardContent>
@@ -403,46 +500,46 @@ export const MediaAnalyticsPage: React.FC = () => {
           <Grid component="div" size={{ xs: 12, md: 6 }}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                   {t('stats.detailsByType')}
                 </Typography>
-                <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mt: 1 }}>
                     <Grid component="div" size={{ xs: 6 }}>
-                    <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1, color: 'white' }}>
-                      <Image />
-                      <Typography variant="h6">{overview.filesByType.images || 0}</Typography>
-                      <Typography variant="caption">{t('types.images')}</Typography>
-                      <Typography variant="caption" display="block">
+                    <Box sx={{ p: { xs: 1, sm: 2 }, bgcolor: 'primary.light', borderRadius: 1, color: 'white' }}>
+                      <Image sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                      <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{(overview.filesByType.images || 0).toLocaleString('en-US')}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{t('types.images')}</Typography>
+                      <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {formatFileSize(overview.sizeByType.images || 0)}
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid component="div" size={{ xs: 6 }}>
-                    <Box sx={{ p: 2, bgcolor: 'secondary.light', borderRadius: 1, color: 'white' }}>
-                      <VideoLibrary />
-                      <Typography variant="h6">{overview.filesByType.videos || 0}</Typography>
-                      <Typography variant="caption">{t('types.videos')}</Typography>
-                      <Typography variant="caption" display="block">
+                    <Box sx={{ p: { xs: 1, sm: 2 }, bgcolor: 'secondary.light', borderRadius: 1, color: 'white' }}>
+                      <VideoLibrary sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                      <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{(overview.filesByType.videos || 0).toLocaleString('en-US')}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{t('types.videos')}</Typography>
+                      <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {formatFileSize(overview.sizeByType.videos || 0)}
                       </Typography>
                     </Box>
                   </Grid>
                     <Grid component="div" size={{ xs: 6 }}>
-                    <Box sx={{ p: 2, bgcolor: 'warning.light', borderRadius: 1, color: 'white' }}>
-                      <Description />
-                      <Typography variant="h6">{overview.filesByType.documents || 0}</Typography>
-                      <Typography variant="caption">{t('types.documents')}</Typography>
-                      <Typography variant="caption" display="block">
+                    <Box sx={{ p: { xs: 1, sm: 2 }, bgcolor: 'warning.light', borderRadius: 1, color: 'white' }}>
+                      <Description sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                      <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{(overview.filesByType.documents || 0).toLocaleString('en-US')}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{t('types.documents')}</Typography>
+                      <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {formatFileSize(overview.sizeByType.documents || 0)}
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid component="div" size={{ xs: 6 }}>
-                    <Box sx={{ p: 2, bgcolor: 'grey.400', borderRadius: 1, color: 'white' }}>
-                      <Folder />
-                      <Typography variant="h6">{overview.filesByType.other || 0}</Typography>
-                      <Typography variant="caption">{t('types.other')}</Typography>
-                      <Typography variant="caption" display="block">
+                    <Box sx={{ p: { xs: 1, sm: 2 }, bgcolor: 'grey.400', borderRadius: 1, color: 'white' }}>
+                      <Folder sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                      <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{(overview.filesByType.other || 0).toLocaleString('en-US')}</Typography>
+                      <Typography variant="caption" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>{t('types.other')}</Typography>
+                      <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {formatFileSize(overview.sizeByType.other || 0)}
                       </Typography>
                     </Box>
@@ -456,17 +553,17 @@ export const MediaAnalyticsPage: React.FC = () => {
 
       {/* Storage Stats */}
       {storage && (
-        <Card sx={{ mb: 4 }}>
+        <Card sx={{ mb: { xs: 2, sm: 4 } }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               {t('stats.storageStats')}
             </Typography>
             <Box sx={{ mt: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2">
+                <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {t('stats.used')}: {storage.usedFormatted || '0 B'} / {storage.totalFormatted || '0 B'}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {storage.usagePercent || 0}%
                 </Typography>
               </Box>
@@ -478,18 +575,18 @@ export const MediaAnalyticsPage: React.FC = () => {
               />
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                     {t('stats.available')}
                   </Typography>
-                  <Typography variant="h6" color="success.main">
+                  <Typography variant="h6" color="success.main" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                     {storage.availableFormatted || '0 B'}
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                     {t('stats.used')}
                   </Typography>
-                  <Typography variant="h6" color="primary.main">
+                  <Typography variant="h6" color="primary.main" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                     {storage.usedFormatted || '0 B'}
                   </Typography>
                 </Box>
@@ -500,9 +597,8 @@ export const MediaAnalyticsPage: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ mb: { xs: 2, sm: 3 } }}>
         <Tabs value={selectedTab} onChange={(_, newValue) => setSelectedTab(newValue)} variant="scrollable">
-          <Tab icon={<Assessment />} label={t('tabs.overview')} iconPosition="start" />
           <Tab icon={<Storage />} label={t('tabs.largestFiles')} iconPosition="start" />
           <Tab icon={<Timeline />} label={t('tabs.recentFiles')} iconPosition="start" />
         </Tabs>
@@ -510,88 +606,34 @@ export const MediaAnalyticsPage: React.FC = () => {
 
       {/* Tab Panels */}
       <TabPanel value={selectedTab} index={0}>
-        <Alert severity="info">{t('stats.overview')}</Alert>
-      </TabPanel>
-
-      <TabPanel value={selectedTab} index={1}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-            <CircularProgress />
-          </Box>
-        ) : largestFiles.length > 0 ? (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('table.filename')}</TableCell>
-                  <TableCell>{t('table.type')}</TableCell>
-                  <TableCell align="right">{t('table.size')}</TableCell>
-                  <TableCell>{t('table.uploadDate')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {largestFiles.map((file) => (
-                  <TableRow key={file._id}>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {getTypeIcon(file.mimeType)}
-                        {file.filename}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={file.mimeType} size="small" color={getTypeColor(file.mimeType)} />
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                      {formatFileSize(file.size)}
-                    </TableCell>
-                    <TableCell>{new Date(file.createdAt).toLocaleDateString('ar-SA')}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
+        {largestFiles.length === 0 && !loading ? (
           <Alert severity="info">{t('stats.noData')}</Alert>
+        ) : (
+          <DataTable
+            columns={largestFilesColumns}
+            rows={largestFiles}
+            loading={loading}
+            paginationModel={largestFilesPagination}
+            onPaginationModelChange={setLargestFilesPagination}
+            getRowId={(row: any) => row._id}
+            height={400}
+          />
         )}
       </TabPanel>
 
-      <TabPanel value={selectedTab} index={2}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-            <CircularProgress />
-          </Box>
-        ) : recentFiles.length > 0 ? (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('table.filename')}</TableCell>
-                  <TableCell>{t('table.type')}</TableCell>
-                  <TableCell align="right">{t('table.size')}</TableCell>
-                  <TableCell>{t('table.uploadDate')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {recentFiles.map((file) => (
-                  <TableRow key={file._id}>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {getTypeIcon(file.mimeType)}
-                        {file.filename}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={file.mimeType} size="small" color={getTypeColor(file.mimeType)} />
-                    </TableCell>
-                    <TableCell align="right">{formatFileSize(file.size)}</TableCell>
-                    <TableCell>{new Date(file.createdAt).toLocaleDateString('ar-SA')}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
+      <TabPanel value={selectedTab} index={1}>
+        {recentFiles.length === 0 && !loading ? (
           <Alert severity="info">{t('stats.noData')}</Alert>
+        ) : (
+          <DataTable
+            columns={recentFilesColumns}
+            rows={recentFiles}
+            loading={loading}
+            paginationModel={recentFilesPagination}
+            onPaginationModelChange={setRecentFilesPagination}
+            getRowId={(row: any) => row._id}
+            height={400}
+          />
         )}
       </TabPanel>
     </Container>

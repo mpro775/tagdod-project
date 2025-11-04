@@ -18,8 +18,8 @@ export interface UpdateExchangeRatesRequest {
 
 export interface ConvertCurrencyRequest {
   amount: number;
-  fromCurrency: 'USD';
-  toCurrency: 'YER' | 'SAR';
+  fromCurrency: 'USD' | 'YER' | 'SAR';
+  toCurrency: 'USD' | 'YER' | 'SAR';
 }
 
 export interface ConvertCurrencyResponse {

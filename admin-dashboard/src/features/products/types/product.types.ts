@@ -67,7 +67,30 @@ export interface Product extends BaseEntity {
 
   mainImage?: string;
   // الصور (مبسط)
-  mainImageId?: string; // الصورة الرئيسية
+  mainImageId?: string | {  // الصورة الرئيسية (string أو populated object)
+    _id: string;
+    url: string;
+    filename?: string;
+    storedFilename?: string;
+    name?: string;
+    category?: string;
+    type?: string;
+    mimeType?: string;
+    size?: number;
+    width?: number;
+    height?: number;
+    fileHash?: string;
+    description?: string;
+    tags?: string[];
+    uploadedBy?: string;
+    usageCount?: number;
+    usedIn?: string[];
+    isPublic?: boolean;
+    deletedAt?: Date | null;
+    createdAt?: string;
+    updatedAt?: string;
+    __v?: number;
+  };
   imageIds: string[]; // صور إضافية
   images?: string[];
 
@@ -346,6 +369,9 @@ export interface StockAlertDto {
 export interface LowStockItem {
   variantId: string;
   productId: string;
+  productName?: string;
+  productNameEn?: string;
+  variantName?: string;
   sku?: string;
   currentStock: number;
   minStock: number;
@@ -355,6 +381,9 @@ export interface LowStockItem {
 export interface OutOfStockItem {
   variantId: string;
   productId: string;
+  productName?: string;
+  productNameEn?: string;
+  variantName?: string;
   sku?: string;
 }
 

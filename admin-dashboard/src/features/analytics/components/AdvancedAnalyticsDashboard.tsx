@@ -13,7 +13,6 @@ import {
   Tooltip,
   Skeleton,
   useTheme,
-  useMediaQuery,
   Button,
   Dialog,
   DialogTitle,
@@ -30,7 +29,11 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
+  Stack,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { getCardPadding, getCardSpacing } from '../utils/responsive';
 import {
   Analytics as AnalyticsIcon,
   Assessment as AssessmentIcon,
@@ -76,6 +79,7 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
+  const breakpoint = useBreakpoint();
 
   return (
     <div
@@ -85,7 +89,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`advanced-analytics-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: breakpoint.isXs ? 1.5 : 3 }}>{children}</Box>}
     </div>
   );
 }
@@ -98,7 +102,10 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
   initialCategory = ReportCategory.SALES,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { t } = useTranslation('analytics');
+  const breakpoint = useBreakpoint();
+  const cardPadding = getCardPadding(breakpoint);
+  const cardSpacing = getCardSpacing(breakpoint);
   
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<ReportCategory>(initialCategory);
@@ -157,7 +164,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         includeRawData: false,
       });
     } catch (error) {
-      console.error('Error generating report:', error);
+      console.error(t('messages.generateError'), error);
     }
   };
 
@@ -168,7 +175,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         data: { format, includeCharts: true, includeRawData: false },
       });
     } catch (error) {
-      console.error('Error exporting report:', error);
+      console.error(t('messages.exportError'), error);
     }
   };
 
@@ -176,7 +183,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
     try {
       await deleteReport.mutateAsync(reportId);
     } catch (error) {
-      console.error('Error deleting report:', error);
+      console.error(t('messages.deleteError'), error);
     }
   };
 
@@ -184,99 +191,144 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
     try {
       await archiveReport.mutateAsync(reportId);
     } catch (error) {
-      console.error('Error archiving report:', error);
+      console.error(t('messages.archiveError'), error);
     }
   };
 
   const tabs = [
-    { label: 'المبيعات', icon: <TrendingUpIcon />, value: 0, category: ReportCategory.SALES },
-    { label: 'المنتجات', icon: <ShoppingCartIcon />, value: 1, category: ReportCategory.PRODUCTS },
-    { label: 'العملاء', icon: <PeopleIcon />, value: 2, category: ReportCategory.CUSTOMERS },
-    { label: 'المخزون', icon: <InventoryIcon />, value: 3, category: ReportCategory.INVENTORY },
-    { label: 'المالية', icon: <AccountBalanceIcon />, value: 4, category: ReportCategory.FINANCIAL },
-    { label: 'التسويق', icon: <CampaignIcon />, value: 5, category: ReportCategory.MARKETING },
-    { label: 'الوقت الفعلي', icon: <AnalyticsIcon />, value: 6 },
-    { label: 'التقارير', icon: <AssessmentIcon />, value: 7 },
+    { label: t('tabs.sales'), icon: <TrendingUpIcon />, value: 0, category: ReportCategory.SALES },
+    { label: t('tabs.products'), icon: <ShoppingCartIcon />, value: 1, category: ReportCategory.PRODUCTS },
+    { label: t('tabs.customers'), icon: <PeopleIcon />, value: 2, category: ReportCategory.CUSTOMERS },
+    { label: t('tabs.inventory'), icon: <InventoryIcon />, value: 3, category: ReportCategory.INVENTORY },
+    { label: t('tabs.financial'), icon: <AccountBalanceIcon />, value: 4, category: ReportCategory.FINANCIAL },
+    { label: t('tabs.marketing'), icon: <CampaignIcon />, value: 5, category: ReportCategory.MARKETING },
+    { label: t('tabs.realtime'), icon: <AnalyticsIcon />, value: 6 },
+    { label: t('tabs.reports'), icon: <AssessmentIcon />, value: 7 },
   ];
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%', px: breakpoint.isXs ? 1 : 0 }}>
       {/* Header */}
       <Paper
         elevation={1}
         sx={{
-          p: 2,
-          mb: 3,
-          background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
+          p: breakpoint.isXs ? 1.5 : 2,
+          mb: breakpoint.isXs ? 2 : 3,
+          background: theme.palette.mode === 'dark'
+            ? `linear-gradient(135deg, ${theme.palette.secondary.dark} 0%, ${theme.palette.secondary.main} 100%)`
+            : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
           color: 'white',
         }}
       >
-        <Box
+        <Stack
+          direction={breakpoint.isXs ? 'column' : 'row'}
+          spacing={breakpoint.isXs ? 2 : 0}
           sx={{
-            display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 2,
+            alignItems: breakpoint.isXs ? 'flex-start' : 'center',
           }}
         >
           <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
-              التحليلات المتقدمة
+            <Typography 
+              variant={breakpoint.isXs ? 'h5' : 'h4'} 
+              component="h1" 
+              gutterBottom
+              sx={{ fontSize: breakpoint.isXs ? '1.5rem' : undefined }}
+            >
+              {t('title')}
             </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.9 }}>
-              تحليلات متخصصة وتقارير مفصلة لجميع جوانب النظام
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                opacity: 0.9,
+                fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+              }}
+            >
+              {t('subtitle')}
             </Typography>
           </Box>
           
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Stack 
+            direction={breakpoint.isXs ? 'column' : 'row'} 
+            spacing={1} 
+            sx={{ 
+              width: breakpoint.isXs ? '100%' : 'auto',
+              alignItems: breakpoint.isXs ? 'stretch' : 'center',
+            }}
+          >
             <Chip
               icon={<AnalyticsIcon />}
-              label={`الفئة: ${selectedCategory}`}
+              label={`${t('header.category')}: ${t(`categories.${selectedCategory}`)}`}
               variant="outlined"
-              sx={{ color: 'white', borderColor: 'white' }}
+              sx={{ 
+                color: 'white', 
+                borderColor: 'white',
+                fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+              }}
             />
             
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setShowReportDialog(true)}
+              size={breakpoint.isXs ? 'medium' : 'large'}
+              fullWidth={breakpoint.isXs}
               sx={{ 
                 backgroundColor: 'white',
                 color: theme.palette.secondary.main,
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
                 },
+                whiteSpace: 'nowrap',
               }}
             >
-              تقرير جديد
+              {t('header.newReport')}
             </Button>
-          </Box>
-        </Box>
+          </Stack>
+        </Stack>
       </Paper>
 
       {/* Tabs */}
-      <Paper elevation={1} sx={{ mb: 3 }}>
+      <Paper 
+        elevation={1} 
+        sx={{ 
+          mb: breakpoint.isXs ? 2 : 3,
+          backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+        }}
+      >
         <Tabs
           value={selectedTab}
           onChange={handleTabChange}
-          variant={isMobile ? 'scrollable' : 'standard'}
+          variant={breakpoint.isXs ? 'scrollable' : 'standard'}
           scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             '& .MuiTab-root': {
-              minHeight: 64,
+              minHeight: breakpoint.isXs ? 56 : 64,
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+              px: breakpoint.isXs ? 1.5 : 2,
+              color: theme.palette.mode === 'dark' ? theme.palette.text.primary : undefined,
+              '&.Mui-selected': {
+                color: theme.palette.secondary.main,
+              },
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: theme.palette.secondary.main,
             },
           }}
         >
           {tabs.map((tab) => (
             <Tab
               key={tab.value}
-              label={tab.label}
+              label={breakpoint.isXs && !breakpoint.isXs ? undefined : tab.label}
               icon={tab.icon}
-              iconPosition="start"
-              sx={{ minWidth: isMobile ? 120 : 160 }}
+              iconPosition={breakpoint.isXs && !breakpoint.isXs ? 'top' : 'start'}
+              sx={{ 
+                minWidth: breakpoint.isXs ? (breakpoint.isXs ? 80 : 64) : 160,
+              }}
+              aria-label={tab.label}
             />
           ))}
         </Tabs>
@@ -285,8 +337,8 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
       {/* Tab Panels */}
       <TabPanel value={selectedTab} index={0}>
         {/* Sales Analytics */}
-        <Grid container spacing={3}>
-        <Grid size={{ xs: 12}}>
+        <Grid container spacing={cardSpacing}>
+          <Grid size={{ xs: 12 }}>
             <SalesAnalyticsCard 
               data={salesAnalytics.data}
               isLoading={salesAnalytics.isLoading}
@@ -298,8 +350,8 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
 
       <TabPanel value={selectedTab} index={1}>
         {/* Product Performance */}
-        <Grid container spacing={3}>
-        <Grid size={{ xs: 12}}>
+        <Grid container spacing={cardSpacing}>
+          <Grid size={{ xs: 12 }}>
             <ProductPerformanceCard />
           </Grid>
         </Grid>
@@ -307,8 +359,8 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
 
       <TabPanel value={selectedTab} index={2}>
         {/* Customer Analytics */}
-        <Grid container spacing={3}>
-        <Grid size={{ xs: 12}}>
+        <Grid container spacing={cardSpacing}>
+          <Grid size={{ xs: 12 }}>
             <CustomerAnalyticsCard 
               data={customerAnalytics.data}
               isLoading={customerAnalytics.isLoading}
@@ -320,8 +372,8 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
 
       <TabPanel value={selectedTab} index={3}>
         {/* Inventory Report */}
-        <Grid container spacing={3}>
-        <Grid size={{ xs: 12}}>
+        <Grid container spacing={cardSpacing}>
+          <Grid size={{ xs: 12 }}>
             <InventoryReportCard 
               data={inventoryReport.data}
               isLoading={inventoryReport.isLoading}
@@ -333,8 +385,8 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
 
       <TabPanel value={selectedTab} index={4}>
         {/* Financial Report */}
-        <Grid container spacing={3}>
-        <Grid size={{ xs: 12}}>
+        <Grid container spacing={cardSpacing}>
+          <Grid size={{ xs: 12 }}>
             <FinancialReportCard 
               data={financialReport.data}
               isLoading={financialReport.isLoading}
@@ -346,8 +398,8 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
 
       <TabPanel value={selectedTab} index={5}>
         {/* Marketing Report */}
-        <Grid container spacing={3}>
-        <Grid size={{ xs: 12}}>
+        <Grid container spacing={cardSpacing}>
+          <Grid size={{ xs: 12 }}>
             <MarketingReportCard 
               data={marketingReport.data}
               isLoading={marketingReport.isLoading}
@@ -359,8 +411,8 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
 
       <TabPanel value={selectedTab} index={6}>
         {/* Real-time Metrics */}
-        <Grid container spacing={3}>
-        <Grid size={{ xs: 12}}>
+        <Grid container spacing={cardSpacing}>
+          <Grid size={{ xs: 12 }}>
             <RealTimeMetricsCard 
               data={realTimeMetrics.data}
               isLoading={realTimeMetrics.isLoading}
@@ -372,95 +424,147 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
 
       <TabPanel value={selectedTab} index={7}>
         {/* Reports Management */}
-        <Grid container spacing={3}>
-        <Grid size={{ xs: 12}}>
+        <Grid container spacing={cardSpacing}>
+          <Grid size={{ xs: 12 }}>
             <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6">إدارة التقارير</Typography>
+              <CardContent sx={{ p: cardPadding }}>
+                <Stack
+                  direction={breakpoint.isXs ? 'column' : 'row'}
+                  spacing={breakpoint.isXs ? 2 : 0}
+                  sx={{
+                    justifyContent: 'space-between',
+                    alignItems: breakpoint.isXs ? 'stretch' : 'center',
+                    mb: 2,
+                  }}
+                >
+                  <Typography 
+                    variant="h6"
+                    sx={{ fontSize: breakpoint.isXs ? '1.1rem' : undefined }}
+                  >
+                    {t('reports.management')}
+                  </Typography>
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
                     onClick={() => setShowReportDialog(true)}
+                    size={breakpoint.isXs ? 'medium' : 'large'}
+                    fullWidth={breakpoint.isXs}
                   >
-                    تقرير جديد
+                    {t('reports.newReport')}
                   </Button>
-                </Box>
+                </Stack>
                 
                 {advancedReports.isLoading ? (
                   <Box>
                     {[...Array(3)].map((_, index) => (
-                      <Skeleton key={index} variant="rectangular" height={80} sx={{ mb: 1 }} />
+                      <Skeleton 
+                        key={index} 
+                        variant="rectangular" 
+                        height={breakpoint.isXs ? 120 : 80} 
+                        sx={{ mb: 1 }} 
+                      />
                     ))}
                   </Box>
                 ) : (
-                  <List>
+                  <List sx={{ p: 0 }}>
                     {Array.isArray(advancedReports.data?.data) && advancedReports.data.data.map((report) => (
-                      <ListItem key={report.reportId} divider>
+                      <ListItem 
+                        key={report.reportId} 
+                        divider
+                        sx={{
+                          flexDirection: breakpoint.isXs ? 'column' : 'row',
+                          alignItems: breakpoint.isXs ? 'flex-start' : 'center',
+                          px: breakpoint.isXs ? 0 : undefined,
+                        }}
+                      >
                         <ListItemText
                           primary={report.title}
                           secondary={
                             <Box>
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography 
+                                variant="body2" 
+                                color="text.secondary"
+                                sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+                              >
                                 {report.description}
                               </Typography>
-                              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                              <Stack
+                                direction={breakpoint.isXs ? 'column' : 'row'}
+                                spacing={1}
+                                sx={{ mt: 1, flexWrap: 'wrap' }}
+                              >
                                 <Chip 
-                                  label={report.category} 
+                                  label={t(`categories.${report.category}`)} 
                                   size="small" 
                                   color="primary" 
-                                  variant="outlined" 
+                                  variant="outlined"
+                                  sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
                                 />
                                 <Chip 
-                                  label={new Date(report.generatedAt).toLocaleDateString('ar-SA')} 
+                                  label={new Date(report.generatedAt).toLocaleDateString()} 
                                   size="small" 
-                                  variant="outlined" 
+                                  variant="outlined"
+                                  sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
                                 />
                                 {report.isArchived && (
                                   <Chip 
-                                    label="مؤرشف" 
+                                    label={t('reports.archived')} 
                                     size="small" 
                                     color="secondary" 
-                                    variant="outlined" 
+                                    variant="outlined"
+                                    sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
                                   />
                                 )}
-                              </Box>
+                              </Stack>
                             </Box>
                           }
+                          sx={{ width: breakpoint.isXs ? '100%' : 'auto' }}
                         />
-                        <ListItemSecondaryAction>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Tooltip title="عرض">
-                              <IconButton size="small">
-                                <VisibilityIcon />
+                        <ListItemSecondaryAction
+                          sx={{
+                            position: breakpoint.isXs ? 'relative' : 'absolute',
+                            right: breakpoint.isXs ? 'auto' : 16,
+                            top: breakpoint.isXs ? 'auto' : '50%',
+                            transform: breakpoint.isXs ? 'none' : 'translateY(-50%)',
+                            mt: breakpoint.isXs ? 1 : 0,
+                          }}
+                        >
+                          <Stack
+                            direction="row"
+                            spacing={breakpoint.isXs ? 0.5 : 1}
+                            sx={{ flexWrap: 'wrap', justifyContent: breakpoint.isXs ? 'flex-start' : 'flex-end' }}
+                          >
+                            <Tooltip title={t('reports.actions.view')}>
+                              <IconButton size={breakpoint.isXs ? 'small' : 'medium'}>
+                                <VisibilityIcon fontSize={breakpoint.isXs ? 'small' : 'medium'} />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="تصدير PDF">
+                            <Tooltip title={t('reports.actions.exportPdf')}>
                               <IconButton 
-                                size="small"
+                                size={breakpoint.isXs ? 'small' : 'medium'}
                                 onClick={() => handleExportReport(report.reportId, ReportFormat.PDF)}
                               >
-                                <DownloadIcon />
+                                <DownloadIcon fontSize={breakpoint.isXs ? 'small' : 'medium'} />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="أرشفة">
+                            <Tooltip title={t('reports.actions.archive')}>
                               <IconButton 
-                                size="small"
+                                size={breakpoint.isXs ? 'small' : 'medium'}
                                 onClick={() => handleArchiveReport(report.reportId)}
                               >
-                                <ArchiveIcon />
+                                <ArchiveIcon fontSize={breakpoint.isXs ? 'small' : 'medium'} />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="حذف">
+                            <Tooltip title={t('reports.actions.delete')}>
                               <IconButton 
-                                size="small"
+                                size={breakpoint.isXs ? 'small' : 'medium'}
                                 color="error"
                                 onClick={() => handleDeleteReport(report.reportId)}
                               >
-                                <DeleteIcon />
+                                <DeleteIcon fontSize={breakpoint.isXs ? 'small' : 'medium'} />
                               </IconButton>
                             </Tooltip>
-                          </Box>
+                          </Stack>
                         </ListItemSecondaryAction>
                       </ListItem>
                     ))}
@@ -478,50 +582,57 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         onClose={() => setShowReportDialog(false)}
         maxWidth="md"
         fullWidth
+        fullScreen={breakpoint.isXs}
       >
-        <DialogTitle>إنشاء تقرير جديد</DialogTitle>
+        <DialogTitle sx={{ fontSize: breakpoint.isXs ? '1.1rem' : undefined }}>
+          {t('reports.createTitle')}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField
-              label="عنوان التقرير"
+              label={t('reports.title')}
               value={reportForm.title}
               onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })}
               fullWidth
               required
+              size={breakpoint.isXs ? 'small' : 'medium'}
             />
             
             <TextField
-              label="وصف التقرير"
+              label={t('reports.description')}
               value={reportForm.description}
               onChange={(e) => setReportForm({ ...reportForm, description: e.target.value })}
               fullWidth
               multiline
-              rows={3}
+              rows={breakpoint.isXs ? 2 : 3}
+              size={breakpoint.isXs ? 'small' : 'medium'}
             />
             
-            <FormControl fullWidth>
-              <InputLabel>فئة التقرير</InputLabel>
+            <FormControl fullWidth size={breakpoint.isXs ? 'small' : 'medium'}>
+              <InputLabel>{t('reports.category')}</InputLabel>
               <Select
                 value={reportForm.category}
                 onChange={(e) => setReportForm({ ...reportForm, category: e.target.value as ReportCategory })}
+                label={t('reports.category')}
               >
                 {Object.values(ReportCategory).map((category) => (
                   <MenuItem key={category} value={category}>
-                    {category}
+                    {t(`categories.${category}`)}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
             
-            <FormControl fullWidth>
-              <InputLabel>تنسيق التقرير</InputLabel>
+            <FormControl fullWidth size={breakpoint.isXs ? 'small' : 'medium'}>
+              <InputLabel>{t('reports.format')}</InputLabel>
               <Select
                 value={reportForm.format}
                 onChange={(e) => setReportForm({ ...reportForm, format: e.target.value as ReportFormat })}
+                label={t('reports.format')}
               >
                 {Object.values(ReportFormat).map((format) => (
                   <MenuItem key={format} value={format}>
-                    {format.toUpperCase()}
+                    {t(`formats.${format}`)}
                   </MenuItem>
                 ))}
               </Select>
@@ -532,9 +643,11 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
                 <Switch
                   checked={reportForm.includeCharts}
                   onChange={(e) => setReportForm({ ...reportForm, includeCharts: e.target.checked })}
+                  size={breakpoint.isXs ? 'small' : 'medium'}
                 />
               }
-              label="تضمين الرسوم البيانية"
+              label={t('reports.includeCharts')}
+              sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
             />
             
             <FormControlLabel
@@ -542,22 +655,30 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
                 <Switch
                   checked={reportForm.includeRawData}
                   onChange={(e) => setReportForm({ ...reportForm, includeRawData: e.target.checked })}
+                  size={breakpoint.isXs ? 'small' : 'medium'}
                 />
               }
-              label="تضمين البيانات الأولية"
+              label={t('reports.includeRawData')}
+              sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
             />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowReportDialog(false)}>
-            إلغاء
+        <DialogActions sx={{ px: breakpoint.isXs ? 1.5 : 3, pb: breakpoint.isXs ? 2 : 3 }}>
+          <Button 
+            onClick={() => setShowReportDialog(false)}
+            size={breakpoint.isXs ? 'medium' : 'large'}
+            fullWidth={breakpoint.isXs}
+          >
+            {t('form.cancel')}
           </Button>
           <Button 
             onClick={handleGenerateReport}
             variant="contained"
             disabled={!reportForm.title || generateReport.isPending}
+            size={breakpoint.isXs ? 'medium' : 'large'}
+            fullWidth={breakpoint.isXs}
           >
-            {generateReport.isPending ? 'جاري الإنشاء...' : 'إنشاء التقرير'}
+            {generateReport.isPending ? t('form.creating') : t('form.create')}
           </Button>
         </DialogActions>
       </Dialog>

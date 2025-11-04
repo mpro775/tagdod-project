@@ -11,36 +11,36 @@ import { useTranslation } from 'react-i18next';
 import { useAddressStats } from '../hooks/useAddresses';
 
 export function AddressStatsCards() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('addresses');
   const { data: stats, isLoading } = useAddressStats();
 
   const cards = [
     {
-      title: t('addresses.stats.totalAddresses', { defaultValue: 'عدد العناوين الكلي' }),
+      title: t('stats.totalAddresses', { defaultValue: 'عدد العناوين الكلي' }),
       value: stats?.totalAddresses || 0,
       icon: <LocationIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       color: '#3f51b5',
     },
     {
-      title: t('addresses.stats.activeAddresses', { defaultValue: 'عدد العناوين النشطة' }),
+      title: t('stats.activeAddresses', { defaultValue: 'عدد العناوين النشطة' }),
       value: stats?.totalActiveAddresses || 0,
       icon: <ActiveIcon sx={{ fontSize: 40, color: 'success.main' }} />,
       color: '#4caf50',
     },
     {
-      title: t('addresses.stats.totalUsers', { defaultValue: 'عدد المستخدمين الكلي' }),
+      title: t('stats.totalUsers', { defaultValue: 'عدد المستخدمين الكلي' }),
       value: stats?.totalUsers || 0,
       icon: <PeopleIcon sx={{ fontSize: 40, color: 'info.main' }} />,
       color: '#2196f3',
     },
     {
-      title: t('addresses.stats.averagePerUser', { defaultValue: 'متوسط العناوين لكل مستخدم' }),
+      title: t('stats.averagePerUser', { defaultValue: 'متوسط العناوين لكل مستخدم' }),
       value: stats?.averagePerUser?.toFixed(1) || '0.0',
       icon: <TrendingIcon sx={{ fontSize: 40, color: 'warning.main' }} />,
       color: '#ff9800',
     },
     {
-      title: t('addresses.stats.deletedAddresses', { defaultValue: 'عدد العناوين المحذوفة' }),
+      title: t('stats.deletedAddresses', { defaultValue: 'عدد العناوين المحذوفة' }),
       value: stats?.totalDeletedAddresses || 0,
       icon: <DeleteIcon sx={{ fontSize: 40, color: 'error.main' }} />,
       color: '#f44336',
@@ -49,9 +49,9 @@ export function AddressStatsCards() {
 
   if (isLoading) {
     return (
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         {[1, 2, 3, 4, 5].map((i: number) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }} key={i}>
+          <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2.4 }} key={i}>
             <Card>
               <CardContent>
                 <Skeleton variant="rectangular" height={100} />
@@ -64,9 +64,9 @@ export function AddressStatsCards() {
   }
 
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={{ xs: 2, sm: 3 }}>
       {cards.map((card, index) => (
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }} key={index}>
+        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2.4 }} key={index}>
           <Card
             sx={{
               height: '100%',
@@ -89,21 +89,41 @@ export function AddressStatsCards() {
                 bgcolor: card.color,
               }}
             />
-            <CardContent>
+            <CardContent
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                p: { xs: 2, sm: 3 },
+                height: '100%',
+              }}
+            >
               <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
+                  justifyContent: 'center',
                   mb: 2,
                 }}
               >
                 {card.icon}
               </Box>
-              <Typography variant="h4" component="div" fontWeight="bold" gutterBottom>
+              <Typography 
+                variant="h4" 
+                component="div" 
+                fontWeight="bold" 
+                gutterBottom
+                sx={{ textAlign: 'center', width: '100%' }}
+              >
                 {card.value.toLocaleString('ar')}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ textAlign: 'center', width: '100%' }}
+              >
                 {card.title}
               </Typography>
             </CardContent>

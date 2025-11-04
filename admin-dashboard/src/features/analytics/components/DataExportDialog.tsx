@@ -26,7 +26,10 @@ import {
   ListItemIcon,
   LinearProgress,
   Grid,
+  Stack,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   Download as DownloadIcon,
   FileDownload as FileDownloadIcon,
@@ -50,6 +53,8 @@ interface DataExportDialogProps {
 }
 
 export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClose }) => {
+  const { t } = useTranslation('analytics');
+  const { isMobile } = useBreakpoint();
   const [activeStep, setActiveStep] = useState(0);
   const [exportType, setExportType] = useState<'sales' | 'products' | 'customers' | 'custom'>(
     'sales'
@@ -137,7 +142,7 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
           });
           break;
         default:
-          throw new Error('نوع التصدير غير مدعوم');
+          throw new Error(t('export.status.unsupportedType'));
       }
 
       setExportResult(result);
@@ -164,114 +169,131 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
   };
 
   const getFormatLabel = (format: ReportFormat) => {
-    switch (format) {
-      case ReportFormat.PDF:
-        return 'PDF';
-      case ReportFormat.EXCEL:
-        return 'Excel';
-      case ReportFormat.CSV:
-        return 'CSV';
-      case ReportFormat.JSON:
-        return 'JSON';
-      default:
-        return format;
-    }
+    return t(`export.format.${format}`);
   };
 
   const getExportTypeLabel = (type: string) => {
-    switch (type) {
-      case 'sales':
-        return 'بيانات المبيعات';
-      case 'products':
-        return 'بيانات المنتجات';
-      case 'customers':
-        return 'بيانات العملاء';
-      case 'custom':
-        return 'بيانات مخصصة';
-      default:
-        return type;
-    }
+    return t(`export.dataType.${type}`);
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <DownloadIcon />
-          <Typography variant="h6">تصدير البيانات</Typography>
-        </Box>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      fullScreen={isMobile}
+    >
+      <DialogTitle sx={{ fontSize: isMobile ? '1.1rem' : undefined }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <DownloadIcon fontSize={isMobile ? 'small' : 'medium'} />
+          <Typography 
+            variant={isMobile ? 'subtitle1' : 'h6'}
+            sx={{ fontSize: isMobile ? '1rem' : undefined }}
+          >
+            {t('export.title')}
+          </Typography>
+        </Stack>
       </DialogTitle>
 
-      <DialogContent>
-        <Stepper activeStep={activeStep} orientation="vertical">
+      <DialogContent sx={{ px: isMobile ? 1.5 : 3 }}>
+        <Stepper 
+          activeStep={activeStep} 
+          orientation={isMobile ? 'vertical' : 'vertical'}
+        >
           {/* Step 1: Data Type Selection */}
           <Step>
-            <StepLabel>اختيار نوع البيانات</StepLabel>
+            <StepLabel sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+              {t('export.steps.dataType')}
+            </StepLabel>
             <StepContent>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>نوع البيانات</InputLabel>
-                <Select value={exportType} onChange={(e) => setExportType(e.target.value as any)}>
+              <FormControl fullWidth sx={{ mb: 2 }} size={isMobile ? 'medium' : 'small'}>
+                <InputLabel>{t('export.dataType.label')}</InputLabel>
+                <Select 
+                  value={exportType} 
+                  onChange={(e) => setExportType(e.target.value as any)}
+                  label={t('export.dataType.label')}
+                >
                   <MenuItem value="sales">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TableChartIcon />
-                      بيانات المبيعات والإيرادات
-                    </Box>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                      <TableChartIcon fontSize="small" />
+                      <span>{t('export.dataType.sales')}</span>
+                    </Stack>
                   </MenuItem>
                   <MenuItem value="products">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TableChartIcon />
-                      بيانات المنتجات والمخزون
-                    </Box>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                      <TableChartIcon fontSize="small" />
+                      <span>{t('export.dataType.products')}</span>
+                    </Stack>
                   </MenuItem>
                   <MenuItem value="customers">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TableChartIcon />
-                      بيانات العملاء والمستخدمين
-                    </Box>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                      <TableChartIcon fontSize="small" />
+                      <span>{t('export.dataType.customers')}</span>
+                    </Stack>
                   </MenuItem>
                   <MenuItem value="custom">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TableChartIcon />
-                      بيانات مخصصة
-                    </Box>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                      <TableChartIcon fontSize="small" />
+                      <span>{t('export.dataType.custom')}</span>
+                    </Stack>
                   </MenuItem>
                 </Select>
               </FormControl>
 
               <Alert severity="info" sx={{ mb: 2 }}>
-                <Typography variant="body2">
-                  اختر نوع البيانات التي تريد تصديرها. يمكنك تصدير بيانات المبيعات، المنتجات،
-                  العملاء، أو بيانات مخصصة.
+                <Typography 
+                  variant="body2"
+                  sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
+                >
+                  {t('export.dataType.info')}
                 </Typography>
               </Alert>
 
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button onClick={handleNext} variant="contained">
-                  التالي
+              <Stack 
+                direction={isMobile ? 'column' : 'row'} 
+                spacing={1}
+              >
+                <Button 
+                  onClick={handleNext} 
+                  variant="contained"
+                  size={isMobile ? 'medium' : 'small'}
+                  fullWidth={isMobile}
+                >
+                  {t('export.actions.next')}
                 </Button>
-                <Button onClick={onClose}>إلغاء</Button>
-              </Box>
+                <Button 
+                  onClick={onClose}
+                  size={isMobile ? 'medium' : 'small'}
+                  fullWidth={isMobile}
+                >
+                  {t('export.actions.cancel')}
+                </Button>
+              </Stack>
             </StepContent>
           </Step>
 
           {/* Step 2: Format and Date Range */}
           <Step>
-            <StepLabel>تحديد التنسيق والفترة</StepLabel>
+            <StepLabel sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+              {t('export.steps.formatAndPeriod')}
+            </StepLabel>
             <StepContent>
-              <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: 2 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>تنسيق الملف</InputLabel>
+                  <FormControl fullWidth size={isMobile ? 'medium' : 'small'}>
+                    <InputLabel>{t('export.format.label')}</InputLabel>
                     <Select
                       value={format}
                       onChange={(e) => setFormat(e.target.value as ReportFormat)}
+                      label={t('export.format.label')}
                     >
                       {Object.values(ReportFormat).map((formatOption) => (
                         <MenuItem key={formatOption} value={formatOption}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                             {getFormatIcon(formatOption)}
-                            {getFormatLabel(formatOption)}
-                          </Box>
+                            <span>{getFormatLabel(formatOption)}</span>
+                          </Stack>
                         </MenuItem>
                       ))}
                     </Select>
@@ -281,40 +303,58 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
-                    label="تاريخ البداية"
+                    label={t('export.dateRange.startDate')}
                     type="date"
                     value={dateRange.startDate}
                     onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
                     InputLabelProps={{ shrink: true }}
+                    size={isMobile ? 'medium' : 'small'}
                   />
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
-                    label="تاريخ النهاية"
+                    label={t('export.dateRange.endDate')}
                     type="date"
                     value={dateRange.endDate}
                     onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
                     InputLabelProps={{ shrink: true }}
+                    size={isMobile ? 'medium' : 'small'}
                   />
                 </Grid>
               </Grid>
 
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button onClick={handleNext} variant="contained">
-                  التالي
+              <Stack 
+                direction={isMobile ? 'column' : 'row'} 
+                spacing={1}
+              >
+                <Button 
+                  onClick={handleNext} 
+                  variant="contained"
+                  size={isMobile ? 'medium' : 'small'}
+                  fullWidth={isMobile}
+                >
+                  {t('export.actions.next')}
                 </Button>
-                <Button onClick={handleBack}>السابق</Button>
-              </Box>
+                <Button 
+                  onClick={handleBack}
+                  size={isMobile ? 'medium' : 'small'}
+                  fullWidth={isMobile}
+                >
+                  {t('export.actions.previous')}
+                </Button>
+              </Stack>
             </StepContent>
           </Step>
 
           {/* Step 3: Filters */}
           <Step>
-            <StepLabel>إعداد الفلاتر</StepLabel>
+            <StepLabel sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+              {t('export.steps.filters')}
+            </StepLabel>
             <StepContent>
-              <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: 2 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
@@ -323,9 +363,11 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
                         onChange={(e) =>
                           setFilters({ ...filters, includeCharts: e.target.checked })
                         }
+                        size={isMobile ? 'medium' : 'small'}
                       />
                     }
-                    label="تضمين الرسوم البيانية"
+                    label={t('export.filters.includeCharts')}
+                    sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
                   />
                 </Grid>
 
@@ -337,97 +379,175 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
                         onChange={(e) =>
                           setFilters({ ...filters, includeRawData: e.target.checked })
                         }
+                        size={isMobile ? 'medium' : 'small'}
                       />
                     }
-                    label="تضمين البيانات الأولية"
+                    label={t('export.filters.includeRawData')}
+                    sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
                   />
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
-                    label="تجميع البيانات"
+                    label={t('export.filters.groupBy')}
                     value={filters.groupBy}
                     onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
-                    placeholder="مثال: يومي، أسبوعي، شهري"
+                    placeholder={t('export.filters.groupByPlaceholder')}
+                    size={isMobile ? 'medium' : 'small'}
                   />
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     fullWidth
-                    label="فلترة حسب الفئة"
+                    label={t('export.filters.category')}
                     value={filters.category}
                     onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                    placeholder="مثال: الطاقة الشمسية، الإضاءة"
+                    placeholder={t('export.filters.categoryPlaceholder')}
+                    size={isMobile ? 'medium' : 'small'}
                   />
                 </Grid>
               </Grid>
 
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button onClick={handleNext} variant="contained">
-                  التالي
+              <Stack 
+                direction={isMobile ? 'column' : 'row'} 
+                spacing={1}
+              >
+                <Button 
+                  onClick={handleNext} 
+                  variant="contained"
+                  size={isMobile ? 'medium' : 'small'}
+                  fullWidth={isMobile}
+                >
+                  {t('export.actions.next')}
                 </Button>
-                <Button onClick={handleBack}>السابق</Button>
-              </Box>
+                <Button 
+                  onClick={handleBack}
+                  size={isMobile ? 'medium' : 'small'}
+                  fullWidth={isMobile}
+                >
+                  {t('export.actions.previous')}
+                </Button>
+              </Stack>
             </StepContent>
           </Step>
 
           {/* Step 4: Export */}
           <Step>
-            <StepLabel>تصدير البيانات</StepLabel>
+            <StepLabel sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+              {t('export.steps.export')}
+            </StepLabel>
             <StepContent>
               {/* Export Summary */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  ملخص التصدير
+              <Box sx={{ mb: isMobile ? 2 : 3 }}>
+                <Typography 
+                  variant={isMobile ? 'subtitle1' : 'h6'} 
+                  gutterBottom
+                  sx={{ fontSize: isMobile ? '1rem' : undefined }}
+                >
+                  {t('export.summary.title')}
                 </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                <Stack 
+                  direction="row" 
+                  spacing={1} 
+                  sx={{ 
+                    flexWrap: 'wrap', 
+                    gap: 1, 
+                    mb: 2 
+                  }}
+                >
                   <Chip
-                    icon={<TableChartIcon />}
+                    icon={<TableChartIcon fontSize="small" />}
                     label={getExportTypeLabel(exportType)}
                     color="primary"
                     variant="outlined"
+                    size={isMobile ? 'small' : 'medium'}
+                    sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
                   />
                   <Chip
                     icon={getFormatIcon(format)}
                     label={getFormatLabel(format)}
                     color="secondary"
                     variant="outlined"
+                    size={isMobile ? 'small' : 'medium'}
+                    sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
                   />
                   {dateRange.startDate && (
-                    <Chip label={`من ${dateRange.startDate}`} variant="outlined" />
+                    <Chip 
+                      label={`${t('export.dateRange.from')} ${dateRange.startDate}`} 
+                      variant="outlined"
+                      size={isMobile ? 'small' : 'medium'}
+                      sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                    />
                   )}
                   {dateRange.endDate && (
-                    <Chip label={`إلى ${dateRange.endDate}`} variant="outlined" />
+                    <Chip 
+                      label={`${t('export.dateRange.to')} ${dateRange.endDate}`} 
+                      variant="outlined"
+                      size={isMobile ? 'small' : 'medium'}
+                      sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                    />
                   )}
-                </Box>
+                </Stack>
 
                 <List dense>
                   <ListItem>
                     <ListItemIcon>
                       {filters.includeCharts ? (
-                        <CheckCircleIcon color="success" />
+                        <CheckCircleIcon 
+                          color="success" 
+                          fontSize={isMobile ? 'small' : 'medium'}
+                        />
                       ) : (
-                        <ErrorIcon color="error" />
+                        <ErrorIcon 
+                          color="error" 
+                          fontSize={isMobile ? 'small' : 'medium'}
+                        />
                       )}
                     </ListItemIcon>
                     <ListItemText
-                      primary="الرسوم البيانية"
-                      secondary={filters.includeCharts ? 'مضمنة' : 'غير مضمونة'}
+                      primary={t('export.summary.charts')}
+                      secondary={
+                        filters.includeCharts 
+                          ? t('export.summary.chartsIncluded') 
+                          : t('export.summary.chartsNotIncluded')
+                      }
+                      primaryTypographyProps={{
+                        fontSize: isMobile ? '0.875rem' : undefined,
+                      }}
+                      secondaryTypographyProps={{
+                        fontSize: isMobile ? '0.75rem' : undefined,
+                      }}
                     />
                   </ListItem>
                   <ListItem>
                     <ListItemIcon>
                       {filters.includeRawData ? (
-                        <CheckCircleIcon color="success" />
+                        <CheckCircleIcon 
+                          color="success" 
+                          fontSize={isMobile ? 'small' : 'medium'}
+                        />
                       ) : (
-                        <ErrorIcon color="error" />
+                        <ErrorIcon 
+                          color="error" 
+                          fontSize={isMobile ? 'small' : 'medium'}
+                        />
                       )}
                     </ListItemIcon>
                     <ListItemText
-                      primary="البيانات الأولية"
-                      secondary={filters.includeRawData ? 'مضمنة' : 'غير مضمونة'}
+                      primary={t('export.summary.rawData')}
+                      secondary={
+                        filters.includeRawData 
+                          ? t('export.summary.rawDataIncluded') 
+                          : t('export.summary.rawDataNotIncluded')
+                      }
+                      primaryTypographyProps={{
+                        fontSize: isMobile ? '0.875rem' : undefined,
+                      }}
+                      secondaryTypographyProps={{
+                        fontSize: isMobile ? '0.75rem' : undefined,
+                      }}
                     />
                   </ListItem>
                 </List>
@@ -436,8 +556,12 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
               {/* Export Status */}
               {exportStatus === 'exporting' && (
                 <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" gutterBottom>
-                    جاري تصدير البيانات...
+                  <Typography 
+                    variant="body2" 
+                    gutterBottom
+                    sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
+                  >
+                    {t('export.status.exporting')}
                   </Typography>
                   <LinearProgress />
                 </Box>
@@ -445,8 +569,11 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
 
               {exportStatus === 'completed' && exportResult && (
                 <Alert severity="success" sx={{ mb: 2 }}>
-                  <Typography variant="body2">
-                    تم تصدير البيانات بنجاح! يمكنك تحميل الملف من الرابط أدناه.
+                  <Typography 
+                    variant="body2"
+                    sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
+                  >
+                    {t('export.status.completed')}
                   </Typography>
                   {exportResult.data?.fileUrl && (
                     <Button
@@ -454,8 +581,10 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
                       startIcon={<DownloadIcon />}
                       onClick={() => window.open(exportResult.data.fileUrl, '_blank')}
                       sx={{ mt: 1 }}
+                      size={isMobile ? 'medium' : 'small'}
+                      fullWidth={isMobile}
                     >
-                      تحميل الملف
+                      {t('export.status.downloadFile')}
                     </Button>
                   )}
                 </Alert>
@@ -463,31 +592,62 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
 
               {exportStatus === 'error' && (
                 <Alert severity="error" sx={{ mb: 2 }}>
-                  حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.
+                  <Typography 
+                    variant="body2"
+                    sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
+                  >
+                    {t('export.status.error')}
+                  </Typography>
                 </Alert>
               )}
 
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Stack 
+                direction={isMobile ? 'column' : 'row'} 
+                spacing={1}
+                sx={{ flexWrap: 'wrap' }}
+              >
                 <Button
                   onClick={handleExport}
                   variant="contained"
                   disabled={exportStatus === 'exporting'}
                   startIcon={<DownloadIcon />}
+                  size={isMobile ? 'medium' : 'small'}
+                  fullWidth={isMobile}
                 >
-                  {exportStatus === 'exporting' ? 'جاري التصدير...' : 'بدء التصدير'}
+                  {exportStatus === 'exporting' 
+                    ? t('export.status.exportingText') 
+                    : t('export.status.startExport')
+                  }
                 </Button>
-                <Button onClick={handleBack} disabled={exportStatus === 'exporting'}>
-                  السابق
+                <Button 
+                  onClick={handleBack} 
+                  disabled={exportStatus === 'exporting'}
+                  size={isMobile ? 'medium' : 'small'}
+                  fullWidth={isMobile}
+                >
+                  {t('export.actions.previous')}
                 </Button>
-                <Button onClick={handleReset}>إعادة تعيين</Button>
-              </Box>
+                <Button 
+                  onClick={handleReset}
+                  size={isMobile ? 'medium' : 'small'}
+                  fullWidth={isMobile}
+                >
+                  {t('export.actions.reset')}
+                </Button>
+              </Stack>
             </StepContent>
           </Step>
         </Stepper>
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={onClose}>إغلاق</Button>
+      <DialogActions sx={{ px: isMobile ? 1.5 : 3, pb: isMobile ? 2 : 3 }}>
+        <Button 
+          onClick={onClose}
+          size={isMobile ? 'medium' : 'large'}
+          fullWidth={isMobile}
+        >
+          {t('export.actions.close')}
+        </Button>
       </DialogActions>
     </Dialog>
   );

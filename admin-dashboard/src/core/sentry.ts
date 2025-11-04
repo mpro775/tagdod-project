@@ -3,7 +3,18 @@ import * as Sentry from '@sentry/react';
 // Sentry DSN - يجب تعيينه في متغيرات البيئة
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 
+// Track if Sentry has been initialized
+let isInitialized = false;
+
 export const initSentry = () => {
+  // Prevent multiple initializations (especially in React StrictMode)
+  if (isInitialized) {
+    return;
+  }
+
+  // Mark as initialized even if DSN is not available to prevent repeated warnings
+  isInitialized = true;
+
   if (!SENTRY_DSN) {
     // eslint-disable-next-line no-console
     console.warn('Sentry DSN not configured. Error tracking will not be available.');
@@ -36,6 +47,23 @@ export const initSentry = () => {
     beforeSend(event) {
       // Don't send events in development unless explicitly configured
       if (import.meta.env.MODE === 'development' && !import.meta.env.VITE_SENTRY_DEBUG) {
+        return null;
+      }
+
+      // Ignore CSS-related warnings about :first-child pseudo-class
+      const message = event.message?.toLowerCase() || '';
+      const exceptionValue = event.exception?.values?.[0]?.value?.toLowerCase() || '';
+      
+      if (
+        message.includes(':first-child') ||
+        message.includes('pseudo class') ||
+        message.includes('potentially unsafe') ||
+        message.includes('server-side rendering') ||
+        exceptionValue.includes(':first-child') ||
+        exceptionValue.includes('pseudo class') ||
+        exceptionValue.includes('potentially unsafe') ||
+        exceptionValue.includes('server-side rendering')
+      ) {
         return null;
       }
 
@@ -74,6 +102,13 @@ export const initSentry = () => {
       // Generic error codes
       'Script error.',
       'Script error',
+      // CSS warnings about :first-child pseudo-class in SSR
+      'first-child',
+      'pseudo class',
+      'server-side rendering',
+      'potentially unsafe',
+      ':first-child',
+      'Try changing it to :first-of-type',
     ],
 
     // Deny URLs

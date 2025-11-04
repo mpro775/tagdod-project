@@ -31,6 +31,7 @@ import { SystemMonitoringModule } from './modules/system-monitoring/system-monit
 import { ErrorLogsModule } from './modules/error-logs/error-logs.module';
 import { I18nModule } from './modules/i18n/i18n.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
+import { PoliciesModule } from './modules/policies/policies.module';
 import { HealthModule } from './health/health.module';
 
 // Shared modules
@@ -96,6 +97,7 @@ import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-enve
     ErrorLogsModule,
     I18nModule,
     SystemSettingsModule,
+    PoliciesModule,
 
     // Health module
     HealthModule,

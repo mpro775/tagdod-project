@@ -82,16 +82,16 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
   };
 
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 2, sm: 3 } }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', mb: 2, gap: { xs: 2, sm: 0 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <FilterList color="primary" />
-          <Typography variant="h6">{t('filters.searchAndFilter')}</Typography>
+          <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{t('filters.searchAndFilter')}</Typography>
           {hasActiveFilters && (
             <Chip label={t('filters.filterCount', { count: getActiveFiltersCount() })} color="primary" size="small" />
           )}
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           <Button
             startIcon={showAdvanced ? <ExpandLess /> : <ExpandMore />}
             onClick={() => setShowAdvanced(!showAdvanced)}

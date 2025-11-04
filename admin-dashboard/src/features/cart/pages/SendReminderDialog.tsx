@@ -16,9 +16,12 @@ import {
   MenuItem,
   Chip,
   IconButton,
+  useTheme,
+  Divider,
 } from '@mui/material';
 import { Close, Email } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { Cart } from '../types/cart.types';
 import { useSendCartReminder } from '../hooks/useCart';
 import { formatCurrency } from '../api/cartApi';
@@ -38,31 +41,27 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('cart');
+  const theme = useTheme();
+  const { isMobile } = useBreakpoint();
 
-  const reminderTypes = [
+  const reminderTypes = React.useMemo(() => [
     {
       value: 'first',
-      label: t('cart.dialogs.sendReminder.types.first', { defaultValue: 'التذكير الأول' }),
-      description: t('cart.dialogs.sendReminder.types.firstDesc', {
-        defaultValue: 'التذكير الأول هو التذكير الذي يرسل للعميل في البداية',
-      }),
+      label: t('dialogs.sendReminder.types.first'),
+      description: t('dialogs.sendReminder.types.firstDesc'),
     },
     {
       value: 'second',
-      label: t('cart.dialogs.sendReminder.types.second', { defaultValue: 'التذكير الثاني' }),
-      description: t('cart.dialogs.sendReminder.types.secondDesc', {
-        defaultValue: 'التذكير الثاني هو التذكير الذي يرسل للعميل بعد التذكير الأول',
-      }),
+      label: t('dialogs.sendReminder.types.second'),
+      description: t('dialogs.sendReminder.types.secondDesc'),
     },
     {
       value: 'final',
-      label: t('cart.dialogs.sendReminder.types.final', { defaultValue: 'التذكير الأخير' }),
-      description: t('cart.dialogs.sendReminder.types.finalDesc', {
-        defaultValue: 'التذكير الأخير هو التذكير الذي يرسل للعميل بعد التذكير الثاني',
-      }),
+      label: t('dialogs.sendReminder.types.final'),
+      description: t('dialogs.sendReminder.types.finalDesc'),
     },
-  ];
+  ], [t]);
   const [reminderType, setReminderType] = useState<ReminderType>('first');
   const [customMessage, setCustomMessage] = useState('');
   const [errors, setErrors] = useState<{ reminderType?: string; customMessage?: string }>({});
@@ -73,15 +72,11 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
     const newErrors: { reminderType?: string; customMessage?: string } = {};
 
     if (!reminderType) {
-      newErrors.reminderType = t('cart.dialogs.sendReminder.types.required', {
-        defaultValue: 'نوع التذكير مطلوب',
-      });
+      newErrors.reminderType = t('dialogs.sendReminder.types.required');
     }
 
     if (customMessage.length > 500) {
-      newErrors.customMessage = t('cart.dialogs.sendReminder.types.messageTooLong', {
-        defaultValue: 'الرسالة طويلة جداً (الحد الأقصى 500 حرف)',
-      });
+      newErrors.customMessage = t('dialogs.sendReminder.types.messageTooLong');
     }
 
     setErrors(newErrors);
@@ -139,6 +134,8 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
   React.useEffect(() => {
     if (cart && open) {
       setReminderType(getRecommendedReminderType());
+      setCustomMessage('');
+      setErrors({});
     }
   }, [cart, open]);
 
@@ -150,87 +147,206 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: 2,
+          borderRadius: isMobile ? 0 : 2,
+          bgcolor: 'background.paper',
         },
       }}
     >
-      <DialogTitle>
+      <DialogTitle
+        sx={{
+          fontWeight: 'bold',
+          fontSize: { xs: '1.125rem', sm: '1.25rem' },
+          color: 'text.primary',
+          pb: 1,
+        }}
+      >
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">
-            <Email sx={{ mr: 1, verticalAlign: 'middle' }} />
-            {t('cart.dialogs.sendReminder.title', { defaultValue: 'إرسال تذكير للعميل' })}
-          </Typography>
-          <IconButton onClick={handleClose} size="small">
+          <Box display="flex" alignItems="center" gap={1}>
+            <Email sx={{ color: 'primary.main', fontSize: { xs: '1.125rem', sm: '1.25rem' } }} />
+            <Typography 
+              variant="h6"
+              sx={{ 
+                fontSize: { xs: '1.125rem', sm: '1.25rem' },
+                fontWeight: 'bold',
+              }}
+            >
+              {t('dialogs.sendReminder.title')}
+            </Typography>
+          </Box>
+          <IconButton 
+            onClick={handleClose} 
+            size="small"
+            sx={{ 
+              color: 'text.secondary',
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+            }}
+          >
             <Close />
           </IconButton>
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent 
+        dividers
+        sx={{ 
+          borderColor: 'divider',
+          p: { xs: 2, sm: 3 },
+        }}
+      >
         {/* Cart Information */}
         <Box mb={3}>
-          <Typography variant="h6" gutterBottom>
-            {t('cart.dialogs.sendReminder.cartInfo', { defaultValue: 'معلومات السلة' })}
+          <Typography 
+            variant="h6" 
+            gutterBottom
+            sx={{ 
+              fontSize: { xs: '1rem', sm: '1.25rem' },
+              fontWeight: 'bold',
+              color: 'text.primary',
+              mb: 2,
+            }}
+          >
+            {t('dialogs.sendReminder.cartInfo')}
           </Typography>
-          <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
+          <Box 
+            display="flex" 
+            flexWrap="wrap" 
+            gap={1} 
+            mb={2}
+            sx={{
+              bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+              p: { xs: 1.5, sm: 2 },
+              borderRadius: 2,
+              border: 1,
+              borderColor: 'divider',
+            }}
+          >
             <Chip
-              label={`${cart.items?.length || 0} منتج`}
+              label={t('dialogs.sendReminder.cartInfoItems', { count: cart.items?.length || 0 })}
               size="small"
               color="primary"
               variant="outlined"
+              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
             />
             <Chip
               label={formatCurrency(cart.pricingSummary?.total || 0, cart.currency)}
               size="small"
               color="success"
               variant="outlined"
+              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
             />
-            <Chip label={`${getCartAge()} ساعة`} size="small" color="warning" variant="outlined" />
+            <Chip 
+              label={t('dialogs.sendReminder.cartInfoAge', { hours: getCartAge() })}
+              size="small" 
+              color="warning" 
+              variant="outlined"
+              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+            />
             {cart.abandonmentEmailsSent > 0 && (
               <Chip
-                label={`${cart.abandonmentEmailsSent} إيميل مرسل`}
+                label={t('dialogs.sendReminder.cartInfoEmailsSent', { count: cart.abandonmentEmailsSent })}
                 size="small"
                 color="info"
                 variant="outlined"
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
               />
             )}
           </Box>
         </Box>
 
+        <Divider sx={{ my: 3, borderColor: 'divider' }} />
+
         {/* Customer Information */}
         <Box mb={3}>
-          <Typography variant="h6" gutterBottom>
-            معلومات العميل
+          <Typography 
+            variant="h6" 
+            gutterBottom
+            sx={{ 
+              fontSize: { xs: '1rem', sm: '1.25rem' },
+              fontWeight: 'bold',
+              color: 'text.primary',
+              mb: 1.5,
+            }}
+          >
+            {t('dialogs.sendReminder.customerInfo')}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {cart.user?.email || cart.user?.phone || 'لا يوجد معلومات اتصال متاحة'}
-          </Typography>
-          {cart.user?.name && <Typography variant="body2">الاسم: {cart.user.name}</Typography>}
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+              border: 1,
+              borderColor: 'divider',
+            }}
+          >
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
+            >
+              {cart.user?.email || cart.user?.phone || t('dialogs.sendReminder.noContactInfo')}
+            </Typography>
+            {cart.user?.name && (
+              <Typography 
+                variant="body2"
+                sx={{ 
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  color: 'text.primary',
+                  fontWeight: 'medium',
+                }}
+              >
+                {t('dialogs.sendReminder.customerName', { name: cart.user.name })}
+              </Typography>
+            )}
+          </Box>
         </Box>
+
+        <Divider sx={{ my: 3, borderColor: 'divider' }} />
 
         {/* Reminder Type Selection */}
         <Box mb={3}>
-          <Typography variant="h6" gutterBottom>
-            {t('cart.dialogs.sendReminder.type', { defaultValue: 'نوع التذكير' })}
+          <Typography 
+            variant="h6" 
+            gutterBottom
+            sx={{ 
+              fontSize: { xs: '1rem', sm: '1.25rem' },
+              fontWeight: 'bold',
+              color: 'text.primary',
+              mb: 1.5,
+            }}
+          >
+            {t('dialogs.sendReminder.type')}
           </Typography>
-          <FormControl fullWidth error={!!errors.reminderType}>
-            <InputLabel>
-              {t('cart.dialogs.sendReminder.selectType', { defaultValue: 'اختر نوع التذكير' })}
-            </InputLabel>
+          <FormControl fullWidth error={!!errors.reminderType} size={isMobile ? 'small' : 'medium'}>
+            <InputLabel>{t('dialogs.sendReminder.selectType')}</InputLabel>
             <Select
               value={reminderType}
               onChange={(e) => setReminderType(e.target.value as ReminderType)}
-              label={t('cart.dialogs.sendReminder.selectType', {
-                defaultValue: 'اختر نوع التذكير',
-              })}
+              label={t('dialogs.sendReminder.selectType')}
+              sx={{
+                '& .MuiInputLabel-root': {
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                },
+              }}
             >
               {reminderTypes.map((type) => (
                 <MenuItem key={type.value} value={type.value}>
                   <Box>
-                    <Typography variant="body2">{type.label}</Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                    >
+                      {type.label}
+                    </Typography>
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                    >
                       {type.description}
                     </Typography>
                   </Box>
@@ -238,80 +354,144 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
               ))}
             </Select>
             {errors.reminderType && (
-              <Typography variant="caption" color="error">
+              <Typography 
+                variant="caption" 
+                color="error"
+                sx={{ mt: 0.5, ml: 1.75 }}
+              >
                 {errors.reminderType}
               </Typography>
             )}
           </FormControl>
 
-          <Box mt={1}>
-            <Typography variant="caption" color="text.secondary">
+          <Box mt={1.5}>
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+            >
               {getReminderPreview()}
             </Typography>
           </Box>
         </Box>
 
+        <Divider sx={{ my: 3, borderColor: 'divider' }} />
+
         {/* Custom Message */}
         <Box mb={3}>
-          <Typography variant="h6" gutterBottom>
-            {t('cart.dialogs.sendReminder.customMessage', {
-              defaultValue: 'رسالة مخصصة (اختيارية)',
-            })}
+          <Typography 
+            variant="h6" 
+            gutterBottom
+            sx={{ 
+              fontSize: { xs: '1rem', sm: '1.25rem' },
+              fontWeight: 'bold',
+              color: 'text.primary',
+              mb: 1.5,
+            }}
+          >
+            {t('dialogs.sendReminder.customMessage')}
           </Typography>
           <TextField
             fullWidth
             multiline
-            rows={4}
+            rows={isMobile ? 3 : 4}
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
             error={!!errors.customMessage}
-            helperText={errors.customMessage || `${customMessage.length}/500 حرف`}
-            placeholder={t('cart.dialogs.sendReminder.customMessagePlaceholder', {
-              defaultValue: 'أضف رسالة مخصصة للتذكير...',
-            })}
+            helperText={errors.customMessage || t('dialogs.sendReminder.charactersCount', { count: customMessage.length })}
+            placeholder={t('dialogs.sendReminder.customMessagePlaceholder')}
             inputProps={{ maxLength: 500 }}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{
+              '& .MuiInputLabel-root': {
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              },
+            }}
           />
         </Box>
+
+        <Divider sx={{ my: 3, borderColor: 'divider' }} />
 
         {/* Reminder Preview */}
         {reminderType && (
           <Box mb={3}>
-            <Typography variant="h6" gutterBottom>
-              {t('cart.dialogs.sendReminder.preview', { defaultValue: 'معاينة التذكير' })}
+            <Typography 
+              variant="h6" 
+              gutterBottom
+              sx={{ 
+                fontSize: { xs: '1rem', sm: '1.25rem' },
+                fontWeight: 'bold',
+                color: 'text.primary',
+                mb: 1.5,
+              }}
+            >
+              {t('dialogs.sendReminder.preview')}
             </Typography>
             <Box
               sx={{
-                p: 2,
-                bgcolor: 'grey.100',
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'grey.300',
+                p: { xs: 1.5, sm: 2 },
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                borderRadius: 2,
+                border: 1,
+                borderColor: 'divider',
               }}
             >
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                {t('cart.dialogs.sendReminder.subject', {
-                  defaultValue: 'الموضوع: تذكير - لديك منتجات في سلتك',
+              <Typography 
+                variant="body2" 
+                color="text.secondary" 
+                gutterBottom
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 1 }}
+              >
+                <strong>{t('dialogs.sendReminder.subjectLabel')}:</strong> {t('dialogs.sendReminder.subject')}
+              </Typography>
+              <Typography 
+                variant="body2"
+                sx={{ 
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  color: 'text.primary',
+                  mb: 1,
+                }}
+              >
+                {t('dialogs.sendReminder.greeting', { 
+                  name: cart.user?.name || t('dialogs.sendReminder.guest')
                 })}
               </Typography>
-              <Typography variant="body2">
-                {t('cart.dialogs.sendReminder.greeting', { defaultValue: 'مرحباً {name},' })}{' '}
-                {cart.user?.name ||
-                  t('cart.dialogs.sendReminder.guest', { defaultValue: 'عزيزي العميل' })}
-                ،
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                لاحظنا أن لديك {cart.items?.length || 0} منتج في سلتك بقيمة{' '}
-                {formatCurrency(cart.pricingSummary?.total || 0, cart.currency)}.
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mt: 1,
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  color: 'text.primary',
+                }}
+              >
+                {t('dialogs.sendReminder.noticeMessage', { 
+                  itemsCount: cart.items?.length || 0,
+                  total: formatCurrency(cart.pricingSummary?.total || 0, cart.currency),
+                })}
               </Typography>
               {customMessage && (
-                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    mt: 1.5, 
+                    fontStyle: 'italic',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    color: 'text.secondary',
+                  }}
+                >
                   {customMessage}
                 </Typography>
               )}
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                {t('cart.dialogs.sendReminder.callToAction', {
-                  defaultValue: 'لا تفوت الفرصة! أكمل طلبك الآن.',
-                })}
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mt: 1.5,
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  color: 'text.primary',
+                  fontWeight: 'medium',
+                }}
+              >
+                {t('dialogs.sendReminder.callToAction')}
               </Typography>
             </Box>
           </Box>
@@ -325,19 +505,42 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         )}
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={handleClose} disabled={sendReminderMutation.isPending}>
-          {t('cart.dialogs.sendReminder.cancel', { defaultValue: 'إلغاء' })}
+      <DialogActions
+        sx={{ 
+          p: { xs: 1.5, sm: 2, md: 3 },
+          borderTop: 1,
+          borderColor: 'divider',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1, sm: 0 },
+        }}
+      >
+        <Button 
+          onClick={handleClose} 
+          disabled={sendReminderMutation.isPending}
+          fullWidth={isMobile}
+          size={isMobile ? 'medium' : 'large'}
+          sx={{ 
+            order: { xs: 2, sm: 1 },
+            minWidth: { xs: '100%', sm: 'auto' },
+          }}
+        >
+          {t('actions.cancel')}
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
           disabled={sendReminderMutation.isPending}
           startIcon={sendReminderMutation.isPending ? <CircularProgress size={20} /> : <Email />}
+          fullWidth={isMobile}
+          size={isMobile ? 'medium' : 'large'}
+          sx={{ 
+            order: { xs: 1, sm: 2 },
+            minWidth: { xs: '100%', sm: 'auto' },
+          }}
         >
           {sendReminderMutation.isPending
-            ? t('cart.dialogs.sendReminder.sending', { defaultValue: 'جاري الإرسال...' })
-            : t('cart.dialogs.sendReminder.send', { defaultValue: 'إرسال التذكير' })}
+            ? t('dialogs.sendReminder.sending')
+            : t('dialogs.sendReminder.send')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -9,7 +9,8 @@
     "manageAttributeValues": "Manage Attribute Values: {{name}}",
     "addValue": "Add New Value",
     "editValue": "Edit Value",
-    "createValue": "Add New Value"
+    "createValue": "Add New Value",
+    "noAttributesAssigned": "No attributes assigned to this product"
   },
   "form": {
     "basicInfo": "Basic Information",
@@ -163,6 +164,10 @@
     "attribute": "attribute",
     "value": "value",
     "unknownError": "An unknown error occurred"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
   },
   "tooltips": {
     "edit": "Edit",

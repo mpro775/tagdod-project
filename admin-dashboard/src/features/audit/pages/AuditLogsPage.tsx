@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { useMediaQuery, useTheme } from '@mui/material';
 import { AuditFilters, AuditStatsCards, AuditLogsTable, AuditLogDetails } from '../components';
 import {
   useAuditLogs,
@@ -36,6 +37,8 @@ import { AuditLog } from '../types/audit.types';
 
 export const AuditLogsPage: React.FC = () => {
   const { t } = useTranslation('audit');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,32 +114,62 @@ export const AuditLogsPage: React.FC = () => {
   });
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, p: { xs: 1, sm: 2, md: 3 } }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box>
-          <Typography variant="h3" fontWeight="bold">
-            {t('audit.title', { defaultValue: 'سجلات التدقيق' })}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ flex: 1, width: { xs: '100%', sm: 'auto' } }}>
+          <Typography
+            variant="h3"
+            fontWeight="bold"
+            sx={{ fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' } }}
+          >
+            {t('audit.logs')}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {t('audit.subtitle', { defaultValue: 'سجلات التدقيق المسجلة' })}
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontSize: { xs: '0.875rem', sm: '1rem' } }}
+          >
+            {t('audit.subtitle')}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: 'stretch',
+            gap: 1,
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
           <Button
             variant="outlined"
             onClick={handleExport}
             disabled={isExporting}
             startIcon={<DownloadIcon />}
+            fullWidth={isMobile}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ flex: { xs: 1, sm: 'none' }, minWidth: { xs: '100%', sm: 'auto' } }}
           >
-            {isExporting ? t('messages.exporting', { defaultValue: 'جاري التصدير' }) : t('buttons.exportData', { defaultValue: 'تصدير البيانات' })}
+            {isExporting ? t('messages.exporting') : t('buttons.exportData')}
           </Button>
           <Button
             variant="outlined"
             onClick={() => window.location.reload()}
             startIcon={<RefreshIcon />}
+            fullWidth={isMobile}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{ flex: { xs: 1, sm: 'none' }, minWidth: { xs: '100%', sm: 'auto' } }}
           >
-            {t('buttons.refresh', { defaultValue: 'تحديث' })}
+            {t('buttons.refresh')}
           </Button>
         </Box>
       </Box>
@@ -149,53 +182,64 @@ export const AuditLogsPage: React.FC = () => {
         <CardHeader>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FilterIcon />
-            {t('filters.quickFilters', { defaultValue: 'فلاتر السجلات' })}
+            {t('filters.quickFilters')}
           </Typography>
         </CardHeader>
         <CardContent>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 1,
+              '& > button': {
+                flex: { xs: '1 1 calc(50% - 8px)', sm: 'none' },
+                minWidth: { xs: 'calc(50% - 8px)', sm: 'auto' },
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              },
+            }}
+          >
             <Button
               variant={quickFilter === 'sensitive' ? 'contained' : 'outlined'}
-              size="small"
+              size={isMobile ? 'small' : 'small'}
               onClick={() => handleQuickFilter('sensitive')}
               startIcon={<AlertTriangleIcon />}
             >
-              {t('filters.sensitiveOperations', { defaultValue: 'العمليات الحساسة' })}
+              {t('filters.sensitiveOperations')}
             </Button>
             <Button
               variant={quickFilter === 'today' ? 'contained' : 'outlined'}
-              size="small"
+              size={isMobile ? 'small' : 'small'}
               onClick={() => handleQuickFilter('today')}
             >
-              {t('filters.today', { defaultValue: 'اليوم' })}
+              {t('filters.today')}
             </Button>
             <Button
               variant={quickFilter === 'week' ? 'contained' : 'outlined'}
-              size="small"
+              size={isMobile ? 'small' : 'small'}
               onClick={() => handleQuickFilter('week')}
             >
-              {t('filters.lastWeek', { defaultValue: 'الأسبوع الماضي' })}
+              {t('filters.lastWeek')}
             </Button>
             <Button
               variant={quickFilter === 'admin' ? 'contained' : 'outlined'}
-              size="small"
+              size={isMobile ? 'small' : 'small'}
               onClick={() => handleQuickFilter('admin')}
             >
-              {t('filters.adminActions', { defaultValue: 'إجراءات الإدارة' })}
+              {t('filters.adminActions')}
             </Button>
             <Button
               variant={quickFilter === 'auth' ? 'contained' : 'outlined'}
-              size="small"
+              size={isMobile ? 'small' : 'small'}
               onClick={() => handleQuickFilter('auth')}
             >
-              {t('filters.authEvents', { defaultValue: 'أحداث المصادقة' })}
+              {t('filters.authEvents')}
             </Button>
             <Button
               variant={quickFilter === 'all' ? 'contained' : 'outlined'}
-              size="small"
+              size={isMobile ? 'small' : 'small'}
               onClick={() => handleQuickFilter('all')}
             >
-              {t('filters.showAll', { defaultValue: 'عرض الكل' })}
+              {t('filters.showAll')}
             </Button>
           </Box>
         </CardContent>
@@ -209,12 +253,12 @@ export const AuditLogsPage: React.FC = () => {
             <CardHeader>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <SearchIcon />
-                {t('filters.search', { defaultValue: 'البحث' })}    
+                {t('filters.search')}    
               </Typography>
             </CardHeader>
             <CardContent>
               <TextField
-                placeholder={t('filters.searchPlaceholder', { defaultValue: 'البحث في السجلات...' })}
+                placeholder={t('filters.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 fullWidth
@@ -229,7 +273,7 @@ export const AuditLogsPage: React.FC = () => {
             <CardHeader>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ShieldIcon />
-                {t('filters.results', { defaultValue: 'النتائج' })}
+                {t('filters.results')}
               </Typography>
             </CardHeader>
             <CardContent>
@@ -238,7 +282,6 @@ export const AuditLogsPage: React.FC = () => {
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {t('filters.resultsCount', {
-                  defaultValue: 'من أصل {count} سجل',
                   count: meta?.total || 0,
                 })}
               </Typography>
@@ -250,19 +293,19 @@ export const AuditLogsPage: React.FC = () => {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Card>
             <CardHeader>
-              <Typography variant="h6">{t('filters.pagination', { defaultValue: 'التحكم في الصفحات' })}</Typography>
+              <Typography variant="h6">{t('filters.pagination')}</Typography>
             </CardHeader>
             <CardContent>
               <FormControl fullWidth>
-                <InputLabel>{t('filters.logsPerPage', { defaultValue: 'عدد السجلات' })}</InputLabel>
+                <InputLabel>{t('filters.logsPerPage')}</InputLabel>
                 <Select
                   value={pagination.limit.toString()}
                   onChange={(e) => handleLimitChange(parseInt(e.target.value))}
                 >
-                  <MenuItem value="25">{t('filters.25Logs', { defaultValue: '25 سجل' })}</MenuItem>
-                  <MenuItem value="50">{t('filters.50Logs', { defaultValue: '50 سجل' })}</MenuItem>
-                  <MenuItem value="100">{t('filters.100Logs', { defaultValue: '100 سجل' })}</MenuItem>
-                  <MenuItem value="200">{t('filters.200Logs', { defaultValue: '200 سجل' })}</MenuItem>
+                  <MenuItem value="25">{t('filters.25Logs')}</MenuItem>
+                  <MenuItem value="50">{t('filters.50Logs')}</MenuItem>
+                  <MenuItem value="100">{t('filters.100Logs')}</MenuItem>
+                  <MenuItem value="200">{t('filters.200Logs')}</MenuItem>
                 </Select>
               </FormControl>
             </CardContent>
@@ -283,7 +326,7 @@ export const AuditLogsPage: React.FC = () => {
       {/* Audit Logs Table */}
       <Card>
         <CardHeader>
-          <Typography variant="h6">{t('audit.logs', { defaultValue: 'سجلات التدقيق' })}</Typography>
+          <Typography variant="h6">{t('audit.logs')}</Typography>
         </CardHeader>
         <CardContent>
           <AuditLogsTable
@@ -298,30 +341,66 @@ export const AuditLogsPage: React.FC = () => {
       {meta && meta.total > 0 && (
         <Card>
           <CardContent sx={{ pt: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="body2" color="text.secondary">
-                {t('audit.viewLogs', { defaultValue: 'عرض {start} إلى {end} من {total} سجل', start: (pagination.page - 1) * pagination.limit + 1, end: Math.min(pagination.page * pagination.limit, meta.total), total: meta.total })}
-                {Math.min(pagination.page * pagination.limit, meta.total)} من {meta.total} سجل
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                justifyContent: 'space-between',
+                gap: 2,
+              }}
+            >
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
+                {t('audit.viewLogs', {
+                  start: (pagination.page - 1) * pagination.limit + 1,
+                  end: Math.min(pagination.page * pagination.limit, meta.total),
+                  total: meta.total,
+                })}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                  width: { xs: '100%', sm: 'auto' },
+                  justifyContent: { xs: 'space-between', sm: 'flex-end' },
+                }}
+              >
                 <Button
                   variant="outlined"
                   size="small"
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page <= 1}
+                  fullWidth={isMobile}
                 >
-                  {t('audit.previous', { defaultValue: 'السابق' })}
+                  {t('audit.previous')}
                 </Button>
-                <Typography variant="body2">
-                  {t('audit.page', { defaultValue: 'صفحة {page} من {total}', page: pagination.page, total: Math.ceil(meta.total / pagination.limit) })}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    textAlign: { xs: 'center', sm: 'left' },
+                    flex: { xs: '1 1 auto', sm: 'none' },
+                  }}
+                >
+                  {t('audit.page', {
+                    page: pagination.page,
+                    total: Math.ceil(meta.total / pagination.limit),
+                  })}
                 </Typography>
                 <Button
                   variant="outlined"
                   size="small"
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={!meta.hasMore}
+                  fullWidth={isMobile}
                 >
-                  {t('audit.next', { defaultValue: 'التالي' })}
+                  {t('audit.next')}
                 </Button>
               </Box>
             </Box>

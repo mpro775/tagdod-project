@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Drawer,
   List,
@@ -38,10 +38,12 @@ import {
   Security,
   Monitor,
   BugReport,
-  Translate,
   AdminPanelSettings,
   LocationOn,
   Search as SearchIcon,
+  Policy,
+  DeleteForever,
+  VerifiedUser,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -69,6 +71,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
   const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
+  const activeItemRef = useRef<HTMLDivElement | null>(null);
+
   const menuItems: MenuItem[] = React.useMemo(() => ([
     {
       id: 'dashboard',
@@ -92,6 +96,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           label: t('navigation.usersAnalytics', 'تحليلات المستخدمين'),
           icon: <Assessment />,
           path: '/users/analytics',
+        },
+        {
+          id: 'users-deleted',
+          label: t('navigation.usersDeleted', 'الحسابات المحذوفة'),
+          icon: <DeleteForever />,
+          path: '/users/deleted',
+        },
+        {
+          id: 'users-verification',
+          label: t('navigation.verificationRequests', 'طلبات التحقق'),
+          icon: <VerifiedUser />,
+          path: '/users/verification-requests',
         },
       ],
     },
@@ -438,17 +454,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           icon: <BugReport />,
           path: '/system/error-logs',
         },
-        {
-          id: 'i18n-management',
-          label: t('navigation.i18nManagement', 'نصوص التعريب'),
-          icon: <Translate />,
-          path: '/system/i18n',
-        },
+        
         {
           id: 'system-settings',
           label: t('navigation.systemSettings', 'إعدادات النظام'),
           icon: <Settings />,
           path: '/system/settings',
+        },
+        {
+          id: 'policies',
+          label: t('navigation.policies', 'السياسات'),
+          icon: <Policy />,
+          path: '/policies',
         },
       ],
     },
@@ -460,29 +477,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     },
     {
       id: 'admin-management',
-      label: t('navigation.adminManagement', 'إدارة الأدمن'),
+      label: t('navigation.adminManagement'),
       icon: <AdminPanelSettings />,
       children: [
         {
           id: 'admin-addresses',
-          label: t('navigation.addresses', 'العناوين'),
+          label: t('navigation.addresses'),
           icon: <LocationOn />,
           path: '/admin/addresses',
         },
         {
           id: 'admin-search',
-          label: t('navigation.search', 'البحث'),
+          label: t('navigation.search'),
           icon: <SearchIcon />,
           path: '/admin/search',
         },
       ],
     },
-    {
-      id: 'settings',
-      label: t('navigation.settings'),
-      icon: <Settings />,
-      path: '/settings',
-    },
+  
   ]), [t, i18n.language]);
 
   // Filter menu items based on user permissions
@@ -490,6 +502,53 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   const filteredMenuItems = React.useMemo(() => {
     return filterMenuByPermissions(menuItems, userPermissions);
   }, [menuItems, userPermissions]);
+
+  // Find and expand parent items for the current path
+  useEffect(() => {
+    const findActiveParents = (items: MenuItem[], path: string): string[] => {
+      const parents: string[] = [];
+      
+      const traverse = (items: MenuItem[], currentPath: string[] = []): boolean => {
+        for (const item of items) {
+          if (item.path && path.startsWith(item.path)) {
+            parents.push(...currentPath);
+            return true;
+          }
+          if (item.children) {
+            if (traverse(item.children, [...currentPath, item.id])) {
+              parents.push(...currentPath);
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+      
+      traverse(items);
+      return parents;
+    };
+
+    const activeParents = findActiveParents(filteredMenuItems, location.pathname);
+    if (activeParents.length > 0) {
+      setExpandedItems((prev) => {
+        const newExpanded = [...new Set([...prev, ...activeParents])];
+        return newExpanded;
+      });
+    }
+  }, [location.pathname, filteredMenuItems]);
+
+  // Focus active item when sidebar opens
+  useEffect(() => {
+    if (open && activeItemRef.current) {
+      // Small delay to ensure the item is rendered
+      setTimeout(() => {
+        if (activeItemRef.current) {
+          activeItemRef.current.focus();
+          activeItemRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 150);
+    }
+  }, [open, location.pathname]);
 
   // Toggle expand
   const handleToggleExpand = (id: string) => {
@@ -514,6 +573,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       <React.Fragment key={item.id}>
         <ListItem disablePadding>
           <ListItemButton
+            ref={isActive ? activeItemRef : null}
             selected={isActive}
             onClick={() => {
               if (hasChildren) {
@@ -527,6 +587,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
               borderRadius: 1,
               mx: 1,
               my: 0.5,
+              '&.Mui-selected': {
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                },
+                '& .MuiListItemIcon-root': {
+                  color: 'primary.contrastText',
+                },
+              },
+              '&:focus': {
+                outline: '2px solid',
+                outlineColor: 'primary.main',
+                outlineOffset: 2,
+              },
             }}
           >
             {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}

@@ -83,7 +83,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FilterIcon />
-            {t('filters.title', { defaultValue: 'فلاتر السجلات' })}
+            {t('filters.title')}
           </Typography>
           {hasActiveFilters && (
             <Button
@@ -92,7 +92,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
               onClick={onClearFilters}
               startIcon={<ClearIcon />}
             >
-              {t('filters.clearFilters', { defaultValue: 'مسح الفلاتر' })}
+              {t('filters.clearFilters')}
             </Button>
           )}
         </Box>
@@ -104,8 +104,8 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
           <Grid size={{ xs: 12, md: 6, lg: 4 }}>
             <TextField
               fullWidth
-              label="معرف المستخدم"
-              placeholder="أدخل معرف المستخدم"
+              label={t('filters.userId')}
+              placeholder={t('filters.userIdPlaceholder')}
               value={filters.userId || ''}
               onChange={(e) => onFiltersChange({ userId: e.target.value || undefined })}
             />
@@ -115,8 +115,8 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
           <Grid size={{ xs: 12, md: 6, lg: 4 }}>
             <TextField
               fullWidth
-              label="قام بالعملية"
-              placeholder="أدخل معرف المستخدم"
+              label={t('filters.performedBy')}
+              placeholder={t('filters.performedByPlaceholder')}
               value={filters.performedBy || ''}
               onChange={(e) => onFiltersChange({ performedBy: e.target.value || undefined })}
             />
@@ -125,13 +125,13 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
           {/* Action Filter */}
           <Grid size={{ xs: 12, md: 6, lg: 4 }}>
             <FormControl fullWidth>
-              <InputLabel>نوع العملية</InputLabel>
+              <InputLabel>{t('filters.actionType')}</InputLabel>
               <Select
                 value={filters.action || ''}
-                label="نوع العملية"
+                label={t('filters.actionType')}
                 onChange={(e) => onFiltersChange({ action: e.target.value as AuditAction || undefined })}
               >
-                <MenuItem value="">جميع العمليات</MenuItem>
+                <MenuItem value="">{t('filters.allActions')}</MenuItem>
                 {availableActions.map((action) => (
                   <MenuItem key={action} value={action}>
                     {AUDIT_ACTION_LABELS[action]}
@@ -144,13 +144,13 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
           {/* Resource Filter */}
           <Grid size={{ xs: 12, md: 6, lg: 4 }}>
             <FormControl fullWidth>
-              <InputLabel>نوع المورد</InputLabel>
+              <InputLabel>{t('filters.resourceType')}</InputLabel>
               <Select
                 value={filters.resource || ''}
-                label="نوع المورد"
+                label={t('filters.resourceType')}
                 onChange={(e) => onFiltersChange({ resource: e.target.value as AuditResource || undefined })}
               >
-                <MenuItem value="">جميع الموارد</MenuItem>
+                <MenuItem value="">{t('filters.allResources')}</MenuItem>
                 {availableResources.map((resource) => (
                   <MenuItem key={resource} value={resource}>
                     {AUDIT_RESOURCE_LABELS[resource]}
@@ -164,8 +164,8 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
           <Grid size={{ xs: 12, md: 6, lg: 4 }}>
             <TextField
               fullWidth
-              label="معرف المورد"
-              placeholder="أدخل معرف المورد"
+              label={t('filters.resourceId')}
+              placeholder={t('filters.resourceIdPlaceholder')}
               value={filters.resourceId || ''}
               onChange={(e) => onFiltersChange({ resourceId: e.target.value || undefined })}
             />
@@ -180,7 +180,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
                   onChange={(e) => onFiltersChange({ isSensitive: e.target.checked || undefined })}
                 />
               }
-              label="عرض العمليات الحساسة فقط"
+              label={t('filters.sensitiveOnly')}
             />
           </Grid>
         </Grid>
@@ -190,7 +190,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
           {/* Start Date */}
           <Grid size={{ xs: 12, md: 6 }}>
             <DatePicker
-              label="تاريخ البداية"
+              label={t('filters.startDate')}
               value={startDate}
               onChange={(date) => handleDateChange('startDate', date || undefined)}
               slotProps={{
@@ -202,7 +202,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
                       onClick={() => handleClearDate('startDate')}
                       sx={{ mt: 1 }}
                     >
-                      مسح التاريخ
+                      {t('filters.clearDate')}
                     </Button>
                   ),
                 },
@@ -213,7 +213,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
           {/* End Date */}
           <Grid size={{ xs: 12, md: 6 }}>
             <DatePicker
-              label="تاريخ النهاية"
+              label={t('filters.endDate')}
               value={endDate}
               onChange={(date) => handleDateChange('endDate', date || undefined)}
               slotProps={{
@@ -225,7 +225,7 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
                       onClick={() => handleClearDate('endDate')}
                       sx={{ mt: 1 }}
                     >
-                      مسح التاريخ
+                      {t('filters.clearDate')}
                     </Button>
                   ),
                 },

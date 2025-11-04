@@ -22,6 +22,7 @@
       "notSpecified": "غير محدد"
     },
     "items": {
+      "single": "منتج واحد",
       "count": "{{count}} منتج"
     },
     "menu": {
@@ -97,35 +98,45 @@
     }
   },
   "filters": {
-    "title": "فلاتر البحث",
+    "title": "فلترة الطلبات",
     "search": "بحث",
     "status": {
       "label": "حالة الطلب",
-      "all": "الكل"
+      "all": "جميع الحالات"
     },
     "paymentStatus": {
       "label": "حالة الدفع",
-      "all": "الكل"
+      "all": "جميع الحالات"
     },
     "paymentMethod": {
       "label": "طريقة الدفع",
-      "all": "الكل"
+      "all": "جميع الطرق"
     },
     "dateRange": {
       "from": "من تاريخ",
       "to": "إلى تاريخ"
     },
+    "last7Days": "آخر 7 أيام",
+    "last30Days": "آخر 30 يوم",
+    "last3Months": "آخر 3 أشهر",
+    "lastYear": "آخر سنة",
+    "dataAggregation": "تجميع البيانات",
+    "daily": "يومي",
+    "weekly": "أسبوعي",
+    "monthly": "شهري",
+    "fromDate": "من تاريخ",
+    "toDate": "إلى تاريخ",
+    "analysisFilters": "فلاتر التحليل",
     "sorting": {
-      "sortBy": "ترتيب حسب",
-      "sortOrder": "اتجاه الترتيب",
+      "sortBy": "ترتيب التصفية",
+      "sortOrder": "ترتيب التصفية",
       "createdAt": "تاريخ الطلب",
       "total": "المجموع",
       "orderNumber": "رقم الطلب",
       "status": "حالة الطلب",
       "descending": "تنازلي",
       "ascending": "تصاعدي"
-    },
-    "clearFilters": "مسح الفلاتر"
+    }
   },
   "stats": {
     "total": "إجمالي الطلبات",
@@ -160,7 +171,8 @@
       "totalRevenue": "إجمالي الإيرادات",
       "averageOrderValue": "متوسط قيمة الطلب",
       "conversionRate": "معدل التحويل",
-      "customerLifetimeValue": "قيمة عمر العميل"
+      "customerLifetimeValue": "قيمة عمر العميل",
+      "completedOrders": "طلبات مكتملة"
     },
     "charts": {
       "ordersOverTime": "الطلبات عبر الزمن",
@@ -169,7 +181,28 @@
       "paymentMethods": "طرق الدفع",
       "topProducts": "أفضل المنتجات",
       "topCustomers": "أفضل العملاء"
-    }
+    },
+    "orderDistributionByStatus": "توزيع الطلبات حسب الحالة",
+    "revenueAnalysis": "تحليل الإيرادات",
+    "revenueSummary": "ملخص الإيرادات",
+    "bestProducts": "أفضل المنتجات",
+    "revenue": "الإيرادات",
+    "orders": "الطلبات",
+    "noDataAvailable": "لا توجد بيانات متاحة",
+    "performanceAnalysis": "تحليل الأداء",
+    "averageProcessingTime": "متوسط وقت التجهيز",
+    "averageShippingTime": "متوسط وقت الشحن",
+    "averageDeliveryTime": "متوسط وقت التسليم",
+    "cancellationRate": "معدل الإلغاء",
+    "refundRate": "معدل الاسترداد",
+    "customerSatisfactionScore": "تقييم رضا العملاء",
+    "recentOrders": "الطلبات الأخيرة",
+    "client": "العميل",
+    "total": "المجموع",
+    "date": "التاريخ",
+    "exportReport": "تصدير التقرير",
+    "day": "يوم",
+    "completedOrders": "طلبات مكتملة"
   },
   "actions": {
     "refresh": "تحديث",
@@ -191,8 +224,8 @@
     "selected": "{{count}} طلب محدد",
     "actions": "الإجراءات المجمعة",
     "startProcessing": "بدء التجهيز",
-    "markAsShipped": "وضع كمُشحَن",
-    "putOnHold": "تعليق",
+    "markAsShipped": "تم الشحن",
+    "putOnHold": "وضع على الاحتياط",
     "cancelOrders": "إلغاء الطلبات"
   },
   "details": {
@@ -204,7 +237,52 @@
     "billing": "عنوان الفوترة",
     "items": "منتجات الطلب",
     "notes": "ملاحظات الطلب",
-    "history": "تاريخ الطلب"
+    "history": "تاريخ الطلب",
+    "overview": "نظرة عامة على الطلب",
+    "orderStatus": "حالة الطلب",
+    "paymentStatus": "حالة الدفع",
+    "paymentMethod": "طريقة الدفع",
+    "total": "المجموع",
+    "orderItems": "منتجات الطلب",
+    "orderTracking": "تتبع الطلب",
+    "deliveryAddress": "عنوان التوصيل",
+    "localPaymentInfo": "معلومات الدفع المحلي",
+    "shippingInfo": "معلومات الشحن",
+    "customerName": "الاسم",
+    "phone": "الهاتف",
+    "shippingCompany": "شركة الشحن",
+    "trackingNumber": "رقم التتبع",
+    "trackOrder": "تتبع الطلب",
+    "estimatedDeliveryDate": "التاريخ المتوقع للتسليم",
+    "customerNotes": "ملاحظات العميل",
+    "adminNotes": "ملاحظات الإدارة",
+    "internalNotes": "ملاحظات داخلية",
+    "quantity": "الكمية",
+    "price": "السعر",
+    "lineTotal": "المجموع",
+    "orderCreatedAt": "تم إنشاء الطلب في",
+    "timelineOrderCreated": "تم إنشاء الطلب",
+    "timelineOrderConfirmed": "تم تأكيد الطلب",
+    "timelineProcessing": "قيد التجهيز",
+    "timelineShipped": "تم الشحن",
+    "timelineDelivered": "تم التسليم",
+    "notSpecified": "غير محدد",
+    "noCustomerNotes": "لا توجد ملاحظات من العميل",
+    "noAdminNotes": "لا توجد ملاحظات إدارية",
+    "noInternalNotes": "لا توجد ملاحظات داخلية",
+    "postalCode": "الرمز البريدي",
+    "paymentReference": "رقم الحوالة / المرجع",
+    "verifiedAmount": "المبلغ المطابق",
+    "verificationDate": "تاريخ المطابقة",
+    "verificationNotes": "ملاحظات المطابقة",
+    "paymentAccepted": "تم قبول الدفع - المبلغ كافٍ",
+    "paymentRejected": "تم رفض الدفع - المبلغ غير كافٍ (المطلوب: {{amount}})",
+    "paymentPending": "في انتظار مراجعة ومطابقة الدفع",
+    "verifyPayment": "مطابقة الدفع",
+    "refundInfo": "معلومات الاسترداد",
+    "refundAmount": "مبلغ الاسترداد",
+    "refundReason": "سبب الاسترداد",
+    "refundedAt": "تاريخ الاسترداد"
   },
   "summary": {
     "orderNumber": "طلب #{{number}}",
@@ -240,38 +318,53 @@
   "dialogs": {
     "updateStatus": {
       "title": "تحديث حالة الطلب",
-      "currentStatus": "الحالة الحالية:",
-      "newStatus": "الحالة الجديدة:",
-      "notes": "الملاحظات (اختيارية):",
-      "confirm": "تحديث الحالة"
+      "currentStatus": "الحالة الحالية",
+      "newStatus": "الحالة الجديدة",
+      "notes": "ملاحظات (اختياري)",
+      "confirm": "تحديث"
     },
     "shipOrder": {
       "title": "شحن الطلب",
-      "trackingNumber": "رقم التتبع:",
-      "carrier": "شركة الشحن:",
-      "shippingDate": "تاريخ الشحن:",
-      "estimatedDelivery": "تاريخ التسليم المتوقع:",
+      "trackingNumber": "رقم التتبع",
+      "carrier": "شركة الشحن",
+      "trackingUrl": "رابط التتبع (اختياري)",
+      "shippingDate": "تاريخ الشحن",
+      "estimatedDelivery": "التاريخ المتوقع للتسليم",
+      "notes": "ملاحظات (اختياري)",
       "confirm": "شحن الطلب"
     },
     "refundOrder": {
       "title": "استرداد الطلب",
-      "amount": "مبلغ الاسترداد:",
-      "reason": "سبب الاسترداد:",
+      "amount": "مبلغ الاسترداد",
+      "reason": "سبب الاسترداد",
       "fullRefund": "استرداد كامل",
       "partialRefund": "استرداد جزئي",
-      "confirm": "معالجة الاسترداد"
+      "confirm": "استرداد"
     },
     "cancelOrder": {
       "title": "إلغاء الطلب",
-      "reason": "سبب الإلغاء:",
+      "reason": "سبب الإلغاء",
       "notifyCustomer": "إشعار العميل",
       "confirm": "إلغاء الطلب"
     },
     "addNotes": {
-      "title": "إضافة ملاحظات الطلب",
-      "notes": "الملاحظات:",
-      "isInternal": "ملاحظة داخلية (غير مرئية للعميل)",
-      "confirm": "إضافة الملاحظات"
+      "title": "إضافة ملاحظات",
+      "noteType": "نوع الملاحظة",
+      "adminNotes": "ملاحظات إدارية",
+      "internalNotes": "ملاحظات داخلية",
+      "customerNotes": "ملاحظات العميل",
+      "notes": "الملاحظة",
+      "confirm": "إضافة الملاحظة"
+    },
+    "verifyPayment": {
+      "title": "مطابقة الدفع المحلي",
+      "requiredAmount": "المبلغ المطلوب: {{amount}}",
+      "verifiedAmount": "المبلغ المطابق",
+      "currency": "العملة",
+      "notes": "ملاحظات (اختياري)",
+      "amountSufficient": "المبلغ كافٍ - سيتم قبول الدفع",
+      "amountInsufficient": "المبلغ غير كافٍ - سيتم رفض الدفع (نقص: {{amount}})",
+      "confirm": "مطابقة"
     }
   },
   "validation": {

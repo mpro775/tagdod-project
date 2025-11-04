@@ -11,7 +11,8 @@ import {
   ListItemText,
   Chip,
   Divider,
-  Alert
+  Alert,
+  useTheme
 } from '@mui/material';
 import { 
   Notifications,
@@ -21,24 +22,31 @@ import {
   Visibility,
   TrendingUp
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useNotificationStats } from '../hooks/useNotifications';
 
 export const NotificationsAnalyticsPage: React.FC = () => {
+  const theme = useTheme();
+  const { t } = useTranslation('notifications');
+  const { isMobile } = useBreakpoint();
   const { data: stats, isLoading, error } = useNotificationStats();
 
   if (isLoading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography>جاري تحميل الإحصائيات...</Typography>
+      <Box sx={{ p: isMobile ? 1.5 : 3 }}>
+        <Typography variant={isMobile ? 'body1' : 'h6'}>
+          {t('analytics.loading')}
+        </Typography>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: isMobile ? 1.5 : 3 }}>
         <Alert severity="error">
-          حدث خطأ في تحميل الإحصائيات
+          {t('analytics.loadError')}
         </Alert>
       </Box>
     );
@@ -46,19 +54,19 @@ export const NotificationsAnalyticsPage: React.FC = () => {
 
   if (!stats) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: isMobile ? 1.5 : 3 }}>
         <Alert severity="info">
-          لا توجد بيانات متاحة
+          {t('analytics.noData')}
         </Alert>
       </Box>
     );
   }
 
   const channelLabels = {
-    inapp: 'داخل التطبيق',
-    push: 'إشعار دفع',
-    sms: 'رسالة نصية',
-    email: 'بريد إلكتروني'
+    inapp: t('analytics.channels.inapp'),
+    push: t('analytics.channels.push'),
+    sms: t('analytics.channels.sms'),
+    email: t('analytics.channels.email')
   };
 
   const getChannelIcon = (channel: string) => {
@@ -102,98 +110,170 @@ export const NotificationsAnalyticsPage: React.FC = () => {
   const failureRate = safeStats.total > 0 ? ((safeStats.failed / safeStats.total) * 100).toFixed(1) : 0;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        إحصائيات الإشعارات
+    <Box sx={{ p: isMobile ? 1.5 : 3 }}>
+      <Typography 
+        variant={isMobile ? 'h5' : 'h4'} 
+        sx={{ 
+          mb: isMobile ? 2 : 3,
+          fontSize: isMobile ? '1.5rem' : undefined
+        }}
+      >
+        {t('analytics.title')}
       </Typography>
 
       {/* Main Statistics */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Notifications color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">{safeStats.total}</Typography>
+      <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 4 }}>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ p: isMobile ? 1.5 : 2, '&:last-child': { pb: isMobile ? 1.5 : 2 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                <Notifications color="primary" sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem' }} />
+                <Typography 
+                  variant={isMobile ? 'body1' : 'h6'}
+                  sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}
+                >
+                  {safeStats.total}
+                </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                إجمالي التنبيهات
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+              >
+                {t('analytics.total')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Send color="success" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="success.main">{safeStats.sent}</Typography>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ p: isMobile ? 1.5 : 2, '&:last-child': { pb: isMobile ? 1.5 : 2 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                <Send color="success" sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem' }} />
+                <Typography 
+                  variant={isMobile ? 'body1' : 'h6'} 
+                  color="success.main"
+                  sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}
+                >
+                  {safeStats.sent}
+                </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                مرسل بنجاح
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+              >
+                {t('analytics.sent')}
               </Typography>
-              <Typography variant="caption" color="success.main">
+              <Typography 
+                variant="caption" 
+                color="success.main"
+                sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
+              >
                 {successRate}%
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Schedule color="warning" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="warning.main">{safeStats.queued}</Typography>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ p: isMobile ? 1.5 : 2, '&:last-child': { pb: isMobile ? 1.5 : 2 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                <Schedule color="warning" sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem' }} />
+                <Typography 
+                  variant={isMobile ? 'body1' : 'h6'} 
+                  color="warning.main"
+                  sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}
+                >
+                  {safeStats.queued}
+                </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                قيد الانتظار
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+              >
+                {t('analytics.queued')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Error color="error" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="error.main">{safeStats.failed}</Typography>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ p: isMobile ? 1.5 : 2, '&:last-child': { pb: isMobile ? 1.5 : 2 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                <Error color="error" sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem' }} />
+                <Typography 
+                  variant={isMobile ? 'body1' : 'h6'} 
+                  color="error.main"
+                  sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}
+                >
+                  {safeStats.failed}
+                </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                فشل في الإرسال
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+              >
+                {t('analytics.failed')}
               </Typography>
-              <Typography variant="caption" color="error.main">
+              <Typography 
+                variant="caption" 
+                color="error.main"
+                sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
+              >
                 {failureRate}%
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Visibility color="info" sx={{ mr: 1 }} />
-                <Typography variant="h6" color="info.main">{safeStats.read}</Typography>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ p: isMobile ? 1.5 : 2, '&:last-child': { pb: isMobile ? 1.5 : 2 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                <Visibility color="info" sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem' }} />
+                <Typography 
+                  variant={isMobile ? 'body1' : 'h6'} 
+                  color="info.main"
+                  sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}
+                >
+                  {safeStats.read}
+                </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                تم القراءة
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+              >
+                {t('analytics.read')}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <TrendingUp color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6">{safeStats.recent24h}</Typography>
+        <Grid size={{ xs: 6, sm: 4, md: 2 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ p: isMobile ? 1.5 : 2, '&:last-child': { pb: isMobile ? 1.5 : 2 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                <TrendingUp color="primary" sx={{ mr: 1, fontSize: isMobile ? '1.25rem' : '1.5rem' }} />
+                <Typography 
+                  variant={isMobile ? 'body1' : 'h6'}
+                  sx={{ fontWeight: 600, fontSize: isMobile ? '1rem' : undefined }}
+                >
+                  {safeStats.recent24h}
+                </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                آخر 24 ساعة
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+              >
+                {t('analytics.recent24h')}
               </Typography>
             </CardContent>
           </Card>
@@ -201,123 +281,246 @@ export const NotificationsAnalyticsPage: React.FC = () => {
       </Grid>
 
       {/* Channel Distribution */}
-      <Grid container spacing={3}>
+      <Grid container spacing={isMobile ? 1.5 : 3}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              توزيع التنبيهات حسب القناة
+          <Paper 
+            sx={{ 
+              p: isMobile ? 2 : 3,
+              bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default'
+            }}
+          >
+            <Typography 
+              variant={isMobile ? 'subtitle1' : 'h6'} 
+              sx={{ 
+                mb: isMobile ? 1.5 : 2,
+                fontSize: isMobile ? '1rem' : undefined,
+                fontWeight: 600
+              }}
+            >
+              {t('analytics.channelDistribution')}
             </Typography>
             
             {Object.keys(safeStats.byChannel).length > 0 ? (
-              <List>
+              <List sx={{ pt: 0 }}>
                 {Object.entries(safeStats.byChannel).map(([channel, count], index) => (
                   <React.Fragment key={channel}>
-                    <ListItem>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+                    <ListItem 
+                      sx={{ 
+                        px: isMobile ? 0 : 2,
+                        py: isMobile ? 1 : 1.5
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', mr: isMobile ? 1 : 2 }}>
                         {getChannelIcon(channel)}
                       </Box>
                       <ListItemText
                         primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body1">
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1,
+                            flexWrap: isMobile ? 'wrap' : 'nowrap'
+                          }}>
+                            <Typography 
+                              variant={isMobile ? 'body2' : 'body1'}
+                              sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
+                            >
                               {channelLabels[channel as keyof typeof channelLabels] || channel}
                             </Typography>
                             <Chip 
                               label={count} 
-                              size="small" 
+                              size={isMobile ? 'small' : 'medium'}
                               color={getChannelColor(channel) as any}
+                              sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
                             />
                           </Box>
                         }
                         secondary={
-                          <Typography variant="body2" color="text.secondary">
-                            {safeStats.total > 0 ? ((count as number / safeStats.total) * 100).toFixed(1) : 0}% من إجمالي التنبيهات
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary"
+                            sx={{ fontSize: isMobile ? '0.75rem' : undefined, mt: 0.5 }}
+                          >
+                            {safeStats.total > 0 ? ((count as number / safeStats.total) * 100).toFixed(1) : 0}% {t('analytics.percentageOfTotal')}
                           </Typography>
                         }
                       />
                     </ListItem>
-                    {index < Object.keys(safeStats.byChannel).length - 1 && <Divider />}
+                    {index < Object.keys(safeStats.byChannel).length - 1 && (
+                      <Divider 
+                        sx={{ 
+                          ml: isMobile ? 0 : 4,
+                          opacity: theme.palette.mode === 'dark' ? 0.3 : 0.5
+                        }} 
+                      />
+                    )}
                   </React.Fragment>
                 ))}
               </List>
             ) : (
-              <Alert severity="info">
-                لا توجد بيانات متاحة لتوزيع القنوات
+              <Alert severity="info" sx={{ mt: 1 }}>
+                {t('analytics.noChannelData')}
               </Alert>
             )}
           </Paper>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              ملخص الأداء
+          <Paper 
+            sx={{ 
+              p: isMobile ? 2 : 3,
+              bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default'
+            }}
+          >
+            <Typography 
+              variant={isMobile ? 'subtitle1' : 'h6'} 
+              sx={{ 
+                mb: isMobile ? 1.5 : 2,
+                fontSize: isMobile ? '1rem' : undefined,
+                fontWeight: 600
+              }}
+            >
+              {t('analytics.performanceSummary')}
             </Typography>
             
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                معدل النجاح
+            <Box sx={{ mb: isMobile ? 1.5 : 2 }}>
+              <Typography 
+                variant="subtitle2" 
+                color="text.secondary" 
+                gutterBottom
+                sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+              >
+                {t('analytics.successRate')}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ flexGrow: 1, bgcolor: 'grey.200', borderRadius: 1, height: 8 }}>
+                <Box 
+                  sx={{ 
+                    flexGrow: 1, 
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'grey.200', 
+                    borderRadius: 1, 
+                    height: isMobile ? 6 : 8 
+                  }}
+                >
                   <Box 
                     sx={{ 
                       bgcolor: 'success.main', 
                       height: '100%', 
                       borderRadius: 1,
-                      width: `${successRate}%`
+                      width: `${successRate}%`,
+                      transition: 'width 0.3s ease'
                     }} 
                   />
                 </Box>
-                <Typography variant="body2" color="success.main">
+                <Typography 
+                  variant="body2" 
+                  color="success.main"
+                  sx={{ 
+                    fontSize: isMobile ? '0.75rem' : undefined,
+                    minWidth: isMobile ? '35px' : '40px',
+                    textAlign: 'right'
+                  }}
+                >
                   {successRate}%
                 </Typography>
               </Box>
             </Box>
 
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                معدل الفشل
+            <Box sx={{ mb: isMobile ? 1.5 : 2 }}>
+              <Typography 
+                variant="subtitle2" 
+                color="text.secondary" 
+                gutterBottom
+                sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+              >
+                {t('analytics.failureRate')}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ flexGrow: 1, bgcolor: 'grey.200', borderRadius: 1, height: 8 }}>
+                <Box 
+                  sx={{ 
+                    flexGrow: 1, 
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'grey.200', 
+                    borderRadius: 1, 
+                    height: isMobile ? 6 : 8 
+                  }}
+                >
                   <Box 
                     sx={{ 
                       bgcolor: 'error.main', 
                       height: '100%', 
                       borderRadius: 1,
-                      width: `${failureRate}%`
+                      width: `${failureRate}%`,
+                      transition: 'width 0.3s ease'
                     }} 
                   />
                 </Box>
-                <Typography variant="body2" color="error.main">
+                <Typography 
+                  variant="body2" 
+                  color="error.main"
+                  sx={{ 
+                    fontSize: isMobile ? '0.75rem' : undefined,
+                    minWidth: isMobile ? '35px' : '40px',
+                    textAlign: 'right'
+                  }}
+                >
                   {failureRate}%
                 </Typography>
               </Box>
             </Box>
 
-            <Divider sx={{ my: 2 }} />
+            <Divider sx={{ my: isMobile ? 1.5 : 2 }} />
 
             <Box>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                إحصائيات إضافية
+              <Typography 
+                variant="subtitle2" 
+                color="text.secondary" 
+                gutterBottom
+                sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+              >
+                {t('analytics.additionalStats')}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">متوسط التنبيهات يومياً:</Typography>
-                  <Typography variant="body2" fontWeight="medium">
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                  <Typography 
+                    variant="body2"
+                    sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                  >
+                    {t('analytics.dailyAverage')}:
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    fontWeight="medium"
+                    sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                  >
                     {safeStats.recent24h}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">التنبيهات المقروءة:</Typography>
-                  <Typography variant="body2" fontWeight="medium">
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                  <Typography 
+                    variant="body2"
+                    sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                  >
+                    {t('analytics.readNotifications')}:
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    fontWeight="medium"
+                    sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                  >
                     {safeStats.read} ({safeStats.total > 0 ? ((safeStats.read / safeStats.total) * 100).toFixed(1) : 0}%)
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">التنبيهات المعلقة:</Typography>
-                  <Typography variant="body2" fontWeight="medium">
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                  <Typography 
+                    variant="body2"
+                    sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                  >
+                    {t('analytics.pendingNotifications')}:
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    fontWeight="medium"
+                    sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                  >
                     {safeStats.queued}
                   </Typography>
                 </Box>

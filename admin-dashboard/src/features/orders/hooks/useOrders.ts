@@ -11,6 +11,7 @@ import type {
   AddOrderNotesDto,
   BulkOrderUpdateDto,
   OrderAnalyticsParams,
+  VerifyPaymentDto,
 } from '../types/order.types';
 
 const ORDERS_KEY = 'orders';
@@ -214,5 +215,22 @@ export const useOrderStats = () => {
   return useQuery({
     queryKey: [ORDERS_KEY, 'stats'],
     queryFn: () => ordersApi.getStats(),
+  });
+};
+
+// Verify payment
+export const useVerifyPayment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: VerifyPaymentDto }) =>
+      ordersApi.verifyPayment(id, data),
+    onSuccess: (data) => {
+      const message = data.paymentStatus === 'paid' 
+        ? 'تم قبول الدفع بنجاح' 
+        : 'تم رفض الدفع - المبلغ غير كافٍ';
+      toast.success(message);
+      queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
+    },
+    onError: ErrorHandler.showError,
   });
 };

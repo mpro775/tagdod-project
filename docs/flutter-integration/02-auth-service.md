@@ -744,7 +744,7 @@ Future<bool> updatePreferredCurrency(String currency) async {
 
 ## 9. حذف الحساب
 
-يحذف حساب المستخدم نهائياً.
+يحذف حساب المستخدم (Soft Delete) مع إدخال السبب.
 
 ### معلومات الطلب
 
@@ -752,35 +752,71 @@ Future<bool> updatePreferredCurrency(String currency) async {
 - **Endpoint:** `/auth/me`
 - **Auth Required:** ✅ نعم (Bearer Token)
 
+### Request Body
+
+```json
+{
+  "reason": "لا أستخدم التطبيق بعد الآن"
+}
+```
+
+**الحقول:**
+- `reason` (required, string): سبب حذف الحساب (5-500 حرف)
+
 ### Response - نجاح
 
 ```json
 {
   "success": true,
   "data": {
-    "deleted": true
+    "deleted": true,
+    "message": "تم حذف حسابك بنجاح"
   },
   "requestId": "req_505"
+}
+```
+
+### Response - خطأ
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "يجب أن يكون السبب 5 أحرف على الأقل"
+  },
+  "requestId": "req_506"
 }
 ```
 
 ### كود Flutter
 
 ```dart
-Future<bool> deleteAccount() async {
-  final response = await _dio.delete('/auth/me');
+Future<bool> deleteAccount(String reason) async {
+  try {
+    final response = await _dio.delete(
+      '/auth/me',
+      data: {
+        'reason': reason,
+      },
+    );
 
-  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
-    response.data,
-    (data) => data as Map<String, dynamic>,
-  );
+    final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+      response.data,
+      (data) => data as Map<String, dynamic>,
+    );
 
-  if (apiResponse.isSuccess && apiResponse.data!['deleted'] == true) {
-    // امسح البيانات المحلية
-    await _clearLocalData();
-    return true;
+    if (apiResponse.isSuccess && apiResponse.data!['deleted'] == true) {
+      // امسح البيانات المحلية
+      await _clearLocalData();
+      return true;
+    }
+    return false;
+  } catch (e) {
+    // معالجة الأخطاء
+    print('خطأ في حذف الحساب: $e');
+    return false;
   }
-  return false;
 }
 
 Future<void> _clearLocalData() async {
@@ -788,6 +824,8 @@ Future<void> _clearLocalData() async {
   await prefs.clear();
 }
 ```
+
+**ملاحظة:** الحذف من نوع Soft Delete، مما يعني أن البيانات يتم حفظها في قاعدة البيانات مع حالة "محذوف" ويمكن استعادتها من قبل الأدمن.
 
 ---
 

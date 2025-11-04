@@ -115,6 +115,17 @@
       "from": "From Date",
       "to": "To Date"
     },
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "last3Months": "Last 3 months",
+    "lastYear": "Last year",
+    "dataAggregation": "Data Aggregation",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "fromDate": "From Date",
+    "toDate": "To Date",
+    "analysisFilters": "Analysis Filters",
     "sorting": {
       "sortBy": "Sort By",
       "sortOrder": "Sort Order",
@@ -160,7 +171,8 @@
       "totalRevenue": "Total Revenue",
       "averageOrderValue": "Average Order Value",
       "conversionRate": "Conversion Rate",
-      "customerLifetimeValue": "Customer Lifetime Value"
+      "customerLifetimeValue": "Customer Lifetime Value",
+      "completedOrders": "Completed Orders"
     },
     "charts": {
       "ordersOverTime": "Orders Over Time",
@@ -169,7 +181,27 @@
       "paymentMethods": "Payment Methods",
       "topProducts": "Top Products",
       "topCustomers": "Top Customers"
-    }
+    },
+    "orderDistributionByStatus": "Order Distribution by Status",
+    "revenueAnalysis": "Revenue Analysis",
+    "revenueSummary": "Revenue Summary",
+    "bestProducts": "Best Products",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "noDataAvailable": "No data available",
+    "performanceAnalysis": "Performance Analysis",
+    "averageProcessingTime": "Average Processing Time",
+    "averageShippingTime": "Average Shipping Time",
+    "averageDeliveryTime": "Average Delivery Time",
+    "cancellationRate": "Cancellation Rate",
+    "refundRate": "Refund Rate",
+    "customerSatisfactionScore": "Customer Satisfaction Score",
+    "recentOrders": "Recent Orders",
+    "client": "Client",
+    "total": "Total",
+    "date": "Date",
+    "day": "day",
+    "exportReport": "Export Report"
   },
   "actions": {
     "refresh": "Refresh",

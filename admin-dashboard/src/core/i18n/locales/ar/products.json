@@ -17,6 +17,7 @@
     },
     "columns": {
       "product": "المنتج",
+      "sku": "رقم المنتج",
       "category": "الفئة",
       "brand": "العلامة التجارية",
       "price": "السعر",
@@ -24,12 +25,23 @@
       "status": "الحالة",
       "rating": "التقييم",
       "sales": "المبيعات",
-      "actions": "الإجراءات"
+      "variants": "الخيارات",
+      "badges": "الشارات",
+      "actions": "الإجراءات",
+      "createdAt": "تاريخ الإنشاء"
     },
     "empty": "لا توجد منتجات",
     "emptyDescription": "ابدأ بإضافة منتج جديد",
     "noResults": "لم يتم العثور على نتائج",
-    "showing": "عرض {{count}} من {{total}} منتج"
+    "showing": "عرض {{count}} من {{total}} منتج",
+    "activeFilters": "الفلاتر النشطة:",
+    "filtersLabel": "الفلاتر",
+    "inventoryManagement": "إدارة المخزون",
+    "managementTitle": "إدارة المنتجات",
+    "allStatuses": "جميع الحالات",
+    "featuredProducts": "منتجات مميزة",
+    "normalProducts": "منتجات عادية",
+    "statusColon": "الحالة:"
   },
   "form": {
     "new": "إضافة منتج جديد",
@@ -59,8 +71,14 @@
     "isNew": "منتج جديد",
     "isBestseller": "الأكثر مبيعاً",
     "attributes": "السمات",
+    "attributesCount": "عدد السمات",
     "selectAttributes": "اختر السمات",
     "relatedProducts": "المنتجات ذات الصلة",
+    "relatedProductsHelp": "اختر المنتجات المشابهة التي تريد عرضها في صفحة تفاصيل هذا المنتج",
+    "searchAndSelectProducts": "ابحث واختر المنتجات",
+    "searchProduct": "ابحث عن منتج...",
+    "noProductsAvailable": "لا توجد منتجات متاحة",
+    "selectedProducts": "المنتجات المحددة",
     "pricing": "التسعير والمخزون",
     "defaultPrice": "السعر الافتراضي",
     "defaultPriceHelp": "السعر الافتراضي بالدولار الأمريكي",
@@ -71,7 +89,10 @@
     "generateVariantsDescription": "يمكنك توليد متغيرات تلقائياً بناءً على السمات المختارة",
     "generateVariantsNew": "سيتم حفظ المنتج تلقائياً ثم توليد المتغيرات بناءً على السمات المختارة",
     "generateVariantsConfirm": "هل تريد توليد متغيرات تلقائياً؟",
+    "generateVariantsWarningExisting": "سيتم إنشاء متغيرات جديدة وفق السمات المحددة. لن يتم حذف المتغيرات الحالية.",
     "variantsWillBeSaved": "سيتم حفظ المنتج أولاً تلقائياً",
+    "overwriteExisting": "استبدال المتغيرات الحالية (حذف وإعادة توليد)",
+    "summary": "الملخص",
     "seo": "تحسين محركات البحث (SEO)",
     "metaTitle": "عنوان الصفحة (Meta Title)",
     "metaDescription": "وصف الصفحة (Meta Description)",
@@ -88,7 +109,17 @@
     "manualRatingWarning": "عند استخدام التقييم اليدوي، سيتم تجاهل التقييمات الحقيقية من العملاء. يمكنك التبديل للتقييمات الحقيقية في أي وقت.",
     "save": "حفظ",
     "cancel": "إلغاء",
-    "backToList": "العودة للقائمة"
+    "backToList": "العودة للقائمة",
+    "addImage": "إضافة صورة",
+    "addFirstImage": "إضافة أول صورة",
+    "addAnotherImage": "إضافة صورة أخرى",
+    "noImagesAdded": "لا توجد صور مضافة",
+    "editImage": "تعديل الصورة",
+    "selectNewImage": "اختر صورة جديدة",
+    "imagesCount": "{{current}} من {{max}} صورة",
+    "canAddMore": "يمكن إضافة المزيد",
+    "maximum": "الحد الأقصى",
+    "imageDefault": "صورة {{number}}"
   },
   "variants": {
     "title": "المتغيرات",
@@ -120,18 +151,52 @@
       "discountNote": "الخصومات والأسعار الترويجية يتم إدارتها من قسم \"العروض والتسويق\"",
       "save": "حفظ",
       "cancel": "إلغاء",
-      "quickEdit": "تعديل سريع"
+      "quickEdit": "تعديل سريع",
+      "pricingManagement": "إدارة التسعير",
+      "currentPrice": "السعر الحالي",
+      "originalPrice": "السعر الأصلي",
+      "costPrice": "سعر التكلفة",
+      "costPriceHelp": "تكلفة المنتج (لحساب الربحية)",
+      "discount": "خصم {{percent}}%",
+      "profit": "ربح {{percent}}%",
+      "profitMargin": "هامش الربح: {{percent}}%",
+      "priceRange": "نطاق الأسعار (المنتج)",
+      "priceRangeFrom": "من {{min}} $ إلى {{max}} $",
+      "viewAllPrices": "عرض جميع أسعار المتغيرات",
+      "updatePrices": "تحديث الأسعار",
+      "pricesUsd": "الأسعار بالدولار الأمريكي (USD)",
+      "basePrice": "السعر الأساسي *",
+      "basePriceHelp": "السعر الذي يراه العملاء",
+      "comparePrice": "السعر الأصلي (للعرض)",
+      "comparePriceHelp": "السعر الأصلي قبل الخصم (اختياري)"
     },
     "status": {
       "available": "متوفر",
       "low": "منخفض",
       "outOfStock": "نفذ"
     },
+    "stockStatus": {
+      "inStock": "متوفر",
+      "lowStock": "مخزون منخفض",
+      "outOfStock": "نفذ"
+    },
     "noAttributes": "بدون سمات",
+    "noSku": "بدون SKU",
+    "unit": "وحدة",
+    "minimum": "الحد الأدنى",
+    "sales": "المبيعات",
     "generated": "تم توليد {{count}} متغير بنجاح",
-    "backToProduct": "العودة للمنتج"
+    "backToProduct": "العودة للمنتج",
+    "actions": {
+      "view": "عرض التفاصيل"
+    }
   },
   "stats": {
+    "title": "إحصائيات المنتجات",
+    "backToProducts": "العودة للمنتجات",
+    "export": "تصدير البيانات",
+    "exportSoon": "ميزة التصدير ستكون متاحة قريباً",
+    "refresh": "تحديث",
     "total": "إجمالي المنتجات",
     "active": "المنتجات النشطة",
     "draft": "المسودات",
@@ -142,12 +207,41 @@
     "variants": "متغير",
     "reviews": "تقييم",
     "rating": "التقييم",
-    "averageRating": "متوسط التقييم"
+    "averageRating": "متوسط التقييم",
+    "manual": "يدوي",
+    "reviewsManual": "تقييم (يدوي)",
+    "reviewsReal": "تقييم (حقيقي)",
+    "view": "مشاهدة",
+    "variantClickToManage": "متغير (اضغط للإدارة)",
+    "noVariants": "لا توجد متغيرات",
+    "byStatus": "توزيع المنتجات حسب الحالة",
+    "inventoryStats": "إحصائيات المخزون",
+    "totalVariants": "إجمالي المتغيرات",
+    "inStock": "متوفر في المخزون",
+    "available": "متوفر",
+    "low": "منخفض",
+    "soldOut": "نفذ",
+    "unit": "وحدة",
+    "totalInventoryValue": "إجمالي قيمة المخزون",
+    "variantsPerProduct": "إحصائيات المتغيرات لكل منتج",
+    "product": "المنتج",
+    "variantsCount": "عدد المتغيرات",
+    "totalUnits": "إجمالي الوحدات",
+    "currentStock": "المخزون الحالي",
+    "minimumStock": "الحد الأدنى",
+    "price": "السعر",
+    "actions": "الإجراءات",
+    "viewDetails": "عرض التفاصيل",
+    "noLowStock": "لا توجد منتجات بمخزون منخفض حالياً",
+    "allInStock": "جميع المنتجات متوفرة في المخزون",
+    "featured": "منتجات مميزة",
+    "new": "منتجات جديدة"
   },
   "status": {
     "active": "نشط",
     "draft": "مسودة",
-    "archived": "مؤرشف"
+    "archived": "مؤرشف",
+    "inactive": "غير نشط"
   },
   "messages": {
     "saveProduct": "جاري حفظ المنتج...",
@@ -162,12 +256,85 @@
     "needPrice": "يجب إدخال سعر افتراضي صحيح أكبر من 0",
     "needStock": "الكمية الافتراضية يجب أن تكون 0 أو أكبر",
     "fillRequired": "يرجى ملء جميع الحقول المطلوبة بشكل صحيح",
-    "priceStockRequired": "السعر والكمية يجب أن تكون أكبر من أو تساوي صفر"
+    "priceStockRequired": "السعر والكمية يجب أن تكون أكبر من أو تساوي صفر",
+    "confirmDelete": "هل أنت متأكد من حذف المنتج \"{{name}}\"؟",
+    "confirmRestore": "هل تريد استعادة المنتج \"{{name}}\"؟",
+    "loadProductsFailed": "فشل تحميل المنتجات"
   },
   "currency": {
     "usd": "دولار أمريكي",
     "sar": "ريال سعودي",
     "eur": "يورو"
+  },
+  "badges": {
+    "featured": "مميز",
+    "new": "جديد"
+  },
+  "actions": {
+    "view": "عرض",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "restore": "استعادة",
+    "variants": "المتغيرات"
+  },
+  "inventory": {
+    "title": "لوحة إدارة المخزون",
+    "totalVariants": "إجمالي المتغيرات",
+    "inStock": "متوفر في المخزون",
+    "lowStock": "مخزون منخفض",
+    "outOfStock": "نفذ من المخزون",
+    "totalValue": "إجمالي قيمة المخزون:",
+    "lowStockVariants": "مخزون منخفض",
+    "outOfStockVariants": "نفذ من المخزون",
+    "noLowStock": "لا توجد منتجات بمخزون منخفض حالياً",
+    "allProductsInStock": "جميع المنتجات متوفرة في المخزون",
+    "product": "المنتج",
+    "available": "المتاح",
+    "minimum": "الحد الأدنى",
+    "shortage": "النقص",
+    "viewVariant": "عرض المتغير",
+    "viewProduct": "عرض المنتج",
+    "variantDetails": "تفاصيل المتغير",
+    "backToProducts": "العودة للمنتجات"
+  },
+  "view": {
+    "title": "عرض المنتج",
+    "backToProducts": "العودة للمنتجات",
+    "edit": "تعديل",
+    "manageVariants": "إدارة المتغيرات",
+    "productNotFound": "المنتج غير موجود أو تم حذفه",
+    "productImage": "صورة المنتج",
+    "sku": "رقم المنتج (SKU)",
+    "skuNotSpecified": "غير محدد",
+    "category": "الفئة",
+    "brand": "العلامة التجارية",
+    "variantsCount": "عدد المتغيرات",
+    "rating": "التقييم",
+    "reviewsManual": "تقييم (يدوي)",
+    "reviewsReal": "تقييم (حقيقي)",
+    "viewsCount": "عدد المشاهدات",
+    "salesCount": "عدد المبيعات",
+    "reviewsCount": "عدد التقييمات",
+    "averageRating": "متوسط التقييم",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "آخر تحديث",
+    "tabs": {
+      "description": "الوصف",
+      "variants": "المتغيرات",
+      "seo": "SEO"
+    },
+    "descriptionAr": "الوصف بالعربية",
+    "descriptionEn": "English Description",
+    "seo": {
+      "title": "معلومات SEO",
+      "metaTitle": "عنوان الصفحة (Meta Title)",
+      "metaDescription": "وصف الصفحة (Meta Description)",
+      "keywords": "الكلمات المفتاحية",
+      "noKeywords": "لا توجد كلمات مفتاحية",
+      "notSpecified": "غير محدد"
+    }
   }
 }
+
+
 

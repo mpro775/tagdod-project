@@ -9,6 +9,7 @@ import {
   Box,
   Alert,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import { Delete, Cancel } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +33,7 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
   error,
 }) => {
   const { t } = useTranslation('brands');
+  const theme = useTheme();
 
   const handleClose = () => {
     if (!loading) {
@@ -49,23 +51,26 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: 'background.paper',
+        },
+      }}
     >
-      <DialogTitle>
-        <Typography variant="h6" fontWeight="bold" color="error">
-          {t('messages.deleteConfirmTitle', { defaultValue: 'تأكيد حذف العلامة التجارية' })}
-        </Typography>
+      <DialogTitle sx={{ fontWeight: 'bold', color: 'error.main' }}>
+        {t('messages.deleteConfirmTitle')}
       </DialogTitle>
 
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error.message || t('messages.unknownError', { defaultValue: 'حدث خطأ غير معروف' })}
+            {error.message || t('messages.unknownError')}
           </Alert>
         )}
 
         <Box sx={{ mb: 2 }}>
-          <Typography variant="body1" gutterBottom>
-            {t('messages.deleteConfirmMessage', { defaultValue: 'هل أنت متأكد من حذف هذه العلامة؟ لا يمكن التراجع.' })}
+          <Typography variant="body1" color="text.primary" gutterBottom>
+            {t('messages.deleteConfirmMessage')}
           </Typography>
         </Box>
 
@@ -76,7 +81,9 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
               border: 1,
               borderColor: 'divider',
               borderRadius: 1,
-              backgroundColor: 'grey.50',
+              bgcolor: theme.palette.mode === 'dark' 
+                ? 'rgba(255, 255, 255, 0.05)' 
+                : 'grey.50',
             }}
           >
             <Box display="flex" alignItems="center" gap={2}>
@@ -90,18 +97,23 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
                     height: 60,
                     objectFit: 'contain',
                     borderRadius: 1,
+                    border: 1,
+                    borderColor: 'divider',
+                    bgcolor: theme.palette.mode === 'dark' 
+                      ? 'rgba(255, 255, 255, 0.05)' 
+                      : 'white',
                   }}
                 />
               )}
               <Box>
-                <Typography variant="h6" fontWeight="bold">
+                <Typography variant="h6" fontWeight="bold" color="text.primary">
                   {brand.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {brand.nameEn}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {t('messages.slug', { defaultValue: 'المعرف (Slug)' })}: {brand.slug}
+                  {t('fields.slug')}: {brand.slug}
                 </Typography>
               </Box>
             </Box>
@@ -109,8 +121,8 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
         )}
 
         <Alert severity="warning" sx={{ mt: 2 }}>
-          <Typography variant="body2">
-            {t('messages.deleteWarning', { defaultValue: 'سيتم حذف جميع البيانات المرتبطة بهذه العلامة بشكل دائم.' })}
+          <Typography variant="body2" color="text.primary">
+            {t('messages.deleteWarning')}
           </Typography>
         </Alert>
       </DialogContent>
@@ -122,7 +134,7 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
           onClick={handleClose}
           disabled={loading}
         >
-          {t('dialogs.cancel', { defaultValue: 'إلغاء' })}
+          {t('dialogs.cancel')}
         </Button>
         <Button
           variant="contained"
@@ -131,7 +143,7 @@ export const BrandDeleteDialog: React.FC<BrandDeleteDialogProps> = ({
           onClick={handleConfirm}
           disabled={loading}
         >
-          {loading ? t('dialogs.deleting', { defaultValue: 'جارٍ الحذف...' }) : t('dialogs.delete', { defaultValue: 'حذف' })}
+          {loading ? t('dialogs.deleting') : t('dialogs.delete')}
         </Button>
       </DialogActions>
     </Dialog>

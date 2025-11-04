@@ -6,14 +6,19 @@ flowchart TD
   B -->|Auto Coupon| D[System applies auto coupon]
   B -->|Promotion| E[System applies promotion rule]
   
-  %% Manual Coupon Flow
+  %% Manual Coupon Flow (Multiple Coupons Support)
   C --> F[Validate coupon code]
   F --> G{Coupon valid?}
   G -->|No| H[Error: Invalid coupon]
-  G -->|Yes| I[Check coupon conditions]
-  I --> J{Conditions met?}
-  J -->|No| K[Error: Conditions not met]
-  J -->|Yes| L[Apply coupon discount]
+  G -->|Yes| I[Check if coupon already applied]
+  I --> J{Already applied?}
+  J -->|Yes| K[Error: Coupon already applied]
+  J -->|No| L[Check coupon conditions]
+  L --> M{Conditions met?}
+  M -->|No| N[Error: Conditions not met]
+  M -->|Yes| O[Add coupon to appliedCouponCodes array]
+  O --> P[Calculate cumulative discount]
+  P --> Q[Apply discount on remaining subtotal]
   
   %% Auto Coupon Flow
   D --> M[Check cart value]
@@ -30,23 +35,26 @@ flowchart TD
   U -->|No| V[No promotion applied]
   U -->|Yes| W[Apply promotion discount]
   
-  %% Discount Application
-  L --> X[Calculate discount amount]
+  %% Discount Application (Cumulative)
+  Q --> X[Calculate discount on remaining amount]
   R --> X
   W --> X
-  X --> Y[Update cart pricing]
-  Y --> Z[Recalculate totals]
-  Z --> AA[Update pricing summary]
-  AA --> BB[Save cart with discount]
-  BB --> CC[Return updated cart]
+  X --> Y[Sum all discounts (items + coupons + auto)]
+  Y --> Z[Update cart pricing summary]
+  Z --> AA[Store applied coupons details]
+  AA --> AB[Update totalDiscount]
+  AB --> AC[Recalculate final total]
+  AC --> AD[Save cart with all discounts]
+  AD --> AE[Return updated cart with breakdown]
   
   %% Error Handling
   H --> DD[Return error response]
   K --> DD
+  N --> DD
   Q --> EE[Continue without discount]
   V --> EE
   
   %% End Points
-  CC --> FF[End]
+  AE --> FF[End: Cart with multiple coupons]
   DD --> FF
   EE --> FF

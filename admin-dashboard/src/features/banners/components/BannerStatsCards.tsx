@@ -8,6 +8,7 @@ import {
   Skeleton,
   Chip,
   LinearProgress,
+  useTheme,
 } from '@mui/material';
 import { Visibility, TrendingUp, Campaign, AdsClick } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -25,69 +26,99 @@ interface StatCardProps {
   };
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color, subtitle, trend }) => (
-  <Card sx={{ height: '100%' }}>
-    <CardContent>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Box>
-          <Typography variant="h4" component="div" color={`${color}.main`} fontWeight="bold">
-            {value}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {title}
-          </Typography>
-          {subtitle && (
-            <Typography variant="caption" color="text.secondary">
-              {subtitle}
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color, subtitle, trend }) => {
+  const theme = useTheme();
+  
+  return (
+    <Card 
+      sx={{ 
+        height: '100%',
+        bgcolor: 'background.paper',
+      }}
+    >
+      <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+          <Box flex={1}>
+            <Typography 
+              variant="h5" 
+              component="div" 
+              color={`${color}.main`} 
+              fontWeight="bold"
+              sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' } }}
+            >
+              {value}
             </Typography>
-          )}
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              gutterBottom
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+            >
+              {title}
+            </Typography>
+            {subtitle && (
+              <Typography 
+                variant="caption" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+              >
+                {subtitle}
+              </Typography>
+            )}
+          </Box>
+          <Box
+            sx={{
+              p: { xs: 0.75, sm: 1 },
+              borderRadius: 2,
+              bgcolor: theme.palette.mode === 'dark' 
+                ? `${color}.dark` 
+                : `${color}.light`,
+              color: `${color}.main`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              '& svg': {
+                fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              },
+            }}
+          >
+            {icon}
+          </Box>
         </Box>
-        <Box
-          sx={{
-            p: 1,
-            borderRadius: 2,
-            bgcolor: `${color}.light`,
-            color: `${color}.contrastText`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {icon}
-        </Box>
-      </Box>
 
-      {trend && (
-        <Box display="flex" alignItems="center" gap={1}>
-          <Chip
-            label={`${trend.isPositive ? '+' : ''}${trend.value}%`}
-            size="small"
-            color={trend.isPositive ? 'success' : 'error'}
-            variant="outlined"
-          />
-          <Typography variant="caption" color="text.secondary">
-            من الشهر الماضي
-          </Typography>
-        </Box>
-      )}
-    </CardContent>
-  </Card>
-);
+        {trend && (
+          <Box display="flex" alignItems="center" gap={1}>
+            <Chip
+              label={`${trend.isPositive ? '+' : ''}${trend.value}%`}
+              size="small"
+              color={trend.isPositive ? 'success' : 'error'}
+              variant="outlined"
+            />
+            <Typography variant="caption" color="text.secondary">
+              من الشهر الماضي
+            </Typography>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const LoadingSkeleton: React.FC = () => (
-  <Grid container spacing={3}>
+  <Grid container spacing={2}>
     {[1, 2, 3, 4].map((item) => (
-      <Grid size={{ xs: 12, sm: 6, md: 3 }} key={item}>
+      <Grid size={{ xs: 6, sm: 6, md: 3 }} key={item}>
         <Card sx={{ height: '100%' }}>
-          <CardContent>
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+          <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
               <Box flex={1}>
-                <Skeleton variant="text" width="60%" height={40} />
-                <Skeleton variant="text" width="40%" height={20} />
+                <Skeleton variant="text" width="60%" sx={{ height: { xs: 30, sm: 40 } }} />
+                <Skeleton variant="text" width="40%" sx={{ height: { xs: 16, sm: 20 } }} />
               </Box>
-              <Skeleton variant="circular" width={40} height={40} />
+              <Skeleton variant="circular" sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }} />
             </Box>
-            <Skeleton variant="text" width="80%" height={20} />
+            <Skeleton variant="text" width="80%" sx={{ height: { xs: 16, sm: 20 } }} />
           </CardContent>
         </Card>
       </Grid>
@@ -133,8 +164,8 @@ export const BannerStatsCards: React.FC = () => {
   const conversionPercentage = (averageConversionRate || 0) * 100;
 
   return (
-    <Grid container spacing={3}>
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+    <Grid container spacing={2}>
+      <Grid size={{ xs: 6, sm: 6, md: 3 }}>
         <StatCard
           title={t('stats.totalBanners')}
           value={totalBanners}
@@ -144,7 +175,7 @@ export const BannerStatsCards: React.FC = () => {
         />
       </Grid>
 
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid size={{ xs: 6, sm: 6, md: 3 }}>
         <StatCard
           title={t('stats.totalViews')}
           value={totalViews.toLocaleString()}
@@ -154,7 +185,7 @@ export const BannerStatsCards: React.FC = () => {
         />
       </Grid>
 
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid size={{ xs: 6, sm: 6, md: 3 }}>
         <StatCard
           title={t('stats.totalClicks')}
           value={totalClicks.toLocaleString()}
@@ -164,7 +195,7 @@ export const BannerStatsCards: React.FC = () => {
         />
       </Grid>
 
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid size={{ xs: 6, sm: 6, md: 3 }}>
         <StatCard
           title={t('stats.totalConversions')}
           value={totalConversions.toLocaleString()}
@@ -176,15 +207,19 @@ export const BannerStatsCards: React.FC = () => {
 
       {/* Progress indicators */}
       <Grid size={{ xs: 12, md: 6 }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
+        <Card sx={{ bgcolor: 'background.paper' }}>
+          <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+            <Typography 
+              variant="h6" 
+              gutterBottom
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
               {t('stats.statusChart')}
             </Typography>
             <Box mb={2}>
               <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body2">{t('stats.activeBanners')}</Typography>
-                <Typography variant="body2">{activePercentage.toFixed(1)}%</Typography>
+                <Typography variant="body2" color="text.primary">{t('stats.activeBanners')}</Typography>
+                <Typography variant="body2" color="text.primary">{activePercentage.toFixed(1)}%</Typography>
               </Box>
               <LinearProgress
                 variant="determinate"
@@ -206,15 +241,19 @@ export const BannerStatsCards: React.FC = () => {
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
+        <Card sx={{ bgcolor: 'background.paper' }}>
+          <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+            <Typography 
+              variant="h6" 
+              gutterBottom
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
               {t('stats.performanceChart')}
             </Typography>
             <Box mb={2}>
               <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body2">{t('stats.clickRateLabel')}</Typography>
-                <Typography variant="body2">{ctrPercentage.toFixed(1)}%</Typography>
+                <Typography variant="body2" color="text.primary">{t('stats.clickRateLabel')}</Typography>
+                <Typography variant="body2" color="text.primary">{ctrPercentage.toFixed(1)}%</Typography>
               </Box>
               <LinearProgress
                 variant="determinate"
@@ -225,8 +264,8 @@ export const BannerStatsCards: React.FC = () => {
             </Box>
             <Box mb={2}>
               <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body2">{t('stats.conversionRateLabel')}</Typography>
-                <Typography variant="body2">{conversionPercentage.toFixed(1)}%</Typography>
+                <Typography variant="body2" color="text.primary">{t('stats.conversionRateLabel')}</Typography>
+                <Typography variant="body2" color="text.primary">{conversionPercentage.toFixed(1)}%</Typography>
               </Box>
               <LinearProgress
                 variant="determinate"

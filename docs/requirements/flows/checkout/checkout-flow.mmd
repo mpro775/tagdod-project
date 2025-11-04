@@ -3,58 +3,88 @@
 flowchart TD
   A[Start Checkout] --> B[Checkout Preview]
   B --> C[Validate cart items availability]
-  C --> D[Calculate pricing with discounts]
-  D --> E[Apply currency conversion]
-  E --> F[Calculate shipping costs]
-  F --> G[Apply wholesale/engineer discounts]
-  G --> H[Return preview with totals]
+  C --> D[Calculate items discount from promotions]
+  D --> E[Apply multiple coupons cumulatively]
+  E --> F[Calculate coupon discounts on remaining amount]
+  F --> G[Apply currency conversion]
+  G --> H[Calculate shipping costs]
+  H --> I[Apply wholesale/engineer discounts]
+  I --> J[Check COD eligibility if COD selected]
+  J --> K[Return preview with totals and COD status]
   
   %% Checkout Confirmation
-  H --> I[User confirms checkout]
-  I --> J[Start Database Transaction]
-  J --> K[Create Order with PENDING status]
-  K --> L[Reserve inventory items]
-  L --> M[Generate order number]
-  M --> N[Save order snapshot]
-  N --> O{Payment method?}
+  K --> L[User confirms checkout]
+  L --> M[Start Database Transaction]
+  M --> N[Create Order with PENDING status]
+  N --> O[Reserve inventory items]
+  O --> P[Generate order number]
+  P --> Q[Save order snapshot]
+  Q --> R{Payment method?}
   
-  %% COD Payment Flow
-  O -->|COD| P[Set payment status to PENDING]
-  P --> Q[Mark order as CONFIRMED]
-  Q --> R[Update inventory]
-  R --> S[Send confirmation notifications]
-  S --> T[End - COD Order Complete]
+  %% COD Payment Flow (with Eligibility Check)
+  R -->|COD| S[Check COD Eligibility]
+  S --> T{User eligible for COD?}
+  T -->|No - Regular user with <3 orders| U[Return error: COD not eligible]
+  U --> V[Show progress: X/3 completed orders]
+  V --> W[End - COD Not Allowed]
+  T -->|Yes - Admin or >=3 orders| X[Set payment status to PAID]
+  X --> Y[Mark order as CONFIRMED]
+  Y --> Z[Update inventory]
+  Z --> AA[Send confirmation notifications]
+  AA --> AB[End - COD Order Complete]
+  
+  %% Local Payment (Bank Transfer) Flow
+  R -->|BANK_TRANSFER| AC[Validate local payment account]
+  AC --> AD{Account valid and active?}
+  AD -->|No| AE[Return validation error]
+  AD -->|Yes| AF{Currency matches?}
+  AF -->|No| AG[Return currency mismatch error]
+  AF -->|Yes| AH{Payment reference provided?}
+  AH -->|No| AI[Return reference required error]
+  AH -->|Yes| AJ[Save localPaymentAccountId and paymentReference]
+  AJ --> AK[Set payment status to PENDING]
+  AK --> AL[Set order status to PENDING_PAYMENT]
+  AL --> AM[Reserve inventory temporarily]
+  AM --> AN[Send order confirmation with payment reference]
+  AN --> AO[End - Waiting for manual verification]
   
   %% Online Payment Flow
-  O -->|ONLINE| U[Create Payment Intent]
-  U --> V[Generate payment URL]
-  V --> W[Return payment URL to user]
-  W --> X[User redirects to payment]
-  X --> Y[Payment provider processes]
-  Y --> Z[Payment webhook received]
-  Z --> AA{Payment successful?}
-  AA -->|SUCCESS| BB[Verify webhook signature]
-  BB --> CC[Update payment status to PAID]
-  CC --> DD[Mark order as CONFIRMED]
-  DD --> EE[Update inventory]
-  EE --> FF[Send confirmation notifications]
-  FF --> GG[End - Online Payment Complete]
-  AA -->|FAILED| HH[Mark payment status to FAILED]
-  HH --> II[Mark order as PAYMENT_FAILED]
-  II --> JJ[Release reserved inventory]
-  JJ --> KK[Send failure notifications]
-  KK --> LL[End - Payment Failed]
+  R -->|ONLINE| AP[Create Payment Intent]
+  AP --> AQ[Generate payment URL]
+  AQ --> AR[Return payment URL to user]
+  AR --> AS[User redirects to payment]
+  AS --> AT[Payment provider processes]
+  AT --> AU[Payment webhook received]
+  AU --> AV{Payment successful?}
+  AV -->|SUCCESS| AW[Verify webhook signature]
+  AW --> AX[Update payment status to PAID]
+  AX --> AY[Mark order as CONFIRMED]
+  AY --> AZ[Update inventory]
+  AZ --> BA[Send confirmation notifications]
+  BA --> BB[End - Online Payment Complete]
+  AV -->|FAILED| BC[Mark payment status to FAILED]
+  BC --> BD[Mark order as PAYMENT_FAILED]
+  BD --> BE[Release reserved inventory]
+  BE --> BF[Send failure notifications]
+  BF --> BG[End - Payment Failed]
   
-  %% Order Management Flow
+  %% Order Management Flow (with Payment Validation)
   MM[Order Status Update] --> NN{New status?}
-  NN -->|PROCESSING| OO[Update to PROCESSING]
-  NN -->|SHIPPED| PP[Add tracking number]
-  NN -->|DELIVERED| QQ[Mark as DELIVERED]
-  NN -->|CANCELLED| RR[Release inventory]
-  OO --> SS[Send status notification]
-  PP --> SS
-  QQ --> SS
-  RR --> SS
+  NN -->|CANCELLED| RR[Allow - No payment check needed]
+  RR --> RRA[Release inventory]
+  RRA --> SS[Send status notification]
+  NN -->|CONFIRMED/PROCESSING/SHIPPED/etc| OO[Check payment status]
+  OO --> PP{Payment status is PAID?}
+  PP -->|No| QQ[Return error: Payment required]
+  QQ --> RRB[Show current payment status]
+  RRB --> SS
+  PP -->|Yes| RRC[Validate status transition]
+  RRC --> RRD{Transition valid?}
+  RRD -->|No| RRE[Return error: Invalid transition]
+  RRE --> SS
+  RRD -->|Yes| RRF[Update order status]
+  RRF --> RRG[Add to status history]
+  RRG --> SS
   
   %% Inventory Management
   TT[Inventory Reservation] --> UU[Check stock availability]
@@ -75,12 +105,48 @@ flowchart TD
   HHH --> III[End - Webhook Processed]
   FFF --> JJJ[End - Invalid Webhook]
   
+  %% Local Payment Verification Flow
+  BBBB[Admin reviews order] --> CCCC[Open verify payment dialog]
+  CCCC --> DDDD[Enter verified amount and currency]
+  DDDD --> EEEE{Amount >= Order total?}
+  EEEE -->|Yes| FFFF[Accept payment - Set status to PAID]
+  EEEE -->|No| GGGG[Reject payment - Set status to FAILED]
+  FFFF --> HHHH[Update order status to CONFIRMED]
+  HHHH --> IIII[Update inventory - reduce stock]
+  IIII --> JJJJ[Send payment accepted notification]
+  GGGG --> KKKK[Keep order as PAYMENT_FAILED]
+  KKK  K --> LLLL[Send payment rejected notification]
+  JJJJ --> MMMM[End - Payment Verified Successfully]
+  LLLL --> NNNN[End - Payment Verification Failed]
+  
+  %% Multiple Coupons Flow
+  OOOO[Apply Coupon] --> PPPP[Check if coupon already applied]
+  PPPP --> QQQQ{Already in appliedCouponCodes?}
+  QQQQ -->|Yes| RRRR[Error: Coupon already applied]
+  QQQQ -->|No| SSSS[Validate coupon code and conditions]
+  SSSS --> TTTT{Coupon valid?}
+  TTTT -->|No| UUUU[Return validation error]
+  TTTT -->|Yes| VVVV[Add to appliedCouponCodes array]
+  VVVV --> WWWW[Calculate discount on remaining subtotal]
+  WWWW --> XXXX[Update appliedCoupons with details]
+  XXXX --> YYYY[Recalculate total discount]
+  YYYY --> ZZZZ[Save cart with updated coupons]
+  ZZZZ --> AAAAA[Return updated cart with breakdown]
+  
   %% End points
-  T --> KKK[End]
-  GG --> KKK
-  LL --> KKK
+  W --> KKK[End]
+  AB --> KKK
+  BB --> KKK
+  BG --> KKK
+  AO --> KKK
   SS --> KKK
   ZZ --> KKK
   AAA --> KKK
   III --> KKK
   JJJ --> KKK
+  AE --> KKK
+  AG --> KKK
+  AI --> KKK
+  MMMM --> KKK
+  NNNN --> KKK
+  AAAAA --> KKK

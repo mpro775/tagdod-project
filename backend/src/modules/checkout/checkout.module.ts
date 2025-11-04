@@ -6,6 +6,7 @@ import { Order, OrderSchema } from './schemas/order.schema';
 import { Inventory, InventorySchema } from './schemas/inventory.schema';
 import { Reservation, ReservationSchema } from './schemas/reservation.schema';
 import { InventoryLedger, InventoryLedgerSchema } from './schemas/inventory-ledger.schema';
+import { Cart, CartSchema } from '../cart/schemas/cart.schema';
 
 // Services
 import { OrderService } from './services/order.service';
@@ -24,6 +25,8 @@ import { FavoritesModule } from '../favorites/favorites.module';
 import { ProductsModule } from '../products/products.module';
 import { AddressesModule } from '../addresses/addresses.module';
 import { SharedModule } from '../../shared/shared.module';
+import { SystemSettingsModule } from '../system-settings/system-settings.module';
+import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 
 /**
  * Module موحد للطلبات والدفع - نظام احترافي شامل
@@ -35,6 +38,7 @@ import { SharedModule } from '../../shared/shared.module';
       { name: Inventory.name, schema: InventorySchema },
       { name: Reservation.name, schema: ReservationSchema },
       { name: InventoryLedger.name, schema: InventoryLedgerSchema },
+      { name: Cart.name, schema: CartSchema },
     ]),
     CartModule,
     MarketingModule,
@@ -43,6 +47,8 @@ import { SharedModule } from '../../shared/shared.module';
     forwardRef(() => FavoritesModule),
     forwardRef(() => ProductsModule),
     AddressesModule,
+    SystemSettingsModule,
+    ExchangeRatesModule,
     SharedModule,
   ],
   controllers: [

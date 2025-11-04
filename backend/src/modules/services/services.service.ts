@@ -471,8 +471,17 @@ export class ServicesService {
   async getOverviewStatistics() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-    const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+    const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    
+    // إصلاح حساب startOfWeek
+    const weekDate = new Date(now);
+    weekDate.setDate(weekDate.getDate() - weekDate.getDay());
+    weekDate.setHours(0, 0, 0, 0);
+    const startOfWeek = weekDate;
+    
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
 
     const [
       totalRequests,
@@ -485,6 +494,15 @@ export class ServicesService {
       cancelledRequests,
       averageRating,
       totalRevenue,
+      // بيانات الشهر الحالي
+      monthlyOffers,
+      monthlyRevenue,
+      monthlyEngineers,
+      // البيانات للفترة السابقة لحساب الاتجاهات
+      previousMonthRequests,
+      previousMonthOffers,
+      previousMonthEngineers,
+      previousMonthRevenue,
     ] = await Promise.all([
       this.requests.countDocuments(),
       this.offers.countDocuments(),
@@ -506,7 +524,60 @@ export class ServicesService {
           { $group: { _id: null, total: { $sum: '$acceptedOffer.amount' } } },
         ])
         .then((result) => result[0]?.total || 0),
+      // بيانات الشهر الحالي
+      this.offers.countDocuments({ createdAt: { $gte: startOfMonth } }),
+      this.requests
+        .aggregate([
+          { $match: { status: 'COMPLETED', acceptedOffer: { $exists: true }, createdAt: { $gte: startOfMonth } } },
+          { $group: { _id: null, total: { $sum: '$acceptedOffer.amount' } } },
+        ])
+        .then((result) => result[0]?.total || 0),
+      this.requests.distinct('engineerId', {
+        createdAt: { $gte: startOfMonth },
+        engineerId: { $ne: null }
+      }).then((ids) => ids.filter((id) => id !== null).length),
+      // حساب البيانات للفترة السابقة
+      this.requests.countDocuments({ 
+        createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth } 
+      }),
+      this.offers.countDocuments({ 
+        createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth } 
+      }),
+      this.requests.distinct('engineerId', {
+        createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth },
+        engineerId: { $ne: null }
+      }).then((ids) => ids.filter((id) => id !== null).length),
+      this.requests
+        .aggregate([
+          { 
+            $match: { 
+              status: 'COMPLETED', 
+              acceptedOffer: { $exists: true }, 
+              createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth } 
+            } 
+          },
+          { $group: { _id: null, total: { $sum: '$acceptedOffer.amount' } } },
+        ])
+        .then((result) => result[0]?.total || 0),
     ]);
+
+    // حساب نسب التغيير
+    const calculateTrend = (current: number, previous: number) => {
+      if (previous === 0) {
+        return current > 0 ? { value: 100, isPositive: true } : { value: 0, isPositive: true };
+      }
+      const change = ((current - previous) / previous) * 100;
+      return {
+        value: Math.abs(change),
+        isPositive: change >= 0,
+      };
+    };
+
+    // حساب الاتجاهات
+    const requestsTrend = calculateTrend(monthlyRequests, previousMonthRequests);
+    const offersTrend = calculateTrend(monthlyOffers, previousMonthOffers);
+    const engineersTrend = calculateTrend(monthlyEngineers, previousMonthEngineers);
+    const revenueTrend = calculateTrend(monthlyRevenue, previousMonthRevenue);
 
     return {
       totalRequests,
@@ -521,6 +592,13 @@ export class ServicesService {
         totalRequests > 0 ? ((completedRequests / totalRequests) * 100).toFixed(1) : 0,
       averageRating: Number(averageRating.toFixed(1)),
       totalRevenue,
+      // إضافة الاتجاهات
+      trends: {
+        requests: requestsTrend,
+        offers: offersTrend,
+        engineers: engineersTrend,
+        revenue: revenueTrend,
+      },
     };
   }
 

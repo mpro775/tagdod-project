@@ -85,6 +85,7 @@
     "showAdvanced": "Show Advanced Filters",
     "hideAdvanced": "Hide Advanced Filters",
     "clearFilters": "Clear Filters",
+    "search": "Search",
     "activeFilters": "Active Filters",
     "filterCount": "{{count}} active filter",
     "searchFilter": "Search: \"{{value}}\"",
@@ -153,6 +154,10 @@
     "description": "Brand description (optional)",
     "sortOrder": "0"
   },
+  "pageTitle": "Brands Management",
+  "back": "Back",
+  "noBrands": "No brands found",
+  "noBrandsDescription": "Start by adding a new brand",
   "table": {
     "title": "Brands Management",
     "addButton": "Add Brand",

@@ -5,16 +5,14 @@ import {
   Typography,
   Grid,
   Box,
-  Chip,
-  IconButton,
-  Tooltip,
+ 
   Skeleton,
+  useTheme,
 } from '@mui/material';
 import {
   ShoppingCart,
   LooksOne,
   TrendingUp,
-  TrendingDown,
   MonetizationOn,
   Email,
   Refresh,
@@ -49,74 +47,108 @@ const StatCard: React.FC<StatCardProps> = ({
   subtitle,
   icon,
   color = '#2196f3',
-  trend,
   isLoading = false,
 }) => {
-  const { t } = useTranslation();
+  const theme = useTheme();
+  
   if (isLoading) {
     return (
-      <Card sx={{ height: '100%' }}>
-        <CardContent>
-          <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-            <Skeleton variant="rectangular" width={40} height={40} />
-            <Skeleton variant="text" width={60} height={20} />
+      <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
+        <CardContent sx={{ p: { xs: 1, sm: 1.5 } }}>
+          <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+            <Skeleton 
+              variant="rectangular" 
+              sx={{ 
+                width: { xs: 28, sm: 32 }, 
+                height: { xs: 28, sm: 32 },
+                borderRadius: 1.5,
+              }} 
+            />
+            <Skeleton variant="text" sx={{ width: { xs: 40, sm: 50 }, height: { xs: 14, sm: 16 } }} />
           </Box>
-          <Skeleton variant="text" width="80%" height={32} />
-          <Skeleton variant="text" width="60%" height={20} />
+          <Skeleton variant="text" sx={{ width: '80%', height: { xs: 20, sm: 24 } }} />
+          <Skeleton variant="text" sx={{ width: '60%', height: { xs: 14, sm: 16 } }} />
         </CardContent>
       </Card>
     );
   }
 
+  const getColorValue = (colorHex: string, opacity: number) => {
+    // Convert hex to rgba based on theme mode
+    if (theme.palette.mode === 'dark') {
+      return `rgba(255, 255, 255, ${opacity * 0.1})`;
+    }
+    // For light mode, use the color with opacity
+    const r = parseInt(colorHex.slice(1, 3), 16);
+    const g = parseInt(colorHex.slice(3, 5), 16);
+    const b = parseInt(colorHex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
   return (
     <Card 
       sx={{ 
         height: '100%',
-        background: `linear-gradient(135deg, ${color}15, ${color}05)`,
-        border: `1px solid ${color}20`,
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: 'divider',
         '&:hover': {
-          boxShadow: `0 8px 25px ${color}25`,
+          boxShadow: theme.palette.mode === 'dark' ? 4 : 3,
           transform: 'translateY(-2px)',
         },
         transition: 'all 0.3s ease',
       }}
     >
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+      <CardContent sx={{ p: { xs: 1, sm: 1.5 }, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        <Box display="flex" alignItems="center" justifyContent="center" mb={1.5}>
           <Box
             sx={{
-              p: 1.5,
-              borderRadius: 2,
-              backgroundColor: `${color}15`,
+              p: { xs: 0.75, sm: 1 },
+              borderRadius: 1.5,
+              bgcolor: getColorValue(color, 0.15),
               color: color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              '& svg': {
+                fontSize: { xs: '1rem', sm: '1.125rem' },
+              },
             }}
           >
             {icon}
           </Box>
-          {trend && (
-            <Chip
-              icon={trend.isPositive ? <TrendingUp /> : <TrendingDown />}
-              label={trend.isPositive
-                ? t('cart.stats.trend.positive', { value: trend.value })
-                : t('cart.stats.trend.negative', { value: trend.value })
-              }
-              size="small"
-              color={trend.isPositive ? 'success' : 'error'}
-              variant="outlined"
-            />
-          )}
         </Box>
         
-        <Typography variant="h4" component="div" gutterBottom sx={{ fontWeight: 'bold' }}>
+        <Typography 
+          variant="h6" 
+          component="div" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 'bold',
+            fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
+            color: 'text.primary',
+            textAlign: 'center',
+          }}
+        >
           {value}
         </Typography>
         
-        <Typography variant="body2" color="text.secondary">
+        <Typography 
+          variant="body2" 
+          color="text.secondary"
+          sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' }, textAlign: 'center' }}
+        >
           {title}
         </Typography>
         
         {subtitle && (
-          <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+          <Typography 
+            variant="caption" 
+            color="text.secondary" 
+            display="block" 
+            mt={1}
+            sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' }, textAlign: 'center' }}
+          >
             {subtitle}
           </Typography>
         )}
@@ -129,66 +161,57 @@ export const CartStatsCards: React.FC<CartStatsCardsProps> = ({
   statistics,
   analytics,
   isLoading = false,
-  onRefresh,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('cart');
 
   const stats = [
     {
-      title: t('cart.stats.totalCarts', { defaultValue: 'عدد السلات' }),
+      title: t('stats.totalCarts'),
       value: statistics?.totalCarts?.toLocaleString('en-US') || analytics?.totalCarts?.toLocaleString('en-US') || '0',
-      subtitle: t('cart.stats.subtitle.totalCarts', { defaultValue: 'عدد السلات' }),
       icon: <ShoppingCart />,
       color: '#2196f3',
     },
     {
-      title: t('cart.stats.activeCarts', { defaultValue: 'عدد السلات النشطة' }),
+      title: t('stats.activeCarts'),
       value: statistics?.totalCarts ?
         ((statistics.totalCarts - (analytics?.abandonedCarts || 0) - (analytics?.convertedCarts || 0))).toLocaleString('en-US') :
           analytics?.activeCarts?.toLocaleString('en-US') || '0',
-      subtitle: t('cart.stats.subtitle.activeCarts', { defaultValue: 'عدد السلات النشطة' }),
       icon: <LooksOne />,
       color: '#4caf50',
     },
     {
-      title: t('cart.stats.abandonedCarts', { defaultValue: 'عدد السلات المهملة' }),
+      title: t('stats.abandonedCarts'),
       value: analytics?.abandonedCarts?.toLocaleString('en-US') || '0',
-      subtitle: t('cart.stats.subtitle.abandonedCarts', { defaultValue: 'عدد السلات المهملة' }),
       icon: <Email />,
       color: '#ff9800',
     },
     {
-      title: t('cart.stats.convertedCarts', { defaultValue: 'عدد السلات المحولة' }  ),
+      title: t('stats.convertedCarts'),
       value: analytics?.convertedCarts?.toLocaleString('en-US') || '0',
-      subtitle: t('cart.stats.subtitle.convertedCarts', { defaultValue: 'عدد السلات المحولة' }),
       icon: <TrendingUp />,
       color: '#9c27b0',
     },
     {
-      title: t('cart.stats.totalValue', { defaultValue: 'المجموع الكلي' }),
+      title: t('stats.totalValue'),
       value: formatCurrency(statistics?.totalValue || analytics?.totalValue || 0),
-      subtitle: t('cart.stats.subtitle.totalValue', { defaultValue: 'المجموع الكلي' }),
       icon: <MonetizationOn />,
       color: '#00bcd4',
     },
     {
-      title: t('cart.stats.averageValue', { defaultValue: 'المجموع المتوسط' }),
+      title: t('stats.averageValue'),
       value: formatCurrency(statistics?.averageCartValue || analytics?.averageCartValue || 0),
-      subtitle: t('cart.stats.subtitle.averageValue', { defaultValue: 'المجموع المتوسط' }),
       icon: <TrendingUp />,
       color: '#795548',
     },
     {
-      title: t('cart.stats.conversionRate', { defaultValue: 'معدل التحويل' }),
+      title: t('stats.conversionRate'),
       value: `${((statistics?.conversionRate || analytics?.conversionRate || 0) * 100).toFixed(1)}%`,
-      subtitle: t('cart.stats.subtitle.conversionRate', { defaultValue: 'معدل التحويل' }  ),
       icon: <TrendingUp />,
       color: '#607d8b',
     },
     {
-      title: t('cart.stats.recoveryRate', { defaultValue: 'معدل الاسترداد' }),
+      title: t('stats.recoveryRate'),
       value: `${((statistics?.recoveryRate || 0) * 100).toFixed(1)}%`,
-        subtitle: t('cart.stats.subtitle.recoveryRate', { defaultValue: 'معدل الاسترداد' }),
       icon: <Refresh />,
       color: '#e91e63',
     },
@@ -196,26 +219,14 @@ export const CartStatsCards: React.FC<CartStatsCardsProps> = ({
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-        <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-          {t('cart.stats.title', { defaultValue: 'إحصائيات السلات' })}
-        </Typography>
-        {onRefresh && (
-          <Tooltip title={t('cart.actions.refresh', { defaultValue: 'تحديث' }     )}>
-            <IconButton onClick={onRefresh} disabled={isLoading}>
-              <Refresh />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Box>
+    
       
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         {stats.map((stat, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
+          <Grid size={{ xs: 6, sm: 6, md: 3 }} key={index}>
             <StatCard
               title={stat.title}
               value={stat.value}
-              subtitle={stat.subtitle}
               icon={stat.icon}
               color={stat.color}
               isLoading={isLoading}

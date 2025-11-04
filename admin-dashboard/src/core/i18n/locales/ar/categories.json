@@ -152,8 +152,21 @@
     "inactive": "غير نشط",
     "reload": "إعادة تحميل"
   },
+  "dialogs": {
+    "deleteTitle": "حذف الفئة",
+    "permanentDeleteTitle": "حذف نهائي",
+    "permanentDelete": "حذف نهائياً",
+    "temporaryDelete": "حذف مؤقت"
+  },
   "placeholders": {
     "search": "ابحث بالاسم أو الوصف...",
     "order": "0"
+  },
+  "status": {
+    "active": "نشط",
+    "inactive": "غير نشط"
+  },
+  "actions": {
+    "cancel": "إلغاء"
   }
 }

@@ -152,6 +152,39 @@ export class BrandsAdminController {
     };
   }
 
+  // ==================== إحصائيات العلامات التجارية ====================
+  @Get('stats/summary')
+  @ApiOperation({
+    summary: 'إحصائيات العلامات التجارية',
+    description: 'الحصول على إحصائيات شاملة عن العلامات التجارية في النظام. يتطلب صلاحيات إدارية.',
+    tags: ['إدارة العلامات التجارية - الإحصائيات']
+  })
+  @ApiOkResponse({
+    description: 'تم الحصول على الإحصائيات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 50, description: 'إجمالي عدد العلامات التجارية' },
+            active: { type: 'number', example: 45, description: 'عدد العلامات التجارية النشطة' },
+            inactive: { type: 'number', example: 5, description: 'عدد العلامات التجارية غير النشطة' },
+            withProducts: { type: 'number', example: 35, description: 'عدد العلامات التجارية التي لديها منتجات' }
+          }
+        }
+      }
+    }
+  })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح - مطلوب تسجيل دخول' })
+  @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
+  async getStats() {
+    const stats = await this.brandsService.getStats();
+    return {
+      data: stats,
+    };
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'الحصول على علامة تجارية بواسطة المعرف',

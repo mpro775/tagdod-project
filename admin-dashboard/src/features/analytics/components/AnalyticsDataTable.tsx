@@ -19,11 +19,20 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Divider,
 } from '@mui/material';
 import {
   Search,
   GetApp,
+  TableChart,
+  ViewModule,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { getCardPadding, getCardSpacing } from '../utils/responsive';
 
 interface Column {
   id: string;
@@ -75,12 +84,17 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
   filters = [],
   onRowClick,
 }) => {
+  const { t } = useTranslation('analytics');
+  const breakpoint = useBreakpoint();
+  const cardPadding = getCardPadding(breakpoint);
+  const cardSpacing = getCardSpacing(breakpoint);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(pageSize);
   const [orderBy, setOrderBy] = useState<string>('');
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(breakpoint.isXs ? 'cards' : 'table');
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -113,7 +127,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
   const handleExport = () => {
     // Export data to CSV
     if (filteredData.length === 0) {
-      alert('لا توجد بيانات للتصدير');
+      alert(t('table.exportNoData'));
       return;
     }
 
@@ -164,7 +178,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error exporting data:', error);
-      alert('حدث خطأ أثناء تصدير البيانات');
+      alert(t('table.exportError'));
     }
   };
 
@@ -216,44 +230,175 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
     return sortedData.slice(start, end);
   }, [sortedData, page, rowsPerPage]);
 
+  const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: 'table' | 'cards' | null) => {
+    if (newMode !== null) {
+      setViewMode(newMode);
+    }
+  };
+
+  // Render card view
+  const renderCardView = () => (
+    <Box>
+      {paginatedData.length === 0 ? (
+        <Typography 
+          variant="body2" 
+          color="text.secondary"
+          textAlign="center"
+          sx={{ py: breakpoint.isXs ? 3 : 4, fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+        >
+          {t('table.noData')}
+        </Typography>
+      ) : (
+        <Stack spacing={cardSpacing}>
+          {paginatedData.map((row, index) => (
+            <Card 
+              key={index}
+              sx={{ 
+                cursor: onRowClick ? 'pointer' : 'default',
+                transition: 'all 0.2s ease',
+                '&:hover': onRowClick ? {
+                  boxShadow: 3,
+                  transform: 'translateY(-2px)',
+                } : {},
+              }}
+              onClick={() => onRowClick?.(row)}
+            >
+              <CardContent sx={{ p: cardPadding }}>
+                <Stack spacing={1}>
+                  {columns.map((column) => (
+                    <Box key={column.id}>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary"
+                        sx={{ 
+                          fontSize: breakpoint.isXs ? '0.6875rem' : undefined,
+                          fontWeight: 600,
+                          display: 'block',
+                          mb: 0.5,
+                        }}
+                      >
+                        {column.label}
+                      </Typography>
+                      <Typography 
+                        variant="body2"
+                        sx={{ 
+                          fontSize: breakpoint.isXs ? '0.8125rem' : undefined,
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {column.format ? column.format(row[column.id]) : row[column.id]}
+                      </Typography>
+                    </Box>
+                  ))}
+                  {actions.length > 0 && (
+                    <>
+                      <Divider sx={{ my: 1 }} />
+                      <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        {actions.map((action, actionIndex) => (
+                          <Tooltip key={actionIndex} title={action.label}>
+                            <IconButton
+                              size={breakpoint.isXs ? 'small' : 'medium'}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                action.onClick(row);
+                              }}
+                              color={action.color}
+                            >
+                              {action.icon}
+                            </IconButton>
+                          </Tooltip>
+                        ))}
+                      </Stack>
+                    </>
+                  )}
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      )}
+    </Box>
+  );
+
   return (
     <Card>
-      <CardContent>
+      <CardContent sx={{ p: cardPadding }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">
-            {title || 'جدول البيانات'}
+        <Stack
+          direction={breakpoint.isMobile ? 'column' : 'row'}
+          spacing={breakpoint.isMobile ? 1.5 : 0}
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: breakpoint.isMobile ? 'flex-start' : 'center',
+            mb: 2,
+          }}
+        >
+          <Typography 
+            variant={breakpoint.isXs ? 'subtitle1' : 'h6'}
+            sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
+          >
+            {title || t('table.title')}
           </Typography>
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            {breakpoint.isMobile && (
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={handleViewModeChange}
+                size={breakpoint.isXs ? 'small' : 'medium'}
+                aria-label="view mode"
+              >
+                <ToggleButton value="table" aria-label="table view">
+                  <TableChart fontSize={breakpoint.isXs ? 'small' : 'medium'} />
+                </ToggleButton>
+                <ToggleButton value="cards" aria-label="cards view">
+                  <ViewModule fontSize={breakpoint.isXs ? 'small' : 'medium'} />
+                </ToggleButton>
+              </ToggleButtonGroup>
+            )}
             {exportable && (
-              <Tooltip title="تصدير البيانات">
-                <IconButton onClick={handleExport} color="primary">
-                  <GetApp />
+              <Tooltip title={t('table.export')}>
+                <IconButton 
+                  onClick={handleExport} 
+                  color="primary"
+                  size={breakpoint.isXs ? 'medium' : 'small'}
+                >
+                  <GetApp fontSize={breakpoint.isXs ? 'small' : 'medium'} />
                 </IconButton>
               </Tooltip>
             )}
-          </Box>
-        </Box>
+          </Stack>
+        </Stack>
 
         {/* Search and Filters */}
         {(searchable || filterable) && (
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <Stack
+            direction={breakpoint.isMobile ? 'column' : 'row'}
+            spacing={breakpoint.isMobile ? cardSpacing : 2}
+            sx={{ mb: 2 }}
+          >
             {searchable && (
               <TextField
-                size="small"
-                placeholder="البحث..."
+                size={breakpoint.isXs ? 'medium' : 'small'}
+                placeholder={t('table.search')}
                 value={searchTerm}
                 onChange={handleSearch}
                 InputProps={{
                   startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
                 }}
-                sx={{ minWidth: 200 }}
+                sx={{ minWidth: breakpoint.isMobile ? '100%' : 200 }}
+                fullWidth={breakpoint.isMobile}
               />
             )}
 
             {filterable && filters.map((filter) => (
-              <FormControl key={filter.key} size="small" sx={{ minWidth: 150 }}>
+              <FormControl 
+                key={filter.key} 
+                size={breakpoint.isXs ? 'medium' : 'small'} 
+                sx={{ minWidth: breakpoint.isMobile ? '100%' : 150 }}
+                fullWidth={breakpoint.isMobile}
+              >
                 <InputLabel>{filter.label}</InputLabel>
                 <Select
                   value={activeFilters[filter.key] || ''}
@@ -261,7 +406,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
                   onChange={(e) => handleFilterChange(filter.key, e.target.value)}
                 >
                   <MenuItem value="">
-                    <em>الكل</em>
+                    <em>{t('table.all')}</em>
                   </MenuItem>
                   {filter.options.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
@@ -271,108 +416,159 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
                 </Select>
               </FormControl>
             ))}
-          </Box>
+          </Stack>
         )}
 
-        {/* Table */}
-        <TableContainer>
-          <Table size="small">
-            <TableHead
-              sx={{
-                backgroundColor: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? theme.palette.grey[800]
-                    : theme.palette.grey[100],
-              }}
+        {/* Table or Card View */}
+        {loading ? (
+          <Box sx={{ py: breakpoint.isXs ? 3 : 4, textAlign: 'center' }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
             >
-              <TableRow>
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.id}
-                    align={column.align}
-                    style={{ minWidth: column.minWidth }}
-                    sortDirection={orderBy === column.id ? order : false}
-                    sx={{ fontWeight: 'bold', color: 'text.primary' }}
-                  >
-                    {column.sortable ? (
-                      <TableSortLabel
-                        active={orderBy === column.id}
-                        direction={orderBy === column.id ? order : 'asc'}
-                        onClick={() => handleSort(column.id)}
+              {t('table.loading')}
+            </Typography>
+          </Box>
+        ) : viewMode === 'cards' && breakpoint.isMobile ? (
+          renderCardView()
+        ) : (
+          <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+            <Table size={breakpoint.isXs ? 'small' : 'medium'}>
+              <TableHead
+                sx={{
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.grey[800]
+                      : theme.palette.grey[100],
+                }}
+              >
+                <TableRow>
+                  {columns.map((column) => (
+                    <TableCell
+                      key={column.id}
+                      align={column.align}
+                      style={{ 
+                        minWidth: breakpoint.isXs ? undefined : column.minWidth,
+                        whiteSpace: breakpoint.isXs ? 'nowrap' : 'normal',
+                      }}
+                      sortDirection={orderBy === column.id ? order : false}
+                      sx={{ 
+                        fontWeight: 'bold', 
+                        color: 'text.primary',
+                        fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+                        px: breakpoint.isXs ? 1 : 2,
+                      }}
+                    >
+                      {column.sortable ? (
+                        <TableSortLabel
+                          active={orderBy === column.id}
+                          direction={orderBy === column.id ? order : 'asc'}
+                          onClick={() => handleSort(column.id)}
+                          sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
+                        >
+                          {column.label}
+                        </TableSortLabel>
+                      ) : (
+                        column.label
+                      )}
+                    </TableCell>
+                  ))}
+                  {actions.length > 0 && (
+                    <TableCell 
+                      align="center" 
+                      sx={{ 
+                        fontWeight: 'bold', 
+                        color: 'text.primary',
+                        fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+                        px: breakpoint.isXs ? 1 : 2,
+                      }}
+                    >
+                      {t('table.actions')}
+                    </TableCell>
+                  )}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedData.length === 0 ? (
+                  <TableRow>
+                    <TableCell 
+                      colSpan={columns.length + (actions.length > 0 ? 1 : 0)} 
+                      align="center"
+                      sx={{ py: breakpoint.isXs ? 2 : 3 }}
+                    >
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
                       >
-                        {column.label}
-                      </TableSortLabel>
-                    ) : (
-                      column.label
-                    )}
-                  </TableCell>
-                ))}
-                {actions.length > 0 && (
-                  <TableCell align="center" sx={{ fontWeight: 'bold', color: 'text.primary' }}>الإجراءات</TableCell>
-                )}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length + (actions.length > 0 ? 1 : 0)} align="center">
-                    <Typography variant="body2" color="text.secondary">
-                      جاري التحميل...
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : paginatedData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length + (actions.length > 0 ? 1 : 0)} align="center">
-                    <Typography variant="body2" color="text.secondary">
-                      لا توجد بيانات للعرض
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedData.map((row, index) => (
-                  <TableRow
-                    key={index}
-                    hover
-                    sx={{
-                      cursor: onRowClick ? 'pointer' : 'default',
-                      '&:hover': {
-                        backgroundColor: 'action.hover',
-                      },
-                    }}
-                    onClick={() => onRowClick?.(row)}
-                  >
-                    {columns.map((column) => (
-                      <TableCell key={column.id} align={column.align}>
-                        {column.format ? column.format(row[column.id]) : row[column.id]}
-                      </TableCell>
-                    ))}
-                    {actions.length > 0 && (
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          {actions.map((action, actionIndex) => (
-                            <Tooltip key={actionIndex} title={action.label}>
-                              <IconButton
-                                size="small"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  action.onClick(row);
-                                }}
-                                color={action.color}
-                              >
-                                {action.icon}
-                              </IconButton>
-                            </Tooltip>
-                          ))}
-                        </Box>
-                      </TableCell>
-                    )}
+                        {t('table.noData')}
+                      </Typography>
+                    </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ) : (
+                  paginatedData.map((row, index) => (
+                    <TableRow
+                      key={index}
+                      hover
+                      sx={{
+                        cursor: onRowClick ? 'pointer' : 'default',
+                        '&:hover': {
+                          backgroundColor: 'action.hover',
+                        },
+                      }}
+                      onClick={() => onRowClick?.(row)}
+                    >
+                      {columns.map((column) => (
+                        <TableCell 
+                          key={column.id} 
+                          align={column.align}
+                          sx={{ 
+                            fontSize: breakpoint.isXs ? '0.8125rem' : undefined,
+                            px: breakpoint.isXs ? 1 : 2,
+                            whiteSpace: breakpoint.isXs ? 'nowrap' : 'normal',
+                          }}
+                        >
+                          {column.format ? column.format(row[column.id]) : row[column.id]}
+                        </TableCell>
+                      ))}
+                      {actions.length > 0 && (
+                        <TableCell 
+                          align="center"
+                          sx={{ px: breakpoint.isXs ? 1 : 2 }}
+                        >
+                          <Stack 
+                            direction="row" 
+                            spacing={0.5}
+                            sx={{ 
+                              justifyContent: 'center',
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            {actions.map((action, actionIndex) => (
+                              <Tooltip key={actionIndex} title={action.label}>
+                                <IconButton
+                                  size={breakpoint.isXs ? 'small' : 'medium'}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    action.onClick(row);
+                                  }}
+                                  color={action.color}
+                                >
+                                  {action.icon}
+                                </IconButton>
+                              </Tooltip>
+                            ))}
+                          </Stack>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         {/* Pagination */}
         <TablePagination
@@ -383,10 +579,24 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="عدد الصفوف في الصفحة:"
+          labelRowsPerPage={t('table.rowsPerPage')}
           labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} من ${count !== -1 ? count : `أكثر من ${to}`}`
+            count !== -1 
+              ? t('table.displayedRows', { from, to, count })
+              : t('table.displayedRowsMore', { from, to })
           }
+          sx={{
+            '& .MuiTablePagination-selectLabel': {
+              fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+            },
+            '& .MuiTablePagination-displayedRows': {
+              fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+            },
+            '& .MuiTablePagination-select': {
+              fontSize: breakpoint.isXs ? '0.75rem' : undefined,
+            },
+            flexWrap: breakpoint.isXs ? 'wrap' : 'nowrap',
+          }}
         />
       </CardContent>
     </Card>
