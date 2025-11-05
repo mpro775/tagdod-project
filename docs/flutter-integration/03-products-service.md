@@ -1,8 +1,9 @@
 # 🛍️ خدمة المنتجات (Products Service)
 
-خدمة المنتجات توفر endpoints لعرض وتصفح المنتجات.
+خدمة المنتجات توفر endpoints لعرض وتصفح المنتجات **للمستخدمين والزوار**.
 
-> ✅ **تم التحقق من صحة هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/products`
+> ✅ **تم التحقق من صحة هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/products`  
+> ⚠️ **هذا الملف للمستخدمين فقط** - endpoints الأدمن موجودة في `products.controller.ts`
 
 ---
 
@@ -10,9 +11,15 @@
 
 1. [قائمة المنتجات](#1-قائمة-المنتجات)
 2. [تفاصيل منتج](#2-تفاصيل-منتج)
-3. [المنتجات المميزة](#3-المنتجات-المميزة)
-4. [المنتجات الجديدة](#4-المنتجات-الجديدة)
-5. [Models في Flutter](#models-في-flutter)
+3. [تفاصيل منتج بالـ Slug](#3-تفاصيل-منتج-بالـ-slug)
+4. [المنتجات المميزة](#4-المنتجات-المميزة)
+5. [المنتجات الجديدة](#5-المنتجات-الجديدة)
+6. [Variants المنتج](#6-variants-المنتج)
+7. [سعر Variant](#7-سعر-variant)
+8. [التحقق من التوفر](#8-التحقق-من-التوفر)
+9. [نطاق أسعار المنتج](#9-نطاق-أسعار-المنتج)
+10. [المنتجات الشبيهة](#10-المنتجات-الشبيهة)
+11. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -100,13 +107,14 @@ GET /products?page=1&limit=20&categoryId=64abc123&search=solar
       "updatedAt": "2025-01-20T14:30:00.000Z"
     }
   ],
-  "meta": {
-    "page": 1,
-    "limit": 20,
-    "total": 150,
-    "totalPages": 8,
-    "hasNextPage": true,
-    "hasPrevPage": false
+    "meta": {
+      "page": 1,
+      "limit": 20,
+      "total": 150,
+      "totalPages": 8,
+      "hasNextPage": true,
+      "hasPrevPage": false
+    }
   },
   "requestId": "req_prod_001"
 }
@@ -272,7 +280,12 @@ GET /products/64prod123?currency=YER
           "alt": "Black Solar Panel"
         }
       }
-    ]
+    ],
+    "currency": "YER",
+    "userDiscount": {
+      "isWholesale": false,
+      "discountPercent": 0
+    }
   },
   "requestId": "req_prod_002"
 }
@@ -286,14 +299,22 @@ GET /products/64prod123?currency=YER
 {
   "success": false,
   "error": {
-    "code": "PRODUCT_NOT_FOUND",
+    "code": "PRODUCT_300",
     "message": "المنتج غير موجود",
     "details": null,
     "fieldErrors": null
   },
-  "requestId": "req_prod_002"
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:30:00.000Z",
+  "path": "/api/products/64prod123"
 }
 ```
+
+### ملاحظة مهمة عن الأسعار والخصومات
+
+- 🔐 **للمستخدمين المسجلين:** يتم تطبيق خصم التاجر تلقائياً إذا كان معتمد
+- 👤 **للزوار:** `userDiscount.discountPercent = 0`
+- 💰 **العملة:** تُحدد من `preferredCurrency` للمستخدم أو من query parameter
 
 ### كود Flutter
 
@@ -341,7 +362,58 @@ class ProductDetails {
 
 ---
 
-## 3. المنتجات المميزة
+## 3. تفاصيل منتج بالـ Slug
+
+يسترجع تفاصيل منتج باستخدام الـ slug (URL friendly).
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/products/slug/:slug`
+- **Auth Required:** ❌ لا (لكن يُنصح للحصول على خصم التاجر)
+- **Cache:** ✅ نعم (10 دقائق)
+
+### Query Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `currency` | `string` | ❌ | رمز العملة (USD, YER, SAR) للحصول على الأسعار المحولة |
+
+### مثال الطلب
+
+```
+GET /products/slug/solar-panel-550w?currency=YER
+```
+
+### Response - نجاح
+
+نفس Response المثال السابق (`GET /products/:id`)
+
+### كود Flutter
+
+```dart
+Future<ProductDetails> getProductBySlug(String slug, {String currency = 'USD'}) async {
+  final response = await _dio.get(
+    '/products/slug/$slug',
+    queryParameters: {'currency': currency},
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return ProductDetails.fromJson(apiResponse.data!);
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 4. المنتجات المميزة
 
 يسترجع المنتجات المميزة فقط.
 
@@ -401,7 +473,7 @@ Future<List<Product>> getFeaturedProducts() async {
 
 ---
 
-## 4. المنتجات الجديدة
+## 5. المنتجات الجديدة
 
 يسترجع المنتجات الجديدة فقط.
 
@@ -453,6 +525,427 @@ Future<List<Product>> getNewProducts() async {
 
   if (apiResponse.isSuccess) {
     return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 6. Variants المنتج
+
+يسترجع جميع variants لمنتج معين مع الأسعار.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/products/:id/variants`
+- **Auth Required:** ❌ لا (لكن يُنصح للحصول على خصم التاجر)
+- **Cache:** ✅ نعم (5 دقائق)
+
+### Query Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `currency` | `string` | ❌ | رمز العملة (افتراضي: USD أو العملة المفضلة للمستخدم) |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "_id": "64var123",
+        "productId": "64prod123",
+        "sku": "SP-550-001-BLK",
+        "nameAr": "لوح شمسي 550 واط - أسود",
+        "nameEn": "Solar Panel 550W - Black",
+        "attributes": {
+          "Color": "أسود",
+          "Size": "2m x 1m"
+        },
+        "pricing": {
+          "basePrice": 150000,
+          "compareAtPrice": 180000,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 150000,
+          "currency": "YER",
+          "exchangeRate": 250,
+          "formattedPrice": "150,000 ر.ي",
+          "formattedFinalPrice": "150,000 ر.ي"
+        },
+        "inventory": {
+          "quantity": 50,
+          "reserved": 5,
+          "available": 45
+        },
+        "isDefault": true,
+        "isActive": true
+      }
+    ],
+    "currency": "YER",
+    "userDiscount": {
+      "isWholesale": true,
+      "discountPercent": 15
+    }
+  },
+  "requestId": "req_var_001"
+}
+```
+
+> **ملاحظة:** إذا كان المستخدم تاجر معتمد، يتم تطبيق خصم التاجر على `finalPrice` تلقائياً.
+
+### كود Flutter
+
+```dart
+Future<List<ProductVariant>> getProductVariants(
+  String productId, 
+  {String currency = 'USD'}
+) async {
+  final response = await _dio.get(
+    '/products/$productId/variants',
+    queryParameters: {'currency': currency},
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return (apiResponse.data!['data'] as List)
+        .map((v) => ProductVariant.fromJson(v))
+        .toList();
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 7. سعر Variant
+
+يسترجع سعر variant محدد بعملة معينة مع خصم التاجر.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/products/variants/:id/price`
+- **Auth Required:** ❌ لا (لكن يُنصح للحصول على خصم التاجر)
+- **Cache:** ✅ نعم (5 دقائق)
+
+### Query Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `currency` | `string` | ❌ | رمز العملة (افتراضي: USD) |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "basePrice": 150000,
+    "compareAtPrice": 180000,
+    "discountPercent": 15,
+    "discountAmount": 22500,
+    "finalPrice": 127500,
+    "currency": "YER",
+    "exchangeRate": 250,
+    "formattedPrice": "150,000 ر.ي",
+    "formattedFinalPrice": "127,500 ر.ي",
+    "userDiscount": {
+      "isWholesale": true,
+      "discountPercent": 15
+    }
+  },
+  "requestId": "req_price_001"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<VariantPrice> getVariantPrice(
+  String variantId, 
+  {String currency = 'USD'}
+) async {
+  final response = await _dio.get(
+    '/products/variants/$variantId/price',
+    queryParameters: {'currency': currency},
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return VariantPrice.fromJson(apiResponse.data!);
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+
+class VariantPrice {
+  final double basePrice;
+  final double? compareAtPrice;
+  final double discountPercent;
+  final double discountAmount;
+  final double finalPrice;
+  final String currency;
+  final double? exchangeRate;
+  final String? formattedPrice;
+  final String? formattedFinalPrice;
+  final bool isWholesale;
+  final double wholesaleDiscountPercent;
+
+  VariantPrice({
+    required this.basePrice,
+    this.compareAtPrice,
+    required this.discountPercent,
+    required this.discountAmount,
+    required this.finalPrice,
+    required this.currency,
+    this.exchangeRate,
+    this.formattedPrice,
+    this.formattedFinalPrice,
+    required this.isWholesale,
+    required this.wholesaleDiscountPercent,
+  });
+
+  factory VariantPrice.fromJson(Map<String, dynamic> json) {
+    final userDiscount = json['userDiscount'] as Map<String, dynamic>?;
+    return VariantPrice(
+      basePrice: (json['basePrice'] ?? 0).toDouble(),
+      compareAtPrice: json['compareAtPrice']?.toDouble(),
+      discountPercent: (json['discountPercent'] ?? 0).toDouble(),
+      discountAmount: (json['discountAmount'] ?? 0).toDouble(),
+      finalPrice: (json['finalPrice'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'USD',
+      exchangeRate: json['exchangeRate']?.toDouble(),
+      formattedPrice: json['formattedPrice'],
+      formattedFinalPrice: json['formattedFinalPrice'],
+      isWholesale: userDiscount?['isWholesale'] ?? false,
+      wholesaleDiscountPercent: (userDiscount?['discountPercent'] ?? 0).toDouble(),
+    );
+  }
+  
+  bool get hasDiscount => finalPrice < basePrice;
+}
+```
+
+---
+
+## 8. التحقق من التوفر
+
+يتحقق من توفر variant بكمية معينة.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/products/variants/:id/availability`
+- **Auth Required:** ❌ لا
+
+### Query Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `quantity` | `number` | ✅ نعم | الكمية المطلوبة |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "available": true,
+    "quantity": 45,
+    "requestedQty": 5
+  },
+  "requestId": "req_avail_001"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<bool> checkVariantAvailability(
+  String variantId, 
+  int quantity
+) async {
+  final response = await _dio.get(
+    '/products/variants/$variantId/availability',
+    queryParameters: {'quantity': quantity},
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!['available'] ?? false;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 9. نطاق أسعار المنتج
+
+يسترجع نطاق الأسعار لجميع variants المنتج.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/products/:id/price-range`
+- **Auth Required:** ❌ لا
+- **Cache:** ✅ نعم (5 دقائق)
+
+### Query Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `currency` | `string` | ❌ | رمز العملة (افتراضي: USD) |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "minPrice": 120000,
+    "maxPrice": 180000,
+    "currency": "YER"
+  },
+  "requestId": "req_range_001"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<PriceRange> getProductPriceRange(
+  String productId, 
+  {String currency = 'USD'}
+) async {
+  final response = await _dio.get(
+    '/products/$productId/price-range',
+    queryParameters: {'currency': currency},
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return PriceRange.fromJson(apiResponse.data!);
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+
+class PriceRange {
+  final double minPrice;
+  final double maxPrice;
+  final String currency;
+
+  PriceRange({
+    required this.minPrice,
+    required this.maxPrice,
+    required this.currency,
+  });
+
+  factory PriceRange.fromJson(Map<String, dynamic> json) {
+    return PriceRange(
+      minPrice: (json['minPrice'] ?? 0).toDouble(),
+      maxPrice: (json['maxPrice'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'USD',
+    );
+  }
+  
+  String get formattedRange => '${minPrice.toStringAsFixed(0)} - ${maxPrice.toStringAsFixed(0)} $currency';
+}
+```
+
+---
+
+## 10. المنتجات الشبيهة
+
+يسترجع منتجات شبيهة بمنتج معين (من نفس الفئة).
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/products/:id/related`
+- **Auth Required:** ❌ لا
+- **Cache:** ✅ نعم (10 دقائق)
+
+### Query Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `limit` | `number` | ❌ | عدد المنتجات (افتراضي: 10) |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "_id": "64prod789",
+        "nameAr": "لوح شمسي 600 واط",
+        "nameEn": "Solar Panel 600W",
+        "slug": "solar-panel-600w",
+        "categoryId": {
+          "_id": "64cat123",
+          "nameAr": "الألواح الشمسية"
+        },
+        "isFeatured": true,
+        "mainImageId": {
+          "url": "https://cdn.example.com/products/solar-600.jpg"
+        }
+      }
+    ],
+    "count": 5
+  },
+  "requestId": "req_related_001"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<List<Product>> getRelatedProducts(
+  String productId, 
+  {int limit = 10}
+) async {
+  final response = await _dio.get(
+    '/products/$productId/related',
+    queryParameters: {'limit': limit},
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return (apiResponse.data!['data'] as List)
+        .map((item) => Product.fromJson(item))
+        .toList();
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -842,29 +1335,40 @@ class PaginationMeta {
    - جميع الـ endpoints مع cache من جهة السيرفر
    - يمكنك إضافة cache في التطبيق أيضاً
 
-8. **Endpoints إضافية متوفرة:**
-   - `GET /products/slug/:slug` - البحث بالـ slug (URL friendly)
-   - `GET /products/:id/variants` - جلب variants منتج معين
-   - `GET /products/variants/:id/price?currency=YER` - سعر variant محدد
-   - `GET /products/variants/:id/availability?quantity=5` - التحقق من التوفر
-   - `GET /products/:id/price-range?currency=YER` - نطاق الأسعار
+8. **خصم التاجر (Wholesale Discount):**
+   - يتم تطبيقه تلقائياً للمستخدمين المعتمدين كتجار
+   - يظهر في `userDiscount.isWholesale` و `userDiscount.discountPercent`
+   - يتم خصمه من `finalPrice` مباشرة
+   - للزوار غير المسجلين: `discountPercent = 0`
 
 ---
 
 ## 📝 ملاحظات التحديث
 
-> ✅ **تم تحديث هذه الوثيقة** لتطابق الكود الفعلي
+> ✅ **تم تحديث هذه الوثيقة بالكامل** لتطابق الكود الفعلي
 
-### التحديثات المضافة:
-1. ✅ إضافة `currency` parameter في GET /products/:id
-2. ✅ إزالة `attributes` من response (موجودة في variants)
-3. ✅ إضافة `ProductDetails` class للـ Flutter
-4. ✅ إضافة ملاحظة عن endpoints إضافية
-5. ✅ تحديث أمثلة الكود
+### التحديثات المضافة في هذه النسخة:
+1. ✅ **إضافة 6 endpoints جديدة:**
+   - `GET /products/slug/:slug` - البحث بالـ slug
+   - `GET /products/:id/variants` - جلب variants المنتج
+   - `GET /products/variants/:id/price` - سعر variant محدد
+   - `GET /products/variants/:id/availability` - التحقق من التوفر
+   - `GET /products/:id/price-range` - نطاق أسعار المنتج
+   - `GET /products/:id/related` - المنتجات الشبيهة
+2. ✅ **تحديث Response structures** - إضافة `userDiscount` و `currency`
+3. ✅ **إضافة معلومات خصم التاجر** - يطبق تلقائياً للمستخدمين المعتمدين
+4. ✅ **تحديث أكواد الأخطاء** - استخدام `PRODUCT_300` بدلاً من `PRODUCT_NOT_FOUND`
+5. ✅ **إضافة `timestamp` و `path`** في أمثلة الأخطاء
+6. ✅ **تحديث Flutter Models** - إضافة `VariantPrice` و `PriceRange`
+7. ✅ **تصحيح Response structure** - `data` تحتوي على `data` + `meta` (pagination)
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/products/controllers/public-products.controller.ts`
-- **Service:** `backend/src/modules/products/services/product.service.ts`
+- **Services:** 
+  - `backend/src/modules/products/services/product.service.ts`
+  - `backend/src/modules/products/services/variant.service.ts`
+  - `backend/src/modules/products/services/pricing.service.ts`
+  - `backend/src/modules/products/services/inventory.service.ts`
 
 ---
 
