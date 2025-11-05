@@ -6,8 +6,7 @@ import {
   Typography, 
   Button, 
   Chip, 
-  Grid,
-  Stack 
+  Grid
 } from '@mui/material';
 import { 
   TrendingUp, 

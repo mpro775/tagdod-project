@@ -19,7 +19,6 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import { getCardPadding, getCardSpacing, getChartHeight, getChartMargin, getChartLabelFontSize, getChartTooltipFontSize, getYAxisWidth, getXAxisHeight } from '../utils/responsive';
 import {
   LineChart,
   Line,
@@ -48,14 +47,6 @@ export const FinancialReportCard: React.FC<FinancialReportCardProps> = ({
   const theme = useTheme();
   const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
-  const cardPadding = getCardPadding(breakpoint);
-  const cardSpacing = getCardSpacing(breakpoint);
-  const chartHeight = getChartHeight(breakpoint, 200);
-  const chartMargin = getChartMargin(breakpoint);
-  const labelFontSize = getChartLabelFontSize(breakpoint);
-  const tooltipFontSize = getChartTooltipFontSize(breakpoint);
-  const yAxisWidth = getYAxisWidth(breakpoint);
-  const xAxisHeight = getXAxisHeight(breakpoint, true);
 
   if (error) {
     return (

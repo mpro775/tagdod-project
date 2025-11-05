@@ -1,8 +1,9 @@
 # 🔐 خدمة المصادقة (Authentication Service)
 
-خدمة المصادقة توفر جميع endpoints المتعلقة بتسجيل الدخول، إدارة الحساب، والصلاحيات.
+خدمة المصادقة توفر جميع endpoints المتعلقة بتسجيل الدخول، إدارة الحساب، والصلاحيات **للمستخدمين العاديين والمهندسين والتجار**.
 
-> ✅ **تم التحقق من صحة هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/auth`
+> ✅ **تم التحقق من صحة هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/auth`  
+> ⚠️ **هذا الملف للمستخدمين فقط** - endpoints الأدمن موجودة في وثائق منفصلة
 
 ---
 
@@ -17,7 +18,9 @@
 7. [تحديث بيانات المستخدم](#7-تحديث-بيانات-المستخدم)
 8. [تحديث العملة المفضلة](#8-تحديث-العملة-المفضلة)
 9. [حذف الحساب](#9-حذف-الحساب)
-10. [Models في Flutter](#models-في-flutter)
+10. [تسجيل الدخول بكلمة المرور (User)](#10-تسجيل-الدخول-بكلمة-المرور-user)
+11. [إنشاء حساب جديد بكلمة المرور](#11-إنشاء-حساب-جديد-بكلمة-المرور)
+12. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -66,8 +69,8 @@
 {
   "success": false,
   "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "خطأ في البيانات المدخلة",
+    "code": "GENERAL_004",
+    "message": "خطأ في التحقق من البيانات",
     "details": null,
     "fieldErrors": [
       {
@@ -76,11 +79,13 @@
       }
     ]
   },
-  "requestId": "req_123"
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:30:00.000Z",
+  "path": "/api/auth/send-otp"
 }
 ```
 
-> **ملاحظة:** أخطاء الـ Validation قد تأتي من NestJS ValidationPipe مباشرة وقد يختلف شكلها قليلاً عن الهيكل الموحد.
+> **ملاحظة:** أخطاء الـ Validation تستخدم الكود `GENERAL_004` في النظام الجديد.
 
 ### كود Flutter
 
@@ -116,6 +121,11 @@ Future<Map<String, dynamic>> sendOtp({
 
 يتحقق من رمز OTP ويقوم بإنشاء حساب جديد أو تسجيل الدخول.
 
+> 💡 **أنواع الحسابات التي يمكن إنشاؤها:**
+> - **Customer (زبون عادي)** - الافتراضي - لا تحتاج `capabilityRequest`
+> - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle`
+> - **Wholesale (تاجر جملة)** - تحتاج `capabilityRequest: "wholesale"`
+
 ### معلومات الطلب
 
 - **Method:** `POST`
@@ -131,6 +141,7 @@ Future<Map<String, dynamic>> sendOtp({
   "firstName": "أحمد",
   "lastName": "محمد",
   "gender": "male",
+  "city": "صنعاء",
   "capabilityRequest": "engineer",
   "jobTitle": "مهندس كهرباء",
   "deviceId": "device_abc123"
@@ -144,6 +155,7 @@ Future<Map<String, dynamic>> sendOtp({
 | `firstName` | `string` | ❌ لا | الاسم الأول (مطلوب للمستخدمين الجدد) |
 | `lastName` | `string` | ❌ لا | اسم العائلة |
 | `gender` | `string` | ❌ لا | `male`, `female`, `other` |
+| `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
 | `capabilityRequest` | `string` | ❌ لا | `engineer` أو `wholesale` |
 | `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
 | `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
@@ -161,7 +173,17 @@ Future<Map<String, dynamic>> sendOtp({
     "me": {
       "id": "64a1b2c3d4e5f6789",
       "phone": "777123456",
-      "preferredCurrency": "USD"
+      "firstName": "أحمد",
+      "lastName": "محمد",
+      "gender": "male",
+      "city": "صنعاء",
+      "jobTitle": "مهندس كهرباء",
+      "roles": ["user"],
+      "permissions": [],
+      "isAdmin": false,
+      "preferredCurrency": "USD",
+      "engineerStatus": "unverified",
+      "wholesaleStatus": "none"
     }
   },
   "requestId": "req_456"
@@ -174,12 +196,14 @@ Future<Map<String, dynamic>> sendOtp({
 {
   "success": false,
   "error": {
-    "code": "AUTH_INVALID_OTP",
+    "code": "AUTH_100",
     "message": "رمز التحقق غير صالح",
     "details": null,
     "fieldErrors": null
   },
-  "requestId": "req_456"
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:31:00.000Z",
+  "path": "/api/auth/verify-otp"
 }
 ```
 
@@ -187,11 +211,105 @@ Future<Map<String, dynamic>> sendOtp({
 
 | الكود | الوصف | HTTP Status |
 |------|-------|-------------|
-| `AUTH_INVALID_OTP` | رمز OTP غير صحيح | 401 |
-| `AUTH_JOB_TITLE_REQUIRED` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
-| `VALIDATION_ERROR` | خطأ في البيانات المدخلة | 400 |
+| `AUTH_100` | رمز OTP غير صحيح | 401 |
+| `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
+| `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
 
-### كود Flutter
+### ⚠️ ملاحظة مهمة عن أنواع الحسابات وحالاتها
+
+#### **أنواع الحسابات الثلاثة:**
+
+1. **Customer (زبون عادي)** - الافتراضي
+   - لا تحتاج إرسال `capabilityRequest`
+   - الحالة: `engineerStatus: "none"`, `wholesaleStatus: "none"`
+   - يمكنه: تصفح المنتجات، الشراء، إضافة العناوين
+
+2. **Engineer (مهندس)**
+   - تحتاج: `capabilityRequest: "engineer"` + `jobTitle`
+   - الحالة الأولية: `engineerStatus: "unverified"`
+   - يجب رفع السيرة الذاتية → `pending` → موافقة الأدمن → `approved`
+
+3. **Wholesale (تاجر جملة)**
+   - تحتاج: `capabilityRequest: "wholesale"`
+   - الحالة الأولية: `wholesaleStatus: "unverified"`
+   - يجب رفع معلومات المحل → `pending` → موافقة الأدمن → `approved`
+
+#### **جدول حالات المهندس/التاجر:**
+
+| الحالة | المعنى | ماذا يجب فعله |
+|--------|--------|---------------|
+| `none` | مستخدم عادي (customer) | لا شيء - يمكنه الشراء مباشرة |
+| `unverified` | طلب الصلاحية لكن لم يرفع الوثائق | **يجب رفع السيرة الذاتية/صورة المحل** |
+| `pending` | رفع الوثائق وفي انتظار الموافقة | انتظار موافقة الأدمن |
+| `approved` | تمت الموافقة | يمكن استخدام الصلاحية |
+| `rejected` | تم الرفض | لا يمكن استخدام الصلاحية |
+
+### أمثلة Flutter
+
+#### مثال 1: تسجيل زبون عادي (Customer)
+
+```dart
+// بدون إرسال capabilityRequest = customer عادي
+final response = await verifyOtp(
+  phone: '777123456',
+  code: '123456',
+  firstName: 'أحمد',
+  lastName: 'محمد',
+  gender: 'male',
+  city: 'صنعاء',
+  // لا نرسل capabilityRequest
+);
+
+// الحالة:
+print(response.me.engineerStatus);   // "none"
+print(response.me.wholesaleStatus);  // "none"
+// المستخدم customer عادي، يمكنه الشراء مباشرة
+```
+
+#### مثال 2: تسجيل مهندس
+
+```dart
+final response = await verifyOtp(
+  phone: '777123456',
+  code: '123456',
+  firstName: 'أحمد',
+  lastName: 'محمد',
+  gender: 'male',
+  city: 'صنعاء',
+  capabilityRequest: 'engineer',  // ✨ طلب صلاحية مهندس
+  jobTitle: 'مهندس كهرباء',       // ✨ مطلوب
+);
+
+// الحالة:
+print(response.me.engineerStatus);   // "unverified" ⚠️
+// يجب رفع السيرة الذاتية
+if (response.me.isEngineerUnverified) {
+  navigateToUploadCV();
+}
+```
+
+#### مثال 3: تسجيل تاجر
+
+```dart
+final response = await verifyOtp(
+  phone: '777123456',
+  code: '123456',
+  firstName: 'أحمد',
+  lastName: 'محمد',
+  gender: 'male',
+  city: 'صنعاء',
+  capabilityRequest: 'wholesale',  // ✨ طلب صلاحية تاجر
+);
+
+// الحالة:
+print(response.me.wholesaleStatus);   // "unverified" ⚠️
+// يجب رفع معلومات المحل
+if (response.me.isWholesaleUnverified) {
+  navigateToUploadStoreInfo();
+}
+```
+
+### كود Flutter الأساسي
 
 ```dart
 class AuthTokens {
@@ -211,21 +329,68 @@ class AuthTokens {
 class AuthUser {
   final String id;
   final String phone;
+  final String? firstName;
+  final String? lastName;
+  final String? gender;
+  final String? city;
+  final String? jobTitle;
+  final List<String> roles;
+  final List<String> permissions;
+  final bool isAdmin;
   final String preferredCurrency;
+  final String? engineerStatus;
+  final String? wholesaleStatus;
 
   AuthUser({
     required this.id, 
     required this.phone,
+    this.firstName,
+    this.lastName,
+    this.gender,
+    this.city,
+    this.jobTitle,
+    this.roles = const [],
+    this.permissions = const [],
+    this.isAdmin = false,
     required this.preferredCurrency,
+    this.engineerStatus,
+    this.wholesaleStatus,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
       id: json['id'],
       phone: json['phone'],
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      gender: json['gender'],
+      city: json['city'],
+      jobTitle: json['jobTitle'],
+      roles: json['roles'] != null 
+          ? List<String>.from(json['roles']) 
+          : [],
+      permissions: json['permissions'] != null 
+          ? List<String>.from(json['permissions']) 
+          : [],
+      isAdmin: json['isAdmin'] ?? false,
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
+      engineerStatus: json['engineerStatus'],
+      wholesaleStatus: json['wholesaleStatus'],
     );
   }
+  
+  String get fullName => '${firstName ?? ''} ${lastName ?? ''}'.trim();
+  
+  bool get isEngineerPending => engineerStatus == 'pending';
+  bool get isEngineerApproved => engineerStatus == 'approved';
+  bool get isEngineerUnverified => engineerStatus == 'unverified';
+  
+  bool get isWholesalePending => wholesaleStatus == 'pending';
+  bool get isWholesaleApproved => wholesaleStatus == 'approved';
+  bool get isWholesaleUnverified => wholesaleStatus == 'unverified';
+  
+  bool hasRole(String role) => roles.contains(role);
+  bool hasPermission(String permission) => permissions.contains(permission);
 }
 
 class LoginResponse {
@@ -248,6 +413,7 @@ Future<LoginResponse> verifyOtp({
   String? firstName,
   String? lastName,
   String? gender,
+  String? city,
   String? capabilityRequest,
   String? jobTitle,
   String? deviceId,
@@ -260,6 +426,7 @@ Future<LoginResponse> verifyOtp({
       if (firstName != null) 'firstName': firstName,
       if (lastName != null) 'lastName': lastName,
       if (gender != null) 'gender': gender,
+      if (city != null) 'city': city,
       if (capabilityRequest != null) 'capabilityRequest': capabilityRequest,
       if (jobTitle != null) 'jobTitle': jobTitle,
       if (deviceId != null) 'deviceId': deviceId,
@@ -376,12 +543,14 @@ Future<bool> setPassword(String password) async {
 {
   "success": false,
   "error": {
-    "code": "AUTH_USER_NOT_FOUND",
+    "code": "AUTH_103",
     "message": "المستخدم غير موجود",
     "details": null,
     "fieldErrors": null
   },
-  "requestId": "req_101"
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:32:00.000Z",
+  "path": "/api/auth/forgot-password"
 }
 ```
 
@@ -641,6 +810,7 @@ Future<UserProfile> getMe() async {
   "firstName": "أحمد",
   "lastName": "علي",
   "gender": "male",
+  "city": "عدن",
   "jobTitle": "مهندس طاقة شمسية"
 }
 ```
@@ -666,12 +836,14 @@ Future<bool> updateMe({
   String? firstName,
   String? lastName,
   String? gender,
+  String? city,
   String? jobTitle,
 }) async {
   final data = <String, dynamic>{};
   if (firstName != null) data['firstName'] = firstName;
   if (lastName != null) data['lastName'] = lastName;
   if (gender != null) data['gender'] = gender;
+  if (city != null) data['city'] = city;
   if (jobTitle != null) data['jobTitle'] = jobTitle;
 
   final response = await _dio.patch('/auth/me', data: data);
@@ -782,10 +954,19 @@ Future<bool> updatePreferredCurrency(String currency) async {
 {
   "success": false,
   "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "يجب أن يكون السبب 5 أحرف على الأقل"
+    "code": "GENERAL_004",
+    "message": "خطأ في التحقق من البيانات",
+    "details": null,
+    "fieldErrors": [
+      {
+        "field": "reason",
+        "message": "يجب أن يكون السبب 5 أحرف على الأقل"
+      }
+    ]
   },
-  "requestId": "req_506"
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:33:00.000Z",
+  "path": "/api/auth/me"
 }
 ```
 
@@ -829,7 +1010,376 @@ Future<void> _clearLocalData() async {
 
 ---
 
-## Models في Flutter
+## 10. تسجيل الدخول بكلمة المرور (User)
+
+يسمح للمستخدمين (عادي/مهندس/تاجر) بتسجيل الدخول باستخدام رقم الهاتف وكلمة المرور.
+
+> 💡 **ملاحظة:** يرجع الحالة الفعلية للمستخدم (customer/engineer/wholesale) حسب ما تم التسجيل به.
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/auth/user-login`
+- **Auth Required:** ❌ لا
+
+### Request Body
+
+```json
+{
+  "phone": "777123456",
+  "password": "MyPassword123!"
+}
+```
+
+| الحقل | النوع | مطلوب | الوصف |
+|------|------|-------|-------|
+| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام) |
+| `password` | `string` | ✅ نعم | كلمة المرور |
+
+### Response - نجاح
+
+#### مثال 1: دخول customer عادي
+
+```json
+{
+  "success": true,
+  "data": {
+    "tokens": {
+      "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    },
+    "me": {
+      "id": "64a1b2c3d4e5f6789",
+      "phone": "777123456",
+      "firstName": "أحمد",
+      "lastName": "محمد",
+      "gender": "male",
+      "city": "صنعاء",
+      "jobTitle": null,
+      "roles": ["user"],
+      "permissions": [],
+      "isAdmin": false,
+      "preferredCurrency": "USD",
+      "engineerStatus": "none",
+      "wholesaleStatus": "none"
+    }
+  },
+  "requestId": "req_701"
+}
+```
+
+#### مثال 2: دخول مهندس معتمد
+
+```json
+{
+  "success": true,
+  "data": {
+    "tokens": {
+      "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    },
+    "me": {
+      "id": "64a1b2c3d4e5f6789",
+      "phone": "777123456",
+      "firstName": "أحمد",
+      "lastName": "محمد",
+      "gender": "male",
+      "city": "صنعاء",
+      "jobTitle": "مهندس كهرباء",
+      "roles": ["user"],
+      "permissions": [],
+      "isAdmin": false,
+      "preferredCurrency": "USD",
+      "engineerStatus": "approved",
+      "wholesaleStatus": "none"
+    }
+  },
+  "requestId": "req_701"
+}
+```
+
+### Response - فشل
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_104",
+    "message": "كلمة المرور غير صحيحة",
+    "details": null,
+    "fieldErrors": null
+  },
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:34:00.000Z",
+  "path": "/api/auth/user-login"
+}
+```
+
+### أكواد الأخطاء
+
+| الكود | الوصف | HTTP Status |
+|------|-------|-------------|
+| `AUTH_104` | كلمة المرور غير صحيحة | 401 |
+| `AUTH_125` | كلمة المرور غير محددة | 400 |
+| `AUTH_126` | الحساب غير نشط | 400 |
+
+### كود Flutter
+
+```dart
+Future<LoginResponse> userLogin({
+  required String phone,
+  required String password,
+}) async {
+  final response = await _dio.post(
+    '/auth/user-login',
+    data: {
+      'phone': phone,
+      'password': password,
+    },
+  );
+
+  final apiResponse = ApiResponse<LoginResponse>.fromJson(
+    response.data,
+    (data) => LoginResponse.fromJson(data),
+  );
+
+  if (apiResponse.isSuccess) {
+    // احفظ التوكنات
+    await _saveTokens(apiResponse.data!.tokens);
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 11. إنشاء حساب جديد بكلمة المرور
+
+يسمح بإنشاء حساب جديد مباشرة باستخدام كلمة مرور (بدون OTP).
+
+> 💡 **أنواع الحسابات:**
+> - **Customer (زبون عادي)** - لا تحتاج `capabilityRequest`
+> - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle`
+> - **Wholesale (تاجر جملة)** - تحتاج `capabilityRequest: "wholesale"`
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/auth/user-signup`
+- **Auth Required:** ❌ لا
+
+### Request Body
+
+```json
+{
+  "phone": "777123456",
+  "password": "MyPassword123!",
+  "firstName": "أحمد",
+  "lastName": "محمد",
+  "gender": "male",
+  "city": "صنعاء",
+  "capabilityRequest": "engineer",
+  "jobTitle": "مهندس كهرباء",
+  "deviceId": "device_abc123"
+}
+```
+
+| الحقل | النوع | مطلوب | الوصف |
+|------|------|-------|-------|
+| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام) |
+| `password` | `string` | ✅ نعم | كلمة المرور |
+| `firstName` | `string` | ✅ نعم | الاسم الأول |
+| `lastName` | `string` | ✅ نعم | اسم العائلة |
+| `gender` | `string` | ✅ نعم | `male`, `female`, `other` |
+| `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
+| `capabilityRequest` | `string` | ❌ لا | `engineer` أو `wholesale` (⚠️ إذا لم ترسل = **customer عادي**) |
+| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
+| `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
+
+### Response - نجاح
+
+#### مثال 1: تسجيل كـ Customer عادي (بدون capabilityRequest)
+
+```json
+{
+  "success": true,
+  "data": {
+    "tokens": {
+      "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    },
+    "me": {
+      "id": "64a1b2c3d4e5f6789",
+      "phone": "777123456",
+      "firstName": "أحمد",
+      "lastName": "محمد",
+      "gender": "male",
+      "city": "صنعاء",
+      "jobTitle": null,
+      "roles": ["user"],
+      "permissions": [],
+      "isAdmin": false,
+      "preferredCurrency": "USD",
+      "engineerStatus": "none",
+      "wholesaleStatus": "none"
+    }
+  },
+  "requestId": "req_456"
+}
+```
+
+#### مثال 2: تسجيل كمهندس (مع capabilityRequest: "engineer")
+
+```json
+{
+  "success": true,
+  "data": {
+    "tokens": {
+      "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    },
+    "me": {
+      "id": "64a1b2c3d4e5f6789",
+      "phone": "777123456",
+      "firstName": "أحمد",
+      "lastName": "محمد",
+      "gender": "male",
+      "jobTitle": "مهندس كهرباء",
+      "roles": ["customer"],
+      "permissions": [],
+      "isAdmin": false,
+      "preferredCurrency": "USD",
+      "engineerStatus": "unverified",
+      "wholesaleStatus": "none"
+    }
+  },
+  "requestId": "req_801"
+}
+```
+
+### Response - فشل
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_128",
+    "message": "رقم الهاتف موجود مسبقاً",
+    "details": null,
+    "fieldErrors": null
+  },
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:35:00.000Z",
+  "path": "/api/auth/user-signup"
+}
+```
+
+### أكواد الأخطاء
+
+| الكود | الوصف | HTTP Status |
+|------|-------|-------------|
+| `AUTH_128` | رقم الهاتف موجود مسبقاً | 409 |
+| `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
+| `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
+
+### ⚠️ ملاحظة مهمة عن أنواع الحسابات
+
+#### **1. Customer (زبون عادي) - الافتراضي:**
+```dart
+// لا تحتاج إرسال capabilityRequest
+final response = await userSignup(
+  phone: '777123456',
+  password: 'MyPassword123!',
+  firstName: 'أحمد',
+  lastName: 'محمد',
+  gender: 'male',
+  // لا نرسل capabilityRequest
+);
+// النتيجة: customer عادي يمكنه الشراء مباشرة
+```
+
+#### **2. Engineer (مهندس):**
+```dart
+final response = await userSignup(
+  phone: '777123456',
+  password: 'MyPassword123!',
+  firstName: 'أحمد',
+  lastName: 'محمد',
+  gender: 'male',
+  capabilityRequest: 'engineer',    // ✨ طلب صلاحية مهندس
+  jobTitle: 'مهندس كهرباء',         // ✨ مطلوب
+);
+// النتيجة: engineerStatus = "unverified" - يجب رفع CV
+if (response.me.isEngineerUnverified) {
+  navigateToUploadCV();
+}
+```
+
+#### **3. Wholesale (تاجر جملة):**
+```dart
+final response = await userSignup(
+  phone: '777123456',
+  password: 'MyPassword123!',
+  firstName: 'أحمد',
+  lastName: 'محمد',
+  gender: 'male',
+  capabilityRequest: 'wholesale',    // ✨ طلب صلاحية تاجر
+);
+// النتيجة: wholesaleStatus = "unverified" - يجب رفع معلومات المحل
+if (response.me.isWholesaleUnverified) {
+  navigateToUploadStoreInfo();
+}
+```
+
+### كود Flutter
+
+```dart
+Future<LoginResponse> userSignup({
+  required String phone,
+  required String password,
+  required String firstName,
+  required String lastName,
+  required String gender,
+  String? city,
+  String? capabilityRequest,
+  String? jobTitle,
+  String? deviceId,
+}) async {
+  final response = await _dio.post(
+    '/auth/user-signup',
+    data: {
+      'phone': phone,
+      'password': password,
+      'firstName': firstName,
+      'lastName': lastName,
+      'gender': gender,
+      if (city != null) 'city': city,
+      if (capabilityRequest != null) 'capabilityRequest': capabilityRequest,
+      if (jobTitle != null) 'jobTitle': jobTitle,
+      if (deviceId != null) 'deviceId': deviceId,
+    },
+  );
+
+  final apiResponse = ApiResponse<LoginResponse>.fromJson(
+    response.data,
+    (data) => LoginResponse.fromJson(data),
+  );
+
+  if (apiResponse.isSuccess) {
+    // احفظ التوكنات
+    await _saveTokens(apiResponse.data!.tokens);
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 12. Models في Flutter
 
 ### ملف: `lib/models/auth/auth_models.dart`
 
@@ -861,6 +1411,7 @@ class User {
   final String? firstName;
   final String? lastName;
   final String? gender;
+  final String? city;
   final String? jobTitle;
   final List<String> roles;
   final List<String> permissions;
@@ -872,6 +1423,7 @@ class User {
     this.firstName,
     this.lastName,
     this.gender,
+    this.city,
     this.jobTitle,
     this.roles = const [],
     this.permissions = const [],
@@ -885,6 +1437,7 @@ class User {
       firstName: json['firstName'],
       lastName: json['lastName'],
       gender: json['gender'],
+      city: json['city'],
       jobTitle: json['jobTitle'],
       roles: json['roles'] != null 
           ? List<String>.from(json['roles']) 
@@ -976,11 +1529,15 @@ class AuthUser {
   final String id;
   final String phone;
   final String preferredCurrency;
+  final String? engineerStatus;
+  final String? wholesaleStatus;
 
   AuthUser({
     required this.id, 
     required this.phone,
     required this.preferredCurrency,
+    this.engineerStatus,
+    this.wholesaleStatus,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -988,8 +1545,18 @@ class AuthUser {
       id: json['id'],
       phone: json['phone'],
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
+      engineerStatus: json['engineerStatus'],
+      wholesaleStatus: json['wholesaleStatus'],
     );
   }
+  
+  bool get isEngineerPending => engineerStatus == 'pending';
+  bool get isEngineerApproved => engineerStatus == 'approved';
+  bool get isEngineerUnverified => engineerStatus == 'unverified';
+  
+  bool get isWholesalePending => wholesaleStatus == 'pending';
+  bool get isWholesaleApproved => wholesaleStatus == 'approved';
+  bool get isWholesaleUnverified => wholesaleStatus == 'unverified';
 }
 ```
 
@@ -998,41 +1565,108 @@ class AuthUser {
 ## 📝 ملاحظات مهمة
 
 1. **التوكنات:**
-   - Access Token صالح لمدة 15 دقيقة
-   - Refresh Token صالح لمدة 30 يوم (تم تحديثه من 7 أيام)
+   - Access Token صالح لمدة 8 ساعات
+   - Refresh Token صالح لمدة 30 يوم
    - احفظهما في `SharedPreferences` أو `FlutterSecureStorage`
 
 2. **OTP في التطوير:**
    - في بيئة التطوير، يتم إرجاع `devCode` للاختبار
    - في Production، لن يكون موجوداً
 
-3. **مزامنة المفضلات:**
+3. **المدينة (City):**
+   - حقل المدينة مهم للمهندسين وطلبات الخدمات
+   - القيمة الافتراضية: "صنعاء"
+   - يمكن تحديثها عبر endpoint `/auth/me`
+
+4. **مزامنة المفضلات:**
    - عند تسجيل الدخول، أرسل `deviceId` لمزامنة المفضلات تلقائياً
    - استخدم `device_info_plus` للحصول على Device ID
 
-4. **الصلاحيات:**
-   - `customer_capable`: زبون عادي (افتراضي)
-   - `engineer_capable`: مهندس (يحتاج موافقة الأدمن)
-   - `wholesale_capable`: تاجر جملة (يحتاج موافقة الأدمن)
+5. **أنواع الحسابات:**
+   - **Customer (زبون عادي):** النوع الافتراضي - لا يحتاج `capabilityRequest`
+   - **Engineer (مهندس):** يحتاج `capabilityRequest: "engineer"` + `jobTitle`
+   - **Wholesale (تاجر جملة):** يحتاج `capabilityRequest: "wholesale"`
 
-5. **العملة المفضلة:**
+6. **حالات المهندس/التاجر (engineerStatus / wholesaleStatus):**
+   - `none`: مستخدم عادي (customer)
+   - `unverified`: طلب الصلاحية عند التسجيل لكن لم يرفع الوثائق ⚠️
+   - `pending`: رفع الوثائق وفي انتظار موافقة الأدمن ⏳
+   - `approved`: تمت الموافقة ✅
+   - `rejected`: تم الرفض ❌
+
+7. **العملة المفضلة:**
    - كل مستخدم لديه عملة مفضلة (افتراضي: USD)
    - يمكن تحديثها عبر endpoint `/auth/preferred-currency`
    - يتم إرجاعها في استجابة تسجيل الدخول
 
+8. **كيفية استخدام حالات المهندس/التاجر في Flutter:**
+   ```dart
+   // بعد تسجيل الدخول
+   final loginResponse = await verifyOtp(...);
+   
+   // 1. Customer عادي
+   if (loginResponse.me.engineerStatus == 'none' && 
+       loginResponse.me.wholesaleStatus == 'none') {
+     // مستخدم عادي - يمكنه الشراء مباشرة
+     navigateToHome();
+   }
+   
+   // 2. مهندس
+   if (loginResponse.me.isEngineerUnverified) {
+     // يجب رفع السيرة الذاتية
+     showDialog('يرجى رفع السيرة الذاتية لإكمال التسجيل كمهندس');
+     navigateToUploadCV();
+   } else if (loginResponse.me.isEngineerPending) {
+     // في انتظار الموافقة
+     showDialog('طلبك قيد المراجعة من قبل الإدارة');
+   } else if (loginResponse.me.isEngineerApproved) {
+     // تمت الموافقة
+     navigateToEngineerDashboard();
+   }
+   
+   // 3. تاجر
+   if (loginResponse.me.isWholesaleUnverified) {
+     navigateToUploadStoreInfo();
+   } else if (loginResponse.me.isWholesaleApproved) {
+     navigateToWholesaleDashboard();
+   }
+   ```
 
 ---
 
 ## 📝 ملاحظات التحديث
 
-> ✅ **تم تحديث هذه الوثيقة** لتطابق الكود الفعلي
+> ✅ **تم تحديث هذه الوثيقة بالكامل** لتطابق الكود الفعلي
 
-### التحديثات المضافة:
-1. ✅ إضافة `roles` و `permissions` في User object
-2. ✅ تحديث Flutter Models لتتضمن roles و permissions
-3. ✅ إضافة helper methods: `hasRole()` و `hasPermission()`
-4. ✅ إضافة HTTP Status Codes للأخطاء
-5. ✅ توضيح ملاحظة عن VALIDATION_ERROR
+### التحديثات المضافة في هذه النسخة:
+1. ✅ **تحديث أكواد الأخطاء** - استخدام النظام الجديد (AUTH_100، AUTH_103، إلخ)
+2. ✅ **إضافة endpoints جديدة:**
+   - `/auth/user-login` - تسجيل دخول المستخدمين بكلمة المرور
+   - `/auth/user-signup` - إنشاء حساب جديد بكلمة المرور
+3. ✅ **توضيح أنواع الحسابات الثلاثة:**
+   - **Customer (زبون عادي)** - النوع الافتراضي عند عدم إرسال `capabilityRequest`
+   - **Engineer (مهندس)** - يحتاج `capabilityRequest: "engineer"` + `jobTitle`
+   - **Wholesale (تاجر)** - يحتاج `capabilityRequest: "wholesale"`
+4. ✅ **إضافة حقل `city` (المدينة):**
+   - أضيف في `VerifyOtpDto` و `UserSignupDto`
+   - يُحفظ في User Schema (افتراضي: صنعاء)
+   - يظهر في `/auth/me` ويمكن تحديثه
+5. ✅ **إضافة `timestamp` و `path`** في جميع أمثلة الأخطاء
+6. ✅ **تحديث Flutter code examples** بأكواد الأخطاء الجديدة
+7. ✅ **تصحيح مدة صلاحية Access Token** - 8 ساعات (كان 15 دقيقة)
+8. ✅ **إضافة حقول حالة المهندس/التاجر في جميع Login/Signup Responses:**
+   - `engineerStatus` - حالة المهندس (none/unverified/pending/approved/rejected)
+   - `wholesaleStatus` - حالة التاجر (none/unverified/pending/approved/rejected)
+9. ✅ **إضافة أمثلة واضحة للأنواع الثلاثة:**
+   - مثال Customer عادي (engineerStatus: "none", wholesaleStatus: "none")
+   - مثال Engineer (engineerStatus: "unverified/approved")
+   - مثال Wholesale (wholesaleStatus: "unverified/approved")
+10. ✅ **إضافة أخطاء جديدة:**
+   - `AUTH_125` - كلمة المرور غير محددة
+   - `AUTH_126` - الحساب غير نشط
+   - `AUTH_128` - رقم الهاتف موجود مسبقاً
+11. ✅ تحديث `VALIDATION_ERROR` إلى `GENERAL_004`
+12. ✅ **حذف endpoints الأدمن** - هذا الملف للمستخدمين والتجار والمهندسين فقط
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/auth/auth.controller.ts`

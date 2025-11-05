@@ -301,7 +301,7 @@ export const ProductsListPage: React.FC = () => {
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
         <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
           <Button variant="outlined" startIcon={<FilterList />} onClick={handleMenuOpen} size={isMobile ? 'small' : 'medium'}>
-            {t('list.filters')}
+            {t('list.filtersLabel')}
           </Button>
           <Button
             variant="outlined"

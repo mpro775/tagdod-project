@@ -7,7 +7,6 @@ import {
   Button,
   Typography,
   Box,
-  IconButton,
 } from '@mui/material';
 import {
   Warning as WarningIcon,
@@ -29,7 +28,7 @@ export interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   confirmColor?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
-  cancelColor?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
+  cancelColor?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' | 'inherit';
   loading?: boolean;
 }
 
@@ -43,15 +42,21 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
   confirmColor,
-  cancelColor = 'default',
+  cancelColor = 'inherit',
   loading = false,
 }) => {
   const { t } = useTranslation('common');
 
   const getIcon = () => {
+    const getIconColor = (): 'error' | 'warning' | 'primary' => {
+      if (type === 'error') return 'error';
+      if (type === 'warning') return 'warning';
+      return 'primary';
+    };
+
     const iconProps = {
       sx: { fontSize: 48, mb: 2 },
-      color: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'primary',
+      color: getIconColor(),
     };
 
     switch (type) {

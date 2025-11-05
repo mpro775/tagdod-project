@@ -37,29 +37,7 @@ interface SupportTicketFiltersProps {
   isLoading?: boolean;
 }
 
-const STATUS_FALLBACK_LABELS: Record<SupportStatus, string> = {
-  [SupportStatus.OPEN]: 'مفتوح',
-  [SupportStatus.IN_PROGRESS]: 'قيد التنفيذ',
-  [SupportStatus.WAITING_FOR_USER]: 'بانتظار العميل',
-  [SupportStatus.RESOLVED]: 'تم الحل',
-  [SupportStatus.CLOSED]: 'مغلق',
-};
-
-const PRIORITY_FALLBACK_LABELS: Record<SupportPriority, string> = {
-  [SupportPriority.LOW]: 'منخفضة',
-  [SupportPriority.MEDIUM]: 'متوسطة',
-  [SupportPriority.HIGH]: 'عالية',
-  [SupportPriority.URGENT]: 'عاجلة',
-};
-
-const CATEGORY_FALLBACK_LABELS: Record<SupportCategory, string> = {
-  [SupportCategory.TECHNICAL]: 'تقني',
-  [SupportCategory.BILLING]: 'الفواتير',
-  [SupportCategory.PRODUCTS]: 'المنتجات',
-  [SupportCategory.SERVICES]: 'الخدمات',
-  [SupportCategory.ACCOUNT]: 'الحساب',
-  [SupportCategory.OTHER]: 'أخرى',
-};
+// Removed unused fallback labels - using translations instead
 
 const getCategoryLabel = (category: SupportCategory, t: any): string => {
   return t(`category.${category}`);

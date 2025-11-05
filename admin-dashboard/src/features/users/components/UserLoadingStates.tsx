@@ -21,7 +21,6 @@ interface UserLoadingStatesProps {
 export const UserLoadingStates: React.FC<UserLoadingStatesProps> = ({ type, count = 1 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { t } = useTranslation(['common']);
 
   switch (type) {
     case 'list':
@@ -379,8 +378,6 @@ export const UserProgressBar: React.FC<{
   message?: string;
   color?: 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
 }> = ({ progress, message, color = 'primary' }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <Box sx={{ width: '100%', mb: 2 }}>

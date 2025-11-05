@@ -53,7 +53,7 @@ export function mapCityToArabic(city: string | undefined | null): string {
   }
 
   // Check if it's already a valid Arabic city
-  const validArabicCities = YEMEN_CITIES.map((c) => c.value);
+  const validArabicCities = YEMEN_CITIES.map((c) => c.value) as readonly string[];
   if (validArabicCities.includes(city)) {
     return city;
   }

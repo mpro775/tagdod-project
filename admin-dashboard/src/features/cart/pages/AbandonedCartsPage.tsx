@@ -748,7 +748,6 @@ export const AbandonedCartsPage: React.FC = () => {
           getRowId={(row) => (row as Cart)._id}
           height={isMobile ? 500 : 600}
           rowHeight={isMobile ? 80 : 56}
-          rowCount={total}
         />
       ) : (
         /* Card View - Mobile */

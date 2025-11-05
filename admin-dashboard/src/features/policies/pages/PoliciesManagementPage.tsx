@@ -16,7 +16,6 @@ import {
   DialogContent,
   DialogActions,
   useTheme,
-  useMediaQuery,
   Divider,
   Chip,
 } from '@mui/material';
@@ -27,37 +26,16 @@ import {
   Security,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'react-hot-toast';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { PolicyEditor } from '../components/PolicyEditor';
 import { PolicyPreview } from '../components/PolicyPreview';
 import { usePolicy, useUpdatePolicy, useTogglePolicy } from '../hooks/usePolicies';
 import { PolicyType } from '../types/policy.types';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`policy-tabpanel-${index}`}
-      aria-labelledby={`policy-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
 export const PoliciesManagementPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('policies');
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { isMobile, isTablet } = useBreakpoint();
 
   const [policyTab, setPolicyTab] = useState(0); // Terms or Privacy
   const [languageTab, setLanguageTab] = useState(0); // Arabic or English
@@ -125,7 +103,7 @@ export const PoliciesManagementPage: React.FC = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          minHeight: 400,
+          minHeight: { xs: 300, md: 400 },
         }}
       >
         <CircularProgress />
@@ -135,9 +113,9 @@ export const PoliciesManagementPage: React.FC = () => {
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography color="error">
-          {t('policies.errors.loadFailed', 'فشل تحميل السياسة')}
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Typography color="error" variant={isMobile ? 'body2' : 'body1'}>
+          {t('errors.loadFailed')}
         </Typography>
       </Box>
     );
@@ -145,9 +123,9 @@ export const PoliciesManagementPage: React.FC = () => {
 
   if (!policy) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography>
-          {t('policies.errors.notFound', 'السياسة غير موجودة')}
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Typography variant={isMobile ? 'body2' : 'body1'} color="text.secondary">
+          {t('errors.notFound')}
         </Typography>
       </Box>
     );
@@ -160,12 +138,21 @@ export const PoliciesManagementPage: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 2, sm: 3, md: 3 } }}>
       {/* Header */}
-      <Box sx={{ mb: { xs: 3, md: 4 } }}>
-        <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold" gutterBottom>
-          {t('policies.title', 'إدارة السياسات')}
+      <Box sx={{ mb: { xs: 2, sm: 3, md: 4 } }}>
+        <Typography
+          variant={isMobile ? 'h5' : isTablet ? 'h4' : 'h4'}
+          fontWeight="bold"
+          gutterBottom
+          sx={{ color: theme.palette.text.primary }}
+        >
+          {t('title')}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t('policies.subtitle', 'إدارة سياسة الأحكام والشروط وسياسة الخصوصية')}
+        <Typography
+          variant={isMobile ? 'body2' : 'body2'}
+          color="text.secondary"
+          sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
+        >
+          {t('subtitle')}
         </Typography>
       </Box>
 
@@ -173,7 +160,7 @@ export const PoliciesManagementPage: React.FC = () => {
       <Paper
         elevation={0}
         sx={{
-          mb: 3,
+          mb: { xs: 2, md: 3 },
           borderBottom: 1,
           borderColor: 'divider',
           bgcolor: 'background.paper',
@@ -188,91 +175,148 @@ export const PoliciesManagementPage: React.FC = () => {
           variant={isMobile ? 'scrollable' : 'standard'}
           scrollButtons="auto"
           allowScrollButtonsMobile
+          sx={{
+            '& .MuiTab-root': {
+              minHeight: isMobile ? 64 : 48,
+              fontSize: isMobile ? '0.875rem' : undefined,
+              '& .MuiSvgIcon-root': {
+                fontSize: isMobile ? '1.25rem' : undefined,
+              },
+            },
+          }}
         >
           <Tab
             icon={<Description />}
             iconPosition={isMobile ? 'top' : 'start'}
-            label={t('policies.tabs.terms', 'الأحكام والشروط')}
+            label={t('tabs.terms')}
           />
           <Tab
             icon={<Security />}
             iconPosition={isMobile ? 'top' : 'start'}
-            label={t('policies.tabs.privacy', 'سياسة الخصوصية')}
+            label={t('tabs.privacy')}
           />
         </Tabs>
       </Paper>
 
       {/* Main Content */}
-      <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, bgcolor: 'background.paper' }}>
+      <Paper
+        sx={{
+          p: { xs: 2, sm: 2.5, md: 4 },
+          bgcolor: 'background.paper',
+          border: `1px solid ${theme.palette.divider}`,
+        }}
+      >
         {/* Status and Actions */}
         <Stack
           direction={isMobile ? 'column' : 'row'}
           spacing={2}
-          sx={{ mb: 3 }}
+          sx={{ mb: { xs: 2, md: 3 } }}
           justifyContent="space-between"
           alignItems={isMobile ? 'stretch' : 'center'}
         >
-          <Box>
+          <Box sx={{ width: isMobile ? '100%' : 'auto' }}>
             <FormControlLabel
               control={
                 <Switch
                   checked={formData.isActive}
                   onChange={(e) => handleToggle(e.target.checked)}
                   disabled={toggleMutation.isPending}
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': {
+                      color: theme.palette.success.main,
+                    },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      backgroundColor: theme.palette.success.main,
+                    },
+                  }}
                 />
               }
               label={
                 <Box>
-                  <Typography variant="body1" fontWeight="medium">
-                    {t('policies.status.active', 'نشط')}
+                  <Typography
+                    variant={isMobile ? 'body2' : 'body1'}
+                    fontWeight="medium"
+                    sx={{ color: theme.palette.text.primary }}
+                  >
+                    {t('status.active')}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {formData.isActive
-                      ? t('policies.status.activeDesc', 'السياسة نشطة ومتاحة للعموم')
-                      : t('policies.status.inactiveDesc', 'السياسة غير نشطة')}
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
+                  >
+                    {formData.isActive ? t('status.activeDesc') : t('status.inactiveDesc')}
                   </Typography>
                 </Box>
               }
+              sx={{ m: 0 }}
             />
             {formData.isActive && (
               <Chip
-                label={t('policies.status.published', 'منشور')}
+                label={t('status.published')}
                 color="success"
-                size="small"
-                sx={{ ml: 2 }}
+                size={isMobile ? 'small' : 'small'}
+                sx={{
+                  ml: { xs: 1, md: 2 },
+                  mt: { xs: 1, md: 0 },
+                  fontSize: isMobile ? '0.7rem' : undefined,
+                  height: isMobile ? '20px' : undefined,
+                }}
               />
             )}
           </Box>
 
-          <Stack direction="row" spacing={2}>
+          <Stack
+            direction={isMobile ? 'column' : 'row'}
+            spacing={isMobile ? 1.5 : 2}
+            sx={{ width: isMobile ? '100%' : 'auto' }}
+          >
             <Button
               variant="outlined"
               startIcon={<Visibility />}
               onClick={handlePreview}
               disabled={!currentContent.trim()}
+              fullWidth={isMobile}
+              size={isMobile ? 'medium' : 'medium'}
+              sx={{
+                borderColor: theme.palette.divider,
+                color: theme.palette.text.primary,
+                '&:hover': {
+                  borderColor: theme.palette.primary.main,
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.05)'
+                      : 'rgba(0, 0, 0, 0.04)',
+                },
+              }}
             >
-              {t('policies.actions.preview', 'معاينة')}
+              {t('actions.preview')}
             </Button>
             <Button
               variant="contained"
               startIcon={<Save />}
               onClick={handleSave}
               disabled={updateMutation.isPending}
+              fullWidth={isMobile}
+              size={isMobile ? 'medium' : 'medium'}
             >
-              {updateMutation.isPending
-                ? t('policies.actions.saving', 'جاري الحفظ...')
-                : t('policies.actions.save', 'حفظ')}
+              {updateMutation.isPending ? t('actions.saving') : t('actions.save')}
             </Button>
           </Stack>
         </Stack>
 
-        <Divider sx={{ mb: 3 }} />
+        <Divider
+          sx={{
+            mb: { xs: 2, md: 3 },
+            borderColor: theme.palette.divider,
+          }}
+        />
 
         {/* Language Tabs */}
         <Paper
           elevation={0}
           sx={{
-            mb: 3,
+            mb: { xs: 2, md: 3 },
             borderBottom: 1,
             borderColor: 'divider',
             bgcolor: 'background.paper',
@@ -282,18 +326,24 @@ export const PoliciesManagementPage: React.FC = () => {
             value={languageTab}
             onChange={(_, newValue) => setLanguageTab(newValue)}
             variant="fullWidth"
+            sx={{
+              '& .MuiTab-root': {
+                fontSize: isMobile ? '0.875rem' : undefined,
+                minHeight: isMobile ? 48 : 48,
+              },
+            }}
           >
-            <Tab label={t('policies.language.arabic', 'العربية')} />
-            <Tab label={t('policies.language.english', 'English')} />
+            <Tab label={t('language.arabic')} />
+            <Tab label={t('language.english')} />
           </Tabs>
         </Paper>
 
         {/* Form Content */}
-        <Stack spacing={3}>
+        <Stack spacing={{ xs: 2, md: 3 }}>
           {/* Title */}
           <TextField
             fullWidth
-            label={t('policies.form.title', 'العنوان')}
+            label={t('form.title')}
             value={currentTitle}
             onChange={(e) => {
               if (languageTab === 0) {
@@ -303,10 +353,29 @@ export const PoliciesManagementPage: React.FC = () => {
               }
             }}
             placeholder={
-              languageTab === 0
-                ? t('policies.form.titleArPlaceholder', 'أدخل العنوان بالعربية')
-                : t('policies.form.titleEnPlaceholder', 'Enter title in English')
+              languageTab === 0 ? t('form.titleArPlaceholder') : t('form.titleEnPlaceholder')
             }
+            size={isMobile ? 'small' : 'medium'}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: theme.palette.background.paper,
+                '& fieldset': {
+                  borderColor: theme.palette.divider,
+                },
+                '&:hover fieldset': {
+                  borderColor: theme.palette.primary.main,
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: theme.palette.primary.main,
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: theme.palette.text.secondary,
+                '&.Mui-focused': {
+                  color: theme.palette.primary.main,
+                },
+              },
+            }}
           />
 
           {/* Content Editor */}
@@ -319,13 +388,13 @@ export const PoliciesManagementPage: React.FC = () => {
                 setFormData((prev) => ({ ...prev, contentEn: value }));
               }
             }}
-            label={t('policies.form.content', 'المحتوى')}
+            label={t('form.content')}
             placeholder={
               languageTab === 0
-                ? t('policies.form.contentArPlaceholder', 'أدخل المحتوى بالعربية...')
-                : t('policies.form.contentEnPlaceholder', 'Enter content in English...')
+                ? t('form.contentArPlaceholder')
+                : t('form.contentEnPlaceholder')
             }
-            minHeight={400}
+            minHeight={isMobile ? 300 : isTablet ? 350 : 400}
           />
         </Stack>
       </Paper>
@@ -337,20 +406,57 @@ export const PoliciesManagementPage: React.FC = () => {
         maxWidth="md"
         fullWidth
         fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            bgcolor: theme.palette.background.paper,
+            ...(isMobile && {
+              height: '100%',
+              maxHeight: '100%',
+            }),
+          },
+        }}
       >
-        <DialogTitle>
-          {t('policies.preview.title', 'معاينة السياسة')}
+        <DialogTitle
+          sx={{
+            color: theme.palette.text.primary,
+            fontSize: isMobile ? '1.125rem' : undefined,
+            pb: { xs: 1, md: 2 },
+          }}
+        >
+          {t('preview.title')}
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent
+          dividers
+          sx={{
+            bgcolor: theme.palette.background.paper,
+            borderColor: theme.palette.divider,
+            p: { xs: 2, md: 3 },
+          }}
+        >
           <PolicyPreview
             title={currentTitle}
             content={currentContent}
             language={currentLanguage}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPreviewOpen(false)}>
-            {t('policies.preview.close', 'إغلاق')}
+        <DialogActions
+          sx={{
+            p: { xs: 1.5, md: 2 },
+            borderTop: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Button
+            onClick={() => setPreviewOpen(false)}
+            variant={isMobile ? 'text' : 'outlined'}
+            fullWidth={isMobile}
+            size={isMobile ? 'medium' : 'medium'}
+            sx={{
+              ...(isMobile && {
+                color: theme.palette.text.primary,
+              }),
+            }}
+          >
+            {t('preview.close')}
           </Button>
         </DialogActions>
       </Dialog>

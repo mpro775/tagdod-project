@@ -329,6 +329,38 @@
       }
     }
   },
+  "deleted": {
+    "title": "Deleted Accounts",
+    "description": "View all deleted accounts with deletion reasons",
+    "searchPlaceholder": "Search by name, phone number, or deletion reason...",
+    "totalCount": "Total: {{count}} deleted account",
+    "deletionReason": "Deletion Reason",
+    "deletedAt": "Deleted At",
+    "restore": "Restore",
+    "confirmRestore": "Are you sure you want to restore this account?",
+    "noResults": "No deleted accounts"
+  },
+  "verification": {
+    "title": "Pending Verification Requests",
+    "description": "Review and approve verification requests for engineers and merchants",
+    "refresh": "Refresh",
+    "totalRequests": "Total Requests",
+    "engineerRequests": "Engineer Requests",
+    "merchantRequests": "Merchant Requests",
+    "noRequests": "No pending verification requests",
+    "noRequestsDescription": "All requests have been reviewed",
+    "engineer": "Engineer",
+    "merchant": "Merchant",
+    "storeName": "Store Name",
+    "cvUploaded": "CV uploaded",
+    "cvNotUploaded": "No file",
+    "storePhotoUploaded": "Store photo uploaded",
+    "storePhotoNotUploaded": "No photo",
+    "viewDetails": "View Details",
+    "notAvailable": "Not Available",
+    "errorLoading": "Error loading verification requests",
+    "retry": "Retry"
+  },
   "form": {
     "title": {
       "create": "Add New User or Admin",

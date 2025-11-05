@@ -15,8 +15,6 @@ import {
 import {
   Star,
   Visibility,
-  Phone,
-  Email,
   Edit,
   Block,
   LocationCity,

@@ -8,7 +8,6 @@ import {
   Alert,
   Grid,
   Button,
-  Stack,
   Pagination,
 } from '@mui/material';
 import { Edit, Delete, ToggleOn, ToggleOff, Visibility, VisibilityOff, Add, Business } from '@mui/icons-material';
@@ -64,7 +63,7 @@ export const BrandsListPage: React.FC = () => {
   const { mutate: toggleStatus, isPending: isToggling } = useToggleBrandStatus();
 
   const brands = brandsResponse?.data || [];
-  const pagination = brandsResponse?.pagination;
+  const pagination = brandsResponse?.meta;
 
   // Event handlers
   const handleFiltersChange = (newFilters: ListBrandsParams) => {

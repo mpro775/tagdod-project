@@ -8,7 +8,7 @@ export { cartApi, formatCartStatus, formatCurrency, formatDate, formatRelativeTi
 export * from './hooks/useCart';
 
 // Components
-export { CartStatsCards, CartTable, CartDetailsModal } from './components';
+export { CartStatsCards, CartDetailsModal } from './components';
 export { CartFilters as CartFiltersComponent } from './components';
 
 // Pages

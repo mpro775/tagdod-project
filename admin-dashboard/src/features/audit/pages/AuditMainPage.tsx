@@ -30,14 +30,12 @@ import { AuditLogsPage } from './AuditLogsPage';
 import { AuditAnalyticsPage } from './AuditAnalyticsPage';
 import { useAuditStats } from '../hooks/useAudit';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 
 export const AuditMainPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('logs');
   const { stats, isLoading } = useAuditStats();
   const { t } = useTranslation('audit');
   const theme = useTheme();
-  const breakpoint = useBreakpoint();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const quickStats = [
     {

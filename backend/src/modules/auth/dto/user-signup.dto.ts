@@ -63,6 +63,18 @@ export class UserSignupDto {
   gender!: 'male' | 'female' | 'other';
 
   @ApiPropertyOptional({
+    description: 'المدينة',
+    example: 'صنعاء',
+    minLength: 2,
+    maxLength: 50,
+  })
+  @IsOptional()
+  @IsString({ message: 'المدينة يجب أن تكون نصاً' })
+  @MinLength(2, { message: 'المدينة يجب أن تكون حرفين على الأقل' })
+  @MaxLength(50, { message: 'المدينة يجب أن تكون أقل من 50 حرف' })
+  city?: string;
+
+  @ApiPropertyOptional({
     description: 'نوع القدرة المطلوبة',
     enum: ['engineer', 'wholesale'],
     example: 'engineer',

@@ -38,7 +38,7 @@ export const useUpdatePolicy = () => {
   return useMutation({
     mutationFn: ({ type, data }: { type: PolicyType; data: UpdatePolicyDto }) =>
       policiesApi.update(type, data),
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [POLICIES_KEY] });
       toast.success('تم تحديث السياسة بنجاح');
     },
@@ -57,7 +57,7 @@ export const useTogglePolicy = () => {
   return useMutation({
     mutationFn: ({ type, data }: { type: PolicyType; data: TogglePolicyDto }) =>
       policiesApi.toggle(type, data),
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [POLICIES_KEY] });
       toast.success(`تم ${data.isActive ? 'تفعيل' : 'تعطيل'} السياسة بنجاح`);
     },

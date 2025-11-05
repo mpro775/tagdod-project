@@ -19,11 +19,7 @@ import {
   CardContent,
   Grid,
   CircularProgress,
-  Checkbox,
-  Stack,
   Divider,
-  Pagination,
-  Avatar,
   Fab,
 } from '@mui/material';
 import { Edit, Delete, Restore, AccountTree, Star, Refresh, Add } from '@mui/icons-material';
@@ -449,7 +445,7 @@ export const CategoriesListPage: React.FC = () => {
               </Alert>
             ) : (
               <Grid container spacing={2}>
-                {categories.map((category) => {
+                {(categories as Category[]).map((category: Category) => {
                   const isDeleted = !!category.deletedAt;
                   
                   return (

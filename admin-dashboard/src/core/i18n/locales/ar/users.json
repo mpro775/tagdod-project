@@ -330,6 +330,38 @@
       }
     }
   },
+  "deleted": {
+    "title": "الحسابات المحذوفة",
+    "description": "عرض جميع الحسابات المحذوفة مع أسباب الحذف",
+    "searchPlaceholder": "ابحث بالاسم، رقم الهاتف، أو سبب الحذف...",
+    "totalCount": "إجمالي: {{count}} حساب محذوف",
+    "deletionReason": "سبب الحذف",
+    "deletedAt": "تاريخ الحذف",
+    "restore": "استعادة",
+    "confirmRestore": "هل أنت متأكد من استعادة هذا الحساب؟",
+    "noResults": "لا توجد حسابات محذوفة"
+  },
+  "verification": {
+    "title": "طلبات التحقق قيد المراجعة",
+    "description": "مراجعة واعتماد طلبات التحقق للمهندسين والتجار",
+    "refresh": "تحديث",
+    "totalRequests": "إجمالي الطلبات",
+    "engineerRequests": "طلبات المهندسين",
+    "merchantRequests": "طلبات التجار",
+    "noRequests": "لا توجد طلبات تحقق قيد المراجعة",
+    "noRequestsDescription": "جميع الطلبات تمت مراجعتها",
+    "engineer": "مهندس",
+    "merchant": "تاجر",
+    "storeName": "اسم المحل",
+    "cvUploaded": "تم رفع السيرة الذاتية",
+    "cvNotUploaded": "لا يوجد ملف",
+    "storePhotoUploaded": "تم رفع صورة المحل",
+    "storePhotoNotUploaded": "لا توجد صورة",
+    "viewDetails": "عرض التفاصيل",
+    "notAvailable": "غير متوفر",
+    "errorLoading": "حدث خطأ أثناء تحميل طلبات التحقق",
+    "retry": "إعادة المحاولة"
+  },
   "form": {
     "title": {
       "create": "إضافة مستخدم أو أدمن جديد",

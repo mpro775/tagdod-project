@@ -75,7 +75,7 @@ function TabPanel(props: TabPanelProps) {
 
 export const AdvancedAnalyticsDashboardPage: React.FC = () => {
   const { t } = useTranslation('analytics');
-  const { isMobile, isXs } = useBreakpoint();
+  const { isMobile } = useBreakpoint();
   const [activeTab, setActiveTab] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>(PeriodType.MONTHLY);
 

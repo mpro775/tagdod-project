@@ -209,7 +209,7 @@ export const VerificationRequestDialog: React.FC<VerificationRequestDialogProps>
 
             {/* نموذج الرفض */}
             {showRejectForm && (
-              <Paper variant="outlined" sx={{ p: 2, bgcolor: 'error.light', bgcolor: 'rgba(211, 47, 47, 0.1)' }}>
+              <Paper variant="outlined" sx={{ p: 2, bgcolor: 'rgba(211, 47, 47, 0.1)' }}>
                 <Typography variant="subtitle2" gutterBottom color="error">
                   سبب الرفض (اختياري)
                 </Typography>

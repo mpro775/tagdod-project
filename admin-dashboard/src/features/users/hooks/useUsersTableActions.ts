@@ -12,12 +12,6 @@ interface UseUsersTableActionsProps {
   onRefetch: () => void;
 }
 
-interface ConfirmDialogState {
-  open: boolean;
-  user: User | null;
-  action: 'delete' | null;
-}
-
 export const useUsersTableActions = ({ onRefetch }: UseUsersTableActionsProps) => {
   const { t } = useTranslation(['users', 'common']);
   const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();

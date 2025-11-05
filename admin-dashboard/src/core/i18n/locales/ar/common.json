@@ -9,6 +9,7 @@
     "usersList": "قائمة المستخدمين",
     "usersAnalytics": "تحليلات المستخدمين",
     "usersDeleted": "الحسابات المحذوفة",
+    "verificationRequests": "طلبات التحقق",
     "catalog": "الكتالوج",
     "products": "المنتجات",
     "productsList": "قائمة المنتجات",
@@ -68,6 +69,7 @@
     "errorLogs": "سجلات الأخطاء",
     "i18nManagement": "نصوص التعريب",
     "systemSettings": "إعدادات النظام",
+    "policies": "السياسات",
          "exchangeRates": "أسعار الصرف",
      "adminManagement": "إدارة الأدمن",
      "addresses": "العناوين",
@@ -105,7 +107,7 @@
     "cancelled": "ملغى",
     "refunded": "مسترد"
   },
-  "common": {
+    "common": {
     "loading": "جارٍ التحميل...",
     "noData": "لا توجد بيانات",
     "error": "حدث خطأ",
@@ -125,6 +127,7 @@
     "next": "التالي",
     "of": "من",
     "currency": "العملة",
+    "toggleMenu": "فتح/إغلاق القائمة",
     "currencies": {
       "usd": "دولار أمريكي",
       "yer": "ريال يمني",

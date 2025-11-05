@@ -1,0 +1,46 @@
+{
+  "title": "إدارة السياسات",
+  "subtitle": "إدارة سياسة الأحكام والشروط وسياسة الخصوصية",
+  "tabs": {
+    "terms": "الأحكام والشروط",
+    "privacy": "سياسة الخصوصية"
+  },
+  "status": {
+    "active": "نشط",
+    "activeDesc": "السياسة نشطة ومتاحة للعموم",
+    "inactiveDesc": "السياسة غير نشطة",
+    "published": "منشور"
+  },
+  "actions": {
+    "preview": "معاينة",
+    "save": "حفظ",
+    "saving": "جاري الحفظ...",
+    "close": "إغلاق"
+  },
+  "language": {
+    "arabic": "العربية",
+    "english": "English"
+  },
+  "form": {
+    "title": "العنوان",
+    "titleArPlaceholder": "أدخل العنوان بالعربية",
+    "titleEnPlaceholder": "Enter title in English",
+    "content": "المحتوى",
+    "contentArPlaceholder": "أدخل المحتوى بالعربية...",
+    "contentEnPlaceholder": "Enter content in English..."
+  },
+  "preview": {
+    "title": "معاينة السياسة",
+    "close": "إغلاق"
+  },
+  "errors": {
+    "loadFailed": "فشل تحميل السياسة",
+    "notFound": "السياسة غير موجودة"
+  },
+  "editor": {
+    "placeholder": "أدخل المحتوى...",
+    "label": "المحتوى",
+    "helperText": ""
+  }
+}
+

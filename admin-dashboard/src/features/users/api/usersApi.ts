@@ -8,7 +8,6 @@ import type {
   SuspendUserDto,
   UserStats,
   DeletedUser,
-  ListDeletedUsersParams,
 } from '../types/user.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 

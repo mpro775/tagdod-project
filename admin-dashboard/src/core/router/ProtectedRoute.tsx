@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Box, CircularProgress } from '@mui/material';
-import { trackError, trackAdminAction } from '@/lib/analytics';
+import { ErrorHandler } from '@/core/error/ErrorHandler';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -68,8 +68,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (requireAdmin && user && !user.roles.includes('admin') && !user.roles.includes('super_admin')) {
     // eslint-disable-next-line no-console
     console.log('❌ User does not have admin privileges');
-    trackError('Access denied: Admin privileges required', 'ADMIN_REQUIRED', 'ProtectedRoute');
-    trackAdminAction('access_denied', 'admin_dashboard', { reason: 'insufficient_admin_privileges' });
+    ErrorHandler.logError('Access denied: Admin privileges required', 'ProtectedRoute');
     return <Navigate to={fallbackPath} replace />;
   }
 
@@ -77,8 +76,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (requiredRoles.length > 0 && !hasRole(requiredRoles)) {
     // eslint-disable-next-line no-console
     console.log('❌ User does not have required roles:', requiredRoles);
-    trackError('Access denied: Required roles missing', 'ROLE_REQUIRED', 'ProtectedRoute');
-    trackAdminAction('access_denied', 'protected_route', { requiredRoles, userRoles: user?.roles });
+    ErrorHandler.logError('Access denied: Required roles missing', 'ProtectedRoute');
     return <Navigate to={fallbackPath} replace />;
   }
 
@@ -91,12 +89,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       const missingPermissions = requiredPermissions.filter(permission => !hasPermission(permission));
       // eslint-disable-next-line no-console
       console.log('❌ User does not have required permissions:', missingPermissions);
-      trackError('Access denied: Required permissions missing', 'PERMISSION_REQUIRED', 'ProtectedRoute');
-      trackAdminAction('access_denied', 'protected_route', { 
-        requiredPermissions, 
-        missingPermissions,
-        userPermissions: user?.permissions 
-      });
+      ErrorHandler.logError('Access denied: Required permissions missing', 'ProtectedRoute');
       return <Navigate to={fallbackPath} replace />;
     }
   }

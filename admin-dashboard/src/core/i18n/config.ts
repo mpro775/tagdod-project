@@ -54,6 +54,8 @@ import arProducts from './locales/ar/products.json';
 import enProducts from './locales/en/products.json';
 import arSupport from './locales/ar/support.json';
 import enSupport from './locales/en/support.json';
+import arPolicies from './locales/ar/policies.json';
+import enPolicies from './locales/en/policies.json';
 
 // الترجمات المحلية
 const resources = {
@@ -83,6 +85,7 @@ const resources = {
     'system-monitoring': arSystemMonitoring,
     products: arProducts,
     support: arSupport,
+    policies: arPolicies,
   },
   en: {
     common: enCommon,
@@ -110,6 +113,7 @@ const resources = {
     'system-monitoring': enSystemMonitoring,
     products: enProducts,
     support: enSupport,
+    policies: enPolicies,
   },
 };
 
@@ -124,7 +128,7 @@ if (!i18n.isInitialized) {
       
       fallbackLng: DEFAULT_LANGUAGE,
       defaultNS: 'common',
-      ns: ['common', 'auth', 'orders', 'services', 'users', 'dashboard', 'attributes', 'categories', 'banners', 'brands', 'media', 'errorLogs', 'addresses', 'audit', 'cart', 'coupons', 'exchangeRates', 'marketing', 'analytics', 'notifications', 'systemSettings', 'search', 'system-monitoring', 'products', 'support'],
+      ns: ['common', 'auth', 'orders', 'services', 'users', 'dashboard', 'attributes', 'categories', 'banners', 'brands', 'media', 'errorLogs', 'addresses', 'audit', 'cart', 'coupons', 'exchangeRates', 'marketing', 'analytics', 'notifications', 'systemSettings', 'search', 'system-monitoring', 'products', 'support', 'policies'],
       
       interpolation: {
         escapeValue: false, // React already escapes

@@ -11,7 +11,6 @@ import {
   Divider,
   Grid,
   useTheme,
-  useMediaQuery,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -74,7 +73,6 @@ export const UserCard: React.FC<UserCardProps> = ({
 }) => {
   const { t } = useTranslation(['users', 'common']);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isDeleted = !!user.deletedAt;
   const fullName =
     `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
@@ -194,7 +192,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {React.cloneElement(STATUS_ICONS[user.status] as React.ReactElement, {
               sx: { fontSize: { xs: 20, sm: 24 } },
-            })}
+            } as any)}
           </Box>
         </Box>
 

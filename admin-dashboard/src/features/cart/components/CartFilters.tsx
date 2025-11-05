@@ -15,7 +15,6 @@ import {
   Tooltip,
   Collapse,
   Typography,
-  useTheme,
   Divider,
 } from '@mui/material';
 import { FilterList, Clear, ExpandMore, ExpandLess, Search, DateRange } from '@mui/icons-material';
@@ -39,7 +38,6 @@ export const CartFilters: React.FC<CartFiltersProps> = ({
   isLoading = false,
 }) => {
   const { t } = useTranslation('cart');
-  const theme = useTheme();
   const [expanded, setExpanded] = React.useState(false);
 
   const handleFilterChange = (key: keyof CartFiltersType, value: any) => {

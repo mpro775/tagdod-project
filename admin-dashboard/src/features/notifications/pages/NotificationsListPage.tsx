@@ -86,12 +86,13 @@ import {
   NotificationPriority,
   NotificationCategory,
 } from '../types/notification.types';
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 
 export const NotificationsListPage: React.FC = () => {
   const theme = useTheme();
   const { t } = useTranslation('notifications');
   const { isMobile } = useBreakpoint();
-  const { confirmDialog, dialogProps } = useConfirmDialog();
+  const { confirmDialog } = useConfirmDialog();
   const [filters, setFilters] = useState<ListNotificationsParams>({
     search: '',
     channel: undefined,

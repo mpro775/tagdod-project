@@ -4,7 +4,7 @@ export { AddressesDashboardPage } from './pages/AddressesDashboardPage';
 // Components
 export { AddressStatsCards } from './components/AddressStatsCards';
 export { TopCitiesChart } from './components/TopCitiesChart';
-export { AddressListTable } from './components/AddressListTable';
+export { AddressCard } from './components/AddressCard';
 
 // Hooks
 export * from './hooks/useAddresses';

@@ -169,9 +169,9 @@ export const AttributesListPage: React.FC = () => {
       width: 120,
       renderCell: (params) =>
         params.row.isFilterable ? (
-          <Chip label={t('common.yes')} color="success" size="small" />
+          <Chip label={t('common.yes', { ns: 'common' })} color="success" size="small" />
         ) : (
-          <Chip label={t('common.no')} color="default" size="small" />
+          <Chip label={t('common.no', { ns: 'common' })} color="default" size="small" />
         ),
     },
     {
@@ -179,7 +179,7 @@ export const AttributesListPage: React.FC = () => {
       headerName: t('fields.required'),
       width: 100,
       renderCell: (params) =>
-        params.row.isRequired ? <Chip label={t('common.yes')} color="error" size="small" /> : null,
+        params.row.isRequired ? <Chip label={t('common.yes', { ns: 'common' })} color="error" size="small" /> : null,
     },
     {
       field: 'isActive',

@@ -6,14 +6,12 @@ import {
   TextField,
   InputAdornment,
   useTheme,
-  useMediaQuery,
   Typography,
   Chip,
   IconButton,
   Tooltip,
 } from '@mui/material';
 import { Search, Restore, Info } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useDeletedUsers } from '../hooks/useUsers';
@@ -21,14 +19,13 @@ import type { DeletedUser } from '../types/user.types';
 import { useRestoreUser } from '../hooks/useUsers';
 import { formatDate } from '@/shared/utils/formatters';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import '../styles/responsive-users.css';
 
 export const DeletedUsersPage: React.FC = () => {
-  const navigate = useNavigate();
   const { t } = useTranslation(['users', 'common']);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { isMobile, isTablet, isXs } = useBreakpoint();
 
   // State
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -51,7 +48,7 @@ export const DeletedUsersPage: React.FC = () => {
 
   // Handle restore
   const handleRestore = (user: DeletedUser) => {
-    if (window.confirm(t('users:deleted.confirmRestore', 'هل أنت متأكد من استعادة هذا الحساب؟'))) {
+    if (window.confirm(t('users:deleted.confirmRestore'))) {
       restoreUserMutation.mutate(user.id, {
         onSuccess: () => {
           refetch();
@@ -158,13 +155,13 @@ export const DeletedUsersPage: React.FC = () => {
     },
     {
       field: 'actions',
-      headerName: t('common:actions', 'الإجراءات'),
+      headerName: t('common:actions.title', 'الإجراءات'),
       minWidth: 120,
       flex: 0.8,
       sortable: false,
       renderCell: (params: any) => (
         <Stack direction="row" spacing={1}>
-          <Tooltip title={t('users:deleted.restore', 'استعادة')}>
+          <Tooltip title={t('users:deleted.restore')}>
             <IconButton
               size="small"
               onClick={() => handleRestore(params.row)}
@@ -172,7 +169,10 @@ export const DeletedUsersPage: React.FC = () => {
               color="primary"
               sx={{
                 '&:hover': {
-                  bgcolor: 'primary.lighter',
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.1)'
+                      : 'rgba(0, 0, 0, 0.04)',
                 },
               }}
             >
@@ -186,10 +186,10 @@ export const DeletedUsersPage: React.FC = () => {
 
   // Calculate table height responsively
   const tableHeight = React.useMemo(() => {
-    if (isSmallScreen) return 'calc(100vh - 320px)';
+    if (isXs) return 'calc(100vh - 320px)';
     if (isMobile) return 'calc(100vh - 300px)';
     return 'calc(100vh - 280px)';
-  }, [isMobile, isSmallScreen]);
+  }, [isMobile, isXs]);
 
   return (
     <Box
@@ -201,40 +201,44 @@ export const DeletedUsersPage: React.FC = () => {
       }}
     >
       {/* Header */}
-      <Box sx={{ mb: 3, px: { xs: 1, sm: 0 } }}>
+      <Box sx={{ mb: { xs: 2, md: 3 }, px: { xs: 1, sm: 0 } }}>
         <Typography
-          variant="h4"
+          variant={isMobile ? 'h5' : isTablet ? 'h4' : 'h4'}
           sx={{
             fontWeight: 600,
             mb: 1,
-            fontSize: { xs: '1.5rem', sm: '2rem' },
+            fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
+            color: theme.palette.text.primary,
           }}
         >
-          {t('users:deleted.title', 'الحسابات المحذوفة')}
+          {t('users:deleted.title')}
         </Typography>
         <Typography
           variant="body2"
           sx={{
-            color: 'text.secondary',
+            color: theme.palette.text.secondary,
             fontSize: { xs: '0.75rem', sm: '0.875rem' },
           }}
         >
-          {t('users:deleted.description', 'عرض جميع الحسابات المحذوفة مع أسباب الحذف')}
+          {t('users:deleted.description')}
         </Typography>
       </Box>
 
       {/* Search Bar */}
-      <Box sx={{ mb: 2, px: { xs: 1, sm: 0 } }}>
+      <Box sx={{ mb: { xs: 1.5, md: 2 }, px: { xs: 1, sm: 0 } }}>
         <MuiPaper
+          elevation={0}
           sx={{
-            p: 2,
-            bgcolor: 'background.paper',
+            p: { xs: 1.5, md: 2 },
+            bgcolor: theme.palette.background.paper,
             backgroundImage: 'none',
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1,
           }}
         >
           <TextField
             fullWidth
-            placeholder={t('users:deleted.searchPlaceholder', 'ابحث بالاسم، رقم الهاتف، أو سبب الحذف...')}
+            placeholder={t('users:deleted.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -243,14 +247,26 @@ export const DeletedUsersPage: React.FC = () => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search />
+                  <Search sx={{ color: theme.palette.text.secondary }} />
                 </InputAdornment>
               ),
             }}
-            size="medium"
+            size={isMobile ? 'small' : 'medium'}
             sx={{
               '& .MuiOutlinedInput-root': {
-                bgcolor: 'background.default',
+                bgcolor: theme.palette.background.default,
+                '& fieldset': {
+                  borderColor: theme.palette.divider,
+                },
+                '&:hover fieldset': {
+                  borderColor: theme.palette.primary.main,
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: theme.palette.primary.main,
+                },
+              },
+              '& .MuiInputBase-input': {
+                color: theme.palette.text.primary,
               },
             }}
           />
@@ -259,14 +275,24 @@ export const DeletedUsersPage: React.FC = () => {
 
       {/* Stats Info */}
       {data && (
-        <Box sx={{ mb: 2, px: { xs: 1, sm: 0 } }}>
+        <Box sx={{ mb: { xs: 1.5, md: 2 }, px: { xs: 1, sm: 0 } }}>
           <Chip
-            label={t('users:deleted.totalCount', `إجمالي: ${data.meta.total} حساب محذوف`, {
-              count: data.meta.total,
-            })}
+            label={t('users:deleted.totalCount', { count: data.meta.total })}
             color="primary"
             variant="outlined"
-            sx={{ fontWeight: 500 }}
+            size={isMobile ? 'small' : 'medium'}
+            sx={{
+              fontWeight: 500,
+              fontSize: isMobile ? '0.75rem' : undefined,
+              borderColor: theme.palette.primary.main,
+              color: theme.palette.primary.main,
+              '&:hover': {
+                backgroundColor:
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.04)',
+              },
+            }}
           />
         </Box>
       )}
@@ -279,27 +305,49 @@ export const DeletedUsersPage: React.FC = () => {
           px: { xs: 1, sm: 0 },
         }}
       >
-        <DataTable
-          title={t('users:deleted.title', 'الحسابات المحذوفة')}
-          columns={columns}
-          rows={data?.data || []}
-          loading={isLoading}
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-          sortModel={sortModel}
-          onSortModelChange={setSortModel}
-          rowCount={data?.meta.total || 0}
-          pageSizeOptions={[10, 20, 50, 100]}
+        <Box
           sx={{
             height: tableHeight,
             '& .MuiDataGrid-root': {
               border: 'none',
+              bgcolor: theme.palette.background.paper,
             },
             '& .MuiDataGrid-cell': {
               borderBottom: `1px solid ${theme.palette.divider}`,
+              color: theme.palette.text.primary,
+            },
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.05)'
+                  : 'rgba(0, 0, 0, 0.02)',
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              color: theme.palette.text.primary,
+            },
+            '& .MuiDataGrid-footerContainer': {
+              borderTop: `1px solid ${theme.palette.divider}`,
+              color: theme.palette.text.secondary,
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.05)'
+                  : 'rgba(0, 0, 0, 0.02)',
             },
           }}
-        />
+        >
+          <DataTable
+            title={t('users:deleted.title', 'الحسابات المحذوفة')}
+            columns={columns}
+            rows={data?.data || []}
+            loading={isLoading}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            sortModel={sortModel}
+            onSortModelChange={setSortModel}
+            height={tableHeight}
+          />
+        </Box>
       </Box>
 
       {/* Mobile View - Cards */}
@@ -311,38 +359,72 @@ export const DeletedUsersPage: React.FC = () => {
       >
         {isLoading ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography>{t('common:loading', 'جاري التحميل...')}</Typography>
+            <Typography color={theme.palette.text.secondary}>
+              {t('common:loading')}
+            </Typography>
           </Box>
         ) : data?.data && data.data.length > 0 ? (
-          <Stack spacing={2}>
+          <Stack spacing={{ xs: 1.5, md: 2 }}>
             {data.data.map((user) => (
               <MuiPaper
                 key={user.id}
+                elevation={0}
                 sx={{
-                  p: 2,
-                  bgcolor: 'background.paper',
+                  p: { xs: 1.5, md: 2 },
+                  bgcolor: theme.palette.background.paper,
                   backgroundImage: 'none',
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
                 }}
               >
-                <Stack spacing={1.5}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                <Stack spacing={{ xs: 1, md: 1.5 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'start',
+                      gap: 1,
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant={isMobile ? 'body1' : 'subtitle1'}
+                        sx={{
+                          fontWeight: 600,
+                          color: theme.palette.text.primary,
+                          fontSize: isMobile ? '0.875rem' : undefined,
+                        }}
+                      >
                         {user.firstName || user.lastName
                           ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                          : t('common:notProvided', 'غير متوفر')}
+                          : t('common:notProvided')}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: theme.palette.text.secondary,
+                          mt: 0.5,
+                          fontSize: isMobile ? '0.75rem' : undefined,
+                        }}
+                      >
                         {user.phone}
                       </Typography>
                     </Box>
                     <IconButton
-                      size="small"
+                      size={isMobile ? 'small' : 'medium'}
                       onClick={() => handleRestore(user)}
                       disabled={restoreUserMutation.isPending}
                       color="primary"
+                      sx={{
+                        '&:hover': {
+                          backgroundColor:
+                            theme.palette.mode === 'dark'
+                              ? 'rgba(255, 255, 255, 0.1)'
+                              : 'rgba(0, 0, 0, 0.04)',
+                        },
+                      }}
                     >
-                      <Restore />
+                      <Restore fontSize={isMobile ? 'small' : 'medium'} />
                     </IconButton>
                   </Box>
 
@@ -350,25 +432,51 @@ export const DeletedUsersPage: React.FC = () => {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: 'text.secondary',
+                        color: theme.palette.text.secondary,
                         fontWeight: 500,
                         display: 'block',
                         mb: 0.5,
+                        fontSize: isMobile ? '0.7rem' : undefined,
                       }}
                     >
-                      {t('users:deleted.deletionReason', 'سبب الحذف')}:
+                      {t('users:deleted.deletionReason')}:
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: theme.palette.text.primary,
+                        fontSize: isMobile ? '0.75rem' : undefined,
+                      }}
+                    >
                       {user.deletionReason}
                     </Typography>
                   </Box>
 
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      {t('users:deleted.deletedAt', 'تاريخ الحذف')}: {formatDate(user.deletedAt)}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: { xs: 1, md: 2 },
+                      flexWrap: 'wrap',
+                      pt: 0.5,
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        fontSize: isMobile ? '0.7rem' : undefined,
+                      }}
+                    >
+                      {t('users:deleted.deletedAt')}: {formatDate(user.deletedAt)}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                      {t('users:list.columns.createdAt', 'تاريخ الإنشاء')}: {formatDate(user.createdAt)}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: theme.palette.text.secondary,
+                        fontSize: isMobile ? '0.7rem' : undefined,
+                      }}
+                    >
+                      {t('users:list.columns.createdAt')}: {formatDate(user.createdAt)}
                     </Typography>
                   </Box>
                 </Stack>
@@ -377,8 +485,11 @@ export const DeletedUsersPage: React.FC = () => {
           </Stack>
         ) : (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              {t('users:deleted.noResults', 'لا توجد حسابات محذوفة')}
+            <Typography
+              variant={isMobile ? 'body2' : 'body1'}
+              sx={{ color: theme.palette.text.secondary }}
+            >
+              {t('users:deleted.noResults')}
             </Typography>
           </Box>
         )}

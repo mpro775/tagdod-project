@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Currency Selector */}
         <Box sx={{ display: { xs: 'none', sm: 'block' }, mr: 2 }}>
-          <CurrencySelector size="sm" showLabel={false} />
+          <CurrencySelector size="small" showLabel={false} />
         </Box>
 
         {/* Current Currency Display (Mobile) */}

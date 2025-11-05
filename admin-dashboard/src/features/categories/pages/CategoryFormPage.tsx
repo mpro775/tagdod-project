@@ -200,19 +200,19 @@ export const CategoryFormPage: React.FC = () => {
       <Box>
         <Skeleton 
           variant="rectangular" 
-          height={{ xs: 50, sm: 60 }} 
           sx={{ 
             mb: 2,
             borderRadius: 2,
             bgcolor: 'background.paper',
+            height: { xs: 50, sm: 60 },
           }} 
         />
         <Skeleton 
           variant="rectangular" 
-          height={{ xs: 300, sm: 400 }}
           sx={{
             borderRadius: 2,
             bgcolor: 'background.paper',
+            height: { xs: 300, sm: 400 },
           }}
         />
       </Box>

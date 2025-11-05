@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 import { useRTL } from '@/shared/hooks/useRTL';
 
 export function ApiPerformanceChart() {
-  const { t, i18n } = useTranslation('system-monitoring');
+  const { t } = useTranslation('system-monitoring');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { isRTL } = useRTL();

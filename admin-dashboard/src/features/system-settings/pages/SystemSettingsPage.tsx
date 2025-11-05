@@ -56,6 +56,8 @@ import { systemSettingsApi, localPaymentAccountsApi } from '../api/systemSetting
 import type { SystemSetting, LocalPaymentAccount, GroupedPaymentAccount, CreatePaymentAccountDto } from '../api/systemSettingsApi';
 import { toast } from 'react-hot-toast';
 import { alpha } from '@mui/material/styles';
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
+import { ConfirmDialog } from '@/shared/components';
 
 export function SystemSettingsPage() {
   const theme = useTheme();

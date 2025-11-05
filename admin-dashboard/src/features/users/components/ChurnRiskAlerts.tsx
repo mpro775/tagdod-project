@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Card, CardContent, Box, Typography, Chip, useTheme, useMediaQuery } from '@mui/material';
+import { Grid, Card, CardContent, Box, Typography, Chip, useTheme } from '@mui/material';
 import { Warning } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 
@@ -34,7 +34,6 @@ const getRiskColor = (risk: string): 'error' | 'warning' | 'success' | 'default'
 export const ChurnRiskAlerts: React.FC<ChurnRiskAlertsProps> = ({ alerts, loading = false }) => {
   const { t } = useTranslation(['users', 'common']);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   if (loading || alerts.length === 0) {
     return null;

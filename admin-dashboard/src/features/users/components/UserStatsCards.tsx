@@ -8,7 +8,6 @@ import {
   LinearProgress,
   Chip,
   useTheme,
-  useMediaQuery,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -30,7 +29,6 @@ interface UserStatsCardsProps {
 export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading = false }) => {
   const { t } = useTranslation(['users', 'common']);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const statsData = [
     {
@@ -147,7 +145,7 @@ export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading =
                   >
                     {React.cloneElement(stat.icon as React.ReactElement, {
                       sx: { fontSize: { xs: 20, sm: 24 } },
-                    })}
+                    } as any)}
                   </Box>
                   <Typography
                     variant="subtitle2"

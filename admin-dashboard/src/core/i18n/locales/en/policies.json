@@ -1,0 +1,46 @@
+{
+  "title": "Policies Management",
+  "subtitle": "Manage Terms & Conditions and Privacy Policy",
+  "tabs": {
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy"
+  },
+  "status": {
+    "active": "Active",
+    "activeDesc": "Policy is active and publicly available",
+    "inactiveDesc": "Policy is inactive",
+    "published": "Published"
+  },
+  "actions": {
+    "preview": "Preview",
+    "save": "Save",
+    "saving": "Saving...",
+    "close": "Close"
+  },
+  "language": {
+    "arabic": "العربية",
+    "english": "English"
+  },
+  "form": {
+    "title": "Title",
+    "titleArPlaceholder": "أدخل العنوان بالعربية",
+    "titleEnPlaceholder": "Enter title in English",
+    "content": "Content",
+    "contentArPlaceholder": "أدخل المحتوى بالعربية...",
+    "contentEnPlaceholder": "Enter content in English..."
+  },
+  "preview": {
+    "title": "Policy Preview",
+    "close": "Close"
+  },
+  "errors": {
+    "loadFailed": "Failed to load policy",
+    "notFound": "Policy not found"
+  },
+  "editor": {
+    "placeholder": "Enter content...",
+    "label": "Content",
+    "helperText": ""
+  }
+}
+

@@ -7,7 +7,6 @@ import {
   Typography,
   Grid,
   Skeleton,
-  Chip,
   IconButton,
   Tooltip,
 } from '@mui/material';

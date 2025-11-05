@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Button, alpha, useTheme, Grid } from '@mui/material';
+import { Card, CardContent, Typography, Button, alpha, useTheme, Grid } from '@mui/material';
 import { 
   Add, 
   Inventory, 

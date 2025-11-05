@@ -12,7 +12,6 @@ import {
   Grid,
   Chip,
   Typography,
-  useTheme,
 } from '@mui/material';
 import { Search, FilterList, Clear, Sort } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -49,7 +48,6 @@ export const BrandFilters: React.FC<BrandFiltersProps> = ({
   loading = false,
 }) => {
   const { t } = useTranslation('brands');
-  const theme = useTheme();
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const sortOptions = createSortOptions(t);

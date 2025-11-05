@@ -1,12 +1,10 @@
 import React from 'react';
-import { Grid, Card, CardContent, Typography, useTheme, useMediaQuery } from '@mui/material';
-import { useFormContext } from 'react-hook-form';
+import { Grid, Card, CardContent, Typography, useTheme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { FormInput } from '@/shared/components/Form/FormInput';
 import { FormSelect } from '@/shared/components/Form/FormSelect';
 import { YEMEN_CITIES } from '@/shared/constants/yemen-cities';
 import { UserRole } from '../types/user.types';
-import type { UserFormData } from '../schemas/userFormSchema';
 
 interface UserBasicInfoSectionProps {
   isEditMode: boolean;
@@ -21,7 +19,6 @@ export const UserBasicInfoSection: React.FC<UserBasicInfoSectionProps> = ({
 }) => {
   const { t } = useTranslation(['users', 'common']);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <Grid size={{ xs: 12 }}>

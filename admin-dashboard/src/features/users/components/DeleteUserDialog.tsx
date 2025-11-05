@@ -9,7 +9,6 @@ import {
   useTheme,
   useMediaQuery,
   Box,
-  Typography,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import type { User } from '../types/user.types';

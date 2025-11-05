@@ -17375,6 +17375,12 @@ components:
             - female
             - other
           example: male
+        city:
+          type: string
+          description: المدينة
+          example: صنعاء
+          minLength: 2
+          maxLength: 50
         capabilityRequest:
           type: string
           description: نوع القدرة المطلوبة
@@ -17521,6 +17527,12 @@ components:
             - female
             - other
           example: male
+        city:
+          type: string
+          description: المدينة
+          example: صنعاء
+          minLength: 2
+          maxLength: 50
         capabilityRequest:
           type: string
           description: نوع القدرة المطلوبة

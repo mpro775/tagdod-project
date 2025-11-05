@@ -162,6 +162,7 @@ export class AuthController {
         firstName?: string;
         lastName?: string;
         gender?: 'male' | 'female' | 'other';
+        city?: string;
         jobTitle?: string;
         engineer_capable?: boolean;
         engineer_status?: string;
@@ -172,6 +173,7 @@ export class AuthController {
         firstName: dto.firstName,
         lastName: dto.lastName,
         gender: dto.gender,
+        city: dto.city || 'صنعاء',
         jobTitle: dto.capabilityRequest === 'engineer' ? dto.jobTitle : undefined,
       };
 
@@ -234,7 +236,17 @@ export class AuthController {
       me: {
         id: user._id,
         phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: user.gender,
+        city: user.city,
+        jobTitle: user.jobTitle,
+        roles: user.roles || [],
+        permissions: user.permissions || [],
+        isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
+        engineerStatus: user.engineer_status,
+        wholesaleStatus: user.wholesale_status,
       },
     };
   }
@@ -340,6 +352,7 @@ export class AuthController {
         firstName: user!.firstName,
         lastName: user!.lastName,
         gender: user!.gender,
+        city: user!.city,
         jobTitle: user!.jobTitle,
         roles: user!.roles || [],
         permissions: user!.permissions || [],
@@ -354,10 +367,10 @@ export class AuthController {
   @Patch('me')
   async updateMe(
     @Req() req: { user: { sub: string } },
-    @Body() body: { firstName?: string; lastName?: string; gender?: string; jobTitle?: string },
+    @Body() body: { firstName?: string; lastName?: string; gender?: string; city?: string; jobTitle?: string },
   ) {
-    const allowed = ['firstName', 'lastName', 'gender', 'jobTitle'] as const;
-    const $set: { firstName?: string; lastName?: string; gender?: string; jobTitle?: string } = {};
+    const allowed = ['firstName', 'lastName', 'gender', 'city', 'jobTitle'] as const;
+    const $set: { firstName?: string; lastName?: string; gender?: string; city?: string; jobTitle?: string } = {};
     for (const k of allowed) if (body[k] !== undefined) $set[k] = body[k];
     await this.userModel.updateOne({ _id: req.user.sub }, { $set });
     return { updated: true };
@@ -671,9 +684,13 @@ export class AuthController {
         phone: user.phone,
         firstName: user.firstName,
         lastName: user.lastName,
+        gender: user.gender,
+        city: user.city,
+        jobTitle: user.jobTitle,
         roles: user.roles || [],
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
+        preferredCurrency: user.preferredCurrency || 'USD',
       },
     };
   }
@@ -746,6 +763,7 @@ export class AuthController {
       firstName: dto.firstName,
       lastName: dto.lastName,
       gender: dto.gender,
+      city: dto.city || 'صنعاء',
       jobTitle: dto.capabilityRequest === 'engineer' ? dto.jobTitle : undefined,
       passwordHash: hashedPassword,
     });
@@ -808,11 +826,14 @@ export class AuthController {
         firstName: user.firstName,
         lastName: user.lastName,
         gender: user.gender,
+        city: user.city,
         jobTitle: user.jobTitle,
         roles: user.roles || [],
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
+        engineerStatus: user.engineer_status,
+        wholesaleStatus: user.wholesale_status,
       },
     };
   }
@@ -913,10 +934,15 @@ export class AuthController {
         phone: user.phone,
         firstName: user.firstName,
         lastName: user.lastName,
+        gender: user.gender,
+        city: user.city,
+        jobTitle: user.jobTitle,
         roles: user.roles || [],
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
+        engineerStatus: user.engineer_status,
+        wholesaleStatus: user.wholesale_status,
       },
     };
   }
@@ -972,8 +998,13 @@ export class AuthController {
         phone: user.phone,
         firstName: user.firstName,
         lastName: user.lastName,
+        gender: user.gender,
+        city: user.city,
+        jobTitle: user.jobTitle,
         roles: user.roles || [],
+        permissions: user.permissions || [],
         isAdmin: isAdminUser,
+        preferredCurrency: user.preferredCurrency || 'USD',
       },
     };
   }

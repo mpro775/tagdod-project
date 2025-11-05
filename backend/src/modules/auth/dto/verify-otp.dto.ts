@@ -44,6 +44,14 @@ export class VerifyOtpDto {
   @IsOptional() @IsString() gender?: 'male' | 'female' | 'other';
 
   @ApiPropertyOptional({
+    description: 'المدينة',
+    example: 'صنعاء',
+    minLength: 2,
+    maxLength: 50
+  })
+  @IsOptional() @IsString() city?: string;
+
+  @ApiPropertyOptional({
     description: 'نوع القدرة المطلوبة',
     enum: ['engineer', 'wholesale'],
     example: 'engineer'

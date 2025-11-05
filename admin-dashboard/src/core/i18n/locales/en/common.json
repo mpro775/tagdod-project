@@ -9,6 +9,7 @@
     "usersList": "Users List",
     "usersAnalytics": "Users Analytics",
     "usersDeleted": "Deleted Accounts",
+    "verificationRequests": "Verification Requests",
     "catalog": "Catalog",
     "products": "Products",
     "productsList": "Products List",
@@ -68,6 +69,7 @@
     "errorLogs": "Error Logs",
     "i18nManagement": "Localization Texts",
     "systemSettings": "System Settings",
+    "policies": "Policies",
          "exchangeRates": "Exchange Rates",
      "adminManagement": "Admin Management",
      "addresses": "Addresses",
@@ -105,7 +107,7 @@
     "cancelled": "Cancelled",
     "refunded": "Refunded"
   },
-  "common": {
+    "common": {
     "loading": "Loading...",
     "noData": "No Data",
     "error": "Error",
@@ -122,6 +124,7 @@
     "logout": "Logout",
     "refresh_profile": "Refresh Profile",
     "currency": "Currency",
+    "toggleMenu": "Toggle Menu",
     "currencies": {
       "usd": "US Dollar",
       "yer": "Yemeni Rial",
