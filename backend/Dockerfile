@@ -8,12 +8,22 @@ RUN apk add --no-cache python3 make g++ pkgconfig libc6-compat openssl
 # لو عندك private registry انسخ .npmrc
 # COPY .npmrc ./
 
-# انسخ الملفات الضرورية فقط
-COPY package.json package-lock.json ./
+# انسخ package.json أولاً
+COPY package.json ./
+
+# انسخ package-lock.json إن وجد (اختياري)
+# ملاحظة: إذا كان package-lock.json غير موجود، سيتم استخدام npm install بدلاً من npm ci
+# لإنشاء package-lock.json محلياً: npm install --package-lock-only
+COPY package-lock.json* ./
 
 # استخدم كاش npm لتسريع وإستقرار البناء
+# استخدم npm ci إذا كان package-lock.json موجود، وإلا استخدم npm install
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --no-audit --no-fund
+    if [ -f package-lock.json ]; then \
+        npm ci --no-audit --no-fund; \
+    else \
+        npm install --no-audit --no-fund; \
+    fi
 
 # --- build stage ---
 FROM node:20-alpine AS build
