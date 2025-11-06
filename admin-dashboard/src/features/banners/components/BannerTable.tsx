@@ -22,7 +22,6 @@ import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useTranslation } from 'react-i18next';
 import type { Banner } from '../types/banner.types';
-import type { Media } from '@/features/media/types/media.types';
 
 // Helper function to get image URL from banner
 const getBannerImageUrl = (banner: Banner): string => {

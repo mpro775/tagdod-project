@@ -3,15 +3,12 @@ import {
   Box,
   Paper,
   Grid,
- 
   Typography,
   Button,
-  
   TextField,
   FormControl,
   InputLabel,
   Select,
-  Badge,
   LinearProgress,
   Alert,
   Dialog,
@@ -24,7 +21,6 @@ import {
   Pagination,
   Menu,
   MenuItem,
-
   Chip,
   Stack,
   Card,
@@ -32,7 +28,6 @@ import {
   CardActions,
   Tooltip,
   IconButton,
-  CardMedia,
 } from '@mui/material';
 import {
   DndContext,
@@ -48,15 +43,12 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   rectSortingStrategy,
-  useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import {
   CloudUpload,
   Edit,
   Delete,
   Restore,
-  MoreVert,
   ContentCopy,
   Folder,
   Search,
@@ -70,7 +62,6 @@ import {
   Warning,
   Refresh,
   CleanHands,
-
 } from '@mui/icons-material';
 import {
   useMedia,
@@ -161,7 +152,7 @@ export const MediaLibraryPage: React.FC = () => {
       });
     }
   };
-  
+
   // Provide default stats to prevent undefined errors
   const safeStats = {
     total: stats?.total || 0,
@@ -216,10 +207,8 @@ export const MediaLibraryPage: React.FC = () => {
   };
 
   const handleBulkSelect = (mediaId: string) => {
-    setSelectedMediaIds(prev => 
-      prev.includes(mediaId) 
-        ? prev.filter(id => id !== mediaId)
-        : [...prev, mediaId]
+    setSelectedMediaIds((prev) =>
+      prev.includes(mediaId) ? prev.filter((id) => id !== mediaId) : [...prev, mediaId]
     );
   };
 
@@ -227,23 +216,28 @@ export const MediaLibraryPage: React.FC = () => {
     if (selectedMediaIds.length === (data?.data?.length || 0)) {
       setSelectedMediaIds([]);
     } else {
-      setSelectedMediaIds(data?.data?.map(media => media._id) || []);
+      setSelectedMediaIds(data?.data?.map((media) => media._id) || []);
     }
   };
 
-  const handleBulkOperation = (operation: 'delete' | 'restore' | 'togglePublic' | 'changeCategory') => {
+  const handleBulkOperation = (
+    operation: 'delete' | 'restore' | 'togglePublic' | 'changeCategory'
+  ) => {
     if (selectedMediaIds.length === 0) return;
 
-    bulkOperation({
-      mediaIds: selectedMediaIds,
-      operation,
-    }, {
-      onSuccess: () => {
-        setSelectedMediaIds([]);
-        setShowBulkActions(false);
-        refetch();
+    bulkOperation(
+      {
+        mediaIds: selectedMediaIds,
+        operation,
       },
-    });
+      {
+        onSuccess: () => {
+          setSelectedMediaIds([]);
+          setShowBulkActions(false);
+          refetch();
+        },
+      }
+    );
   };
 
   const handleCleanupOperation = (operation: 'deleted' | 'duplicates' | 'unused') => {
@@ -261,20 +255,39 @@ export const MediaLibraryPage: React.FC = () => {
     setCleanupDialogOpen(false);
   };
 
-
   return (
     <Box>
       <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 3, gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            mb: 3,
+            gap: 2,
+          }}
+        >
           <Box>
-            <Typography variant="h5" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+            <Typography
+              variant="h5"
+              fontWeight="bold"
+              sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+            >
               {t('pageTitle')}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-              {t('stats.totalFiles')}: {safeStats.total} | {t('stats.totalSize')}: {safeStats.totalSizeMB} MB
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+            >
+              {t('stats.totalFiles')}: {safeStats.total} | {t('stats.totalSize')}:{' '}
+              {safeStats.totalSizeMB} MB
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
+          <Box
+            sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}
+          >
             <Button
               variant="outlined"
               startIcon={<Analytics />}
@@ -307,7 +320,11 @@ export const MediaLibraryPage: React.FC = () => {
               startIcon={<CloudUpload />}
               onClick={() => setUploadDialogOpen(true)}
               size="medium"
-              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, flex: { xs: '1 1 auto', sm: '0 0 auto' }, minWidth: { xs: 'auto', sm: '120px' } }}
+              sx={{
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                flex: { xs: '1 1 auto', sm: '0 0 auto' },
+                minWidth: { xs: 'auto', sm: '120px' },
+              }}
             >
               {t('uploadFile')}
             </Button>
@@ -383,8 +400,25 @@ export const MediaLibraryPage: React.FC = () => {
         </Grid>
 
         {/* Controls */}
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 2, gap: 2 }}>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            mb: 2,
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
             <Button
               variant="outlined"
               size="small"
@@ -409,7 +443,9 @@ export const MediaLibraryPage: React.FC = () => {
                 onClick={handleBulkSelectAll}
                 sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
               >
-                {selectedMediaIds.length === (data?.data?.length || 0) ? t('filters.unselectAll') : t('filters.selectAll')}
+                {selectedMediaIds.length === (data?.data?.length || 0)
+                  ? t('filters.unselectAll')
+                  : t('filters.selectAll')}
               </Button>
             )}
             {selectedMediaIds.length > 0 && (
@@ -471,10 +507,7 @@ export const MediaLibraryPage: React.FC = () => {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext
-              items={mediaItems.map((m) => m._id)}
-              strategy={rectSortingStrategy}
-            >
+            <SortableContext items={mediaItems.map((m) => m._id)} strategy={rectSortingStrategy}>
               <Grid container spacing={2}>
                 {mediaItems.map((media) => (
                   <Grid size={{ xs: 6, sm: 6, md: 4, lg: 3 }} key={media._id}>
@@ -495,6 +528,7 @@ export const MediaLibraryPage: React.FC = () => {
                         setSelectedMedia(m);
                         setDetailsDialogOpen(true);
                       }}
+                      onMenuOpen={handleMenuOpen}
                       confirmDelete={async (m) => {
                         const confirmed = await confirmDialog({
                           title: t('messages.deleteTitle', 'تأكيد الحذف'),
@@ -546,7 +580,7 @@ export const MediaLibraryPage: React.FC = () => {
                 ? t('empty.noFilesDescription')
                 : t('empty.startUploading')}
             </Typography>
-            {(!searchTerm && !categoryFilter && !typeFilter && !showDeleted) && (
+            {!searchTerm && !categoryFilter && !typeFilter && !showDeleted && (
               <Button
                 variant="contained"
                 startIcon={<CloudUpload />}
@@ -608,7 +642,11 @@ export const MediaLibraryPage: React.FC = () => {
               if (selectedMedia) handleTogglePublic(selectedMedia);
             }}
           >
-            {selectedMedia.isPublic ? <VisibilityOff sx={{ mr: 1, fontSize: 18 }} /> : <Visibility sx={{ mr: 1, fontSize: 18 }} />}
+            {selectedMedia.isPublic ? (
+              <VisibilityOff sx={{ mr: 1, fontSize: 18 }} />
+            ) : (
+              <Visibility sx={{ mr: 1, fontSize: 18 }} />
+            )}
             {selectedMedia.isPublic ? t('hide') : t('show')}
           </MenuItem>
         )}
@@ -628,7 +666,12 @@ export const MediaLibraryPage: React.FC = () => {
       </Menu>
 
       {/* Media Details Dialog */}
-      <Dialog open={detailsDialogOpen} onClose={() => setDetailsDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={detailsDialogOpen}
+        onClose={() => setDetailsDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>{t('details.title')}</DialogTitle>
         <DialogContent>
           {selectedMedia && (
@@ -712,7 +755,12 @@ export const MediaLibraryPage: React.FC = () => {
       </Dialog>
 
       {/* Stats Dialog */}
-      <Dialog open={statsDialogOpen} onClose={() => setStatsDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={statsDialogOpen}
+        onClose={() => setStatsDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>{t('stats.storageStats')}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -726,9 +774,14 @@ export const MediaLibraryPage: React.FC = () => {
                 {t('stats.byCategory')}:
               </Typography>
               {Object.entries(safeStats.byCategory || {}).map(([category, count]) => (
-                <Box key={category} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Box
+                  key={category}
+                  sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}
+                >
                   <Typography variant="body2">{category}</Typography>
-                  <Typography variant="body2" fontWeight="bold">{count}</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {count}
+                  </Typography>
                 </Box>
               ))}
             </Grid>
@@ -739,7 +792,9 @@ export const MediaLibraryPage: React.FC = () => {
               {Object.entries(safeStats.byType).map(([type, count]) => (
                 <Box key={type} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="body2">{type}</Typography>
-                  <Typography variant="body2" fontWeight="bold">{count}</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {count}
+                  </Typography>
                 </Box>
               ))}
             </Grid>
@@ -756,13 +811,18 @@ export const MediaLibraryPage: React.FC = () => {
       </Dialog>
 
       {/* Cleanup Dialog */}
-      <Dialog open={cleanupDialogOpen} onClose={() => setCleanupDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={cleanupDialogOpen}
+        onClose={() => setCleanupDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>{t('cleanup.title')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             {t('cleanup.description')}
           </Typography>
-          
+
           <Stack spacing={2}>
             <Card>
               <CardContent>

@@ -283,11 +283,11 @@ export const BannerFormPage: React.FC = () => {
                   >
                     <ImageField
                       label={t('form.imageUrl.label')}
-                      value={selectedImage}
+                      value={selectedImage || undefined}
                       onChange={(media: Media | null) => {
                         setSelectedImage(media);
                         // استخراج ID من Media object
-                        const mediaId = media?._id || media?.id || '';
+                        const mediaId = media?._id || '';
                         setValue('imageId', mediaId, { shouldValidate: true });
                       }}
                       category={MediaCategory.BANNER}
