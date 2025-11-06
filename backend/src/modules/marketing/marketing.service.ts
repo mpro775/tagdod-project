@@ -481,15 +481,18 @@ export class MarketingService {
       viewCount: 0,
     });
 
-    return await banner.save();
+    const savedBanner = await banner.save();
+    return this.bannerModel.findById(savedBanner._id).populate('imageId').lean() as any;
   }
 
   async updateBanner(id: string, dto: UpdateBannerDto): Promise<Banner | null> {
-    return this.bannerModel.findByIdAndUpdate(id, dto, { new: true });
+    const updated = await this.bannerModel.findByIdAndUpdate(id, dto, { new: true });
+    if (!updated) return null;
+    return this.bannerModel.findById(id).populate('imageId').lean() as any;
   }
 
   async getBanner(id: string): Promise<Banner | null> {
-    return this.bannerModel.findById(id);
+    return this.bannerModel.findById(id).populate('imageId').lean() as any;
   }
 
   async listBanners(dto: ListBannersDto) {
@@ -511,7 +514,7 @@ export class MarketingService {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [banners, total] = await Promise.all([
-      this.bannerModel.find(query).skip(skip).limit(limit).sort(sort),
+      this.bannerModel.find(query).populate('imageId').skip(skip).limit(limit).sort(sort).lean(),
       this.bannerModel.countDocuments(query),
     ]);
 
@@ -548,7 +551,7 @@ export class MarketingService {
     if (location) query.location = location;
 
     // Get all banners that match the query
-    const allBanners = await this.bannerModel.find(query).sort({ sortOrder: 1 });
+    const allBanners = await this.bannerModel.find(query).populate('imageId').sort({ sortOrder: 1 }).lean();
 
     // Filter by user types if provided
     if (userRoles && userRoles.length > 0) {

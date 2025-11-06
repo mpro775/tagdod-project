@@ -1,3 +1,5 @@
+import type { Media } from '@/features/media/types/media.types';
+
 // Enum values are used in BANNER_LOCATION_OPTIONS below
 export enum BannerLocation {
   HOME_TOP = 'home_top',
@@ -25,7 +27,8 @@ export interface Banner {
   _id: string;
   title: string;
   description?: string;
-  imageUrl: string;
+  imageId?: string | Media; // Reference to Media collection (populated)
+  imageUrl?: string; // Deprecated: kept for backward compatibility, use imageId instead
   linkUrl?: string;
   altText?: string;
   location: BannerLocation;
@@ -52,7 +55,7 @@ export interface Banner {
 export interface CreateBannerDto {
   title: string;
   description?: string;
-  imageUrl: string;
+  imageId: string; // Media ID
   linkUrl?: string;
   altText?: string;
   location: BannerLocation;
@@ -70,7 +73,7 @@ export interface CreateBannerDto {
 export interface UpdateBannerDto {
   title?: string;
   description?: string;
-  imageUrl?: string;
+  imageId?: string; // Media ID
   linkUrl?: string;
   altText?: string;
   location?: BannerLocation;

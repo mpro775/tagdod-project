@@ -19,8 +19,13 @@ export const bannersApi = {
 
   // Get all banners with filters and pagination
   getBanners: async (params: ListBannersDto = {}) => {
-    const response = await apiClient.get<ApiResponse<{ data: Banner[]; meta: any }>>(API_BASE, { params });
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<{ data: Banner[]; pagination: any }>>(API_BASE, { params });
+    // Handle the nested response structure: { success: true, data: { data: [...], pagination: {...} } }
+    const responseData = response.data.data;
+    return {
+      data: responseData.data || [],
+      pagination: responseData.pagination || {},
+    };
   },
 
   // Get a single banner by ID

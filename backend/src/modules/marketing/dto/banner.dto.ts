@@ -1,12 +1,15 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsArray, IsBoolean, IsUrl } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsArray, IsBoolean, IsUrl, IsMongoId, ValidateIf } from 'class-validator';
 import { BannerLocation, BannerPromotionType } from '../schemas/banner.schema';
 import { UserRole } from '../../users/schemas/user.schema';
 
 export class CreateBannerDto {
   @IsString() title!: string;
   @IsString() @IsOptional() description?: string;
-  @IsUrl() imageUrl!: string;
-  @IsUrl() @IsOptional() linkUrl?: string;
+  @IsMongoId() imageId!: string; // Media ID
+  @ValidateIf((o) => o.linkUrl !== undefined && o.linkUrl !== null && o.linkUrl !== '')
+  @IsUrl()
+  @IsOptional()
+  linkUrl?: string;
   @IsString() @IsOptional() altText?: string;
   
   @IsEnum(BannerLocation) location!: BannerLocation;
@@ -28,8 +31,11 @@ export class CreateBannerDto {
 export class UpdateBannerDto {
   @IsString() @IsOptional() title?: string;
   @IsString() @IsOptional() description?: string;
-  @IsUrl() @IsOptional() imageUrl?: string;
-  @IsUrl() @IsOptional() linkUrl?: string;
+  @IsMongoId() @IsOptional() imageId?: string; // Media ID
+  @ValidateIf((o) => o.linkUrl !== undefined && o.linkUrl !== null && o.linkUrl !== '')
+  @IsUrl()
+  @IsOptional()
+  linkUrl?: string;
   @IsString() @IsOptional() altText?: string;
   
   @IsEnum(BannerLocation) @IsOptional() location?: BannerLocation;

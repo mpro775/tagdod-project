@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
@@ -25,6 +25,8 @@ import {
   BannerPromotionType,
 } from '../types/banner.types';
 import type { CreateBannerDto, UpdateBannerDto } from '../types/banner.types';
+import { ImageField, MediaCategory } from '@/features/media';
+import type { Media } from '@/features/media/types/media.types';
 
 type BannerFormData = CreateBannerDto | UpdateBannerDto;
 
@@ -66,6 +68,8 @@ export const BannerFormPage: React.FC = () => {
   const { mutate: createBanner, isPending: creating } = useCreateBanner();
   const { mutate: updateBanner, isPending: updating } = useUpdateBanner();
 
+  const [selectedImage, setSelectedImage] = useState<Media | null>(null);
+
   const {
     control,
     handleSubmit,
@@ -77,7 +81,7 @@ export const BannerFormPage: React.FC = () => {
     defaultValues: {
       title: '',
       description: '',
-      imageUrl: '',
+      imageId: '',
       linkUrl: '',
       altText: '',
       location: BannerLocation.HOME_TOP,
@@ -93,14 +97,22 @@ export const BannerFormPage: React.FC = () => {
     },
   });
 
-  const imageUrl = watch('imageUrl');
-
   useEffect(() => {
     if (banner && isEditing) {
+      // Handle imageId - could be a Media object (populated) or string (ID)
+      const imageId = typeof banner.imageId === 'string' 
+        ? banner.imageId 
+        : banner.imageId?._id || '';
+      
+      // If imageId is a Media object, set it for display
+      if (banner.imageId && typeof banner.imageId === 'object') {
+        setSelectedImage(banner.imageId);
+      }
+
       reset({
         title: banner.title,
         description: banner.description,
-        imageUrl: banner.imageUrl,
+        imageId: imageId,
         linkUrl: banner.linkUrl,
         altText: banner.altText,
         location: banner.location,
@@ -118,9 +130,21 @@ export const BannerFormPage: React.FC = () => {
   }, [banner, isEditing, reset]);
 
   const onSubmit = (data: BannerFormData) => {
+    // Ensure imageId is set
+    if (!data.imageId) {
+      toast.error(t('form.imageUrl.required'));
+      return;
+    }
+
+    // Prepare the data - only send imageId, not imageUrl
+    const submitData = {
+      ...data,
+      imageId: data.imageId,
+    };
+
     if (isEditing) {
       updateBanner(
-        { id: id!, data },
+        { id: id!, data: submitData },
         {
           onSuccess: () => {
             toast.success(t('messages.updated'));
@@ -132,7 +156,7 @@ export const BannerFormPage: React.FC = () => {
         }
       );
     } else {
-      createBanner(data as CreateBannerDto, {
+      createBanner(submitData as CreateBannerDto, {
         onSuccess: () => {
           toast.success(t('messages.created'));
           navigate('/banners');
@@ -242,23 +266,36 @@ export const BannerFormPage: React.FC = () => {
 
             <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="imageUrl"
+                name="imageId"
                 control={control}
                 rules={{
                   required: t('form.imageUrl.required'),
-                  pattern: {
-                    value: /^https?:\/\/.+/,
-                    message: t('form.imageUrl.invalid'),
-                  },
                 }}
-                render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label={t('form.imageUrl.label')}
-                    error={!!error}
-                    helperText={error?.message || t('form.imageUrl.helper')}
-                  />
+                render={({ fieldState: { error } }) => (
+                  <Box
+                    sx={{
+                      bgcolor: watch('imageId') ? 'background.paper' : 'grey.50',
+                      border: 1,
+                      borderColor: error ? 'error.main' : 'divider',
+                      borderRadius: 1,
+                      p: 2,
+                    }}
+                  >
+                    <ImageField
+                      label={t('form.imageUrl.label')}
+                      value={selectedImage}
+                      onChange={(media: Media | null) => {
+                        setSelectedImage(media);
+                        // استخراج ID من Media object
+                        const mediaId = media?._id || media?.id || '';
+                        setValue('imageId', mediaId, { shouldValidate: true });
+                      }}
+                      category={MediaCategory.BANNER}
+                      required
+                      error={!!error}
+                      helperText={error?.message || t('form.imageUrl.helper')}
+                    />
+                  </Box>
                 )}
               />
             </Grid>
@@ -278,33 +315,6 @@ export const BannerFormPage: React.FC = () => {
                 )}
               />
             </Grid>
-
-            {imageUrl && (
-              <Grid size={{ xs: 12 }}>
-                <Box
-                  sx={{ textAlign: 'center', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}
-                >
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {t('form.imagePreview')}
-                  </Typography>
-                  <Box
-                    component="img"
-                    src={imageUrl}
-                    alt="Banner preview"
-                    sx={{
-                      maxWidth: '100%',
-                      maxHeight: 200,
-                      objectFit: 'contain',
-                      borderRadius: 1,
-                      boxShadow: 1,
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </Box>
-              </Grid>
-            )}
 
             <Grid size={{ xs: 12 }}>
               <Controller

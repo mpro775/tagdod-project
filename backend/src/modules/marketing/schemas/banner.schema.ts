@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 import { UserRole } from '../../users/schemas/user.schema';
 
 export enum BannerLocation {
@@ -29,7 +29,8 @@ export type BannerDocument = HydratedDocument<Banner>;
 export class Banner {
   @Prop({ required: true }) title!: string;
   @Prop() description?: string;
-  @Prop({ required: true }) imageUrl!: string;
+  @Prop({ type: Types.ObjectId, ref: 'Media', required: true })
+  imageId!: string; // Reference to Media collection
   @Prop() linkUrl?: string;
   @Prop() altText?: string;
   

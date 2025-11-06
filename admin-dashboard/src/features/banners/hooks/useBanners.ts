@@ -25,8 +25,8 @@ export const useBanners = (params: ListBannersDto = {}) => {
     queryFn: async () => {
       const response = await bannersApi.getBanners(params);
       return {
-        banners: response.data,
-        pagination: response.meta.pagination,
+        banners: response.data || [],
+        pagination: response.pagination || {},
       };
     },
   });

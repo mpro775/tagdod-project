@@ -350,7 +350,7 @@
                           "type": "boolean",
                           "example": false
                         },
-                        "wholesale_capable": {
+                        "merchant_capable": {
                           "type": "boolean",
                           "example": false
                         }
@@ -13694,119 +13694,6 @@
         ]
       }
     },
-    "/api/v1/system-settings/{key}": {
-      "get": {
-        "operationId": "getSetting",
-        "summary": "الحصول على إعداد بالمفتاح",
-        "description": "استرداد إعداد معين",
-        "parameters": [
-          {
-            "name": "key",
-            "required": true,
-            "in": "path",
-            "description": "مفتاح الإعداد",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد الإعداد بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إعدادات النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "put": {
-        "operationId": "updateSetting",
-        "summary": "تحديث إعداد",
-        "description": "تعديل قيمة إعداد موجود",
-        "parameters": [
-          {
-            "name": "key",
-            "required": true,
-            "in": "path",
-            "description": "مفتاح الإعداد",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSettingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم تحديث الإعداد بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إعدادات النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "deleteSetting",
-        "summary": "حذف إعداد",
-        "description": "حذف إعداد من النظام",
-        "parameters": [
-          {
-            "name": "key",
-            "required": true,
-            "in": "path",
-            "description": "مفتاح الإعداد",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم حذف الإعداد بنجاح"
-          }
-        },
-        "tags": [
-          "إعدادات النظام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
     "/api/v1/system-settings/payment-accounts": {
       "get": {
         "operationId": "getAllPaymentAccounts",
@@ -14025,6 +13912,119 @@
         "responses": {
           "200": {
             "description": "تم حذف الحساب بنجاح"
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system-settings/{key}": {
+      "get": {
+        "operationId": "getSetting",
+        "summary": "الحصول على إعداد بالمفتاح",
+        "description": "استرداد إعداد معين",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "مفتاح الإعداد",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإعداد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateSetting",
+        "summary": "تحديث إعداد",
+        "description": "تعديل قيمة إعداد موجود",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "مفتاح الإعداد",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث الإعداد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إعدادات النظام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteSetting",
+        "summary": "حذف إعداد",
+        "description": "حذف إعداد من النظام",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "description": "مفتاح الإعداد",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الإعداد بنجاح"
           }
         },
         "tags": [
@@ -27794,7 +27794,7 @@
             "example": "retail",
             "enum": [
               "retail",
-              "wholesale",
+              "merchant",
               "engineer"
             ]
           }
@@ -27865,7 +27865,7 @@
             "example": "retail",
             "enum": [
               "retail",
-              "wholesale",
+              "merchant",
               "engineer"
             ]
           },
@@ -27912,7 +27912,7 @@
             "example": "retail",
             "enum": [
               "retail",
-              "wholesale",
+              "merchant",
               "engineer"
             ]
           },
@@ -28220,22 +28220,6 @@
           "settings"
         ]
       },
-      "UpdateSettingDto": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "type": "object",
-            "description": "قيمة الإعداد"
-          },
-          "description": {
-            "type": "string",
-            "description": "الوصف"
-          }
-        },
-        "required": [
-          "value"
-        ]
-      },
       "LocalPaymentAccount": {
         "type": "object",
         "properties": {}
@@ -28377,6 +28361,22 @@
             "type": "number"
           }
         }
+      },
+      "UpdateSettingDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "object",
+            "description": "قيمة الإعداد"
+          },
+          "description": {
+            "type": "string",
+            "description": "الوصف"
+          }
+        },
+        "required": [
+          "value"
+        ]
       },
       "CreateSupportTicketDto": {
         "type": "object",

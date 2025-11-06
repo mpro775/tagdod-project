@@ -234,7 +234,7 @@ paths:
                       engineer_capable:
                         type: boolean
                         example: false
-                      wholesale_capable:
+                      merchant_capable:
                         type: boolean
                         example: false
         '401':
@@ -9008,75 +9008,6 @@ paths:
         - إعدادات النظام
       security:
         - bearer: []
-  /api/v1/system-settings/{key}:
-    get:
-      operationId: getSetting
-      summary: الحصول على إعداد بالمفتاح
-      description: استرداد إعداد معين
-      parameters:
-        - name: key
-          required: true
-          in: path
-          description: مفتاح الإعداد
-          schema:
-            type: string
-      responses:
-        '200':
-          description: تم استرداد الإعداد بنجاح
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SettingDto'
-      tags:
-        - إعدادات النظام
-      security:
-        - bearer: []
-    put:
-      operationId: updateSetting
-      summary: تحديث إعداد
-      description: تعديل قيمة إعداد موجود
-      parameters:
-        - name: key
-          required: true
-          in: path
-          description: مفتاح الإعداد
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateSettingDto'
-      responses:
-        '200':
-          description: تم تحديث الإعداد بنجاح
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SettingDto'
-      tags:
-        - إعدادات النظام
-      security:
-        - bearer: []
-    delete:
-      operationId: deleteSetting
-      summary: حذف إعداد
-      description: حذف إعداد من النظام
-      parameters:
-        - name: key
-          required: true
-          in: path
-          description: مفتاح الإعداد
-          schema:
-            type: string
-      responses:
-        '200':
-          description: تم حذف الإعداد بنجاح
-      tags:
-        - إعدادات النظام
-      security:
-        - bearer: []
   /api/v1/system-settings/payment-accounts:
     get:
       operationId: getAllPaymentAccounts
@@ -9214,6 +9145,75 @@ paths:
       responses:
         '200':
           description: تم حذف الحساب بنجاح
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+  /api/v1/system-settings/{key}:
+    get:
+      operationId: getSetting
+      summary: الحصول على إعداد بالمفتاح
+      description: استرداد إعداد معين
+      parameters:
+        - name: key
+          required: true
+          in: path
+          description: مفتاح الإعداد
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم استرداد الإعداد بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingDto'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+    put:
+      operationId: updateSetting
+      summary: تحديث إعداد
+      description: تعديل قيمة إعداد موجود
+      parameters:
+        - name: key
+          required: true
+          in: path
+          description: مفتاح الإعداد
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingDto'
+      responses:
+        '200':
+          description: تم تحديث الإعداد بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingDto'
+      tags:
+        - إعدادات النظام
+      security:
+        - bearer: []
+    delete:
+      operationId: deleteSetting
+      summary: حذف إعداد
+      description: حذف إعداد من النظام
+      parameters:
+        - name: key
+          required: true
+          in: path
+          description: مفتاح الإعداد
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم حذف الإعداد بنجاح
       tags:
         - إعدادات النظام
       security:
@@ -18416,7 +18416,7 @@ components:
           example: retail
           enum:
             - retail
-            - wholesale
+            - merchant
             - engineer
       required:
         - variantId
@@ -18466,7 +18466,7 @@ components:
           example: retail
           enum:
             - retail
-            - wholesale
+            - merchant
             - engineer
         metadata:
           type: object
@@ -18500,7 +18500,7 @@ components:
           example: retail
           enum:
             - retail
-            - wholesale
+            - merchant
             - engineer
         deviceId:
           type: string
@@ -18726,17 +18726,6 @@ components:
             maintenance_mode: false
       required:
         - settings
-    UpdateSettingDto:
-      type: object
-      properties:
-        value:
-          type: object
-          description: قيمة الإعداد
-        description:
-          type: string
-          description: الوصف
-      required:
-        - value
     LocalPaymentAccount:
       type: object
       properties: {}
@@ -18838,6 +18827,17 @@ components:
           type: string
         displayOrder:
           type: number
+    UpdateSettingDto:
+      type: object
+      properties:
+        value:
+          type: object
+          description: قيمة الإعداد
+        description:
+          type: string
+          description: الوصف
+      required:
+        - value
     CreateSupportTicketDto:
       type: object
       properties:

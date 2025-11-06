@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -20,7 +20,7 @@ import {
   IconButton,
   CircularProgress,
 } from '@mui/material';
-import { Close, Save, Image, Link as LinkIcon, Campaign } from '@mui/icons-material';
+import { Close, Save, Link as LinkIcon, Campaign } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +32,8 @@ import type {
   CreateBannerDto,
   UpdateBannerDto,
 } from '../types/banner.types';
+import { ImageField, MediaCategory } from '@/features/media';
+import type { Media } from '@/features/media/types/media.types';
 
 interface BannerDialogProps {
   open: boolean;
@@ -84,17 +86,20 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
     { value: BannerPromotionType.BRAND_PROMOTION },
   ];
 
+  const [selectedImage, setSelectedImage] = useState<Media | null>(null);
+
   const {
     control,
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<BannerFormData>({
     defaultValues: {
       title: '',
       description: '',
-      imageUrl: '',
+      imageId: '',
       linkUrl: '',
       altText: '',
       location: 'home_top' as any,
@@ -110,15 +115,26 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
     },
   });
 
-  const watchedImageUrl = watch('imageUrl');
   const watchedIsActive = watch('isActive');
 
   useEffect(() => {
     if (banner && isEditing) {
+      // Handle imageId - could be a Media object (populated) or string (ID)
+      const imageId = typeof banner.imageId === 'string' 
+        ? banner.imageId 
+        : banner.imageId?._id || '';
+      
+      // If imageId is a Media object, set it for display
+      if (banner.imageId && typeof banner.imageId === 'object') {
+        setSelectedImage(banner.imageId);
+      } else {
+        setSelectedImage(null);
+      }
+
       reset({
         title: banner.title,
         description: banner.description || '',
-        imageUrl: banner.imageUrl,
+        imageId: imageId,
         linkUrl: banner.linkUrl || '',
         altText: banner.altText || '',
         location: banner.location,
@@ -133,10 +149,11 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
         targetProducts: banner.targetProducts || [],
       });
     } else if (!isEditing) {
+      setSelectedImage(null);
       reset({
         title: '',
         description: '',
-        imageUrl: '',
+        imageId: '',
         linkUrl: '',
         altText: '',
         location: 'home_top' as any,
@@ -154,8 +171,20 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
   }, [banner, isEditing, reset]);
 
   const onSubmit = (data: BannerFormData) => {
+    // Ensure imageId is set
+    if (!data.imageId) {
+      toast.error(t('form.imageUrl.required'));
+      return;
+    }
+
+    // Prepare the data - only send imageId, not imageUrl
+    const submitData = {
+      ...data,
+      imageId: data.imageId,
+    };
+
     try {
-      onSave(data);
+      onSave(submitData);
     } catch (error) {
       toast.error(t('messages.error'));
     }
@@ -274,27 +303,36 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
 
             <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="imageUrl"
+                name="imageId"
                 control={control}
                 rules={{
                   required: t('form.imageUrl.required'),
-                  pattern: {
-                    value: /^https?:\/\/.+/,
-                    message: t('form.imageUrl.invalid'),
-                  },
                 }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label={t('form.imageUrl.label')}
-                    error={!!errors.imageUrl}
-                    helperText={errors.imageUrl?.message}
-                    disabled={isLoading}
-                    InputProps={{
-                      startAdornment: <Image sx={{ mr: 1, color: 'text.secondary' }} />,
+                render={({ fieldState: { error } }) => (
+                  <Box
+                    sx={{
+                      bgcolor: watch('imageId') ? 'background.paper' : 'grey.50',
+                      border: 1,
+                      borderColor: error ? 'error.main' : 'divider',
+                      borderRadius: 1,
+                      p: 2,
                     }}
-                  />
+                  >
+                    <ImageField
+                      label={t('form.imageUrl.label')}
+                      value={selectedImage}
+                      onChange={(media: Media | null) => {
+                        setSelectedImage(media);
+                        // استخراج ID من Media object
+                        const mediaId = media?._id || media?.id || '';
+                        setValue('imageId', mediaId, { shouldValidate: true });
+                      }}
+                      category={MediaCategory.BANNER}
+                      required
+                      error={!!error}
+                      helperText={error?.message || t('form.imageUrl.helper')}
+                    />
+                  </Box>
                 )}
               />
             </Grid>
@@ -325,32 +363,6 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
               />
             </Grid>
 
-            {/* Image Preview */}
-            {watchedImageUrl && (
-              <Grid size={{ xs: 12 }}>
-                <Box
-                  sx={{ textAlign: 'center', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}
-                >
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {t('form.imagePreview')}
-                  </Typography>
-                  <Avatar
-                    src={watchedImageUrl}
-                    alt="Banner preview"
-                    variant="rounded"
-                    sx={{
-                      width: '100%',
-                      maxWidth: 400,
-                      height: 200,
-                      mx: 'auto',
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </Box>
-              </Grid>
-            )}
 
             <Grid size={{ xs: 12 }}>
               <Controller
