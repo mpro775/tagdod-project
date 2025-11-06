@@ -7,6 +7,7 @@ import {
   Body,
   UseGuards,
   Req,
+  ParseEnumPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -67,7 +68,9 @@ export class PoliciesAdminController {
     type: PolicyResponseDto,
   })
   @ApiResponse({ status: 404, description: 'السياسة غير موجودة' })
-  async getPolicyByType(@Param('type') type: PolicyType): Promise<PolicyResponseDto> {
+  async getPolicyByType(
+    @Param('type', new ParseEnumPipe(PolicyType)) type: PolicyType,
+  ): Promise<PolicyResponseDto> {
     return this.policiesService.getPolicyByTypeForAdmin(type);
   }
 
@@ -85,7 +88,7 @@ export class PoliciesAdminController {
   })
   @ApiResponse({ status: 404, description: 'السياسة غير موجودة' })
   async updatePolicy(
-    @Param('type') type: PolicyType,
+    @Param('type', new ParseEnumPipe(PolicyType)) type: PolicyType,
     @Body() dto: UpdatePolicyDto,
     @Req() req: RequestWithUser,
   ): Promise<PolicyResponseDto> {
@@ -106,7 +109,7 @@ export class PoliciesAdminController {
   })
   @ApiResponse({ status: 404, description: 'السياسة غير موجودة' })
   async togglePolicy(
-    @Param('type') type: PolicyType,
+    @Param('type', new ParseEnumPipe(PolicyType)) type: PolicyType,
     @Body() dto: TogglePolicyDto,
     @Req() req: RequestWithUser,
   ): Promise<PolicyResponseDto> {

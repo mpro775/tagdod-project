@@ -23,7 +23,7 @@ interface PromotionsLike {
     variantId: string;
     currency: string;
     qty: number;
-    accountType: 'any' | 'customer' | 'engineer' | 'wholesale';
+    accountType: 'any' | 'customer' | 'engineer' | 'merchant';
   }): Promise<{
     finalPrice: number;
     basePrice: number;
@@ -412,20 +412,20 @@ export class CartService {
   async previewByCart(
     cart: Cart,
     currency: string,
-    accountType: 'any' | 'customer' | 'engineer' | 'wholesale',
+    accountType: 'any' | 'customer' | 'engineer' | 'merchant',
     userId?: string,
   ) {
     // Gather prices and totals
     const lines: CartLine[] = [];
     let subtotal = 0;
-    let wholesaleDiscountPercent = 0;
-    let wholesaleDiscountAmount = 0;
+    let merchantDiscountPercent = 0;
+    let merchantDiscountAmount = 0;
 
     // جلب قدرات المستخدم لتطبيق خصم التاجر
     if (userId) {
       const caps = await this.capsModel.findOne({ userId }).lean();
-      if (caps && caps.wholesale_capable && caps.wholesale_discount_percent > 0) {
-        wholesaleDiscountPercent = caps.wholesale_discount_percent;
+      if (caps && caps.merchant_capable && caps.merchant_discount_percent > 0) {
+        merchantDiscountPercent = caps.merchant_discount_percent;
       }
     }
 
@@ -454,8 +454,8 @@ export class CartService {
       }
 
       // تطبيق خصم التاجر بعد العروض الترويجية
-      if (wholesaleDiscountPercent > 0) {
-        final = final * (1 - wholesaleDiscountPercent / 100);
+      if (merchantDiscountPercent > 0) {
+        final = final * (1 - merchantDiscountPercent / 100);
       }
 
       const lineTotal = final * it.qty;
@@ -471,12 +471,12 @@ export class CartService {
     }
 
     // حساب مبلغ الخصم الإجمالي للتاجر
-    if (wholesaleDiscountPercent > 0) {
-      const subtotalBeforeWholesaleDiscount = lines.reduce((sum, line) => {
-        const priceBeforeWholesaleDiscount = line.unit.final / (1 - wholesaleDiscountPercent / 100);
-        return sum + priceBeforeWholesaleDiscount * line.qty;
+    if (merchantDiscountPercent > 0) {
+      const subtotalBeforeMerchantDiscount = lines.reduce((sum, line) => {
+        const priceBeforeMerchantDiscount = line.unit.final / (1 - merchantDiscountPercent / 100);
+        return sum + priceBeforeMerchantDiscount * line.qty;
       }, 0);
-      wholesaleDiscountAmount = subtotalBeforeWholesaleDiscount - subtotal;
+      merchantDiscountAmount = subtotalBeforeMerchantDiscount - subtotal;
     }
 
     // 🆕 تحويل الإجماليات إلى USD أولاً ثم حسابها بالعملات الثلاث
@@ -487,7 +487,7 @@ export class CartService {
       const usdShipping = 0; // يمكن إضافة حساب الشحن لاحقاً
       const usdTax = 0; // يمكن إضافة حساب الضريبة لاحقاً
       const usdDiscount = await this.exchangeRatesService.convertToUSD(
-        wholesaleDiscountAmount,
+        merchantDiscountAmount,
         currency,
       );
 
@@ -505,8 +505,8 @@ export class CartService {
       items: lines,
       meta: {
         count: lines.length,
-        wholesaleDiscountPercent,
-        wholesaleDiscountAmount: Math.round(wholesaleDiscountAmount * 100) / 100,
+        merchantDiscountPercent,
+        merchantDiscountAmount: Math.round(merchantDiscountAmount * 100) / 100,
       },
       ...(totalsInAllCurrencies && { totalsInAllCurrencies }),
     };
@@ -515,7 +515,7 @@ export class CartService {
   async previewUser(
     userId: string,
     currency: string,
-    accountType: 'any' | 'customer' | 'engineer' | 'wholesale' = 'any',
+    accountType: 'any' | 'customer' | 'engineer' | 'merchant' = 'any',
   ) {
     const cart = await this.getOrCreateUserCart(userId);
     return this.previewByCart(cart, currency, accountType, userId);
@@ -524,7 +524,7 @@ export class CartService {
   async previewGuest(
     deviceId: string,
     currency: string,
-    accountType: 'any' | 'customer' | 'engineer' | 'wholesale' = 'any',
+    accountType: 'any' | 'customer' | 'engineer' | 'merchant' = 'any',
   ) {
     const cart = await this.getOrCreateGuestCart(deviceId);
     return this.previewByCart(cart, currency, accountType);

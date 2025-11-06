@@ -99,7 +99,7 @@ export class MarketingService {
     variantId: string;
     currency: string;
     qty: number;
-    accountType: 'any' | 'customer' | 'engineer' | 'wholesale';
+    accountType: 'any' | 'customer' | 'engineer' | 'merchant';
   }): Promise<{
     finalPrice: number;
     basePrice: number;

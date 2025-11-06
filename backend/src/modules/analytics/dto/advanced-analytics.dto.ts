@@ -350,7 +350,7 @@ export class CustomerAnalyticsQueryDto {
   @ApiProperty({
     description: 'نوع العميل',
     example: 'retail',
-    enum: ['retail', 'wholesale', 'engineer'],
+    enum: ['retail', 'merchant', 'engineer'],
     required: false,
   })
   @IsOptional()

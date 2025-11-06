@@ -147,64 +147,9 @@ export class SystemSettingsController {
     };
   }
 
-  @Get(':key')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  @ApiOperation({
-    summary: 'الحصول على إعداد بالمفتاح',
-    description: 'استرداد إعداد معين',
-  })
-  @ApiParam({ name: 'key', description: 'مفتاح الإعداد' })
-  @ApiResponse({
-    status: 200,
-    description: 'تم استرداد الإعداد بنجاح',
-    type: SettingDto,
-  })
-  async getSetting(@Param('key') key: string): Promise<SettingDto> {
-    return this.systemSettingsService.getSetting(key);
-  }
-
-  @Put(':key')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  @ApiOperation({
-    summary: 'تحديث إعداد',
-    description: 'تعديل قيمة إعداد موجود',
-  })
-  @ApiParam({ name: 'key', description: 'مفتاح الإعداد' })
-  @ApiBody({ type: UpdateSettingDto })
-  @ApiResponse({
-    status: 200,
-    description: 'تم تحديث الإعداد بنجاح',
-    type: SettingDto,
-  })
-  async updateSetting(
-    @Param('key') key: string,
-    @Body() dto: UpdateSettingDto,
-    @Request() req: { user: { userId: string } },
-  ): Promise<SettingDto> {
-    const userId = req.user.userId;
-    return this.systemSettingsService.updateSetting(key, dto, userId);
-  }
-
-  @Delete(':key')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  @ApiOperation({
-    summary: 'حذف إعداد',
-    description: 'حذف إعداد من النظام',
-  })
-  @ApiParam({ name: 'key', description: 'مفتاح الإعداد' })
-  @ApiResponse({
-    status: 200,
-    description: 'تم حذف الإعداد بنجاح',
-  })
-  async deleteSetting(@Param('key') key: string) {
-    await this.systemSettingsService.deleteSetting(key);
-    return { message: 'تم حذف الإعداد بنجاح' };
-  }
-
   // ==================== Local Payment Accounts Endpoints ====================
+  // Note: These routes must be defined BEFORE the parameterized :key route
+  // to prevent route conflicts
 
   @Get('payment-accounts')
   @ApiBearerAuth()
@@ -323,6 +268,67 @@ export class SystemSettingsController {
   ): Promise<{ message: string }> {
     await this.localPaymentAccountService.delete(id);
     return { message: 'تم حذف الحساب بنجاح' };
+  }
+
+  // ==================== Setting by Key Endpoints ====================
+  // Note: These parameterized routes must be defined AFTER specific routes
+  // to prevent route conflicts
+
+  @Get(':key')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({
+    summary: 'الحصول على إعداد بالمفتاح',
+    description: 'استرداد إعداد معين',
+  })
+  @ApiParam({ name: 'key', description: 'مفتاح الإعداد' })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد الإعداد بنجاح',
+    type: SettingDto,
+  })
+  async getSetting(@Param('key') key: string): Promise<SettingDto> {
+    return this.systemSettingsService.getSetting(key);
+  }
+
+  @Put(':key')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({
+    summary: 'تحديث إعداد',
+    description: 'تعديل قيمة إعداد موجود',
+  })
+  @ApiParam({ name: 'key', description: 'مفتاح الإعداد' })
+  @ApiBody({ type: UpdateSettingDto })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تحديث الإعداد بنجاح',
+    type: SettingDto,
+  })
+  async updateSetting(
+    @Param('key') key: string,
+    @Body() dto: UpdateSettingDto,
+    @Request() req: { user: { userId: string } },
+  ): Promise<SettingDto> {
+    const userId = req.user.userId;
+    return this.systemSettingsService.updateSetting(key, dto, userId);
+  }
+
+  @Delete(':key')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({
+    summary: 'حذف إعداد',
+    description: 'حذف إعداد من النظام',
+  })
+  @ApiParam({ name: 'key', description: 'مفتاح الإعداد' })
+  @ApiResponse({
+    status: 200,
+    description: 'تم حذف الإعداد بنجاح',
+  })
+  async deleteSetting(@Param('key') key: string) {
+    await this.systemSettingsService.deleteSetting(key);
+    return { message: 'تم حذف الإعداد بنجاح' };
   }
 }
 

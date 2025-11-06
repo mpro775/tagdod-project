@@ -27,7 +27,7 @@ export class AddItemDto {
   @IsString()
   currency?: string;
 
-  @ApiProperty({ example: 'retail', enum: ['retail', 'wholesale', 'engineer'], required: false })
+  @ApiProperty({ example: 'retail', enum: ['retail', 'merchant', 'engineer'], required: false })
   @IsOptional()
   @IsString()
   accountType?: string;
@@ -114,7 +114,7 @@ export class UpdateCartSettingsDto {
   @IsString()
   currency?: string;
 
-  @ApiProperty({ example: 'retail', enum: ['retail', 'wholesale', 'engineer'], required: false })
+  @ApiProperty({ example: 'retail', enum: ['retail', 'merchant', 'engineer'], required: false })
   @IsOptional()
   @IsString()
   accountType?: string;

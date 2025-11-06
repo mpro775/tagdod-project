@@ -55,10 +55,10 @@ export class User {
   @Prop({ default: false }) engineer_capable!: boolean;
   @Prop({ type: String, enum: Object.values(CapabilityStatus), default: CapabilityStatus.NONE })
   engineer_status!: CapabilityStatus;
-  @Prop({ default: false }) wholesale_capable!: boolean;
+  @Prop({ default: false }) merchant_capable!: boolean;
   @Prop({ type: String, enum: Object.values(CapabilityStatus), default: CapabilityStatus.NONE })
-  wholesale_status!: CapabilityStatus;
-  @Prop({ default: 0, min: 0, max: 100 }) wholesale_discount_percent!: number;
+  merchant_status!: CapabilityStatus;
+  @Prop({ default: 0, min: 0, max: 100 }) merchant_discount_percent!: number;
   @Prop({ default: false }) admin_capable!: boolean;
   @Prop({ type: String, enum: Object.values(CapabilityStatus), default: CapabilityStatus.NONE })
   admin_status!: CapabilityStatus;
@@ -135,16 +135,16 @@ export class User {
     return this.engineer_capable === true && this.engineer_status === CapabilityStatus.UNVERIFIED;
   }
 
-  isWholesale(): boolean {
-    return this.wholesale_capable === true && this.wholesale_status === CapabilityStatus.APPROVED;
+  isMerchant(): boolean {
+    return this.merchant_capable === true && this.merchant_status === CapabilityStatus.APPROVED;
   }
 
-  isWholesalePending(): boolean {
-    return this.wholesale_status === CapabilityStatus.PENDING;
+  isMerchantPending(): boolean {
+    return this.merchant_status === CapabilityStatus.PENDING;
   }
 
-  isWholesaleUnverified(): boolean {
-    return this.wholesale_capable === true && this.wholesale_status === CapabilityStatus.UNVERIFIED;
+  isMerchantUnverified(): boolean {
+    return this.merchant_capable === true && this.merchant_status === CapabilityStatus.UNVERIFIED;
   }
 
   isAdminCapability(): boolean {
@@ -170,19 +170,19 @@ export class User {
     this.roles = this.roles.filter(role => role !== UserRole.ENGINEER);
   }
 
-  approveWholesale(discountPercent: number = 0): void {
-    this.wholesale_capable = true;
-    this.wholesale_status = CapabilityStatus.APPROVED;
-    this.wholesale_discount_percent = discountPercent;
+  approveMerchant(discountPercent: number = 0): void {
+    this.merchant_capable = true;
+    this.merchant_status = CapabilityStatus.APPROVED;
+    this.merchant_discount_percent = discountPercent;
     if (!this.roles.includes(UserRole.MERCHANT)) {
       this.roles.push(UserRole.MERCHANT);
     }
   }
 
-  rejectWholesale(): void {
-    this.wholesale_capable = false;
-    this.wholesale_status = CapabilityStatus.REJECTED;
-    this.wholesale_discount_percent = 0;
+  rejectMerchant(): void {
+    this.merchant_capable = false;
+    this.merchant_status = CapabilityStatus.REJECTED;
+    this.merchant_discount_percent = 0;
     this.roles = this.roles.filter(role => role !== UserRole.MERCHANT);
   }
 

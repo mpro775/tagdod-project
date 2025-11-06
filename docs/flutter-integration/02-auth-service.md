@@ -43,11 +43,9 @@
 }
 ```
 
-> **ملاحظة:** رقم الهاتف يجب أن يبدأ بـ `05` أو `5` أو `7` ويتكون من 9-10 أرقام (مثال: `777123456` أو `0501234567`)
-
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (يجب أن يبدأ بـ 05 أو 5 أو 7 ويتكون من 9-10 أرقام) |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام بدون 967+) |
 | `context` | `string` | ❌ لا | `register` أو `reset` (افتراضي: `register`) |
 
 ### Response - نجاح
@@ -77,7 +75,7 @@
     "fieldErrors": [
       {
         "field": "phone",
-        "message": "رقم الهاتف غير صحيح. يجب أن يبدأ بـ 05 أو 5 أو 7 ويتكون من 9-10 أرقام"
+        "message": "رقم الهاتف يجب أن يكون 9 أرقام"
       }
     ]
   },
@@ -87,7 +85,7 @@
 }
 ```
 
-> **ملاحظة:** أخطاء الـ Validation تستخدم الكود `GENERAL_004` (VALIDATION_ERROR) في النظام الجديد.
+> **ملاحظة:** أخطاء الـ Validation تستخدم الكود `GENERAL_004` في النظام الجديد.
 
 ### كود Flutter
 
@@ -127,6 +125,8 @@ Future<Map<String, dynamic>> sendOtp({
 > - **Customer (زبون عادي)** - الافتراضي - لا تحتاج `capabilityRequest`
 > - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle`
 > - **Merchant (تاجر)** - تحتاج `capabilityRequest: "merchant"`
+> 
+> ⚠️ **ملاحظة مهمة:** النوع في `capabilityRequest` هو `"merchant"` (وليس `"wholesale"`)، والحقول في API Response هي `merchantStatus` و `merchant_capable`.
 
 ### معلومات الطلب
 
@@ -152,15 +152,15 @@ Future<Map<String, dynamic>> sendOtp({
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (يبدأ بـ 05/5/7 ومكون من 9-10 أرقام) |
+| `phone` | `string` | ✅ نعم | رقم الهاتف |
 | `code` | `string` | ✅ نعم | رمز OTP (6 أرقام) |
-| `firstName` | `string` | ❌ لا | الاسم الأول (2-50 حرف، مطلوب للمستخدمين الجدد) |
-| `lastName` | `string` | ❌ لا | اسم العائلة (2-50 حرف) |
+| `firstName` | `string` | ❌ لا | الاسم الأول (مطلوب للمستخدمين الجدد) |
+| `lastName` | `string` | ❌ لا | اسم العائلة |
 | `gender` | `string` | ❌ لا | `male`, `female`, `other` |
-| `city` | `string` | ❌ لا | المدينة (2-50 حرف، افتراضي: صنعاء) |
+| `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
 | `capabilityRequest` | `string` | ❌ لا | `engineer` أو `merchant` |
-| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (3-100 حرف، مطلوب إذا `capabilityRequest = engineer`) |
-| `deviceId` | `string` | ❌ لا | معرف الجهاز (10-50 حرف، لمزامنة المفضلات تلقائياً) |
+| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
+| `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
 
 ### Response - نجاح
 
@@ -185,7 +185,7 @@ Future<Map<String, dynamic>> sendOtp({
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "unverified",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_456"
@@ -211,11 +211,11 @@ Future<Map<String, dynamic>> sendOtp({
 
 ### أكواد الأخطاء
 
-| الكود | الرسالة | HTTP Status |
+| الكود | الوصف | HTTP Status |
 |------|-------|-------------|
-| `AUTH_100` (AUTH_INVALID_OTP) | رمز التحقق غير صالح | 401 |
-| `AUTH_122` (AUTH_JOB_TITLE_REQUIRED) | المسمى الوظيفي مطلوب للمهندسين | 400 |
-| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
+| `AUTH_100` | رمز OTP غير صحيح | 401 |
+| `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
+| `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
 
 ### ⚠️ ملاحظة مهمة عن أنواع الحسابات وحالاتها
 
@@ -223,7 +223,7 @@ Future<Map<String, dynamic>> sendOtp({
 
 1. **Customer (زبون عادي)** - الافتراضي
    - لا تحتاج إرسال `capabilityRequest`
-   - الحالة: `engineerStatus: "none"`, `wholesaleStatus: "none"`
+   - الحالة: `engineerStatus: "none"`, `merchantStatus: "none"`
    - يمكنه: تصفح المنتجات، الشراء، إضافة العناوين
 
 2. **Engineer (مهندس)**
@@ -233,7 +233,7 @@ Future<Map<String, dynamic>> sendOtp({
 
 3. **Merchant (تاجر)**
    - تحتاج: `capabilityRequest: "merchant"`
-   - الحالة الأولية: `wholesaleStatus: "unverified"`
+   - الحالة الأولية: `merchantStatus: "unverified"`
    - يجب رفع معلومات المحل → `pending` → موافقة الأدمن → `approved`
 
 #### **جدول حالات المهندس/التاجر:**
@@ -264,7 +264,7 @@ final response = await verifyOtp(
 
 // الحالة:
 print(response.me.engineerStatus);   // "none"
-print(response.me.wholesaleStatus);  // "none"
+print(response.me.merchantStatus);  // "none"
 // المستخدم customer عادي، يمكنه الشراء مباشرة
 ```
 
@@ -304,9 +304,9 @@ final response = await verifyOtp(
 );
 
 // الحالة:
-print(response.me.wholesaleStatus);   // "unverified" ⚠️
+print(response.me.merchantStatus);   // "unverified" ⚠️
 // يجب رفع معلومات المحل
-if (response.me.isWholesaleUnverified) {
+if (response.me.isMerchantUnverified) {
   navigateToUploadStoreInfo();
 }
 ```
@@ -341,7 +341,7 @@ class AuthUser {
   final bool isAdmin;
   final String preferredCurrency;
   final String? engineerStatus;
-  final String? wholesaleStatus;
+  final String? merchantStatus;
 
   AuthUser({
     required this.id, 
@@ -356,7 +356,7 @@ class AuthUser {
     this.isAdmin = false,
     required this.preferredCurrency,
     this.engineerStatus,
-    this.wholesaleStatus,
+    this.merchantStatus,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -377,7 +377,7 @@ class AuthUser {
       isAdmin: json['isAdmin'] ?? false,
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
       engineerStatus: json['engineerStatus'],
-      wholesaleStatus: json['wholesaleStatus'],
+      merchantStatus: json['merchantStatus'],
     );
   }
   
@@ -387,9 +387,9 @@ class AuthUser {
   bool get isEngineerApproved => engineerStatus == 'approved';
   bool get isEngineerUnverified => engineerStatus == 'unverified';
   
-  bool get isWholesalePending => wholesaleStatus == 'pending';
-  bool get isWholesaleApproved => wholesaleStatus == 'approved';
-  bool get isWholesaleUnverified => wholesaleStatus == 'unverified';
+  bool get isMerchantPending => merchantStatus == 'pending';
+  bool get isMerchantApproved => merchantStatus == 'approved';
+  bool get isMerchantUnverified => merchantStatus == 'unverified';
   
   bool hasRole(String role) => roles.contains(role);
   bool hasPermission(String permission) => permissions.contains(permission);
@@ -488,13 +488,6 @@ Future<void> _saveTokens(AuthTokens tokens) async {
 }
 ```
 
-### أكواد الأخطاء
-
-| الكود | الرسالة | HTTP Status |
-|------|-------|-------------|
-| `AUTH_115` (AUTH_UNAUTHORIZED) | غير مصرح بالوصول | 401 |
-| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
-
 ### كود Flutter
 
 ```dart
@@ -563,13 +556,6 @@ Future<bool> setPassword(String password) async {
 }
 ```
 
-### أكواد الأخطاء
-
-| الكود | الرسالة | HTTP Status |
-|------|-------|-------------|
-| `AUTH_103` (AUTH_USER_NOT_FOUND) | المستخدم غير موجود | 404 |
-| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
-
 ### كود Flutter
 
 ```dart
@@ -625,14 +611,6 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
   "requestId": "req_202"
 }
 ```
-
-### أكواد الأخطاء
-
-| الكود | الرسالة | HTTP Status |
-|------|-------|-------------|
-| `AUTH_100` (AUTH_INVALID_OTP) | رمز التحقق غير صالح | 401 |
-| `AUTH_103` (AUTH_USER_NOT_FOUND) | المستخدم غير موجود | 404 |
-| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
 
 ### كود Flutter
 
@@ -695,9 +673,9 @@ Future<bool> resetPassword({
       "customer_capable": true,
       "engineer_capable": false,
       "engineer_status": "pending",
-      "wholesale_capable": false,
-      "wholesale_status": null,
-      "wholesale_discount_percent": 0
+      "merchant_capable": false,
+      "merchant_status": null,
+      "merchant_discount_percent": 0
     }
   },
   "requestId": "req_303"
@@ -755,9 +733,9 @@ class Capabilities {
   final bool customerCapable;
   final bool engineerCapable;
   final String? engineerStatus; // pending, approved, rejected
-  final bool wholesaleCapable;
-  final String? wholesaleStatus;
-  final double wholesaleDiscountPercent;
+  final bool merchantCapable;
+  final String? merchantStatus;
+  final double merchantDiscountPercent;
 
   Capabilities({
     required this.id,
@@ -765,9 +743,9 @@ class Capabilities {
     required this.customerCapable,
     required this.engineerCapable,
     this.engineerStatus,
-    required this.wholesaleCapable,
-    this.wholesaleStatus,
-    required this.wholesaleDiscountPercent,
+    required this.merchantCapable,
+    this.merchantStatus,
+    required this.merchantDiscountPercent,
   });
 
   factory Capabilities.fromJson(Map<String, dynamic> json) {
@@ -777,10 +755,10 @@ class Capabilities {
       customerCapable: json['customer_capable'] ?? false,
       engineerCapable: json['engineer_capable'] ?? false,
       engineerStatus: json['engineer_status'],
-      wholesaleCapable: json['wholesale_capable'] ?? false,
-      wholesaleStatus: json['wholesale_status'],
-      wholesaleDiscountPercent: 
-          (json['wholesale_discount_percent'] ?? 0).toDouble(),
+      merchantCapable: json['merchant_capable'] ?? false,
+      merchantStatus: json['merchant_status'],
+      merchantDiscountPercent: 
+          (json['merchant_discount_percent'] ?? 0).toDouble(),
     );
   }
 }
@@ -853,13 +831,6 @@ Future<UserProfile> getMe() async {
 }
 ```
 
-### أكواد الأخطاء
-
-| الكود | الرسالة | HTTP Status |
-|------|-------|-------------|
-| `AUTH_115` (AUTH_UNAUTHORIZED) | غير مصرح بالوصول | 401 |
-| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
-
 ### كود Flutter
 
 ```dart
@@ -924,14 +895,6 @@ Future<bool> updateMe({
   "requestId": "req_606"
 }
 ```
-
-### أكواد الأخطاء
-
-| الكود | الرسالة | HTTP Status |
-|------|-------|-------------|
-| `AUTH_103` (AUTH_USER_NOT_FOUND) | المستخدم غير موجود | 404 |
-| `AUTH_115` (AUTH_UNAUTHORIZED) | غير مصرح بالوصول | 401 |
-| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
 
 ### كود Flutter
 
@@ -1045,13 +1008,6 @@ Future<void> _clearLocalData() async {
 }
 ```
 
-### أكواد الأخطاء
-
-| الكود | الرسالة | HTTP Status |
-|------|-------|-------------|
-| `AUTH_108` (AUTH_USER_DELETED) | تم حذف حساب المستخدم | 400 |
-| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
-
 **ملاحظة:** الحذف من نوع Soft Delete، مما يعني أن البيانات يتم حفظها في قاعدة البيانات مع حالة "محذوف" ويمكن استعادتها من قبل الأدمن.
 
 ---
@@ -1060,7 +1016,7 @@ Future<void> _clearLocalData() async {
 
 يسمح للمستخدمين (عادي/مهندس/تاجر) بتسجيل الدخول باستخدام رقم الهاتف وكلمة المرور.
 
-> 💡 **ملاحظة:** يرجع الحالة الفعلية للمستخدم (customer/engineer/wholesale) حسب ما تم التسجيل به.
+> 💡 **ملاحظة:** يرجع الحالة الفعلية للمستخدم (customer/engineer/merchant) حسب ما تم التسجيل به.
 
 ### معلومات الطلب
 
@@ -1077,12 +1033,10 @@ Future<void> _clearLocalData() async {
 }
 ```
 
-> **ملاحظة:** رقم الهاتف يجب أن يبدأ بـ `05` أو `5` أو `7` ويتكون من 9-10 أرقام
-
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (يبدأ بـ 05/5/7، 9-10 أرقام) |
-| `password` | `string` | ✅ نعم | كلمة المرور (6 أحرف على الأقل) |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام) |
+| `password` | `string` | ✅ نعم | كلمة المرور |
 
 ### Response - نجاح
 
@@ -1109,7 +1063,7 @@ Future<void> _clearLocalData() async {
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "none",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_701"
@@ -1139,7 +1093,7 @@ Future<void> _clearLocalData() async {
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "approved",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_701"
@@ -1165,12 +1119,11 @@ Future<void> _clearLocalData() async {
 
 ### أكواد الأخطاء
 
-| الكود | الرسالة | HTTP Status |
+| الكود | الوصف | HTTP Status |
 |------|-------|-------------|
-| `AUTH_103` (AUTH_USER_NOT_FOUND) | المستخدم غير موجود | 404 |
-| `AUTH_104` (AUTH_INVALID_PASSWORD) | كلمة المرور غير صحيحة | 401 |
-| `AUTH_125` (AUTH_PASSWORD_NOT_SET) | لم يتم تعيين كلمة مرور لهذا الحساب | 400 |
-| `AUTH_126` (AUTH_USER_NOT_ACTIVE) | هذا الحساب غير نشط | 400 |
+| `AUTH_104` | كلمة المرور غير صحيحة | 401 |
+| `AUTH_125` | كلمة المرور غير محددة | 400 |
+| `AUTH_126` | الحساب غير نشط | 400 |
 
 ### كود Flutter
 
@@ -1237,15 +1190,15 @@ Future<LoginResponse> userLogin({
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (يبدأ بـ 05/5/7، 9-10 أرقام) |
-| `password` | `string` | ✅ نعم | كلمة المرور (6 أحرف على الأقل) |
-| `firstName` | `string` | ✅ نعم | الاسم الأول (2-50 حرف) |
-| `lastName` | `string` | ✅ نعم | اسم العائلة (2-50 حرف) |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام) |
+| `password` | `string` | ✅ نعم | كلمة المرور |
+| `firstName` | `string` | ✅ نعم | الاسم الأول |
+| `lastName` | `string` | ✅ نعم | اسم العائلة |
 | `gender` | `string` | ✅ نعم | `male`, `female`, `other` |
-| `city` | `string` | ❌ لا | المدينة (2-50 حرف، افتراضي: صنعاء) |
+| `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
 | `capabilityRequest` | `string` | ❌ لا | `engineer` أو `merchant` (⚠️ إذا لم ترسل = **customer عادي**) |
-| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (3-100 حرف، مطلوب إذا `capabilityRequest = engineer`) |
-| `deviceId` | `string` | ❌ لا | معرف الجهاز (10-50 حرف، لمزامنة المفضلات تلقائياً) |
+| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
+| `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
 
 ### Response - نجاح
 
@@ -1272,7 +1225,7 @@ Future<LoginResponse> userLogin({
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "none",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_456"
@@ -1301,7 +1254,7 @@ Future<LoginResponse> userLogin({
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "unverified",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_801"
@@ -1327,11 +1280,11 @@ Future<LoginResponse> userLogin({
 
 ### أكواد الأخطاء
 
-| الكود | الرسالة | HTTP Status |
+| الكود | الوصف | HTTP Status |
 |------|-------|-------------|
-| `AUTH_128` (AUTH_PHONE_EXISTS) | رقم الهاتف موجود مسبقاً | 409 |
-| `AUTH_122` (AUTH_JOB_TITLE_REQUIRED) | المسمى الوظيفي مطلوب للمهندسين | 400 |
-| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
+| `AUTH_128` | رقم الهاتف موجود مسبقاً | 409 |
+| `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
+| `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
 
 ### ⚠️ ملاحظة مهمة عن أنواع الحسابات
 
@@ -1376,8 +1329,8 @@ final response = await userSignup(
   gender: 'male',
   capabilityRequest: 'merchant',    // ✨ طلب صلاحية تاجر
 );
-// النتيجة: wholesaleStatus = "unverified" - يجب رفع معلومات المحل
-if (response.me.isWholesaleUnverified) {
+// النتيجة: merchantStatus = "unverified" - يجب رفع معلومات المحل
+if (response.me.isMerchantUnverified) {
   navigateToUploadStoreInfo();
 }
 ```
@@ -1510,9 +1463,9 @@ class Capabilities {
   final bool customerCapable;
   final bool engineerCapable;
   final String? engineerStatus;
-  final bool wholesaleCapable;
-  final String? wholesaleStatus;
-  final double wholesaleDiscountPercent;
+  final bool merchantCapable;
+  final String? merchantStatus;
+  final double merchantDiscountPercent;
 
   Capabilities({
     required this.id,
@@ -1520,9 +1473,9 @@ class Capabilities {
     required this.customerCapable,
     required this.engineerCapable,
     this.engineerStatus,
-    required this.wholesaleCapable,
-    this.wholesaleStatus,
-    required this.wholesaleDiscountPercent,
+    required this.merchantCapable,
+    this.merchantStatus,
+    required this.merchantDiscountPercent,
   });
 
   factory Capabilities.fromJson(Map<String, dynamic> json) {
@@ -1532,18 +1485,18 @@ class Capabilities {
       customerCapable: json['customer_capable'] ?? false,
       engineerCapable: json['engineer_capable'] ?? false,
       engineerStatus: json['engineer_status'],
-      wholesaleCapable: json['wholesale_capable'] ?? false,
-      wholesaleStatus: json['wholesale_status'],
-      wholesaleDiscountPercent:
-          (json['wholesale_discount_percent'] ?? 0).toDouble(),
+      merchantCapable: json['merchant_capable'] ?? false,
+      merchantStatus: json['merchant_status'],
+      merchantDiscountPercent:
+          (json['merchant_discount_percent'] ?? 0).toDouble(),
     );
   }
 
   bool get isEngineerApproved => 
       engineerCapable && engineerStatus == 'approved';
   bool get isEngineerPending => engineerStatus == 'pending';
-  bool get isWholesaleApproved => 
-      wholesaleCapable && wholesaleStatus == 'approved';
+  bool get isMerchantApproved => 
+      merchantCapable && merchantStatus == 'approved';
 }
 
 class UserProfile {
@@ -1579,14 +1532,14 @@ class AuthUser {
   final String phone;
   final String preferredCurrency;
   final String? engineerStatus;
-  final String? wholesaleStatus;
+  final String? merchantStatus;
 
   AuthUser({
     required this.id, 
     required this.phone,
     required this.preferredCurrency,
     this.engineerStatus,
-    this.wholesaleStatus,
+    this.merchantStatus,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -1595,7 +1548,7 @@ class AuthUser {
       phone: json['phone'],
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
       engineerStatus: json['engineerStatus'],
-      wholesaleStatus: json['wholesaleStatus'],
+      merchantStatus: json['merchantStatus'],
     );
   }
   
@@ -1603,9 +1556,9 @@ class AuthUser {
   bool get isEngineerApproved => engineerStatus == 'approved';
   bool get isEngineerUnverified => engineerStatus == 'unverified';
   
-  bool get isWholesalePending => wholesaleStatus == 'pending';
-  bool get isWholesaleApproved => wholesaleStatus == 'approved';
-  bool get isWholesaleUnverified => wholesaleStatus == 'unverified';
+  bool get isMerchantPending => merchantStatus == 'pending';
+  bool get isMerchantApproved => merchantStatus == 'approved';
+  bool get isMerchantUnverified => merchantStatus == 'unverified';
 }
 ```
 
@@ -1636,7 +1589,7 @@ class AuthUser {
    - **Engineer (مهندس):** يحتاج `capabilityRequest: "engineer"` + `jobTitle`
    - **Merchant (تاجر):** يحتاج `capabilityRequest: "merchant"`
 
-6. **حالات المهندس/التاجر (engineerStatus / wholesaleStatus):**
+6. **حالات المهندس/التاجر (engineerStatus / merchantStatus):**
    - `none`: مستخدم عادي (customer)
    - `unverified`: طلب الصلاحية عند التسجيل لكن لم يرفع الوثائق ⚠️
    - `pending`: رفع الوثائق وفي انتظار موافقة الأدمن ⏳
@@ -1655,7 +1608,7 @@ class AuthUser {
    
    // 1. Customer عادي
    if (loginResponse.me.engineerStatus == 'none' && 
-       loginResponse.me.wholesaleStatus == 'none') {
+       loginResponse.me.merchantStatus == 'none') {
      // مستخدم عادي - يمكنه الشراء مباشرة
      navigateToHome();
    }
@@ -1674,10 +1627,10 @@ class AuthUser {
    }
    
    // 3. تاجر
-   if (loginResponse.me.isWholesaleUnverified) {
+   if (loginResponse.me.isMerchantUnverified) {
      navigateToUploadStoreInfo();
-   } else if (loginResponse.me.isWholesaleApproved) {
-     navigateToWholesaleDashboard();
+   } else if (loginResponse.me.isMerchantApproved) {
+     navigateToMerchantDashboard();
    }
    ```
 
@@ -1688,54 +1641,35 @@ class AuthUser {
 > ✅ **تم تحديث هذه الوثيقة بالكامل** لتطابق الكود الفعلي
 
 ### التحديثات المضافة في هذه النسخة:
-1. ✅ **تحديث أكواد الأخطاء** - استخدام النظام الجديد من `error-codes.ts`:
-   - `AUTH_100` (AUTH_INVALID_OTP) - رمز التحقق غير صالح
-   - `AUTH_103` (AUTH_USER_NOT_FOUND) - المستخدم غير موجود
-   - `AUTH_104` (AUTH_INVALID_PASSWORD) - كلمة المرور غير صحيحة
-   - `AUTH_108` (AUTH_USER_DELETED) - تم حذف حساب المستخدم
-   - `AUTH_115` (AUTH_UNAUTHORIZED) - غير مصرح بالوصول
-   - `AUTH_122` (AUTH_JOB_TITLE_REQUIRED) - المسمى الوظيفي مطلوب للمهندسين
-   - `AUTH_125` (AUTH_PASSWORD_NOT_SET) - لم يتم تعيين كلمة مرور
-   - `AUTH_126` (AUTH_USER_NOT_ACTIVE) - الحساب غير نشط
-   - `AUTH_128` (AUTH_PHONE_EXISTS) - رقم الهاتف موجود مسبقاً
-   - `GENERAL_004` (VALIDATION_ERROR) - خطأ في التحقق من البيانات
-2. ✅ **تحديث قواعد التحقق من رقم الهاتف:**
-   - يجب أن يبدأ بـ `05` أو `5` أو `7`
-   - يتكون من 9-10 أرقام
-   - أمثلة صحيحة: `777123456`، `0501234567`
-3. ✅ **تحديث جميع جداول الحقول مع التفاصيل:**
-   - إضافة الحد الأدنى والأقصى لطول كل حقل
-   - توضيح قواعد التحقق (Validation Rules)
-   - إضافة أمثلة لكل حقل
-4. ✅ **إضافة جداول أكواد الأخطاء لجميع endpoints:**
-   - كل endpoint الآن لديه جدول واضح بأكواد الأخطاء الممكنة
-   - إضافة HTTP Status Code لكل خطأ
-   - توضيح اسم الكود الفعلي من النظام
-5. ✅ **إضافة endpoints جديدة:**
+1. ✅ **تحديث أكواد الأخطاء** - استخدام النظام الجديد (AUTH_100، AUTH_103، إلخ)
+2. ✅ **إضافة endpoints جديدة:**
    - `/auth/user-login` - تسجيل دخول المستخدمين بكلمة المرور
    - `/auth/user-signup` - إنشاء حساب جديد بكلمة المرور
-6. ✅ **توضيح أنواع الحسابات الثلاثة:**
+3. ✅ **توضيح أنواع الحسابات الثلاثة:**
    - **Customer (زبون عادي)** - النوع الافتراضي عند عدم إرسال `capabilityRequest`
    - **Engineer (مهندس)** - يحتاج `capabilityRequest: "engineer"` + `jobTitle`
    - **Merchant (تاجر)** - يحتاج `capabilityRequest: "merchant"`
-7. ✅ **إضافة حقل `city` (المدينة):**
+4. ✅ **إضافة حقل `city` (المدينة):**
    - أضيف في `VerifyOtpDto` و `UserSignupDto`
    - يُحفظ في User Schema (افتراضي: صنعاء)
    - يظهر في `/auth/me` ويمكن تحديثه
-   - نطاق الطول: 2-50 حرف
-8. ✅ **إضافة `timestamp` و `path`** في جميع أمثلة الأخطاء
-9. ✅ **تحديث Flutter code examples** بأكواد الأخطاء الجديدة
-10. ✅ **تصحيح مدة صلاحية Access Token** - 8 ساعات (كان 15 دقيقة)
-11. ✅ **إضافة حقول حالة المهندس/التاجر في جميع Login/Signup Responses:**
+5. ✅ **إضافة `timestamp` و `path`** في جميع أمثلة الأخطاء
+6. ✅ **تحديث Flutter code examples** بأكواد الأخطاء الجديدة
+7. ✅ **تصحيح مدة صلاحية Access Token** - 8 ساعات (كان 15 دقيقة)
+8. ✅ **إضافة حقول حالة المهندس/التاجر في جميع Login/Signup Responses:**
    - `engineerStatus` - حالة المهندس (none/unverified/pending/approved/rejected)
-   - `wholesaleStatus` - حالة التاجر (none/unverified/pending/approved/rejected)
-12. ✅ **إضافة أمثلة واضحة للأنواع الثلاثة:**
-   - مثال Customer عادي (engineerStatus: "none", wholesaleStatus: "none")
+   - `merchantStatus` - حالة التاجر/المتجر (none/unverified/pending/approved/rejected)
+9. ✅ **إضافة أمثلة واضحة للأنواع الثلاثة:**
+   - مثال Customer عادي (engineerStatus: "none", merchantStatus: "none")
    - مثال Engineer (engineerStatus: "unverified/approved")
-   - مثال Merchant (wholesaleStatus: "unverified/approved")
-13. ✅ **حذف endpoints الأدمن** - هذا الملف للمستخدمين والتجار والمهندسين فقط
-14. ✅ **تحديث نوع capabilityRequest للتاجر** - تم تغيير `"wholesale"` إلى `"merchant"` في جميع endpoints
-15. ✅ **إضافة ملاحظات توضيحية** عن رقم الهاتف في كل endpoint
+   - مثال Merchant (merchantStatus: "unverified/approved")
+10. ✅ **إضافة أخطاء جديدة:**
+   - `AUTH_125` - كلمة المرور غير محددة
+   - `AUTH_126` - الحساب غير نشط
+   - `AUTH_128` - رقم الهاتف موجود مسبقاً
+11. ✅ تحديث `VALIDATION_ERROR` إلى `GENERAL_004`
+12. ✅ **حذف endpoints الأدمن** - هذا الملف للمستخدمين والتجار والمهندسين فقط
+13. ✅ **تحديث نوع capabilityRequest والتسميات** - تم تغيير `"wholesale"` إلى `"merchant"` في جميع endpoints والحقول (`merchantStatus`, `merchant_capable`, `merchant_discount_percent`)
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/auth/auth.controller.ts`
