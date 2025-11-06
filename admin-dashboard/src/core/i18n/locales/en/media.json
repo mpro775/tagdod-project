@@ -92,6 +92,7 @@
     "uploadSettings": "Upload Settings",
     "uploadComplete": "Upload Complete",
     "dragDrop": "Drag and drop file here or click to select",
+    "dropFile": "Drop file here",
     "fileSelected": "File selected",
     "fileNotSelected": "No file selected",
     "fileName": "File Name",

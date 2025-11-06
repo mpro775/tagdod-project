@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -35,6 +35,23 @@ import {
   CardMedia,
 } from '@mui/material';
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   CloudUpload,
   Edit,
   Delete,
@@ -68,6 +85,7 @@ import {
 } from '../hooks/useMedia';
 import { MediaUploader } from '../components/MediaUploader';
 import { MediaListItem } from '../components/MediaListItem';
+import { SortableMediaCard } from '../components/SortableMediaCard';
 import { formatFileSize } from '@/shared/utils/formatters';
 import { useTranslation } from 'react-i18next';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
@@ -92,6 +110,7 @@ export const MediaLibraryPage: React.FC = () => {
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
   const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [mediaItems, setMediaItems] = useState<Media[]>([]);
 
   const { data, isLoading, refetch } = useMedia({
     page: currentPage,
@@ -110,6 +129,38 @@ export const MediaLibraryPage: React.FC = () => {
   const { mutate: cleanupUnused } = useCleanupUnusedFiles();
   const { mutate: bulkOperation } = useBulkMediaOperation();
   const { data: stats } = useMediaStats();
+
+  // Update mediaItems when data changes
+  useEffect(() => {
+    if (data?.data && Array.isArray(data.data)) {
+      setMediaItems(data.data);
+    }
+  }, [data]);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setMediaItems((items) => {
+        const oldIndex = items.findIndex((item) => item._id === active.id);
+        const newIndex = items.findIndex((item) => item._id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
   
   // Provide default stats to prevent undefined errors
   const safeStats = {
@@ -413,148 +464,54 @@ export const MediaLibraryPage: React.FC = () => {
         {/* Loading */}
         {isLoading && <LinearProgress sx={{ mb: 2 }} />}
 
-        {/* Gallery Grid */}
+        {/* Gallery Grid with Drag and Drop */}
         {!isLoading && viewMode === 'grid' && (
-          <Grid container spacing={2}>
-            {(Array.isArray(data?.data) ? data.data : [])?.map((media) => (
-              <Grid size={{ xs: 6, sm: 6, md: 4, lg: 3 }} key={media._id}>
-                <Card 
-                  sx={{ 
-                    opacity: media.deletedAt ? 0.6 : 1,
-                    border: showBulkActions && selectedMediaIds.includes(media._id) ? 2 : 0,
-                    borderColor: 'primary.main',
-                    cursor: showBulkActions ? 'pointer' : 'default',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%'
-                  }}
-                  onClick={() => showBulkActions && handleBulkSelect(media._id)}
-                >
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={media.url}
-                    alt={media.name}
-                    sx={{ 
-                      objectFit: 'contain', 
-                      bgcolor: 'grey.100',
-                      cursor: 'pointer',
-                      height: { xs: '150px', sm: '200px' }
-                    }}
-                    onClick={() => {
-                      setSelectedMedia(media);
-                      setDetailsDialogOpen(true);
-                    }}
-                  />
-                  <CardContent sx={{ flex: 1, pb: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="body2" fontWeight="medium" noWrap sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {media.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                          {formatFileSize(media.size)}
-                        </Typography>
-                        {media.width && media.height && (
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                            {media.width} × {media.height}
-                          </Typography>
-                        )}
-                        <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                          <Chip label={media.category} size="small" variant="outlined" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: '20px', sm: '24px' } }} />
-                          <Chip
-                            label={media.isPublic ? t('public') : t('private')}
-                            size="small"
-                            color={media.isPublic ? 'success' : 'warning'}
-                            variant="outlined"
-                            sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: '20px', sm: '24px' } }}
-                          />
-                          {media.deletedAt && (
-                            <Chip label={t('deleted')} size="small" color="error" variant="outlined" sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: '20px', sm: '24px' } }} />
-                          )}
-                        </Box>
-                      </Box>
-                      {media.usageCount > 0 && (
-                        <Badge badgeContent={media.usageCount} color="primary">
-                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                            {t('used')}
-                          </Typography>
-                        </Badge>
-                      )}
-                    </Box>
-                  </CardContent>
-                  <CardActions sx={{ pt: 0, pb: 1, px: 1 }}>
-                    <Tooltip title={t('copyUrl')}>
-                      <IconButton size="small" onClick={() => handleCopyUrl(media.url)} sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}>
-                        <ContentCopy fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={media.isPublic ? t('hide') : t('show')}>
-                      <IconButton
-                        size="small"
-                        color={media.isPublic ? 'success' : 'default'}
-                        onClick={() => handleTogglePublic(media)}
-                        sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}
-                      >
-                        {media.isPublic ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
-                      </IconButton>
-                    </Tooltip>
-                    {media.deletedAt ? (
-                      <Tooltip title={t('restore')}>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => restoreMedia(media._id, { onSuccess: () => refetch() })}
-                          sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}
-                        >
-                          <Restore fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    ) : (
-                      <>
-                        <Tooltip title={t('edit')}>
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => {
-                              setSelectedMedia(media);
-                              setDetailsDialogOpen(true);
-                            }}
-                            sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t('delete')}>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={async () => {
-                              const confirmed = await confirmDialog({
-                                title: t('messages.deleteTitle', 'تأكيد الحذف'),
-                                message: t('messages.deleteConfirm', { name: media.name }),
-                                type: 'warning',
-                                confirmColor: 'error',
-                              });
-                              if (confirmed) {
-                                deleteMedia(media._id, { onSuccess: () => refetch() });
-                              }
-                            }}
-                            sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </>
-                    )}
-                    <IconButton size="small" onClick={(e) => handleMenuOpen(e, media)} sx={{ '& svg': { fontSize: { xs: '0.875rem', sm: '1.25rem' } } }}>
-                      <MoreVert fontSize="small" />
-                    </IconButton>
-                  </CardActions>
-                </Card>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={mediaItems.map((m) => m._id)}
+              strategy={rectSortingStrategy}
+            >
+              <Grid container spacing={2}>
+                {mediaItems.map((media) => (
+                  <Grid size={{ xs: 6, sm: 6, md: 4, lg: 3 }} key={media._id}>
+                    <SortableMediaCard
+                      media={media}
+                      showBulkActions={showBulkActions}
+                      isSelected={selectedMediaIds.includes(media._id)}
+                      onBulkSelect={handleBulkSelect}
+                      onEdit={(m) => {
+                        setSelectedMedia(m);
+                        setDetailsDialogOpen(true);
+                      }}
+                      onDelete={(id) => deleteMedia(id, { onSuccess: () => refetch() })}
+                      onRestore={(id) => restoreMedia(id, { onSuccess: () => refetch() })}
+                      onCopyUrl={handleCopyUrl}
+                      onTogglePublic={handleTogglePublic}
+                      onDetails={(m) => {
+                        setSelectedMedia(m);
+                        setDetailsDialogOpen(true);
+                      }}
+                      confirmDelete={async (m) => {
+                        const confirmed = await confirmDialog({
+                          title: t('messages.deleteTitle', 'تأكيد الحذف'),
+                          message: t('messages.deleteConfirm', { name: m.name }),
+                          type: 'warning',
+                          confirmColor: 'error',
+                        });
+                        if (confirmed) {
+                          deleteMedia(m._id, { onSuccess: () => refetch() });
+                        }
+                      }}
+                    />
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
+            </SortableContext>
+          </DndContext>
         )}
 
         {/* List View */}

@@ -42,6 +42,8 @@ export const envSchema = z.object({
   
   // Logging Configuration
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
+  ENABLE_SECURITY_LOGGING: z.coerce.boolean().default(true),
+  VERBOSE_SECURITY_LOGGING: z.coerce.boolean().optional(),
 });
 
 export type EnvType = z.infer<typeof envSchema>;

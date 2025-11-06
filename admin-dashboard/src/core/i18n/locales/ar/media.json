@@ -92,6 +92,7 @@
     "uploadSettings": "إعدادات الرفع",
     "uploadComplete": "تم الرفع بنجاح",
     "dragDrop": "اسحب وأسقط الملف هنا أو انقر للاختيار",
+    "dropFile": "أسقط الملف هنا",
     "fileSelected": "تم اختيار الملف",
     "fileNotSelected": "لم يتم اختيار ملف",
     "fileName": "اسم الملف",

@@ -15,6 +15,8 @@ import { ClientIPService } from '../services/client-ip.service';
 export class SecurityLoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger(SecurityLoggingInterceptor.name);
   private readonly isDevelopment: boolean;
+  private readonly enableSecurityLogging: boolean;
+  private readonly verboseLogging: boolean;
   private readonly sensitiveHeaders = [
     'authorization',
     'x-api-key',
@@ -28,14 +30,25 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
   ) {
     this.isDevelopment = this.configService.get<string>('NODE_ENV', 'development') === 'development';
     
+    // Allow enabling security logging in development via ENABLE_SECURITY_LOGGING env var
+    // Default: enabled in development for better debugging, can be disabled if needed
+    this.enableSecurityLogging = this.configService.get<string>('ENABLE_SECURITY_LOGGING', 'true') === 'true';
+    
+    // Verbose logging shows all requests, non-verbose only shows important events
+    this.verboseLogging = this.configService.get<string>('VERBOSE_SECURITY_LOGGING', this.isDevelopment ? 'true' : 'false') === 'true';
+    
     if (this.isDevelopment) {
-      this.logger.warn('🚧 Development mode detected - Security logging is DISABLED');
+      if (this.enableSecurityLogging) {
+        this.logger.log(`🔍 Development mode - Security logging is ENABLED (verbose: ${this.verboseLogging})`);
+      } else {
+        this.logger.warn('🚧 Development mode detected - Security logging is DISABLED (set ENABLE_SECURITY_LOGGING=true to enable)');
+      }
     }
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    // Skip security logging in development mode
-    if (this.isDevelopment) {
+    // Skip security logging if explicitly disabled
+    if (!this.enableSecurityLogging) {
       return next.handle();
     }
 
@@ -52,11 +65,21 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
           const duration = Date.now() - startTime;
           const responseInfo = this.extractResponseInfo(response, data, duration);
 
+          // Log all requests in verbose mode (development), or only important events in production
+          if (this.verboseLogging) {
+            this.logger.debug(`${requestInfo.method} ${requestInfo.path} [${responseInfo.statusCode}] - ${duration}ms`, {
+              ip: requestInfo.ip,
+              userId: requestInfo.userId,
+              requestId: requestInfo.requestId,
+            });
+          }
+
           // Log security events
           this.logSecurityEvent(requestInfo, responseInfo);
 
-          // Log performance issues
-          if (duration > 5000) { // Log slow requests > 5 seconds
+          // Log performance issues (lower threshold in development)
+          const slowRequestThreshold = this.isDevelopment ? 1000 : 5000; // 1s in dev, 5s in prod
+          if (duration > slowRequestThreshold) {
             this.logger.warn(`Slow request: ${requestInfo.method} ${requestInfo.path} took ${duration}ms`, {
               ...requestInfo,
               ...responseInfo,
@@ -187,18 +210,46 @@ export class SecurityLoggingInterceptor implements NestInterceptor {
       if (statusCode === 200) {
         this.logger.log(`Successful authentication: ${method} ${path} from ${ip}`);
       } else if (statusCode === 401 || statusCode === 403) {
-        this.logger.warn(`Failed authentication: ${method} ${path} from ${ip}`);
+        this.logger.warn(`Failed authentication: ${method} ${path} from ${ip}`, {
+          ip,
+          method,
+          path,
+          statusCode,
+        });
       }
     }
 
     // Log file upload events
     if (path.includes('/upload/') && statusCode === 200) {
-      this.logger.log(`File uploaded: ${method} ${path} by user ${userId} from ${ip}`);
+      this.logger.log(`File uploaded: ${method} ${path} by user ${userId} from ${ip}`, {
+        userId,
+        ip,
+        method,
+        path,
+      });
     }
 
     // Log sensitive data access
     if (path.includes('/analytics/') || path.includes('/admin/')) {
-      this.logger.log(`Sensitive data access: ${method} ${path} by user ${userId} from ${ip}`);
+      this.logger.log(`Sensitive data access: ${method} ${path} by user ${userId} from ${ip}`, {
+        userId,
+        ip,
+        method,
+        path,
+        statusCode,
+      });
+    }
+
+    // In development, also log errors and warnings with more detail
+    if (this.isDevelopment && (statusCode >= 400)) {
+      this.logger.debug(`Request error: ${method} ${path} [${statusCode}]`, {
+        ip,
+        userId,
+        method,
+        path,
+        statusCode,
+        query: requestInfo.query,
+      });
     }
   }
 

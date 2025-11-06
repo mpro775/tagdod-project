@@ -10,10 +10,28 @@ async function bootstrap() {
   
   let app;
   try {
-    // Use appropriate logging levels based on environment
-    const logLevels: LogLevel[] = process.env.NODE_ENV === 'production' 
-      ? ['error', 'warn', 'log']
-      : ['error', 'warn', 'log', 'debug', 'verbose'];
+    // Use LOG_LEVEL from environment or default based on NODE_ENV
+    const envLogLevel = process.env.LOG_LEVEL?.toLowerCase();
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    
+    let logLevels: LogLevel[];
+    if (envLogLevel) {
+      // Map LOG_LEVEL to NestJS LogLevel array
+      const levelMap: Record<string, LogLevel[]> = {
+        'error': ['error'],
+        'warn': ['error', 'warn'],
+        'info': ['error', 'warn', 'log'],
+        'debug': ['error', 'warn', 'log', 'debug', 'verbose'],
+      };
+      logLevels = levelMap[envLogLevel] || ['error', 'warn', 'log', 'debug', 'verbose'];
+    } else {
+      // Default behavior: verbose in development, minimal in production
+      logLevels = nodeEnv === 'production' 
+        ? ['error', 'warn', 'log']
+        : ['error', 'warn', 'log', 'debug', 'verbose'];
+    }
+    
+    logger.log(`📊 Logging level: ${logLevels.join(', ')} (LOG_LEVEL=${envLogLevel || 'default'}, NODE_ENV=${nodeEnv})`);
     
     app = await NestFactory.create(AppModule, {
       logger: logLevels,

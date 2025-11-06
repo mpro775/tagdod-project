@@ -33,6 +33,7 @@ import {
   CheckCircle,  
 } from '@mui/icons-material';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { useDropzone } from 'react-dropzone';
 import { useUploadMedia } from '../hooks/useMedia';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
@@ -70,26 +71,50 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
   const { mutate: upload, isPending } = useUploadMedia();
 
+  const handleFileSelect = useCallback((selectedFile: File) => {
+    setFile(selectedFile);
+    setName(selectedFile.name.split('.')[0]);
+    setUploadError(null);
+
+    // Create preview for images
+    if (selectedFile.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+    
+    // Auto-advance to next step
+    setActiveStep(1);
+  }, []);
+
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      setFile(selectedFile);
-      setName(selectedFile.name.split('.')[0]);
-      setUploadError(null);
-
-      // Create preview for images
-      if (selectedFile.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreview(reader.result as string);
-        };
-        reader.readAsDataURL(selectedFile);
-      }
-      
-      // Auto-advance to next step
-      setActiveStep(1);
+      handleFileSelect(selectedFile);
     }
-  }, []);
+  }, [handleFileSelect]);
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      handleFileSelect(acceptedFiles[0]);
+    }
+  }, [handleFileSelect]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+      'video/*': ['.mp4', '.webm', '.ogg'],
+      'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'text/plain': ['.txt'],
+    },
+    multiple: false,
+    noClick: false,
+  });
 
   const getFileIcon = (file: File) => {
     if (file.type.startsWith('image/')) return <Image />;
@@ -202,18 +227,29 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
               <StepLabel>{t('uploader.selectFile')}</StepLabel>
               <StepContent>
                 <Paper
+                  {...getRootProps()}
                   sx={{
                     p: { xs: 2, sm: 3 },
                     border: '2px dashed',
-                    borderColor: file ? 'success.main' : 'divider',
-                    bgcolor: file 
-                      ? theme.palette.mode === 'dark' 
-                        ? 'success.dark' 
-                        : 'success.light' 
-                      : 'background.paper',
+                    borderColor: isDragActive 
+                      ? 'primary.main' 
+                      : file 
+                        ? 'success.main' 
+                        : 'divider',
+                    bgcolor: isDragActive
+                      ? theme.palette.mode === 'dark'
+                        ? 'primary.dark'
+                        : 'primary.light'
+                      : file 
+                        ? theme.palette.mode === 'dark' 
+                          ? 'success.dark' 
+                          : 'success.light' 
+                        : 'background.paper',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
+                    opacity: isDragActive ? 0.8 : 1,
+                    transform: isDragActive ? 'scale(1.02)' : 'scale(1)',
                     '&:hover': {
                       borderColor: 'primary.main',
                       bgcolor: theme.palette.mode === 'dark' 
@@ -221,15 +257,8 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         : 'primary.light',
                     },
                   }}
-                  onClick={() => document.getElementById('file-input')?.click()}
                 >
-                  <input
-                    id="file-input"
-                    type="file"
-                    hidden
-                    onChange={handleFileChange}
-                    accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-                  />
+                  <input {...getInputProps()} />
                   
                   {file ? (
                     <Box>
@@ -276,13 +305,24 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     </Box>
                   ) : (
                     <Box>
-                      <CloudUpload sx={{ fontSize: { xs: 40, sm: 48 }, color: 'text.disabled', mb: 2 }} />
+                      <CloudUpload 
+                        sx={{ 
+                          fontSize: { xs: 40, sm: 48 }, 
+                          color: isDragActive ? 'primary.main' : 'text.disabled', 
+                          mb: 2,
+                          transition: 'all 0.3s ease',
+                          transform: isDragActive ? 'scale(1.1)' : 'scale(1)',
+                        }} 
+                      />
                       <Typography 
                         variant="h6" 
                         gutterBottom
-                        sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                        sx={{ 
+                          fontSize: { xs: '0.875rem', sm: '1rem' },
+                          color: isDragActive ? 'primary.main' : 'text.primary',
+                        }}
                       >
-                        {t('uploader.selectFile')}
+                        {isDragActive ? t('uploader.dropFile') : t('uploader.selectFile')}
                       </Typography>
                       <Typography 
                         variant="body2" 

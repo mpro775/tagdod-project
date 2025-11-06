@@ -26423,7 +26423,7 @@
             "description": "نوع القدرة المطلوبة",
             "enum": [
               "engineer",
-              "wholesale"
+              "merchant"
             ],
             "example": "engineer"
           },
@@ -26618,7 +26618,7 @@
             "description": "نوع القدرة المطلوبة",
             "enum": [
               "engineer",
-              "wholesale"
+              "merchant"
             ],
             "example": "engineer"
           },

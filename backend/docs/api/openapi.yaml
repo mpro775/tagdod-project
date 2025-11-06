@@ -17386,7 +17386,7 @@ components:
           description: نوع القدرة المطلوبة
           enum:
             - engineer
-            - wholesale
+            - merchant
           example: engineer
         jobTitle:
           type: string
@@ -17538,7 +17538,7 @@ components:
           description: نوع القدرة المطلوبة
           enum:
             - engineer
-            - wholesale
+            - merchant
           example: engineer
         jobTitle:
           type: string

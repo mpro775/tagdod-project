@@ -46,6 +46,7 @@ import { IdempotencyMiddleware } from './shared/middleware/idempotency.middlewar
 // Global filters and interceptors
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
 import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-envelope.interceptor';
+import { SecurityLoggingInterceptor } from './modules/security/interceptors/security-logging.interceptor';
 
 @Module({
   imports: [
@@ -109,6 +110,7 @@ import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-enve
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ResponseEnvelopeInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: SecurityLoggingInterceptor },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
