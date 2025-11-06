@@ -9,6 +9,7 @@ import {
   NewReleases,
   Inventory,
   FilterList,
+  TrendingUp,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
@@ -179,7 +180,7 @@ export const ProductsListPage: React.FC = () => {
     {
       field: 'badges',
       headerName: t('list.columns.badges'),
-      width: 120,
+      width: 150,
       sortable: false,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -191,6 +192,11 @@ export const ProductsListPage: React.FC = () => {
           {params.row.isNew && (
             <Tooltip title={t('badges.new')}>
               <NewReleases sx={{ fontSize: { xs: 16, sm: 18 }, color: 'info.main' }} />
+            </Tooltip>
+          )}
+          {params.row.isBestseller && (
+            <Tooltip title={t('badges.bestseller')}>
+              <TrendingUp sx={{ fontSize: { xs: 16, sm: 18 }, color: 'success.main' }} />
             </Tooltip>
           )}
         </Box>
@@ -206,7 +212,11 @@ export const ProductsListPage: React.FC = () => {
       field: 'createdAt',
       headerName: t('list.columns.createdAt'),
       width: 140,
-      valueFormatter: (value) => formatDate(value as Date),
+      valueGetter: (value, row) => row.createdAt || null,
+      valueFormatter: (value) => {
+        if (!value || value === null || value === undefined) return '-';
+        return formatDate(value as Date | string);
+      },
     },
     {
       field: 'actions',

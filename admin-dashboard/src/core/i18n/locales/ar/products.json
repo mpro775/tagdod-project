@@ -268,7 +268,8 @@
   },
   "badges": {
     "featured": "مميز",
-    "new": "جديد"
+    "new": "جديد",
+    "bestseller": "الأكثر مبيعاً"
   },
   "actions": {
     "view": "عرض",

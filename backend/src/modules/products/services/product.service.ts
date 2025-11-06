@@ -172,6 +172,7 @@ export class ProductService {
     categoryId?: string;
     brandId?: string;
     status?: ProductStatus;
+    isActive?: boolean;
     isFeatured?: boolean;
     isNew?: boolean;
     includeDeleted?: boolean;
@@ -183,6 +184,7 @@ export class ProductService {
       categoryId,
       brandId,
       status,
+      isActive,
       isFeatured,
       isNew,
       includeDeleted = false,
@@ -209,6 +211,10 @@ export class ProductService {
 
     if (status) {
       filter.status = status;
+    }
+
+    if (isActive !== undefined) {
+      filter.isActive = isActive;
     }
 
     if (isFeatured !== undefined) {

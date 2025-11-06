@@ -2650,6 +2650,33 @@
           }
         },
         {
+          "name": "الحصول على المنتجات حسب الفئة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categories/{id}/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{id}",
+                "products"
+              ]
+            },
+            "description": "الحصول على قائمة بالمنتجات العامة (النشطة) التي تنتمي إلى فئة محددة. النتائج مخزنة مؤقتاً لمدة 5 دقائق."
+          }
+        },
+        {
           "name": "الحصول على فئة واحدة",
           "request": {
             "method": "GET",
