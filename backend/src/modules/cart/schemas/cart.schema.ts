@@ -68,7 +68,7 @@ export class Cart {
   currency!: string;
 
   @Prop()
-  accountType?: string; // retail/wholesale/engineer
+  accountType?: string; // retail/merchant/engineer
 
   // 🆕 Coupon Support - Multiple Coupons Support
   @Prop({ type: [String], default: [] })

@@ -51,7 +51,7 @@ export class PublicProductsController {
   /**
    * جلب نسبة خصم التاجر للمستخدم
    */
-  private async getUserWholesaleDiscount(userId?: string): Promise<number> {
+  private async getUserMerchantDiscount(userId?: string): Promise<number> {
     if (!userId) {
       return 0;
     }
@@ -59,18 +59,18 @@ export class PublicProductsController {
     try {
       // محاولة جلب من Capabilities أولاً (النظام القديم)
       const caps = await this.capabilitiesModel.findOne({ userId }).lean();
-      if (caps && caps.wholesale_capable && caps.wholesale_status === 'approved' && caps.wholesale_discount_percent > 0) {
-        return caps.wholesale_discount_percent;
+      if (caps && caps.merchant_capable && caps.merchant_status === 'approved' && caps.merchant_discount_percent > 0) {
+        return caps.merchant_discount_percent;
       }
 
       // إذا لم يوجد في Capabilities، جلب من User مباشرة
       const user = await this.userModel.findById(userId).lean();
-      if (user && user.wholesale_capable && user.wholesale_status === 'approved' && user.wholesale_discount_percent > 0) {
-        return user.wholesale_discount_percent;
+      if (user && user.merchant_capable && user.merchant_status === 'approved' && user.merchant_discount_percent > 0) {
+        return user.merchant_discount_percent;
       }
     } catch (error) {
       // في حالة حدوث خطأ، إرجاع 0 (لا خصم)
-      console.error('Error fetching user wholesale discount:', error);
+      console.error('Error fetching user merchant discount:', error);
     }
 
     return 0;
@@ -232,7 +232,7 @@ export class PublicProductsController {
 
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
-    const discountPercent = await this.getUserWholesaleDiscount(userId);
+    const discountPercent = await this.getUserMerchantDiscount(userId);
     const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
     // جلب الأسعار مع خصم التاجر
@@ -273,7 +273,7 @@ export class PublicProductsController {
       variants: variantsWithPrices,
       currency: selectedCurrency,
       userDiscount: {
-        isWholesale: discountPercent > 0,
+        isMerchant: discountPercent > 0,
         discountPercent,
       },
     };
@@ -302,7 +302,7 @@ export class PublicProductsController {
 
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
-    const discountPercent = await this.getUserWholesaleDiscount(userId);
+    const discountPercent = await this.getUserMerchantDiscount(userId);
     const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
     // جلب الأسعار مع خصم التاجر
@@ -343,7 +343,7 @@ export class PublicProductsController {
       variants: variantsWithPrices,
       currency: selectedCurrency,
       userDiscount: {
-        isWholesale: discountPercent > 0,
+        isMerchant: discountPercent > 0,
         discountPercent,
       },
     };
@@ -391,7 +391,7 @@ export class PublicProductsController {
 
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
-    const discountPercent = await this.getUserWholesaleDiscount(userId);
+    const discountPercent = await this.getUserMerchantDiscount(userId);
     const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
     // جلب الأسعار مع خصم التاجر
@@ -430,7 +430,7 @@ export class PublicProductsController {
       data: variantsWithPrices,
       currency: selectedCurrency,
       userDiscount: {
-        isWholesale: discountPercent > 0,
+        isMerchant: discountPercent > 0,
         discountPercent,
       },
     };
@@ -448,7 +448,7 @@ export class PublicProductsController {
   ) {
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
-    const discountPercent = await this.getUserWholesaleDiscount(userId);
+    const discountPercent = await this.getUserMerchantDiscount(userId);
     const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
     // جلب السعر مع خصم التاجر
@@ -461,7 +461,7 @@ export class PublicProductsController {
     return {
       ...priceWithDiscount,
       userDiscount: {
-        isWholesale: discountPercent > 0,
+        isMerchant: discountPercent > 0,
         discountPercent,
       },
     };

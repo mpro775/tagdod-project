@@ -301,7 +301,7 @@ export class Order {
   userId!: Types.ObjectId;
 
   @Prop()
-  accountType?: string; // retail/wholesale/engineer
+  accountType?: string; // retail/merchant/engineer
 
   @Prop({ default: 'web' })
   source!: string; // web/mobile/app

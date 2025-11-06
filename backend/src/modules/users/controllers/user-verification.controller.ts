@@ -106,7 +106,7 @@ export class UserVerificationController {
 
     // تحديد نوع المستخدم ونوع الملف المطلوب
     const isEngineer = user.roles?.includes(UserRole.ENGINEER) || user.engineer_capable;
-    const isMerchant = user.roles?.includes(UserRole.MERCHANT) || user.wholesale_capable;
+    const isMerchant = user.roles?.includes(UserRole.MERCHANT) || user.merchant_capable;
 
     // التحقق من أن المستخدم مهندس أو تاجر
     if (!isEngineer && !isMerchant) {
@@ -136,7 +136,7 @@ export class UserVerificationController {
       );
     }
 
-    if (isMerchant && user.wholesale_status !== CapabilityStatus.UNVERIFIED) {
+    if (isMerchant && user.merchant_status !== CapabilityStatus.UNVERIFIED) {
       throw new HttpException(
         {
           success: false,
@@ -204,7 +204,7 @@ export class UserVerificationController {
       user.storePhotoUrl = uploadResult.url;
       user.storeName = merchantDto.storeName;
       user.verificationNote = dto.note;
-      user.wholesale_status = CapabilityStatus.PENDING;
+      user.merchant_status = CapabilityStatus.PENDING;
     }
 
     await user.save();

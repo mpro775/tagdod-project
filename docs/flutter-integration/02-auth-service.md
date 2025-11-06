@@ -125,6 +125,8 @@ Future<Map<String, dynamic>> sendOtp({
 > - **Customer (زبون عادي)** - الافتراضي - لا تحتاج `capabilityRequest`
 > - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle`
 > - **Merchant (تاجر)** - تحتاج `capabilityRequest: "merchant"`
+> 
+> ⚠️ **ملاحظة مهمة:** النوع في `capabilityRequest` هو `"merchant"` (وليس `"wholesale"`)، والحقول في API Response هي `merchantStatus` و `merchant_capable`.
 
 ### معلومات الطلب
 
@@ -183,7 +185,7 @@ Future<Map<String, dynamic>> sendOtp({
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "unverified",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_456"
@@ -221,7 +223,7 @@ Future<Map<String, dynamic>> sendOtp({
 
 1. **Customer (زبون عادي)** - الافتراضي
    - لا تحتاج إرسال `capabilityRequest`
-   - الحالة: `engineerStatus: "none"`, `wholesaleStatus: "none"`
+   - الحالة: `engineerStatus: "none"`, `merchantStatus: "none"`
    - يمكنه: تصفح المنتجات، الشراء، إضافة العناوين
 
 2. **Engineer (مهندس)**
@@ -231,7 +233,7 @@ Future<Map<String, dynamic>> sendOtp({
 
 3. **Merchant (تاجر)**
    - تحتاج: `capabilityRequest: "merchant"`
-   - الحالة الأولية: `wholesaleStatus: "unverified"`
+   - الحالة الأولية: `merchantStatus: "unverified"`
    - يجب رفع معلومات المحل → `pending` → موافقة الأدمن → `approved`
 
 #### **جدول حالات المهندس/التاجر:**
@@ -262,7 +264,7 @@ final response = await verifyOtp(
 
 // الحالة:
 print(response.me.engineerStatus);   // "none"
-print(response.me.wholesaleStatus);  // "none"
+print(response.me.merchantStatus);  // "none"
 // المستخدم customer عادي، يمكنه الشراء مباشرة
 ```
 
@@ -302,9 +304,9 @@ final response = await verifyOtp(
 );
 
 // الحالة:
-print(response.me.wholesaleStatus);   // "unverified" ⚠️
+print(response.me.merchantStatus);   // "unverified" ⚠️
 // يجب رفع معلومات المحل
-if (response.me.isWholesaleUnverified) {
+if (response.me.isMerchantUnverified) {
   navigateToUploadStoreInfo();
 }
 ```
@@ -339,7 +341,7 @@ class AuthUser {
   final bool isAdmin;
   final String preferredCurrency;
   final String? engineerStatus;
-  final String? wholesaleStatus;
+  final String? merchantStatus;
 
   AuthUser({
     required this.id, 
@@ -354,7 +356,7 @@ class AuthUser {
     this.isAdmin = false,
     required this.preferredCurrency,
     this.engineerStatus,
-    this.wholesaleStatus,
+    this.merchantStatus,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -375,7 +377,7 @@ class AuthUser {
       isAdmin: json['isAdmin'] ?? false,
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
       engineerStatus: json['engineerStatus'],
-      wholesaleStatus: json['wholesaleStatus'],
+      merchantStatus: json['merchantStatus'],
     );
   }
   
@@ -385,9 +387,9 @@ class AuthUser {
   bool get isEngineerApproved => engineerStatus == 'approved';
   bool get isEngineerUnverified => engineerStatus == 'unverified';
   
-  bool get isWholesalePending => wholesaleStatus == 'pending';
-  bool get isWholesaleApproved => wholesaleStatus == 'approved';
-  bool get isWholesaleUnverified => wholesaleStatus == 'unverified';
+  bool get isMerchantPending => merchantStatus == 'pending';
+  bool get isMerchantApproved => merchantStatus == 'approved';
+  bool get isMerchantUnverified => merchantStatus == 'unverified';
   
   bool hasRole(String role) => roles.contains(role);
   bool hasPermission(String permission) => permissions.contains(permission);
@@ -671,9 +673,9 @@ Future<bool> resetPassword({
       "customer_capable": true,
       "engineer_capable": false,
       "engineer_status": "pending",
-      "wholesale_capable": false,
-      "wholesale_status": null,
-      "wholesale_discount_percent": 0
+      "merchant_capable": false,
+      "merchant_status": null,
+      "merchant_discount_percent": 0
     }
   },
   "requestId": "req_303"
@@ -731,9 +733,9 @@ class Capabilities {
   final bool customerCapable;
   final bool engineerCapable;
   final String? engineerStatus; // pending, approved, rejected
-  final bool wholesaleCapable;
-  final String? wholesaleStatus;
-  final double wholesaleDiscountPercent;
+  final bool merchantCapable;
+  final String? merchantStatus;
+  final double merchantDiscountPercent;
 
   Capabilities({
     required this.id,
@@ -741,9 +743,9 @@ class Capabilities {
     required this.customerCapable,
     required this.engineerCapable,
     this.engineerStatus,
-    required this.wholesaleCapable,
-    this.wholesaleStatus,
-    required this.wholesaleDiscountPercent,
+    required this.merchantCapable,
+    this.merchantStatus,
+    required this.merchantDiscountPercent,
   });
 
   factory Capabilities.fromJson(Map<String, dynamic> json) {
@@ -753,10 +755,10 @@ class Capabilities {
       customerCapable: json['customer_capable'] ?? false,
       engineerCapable: json['engineer_capable'] ?? false,
       engineerStatus: json['engineer_status'],
-      wholesaleCapable: json['wholesale_capable'] ?? false,
-      wholesaleStatus: json['wholesale_status'],
-      wholesaleDiscountPercent: 
-          (json['wholesale_discount_percent'] ?? 0).toDouble(),
+      merchantCapable: json['merchant_capable'] ?? false,
+      merchantStatus: json['merchant_status'],
+      merchantDiscountPercent: 
+          (json['merchant_discount_percent'] ?? 0).toDouble(),
     );
   }
 }
@@ -1014,7 +1016,7 @@ Future<void> _clearLocalData() async {
 
 يسمح للمستخدمين (عادي/مهندس/تاجر) بتسجيل الدخول باستخدام رقم الهاتف وكلمة المرور.
 
-> 💡 **ملاحظة:** يرجع الحالة الفعلية للمستخدم (customer/engineer/wholesale) حسب ما تم التسجيل به.
+> 💡 **ملاحظة:** يرجع الحالة الفعلية للمستخدم (customer/engineer/merchant) حسب ما تم التسجيل به.
 
 ### معلومات الطلب
 
@@ -1061,7 +1063,7 @@ Future<void> _clearLocalData() async {
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "none",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_701"
@@ -1091,7 +1093,7 @@ Future<void> _clearLocalData() async {
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "approved",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_701"
@@ -1223,7 +1225,7 @@ Future<LoginResponse> userLogin({
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "none",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_456"
@@ -1252,7 +1254,7 @@ Future<LoginResponse> userLogin({
       "isAdmin": false,
       "preferredCurrency": "USD",
       "engineerStatus": "unverified",
-      "wholesaleStatus": "none"
+      "merchantStatus": "none"
     }
   },
   "requestId": "req_801"
@@ -1327,8 +1329,8 @@ final response = await userSignup(
   gender: 'male',
   capabilityRequest: 'merchant',    // ✨ طلب صلاحية تاجر
 );
-// النتيجة: wholesaleStatus = "unverified" - يجب رفع معلومات المحل
-if (response.me.isWholesaleUnverified) {
+// النتيجة: merchantStatus = "unverified" - يجب رفع معلومات المحل
+if (response.me.isMerchantUnverified) {
   navigateToUploadStoreInfo();
 }
 ```
@@ -1461,9 +1463,9 @@ class Capabilities {
   final bool customerCapable;
   final bool engineerCapable;
   final String? engineerStatus;
-  final bool wholesaleCapable;
-  final String? wholesaleStatus;
-  final double wholesaleDiscountPercent;
+  final bool merchantCapable;
+  final String? merchantStatus;
+  final double merchantDiscountPercent;
 
   Capabilities({
     required this.id,
@@ -1471,9 +1473,9 @@ class Capabilities {
     required this.customerCapable,
     required this.engineerCapable,
     this.engineerStatus,
-    required this.wholesaleCapable,
-    this.wholesaleStatus,
-    required this.wholesaleDiscountPercent,
+    required this.merchantCapable,
+    this.merchantStatus,
+    required this.merchantDiscountPercent,
   });
 
   factory Capabilities.fromJson(Map<String, dynamic> json) {
@@ -1483,18 +1485,18 @@ class Capabilities {
       customerCapable: json['customer_capable'] ?? false,
       engineerCapable: json['engineer_capable'] ?? false,
       engineerStatus: json['engineer_status'],
-      wholesaleCapable: json['wholesale_capable'] ?? false,
-      wholesaleStatus: json['wholesale_status'],
-      wholesaleDiscountPercent:
-          (json['wholesale_discount_percent'] ?? 0).toDouble(),
+      merchantCapable: json['merchant_capable'] ?? false,
+      merchantStatus: json['merchant_status'],
+      merchantDiscountPercent:
+          (json['merchant_discount_percent'] ?? 0).toDouble(),
     );
   }
 
   bool get isEngineerApproved => 
       engineerCapable && engineerStatus == 'approved';
   bool get isEngineerPending => engineerStatus == 'pending';
-  bool get isWholesaleApproved => 
-      wholesaleCapable && wholesaleStatus == 'approved';
+  bool get isMerchantApproved => 
+      merchantCapable && merchantStatus == 'approved';
 }
 
 class UserProfile {
@@ -1530,14 +1532,14 @@ class AuthUser {
   final String phone;
   final String preferredCurrency;
   final String? engineerStatus;
-  final String? wholesaleStatus;
+  final String? merchantStatus;
 
   AuthUser({
     required this.id, 
     required this.phone,
     required this.preferredCurrency,
     this.engineerStatus,
-    this.wholesaleStatus,
+    this.merchantStatus,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -1546,7 +1548,7 @@ class AuthUser {
       phone: json['phone'],
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
       engineerStatus: json['engineerStatus'],
-      wholesaleStatus: json['wholesaleStatus'],
+      merchantStatus: json['merchantStatus'],
     );
   }
   
@@ -1554,9 +1556,9 @@ class AuthUser {
   bool get isEngineerApproved => engineerStatus == 'approved';
   bool get isEngineerUnverified => engineerStatus == 'unverified';
   
-  bool get isWholesalePending => wholesaleStatus == 'pending';
-  bool get isWholesaleApproved => wholesaleStatus == 'approved';
-  bool get isWholesaleUnverified => wholesaleStatus == 'unverified';
+  bool get isMerchantPending => merchantStatus == 'pending';
+  bool get isMerchantApproved => merchantStatus == 'approved';
+  bool get isMerchantUnverified => merchantStatus == 'unverified';
 }
 ```
 
@@ -1587,7 +1589,7 @@ class AuthUser {
    - **Engineer (مهندس):** يحتاج `capabilityRequest: "engineer"` + `jobTitle`
    - **Merchant (تاجر):** يحتاج `capabilityRequest: "merchant"`
 
-6. **حالات المهندس/التاجر (engineerStatus / wholesaleStatus):**
+6. **حالات المهندس/التاجر (engineerStatus / merchantStatus):**
    - `none`: مستخدم عادي (customer)
    - `unverified`: طلب الصلاحية عند التسجيل لكن لم يرفع الوثائق ⚠️
    - `pending`: رفع الوثائق وفي انتظار موافقة الأدمن ⏳
@@ -1606,7 +1608,7 @@ class AuthUser {
    
    // 1. Customer عادي
    if (loginResponse.me.engineerStatus == 'none' && 
-       loginResponse.me.wholesaleStatus == 'none') {
+       loginResponse.me.merchantStatus == 'none') {
      // مستخدم عادي - يمكنه الشراء مباشرة
      navigateToHome();
    }
@@ -1625,10 +1627,10 @@ class AuthUser {
    }
    
    // 3. تاجر
-   if (loginResponse.me.isWholesaleUnverified) {
+   if (loginResponse.me.isMerchantUnverified) {
      navigateToUploadStoreInfo();
-   } else if (loginResponse.me.isWholesaleApproved) {
-     navigateToWholesaleDashboard();
+   } else if (loginResponse.me.isMerchantApproved) {
+     navigateToMerchantDashboard();
    }
    ```
 
@@ -1656,18 +1658,18 @@ class AuthUser {
 7. ✅ **تصحيح مدة صلاحية Access Token** - 8 ساعات (كان 15 دقيقة)
 8. ✅ **إضافة حقول حالة المهندس/التاجر في جميع Login/Signup Responses:**
    - `engineerStatus` - حالة المهندس (none/unverified/pending/approved/rejected)
-   - `wholesaleStatus` - حالة التاجر (none/unverified/pending/approved/rejected)
+   - `merchantStatus` - حالة التاجر/المتجر (none/unverified/pending/approved/rejected)
 9. ✅ **إضافة أمثلة واضحة للأنواع الثلاثة:**
-   - مثال Customer عادي (engineerStatus: "none", wholesaleStatus: "none")
+   - مثال Customer عادي (engineerStatus: "none", merchantStatus: "none")
    - مثال Engineer (engineerStatus: "unverified/approved")
-   - مثال Merchant (wholesaleStatus: "unverified/approved")
+   - مثال Merchant (merchantStatus: "unverified/approved")
 10. ✅ **إضافة أخطاء جديدة:**
    - `AUTH_125` - كلمة المرور غير محددة
    - `AUTH_126` - الحساب غير نشط
    - `AUTH_128` - رقم الهاتف موجود مسبقاً
 11. ✅ تحديث `VALIDATION_ERROR` إلى `GENERAL_004`
 12. ✅ **حذف endpoints الأدمن** - هذا الملف للمستخدمين والتجار والمهندسين فقط
-13. ✅ **تحديث نوع capabilityRequest للتاجر** - تم تغيير `"wholesale"` إلى `"merchant"` في جميع endpoints
+13. ✅ **تحديث نوع capabilityRequest والتسميات** - تم تغيير `"wholesale"` إلى `"merchant"` في جميع endpoints والحقول (`merchantStatus`, `merchant_capable`, `merchant_discount_percent`)
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/auth/auth.controller.ts`

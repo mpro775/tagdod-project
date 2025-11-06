@@ -166,8 +166,8 @@ export class AuthController {
         jobTitle?: string;
         engineer_capable?: boolean;
         engineer_status?: string;
-        wholesale_capable?: boolean;
-        wholesale_status?: string;
+        merchant_capable?: boolean;
+        merchant_status?: string;
       } = {
         phone: dto.phone,
         firstName: dto.firstName,
@@ -183,8 +183,8 @@ export class AuthController {
           userData.engineer_capable = true;
           userData.engineer_status = 'unverified';
         } else if (dto.capabilityRequest === 'merchant') {
-          userData.wholesale_capable = true;
-          userData.wholesale_status = 'unverified';
+          userData.merchant_capable = true;
+          userData.merchant_status = 'unverified';
         }
       }
 
@@ -196,9 +196,9 @@ export class AuthController {
         customer_capable: true,
         engineer_capable: user.engineer_capable || false,
         engineer_status: user.engineer_status || 'none',
-        wholesale_capable: user.wholesale_capable || false,
-        wholesale_status: user.wholesale_status || 'none',
-        wholesale_discount_percent: 0,
+        merchant_capable: user.merchant_capable || false,
+        merchant_status: user.merchant_status || 'none',
+        merchant_discount_percent: 0,
       });
     } else if (dto.capabilityRequest === 'engineer' && dto.jobTitle && !user.jobTitle) {
       // تحديث المسمى الوظيفي إذا كان المستخدم موجوداً ولكن ليس لديه مسمى
@@ -246,7 +246,7 @@ export class AuthController {
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
         engineerStatus: user.engineer_status,
-        wholesaleStatus: user.wholesale_status,
+        merchantStatus: user.merchant_status,
       },
     };
   }
@@ -329,7 +329,7 @@ export class AuthController {
           properties: {
             customer_capable: { type: 'boolean', example: true },
             engineer_capable: { type: 'boolean', example: false },
-            wholesale_capable: { type: 'boolean', example: false },
+            merchant_capable: { type: 'boolean', example: false },
           },
         },
       },
@@ -440,11 +440,11 @@ export class AuthController {
       .find({
         $or: [
           { engineer_status: 'pending' },
-          { wholesale_status: 'pending' },
+          { merchant_status: 'pending' },
         ],
         deletedAt: null,
       })
-      .select('phone firstName lastName engineer_status wholesale_status cvFileUrl storePhotoUrl storeName verificationNote createdAt')
+      .select('phone firstName lastName engineer_status merchant_status cvFileUrl storePhotoUrl storeName verificationNote createdAt')
       .sort({ createdAt: -1 })
       .lean();
     return { items: list };
@@ -460,7 +460,7 @@ export class AuthController {
       userId: string;
       capability: 'engineer' | 'merchant';
       approve: boolean;
-      wholesaleDiscountPercent?: number; // نسبة الخصم للتاجر (0-100)
+      merchantDiscountPercent?: number; // نسبة الخصم للتاجر (0-100)
     },
   ) {
     const caps = await this.capsModel.findOne({ userId: body.userId });
@@ -472,22 +472,22 @@ export class AuthController {
     }
 
     if (body.capability === 'merchant') {
-      caps.wholesale_status = body.approve ? 'approved' : 'rejected';
-      caps.wholesale_capable = body.approve;
+      caps.merchant_status = body.approve ? 'approved' : 'rejected';
+      caps.merchant_capable = body.approve;
 
       // تعيين نسبة الخصم عند الموافقة على التاجر
       if (body.approve) {
         if (
-          body.wholesaleDiscountPercent === undefined ||
-          body.wholesaleDiscountPercent < 0 ||
-          body.wholesaleDiscountPercent > 100
+          body.merchantDiscountPercent === undefined ||
+          body.merchantDiscountPercent < 0 ||
+          body.merchantDiscountPercent > 100
         ) {
-          throw new AuthException(ErrorCode.AUTH_INVALID_DISCOUNT, { discount: body.wholesaleDiscountPercent });
+          throw new AuthException(ErrorCode.AUTH_INVALID_DISCOUNT, { discount: body.merchantDiscountPercent });
         }
-        caps.wholesale_discount_percent = body.wholesaleDiscountPercent;
+        caps.merchant_discount_percent = body.merchantDiscountPercent;
       } else {
         // إزالة الخصم عند الرفض
-        caps.wholesale_discount_percent = 0;
+        caps.merchant_discount_percent = 0;
       }
     }
 
@@ -559,9 +559,9 @@ export class AuthController {
       customer_capable: true,
       engineer_capable: true,
       engineer_status: 'approved',
-      wholesale_capable: true,
-      wholesale_status: 'approved',
-      wholesale_discount_percent: 0,
+      merchant_capable: true,
+      merchant_status: 'approved',
+      merchant_discount_percent: 0,
     };
 
     await this.capsModel.create(adminCapabilities);
@@ -774,8 +774,8 @@ export class AuthController {
         user.engineer_capable = true;
         user.engineer_status = CapabilityStatus.UNVERIFIED;
       } else if (dto.capabilityRequest === 'merchant') {
-        user.wholesale_capable = true;
-        user.wholesale_status = CapabilityStatus.UNVERIFIED;
+        user.merchant_capable = true;
+        user.merchant_status = CapabilityStatus.UNVERIFIED;
       }
       await user.save();
     }
@@ -786,9 +786,9 @@ export class AuthController {
       customer_capable: true,
       engineer_capable: user.engineer_capable || false,
       engineer_status: user.engineer_status || 'none',
-      wholesale_capable: user.wholesale_capable || false,
-      wholesale_status: user.wholesale_status || 'none',
-      wholesale_discount_percent: 0,
+      merchant_capable: user.merchant_capable || false,
+      merchant_status: user.merchant_status || 'none',
+      merchant_discount_percent: 0,
     });
 
     // مزامنة المفضلات تلقائياً عند التسجيل
@@ -833,7 +833,7 @@ export class AuthController {
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
         engineerStatus: user.engineer_status,
-        wholesaleStatus: user.wholesale_status,
+        merchantStatus: user.merchant_status,
       },
     };
   }
@@ -942,7 +942,7 @@ export class AuthController {
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
         engineerStatus: user.engineer_status,
-        wholesaleStatus: user.wholesale_status,
+        merchantStatus: user.merchant_status,
       },
     };
   }

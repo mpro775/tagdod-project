@@ -49,6 +49,6 @@ export class UpdateUserAdminDto {
   capabilityRequest?: 'engineer' | 'merchant';
 
   @IsOptional()
-  wholesaleDiscountPercent?: number;
+  merchantDiscountPercent?: number;
 }
 

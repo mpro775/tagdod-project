@@ -3,12 +3,12 @@ import { AppModule } from '../src/app.module';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../src/modules/users/schemas/user.schema';
-import { Product, ProductDocument } from '../src/modules/catalog/schemas/product.schema';
+import { Product, ProductDocument } from '../src/modules/products/schemas/product.schema';
 import { Category, CategoryDocument } from '../src/modules/categories/schemas/category.schema';
 import { Brand, BrandDocument } from '../src/modules/brands/schemas/brand.schema';
 import { Attribute, AttributeDocument } from '../src/modules/attributes/schemas/attribute.schema';
 import { AttributeValue, AttributeValueDocument } from '../src/modules/attributes/schemas/attribute-value.schema';
-import { Variant, VariantDocument } from '../src/modules/catalog/schemas/variant.schema';
+import { Variant, VariantDocument } from '../src/modules/products/schemas/variant.schema';
 import { Cart, CartDocument } from '../src/modules/cart/schemas/cart.schema';
 import { Order, OrderDocument } from '../src/modules/checkout/schemas/order.schema';
 import { Address, AddressDocument } from '../src/modules/addresses/schemas/address.schema';
@@ -16,6 +16,7 @@ import { Media, MediaDocument } from '../src/modules/upload/schemas/media.schema
 import { Favorite, FavoriteDocument } from '../src/modules/favorites/schemas/favorite.schema';
 import { Notification, NotificationDocument } from '../src/modules/notifications/schemas/notification.schema';
 import { AnalyticsSnapshot, AnalyticsSnapshotDocument } from '../src/modules/analytics/schemas/analytics-snapshot.schema';
+import { Capabilities, CapabilitiesDocument } from '../src/modules/capabilities/schemas/capabilities.schema';
 
 interface Migration {
   name: string;
@@ -40,6 +41,7 @@ class DatabaseMigrator {
     Favorite: Model<FavoriteDocument>;
     Notification: Model<NotificationDocument>;
     AnalyticsSnapshot: Model<AnalyticsSnapshotDocument>;
+    Capabilities: Model<CapabilitiesDocument>;
   };
 
   constructor() {
@@ -65,6 +67,7 @@ class DatabaseMigrator {
     this.models.Favorite = this.app.get(getModelToken(Favorite.name));
     this.models.Notification = this.app.get(getModelToken(Notification.name));
     this.models.AnalyticsSnapshot = this.app.get(getModelToken(AnalyticsSnapshot.name));
+    this.models.Capabilities = this.app.get(getModelToken(Capabilities.name));
     
     console.log('✅ Database migrator initialized');
   }
@@ -209,6 +212,123 @@ class DatabaseMigrator {
           console.log('🗑️ Dropping TTL indexes...');
           console.log('⚠️ Manual TTL index cleanup required');
         }
+      },
+      {
+        name: 'rename_wholesale_to_merchant',
+        up: async () => {
+          console.log('🔄 Renaming wholesale fields to merchant...');
+          
+          // 1. Update Users collection
+          console.log('📝 Updating Users collection...');
+          const userResult = await this.models.User.collection.updateMany(
+            {},
+            {
+              $rename: {
+                'wholesale_capable': 'merchant_capable',
+                'wholesale_status': 'merchant_status',
+                'wholesale_discount_percent': 'merchant_discount_percent',
+              }
+            }
+          );
+          console.log(`✅ Updated ${userResult.modifiedCount} users`);
+          
+          // 2. Update Capabilities collection
+          console.log('📝 Updating Capabilities collection...');
+          const capsResult = await this.models.Capabilities.collection.updateMany(
+            {},
+            {
+              $rename: {
+                'wholesale_capable': 'merchant_capable',
+                'wholesale_status': 'merchant_status',
+                'wholesale_discount_percent': 'merchant_discount_percent',
+              }
+            }
+          );
+          console.log(`✅ Updated ${capsResult.modifiedCount} capabilities`);
+          
+          // 3. Update accountType in Carts collection
+          console.log('📝 Updating accountType in Carts collection...');
+          const cartResult = await this.models.Cart.collection.updateMany(
+            { accountType: 'wholesale' },
+            {
+              $set: {
+                accountType: 'merchant'
+              }
+            }
+          );
+          console.log(`✅ Updated ${cartResult.modifiedCount} carts`);
+          
+          // 4. Update accountType in Orders collection
+          console.log('📝 Updating accountType in Orders collection...');
+          const orderResult = await this.models.Order.collection.updateMany(
+            { accountType: 'wholesale' },
+            {
+              $set: {
+                accountType: 'merchant'
+              }
+            }
+          );
+          console.log(`✅ Updated ${orderResult.modifiedCount} orders`);
+          
+          console.log('✅ Migration completed: rename_wholesale_to_merchant');
+        },
+        down: async () => {
+          console.log('🔄 Rolling back: renaming merchant fields back to wholesale...');
+          
+          // 1. Rollback Users collection
+          console.log('📝 Rolling back Users collection...');
+          const userResult = await this.models.User.collection.updateMany(
+            {},
+            {
+              $rename: {
+                'merchant_capable': 'wholesale_capable',
+                'merchant_status': 'wholesale_status',
+                'merchant_discount_percent': 'wholesale_discount_percent',
+              }
+            }
+          );
+          console.log(`✅ Rolled back ${userResult.modifiedCount} users`);
+          
+          // 2. Rollback Capabilities collection
+          console.log('📝 Rolling back Capabilities collection...');
+          const capsResult = await this.models.Capabilities.collection.updateMany(
+            {},
+            {
+              $rename: {
+                'merchant_capable': 'wholesale_capable',
+                'merchant_status': 'wholesale_status',
+                'merchant_discount_percent': 'wholesale_discount_percent',
+              }
+            }
+          );
+          console.log(`✅ Rolled back ${capsResult.modifiedCount} capabilities`);
+          
+          // 3. Rollback accountType in Carts collection
+          console.log('📝 Rolling back accountType in Carts collection...');
+          const cartResult = await this.models.Cart.collection.updateMany(
+            { accountType: 'merchant' },
+            {
+              $set: {
+                accountType: 'wholesale'
+              }
+            }
+          );
+          console.log(`✅ Rolled back ${cartResult.modifiedCount} carts`);
+          
+          // 4. Rollback accountType in Orders collection
+          console.log('📝 Rolling back accountType in Orders collection...');
+          const orderResult = await this.models.Order.collection.updateMany(
+            { accountType: 'merchant' },
+            {
+              $set: {
+                accountType: 'wholesale'
+              }
+            }
+          );
+          console.log(`✅ Rolled back ${orderResult.modifiedCount} orders`);
+          
+          console.log('✅ Rollback completed: rename_wholesale_to_merchant');
+        }
       }
     ];
   }
@@ -269,7 +389,8 @@ class DatabaseMigrator {
           if (index.expireAfterSeconds !== undefined) console.log(`     - TTL: ${index.expireAfterSeconds}s`);
         });
       } catch (error) {
-        console.log(`⚠️ Could not list indexes for ${collectionName}: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.log(`⚠️ Could not list indexes for ${collectionName}: ${errorMessage}`);
       }
     }
   }

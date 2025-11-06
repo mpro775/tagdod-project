@@ -471,9 +471,9 @@ export class UsersAdminController {
       customer_capable: true,
       engineer_capable: false,
       engineer_status: CapabilityStatus.NONE,
-      wholesale_capable: false,
-      wholesale_status: CapabilityStatus.NONE,
-      wholesale_discount_percent: 0,
+      merchant_capable: false,
+      merchant_status: CapabilityStatus.NONE,
+      merchant_discount_percent: 0,
       admin_capable: false,
       admin_status: CapabilityStatus.NONE,
     };
@@ -488,9 +488,9 @@ export class UsersAdminController {
     }
 
     if (dto.capabilityRequest === 'merchant') {
-      userData.wholesale_capable = true;
-      userData.wholesale_status = CapabilityStatus.APPROVED;
-      userData.wholesale_discount_percent = dto.wholesaleDiscountPercent || 0;
+      userData.merchant_capable = true;
+      userData.merchant_status = CapabilityStatus.APPROVED;
+      userData.merchant_discount_percent = dto.merchantDiscountPercent || 0;
     }
 
     // تحديث القدرات للأدمن
@@ -513,9 +513,9 @@ export class UsersAdminController {
       customer_capable: user.customer_capable,
       engineer_capable: user.engineer_capable,
       engineer_status: user.engineer_status,
-      wholesale_capable: user.wholesale_capable,
-      wholesale_status: user.wholesale_status,
-      wholesale_discount_percent: user.wholesale_discount_percent,
+      merchant_capable: user.merchant_capable,
+      merchant_status: user.merchant_status,
+      merchant_discount_percent: user.merchant_discount_percent,
       admin_capable: user.admin_capable,
       admin_status: user.admin_status,
     };
@@ -576,9 +576,9 @@ export class UsersAdminController {
       // تنظيف القدرات القديمة أولاً
       user.engineer_capable = false;
       user.engineer_status = CapabilityStatus.NONE;
-      user.wholesale_capable = false;
-      user.wholesale_status = CapabilityStatus.NONE;
-      user.wholesale_discount_percent = 0;
+      user.merchant_capable = false;
+      user.merchant_status = CapabilityStatus.NONE;
+      user.merchant_discount_percent = 0;
       user.admin_capable = false;
       user.admin_status = CapabilityStatus.NONE;
 
@@ -587,9 +587,9 @@ export class UsersAdminController {
         user.engineer_capable = true;
         user.engineer_status = CapabilityStatus.APPROVED;
       } else if (mainRole === UserRole.MERCHANT) {
-        user.wholesale_capable = true;
-        user.wholesale_status = CapabilityStatus.APPROVED;
-        user.wholesale_discount_percent = dto.wholesaleDiscountPercent || 0;
+        user.merchant_capable = true;
+        user.merchant_status = CapabilityStatus.APPROVED;
+        user.merchant_discount_percent = dto.merchantDiscountPercent || 0;
       } else if (mainRole === UserRole.ADMIN || mainRole === UserRole.SUPER_ADMIN) {
         user.admin_capable = true;
         user.admin_status = CapabilityStatus.APPROVED;
@@ -606,9 +606,9 @@ export class UsersAdminController {
         customer_capable: user.customer_capable,
         engineer_capable: user.engineer_capable,
         engineer_status: user.engineer_status,
-        wholesale_capable: user.wholesale_capable,
-        wholesale_status: user.wholesale_status,
-        wholesale_discount_percent: user.wholesale_discount_percent,
+        merchant_capable: user.merchant_capable,
+        merchant_status: user.merchant_status,
+        merchant_discount_percent: user.merchant_discount_percent,
         admin_capable: user.admin_capable,
         admin_status: user.admin_status,
       });
@@ -617,9 +617,9 @@ export class UsersAdminController {
       capabilities.customer_capable = user.customer_capable;
       capabilities.engineer_capable = user.engineer_capable;
       capabilities.engineer_status = user.engineer_status;
-      capabilities.wholesale_capable = user.wholesale_capable;
-      capabilities.wholesale_status = user.wholesale_status;
-      capabilities.wholesale_discount_percent = user.wholesale_discount_percent;
+      capabilities.merchant_capable = user.merchant_capable;
+      capabilities.merchant_status = user.merchant_status;
+      capabilities.merchant_discount_percent = user.merchant_discount_percent;
       capabilities.admin_capable = user.admin_capable;
       capabilities.admin_status = user.admin_status;
       await capabilities.save();
@@ -857,11 +857,11 @@ export class UsersAdminController {
       .find({
         $or: [
           { engineer_status: CapabilityStatus.PENDING },
-          { wholesale_status: CapabilityStatus.PENDING },
+          { merchant_status: CapabilityStatus.PENDING },
         ],
         deletedAt: null,
       })
-      .select('phone firstName lastName engineer_status wholesale_status cvFileUrl storePhotoUrl storeName verificationNote createdAt')
+      .select('phone firstName lastName engineer_status merchant_status cvFileUrl storePhotoUrl storeName verificationNote createdAt')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -911,7 +911,7 @@ export class UsersAdminController {
     // التحقق من وجود طلب تحقق قيد المراجعة
     const hasPendingVerification = 
       user.engineer_status === CapabilityStatus.PENDING ||
-      user.wholesale_status === CapabilityStatus.PENDING;
+      user.merchant_status === CapabilityStatus.PENDING;
 
     if (!hasPendingVerification) {
       throw new UserNotFoundException({
@@ -934,7 +934,7 @@ export class UsersAdminController {
         storeName: user.storeName,
         verificationNote: user.verificationNote,
         engineerStatus: user.engineer_status,
-        wholesaleStatus: user.wholesale_status,
+        merchantStatus: user.merchant_status,
         createdAt: userWithTimestamps.createdAt,
         updatedAt: userWithTimestamps.updatedAt,
       },
@@ -966,7 +966,7 @@ export class UsersAdminController {
 
     // التحقق من وجود طلب قيد المراجعة
     const isEngineerPending = user.engineer_status === CapabilityStatus.PENDING;
-    const isMerchantPending = user.wholesale_status === CapabilityStatus.PENDING;
+    const isMerchantPending = user.merchant_status === CapabilityStatus.PENDING;
 
     if (!isEngineerPending && !isMerchantPending) {
       throw new UserNotFoundException({
@@ -984,7 +984,7 @@ export class UsersAdminController {
     }
 
     if (isMerchantPending) {
-      user.wholesale_status = CapabilityStatus.APPROVED;
+      user.merchant_status = CapabilityStatus.APPROVED;
       if (!user.roles.includes(UserRole.MERCHANT)) {
         user.roles.push(UserRole.MERCHANT);
       }
@@ -1000,8 +1000,8 @@ export class UsersAdminController {
         caps.engineer_capable = true;
       }
       if (isMerchantPending) {
-        caps.wholesale_status = CapabilityStatus.APPROVED;
-        caps.wholesale_capable = true;
+        caps.merchant_status = CapabilityStatus.APPROVED;
+        caps.merchant_capable = true;
       }
       await caps.save();
     }
@@ -1043,7 +1043,7 @@ export class UsersAdminController {
 
     // التحقق من وجود طلب قيد المراجعة
     const isEngineerPending = user.engineer_status === CapabilityStatus.PENDING;
-    const isMerchantPending = user.wholesale_status === CapabilityStatus.PENDING;
+    const isMerchantPending = user.merchant_status === CapabilityStatus.PENDING;
 
     if (!isEngineerPending && !isMerchantPending) {
       throw new UserNotFoundException({
@@ -1061,7 +1061,7 @@ export class UsersAdminController {
     }
 
     if (isMerchantPending) {
-      user.wholesale_status = CapabilityStatus.REJECTED;
+      user.merchant_status = CapabilityStatus.REJECTED;
       user.roles = user.roles.filter(role => role !== UserRole.MERCHANT);
       // مسح صورة المحل واسم المحل
       user.storePhotoUrl = undefined;
@@ -1083,8 +1083,8 @@ export class UsersAdminController {
         caps.engineer_capable = false;
       }
       if (isMerchantPending) {
-        caps.wholesale_status = CapabilityStatus.REJECTED;
-        caps.wholesale_capable = false;
+        caps.merchant_status = CapabilityStatus.REJECTED;
+        caps.merchant_capable = false;
       }
       await caps.save();
     }
