@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
@@ -14,8 +14,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Autocomplete,
+  Chip,
+  Divider,
 } from '@mui/material';
-import { Save, ArrowBack } from '@mui/icons-material';
+import { Save, ArrowBack, Navigation } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -23,8 +26,15 @@ import { useCreateBanner, useUpdateBanner, useBanner } from '../hooks/useBanners
 import {
   BannerLocation,
   BannerPromotionType,
+  BannerNavigationType,
+  BANNER_NAVIGATION_TYPE_OPTIONS,
+  USER_ROLE_OPTIONS,
 } from '../types/banner.types';
 import type { CreateBannerDto, UpdateBannerDto } from '../types/banner.types';
+import { ImageField, MediaCategory } from '@/features/media';
+import type { Media } from '@/features/media/types/media.types';
+import { useCategories } from '@/features/categories/hooks/useCategories';
+import { productsApi } from '@/features/products/api/productsApi';
 
 type BannerFormData = CreateBannerDto | UpdateBannerDto;
 
@@ -66,6 +76,13 @@ export const BannerFormPage: React.FC = () => {
   const { mutate: createBanner, isPending: creating } = useCreateBanner();
   const { mutate: updateBanner, isPending: updating } = useUpdateBanner();
 
+  const [selectedImage, setSelectedImage] = useState<Media | null>(null);
+  const [products, setProducts] = useState<Array<{ _id: string; name: string }>>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  
+  // Get categories for navigation
+  const { data: categories = [] } = useCategories({ isActive: true });
+
   const {
     control,
     handleSubmit,
@@ -77,9 +94,12 @@ export const BannerFormPage: React.FC = () => {
     defaultValues: {
       title: '',
       description: '',
-      imageUrl: '',
+      imageId: '',
       linkUrl: '',
       altText: '',
+      navigationType: BannerNavigationType.NONE,
+      navigationTarget: '',
+      navigationParams: {},
       location: BannerLocation.HOME_TOP,
       promotionType: BannerPromotionType.DISCOUNT,
       isActive: true,
@@ -88,21 +108,55 @@ export const BannerFormPage: React.FC = () => {
       endDate: '',
       displayDuration: 5000,
       targetAudiences: [],
+      targetUserTypes: [],
       targetCategories: [],
       targetProducts: [],
     },
   });
 
-  const imageUrl = watch('imageUrl');
+  const watchedNavigationType = watch('navigationType');
+
+  // Load products when navigation type is PRODUCT
+  useEffect(() => {
+    if (watchedNavigationType === BannerNavigationType.PRODUCT) {
+      loadProducts();
+    }
+  }, [watchedNavigationType]);
+
+  const loadProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      const response = await productsApi.list({ page: 1, limit: 100, status: 'active' as any });
+      const productsData = Array.isArray(response.data) ? response.data : [];
+      setProducts(productsData.map((p: any) => ({ _id: p._id, name: p.name || p.nameAr || '' })));
+    } catch (error) {
+      console.error('Error loading products:', error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   useEffect(() => {
     if (banner && isEditing) {
+      // Handle imageId - could be a Media object (populated) or string (ID)
+      const imageId = typeof banner.imageId === 'string' 
+        ? banner.imageId 
+        : banner.imageId?._id || '';
+      
+      // If imageId is a Media object, set it for display
+      if (banner.imageId && typeof banner.imageId === 'object') {
+        setSelectedImage(banner.imageId);
+      }
+
       reset({
         title: banner.title,
         description: banner.description,
-        imageUrl: banner.imageUrl,
+        imageId: imageId,
         linkUrl: banner.linkUrl,
         altText: banner.altText,
+        navigationType: banner.navigationType || BannerNavigationType.NONE,
+        navigationTarget: banner.navigationTarget || '',
+        navigationParams: banner.navigationParams || {},
         location: banner.location,
         promotionType: banner.promotionType,
         isActive: banner.isActive,
@@ -111,6 +165,7 @@ export const BannerFormPage: React.FC = () => {
         endDate: banner.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : '',
         displayDuration: banner.displayDuration,
         targetAudiences: banner.targetAudiences,
+        targetUserTypes: banner.targetUserTypes || [],
         targetCategories: banner.targetCategories,
         targetProducts: banner.targetProducts,
       });
@@ -118,9 +173,21 @@ export const BannerFormPage: React.FC = () => {
   }, [banner, isEditing, reset]);
 
   const onSubmit = (data: BannerFormData) => {
+    // Ensure imageId is set
+    if (!data.imageId) {
+      toast.error(t('form.imageUrl.required'));
+      return;
+    }
+
+    // Prepare the data - only send imageId, not imageUrl
+    const submitData = {
+      ...data,
+      imageId: data.imageId,
+    };
+
     if (isEditing) {
       updateBanner(
-        { id: id!, data },
+        { id: id!, data: submitData },
         {
           onSuccess: () => {
             toast.success(t('messages.updated'));
@@ -132,7 +199,7 @@ export const BannerFormPage: React.FC = () => {
         }
       );
     } else {
-      createBanner(data as CreateBannerDto, {
+      createBanner(submitData as CreateBannerDto, {
         onSuccess: () => {
           toast.success(t('messages.created'));
           navigate('/banners');
@@ -242,23 +309,36 @@ export const BannerFormPage: React.FC = () => {
 
             <Grid size={{ xs: 12, md: 6 }}>
               <Controller
-                name="imageUrl"
+                name="imageId"
                 control={control}
                 rules={{
                   required: t('form.imageUrl.required'),
-                  pattern: {
-                    value: /^https?:\/\/.+/,
-                    message: t('form.imageUrl.invalid'),
-                  },
                 }}
-                render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label={t('form.imageUrl.label')}
-                    error={!!error}
-                    helperText={error?.message || t('form.imageUrl.helper')}
-                  />
+                render={({ fieldState: { error } }) => (
+                  <Box
+                    sx={{
+                      bgcolor: watch('imageId') ? 'background.paper' : 'grey.50',
+                      border: 1,
+                      borderColor: error ? 'error.main' : 'divider',
+                      borderRadius: 1,
+                      p: 2,
+                    }}
+                  >
+                    <ImageField
+                      label={t('form.imageUrl.label')}
+                      value={selectedImage || undefined}
+                      onChange={(media: Media | null) => {
+                        setSelectedImage(media);
+                        // استخراج ID من Media object
+                        const mediaId = media?._id || '';
+                        setValue('imageId', mediaId, { shouldValidate: true });
+                      }}
+                      category={MediaCategory.BANNER}
+                      required
+                      error={!!error}
+                      helperText={error?.message || t('form.imageUrl.helper')}
+                    />
+                  </Box>
                 )}
               />
             </Grid>
@@ -279,33 +359,6 @@ export const BannerFormPage: React.FC = () => {
               />
             </Grid>
 
-            {imageUrl && (
-              <Grid size={{ xs: 12 }}>
-                <Box
-                  sx={{ textAlign: 'center', p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}
-                >
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {t('form.imagePreview')}
-                  </Typography>
-                  <Box
-                    component="img"
-                    src={imageUrl}
-                    alt="Banner preview"
-                    sx={{
-                      maxWidth: '100%',
-                      maxHeight: 200,
-                      objectFit: 'contain',
-                      borderRadius: 1,
-                      boxShadow: 1,
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </Box>
-              </Grid>
-            )}
-
             <Grid size={{ xs: 12 }}>
               <Controller
                 name="altText"
@@ -317,6 +370,157 @@ export const BannerFormPage: React.FC = () => {
                     label={t('form.altText.label')}
                     type="text"
                     InputProps={{ inputProps: { min: 0 } }}
+                  />
+                )}
+              />
+            </Grid>
+
+            {/* Navigation Settings */}
+            <Grid size={{ xs: 12 }}>
+              <Divider sx={{ my: 2 }} />
+              <Box display="flex" alignItems="center" gap={1} mb={1}>
+                <Navigation />
+                <Typography variant="h6">
+                  {t('navigation', 'إعدادات التنقل')}
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Controller
+                name="navigationType"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>{t('form.navigationType.label', 'نوع التنقل')}</InputLabel>
+                    <Select {...field} label={t('form.navigationType.label', 'نوع التنقل')}>
+                      {BANNER_NAVIGATION_TYPE_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+
+            {watchedNavigationType && watchedNavigationType !== BannerNavigationType.NONE && (
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="navigationTarget"
+                  control={control}
+                  rules={{
+                    required: t('form.navigationTarget.required', 'الهدف مطلوب'),
+                  }}
+                  render={({ field }) => {
+                    if (watchedNavigationType === BannerNavigationType.CATEGORY) {
+                      return (
+                        <FormControl fullWidth error={!!errors.navigationTarget}>
+                          <InputLabel>{t('form.navigationTarget.label', 'الفئة')}</InputLabel>
+                          <Select {...field} label={t('form.navigationTarget.label', 'الفئة')}>
+                            {categories.map((cat) => (
+                              <MenuItem key={cat._id} value={cat._id}>
+                                {cat.name} {cat.nameEn ? `(${cat.nameEn})` : ''}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {errors.navigationTarget && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                              {errors.navigationTarget.message}
+                            </Typography>
+                          )}
+                        </FormControl>
+                      );
+                    }
+                    if (watchedNavigationType === BannerNavigationType.PRODUCT) {
+                      return (
+                        <FormControl fullWidth error={!!errors.navigationTarget}>
+                          <InputLabel>{t('form.navigationTarget.label', 'المنتج')}</InputLabel>
+                          <Select 
+                            {...field} 
+                            label={t('form.navigationTarget.label', 'المنتج')} 
+                            disabled={loadingProducts}
+                          >
+                            {products.map((prod) => (
+                              <MenuItem key={prod._id} value={prod._id}>
+                                {prod.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {errors.navigationTarget && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                              {errors.navigationTarget.message}
+                            </Typography>
+                          )}
+                        </FormControl>
+                      );
+                    }
+                    if (watchedNavigationType === BannerNavigationType.SECTION) {
+                      return (
+                        <TextField
+                          {...field}
+                          fullWidth
+                          label={t('form.navigationTarget.label', 'اسم القسم')}
+                          placeholder="products, categories, cart, etc."
+                          error={!!errors.navigationTarget}
+                          helperText={errors.navigationTarget?.message || t('form.navigationTarget.helper', 'اسم القسم في التطبيق')}
+                        />
+                      );
+                    }
+                    // EXTERNAL_URL
+                    return (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label={t('form.navigationTarget.label', 'الرابط الخارجي')}
+                        placeholder="https://example.com"
+                        error={!!errors.navigationTarget}
+                        helperText={errors.navigationTarget?.message || t('form.navigationTarget.helper', 'رابط خارجي')}
+                      />
+                    );
+                  }}
+                />
+              </Grid>
+            )}
+
+            {/* Targeting Settings */}
+            <Grid size={{ xs: 12 }}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                {t('targeting', 'استهداف المستخدمين')}
+              </Typography>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Controller
+                name="targetUserTypes"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={USER_ROLE_OPTIONS}
+                    getOptionLabel={(option) => option.label}
+                    value={USER_ROLE_OPTIONS.filter(opt => field.value?.includes(opt.value))}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue.map(v => v.value));
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={t('form.targetUserTypes.label', 'أنواع المستخدمين المستهدفين')}
+                        helperText={t('form.targetUserTypes.helper', 'اتركه فارغاً لعرض البانر للجميع')}
+                      />
+                    )}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => (
+                        <Chip
+                          {...getTagProps({ index })}
+                          key={option.value}
+                          label={option.label}
+                        />
+                      ))
+                    }
                   />
                 )}
               />

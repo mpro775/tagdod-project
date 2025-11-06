@@ -26,6 +26,20 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { Banner } from '../types/banner.types';
 
+// Helper function to get image URL from banner
+const getBannerImageUrl = (banner: Banner): string => {
+  // If imageId is a Media object (populated), use its URL
+  if (banner.imageId && typeof banner.imageId === 'object') {
+    return banner.imageId.url;
+  }
+  // Fallback to imageUrl for backward compatibility
+  if (banner.imageUrl) {
+    return banner.imageUrl;
+  }
+  // Return empty string if no image
+  return '';
+};
+
 interface BannerCardProps {
   banner: Banner;
   onEdit: (banner: Banner) => void;
@@ -89,11 +103,15 @@ export const BannerCard: React.FC<BannerCardProps> = ({
       <CardMedia
         component="img"
         height="180"
-        image={banner.imageUrl}
-        alt={banner.title}
+        image={getBannerImageUrl(banner)}
+        alt={banner.altText || banner.title}
         sx={{
           objectFit: 'cover',
           backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+        }}
+        onError={(e) => {
+          // Hide image if it fails to load
+          e.currentTarget.style.display = 'none';
         }}
       />
 

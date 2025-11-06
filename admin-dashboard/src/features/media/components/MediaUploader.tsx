@@ -89,13 +89,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     setActiveStep(1);
   }, []);
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      handleFileSelect(selectedFile);
-    }
-  }, [handleFileSelect]);
-
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles.length > 0) {
       handleFileSelect(acceptedFiles[0]);

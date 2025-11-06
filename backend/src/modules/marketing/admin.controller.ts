@@ -404,7 +404,7 @@ export class MarketingAdminController {
   @Post('banners')
   @ApiOperation({
     summary: 'إنشاء بانر',
-    description: 'إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin). إذا تركت فارغاً، سيظهر البانر للجميع.'
+    description: 'إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin). إذا تركت فارغاً، سيظهر البانر للجميع. يمكن تحديد نوع التنقل: external_url (رابط خارجي)، category (فئة)، product (منتج)، section (قسم في التطبيق)، أو none (بدون تنقل).'
   })
   @ApiBody({ type: CreateBannerDto })
   @ApiResponse({

@@ -40,6 +40,10 @@ export type {
 export {
   BannerLocation,
   BannerPromotionType,
+  BannerNavigationType,
+  UserRole,
   BANNER_LOCATION_OPTIONS,
   BANNER_PROMOTION_TYPE_OPTIONS,
+  BANNER_NAVIGATION_TYPE_OPTIONS,
+  USER_ROLE_OPTIONS,
 } from './types/banner.types';

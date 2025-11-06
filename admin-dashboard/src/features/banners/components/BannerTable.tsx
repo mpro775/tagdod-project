@@ -23,6 +23,20 @@ import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useTranslation } from 'react-i18next';
 import type { Banner } from '../types/banner.types';
 
+// Helper function to get image URL from banner
+const getBannerImageUrl = (banner: Banner): string => {
+  // If imageId is a Media object (populated), use its URL
+  if (banner.imageId && typeof banner.imageId === 'object') {
+    return banner.imageId.url;
+  }
+  // Fallback to imageUrl for backward compatibility
+  if (banner.imageUrl) {
+    return banner.imageUrl;
+  }
+  // Return empty string if no image
+  return '';
+};
+
 interface BannerTableProps {
   banners: Banner[];
   isLoading: boolean;
@@ -81,10 +95,14 @@ export const BannerTable: React.FC<BannerTableProps> = ({
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1 }}>
             <Avatar
-              src={banner.imageUrl}
-              alt={banner.title}
+              src={getBannerImageUrl(banner)}
+              alt={banner.altText || banner.title}
               variant="rounded"
               sx={{ width: 60, height: 40 }}
+              onError={(e) => {
+                // Hide avatar if image fails to load
+                e.currentTarget.style.display = 'none';
+              }}
             />
             <Box>
               <Typography variant="body2" fontWeight="bold" noWrap>

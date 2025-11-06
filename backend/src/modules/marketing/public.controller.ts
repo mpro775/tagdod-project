@@ -9,7 +9,7 @@ import {
 import { MarketingService } from './marketing.service';
 import { PricingQueryDto } from './dto/price-rule.dto';
 import { ValidateCouponDto } from './dto/coupon.dto';
-import { BannerLocation } from './schemas/banner.schema';
+import { BannerLocation, BannerNavigationType } from './schemas/banner.schema';
 
 @ApiTags('التسويق-العام')
 @Controller('marketing')
@@ -115,7 +115,10 @@ export class MarketingPublicController {
               id: { type: 'string', example: 'banner123', description: 'معرف البانر' },
               title: { type: 'string', example: 'عرض خاص', description: 'عنوان البانر' },
               imageUrl: { type: 'string', example: 'https://cdn.example.com/banner.jpg', description: 'رابط صورة البانر' },
-              linkUrl: { type: 'string', example: 'https://example.com/special-offer', description: 'رابط البانر' },
+              linkUrl: { type: 'string', example: 'https://example.com/special-offer', description: 'رابط البانر (للتوافق مع الإصدارات القديمة)' },
+              navigationType: { type: 'string', enum: Object.values(BannerNavigationType), example: 'category', description: 'نوع التنقل: external_url, category, product, section, none' },
+              navigationTarget: { type: 'string', example: 'category123', description: 'الهدف من التنقل: معرف الفئة، معرف المنتج، اسم القسم، أو رابط خارجي' },
+              navigationParams: { type: 'object', example: {}, description: 'معاملات إضافية للتنقل' },
               location: { type: 'string', enum: Object.values(BannerLocation), example: 'home', description: 'موقع البانر' },
               isActive: { type: 'boolean', example: true, description: 'حالة البانر' }
             }

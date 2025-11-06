@@ -27,6 +27,12 @@ This module provides a comprehensive solution for all marketing-related function
 - **Promotion Types**: Discount, free shipping, new arrivals, sales, seasonal
 - **Targeting**: User type, audience, category, and product-specific targeting
 - **User Type Targeting**: Display banners to specific user roles (user, engineer, merchant, admin, super_admin) or to everyone
+- **Navigation Support**: When clicked, banners can navigate to:
+  - **Category Details**: Navigate to a specific category page
+  - **Product Details**: Navigate to a specific product page
+  - **App Section**: Navigate to a specific section/screen in the app
+  - **External URL**: Open an external link
+  - **None**: No navigation (display only)
 - **Scheduling**: Start and end dates with display duration
 - **Analytics**: View and click tracking
 - **Sorting**: Custom sort order for banner display
@@ -161,8 +167,12 @@ This module provides a comprehensive solution for all marketing-related function
   title: string,
   description?: string,
   imageUrl: string,
-  linkUrl?: string,
+  linkUrl?: string, // Legacy field - kept for backward compatibility
   altText?: string,
+  // Navigation settings
+  navigationType: 'external_url' | 'category' | 'product' | 'section' | 'none',
+  navigationTarget?: string, // Category ID, Product ID, Section name, or external URL
+  navigationParams?: Record<string, unknown>, // Additional parameters for navigation
   location: 'home_top' | 'home_middle' | 'home_bottom' | 'category_top' | 'product_page' | 'cart_page' | 'checkout_page' | 'sidebar' | 'footer',
   promotionType?: 'discount' | 'free_shipping' | 'new_arrival' | 'sale' | 'seasonal' | 'brand_promotion',
   isActive: boolean,
@@ -252,6 +262,76 @@ POST /admin/marketing/banners
   "isActive": true,
   "sortOrder": 2,
   "targetUserTypes": ["engineer"]  // Visible only to engineers
+}
+```
+
+### Create a banner that navigates to a category when clicked
+```json
+POST /admin/marketing/banners
+{
+  "title": "عرض الإلكترونيات",
+  "description": "تصفح فئة الإلكترونيات",
+  "imageId": "507f1f77bcf86cd799439011",
+  "location": "home_top",
+  "promotionType": "sale",
+  "isActive": true,
+  "sortOrder": 1,
+  "navigationType": "category",
+  "navigationTarget": "507f1f77bcf86cd799439012",  // Category ID
+  "targetUserTypes": []  // Visible to everyone
+}
+```
+
+### Create a banner that navigates to a product when clicked
+```json
+POST /admin/marketing/banners
+{
+  "title": "منتج مميز",
+  "description": "اكتشف هذا المنتج الرائع",
+  "imageId": "507f1f77bcf86cd799439011",
+  "location": "home_middle",
+  "promotionType": "new_arrival",
+  "isActive": true,
+  "sortOrder": 2,
+  "navigationType": "product",
+  "navigationTarget": "507f1f77bcf86cd799439013",  // Product ID
+  "targetUserTypes": []  // Visible to everyone
+}
+```
+
+### Create a banner that navigates to an app section
+```json
+POST /admin/marketing/banners
+{
+  "title": "تسوق الآن",
+  "description": "تصفح جميع المنتجات",
+  "imageId": "507f1f77bcf86cd799439011",
+  "location": "home_bottom",
+  "isActive": true,
+  "sortOrder": 3,
+  "navigationType": "section",
+  "navigationTarget": "products",  // Section name in the app
+  "navigationParams": {
+    "filter": "new",
+    "sort": "popular"
+  },
+  "targetUserTypes": []  // Visible to everyone
+}
+```
+
+### Create a banner with external URL
+```json
+POST /admin/marketing/banners
+{
+  "title": "زيارة موقعنا",
+  "description": "تعرف على المزيد",
+  "imageId": "507f1f77bcf86cd799439011",
+  "location": "footer",
+  "isActive": true,
+  "sortOrder": 1,
+  "navigationType": "external_url",
+  "navigationTarget": "https://example.com/special-offer",
+  "targetUserTypes": []  // Visible to everyone
 }
 ```
 

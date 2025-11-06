@@ -10,7 +10,6 @@ import {
   Badge,
   IconButton,
   Tooltip,
-  useTheme,
 } from '@mui/material';
 import {
   Edit,
@@ -20,6 +19,7 @@ import {
   Visibility,
   VisibilityOff,
   DragIndicator,
+  MoreVert,
 } from '@mui/icons-material';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -38,6 +38,7 @@ interface SortableMediaCardProps {
   onCopyUrl: (url: string) => void;
   onTogglePublic: (media: Media) => void;
   onDetails: (media: Media) => void;
+  onMenuOpen?: (event: React.MouseEvent<HTMLElement>, media: Media) => void;
   confirmDelete: (media: Media) => Promise<void>;
 }
 
@@ -47,15 +48,14 @@ export const SortableMediaCard: React.FC<SortableMediaCardProps> = ({
   isSelected,
   onBulkSelect,
   onEdit,
-  onDelete,
   onRestore,
   onCopyUrl,
   onTogglePublic,
   onDetails,
+  onMenuOpen,
   confirmDelete,
 }) => {
   const { t } = useTranslation('media');
-  const theme = useTheme();
   
   const {
     attributes,
@@ -98,7 +98,7 @@ export const SortableMediaCard: React.FC<SortableMediaCardProps> = ({
         sx={{
           position: 'absolute',
           top: 8,
-          right: 8,
+          left: 8,
           zIndex: 10,
           opacity: 0,
           transition: 'opacity 0.2s',
@@ -117,6 +117,30 @@ export const SortableMediaCard: React.FC<SortableMediaCardProps> = ({
       >
         <DragIndicator fontSize="small" color="action" />
       </Box>
+
+      {/* Menu Button */}
+      {onMenuOpen && (
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMenuOpen(e, media);
+          }}
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 10,
+            bgcolor: 'background.paper',
+            boxShadow: 2,
+            '&:hover': {
+              bgcolor: 'action.hover',
+            },
+          }}
+        >
+          <MoreVert fontSize="small" />
+        </IconButton>
+      )}
 
       <CardMedia
         component="img"

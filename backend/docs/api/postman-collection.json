@@ -5615,7 +5615,7 @@
                 "banners"
               ]
             },
-            "description": "إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin). إذا تركت فارغاً، سيظهر البانر للجميع."
+            "description": "إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin). إذا تركت فارغاً، سيظهر البانر للجميع. يمكن تحديد نوع التنقل: external_url (رابط خارجي)، category (فئة)، product (منتج)، section (قسم في التطبيق)، أو none (بدون تنقل)."
           }
         },
         {
@@ -6636,84 +6636,6 @@
           }
         },
         {
-          "name": "الحصول على إعداد بالمفتاح",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-settings/{key}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-settings",
-                "{key}"
-              ]
-            },
-            "description": "استرداد إعداد معين"
-          }
-        },
-        {
-          "name": "تحديث إعداد",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-settings/{key}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-settings",
-                "{key}"
-              ]
-            },
-            "description": "تعديل قيمة إعداد موجود"
-          }
-        },
-        {
-          "name": "حذف إعداد",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/system-settings/{key}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "system-settings",
-                "{key}"
-              ]
-            },
-            "description": "حذف إعداد من النظام"
-          }
-        },
-        {
           "name": "جميع حسابات الدفع المحلية",
           "request": {
             "method": "GET",
@@ -6871,6 +6793,84 @@
               ]
             },
             "description": "حذف حساب دفع محلي من النظام"
+          }
+        },
+        {
+          "name": "الحصول على إعداد بالمفتاح",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings",
+                "{key}"
+              ]
+            },
+            "description": "استرداد إعداد معين"
+          }
+        },
+        {
+          "name": "تحديث إعداد",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings",
+                "{key}"
+              ]
+            },
+            "description": "تعديل قيمة إعداد موجود"
+          }
+        },
+        {
+          "name": "حذف إعداد",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system-settings/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-settings",
+                "{key}"
+              ]
+            },
+            "description": "حذف إعداد من النظام"
           }
         }
       ],
