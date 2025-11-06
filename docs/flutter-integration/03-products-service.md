@@ -19,7 +19,8 @@
 8. [التحقق من التوفر](#8-التحقق-من-التوفر)
 9. [نطاق أسعار المنتج](#9-نطاق-أسعار-المنتج)
 10. [المنتجات الشبيهة](#10-المنتجات-الشبيهة)
-11. [Models في Flutter](#models-في-flutter)
+11. [إحصائيات المنتجات](#11-إحصائيات-المنتجات)
+12. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -260,13 +261,17 @@ GET /products/64prod123?currency=YER
           "Color": "أسود",
           "Size": "2m x 1m"
         },
-        "pricing": [
-          {
-            "currency": "YER",
-            "basePrice": 150000,
-            "salePrice": null
-          }
-        ],
+        "pricing": {
+          "basePrice": 150000,
+          "compareAtPrice": 180000,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 150000,
+          "currency": "YER",
+          "exchangeRate": 250,
+          "formattedPrice": "150,000 ر.ي",
+          "formattedFinalPrice": "150,000 ر.ي"
+        },
         "inventory": {
           "quantity": 50,
           "reserved": 5,
@@ -283,7 +288,7 @@ GET /products/64prod123?currency=YER
     ],
     "currency": "YER",
     "userDiscount": {
-      "isWholesale": false,
+      "isMerchant": false,
       "discountPercent": 0
     }
   },
@@ -429,22 +434,33 @@ Future<ProductDetails> getProductBySlug(String slug, {String currency = 'USD'}) 
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "_id": "64prod123",
-      "name": {
-        "ar": "لوح شمسي 550 واط",
-        "en": "Solar Panel 550W"
-      },
-      "isFeatured": true
-      // ... باقي البيانات
+  "data": {
+    "data": [
+      {
+        "_id": "64prod123",
+        "nameAr": "لوح شمسي 550 واط",
+        "nameEn": "Solar Panel 550W",
+        "slug": "solar-panel-550w",
+        "categoryId": {
+          "_id": "64cat123",
+          "nameAr": "الألواح الشمسية",
+          "nameEn": "Solar Panels"
+        },
+        "isFeatured": true,
+        "mainImageId": {
+          "_id": "64img123",
+          "url": "https://cdn.example.com/products/solar-panel-1.jpg"
+        }
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 12,
+      "total": 12,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPrevPage": false
     }
-  ],
-  "meta": {
-    "total": 12,
-    "page": 1,
-    "limit": 12,
-    "totalPages": 1
   },
   "requestId": "req_prod_003"
 }
@@ -453,14 +469,12 @@ Future<ProductDetails> getProductBySlug(String slug, {String currency = 'USD'}) 
 ### كود Flutter
 
 ```dart
-Future<List<Product>> getFeaturedProducts() async {
+Future<PaginatedProducts> getFeaturedProducts() async {
   final response = await _dio.get('/products/featured/list');
 
-  final apiResponse = ApiResponse<List<Product>>.fromJson(
+  final apiResponse = ApiResponse<PaginatedProducts>.fromJson(
     response.data,
-    (json) => (json as List)
-        .map((item) => Product.fromJson(item))
-        .toList(),
+    (json) => PaginatedProducts.fromJson(json as Map<String, dynamic>),
   );
 
   if (apiResponse.isSuccess) {
@@ -489,22 +503,33 @@ Future<List<Product>> getFeaturedProducts() async {
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "_id": "64prod456",
-      "name": {
-        "ar": "بطارية ليثيوم 10 كيلو واط",
-        "en": "Lithium Battery 10kW"
-      },
-      "isNew": true
-      // ... باقي البيانات
+  "data": {
+    "data": [
+      {
+        "_id": "64prod456",
+        "nameAr": "بطارية ليثيوم 10 كيلو واط",
+        "nameEn": "Lithium Battery 10kW",
+        "slug": "lithium-battery-10kw",
+        "categoryId": {
+          "_id": "64cat456",
+          "nameAr": "البطاريات",
+          "nameEn": "Batteries"
+        },
+        "isNew": true,
+        "mainImageId": {
+          "_id": "64img456",
+          "url": "https://cdn.example.com/products/battery-10kw.jpg"
+        }
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 12,
+      "total": 8,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPrevPage": false
     }
-  ],
-  "meta": {
-    "total": 8,
-    "page": 1,
-    "limit": 12,
-    "totalPages": 1
   },
   "requestId": "req_prod_004"
 }
@@ -513,14 +538,12 @@ Future<List<Product>> getFeaturedProducts() async {
 ### كود Flutter
 
 ```dart
-Future<List<Product>> getNewProducts() async {
+Future<PaginatedProducts> getNewProducts() async {
   final response = await _dio.get('/products/new/list');
 
-  final apiResponse = ApiResponse<List<Product>>.fromJson(
+  final apiResponse = ApiResponse<PaginatedProducts>.fromJson(
     response.data,
-    (json) => (json as List)
-        .map((item) => Product.fromJson(item))
-        .toList(),
+    (json) => PaginatedProducts.fromJson(json as Map<String, dynamic>),
   );
 
   if (apiResponse.isSuccess) {
@@ -589,7 +612,7 @@ Future<List<Product>> getNewProducts() async {
     ],
     "currency": "YER",
     "userDiscount": {
-      "isWholesale": true,
+      "isMerchant": true,
       "discountPercent": 15
     }
   },
@@ -661,7 +684,7 @@ Future<List<ProductVariant>> getProductVariants(
     "formattedPrice": "150,000 ر.ي",
     "formattedFinalPrice": "127,500 ر.ي",
     "userDiscount": {
-      "isWholesale": true,
+      "isMerchant": true,
       "discountPercent": 15
     }
   },
@@ -703,8 +726,8 @@ class VariantPrice {
   final double? exchangeRate;
   final String? formattedPrice;
   final String? formattedFinalPrice;
-  final bool isWholesale;
-  final double wholesaleDiscountPercent;
+  final bool isMerchant;
+  final double merchantDiscountPercent;
 
   VariantPrice({
     required this.basePrice,
@@ -716,8 +739,8 @@ class VariantPrice {
     this.exchangeRate,
     this.formattedPrice,
     this.formattedFinalPrice,
-    required this.isWholesale,
-    required this.wholesaleDiscountPercent,
+    required this.isMerchant,
+    required this.merchantDiscountPercent,
   });
 
   factory VariantPrice.fromJson(Map<String, dynamic> json) {
@@ -732,8 +755,8 @@ class VariantPrice {
       exchangeRate: json['exchangeRate']?.toDouble(),
       formattedPrice: json['formattedPrice'],
       formattedFinalPrice: json['formattedFinalPrice'],
-      isWholesale: userDiscount?['isWholesale'] ?? false,
-      wholesaleDiscountPercent: (userDiscount?['discountPercent'] ?? 0).toDouble(),
+      isMerchant: userDiscount?['isMerchant'] ?? false,
+      merchantDiscountPercent: (userDiscount?['discountPercent'] ?? 0).toDouble(),
     );
   }
   
@@ -766,17 +789,56 @@ class VariantPrice {
   "success": true,
   "data": {
     "available": true,
-    "quantity": 45,
-    "requestedQty": 5
+    "availableStock": 45,
+    "reason": null,
+    "canBackorder": false
   },
   "requestId": "req_avail_001"
+}
+```
+
+### Response - غير متوفر
+
+```json
+{
+  "success": true,
+  "data": {
+    "available": false,
+    "availableStock": 2,
+    "reason": "INSUFFICIENT_STOCK",
+    "canBackorder": false
+  },
+  "requestId": "req_avail_002"
 }
 ```
 
 ### كود Flutter
 
 ```dart
-Future<bool> checkVariantAvailability(
+class VariantAvailability {
+  final bool available;
+  final int? availableStock;
+  final String? reason;
+  final bool canBackorder;
+
+  VariantAvailability({
+    required this.available,
+    this.availableStock,
+    this.reason,
+    this.canBackorder = false,
+  });
+
+  factory VariantAvailability.fromJson(Map<String, dynamic> json) {
+    return VariantAvailability(
+      available: json['available'] ?? false,
+      availableStock: json['availableStock'],
+      reason: json['reason'],
+      canBackorder: json['canBackorder'] ?? false,
+    );
+  }
+}
+
+Future<VariantAvailability> checkVariantAvailability(
   String variantId, 
   int quantity
 ) async {
@@ -791,7 +853,7 @@ Future<bool> checkVariantAvailability(
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!['available'] ?? false;
+    return VariantAvailability.fromJson(apiResponse.data!);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -825,7 +887,9 @@ Future<bool> checkVariantAvailability(
   "data": {
     "minPrice": 120000,
     "maxPrice": 180000,
-    "currency": "YER"
+    "currency": "YER",
+    "formattedMinPrice": "120,000 ر.ي",
+    "formattedMaxPrice": "180,000 ر.ي"
   },
   "requestId": "req_range_001"
 }
@@ -859,11 +923,15 @@ class PriceRange {
   final double minPrice;
   final double maxPrice;
   final String currency;
+  final String? formattedMinPrice;
+  final String? formattedMaxPrice;
 
   PriceRange({
     required this.minPrice,
     required this.maxPrice,
     required this.currency,
+    this.formattedMinPrice,
+    this.formattedMaxPrice,
   });
 
   factory PriceRange.fromJson(Map<String, dynamic> json) {
@@ -871,10 +939,15 @@ class PriceRange {
       minPrice: (json['minPrice'] ?? 0).toDouble(),
       maxPrice: (json['maxPrice'] ?? 0).toDouble(),
       currency: json['currency'] ?? 'USD',
+      formattedMinPrice: json['formattedMinPrice'],
+      formattedMaxPrice: json['formattedMaxPrice'],
     );
   }
   
-  String get formattedRange => '${minPrice.toStringAsFixed(0)} - ${maxPrice.toStringAsFixed(0)} $currency';
+  String get formattedRange => 
+      formattedMinPrice != null && formattedMaxPrice != null
+          ? '$formattedMinPrice - $formattedMaxPrice'
+          : '${minPrice.toStringAsFixed(0)} - ${maxPrice.toStringAsFixed(0)} $currency';
 }
 ```
 
@@ -954,6 +1027,50 @@ Future<List<Product>> getRelatedProducts(
 
 ---
 
+## 11. إحصائيات المنتجات
+
+يسترجع عدد المنتجات الإجمالي.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/products/stats/count`
+- **Auth Required:** ❌ لا
+- **Cache:** ✅ نعم (5 دقائق)
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "count": 150
+  },
+  "requestId": "req_stats_001"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<int> getProductsCount() async {
+  final response = await _dio.get('/products/stats/count');
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!['count'] ?? 0;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
 ## Models في Flutter
 
 ### ملف: `lib/models/product/product_models.dart`
@@ -1011,7 +1128,7 @@ class ProductVariant {
   final String nameAr;
   final String nameEn;
   final Map<String, dynamic> attributes;
-  final List<VariantPricing> pricing;
+  final VariantPricing? pricing; // من جميع endpoints يكون object واحد
   final VariantInventory inventory;
   final bool isDefault;
   final bool isActive;
@@ -1024,7 +1141,7 @@ class ProductVariant {
     required this.nameAr,
     required this.nameEn,
     required this.attributes,
-    required this.pricing,
+    this.pricing,
     required this.inventory,
     required this.isDefault,
     required this.isActive,
@@ -1032,6 +1149,14 @@ class ProductVariant {
   });
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
+    // من جميع endpoints يكون pricing object واحد
+    VariantPricing? pricingObj;
+    final pricingData = json['pricing'];
+    
+    if (pricingData != null && pricingData is Map) {
+      pricingObj = VariantPricing.fromJson(pricingData);
+    }
+
     return ProductVariant(
       id: json['_id'],
       productId: json['productId'],
@@ -1039,10 +1164,8 @@ class ProductVariant {
       nameAr: json['nameAr'] ?? '',
       nameEn: json['nameEn'] ?? '',
       attributes: json['attributes'] ?? {},
-      pricing: (json['pricing'] as List)
-          .map((e) => VariantPricing.fromJson(e))
-          .toList(),
-      inventory: VariantInventory.fromJson(json['inventory']),
+      pricing: pricingObj,
+      inventory: VariantInventory.fromJson(json['inventory'] ?? {}),
       isDefault: json['isDefault'] ?? false,
       isActive: json['isActive'] ?? true,
       image: json['imageId'] != null 
@@ -1058,42 +1181,84 @@ class ProductVariant {
 
   // الحصول على السعر لعملة معينة
   VariantPricing? getPricing(String currency) {
-    try {
-      return pricing.firstWhere((p) => p.currency == currency);
-    } catch (e) {
-      return null;
+    if (pricing != null && pricing!.currency == currency) {
+      return pricing;
     }
+    return null;
   }
 
   // السعر النهائي (مع الخصم إن وجد)
   double? getFinalPrice(String currency) {
-    final price = getPricing(currency);
-    return price?.salePrice ?? price?.basePrice;
+    if (pricing != null && pricing!.currency == currency) {
+      return pricing!.finalPrice ?? pricing!.basePrice;
+    }
+    return null;
   }
 }
 
 class VariantPricing {
   final String currency;
   final double basePrice;
+  final double? compareAtPrice;
   final double? salePrice;
+  final double? discountPercent;
+  final double? discountAmount;
+  final double? finalPrice;
+  final double? exchangeRate;
+  final String? formattedPrice;
+  final String? formattedFinalPrice;
 
   VariantPricing({
     required this.currency,
     required this.basePrice,
+    this.compareAtPrice,
     this.salePrice,
+    this.discountPercent,
+    this.discountAmount,
+    this.finalPrice,
+    this.exchangeRate,
+    this.formattedPrice,
+    this.formattedFinalPrice,
   });
 
   factory VariantPricing.fromJson(Map<String, dynamic> json) {
     return VariantPricing(
-      currency: json['currency'],
+      currency: json['currency'] ?? 'USD',
       basePrice: (json['basePrice'] ?? 0).toDouble(),
+      compareAtPrice: json['compareAtPrice']?.toDouble(),
       salePrice: json['salePrice']?.toDouble(),
+      discountPercent: json['discountPercent']?.toDouble(),
+      discountAmount: json['discountAmount']?.toDouble(),
+      finalPrice: json['finalPrice']?.toDouble(),
+      exchangeRate: json['exchangeRate']?.toDouble(),
+      formattedPrice: json['formattedPrice'],
+      formattedFinalPrice: json['formattedFinalPrice'],
     );
   }
 
-  bool get hasDiscount => salePrice != null && salePrice! < basePrice;
-  double get discountPercent => 
-      hasDiscount ? ((basePrice - salePrice!) / basePrice * 100) : 0;
+  bool get hasDiscount {
+    if (finalPrice != null) {
+      return finalPrice! < basePrice;
+    }
+    if (salePrice != null) {
+      return salePrice! < basePrice;
+    }
+    if (discountPercent != null && discountPercent! > 0) {
+      return true;
+    }
+    return false;
+  }
+  
+  double get calculatedDiscountPercent {
+    if (discountPercent != null) return discountPercent!;
+    if (finalPrice != null) {
+      return ((basePrice - finalPrice!) / basePrice * 100);
+    }
+    if (salePrice != null) {
+      return ((basePrice - salePrice!) / basePrice * 100);
+    }
+    return 0;
+  }
 }
 
 class VariantInventory {
@@ -1335,9 +1500,9 @@ class PaginationMeta {
    - جميع الـ endpoints مع cache من جهة السيرفر
    - يمكنك إضافة cache في التطبيق أيضاً
 
-8. **خصم التاجر (Wholesale Discount):**
+8. **خصم التاجر (Merchant Discount):**
    - يتم تطبيقه تلقائياً للمستخدمين المعتمدين كتجار
-   - يظهر في `userDiscount.isWholesale` و `userDiscount.discountPercent`
+   - يظهر في `userDiscount.isMerchant` و `userDiscount.discountPercent`
    - يتم خصمه من `finalPrice` مباشرة
    - للزوار غير المسجلين: `discountPercent = 0`
 
@@ -1348,19 +1513,22 @@ class PaginationMeta {
 > ✅ **تم تحديث هذه الوثيقة بالكامل** لتطابق الكود الفعلي
 
 ### التحديثات المضافة في هذه النسخة:
-1. ✅ **إضافة 6 endpoints جديدة:**
+1. ✅ **إضافة 7 endpoints جديدة:**
    - `GET /products/slug/:slug` - البحث بالـ slug
    - `GET /products/:id/variants` - جلب variants المنتج
    - `GET /products/variants/:id/price` - سعر variant محدد
    - `GET /products/variants/:id/availability` - التحقق من التوفر
    - `GET /products/:id/price-range` - نطاق أسعار المنتج
    - `GET /products/:id/related` - المنتجات الشبيهة
+   - `GET /products/stats/count` - عدد المنتجات الإجمالي
 2. ✅ **تحديث Response structures** - إضافة `userDiscount` و `currency`
-3. ✅ **إضافة معلومات خصم التاجر** - يطبق تلقائياً للمستخدمين المعتمدين
-4. ✅ **تحديث أكواد الأخطاء** - استخدام `PRODUCT_300` بدلاً من `PRODUCT_NOT_FOUND`
-5. ✅ **إضافة `timestamp` و `path`** في أمثلة الأخطاء
-6. ✅ **تحديث Flutter Models** - إضافة `VariantPrice` و `PriceRange`
-7. ✅ **تصحيح Response structure** - `data` تحتوي على `data` + `meta` (pagination)
+3. ✅ **تصحيح userDiscount structure** - استخدام `isMerchant` بدلاً من `isWholesale`
+4. ✅ **تحديث checkAvailability response** - إضافة `availableStock`, `reason`, `canBackorder`
+5. ✅ **تحديث price-range response** - إضافة `formattedMinPrice` و `formattedMaxPrice`
+6. ✅ **تصحيح featured/new products response** - استخدام pagination structure (data + meta)
+7. ✅ **تحديث variants pricing structure** - object واحد في جميع endpoints (variants و product details)
+8. ✅ **تحديث Flutter Models** - إضافة `VariantPrice`, `PriceRange`, `VariantAvailability`
+9. ✅ **تحديث VariantPricing model** - دعم جميع الحقول من API
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/products/controllers/public-products.controller.ts`

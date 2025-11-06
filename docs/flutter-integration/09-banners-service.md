@@ -60,6 +60,9 @@
       "imageUrl": "https://cdn.example.com/banners/solar-panels-offer.jpg",
       "linkUrl": "/products?categoryId=64cat123",
       "altText": "عرض الألواح الشمسية",
+      "navigationType": "category",
+      "navigationTarget": "64cat123",
+      "navigationParams": {},
       "location": "home_top",
       "promotionType": "discount",
       "isActive": true,
@@ -68,6 +71,7 @@
       "endDate": "2025-01-31T23:59:59.000Z",
       "displayDuration": 30,
       "targetAudiences": ["wholesale", "retail"],
+      "targetUserTypes": ["user", "engineer"],
       "targetCategories": ["64cat123", "64cat124"],
       "targetProducts": ["64prod123", "64prod124"],
       "viewCount": 1520,
@@ -265,13 +269,72 @@ extension BannerPromotionTypeExtension on BannerPromotionType {
   }
 }
 
+enum BannerNavigationType {
+  external_url,
+  category,
+  product,
+  section,
+  none,
+}
+
+extension BannerNavigationTypeExtension on BannerNavigationType {
+  String get value {
+    switch (this) {
+      case BannerNavigationType.external_url: return 'external_url';
+      case BannerNavigationType.category: return 'category';
+      case BannerNavigationType.product: return 'product';
+      case BannerNavigationType.section: return 'section';
+      case BannerNavigationType.none: return 'none';
+    }
+  }
+
+  static BannerNavigationType fromString(String? value) {
+    if (value == null) return BannerNavigationType.none;
+    return BannerNavigationType.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => BannerNavigationType.none,
+    );
+  }
+}
+
+enum UserRole {
+  user,
+  admin,
+  super_admin,
+  merchant,
+  engineer,
+}
+
+extension UserRoleExtension on UserRole {
+  String get value {
+    switch (this) {
+      case UserRole.user: return 'user';
+      case UserRole.admin: return 'admin';
+      case UserRole.super_admin: return 'super_admin';
+      case UserRole.merchant: return 'merchant';
+      case UserRole.engineer: return 'engineer';
+    }
+  }
+
+  static UserRole? fromString(String? value) {
+    if (value == null) return null;
+    return UserRole.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => UserRole.user,
+    );
+  }
+}
+
 class Banner {
   final String id;
   final String title;
   final String? description;
   final String imageUrl;
-  final String? linkUrl;
+  final String? linkUrl; // Legacy field - kept for backward compatibility
   final String? altText;
+  final BannerNavigationType navigationType;
+  final String? navigationTarget;
+  final Map<String, dynamic>? navigationParams;
   final BannerLocation location;
   final BannerPromotionType? promotionType;
   final bool isActive;
@@ -280,6 +343,7 @@ class Banner {
   final DateTime? endDate;
   final int? displayDuration;
   final List<String> targetAudiences;
+  final List<UserRole> targetUserTypes;
   final List<String> targetCategories;
   final List<String> targetProducts;
   final int viewCount;
@@ -297,6 +361,9 @@ class Banner {
     required this.imageUrl,
     this.linkUrl,
     this.altText,
+    required this.navigationType,
+    this.navigationTarget,
+    this.navigationParams,
     required this.location,
     this.promotionType,
     required this.isActive,
@@ -305,6 +372,7 @@ class Banner {
     this.endDate,
     this.displayDuration,
     required this.targetAudiences,
+    required this.targetUserTypes,
     required this.targetCategories,
     required this.targetProducts,
     required this.viewCount,
@@ -317,13 +385,30 @@ class Banner {
   });
 
   factory Banner.fromJson(Map<String, dynamic> json) {
+    // Handle imageId - could be populated Media object or just ID
+    String imageUrl = '';
+    if (json['imageId'] != null) {
+      if (json['imageId'] is Map) {
+        imageUrl = json['imageId']['url'] ?? json['imageId']['path'] ?? '';
+      } else if (json['imageUrl'] != null) {
+        imageUrl = json['imageUrl'];
+      }
+    } else if (json['imageUrl'] != null) {
+      imageUrl = json['imageUrl'];
+    }
+
     return Banner(
       id: json['_id'],
       title: json['title'] ?? '',
       description: json['description'],
-      imageUrl: json['imageUrl'] ?? '',
+      imageUrl: imageUrl,
       linkUrl: json['linkUrl'],
       altText: json['altText'],
+      navigationType: BannerNavigationTypeExtension.fromString(json['navigationType']),
+      navigationTarget: json['navigationTarget'],
+      navigationParams: json['navigationParams'] != null 
+          ? Map<String, dynamic>.from(json['navigationParams']) 
+          : null,
       location: BannerLocationExtension.fromString(json['location']),
       promotionType: BannerPromotionTypeExtension.fromString(json['promotionType']),
       isActive: json['isActive'] ?? true,
@@ -336,6 +421,10 @@ class Banner {
           : null,
       displayDuration: json['displayDuration'],
       targetAudiences: List<String>.from(json['targetAudiences'] ?? []),
+      targetUserTypes: (json['targetUserTypes'] as List<dynamic>?)
+          ?.map((e) => UserRoleExtension.fromString(e.toString()))
+          .whereType<UserRole>()
+          .toList() ?? [],
       targetCategories: List<String>.from(json['targetCategories'] ?? []),
       targetProducts: List<String>.from(json['targetProducts'] ?? []),
       viewCount: json['viewCount'] ?? 0,
@@ -348,7 +437,20 @@ class Banner {
     );
   }
 
-  bool get hasLink => linkUrl != null && linkUrl!.isNotEmpty;
+  // Navigation helpers
+  bool get hasNavigation => navigationType != BannerNavigationType.none;
+  bool get navigatesToCategory => navigationType == BannerNavigationType.category;
+  bool get navigatesToProduct => navigationType == BannerNavigationType.product;
+  bool get navigatesToSection => navigationType == BannerNavigationType.section;
+  bool get navigatesToExternalUrl => navigationType == BannerNavigationType.external_url;
+  
+  // Legacy support
+  bool get hasLink => (linkUrl != null && linkUrl!.isNotEmpty) || hasNavigation;
+  
+  // Targeting helpers
+  bool get isVisibleToAllUsers => targetUserTypes.isEmpty;
+  bool hasTargetUserType(UserRole role) => targetUserTypes.contains(role);
+  
   bool get isExpired => endDate != null && endDate!.isBefore(DateTime.now());
   bool get isActiveNow => isActive && !isExpired;
   bool get hasStartDate => startDate != null;
@@ -375,7 +477,9 @@ class Banner {
   bool get isHighPerforming => clickThroughRate > 5.0;
   bool get isLowPerforming => clickThroughRate < 1.0;
   bool get hasTargeting => targetAudiences.isNotEmpty || 
-      targetCategories.isNotEmpty || targetProducts.isNotEmpty;
+      targetUserTypes.isNotEmpty ||
+      targetCategories.isNotEmpty || 
+      targetProducts.isNotEmpty;
 }
 ```
 
@@ -411,9 +515,12 @@ class Banner {
 
 4. **الاستهداف:**
    - `targetAudiences`: الجماهير المستهدفة (wholesale, retail)
+   - `targetUserTypes`: أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin)
    - `targetCategories`: الفئات المستهدفة
    - `targetProducts`: المنتجات المستهدفة
    - استخدم `hasTargeting` للتحقق من وجود استهداف
+   - استخدم `isVisibleToAllUsers` للتحقق من أن البانر مرئي للجميع
+   - استخدم `hasTargetUserType(role)` للتحقق من استهداف نوع معين
 
 5. **الجدولة:**
    - `startDate`: تاريخ البداية
@@ -427,23 +534,53 @@ class Banner {
    - `isHighPerforming`: أداء عالي (CTR > 5%)
    - `isLowPerforming`: أداء منخفض (CTR < 1%)
 
-7. **العرض في التطبيق:**
+7. **التنقل (Navigation):**
+   - `navigationType`: نوع التنقل (external_url, category, product, section, none)
+   - `navigationTarget`: الهدف من التنقل (معرف الفئة، معرف المنتج، اسم القسم، أو رابط خارجي)
+   - `navigationParams`: معاملات إضافية للتنقل
+   - استخدم `hasNavigation` للتحقق من وجود تنقل
+   - استخدم `navigatesToCategory`, `navigatesToProduct`, `navigatesToSection`, `navigatesToExternalUrl` للتحقق من نوع التنقل
+   - عند النقر على البانر، استخدم `navigationType` و `navigationTarget` للتنقل المناسب:
+     ```dart
+     void handleBannerTap(Banner banner) {
+       if (!banner.hasNavigation) return;
+       
+       switch (banner.navigationType) {
+         case BannerNavigationType.category:
+           Navigator.pushNamed(context, '/category/${banner.navigationTarget}');
+           break;
+         case BannerNavigationType.product:
+           Navigator.pushNamed(context, '/product/${banner.navigationTarget}');
+           break;
+         case BannerNavigationType.section:
+           Navigator.pushNamed(context, '/${banner.navigationTarget}');
+           break;
+         case BannerNavigationType.external_url:
+           launchUrl(Uri.parse(banner.navigationTarget!));
+           break;
+         case BannerNavigationType.none:
+           break;
+       }
+     }
+     ```
+
+8. **العرض في التطبيق:**
    - اعرض `isCurrentlyActive` للبنرات النشطة
    - اعرض `isExpired` للبنرات المنتهية
    - اعرض `isScheduled` للبنرات المجدولة
-   - اعرض `hasLink` للبنرات القابلة للنقر
+   - اعرض `hasLink` أو `hasNavigation` للبنرات القابلة للنقر
 
-8. **Cache:**
+9. **Cache:**
    - البنرات مع cache لمدة 5 دقائق
    - يمكنك cache البيانات محلياً أيضاً
    - استخدم `location` parameter للفلترة
 
-9. **الأداء:**
+10. **الأداء:**
    - جميع الـ endpoints لا تتطلب مصادقة
    - استخدم `getActiveBanners()` للحصول على البنرات النشطة
    - استخدم `trackBannerView()` و `trackBannerClick()` للتتبع
 
-10. **التحسين:**
+11. **التحسين:**
     - اعرض البنرات عالية الأداء أولاً
     - استخدم الاستهداف لتحسين التحويل
     - تتبع الإحصائيات لتحسين الحملات
@@ -457,6 +594,10 @@ class Banner {
 2. ✅ تم تحديث Enums - استخدام underscore في القيم (home_top بدلاً من homeTop) لمطابقة Backend
 3. ✅ تم إضافة Extensions لـ Enums - للتحويل من/إلى String بشكل صحيح
 4. ✅ تم تصحيح fromJson - استخدام Extensions بدلاً من `.name`
+5. ✅ **جديد**: إضافة حقول التنقل (`navigationType`, `navigationTarget`, `navigationParams`)
+6. ✅ **جديد**: إضافة `targetUserTypes` لاستهداف أنواع المستخدمين
+7. ✅ **جديد**: إضافة `BannerNavigationType` enum و `UserRole` enum
+8. ✅ **جديد**: إضافة helper methods للتنقل والاستهداف
 
 **ملفات Backend المرجعية:**
 - `backend/src/modules/marketing/public.controller.ts` - جميع endpoints

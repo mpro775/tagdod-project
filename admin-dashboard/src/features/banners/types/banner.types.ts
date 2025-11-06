@@ -23,14 +23,36 @@ export enum BannerPromotionType {
   BRAND_PROMOTION = 'brand_promotion',
 }
 
+// Navigation type enum
+export enum BannerNavigationType {
+  EXTERNAL_URL = 'external_url', // رابط خارجي
+  CATEGORY = 'category', // فئة معينة
+  PRODUCT = 'product', // منتج معين
+  SECTION = 'section', // قسم/شاشة معينة في التطبيق
+  NONE = 'none', // بدون تنقل
+}
+
+// User role enum (matching backend)
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
+  MERCHANT = 'merchant',
+  ENGINEER = 'engineer',
+}
+
 export interface Banner {
   _id: string;
   title: string;
   description?: string;
   imageId?: string | Media; // Reference to Media collection (populated)
   imageUrl?: string; // Deprecated: kept for backward compatibility, use imageId instead
-  linkUrl?: string;
+  linkUrl?: string; // Legacy field - kept for backward compatibility
   altText?: string;
+  // Navigation settings
+  navigationType?: BannerNavigationType;
+  navigationTarget?: string; // Category ID, Product ID, Section name, or external URL
+  navigationParams?: Record<string, unknown>; // Additional parameters for navigation
   location: BannerLocation;
   promotionType?: BannerPromotionType;
   isActive: boolean;
@@ -39,6 +61,7 @@ export interface Banner {
   endDate?: string;
   displayDuration?: number;
   targetAudiences: string[];
+  targetUserTypes: UserRole[]; // User roles that can see this banner
   targetCategories: string[];
   targetProducts: string[];
   viewCount: number;
@@ -56,8 +79,12 @@ export interface CreateBannerDto {
   title: string;
   description?: string;
   imageId: string; // Media ID
-  linkUrl?: string;
+  linkUrl?: string; // Legacy field - kept for backward compatibility
   altText?: string;
+  // Navigation settings
+  navigationType?: BannerNavigationType;
+  navigationTarget?: string; // Category ID, Product ID, Section name, or external URL
+  navigationParams?: Record<string, unknown>; // Additional parameters for navigation
   location: BannerLocation;
   promotionType?: BannerPromotionType;
   isActive?: boolean;
@@ -66,6 +93,7 @@ export interface CreateBannerDto {
   endDate?: string;
   displayDuration?: number;
   targetAudiences?: string[];
+  targetUserTypes?: UserRole[]; // User roles that can see this banner (empty = all users)
   targetCategories?: string[];
   targetProducts?: string[];
 }
@@ -74,8 +102,12 @@ export interface UpdateBannerDto {
   title?: string;
   description?: string;
   imageId?: string; // Media ID
-  linkUrl?: string;
+  linkUrl?: string; // Legacy field - kept for backward compatibility
   altText?: string;
+  // Navigation settings
+  navigationType?: BannerNavigationType;
+  navigationTarget?: string; // Category ID, Product ID, Section name, or external URL
+  navigationParams?: Record<string, unknown>; // Additional parameters for navigation
   location?: BannerLocation;
   promotionType?: BannerPromotionType;
   isActive?: boolean;
@@ -84,6 +116,7 @@ export interface UpdateBannerDto {
   endDate?: string;
   displayDuration?: number;
   targetAudiences?: string[];
+  targetUserTypes?: UserRole[]; // User roles that can see this banner (empty = all users)
   targetCategories?: string[];
   targetProducts?: string[];
 }
@@ -158,4 +191,22 @@ export const BANNER_PROMOTION_TYPE_OPTIONS = [
   { value: BannerPromotionType.SALE, label: 'تخفيض' },
   { value: BannerPromotionType.SEASONAL, label: 'موسمي' },
   { value: BannerPromotionType.BRAND_PROMOTION, label: 'ترويج العلامة التجارية' },
+];
+
+// Banner navigation type options for forms
+export const BANNER_NAVIGATION_TYPE_OPTIONS = [
+  { value: BannerNavigationType.NONE, label: 'بدون تنقل' },
+  { value: BannerNavigationType.EXTERNAL_URL, label: 'رابط خارجي' },
+  { value: BannerNavigationType.CATEGORY, label: 'فئة' },
+  { value: BannerNavigationType.PRODUCT, label: 'منتج' },
+  { value: BannerNavigationType.SECTION, label: 'قسم في التطبيق' },
+];
+
+// User role options for targeting
+export const USER_ROLE_OPTIONS = [
+  { value: UserRole.USER, label: 'عميل' },
+  { value: UserRole.ENGINEER, label: 'مهندس' },
+  { value: UserRole.MERCHANT, label: 'تاجر' },
+  { value: UserRole.ADMIN, label: 'مدير' },
+  { value: UserRole.SUPER_ADMIN, label: 'مدير عام' },
 ];

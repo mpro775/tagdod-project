@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { PriceRule, PriceRuleDocument } from './schemas/price-rule.schema';
 import { Coupon, CouponDocument, CouponStatus } from './schemas/coupon.schema';
-import { Banner, BannerDocument, BannerLocation } from './schemas/banner.schema';
+import { Banner, BannerDocument, BannerLocation, BannerNavigationType } from './schemas/banner.schema';
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
+import { Media } from '../upload/schemas/media.schema';
 
 // DTOs
 import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto, PricingQueryDto } from './dto/price-rule.dto';
@@ -14,6 +15,12 @@ import { CreateBannerDto, UpdateBannerDto, ListBannersDto } from './dto/banner.d
 
 // Types
 import { EffectivePriceResult } from './types';
+
+// Type for Banner with populated imageId (lean document)
+type BannerWithPopulatedImage = Omit<Banner, 'imageId'> & {
+  imageId: Media | Types.ObjectId;
+  _id: Types.ObjectId;
+};
 
 @Injectable()
 export class MarketingService {
@@ -473,8 +480,19 @@ export class MarketingService {
   // ==================== BANNERS ====================
 
   async createBanner(dto: CreateBannerDto): Promise<Banner> {
+    // Handle backward compatibility: if linkUrl is provided but navigationType is not set, use external_url
+    let navigationType = dto.navigationType ?? BannerNavigationType.NONE;
+    let navigationTarget = dto.navigationTarget;
+    
+    if (dto.linkUrl && !dto.navigationType && !dto.navigationTarget) {
+      navigationType = BannerNavigationType.EXTERNAL_URL;
+      navigationTarget = dto.linkUrl;
+    }
+    
     const banner = new this.bannerModel({
       ...dto,
+      navigationType,
+      navigationTarget,
       isActive: dto.isActive ?? true,
       sortOrder: dto.sortOrder ?? 0,
       clickCount: 0,
@@ -482,17 +500,31 @@ export class MarketingService {
     });
 
     const savedBanner = await banner.save();
-    return this.bannerModel.findById(savedBanner._id).populate('imageId').lean() as any;
+    const populatedBanner = await this.bannerModel.findById(savedBanner._id).populate('imageId').lean<BannerWithPopulatedImage>();
+    if (!populatedBanner) throw new Error('Failed to create banner');
+    return this.formatBannerForResponse(populatedBanner);
   }
 
   async updateBanner(id: string, dto: UpdateBannerDto): Promise<Banner | null> {
-    const updated = await this.bannerModel.findByIdAndUpdate(id, dto, { new: true });
+    // Handle backward compatibility: if linkUrl is provided but navigationType is not set, use external_url
+    const updateData: Record<string, unknown> = { ...dto };
+    
+    if (dto.linkUrl && !dto.navigationType && !dto.navigationTarget) {
+      updateData.navigationType = BannerNavigationType.EXTERNAL_URL;
+      updateData.navigationTarget = dto.linkUrl;
+    }
+    
+    const updated = await this.bannerModel.findByIdAndUpdate(id, updateData, { new: true });
     if (!updated) return null;
-    return this.bannerModel.findById(id).populate('imageId').lean() as any;
+    const banner = await this.bannerModel.findById(id).populate('imageId').lean<BannerWithPopulatedImage>();
+    if (!banner) return null;
+    return this.formatBannerForResponse(banner);
   }
 
   async getBanner(id: string): Promise<Banner | null> {
-    return this.bannerModel.findById(id).populate('imageId').lean() as any;
+    const banner = await this.bannerModel.findById(id).populate('imageId').lean<BannerWithPopulatedImage>();
+    if (!banner) return null;
+    return this.formatBannerForResponse(banner);
   }
 
   async listBanners(dto: ListBannersDto) {
@@ -514,12 +546,12 @@ export class MarketingService {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [banners, total] = await Promise.all([
-      this.bannerModel.find(query).populate('imageId').skip(skip).limit(limit).sort(sort).lean(),
+      this.bannerModel.find(query).populate('imageId').skip(skip).limit(limit).sort(sort).lean<BannerWithPopulatedImage[]>(),
       this.bannerModel.countDocuments(query),
     ]);
 
     return {
-      data: banners,
+      data: banners.map(banner => this.formatBannerForResponse(banner)),
       pagination: {
         page,
         limit,
@@ -551,7 +583,7 @@ export class MarketingService {
     if (location) query.location = location;
 
     // Get all banners that match the query
-    const allBanners = await this.bannerModel.find(query).populate('imageId').sort({ sortOrder: 1 }).lean();
+    const allBanners = await this.bannerModel.find(query).populate('imageId').sort({ sortOrder: 1 }).lean<BannerWithPopulatedImage[]>();
 
     // Filter by user types if provided
     if (userRoles && userRoles.length > 0) {
@@ -562,13 +594,34 @@ export class MarketingService {
         }
         // Check if user's roles match any of the banner's targetUserTypes
         return banner.targetUserTypes.some(targetType => userRoles.includes(targetType));
-      });
+      }).map(banner => this.formatBannerForResponse(banner));
     }
 
     // If no user roles provided, only return banners visible to everyone
     return allBanners.filter(banner => 
       !banner.targetUserTypes || banner.targetUserTypes.length === 0
-    );
+    ).map(banner => this.formatBannerForResponse(banner));
+  }
+
+  /**
+   * Format banner for API response with navigation information
+   */
+  private formatBannerForResponse(banner: BannerWithPopulatedImage): Banner {
+    // Ensure navigation information is properly structured
+    const formatted: Banner = { ...banner } as unknown as Banner;
+    
+    // Backward compatibility: if navigationType is not set but linkUrl exists, use it
+    if (!formatted.navigationType && formatted.linkUrl) {
+      formatted.navigationType = BannerNavigationType.EXTERNAL_URL;
+      formatted.navigationTarget = formatted.linkUrl;
+    }
+    
+    // If navigationType is NONE, ensure navigationTarget is not set
+    if (formatted.navigationType === BannerNavigationType.NONE) {
+      formatted.navigationTarget = undefined;
+    }
+    
+    return formatted;
   }
 
   async incrementBannerView(id: string): Promise<void> {

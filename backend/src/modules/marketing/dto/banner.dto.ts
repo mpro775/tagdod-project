@@ -1,5 +1,5 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsArray, IsBoolean, IsUrl, IsMongoId, ValidateIf } from 'class-validator';
-import { BannerLocation, BannerPromotionType } from '../schemas/banner.schema';
+import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsArray, IsBoolean, IsUrl, IsMongoId, ValidateIf, IsObject } from 'class-validator';
+import { BannerLocation, BannerPromotionType, BannerNavigationType } from '../schemas/banner.schema';
 import { UserRole } from '../../users/schemas/user.schema';
 
 export class CreateBannerDto {
@@ -9,8 +9,13 @@ export class CreateBannerDto {
   @ValidateIf((o) => o.linkUrl !== undefined && o.linkUrl !== null && o.linkUrl !== '')
   @IsUrl()
   @IsOptional()
-  linkUrl?: string;
+  linkUrl?: string; // Legacy field - kept for backward compatibility
   @IsString() @IsOptional() altText?: string;
+  
+  // Navigation settings
+  @IsEnum(BannerNavigationType) @IsOptional() navigationType?: BannerNavigationType;
+  @IsString() @IsOptional() navigationTarget?: string; // Category ID, Product ID, Section name, or external URL
+  @IsObject() @IsOptional() navigationParams?: Record<string, unknown>; // Additional parameters for navigation
   
   @IsEnum(BannerLocation) location!: BannerLocation;
   @IsEnum(BannerPromotionType) @IsOptional() promotionType?: BannerPromotionType;
@@ -35,8 +40,13 @@ export class UpdateBannerDto {
   @ValidateIf((o) => o.linkUrl !== undefined && o.linkUrl !== null && o.linkUrl !== '')
   @IsUrl()
   @IsOptional()
-  linkUrl?: string;
+  linkUrl?: string; // Legacy field - kept for backward compatibility
   @IsString() @IsOptional() altText?: string;
+  
+  // Navigation settings
+  @IsEnum(BannerNavigationType) @IsOptional() navigationType?: BannerNavigationType;
+  @IsString() @IsOptional() navigationTarget?: string; // Category ID, Product ID, Section name, or external URL
+  @IsObject() @IsOptional() navigationParams?: Record<string, unknown>; // Additional parameters for navigation
   
   @IsEnum(BannerLocation) @IsOptional() location?: BannerLocation;
   @IsEnum(BannerPromotionType) @IsOptional() promotionType?: BannerPromotionType;

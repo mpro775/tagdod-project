@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
 import { UserRole } from '../../users/schemas/user.schema';
 
 export enum BannerLocation {
@@ -23,6 +23,14 @@ export enum BannerPromotionType {
   BRAND_PROMOTION = 'brand_promotion',
 }
 
+export enum BannerNavigationType {
+  EXTERNAL_URL = 'external_url', // رابط خارجي
+  CATEGORY = 'category', // فئة معينة
+  PRODUCT = 'product', // منتج معين
+  SECTION = 'section', // قسم/شاشة معينة في التطبيق
+  NONE = 'none', // بدون تنقل
+}
+
 export type BannerDocument = HydratedDocument<Banner>;
 
 @Schema({ timestamps: true })
@@ -31,8 +39,15 @@ export class Banner {
   @Prop() description?: string;
   @Prop({ type: Types.ObjectId, ref: 'Media', required: true })
   imageId!: string; // Reference to Media collection
-  @Prop() linkUrl?: string;
+  @Prop() linkUrl?: string; // Legacy field - kept for backward compatibility
   @Prop() altText?: string;
+  
+  // Navigation settings
+  @Prop({ type: String, enum: BannerNavigationType, default: BannerNavigationType.NONE })
+  navigationType!: BannerNavigationType;
+  
+  @Prop() navigationTarget?: string; // Category ID, Product ID, Section name, or external URL
+  @Prop({ type: MongooseSchema.Types.Mixed }) navigationParams?: Record<string, unknown>; // Additional parameters for navigation
   
   @Prop({ type: String, enum: BannerLocation, required: true })
   location!: BannerLocation;

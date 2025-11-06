@@ -7679,7 +7679,8 @@ paths:
       summary: إنشاء بانر
       description: >-
         إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin).
-        إذا تركت فارغاً، سيظهر البانر للجميع.
+        إذا تركت فارغاً، سيظهر البانر للجميع. يمكن تحديد نوع التنقل: external_url (رابط خارجي)، category (فئة)، product
+        (منتج)، section (قسم في التطبيق)، أو none (بدون تنقل).
       parameters: []
       requestBody:
         required: true
@@ -8042,7 +8043,25 @@ paths:
                         linkUrl:
                           type: string
                           example: https://example.com/special-offer
-                          description: رابط البانر
+                          description: رابط البانر (للتوافق مع الإصدارات القديمة)
+                        navigationType:
+                          type: string
+                          enum:
+                            - external_url
+                            - category
+                            - product
+                            - section
+                            - none
+                          example: category
+                          description: 'نوع التنقل: external_url, category, product, section, none'
+                        navigationTarget:
+                          type: string
+                          example: category123
+                          description: 'الهدف من التنقل: معرف الفئة، معرف المنتج، اسم القسم، أو رابط خارجي'
+                        navigationParams:
+                          type: object
+                          example: {}
+                          description: معاملات إضافية للتنقل
                         location:
                           type: string
                           enum:
