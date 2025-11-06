@@ -36,7 +36,7 @@ Base path: `/auth`
   - Returns: `{ sent: boolean, devCode?: string }`
 
 - ✅ **POST** `/auth/verify-otp`
-  - Body: `VerifyOtpDto { phone: string; code: string; firstName?, lastName?, gender?, capabilityRequest?: 'engineer'|'wholesale', jobTitle?, deviceId? }`
+  - Body: `VerifyOtpDto { phone: string; code: string; firstName?, lastName?, gender?, capabilityRequest?: 'engineer'|'merchant', jobTitle?, deviceId? }`
   - السلوك:
     - إنشاء مستخدم جديد إن لم يوجد، وضبط `capabilities` (customer افتراضيًا).
     - إذا `capabilityRequest='engineer'` يتطلب `jobTitle`.
@@ -84,7 +84,7 @@ Base path: `/auth`
 
 - ✅ **POST** `/auth/admin/approve` (محمي، مسؤول)
   - Guards: `JwtAuthGuard`, `AdminGuard`
-  - Body: `{ userId: string; capability: 'engineer'|'wholesale'; approve: boolean; wholesaleDiscountPercent?: number }`
+  - Body: `{ userId: string; capability: 'engineer'|'merchant'; approve: boolean; wholesaleDiscountPercent?: number }`
   - يعتمد/يرفض القدرة، ويضبط `wholesale_discount_percent` عند الموافقة.
 
 ### إدارة النظام (Development):

@@ -487,7 +487,7 @@ export class UsersAdminController {
       userData.engineer_status = CapabilityStatus.APPROVED;
     }
 
-    if (dto.capabilityRequest === 'wholesale') {
+    if (dto.capabilityRequest === 'merchant') {
       userData.wholesale_capable = true;
       userData.wholesale_status = CapabilityStatus.APPROVED;
       userData.wholesale_discount_percent = dto.wholesaleDiscountPercent || 0;

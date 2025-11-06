@@ -182,7 +182,7 @@ export class AuthController {
         if (dto.capabilityRequest === 'engineer') {
           userData.engineer_capable = true;
           userData.engineer_status = 'unverified';
-        } else if (dto.capabilityRequest === 'wholesale') {
+        } else if (dto.capabilityRequest === 'merchant') {
           userData.wholesale_capable = true;
           userData.wholesale_status = 'unverified';
         }
@@ -458,7 +458,7 @@ export class AuthController {
     @Body()
     body: {
       userId: string;
-      capability: 'engineer' | 'wholesale';
+      capability: 'engineer' | 'merchant';
       approve: boolean;
       wholesaleDiscountPercent?: number; // نسبة الخصم للتاجر (0-100)
     },
@@ -471,7 +471,7 @@ export class AuthController {
       caps.engineer_capable = body.approve;
     }
 
-    if (body.capability === 'wholesale') {
+    if (body.capability === 'merchant') {
       caps.wholesale_status = body.approve ? 'approved' : 'rejected';
       caps.wholesale_capable = body.approve;
 
@@ -773,7 +773,7 @@ export class AuthController {
       if (dto.capabilityRequest === 'engineer') {
         user.engineer_capable = true;
         user.engineer_status = CapabilityStatus.UNVERIFIED;
-      } else if (dto.capabilityRequest === 'wholesale') {
+      } else if (dto.capabilityRequest === 'merchant') {
         user.wholesale_capable = true;
         user.wholesale_status = CapabilityStatus.UNVERIFIED;
       }

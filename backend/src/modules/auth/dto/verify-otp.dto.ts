@@ -53,10 +53,10 @@ export class VerifyOtpDto {
 
   @ApiPropertyOptional({
     description: 'نوع القدرة المطلوبة',
-    enum: ['engineer', 'wholesale'],
+    enum: ['engineer', 'merchant'],
     example: 'engineer'
   })
-  @IsOptional() @IsIn(['engineer', 'wholesale']) capabilityRequest?: 'engineer' | 'wholesale';
+  @IsOptional() @IsIn(['engineer', 'merchant']) capabilityRequest?: 'engineer' | 'merchant';
 
   @ApiPropertyOptional({
     description: 'المسمى الوظيفي للمهندس (مطلوب إذا كان capabilityRequest = "engineer")',

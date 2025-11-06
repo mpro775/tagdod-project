@@ -124,7 +124,7 @@ Future<Map<String, dynamic>> sendOtp({
 > 💡 **أنواع الحسابات التي يمكن إنشاؤها:**
 > - **Customer (زبون عادي)** - الافتراضي - لا تحتاج `capabilityRequest`
 > - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle`
-> - **Wholesale (تاجر جملة)** - تحتاج `capabilityRequest: "wholesale"`
+> - **Merchant (تاجر)** - تحتاج `capabilityRequest: "merchant"`
 
 ### معلومات الطلب
 
@@ -156,7 +156,7 @@ Future<Map<String, dynamic>> sendOtp({
 | `lastName` | `string` | ❌ لا | اسم العائلة |
 | `gender` | `string` | ❌ لا | `male`, `female`, `other` |
 | `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
-| `capabilityRequest` | `string` | ❌ لا | `engineer` أو `wholesale` |
+| `capabilityRequest` | `string` | ❌ لا | `engineer` أو `merchant` |
 | `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
 | `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
 
@@ -229,8 +229,8 @@ Future<Map<String, dynamic>> sendOtp({
    - الحالة الأولية: `engineerStatus: "unverified"`
    - يجب رفع السيرة الذاتية → `pending` → موافقة الأدمن → `approved`
 
-3. **Wholesale (تاجر جملة)**
-   - تحتاج: `capabilityRequest: "wholesale"`
+3. **Merchant (تاجر)**
+   - تحتاج: `capabilityRequest: "merchant"`
    - الحالة الأولية: `wholesaleStatus: "unverified"`
    - يجب رفع معلومات المحل → `pending` → موافقة الأدمن → `approved`
 
@@ -298,7 +298,7 @@ final response = await verifyOtp(
   lastName: 'محمد',
   gender: 'male',
   city: 'صنعاء',
-  capabilityRequest: 'wholesale',  // ✨ طلب صلاحية تاجر
+  capabilityRequest: 'merchant',  // ✨ طلب صلاحية تاجر
 );
 
 // الحالة:
@@ -1162,7 +1162,7 @@ Future<LoginResponse> userLogin({
 > 💡 **أنواع الحسابات:**
 > - **Customer (زبون عادي)** - لا تحتاج `capabilityRequest`
 > - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle`
-> - **Wholesale (تاجر جملة)** - تحتاج `capabilityRequest: "wholesale"`
+> - **Merchant (تاجر)** - تحتاج `capabilityRequest: "merchant"`
 
 ### معلومات الطلب
 
@@ -1194,7 +1194,7 @@ Future<LoginResponse> userLogin({
 | `lastName` | `string` | ✅ نعم | اسم العائلة |
 | `gender` | `string` | ✅ نعم | `male`, `female`, `other` |
 | `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
-| `capabilityRequest` | `string` | ❌ لا | `engineer` أو `wholesale` (⚠️ إذا لم ترسل = **customer عادي**) |
+| `capabilityRequest` | `string` | ❌ لا | `engineer` أو `merchant` (⚠️ إذا لم ترسل = **customer عادي**) |
 | `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
 | `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
 
@@ -1317,7 +1317,7 @@ if (response.me.isEngineerUnverified) {
 }
 ```
 
-#### **3. Wholesale (تاجر جملة):**
+#### **3. Merchant (تاجر):**
 ```dart
 final response = await userSignup(
   phone: '777123456',
@@ -1325,7 +1325,7 @@ final response = await userSignup(
   firstName: 'أحمد',
   lastName: 'محمد',
   gender: 'male',
-  capabilityRequest: 'wholesale',    // ✨ طلب صلاحية تاجر
+  capabilityRequest: 'merchant',    // ✨ طلب صلاحية تاجر
 );
 // النتيجة: wholesaleStatus = "unverified" - يجب رفع معلومات المحل
 if (response.me.isWholesaleUnverified) {
@@ -1585,7 +1585,7 @@ class AuthUser {
 5. **أنواع الحسابات:**
    - **Customer (زبون عادي):** النوع الافتراضي - لا يحتاج `capabilityRequest`
    - **Engineer (مهندس):** يحتاج `capabilityRequest: "engineer"` + `jobTitle`
-   - **Wholesale (تاجر جملة):** يحتاج `capabilityRequest: "wholesale"`
+   - **Merchant (تاجر):** يحتاج `capabilityRequest: "merchant"`
 
 6. **حالات المهندس/التاجر (engineerStatus / wholesaleStatus):**
    - `none`: مستخدم عادي (customer)
@@ -1646,7 +1646,7 @@ class AuthUser {
 3. ✅ **توضيح أنواع الحسابات الثلاثة:**
    - **Customer (زبون عادي)** - النوع الافتراضي عند عدم إرسال `capabilityRequest`
    - **Engineer (مهندس)** - يحتاج `capabilityRequest: "engineer"` + `jobTitle`
-   - **Wholesale (تاجر)** - يحتاج `capabilityRequest: "wholesale"`
+   - **Merchant (تاجر)** - يحتاج `capabilityRequest: "merchant"`
 4. ✅ **إضافة حقل `city` (المدينة):**
    - أضيف في `VerifyOtpDto` و `UserSignupDto`
    - يُحفظ في User Schema (افتراضي: صنعاء)
@@ -1660,13 +1660,14 @@ class AuthUser {
 9. ✅ **إضافة أمثلة واضحة للأنواع الثلاثة:**
    - مثال Customer عادي (engineerStatus: "none", wholesaleStatus: "none")
    - مثال Engineer (engineerStatus: "unverified/approved")
-   - مثال Wholesale (wholesaleStatus: "unverified/approved")
+   - مثال Merchant (wholesaleStatus: "unverified/approved")
 10. ✅ **إضافة أخطاء جديدة:**
    - `AUTH_125` - كلمة المرور غير محددة
    - `AUTH_126` - الحساب غير نشط
    - `AUTH_128` - رقم الهاتف موجود مسبقاً
 11. ✅ تحديث `VALIDATION_ERROR` إلى `GENERAL_004`
 12. ✅ **حذف endpoints الأدمن** - هذا الملف للمستخدمين والتجار والمهندسين فقط
+13. ✅ **تحديث نوع capabilityRequest للتاجر** - تم تغيير `"wholesale"` إلى `"merchant"` في جميع endpoints
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/auth/auth.controller.ts`

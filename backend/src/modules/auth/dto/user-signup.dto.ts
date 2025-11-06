@@ -76,12 +76,12 @@ export class UserSignupDto {
 
   @ApiPropertyOptional({
     description: 'نوع القدرة المطلوبة',
-    enum: ['engineer', 'wholesale'],
+    enum: ['engineer', 'merchant'],
     example: 'engineer',
   })
   @IsOptional()
-  @IsIn(['engineer', 'wholesale'], { message: 'نوع القدرة يجب أن يكون engineer أو wholesale' })
-  capabilityRequest?: 'engineer' | 'wholesale';
+  @IsIn(['engineer', 'merchant'], { message: 'نوع القدرة يجب أن يكون engineer أو merchant' })
+  capabilityRequest?: 'engineer' | 'merchant';
 
   @ApiPropertyOptional({
     description: 'المسمى الوظيفي للمهندس (مطلوب إذا كان capabilityRequest = "engineer")',

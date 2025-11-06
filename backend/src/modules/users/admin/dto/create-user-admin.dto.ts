@@ -53,8 +53,8 @@ export class CreateUserAdminDto {
 
   // Capabilities
   @IsOptional()
-  @IsIn(['engineer', 'wholesale'])
-  capabilityRequest?: 'engineer' | 'wholesale';
+  @IsIn(['engineer', 'merchant'])
+  capabilityRequest?: 'engineer' | 'merchant';
 
   @IsOptional()
   wholesaleDiscountPercent?: number;
