@@ -43,9 +43,11 @@
 }
 ```
 
+> **ملاحظة:** رقم الهاتف يجب أن يبدأ بـ `05` أو `5` أو `7` ويتكون من 9-10 أرقام (مثال: `777123456` أو `0501234567`)
+
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام بدون 967+) |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (يجب أن يبدأ بـ 05 أو 5 أو 7 ويتكون من 9-10 أرقام) |
 | `context` | `string` | ❌ لا | `register` أو `reset` (افتراضي: `register`) |
 
 ### Response - نجاح
@@ -75,7 +77,7 @@
     "fieldErrors": [
       {
         "field": "phone",
-        "message": "رقم الهاتف يجب أن يكون 9 أرقام"
+        "message": "رقم الهاتف غير صحيح. يجب أن يبدأ بـ 05 أو 5 أو 7 ويتكون من 9-10 أرقام"
       }
     ]
   },
@@ -85,7 +87,7 @@
 }
 ```
 
-> **ملاحظة:** أخطاء الـ Validation تستخدم الكود `GENERAL_004` في النظام الجديد.
+> **ملاحظة:** أخطاء الـ Validation تستخدم الكود `GENERAL_004` (VALIDATION_ERROR) في النظام الجديد.
 
 ### كود Flutter
 
@@ -150,15 +152,15 @@ Future<Map<String, dynamic>> sendOtp({
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (يبدأ بـ 05/5/7 ومكون من 9-10 أرقام) |
 | `code` | `string` | ✅ نعم | رمز OTP (6 أرقام) |
-| `firstName` | `string` | ❌ لا | الاسم الأول (مطلوب للمستخدمين الجدد) |
-| `lastName` | `string` | ❌ لا | اسم العائلة |
+| `firstName` | `string` | ❌ لا | الاسم الأول (2-50 حرف، مطلوب للمستخدمين الجدد) |
+| `lastName` | `string` | ❌ لا | اسم العائلة (2-50 حرف) |
 | `gender` | `string` | ❌ لا | `male`, `female`, `other` |
-| `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
+| `city` | `string` | ❌ لا | المدينة (2-50 حرف، افتراضي: صنعاء) |
 | `capabilityRequest` | `string` | ❌ لا | `engineer` أو `merchant` |
-| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
-| `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
+| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (3-100 حرف، مطلوب إذا `capabilityRequest = engineer`) |
+| `deviceId` | `string` | ❌ لا | معرف الجهاز (10-50 حرف، لمزامنة المفضلات تلقائياً) |
 
 ### Response - نجاح
 
@@ -209,11 +211,11 @@ Future<Map<String, dynamic>> sendOtp({
 
 ### أكواد الأخطاء
 
-| الكود | الوصف | HTTP Status |
+| الكود | الرسالة | HTTP Status |
 |------|-------|-------------|
-| `AUTH_100` | رمز OTP غير صحيح | 401 |
-| `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
-| `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
+| `AUTH_100` (AUTH_INVALID_OTP) | رمز التحقق غير صالح | 401 |
+| `AUTH_122` (AUTH_JOB_TITLE_REQUIRED) | المسمى الوظيفي مطلوب للمهندسين | 400 |
+| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
 
 ### ⚠️ ملاحظة مهمة عن أنواع الحسابات وحالاتها
 
@@ -486,6 +488,13 @@ Future<void> _saveTokens(AuthTokens tokens) async {
 }
 ```
 
+### أكواد الأخطاء
+
+| الكود | الرسالة | HTTP Status |
+|------|-------|-------------|
+| `AUTH_115` (AUTH_UNAUTHORIZED) | غير مصرح بالوصول | 401 |
+| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
+
 ### كود Flutter
 
 ```dart
@@ -554,6 +563,13 @@ Future<bool> setPassword(String password) async {
 }
 ```
 
+### أكواد الأخطاء
+
+| الكود | الرسالة | HTTP Status |
+|------|-------|-------------|
+| `AUTH_103` (AUTH_USER_NOT_FOUND) | المستخدم غير موجود | 404 |
+| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
+
 ### كود Flutter
 
 ```dart
@@ -609,6 +625,14 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
   "requestId": "req_202"
 }
 ```
+
+### أكواد الأخطاء
+
+| الكود | الرسالة | HTTP Status |
+|------|-------|-------------|
+| `AUTH_100` (AUTH_INVALID_OTP) | رمز التحقق غير صالح | 401 |
+| `AUTH_103` (AUTH_USER_NOT_FOUND) | المستخدم غير موجود | 404 |
+| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
 
 ### كود Flutter
 
@@ -829,6 +853,13 @@ Future<UserProfile> getMe() async {
 }
 ```
 
+### أكواد الأخطاء
+
+| الكود | الرسالة | HTTP Status |
+|------|-------|-------------|
+| `AUTH_115` (AUTH_UNAUTHORIZED) | غير مصرح بالوصول | 401 |
+| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
+
 ### كود Flutter
 
 ```dart
@@ -893,6 +924,14 @@ Future<bool> updateMe({
   "requestId": "req_606"
 }
 ```
+
+### أكواد الأخطاء
+
+| الكود | الرسالة | HTTP Status |
+|------|-------|-------------|
+| `AUTH_103` (AUTH_USER_NOT_FOUND) | المستخدم غير موجود | 404 |
+| `AUTH_115` (AUTH_UNAUTHORIZED) | غير مصرح بالوصول | 401 |
+| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
 
 ### كود Flutter
 
@@ -1006,6 +1045,13 @@ Future<void> _clearLocalData() async {
 }
 ```
 
+### أكواد الأخطاء
+
+| الكود | الرسالة | HTTP Status |
+|------|-------|-------------|
+| `AUTH_108` (AUTH_USER_DELETED) | تم حذف حساب المستخدم | 400 |
+| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
+
 **ملاحظة:** الحذف من نوع Soft Delete، مما يعني أن البيانات يتم حفظها في قاعدة البيانات مع حالة "محذوف" ويمكن استعادتها من قبل الأدمن.
 
 ---
@@ -1031,10 +1077,12 @@ Future<void> _clearLocalData() async {
 }
 ```
 
+> **ملاحظة:** رقم الهاتف يجب أن يبدأ بـ `05` أو `5` أو `7` ويتكون من 9-10 أرقام
+
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام) |
-| `password` | `string` | ✅ نعم | كلمة المرور |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (يبدأ بـ 05/5/7، 9-10 أرقام) |
+| `password` | `string` | ✅ نعم | كلمة المرور (6 أحرف على الأقل) |
 
 ### Response - نجاح
 
@@ -1117,11 +1165,12 @@ Future<void> _clearLocalData() async {
 
 ### أكواد الأخطاء
 
-| الكود | الوصف | HTTP Status |
+| الكود | الرسالة | HTTP Status |
 |------|-------|-------------|
-| `AUTH_104` | كلمة المرور غير صحيحة | 401 |
-| `AUTH_125` | كلمة المرور غير محددة | 400 |
-| `AUTH_126` | الحساب غير نشط | 400 |
+| `AUTH_103` (AUTH_USER_NOT_FOUND) | المستخدم غير موجود | 404 |
+| `AUTH_104` (AUTH_INVALID_PASSWORD) | كلمة المرور غير صحيحة | 401 |
+| `AUTH_125` (AUTH_PASSWORD_NOT_SET) | لم يتم تعيين كلمة مرور لهذا الحساب | 400 |
+| `AUTH_126` (AUTH_USER_NOT_ACTIVE) | هذا الحساب غير نشط | 400 |
 
 ### كود Flutter
 
@@ -1188,15 +1237,15 @@ Future<LoginResponse> userLogin({
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام) |
-| `password` | `string` | ✅ نعم | كلمة المرور |
-| `firstName` | `string` | ✅ نعم | الاسم الأول |
-| `lastName` | `string` | ✅ نعم | اسم العائلة |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (يبدأ بـ 05/5/7، 9-10 أرقام) |
+| `password` | `string` | ✅ نعم | كلمة المرور (6 أحرف على الأقل) |
+| `firstName` | `string` | ✅ نعم | الاسم الأول (2-50 حرف) |
+| `lastName` | `string` | ✅ نعم | اسم العائلة (2-50 حرف) |
 | `gender` | `string` | ✅ نعم | `male`, `female`, `other` |
-| `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
+| `city` | `string` | ❌ لا | المدينة (2-50 حرف، افتراضي: صنعاء) |
 | `capabilityRequest` | `string` | ❌ لا | `engineer` أو `merchant` (⚠️ إذا لم ترسل = **customer عادي**) |
-| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
-| `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
+| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (3-100 حرف، مطلوب إذا `capabilityRequest = engineer`) |
+| `deviceId` | `string` | ❌ لا | معرف الجهاز (10-50 حرف، لمزامنة المفضلات تلقائياً) |
 
 ### Response - نجاح
 
@@ -1278,11 +1327,11 @@ Future<LoginResponse> userLogin({
 
 ### أكواد الأخطاء
 
-| الكود | الوصف | HTTP Status |
+| الكود | الرسالة | HTTP Status |
 |------|-------|-------------|
-| `AUTH_128` | رقم الهاتف موجود مسبقاً | 409 |
-| `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
-| `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
+| `AUTH_128` (AUTH_PHONE_EXISTS) | رقم الهاتف موجود مسبقاً | 409 |
+| `AUTH_122` (AUTH_JOB_TITLE_REQUIRED) | المسمى الوظيفي مطلوب للمهندسين | 400 |
+| `GENERAL_004` (VALIDATION_ERROR) | خطأ في التحقق من البيانات | 400 |
 
 ### ⚠️ ملاحظة مهمة عن أنواع الحسابات
 
@@ -1639,35 +1688,54 @@ class AuthUser {
 > ✅ **تم تحديث هذه الوثيقة بالكامل** لتطابق الكود الفعلي
 
 ### التحديثات المضافة في هذه النسخة:
-1. ✅ **تحديث أكواد الأخطاء** - استخدام النظام الجديد (AUTH_100، AUTH_103، إلخ)
-2. ✅ **إضافة endpoints جديدة:**
+1. ✅ **تحديث أكواد الأخطاء** - استخدام النظام الجديد من `error-codes.ts`:
+   - `AUTH_100` (AUTH_INVALID_OTP) - رمز التحقق غير صالح
+   - `AUTH_103` (AUTH_USER_NOT_FOUND) - المستخدم غير موجود
+   - `AUTH_104` (AUTH_INVALID_PASSWORD) - كلمة المرور غير صحيحة
+   - `AUTH_108` (AUTH_USER_DELETED) - تم حذف حساب المستخدم
+   - `AUTH_115` (AUTH_UNAUTHORIZED) - غير مصرح بالوصول
+   - `AUTH_122` (AUTH_JOB_TITLE_REQUIRED) - المسمى الوظيفي مطلوب للمهندسين
+   - `AUTH_125` (AUTH_PASSWORD_NOT_SET) - لم يتم تعيين كلمة مرور
+   - `AUTH_126` (AUTH_USER_NOT_ACTIVE) - الحساب غير نشط
+   - `AUTH_128` (AUTH_PHONE_EXISTS) - رقم الهاتف موجود مسبقاً
+   - `GENERAL_004` (VALIDATION_ERROR) - خطأ في التحقق من البيانات
+2. ✅ **تحديث قواعد التحقق من رقم الهاتف:**
+   - يجب أن يبدأ بـ `05` أو `5` أو `7`
+   - يتكون من 9-10 أرقام
+   - أمثلة صحيحة: `777123456`، `0501234567`
+3. ✅ **تحديث جميع جداول الحقول مع التفاصيل:**
+   - إضافة الحد الأدنى والأقصى لطول كل حقل
+   - توضيح قواعد التحقق (Validation Rules)
+   - إضافة أمثلة لكل حقل
+4. ✅ **إضافة جداول أكواد الأخطاء لجميع endpoints:**
+   - كل endpoint الآن لديه جدول واضح بأكواد الأخطاء الممكنة
+   - إضافة HTTP Status Code لكل خطأ
+   - توضيح اسم الكود الفعلي من النظام
+5. ✅ **إضافة endpoints جديدة:**
    - `/auth/user-login` - تسجيل دخول المستخدمين بكلمة المرور
    - `/auth/user-signup` - إنشاء حساب جديد بكلمة المرور
-3. ✅ **توضيح أنواع الحسابات الثلاثة:**
+6. ✅ **توضيح أنواع الحسابات الثلاثة:**
    - **Customer (زبون عادي)** - النوع الافتراضي عند عدم إرسال `capabilityRequest`
    - **Engineer (مهندس)** - يحتاج `capabilityRequest: "engineer"` + `jobTitle`
    - **Merchant (تاجر)** - يحتاج `capabilityRequest: "merchant"`
-4. ✅ **إضافة حقل `city` (المدينة):**
+7. ✅ **إضافة حقل `city` (المدينة):**
    - أضيف في `VerifyOtpDto` و `UserSignupDto`
    - يُحفظ في User Schema (افتراضي: صنعاء)
    - يظهر في `/auth/me` ويمكن تحديثه
-5. ✅ **إضافة `timestamp` و `path`** في جميع أمثلة الأخطاء
-6. ✅ **تحديث Flutter code examples** بأكواد الأخطاء الجديدة
-7. ✅ **تصحيح مدة صلاحية Access Token** - 8 ساعات (كان 15 دقيقة)
-8. ✅ **إضافة حقول حالة المهندس/التاجر في جميع Login/Signup Responses:**
+   - نطاق الطول: 2-50 حرف
+8. ✅ **إضافة `timestamp` و `path`** في جميع أمثلة الأخطاء
+9. ✅ **تحديث Flutter code examples** بأكواد الأخطاء الجديدة
+10. ✅ **تصحيح مدة صلاحية Access Token** - 8 ساعات (كان 15 دقيقة)
+11. ✅ **إضافة حقول حالة المهندس/التاجر في جميع Login/Signup Responses:**
    - `engineerStatus` - حالة المهندس (none/unverified/pending/approved/rejected)
    - `wholesaleStatus` - حالة التاجر (none/unverified/pending/approved/rejected)
-9. ✅ **إضافة أمثلة واضحة للأنواع الثلاثة:**
+12. ✅ **إضافة أمثلة واضحة للأنواع الثلاثة:**
    - مثال Customer عادي (engineerStatus: "none", wholesaleStatus: "none")
    - مثال Engineer (engineerStatus: "unverified/approved")
    - مثال Merchant (wholesaleStatus: "unverified/approved")
-10. ✅ **إضافة أخطاء جديدة:**
-   - `AUTH_125` - كلمة المرور غير محددة
-   - `AUTH_126` - الحساب غير نشط
-   - `AUTH_128` - رقم الهاتف موجود مسبقاً
-11. ✅ تحديث `VALIDATION_ERROR` إلى `GENERAL_004`
-12. ✅ **حذف endpoints الأدمن** - هذا الملف للمستخدمين والتجار والمهندسين فقط
-13. ✅ **تحديث نوع capabilityRequest للتاجر** - تم تغيير `"wholesale"` إلى `"merchant"` في جميع endpoints
+13. ✅ **حذف endpoints الأدمن** - هذا الملف للمستخدمين والتجار والمهندسين فقط
+14. ✅ **تحديث نوع capabilityRequest للتاجر** - تم تغيير `"wholesale"` إلى `"merchant"` في جميع endpoints
+15. ✅ **إضافة ملاحظات توضيحية** عن رقم الهاتف في كل endpoint
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/auth/auth.controller.ts`
