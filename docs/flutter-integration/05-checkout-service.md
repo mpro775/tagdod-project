@@ -52,6 +52,7 @@
         {
           "itemId": "item_001",
           "variantId": "var_789",
+          "productId": "prod_123",
           "qty": 2,
           "unit": {
             "base": 150000,
@@ -60,6 +61,19 @@
             "appliedRule": null
           },
           "lineTotal": 270000
+        },
+        {
+          "itemId": "item_002",
+          "productId": "prod_456",
+          "variantId": null,
+          "qty": 1,
+          "unit": {
+            "base": 850000,
+            "final": 850000,
+            "currency": "YER",
+            "appliedRule": null
+          },
+          "lineTotal": 850000
         }
       ],
       "subtotal": 1120000,
@@ -85,6 +99,7 @@
 > - `shipping` افتراضياً 0 (يتم تحديده لاحقاً من قبل الأدمن)
 > - `deliveryOptions` فارغة حالياً
 > - `total = subtotal - couponDiscount + shipping`
+> - كل عنصر يحتوي على `variantId` أو `productId` بحسب نوع العنصر في السلة
 
 ### Response - فشل
 
@@ -747,14 +762,16 @@ class CouponInfo {
 
 class CheckoutItem {
   final String itemId;
-  final String variantId;
+  final String? variantId;
+  final String? productId;
   final int qty;
   final CheckoutUnit unit;
   final double lineTotal;
 
   CheckoutItem({
     required this.itemId,
-    required this.variantId,
+    this.variantId,
+    this.productId,
     required this.qty,
     required this.unit,
     required this.lineTotal,
@@ -764,6 +781,7 @@ class CheckoutItem {
     return CheckoutItem(
       itemId: json['itemId'],
       variantId: json['variantId'],
+      productId: json['productId'],
       qty: json['qty'],
       unit: CheckoutUnit.fromJson(json['unit']),
       lineTotal: (json['lineTotal'] ?? 0).toDouble(),
@@ -907,7 +925,7 @@ class OrderDetails {
 
 class OrderItem {
   final String? productId;
-  final String variantId;
+  final String? variantId;
   final int qty;
   final double basePrice;
   final double finalPrice;
@@ -917,7 +935,7 @@ class OrderItem {
 
   OrderItem({
     this.productId,
-    required this.variantId,
+    this.variantId,
     required this.qty,
     required this.basePrice,
     required this.finalPrice,

@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { CartService } from './cart.service';
 import { Cart } from './schemas/cart.schema';
 import { Variant } from '../products/schemas/variant.schema';
+import { Product } from '../products/schemas/product.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 
 describe('CartService', () => {
@@ -55,6 +56,10 @@ describe('CartService', () => {
     findById: jest.fn(),
   };
 
+  const mockProductModel = {
+    findById: jest.fn(),
+  };
+
   const mockCapsModel = {
     findOne: jest.fn(),
   };
@@ -70,6 +75,10 @@ describe('CartService', () => {
         {
           provide: getModelToken(Variant.name),
           useValue: mockVariantModel,
+        },
+        {
+          provide: getModelToken(Product.name),
+          useValue: mockProductModel,
         },
         {
           provide: getModelToken(Capabilities.name),
@@ -144,12 +153,22 @@ describe('CartService', () => {
       mockCartModel.findOne.mockResolvedValue(cart);
       mockVariantModel.findById.mockResolvedValue({
         _id: '507f1f77bcf86cd799439011',
+        productId: '507f1f77bcf86cd799439099',
         basePriceUSD: 100,
         stock: 50,
         isActive: true,
       });
+      mockProductModel.findById.mockResolvedValue({
+        _id: '507f1f77bcf86cd799439099',
+        basePriceUSD: 100,
+        name: 'Product',
+        slug: 'product',
+      });
 
-      await service.addUserItem('507f1f77bcf86cd799439015', '507f1f77bcf86cd799439011', 2);
+      await service.addUserItem('507f1f77bcf86cd799439015', {
+        variantId: '507f1f77bcf86cd799439011',
+        qty: 2,
+      });
 
       expect(cart.save).toHaveBeenCalled();
     });
@@ -158,7 +177,10 @@ describe('CartService', () => {
       mockCartModel.findOne.mockResolvedValue(mockCart);
 
       await expect(
-        service.addUserItem('507f1f77bcf86cd799439015', '507f1f77bcf86cd799439011', 0),
+        service.addUserItem('507f1f77bcf86cd799439015', {
+          variantId: '507f1f77bcf86cd799439011',
+          qty: 0,
+        }),
       ).rejects.toThrow();
     });
   });
@@ -174,12 +196,23 @@ describe('CartService', () => {
       mockCartModel.findOne.mockResolvedValue(cart);
       mockVariantModel.findById.mockResolvedValue({
         _id: '507f1f77bcf86cd799439011',
+        productId: '507f1f77bcf86cd799439099',
         basePriceUSD: 100,
         stock: 50,
         isActive: true,
       });
+      mockProductModel.findById.mockResolvedValue({
+        _id: '507f1f77bcf86cd799439099',
+        basePriceUSD: 100,
+        name: 'Product',
+        slug: 'product',
+      });
 
-      await service.addGuestItem('device-123', '507f1f77bcf86cd799439011', 2);
+      await service.addGuestItem({
+        deviceId: 'device-123',
+        variantId: '507f1f77bcf86cd799439011',
+        qty: 2,
+      });
 
       expect(cart.save).toHaveBeenCalled();
     });

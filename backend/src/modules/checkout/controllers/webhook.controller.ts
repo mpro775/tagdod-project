@@ -398,7 +398,9 @@ export class WebhookController {
         .populate('customer', 'name email phone');
 
       for (const order of pendingOrders) {
-        const orderItem = order.items.find((item) => item.variantId.toString() === variantId);
+        const orderItem = order.items.find(
+          (item) => item.variantId != null && item.variantId.toString() === variantId,
+        );
         if (orderItem && orderItem.qty <= availableStock) {
           // يمكن إكمال الطلب إذا كان المخزون كافياً
           await this.orderService.updateOrderStatus(

@@ -212,7 +212,7 @@ export const ProductsListPage: React.FC = () => {
       field: 'createdAt',
       headerName: t('list.columns.createdAt'),
       width: 140,
-      valueGetter: (value, row) => row.createdAt || null,
+      valueGetter: (_value, row) => row.createdAt || null,
       valueFormatter: (value) => {
         if (!value || value === null || value === undefined) return '-';
         return formatDate(value as Date | string);

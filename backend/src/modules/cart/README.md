@@ -55,7 +55,7 @@
 
 ### سلة المستخدم:
 - ✅ `getUserCart(userId)` - جلب سلة المستخدم
-- ✅ `addUserItem(userId, variantId, qty)` - إضافة عنصر
+- ✅ `addUserItem(userId, payload)` - إضافة عنصر (يدعم `variantId` أو `productId`)
 - ✅ `updateUserItem(userId, itemId, qty)` - تحديث الكمية
 - ✅ `removeUserItem(userId, itemId)` - حذف عنصر
 - ✅ `clearUserCart(userId)` - مسح السلة
@@ -65,7 +65,7 @@
 
 ### سلة الضيف:
 - ✅ `getGuestCart(deviceId)` - جلب سلة الضيف
-- ✅ `addGuestItem(deviceId, variantId, qty)` - إضافة عنصر
+- ✅ `addGuestItem({ deviceId, ...payload })` - إضافة عنصر (يدعم `variantId` أو `productId`)
 - ✅ `updateGuestItem(deviceId, itemId, qty)` - تحديث الكمية
 - ✅ `removeGuestItem(deviceId, itemId)` - حذف عنصر
 - ✅ `clearGuestCart(deviceId)` - مسح السلة
@@ -196,7 +196,7 @@ Authorization: Bearer {token}
 
 Body:
 {
-  "variantId": "65abc123def456789",
+  "productId": "65abc123def456789",
   "qty": 2,
   "currency": "YER",
   "accountType": "retail"
@@ -239,6 +239,8 @@ Response:
   }
 }
 ```
+
+> **ملاحظة:** يمكن إرسال `variantId` أو `productId` (أحدهما فقط إلزامي). في حال كان المنتج بدون متغيرات، يجب تحديد `productId` مع ضمان وجود `basePriceUSD` للمنتج.
 
 ### مثال 2: معاينة سلة الضيف
 ```http

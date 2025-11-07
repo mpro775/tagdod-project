@@ -124,6 +124,11 @@
 - `trackInventory`: هل يتم تتبع المخزون (boolean) - افتراضي false
 - `allowBackorder`: السماح بالطلب المسبق (boolean) - افتراضي true
 
+### حقول التسعير الافتراضي (للمنتجات البسيطة بدون متغيرات)
+- `basePriceUSD`: السعر الأساسي للمنتج بالدولار (number) - مطلوب في حال عدم وجود Variants
+- `compareAtPriceUSD`: سعر المقارنة إن وجد (number) - اختياري
+- `costPriceUSD`: سعر التكلفة للمنتج (number) - اختياري
+
 ### حقول الخصائص الإضافية (Additional Properties)
 - `imageId`: معرف الصورة الخاصة بالتنويعة (ObjectId) - اختياري
 - `weight`: الوزن بالجرام (number) - اختياري

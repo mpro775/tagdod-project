@@ -14,11 +14,14 @@ export enum CartStatus {
 export class CartItem {
   _id?: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Variant', required: true })
-  variantId!: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'Variant' })
+  variantId?: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Product' })
   productId?: Types.ObjectId;
+
+  @Prop({ type: String, enum: ['variant', 'product'], default: 'variant' })
+  itemType!: 'variant' | 'product';
 
   @Prop({ required: true, min: 1, max: 999, default: 1 })
   qty!: number;

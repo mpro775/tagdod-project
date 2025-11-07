@@ -6011,13 +6011,16 @@ paths:
                             variantId:
                               type: string
                               example: 507f1f77bcf86cd799439014
+                              nullable: true
+                              description: يتوفر فقط عند وجود متغير محدد
+                            productId:
+                              type: string
+                              example: 507f1f77bcf86cd799439099
+                              nullable: true
+                              description: معرف المنتج عند التعامل مع عنصر بدون متغيرات
                             quantity:
                               type: number
                               example: 2
-                            product:
-                              type: object
-                            variant:
-                              type: object
                       totalItems:
                         type: number
                         example: 3
@@ -6037,7 +6040,7 @@ paths:
     post:
       operationId: add
       summary: إضافة عنصر إلى السلة
-      description: إضافة متغير منتج إلى سلة التسوق للمستخدم
+      description: إضافة عنصر إلى السلة باستخدام `variantId` أو `productId` (لمنتج بسيط بدون متغيرات)
       parameters: []
       requestBody:
         required: true
@@ -6062,6 +6065,11 @@ paths:
                       variantId:
                         type: string
                         example: 507f1f77bcf86cd799439014
+                        nullable: true
+                      productId:
+                        type: string
+                        example: 507f1f77bcf86cd799439099
+                        nullable: true
                       quantity:
                         type: number
                         example: 2
@@ -6115,6 +6123,11 @@ paths:
                       variantId:
                         type: string
                         example: 507f1f77bcf86cd799439014
+                        nullable: true
+                      productId:
+                        type: string
+                        example: 507f1f77bcf86cd799439099
+                        nullable: true
                       quantity:
                         type: number
                         example: 3
@@ -18551,6 +18564,9 @@ components:
         variantId:
           type: string
           example: 65abc123def456789
+        productId:
+          type: string
+          example: 65abc123def456780
         qty:
           type: number
           example: 1
@@ -18570,7 +18586,6 @@ components:
             - merchant
             - engineer
       required:
-        - variantId
         - qty
     UpdateItemDto:
       type: object
@@ -18635,6 +18650,9 @@ components:
         variantId:
           type: string
           example: 65abc123def456789
+        productId:
+          type: string
+          example: 65abc123def456780
         qty:
           type: number
           example: 1
@@ -18659,7 +18677,6 @@ components:
         metadata:
           type: object
       required:
-        - variantId
         - qty
         - deviceId
     GuestUpdateItemDto:

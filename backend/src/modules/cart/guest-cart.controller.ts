@@ -95,7 +95,7 @@ export class GuestCartController {
   })
   @ApiBadRequestResponse({ description: 'معرف المنتج أو الكمية غير صحيحة' })
   async add(@Body() dto: GuestAddItemDto) {
-    const data = await this.svc.addGuestItem(dto.deviceId, dto.variantId, dto.qty);
+    const data = await this.svc.addGuestItem(dto);
     return { data };
   }
 

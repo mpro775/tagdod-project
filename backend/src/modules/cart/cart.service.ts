@@ -3,18 +3,32 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cart, CartItem, CartStatus } from './schemas/cart.schema';
 import { Variant } from '../products/schemas/variant.schema';
+import { Product } from '../products/schemas/product.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { MarketingService } from '../marketing/marketing.service';
 import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 
-type ItemView = { itemId: string; variantId: string; qty: number };
+type ItemView = {
+  itemId: string;
+  variantId?: string;
+  productId?: string;
+  qty: number;
+};
 
 type CartLine = {
   itemId: string;
-  variantId: string;
+  variantId?: string;
+  productId?: string;
   qty: number;
   unit: { base: number; final: number; currency: string; appliedRule: unknown };
   lineTotal: number;
+  snapshot?: CartItem['productSnapshot'];
+};
+
+type AddItemInput = {
+  variantId?: string;
+  productId?: string;
+  qty: number;
 };
 
 // Optional promotions interface (duck-typing)
@@ -39,6 +53,7 @@ export class CartService {
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
     @InjectModel(Variant.name) private variantModel: Model<Variant>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
+    @InjectModel(Product.name) private productModel: Model<Product>,
     @Optional() private promotions?: PromotionsLike,
     @Optional() private marketingService?: MarketingService,
     @Inject(forwardRef(() => ExchangeRatesService))
@@ -88,7 +103,8 @@ export class CartService {
   private toView(cart: Cart): ItemView[] {
     return (cart.items || []).map((ci: CartItem) => ({
       itemId: String(ci._id),
-      variantId: String(ci.variantId),
+      variantId: ci.variantId ? String(ci.variantId) : undefined,
+      productId: ci.productId ? String(ci.productId) : undefined,
       qty: ci.qty,
     }));
   }
@@ -222,6 +238,16 @@ export class CartService {
     for (const item of cart.items) {
       if (item.pricing) {
         pricingSummary.subtotal += item.pricing.finalPrice * item.qty;
+      } else if (item.variantId) {
+        const variant = await this.variantModel.findById(item.variantId).lean();
+        if (variant) {
+          pricingSummary.subtotal += (variant.basePriceUSD || 0) * item.qty;
+        }
+      } else if (item.productId) {
+        const product = await this.productModel.findById(item.productId).lean();
+        if (product && product.basePriceUSD !== undefined && product.basePriceUSD !== null) {
+          pricingSummary.subtotal += product.basePriceUSD * item.qty;
+        }
       }
     }
 
@@ -320,20 +346,18 @@ export class CartService {
     }
   }
 
-  async addUserItem(userId: string, variantId: string, qty: number) {
+  async addUserItem(userId: string, payload: AddItemInput) {
     const cart = await this.getOrCreateUserCart(userId);
-    const exist = cart.items.find((it: CartItem) => String(it.variantId) === String(variantId));
-    if (exist) exist.qty = Math.min(999, exist.qty + qty);
-    else cart.items.push({ variantId: new Types.ObjectId(variantId), qty, addedAt: new Date() });
-    this.ensureCapacity(cart);
+    const result = await this.addOrUpdateCartItem(cart, payload);
     await cart.save();
-    return { items: this.toView(cart) };
+    return result;
   }
   async updateUserItem(userId: string, itemId: string, qty: number) {
     const cart = await this.getOrCreateUserCart(userId);
     const it = (cart.items as Types.DocumentArray<CartItem>).id(itemId);
     if (!it) return { items: this.toView(cart) };
     it.qty = qty;
+    cart.lastActivityAt = new Date();
     await cart.save();
     return { items: this.toView(cart) };
   }
@@ -344,6 +368,7 @@ export class CartService {
         remove(): void;
       }
     )?.remove();
+    cart.lastActivityAt = new Date();
     await cart.save();
     return { items: this.toView(cart) };
   }
@@ -359,20 +384,21 @@ export class CartService {
     const cart = await this.getOrCreateGuestCart(deviceId);
     return { items: this.toView(cart) };
   }
-  async addGuestItem(deviceId: string, variantId: string, qty: number) {
+  async addGuestItem(
+    payload: AddItemInput & { deviceId: string },
+  ) {
+    const { deviceId, ...itemInput } = payload;
     const cart = await this.getOrCreateGuestCart(deviceId);
-    const exist = cart.items.find((it: CartItem) => String(it.variantId) === String(variantId));
-    if (exist) exist.qty = Math.min(999, exist.qty + qty);
-    else cart.items.push({ variantId: new Types.ObjectId(variantId), qty, addedAt: new Date() });
-    this.ensureCapacity(cart);
+    const result = await this.addOrUpdateCartItem(cart, itemInput);
     await cart.save();
-    return { items: this.toView(cart) };
+    return result;
   }
   async updateGuestItem(deviceId: string, itemId: string, qty: number) {
     const cart = await this.getOrCreateGuestCart(deviceId);
     const it = (cart.items as Types.DocumentArray<CartItem>).id(itemId);
     if (!it) return { items: this.toView(cart) };
     it.qty = qty;
+    cart.lastActivityAt = new Date();
     await cart.save();
     return { items: this.toView(cart) };
   }
@@ -383,6 +409,7 @@ export class CartService {
         remove(): void;
       }
     )?.remove();
+    cart.lastActivityAt = new Date();
     await cart.save();
     return { items: this.toView(cart) };
   }
@@ -398,14 +425,189 @@ export class CartService {
     const guest = await this.getOrCreateGuestCart(deviceId);
     const user = await this.getOrCreateUserCart(userId);
     for (const g of guest.items) {
-      const u = user.items.find((x: CartItem) => String(x.variantId) === String(g.variantId));
-      if (u) u.qty = Math.min(999, u.qty + g.qty);
-      else user.items.push({ variantId: g.variantId, qty: g.qty, addedAt: g.addedAt });
+      let target: CartItem | undefined;
+      if (g.variantId) {
+        target = user.items.find(
+          (x: CartItem) => x.variantId && String(x.variantId) === String(g.variantId),
+        );
+      } else if (g.productId) {
+        target = user.items.find(
+          (x: CartItem) =>
+            !x.variantId &&
+            x.productId &&
+            String(x.productId) === String(g.productId),
+        );
+      }
+
+      if (target) {
+        target.qty = Math.min(999, target.qty + g.qty);
+      } else {
+        user.items.push({
+          variantId: g.variantId,
+          productId: g.productId,
+          itemType: g.itemType || (g.variantId ? 'variant' : 'product'),
+          qty: g.qty,
+          addedAt: g.addedAt,
+          productSnapshot: g.productSnapshot,
+          pricing: g.pricing,
+        } as CartItem);
+      }
     }
+    user.lastActivityAt = new Date();
+    this.ensureCapacity(user);
     await user.save();
     guest.items = [];
     await guest.save();
     return { items: this.toView(user) };
+  }
+
+  private async addOrUpdateCartItem(cart: Cart, input: AddItemInput) {
+    const { variantId, productId, qty } = input;
+    if (!variantId && !productId) {
+      throw new Error('يجب تحديد المنتج أو المتغير لإضافته إلى السلة');
+    }
+    if (qty <= 0) {
+      throw new Error('الكمية يجب أن تكون أكبر من صفر');
+    }
+
+    const resolved = await this.resolveCartItemIdentifiers({ variantId, productId });
+
+    let target: CartItem | undefined;
+    if (resolved.variantId) {
+      target = cart.items.find(
+        (item: CartItem) =>
+          item.variantId && String(item.variantId) === String(resolved.variantId),
+      );
+    } else {
+      target = cart.items.find(
+        (item: CartItem) =>
+          !item.variantId &&
+          item.productId &&
+          String(item.productId) === String(resolved.productId),
+      );
+    }
+
+    if (target) {
+      target.qty = Math.min(999, target.qty + qty);
+      target.productId = resolved.productId;
+      target.variantId = resolved.variantId;
+      target.itemType = resolved.itemType;
+      target.productSnapshot = resolved.productSnapshot;
+      target.pricing = target.pricing || {
+        currency: cart.currency || 'USD',
+        basePrice: resolved.basePriceUSD,
+        finalPrice: resolved.basePriceUSD,
+        discount: 0,
+      };
+      target.pricing.basePrice = resolved.basePriceUSD;
+      target.pricing.finalPrice = resolved.basePriceUSD;
+    } else {
+      cart.items.push({
+        variantId: resolved.variantId,
+        productId: resolved.productId,
+        itemType: resolved.itemType,
+        qty,
+        addedAt: new Date(),
+        productSnapshot: resolved.productSnapshot,
+        pricing: {
+          currency: cart.currency || 'USD',
+          basePrice: resolved.basePriceUSD,
+          finalPrice: resolved.basePriceUSD,
+          discount: 0,
+        },
+      } as CartItem);
+    }
+
+    this.ensureCapacity(cart);
+    cart.lastActivityAt = new Date();
+    return { items: this.toView(cart) };
+  }
+
+  private toStringId(value?: unknown): string | undefined {
+    if (!value) return undefined;
+    if (typeof value === 'string') return value;
+    if (value instanceof Types.ObjectId) return value.toString();
+    if (typeof value === 'object' && '_id' in (value as Record<string, unknown>)) {
+      return this.toStringId((value as { _id?: unknown })._id);
+    }
+    return undefined;
+  }
+
+  private buildProductSnapshot(product?: Product | null): CartItem['productSnapshot'] | undefined {
+    if (!product) return undefined;
+
+    let image: string | undefined;
+    const mainImage: unknown = (product as unknown as { mainImageId?: unknown }).mainImageId;
+    if (mainImage && typeof mainImage === 'object' && 'url' in (mainImage as Record<string, unknown>)) {
+      image = (mainImage as { url?: string }).url;
+    }
+
+    const brand = (product as unknown as { brandId?: unknown }).brandId;
+    const category = (product as unknown as { categoryId?: unknown }).categoryId;
+
+    return {
+      name: (product as unknown as { name: string }).name,
+      slug: (product as unknown as { slug: string }).slug,
+      image,
+      brandId: this.toStringId(brand),
+      brandName:
+        brand && typeof brand === 'object' && 'name' in (brand as Record<string, unknown>)
+          ? String((brand as { name?: unknown }).name ?? '')
+          : undefined,
+      categoryId: this.toStringId(category),
+    };
+  }
+
+  private async resolveCartItemIdentifiers(input: {
+    variantId?: string;
+    productId?: string;
+  }): Promise<{
+    variantId?: Types.ObjectId;
+    productId: Types.ObjectId;
+    itemType: 'variant' | 'product';
+    productSnapshot?: CartItem['productSnapshot'];
+    basePriceUSD: number;
+  }> {
+    if (input.variantId) {
+      const variant = await this.variantModel.findById(input.variantId).lean();
+      if (!variant) {
+        throw new Error('المتغير غير موجود');
+      }
+
+      const product = await this.productModel.findById(variant.productId).lean();
+      if (!product) {
+        throw new Error('المنتج المرتبط بالمتغير غير موجود');
+      }
+
+      return {
+        variantId: new Types.ObjectId(String(variant._id)),
+        productId: new Types.ObjectId(String(variant.productId)),
+        itemType: 'variant',
+        productSnapshot: this.buildProductSnapshot(product),
+        basePriceUSD: variant.basePriceUSD ?? 0,
+      };
+    }
+
+    if (input.productId) {
+      const product = await this.productModel.findById(input.productId).lean();
+      if (!product) {
+        throw new Error('المنتج غير موجود');
+      }
+
+      const basePriceUSD = product.basePriceUSD;
+      if (basePriceUSD === undefined || basePriceUSD === null) {
+        throw new Error('لم يتم تحديد سعر لهذا المنتج');
+      }
+
+      return {
+        productId: new Types.ObjectId(String(product._id)),
+        itemType: 'product',
+        productSnapshot: this.buildProductSnapshot(product),
+        basePriceUSD,
+      };
+    }
+
+    throw new Error('يجب تحديد معرف المتغير أو المنتج');
   }
 
   // ---------- preview
@@ -430,30 +632,53 @@ export class CartService {
     }
 
     for (const it of cart.items) {
-      // Get variant pricing - simplified approach without priceModel
-      const variant = await this.variantModel.findById(it.variantId).lean();
-      if (!variant) continue; // skip items without variant
+      let base = 0;
+      let final = 0;
+      let appliedRule: unknown = null;
+      let variantIdStr: string | undefined;
+      let productIdStr: string | undefined;
+      let snapshot = it.productSnapshot;
 
-      let final = variant.basePriceUSD || 0;
-      let base = variant.basePriceUSD || 0;
-      let appliedRule = null;
+      if (it.variantId) {
+        const variant = await this.variantModel.findById(it.variantId).lean();
+        if (!variant) continue;
 
-      // تطبيق العروض الترويجية أولاً
-      if (this.marketingService && typeof this.marketingService.preview === 'function') {
-        const res = await this.marketingService.preview({
-          variantId: String(it.variantId),
-          currency,
-          qty: it.qty,
-          accountType,
-        });
-        if (res) {
-          final = res.finalPrice;
-          base = res.basePrice;
-          appliedRule = res.appliedRule;
+        const product = await this.productModel.findById(variant.productId).lean();
+
+        base = variant.basePriceUSD || 0;
+        final = base;
+        variantIdStr = String(variant._id);
+        productIdStr = String(variant.productId);
+        snapshot = snapshot ?? this.buildProductSnapshot(product);
+
+        if (this.marketingService && typeof this.marketingService.preview === 'function') {
+          const res = await this.marketingService.preview({
+            variantId: String(variant._id),
+            currency,
+            qty: it.qty,
+            accountType,
+          });
+          if (res) {
+            final = res.finalPrice;
+            base = res.basePrice;
+            appliedRule = res.appliedRule;
+          }
         }
+      } else if (it.productId) {
+        const product = await this.productModel.findById(it.productId).lean();
+        if (!product) continue;
+
+        const productBasePrice = product.basePriceUSD;
+        if (productBasePrice === undefined || productBasePrice === null) continue;
+
+        base = productBasePrice;
+        final = productBasePrice;
+        productIdStr = String(product._id);
+        snapshot = snapshot ?? this.buildProductSnapshot(product);
+      } else {
+        continue;
       }
 
-      // تطبيق خصم التاجر بعد العروض الترويجية
       if (merchantDiscountPercent > 0) {
         final = final * (1 - merchantDiscountPercent / 100);
       }
@@ -463,10 +688,12 @@ export class CartService {
 
       lines.push({
         itemId: String((it as unknown as { _id: string })._id),
-        variantId: String(it.variantId),
+        variantId: variantIdStr,
+        productId: productIdStr,
         qty: it.qty,
         unit: { base, final, currency, appliedRule },
         lineTotal,
+        snapshot,
       });
     }
 

@@ -95,8 +95,8 @@ export class OrderItem {
   @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
   productId!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Variant', required: true })
-  variantId!: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'Variant' })
+  variantId?: Types.ObjectId;
 
   @Prop({ required: true, min: 1 })
   qty!: number;
