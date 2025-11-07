@@ -29,7 +29,6 @@ import {
   BannerLocation, 
   BannerPromotionType, 
   BannerNavigationType,
-  UserRole,
   BANNER_NAVIGATION_TYPE_OPTIONS,
   USER_ROLE_OPTIONS,
 } from '../types/banner.types';
@@ -135,7 +134,6 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
 
   const watchedIsActive = watch('isActive');
   const watchedNavigationType = watch('navigationType');
-  const watchedTargetUserTypes = watch('targetUserTypes') || [];
 
   // Load products when navigation type is PRODUCT
   useEffect(() => {

@@ -326,44 +326,37 @@ export class MarketingService {
       }
     }
 
-    // Check product restrictions if productIds are provided (productIds are actually variantIds)
+    // Check product restrictions if productIds are provided (can be variantIds or productIds)
     if (productIds && productIds.length > 0 && coupon.appliesTo !== 'all_products' && coupon.appliesTo !== 'minimum_order_amount') {
       let isValidForProducts = false;
 
+      const { combinedProductIds } = await this.extractProductIdsFromCartItems(productIds);
+
       if (coupon.appliesTo === 'specific_products' && coupon.applicableProductIds && coupon.applicableProductIds.length > 0) {
-        // Get variants to find their products
-        const variants = await this.variantModel.find({
-          _id: { $in: productIds }
-        }).select('productId').lean();
-        
-        const productIdsFromVariants = variants.map(v => String(v.productId));
         // Check if at least one product in cart matches
-        isValidForProducts = productIdsFromVariants.some(id => coupon.applicableProductIds.includes(id));
+        isValidForProducts = combinedProductIds.some(id => coupon.applicableProductIds.includes(id));
       } else if (coupon.appliesTo === 'specific_categories' && coupon.applicableCategoryIds && coupon.applicableCategoryIds.length > 0) {
-        // Get variants and their products to check categories
-        const variants = await this.variantModel.find({
-          _id: { $in: productIds }
-        }).select('productId').lean();
-        
-        const productIdsFromVariants = variants.map(v => String(v.productId));
-        const products = await this.productModel.find({
-          _id: { $in: productIdsFromVariants }
-        }).select('categoryId').lean();
-        
+        const products = await this.productModel
+          .find({
+            _id: { $in: combinedProductIds.map(id => new Types.ObjectId(id)) },
+          })
+          .select('categoryId')
+          .lean();
+
         const categoryIds = products.map(p => String(p.categoryId));
         isValidForProducts = categoryIds.some(catId => coupon.applicableCategoryIds.includes(catId));
       } else if (coupon.appliesTo === 'specific_brands' && coupon.applicableBrandIds && coupon.applicableBrandIds.length > 0) {
-        // Get variants and their products to check brands
-        const variants = await this.variantModel.find({
-          _id: { $in: productIds }
-        }).select('productId').lean();
-        
-        const productIdsFromVariants = variants.map(v => String(v.productId));
-        const products = await this.productModel.find({
-          _id: { $in: productIdsFromVariants }
-        }).select('brandId').lean();
-        
-        const brandIds = products.map(p => p.brandId).filter(Boolean).map(String);
+        const products = await this.productModel
+          .find({
+            _id: { $in: combinedProductIds.map(id => new Types.ObjectId(id)) },
+          })
+          .select('brandId')
+          .lean();
+
+        const brandIds = products
+          .map(p => p.brandId)
+          .filter(Boolean)
+          .map(id => String(id));
         isValidForProducts = brandIds.some(brandId => coupon.applicableBrandIds.includes(brandId));
       }
 
@@ -409,6 +402,62 @@ export class MarketingService {
         period,
       }
     };
+  }
+
+  private async extractProductIdsFromCartItems(ids: string[]): Promise<{
+    variants: Array<{ _id: Types.ObjectId; productId: Types.ObjectId }>;
+    combinedProductIds: string[];
+  }> {
+    const normalizedVariantIds: Types.ObjectId[] = [];
+    for (const id of ids) {
+      try {
+        normalizedVariantIds.push(new Types.ObjectId(id));
+      } catch {
+        // ignore invalid ObjectId formats for variant lookup
+      }
+    }
+
+    const variants = await this.variantModel
+      .find({ _id: { $in: normalizedVariantIds } })
+      .select('_id productId')
+      .lean();
+
+    const variantIdSet = new Set(variants.map(v => String(v._id)));
+    const directProductIds = ids.filter(id => !variantIdSet.has(id));
+
+    const validDirectProductIds: string[] = [];
+    for (const id of directProductIds) {
+      try {
+        // Ensure the id can be interpreted as ObjectId
+        void new Types.ObjectId(id);
+        validDirectProductIds.push(id);
+      } catch {
+        // ignore invalid ids
+      }
+    }
+
+    const combinedProductIds = Array.from(
+      new Set([
+        ...variants.map(v => String(v.productId)),
+        ...validDirectProductIds,
+      ]),
+    );
+
+    const typedVariants: Array<{ _id: Types.ObjectId; productId: Types.ObjectId }> = [];
+    for (const variant of variants) {
+      try {
+        typedVariants.push({
+          _id: new Types.ObjectId(variant._id),
+          productId: new Types.ObjectId(variant.productId),
+        });
+      } catch {
+        this.logger.warn(
+          `Skipping variant ${variant._id?.toString?.() ?? String(variant._id)} due to invalid ObjectId formatting`,
+        );
+      }
+    }
+
+    return { variants: typedVariants, combinedProductIds };
   }
 
   async getCouponsStatistics(period: number = 30) {

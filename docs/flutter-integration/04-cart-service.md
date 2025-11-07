@@ -38,11 +38,13 @@
       {
         "itemId": "item_001",
         "variantId": "var_789",
+        "productId": "prod_123",
         "qty": 2
       },
       {
         "itemId": "item_002",
-        "variantId": "var_012",
+        "productId": "prod_456",
+        "variantId": null,
         "qty": 1
       }
     ]
@@ -141,8 +143,13 @@ class CartItemSimple {
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `variantId` | `string` | ✅ نعم | ID الـ variant المراد إضافته |
+| `variantId` | `string` | ✅ نعم (أو `productId`) | ID الـ variant المراد إضافته |
+| `productId` | `string` | ✅ نعم (أو `variantId`) | معرف المنتج عند عدم وجود متغيرات |
 | `qty` | `number` | ✅ نعم | الكمية (يجب أن تكون > 0) |
+
+> **ملاحظة:** أرسل `productId` عند التعامل مع منتج بدون متغيرات، بشرط أن يكون للمنتج سعر افتراضي معرف (`basePriceUSD`).
+>
+> **ملاحظة إضافية:** العناصر في الرد تحتوي على أحد الحقلين `variantId` أو `productId` (أو كلاهما) بحسب نوع المنتج في السلة.
 
 ### Response - نجاح
 
@@ -500,12 +507,14 @@ class CartItemsResponse {
 
 class CartItemSimple {
   final String itemId;
-  final String variantId;
+  final String? variantId;
+  final String? productId;
   final int qty;
 
   CartItemSimple({
     required this.itemId,
-    required this.variantId,
+    this.variantId,
+    this.productId,
     required this.qty,
   });
 
@@ -513,6 +522,7 @@ class CartItemSimple {
     return CartItemSimple(
       itemId: json['itemId'],
       variantId: json['variantId'],
+      productId: json['productId'],
       qty: json['qty'],
     );
   }
@@ -569,14 +579,16 @@ class CartPreview {
 
 class CartLineItem {
   final String itemId;
-  final String variantId;
+  final String? variantId;
+  final String? productId;
   final int qty;
   final UnitPrice unit;
   final double lineTotal;
 
   CartLineItem({
     required this.itemId,
-    required this.variantId,
+    this.variantId,
+    this.productId,
     required this.qty,
     required this.unit,
     required this.lineTotal,
@@ -586,6 +598,7 @@ class CartLineItem {
     return CartLineItem(
       itemId: json['itemId'],
       variantId: json['variantId'],
+      productId: json['productId'],
       qty: json['qty'],
       unit: UnitPrice.fromJson(json['unit']),
       lineTotal: (json['lineTotal'] ?? 0).toDouble(),
@@ -629,7 +642,7 @@ class UnitPrice {
 
 1. **Response Structure البسيط:**
    - GET, POST, PATCH, DELETE تُرجع فقط `{ items: [...] }`
-   - كل item يحتوي على: `itemId`, `variantId`, `qty`
+   - كل عنصر يحتوي على `itemId`, وواحد على الأقل من (`variantId` أو `productId`) بالإضافة إلى `qty`
    - للحصول على الأسعار والتفاصيل، استخدم `/cart/preview`
 
 2. **سلة الزائر vs المستخدم:**

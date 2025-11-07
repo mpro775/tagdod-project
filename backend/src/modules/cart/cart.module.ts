@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Cart, CartSchema } from './schemas/cart.schema';
 import { Variant, VariantSchema } from '../products/schemas/variant.schema';
+import { Product, ProductSchema } from '../products/schemas/product.schema';
 // VariantPrice schema removed - pricing is now handled in Variant schema
 import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabilities.schema';
 import { CartService } from './cart.service';
@@ -20,6 +21,7 @@ import { MarketingModule } from '../marketing/marketing.module';
     MongooseModule.forFeature([
       { name: Cart.name, schema: CartSchema },
       { name: Variant.name, schema: VariantSchema },
+      { name: Product.name, schema: ProductSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
       { name: User.name, schema: UserSchema },
     ]),

@@ -50,11 +50,11 @@ import {
 
 interface CartLine {
   itemId: string;
-  variantId: string;
+  variantId?: string;
+  productId?: string;
   qty: number;
   unit: { base: number; final: number; currency: string; appliedRule: unknown };
   lineTotal: number;
-  productId?: string;
   snapshot?: Record<string, unknown>;
 }
 
@@ -228,7 +228,9 @@ export class OrderService {
       let remainingSubtotal = data.subtotal;
       
       // Extract product IDs from cart items
-      const productIds = data.items.map(item => item.variantId);
+      const productIds = data.items
+        .map(item => item.productId || item.variantId)
+        .filter((id): id is string => Boolean(id));
       
       // Apply each coupon one by one
       for (const code of couponCodesArray) {
@@ -426,20 +428,23 @@ export class OrderService {
           coords: address.coords,
           notes: address.notes,
         },
-        items: quote.data.items.map((item: CartLine) => ({
-          productId: item.productId ? new Types.ObjectId(item.productId) : undefined,
-          variantId: new Types.ObjectId(item.variantId),
-          qty: item.qty,
-          basePrice: item.unit.base,
-          finalPrice: item.unit.final,
-          lineTotal: item.lineTotal,
-          currency: dto.currency,
-          snapshot: item.snapshot || {
-            name: '',
-            slug: '',
-            attributes: {}
-          }
-        })),
+        items: quote.data.items.map((item: CartLine) => {
+          const productObjectId = item.productId || item.variantId;
+          return {
+            productId: productObjectId ? new Types.ObjectId(productObjectId) : undefined,
+            variantId: item.variantId ? new Types.ObjectId(item.variantId) : undefined,
+            qty: item.qty,
+            basePrice: item.unit.base,
+            finalPrice: item.unit.final,
+            lineTotal: item.lineTotal,
+            currency: dto.currency,
+            snapshot: item.snapshot || {
+              name: '',
+              slug: '',
+              attributes: {},
+            },
+          };
+        }),
         currency: dto.currency,
         subtotal: subtotal,
         total,

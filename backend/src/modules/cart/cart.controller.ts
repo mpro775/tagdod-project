@@ -42,10 +42,19 @@ export class CartController {
                 type: 'object',
                 properties: {
                   id: { type: 'string', example: '507f1f77bcf86cd799439013' },
-                  variantId: { type: 'string', example: '507f1f77bcf86cd799439014' },
+                  variantId: {
+                    type: 'string',
+                    example: '507f1f77bcf86cd799439014',
+                    nullable: true,
+                    description: 'يتوفر فقط عند وجود متغير محدد',
+                  },
+                  productId: {
+                    type: 'string',
+                    example: '507f1f77bcf86cd799439099',
+                    nullable: true,
+                    description: 'معرف المنتج عند التعامل مع عنصر بدون متغيرات',
+                  },
                   quantity: { type: 'number', example: 2 },
-                  product: { type: 'object' },
-                  variant: { type: 'object' },
                 },
               },
             },
@@ -65,7 +74,8 @@ export class CartController {
   @Post('items')
   @ApiOperation({
     summary: 'إضافة عنصر إلى السلة',
-    description: 'إضافة متغير منتج إلى سلة التسوق للمستخدم',
+    description:
+      'إضافة عنصر إلى السلة باستخدام `variantId` أو `productId` (لمنتج بسيط بدون متغيرات)',
   })
   @ApiBody({ type: AddItemDto })
   @ApiOkResponse({
@@ -77,7 +87,16 @@ export class CartController {
           type: 'object',
           properties: {
             id: { type: 'string', example: '507f1f77bcf86cd799439013' },
-            variantId: { type: 'string', example: '507f1f77bcf86cd799439014' },
+            variantId: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439014',
+              nullable: true,
+            },
+            productId: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439099',
+              nullable: true,
+            },
             quantity: { type: 'number', example: 2 },
             product: { type: 'object' },
             variant: { type: 'object' },
@@ -89,7 +108,7 @@ export class CartController {
   @ApiBadRequestResponse({ description: 'معرف المتغير أو الكمية غير صحيحة' })
   @ApiUnauthorizedResponse({ description: 'رمز JWT غير صحيح أو مفقود' })
   async add(@Req() req: { user: { sub: string } }, @Body() dto: AddItemDto) {
-    const data = await this.svc.addUserItem(req.user.sub, dto.variantId, dto.qty);
+    const data = await this.svc.addUserItem(req.user.sub, dto);
     return data;
   }
 
@@ -114,7 +133,16 @@ export class CartController {
           type: 'object',
           properties: {
             id: { type: 'string', example: '507f1f77bcf86cd799439013' },
-            variantId: { type: 'string', example: '507f1f77bcf86cd799439014' },
+            variantId: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439014',
+              nullable: true,
+            },
+            productId: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439099',
+              nullable: true,
+            },
             quantity: { type: 'number', example: 3 },
             product: { type: 'object' },
             variant: { type: 'object' }

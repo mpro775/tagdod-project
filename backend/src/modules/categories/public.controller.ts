@@ -8,6 +8,8 @@ import {
   ApiNotFoundResponse
 } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
+import { ProductService } from '../products/services/product.service';
+import { ProductStatus } from '../products/schemas/product.schema';
 import {
   ResponseCacheInterceptor,
   CacheResponse,
@@ -17,7 +19,10 @@ import {
 @Controller('categories')
 @UseInterceptors(ResponseCacheInterceptor)
 export class CategoriesPublicController {
-  constructor(private categoriesService: CategoriesService) {}
+  constructor(
+    private categoriesService: CategoriesService,
+    private productService: ProductService,
+  ) {}
 
   // ==================== قائمة الفئات ====================
   @Get()
@@ -136,6 +141,136 @@ export class CategoriesPublicController {
   async getCategoryTree() {
     const data = await this.categoriesService.getCategoryTree();
     return data;
+  }
+
+  // ==================== المنتجات حسب الفئة ====================
+  @Get(':id/products')
+  @ApiOperation({
+    summary: 'الحصول على المنتجات حسب الفئة',
+    description: 'الحصول على قائمة بالمنتجات العامة (النشطة) التي تنتمي إلى فئة محددة. النتائج مخزنة مؤقتاً لمدة 5 دقائق.',
+    tags: ['الفئات العامة']
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'معرف الفئة (ObjectId أو Slug)',
+    example: '64a1b2c3d4e5f6789abcdef0'
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'رقم الصفحة (افتراضي: 1)',
+    example: 1
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'عدد العناصر في الصفحة (افتراضي: 20)',
+    example: 20
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'نص البحث في أسماء المنتجات',
+    example: 'solar'
+  })
+  @ApiQuery({
+    name: 'brandId',
+    required: false,
+    type: String,
+    description: 'تصفية حسب البراند',
+    example: '64a1b2c3d4e5f6789abcdef1'
+  })
+  @ApiQuery({
+    name: 'isFeatured',
+    required: false,
+    type: Boolean,
+    description: 'تصفية المنتجات المميزة فقط',
+    example: true
+  })
+  @ApiQuery({
+    name: 'isNew',
+    required: false,
+    type: Boolean,
+    description: 'تصفية المنتجات الجديدة فقط',
+    example: false
+  })
+  @ApiOkResponse({
+    description: 'تم الحصول على المنتجات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string', example: '64prod123abc' },
+                  name: { type: 'string', example: 'منتج رقم 1' },
+                  nameEn: { type: 'string', example: 'Product 1' },
+                  slug: { type: 'string', example: 'product-1' },
+                  description: { type: 'string', example: 'وصف المنتج' },
+                  categoryId: { type: 'object' },
+                  brandId: { type: 'object' },
+                  mainImageId: { type: 'object' },
+                  isActive: { type: 'boolean', example: true },
+                  isFeatured: { type: 'boolean', example: false },
+                  isNew: { type: 'boolean', example: true },
+                  status: { type: 'string', example: 'active' },
+                  createdAt: { type: 'string', format: 'date-time' },
+                }
+              }
+            },
+            meta: {
+              type: 'object',
+              properties: {
+                page: { type: 'number', example: 1 },
+                limit: { type: 'number', example: 20 },
+                total: { type: 'number', example: 50 },
+                totalPages: { type: 'number', example: 3 },
+                hasNextPage: { type: 'boolean', example: true },
+                hasPrevPage: { type: 'boolean', example: false }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  @ApiNotFoundResponse({ description: 'الفئة غير موجودة أو غير نشطة' })
+  @CacheResponse({ ttl: 300 }) // 5 minutes
+  async getCategoryProducts(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('brandId') brandId?: string,
+    @Query('isFeatured') isFeatured?: string,
+    @Query('isNew') isNew?: string,
+  ) {
+    // التحقق من وجود الفئة
+    await this.categoriesService.getCategory(id);
+
+    // جلب المنتجات العامة فقط
+    const result = await this.productService.list({
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 20,
+      search,
+      categoryId: id,
+      brandId,
+      status: ProductStatus.ACTIVE, // فقط المنتجات النشطة (public)
+      isActive: true, // فقط المنتجات المفعلة (public)
+      isFeatured: isFeatured === 'true' ? true : undefined,
+      isNew: isNew === 'true' ? true : undefined,
+      includeDeleted: false, // فقط المنتجات غير المحذوفة
+    });
+
+    return result;
   }
 
   // ==================== عرض فئة واحدة مع التفاصيل ====================

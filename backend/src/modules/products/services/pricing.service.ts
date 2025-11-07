@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Variant } from '../schemas/variant.schema';
 import { 
   VariantNotFoundException,
@@ -25,6 +25,13 @@ export interface PriceWithDiscount {
 export interface PriceWithDiscountAndVariantId extends PriceWithDiscount {
   variantId: string;
 }
+
+type VariantPricingSnapshot = {
+  _id: Types.ObjectId | string;
+  basePriceUSD: number;
+  compareAtPriceUSD?: number;
+  costPriceUSD?: number;
+};
 
 @Injectable()
 export class PricingService {
@@ -346,18 +353,22 @@ export class PricingService {
   async getProductPricesWithDiscount(
     productId: string,
     currency: string = 'USD',
-    discountPercent: number = 0
+    discountPercent: number = 0,
+    options: { variants?: VariantPricingSnapshot[] } = {},
   ): Promise<PriceWithDiscountAndVariantId[]> {
-    const variants = await this.variantModel
-      .find({ productId, deletedAt: null, isActive: true })
-      .select('_id basePriceUSD compareAtPriceUSD costPriceUSD')
-      .lean();
+    const normalizedCurrency = (currency || 'USD').toUpperCase();
+    const variants =
+      options.variants ??
+      (await this.variantModel
+        .find({ productId, deletedAt: null, isActive: true })
+        .select('_id basePriceUSD compareAtPriceUSD costPriceUSD')
+        .lean());
 
-    if (variants.length === 0) {
+    if (!variants || variants.length === 0) {
       return [];
     }
 
-    if (currency === 'USD') {
+    if (normalizedCurrency === 'USD') {
       return variants.map(variant => {
         const discountAmount = discountPercent > 0 
           ? variant.basePriceUSD * (discountPercent / 100)
@@ -383,7 +394,7 @@ export class PricingService {
           const converted = await this.exchangeRatesService.convertCurrency({
             amount: variant.basePriceUSD,
             fromCurrency: 'USD',
-            toCurrency: currency,
+            toCurrency: normalizedCurrency,
           });
 
           let compareAtPriceConverted;
@@ -391,7 +402,7 @@ export class PricingService {
             compareAtPriceConverted = await this.exchangeRatesService.convertCurrency({
               amount: variant.compareAtPriceUSD,
               fromCurrency: 'USD',
-              toCurrency: currency,
+              toCurrency: normalizedCurrency,
             });
           }
 
@@ -400,7 +411,7 @@ export class PricingService {
             costPriceConverted = await this.exchangeRatesService.convertCurrency({
               amount: variant.costPriceUSD,
               fromCurrency: 'USD',
-              toCurrency: currency,
+              toCurrency: normalizedCurrency,
             });
           }
 
@@ -424,7 +435,7 @@ export class PricingService {
             discountPercent,
             discountAmount,
             finalPrice,
-            currency,
+            currency: normalizedCurrency,
             exchangeRate: converted.rate,
             formattedPrice: converted.formatted,
             formattedFinalPrice,
@@ -437,5 +448,56 @@ export class PricingService {
       this.logger.error(`Error converting product prices with discount for ${productId}:`, error);
       throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, { productId, error: error instanceof Error ? error.message : String(error) });
     }
+  }
+
+  async getProductPricesWithDiscountByCurrencies(
+    productId: string,
+    currencies: string[] = ['USD'],
+    discountPercent: number = 0,
+    options: { variants?: VariantPricingSnapshot[] } = {},
+  ): Promise<Record<string, PriceWithDiscountAndVariantId[]>> {
+    if (!currencies || currencies.length === 0) {
+      return {};
+    }
+
+    const normalizedCurrencies = Array.from(
+      new Set(
+        currencies
+          .filter((currency): currency is string => typeof currency === 'string' && currency.trim().length > 0)
+          .map(currency => currency.toUpperCase()),
+      ),
+    );
+
+    if (normalizedCurrencies.length === 0) {
+      return {};
+    }
+
+    const variants =
+      options.variants ??
+      (await this.variantModel
+        .find({ productId, deletedAt: null, isActive: true })
+        .select('_id basePriceUSD compareAtPriceUSD costPriceUSD')
+        .lean());
+
+    if (!variants || variants.length === 0) {
+      return normalizedCurrencies.reduce<Record<string, PriceWithDiscountAndVariantId[]>>((acc, currencyCode) => {
+        acc[currencyCode] = [];
+        return acc;
+      }, {});
+    }
+
+    const entries = await Promise.all(
+      normalizedCurrencies.map(async (currencyCode) => {
+        const prices = await this.getProductPricesWithDiscount(
+          productId,
+          currencyCode,
+          discountPercent,
+          { variants },
+        );
+        return [currencyCode, prices] as const;
+      }),
+    );
+
+    return Object.fromEntries(entries) as Record<string, PriceWithDiscountAndVariantId[]>;
   }
 }

@@ -5,6 +5,8 @@
 
 خدمة العناوين توفر endpoints لإدارة عناوين التوصيل مع دعم الإحداثيات (**coords إجباري**).
 
+> ℹ️ **هيكل الاستجابة**: جميع الاستجابات الناجحة تُغلف تلقائياً بواسطة `ResponseEnvelopeInterceptor` وتعود بالشكل `{ success, data, requestId }`. راجع `docs/flutter-integration/01-response-structure.md` للتفاصيل الكاملة.
+
 ---
 
 ## 📋 جدول المحتويات
@@ -45,28 +47,30 @@
 ```json
 {
   "success": true,
-  "addresses": [
-    {
-      "_id": "64addr123",
-      "userId": "64user456",
-      "label": "المنزل",
-      "line1": "شارع الستين، بجوار مطعم السلطان",
-      "city": "صنعاء",
-      "coords": {
-        "lat": 15.3694,
-        "lng": 44.1910
-      },
-      "notes": "يرجى الاتصال عند الوصول",
-      "isDefault": true,
-      "isActive": true,
-      "lastUsedAt": "2025-01-15T10:00:00.000Z",
-      "usageCount": 15,
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "updatedAt": "2025-01-15T10:00:00.000Z"
-    }
-  ],
-  "count": 1,
-  "requestId": "req_addr_001"
+  "data": {
+    "addresses": [
+      {
+        "_id": "64addr123",
+        "userId": "64user456",
+        "label": "المنزل",
+        "line1": "شارع الستين، بجوار مطعم السلطان",
+        "city": "صنعاء",
+        "coords": {
+          "lat": 15.3694,
+          "lng": 44.1910
+        },
+        "notes": "يرجى الاتصال عند الوصول",
+        "isDefault": true,
+        "isActive": true,
+        "lastUsedAt": "2025-01-15T10:00:00.000Z",
+        "usageCount": 15,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-15T10:00:00.000Z"
+      }
+    ],
+    "count": 1
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -115,28 +119,30 @@ Future<List<Address>> getAddresses({bool includeDeleted = false}) async {
 ```json
 {
   "success": true,
-  "addresses": [
-    {
-      "_id": "64addr123",
-      "userId": "64user456",
-      "label": "المنزل",
-      "line1": "شارع الستين، بجوار مطعم السلطان",
-      "city": "صنعاء",
-      "coords": {
-        "lat": 15.3694,
-        "lng": 44.1910
-      },
-      "notes": "يرجى الاتصال عند الوصول",
-      "isDefault": true,
-      "isActive": true,
-      "lastUsedAt": "2025-01-15T10:00:00.000Z",
-      "usageCount": 15,
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "updatedAt": "2025-01-15T10:00:00.000Z"
-    }
-  ],
-  "count": 1,
-  "requestId": "req_addr_002"
+  "data": {
+    "addresses": [
+      {
+        "_id": "64addr123",
+        "userId": "64user456",
+        "label": "المنزل",
+        "line1": "شارع الستين، بجوار مطعم السلطان",
+        "city": "صنعاء",
+        "coords": {
+          "lat": 15.3694,
+          "lng": 44.1910
+        },
+        "notes": "يرجى الاتصال عند الوصول",
+        "isDefault": true,
+        "isActive": true,
+        "lastUsedAt": "2025-01-15T10:00:00.000Z",
+        "usageCount": 15,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-15T10:00:00.000Z"
+      }
+    ],
+    "count": 1
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -180,25 +186,27 @@ Future<List<Address>> getActiveAddresses() async {
 ```json
 {
   "success": true,
-  "address": {
-    "_id": "64addr123",
-    "userId": "64user456",
-    "label": "المنزل",
-    "line1": "شارع الستين، بجوار مطعم السلطان",
-    "city": "صنعاء",
-    "coords": {
-      "lat": 15.3694,
-      "lng": 44.1910
-    },
-    "notes": "يرجى الاتصال عند الوصول",
-    "isDefault": true,
-    "isActive": true,
-    "lastUsedAt": "2025-01-15T10:00:00.000Z",
-    "usageCount": 15,
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-01-15T10:00:00.000Z"
+  "data": {
+    "address": {
+      "_id": "64addr123",
+      "userId": "64user456",
+      "label": "المنزل",
+      "line1": "شارع الستين، بجوار مطعم السلطان",
+      "city": "صنعاء",
+      "coords": {
+        "lat": 15.3694,
+        "lng": 44.1910
+      },
+      "notes": "يرجى الاتصال عند الوصول",
+      "isDefault": true,
+      "isActive": true,
+      "lastUsedAt": "2025-01-15T10:00:00.000Z",
+      "usageCount": 15,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-15T10:00:00.000Z"
+    }
   },
-  "requestId": "req_addr_003"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -207,9 +215,11 @@ Future<List<Address>> getActiveAddresses() async {
 ```json
 {
   "success": true,
-  "address": null,
-  "message": "No addresses found. Please add an address first.",
-  "requestId": "req_addr_003"
+  "data": {
+    "address": null,
+    "message": "No addresses found. Please add an address first."
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -251,25 +261,27 @@ Future<Address?> getDefaultAddress() async {
 ```json
 {
   "success": true,
-  "address": {
-    "_id": "64addr123",
-    "userId": "64user456",
-    "label": "المنزل",
-    "line1": "شارع الستين، بجوار مطعم السلطان",
-    "city": "صنعاء",
-    "coords": {
-      "lat": 15.3694,
-      "lng": 44.1910
-    },
-    "notes": "يرجى الاتصال عند الوصول",
-    "isDefault": true,
-    "isActive": true,
-    "lastUsedAt": "2025-01-15T10:00:00.000Z",
-    "usageCount": 15,
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-01-15T10:00:00.000Z"
+  "data": {
+    "address": {
+      "_id": "64addr123",
+      "userId": "64user456",
+      "label": "المنزل",
+      "line1": "شارع الستين، بجوار مطعم السلطان",
+      "city": "صنعاء",
+      "coords": {
+        "lat": 15.3694,
+        "lng": 44.1910
+      },
+      "notes": "يرجى الاتصال عند الوصول",
+      "isDefault": true,
+      "isActive": true,
+      "lastUsedAt": "2025-01-15T10:00:00.000Z",
+      "usageCount": 15,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-15T10:00:00.000Z"
+    }
   },
-  "requestId": "req_addr_004"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -331,25 +343,27 @@ Future<Address> getAddress(String id) async {
 ```json
 {
   "success": true,
-  "message": "Address created successfully",
-  "address": {
-    "_id": "64addr123",
-    "userId": "64user456",
-    "label": "المنزل",
-    "line1": "شارع الستين، بجوار مطعم السلطان",
-    "city": "صنعاء",
-    "coords": {
-      "lat": 15.3694,
-      "lng": 44.1910
-    },
-    "notes": "يرجى الاتصال عند الوصول",
-    "isDefault": true,
-    "isActive": true,
-    "usageCount": 0,
-    "createdAt": "2025-01-15T10:00:00.000Z",
-    "updatedAt": "2025-01-15T10:00:00.000Z"
+  "data": {
+    "message": "Address created successfully",
+    "address": {
+      "_id": "64addr123",
+      "userId": "64user456",
+      "label": "المنزل",
+      "line1": "شارع الستين، بجوار مطعم السلطان",
+      "city": "صنعاء",
+      "coords": {
+        "lat": 15.3694,
+        "lng": 44.1910
+      },
+      "notes": "يرجى الاتصال عند الوصول",
+      "isDefault": true,
+      "isActive": true,
+      "usageCount": 0,
+      "createdAt": "2025-01-15T10:00:00.000Z",
+      "updatedAt": "2025-01-15T10:00:00.000Z"
+    }
   },
-  "requestId": "req_addr_005"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -423,26 +437,28 @@ Future<Address> createAddress({
 ```json
 {
   "success": true,
-  "message": "Address updated successfully",
-  "address": {
-    "_id": "64addr123",
-    "userId": "64user456",
-    "label": "المنزل الجديد",
-    "line1": "شارع الستين، بجوار مطعم السلطان",
-    "city": "صنعاء",
-    "coords": {
-      "lat": 15.3694,
-      "lng": 44.1910
-    },
-    "notes": "يرجى الاتصال عند الوصول",
-    "isDefault": true,
-    "isActive": true,
-    "lastUsedAt": "2025-01-15T10:00:00.000Z",
-    "usageCount": 15,
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-01-15T11:00:00.000Z"
+  "data": {
+    "message": "Address updated successfully",
+    "address": {
+      "_id": "64addr123",
+      "userId": "64user456",
+      "label": "المنزل الجديد",
+      "line1": "شارع الستين، بجوار مطعم السلطان",
+      "city": "صنعاء",
+      "coords": {
+        "lat": 15.3694,
+        "lng": 44.1910
+      },
+      "notes": "يرجى الاتصال عند الوصول",
+      "isDefault": true,
+      "isActive": true,
+      "lastUsedAt": "2025-01-15T10:00:00.000Z",
+      "usageCount": 15,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-15T11:00:00.000Z"
+    }
   },
-  "requestId": "req_addr_006"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -501,20 +517,41 @@ Future<Address> updateAddress({
 ```json
 {
   "success": true,
-  "message": "Address deleted successfully",
-  "result": {
-    "deleted": true
+  "data": {
+    "message": "Address deleted successfully",
+    "result": {
+      "deleted": true
+    }
   },
-  "requestId": "req_addr_007"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
 ### Errors
 
-| Code | HTTP Status | الوصف |
-|------|-------------|-------|
-| `Address not found` | 404 | العنوان غير موجود |
-| `Cannot delete your only address` | 400 | لا يمكن حذف العنوان الوحيد |
+| `error.code` | HTTP Status | الوصف |
+|---------------|-------------|-------|
+| `ADDRESS_NOT_FOUND` | 404 | يتم إرجاعه عندما لا يوجد عنوان مطابق (`error.details.addressId`) |
+| `ADDRESS_DELETE_FAILED` | 400 | يحدث عندما يكون العنوان الوحيد للمستخدم. يتم إرجاع `error.details.reason = "only_address"` |
+
+#### مثال خطأ (عنوان غير موجود)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ADDRESS_NOT_FOUND",
+    "message": "العنوان غير موجود",
+    "details": {
+      "addressId": "64addr123"
+    },
+    "fieldErrors": null
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1",
+  "timestamp": "2025-01-15T10:05:00.000Z",
+  "path": "/api/v1/addresses/64addr123"
+}
+```
 
 ### كود Flutter
 
@@ -553,26 +590,28 @@ Future<bool> deleteAddress(String id) async {
 ```json
 {
   "success": true,
-  "message": "Default address set successfully",
-  "address": {
-    "_id": "64addr123",
-    "userId": "64user456",
-    "label": "المنزل",
-    "line1": "شارع الستين، بجوار مطعم السلطان",
-    "city": "صنعاء",
-    "coords": {
-      "lat": 15.3694,
-      "lng": 44.1910
-    },
-    "notes": "يرجى الاتصال عند الوصول",
-    "isDefault": true,
-    "isActive": true,
-    "lastUsedAt": "2025-01-15T10:00:00.000Z",
-    "usageCount": 15,
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-01-15T11:00:00.000Z"
+  "data": {
+    "message": "Default address set successfully",
+    "address": {
+      "_id": "64addr123",
+      "userId": "64user456",
+      "label": "المنزل",
+      "line1": "شارع الستين، بجوار مطعم السلطان",
+      "city": "صنعاء",
+      "coords": {
+        "lat": 15.3694,
+        "lng": 44.1910
+      },
+      "notes": "يرجى الاتصال عند الوصول",
+      "isDefault": true,
+      "isActive": true,
+      "lastUsedAt": "2025-01-15T10:00:00.000Z",
+      "usageCount": 15,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-15T11:00:00.000Z"
+    }
   },
-  "requestId": "req_addr_008"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -613,35 +652,37 @@ Future<Address> setDefaultAddress(String id) async {
 ```json
 {
   "success": true,
-  "message": "Address restored successfully",
-  "address": {
-    "_id": "64addr123",
-    "userId": "64user456",
-    "label": "المنزل",
-    "line1": "شارع الستين، بجوار مطعم السلطان",
-    "city": "صنعاء",
-    "coords": {
-      "lat": 15.3694,
-      "lng": 44.1910
-    },
-    "notes": "يرجى الاتصال عند الوصول",
-    "isDefault": false,
-    "isActive": true,
-    "lastUsedAt": "2025-01-15T10:00:00.000Z",
-    "usageCount": 15,
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-01-15T11:00:00.000Z"
+  "data": {
+    "message": "Address restored successfully",
+    "address": {
+      "_id": "64addr123",
+      "userId": "64user456",
+      "label": "المنزل",
+      "line1": "شارع الستين، بجوار مطعم السلطان",
+      "city": "صنعاء",
+      "coords": {
+        "lat": 15.3694,
+        "lng": 44.1910
+      },
+      "notes": "يرجى الاتصال عند الوصول",
+      "isDefault": false,
+      "isActive": true,
+      "lastUsedAt": "2025-01-15T10:00:00.000Z",
+      "usageCount": 15,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-15T11:00:00.000Z"
+    }
   },
-  "requestId": "req_addr_009"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
 ### Errors
 
-| Code | HTTP Status | الوصف |
-|------|-------------|-------|
-| `Address not found` | 404 | العنوان غير موجود |
-| `Address is not deleted` | 400 | العنوان ليس محذوفاً |
+| `error.code` | HTTP Status | الوصف |
+|---------------|-------------|-------|
+| `ADDRESS_NOT_FOUND` | 404 | العنوان غير موجود (`error.details.addressId`) |
+| `ADDRESS_INVALID_DATA` | 400 | يحدث عندما يحاول المستخدم استعادة عنوان غير محذوف (`error.details.reason = "not_deleted"`) |
 
 ### كود Flutter
 
@@ -683,7 +724,7 @@ Future<Address> restoreAddress(String id) async {
   "data": {
     "valid": true
   },
-  "requestId": "req_addr_010"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -859,11 +900,11 @@ class AddressCoords {
 ## 🔄 Notes on Update
 
 **التغييرات الرئيسية:**
-1. ✅ تم تصحيح جميع الـ responses - النموذج الموحد: `{ success, address/addresses, count?, message?, requestId }`
+1. ✅ تم توحيد جميع الاستجابات لتتبع الغلاف `{ success, data, requestId }` مع نفس المفاتيح داخل `data`
 2. ✅ تم تبسيط نموذج `Address` - إزالة جميع الحقول غير الموجودة في Backend
 3. ✅ تم جعل `coords` إجباري في الـ create
-4. ✅ تم تصحيح الـ delete response (result بدلاً من data)
-5. ✅ تم إضافة error codes الفعلية (Cannot delete your only address, Address is not deleted)
+4. ✅ تم تصحيح استجابة الحذف بحيث تعود داخل `data.result.deleted`
+5. ✅ تم توثيق أكواد الأخطاء الفعلية (`ADDRESS_NOT_FOUND`, `ADDRESS_DELETE_FAILED`, `ADDRESS_INVALID_DATA`) بدل الرسائل النصية
 6. ✅ تم تحديث جميع أكواد Flutter لتعكس البنية الصحيحة
 
 **ملفات Backend المرجعية:**

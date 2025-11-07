@@ -5,6 +5,8 @@
 
 خدمة الطلبات الهندسية توفر endpoints لطلب خدمات المهندسين وتقديم العروض.
 
+> ℹ️ **هيكل الاستجابة**: جميع الاستجابات الناجحة تُغلّف تلقائياً بواسطة `ResponseEnvelopeInterceptor` وتعود بالشكل `{ success, data, requestId }`. معظم الـ endpoints في هذه الخدمة تُرجع بياناتها تحت المفتاح `data` داخل الحقل `data` الرئيسي (أي `apiResponse.data['data']`). راجع `docs/flutter-integration/01-response-structure.md` للتفاصيل الكاملة.
+
 ---
 
 ## 📋 جدول المحتويات
@@ -63,29 +65,32 @@
 {
   "success": true,
   "data": {
-    "_id": "64service123",
-    "userId": "64user123",
-    "title": "تركيب نظام طاقة شمسية",
-    "type": "INSTALLATION",
-    "description": "أحتاج تركيب نظام 10 كيلو واط",
-    "images": [
-      "https://cdn.example.com/uploads/site-photo-1.jpg"
-    ],
-    "addressId": "64address123",
-    "location": {
-      "type": "Point",
-      "coordinates": [44.2060, 15.3694]
-    },
-    "status": "OPEN",
-    "scheduledAt": "2025-10-20T10:00:00.000Z",
-    "engineerId": null,
-    "acceptedOffer": null,
-    "rating": null,
-    "adminNotes": [],
-    "createdAt": "2025-01-15T12:00:00.000Z",
-    "updatedAt": "2025-01-15T12:00:00.000Z"
+    "data": {
+      "_id": "64service123",
+      "userId": "64user123",
+      "title": "تركيب نظام طاقة شمسية",
+      "type": "INSTALLATION",
+      "description": "أحتاج تركيب نظام 10 كيلو واط",
+      "images": [
+        "https://cdn.example.com/uploads/site-photo-1.jpg"
+      ],
+      "city": "صنعاء",
+      "addressId": "64address123",
+      "location": {
+        "type": "Point",
+        "coordinates": [44.2060, 15.3694]
+      },
+      "status": "OPEN",
+      "scheduledAt": "2025-10-20T10:00:00.000Z",
+      "engineerId": null,
+      "acceptedOffer": null,
+      "rating": null,
+      "adminNotes": [],
+      "createdAt": "2025-01-15T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z"
+    }
   },
-  "requestId": "req_service_001"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -142,34 +147,39 @@ Future<ServiceRequest> createServiceRequest({
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "_id": "64service123",
-      "userId": "64user123",
-      "title": "تركيب نظام طاقة شمسية",
-      "type": "INSTALLATION",
-      "description": "أحتاج تركيب نظام 10 كيلو واط",
-      "images": [
-        "https://cdn.example.com/uploads/site-photo-1.jpg"
-      ],
-      "addressId": "64address123",
-      "location": {
-        "type": "Point",
-        "coordinates": [44.2060, 15.3694]
-      },
-      "status": "OPEN",
-      "scheduledAt": "2025-10-20T10:00:00.000Z",
-      "engineerId": null,
-      "acceptedOffer": null,
-      "rating": null,
-      "adminNotes": [],
-      "createdAt": "2025-01-15T12:00:00.000Z",
-      "updatedAt": "2025-01-15T12:00:00.000Z"
-    }
-  ],
-  "requestId": "req_service_002"
+  "data": {
+    "data": [
+      {
+        "_id": "64service123",
+        "userId": "64user123",
+        "title": "تركيب نظام طاقة شمسية",
+        "type": "INSTALLATION",
+        "description": "أحتاج تركيب نظام 10 كيلو واط",
+        "images": [
+          "https://cdn.example.com/uploads/site-photo-1.jpg"
+        ],
+        "city": "صنعاء",
+        "addressId": "64address123",
+        "location": {
+          "type": "Point",
+          "coordinates": [44.2060, 15.3694]
+        },
+        "status": "OPEN",
+        "scheduledAt": "2025-10-20T10:00:00.000Z",
+        "engineerId": null,
+        "acceptedOffer": null,
+        "rating": null,
+        "adminNotes": [],
+        "createdAt": "2025-01-15T12:00:00.000Z",
+        "updatedAt": "2025-01-15T12:00:00.000Z"
+      }
+    ]
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
+
+> ℹ️ يتم إرجاع `engineerId` ككائن `populated` يحتوي على `_id`, `firstName`, `lastName`, `phone`, `jobTitle`.
 
 ### كود Flutter
 
@@ -211,31 +221,36 @@ Future<List<ServiceRequest>> getMyRequests() async {
 {
   "success": true,
   "data": {
-    "_id": "64service123",
-    "userId": "64user123",
-    "title": "تركيب نظام طاقة شمسية",
-    "type": "INSTALLATION",
-    "description": "أحتاج تركيب نظام 10 كيلو واط",
-    "images": [
-      "https://cdn.example.com/uploads/site-photo-1.jpg"
-    ],
-    "addressId": "64address123",
-    "location": {
-      "type": "Point",
-      "coordinates": [44.2060, 15.3694]
-    },
-    "status": "OPEN",
-    "scheduledAt": "2025-10-20T10:00:00.000Z",
-    "engineerId": null,
-    "acceptedOffer": null,
-    "rating": null,
-    "adminNotes": [],
-    "createdAt": "2025-01-15T12:00:00.000Z",
-    "updatedAt": "2025-01-15T12:00:00.000Z"
+    "data": {
+      "_id": "64service123",
+      "userId": "64user123",
+      "title": "تركيب نظام طاقة شمسية",
+      "type": "INSTALLATION",
+      "description": "أحتاج تركيب نظام 10 كيلو واط",
+      "images": [
+        "https://cdn.example.com/uploads/site-photo-1.jpg"
+      ],
+      "city": "صنعاء",
+      "addressId": "64address123",
+      "location": {
+        "type": "Point",
+        "coordinates": [44.2060, 15.3694]
+      },
+      "status": "OPEN",
+      "scheduledAt": "2025-10-20T10:00:00.000Z",
+      "engineerId": null,
+      "acceptedOffer": null,
+      "rating": null,
+      "adminNotes": [],
+      "createdAt": "2025-01-15T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z"
+    }
   },
-  "requestId": "req_service_003"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
+
+> ℹ️ الحقل `requestId` يكون مكتملاً (`populated`) ويتضمن بيانات الطلب (`_id`, `title`, `status`).
 
 ### كود Flutter
 
@@ -275,18 +290,20 @@ Future<ServiceRequest> getServiceRequest(String requestId) async {
 {
   "success": true,
   "data": {
-    "id": "64service123",
-    "status": "CANCELLED",
-    "cancelledAt": "2025-01-15T14:30:00.000Z"
+    "data": {
+      "ok": true
+    }
   },
-  "requestId": "req_service_004"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
+
+> ℹ️ عند فشل الإلغاء يعيد الحقل `data` قيمة مثل `{ "error": "CANNOT_CANCEL" }`.
 
 ### كود Flutter
 
 ```dart
-Future<ServiceRequest> cancelServiceRequest(String requestId) async {
+Future<bool> cancelServiceRequest(String requestId) async {
   final response = await _dio.post('/services/customer/$requestId/cancel');
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
@@ -295,7 +312,8 @@ Future<ServiceRequest> cancelServiceRequest(String requestId) async {
   );
 
   if (apiResponse.isSuccess) {
-    return ServiceRequest.fromJson(apiResponse.data!['data']);
+    final result = apiResponse.data!['data'] as Map<String, dynamic>?;
+    return result?['ok'] == true;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -320,20 +338,28 @@ Future<ServiceRequest> cancelServiceRequest(String requestId) async {
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "_id": "64offer123",
-      "requestId": "64service123",
-      "engineerId": "64engineer123",
-      "amount": 750000,
-      "note": "سأقوم بتركيب النظام بأعلى جودة",
-      "distanceKm": 2.5,
-      "status": "OFFERED",
-      "createdAt": "2025-01-15T14:00:00.000Z",
-      "updatedAt": "2025-01-15T14:00:00.000Z"
-    }
-  ],
-  "requestId": "req_service_005"
+  "data": {
+    "data": [
+      {
+        "_id": "64offer123",
+        "requestId": "64service123",
+        "engineerId": {
+          "_id": "64engineer123",
+          "firstName": "أحمد",
+          "lastName": "محمد",
+          "phone": "777123456",
+          "jobTitle": "مهندس كهرباء"
+        },
+        "amount": 750000,
+        "note": "سأقوم بتركيب النظام بأعلى جودة",
+        "distanceKm": 2.5,
+        "status": "OFFERED",
+        "createdAt": "2025-01-15T14:00:00.000Z",
+        "updatedAt": "2025-01-15T14:00:00.000Z"
+      }
+    ]
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -385,21 +411,20 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
 {
   "success": true,
   "data": {
-    "id": "64service123",
-    "status": "ASSIGNED",
-    "engineerId": "64engineer123",
-    "engineerName": "أحمد محمد",
-    "acceptedPrice": 750000,
-    "acceptedAt": "2025-01-15T15:00:00.000Z"
+    "data": {
+      "ok": true
+    }
   },
-  "requestId": "req_service_006"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
+
+> ℹ️ قد يعيد الحقل `data` قيمة `{ "error": "OFFER_NOT_FOUND" }` أو `{ "error": "INVALID_STATUS" }` عند الفشل.
 
 ### كود Flutter
 
 ```dart
-Future<ServiceRequest> acceptOffer(String requestId, String offerId) async {
+Future<bool> acceptOffer(String requestId, String offerId) async {
   final response = await _dio.post('/services/customer/$requestId/accept-offer', data: {
     'offerId': offerId,
   });
@@ -410,7 +435,8 @@ Future<ServiceRequest> acceptOffer(String requestId, String offerId) async {
   );
 
   if (apiResponse.isSuccess) {
-    return ServiceRequest.fromJson(apiResponse.data!['data']);
+    final result = apiResponse.data!['data'] as Map<String, dynamic>?;
+    return result?['ok'] == true;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -445,19 +471,20 @@ Future<ServiceRequest> acceptOffer(String requestId, String offerId) async {
 {
   "success": true,
   "data": {
-    "id": "64service123",
-    "rating": 5,
-    "comment": "خدمة ممتازة وجودة عالية",
-    "ratedAt": "2025-01-15T16:00:00.000Z"
+    "data": {
+      "ok": true
+    }
   },
-  "requestId": "req_service_007"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
+
+> ℹ️ إذا كان الطلب غير مكتمل أو تم تقييمه مسبقاً يعيد الحقل `data` قيمة `{ "error": "NOT_COMPLETED" }`.
 
 ### كود Flutter
 
 ```dart
-Future<ServiceRequest> rateService(String requestId, int score, String? comment) async {
+Future<bool> rateService(String requestId, int score, String? comment) async {
   final response = await _dio.post('/services/customer/$requestId/rate', data: {
     'score': score,
     if (comment != null) 'comment': comment,
@@ -469,7 +496,8 @@ Future<ServiceRequest> rateService(String requestId, int score, String? comment)
   );
 
   if (apiResponse.isSuccess) {
-    return ServiceRequest.fromJson(apiResponse.data!['data']);
+    final result = apiResponse.data!['data'] as Map<String, dynamic>?;
+    return result?['ok'] == true;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -504,32 +532,35 @@ Future<ServiceRequest> rateService(String requestId, int score, String? comment)
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "_id": "64service123",
-      "userId": "64user123",
-      "title": "تركيب نظام طاقة شمسية",
-      "type": "INSTALLATION",
-      "description": "أحتاج تركيب نظام 10 كيلو واط",
-      "images": [
-        "https://cdn.example.com/uploads/site-photo-1.jpg"
-      ],
-      "addressId": "64address123",
-      "location": {
-        "type": "Point",
-        "coordinates": [44.2060, 15.3694]
-      },
-      "status": "OPEN",
-      "scheduledAt": "2025-10-20T10:00:00.000Z",
-      "engineerId": null,
-      "acceptedOffer": null,
-      "rating": null,
-      "adminNotes": [],
-      "createdAt": "2025-01-15T12:00:00.000Z",
-      "updatedAt": "2025-01-15T12:00:00.000Z"
-    }
-  ],
-  "requestId": "req_service_008"
+  "data": {
+    "data": [
+      {
+        "_id": "64service123",
+        "userId": "64user123",
+        "title": "تركيب نظام طاقة شمسية",
+        "type": "INSTALLATION",
+        "description": "أحتاج تركيب نظام 10 كيلو واط",
+        "images": [
+          "https://cdn.example.com/uploads/site-photo-1.jpg"
+        ],
+        "city": "صنعاء",
+        "addressId": "64address123",
+        "location": {
+          "type": "Point",
+          "coordinates": [44.2060, 15.3694]
+        },
+        "status": "OPEN",
+        "scheduledAt": "2025-10-20T10:00:00.000Z",
+        "engineerId": null,
+        "acceptedOffer": null,
+        "rating": null,
+        "adminNotes": [],
+        "createdAt": "2025-01-15T12:00:00.000Z",
+        "updatedAt": "2025-01-15T12:00:00.000Z"
+      }
+    ]
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -593,17 +624,19 @@ Future<List<ServiceRequest>> getNearbyRequests({
 {
   "success": true,
   "data": {
-    "_id": "64offer123",
-    "requestId": "64service123",
-    "engineerId": "64engineer123",
-    "amount": 750000,
-    "note": "سأقوم بتركيب النظام بأعلى جودة",
-    "distanceKm": 2.5,
-    "status": "OFFERED",
-    "createdAt": "2025-01-15T14:00:00.000Z",
-    "updatedAt": "2025-01-15T14:00:00.000Z"
+    "data": {
+      "_id": "64offer123",
+      "requestId": "64service123",
+      "engineerId": "64engineer123",
+      "amount": 750000,
+      "note": "سأقوم بتركيب النظام بأعلى جودة",
+      "distanceKm": 2.5,
+      "status": "OFFERED",
+      "createdAt": "2025-01-15T14:00:00.000Z",
+      "updatedAt": "2025-01-15T14:00:00.000Z"
+    }
   },
-  "requestId": "req_service_009"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -666,17 +699,19 @@ Future<EngineerOffer> createOffer({
 {
   "success": true,
   "data": {
-    "_id": "64offer123",
-    "requestId": "64service123",
-    "engineerId": "64engineer123",
-    "amount": 700000,
-    "note": "سأقوم بتركيب النظام بأعلى جودة مع خصم",
-    "distanceKm": 2.5,
-    "status": "OFFERED",
-    "createdAt": "2025-01-15T14:00:00.000Z",
-    "updatedAt": "2025-01-15T15:00:00.000Z"
+    "data": {
+      "_id": "64offer123",
+      "requestId": "64service123",
+      "engineerId": "64engineer123",
+      "amount": 700000,
+      "note": "سأقوم بتركيب النظام بأعلى جودة مع خصم",
+      "distanceKm": 2.5,
+      "status": "OFFERED",
+      "createdAt": "2025-01-15T14:00:00.000Z",
+      "updatedAt": "2025-01-15T15:00:00.000Z"
+    }
   },
-  "requestId": "req_service_010"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -724,20 +759,26 @@ Future<EngineerOffer> updateOffer({
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "_id": "64offer123",
-      "requestId": "64service123",
-      "engineerId": "64engineer123",
-      "amount": 750000,
-      "note": "سأقوم بتركيب النظام بأعلى جودة",
-      "distanceKm": 2.5,
-      "status": "OFFERED",
-      "createdAt": "2025-01-15T14:00:00.000Z",
-      "updatedAt": "2025-01-15T14:00:00.000Z"
-    }
-  ],
-  "requestId": "req_service_011"
+  "data": {
+    "data": [
+      {
+        "_id": "64offer123",
+        "requestId": {
+          "_id": "64service123",
+          "title": "تركيب نظام طاقة شمسية",
+          "status": "ASSIGNED"
+        },
+        "engineerId": "64engineer123",
+        "amount": 750000,
+        "note": "سأقوم بتركيب النظام بأعلى جودة",
+        "distanceKm": 2.5,
+        "status": "OFFERED",
+        "createdAt": "2025-01-15T14:00:00.000Z",
+        "updatedAt": "2025-01-15T14:00:00.000Z"
+      }
+    ]
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -781,18 +822,20 @@ Future<List<EngineerOffer>> getMyOffers() async {
 {
   "success": true,
   "data": {
-    "id": "64service123",
-    "status": "IN_PROGRESS",
-    "startedAt": "2025-01-15T14:00:00.000Z"
+    "data": {
+      "ok": true
+    }
   },
-  "requestId": "req_service_012"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
+
+> ℹ️ في حال لم يكن الفني معيناً أو كانت الحالة غير صحيحة ستجد قيمة `{ "error": "NOT_ASSIGNED" }` أو `{ "error": "INVALID_STATUS" }`.
 
 ### كود Flutter
 
 ```dart
-Future<ServiceRequest> startServiceRequest(String requestId) async {
+Future<bool> startServiceRequest(String requestId) async {
   final response = await _dio.post('/services/engineer/requests/$requestId/start');
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
@@ -801,7 +844,8 @@ Future<ServiceRequest> startServiceRequest(String requestId) async {
   );
 
   if (apiResponse.isSuccess) {
-    return ServiceRequest.fromJson(apiResponse.data!['data']);
+    final result = apiResponse.data!['data'] as Map<String, dynamic>?;
+    return result?['ok'] == true;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -827,19 +871,20 @@ Future<ServiceRequest> startServiceRequest(String requestId) async {
 {
   "success": true,
   "data": {
-    "id": "64service123",
-    "status": "COMPLETED",
-    "completedAt": "2025-01-15T17:00:00.000Z",
-    "totalTime": 3
+    "data": {
+      "ok": true
+    }
   },
-  "requestId": "req_service_013"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
+
+> ℹ️ القيم المحتملة عند الفشل تشمل `{ "error": "NOT_ASSIGNED" }` أو `{ "error": "INVALID_STATUS" }`.
 
 ### كود Flutter
 
 ```dart
-Future<ServiceRequest> completeServiceRequest(String requestId) async {
+Future<bool> completeServiceRequest(String requestId) async {
   final response = await _dio.post('/services/engineer/requests/$requestId/complete');
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
@@ -848,7 +893,8 @@ Future<ServiceRequest> completeServiceRequest(String requestId) async {
   );
 
   if (apiResponse.isSuccess) {
-    return ServiceRequest.fromJson(apiResponse.data!['data']);
+    final result = apiResponse.data!['data'] as Map<String, dynamic>?;
+    return result?['ok'] == true;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -1062,8 +1108,8 @@ class AdminNote {
 
 class EngineerOffer {
   final String id;
-  final String requestId;
-  final String engineerId;
+  final dynamic requestId; // قد يكون String أو Object (populated)
+  final dynamic engineerId; // قد يكون String أو Object (populated)
   final double amount;
   final String? note;
   final double? distanceKm;
@@ -1086,8 +1132,8 @@ class EngineerOffer {
   factory EngineerOffer.fromJson(Map<String, dynamic> json) {
     return EngineerOffer(
       id: json['_id'] ?? '',
-      requestId: json['requestId'] ?? '',
-      engineerId: json['engineerId'] ?? '',
+      requestId: json['requestId'],
+      engineerId: json['engineerId'],
       amount: (json['amount'] ?? 0).toDouble(),
       note: json['note'],
       distanceKm: json['distanceKm']?.toDouble(),
@@ -1110,6 +1156,20 @@ class EngineerOffer {
   bool get isActive => isOffered || isAccepted;
   bool get isFinal => isAccepted || isRejected || isCancelled;
   
+  String get requestIdValue {
+    if (requestId is Map) {
+      return requestId['_id'] ?? '';
+    }
+    return requestId?.toString() ?? '';
+  }
+
+  String get engineerIdValue {
+    if (engineerId is Map) {
+      return engineerId['_id'] ?? '';
+    }
+    return engineerId?.toString() ?? '';
+  }
+
   String get formattedAmount => '${amount.toStringAsFixed(0)} ريال';
   String get formattedDistance => hasDistance ? '${distanceKm!.toStringAsFixed(1)} كم' : 'غير محدد';
 }
@@ -1395,11 +1455,11 @@ class NearbyQueryDto {
 1. ✅ تصحيح جميع Endpoints:
    - Customer: `/services/customer` و `/services/customer/...`
    - Engineer: `/services/engineer/...`
-2. ✅ جميع Responses تحت `data` wrapper
+2. ✅ توحيد جميع الاستجابات تحت الغلاف `{ success, data, requestId }` مع توضيح أن البيانات الفعلية متاحة في `data['data']`
 3. ✅ تحديث Enums إلى UPPERCASE:
    - `OPEN`, `OFFERS_COLLECTING`, `ASSIGNED`, `IN_PROGRESS`, `COMPLETED`, `RATED`, `CANCELLED`
    - `OFFERED`, `ACCEPTED`, `REJECTED`, `CANCELLED`
-4. ✅ تحديث جميع return types - معظمها ترجع `ServiceRequest` أو `EngineerOffer` كاملة
+4. ✅ تحديث جميع return types - توثيق الحقول الفعلية المعادة من الـ Backend (بما في ذلك قيم `ok`)
 5. ✅ إزالة جميع الـ Cache flags (لا يوجد caching في endpoints الفعلية)
 6. ✅ **إضافة نظام المدن اليمنية** - فلترة الطلبات حسب المدينة ⭐ جديد
 

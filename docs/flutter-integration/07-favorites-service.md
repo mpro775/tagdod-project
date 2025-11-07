@@ -2,6 +2,8 @@
 
 خدمة المفضلات توفر endpoints لإدارة المنتجات المفضلة للمستخدم مع دعم المزامنة بين الأجهزة.
 
+> ℹ️ **هيكل الاستجابة**: جميع الاستجابات الناجحة تمر عبر `ResponseEnvelopeInterceptor` وتعود بالشكل `{ success, data, requestId }`. راجع `docs/flutter-integration/01-response-structure.md` للتفاصيل.
+
 > ✅ **تم التحقق وتحديث هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/favorites`
 
 ---
@@ -64,7 +66,7 @@
       "updatedAt": "2025-01-15T10:00:00.000Z"
     }
   ],
-  "requestId": "req_fav_001"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -130,7 +132,7 @@ Future<List<Favorite>> getFavorites() async {
     "createdAt": "2025-01-15T09:00:00.000Z",
     "updatedAt": "2025-01-15T09:00:00.000Z"
   },
-  "requestId": "req_fav_002"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -191,7 +193,7 @@ Future<Favorite> addFavorite({
   "data": {
     "deleted": true
   },
-  "requestId": "req_fav_003"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -259,7 +261,7 @@ Future<bool> removeFavorite({
     "createdAt": "2025-01-15T09:00:00.000Z",
     "updatedAt": "2025-01-15T11:00:00.000Z"
   },
-  "requestId": "req_fav_004"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -287,6 +289,31 @@ Future<Favorite> updateFavorite({
 }
 ```
 
+### Errors
+
+| `error.code` | HTTP Status | الوصف |
+|---------------|-------------|-------|
+| `FAVORITE_NOT_FOUND` | 404 | لا يوجد عنصر مفضلة مطابق (`error.details.favoriteId`) |
+
+#### مثال خطأ
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "FAVORITE_NOT_FOUND",
+    "message": "المفضلة غير موجودة",
+    "details": {
+      "favoriteId": "64fav999"
+    },
+    "fieldErrors": null
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1",
+  "timestamp": "2025-01-15T11:05:00.000Z",
+  "path": "/api/v1/favorites/64fav999"
+}
+```
+
 ---
 
 ## 5. حذف جميع المفضلات
@@ -308,7 +335,7 @@ Future<Favorite> updateFavorite({
   "data": {
     "cleared": 15
   },
-  "requestId": "req_fav_005"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -352,7 +379,7 @@ Future<int> clearAllFavorites() async {
   "data": {
     "count": 15
   },
-  "requestId": "req_fav_006"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -406,7 +433,7 @@ Future<int> getFavoritesCount() async {
     "skipped": 2,
     "total": 10
   },
-  "requestId": "req_fav_008"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -472,7 +499,7 @@ class SyncResult {
   "data": {
     "viewed": true
   },
-  "requestId": "req_fav_009"
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
 }
 ```
 
@@ -627,8 +654,8 @@ class Favorite {
 
 8. **Guest Favorites Endpoints:**
    - `GET /favorites/guest?deviceId=xxx`
-   - `POST /favorites/guest` (مع deviceId في body)
-   - `DELETE /favorites/guest` (مع deviceId في body)
+   - `POST /favorites/guest` (يتطلب `deviceId`, `productId`, واختيارياً `variantId`, `note`)
+   - `DELETE /favorites/guest` (يتطلب `deviceId`, `productId`, واختيارياً `variantId`)
    - `DELETE /favorites/guest/clear?deviceId=xxx`
    - `GET /favorites/guest/count?deviceId=xxx`
 
@@ -643,7 +670,9 @@ class Favorite {
 2. ✅ تصحيح `/favorites/clear/all` response من `deletedCount` إلى `cleared`
 3. ✅ تصحيح `/favorites/sync` response ليشمل `synced, skipped, total`
 4. ✅ إزالة `tags` من الـ schema (غير مستخدمة حالياً)
-5. ✅ إضافة ملاحظة عن guest favorites endpoints
+5. ✅ توضيح تفاصيل `guest favorites` والمتطلبات في الـ body
+6. ✅ إضافة توثيق لأخطاء `FAVORITE_NOT_FOUND` أثناء التحديث
+7. ✅ تحديث أمثلة `requestId` لتتوافق مع UUID v4 كما في الـ Backend
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/favorites/favorites.user.controller.ts`

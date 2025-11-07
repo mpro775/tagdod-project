@@ -35,6 +35,11 @@ export class CreateProductDto {
   @IsOptional() @IsBoolean() trackStock?: boolean;
   @IsOptional() @IsBoolean() allowBackorder?: boolean;
   
+  // التسعير الافتراضي للمنتجات البسيطة
+  @IsOptional() @IsNumber() @Min(0) basePriceUSD?: number;
+  @IsOptional() @IsNumber() @Min(0) compareAtPriceUSD?: number;
+  @IsOptional() @IsNumber() @Min(0) costPriceUSD?: number;
+
   // التقييم اليدوي
   @IsOptional() @IsBoolean() useManualRating?: boolean;
   @IsOptional() @IsNumber() @Min(0) manualRating?: number;
@@ -75,6 +80,11 @@ export class UpdateProductDto {
   @IsOptional() @IsBoolean() trackStock?: boolean;
   @IsOptional() @IsBoolean() allowBackorder?: boolean;
   
+  // التسعير الافتراضي للمنتجات البسيطة
+  @IsOptional() @IsNumber() @Min(0) basePriceUSD?: number;
+  @IsOptional() @IsNumber() @Min(0) compareAtPriceUSD?: number;
+  @IsOptional() @IsNumber() @Min(0) costPriceUSD?: number;
+
   // التقييم اليدوي
   @IsOptional() @IsBoolean() useManualRating?: boolean;
   @IsOptional() @IsNumber() @Min(0) manualRating?: number;

@@ -32,7 +32,7 @@
 | `code` | `string` | ✅ | كود الكوبون |
 | `userId` | `string` | ❌ | معرف المستخدم |
 | `orderAmount` | `number` | ❌ | قيمة الطلب |
-| `productIds` | `string[]` | ❌ | معرفات المنتجات |
+| `productIds` | `string[]` | ❌ | معرفات العناصر في السلة (يمكن أن تكون `variantId` أو `productId`) |
 
 ### Response - نجاح (كوبون صالح)
 

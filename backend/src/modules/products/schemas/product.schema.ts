@@ -90,6 +90,16 @@ export class Product {
   @Prop({ default: 0 })
   manualReviewsCount!: number; // عدد التقييمات اليدوي (للعرض فقط)
 
+  // 🆕 Default pricing for simple products (without variants)
+  @Prop({ type: Number, min: 0 })
+  basePriceUSD?: number;
+
+  @Prop({ type: Number, min: 0 })
+  compareAtPriceUSD?: number;
+
+  @Prop({ type: Number, min: 0 })
+  costPriceUSD?: number;
+
   // SEO
   @Prop()
   metaTitle?: string;

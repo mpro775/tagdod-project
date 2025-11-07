@@ -6,14 +6,21 @@ import {
   IsObject,
   Min,
   Max,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AddItemDto {
-  @ApiProperty({ example: '65abc123def456789' })
+  @ApiProperty({ example: '65abc123def456789', required: false })
+  @ValidateIf((value: AddItemDto) => !value.productId)
   @IsMongoId()
-  variantId!: string;
+  variantId?: string;
+
+  @ApiProperty({ example: '65abc123def456780', required: false })
+  @ValidateIf((value: AddItemDto) => !value.variantId)
+  @IsMongoId()
+  productId?: string;
 
   @ApiProperty({ example: 1, default: 1 })
   @Type(() => Number)

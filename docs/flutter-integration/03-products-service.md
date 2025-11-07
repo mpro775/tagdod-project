@@ -247,6 +247,17 @@ GET /products/64prod123?currency=YER
       "salesCount": 45,
       "reviewsCount": 12,
       "averageRating": 4.5,
+      "attributesDetails": [
+        {
+          "id": "64attr001",
+          "name": "اللون",
+          "nameEn": "Color",
+          "values": [
+            { "id": "64attrVal001", "value": "أسود", "valueEn": "Black" },
+            { "id": "64attrVal002", "value": "أبيض", "valueEn": "White" }
+          ]
+        }
+      ],
       "createdAt": "2025-01-15T10:00:00.000Z",
       "updatedAt": "2025-01-20T14:30:00.000Z"
     },
@@ -255,12 +266,16 @@ GET /products/64prod123?currency=YER
         "_id": "64var123",
         "productId": "64prod123",
         "sku": "SP-550-001-BLK",
-        "nameAr": "لوح شمسي 550 واط - أسود",
-        "nameEn": "Solar Panel 550W - Black",
-        "attributes": {
-          "Color": "أسود",
-          "Size": "2m x 1m"
-        },
+        "attributeValues": [
+          {
+            "attributeId": "64attr001",
+            "valueId": "64attrVal001",
+            "name": "اللون",
+            "nameEn": "Color",
+            "value": "أسود",
+            "valueEn": "Black"
+          }
+        ],
         "pricing": {
           "basePrice": 150000,
           "compareAtPrice": 180000,
@@ -272,18 +287,43 @@ GET /products/64prod123?currency=YER
           "formattedPrice": "150,000 ر.ي",
           "formattedFinalPrice": "150,000 ر.ي"
         },
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 600,
+            "compareAtPrice": 720,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 600,
+            "currency": "USD",
+            "formattedPrice": "$600.00"
+          },
+          "SAR": {
+            "basePrice": 2250,
+            "compareAtPrice": 2700,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 2250,
+            "currency": "SAR",
+            "formattedPrice": "2,250.00 ر.س"
+          },
+          "YER": {
+            "basePrice": 150000,
+            "compareAtPrice": 180000,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 150000,
+            "currency": "YER",
+            "formattedPrice": "150,000 ر.ي",
+            "formattedFinalPrice": "150,000 ر.ي"
+          }
+        },
         "inventory": {
           "quantity": 50,
           "reserved": 5,
           "available": 45
         },
         "isDefault": true,
-        "isActive": true,
-        "imageId": {
-          "_id": "64img125",
-          "url": "https://cdn.example.com/products/solar-panel-black.jpg",
-          "alt": "Black Solar Panel"
-        }
+        "isActive": true
       }
     ],
     "currency": "YER",
@@ -320,6 +360,7 @@ GET /products/64prod123?currency=YER
 - 🔐 **للمستخدمين المسجلين:** يتم تطبيق خصم التاجر تلقائياً إذا كان معتمد
 - 👤 **للزوار:** `userDiscount.discountPercent = 0`
 - 💰 **العملة:** تُحدد من `preferredCurrency` للمستخدم أو من query parameter
+- 🌍 **متعدد العملات:** يتم إرجاع `pricingByCurrency` لكل variant ويحتوي على الأسعار بالعملات `USD`, `YER`, `SAR` دائماً
 
 ### كود Flutter
 
@@ -584,12 +625,16 @@ Future<PaginatedProducts> getNewProducts() async {
         "_id": "64var123",
         "productId": "64prod123",
         "sku": "SP-550-001-BLK",
-        "nameAr": "لوح شمسي 550 واط - أسود",
-        "nameEn": "Solar Panel 550W - Black",
-        "attributes": {
-          "Color": "أسود",
-          "Size": "2m x 1m"
-        },
+        "attributeValues": [
+          {
+            "attributeId": "64attr001",
+            "valueId": "64attrVal001",
+            "name": "اللون",
+            "nameEn": "Color",
+            "value": "أسود",
+            "valueEn": "Black"
+          }
+        ],
         "pricing": {
           "basePrice": 150000,
           "compareAtPrice": 180000,
@@ -600,6 +645,36 @@ Future<PaginatedProducts> getNewProducts() async {
           "exchangeRate": 250,
           "formattedPrice": "150,000 ر.ي",
           "formattedFinalPrice": "150,000 ر.ي"
+        },
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 600,
+            "compareAtPrice": 720,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 600,
+            "currency": "USD",
+            "formattedPrice": "$600.00"
+          },
+          "SAR": {
+            "basePrice": 2250,
+            "compareAtPrice": 2700,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 2250,
+            "currency": "SAR",
+            "formattedPrice": "2,250.00 ر.س"
+          },
+          "YER": {
+            "basePrice": 150000,
+            "compareAtPrice": 180000,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 150000,
+            "currency": "YER",
+            "formattedPrice": "150,000 ر.ي",
+            "formattedFinalPrice": "150,000 ر.ي"
+          }
         },
         "inventory": {
           "quantity": 50,
@@ -621,6 +696,7 @@ Future<PaginatedProducts> getNewProducts() async {
 ```
 
 > **ملاحظة:** إذا كان المستخدم تاجر معتمد، يتم تطبيق خصم التاجر على `finalPrice` تلقائياً.
+> بالإضافة إلى ذلك، يتم إرجاع قائمة `attributeValues` تحتوي على أسماء السمات بالعربية والإنجليزية، مع `pricingByCurrency` الذي يوفر الأسعار الحقيقية بالدولار والريال اليمني والريال السعودي.
 
 ### كود Flutter
 
@@ -1072,6 +1148,8 @@ Future<int> getProductsCount() async {
 ---
 
 ## Models في Flutter
+
+> ⚠️ **تنبيه مهم:** الواجهات الآن تُعيد `attributeValues` لكل variant و`pricingByCurrency` بجانب `pricing` المختارة. تأكد من تحديث موديلات Flutter للتعامل مع هذه الحقول الجديدة (مثال: إضافة قائمة `attributeValues` وخرائط `pricingByCurrency`).
 
 ### ملف: `lib/models/product/product_models.dart`
 
