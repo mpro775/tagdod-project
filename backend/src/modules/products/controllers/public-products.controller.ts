@@ -10,11 +10,15 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model , Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import { ProductService } from '../services/product.service';
 import { VariantService } from '../services/variant.service';
-import { PricingService, PriceWithDiscount, PriceWithDiscountAndVariantId } from '../services/pricing.service';
+import {
+  PricingService,
+  PriceWithDiscount,
+  PriceWithDiscountAndVariantId,
+} from '../services/pricing.service';
 import { InventoryService } from '../services/inventory.service';
 import {
   ResponseCacheInterceptor,
@@ -47,6 +51,12 @@ type AttributeSummary = {
   }>;
 };
 
+type RelatedProductPayload = Record<string, any> & {
+  attributesDetails: AttributeSummary[];
+  variants: Array<Record<string, any>>;
+  pricingByCurrency?: Record<string, PriceWithDiscount>;
+};
+
 @ApiTags('المنتجات')
 @Controller('products')
 @UseInterceptors(ResponseCacheInterceptor)
@@ -75,13 +85,23 @@ export class PublicProductsController {
     try {
       // محاولة جلب من Capabilities أولاً (النظام القديم)
       const caps = await this.capabilitiesModel.findOne({ userId }).lean();
-      if (caps && caps.merchant_capable && caps.merchant_status === 'approved' && caps.merchant_discount_percent > 0) {
+      if (
+        caps &&
+        caps.merchant_capable &&
+        caps.merchant_status === 'approved' &&
+        caps.merchant_discount_percent > 0
+      ) {
         return caps.merchant_discount_percent;
       }
 
       // إذا لم يوجد في Capabilities، جلب من User مباشرة
       const user = await this.userModel.findById(userId).lean();
-      if (user && user.merchant_capable && user.merchant_status === 'approved' && user.merchant_discount_percent > 0) {
+      if (
+        user &&
+        user.merchant_capable &&
+        user.merchant_status === 'approved' &&
+        user.merchant_discount_percent > 0
+      ) {
         return user.merchant_discount_percent;
       }
     } catch (error) {
@@ -106,7 +126,8 @@ export class PublicProductsController {
       return null;
     }
 
-    const { variantId: _variantId, ...rest } = price;
+    const { variantId, ...rest } = price;
+    void variantId;
     return rest;
   }
 
@@ -150,7 +171,7 @@ export class PublicProductsController {
     const uniqueIds = Array.from(
       new Set(
         attributeIds
-          .map(id => this.extractIdString(id))
+          .map((id) => this.extractIdString(id))
           .filter((id): id is string => Boolean(id)),
       ),
     );
@@ -164,7 +185,8 @@ export class PublicProductsController {
         try {
           const attribute = await this.attributesService.getAttribute(attributeId);
           const attributeRecord = attribute as Record<string, unknown>;
-          const valuesList = (attributeRecord.values as Array<Record<string, unknown>> | undefined) ?? [];
+          const valuesList =
+            (attributeRecord.values as Array<Record<string, unknown>> | undefined) ?? [];
 
           return {
             id: this.extractIdString(attributeRecord._id) ?? attributeId,
@@ -174,8 +196,7 @@ export class PublicProductsController {
               id: this.extractIdString(valueRecord._id) ?? '',
               value: (valueRecord.value as string) ?? '',
               valueEn:
-                (valueRecord.valueEn as string | undefined) ??
-                ((valueRecord.value as string) ?? ''),
+                (valueRecord.valueEn as string | undefined) ?? (valueRecord.value as string) ?? '',
             })),
           } as AttributeSummary;
         } catch (error) {
@@ -192,6 +213,23 @@ export class PublicProductsController {
     return summaries.filter((summary): summary is AttributeSummary => Boolean(summary));
   }
 
+  private normalizePrice(value: unknown): number | undefined {
+    if (value === null || value === undefined) {
+      return undefined;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  private hasSimplePricing(product: Record<string, unknown>): boolean {
+    const basePrice = this.normalizePrice(product.basePriceUSD ?? product.basePrice);
+    const compareAtPrice = this.normalizePrice(product.compareAtPriceUSD ?? product.compareAtPrice);
+    const costPrice = this.normalizePrice(product.costPriceUSD ?? product.costPrice);
+
+    return basePrice !== undefined || compareAtPrice !== undefined || costPrice !== undefined;
+  }
+
   private async enrichVariantsPricing(
     productId: string,
     variants: Array<WithId & Record<string, any>>,
@@ -206,7 +244,7 @@ export class PublicProductsController {
       new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
     );
 
-    const variantSnapshots = variants.map(variant => ({
+    const variantSnapshots = variants.map((variant) => ({
       _id: variant._id,
       basePriceUSD: variant.basePriceUSD ?? 0,
       compareAtPriceUSD: variant.compareAtPriceUSD,
@@ -220,13 +258,15 @@ export class PublicProductsController {
       { variants: variantSnapshots as any },
     );
 
-    const variantsWithPricing = variants.map(variant => {
+    const variantsWithPricing = variants.map((variant) => {
       const variantId = variant._id.toString();
 
-      const pricingByCurrency = this.BASE_PRICING_CURRENCIES.reduce<Record<string, PriceWithDiscount | null>>(
+      const pricingByCurrency = this.BASE_PRICING_CURRENCIES.reduce<
+        Record<string, PriceWithDiscount | null>
+      >(
         (acc, currencyCode) => {
           const entry =
-            pricesByCurrency[currencyCode]?.find(price => price.variantId === variantId) ?? null;
+            pricesByCurrency[currencyCode]?.find((price) => price.variantId === variantId) ?? null;
           acc[currencyCode] = this.stripVariantId(entry);
           return acc;
         },
@@ -234,7 +274,8 @@ export class PublicProductsController {
       );
 
       const selectedPriceEntry =
-        pricesByCurrency[normalizedCurrency]?.find(price => price.variantId === variantId) ?? null;
+        pricesByCurrency[normalizedCurrency]?.find((price) => price.variantId === variantId) ??
+        null;
 
       return {
         ...variant,
@@ -244,6 +285,89 @@ export class PublicProductsController {
     });
 
     return { variantsWithPricing, currenciesForPricing };
+  }
+
+  private async buildRelatedProducts(
+    relatedProductsRaw: unknown,
+    discountPercent: number,
+    selectedCurrencyInput: string,
+  ): Promise<RelatedProductPayload[]> {
+    if (!Array.isArray(relatedProductsRaw) || relatedProductsRaw.length === 0) {
+      return [];
+    }
+
+    const relatedIds = Array.from(
+      new Set(
+        relatedProductsRaw
+          .map((id) => this.extractIdString(id))
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    if (relatedIds.length === 0) {
+      return [];
+    }
+
+    const relatedProducts = await Promise.all(
+      relatedIds.map(async (id) => {
+        try {
+          const product = await this.productService.findById(id);
+          const productRecord = product as unknown as Record<string, unknown>;
+          const variants = await this.variantService.findByProductId(id);
+
+          const { variantsWithPricing, currenciesForPricing } = await this.enrichVariantsPricing(
+            id,
+            variants as unknown as Array<WithId & Record<string, any>>,
+            discountPercent,
+            selectedCurrencyInput,
+          );
+
+          const attributesDetails = await this.getAttributeSummaries(
+            productRecord.attributes as unknown[],
+          );
+
+          let pricingByCurrency: Record<string, PriceWithDiscount> | undefined;
+
+          if (variantsWithPricing.length === 0 && this.hasSimplePricing(productRecord)) {
+            const basePriceUSD = this.normalizePrice(
+              productRecord.basePriceUSD ?? productRecord.basePrice,
+            );
+            const compareAtPriceUSD = this.normalizePrice(
+              productRecord.compareAtPriceUSD ?? productRecord.compareAtPrice,
+            );
+            const costPriceUSD = this.normalizePrice(
+              productRecord.costPriceUSD ?? productRecord.costPrice,
+            );
+
+            pricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
+              basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
+              compareAtPriceUSD,
+              costPriceUSD,
+              currenciesForPricing,
+              discountPercent,
+            );
+          }
+
+          return {
+            ...(productRecord as Record<string, any>),
+            attributesDetails,
+            ...(pricingByCurrency ? { pricingByCurrency } : {}),
+            variants: variantsWithPricing,
+          } as RelatedProductPayload;
+        } catch (error) {
+          this.logger.warn(
+            `Failed to build related product ${id}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+          return undefined;
+        }
+      }),
+    );
+
+    return relatedProducts.filter(
+      (item): item is RelatedProductPayload => Boolean(item),
+    );
   }
 
   private async buildProductDetailResponse(
@@ -263,15 +387,17 @@ export class PublicProductsController {
     const attributesDetails = await this.getAttributeSummaries(product.attributes as unknown[]);
 
     let productPricingByCurrency: Record<string, PriceWithDiscount> | undefined;
+    const basePriceUSD = this.normalizePrice(product.basePriceUSD ?? product.basePrice);
+    const compareAtPriceUSD = this.normalizePrice(
+      product.compareAtPriceUSD ?? product.compareAtPrice,
+    );
+    const costPriceUSD = this.normalizePrice(product.costPriceUSD ?? product.costPrice);
 
-    if (
-      variantsWithPricing.length === 0 &&
-      (typeof product.basePriceUSD === 'number' || typeof product.compareAtPriceUSD === 'number')
-    ) {
+    if (variantsWithPricing.length === 0 && this.hasSimplePricing(product)) {
       productPricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
-        product.basePriceUSD ?? 0,
-        product.compareAtPriceUSD,
-        product.costPriceUSD,
+        basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
+        compareAtPriceUSD,
+        costPriceUSD,
         currenciesForPricing,
         discountPercent,
       );
@@ -283,9 +409,16 @@ export class PublicProductsController {
       ...(productPricingByCurrency ? { pricingByCurrency: productPricingByCurrency } : {}),
     };
 
+    const relatedProducts = await this.buildRelatedProducts(
+      product.relatedProducts as unknown[],
+      discountPercent,
+      selectedCurrencyInput,
+    );
+
     return {
       product: productWithAttributes,
       variants: variantsWithPricing,
+      relatedProducts,
       userDiscount: {
         isMerchant: discountPercent > 0,
         discountPercent,
@@ -663,10 +796,7 @@ export class PublicProductsController {
   })
   @ApiNotFoundResponse({ description: 'Product not found' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getRelatedProducts(
-    @Param('id') productId: string,
-    @Query('limit') limit?: string,
-  ) {
+  async getRelatedProducts(@Param('id') productId: string, @Query('limit') limit?: string) {
     const products = await this.productService.getRelatedProducts(
       productId,
       limit ? Number(limit) : 10,
