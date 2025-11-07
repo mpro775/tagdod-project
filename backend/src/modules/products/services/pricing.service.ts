@@ -500,4 +500,105 @@ export class PricingService {
 
     return Object.fromEntries(entries) as Record<string, PriceWithDiscountAndVariantId[]>;
   }
+
+  async getSimpleProductPricingByCurrencies(
+    basePriceUSD: number = 0,
+    compareAtPriceUSD?: number,
+    costPriceUSD?: number,
+    currencies: string[] = ['USD'],
+    discountPercent: number = 0,
+  ): Promise<Record<string, PriceWithDiscount>> {
+    if (!currencies || currencies.length === 0) {
+      return {};
+    }
+
+    const normalizedCurrencies = Array.from(
+      new Set(
+        currencies
+          .filter((currency): currency is string => typeof currency === 'string' && currency.trim().length > 0)
+          .map(currency => currency.toUpperCase()),
+      ),
+    );
+
+    if (normalizedCurrencies.length === 0) {
+      return {};
+    }
+
+    const results: Record<string, PriceWithDiscount> = {};
+
+    await Promise.all(
+      normalizedCurrencies.map(async (currency) => {
+        let basePrice = basePriceUSD;
+        let compareAtPrice = compareAtPriceUSD;
+        let costPrice = costPriceUSD;
+        let exchangeRate: number | undefined;
+        let formattedPrice: string | undefined;
+
+        if (currency !== 'USD') {
+          try {
+            const baseConverted = await this.exchangeRatesService.convertCurrency({
+              amount: basePriceUSD,
+              fromCurrency: 'USD',
+              toCurrency: currency,
+            });
+            basePrice = baseConverted.result;
+            exchangeRate = baseConverted.rate;
+            formattedPrice = baseConverted.formatted;
+
+            if (compareAtPriceUSD !== undefined) {
+              const compareConverted = await this.exchangeRatesService.convertCurrency({
+                amount: compareAtPriceUSD,
+                fromCurrency: 'USD',
+                toCurrency: currency,
+              });
+              compareAtPrice = compareConverted.result;
+            }
+
+            if (costPriceUSD !== undefined) {
+              const costConverted = await this.exchangeRatesService.convertCurrency({
+                amount: costPriceUSD,
+                fromCurrency: 'USD',
+                toCurrency: currency,
+              });
+              costPrice = costConverted.result;
+            }
+          } catch (error) {
+            this.logger.error(
+              `Error converting simple product prices to ${currency}:`,
+              error,
+            );
+            throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, {
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+
+        const discountAmount = discountPercent > 0 ? basePrice * (discountPercent / 100) : 0;
+        const finalPrice = this.calculatePriceWithDiscount(basePrice, discountPercent);
+        let formattedFinalPrice: string | undefined;
+
+        if (formattedPrice) {
+          formattedFinalPrice = formattedPrice.replace(
+            basePrice.toFixed(2),
+            finalPrice.toFixed(2),
+          );
+        }
+
+        results[currency] = {
+          basePrice,
+          compareAtPrice,
+          costPrice,
+          discountPercent,
+          discountAmount,
+          finalPrice,
+          currency,
+          exchangeRate,
+          formattedPrice,
+          formattedFinalPrice,
+        };
+      }),
+    );
+
+    return results;
+  }
 }

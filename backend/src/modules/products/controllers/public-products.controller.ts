@@ -197,7 +197,10 @@ export class PublicProductsController {
     variants: Array<WithId & Record<string, any>>,
     discountPercent: number,
     selectedCurrencyInput: string,
-  ): Promise<{ variantsWithPricing: Array<Record<string, any>>; normalizedCurrency: string }> {
+  ): Promise<{
+    variantsWithPricing: Array<Record<string, any>>;
+    currenciesForPricing: string[];
+  }> {
     const normalizedCurrency = this.normalizeCurrency(selectedCurrencyInput);
     const currenciesForPricing = Array.from(
       new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
@@ -240,7 +243,7 @@ export class PublicProductsController {
       };
     });
 
-    return { variantsWithPricing, normalizedCurrency };
+    return { variantsWithPricing, currenciesForPricing };
   }
 
   private async buildProductDetailResponse(
@@ -250,7 +253,7 @@ export class PublicProductsController {
     discountPercent: number,
     selectedCurrencyInput: string,
   ) {
-    const { variantsWithPricing, normalizedCurrency } = await this.enrichVariantsPricing(
+    const { variantsWithPricing, currenciesForPricing } = await this.enrichVariantsPricing(
       productId,
       variants,
       discountPercent,
@@ -259,15 +262,30 @@ export class PublicProductsController {
 
     const attributesDetails = await this.getAttributeSummaries(product.attributes as unknown[]);
 
+    let productPricingByCurrency: Record<string, PriceWithDiscount> | undefined;
+
+    if (
+      variantsWithPricing.length === 0 &&
+      (typeof product.basePriceUSD === 'number' || typeof product.compareAtPriceUSD === 'number')
+    ) {
+      productPricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
+        product.basePriceUSD ?? 0,
+        product.compareAtPriceUSD,
+        product.costPriceUSD,
+        currenciesForPricing,
+        discountPercent,
+      );
+    }
+
     const productWithAttributes = {
       ...product,
       attributesDetails,
+      ...(productPricingByCurrency ? { pricingByCurrency: productPricingByCurrency } : {}),
     };
 
     return {
       product: productWithAttributes,
       variants: variantsWithPricing,
-      currency: normalizedCurrency,
       userDiscount: {
         isMerchant: discountPercent > 0,
         discountPercent,
@@ -523,7 +541,7 @@ export class PublicProductsController {
     const discountPercent = await this.getUserMerchantDiscount(userId);
     const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    const { variantsWithPricing, normalizedCurrency } = await this.enrichVariantsPricing(
+    const { variantsWithPricing } = await this.enrichVariantsPricing(
       productId,
       variants as unknown as Array<WithId & Record<string, any>>,
       discountPercent,
@@ -532,7 +550,6 @@ export class PublicProductsController {
 
     return {
       data: variantsWithPricing,
-      currency: normalizedCurrency,
       userDiscount: {
         isMerchant: discountPercent > 0,
         discountPercent,
