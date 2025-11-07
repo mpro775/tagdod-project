@@ -14,8 +14,14 @@ export class VariantAttribute {
   @Prop() // للعرض السريع بدون populate
   name?: string; // مثل: "اللون"
 
+  @Prop() // الاسم بالإنجليزية
+  nameEn?: string; // مثل: "Color"
+
   @Prop() // للعرض السريع بدون populate
   value?: string; // مثل: "أحمر"
+
+  @Prop() // القيمة بالإنجليزية
+  valueEn?: string; // مثل: "Red"
 }
 
 @Schema({ timestamps: true })

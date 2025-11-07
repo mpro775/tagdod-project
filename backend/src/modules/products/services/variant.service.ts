@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
-import { Variant } from '../schemas/variant.schema';
+import { Variant, VariantAttribute } from '../schemas/variant.schema';
 import { Product } from '../schemas/product.schema';
 import { 
   ProductNotFoundException,
@@ -10,6 +10,8 @@ import {
   ErrorCode 
 } from '../../../shared/exceptions';
 import { AttributesService } from '../../attributes/attributes.service';
+import { Attribute } from '../../attributes/schemas/attribute.schema';
+import { AttributeValue } from '../../attributes/schemas/attribute-value.schema';
 
 // Local, explicit types to eliminate 'any' usage and align with real data
 type AttributeValueInput = {
@@ -21,7 +23,9 @@ type EnrichedAttributeValue = {
   attributeId: string;
   valueId: string;
   name: string;
+  nameEn: string;
   value: string;
+  valueEn: string;
 };
 
 type MonetaryInputFields = {
@@ -76,7 +80,9 @@ export class VariantService {
           attributeId: av.attributeId,
           valueId: av.valueId,
           name: attr.name,
+          nameEn: attr.nameEn,
           value: value?.value || '',
+          valueEn: value?.valueEn || value?.value || '',
         };
       }),
     );
@@ -121,8 +127,63 @@ export class VariantService {
     const variants = await this.variantModel
       .find(filter)
       .populate('imageId')
+      .populate('attributeValues.attributeId', 'name nameEn slug')
+      .populate('attributeValues.valueId', 'value valueEn slug')
       .sort({ basePriceUSD: 1 });
-    return variants.map(v => v.toObject());
+
+    return variants.map(variantDoc => {
+      const variantObject = variantDoc.toObject() as Variant & Record<string, unknown>;
+
+      if (Array.isArray(variantObject.attributeValues)) {
+        const attributeValues = variantObject.attributeValues as unknown as Array<Record<string, unknown>>;
+
+        variantObject.attributeValues = attributeValues.map((av) => {
+          const attributeRaw = (av as { attributeId?: unknown }).attributeId;
+          const valueRaw = (av as { valueId?: unknown }).valueId;
+
+          const attributeDoc =
+            attributeRaw && typeof attributeRaw === 'object' && '_id' in (attributeRaw as Record<string, unknown>)
+              ? (attributeRaw as Attribute & { _id: Types.ObjectId })
+              : undefined;
+
+          const valueDoc =
+            valueRaw && typeof valueRaw === 'object' && '_id' in (valueRaw as Record<string, unknown>)
+              ? (valueRaw as AttributeValue & { _id: Types.ObjectId })
+              : undefined;
+
+          const attributeId = this.normalizeReferenceId(attributeRaw);
+          const valueId = this.normalizeReferenceId(valueRaw);
+
+          const avLocalized = av as {
+            name?: string;
+            nameEn?: string;
+            value?: string;
+            valueEn?: string;
+          };
+
+          return {
+            attributeId,
+            valueId,
+            name: attributeDoc?.name ?? avLocalized.name ?? '',
+            nameEn:
+              attributeDoc?.nameEn ??
+              avLocalized.nameEn ??
+              attributeDoc?.name ??
+              avLocalized.name ??
+              '',
+            value: valueDoc?.value ?? avLocalized.value ?? '',
+            valueEn:
+              valueDoc?.valueEn ??
+              avLocalized.valueEn ??
+              valueDoc?.value ??
+              avLocalized.value ??
+              '',
+          } as VariantAttribute;
+        }) as VariantAttribute[];
+      }
+
+      return variantObject;
+    });
   }
 
   async update(id: string, dto: UpdateVariantDto): Promise<Variant> {
@@ -200,6 +261,7 @@ export class VariantService {
         return {
           attributeId: String(attrId),
           name: attr.name,
+          nameEn: attr.nameEn,
           values: attr.values || [],
         };
       }),
@@ -326,25 +388,30 @@ export class VariantService {
     attributesWithValues: Array<{
       attributeId: string;
       name: string;
-      values: Array<{ _id: Types.ObjectId; value: string }>;
+      nameEn?: string;
+      values: Array<{ _id: Types.ObjectId; value: string; valueEn?: string }>;
     }>,
   ): Array<
     Array<{
       attributeId: string;
       valueId: string;
       name: string;
+      nameEn?: string;
       value: string;
+      valueEn?: string;
     }>
   > {
     if (attributesWithValues.length === 0) return [];
 
     if (attributesWithValues.length === 1) {
-      return attributesWithValues[0].values.map((v: { _id: Types.ObjectId; value: string }) => [
+      return attributesWithValues[0].values.map((v: { _id: Types.ObjectId; value: string; valueEn?: string }) => [
         {
           attributeId: attributesWithValues[0].attributeId,
           valueId: String(v._id),
           name: attributesWithValues[0].name,
+          nameEn: attributesWithValues[0].nameEn ?? attributesWithValues[0].name,
           value: v.value,
+          valueEn: v.valueEn ?? v.value,
         },
       ]);
     }
@@ -353,7 +420,14 @@ export class VariantService {
     const restCombinations = this.generateCombinations(rest);
 
     const result: Array<
-      Array<{ attributeId: string; valueId: string; name: string; value: string }>
+      Array<{
+        attributeId: string;
+        valueId: string;
+        name: string;
+        nameEn?: string;
+        value: string;
+        valueEn?: string;
+      }>
     > = [];
 
     for (const value of first.values) {
@@ -363,7 +437,9 @@ export class VariantService {
             attributeId: first.attributeId,
             valueId: String(value._id),
             name: first.name,
+            nameEn: first.nameEn ?? first.name,
             value: value.value,
+            valueEn: value.valueEn ?? value.value,
           },
           ...combo,
         ]);
@@ -371,5 +447,37 @@ export class VariantService {
     }
 
     return result;
+  }
+
+  private normalizeReferenceId(ref: unknown): string {
+    if (!ref) {
+      return '';
+    }
+
+    if (typeof ref === 'string') {
+      return ref;
+    }
+
+    if (typeof ref === 'object') {
+      const record = ref as Record<string, unknown>;
+
+      if (record._id) {
+        const { _id } = record as { _id: Types.ObjectId | string };
+        if (typeof _id === 'string') {
+          return _id;
+        }
+        if (_id && typeof _id.toString === 'function') {
+          const converted = _id.toString();
+          return converted === '[object Object]' ? '' : converted;
+        }
+      }
+
+      if (typeof (record as { toString?: () => string }).toString === 'function') {
+        const converted = (record as { toString: () => string }).toString();
+        return converted === '[object Object]' ? '' : converted;
+      }
+    }
+
+    return '';
   }
 }

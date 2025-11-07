@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseInterceptors, Req } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseInterceptors, Req, Logger } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -14,7 +14,7 @@ import { Model , Types } from 'mongoose';
 
 import { ProductService } from '../services/product.service';
 import { VariantService } from '../services/variant.service';
-import { PricingService } from '../services/pricing.service';
+import { PricingService, PriceWithDiscount, PriceWithDiscountAndVariantId } from '../services/pricing.service';
 import { InventoryService } from '../services/inventory.service';
 import {
   ResponseCacheInterceptor,
@@ -23,6 +23,7 @@ import {
 import { ProductStatus } from '../schemas/product.schema';
 import { User } from '../../users/schemas/user.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
+import { AttributesService } from '../../attributes/attributes.service';
 
 type WithId = { _id: Types.ObjectId | string };
 
@@ -35,15 +36,30 @@ interface RequestWithUser {
   };
 }
 
+type AttributeSummary = {
+  id: string;
+  name: string;
+  nameEn: string;
+  values: Array<{
+    id: string;
+    value: string;
+    valueEn?: string;
+  }>;
+};
+
 @ApiTags('المنتجات')
 @Controller('products')
 @UseInterceptors(ResponseCacheInterceptor)
 export class PublicProductsController {
+  private readonly logger = new Logger(PublicProductsController.name);
+  private readonly BASE_PRICING_CURRENCIES = ['USD', 'YER', 'SAR'] as const;
+
   constructor(
     private productService: ProductService,
     private variantService: VariantService,
     private pricingService: PricingService,
     private inventoryService: InventoryService,
+    private attributesService: AttributesService,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Capabilities.name) private capabilitiesModel: Model<Capabilities>,
   ) {}
@@ -74,6 +90,189 @@ export class PublicProductsController {
     }
 
     return 0;
+  }
+
+  private normalizeCurrency(currency?: string): string {
+    if (!currency || typeof currency !== 'string') {
+      return 'USD';
+    }
+
+    const trimmed = currency.trim();
+    return trimmed.length === 0 ? 'USD' : trimmed.toUpperCase();
+  }
+
+  private stripVariantId(price?: PriceWithDiscountAndVariantId | null): PriceWithDiscount | null {
+    if (!price) {
+      return null;
+    }
+
+    const { variantId: _variantId, ...rest } = price;
+    return rest;
+  }
+
+  private extractIdString(value: unknown): string | null {
+    if (!value) {
+      return null;
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+
+      if (record._id) {
+        const innerId = record._id;
+        if (typeof innerId === 'string') {
+          return innerId;
+        }
+        if (innerId && typeof (innerId as { toString: () => string }).toString === 'function') {
+          const converted = (innerId as { toString: () => string }).toString();
+          return converted === '[object Object]' ? null : converted;
+        }
+      }
+
+      if (typeof (record as { toString?: () => string }).toString === 'function') {
+        const converted = (record as { toString: () => string }).toString();
+        return converted === '[object Object]' ? null : converted;
+      }
+    }
+
+    return null;
+  }
+
+  private async getAttributeSummaries(attributeIds: unknown[]): Promise<AttributeSummary[]> {
+    if (!Array.isArray(attributeIds) || attributeIds.length === 0) {
+      return [];
+    }
+
+    const uniqueIds = Array.from(
+      new Set(
+        attributeIds
+          .map(id => this.extractIdString(id))
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    if (uniqueIds.length === 0) {
+      return [];
+    }
+
+    const summaries = await Promise.all(
+      uniqueIds.map(async (attributeId) => {
+        try {
+          const attribute = await this.attributesService.getAttribute(attributeId);
+          const attributeRecord = attribute as Record<string, unknown>;
+          const valuesList = (attributeRecord.values as Array<Record<string, unknown>> | undefined) ?? [];
+
+          return {
+            id: this.extractIdString(attributeRecord._id) ?? attributeId,
+            name: (attributeRecord.name as string) ?? '',
+            nameEn: (attributeRecord.nameEn as string) ?? '',
+            values: valuesList.map((valueRecord) => ({
+              id: this.extractIdString(valueRecord._id) ?? '',
+              value: (valueRecord.value as string) ?? '',
+              valueEn:
+                (valueRecord.valueEn as string | undefined) ??
+                ((valueRecord.value as string) ?? ''),
+            })),
+          } as AttributeSummary;
+        } catch (error) {
+          this.logger.warn(
+            `Failed to load attribute ${attributeId}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+          return null;
+        }
+      }),
+    );
+
+    return summaries.filter((summary): summary is AttributeSummary => Boolean(summary));
+  }
+
+  private async enrichVariantsPricing(
+    productId: string,
+    variants: Array<WithId & Record<string, any>>,
+    discountPercent: number,
+    selectedCurrencyInput: string,
+  ): Promise<{ variantsWithPricing: Array<Record<string, any>>; normalizedCurrency: string }> {
+    const normalizedCurrency = this.normalizeCurrency(selectedCurrencyInput);
+    const currenciesForPricing = Array.from(
+      new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
+    );
+
+    const variantSnapshots = variants.map(variant => ({
+      _id: variant._id,
+      basePriceUSD: variant.basePriceUSD ?? 0,
+      compareAtPriceUSD: variant.compareAtPriceUSD,
+      costPriceUSD: variant.costPriceUSD,
+    }));
+
+    const pricesByCurrency = await this.pricingService.getProductPricesWithDiscountByCurrencies(
+      productId,
+      currenciesForPricing,
+      discountPercent,
+      { variants: variantSnapshots as any },
+    );
+
+    const variantsWithPricing = variants.map(variant => {
+      const variantId = variant._id.toString();
+
+      const pricingByCurrency = this.BASE_PRICING_CURRENCIES.reduce<Record<string, PriceWithDiscount | null>>(
+        (acc, currencyCode) => {
+          const entry =
+            pricesByCurrency[currencyCode]?.find(price => price.variantId === variantId) ?? null;
+          acc[currencyCode] = this.stripVariantId(entry);
+          return acc;
+        },
+        {} as Record<string, PriceWithDiscount | null>,
+      );
+
+      const selectedPriceEntry =
+        pricesByCurrency[normalizedCurrency]?.find(price => price.variantId === variantId) ?? null;
+
+      return {
+        ...variant,
+        pricing: this.stripVariantId(selectedPriceEntry),
+        pricingByCurrency,
+      };
+    });
+
+    return { variantsWithPricing, normalizedCurrency };
+  }
+
+  private async buildProductDetailResponse(
+    productId: string,
+    product: Record<string, any>,
+    variants: Array<WithId & Record<string, any>>,
+    discountPercent: number,
+    selectedCurrencyInput: string,
+  ) {
+    const { variantsWithPricing, normalizedCurrency } = await this.enrichVariantsPricing(
+      productId,
+      variants,
+      discountPercent,
+      selectedCurrencyInput,
+    );
+
+    const attributesDetails = await this.getAttributeSummaries(product.attributes as unknown[]);
+
+    const productWithAttributes = {
+      ...product,
+      attributesDetails,
+    };
+
+    return {
+      product: productWithAttributes,
+      variants: variantsWithPricing,
+      currency: normalizedCurrency,
+      userDiscount: {
+        isMerchant: discountPercent > 0,
+        discountPercent,
+      },
+    };
   }
 
   // ==================== Products List ====================
@@ -233,50 +432,15 @@ export class PublicProductsController {
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
     const discountPercent = await this.getUserMerchantDiscount(userId);
-    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+    const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    // جلب الأسعار مع خصم التاجر
-    let variantsWithPrices = variants;
-    const pricesWithDiscount = await this.pricingService.getProductPricesWithDiscount(
+    return this.buildProductDetailResponse(
       id,
-      selectedCurrency,
+      product as Record<string, any>,
+      variants as unknown as Array<WithId & Record<string, any>>,
       discountPercent,
+      requestedCurrency,
     );
-
-    variantsWithPrices = variants.map((variant) => {
-      const variantWithId = variant as unknown as WithId;
-      const priceData = pricesWithDiscount.find((p) => p.variantId === variantWithId._id.toString());
-      
-      if (priceData) {
-        return {
-          ...variant,
-          pricing: {
-            basePrice: priceData.basePrice,
-            compareAtPrice: priceData.compareAtPrice,
-            discountPercent: priceData.discountPercent,
-            discountAmount: priceData.discountAmount,
-            finalPrice: priceData.finalPrice,
-            currency: priceData.currency,
-            exchangeRate: priceData.exchangeRate,
-            formattedPrice: priceData.formattedPrice,
-            formattedFinalPrice: priceData.formattedFinalPrice,
-          },
-        };
-      }
-      
-      // Fallback للحالات القديمة
-      return variant;
-    });
-
-    return {
-      product,
-      variants: variantsWithPrices,
-      currency: selectedCurrency,
-      userDiscount: {
-        isMerchant: discountPercent > 0,
-        discountPercent,
-      },
-    };
   }
 
   @Get('slug/:slug')
@@ -303,50 +467,15 @@ export class PublicProductsController {
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
     const discountPercent = await this.getUserMerchantDiscount(userId);
-    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+    const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    // جلب الأسعار مع خصم التاجر
-    let variantsWithPrices = variants;
-    const pricesWithDiscount = await this.pricingService.getProductPricesWithDiscount(
+    return this.buildProductDetailResponse(
       productId,
-      selectedCurrency,
+      product as Record<string, any>,
+      variants as unknown as Array<WithId & Record<string, any>>,
       discountPercent,
+      requestedCurrency,
     );
-
-    variantsWithPrices = variants.map((variant) => {
-      const variantWithId = variant as unknown as WithId;
-      const priceData = pricesWithDiscount.find((p) => p.variantId === variantWithId._id.toString());
-      
-      if (priceData) {
-        return {
-          ...variant,
-          pricing: {
-            basePrice: priceData.basePrice,
-            compareAtPrice: priceData.compareAtPrice,
-            discountPercent: priceData.discountPercent,
-            discountAmount: priceData.discountAmount,
-            finalPrice: priceData.finalPrice,
-            currency: priceData.currency,
-            exchangeRate: priceData.exchangeRate,
-            formattedPrice: priceData.formattedPrice,
-            formattedFinalPrice: priceData.formattedFinalPrice,
-          },
-        };
-      }
-      
-      // Fallback للحالات القديمة
-      return variant;
-    });
-
-    return {
-      product,
-      variants: variantsWithPrices,
-      currency: selectedCurrency,
-      userDiscount: {
-        isMerchant: discountPercent > 0,
-        discountPercent,
-      },
-    };
   }
 
   // ==================== Featured & New Products ====================
@@ -392,43 +521,18 @@ export class PublicProductsController {
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
     const discountPercent = await this.getUserMerchantDiscount(userId);
-    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+    const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    // جلب الأسعار مع خصم التاجر
-    let variantsWithPrices = variants;
-    const pricesWithDiscount = await this.pricingService.getProductPricesWithDiscount(
+    const { variantsWithPricing, normalizedCurrency } = await this.enrichVariantsPricing(
       productId,
-      selectedCurrency,
+      variants as unknown as Array<WithId & Record<string, any>>,
       discountPercent,
+      requestedCurrency,
     );
 
-    variantsWithPrices = variants.map((variant) => {
-      const variantWithId = variant as unknown as WithId;
-      const priceData = pricesWithDiscount.find((p) => p.variantId === variantWithId._id.toString());
-      
-      if (priceData) {
-        return {
-          ...variant,
-          pricing: {
-            basePrice: priceData.basePrice,
-            compareAtPrice: priceData.compareAtPrice,
-            discountPercent: priceData.discountPercent,
-            discountAmount: priceData.discountAmount,
-            finalPrice: priceData.finalPrice,
-            currency: priceData.currency,
-            exchangeRate: priceData.exchangeRate,
-            formattedPrice: priceData.formattedPrice,
-            formattedFinalPrice: priceData.formattedFinalPrice,
-          },
-        };
-      }
-      
-      return variant;
-    });
-
     return {
-      data: variantsWithPrices,
-      currency: selectedCurrency,
+      data: variantsWithPricing,
+      currency: normalizedCurrency,
       userDiscount: {
         isMerchant: discountPercent > 0,
         discountPercent,
