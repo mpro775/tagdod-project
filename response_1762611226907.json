@@ -1,0 +1,2104 @@
+{
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "_id": "690dd8c2567068e48ce625d1",
+        "name": "علبة التثبيت الجداري YCS1",
+        "nameEn": "YCS1 Enclosure",
+        "slug": "ycs1-enclosure",
+        "description": "🧰 علبة التثبيت الجداري YCS1 – متعددة المقاسات\n\nعلبة YCS1 هي غلاف معدني متين صُمم لاستيعاب معدات المفاتيح ولوحات التحكم الكهربائية، وتوفير حماية موثوقة في البيئات المختلفة.\nمصنوعة من فولاذ مجلفن كهربائيًا عالي الجودة بسماكة تقريبًا 1.5 مم، مع لوحة تثبيت داخلية من فولاذ GI بسماكة 2 مم تقريبًا، مما يمنحها صلابة عالية وعمرًا طويلًا.\n\n🔹 المميزات:\n\nتصميم قوي مناسب للتركيب الداخلي والخارجي.\n\nلوحة سفلية قابلة للإزالة لتسهيل إدخال الكابلات.\n\nإمكانية إضافة مظلة اختيارية للحماية من المطر والعوامل الخارجية.\n\nتصنيف حماية يصل إلى IP65 ضد الماء والغبار.\n\nمطابقة لمعايير IEC الدولية الخاصة بالأغلفة الكهربائية.\n\n📏 المقاسات المتوفرة:\n20×30×20 سم، 30×30×20 سم، 30×40×20 سم، 40×40×20 سم، 50×40×20 سم،\n60×40×20 سم، 60×50×20 سم، 60×60×20 سم، 80×60×20 سم، 80×60×30 سم.\n\n🛠️ الاستخدامات:\nمناسبة للتركيبات التجارية والصناعية الخفيفة التي تتطلب غلافًا آمنًا ومتينًا لمعدات التوزيع والتحكم الكهربائي.\n\n💡 اختر المقاس المناسب لتطبيقك من بين مجموعة خيارات متعددة.",
+        "descriptionEn": "🧰 YCS1 Wall-Mount Enclosure — Multi-Size Metal Housing\n\nThe YCS1 wall-mount enclosure is a durable and versatile metal housing designed to accommodate electrical switchgear and control gear assemblies.\nManufactured from high-quality electro-galvanized steel (≈1.5 mm thick) with a mounting plate made of GI steel (≈2 mm), it ensures long-term strength and protection in demanding environments.\n\n🔹 Key Features:\n\nSturdy construction for indoor and outdoor applications.\n\nRemovable gland plate at the bottom for easy cable entry.\n\nOptional canopy for additional weather protection.\n\nRated protection: up to IP65, providing excellent water and dust resistance.\n\nCompliance: Meets relevant IEC enclosure standards.\n\n📏 Available Sizes:\n20×30×20 cm, 30×30×20 cm, 30×40×20 cm, 40×40×20 cm, 50×40×20 cm,\n60×40×20 cm, 60×50×20 cm, 60×60×20 cm, 80×60×20 cm, 80×60×30 cm.\n\n🛠️ Ideal for:\nCommercial and light-industrial installations requiring reliable protection for electrical and control components.",
+        "categoryId": {
+          "_id": "690c8fafab011a233776cb3c",
+          "parentId": null,
+          "name": "طبالين وصناديق",
+          "nameEn": "Drummers And the boxes",
+          "slug": "drummers-and-the-boxes",
+          "description": "",
+          "descriptionEn": "",
+          "imageId": "690c8fa9ab011a233776cb36",
+          "metaKeywords": [],
+          "order": 4,
+          "isActive": true,
+          "isFeatured": false,
+          "productsCount": 1,
+          "childrenCount": 0,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T12:08:15.635Z",
+          "updatedAt": "2025-11-07T11:32:19.049Z",
+          "__v": 0
+        },
+        "brandId": {
+          "_id": "68ffa9a355755bbf62105206",
+          "name": "CNC",
+          "nameEn": "CNC",
+          "slug": "cnc",
+          "image": "https://tagadod.b-cdn.net/media/brand/327c9b85-8696-4e9f-9d26-5f63549e6691-4_5764614038499629247.png",
+          "description": "براند CNC ",
+          "descriptionEn": "CNC BRAND",
+          "isActive": true,
+          "sortOrder": 3,
+          "createdAt": "2025-10-27T17:19:31.173Z",
+          "updatedAt": "2025-11-06T13:08:54.516Z",
+          "__v": 0,
+          "metadata": {}
+        },
+        "mainImageId": {
+          "_id": "690dd7f3567068e48ce6258d",
+          "url": "https://tagadod.b-cdn.net/media/product/803de19f-5243-4f90-a5c0-03c7b93a80f7-68ce7230bb189_Remove background project (58).png",
+          "filename": "68ce7230bb189_Remove background project (58).png",
+          "storedFilename": "media/product/803de19f-5243-4f90-a5c0-03c7b93a80f7-68ce7230bb189_Remove background project (58).png",
+          "name": "68ce7230bb189_Remove background project (58)",
+          "category": "product",
+          "type": "image",
+          "mimeType": "image/png",
+          "size": 142671,
+          "width": 800,
+          "height": 800,
+          "fileHash": "b78d3840826a2a3add3d03e0ab302f504a181e3b2e756680a8c7156c46b7e308",
+          "description": "",
+          "tags": [],
+          "uploadedBy": "68ff95bc23fc16f642cb910a",
+          "usageCount": 0,
+          "usedIn": [],
+          "isPublic": true,
+          "deletedAt": null,
+          "createdAt": "2025-11-07T11:28:51.021Z",
+          "updatedAt": "2025-11-07T11:28:51.021Z",
+          "__v": 0
+        },
+        "imageIds": [
+          "690dd7ff567068e48ce62599",
+          "690dd809567068e48ce625a1",
+          "690dd813567068e48ce625a7",
+          "690dd821567068e48ce625ad"
+        ],
+        "attributes": [
+          "690dd66c567068e48ce624f6"
+        ],
+        "status": "active",
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": true,
+        "isBestseller": true,
+        "viewsCount": 45,
+        "salesCount": 0,
+        "variantsCount": 10,
+        "reviewsCount": 0,
+        "averageRating": 0,
+        "useManualRating": true,
+        "manualRating": 4,
+        "manualReviewsCount": 0,
+        "metaKeywords": [],
+        "order": 0,
+        "relatedProducts": [
+          "690d2858567068e48ce6091f",
+          "690d2625567068e48ce60873",
+          "690d24e4567068e48ce6080b",
+          "690c9e8bab011a233776cddd",
+          "690ca137ab011a233776cee5"
+        ],
+        "deletedAt": null,
+        "createdAt": "2025-11-07T11:32:18.785Z",
+        "updatedAt": "2025-11-08T14:08:07.209Z",
+        "__v": 0,
+        "variants": [
+          {
+            "_id": "690dd8c5567068e48ce625e2",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd6eb567068e48ce62516",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "20 × 30 × 20 سم",
+                "valueEn": "20 × 30 × 20 cm"
+              }
+            ],
+            "basePriceUSD": 17,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:21.726Z",
+            "updatedAt": "2025-11-07T11:32:21.726Z",
+            "__v": 0,
+            "price": 17,
+            "id": "690dd8c5567068e48ce625e2",
+            "pricing": {
+              "basePrice": 17,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 17,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 17,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 17,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 9010,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 9010,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "9,010 $",
+                "formattedFinalPrice": "9,010 $"
+              },
+              "SAR": {
+                "basePrice": 63.75,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 63.75,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "63.75 $",
+                "formattedFinalPrice": "63.75 $"
+              }
+            }
+          },
+          {
+            "_id": "690dd8c6567068e48ce625e7",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd702567068e48ce6251e",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "30 × 30 × 20 سم",
+                "valueEn": "30 × 30 × 20 cm"
+              }
+            ],
+            "basePriceUSD": 23,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:22.776Z",
+            "updatedAt": "2025-11-07T11:33:26.001Z",
+            "__v": 0,
+            "price": 23,
+            "id": "690dd8c6567068e48ce625e7",
+            "pricing": {
+              "basePrice": 23,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 23,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 23,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 23,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 12190,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 12190,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "12,190 $",
+                "formattedFinalPrice": "12,190 $"
+              },
+              "SAR": {
+                "basePrice": 86.25,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 86.25,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "86.25 $",
+                "formattedFinalPrice": "86.25 $"
+              }
+            }
+          },
+          {
+            "_id": "690dd8c7567068e48ce625ec",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd719567068e48ce6252c",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "30 × 40 × 20 سم",
+                "valueEn": "30 × 40 × 20 cm"
+              }
+            ],
+            "basePriceUSD": 27,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:23.827Z",
+            "updatedAt": "2025-11-07T11:34:11.253Z",
+            "__v": 0,
+            "price": 27,
+            "id": "690dd8c7567068e48ce625ec",
+            "pricing": {
+              "basePrice": 27,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 27,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 27,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 27,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 14310,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 14310,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "14,310 $",
+                "formattedFinalPrice": "14,310 $"
+              },
+              "SAR": {
+                "basePrice": 101.25,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 101.25,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "101.25 $",
+                "formattedFinalPrice": "101.25 $"
+              }
+            }
+          },
+          {
+            "_id": "690dd8c8567068e48ce625f1",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd72e567068e48ce62532",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "40 × 40 × 20 سم",
+                "valueEn": "40 × 40 × 20 cm"
+              }
+            ],
+            "basePriceUSD": 29,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:24.879Z",
+            "updatedAt": "2025-11-07T11:34:32.671Z",
+            "__v": 0,
+            "price": 29,
+            "id": "690dd8c8567068e48ce625f1",
+            "pricing": {
+              "basePrice": 29,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 29,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 29,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 29,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 15370,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 15370,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "15,370 $",
+                "formattedFinalPrice": "15,370 $"
+              },
+              "SAR": {
+                "basePrice": 108.75,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 108.75,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "108.75 $",
+                "formattedFinalPrice": "108.75 $"
+              }
+            }
+          },
+          {
+            "_id": "690dd8c9567068e48ce625f6",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd740567068e48ce6253a",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "50 × 40 × 20 سم",
+                "valueEn": "50 × 40 × 20 cm"
+              }
+            ],
+            "basePriceUSD": 35,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:25.929Z",
+            "updatedAt": "2025-11-07T11:34:46.793Z",
+            "__v": 0,
+            "price": 35,
+            "id": "690dd8c9567068e48ce625f6",
+            "pricing": {
+              "basePrice": 35,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 35,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 35,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 35,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 18550,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 18550,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "18,550 $",
+                "formattedFinalPrice": "18,550 $"
+              },
+              "SAR": {
+                "basePrice": 131.25,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 131.25,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "131.25 $",
+                "formattedFinalPrice": "131.25 $"
+              }
+            }
+          },
+          {
+            "_id": "690dd8ca567068e48ce625fb",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd759567068e48ce62548",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "60 × 40 × 20 سم",
+                "valueEn": "60 × 40 × 20 cm"
+              }
+            ],
+            "basePriceUSD": 47,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:26.980Z",
+            "updatedAt": "2025-11-07T11:34:59.735Z",
+            "__v": 0,
+            "price": 47,
+            "id": "690dd8ca567068e48ce625fb",
+            "pricing": {
+              "basePrice": 47,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 47,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 47,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 47,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 24910,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 24910,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "24,910 $",
+                "formattedFinalPrice": "24,910 $"
+              },
+              "SAR": {
+                "basePrice": 176.25,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 176.25,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "176.25 $",
+                "formattedFinalPrice": "176.25 $"
+              }
+            }
+          },
+          {
+            "_id": "690dd8cc567068e48ce62600",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd76a567068e48ce6254e",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "60 × 50 × 20 سم",
+                "valueEn": "60 × 50 × 20 cm"
+              }
+            ],
+            "basePriceUSD": 54,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:28.029Z",
+            "updatedAt": "2025-11-07T11:35:14.142Z",
+            "__v": 0,
+            "price": 54,
+            "id": "690dd8cc567068e48ce62600",
+            "pricing": {
+              "basePrice": 54,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 54,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 54,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 54,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 28620,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 28620,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "28,620 $",
+                "formattedFinalPrice": "28,620 $"
+              },
+              "SAR": {
+                "basePrice": 202.5,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 202.5,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "202.50 $",
+                "formattedFinalPrice": "202.50 $"
+              }
+            }
+          },
+          {
+            "_id": "690dd8cd567068e48ce62605",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd78a567068e48ce6255c",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "60 × 60 × 20 سم",
+                "valueEn": "60 × 60 × 20 cm"
+              }
+            ],
+            "basePriceUSD": 64,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:29.081Z",
+            "updatedAt": "2025-11-07T11:35:26.750Z",
+            "__v": 0,
+            "price": 64,
+            "id": "690dd8cd567068e48ce62605",
+            "pricing": {
+              "basePrice": 64,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 64,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 64,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 64,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 33920,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 33920,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "33,920 $",
+                "formattedFinalPrice": "33,920 $"
+              },
+              "SAR": {
+                "basePrice": 240,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 240,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "240.00 $",
+                "formattedFinalPrice": "240.00 $"
+              }
+            }
+          },
+          {
+            "_id": "690dd8ce567068e48ce6260a",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd7a0567068e48ce62564",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "80 × 60 × 20 سم",
+                "valueEn": "80 × 60 × 20 cm"
+              }
+            ],
+            "basePriceUSD": 80,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:30.130Z",
+            "updatedAt": "2025-11-07T11:35:36.948Z",
+            "__v": 0,
+            "price": 80,
+            "id": "690dd8ce567068e48ce6260a",
+            "pricing": {
+              "basePrice": 80,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 80,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 80,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 80,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 42400,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 42400,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "42,400 $",
+                "formattedFinalPrice": "42,400 $"
+              },
+              "SAR": {
+                "basePrice": 300,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 300,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "300.00 $",
+                "formattedFinalPrice": "300.00 $"
+              }
+            }
+          },
+          {
+            "_id": "690dd8cf567068e48ce6260f",
+            "productId": "690dd8c2567068e48ce625d1",
+            "attributeValues": [
+              {
+                "attributeId": "690dd66c567068e48ce624f6",
+                "valueId": "690dd7bb567068e48ce6256c",
+                "name": "مقاسات YCS1:",
+                "nameEn": "YCS1 Attributes:",
+                "value": "80 × 60 × 30 سم",
+                "valueEn": "80 × 60 × 30 cm"
+              }
+            ],
+            "basePriceUSD": 93,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-07T11:32:31.180Z",
+            "updatedAt": "2025-11-07T11:35:50.751Z",
+            "__v": 0,
+            "price": 93,
+            "id": "690dd8cf567068e48ce6260f",
+            "pricing": {
+              "basePrice": 93,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 93,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 93,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 93,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 49290,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 49290,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "49,290 $",
+                "formattedFinalPrice": "49,290 $"
+              },
+              "SAR": {
+                "basePrice": 348.75,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 348.75,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "348.75 $",
+                "formattedFinalPrice": "348.75 $"
+              }
+            }
+          }
+        ],
+        "priceRangeByCurrency": {
+          "USD": {
+            "minPrice": 17,
+            "maxPrice": 93,
+            "currency": "USD",
+            "hasDiscountedVariant": false
+          },
+          "YER": {
+            "minPrice": 9010,
+            "maxPrice": 49290,
+            "currency": "YER",
+            "hasDiscountedVariant": false
+          },
+          "SAR": {
+            "minPrice": 63.75,
+            "maxPrice": 348.75,
+            "currency": "SAR",
+            "hasDiscountedVariant": false
+          }
+        },
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 17,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 17,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 9010,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 9010,
+            "currency": "YER",
+            "exchangeRate": 530,
+            "formattedPrice": "9,010 $",
+            "formattedFinalPrice": "9,010 $"
+          },
+          "SAR": {
+            "basePrice": 63.75,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 63.75,
+            "currency": "SAR",
+            "exchangeRate": 3.75,
+            "formattedPrice": "63.75 $",
+            "formattedFinalPrice": "63.75 $"
+          }
+        },
+        "defaultPricing": {
+          "basePrice": 17,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 17,
+          "currency": "USD"
+        }
+      },
+      {
+        "_id": "690d2858567068e48ce6091f",
+        "name": "محول التيار MSQ ",
+        "nameEn": "MSQ Current Transformer",
+        "slug": "msq-current-transformer",
+        "description": "محول تيار MSQ هو جهاز يستخدم لتحويل تيار عالي مقداره 400/1000/2000 أمبير إلى تيار ثانوي مقداره 5 أمبير، ليتم قياسه أو مراقبته بأجهزة حماية أو عدادات كهربائية. هذا المحول من النوع MSQ يتميز بدقة عالية ضمن الفئة 0.5 أو 1.0 حسب النسخة، ويُستخدم ضمن دوائر التوزيع الكهربائية وأنظمة الحماية والمراقبة. يعمل عند تردد 50-60Hz، ويتحمل الأحمال الظاهرية (Burden) للجهد الثانوي بحسب التصنيف (مثلاً 2.5VA أو 5VA). الجهد العزلي المقنن قد يصل إلى حوالي 0.72kV في بعض النماذج.",
+        "descriptionEn": "The MSQ Current Transformer converts a high primary current of 400/1000/2000 A to a secondary current of 5 A for measurement or protection purposes. Part of the MSQ series, it offers high reliability and is available in accuracy classes such as 0.5 or 1.0 depending on the variant. Operates at 50-60 Hz. The secondary burden (rated VA) is matched to maintain accuracy (e.g. 2.5 VA, 5 VA etc.). The device is designed with insulation suitable for voltages up to approximately 0.72 kV (depending on version).",
+        "categoryId": {
+          "_id": "690c90c7ab011a233776cb78",
+          "parentId": null,
+          "name": "تحكم صناعي",
+          "nameEn": "Control Industrial",
+          "slug": "control-industrial",
+          "description": "",
+          "descriptionEn": "",
+          "imageId": "690c90bdab011a233776cb70",
+          "metaKeywords": [],
+          "order": 5,
+          "isActive": true,
+          "isFeatured": false,
+          "productsCount": 3,
+          "childrenCount": 0,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T12:12:55.839Z",
+          "updatedAt": "2025-11-06T22:59:36.904Z",
+          "__v": 0
+        },
+        "brandId": {
+          "_id": "68ffa9a355755bbf62105206",
+          "name": "CNC",
+          "nameEn": "CNC",
+          "slug": "cnc",
+          "image": "https://tagadod.b-cdn.net/media/brand/327c9b85-8696-4e9f-9d26-5f63549e6691-4_5764614038499629247.png",
+          "description": "براند CNC ",
+          "descriptionEn": "CNC BRAND",
+          "isActive": true,
+          "sortOrder": 3,
+          "createdAt": "2025-10-27T17:19:31.173Z",
+          "updatedAt": "2025-11-06T13:08:54.516Z",
+          "__v": 0,
+          "metadata": {}
+        },
+        "mainImageId": {
+          "_id": "690d280e567068e48ce60903",
+          "url": "https://tagadod.b-cdn.net/media/product/bb2a3e56-d41b-46b8-9a58-d4cef9bbe004-68ca93d4f2bce_Remove background project (3).png",
+          "filename": "68ca93d4f2bce_Remove background project (3).png",
+          "storedFilename": "media/product/bb2a3e56-d41b-46b8-9a58-d4cef9bbe004-68ca93d4f2bce_Remove background project (3).png",
+          "name": "68ca93d4f2bce_Remove background project (3)",
+          "category": "product",
+          "type": "image",
+          "mimeType": "image/png",
+          "size": 299444,
+          "width": 800,
+          "height": 800,
+          "fileHash": "27a6d87862182536ee9284c8efcbf4716a15f7c91d9d30dfd30d12a438488a81",
+          "description": "",
+          "tags": [],
+          "uploadedBy": "68ff95bc23fc16f642cb910a",
+          "usageCount": 0,
+          "usedIn": [],
+          "isPublic": true,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T22:58:22.357Z",
+          "updatedAt": "2025-11-06T22:58:22.357Z",
+          "__v": 0
+        },
+        "imageIds": [
+          "690d2827567068e48ce6090b",
+          "690d2837567068e48ce60917"
+        ],
+        "attributes": [
+          "690d26ae567068e48ce60895"
+        ],
+        "status": "active",
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": true,
+        "isBestseller": true,
+        "viewsCount": 23,
+        "salesCount": 0,
+        "variantsCount": 3,
+        "reviewsCount": 0,
+        "averageRating": 0,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "metaKeywords": [],
+        "order": 0,
+        "relatedProducts": [
+          "690d2625567068e48ce60873",
+          "690c9e8bab011a233776cddd"
+        ],
+        "deletedAt": null,
+        "createdAt": "2025-11-06T22:59:36.651Z",
+        "updatedAt": "2025-11-08T13:42:50.626Z",
+        "__v": 0,
+        "variants": [
+          {
+            "_id": "690d285b567068e48ce60930",
+            "productId": "690d2858567068e48ce6091f",
+            "attributeValues": [
+              {
+                "attributeId": "690d26ae567068e48ce60895",
+                "valueId": "690d2707567068e48ce608ad",
+                "name": "قدرات MSQ :",
+                "nameEn": "MSQ Attributes :",
+                "value": "400/5 امبير",
+                "valueEn": "400/5A"
+              }
+            ],
+            "basePriceUSD": 6.86,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-06T22:59:39.974Z",
+            "updatedAt": "2025-11-06T22:59:39.974Z",
+            "__v": 0,
+            "price": 6.86,
+            "id": "690d285b567068e48ce60930",
+            "pricing": {
+              "basePrice": 6.86,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 6.86,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 6.86,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 6.86,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 3635.8,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 3635.8,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "3,636 $",
+                "formattedFinalPrice": "3,636 $"
+              },
+              "SAR": {
+                "basePrice": 25.73,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 25.73,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "25.73 $",
+                "formattedFinalPrice": "25.73 $"
+              }
+            }
+          },
+          {
+            "_id": "690d285c567068e48ce60935",
+            "productId": "690d2858567068e48ce6091f",
+            "attributeValues": [
+              {
+                "attributeId": "690d26ae567068e48ce60895",
+                "valueId": "690d2721567068e48ce608bb",
+                "name": "قدرات MSQ :",
+                "nameEn": "MSQ Attributes :",
+                "value": "1000/5 امبير",
+                "valueEn": "1000/5A"
+              }
+            ],
+            "basePriceUSD": 9.5,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-06T22:59:40.984Z",
+            "updatedAt": "2025-11-06T22:59:57.647Z",
+            "__v": 0,
+            "price": 9.5,
+            "id": "690d285c567068e48ce60935",
+            "pricing": {
+              "basePrice": 9.5,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 9.5,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 9.5,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 9.5,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 5035,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 5035,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "5,035 $",
+                "formattedFinalPrice": "5,035 $"
+              },
+              "SAR": {
+                "basePrice": 35.63,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 35.63,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "35.63 $",
+                "formattedFinalPrice": "35.63 $"
+              }
+            }
+          },
+          {
+            "_id": "690d285d567068e48ce6093a",
+            "productId": "690d2858567068e48ce6091f",
+            "attributeValues": [
+              {
+                "attributeId": "690d26ae567068e48ce60895",
+                "valueId": "690d2732567068e48ce608c1",
+                "name": "قدرات MSQ :",
+                "nameEn": "MSQ Attributes :",
+                "value": "2000/5 امبير",
+                "valueEn": "2000/5"
+              }
+            ],
+            "basePriceUSD": 17.35,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-06T22:59:41.989Z",
+            "updatedAt": "2025-11-06T23:00:09.501Z",
+            "__v": 0,
+            "price": 17.35,
+            "id": "690d285d567068e48ce6093a",
+            "pricing": {
+              "basePrice": 17.35,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 17.35,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 17.35,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 17.35,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 9195.5,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 9195.5,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "9,196 $",
+                "formattedFinalPrice": "9,196 $"
+              },
+              "SAR": {
+                "basePrice": 65.06,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 65.06,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "65.06 $",
+                "formattedFinalPrice": "65.06 $"
+              }
+            }
+          }
+        ],
+        "priceRangeByCurrency": {
+          "USD": {
+            "minPrice": 6.86,
+            "maxPrice": 17.35,
+            "currency": "USD",
+            "hasDiscountedVariant": false
+          },
+          "YER": {
+            "minPrice": 3635.8,
+            "maxPrice": 9195.5,
+            "currency": "YER",
+            "hasDiscountedVariant": false
+          },
+          "SAR": {
+            "minPrice": 25.73,
+            "maxPrice": 65.06,
+            "currency": "SAR",
+            "hasDiscountedVariant": false
+          }
+        },
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 6.86,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 6.86,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 3635.8,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 3635.8,
+            "currency": "YER",
+            "exchangeRate": 530,
+            "formattedPrice": "3,636 $",
+            "formattedFinalPrice": "3,636 $"
+          },
+          "SAR": {
+            "basePrice": 25.73,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 25.73,
+            "currency": "SAR",
+            "exchangeRate": 3.75,
+            "formattedPrice": "25.73 $",
+            "formattedFinalPrice": "25.73 $"
+          }
+        },
+        "defaultPricing": {
+          "basePrice": 6.86,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 6.86,
+          "currency": "USD"
+        }
+      },
+      {
+        "_id": "690d2625567068e48ce60873",
+        "name": "فيوز جهد منخفض RT18",
+        "nameEn": "RT18 Low Voltage Fuse",
+        "slug": "rt18-low-voltage-fuse",
+        "description": "فيوز جهد منخفض من سلسلة RT18 هو حل موثوق لحماية الدوائر الكهربائية من التحميل الزائد (overload) والقصير (short circuit). يُستخدم في أنظمة القوى الكهربائية الصناعية والتجارية، ويتوفر لمجموعة واسعة من التيارات والفولتية المطلوبة. يمتاز بمجموعة من الأحجام القياسية وجودة تصنيع عالية ومطابقة للمعايير الدولية.",
+        "descriptionEn": "The RT18 Low-Voltage Fuse series offers reliable protection for electrical circuits against overloads and short circuits. Designed for industrial, commercial and residential applications, this series comes in many current ratings and sizes, built to international standards.",
+        "categoryId": {
+          "_id": "690c90c7ab011a233776cb78",
+          "parentId": null,
+          "name": "تحكم صناعي",
+          "nameEn": "Control Industrial",
+          "slug": "control-industrial",
+          "description": "",
+          "descriptionEn": "",
+          "imageId": "690c90bdab011a233776cb70",
+          "metaKeywords": [],
+          "order": 5,
+          "isActive": true,
+          "isFeatured": false,
+          "productsCount": 3,
+          "childrenCount": 0,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T12:12:55.839Z",
+          "updatedAt": "2025-11-06T22:59:36.904Z",
+          "__v": 0
+        },
+        "brandId": {
+          "_id": "68ffa9a355755bbf62105206",
+          "name": "CNC",
+          "nameEn": "CNC",
+          "slug": "cnc",
+          "image": "https://tagadod.b-cdn.net/media/brand/327c9b85-8696-4e9f-9d26-5f63549e6691-4_5764614038499629247.png",
+          "description": "براند CNC ",
+          "descriptionEn": "CNC BRAND",
+          "isActive": true,
+          "sortOrder": 3,
+          "createdAt": "2025-10-27T17:19:31.173Z",
+          "updatedAt": "2025-11-06T13:08:54.516Z",
+          "__v": 0,
+          "metadata": {}
+        },
+        "mainImageId": {
+          "_id": "690d258b567068e48ce6083b",
+          "url": "https://tagadod.b-cdn.net/media/product/8797eb5d-e205-4837-ab61-acfd516eccdf-68ca940852add_Remove background project (4).png",
+          "filename": "68ca940852add_Remove background project (4).png",
+          "storedFilename": "media/product/8797eb5d-e205-4837-ab61-acfd516eccdf-68ca940852add_Remove background project (4).png",
+          "name": "68ca940852add_Remove background project (4)",
+          "category": "product",
+          "type": "image",
+          "mimeType": "image/png",
+          "size": 140205,
+          "width": 800,
+          "height": 800,
+          "fileHash": "fedf7b99f8c5781ed2b8d44c3b85c53cc63df6874cbf66f813150f969e8146f7",
+          "description": "",
+          "tags": [],
+          "uploadedBy": "68ff95bc23fc16f642cb910a",
+          "usageCount": 0,
+          "usedIn": [],
+          "isPublic": true,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T22:47:39.104Z",
+          "updatedAt": "2025-11-06T22:47:39.104Z",
+          "__v": 0
+        },
+        "imageIds": [
+          "690d25ce567068e48ce6084b",
+          "690d25da567068e48ce60851",
+          "690d25e6567068e48ce6085d",
+          "690d25f1567068e48ce60865"
+        ],
+        "attributes": [],
+        "status": "active",
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": true,
+        "isBestseller": true,
+        "viewsCount": 21,
+        "salesCount": 0,
+        "variantsCount": 0,
+        "reviewsCount": 0,
+        "averageRating": 0,
+        "useManualRating": true,
+        "manualRating": 5,
+        "manualReviewsCount": 0,
+        "metaKeywords": [],
+        "order": 0,
+        "relatedProducts": [
+          "690d24e4567068e48ce6080b",
+          "690c9e8bab011a233776cddd",
+          "690ca137ab011a233776cee5"
+        ],
+        "deletedAt": null,
+        "createdAt": "2025-11-06T22:50:13.598Z",
+        "updatedAt": "2025-11-08T14:05:24.981Z",
+        "__v": 0,
+        "compareAtPriceUSD": 99.99,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 99.99,
+            "compareAtPrice": 99.99,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 99.99,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 52994.7,
+            "compareAtPrice": 52994.7,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 52994.7,
+            "currency": "YER",
+            "exchangeRate": 530,
+            "formattedPrice": "52,995 $",
+            "formattedFinalPrice": "52,995 $"
+          },
+          "SAR": {
+            "basePrice": 374.96,
+            "compareAtPrice": 374.96,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 374.96,
+            "currency": "SAR",
+            "exchangeRate": 3.75,
+            "formattedPrice": "374.96 $",
+            "formattedFinalPrice": "374.96 $"
+          }
+        },
+        "defaultPricing": {
+          "basePrice": 99.99,
+          "compareAtPrice": 99.99,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 99.99,
+          "currency": "USD"
+        }
+      },
+      {
+        "_id": "690c9e8bab011a233776cddd",
+        "name": "كونتاكتور AC من سلسلة CJX2s",
+        "nameEn": "CJX2s AC Contactor",
+        "slug": "cjx2s-ac-contactor",
+        "description": "كونتاكتور AC من سلسلة CJX2s ، بـ 3 أقطاب (3-Pole). مناسب لتشغيل المحركات الكهربائية AC بشكل متكرر وتبديل الدائرة عن بُعد. يحتوي على اتصالات مساعدة 1 NO + 1 NC في بعض الموديلات. الفولطية لفائف التشغيل تتوفر بعدة خيارات مثل 24V، 36V، 110V، 220V، 380V وتردد التشغيل 50/60Hz. يُستخدم مع مرحل حراري لتكوين Starter مغناطيسي للمحرك. يناسب معايير IEC 60947-1 و IEC 60947-4-1، وفئة الاستخدام مثل AC-3 و AC-4 حسب التطبيق. مزود بشهادات مثل CE / CB / TUV في بعض الإصدارات.",
+        "descriptionEn": "CJX2s series AC Contactor with novel appearance and compact structure is suitablefor using starting &controlling the AC motor frequently,switching on and off thecircuitat a long distance.It is used in combinationwith thermal relay to compose amagneticmotor starter StandardIEC60947-1,IEC 60947-4-1.",
+        "categoryId": {
+          "_id": "690c90c7ab011a233776cb78",
+          "parentId": null,
+          "name": "تحكم صناعي",
+          "nameEn": "Control Industrial",
+          "slug": "control-industrial",
+          "description": "",
+          "descriptionEn": "",
+          "imageId": "690c90bdab011a233776cb70",
+          "metaKeywords": [],
+          "order": 5,
+          "isActive": true,
+          "isFeatured": false,
+          "productsCount": 3,
+          "childrenCount": 0,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T12:12:55.839Z",
+          "updatedAt": "2025-11-06T22:59:36.904Z",
+          "__v": 0
+        },
+        "brandId": {
+          "_id": "68ffa9a355755bbf62105206",
+          "name": "CNC",
+          "nameEn": "CNC",
+          "slug": "cnc",
+          "image": "https://tagadod.b-cdn.net/media/brand/327c9b85-8696-4e9f-9d26-5f63549e6691-4_5764614038499629247.png",
+          "description": "براند CNC ",
+          "descriptionEn": "CNC BRAND",
+          "isActive": true,
+          "sortOrder": 3,
+          "createdAt": "2025-10-27T17:19:31.173Z",
+          "updatedAt": "2025-11-06T13:08:54.516Z",
+          "__v": 0,
+          "metadata": {}
+        },
+        "mainImageId": {
+          "_id": "690c9a64ab011a233776cccd",
+          "url": "https://tagadod.b-cdn.net/media/product/db6cdbdf-77fc-4591-b16d-9fbd6d650415-68ca921311be8_Remove background project (1).png",
+          "filename": "68ca921311be8_Remove background project (1).png",
+          "storedFilename": "media/product/db6cdbdf-77fc-4591-b16d-9fbd6d650415-68ca921311be8_Remove background project (1).png",
+          "name": "68ca921311be8_Remove background project (1)",
+          "category": "product",
+          "type": "image",
+          "mimeType": "image/png",
+          "size": 383331,
+          "width": 800,
+          "height": 800,
+          "fileHash": "58841a64a90724211c5e5eb73ab7f30ce307876f70753bbd044a5e590ff44ff9",
+          "description": "",
+          "tags": [],
+          "uploadedBy": "68ff95bc23fc16f642cb910a",
+          "usageCount": 0,
+          "usedIn": [],
+          "isPublic": true,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T12:53:56.989Z",
+          "updatedAt": "2025-11-06T12:53:56.989Z",
+          "__v": 0
+        },
+        "imageIds": [
+          "690c9a64ab011a233776cccd"
+        ],
+        "attributes": [
+          "690c9cafab011a233776cd42"
+        ],
+        "status": "active",
+        "isActive": true,
+        "isFeatured": true,
+        "isNew": true,
+        "isBestseller": true,
+        "viewsCount": 19,
+        "salesCount": 0,
+        "variantsCount": 6,
+        "reviewsCount": 0,
+        "averageRating": 0,
+        "useManualRating": true,
+        "manualRating": 4.5,
+        "manualReviewsCount": 248,
+        "metaKeywords": [],
+        "order": 0,
+        "relatedProducts": [],
+        "deletedAt": null,
+        "updatedAt": "2025-11-08T14:03:49.108Z",
+        "__v": "2025-11-06T22:44:52.246Z",
+        "compareAtPriceUSD": 120,
+        "createdAt": "2025-11-06T22:44:52.246Z",
+        "variants": [
+          {
+            "_id": "690c9e8eab011a233776cdee",
+            "productId": "690c9e8bab011a233776cddd",
+            "attributeValues": [
+              {
+                "attributeId": "690c9cafab011a233776cd42",
+                "valueId": "690c9d17ab011a233776cd62",
+                "name": "قدرات CJX2s:",
+                "nameEn": "CJX2s Attributes",
+                "value": "18 امبير",
+                "valueEn": "18A"
+              }
+            ],
+            "basePriceUSD": 13.6,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-06T13:11:42.174Z",
+            "updatedAt": "2025-11-06T13:11:42.174Z",
+            "__v": 0,
+            "price": 13.6,
+            "id": "690c9e8eab011a233776cdee",
+            "pricing": {
+              "basePrice": 13.6,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 13.6,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 13.6,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 13.6,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 7208,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 7208,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "7,208 $",
+                "formattedFinalPrice": "7,208 $"
+              },
+              "SAR": {
+                "basePrice": 51,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 51,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "51.00 $",
+                "formattedFinalPrice": "51.00 $"
+              }
+            }
+          },
+          {
+            "_id": "690c9e8fab011a233776cdf3",
+            "productId": "690c9e8bab011a233776cddd",
+            "attributeValues": [
+              {
+                "attributeId": "690c9cafab011a233776cd42",
+                "valueId": "690c9d35ab011a233776cd6a",
+                "name": "قدرات CJX2s:",
+                "nameEn": "CJX2s Attributes",
+                "value": "25 امبير",
+                "valueEn": "25A"
+              }
+            ],
+            "basePriceUSD": 14.86,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-06T13:11:43.221Z",
+            "updatedAt": "2025-11-06T13:12:33.670Z",
+            "__v": 0,
+            "price": 14.86,
+            "id": "690c9e8fab011a233776cdf3",
+            "pricing": {
+              "basePrice": 14.86,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 14.86,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 14.86,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 14.86,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 7875.8,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 7875.8,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "7,876 $",
+                "formattedFinalPrice": "7,876 $"
+              },
+              "SAR": {
+                "basePrice": 55.72,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 55.72,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "55.72 $",
+                "formattedFinalPrice": "55.72 $"
+              }
+            }
+          },
+          {
+            "_id": "690c9e90ab011a233776cdf8",
+            "productId": "690c9e8bab011a233776cddd",
+            "attributeValues": [
+              {
+                "attributeId": "690c9cafab011a233776cd42",
+                "valueId": "690c9d4dab011a233776cd76",
+                "name": "قدرات CJX2s:",
+                "nameEn": "CJX2s Attributes",
+                "value": "32 امبير",
+                "valueEn": "32A"
+              }
+            ],
+            "basePriceUSD": 16,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-06T13:11:44.268Z",
+            "updatedAt": "2025-11-06T13:14:06.303Z",
+            "__v": 0,
+            "price": 16,
+            "id": "690c9e90ab011a233776cdf8",
+            "pricing": {
+              "basePrice": 16,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 16,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 16,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 16,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 8480,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 8480,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "8,480 $",
+                "formattedFinalPrice": "8,480 $"
+              },
+              "SAR": {
+                "basePrice": 60,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 60,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "60.00 $",
+                "formattedFinalPrice": "60.00 $"
+              }
+            }
+          },
+          {
+            "_id": "690c9e91ab011a233776cdfd",
+            "productId": "690c9e8bab011a233776cddd",
+            "attributeValues": [
+              {
+                "attributeId": "690c9cafab011a233776cd42",
+                "valueId": "690c9d69ab011a233776cd7e",
+                "name": "قدرات CJX2s:",
+                "nameEn": "CJX2s Attributes",
+                "value": "40 امبير",
+                "valueEn": "40A"
+              }
+            ],
+            "basePriceUSD": 30.86,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-06T13:11:45.312Z",
+            "updatedAt": "2025-11-06T13:13:41.026Z",
+            "__v": 0,
+            "price": 30.86,
+            "id": "690c9e91ab011a233776cdfd",
+            "pricing": {
+              "basePrice": 30.86,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 30.86,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 30.86,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 30.86,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 16355.8,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 16355.8,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "16,356 $",
+                "formattedFinalPrice": "16,356 $"
+              },
+              "SAR": {
+                "basePrice": 115.73,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 115.73,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "115.72 $",
+                "formattedFinalPrice": "115.72 $"
+              }
+            }
+          },
+          {
+            "_id": "690c9e92ab011a233776ce02",
+            "productId": "690c9e8bab011a233776cddd",
+            "attributeValues": [
+              {
+                "attributeId": "690c9cafab011a233776cd42",
+                "valueId": "690c9daaab011a233776cd90",
+                "name": "قدرات CJX2s:",
+                "nameEn": "CJX2s Attributes",
+                "value": "50 امبير",
+                "valueEn": "50A"
+              }
+            ],
+            "basePriceUSD": 33,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-06T13:11:46.356Z",
+            "updatedAt": "2025-11-06T13:13:25.498Z",
+            "__v": 0,
+            "price": 33,
+            "id": "690c9e92ab011a233776ce02",
+            "pricing": {
+              "basePrice": 33,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 33,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 33,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 33,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 17490,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 17490,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "17,490 $",
+                "formattedFinalPrice": "17,490 $"
+              },
+              "SAR": {
+                "basePrice": 123.75,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 123.75,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "123.75 $",
+                "formattedFinalPrice": "123.75 $"
+              }
+            }
+          },
+          {
+            "_id": "690c9e93ab011a233776ce07",
+            "productId": "690c9e8bab011a233776cddd",
+            "attributeValues": [
+              {
+                "attributeId": "690c9cafab011a233776cd42",
+                "valueId": "690c9dc1ab011a233776cd9c",
+                "name": "قدرات CJX2s:",
+                "nameEn": "CJX2s Attributes",
+                "value": "65 امبير",
+                "valueEn": "65A"
+              }
+            ],
+            "basePriceUSD": 35.43,
+            "stock": 100,
+            "minStock": 0,
+            "trackInventory": true,
+            "allowBackorder": true,
+            "isActive": true,
+            "isAvailable": true,
+            "salesCount": 0,
+            "deletedAt": null,
+            "createdAt": "2025-11-06T13:11:47.401Z",
+            "updatedAt": "2025-11-06T13:13:12.100Z",
+            "__v": 0,
+            "price": 35.43,
+            "id": "690c9e93ab011a233776ce07",
+            "pricing": {
+              "basePrice": 35.43,
+              "discountPercent": 0,
+              "discountAmount": 0,
+              "finalPrice": 35.43,
+              "currency": "USD"
+            },
+            "pricingByCurrency": {
+              "USD": {
+                "basePrice": 35.43,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 35.43,
+                "currency": "USD"
+              },
+              "YER": {
+                "basePrice": 18777.9,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 18777.9,
+                "currency": "YER",
+                "exchangeRate": 530,
+                "formattedPrice": "18,778 $",
+                "formattedFinalPrice": "18,778 $"
+              },
+              "SAR": {
+                "basePrice": 132.86,
+                "discountPercent": 0,
+                "discountAmount": 0,
+                "finalPrice": 132.86,
+                "currency": "SAR",
+                "exchangeRate": 3.75,
+                "formattedPrice": "132.86 $",
+                "formattedFinalPrice": "132.86 $"
+              }
+            }
+          }
+        ],
+        "priceRangeByCurrency": {
+          "USD": {
+            "minPrice": 13.6,
+            "maxPrice": 35.43,
+            "currency": "USD",
+            "hasDiscountedVariant": false
+          },
+          "YER": {
+            "minPrice": 7208,
+            "maxPrice": 18777.9,
+            "currency": "YER",
+            "hasDiscountedVariant": false
+          },
+          "SAR": {
+            "minPrice": 51,
+            "maxPrice": 132.86,
+            "currency": "SAR",
+            "hasDiscountedVariant": false
+          }
+        },
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 13.6,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 13.6,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 7208,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 7208,
+            "currency": "YER",
+            "exchangeRate": 530,
+            "formattedPrice": "7,208 $",
+            "formattedFinalPrice": "7,208 $"
+          },
+          "SAR": {
+            "basePrice": 51,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 51,
+            "currency": "SAR",
+            "exchangeRate": 3.75,
+            "formattedPrice": "51.00 $",
+            "formattedFinalPrice": "51.00 $"
+          }
+        },
+        "defaultPricing": {
+          "basePrice": 13.6,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 13.6,
+          "currency": "USD"
+        }
+      },
+      {
+        "_id": "690ca137ab011a233776cee5",
+        "name": "مؤقت كهربائي KG316T",
+        "nameEn": "KG316T Time Relay",
+        "slug": "kg316t-time-relay",
+        "description": "مؤقت كهربائي KG316T هو مفتاح زمني (Time Switch / Time Relay) ذكي قابل للبرمجة، يعمل على تحديد مواعيد تشغيل وإيقاف تلقائية للأجهزة الكهربائية وفق ما يحدده المستخدم. يُستخدم للتحكم بأجهزة مثل الإنارة، لوحات الإعلانات، المراوح، أجهزة البث والتلفزيون، وغيرها التي تحتاج جدولة تشغيل ثابتة.",
+        "descriptionEn": "Time Switch is control element with time as control unit and can automatically turn on or tunrn off power supply of various consumer equipments according to preset time by user. The controlled objects are circuit equipments and household appliances such as street lamps, neon lamps, advertising lamps, manufacturing equipments, broadcast & television equipments, etc., which requires turning on and off at definite time",
+        "categoryId": {
+          "_id": "690d2253567068e48ce60726",
+          "parentId": null,
+          "name": "مؤقتات",
+          "nameEn": "timers",
+          "slug": "timers",
+          "description": "",
+          "descriptionEn": "",
+          "imageId": "690d224a567068e48ce60720",
+          "metaKeywords": [],
+          "order": 0,
+          "isActive": true,
+          "isFeatured": false,
+          "productsCount": 2,
+          "childrenCount": 0,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T22:33:55.745Z",
+          "updatedAt": "2025-11-07T12:03:53.664Z",
+          "__v": 0
+        },
+        "brandId": {
+          "_id": "68ffa9a355755bbf62105206",
+          "name": "CNC",
+          "nameEn": "CNC",
+          "slug": "cnc",
+          "image": "https://tagadod.b-cdn.net/media/brand/327c9b85-8696-4e9f-9d26-5f63549e6691-4_5764614038499629247.png",
+          "description": "براند CNC ",
+          "descriptionEn": "CNC BRAND",
+          "isActive": true,
+          "sortOrder": 3,
+          "createdAt": "2025-10-27T17:19:31.173Z",
+          "updatedAt": "2025-11-06T13:08:54.516Z",
+          "__v": 0,
+          "metadata": {}
+        },
+        "mainImageId": {
+          "_id": "690ca07cab011a233776ceaf",
+          "url": "https://tagadod.b-cdn.net/media/product/fdc96d57-342d-4d1c-aecd-64ed93b28047-68ca927685091_Remove background project (2).png",
+          "filename": "68ca927685091_Remove background project (2).png",
+          "storedFilename": "media/product/fdc96d57-342d-4d1c-aecd-64ed93b28047-68ca927685091_Remove background project (2).png",
+          "name": "68ca927685091_Remove background project (2)",
+          "category": "product",
+          "type": "image",
+          "mimeType": "image/png",
+          "size": 300179,
+          "width": 800,
+          "height": 800,
+          "fileHash": "4b505f6ba40a19473f4d11afaf7bd8105be6eec48fb21f0f5508779655e2d4ad",
+          "description": "",
+          "tags": [],
+          "uploadedBy": "68ff95bc23fc16f642cb910a",
+          "usageCount": 0,
+          "usedIn": [],
+          "isPublic": true,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T13:19:56.720Z",
+          "updatedAt": "2025-11-06T13:19:56.720Z",
+          "__v": 0
+        },
+        "imageIds": [
+          "690ca0f8ab011a233776cecb",
+          "690ca106ab011a233776ced5"
+        ],
+        "attributes": [],
+        "status": "active",
+        "isActive": true,
+        "isFeatured": true,
+        "isNew": true,
+        "isBestseller": true,
+        "viewsCount": 4,
+        "salesCount": 0,
+        "variantsCount": 0,
+        "reviewsCount": 0,
+        "averageRating": 0,
+        "useManualRating": true,
+        "manualRating": 5,
+        "manualReviewsCount": 999,
+        "metaKeywords": [],
+        "order": 0,
+        "relatedProducts": [],
+        "deletedAt": null,
+        "updatedAt": "2025-11-08T11:16:41.005Z",
+        "__v": 0,
+        "compareAtPriceUSD": 100,
+        "createdAt": "2025-11-06T22:44:52.246Z",
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 100,
+            "compareAtPrice": 100,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 100,
+            "currency": "USD"
+          },
+          "SAR": {
+            "basePrice": 375,
+            "compareAtPrice": 375,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 375,
+            "currency": "SAR",
+            "exchangeRate": 3.75,
+            "formattedPrice": "375.00 $",
+            "formattedFinalPrice": "375.00 $"
+          },
+          "YER": {
+            "basePrice": 53000,
+            "compareAtPrice": 53000,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 53000,
+            "currency": "YER",
+            "exchangeRate": 530,
+            "formattedPrice": "53,000 $",
+            "formattedFinalPrice": "53,000 $"
+          }
+        },
+        "defaultPricing": {
+          "basePrice": 100,
+          "compareAtPrice": 100,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 100,
+          "currency": "USD"
+        }
+      },
+      {
+        "_id": "690d24e4567068e48ce6080b",
+        "name": "مؤقت كهربائي SUL181d",
+        "nameEn": "SUL181d Time Relay",
+        "slug": "sul181d-time-relay",
+        "description": "مؤقت كهربائي SUL181d هو مفتاح توقيت تماثلي (Analogue Time Switch) ذو قناة واحدة ببرنامج يومي، مزود ببطارية NiMH قابلة للشحن للاحتفاظ بالتوقيت عند انقطاع التيار. يحتوي الجهاز على 96 مقطع تبديل في اليوم (كل مقطع 15 دقيقة) كمعدل أدنى للتبديل. يتم التحكم فيه بواسطة ساعة كوارتز عالية الدقة، مع عرض للوقت باستخدام عقارب الساعة، مع إمكانية التبديل بين نظامي 12 ساعة و24 ساعة. يدعم تعديل بسيط للتوقيت الصيفي/الشتوي، ويمكن تدوير الساعة في الاتجاهين (مع عقارب الساعة وعكسها). مزود بأطراف DuoFix بنوابض لتركيب موصلين في كل طرف (0.5-2.5 مم²)، مع زر لتحرير التوصيل، وانتقاء مسبق للتبديل. يحتوي مفتاح يدوي بثلاث وضعيات: تشغيل دائم (ON)، أو أوتوماتيكي (AUTO)، أو إيقاف دائم (OFF)، ويوجد مؤشر لحالة التبديل.",
+        "descriptionEn": "Feature ·Analogue time switch ·1 channel Daily program ·With power reserve(NiMH rechargeable battery) ·96switching segments ·Quartz controlled ·Shortest switching time15 minutes ·Clock hands for time display andin addition 1224 hour recognition ·Simple summerwintertime correction ·Time canbe changed dockwise oranti-clockwise ·DuoFix spring terminals ·For 2 conductors each ·Wire or strand (withor without wire end sleeve) ·Wire diameter0.5-2.5 mm² ·Button for releasing plug-in connection ·Switching preselection ·Manual switch with3 positionsContinuous ONAUTOcontinuousOFF ·Switching status display",
+        "categoryId": {
+          "_id": "690d2253567068e48ce60726",
+          "parentId": null,
+          "name": "مؤقتات",
+          "nameEn": "timers",
+          "slug": "timers",
+          "description": "",
+          "descriptionEn": "",
+          "imageId": "690d224a567068e48ce60720",
+          "metaKeywords": [],
+          "order": 0,
+          "isActive": true,
+          "isFeatured": false,
+          "productsCount": 2,
+          "childrenCount": 0,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T22:33:55.745Z",
+          "updatedAt": "2025-11-07T12:03:53.664Z",
+          "__v": 0
+        },
+        "brandId": {
+          "_id": "68ffa9a355755bbf62105206",
+          "name": "CNC",
+          "nameEn": "CNC",
+          "slug": "cnc",
+          "image": "https://tagadod.b-cdn.net/media/brand/327c9b85-8696-4e9f-9d26-5f63549e6691-4_5764614038499629247.png",
+          "description": "براند CNC ",
+          "descriptionEn": "CNC BRAND",
+          "isActive": true,
+          "sortOrder": 3,
+          "createdAt": "2025-10-27T17:19:31.173Z",
+          "updatedAt": "2025-11-06T13:08:54.516Z",
+          "__v": 0,
+          "metadata": {}
+        },
+        "mainImageId": {
+          "_id": "690d224a567068e48ce60720",
+          "url": "https://tagadod.b-cdn.net/media/category/70a08931-8677-4adc-9a2c-90bedd58b151-timer.png",
+          "filename": "timer.png",
+          "storedFilename": "media/category/70a08931-8677-4adc-9a2c-90bedd58b151-timer.png",
+          "name": "timer",
+          "category": "category",
+          "type": "image",
+          "mimeType": "image/png",
+          "size": 420060,
+          "width": 800,
+          "height": 800,
+          "fileHash": "46061c09f17774e0b7bd6ac517a92fa5a889140baf2ec74a290e9758cb4685a7",
+          "description": "",
+          "tags": [],
+          "uploadedBy": "68ff95bc23fc16f642cb910a",
+          "usageCount": 0,
+          "usedIn": [],
+          "isPublic": true,
+          "deletedAt": null,
+          "createdAt": "2025-11-06T22:33:46.189Z",
+          "updatedAt": "2025-11-06T22:33:46.189Z",
+          "__v": 0
+        },
+        "imageIds": [],
+        "attributes": [],
+        "status": "active",
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": true,
+        "isBestseller": true,
+        "viewsCount": 1,
+        "salesCount": 0,
+        "variantsCount": 0,
+        "reviewsCount": 0,
+        "averageRating": 0,
+        "useManualRating": true,
+        "manualRating": 4,
+        "manualReviewsCount": 0,
+        "metaKeywords": [],
+        "order": 0,
+        "relatedProducts": [
+          "690ca137ab011a233776cee5",
+          "690c9e8bab011a233776cddd"
+        ],
+        "deletedAt": null,
+        "createdAt": "2025-11-06T22:44:52.246Z",
+        "updatedAt": "2025-11-07T23:35:12.197Z",
+        "__v": 0,
+        "compareAtPriceUSD": 99.99,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 99.99,
+            "compareAtPrice": 99.99,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 99.99,
+            "currency": "USD"
+          },
+          "SAR": {
+            "basePrice": 374.96,
+            "compareAtPrice": 374.96,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 374.96,
+            "currency": "SAR",
+            "exchangeRate": 3.75,
+            "formattedPrice": "374.96 $",
+            "formattedFinalPrice": "374.96 $"
+          },
+          "YER": {
+            "basePrice": 52994.7,
+            "compareAtPrice": 52994.7,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 52994.7,
+            "currency": "YER",
+            "exchangeRate": 530,
+            "formattedPrice": "52,995 $",
+            "formattedFinalPrice": "52,995 $"
+          }
+        },
+        "defaultPricing": {
+          "basePrice": 99.99,
+          "compareAtPrice": 99.99,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 99.99,
+          "currency": "USD"
+        }
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 20,
+      "total": 6,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPrevPage": false
+    }
+  },
+  "requestId": "b3105609-678c-4de5-b83c-1a49568ea49f"
+}

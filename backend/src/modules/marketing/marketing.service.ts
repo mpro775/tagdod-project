@@ -22,6 +22,19 @@ type BannerWithPopulatedImage = Omit<Banner, 'imageId'> & {
   _id: Types.ObjectId;
 };
 
+type PublicBannerResponse = {
+  id: string;
+  image: { id?: string; url: string } | null;
+  linkUrl?: string;
+  navigationType: BannerNavigationType;
+  navigationTarget?: string;
+  navigationParams?: Record<string, unknown>;
+  location: BannerLocation;
+  sortOrder: number;
+  isActive: boolean;
+  altText?: string | null;
+};
+
 @Injectable()
 export class MarketingService {
   private readonly logger = new Logger(MarketingService.name);
@@ -618,7 +631,10 @@ export class MarketingService {
     return !!result;
   }
 
-  async getActiveBanners(location?: BannerLocation, userRoles?: string[]): Promise<Banner[]> {
+  async getActiveBanners(
+    location?: BannerLocation,
+    userRoles?: string[],
+  ): Promise<PublicBannerResponse[]> {
     const now = new Date();
     const query: Record<string, unknown> = {
       isActive: true,
@@ -635,21 +651,19 @@ export class MarketingService {
     const allBanners = await this.bannerModel.find(query).populate('imageId').sort({ sortOrder: 1 }).lean<BannerWithPopulatedImage[]>();
 
     // Filter by user types if provided
-    if (userRoles && userRoles.length > 0) {
-      return allBanners.filter(banner => {
-        // If banner has no targetUserTypes, it's visible to everyone
-        if (!banner.targetUserTypes || banner.targetUserTypes.length === 0) {
-          return true;
-        }
-        // Check if user's roles match any of the banner's targetUserTypes
-        return banner.targetUserTypes.some(targetType => userRoles.includes(targetType));
-      }).map(banner => this.formatBannerForResponse(banner));
-    }
+    const visibleBanners =
+      userRoles && userRoles.length > 0
+        ? allBanners.filter((banner) => {
+            if (!banner.targetUserTypes || banner.targetUserTypes.length === 0) {
+              return true;
+            }
+            return banner.targetUserTypes.some((targetType) => userRoles.includes(targetType));
+          })
+        : allBanners.filter(
+            (banner) => !banner.targetUserTypes || banner.targetUserTypes.length === 0,
+          );
 
-    // If no user roles provided, only return banners visible to everyone
-    return allBanners.filter(banner => 
-      !banner.targetUserTypes || banner.targetUserTypes.length === 0
-    ).map(banner => this.formatBannerForResponse(banner));
+    return visibleBanners.map((banner) => this.mapPublicBannerResponse(banner));
   }
 
   /**
@@ -671,6 +685,44 @@ export class MarketingService {
     }
     
     return formatted;
+  }
+
+  private mapPublicBannerResponse(banner: BannerWithPopulatedImage): PublicBannerResponse {
+    const formatted = this.formatBannerForResponse(banner);
+
+    const imageRecord =
+      formatted.imageId && typeof formatted.imageId === 'object'
+        ? (formatted.imageId as Media)
+        : null;
+
+    const imageIdValue = (imageRecord as unknown as { _id?: Types.ObjectId | string })?._id;
+
+    const image = imageRecord?.url
+      ? {
+          ...(imageIdValue ? { id: imageIdValue.toString() } : {}),
+          url: imageRecord.url,
+        }
+      : null;
+
+    const navigationParams =
+      formatted.navigationParams && Object.keys(formatted.navigationParams).length > 0
+        ? formatted.navigationParams
+        : undefined;
+
+    const id = banner._id?.toString?.() ?? '';
+
+    return {
+      id,
+      image,
+      ...(formatted.linkUrl ? { linkUrl: formatted.linkUrl } : {}),
+      navigationType: formatted.navigationType ?? BannerNavigationType.NONE,
+      ...(formatted.navigationTarget ? { navigationTarget: formatted.navigationTarget } : {}),
+      ...(navigationParams ? { navigationParams } : {}),
+      location: formatted.location,
+      sortOrder: formatted.sortOrder ?? 0,
+      isActive: !!formatted.isActive,
+      ...(formatted.altText ? { altText: formatted.altText } : {}),
+    };
   }
 
   async incrementBannerView(id: string): Promise<void> {

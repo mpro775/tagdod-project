@@ -6149,7 +6149,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "_id": {
+                          "id": {
                             "type": "string",
                             "example": "64a1b2c3d4e5f6789abcdef0"
                           },
@@ -6161,41 +6161,31 @@
                             "type": "string",
                             "example": "Electronics"
                           },
-                          "slug": {
-                            "type": "string",
-                            "example": "electronics"
-                          },
-                          "description": {
-                            "type": "string",
-                            "example": "جميع الأجهزة الإلكترونية والكهربائية"
-                          },
                           "parentId": {
                             "type": "string",
                             "example": null
                           },
-                          "isActive": {
-                            "type": "boolean",
-                            "example": true
+                          "image": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "64img123abc"
+                              },
+                              "path": {
+                                "type": "string",
+                                "example": "media/category/lighting.png"
+                              }
+                            }
                           },
-                          "isFeatured": {
+                          "isActive": {
                             "type": "boolean",
                             "example": true
                           },
                           "order": {
                             "type": "number",
                             "example": 1
-                          },
-                          "productCount": {
-                            "type": "number",
-                            "example": 25
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time"
                           }
                         }
                       }
@@ -6693,7 +6683,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "_id": {
+                          "id": {
                             "type": "string",
                             "example": "64a1b2c3d4e5f6789abcdef0"
                           },
@@ -6705,41 +6695,31 @@
                             "type": "string",
                             "example": "Featured Electronics"
                           },
-                          "slug": {
-                            "type": "string",
-                            "example": "featured-electronics"
-                          },
-                          "description": {
-                            "type": "string",
-                            "example": "أفضل الأجهزة الإلكترونية المختارة"
-                          },
                           "parentId": {
                             "type": "string",
                             "example": null
                           },
-                          "isActive": {
-                            "type": "boolean",
-                            "example": true
+                          "image": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "64img123abc"
+                              },
+                              "path": {
+                                "type": "string",
+                                "example": "media/category/featured.png"
+                              }
+                            }
                           },
-                          "isFeatured": {
+                          "isActive": {
                             "type": "boolean",
                             "example": true
                           },
                           "order": {
                             "type": "number",
                             "example": 1
-                          },
-                          "productCount": {
-                            "type": "number",
-                            "example": 10
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time"
                           }
                         }
                       }
