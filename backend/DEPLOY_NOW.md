@@ -2,8 +2,10 @@
 
 ## التغييرات المطبقة:
 ✅ تحويل Dockerfile من Alpine إلى Debian  
-✅ إضافة مكتبات libvips للـ runtime  
+✅ إضافة جميع المكتبات المطلوبة (libvips, libglib, libexpat)  
+✅ إعادة بناء Sharp في الـ runtime environment  
 ✅ إضافة postinstall script لإعادة بناء Sharp  
+✅ استخدام `--verbose` لمعرفة تفاصيل البناء  
 
 ---
 

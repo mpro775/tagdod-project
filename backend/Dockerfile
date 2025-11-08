@@ -44,9 +44,14 @@ FROM node:20-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install runtime dependencies for sharp and other native modules
+# Install ALL dependencies needed for sharp at runtime
 RUN apt-get update && apt-get install -y \
     libvips-dev \
+    libglib2.0-0 \
+    libglib2.0-dev \
+    libexpat1 \
+    build-essential \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # لو تطبيقك يحتاج فقط prod deps:
@@ -57,6 +62,9 @@ RUN apt-get update && apt-get install -y \
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json ./
+
+# Rebuild sharp in the final runtime environment to ensure compatibility
+RUN npm rebuild sharp --verbose
 
 HEALTHCHECK CMD node -e "require('http').get('http://localhost:3000/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 EXPOSE 3000
