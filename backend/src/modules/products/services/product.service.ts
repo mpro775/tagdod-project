@@ -202,7 +202,18 @@ export class ProductService {
     }
 
     if (categoryId) {
-      filter.categoryId = new Types.ObjectId(categoryId);
+      const candidates: Array<string | Types.ObjectId> = [];
+
+      if (Types.ObjectId.isValid(categoryId)) {
+        const objectId = new Types.ObjectId(categoryId);
+        candidates.push(objectId);
+        candidates.push(objectId.toHexString());
+      } else {
+        candidates.push(categoryId);
+      }
+
+      filter.categoryId =
+        candidates.length === 1 ? candidates[0] : { $in: candidates };
     }
 
     if (brandId) {
@@ -436,8 +447,9 @@ export class ProductService {
 
   private async clearCache(): Promise<void> {
     try {
-      await this.cacheService.clear('product:*');
-      await this.cacheService.clear('products:*');
+      await this.cacheService.clear('product:');
+      await this.cacheService.clear('products:');
+      await this.cacheService.clear('response:');
       this.logger.log('Cleared all product caches');
     } catch (error) {
       this.logger.error('Error clearing product caches:', error);

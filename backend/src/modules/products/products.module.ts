@@ -5,6 +5,7 @@ import { VariantService } from './services/variant.service';
 import { PricingService } from './services/pricing.service';
 import { InventoryService } from './services/inventory.service';
 import { StockAlertService } from './services/stock-alert.service';
+import { PublicProductsPresenter } from './services/public-products.presenter';
 import { ProductsController } from './controllers/products.controller';
 import { PublicProductsController } from './controllers/public-products.controller';
 import { Product, ProductSchema } from './schemas/product.schema';
@@ -45,6 +46,7 @@ import { SharedModule } from '../../shared/shared.module';
     PricingService,
     InventoryService,
     StockAlertService,
+    PublicProductsPresenter,
   ],
   exports: [
     ProductService,
@@ -52,6 +54,7 @@ import { SharedModule } from '../../shared/shared.module';
     PricingService,
     InventoryService,
     StockAlertService,
+    PublicProductsPresenter,
     MongooseModule
   ],
 })

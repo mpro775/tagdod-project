@@ -361,17 +361,24 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Clear all cache keys with prefix
    */
   async clear(prefix?: string): Promise<void> {
-    const pattern = this.generateKey('*', prefix);
+    const globalPrefix = this.configService.get('CACHE_PREFIX', 'solar:');
+    const basePrefix = prefix
+      ? prefix.startsWith(globalPrefix)
+        ? prefix
+        : `${globalPrefix}${prefix}`
+      : globalPrefix;
+
+    const pattern = basePrefix.endsWith('*') ? basePrefix : `${basePrefix}*`;
 
     try {
       const keys = await this.redis.keys(pattern);
       if (keys.length > 0) {
         await this.redis.del(...keys);
         this.stats.deletes += keys.length;
-        this.logger.log(`Cleared ${keys.length} cache keys with prefix ${prefix}`);
+        this.logger.log(`Cleared ${keys.length} cache keys with pattern ${pattern}`);
       }
     } catch (error) {
-      this.logger.error(`Failed to clear cache with prefix ${prefix}:`, error);
+      this.logger.error(`Failed to clear cache with pattern ${pattern}:`, error);
       throw error;
     }
   }

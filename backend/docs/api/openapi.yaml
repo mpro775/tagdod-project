@@ -4230,6 +4230,20 @@ paths:
           schema:
             example: false
             type: boolean
+        - name: currency
+          required: false
+          in: query
+          description: رمز العملة المطلوبة (افتراضي USD)
+          schema:
+            example: SAR
+            type: string
+        - name: force
+          required: false
+          in: query
+          description: تجاوز التخزين المؤقت وإرجاع البيانات المحدثة فوراً
+          schema:
+            example: false
+            type: boolean
       responses:
         '200':
           description: تم الحصول على المنتجات بنجاح
