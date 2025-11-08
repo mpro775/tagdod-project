@@ -18,6 +18,7 @@ import {
   useTheme,
   Divider,
   Chip,
+  Alert,
 } from '@mui/material';
 import {
   Save,
@@ -29,8 +30,24 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { PolicyEditor } from '../components/PolicyEditor';
 import { PolicyPreview } from '../components/PolicyPreview';
-import { usePolicy, useUpdatePolicy, useTogglePolicy } from '../hooks/usePolicies';
+import { usePolicy, useUpdatePolicy, useTogglePolicy, useCreatePolicy } from '../hooks/usePolicies';
 import { PolicyType } from '../types/policy.types';
+
+interface PolicyFormState {
+  titleAr: string;
+  titleEn: string;
+  contentAr: string;
+  contentEn: string;
+  isActive: boolean;
+}
+
+const getEmptyPolicyFormState = (): PolicyFormState => ({
+  titleAr: '',
+  titleEn: '',
+  contentAr: '',
+  contentEn: '',
+  isActive: true,
+});
 
 export const PoliciesManagementPage: React.FC = () => {
   const { t } = useTranslation('policies');
@@ -46,14 +63,13 @@ export const PoliciesManagementPage: React.FC = () => {
   const { data: policy, isLoading, error, refetch } = usePolicy(currentPolicyType);
   const updateMutation = useUpdatePolicy();
   const toggleMutation = useTogglePolicy();
+  const createMutation = useCreatePolicy();
 
-  const [formData, setFormData] = useState({
-    titleAr: '',
-    titleEn: '',
-    contentAr: '',
-    contentEn: '',
-    isActive: true,
-  });
+  const [formData, setFormData] = useState<PolicyFormState>(getEmptyPolicyFormState);
+
+  const isSaving = updateMutation.isPending || createMutation.isPending;
+  const isNewPolicy = policy === null;
+  const hasPolicy = Boolean(policy);
 
   useEffect(() => {
     if (policy) {
@@ -64,16 +80,25 @@ export const PoliciesManagementPage: React.FC = () => {
         contentEn: policy.contentEn || '',
         isActive: policy.isActive,
       });
+    } else if (policy === null) {
+      setFormData(getEmptyPolicyFormState());
     }
   }, [policy]);
 
   const handleSave = async () => {
     try {
-      await updateMutation.mutateAsync({
-        type: currentPolicyType,
-        data: formData,
-      });
-      refetch();
+      if (hasPolicy) {
+        await updateMutation.mutateAsync({
+          type: currentPolicyType,
+          data: formData,
+        });
+      } else {
+        await createMutation.mutateAsync({
+          type: currentPolicyType,
+          ...formData,
+        });
+      }
+      await refetch();
     } catch (error) {
       // Error is handled by the hook
     }
@@ -81,6 +106,10 @@ export const PoliciesManagementPage: React.FC = () => {
 
   const handleToggle = async (isActive: boolean) => {
     try {
+      if (!hasPolicy) {
+        setFormData((prev) => ({ ...prev, isActive }));
+        return;
+      }
       await toggleMutation.mutateAsync({
         type: currentPolicyType,
         data: { isActive },
@@ -121,19 +150,19 @@ export const PoliciesManagementPage: React.FC = () => {
     );
   }
 
-  if (!policy) {
-    return (
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
-        <Typography variant={isMobile ? 'body2' : 'body1'} color="text.secondary">
-          {t('errors.notFound')}
-        </Typography>
-      </Box>
-    );
-  }
-
   const currentTitle = languageTab === 0 ? formData.titleAr : formData.titleEn;
   const currentContent = languageTab === 0 ? formData.contentAr : formData.contentEn;
   const currentLanguage = languageTab === 0 ? 'ar' : 'en';
+  const statusTitle = isNewPolicy
+    ? t('status.notCreated')
+    : formData.isActive
+    ? t('status.active')
+    : t('status.inactive');
+  const statusDescription = isNewPolicy
+    ? t('status.notCreatedDesc')
+    : formData.isActive
+    ? t('status.activeDesc')
+    : t('status.inactiveDesc');
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3, md: 3 } }}>
@@ -206,6 +235,23 @@ export const PoliciesManagementPage: React.FC = () => {
           border: `1px solid ${theme.palette.divider}`,
         }}
       >
+        {isNewPolicy && (
+          <Alert
+            severity="info"
+            sx={{
+              mb: { xs: 2, md: 3 },
+              border: `1px solid ${theme.palette.info.light}`,
+            }}
+          >
+            <Typography variant={isMobile ? 'body2' : 'body1'} fontWeight={500}>
+              {t('empty.title')}
+            </Typography>
+            <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+              {t('empty.description')}
+            </Typography>
+          </Alert>
+        )}
+
         {/* Status and Actions */}
         <Stack
           direction={isMobile ? 'column' : 'row'}
@@ -220,7 +266,7 @@ export const PoliciesManagementPage: React.FC = () => {
                 <Switch
                   checked={formData.isActive}
                   onChange={(e) => handleToggle(e.target.checked)}
-                  disabled={toggleMutation.isPending}
+                  disabled={toggleMutation.isPending || isSaving}
                   sx={{
                     '& .MuiSwitch-switchBase.Mui-checked': {
                       color: theme.palette.success.main,
@@ -238,23 +284,49 @@ export const PoliciesManagementPage: React.FC = () => {
                     fontWeight="medium"
                     sx={{ color: theme.palette.text.primary }}
                   >
-                    {t('status.active')}
+                    {statusTitle}
                   </Typography>
                   <Typography
                     variant="caption"
                     color="text.secondary"
                     sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
                   >
-                    {formData.isActive ? t('status.activeDesc') : t('status.inactiveDesc')}
+                    {statusDescription}
                   </Typography>
                 </Box>
               }
               sx={{ m: 0 }}
             />
-            {formData.isActive && (
+            {formData.isActive && hasPolicy && (
               <Chip
                 label={t('status.published')}
                 color="success"
+                size={isMobile ? 'small' : 'small'}
+                sx={{
+                  ml: { xs: 1, md: 2 },
+                  mt: { xs: 1, md: 0 },
+                  fontSize: isMobile ? '0.7rem' : undefined,
+                  height: isMobile ? '20px' : undefined,
+                }}
+              />
+            )}
+            {!formData.isActive && hasPolicy && (
+              <Chip
+                label={t('status.inactive')}
+                color="warning"
+                size={isMobile ? 'small' : 'small'}
+                sx={{
+                  ml: { xs: 1, md: 2 },
+                  mt: { xs: 1, md: 0 },
+                  fontSize: isMobile ? '0.7rem' : undefined,
+                  height: isMobile ? '20px' : undefined,
+                }}
+              />
+            )}
+            {isNewPolicy && (
+              <Chip
+                label={t('status.draft')}
+                color="default"
                 size={isMobile ? 'small' : 'small'}
                 sx={{
                   ml: { xs: 1, md: 2 },
@@ -296,11 +368,11 @@ export const PoliciesManagementPage: React.FC = () => {
               variant="contained"
               startIcon={<Save />}
               onClick={handleSave}
-              disabled={updateMutation.isPending}
+              disabled={isSaving}
               fullWidth={isMobile}
               size={isMobile ? 'medium' : 'medium'}
             >
-              {updateMutation.isPending ? t('actions.saving') : t('actions.save')}
+              {isSaving ? t('actions.saving') : t('actions.save')}
             </Button>
           </Stack>
         </Stack>

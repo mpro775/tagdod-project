@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsBoolean, IsNumber, Min } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsBoolean, IsNumber, Min, IsMongoId, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentAccountType } from '../schemas/local-payment-account.schema';
 
@@ -7,10 +7,11 @@ export class CreateLocalPaymentAccountDto {
   @IsString()
   providerName!: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/icon.png' })
+  @ApiPropertyOptional({ example: '64f9c0b5c1a2b3d4e5f67890', description: 'معرف الوسائط للأيقونة' })
   @IsOptional()
-  @IsString()
-  iconUrl?: string;
+  @ValidateIf((_, value) => value !== null && value !== '')
+  @IsMongoId()
+  iconMediaId?: string | null;
 
   @ApiProperty({ example: '1234567890', description: 'رقم الحساب' })
   @IsString()
@@ -49,8 +50,9 @@ export class UpdateLocalPaymentAccountDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  iconUrl?: string;
+  @ValidateIf((_, value) => value !== null && value !== '')
+  @IsMongoId()
+  iconMediaId?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -85,12 +87,26 @@ export class UpdateLocalPaymentAccountDto {
 }
 
 // DTO للعرض المجمع
+export class MediaReferenceDto {
+  @ApiProperty({ example: '64f9c0b5c1a2b3d4e5f67890' })
+  id!: string;
+
+  @ApiProperty({ example: 'https://cdn.example.com/images/bank-icon.png' })
+  url!: string;
+
+  @ApiPropertyOptional({ example: 'أيقونة بنك الكريمي' })
+  name?: string;
+}
+
 export class GroupedPaymentAccountDto {
   @ApiProperty({ example: 'الكريمي' })
   providerName!: string;
 
-  @ApiPropertyOptional()
-  iconUrl?: string;
+  @ApiPropertyOptional({
+    type: () => MediaReferenceDto,
+    description: 'بيانات الوسائط المرتبطة بالأيقونة',
+  })
+  icon?: MediaReferenceDto;
 
   @ApiProperty({ enum: PaymentAccountType })
   type!: PaymentAccountType;

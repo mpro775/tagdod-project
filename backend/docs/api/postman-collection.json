@@ -12317,6 +12317,32 @@
           }
         },
         {
+          "name": "إنشاء سياسة جديدة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/policies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "policies"
+              ]
+            },
+            "description": "إنشاء سياسة جديدة من لوحة التحكم (terms أو privacy)"
+          }
+        },
+        {
           "name": "جلب سياسة حسب النوع",
           "request": {
             "method": "GET",

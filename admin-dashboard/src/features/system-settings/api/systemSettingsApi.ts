@@ -109,10 +109,17 @@ export const systemSettingsApi = {
 
 // ==================== Local Payment Accounts ====================
 
+export interface MediaReference {
+  id: string;
+  url: string;
+  name?: string;
+}
+
 export interface LocalPaymentAccount {
   _id: string;
   providerName: string;
-  iconUrl?: string;
+  iconMediaId?: string | null;
+  icon?: MediaReference;
   accountNumber: string;
   type: 'bank' | 'wallet';
   currency: 'YER' | 'SAR' | 'USD';
@@ -126,7 +133,7 @@ export interface LocalPaymentAccount {
 
 export interface GroupedPaymentAccount {
   providerName: string;
-  iconUrl?: string;
+  icon?: MediaReference;
   type: 'bank' | 'wallet';
   accounts: Array<{
     id: string;
@@ -139,7 +146,7 @@ export interface GroupedPaymentAccount {
 
 export interface CreatePaymentAccountDto {
   providerName: string;
-  iconUrl?: string;
+  iconMediaId?: string | null;
   accountNumber: string;
   type: 'bank' | 'wallet';
   currency: 'YER' | 'SAR' | 'USD';
@@ -150,7 +157,7 @@ export interface CreatePaymentAccountDto {
 
 export interface UpdatePaymentAccountDto {
   providerName?: string;
-  iconUrl?: string;
+  iconMediaId?: string | null;
   accountNumber?: string;
   type?: 'bank' | 'wallet';
   currency?: 'YER' | 'SAR' | 'USD';

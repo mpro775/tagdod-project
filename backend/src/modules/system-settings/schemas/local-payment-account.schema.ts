@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type LocalPaymentAccountDocument = LocalPaymentAccount & Document;
 
@@ -13,8 +13,8 @@ export class LocalPaymentAccount {
   @Prop({ required: true, index: true })
   providerName!: string; // اسم البنك/المحفظة (مثل: الكريمي، M-pesa، إلخ)
 
-  @Prop()
-  iconUrl?: string; // رابط أيقونة البنك/المحفظة
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  iconMediaId?: Types.ObjectId | string; // مرجع إلى الوسائط (الأيقونة)
 
   @Prop({ required: true })
   accountNumber!: string; // رقم الحساب الخاص بهذا الحساب

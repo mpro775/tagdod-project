@@ -1,10 +1,12 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/shared/types/common.types';
+import { isAxiosError } from 'axios';
 import type {
   Policy,
   PolicyType,
   UpdatePolicyDto,
   TogglePolicyDto,
+  CreatePolicyDto,
 } from '../types/policy.types';
 
 export const policiesApi = {
@@ -19,8 +21,23 @@ export const policiesApi = {
   /**
    * Get policy by type (Admin)
    */
-  getByType: async (type: PolicyType): Promise<Policy> => {
-    const response = await apiClient.get<ApiResponse<Policy>>(`/admin/policies/${type}`);
+  getByType: async (type: PolicyType): Promise<Policy | null> => {
+    try {
+      const response = await apiClient.get<ApiResponse<Policy>>(`/admin/policies/${type}`);
+      return response.data.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Create policy (Admin)
+   */
+  create: async (data: CreatePolicyDto): Promise<Policy> => {
+    const response = await apiClient.post<ApiResponse<Policy>>('/admin/policies', data);
     return response.data.data;
   },
 

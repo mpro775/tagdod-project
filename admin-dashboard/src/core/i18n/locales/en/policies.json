@@ -8,7 +8,11 @@
   "status": {
     "active": "Active",
     "activeDesc": "Policy is active and publicly available",
+    "inactive": "Inactive",
     "inactiveDesc": "Policy is inactive",
+    "notCreated": "Not created yet",
+    "notCreatedDesc": "This policy has not been created yet. Add the content below and press save to create it.",
+    "draft": "Draft",
     "published": "Published"
   },
   "actions": {
@@ -35,7 +39,24 @@
   },
   "errors": {
     "loadFailed": "Failed to load policy",
-    "notFound": "Policy not found"
+    "notFound": "Policy not found",
+    "createFailed": "Failed to create policy",
+    "updateFailed": "Failed to update policy",
+    "toggleFailed": "Failed to toggle policy status",
+    "validation": {
+      "titleArRequired": "Arabic title is required",
+      "titleEnRequired": "English title is required",
+      "contentArRequired": "Arabic content is required",
+      "contentEnRequired": "English content is required",
+      "titleArEmpty": "Arabic title should not be empty",
+      "titleEnEmpty": "English title should not be empty",
+      "contentArEmpty": "Arabic content should not be empty",
+      "contentEnEmpty": "English content should not be empty"
+    }
+  },
+  "empty": {
+    "title": "This policy has not been created yet",
+    "description": "Add content in the fields below and press save to create the policy."
   },
   "editor": {
     "placeholder": "Enter content...",
