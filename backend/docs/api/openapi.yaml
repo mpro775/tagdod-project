@@ -445,6 +445,422 @@ paths:
           description: بيانات غير صحيحة أو رقم الهاتف موجود مسبقاً
       tags:
         - المصادقة
+  /api/v1/auth/biometric/register-challenge:
+    post:
+      operationId: createBiometricRegisterChallenge
+      summary: الحصول على تحدي WebAuthn لتسجيل بصمة اليد
+      description: ينشئ تحدياً لتسجيل جهاز جديد باستخدام WebAuthn للمستخدم المحدد
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BiometricRegisterChallengeDto'
+      responses:
+        '200':
+          description: تم إنشاء التحدي بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  options:
+                    type: object
+                    properties:
+                      challenge:
+                        type: string
+                        example: base64url-encoded-challenge
+                      rp:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: Tagdod Platform
+                          id:
+                            type: string
+                            example: localhost
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: base64-encoded-user-id
+                          name:
+                            type: string
+                            example: '+966501234567'
+                          displayName:
+                            type: string
+                            example: '+966501234567'
+                      pubKeyCredParams:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              example: public-key
+                            alg:
+                              type: number
+                              example: -7
+                      timeout:
+                        type: number
+                        example: 300000
+                      attestationType:
+                        type: string
+                        example: none
+                      authenticatorSelection:
+                        type: object
+                        properties:
+                          residentKey:
+                            type: string
+                            example: preferred
+                          userVerification:
+                            type: string
+                            example: required
+                      excludeCredentials:
+                        type: array
+                        items:
+                          type: object
+        '400':
+          description: بيانات غير صحيحة أو رقم هاتف غير صالح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 400
+                  message:
+                    type: string
+                    example: صيغة رقم الهاتف غير صحيحة
+                  error:
+                    type: string
+                    example: Bad Request
+        '401':
+          description: المستخدم غير موجود أو الحساب غير نشط
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 401
+                  message:
+                    type: string
+                    example: المستخدم غير موجود
+                  error:
+                    type: string
+                    example: Unauthorized
+      tags:
+        - المصادقة
+  /api/v1/auth/biometric/register-verify:
+    post:
+      operationId: verifyBiometricRegister
+      summary: التحقق من استجابة WebAuthn لإتمام تسجيل بصمة اليد
+      description: يتحقق من استجابة WebAuthn ويخزن بيانات الجهاز المسجل
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BiometricRegisterVerifyDto'
+      responses:
+        '200':
+          description: تم تسجيل الجهاز بنجاح وإصدار التوكنات
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokens:
+                    type: object
+                    properties:
+                      access:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      refresh:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  me:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: 507f1f77bcf86cd799439011
+                      phone:
+                        type: string
+                        example: '+966501234567'
+                      firstName:
+                        type: string
+                        example: أحمد
+                      lastName:
+                        type: string
+                        example: محمد
+                      gender:
+                        type: string
+                        example: male
+                      city:
+                        type: string
+                        example: صنعاء
+                      jobTitle:
+                        type: string
+                        example: مهندس
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                        example: []
+                      permissions:
+                        type: array
+                        items:
+                          type: string
+                        example: []
+                      isAdmin:
+                        type: boolean
+                        example: false
+                      preferredCurrency:
+                        type: string
+                        example: USD
+                      engineerStatus:
+                        type: string
+                        example: none
+                      merchantStatus:
+                        type: string
+                        example: none
+        '400':
+          description: بيانات الاستجابة غير صحيحة أو فشل التحقق
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 400
+                  message:
+                    type: string
+                    example: فشل التحقق من بيانات البصمة
+                  error:
+                    type: string
+                    example: Bad Request
+        '401':
+          description: فشل التحقق من الاستجابة أو انتهت صلاحية التحدي
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 401
+                  message:
+                    type: string
+                    example: انتهت صلاحية التحدي
+                  error:
+                    type: string
+                    example: Unauthorized
+      tags:
+        - المصادقة
+  /api/v1/auth/biometric/login-challenge:
+    post:
+      operationId: createBiometricLoginChallenge
+      summary: الحصول على تحدي WebAuthn لتسجيل الدخول بالبصمة
+      description: ينشئ تحدياً لتوثيق المستخدم بالبصمة على جهاز مسجل مسبقاً
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BiometricLoginChallengeDto'
+      responses:
+        '200':
+          description: تم إنشاء التحدي بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  options:
+                    type: object
+                    properties:
+                      challenge:
+                        type: string
+                        example: base64url-encoded-challenge
+                      allowCredentials:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              example: public-key
+                            id:
+                              type: string
+                              example: base64url-credential-id
+                            transports:
+                              type: array
+                              items:
+                                type: string
+                              example:
+                                - internal
+                                - hybrid
+                      rpId:
+                        type: string
+                        example: localhost
+                      timeout:
+                        type: number
+                        example: 300000
+                      userVerification:
+                        type: string
+                        example: required
+        '400':
+          description: بيانات غير صحيحة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 400
+                  message:
+                    type: string
+                    example: صيغة رقم الهاتف غير صحيحة
+                  error:
+                    type: string
+                    example: Bad Request
+        '401':
+          description: المستخدم غير موجود أو لم يتم تسجيل بصمة من قبل
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 401
+                  message:
+                    type: string
+                    example: لم يتم تسجيل بصمة لهذا المستخدم
+                  error:
+                    type: string
+                    example: Unauthorized
+      tags:
+        - المصادقة
+  /api/v1/auth/biometric/login-verify:
+    post:
+      operationId: verifyBiometricLogin
+      summary: التحقق من استجابة WebAuthn لتسجيل الدخول بالبصمة
+      description: يتحقق من التحدي ويصدر توكنات الدخول للمستخدم
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BiometricLoginVerifyDto'
+      responses:
+        '200':
+          description: تم تسجيل الدخول بنجاح باستخدام البصمة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokens:
+                    type: object
+                    properties:
+                      access:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      refresh:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  me:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: 507f1f77bcf86cd799439011
+                      phone:
+                        type: string
+                        example: '+966501234567'
+                      firstName:
+                        type: string
+                        example: أحمد
+                      lastName:
+                        type: string
+                        example: محمد
+                      gender:
+                        type: string
+                        example: male
+                      city:
+                        type: string
+                        example: صنعاء
+                      jobTitle:
+                        type: string
+                        example: مهندس
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                        example: []
+                      permissions:
+                        type: array
+                        items:
+                          type: string
+                        example: []
+                      isAdmin:
+                        type: boolean
+                        example: false
+                      preferredCurrency:
+                        type: string
+                        example: USD
+                      engineerStatus:
+                        type: string
+                        example: none
+                      merchantStatus:
+                        type: string
+                        example: none
+        '400':
+          description: بيانات الاستجابة غير صحيحة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 400
+                  message:
+                    type: string
+                    example: بيانات الاستجابة غير صحيحة
+                  error:
+                    type: string
+                    example: Bad Request
+        '401':
+          description: فشل التحقق من البصمة أو انتهت صلاحية التحدي
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 401
+                  message:
+                    type: string
+                    example: فشل التحقق من البصمة
+                  error:
+                    type: string
+                    example: Unauthorized
+      tags:
+        - المصادقة
   /api/v1/auth/user-login:
     post:
       operationId: userLogin
@@ -1662,6 +2078,11 @@ paths:
           description: Filter new products
           schema:
             type: boolean
+        - name: currency
+          required: true
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: Products list retrieved successfully
@@ -1815,7 +2236,12 @@ paths:
     get:
       operationId: getFeatured
       summary: الحصول على المنتجات المميزة
-      parameters: []
+      parameters:
+        - name: currency
+          required: true
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: Featured products retrieved successfully
@@ -1825,7 +2251,12 @@ paths:
     get:
       operationId: getNew
       summary: الحصول على المنتجات الجديدة
-      parameters: []
+      parameters:
+        - name: currency
+          required: true
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: New products retrieved successfully
@@ -3796,6 +4227,20 @@ paths:
           required: false
           in: query
           description: تصفية المنتجات الجديدة فقط
+          schema:
+            example: false
+            type: boolean
+        - name: currency
+          required: false
+          in: query
+          description: رمز العملة المطلوبة (افتراضي USD)
+          schema:
+            example: SAR
+            type: string
+        - name: force
+          required: false
+          in: query
+          description: تجاوز التخزين المؤقت وإرجاع البيانات المحدثة فوراً
           schema:
             example: false
             type: boolean
@@ -17722,6 +18167,70 @@ components:
         - firstName
         - lastName
         - gender
+    BiometricRegisterChallengeDto:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: رقم هاتف المستخدم المرتبط بالحساب
+          example: '0501234567'
+        deviceName:
+          type: string
+          description: اسم الجهاز أو معرف ودي لعرضه في لوحة التحكم
+          example: iPhone 15 Pro
+        userAgent:
+          type: string
+          description: قيمة User-Agent الخاصة بالجهاز
+      required:
+        - phone
+    BiometricRegisterVerifyDto:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: رقم هاتف المستخدم المرتبط بالحساب
+          example: '0501234567'
+        response:
+          type: object
+          description: استجابة WebAuthn من الجهاز
+        deviceName:
+          type: string
+          description: اسم ودي للجهاز لتسجيله في الحساب
+          example: MacBook Pro M3
+        userAgent:
+          type: string
+          description: قيمة User-Agent الخاصة بالجهاز
+      required:
+        - phone
+        - response
+    BiometricLoginChallengeDto:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: رقم هاتف المستخدم
+          example: '0501234567'
+        userAgent:
+          type: string
+          description: قيمة User-Agent للجهاز الحالي
+      required:
+        - phone
+    BiometricLoginVerifyDto:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: رقم هاتف المستخدم
+          example: '0501234567'
+        response:
+          type: object
+          description: استجابة WebAuthn من الجهاز
+        userAgent:
+          type: string
+          description: قيمة User-Agent للجهاز الحالي
+      required:
+        - phone
+        - response
     UserLoginDto:
       type: object
       properties:
@@ -17847,6 +18356,9 @@ components:
           example: Updated Color
           minLength: 1
           maxLength: 100
+        type:
+          example: select
+          $ref: '#/components/schemas/AttributeType'
         description:
           type: string
           description: وصف السمة

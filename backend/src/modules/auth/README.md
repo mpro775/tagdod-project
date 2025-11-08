@@ -4,7 +4,7 @@
 
 ## المكونات
 - Controller: `auth/auth.controller.ts`
-- Services: `auth/otp.service.ts`, `auth/tokens.service.ts`
+- Services: `auth/otp.service.ts`, `auth/tokens.service.ts`, `auth/biometric.service.ts`
 - Guard: `auth/jwt-auth.guard.ts`
 - Schemas مستخدمة: `users/schemas/user.schema.ts`, `capabilities/schemas/capabilities.schema.ts`
 
@@ -96,6 +96,23 @@ Base path: `/auth`
   - Body: `{ phone: string; password: string }`
   - تسجيل دخول بالمطور (Development فقط، غير متاح في Production).
 
+### مصادقة البصمة (WebAuthn):
+- ✅ **POST** `/auth/biometric/register-challenge`
+  - Body: `BiometricRegisterChallengeDto { phone: string; deviceName?: string; userAgent?: string }`
+  - ينشئ تحدي WebAuthn لتسجيل جهاز حيوي جديد للمستخدم.
+
+- ✅ **POST** `/auth/biometric/register-verify`
+  - Body: `BiometricRegisterVerifyDto { phone: string; response: RegistrationResponseJSON; deviceName?: string; userAgent?: string }`
+  - يتحقق من الاستجابة ويخزن بيانات جهاز WebAuthn ثم يصدر Tokens للمستخدم.
+
+- ✅ **POST** `/auth/biometric/login-challenge`
+  - Body: `BiometricLoginChallengeDto { phone: string; userAgent?: string }`
+  - ينشئ تحدياً لتوثيق المستخدم بالبصمة على جهاز مسجل مسبقاً.
+
+- ✅ **POST** `/auth/biometric/login-verify`
+  - Body: `BiometricLoginVerifyDto { phone: string; response: AuthenticationResponseJSON; userAgent?: string }`
+  - يتحقق من الاستجابة ويصدر Tokens لتسجيل الدخول بالبصمة.
+
 ## المتغيرات البيئية المطلوبة ✅
 
 ### JWT & Security:
@@ -111,6 +128,10 @@ Base path: `/auth`
 
 ### Environment:
 - ✅ `NODE_ENV` - بيئة التشغيل (development/production)
+- ✅ `WEBAUTHN_RP_ID` - معرف الجهة (RP) المستخدم في تحديات WebAuthn (اختياري، افتراضي hostname من `WEBAUTHN_ORIGIN`)
+- ✅ `WEBAUTHN_RP_NAME` - الاسم الودي المعروض للمستخدمين أثناء التسجيل (اختياري، افتراضي: Tagdod Platform)
+- ✅ `WEBAUTHN_ORIGIN` - الأصل المسموح به لتحديات WebAuthn (اختياري، افتراضي: `APP_ORIGIN` أو `http://localhost:3000`)
+- ✅ `WEBAUTHN_CHALLENGE_TTL_MS` - مدة صلاحية التحدي بالمللي ثانية (اختياري، افتراضي: 300000 ملي ثانية)
 
 ---
 

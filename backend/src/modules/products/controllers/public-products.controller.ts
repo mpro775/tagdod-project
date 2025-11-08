@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseInterceptors, Req, Logger } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseInterceptors, Req } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -9,23 +9,16 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model , Types } from 'mongoose';
-
 import { ProductService } from '../services/product.service';
 import { VariantService } from '../services/variant.service';
-import { PricingService, PriceWithDiscount, PriceWithDiscountAndVariantId } from '../services/pricing.service';
+import { PricingService } from '../services/pricing.service';
 import { InventoryService } from '../services/inventory.service';
 import {
   ResponseCacheInterceptor,
   CacheResponse,
 } from '../../../shared/interceptors/response-cache.interceptor';
 import { ProductStatus } from '../schemas/product.schema';
-import { User } from '../../users/schemas/user.schema';
-import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
-import { AttributesService } from '../../attributes/attributes.service';
-
-type WithId = { _id: Types.ObjectId | string };
+import { PublicProductsPresenter, WithId } from '../services/public-products.presenter';
 
 interface RequestWithUser {
   user?: {
@@ -36,244 +29,18 @@ interface RequestWithUser {
   };
 }
 
-type AttributeSummary = {
-  id: string;
-  name: string;
-  nameEn: string;
-  values: Array<{
-    id: string;
-    value: string;
-    valueEn?: string;
-  }>;
-};
-
 @ApiTags('المنتجات')
 @Controller('products')
 @UseInterceptors(ResponseCacheInterceptor)
 export class PublicProductsController {
-  private readonly logger = new Logger(PublicProductsController.name);
-  private readonly BASE_PRICING_CURRENCIES = ['USD', 'YER', 'SAR'] as const;
-
   constructor(
     private productService: ProductService,
     private variantService: VariantService,
     private pricingService: PricingService,
     private inventoryService: InventoryService,
-    private attributesService: AttributesService,
-    @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(Capabilities.name) private capabilitiesModel: Model<Capabilities>,
+    private publicProductsPresenter: PublicProductsPresenter,
   ) {}
 
-  /**
-   * جلب نسبة خصم التاجر للمستخدم
-   */
-  private async getUserMerchantDiscount(userId?: string): Promise<number> {
-    if (!userId) {
-      return 0;
-    }
-
-    try {
-      // محاولة جلب من Capabilities أولاً (النظام القديم)
-      const caps = await this.capabilitiesModel.findOne({ userId }).lean();
-      if (caps && caps.merchant_capable && caps.merchant_status === 'approved' && caps.merchant_discount_percent > 0) {
-        return caps.merchant_discount_percent;
-      }
-
-      // إذا لم يوجد في Capabilities، جلب من User مباشرة
-      const user = await this.userModel.findById(userId).lean();
-      if (user && user.merchant_capable && user.merchant_status === 'approved' && user.merchant_discount_percent > 0) {
-        return user.merchant_discount_percent;
-      }
-    } catch (error) {
-      // في حالة حدوث خطأ، إرجاع 0 (لا خصم)
-      console.error('Error fetching user merchant discount:', error);
-    }
-
-    return 0;
-  }
-
-  private normalizeCurrency(currency?: string): string {
-    if (!currency || typeof currency !== 'string') {
-      return 'USD';
-    }
-
-    const trimmed = currency.trim();
-    return trimmed.length === 0 ? 'USD' : trimmed.toUpperCase();
-  }
-
-  private stripVariantId(price?: PriceWithDiscountAndVariantId | null): PriceWithDiscount | null {
-    if (!price) {
-      return null;
-    }
-
-    const { variantId: _variantId, ...rest } = price;
-    return rest;
-  }
-
-  private extractIdString(value: unknown): string | null {
-    if (!value) {
-      return null;
-    }
-
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    if (typeof value === 'object') {
-      const record = value as Record<string, unknown>;
-
-      if (record._id) {
-        const innerId = record._id;
-        if (typeof innerId === 'string') {
-          return innerId;
-        }
-        if (innerId && typeof (innerId as { toString: () => string }).toString === 'function') {
-          const converted = (innerId as { toString: () => string }).toString();
-          return converted === '[object Object]' ? null : converted;
-        }
-      }
-
-      if (typeof (record as { toString?: () => string }).toString === 'function') {
-        const converted = (record as { toString: () => string }).toString();
-        return converted === '[object Object]' ? null : converted;
-      }
-    }
-
-    return null;
-  }
-
-  private async getAttributeSummaries(attributeIds: unknown[]): Promise<AttributeSummary[]> {
-    if (!Array.isArray(attributeIds) || attributeIds.length === 0) {
-      return [];
-    }
-
-    const uniqueIds = Array.from(
-      new Set(
-        attributeIds
-          .map(id => this.extractIdString(id))
-          .filter((id): id is string => Boolean(id)),
-      ),
-    );
-
-    if (uniqueIds.length === 0) {
-      return [];
-    }
-
-    const summaries = await Promise.all(
-      uniqueIds.map(async (attributeId) => {
-        try {
-          const attribute = await this.attributesService.getAttribute(attributeId);
-          const attributeRecord = attribute as Record<string, unknown>;
-          const valuesList = (attributeRecord.values as Array<Record<string, unknown>> | undefined) ?? [];
-
-          return {
-            id: this.extractIdString(attributeRecord._id) ?? attributeId,
-            name: (attributeRecord.name as string) ?? '',
-            nameEn: (attributeRecord.nameEn as string) ?? '',
-            values: valuesList.map((valueRecord) => ({
-              id: this.extractIdString(valueRecord._id) ?? '',
-              value: (valueRecord.value as string) ?? '',
-              valueEn:
-                (valueRecord.valueEn as string | undefined) ??
-                ((valueRecord.value as string) ?? ''),
-            })),
-          } as AttributeSummary;
-        } catch (error) {
-          this.logger.warn(
-            `Failed to load attribute ${attributeId}: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
-          );
-          return null;
-        }
-      }),
-    );
-
-    return summaries.filter((summary): summary is AttributeSummary => Boolean(summary));
-  }
-
-  private async enrichVariantsPricing(
-    productId: string,
-    variants: Array<WithId & Record<string, any>>,
-    discountPercent: number,
-    selectedCurrencyInput: string,
-  ): Promise<{ variantsWithPricing: Array<Record<string, any>>; normalizedCurrency: string }> {
-    const normalizedCurrency = this.normalizeCurrency(selectedCurrencyInput);
-    const currenciesForPricing = Array.from(
-      new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
-    );
-
-    const variantSnapshots = variants.map(variant => ({
-      _id: variant._id,
-      basePriceUSD: variant.basePriceUSD ?? 0,
-      compareAtPriceUSD: variant.compareAtPriceUSD,
-      costPriceUSD: variant.costPriceUSD,
-    }));
-
-    const pricesByCurrency = await this.pricingService.getProductPricesWithDiscountByCurrencies(
-      productId,
-      currenciesForPricing,
-      discountPercent,
-      { variants: variantSnapshots as any },
-    );
-
-    const variantsWithPricing = variants.map(variant => {
-      const variantId = variant._id.toString();
-
-      const pricingByCurrency = this.BASE_PRICING_CURRENCIES.reduce<Record<string, PriceWithDiscount | null>>(
-        (acc, currencyCode) => {
-          const entry =
-            pricesByCurrency[currencyCode]?.find(price => price.variantId === variantId) ?? null;
-          acc[currencyCode] = this.stripVariantId(entry);
-          return acc;
-        },
-        {} as Record<string, PriceWithDiscount | null>,
-      );
-
-      const selectedPriceEntry =
-        pricesByCurrency[normalizedCurrency]?.find(price => price.variantId === variantId) ?? null;
-
-      return {
-        ...variant,
-        pricing: this.stripVariantId(selectedPriceEntry),
-        pricingByCurrency,
-      };
-    });
-
-    return { variantsWithPricing, normalizedCurrency };
-  }
-
-  private async buildProductDetailResponse(
-    productId: string,
-    product: Record<string, any>,
-    variants: Array<WithId & Record<string, any>>,
-    discountPercent: number,
-    selectedCurrencyInput: string,
-  ) {
-    const { variantsWithPricing, normalizedCurrency } = await this.enrichVariantsPricing(
-      productId,
-      variants,
-      discountPercent,
-      selectedCurrencyInput,
-    );
-
-    const attributesDetails = await this.getAttributeSummaries(product.attributes as unknown[]);
-
-    const productWithAttributes = {
-      ...product,
-      attributesDetails,
-    };
-
-    return {
-      product: productWithAttributes,
-      variants: variantsWithPricing,
-      currency: normalizedCurrency,
-      userDiscount: {
-        isMerchant: discountPercent > 0,
-        discountPercent,
-      },
-    };
-  }
 
   // ==================== Products List ====================
 
@@ -355,8 +122,15 @@ export class PublicProductsController {
     @Query('brandId') brandId?: string,
     @Query('isFeatured') isFeatured?: string,
     @Query('isNew') isNew?: string,
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
   ) {
-    return this.productService.list({
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
+      req?.user?.sub,
+    );
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    const result = await this.productService.list({
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
       search,
@@ -366,6 +140,21 @@ export class PublicProductsController {
       isFeatured: isFeatured === 'true' ? true : undefined,
       isNew: isNew === 'true' ? true : undefined,
     });
+
+    const rawData = Array.isArray(result.data)
+      ? (result.data as unknown as Array<Record<string, unknown>>)
+      : [];
+
+    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
+      rawData,
+      discountPercent,
+      selectedCurrency,
+    );
+
+    return {
+      ...result,
+      data: productsWithPricing,
+    };
   }
 
   // ==================== Product Details ====================
@@ -431,13 +220,13 @@ export class PublicProductsController {
 
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
-    const discountPercent = await this.getUserMerchantDiscount(userId);
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
     const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    return this.buildProductDetailResponse(
+    return this.publicProductsPresenter.buildProductDetailResponse(
       id,
-      product as Record<string, any>,
-      variants as unknown as Array<WithId & Record<string, any>>,
+      product as unknown as Record<string, unknown>,
+      variants as unknown as Array<WithId & Record<string, unknown>>,
       discountPercent,
       requestedCurrency,
     );
@@ -466,13 +255,13 @@ export class PublicProductsController {
 
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
-    const discountPercent = await this.getUserMerchantDiscount(userId);
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
     const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    return this.buildProductDetailResponse(
+    return this.publicProductsPresenter.buildProductDetailResponse(
       productId,
-      product as Record<string, any>,
-      variants as unknown as Array<WithId & Record<string, any>>,
+      product as unknown as Record<string, unknown>,
+      variants as unknown as Array<WithId & Record<string, unknown>>,
       discountPercent,
       requestedCurrency,
     );
@@ -484,24 +273,70 @@ export class PublicProductsController {
   @ApiOperation({ summary: 'الحصول على المنتجات المميزة' })
   @ApiResponse({ status: 200, description: 'Featured products retrieved successfully' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getFeatured() {
-    return this.productService.list({
+  async getFeatured(
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
+  ) {
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
+      req?.user?.sub,
+    );
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    const result = await this.productService.list({
       isFeatured: true,
       status: ProductStatus.ACTIVE,
       limit: 12,
     });
+
+    const rawData = Array.isArray(result.data)
+      ? (result.data as unknown as Array<Record<string, unknown>>)
+      : [];
+
+    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
+      rawData,
+      discountPercent,
+      selectedCurrency,
+    );
+
+    return {
+      ...result,
+      data: productsWithPricing,
+    };
   }
 
   @Get('new/list')
   @ApiOperation({ summary: 'الحصول على المنتجات الجديدة' })
   @ApiResponse({ status: 200, description: 'New products retrieved successfully' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getNew() {
-    return this.productService.list({
+  async getNew(
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
+  ) {
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
+      req?.user?.sub,
+    );
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    const result = await this.productService.list({
       isNew: true,
       status: ProductStatus.ACTIVE,
       limit: 12,
     });
+
+    const rawData = Array.isArray(result.data)
+      ? (result.data as unknown as Array<Record<string, unknown>>)
+      : [];
+
+    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
+      rawData,
+      discountPercent,
+      selectedCurrency,
+    );
+
+    return {
+      ...result,
+      data: productsWithPricing,
+    };
   }
 
   // ==================== Variants ====================
@@ -520,19 +355,18 @@ export class PublicProductsController {
 
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
-    const discountPercent = await this.getUserMerchantDiscount(userId);
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
     const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    const { variantsWithPricing, normalizedCurrency } = await this.enrichVariantsPricing(
+    const { variantsWithPricing } = await this.publicProductsPresenter.enrichVariantsPricing(
       productId,
-      variants as unknown as Array<WithId & Record<string, any>>,
+      variants as unknown as Array<WithId & Record<string, unknown>>,
       discountPercent,
       requestedCurrency,
     );
 
     return {
       data: variantsWithPricing,
-      currency: normalizedCurrency,
       userDiscount: {
         isMerchant: discountPercent > 0,
         discountPercent,
@@ -552,7 +386,7 @@ export class PublicProductsController {
   ) {
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
-    const discountPercent = await this.getUserMerchantDiscount(userId);
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
     const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
     // جلب السعر مع خصم التاجر
@@ -646,10 +480,7 @@ export class PublicProductsController {
   })
   @ApiNotFoundResponse({ description: 'Product not found' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getRelatedProducts(
-    @Param('id') productId: string,
-    @Query('limit') limit?: string,
-  ) {
+  async getRelatedProducts(@Param('id') productId: string, @Query('limit') limit?: string) {
     const products = await this.productService.getRelatedProducts(
       productId,
       limit ? Number(limit) : 10,

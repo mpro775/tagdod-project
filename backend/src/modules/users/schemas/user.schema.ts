@@ -3,6 +3,19 @@ import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 
+export interface WebAuthnCredential {
+  credentialId: string;
+  publicKey: string;
+  counter: number;
+  transports?: string[];
+  deviceType?: string;
+  backedUp?: boolean;
+  createdAt: Date;
+  friendlyName?: string;
+  lastUsedAt?: Date;
+  userAgent?: string;
+}
+
 export enum Currency {
   USD = 'USD',
   YER = 'YER', // الريال اليمني
@@ -74,6 +87,25 @@ export class User {
   // تتبع النشاط
   @Prop({ type: Date, default: Date.now })
   lastActivityAt!: Date;
+
+  @Prop({
+    type: [
+      {
+        credentialId: { type: String, required: true },
+        publicKey: { type: String, required: true },
+        counter: { type: Number, default: 0 },
+        transports: { type: [String], default: [] },
+        deviceType: { type: String },
+        backedUp: { type: Boolean },
+        createdAt: { type: Date, default: Date.now },
+        friendlyName: { type: String },
+        lastUsedAt: { type: Date },
+        userAgent: { type: String },
+      },
+    ],
+    default: [],
+  })
+  webauthnCredentials!: WebAuthnCredential[];
 
   // Soft Delete
   @Prop({ type: Date, default: null }) deletedAt?: Date | null;

@@ -655,7 +655,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       {/* Footer */}
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Typography variant="caption" color="text.secondary">
-          © 2025 Tagadodo
+          © 2025 Tagadod
         </Typography>
       </Box>
     </Box>

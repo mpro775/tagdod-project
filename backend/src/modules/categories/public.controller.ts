@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UseInterceptors } from '@nestjs/common';
 import { 
   ApiTags, 
   ApiOperation, 
@@ -9,6 +9,7 @@ import {
 } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { ProductService } from '../products/services/product.service';
+import { PublicProductsPresenter } from '../products/services/public-products.presenter';
 import { ProductStatus } from '../products/schemas/product.schema';
 import {
   ResponseCacheInterceptor,
@@ -22,6 +23,7 @@ export class CategoriesPublicController {
   constructor(
     private categoriesService: CategoriesService,
     private productService: ProductService,
+    private publicProductsPresenter: PublicProductsPresenter,
   ) {}
 
   // ==================== قائمة الفئات ====================
@@ -195,7 +197,14 @@ export class CategoriesPublicController {
     required: false,
     type: Boolean,
     description: 'تصفية المنتجات الجديدة فقط',
-    example: false
+    example: false,
+  })
+  @ApiQuery({
+    name: 'currency',
+    required: false,
+    type: String,
+    description: 'رمز العملة المطلوبة (افتراضي USD)',
+    example: 'SAR',
   })
   @ApiOkResponse({
     description: 'تم الحصول على المنتجات بنجاح',
@@ -243,7 +252,20 @@ export class CategoriesPublicController {
     }
   })
   @ApiNotFoundResponse({ description: 'الفئة غير موجودة أو غير نشطة' })
-  @CacheResponse({ ttl: 300 }) // 5 minutes
+  @ApiQuery({
+    name: 'force',
+    required: false,
+    type: Boolean,
+    description: 'تجاوز التخزين المؤقت وإرجاع البيانات المحدثة فوراً',
+    example: false,
+  })
+  @CacheResponse({
+    ttl: 300,
+    condition: (context) => {
+      const request = context.switchToHttp().getRequest();
+      return !(request?.query?.force === 'true');
+    },
+  }) // 5 minutes
   async getCategoryProducts(
     @Param('id') id: string,
     @Query('page') page?: string,
@@ -252,16 +274,23 @@ export class CategoriesPublicController {
     @Query('brandId') brandId?: string,
     @Query('isFeatured') isFeatured?: string,
     @Query('isNew') isNew?: string,
+    @Query('currency') currency?: string,
+    @Req() req?: { user?: { sub?: string; preferredCurrency?: string } },
   ) {
     // التحقق من وجود الفئة
-    await this.categoriesService.getCategory(id);
+    const category = await this.categoriesService.getCategory(id);
+    const resolvedCategoryId = String(category._id ?? id);
+
+    const userId = req?.user?.sub;
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
     // جلب المنتجات العامة فقط
     const result = await this.productService.list({
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
       search,
-      categoryId: id,
+      categoryId: resolvedCategoryId,
       brandId,
       status: ProductStatus.ACTIVE, // فقط المنتجات النشطة (public)
       isActive: true, // فقط المنتجات المفعلة (public)
@@ -270,7 +299,20 @@ export class CategoriesPublicController {
       includeDeleted: false, // فقط المنتجات غير المحذوفة
     });
 
-    return result;
+    const rawData = Array.isArray(result.data)
+      ? (result.data as unknown as Array<Record<string, unknown>>)
+      : [];
+
+    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
+      rawData,
+      discountPercent,
+      selectedCurrency,
+    );
+
+    return {
+      ...result,
+      data: productsWithPricing,
+    };
   }
 
   // ==================== عرض فئة واحدة مع التفاصيل ====================

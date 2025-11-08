@@ -4,12 +4,30 @@ import { Model, Types } from 'mongoose';
 import { Category, CategoryDocument } from './schemas/category.schema';
 import { slugify } from '../../shared/utils/slug.util';
 import { CacheService } from '../../shared/cache/cache.service';
-import { 
+import {
   CategoryNotFoundException,
   CategoryAlreadyExistsException,
   CategoryException,
   ErrorCode 
 } from '../../shared/exceptions';
+
+type CategoryBreadcrumb = {
+  id: string;
+  name: string;
+  nameEn: string;
+  slug: string;
+};
+
+type CategoryLean = Category & {
+  _id: Types.ObjectId;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type CategoryDetail = CategoryLean & {
+  children: CategoryLean[];
+  breadcrumbs: CategoryBreadcrumb[];
+};
 
 @Injectable()
 export class CategoriesService {
@@ -107,35 +125,59 @@ export class CategoriesService {
   }
 
   // ==================== عرض فئة واحدة ====================
-  async getCategory(id: string) {
+  async getCategory(identifier: string): Promise<CategoryDetail> {
     const ver = await this.getCacheVersion();
-    const cacheKey = `categories:v${ver}:detail:${id}`;
+    let categoryId = identifier;
 
-    const cached = await this.cacheService.get(cacheKey);
+    // Determine if identifier is ObjectId or slug
+    if (!Types.ObjectId.isValid(identifier)) {
+      const categoryBySlug = await this.categoryModel
+        .findOne({ slug: identifier, deletedAt: null, isActive: true })
+        .select('_id')
+        .lean<{ _id: Types.ObjectId }>();
+
+      if (!categoryBySlug) {
+        throw new CategoryNotFoundException({ categoryId: identifier });
+      }
+
+      categoryId = categoryBySlug._id.toString();
+    }
+
+    const cacheKey = `categories:v${ver}:detail:${categoryId}`;
+
+    const cached = await this.cacheService.get<CategoryDetail>(cacheKey);
     if (cached) {
-      this.logger.debug(`Category detail cache hit: ${id}`);
+      this.logger.debug(`Category detail cache hit: ${categoryId}`);
       return cached;
     }
 
-    const category = await this.categoryModel
-      .findById(id)
+    const categoryDoc = await this.categoryModel
+      .findOne({
+        _id: categoryId,
+        deletedAt: null,
+        isActive: true,
+      })
       .populate('imageId')
       .lean();
 
+    const category = categoryDoc as CategoryLean | null;
+
     if (!category) {
-      throw new CategoryNotFoundException({ categoryId: id });
+      throw new CategoryNotFoundException({ categoryId: identifier });
     }
 
     // جلب الأطفال
-    const children = await this.categoryModel
-      .find({ parentId: id, deletedAt: null, isActive: true })
+    const childrenDocs = await this.categoryModel
+      .find({ parentId: categoryId, deletedAt: null, isActive: true })
       .sort({ order: 1, name: 1 })
       .lean();
 
-    // جلب breadcrumbs
-    const breadcrumbs = await this.getBreadcrumbs(id);
+    const children = childrenDocs as CategoryLean[];
 
-    const result = {
+    // جلب breadcrumbs
+    const breadcrumbs = await this.getBreadcrumbs(categoryId);
+
+    const result: CategoryDetail = {
       ...category,
       children,
       breadcrumbs,
@@ -420,8 +462,8 @@ export class CategoriesService {
   }
 
   // ==================== Helper: Breadcrumbs ====================
-  private async getBreadcrumbs(categoryId: string) {
-    const breadcrumbs: Record<string, unknown>[] = [];
+  private async getBreadcrumbs(categoryId: string): Promise<CategoryBreadcrumb[]> {
+    const breadcrumbs: CategoryBreadcrumb[] = [];
     let currentCategoryId: string | null = categoryId;
 
     while (currentCategoryId) {

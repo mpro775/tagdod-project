@@ -398,6 +398,114 @@
           }
         },
         {
+          "name": "الحصول على تحدي WebAuthn لتسجيل بصمة اليد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/biometric/register-challenge",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "biometric",
+                "register-challenge"
+              ]
+            },
+            "description": "ينشئ تحدياً لتسجيل جهاز جديد باستخدام WebAuthn للمستخدم المحدد"
+          }
+        },
+        {
+          "name": "التحقق من استجابة WebAuthn لإتمام تسجيل بصمة اليد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/biometric/register-verify",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "biometric",
+                "register-verify"
+              ]
+            },
+            "description": "يتحقق من استجابة WebAuthn ويخزن بيانات الجهاز المسجل"
+          }
+        },
+        {
+          "name": "الحصول على تحدي WebAuthn لتسجيل الدخول بالبصمة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/biometric/login-challenge",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "biometric",
+                "login-challenge"
+              ]
+            },
+            "description": "ينشئ تحدياً لتوثيق المستخدم بالبصمة على جهاز مسجل مسبقاً"
+          }
+        },
+        {
+          "name": "التحقق من استجابة WebAuthn لتسجيل الدخول بالبصمة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/biometric/login-verify",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "biometric",
+                "login-verify"
+              ]
+            },
+            "description": "يتحقق من التحدي ويصدر توكنات الدخول للمستخدم"
+          }
+        },
+        {
           "name": "تسجيل دخول المستخدم العادي/المهندس/التاجر بكلمة المرور",
           "request": {
             "method": "POST",

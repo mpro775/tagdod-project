@@ -43,8 +43,25 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.redis.quit();
-    this.logger.log('Cache service destroyed');
+    if (!this.redis) {
+      return;
+    }
+
+    try {
+      const isTerminated = this.redis.status === 'end' || this.redis.status === 'close';
+      if (!isTerminated) {
+        await this.redis.quit();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message !== 'Connection is closed.' && message !== 'Connection is closed') {
+        this.logger.error('Error while closing Redis connection:', error);
+      } else {
+        this.logger.warn('Redis connection already closed. Skipping quit.');
+      }
+    } finally {
+      this.logger.log('Cache service destroyed');
+    }
   }
 
   private setupEventHandlers() {
@@ -344,17 +361,24 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Clear all cache keys with prefix
    */
   async clear(prefix?: string): Promise<void> {
-    const pattern = this.generateKey('*', prefix);
+    const globalPrefix = this.configService.get('CACHE_PREFIX', 'solar:');
+    const basePrefix = prefix
+      ? prefix.startsWith(globalPrefix)
+        ? prefix
+        : `${globalPrefix}${prefix}`
+      : globalPrefix;
+
+    const pattern = basePrefix.endsWith('*') ? basePrefix : `${basePrefix}*`;
 
     try {
       const keys = await this.redis.keys(pattern);
       if (keys.length > 0) {
         await this.redis.del(...keys);
         this.stats.deletes += keys.length;
-        this.logger.log(`Cleared ${keys.length} cache keys with prefix ${prefix}`);
+        this.logger.log(`Cleared ${keys.length} cache keys with pattern ${pattern}`);
       }
     } catch (error) {
-      this.logger.error(`Failed to clear cache with prefix ${prefix}:`, error);
+      this.logger.error(`Failed to clear cache with pattern ${pattern}:`, error);
       throw error;
     }
   }

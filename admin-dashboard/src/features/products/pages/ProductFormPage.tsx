@@ -82,11 +82,21 @@ export const ProductFormPage: React.FC = () => {
   const [metaKeywords, setMetaKeywords] = React.useState<string[]>([]);
   const [defaultPrice, setDefaultPrice] = React.useState<number>(0);
   const [defaultStock, setDefaultStock] = React.useState<number>(0);
+  const [simpleCompareAtPrice, setSimpleCompareAtPrice] = React.useState<string>('');
+  const [simpleCostPrice, setSimpleCostPrice] = React.useState<string>('');
   const [useManualRating, setUseManualRating] = React.useState<boolean>(false);
   const [manualRating, setManualRating] = React.useState<number>(0);
   const [manualReviewsCount, setManualReviewsCount] = React.useState<number>(0);
   const [confirmGenerateOpen, setConfirmGenerateOpen] = React.useState(false);
   const [overwriteExisting, setOverwriteExisting] = React.useState<boolean>(false);
+
+  const parseOptionalNumber = React.useCallback((value: string): number | undefined => {
+    if (!value) {
+      return undefined;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }, []);
 
   // Form
   const methods = useForm<ProductFormData>({
@@ -148,6 +158,9 @@ export const ProductFormPage: React.FC = () => {
 
         // حفظ المنتج
         const formData = methods.getValues();
+        const basePriceValue = defaultPrice > 0 ? defaultPrice : undefined;
+        const compareAtValue = parseOptionalNumber(simpleCompareAtPrice);
+        const costValue = parseOptionalNumber(simpleCostPrice);
         const productData: CreateProductDto = {
           name: formData.name,
           nameEn: formData.nameEn,
@@ -170,6 +183,9 @@ export const ProductFormPage: React.FC = () => {
           useManualRating: useManualRating,
           manualRating: useManualRating ? manualRating : undefined,
           manualReviewsCount: useManualRating ? manualReviewsCount : undefined,
+          basePriceUSD: basePriceValue,
+          compareAtPriceUSD: compareAtValue,
+          costPriceUSD: costValue,
         };
 
         // حفظ المنتج والحصول على الـ ID
@@ -283,11 +299,42 @@ export const ProductFormPage: React.FC = () => {
       setUseManualRating(product.useManualRating || false);
       setManualRating(product.manualRating || 0);
       setManualReviewsCount(product.manualReviewsCount || 0);
+
+      const productBasePrice =
+        typeof (product as any).basePriceUSD === 'number'
+          ? (product as any).basePriceUSD
+          : typeof (product as any).basePrice === 'number'
+            ? (product as any).basePrice
+            : undefined;
+      if (typeof productBasePrice === 'number' && !Number.isNaN(productBasePrice)) {
+        setDefaultPrice(productBasePrice);
+      }
+
+      const productCompareAt =
+        typeof (product as any).compareAtPriceUSD === 'number'
+          ? (product as any).compareAtPriceUSD
+          : undefined;
+      setSimpleCompareAtPrice(
+        productCompareAt !== undefined && !Number.isNaN(productCompareAt)
+          ? productCompareAt.toString()
+          : '',
+      );
+
+      const productCost =
+        typeof (product as any).costPriceUSD === 'number'
+          ? (product as any).costPriceUSD
+          : undefined;
+      setSimpleCostPrice(
+        productCost !== undefined && !Number.isNaN(productCost) ? productCost.toString() : '',
+      );
     }
   }, [product, isEditMode, methods]);
 
   // Submit
   const onSubmit = (data: any) => {
+    const basePriceValue = defaultPrice > 0 ? defaultPrice : undefined;
+    const compareAtValue = parseOptionalNumber(simpleCompareAtPrice);
+    const costValue = parseOptionalNumber(simpleCostPrice);
     const productData: CreateProductDto = {
       name: data.name,
       nameEn: data.nameEn,
@@ -311,6 +358,9 @@ export const ProductFormPage: React.FC = () => {
       useManualRating: useManualRating,
       manualRating: useManualRating ? manualRating : undefined,
       manualReviewsCount: useManualRating ? manualReviewsCount : undefined,
+      basePriceUSD: basePriceValue,
+      compareAtPriceUSD: compareAtValue,
+      costPriceUSD: costValue,
     };
 
     if (isEditMode) {
@@ -778,6 +828,7 @@ export const ProductFormPage: React.FC = () => {
                   placeholder="0.00"
                   fullWidth
                   inputProps={{ min: 0, step: '0.01' }}
+                  helperText={t('products:form.defaultPriceHint', 'يستخدم كالسعر الأساسي للمنتج البسيط أو السعر الافتراضي لتوليد المتغيرات')}
                 />
               </Grid>
 
@@ -790,6 +841,36 @@ export const ProductFormPage: React.FC = () => {
                   placeholder="0"
                   fullWidth
                   inputProps={{ min: 0 }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {t('products:form.simplePricingNotice', 'إذا لم يكن لدى المنتج متغيرات، سيتم استخدام هذه الأسعار الثلاثية (USD) كسعر العرض الأساسي')}
+                </Typography>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  label={t('products:form.simpleComparePrice', 'السعر الأصلي (منتج بسيط)')}
+                  type="number"
+                  value={simpleCompareAtPrice}
+                  onChange={(e) => setSimpleCompareAtPrice(e.target.value)}
+                  placeholder="0.00"
+                  fullWidth
+                  inputProps={{ min: 0, step: '0.01' }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  label={t('products:form.simpleCostPrice', 'سعر التكلفة (منتج بسيط)')}
+                  type="number"
+                  value={simpleCostPrice}
+                  onChange={(e) => setSimpleCostPrice(e.target.value)}
+                  placeholder="0.00"
+                  fullWidth
+                  inputProps={{ min: 0, step: '0.01' }}
                 />
               </Grid>
 

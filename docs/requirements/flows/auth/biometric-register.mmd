@@ -1,0 +1,33 @@
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User<br/>Flutter App
+  participant C as Flutter Client<br/>(WebAuthn Wrapper)
+  participant API as Tagdod API<br/>/auth/*
+  participant S as BiometricService
+  participant DB as MongoDB<br/>User Collection
+
+  rect rgb(240,240,255)
+    note right of U: تسجيل بصمة جديدة<br/>لجهاز المستخدم
+  end
+
+  U->>C: اختيار "تفعيل تسجيل الدخول بالبصمة"
+  C->>API: POST /auth/biometric/register-challenge<br/>{ phone, deviceName?, userAgent? }
+  API->>DB: findOne({ phone })
+  API->>S: generateRegistrationChallenge(user, metadata)
+  S-->>API: PublicKeyCredentialCreationOptions
+  API-->>C: { options }
+
+  C->>C: استدعاء WebAuthn/Passkey API<br/>generate credential
+  C-->>U: يطلب البصمة / Face ID
+  U-->>C: المصادقة المحلية ناجحة
+
+  C->>API: POST /auth/biometric/register-verify<br/>{ phone, response, deviceName?, userAgent? }
+  API->>S: verifyRegistration(user, credential, metadata)
+  S->>DB: حفظ credentialId + publicKey + counter
+  S-->>API: verified
+  API->>API: إصدار Tokens (JWT)
+  API-->>C: tokens + me
+  C-->>U: تم تفعيل تسجيل الدخول بالبصمة
+```
+

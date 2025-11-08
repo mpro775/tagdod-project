@@ -326,10 +326,41 @@ GET /products/64prod123?currency=YER
         "isActive": true
       }
     ],
-    "currency": "YER",
     "userDiscount": {
       "isMerchant": false,
       "discountPercent": 0
+    },
+    "pricingByCurrency": {
+      "USD": {
+        "basePrice": 600,
+        "compareAtPrice": 720,
+        "discountPercent": 0,
+        "discountAmount": 0,
+        "finalPrice": 600,
+        "currency": "USD",
+        "formattedPrice": "$600.00",
+        "formattedFinalPrice": "$600.00"
+      },
+      "SAR": {
+        "basePrice": 2250,
+        "compareAtPrice": 2700,
+        "discountPercent": 0,
+        "discountAmount": 0,
+        "finalPrice": 2250,
+        "currency": "SAR",
+        "formattedPrice": "2,250.00 ر.س",
+        "formattedFinalPrice": "2,250.00 ر.س"
+      },
+      "YER": {
+        "basePrice": 150000,
+        "compareAtPrice": 180000,
+        "discountPercent": 0,
+        "discountAmount": 0,
+        "finalPrice": 150000,
+        "currency": "YER",
+        "formattedPrice": "150,000 ر.ي",
+        "formattedFinalPrice": "150,000 ر.ي"
+      }
     }
   },
   "requestId": "req_prod_002"
@@ -386,12 +417,12 @@ Future<ProductDetails> getProduct(String id, {String currency = 'USD'}) async {
 class ProductDetails {
   final Product product;
   final List<ProductVariant> variants;
-  final String currency;
+  final Map<String, VariantPricing>? pricingByCurrency;
 
   ProductDetails({
     required this.product,
     required this.variants,
-    required this.currency,
+    this.pricingByCurrency,
   });
 
   factory ProductDetails.fromJson(Map<String, dynamic> json) {
@@ -400,7 +431,14 @@ class ProductDetails {
       variants: (json['variants'] as List)
           .map((v) => ProductVariant.fromJson(v))
           .toList(),
-      currency: json['currency'] ?? 'USD',
+      pricingByCurrency: json['product']?['pricingByCurrency'] != null
+          ? (json['product']['pricingByCurrency'] as Map<String, dynamic>).map(
+              (key, value) => MapEntry(
+                key,
+                VariantPricing.fromJson(value as Map<String, dynamic>),
+              ),
+            )
+          : null,
     );
   }
 }
@@ -685,7 +723,6 @@ Future<PaginatedProducts> getNewProducts() async {
         "isActive": true
       }
     ],
-    "currency": "YER",
     "userDiscount": {
       "isMerchant": true,
       "discountPercent": 15

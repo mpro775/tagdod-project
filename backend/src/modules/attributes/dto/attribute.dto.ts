@@ -108,6 +108,16 @@ export class UpdateAttributeDto {
   nameEn?: string;
 
   @ApiPropertyOptional({
+    description: 'نوع السمة',
+    enum: AttributeType,
+    enumName: 'AttributeType',
+    example: AttributeType.SELECT,
+  })
+  @IsOptional()
+  @IsEnum(AttributeType)
+  type?: AttributeType;
+
+  @ApiPropertyOptional({
     description: 'وصف السمة',
     example: 'لون المنتج المحدث',
     maxLength: 500

@@ -13,6 +13,7 @@ import { UpdateMediaDto } from './dto/update-media.dto';
 import { ListMediaDto } from './dto/list-media.dto';
 import * as crypto from 'crypto';
 import * as sharp from 'sharp';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class MediaService {
@@ -427,6 +428,24 @@ export class MediaService {
     }
 
     return { deletedCount, errors };
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async scheduledCleanupDeletedFiles(): Promise<void> {
+    try {
+      this.logger.log('Starting scheduled cleanup of soft-deleted media');
+      const result = await this.cleanupDeletedFiles();
+
+      if (result.deletedCount > 0) {
+        this.logger.log(`Scheduled cleanup removed ${result.deletedCount} media items`);
+      }
+
+      if (result.errors.length > 0) {
+        this.logger.warn(`Scheduled cleanup encountered ${result.errors.length} errors`);
+      }
+    } catch (error) {
+      this.logger.error('Scheduled cleanup failed', error instanceof Error ? error.stack : error);
+    }
   }
 
   /**

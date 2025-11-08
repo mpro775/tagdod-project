@@ -116,6 +116,11 @@ export interface Product extends BaseEntity {
   manualRating?: number; // التقييم اليدوي (0-5)
   manualReviewsCount?: number; // عدد التقييمات اليدوي (للعرض فقط)
 
+  // التسعير للمنتجات البسيطة (بدون متغيرات)
+  basePriceUSD?: number;
+  compareAtPriceUSD?: number;
+  costPriceUSD?: number;
+
   // SEO
   metaTitle?: string;
   metaDescription?: string;
@@ -222,6 +227,11 @@ export interface CreateProductDto {
   useManualRating?: boolean;
   manualRating?: number;
   manualReviewsCount?: number;
+
+  // التسعير للمنتجات البسيطة
+  basePriceUSD?: number;
+  compareAtPriceUSD?: number;
+  costPriceUSD?: number;
 }
 
 export interface UpdateProductDto {
@@ -262,6 +272,11 @@ export interface UpdateProductDto {
   useManualRating?: boolean;
   manualRating?: number;
   manualReviewsCount?: number;
+
+  // التسعير للمنتجات البسيطة
+  basePriceUSD?: number;
+  compareAtPriceUSD?: number;
+  costPriceUSD?: number;
 }
 
 export interface ListProductsParams extends ListParams {

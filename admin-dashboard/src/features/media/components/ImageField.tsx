@@ -42,6 +42,8 @@ interface ImageFieldProps {
   value?: string | Media; // URL أو Media object
   // eslint-disable-next-line no-unused-vars
   onChange: (media: Media | null) => void;
+  // eslint-disable-next-line no-unused-vars
+  onMultiChange?: (media: Media[]) => void;
   required?: boolean;
   error?: boolean;
   helperText?: string;
@@ -58,6 +60,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
   label = 'الصورة',
   value,
   onChange,
+  onMultiChange,
   required = false,
   error = false,
   helperText,
@@ -78,6 +81,10 @@ export const ImageField: React.FC<ImageFieldProps> = ({
   const [selectedMedia, setSelectedMedia] = useState<Media | Media[] | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const handleUploaderClose = useCallback(() => {
+    setUploaderOpen(false);
+    setIsLoading(false);
+  }, []);
 
   // تحويل value إلى Media object أو استخدام selectedMedia
   const currentMedia = useMemo(() => {
@@ -105,10 +112,22 @@ export const ImageField: React.FC<ImageFieldProps> = ({
   }, [value, category, selectedMedia]);
 
   const handleSelectMedia = useCallback((media: Media | Media[]) => {
+    if (multiple) {
+      const mediaArray = Array.isArray(media) ? media : [media];
+      setSelectedMedia(mediaArray);
+      if (onMultiChange) {
+        onMultiChange(mediaArray);
+      } else {
+        onChange(mediaArray[0] ?? null);
+      }
+      setPickerOpen(false);
+      return;
+    }
+
     setSelectedMedia(media);
     onChange(Array.isArray(media) ? media[0] : media);
     setPickerOpen(false);
-  }, [onChange]);
+  }, [multiple, onChange, onMultiChange]);
 
   const handleUploadSuccess = useCallback((uploadedMedia?: Media) => {
     if (uploadedMedia) {
@@ -614,7 +633,13 @@ export const ImageField: React.FC<ImageFieldProps> = ({
       {/* Upload Dialog */}
       <MediaUploader
         open={uploaderOpen}
-        onClose={() => setUploaderOpen(false)}
+        onClose={handleUploaderClose}
+        onSuccess={handleUploadSuccess}
+        defaultCategory={category}
+      />
+      <MediaUploader
+        open={uploaderOpen}
+        onClose={handleUploaderClose}
         onSuccess={handleUploadSuccess}
         defaultCategory={category}
       />
