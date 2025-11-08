@@ -43,8 +43,25 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.redis.quit();
-    this.logger.log('Cache service destroyed');
+    if (!this.redis) {
+      return;
+    }
+
+    try {
+      const isTerminated = this.redis.status === 'end' || this.redis.status === 'close';
+      if (!isTerminated) {
+        await this.redis.quit();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message !== 'Connection is closed.' && message !== 'Connection is closed') {
+        this.logger.error('Error while closing Redis connection:', error);
+      } else {
+        this.logger.warn('Redis connection already closed. Skipping quit.');
+      }
+    } finally {
+      this.logger.log('Cache service destroyed');
+    }
   }
 
   private setupEventHandlers() {

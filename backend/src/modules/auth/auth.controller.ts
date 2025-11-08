@@ -21,11 +21,15 @@ import { UpdatePreferredCurrencyDto } from './dto/update-preferred-currency.dto'
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { AdminLoginDto } from './dto/admin-login.dto';
 import { UserLoginDto } from './dto/user-login.dto';
+import { BiometricRegisterChallengeDto } from './dto/biometric-register-challenge.dto';
+import { BiometricRegisterVerifyDto } from './dto/biometric-register-verify.dto';
+import { BiometricLoginChallengeDto } from './dto/biometric-login-challenge.dto';
+import { BiometricLoginVerifyDto } from './dto/biometric-login-verify.dto';
 
 import { UserSignupDto } from './dto/user-signup.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserRole, UserStatus, CapabilityStatus } from '../users/schemas/user.schema';
+import { User, UserRole, UserStatus, CapabilityStatus, UserDocument } from '../users/schemas/user.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
@@ -42,6 +46,7 @@ import {
   ErrorCode 
 } from '../../shared/exceptions';
 import { FavoritesService } from '../favorites/favorites.service';
+import { BiometricService } from './biometric.service';
 
 @ApiTags('المصادقة')
 @Controller('auth')
@@ -51,10 +56,48 @@ export class AuthController {
   constructor(
     private otp: OtpService,
     private tokens: TokensService,
+    private biometric: BiometricService,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     private favoritesService: FavoritesService,
   ) {}
+
+  private buildAuthResponse(user: UserDocument) {
+    const isAdminUser =
+      Array.isArray(user.roles) &&
+      (user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.SUPER_ADMIN));
+
+    const payload = {
+      sub: String(user._id),
+      phone: user.phone,
+      isAdmin: isAdminUser,
+      roles: user.roles || [],
+      permissions: user.permissions || [],
+      preferredCurrency: user.preferredCurrency || 'USD',
+    };
+
+    const access = this.tokens.signAccess(payload);
+    const refresh = this.tokens.signRefresh(payload);
+
+    return {
+      tokens: { access, refresh },
+      me: {
+        id: String(user._id),
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: user.gender,
+        city: user.city,
+        jobTitle: user.jobTitle,
+        roles: user.roles || [],
+        permissions: user.permissions || [],
+        isAdmin: isAdminUser,
+        preferredCurrency: user.preferredCurrency || 'USD',
+        engineerStatus: user.engineer_status,
+        merchantStatus: user.merchant_status,
+      },
+    };
+  }
 
   @Post('send-otp')
   @ApiOperation({
@@ -838,6 +881,366 @@ export class AuthController {
     };
   }
 
+  // ==================== مصادقة البصمة (WebAuthn) ====================
+  @Post('biometric/register-challenge')
+  @ApiOperation({
+    summary: 'الحصول على تحدي WebAuthn لتسجيل بصمة اليد',
+    description: 'ينشئ تحدياً لتسجيل جهاز جديد باستخدام WebAuthn للمستخدم المحدد',
+  })
+  @ApiBody({ type: BiometricRegisterChallengeDto })
+  @ApiOkResponse({
+    description: 'تم إنشاء التحدي بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        options: {
+          type: 'object',
+          properties: {
+            challenge: { type: 'string', example: 'base64url-encoded-challenge' },
+            rp: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', example: 'Tagdod Platform' },
+                id: { type: 'string', example: 'localhost' },
+              },
+            },
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'string', example: 'base64-encoded-user-id' },
+                name: { type: 'string', example: '+966501234567' },
+                displayName: { type: 'string', example: '+966501234567' },
+              },
+            },
+            pubKeyCredParams: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  type: { type: 'string', example: 'public-key' },
+                  alg: { type: 'number', example: -7 },
+                },
+              },
+            },
+            timeout: { type: 'number', example: 300000 },
+            attestationType: { type: 'string', example: 'none' },
+            authenticatorSelection: {
+              type: 'object',
+              properties: {
+                residentKey: { type: 'string', example: 'preferred' },
+                userVerification: { type: 'string', example: 'required' },
+              },
+            },
+            excludeCredentials: { type: 'array', items: { type: 'object' } },
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'بيانات غير صحيحة أو رقم هاتف غير صالح',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'صيغة رقم الهاتف غير صحيحة' },
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'المستخدم غير موجود أو الحساب غير نشط',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'المستخدم غير موجود' },
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
+  })
+  async createBiometricRegisterChallenge(@Body() body: BiometricRegisterChallengeDto) {
+    this.logger.log(`Biometric register challenge for phone: ${body.phone}`);
+
+    const user = await this.userModel.findOne({ phone: body.phone });
+    if (!user) {
+      this.logger.warn(`Biometric register failed - user not found: ${body.phone}`);
+      throw new UserNotFoundException({ phone: body.phone });
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      this.logger.warn(`Biometric register failed - user not active: ${body.phone}`);
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, {
+        phone: body.phone,
+        status: user.status,
+      });
+    }
+
+    const options = await this.biometric.generateRegistrationChallenge(user, {
+      deviceName: body.deviceName,
+      userAgent: body.userAgent,
+    });
+
+    return { options };
+  }
+
+  @Post('biometric/register-verify')
+  @ApiOperation({
+    summary: 'التحقق من استجابة WebAuthn لإتمام تسجيل بصمة اليد',
+    description: 'يتحقق من استجابة WebAuthn ويخزن بيانات الجهاز المسجل',
+  })
+  @ApiBody({ type: BiometricRegisterVerifyDto })
+  @ApiOkResponse({
+    description: 'تم تسجيل الجهاز بنجاح وإصدار التوكنات',
+    schema: {
+      type: 'object',
+      properties: {
+        tokens: {
+          type: 'object',
+          properties: {
+            access: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+            refresh: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+          },
+        },
+        me: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            phone: { type: 'string', example: '+966501234567' },
+            firstName: { type: 'string', example: 'أحمد' },
+            lastName: { type: 'string', example: 'محمد' },
+            gender: { type: 'string', example: 'male' },
+            city: { type: 'string', example: 'صنعاء' },
+            jobTitle: { type: 'string', example: 'مهندس' },
+            roles: { type: 'array', items: { type: 'string' }, example: [] },
+            permissions: { type: 'array', items: { type: 'string' }, example: [] },
+            isAdmin: { type: 'boolean', example: false },
+            preferredCurrency: { type: 'string', example: 'USD' },
+            engineerStatus: { type: 'string', example: 'none' },
+            merchantStatus: { type: 'string', example: 'none' },
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'بيانات الاستجابة غير صحيحة أو فشل التحقق',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'فشل التحقق من بيانات البصمة' },
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'فشل التحقق من الاستجابة أو انتهت صلاحية التحدي',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'انتهت صلاحية التحدي' },
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
+  })
+  async verifyBiometricRegister(@Body() body: BiometricRegisterVerifyDto) {
+    this.logger.log(`Biometric register verify for phone: ${body.phone}`);
+
+    const user = await this.userModel.findOne({ phone: body.phone });
+    if (!user) {
+      this.logger.warn(`Biometric register verify failed - user not found: ${body.phone}`);
+      throw new UserNotFoundException({ phone: body.phone });
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      this.logger.warn(`Biometric register verify failed - user not active: ${body.phone}`);
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, {
+        phone: body.phone,
+        status: user.status,
+      });
+    }
+
+    await this.biometric.verifyRegistration(user, body.response, {
+      deviceName: body.deviceName,
+      userAgent: body.userAgent,
+    });
+
+    this.logger.log(`Biometric registration successful: ${body.phone}`);
+    return this.buildAuthResponse(user);
+  }
+
+  @Post('biometric/login-challenge')
+  @ApiOperation({
+    summary: 'الحصول على تحدي WebAuthn لتسجيل الدخول بالبصمة',
+    description: 'ينشئ تحدياً لتوثيق المستخدم بالبصمة على جهاز مسجل مسبقاً',
+  })
+  @ApiBody({ type: BiometricLoginChallengeDto })
+  @ApiOkResponse({
+    description: 'تم إنشاء التحدي بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        options: {
+          type: 'object',
+          properties: {
+            challenge: { type: 'string', example: 'base64url-encoded-challenge' },
+            allowCredentials: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  type: { type: 'string', example: 'public-key' },
+                  id: { type: 'string', example: 'base64url-credential-id' },
+                  transports: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    example: ['internal', 'hybrid'],
+                  },
+                },
+              },
+            },
+            rpId: { type: 'string', example: 'localhost' },
+            timeout: { type: 'number', example: 300000 },
+            userVerification: { type: 'string', example: 'required' },
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'بيانات غير صحيحة',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'صيغة رقم الهاتف غير صحيحة' },
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'المستخدم غير موجود أو لم يتم تسجيل بصمة من قبل',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'لم يتم تسجيل بصمة لهذا المستخدم' },
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
+  })
+  async createBiometricLoginChallenge(@Body() body: BiometricLoginChallengeDto) {
+    this.logger.log(`Biometric login challenge for phone: ${body.phone}`);
+
+    const user = await this.userModel.findOne({ phone: body.phone });
+    if (!user) {
+      this.logger.warn(`Biometric login challenge failed - user not found: ${body.phone}`);
+      throw new UserNotFoundException({ phone: body.phone });
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      this.logger.warn(`Biometric login challenge failed - user not active: ${body.phone}`);
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, {
+        phone: body.phone,
+        status: user.status,
+      });
+    }
+
+    const options = await this.biometric.generateLoginChallenge(user, {
+      userAgent: body.userAgent,
+    });
+
+    return { options };
+  }
+
+  @Post('biometric/login-verify')
+  @ApiOperation({
+    summary: 'التحقق من استجابة WebAuthn لتسجيل الدخول بالبصمة',
+    description: 'يتحقق من التحدي ويصدر توكنات الدخول للمستخدم',
+  })
+  @ApiBody({ type: BiometricLoginVerifyDto })
+  @ApiOkResponse({
+    description: 'تم تسجيل الدخول بنجاح باستخدام البصمة',
+    schema: {
+      type: 'object',
+      properties: {
+        tokens: {
+          type: 'object',
+          properties: {
+            access: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+            refresh: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+          },
+        },
+        me: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            phone: { type: 'string', example: '+966501234567' },
+            firstName: { type: 'string', example: 'أحمد' },
+            lastName: { type: 'string', example: 'محمد' },
+            gender: { type: 'string', example: 'male' },
+            city: { type: 'string', example: 'صنعاء' },
+            jobTitle: { type: 'string', example: 'مهندس' },
+            roles: { type: 'array', items: { type: 'string' }, example: [] },
+            permissions: { type: 'array', items: { type: 'string' }, example: [] },
+            isAdmin: { type: 'boolean', example: false },
+            preferredCurrency: { type: 'string', example: 'USD' },
+            engineerStatus: { type: 'string', example: 'none' },
+            merchantStatus: { type: 'string', example: 'none' },
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'بيانات الاستجابة غير صحيحة',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'بيانات الاستجابة غير صحيحة' },
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'فشل التحقق من البصمة أو انتهت صلاحية التحدي',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'فشل التحقق من البصمة' },
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
+  })
+  async verifyBiometricLogin(@Body() body: BiometricLoginVerifyDto) {
+    this.logger.log(`Biometric login attempt for phone: ${body.phone}`);
+
+    const user = await this.userModel.findOne({ phone: body.phone });
+    if (!user) {
+      this.logger.warn(`Biometric login failed - user not found: ${body.phone}`);
+      throw new UserNotFoundException({ phone: body.phone });
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      this.logger.warn(`Biometric login failed - user not active: ${body.phone}`);
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, {
+        phone: body.phone,
+        status: user.status,
+      });
+    }
+
+    await this.biometric.verifyLogin(user, body.response, {
+      userAgent: body.userAgent,
+    });
+
+    this.logger.log(`Biometric login successful: ${body.phone}`);
+    return this.buildAuthResponse(user);
+  }
+
   // ==================== تسجيل دخول المستخدم العادي بكلمة المرور ====================
   @Post('user-login')
   @ApiOperation({
@@ -908,43 +1311,8 @@ export class AuthController {
       throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: body.phone, status: user.status });
     }
 
-    // حساب صلاحية الأدمن من الأدوار
-    const isAdminUser =
-      Array.isArray(user.roles) &&
-      (user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.SUPER_ADMIN));
-
-    // إنشاء الـ Tokens
-    const payload = {
-      sub: String(user._id),
-      phone: user.phone,
-      isAdmin: isAdminUser,
-      roles: user.roles || [],
-      permissions: user.permissions || [],
-      preferredCurrency: user.preferredCurrency || 'USD',
-    };
-    const access = this.tokens.signAccess(payload);
-    const refresh = this.tokens.signRefresh(payload);
-
     this.logger.log(`User login successful: ${body.phone}`);
-
-    return {
-      tokens: { access, refresh },
-      me: {
-        id: String(user._id),
-        phone: user.phone,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        gender: user.gender,
-        city: user.city,
-        jobTitle: user.jobTitle,
-        roles: user.roles || [],
-        permissions: user.permissions || [],
-        isAdmin: isAdminUser,
-        preferredCurrency: user.preferredCurrency || 'USD',
-        engineerStatus: user.engineer_status,
-        merchantStatus: user.merchant_status,
-      },
-    };
+    return this.buildAuthResponse(user);
   }
 
   // ==================== تسجيل دخول السوبر أدمن (للاستخدام في مرحلة التطوير) ====================

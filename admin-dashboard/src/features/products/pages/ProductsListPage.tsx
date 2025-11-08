@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { Box, Chip, IconButton, Tooltip, Button, Menu, MenuItem, Alert, Grid, Skeleton, Paper, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  IconButton,
+  Tooltip,
+  Button,
+  Menu,
+  MenuItem,
+  Alert,
+  Grid,
+  Skeleton,
+  Paper,
+  Typography,
+} from '@mui/material';
 import {
   Edit,
   Delete,
@@ -24,6 +37,7 @@ import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { ConfirmDialog } from '@/shared/components';
 import type { Product } from '../types/product.types';
 import { ProductStatus } from '../types/product.types';
+import { ProductImage } from '../components';
 
 export const ProductsListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -110,28 +124,81 @@ export const ProductsListPage: React.FC = () => {
       minWidth: 150,
       flex: 1,
       renderCell: (params) => {
-        const imageUrl = params.row.mainImage || 
-          (typeof params.row.mainImageId === 'object' ? params.row.mainImageId?.url : null) ||
-          params.row.images?.[0];
-        
+        const product = params.row as Product;
+        const primaryImage =
+          (typeof product.mainImageId === 'object' ? product.mainImageId : undefined) ??
+          product.mainImage;
+
+        const fallbackImages: Array<string | Record<string, unknown>> = [];
+
+        if (product.mainImage && typeof product.mainImage === 'string') {
+          fallbackImages.push(product.mainImage);
+        }
+
+        if (Array.isArray(product.imageIds) && product.imageIds.length > 0) {
+          const withUrl = product.imageIds.find(
+            (img: any) => img && typeof img === 'object' && typeof img.url === 'string',
+          );
+          if (withUrl) {
+            fallbackImages.push(withUrl as Record<string, unknown>);
+          }
+        }
+
         return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {imageUrl && (
-              <Box
-                component="img"
-                src={imageUrl}
-                alt={params.row.name}
-                sx={{
-                  width: { xs: 30, sm: 40 },
-                  height: { xs: 30, sm: 40 },
-                  borderRadius: 1,
-                  objectFit: 'cover',
-                }}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
+            <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+              <ProductImage
+                image={primaryImage}
+                fallbackImages={fallbackImages}
+                size={isMobile ? 36 : 48}
               />
-            )}
-            <Box>
-              <Box sx={{ fontWeight: 'medium', fontSize: { xs: '0.875rem', sm: '1rem' } }}>{params.row.name}</Box>
-              <Box sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' }, color: 'text.secondary' }}>{params.row.nameEn}</Box>
+              {product.isFeatured && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    bgcolor: 'warning.main',
+                    borderRadius: '50%',
+                    width: 18,
+                    height: 18,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  <Star sx={{ fontSize: 12, color: 'white' }} />
+                </Box>
+              )}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="subtitle2"
+                fontWeight="bold"
+                noWrap
+                sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}
+              >
+                {product.name}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                noWrap
+                sx={{ display: 'block', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+              >
+                {product.nameEn}
+              </Typography>
+              {product.sku && (
+                <Typography
+                  variant="caption"
+                  color="text.disabled"
+                  noWrap
+                  sx={{ display: 'block', fontSize: { xs: '0.6rem', sm: '0.7rem' }, mt: 0.25 }}
+                >
+                  SKU: {product.sku}
+                </Typography>
+              )}
             </Box>
           </Box>
         );

@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { Add, Delete, Edit } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { ImageField, MediaCategory } from '@/features/media';
+import { ImageField, MediaCategory, type Media } from '@/features/media';
 
 interface MediaItem {
   _id?: string;
@@ -60,26 +60,47 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
     onChange(newImages);
   };
 
-  const handleImageSelect = (media: { _id?: string; url: string; name?: string } | null) => {
-    if (!media) return;
+  const createImageItem = (media: Media, index: number) => ({
+    _id: media._id,
+    url: media.url,
+    name: media.name || t('products:form.imageDefault', 'صورة {{number}}', { number: index + 1 }),
+  });
+
+  const handleImageSelect = (selectedMedia: Media | Media[] | null) => {
+    if (!selectedMedia) return;
+
+    const mediaArray = Array.isArray(selectedMedia) ? selectedMedia : [selectedMedia];
+
+    if (mediaArray.length === 0) return;
+
     if (editingIndex !== null) {
-      // Edit existing image
+      const [firstMedia] = mediaArray;
+      if (!firstMedia) return;
+
       const newImages = [...value];
-      newImages[editingIndex] = {
-        _id: media._id,
-        url: media.url,
-        name: media.name || t('products:form.imageDefault', 'صورة {{number}}', { number: editingIndex + 1 }),
-      };
+      newImages[editingIndex] = createImageItem(firstMedia, editingIndex);
       onChange(newImages);
     } else {
-      // Add new image
-      const newImage = {
-        _id: media._id,
-        url: media.url,
-        name: media.name || t('products:form.imageDefault', 'صورة {{number}}', { number: value.length + 1 }),
-      };
-      onChange([...value, newImage]);
+      const remainingSlots = Math.max(0, maxImages - value.length);
+      if (remainingSlots === 0) {
+        setDialogOpen(false);
+        setEditingIndex(null);
+        return;
+      }
+
+      const limitedMedia = mediaArray.slice(0, remainingSlots);
+      if (limitedMedia.length === 0) {
+        setDialogOpen(false);
+        setEditingIndex(null);
+        return;
+      }
+
+      const newImages = limitedMedia.map((media, idx) =>
+        createImageItem(media, value.length + idx)
+      );
+      onChange([...value, ...newImages]);
     }
+
     setDialogOpen(false);
     setEditingIndex(null);
   };
@@ -237,9 +258,12 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
                 ? value[editingIndex].url
                 : undefined
             }
-            onChange={handleImageSelect}
+            onChange={(media) => handleImageSelect(media)}
+            onMultiChange={(media) => handleImageSelect(media)}
             category={MediaCategory.PRODUCT}
             helperText={t('media:uploader.selectFile', 'يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة')}
+            multiple={editingIndex === null}
+            maxSelections={editingIndex !== null ? 1 : Math.max(1, maxImages - value.length)}
           />
         </DialogContent>
         <DialogActions>

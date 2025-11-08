@@ -25,6 +25,11 @@
   "private": "Private",
   "deleted": "Deleted",
   "used": "Used",
+  "autoDelete": {
+    "countdown": "Auto cleanup {{time}}",
+    "due": "Auto cleanup imminent",
+    "tooltip": "Scheduled for automatic cleanup on {{date}}"
+  },
 
   "filters": {
     "search": "Search",

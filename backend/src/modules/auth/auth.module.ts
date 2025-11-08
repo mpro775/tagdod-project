@@ -8,6 +8,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabilities.schema';
 import { FavoritesModule } from '../favorites/favorites.module';
 import { SharedModule } from '../../shared/shared.module';
+import { BiometricService } from './biometric.service';
 @Module({
   imports: [
     forwardRef(() => FavoritesModule),
@@ -18,7 +19,7 @@ import { SharedModule } from '../../shared/shared.module';
     SharedModule,
   ],
   controllers: [AuthController],
-  providers: [OtpService, TokensService, JwtAuthGuard],
+  providers: [OtpService, TokensService, JwtAuthGuard, BiometricService],
   exports: [TokensService, JwtAuthGuard, MongooseModule],
 })
 export class AuthModule {}

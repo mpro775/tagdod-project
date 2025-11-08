@@ -23,9 +23,10 @@ import {
 } from '@mui/icons-material';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { formatFileSize } from '@/shared/utils/formatters';
+import { formatFileSize, formatDate } from '@/shared/utils/formatters';
 import { useTranslation } from 'react-i18next';
 import type { Media } from '../types/media.types';
+import { addDays } from 'date-fns';
 
 interface SortableMediaCardProps {
   media: Media;
@@ -55,7 +56,7 @@ export const SortableMediaCard: React.FC<SortableMediaCardProps> = ({
   onMenuOpen,
   confirmDelete,
 }) => {
-  const { t } = useTranslation('media');
+  const { t, i18n } = useTranslation('media');
   
   const {
     attributes,
@@ -71,6 +72,57 @@ export const SortableMediaCard: React.FC<SortableMediaCardProps> = ({
     transition,
     opacity: isDragging ? 0.5 : media.deletedAt ? 0.6 : 1,
   };
+
+  const autoDeleteInfo = React.useMemo(() => {
+    if (!media.deletedAt) {
+      return null;
+    }
+
+    const deletedAtDate = new Date(media.deletedAt);
+    if (Number.isNaN(deletedAtDate.getTime())) {
+      return null;
+    }
+
+    const autoDeleteDays = Number(import.meta.env.VITE_MEDIA_AUTO_DELETE_DAYS ?? 30);
+    const autoDeleteDate = addDays(deletedAtDate, autoDeleteDays);
+    const now = new Date();
+    const isDue = autoDeleteDate.getTime() <= now.getTime();
+    const locale = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+    const tooltipDate = formatDate(autoDeleteDate, 'yyyy-MM-dd HH:mm', locale);
+
+    if (isDue) {
+      return {
+        label: t('autoDelete.due'),
+        tooltip: t('autoDelete.tooltip', { date: tooltipDate }),
+      };
+    }
+
+    const totalMinutes = Math.max(
+      1,
+      Math.round((autoDeleteDate.getTime() - now.getTime()) / (60 * 1000))
+    );
+
+    const value =
+      totalMinutes >= 1440
+        ? Math.round(totalMinutes / 1440)
+        : totalMinutes >= 60
+          ? Math.round(totalMinutes / 60)
+          : totalMinutes;
+
+    const unit: Intl.RelativeTimeFormatUnit =
+      totalMinutes >= 1440 ? 'day' : totalMinutes >= 60 ? 'hour' : 'minute';
+
+    const relativeFormatter = new Intl.RelativeTimeFormat(
+      i18n.language || (locale === 'ar' ? 'ar' : 'en'),
+      { numeric: 'always' }
+    );
+    const relativeTime = relativeFormatter.format(value, unit);
+
+    return {
+      label: t('autoDelete.countdown', { time: relativeTime }),
+      tooltip: t('autoDelete.tooltip', { date: tooltipDate }),
+    };
+  }, [media.deletedAt, i18n.language, t]);
 
   return (
     <Card
@@ -211,6 +263,18 @@ export const SortableMediaCard: React.FC<SortableMediaCardProps> = ({
                 />
               )}
             </Box>
+            {media.deletedAt && autoDeleteInfo && (
+              <Tooltip title={autoDeleteInfo.tooltip}>
+                <Typography
+                  variant="caption"
+                  color="error"
+                  display="block"
+                  sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' }, mt: 0.75 }}
+                >
+                  {autoDeleteInfo.label}
+                </Typography>
+              </Tooltip>
+            )}
           </Box>
           {media.usageCount > 0 && (
             <Badge badgeContent={media.usageCount} color="primary">
