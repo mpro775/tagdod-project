@@ -38,6 +38,15 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Install runtime dependencies for sharp and other native modules
+RUN apk add --no-cache \
+    vips-dev \
+    fftw-dev \
+    gcc \
+    g++ \
+    make \
+    libc6-compat
+
 # لو تطبيقك يحتاج فقط prod deps:
 # COPY package.json package-lock.json ./
 # RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --no-audit --no-fund
