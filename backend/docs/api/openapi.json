@@ -26501,6 +26501,45 @@
             "bearer": []
           }
         ]
+      },
+      "post": {
+        "operationId": "createPolicy",
+        "summary": "إنشاء سياسة جديدة",
+        "description": "إنشاء سياسة جديدة من لوحة التحكم (terms أو privacy)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePolicyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء السياسة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "سياسة من نفس النوع موجودة بالفعل"
+          }
+        },
+        "tags": [
+          "إدارة-السياسات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/v1/admin/policies/{type}": {
@@ -29187,6 +29226,27 @@
         "type": "object",
         "properties": {}
       },
+      "MediaReferenceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "64f9c0b5c1a2b3d4e5f67890"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://cdn.example.com/images/bank-icon.png"
+          },
+          "name": {
+            "type": "string",
+            "example": "أيقونة بنك الكريمي"
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ]
+      },
       "GroupedPaymentAccountDto": {
         "type": "object",
         "properties": {
@@ -29194,8 +29254,13 @@
             "type": "string",
             "example": "الكريمي"
           },
-          "iconUrl": {
-            "type": "string"
+          "icon": {
+            "description": "بيانات الوسائط المرتبطة بالأيقونة",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaReferenceDto"
+              }
+            ]
           },
           "type": {
             "type": "string",
@@ -29242,9 +29307,10 @@
             "example": "الكريمي",
             "description": "اسم البنك أو المحفظة"
           },
-          "iconUrl": {
-            "type": "string",
-            "example": "https://example.com/icon.png"
+          "iconMediaId": {
+            "type": "object",
+            "example": "64f9c0b5c1a2b3d4e5f67890",
+            "description": "معرف الوسائط للأيقونة"
           },
           "accountNumber": {
             "type": "string",
@@ -29293,8 +29359,8 @@
           "providerName": {
             "type": "string"
           },
-          "iconUrl": {
-            "type": "string"
+          "iconMediaId": {
+            "type": "object"
           },
           "accountNumber": {
             "type": "string"
@@ -31193,6 +31259,47 @@
           "lastUpdatedBy",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "CreatePolicyDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "terms",
+              "privacy"
+            ],
+            "description": "نوع السياسة"
+          },
+          "titleAr": {
+            "type": "string",
+            "description": "العنوان بالعربية"
+          },
+          "titleEn": {
+            "type": "string",
+            "description": "العنوان بالإنجليزية"
+          },
+          "contentAr": {
+            "type": "string",
+            "description": "المحتوى بالعربية (HTML)"
+          },
+          "contentEn": {
+            "type": "string",
+            "description": "المحتوى بالإنجليزية (HTML)"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "حالة النشر",
+            "default": true
+          }
+        },
+        "required": [
+          "type",
+          "titleAr",
+          "titleEn",
+          "contentAr",
+          "contentEn"
         ]
       },
       "UpdatePolicyDto": {

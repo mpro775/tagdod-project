@@ -15,7 +15,8 @@
 export interface LocalPaymentAccount {
   _id: string;
   providerName: string;
-  iconUrl?: string;
+  iconMediaId?: string | null;
+  icon?: MediaReference;
   accountNumber: string;
   type: 'bank' | 'wallet';
   currency: 'YER' | 'SAR' | 'USD';
@@ -30,7 +31,7 @@ export interface LocalPaymentAccount {
 // حساب مجمع (مجمعة حسب providerName)
 export interface GroupedPaymentAccount {
   providerName: string;
-  iconUrl?: string;
+  icon?: MediaReference;
   type: 'bank' | 'wallet';
   accounts: Array<{
     id: string;
@@ -81,7 +82,7 @@ localPaymentAccountsApi = {
 
 **Dialog لإضافة/تعديل الحسابات:**
 - اسم البنك/المحفظة (مطلوب)
-- رابط الأيقونة (اختياري)
+- اختيار أيقونة من مكتبة الوسائط (اختياري)
 - النوع: بنك/محفظة
 - رقم الحساب (مطلوب)
 - العملة: YER/SAR/USD

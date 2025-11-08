@@ -53,11 +53,20 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { systemSettingsApi, localPaymentAccountsApi } from '../api/systemSettingsApi';
-import type { SystemSetting, LocalPaymentAccount, GroupedPaymentAccount, CreatePaymentAccountDto } from '../api/systemSettingsApi';
+import type {
+  SystemSetting,
+  LocalPaymentAccount,
+  GroupedPaymentAccount,
+  CreatePaymentAccountDto,
+  MediaReference,
+} from '../api/systemSettingsApi';
 import { toast } from 'react-hot-toast';
 import { alpha } from '@mui/material/styles';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { ConfirmDialog } from '@/shared/components';
+import { MediaPicker } from '@/features/media/components/MediaPicker';
+import type { Media } from '@/features/media/types/media.types';
+import { MediaCategory, MediaType } from '@/features/media/types/media.types';
 
 export function SystemSettingsPage() {
   const theme = useTheme();
@@ -78,12 +87,15 @@ export function SystemSettingsPage() {
   const [editingAccount, setEditingAccount] = useState<LocalPaymentAccount | null>(null);
   const [accountForm, setAccountForm] = useState<CreatePaymentAccountDto>({
     providerName: '',
+    iconMediaId: null,
     accountNumber: '',
     type: 'bank',
     currency: 'YER',
     isActive: true,
     displayOrder: 0,
   });
+  const [selectedIcon, setSelectedIcon] = useState<MediaReference | null>(null);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
   const fetchSettings = async () => {
     try {
@@ -132,9 +144,14 @@ export function SystemSettingsPage() {
   const handleOpenAccountDialog = (account?: LocalPaymentAccount) => {
     if (account) {
       setEditingAccount(account);
+      const iconRef = account.icon ?? (account.iconMediaId ? {
+        id: account.iconMediaId,
+        url: '',
+        name: account.providerName,
+      } : null);
       setAccountForm({
         providerName: account.providerName,
-        iconUrl: account.iconUrl,
+        iconMediaId: account.icon?.id ?? account.iconMediaId ?? null,
         accountNumber: account.accountNumber,
         type: account.type,
         currency: account.currency,
@@ -142,16 +159,19 @@ export function SystemSettingsPage() {
         notes: account.notes,
         displayOrder: account.displayOrder,
       });
+      setSelectedIcon(iconRef);
     } else {
       setEditingAccount(null);
       setAccountForm({
         providerName: '',
+        iconMediaId: null,
         accountNumber: '',
         type: 'bank',
         currency: 'YER',
         isActive: true,
         displayOrder: 0,
       });
+      setSelectedIcon(null);
     }
     setAccountDialogOpen(true);
   };
@@ -159,6 +179,33 @@ export function SystemSettingsPage() {
   const handleCloseAccountDialog = () => {
     setAccountDialogOpen(false);
     setEditingAccount(null);
+    setSelectedIcon(null);
+    setIconPickerOpen(false);
+  };
+
+  const handleIconSelect = (media: Media | Media[]) => {
+    const selected = Array.isArray(media) ? media[0] : media;
+    if (!selected) return;
+
+    const reference: MediaReference = {
+      id: selected._id,
+      url: selected.url,
+      name: selected.name,
+    };
+
+    setSelectedIcon(reference);
+    setAccountForm((prev) => ({
+      ...prev,
+      iconMediaId: reference.id,
+    }));
+  };
+
+  const handleRemoveIcon = () => {
+    setSelectedIcon(null);
+    setAccountForm((prev) => ({
+      ...prev,
+      iconMediaId: null,
+    }));
   };
 
   const handleSaveAccount = async () => {
@@ -902,8 +949,8 @@ export function SystemSettingsPage() {
                         <TableRow key={group.providerName}>
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              {group.iconUrl && (
-                                <Avatar src={group.iconUrl} sx={{ width: 32, height: 32 }} />
+                              {group.icon?.url && (
+                                <Avatar src={group.icon.url} sx={{ width: 32, height: 32 }} />
                               )}
                               <Typography variant="body1" fontWeight="medium">
                                 {group.providerName}
@@ -1185,13 +1232,47 @@ export function SystemSettingsPage() {
               required
             />
 
-            <TextField
-              label={t('sections.localPaymentAccounts.iconUrlLabel')}
-              value={accountForm.iconUrl || ''}
-              onChange={(e) => setAccountForm({ ...accountForm, iconUrl: e.target.value })}
-              fullWidth
-              placeholder={t('sections.localPaymentAccounts.iconUrlPlaceholder')}
-            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography variant="subtitle2">
+                {t('sections.localPaymentAccounts.iconLabel')}
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'flex-start', sm: 'center' },
+                  gap: 2,
+                }}
+              >
+                <Avatar
+                  src={selectedIcon?.url}
+                  sx={{ width: 56, height: 56 }}
+                >
+                  {!selectedIcon && accountForm.providerName?.charAt(0)?.toUpperCase()}
+                </Avatar>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setIconPickerOpen(true)}
+                    size="small"
+                  >
+                    {selectedIcon
+                      ? t('sections.localPaymentAccounts.changeIcon')
+                      : t('sections.localPaymentAccounts.selectIcon')}
+                  </Button>
+                  {selectedIcon && (
+                    <Button
+                      variant="text"
+                      color="error"
+                      onClick={handleRemoveIcon}
+                      size="small"
+                    >
+                      {t('sections.localPaymentAccounts.removeIcon')}
+                    </Button>
+                  )}
+                </Box>
+              </Box>
+            </Box>
 
             <FormControl fullWidth>
               <InputLabel>{t('sections.localPaymentAccounts.type')}</InputLabel>
@@ -1271,6 +1352,15 @@ export function SystemSettingsPage() {
 
       {/* Confirm Dialog */}
       <ConfirmDialog {...dialogProps} />
+      <MediaPicker
+        open={iconPickerOpen}
+        onClose={() => setIconPickerOpen(false)}
+        onSelect={handleIconSelect}
+        acceptTypes={[MediaType.IMAGE]}
+        category={MediaCategory.OTHER}
+        showFilters={false}
+        title={t('sections.localPaymentAccounts.iconPickerTitle')}
+      />
     </Box>
   );
 }

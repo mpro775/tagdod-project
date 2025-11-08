@@ -20,7 +20,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { PoliciesService } from './policies.service';
-import { UpdatePolicyDto, TogglePolicyDto, PolicyResponseDto } from './dto/policy.dto';
+import { CreatePolicyDto, UpdatePolicyDto, TogglePolicyDto, PolicyResponseDto } from './dto/policy.dto';
 import { PolicyType } from './schemas/policy.schema';
 
 interface JwtUser {
@@ -54,6 +54,25 @@ export class PoliciesAdminController {
   })
   async getAllPolicies(): Promise<PolicyResponseDto[]> {
     return this.policiesService.getAllPolicies();
+  }
+
+  @Post()
+  @ApiOperation({
+    summary: 'إنشاء سياسة جديدة',
+    description: 'إنشاء سياسة جديدة من لوحة التحكم (terms أو privacy)',
+  })
+  @ApiBody({ type: CreatePolicyDto })
+  @ApiResponse({
+    status: 201,
+    description: 'تم إنشاء السياسة بنجاح',
+    type: PolicyResponseDto,
+  })
+  @ApiResponse({ status: 409, description: 'سياسة من نفس النوع موجودة بالفعل' })
+  async createPolicy(
+    @Body() dto: CreatePolicyDto,
+    @Req() req: RequestWithUser,
+  ): Promise<PolicyResponseDto> {
+    return this.policiesService.createPolicy(dto, req.user.sub);
   }
 
   @Get(':type')

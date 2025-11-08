@@ -91,6 +91,8 @@ export class BiometricService {
         id: credential.id.toString(),
         transports: credential.transports,
       })),
+      // Prioritize ES256 for better compatibility with Samsung Pass and other authenticators
+      supportedAlgorithmIDs: [-7, -257], // ES256 first, then RS256 as fallback
     });
 
     this.storeChallenge(String(user._id), 'register', options.challenge, metadata);

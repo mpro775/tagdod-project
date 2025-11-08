@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Policy, PolicyDocument, PolicyType } from './schemas/policy.schema';
@@ -18,7 +18,7 @@ export class PoliciesService {
     // التحقق من عدم وجود سياسة من نفس النوع
     const existingPolicy = await this.policyModel.findOne({ type: dto.type });
     if (existingPolicy) {
-      throw new NotFoundException(`سياسة من نوع ${dto.type} موجودة بالفعل. استخدم التحديث بدلاً من الإنشاء.`);
+      throw new ConflictException(`سياسة من نوع ${dto.type} موجودة بالفعل. استخدم التحديث بدلاً من الإنشاء.`);
     }
 
     const policy = new this.policyModel({

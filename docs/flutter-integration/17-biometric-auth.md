@@ -44,9 +44,48 @@
 
 ---
 
-## 3. نقاط النهاية الجديدة
+## 3. الخوارزميات المدعومة (Cryptographic Algorithms)
 
-### 3.1 إنشاء تحدي تسجيل جهاز
+الخادم تم تكوينه لدعم الخوارزميات التالية بالترتيب:
+
+### 3.1 ES256 (ECDSA with SHA-256) - الأولوية
+- **Algorithm ID:** `-7`
+- **الوصف:** خوارزمية التوقيع الرقمي بالمنحنيات الإهليلجية (Elliptic Curve)
+- **التوافق:** 
+  - ✅ Samsung Pass (جميع أجهزة Samsung الحديثة)
+  - ✅ Google Password Manager
+  - ✅ Apple Face ID / Touch ID
+  - ✅ Windows Hello
+  - ✅ معظم أجهزة Android الحديثة
+- **الميزات:** سريعة، آمنة، واستهلاك منخفض للموارد
+
+### 3.2 RS256 (RSASSA-PKCS1-v1_5 with SHA-256) - الاحتياطي
+- **Algorithm ID:** `-257`
+- **الوصف:** خوارزمية RSA التقليدية
+- **التوافق:**
+  - ✅ الأجهزة القديمة التي لا تدعم Elliptic Curve
+  - ✅ بعض Security Keys (YubiKey)
+  - ✅ أجهزة Android القديمة
+- **الميزات:** توافق أوسع مع الأجهزة القديمة
+
+> **ملاحظة فنية:** تم استبعاد خوارزمية EdDSA (alg: -8) من القائمة المدعومة لأنها غير مدعومة حالياً من قبل معظم مديري كلمات المرور في الأجهزة المحمولة، بما في ذلك Samsung Pass.
+
+### 3.3 استكشاف مشاكل الخوارزميات
+
+إذا واجهت رسالة خطأ **"None of the algorithms are supported"**:
+
+1. **تأكد من تحديث الخادم:** الخوارزميات المحددة يجب أن تكون ES256 أولاً
+2. **تحقق من إصدار نظام التشغيل:**
+   - Android: يتطلب Android 7.0+ مع Google Play Services محدث
+   - iOS: يتطلب iOS 16+ لدعم Passkeys الكامل
+3. **تأكد من تمكين Screen Lock:** البصمة تتطلب قفل الشاشة نشط
+4. **جرب جهاز آخر:** بعض الأجهزة القديمة قد لا تدعم WebAuthn
+
+---
+
+## 4. نقاط النهاية الجديدة
+
+### 4.1 إنشاء تحدي تسجيل جهاز
 
 - **Endpoint:** `POST /auth/biometric/register-challenge`
 - **Body:** `BiometricRegisterChallengeDto`
@@ -71,7 +110,10 @@
       "name": "+966501234567",
       "displayName": "+966501234567"
     },
-    "pubKeyCredParams": [ { "type": "public-key", "alg": -7 }, ... ],
+    "pubKeyCredParams": [
+      { "type": "public-key", "alg": -7 },
+      { "type": "public-key", "alg": -257 }
+    ],
     "excludeCredentials": [...],
     "authenticatorSelection": { "userVerification": "required" },
     "timeout": 300000
@@ -79,7 +121,9 @@
 }
 ```
 
-### 3.2 التحقق وتخزين جهاز جديد
+> **ملاحظة هامة:** الخادم يعطي الأولوية لخوارزمية **ES256 (alg: -7)** لتوافقها الواسع مع معظم الأجهزة بما في ذلك Samsung Pass وGoogle Password Manager، مع توفير **RS256 (alg: -257)** كخيار احتياطي.
+
+### 4.2 التحقق وتخزين جهاز جديد
 
 - **Endpoint:** `POST /auth/biometric/register-verify`
 - **Body:** `BiometricRegisterVerifyDto`
@@ -122,7 +166,7 @@
 }
 ```
 
-### 3.3 إنشاء تحدي تسجيل الدخول
+### 4.3 إنشاء تحدي تسجيل الدخول
 
 - **Endpoint:** `POST /auth/biometric/login-challenge`
 - **Body:** `BiometricLoginChallengeDto`
@@ -150,7 +194,7 @@
 }
 ```
 
-### 3.4 التحقق من تسجيل الدخول بالبصمة
+### 4.4 التحقق من تسجيل الدخول بالبصمة
 
 - **Endpoint:** `POST /auth/biometric/login-verify`
 - **Body:** `BiometricLoginVerifyDto`
@@ -178,9 +222,9 @@
 
 ---
 
-## 4. واجهة Flutter (أمثلة مختصرة)
+## 5. واجهة Flutter (أمثلة مختصرة)
 
-### 4.1 الحصول على تحدي التسجيل
+### 5.1 الحصول على تحدي التسجيل
 
 ```dart
 final optionsResponse = await http.post(
@@ -196,7 +240,7 @@ final optionsResponse = await http.post(
 final creationOptions = jsonDecode(optionsResponse.body)['options'];
 ```
 
-### 4.2 استدعاء Passkey/ WebAuthn في Flutter
+### 5.2 استدعاء Passkey/ WebAuthn في Flutter
 
 ```dart
 final passkeyResult = await FlutterPasskeys.registerPasskey(
@@ -212,7 +256,7 @@ final passkeyResult = await FlutterPasskeys.registerPasskey(
 
 > تختلف التفاصيل بين الحزم. تأكد من تحويل قيم `challenge`, `id`, `rawId` بين base64 وbase64url حسب المتطلبات.
 
-### 4.3 إرسال الاستجابة للتحقق
+### 5.3 إرسال الاستجابة للتحقق
 
 ```dart
 final verifyResponse = await http.post(
@@ -229,7 +273,7 @@ final verifyResponse = await http.post(
 final tokens = jsonDecode(verifyResponse.body)['tokens'];
 ```
 
-### 4.4 تسجيل الدخول بجهاز مسجّل
+### 5.4 تسجيل الدخول بجهاز مسجّل
 
 نفس النمط، ولكن استخدم `login-challenge` ثم `login-verify`. عند الاستدعاء في Flutter:
 
@@ -246,7 +290,7 @@ final assertion = await FlutterPasskeys.authenticate(
 
 ---
 
-## 5. حالات الفشل وأكواد الأخطاء
+## 6. حالات الفشل وأكواد الأخطاء
 
 | الحالة | الكود | الوصف |
 |--------|-------|--------|
@@ -258,17 +302,18 @@ final assertion = await FlutterPasskeys.authenticate(
 
 <br />
 
-## 6. أفضل الممارسات
+## 7. أفضل الممارسات
 
 - احتفظ بخيار الرجوع لـ OTP أو كلمة مرور لتفادي إقفال المستخدم عن حسابه.
 - استخدم `deviceName` لعرض الأجهزة الموثوقة في واجهة المستخدم (يمكن إضافة Endpoints لاحقاً لإدارتها).
 - احرص على مسح التحديات بعد الاستخدام في الطرف العميل لتقليل أي تسرب محتمل.
 - في Android تأكد من تفعيل Google Play Services (FIDO2 API) وفي iOS يلزم iOS 16 أو أحدث لدعم Passkeys.
 - استخدم cache على مستوى التطبيق لتجنب طلب تحديات متعددة في نفس الوقت للمستخدم نفسه.
+- **تحديث هام:** تأكد من أن الخادم يعطي الأولوية لخوارزمية ES256 في `pubKeyCredParams` لضمان التوافق الأمثل مع Samsung Pass وأجهزة Android.
 
 ---
 
-## 7. قائمة اختبارات مقترحة
+## 8. قائمة اختبارات مقترحة
 
 - تسجيل جهاز لأول مرة، ثم تسجيل الدخول بنجاح.
 - محاولة تسجيل جهاز جديد لنفس المستخدم من أكثر من جهاز (يجب السماح بذلك مع حفظ كل جهاز).
@@ -276,10 +321,11 @@ final assertion = await FlutterPasskeys.authenticate(
 - تسجيل الدخول بعد انقضاء التحدي (يجب رفضه وإعادة الخطوات).
 - التعامل مع مستخدم غير نشط أو حساب مقفل (يجب رفض التشغيل).
 - اختبار fallback إلى OTP أو كلمة المرور في حالة رفض البصمة.
+- اختبار الميزة على جهاز Samsung مع Samsung Pass للتأكد من دعم خوارزمية ES256.
 
 ---
 
-## 8. الأسئلة الشائعة (FAQ)
+## 9. الأسئلة الشائعة (FAQ)
 
 **هل يلزم تغيير شيء في تطبيق Flutter ليعمل على الويب؟**  
 نعم، WebAuthn يعمل أيضاً على الويب، لكن يتطلب ربطاً مع واجهة JavaScript (يمكن استخدام `package:web_authn` أو بناء قناة JS مع Flutter Web).
@@ -289,6 +335,13 @@ final assertion = await FlutterPasskeys.authenticate(
 
 **ما هي الحماية من إعادة تشغيل (Replay)?**  
 الخادم يتحقق من `counter` (`signCount`). أي استجابة قديمة سيتم رفضها بسبب الرقم المتزايد المخزن.
+
+**لماذا أحصل على خطأ "None of the algorithms are supported" على Samsung؟**  
+Samsung Pass يتطلب خوارزمية ES256 (alg: -7) كخيار أول. تأكد من تحديث الخادم إلى أحدث إصدار والذي يعطي الأولوية لـ ES256. إذا استمرت المشكلة:
+- تأكد من أن Samsung Pass محدث لأحدث إصدار
+- تحقق من تمكين قفل الشاشة والبصمة في إعدادات الجهاز
+- جرب إعادة تشغيل Samsung Pass أو الجهاز
+- في بعض الأجهزة القديمة جداً قد تحتاج لاستخدام Google Password Manager بدلاً من Samsung Pass
 
 ---
 
