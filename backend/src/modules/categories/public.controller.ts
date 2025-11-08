@@ -55,23 +55,25 @@ export class CategoriesPublicController {
           items: {
             type: 'object',
             properties: {
-              _id: { type: 'string', example: '64a1b2c3d4e5f6789abcdef0' },
+              id: { type: 'string', example: '64a1b2c3d4e5f6789abcdef0' },
               name: { type: 'string', example: 'الإلكترونيات' },
               nameEn: { type: 'string', example: 'Electronics' },
-              slug: { type: 'string', example: 'electronics' },
-              description: { type: 'string', example: 'جميع الأجهزة الإلكترونية والكهربائية' },
               parentId: { type: 'string', example: null },
+              image: {
+                type: 'object',
+                nullable: true,
+                properties: {
+                  id: { type: 'string', example: '64img123abc' },
+                  path: { type: 'string', example: 'media/category/lighting.png' },
+                },
+              },
               isActive: { type: 'boolean', example: true },
-              isFeatured: { type: 'boolean', example: true },
               order: { type: 'number', example: 1 },
-              productCount: { type: 'number', example: 25 },
-              createdAt: { type: 'string', format: 'date-time' },
-              updatedAt: { type: 'string', format: 'date-time' }
-            }
-          }
-        }
-      }
-    }
+            },
+          },
+        },
+      },
+    },
   })
   @CacheResponse({ ttl: 1800 }) // 30 minutes
   async listCategories(
@@ -87,7 +89,7 @@ export class CategoriesPublicController {
       isFeatured: featured,
     });
 
-    return data;
+    return this.mapPublicCategories(data);
   }
 
   // ==================== شجرة الفئات الكاملة ====================
@@ -142,7 +144,7 @@ export class CategoriesPublicController {
   @CacheResponse({ ttl: 3600 }) // 1 hour
   async getCategoryTree() {
     const data = await this.categoriesService.getCategoryTree();
-    return data;
+    return this.mapCategoryTree(data);
   }
 
   // ==================== المنتجات حسب الفئة ====================
@@ -398,23 +400,25 @@ export class CategoriesPublicController {
           items: {
             type: 'object',
             properties: {
-              _id: { type: 'string', example: '64a1b2c3d4e5f6789abcdef0' },
+              id: { type: 'string', example: '64a1b2c3d4e5f6789abcdef0' },
               name: { type: 'string', example: 'الإلكترونيات المميزة' },
               nameEn: { type: 'string', example: 'Featured Electronics' },
-              slug: { type: 'string', example: 'featured-electronics' },
-              description: { type: 'string', example: 'أفضل الأجهزة الإلكترونية المختارة' },
               parentId: { type: 'string', example: null },
+              image: {
+                type: 'object',
+                nullable: true,
+                properties: {
+                  id: { type: 'string', example: '64img123abc' },
+                  path: { type: 'string', example: 'media/category/featured.png' },
+                },
+              },
               isActive: { type: 'boolean', example: true },
-              isFeatured: { type: 'boolean', example: true },
               order: { type: 'number', example: 1 },
-              productCount: { type: 'number', example: 10 },
-              createdAt: { type: 'string', format: 'date-time' },
-              updatedAt: { type: 'string', format: 'date-time' }
-            }
-          }
-        }
-      }
-    }
+            },
+          },
+        },
+      },
+    },
   })
   @CacheResponse({ ttl: 1800 }) // 30 minutes
   async getFeaturedCategories() {
@@ -422,6 +426,101 @@ export class CategoriesPublicController {
       isActive: true,
       isFeatured: true,
     });
-    return data;
+    return this.mapPublicCategories(data);
+  }
+
+  private mapPublicCategories(categories: Array<unknown>) {
+    return categories.map((category) =>
+      this.mapPublicCategory(category as Record<string, unknown>),
+    );
+  }
+
+  private mapPublicCategory(category: Record<string, unknown>) {
+    const image = this.mapCategoryImage(category?.['imageId']);
+    const parent = this.mapCategoryParent(category?.['parentId']);
+
+    return {
+      id: String(category?._id ?? ''),
+      name: category?.['name'] ?? null,
+      nameEn: category?.['nameEn'] ?? null,
+      parent,
+      image,
+      isActive: Boolean(category?.['isActive']),
+      order: Number(category?.['order'] ?? 0),
+    };
+  }
+
+  private mapCategoryParent(parent: unknown) {
+    const id =
+      typeof parent === 'object'
+        ? this.safeString(
+            (parent as Record<string, unknown>)?._id ?? (parent as Record<string, unknown>)?.['id'],
+          )
+        : this.safeString(parent);
+
+    return id ? { id } : null;
+  }
+
+  private mapCategoryImage(image: unknown) {
+    if (!image) {
+      return null;
+    }
+
+    if (typeof image === 'object') {
+      const imageRecord = image as Record<string, unknown>;
+      const id = this.safeString(imageRecord?._id ?? imageRecord['id']);
+      const path =
+        this.safeString(imageRecord?.['storedFilename']) ?? this.safeString(imageRecord?.['url']);
+
+      if (!id && !path) {
+        return null;
+      }
+
+      return {
+        ...(id ? { id } : {}),
+        ...(path ? { path } : {}),
+      };
+    }
+
+    return {
+      id: this.safeString(image),
+    };
+  }
+
+  private mapCategoryTree(categories: unknown): Array<Record<string, unknown>> {
+    if (!Array.isArray(categories)) {
+      return [];
+    }
+
+    return categories.map((category) =>
+      this.mapCategoryNode(category as Record<string, unknown>),
+    );
+  }
+
+  private mapCategoryNode(category: Record<string, unknown>) {
+    const base = this.mapPublicCategory(category);
+    const childrenRaw = Array.isArray(category?.['children']) ? category['children'] : [];
+
+    return {
+      ...base,
+      ...(childrenRaw.length > 0
+        ? { children: this.mapCategoryTree(childrenRaw as Array<Record<string, unknown>>) }
+        : {}),
+    };
+  }
+
+  private safeString(value: unknown): string | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    const maybeToString = value as { toString?: () => string };
+    if (maybeToString && typeof maybeToString.toString === 'function') {
+      const converted = maybeToString.toString();
+      return converted === '[object Object]' ? null : converted;
+    }
+    return null;
   }
 }
