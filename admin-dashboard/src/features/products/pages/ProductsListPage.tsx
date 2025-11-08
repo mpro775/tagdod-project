@@ -39,6 +39,16 @@ import type { Product } from '../types/product.types';
 import { ProductStatus } from '../types/product.types';
 import { ProductImage } from '../components';
 
+type ImageWithUrl = {
+  url: string;
+  [key: string]: unknown;
+};
+
+const isImageWithUrl = (value: unknown): value is ImageWithUrl =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as { url?: unknown }).url === 'string';
+
 export const ProductsListPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('products');
@@ -129,18 +139,16 @@ export const ProductsListPage: React.FC = () => {
           (typeof product.mainImageId === 'object' ? product.mainImageId : undefined) ??
           product.mainImage;
 
-        const fallbackImages: Array<string | Record<string, unknown>> = [];
+        const fallbackImages: Array<string | ImageWithUrl> = [];
 
         if (product.mainImage && typeof product.mainImage === 'string') {
           fallbackImages.push(product.mainImage);
         }
 
         if (Array.isArray(product.imageIds) && product.imageIds.length > 0) {
-          const withUrl = product.imageIds.find(
-            (img: any) => img && typeof img === 'object' && typeof img.url === 'string',
-          );
+          const withUrl = product.imageIds.find(isImageWithUrl);
           if (withUrl) {
-            fallbackImages.push(withUrl as Record<string, unknown>);
+            fallbackImages.push(withUrl);
           }
         }
 

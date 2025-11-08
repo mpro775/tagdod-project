@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import type { Product } from '../types/product.types';
 
 type ProductImageSource =
   | string

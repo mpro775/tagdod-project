@@ -20,10 +20,11 @@ COPY package-lock.json* ./
 # استخدم npm ci إذا كان package-lock.json موجود، وإلا استخدم npm install
 RUN --mount=type=cache,target=/root/.npm \
     if [ -f package-lock.json ]; then \
-        npm ci --no-audit --no-fund; \
+        npm ci --no-audit --no-fund --include=optional; \
     else \
-        npm install --no-audit --no-fund; \
-    fi
+        npm install --no-audit --no-fund --include=optional; \
+    fi \
+    && npm rebuild sharp
 
 # --- build stage ---
 FROM node:20-alpine AS build
