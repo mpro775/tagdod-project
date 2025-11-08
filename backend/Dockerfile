@@ -1,9 +1,15 @@
 # --- deps stage ---
-FROM node:20-alpine AS deps
+FROM node:20-slim AS deps
 WORKDIR /app
 
 # أدوات بناء ومكتبات نظام مطلوبة لباكدجات native
-RUN apk add --no-cache python3 make g++ pkgconfig libc6-compat openssl
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    pkg-config \
+    libvips-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # لو عندك private registry انسخ .npmrc
 # COPY .npmrc ./
@@ -27,25 +33,21 @@ RUN --mount=type=cache,target=/root/.npm \
     && npm rebuild sharp
 
 # --- build stage ---
-FROM node:20-alpine AS build
+FROM node:20-slim AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
 # --- runner stage ---
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
 # Install runtime dependencies for sharp and other native modules
-RUN apk add --no-cache \
-    vips-dev \
-    fftw-dev \
-    gcc \
-    g++ \
-    make \
-    libc6-compat
+RUN apt-get update && apt-get install -y \
+    libvips-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # لو تطبيقك يحتاج فقط prod deps:
 # COPY package.json package-lock.json ./
