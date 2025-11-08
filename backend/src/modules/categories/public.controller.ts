@@ -69,6 +69,7 @@ export class CategoriesPublicController {
               },
               isActive: { type: 'boolean', example: true },
               order: { type: 'number', example: 1 },
+              productsCount: { type: 'number', example: 12 },
             },
           },
         },
@@ -447,6 +448,7 @@ export class CategoriesPublicController {
       image,
       isActive: Boolean(category?.['isActive']),
       order: Number(category?.['order'] ?? 0),
+      productsCount: Number(category?.['productsCount'] ?? 0) || 0,
     };
   }
 

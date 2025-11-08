@@ -43,6 +43,13 @@ export type RelatedProductPayload = AnyRecord & {
   defaultPricing?: PriceWithDiscount | null;
 };
 
+type VariantPricingInput = {
+  _id: Types.ObjectId | string;
+  basePriceUSD: number;
+  compareAtPriceUSD?: number;
+  costPriceUSD?: number;
+};
+
 @Injectable()
 export class PublicProductsPresenter {
   private readonly logger = new Logger(PublicProductsPresenter.name);
@@ -421,8 +428,6 @@ export class PublicProductsPresenter {
     const sanitized: AnyRecord = {
       ...(variantId ? { _id: variantId } : {}),
       ...(attributeValues.length > 0 ? { attributeValues } : {}),
-      ...(typeof rawVariant.stock === 'number' ? { stock: rawVariant.stock } : {}),
-      ...(typeof rawVariant.minStock === 'number' ? { minStock: rawVariant.minStock } : {}),
       ...(typeof rawVariant.isActive === 'boolean' ? { isActive: rawVariant.isActive } : {}),
     };
 
@@ -447,6 +452,13 @@ export class PublicProductsPresenter {
         { minPrice: number; maxPrice: number; currency: string; hasDiscountedVariant: boolean }
       >;
       includeImages?: boolean;
+      includeCategory?: boolean;
+      includeBrand?: boolean;
+      includeAttributes?: boolean;
+      includeVariants?: boolean;
+      includePricingByCurrency?: boolean;
+      includePriceRange?: boolean;
+      includeDefaultPricing?: boolean;
     } = {},
   ): AnyRecord {
     const productId = this.extractIdString(product._id) ?? product._id;
@@ -455,7 +467,7 @@ export class PublicProductsPresenter {
     const mainImage = this.simplifyMedia(product.mainImage ?? product.mainImageId);
     const images = this.simplifyMediaList(product.images ?? product.imageIds);
 
-    const pricingByCurrency = extras.pricingByCurrency
+    const pricingMap = extras.pricingByCurrency
       ? Object.fromEntries(
           Object.entries(extras.pricingByCurrency).filter(
             ([, value]) => value !== null && value !== undefined,
@@ -463,33 +475,56 @@ export class PublicProductsPresenter {
         )
       : undefined;
 
-    const cleanedPricingByCurrency = this.cleanPricingMap(pricingByCurrency);
+    const cleanedPricingByCurrency = this.cleanPricingMap(pricingMap);
 
-    const variants = Array.isArray(extras.variants)
-      ? extras.variants.map((variant) => this.sanitizeVariant(variant))
-      : [];
+    const includeVariants = extras.includeVariants ?? true;
+    const variants =
+      includeVariants && Array.isArray(extras.variants)
+        ? extras.variants.map((variant) => this.sanitizeVariant(variant))
+        : [];
 
-    const attributes = Array.isArray(product.attributes) ? product.attributes : [];
+    const includeAttributes = extras.includeAttributes ?? true;
+    const attributes =
+      includeAttributes && Array.isArray(product.attributes) ? product.attributes : [];
+
+    const includeCategory = extras.includeCategory ?? true;
+    const includeBrand = extras.includeBrand ?? true;
     const includeImages = extras.includeImages ?? true;
+    const includePricingByCurrency = extras.includePricingByCurrency ?? true;
+    const includePriceRange = extras.includePriceRange ?? true;
+    const includeDefaultPricing = extras.includeDefaultPricing ?? true;
 
     const sanitized: AnyRecord = {
       ...(productId ? { _id: productId } : {}),
       ...(product.name ? { name: product.name } : {}),
       ...(product.nameEn ? { nameEn: product.nameEn } : {}),
-      ...(category ? { category } : {}),
-      ...(brand ? { brand } : {}),
+      ...(includeCategory && category ? { category } : {}),
+      ...(includeBrand && brand ? { brand } : {}),
       ...(mainImage ? { mainImage } : {}),
       ...(includeImages && images.length > 0 ? { images } : {}),
       ...(attributes.length > 0 ? { attributes } : {}),
       ...(typeof product.isActive === 'boolean' ? { isActive: product.isActive } : {}),
       ...(typeof product.isFeatured === 'boolean' ? { isFeatured: product.isFeatured } : {}),
       ...(typeof product.isNew === 'boolean' ? { isNew: product.isNew } : {}),
-      ...(cleanedPricingByCurrency && Object.keys(cleanedPricingByCurrency).length > 0
-        ? { pricingByCurrency: cleanedPricingByCurrency }
+      ...(typeof product.useManualRating === 'boolean'
+        ? { useManualRating: product.useManualRating }
         : {}),
-      ...(extras.defaultPricing ? { defaultPricing: this.cleanPrice(extras.defaultPricing) } : {}),
-      ...(extras.priceRangeByCurrency ? { priceRangeByCurrency: extras.priceRangeByCurrency } : {}),
-      variants,
+      ...(typeof product.manualRating === 'number' ? { manualRating: product.manualRating } : {}),
+      ...(typeof product.manualReviewsCount === 'number'
+        ? { manualReviewsCount: product.manualReviewsCount }
+        : {}),
+      ...(includePricingByCurrency
+        ? cleanedPricingByCurrency
+          ? { pricingByCurrency: cleanedPricingByCurrency }
+          : { pricingByCurrency: {} }
+        : {}),
+      ...(includeDefaultPricing && extras.defaultPricing
+        ? { defaultPricing: this.cleanPrice(extras.defaultPricing) }
+        : {}),
+      ...(includePriceRange && extras.priceRangeByCurrency
+        ? { priceRangeByCurrency: extras.priceRangeByCurrency }
+        : {}),
+      ...(includeVariants && variants.length > 0 ? { variants } : {}),
     };
 
     return sanitized;
@@ -510,18 +545,18 @@ export class PublicProductsPresenter {
       new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
     );
 
-    const variantSnapshots = variants.map((variant) => ({
+    const variantSnapshots: VariantPricingInput[] = variants.map((variant) => ({
       _id: variant._id,
-      basePriceUSD: variant.basePriceUSD ?? 0,
-      compareAtPriceUSD: variant.compareAtPriceUSD,
-      costPriceUSD: variant.costPriceUSD,
+      basePriceUSD: this.normalizePrice(variant.basePriceUSD) ?? 0,
+      compareAtPriceUSD: this.normalizePrice(variant.compareAtPriceUSD),
+      costPriceUSD: this.normalizePrice(variant.costPriceUSD),
     }));
 
     const pricesByCurrency = await this.pricingService.getProductPricesWithDiscountByCurrencies(
       productId,
       currenciesForPricing,
       discountPercent,
-      { variants: variantSnapshots as any },
+      { variants: variantSnapshots },
     );
 
     const variantsWithPricing = variants.map((variant) => {
@@ -572,7 +607,14 @@ export class PublicProductsPresenter {
 
         if (variants.length === 0) {
           if (!this.hasSimplePricing(productRecord)) {
-            return this.buildSimplifiedProduct(productRecord, { variants: [] });
+            return this.buildSimplifiedProduct(productRecord, {
+              variants: [],
+              includeImages: false,
+              includeCategory: false,
+              includeBrand: false,
+              includeAttributes: false,
+              includeVariants: false,
+            });
           }
 
           const basePriceUSD = this.normalizePrice(
@@ -600,7 +642,16 @@ export class PublicProductsPresenter {
           return this.buildSimplifiedProduct(productRecord, {
             variants: [],
             pricingByCurrency,
-            defaultPricing: pricingByCurrency[normalizedCurrency] ?? pricingByCurrency.USD,
+            defaultPricing: this.cleanPrice(
+              pricingByCurrency[normalizedCurrency] ?? pricingByCurrency.USD,
+            ),
+            includeImages: false,
+            includeCategory: false,
+            includeBrand: false,
+            includeAttributes: false,
+            includeVariants: false,
+            includePriceRange: false,
+            includeDefaultPricing: false,
           });
         }
 
@@ -623,7 +674,14 @@ export class PublicProductsPresenter {
           variants: variantsWithPricing,
           priceRangeByCurrency,
           pricingByCurrency: pricingByCurrencySummary,
-          defaultPricing: this.stripVariantId(selectedVariantPricing),
+          defaultPricing: this.cleanPrice(this.stripVariantId(selectedVariantPricing)),
+          includeImages: false,
+          includeCategory: false,
+          includeBrand: false,
+          includeAttributes: false,
+          includeVariants: false,
+          includePriceRange: false,
+          includeDefaultPricing: false,
         });
       }),
     );
@@ -668,9 +726,7 @@ export class PublicProductsPresenter {
             selectedCurrencyInput,
           );
 
-          const attributesDetails = await this.getAttributeSummaries(
-            productRecord.attributes as unknown[],
-          );
+          void (await this.getAttributeSummaries(productRecord.attributes as unknown[]));
 
           let pricingByCurrency: Record<string, PriceWithDiscount> | undefined;
           let priceRangeByCurrency:
@@ -726,17 +782,20 @@ export class PublicProductsPresenter {
           }
 
           const simplifiedProduct = this.buildSimplifiedProduct(productRecord, {
-            variants: variantsWithPricing,
+            variants: [],
             pricingByCurrency,
             priceRangeByCurrency,
             defaultPricing,
             includeImages: false,
+            includeCategory: false,
+            includeBrand: false,
+            includeAttributes: false,
+            includeVariants: false,
+            includePriceRange: false,
+            includeDefaultPricing: false,
           });
 
-          return {
-            ...simplifiedProduct,
-            attributesDetails,
-          } as RelatedProductPayload;
+          return simplifiedProduct as RelatedProductPayload;
         } catch (error) {
           this.logger.warn(
             `Failed to build related product ${id}: ${
@@ -825,6 +884,8 @@ export class PublicProductsPresenter {
       priceRangeByCurrency: productPriceRangeByCurrency,
       defaultPricing,
       includeImages: true,
+      includeDefaultPricing: false,
+      includePriceRange: false,
     });
 
     const productWithAttributes: AnyRecord = {

@@ -4086,6 +4086,9 @@ paths:
                         order:
                           type: number
                           example: 1
+                        productsCount:
+                          type: number
+                          example: 12
   /api/v1/categories/tree:
     get:
       operationId: getCategoryTree
@@ -9621,7 +9624,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/LocalPaymentAccount'
+                  $ref: '#/components/schemas/LocalPaymentAccountResponseDto'
       tags:
         - إعدادات النظام
       security:
@@ -9643,7 +9646,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LocalPaymentAccount'
+                $ref: '#/components/schemas/LocalPaymentAccountResponseDto'
       tags:
         - إعدادات النظام
       security:
@@ -9719,7 +9722,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LocalPaymentAccount'
+                $ref: '#/components/schemas/LocalPaymentAccountResponseDto'
       tags:
         - إعدادات النظام
       security:
@@ -19414,9 +19417,6 @@ components:
             maintenance_mode: false
       required:
         - settings
-    LocalPaymentAccount:
-      type: object
-      properties: {}
     MediaReferenceDto:
       type: object
       properties:
@@ -19432,9 +19432,134 @@ components:
       required:
         - id
         - url
+    ProviderAccountItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        currency:
+          type: string
+          example: YER
+        accountNumber:
+          type: string
+          example: '1234567890'
+        isActive:
+          type: boolean
+          default: true
+        displayOrder:
+          type: number
+          default: 0
+        notes:
+          type: string
+        isOverride:
+          type: boolean
+          default: false
+      required:
+        - id
+        - currency
+        - accountNumber
+        - isActive
+        - displayOrder
+        - isOverride
+    LocalPaymentAccountResponseDto:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        providerName:
+          type: string
+          example: الكريمي
+        icon:
+          $ref: '#/components/schemas/MediaReferenceDto'
+        iconMediaId:
+          type: string
+          example: 64f9c0b5c1a2b3d4e5f67890
+        type:
+          type: string
+          enum:
+            - bank
+            - wallet
+        numberingMode:
+          type: string
+          enum:
+            - shared
+            - per_currency
+        supportedCurrencies:
+          type: array
+          items:
+            type: string
+            enum:
+              - YER
+              - SAR
+              - USD
+        sharedAccountNumber:
+          type: string
+          example: '1234567890'
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderAccountItemDto'
+        isActive:
+          type: boolean
+          default: true
+        notes:
+          type: string
+        displayOrder:
+          type: number
+          default: 0
+        updatedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - _id
+        - providerName
+        - type
+        - numberingMode
+        - supportedCurrencies
+        - accounts
+        - isActive
+        - displayOrder
+        - createdAt
+        - updatedAt
+    GroupedPaymentAccountItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        currency:
+          type: string
+          example: YER
+        accountNumber:
+          type: string
+          example: '1234567890'
+        isActive:
+          type: boolean
+          default: true
+        displayOrder:
+          type: number
+          default: 0
+        notes:
+          type: string
+      required:
+        - id
+        - currency
+        - accountNumber
+        - isActive
+        - displayOrder
     GroupedPaymentAccountDto:
       type: object
       properties:
+        providerId:
+          type: string
+          example: 507f1f77bcf86cd799439011
         providerName:
           type: string
           example: الكريمي
@@ -19447,25 +19572,61 @@ components:
           enum:
             - bank
             - wallet
+        numberingMode:
+          type: string
+          enum:
+            - shared
+            - per_currency
+        supportedCurrencies:
+          type: array
+          description: العملات المدعومة في وضع shared أو أي حسابات متاحة
+          items:
+            type: string
+            enum:
+              - YER
+              - SAR
+              - USD
+        sharedAccountNumber:
+          type: string
+          example: '1234567890'
+          description: رقم الحساب المشترك (في وضع shared)
         accounts:
+          description: تفاصيل الحسابات لكل عملة
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-              accountNumber:
-                type: string
-              currency:
-                type: string
-              isActive:
-                type: boolean
-              displayOrder:
-                type: number
+            $ref: '#/components/schemas/GroupedPaymentAccountItemDto'
       required:
+        - providerId
         - providerName
         - type
+        - numberingMode
+        - supportedCurrencies
         - accounts
+    ProviderCurrencyAccountDto:
+      type: object
+      properties:
+        currency:
+          type: string
+          enum:
+            - YER
+            - SAR
+            - USD
+          example: YER
+        accountNumber:
+          type: string
+          example: '1234567890'
+          description: رقم الحساب
+        isActive:
+          type: boolean
+          default: true
+        displayOrder:
+          type: number
+          default: 0
+        notes:
+          type: string
+      required:
+        - currency
+        - accountNumber
     CreateLocalPaymentAccountDto:
       type: object
       properties:
@@ -19477,23 +19638,36 @@ components:
           type: object
           example: 64f9c0b5c1a2b3d4e5f67890
           description: معرف الوسائط للأيقونة
-        accountNumber:
-          type: string
-          example: '1234567890'
-          description: رقم الحساب
         type:
           type: string
           enum:
             - bank
             - wallet
           example: bank
-        currency:
+        numberingMode:
           type: string
           enum:
-            - YER
-            - SAR
-            - USD
-          example: YER
+            - shared
+            - per_currency
+          example: shared
+        sharedAccountNumber:
+          type: string
+          example: '1234567890'
+          description: رقم حساب مشترك لكل العملات (في وضع shared)
+        supportedCurrencies:
+          type: array
+          description: العملات المدعومة عندما يكون الحساب مشتركاً
+          items:
+            type: string
+            enum:
+              - YER
+              - SAR
+              - USD
+        accounts:
+          description: الحسابات لكل عملة (في وضع per_currency أو عند وجود استثناءات)
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCurrencyAccountDto'
         isActive:
           type: boolean
           default: true
@@ -19504,9 +19678,8 @@ components:
           default: 0
       required:
         - providerName
-        - accountNumber
         - type
-        - currency
+        - numberingMode
     UpdateLocalPaymentAccountDto:
       type: object
       properties:
@@ -19514,19 +19687,30 @@ components:
           type: string
         iconMediaId:
           type: object
-        accountNumber:
-          type: string
         type:
           type: string
           enum:
             - bank
             - wallet
-        currency:
+        numberingMode:
           type: string
           enum:
-            - YER
-            - SAR
-            - USD
+            - shared
+            - per_currency
+        sharedAccountNumber:
+          type: string
+        supportedCurrencies:
+          type: array
+          items:
+            type: string
+            enum:
+              - YER
+              - SAR
+              - USD
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCurrencyAccountDto'
         isActive:
           type: boolean
         notes:

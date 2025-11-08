@@ -15,30 +15,45 @@
 export interface LocalPaymentAccount {
   _id: string;
   providerName: string;
-  iconMediaId?: string | null;
+  iconMediaId?: string;
   icon?: MediaReference;
-  accountNumber: string;
   type: 'bank' | 'wallet';
-  currency: 'YER' | 'SAR' | 'USD';
+  numberingMode: 'shared' | 'per_currency';
+  supportedCurrencies: Array<'YER' | 'SAR' | 'USD'>;
+  sharedAccountNumber?: string;
+  accounts: Array<{
+    id: string;
+    currency: 'YER' | 'SAR' | 'USD';
+    accountNumber: string;
+    isActive: boolean;
+    displayOrder: number;
+    notes?: string;
+    isOverride: boolean;
+  }>;
   isActive: boolean;
   notes?: string;
   displayOrder: number;
   updatedBy?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // حساب مجمع (مجمعة حسب providerName)
 export interface GroupedPaymentAccount {
+  providerId: string;
   providerName: string;
   icon?: MediaReference;
   type: 'bank' | 'wallet';
+  numberingMode: 'shared' | 'per_currency';
+  supportedCurrencies: Array<'YER' | 'SAR' | 'USD'>;
+  sharedAccountNumber?: string;
   accounts: Array<{
     id: string;
     accountNumber: string;
     currency: 'YER' | 'SAR' | 'USD';
     isActive: boolean;
     displayOrder: number;
+    notes?: string;
   }>;
 }
 ```
@@ -72,23 +87,18 @@ localPaymentAccountsApi = {
 #### Tab جديد: "حسابات الدفع المحلية"
 
 **الميزات:**
-- جدول يعرض الحسابات مجمعة حسب اسم البنك
-- عرض الأيقونات إذا كانت متوفرة
-- عرض جميع الحسابات لكل بنك مع:
-  - العملة (Chip ملون)
-  - رقم الحساب
-  - حالة التفعيل
-- أزرار تحرير وحذف لكل حساب
+- جدول يعرض مزودي الحسابات (البنوك/المحافظ) مع الأيقونات والنوع ووضع الترقيم.
+- عند وضع **مشترك** يتم عرض الرقم الموحد واللغات المدعومة والتخصيصات لكل عملة (إن وجدت).
+- عند وضع **لكل عملة** يتم عرض كل حساب مستقل بالعملة ورقم الحساب والحالة.
+- إجراءات التحرير والحذف أصبحت على مستوى المزوّد بالكامل.
 
-**Dialog لإضافة/تعديل الحسابات:**
-- اسم البنك/المحفظة (مطلوب)
-- اختيار أيقونة من مكتبة الوسائط (اختياري)
-- النوع: بنك/محفظة
-- رقم الحساب (مطلوب)
-- العملة: YER/SAR/USD
-- ترتيب العرض
-- ملاحظات (اختياري)
-- حالة التفعيل (Switch)
+**Dialog لإضافة/تعديل المزوّد:**
+- اسم المزوّد والأيقونة (اختياري).
+- اختيار النوع (بنك / محفظة) ووضع الترقيم (مشترك أو لكل عملة).
+- في وضع المشترك: إدخال رقم الحساب الموحد وتحديد العملات المدعومة وإضافة التخصيصات.
+- في وضع لكل عملة: إنشاء حسابات فرعية لكل عملة مطلوبة.
+- لكل حساب فرعي يمكن ضبط رقم الحساب، الحالة، ترتيب العرض والملاحظات.
+- إعدادات عامة: حالة التفعيل، ترتيب العرض العام، الملاحظات.
 
 ## 🎨 UI Components
 
@@ -119,8 +129,21 @@ const [allAccounts, setAllAccounts] = useState<LocalPaymentAccount[]>([]);
 const [accountDialogOpen, setAccountDialogOpen] = useState(false);
 const [editingAccount, setEditingAccount] = useState<LocalPaymentAccount | null>(null);
 
-// State للـ Form
-const [accountForm, setAccountForm] = useState<CreatePaymentAccountDto>({...});
+// نموذج المزوّد (حقل واحد للحساب المشترك + حسابات فرعية اختيارية)
+type PaymentProviderForm = {
+  providerName: string;
+  iconMediaId?: string | null;
+  type: 'bank' | 'wallet';
+  numberingMode: 'shared' | 'per_currency';
+  sharedAccountNumber?: string;
+  supportedCurrencies: Array<'YER' | 'SAR' | 'USD'>;
+  accounts: ProviderAccountInput[];
+  isActive: boolean;
+  notes?: string;
+  displayOrder: number;
+};
+
+const [accountForm, setAccountForm] = useState<PaymentProviderForm>(createDefaultForm());
 ```
 
 ## 📡 API Calls
@@ -139,43 +162,66 @@ const fetchPaymentAccounts = async () => {
 
 ### إنشاء/تحديث حساب
 ```typescript
+const buildPayload = (): CreatePaymentAccountDto => ({
+  providerName: accountForm.providerName.trim(),
+  iconMediaId: accountForm.iconMediaId ?? null,
+  type: accountForm.type,
+  numberingMode: accountForm.numberingMode,
+  sharedAccountNumber: accountForm.numberingMode === 'shared'
+    ? accountForm.sharedAccountNumber?.trim()
+    : undefined,
+  supportedCurrencies: accountForm.numberingMode === 'shared'
+    ? accountForm.supportedCurrencies
+    : undefined,
+  accounts: normalizeAccountsForPayload(),
+  isActive: accountForm.isActive,
+  notes: accountForm.notes,
+  displayOrder: accountForm.displayOrder ?? 0,
+});
+
 const handleSaveAccount = async () => {
+  const payload = buildPayload();
+
   if (editingAccount) {
-    await localPaymentAccountsApi.updateAccount(editingAccount._id, accountForm);
+    await localPaymentAccountsApi.updateAccount(editingAccount._id, payload);
   } else {
-    await localPaymentAccountsApi.createAccount(accountForm);
+    await localPaymentAccountsApi.createAccount(payload);
   }
-  fetchPaymentAccounts(); // Refresh
+
+  fetchPaymentAccounts();
 };
 ```
 
 ## 🎯 Use Cases
 
-### Use Case 1: إضافة بنك جديد
-1. الانتقال إلى: الإعدادات > حسابات الدفع المحلية
-2. الضغط على "إضافة حساب"
-3. ملء البيانات:
-   - اسم البنك: "الكريمي"
-   - رقم الحساب: "1234567890"
-   - العملة: "YER"
-   - النوع: "بنك"
-4. حفظ
+### Use Case 1: إضافة مزوّد بحساب مشترك
+1. الانتقال إلى: الإعدادات > حسابات الدفع المحلية.
+2. الضغط على "إضافة حساب".
+3. تعبئة الحقول الأساسية (الاسم، النوع، الأيقونة).
+4. اختيار وضع الترقيم **مشترك**، إدخال رقم الحساب الموحد وتحديد العملات المدعومة (مثلاً YER و SAR).
+5. حفظ.
 
-### Use Case 2: إضافة حساب إضافي لنفس البنك
-1. نفس الخطوات أعلاه
-2. استخدام نفس `providerName` (الكريمي)
-3. اختيار عملة مختلفة (مثل SAR)
-4. سيتم عرضه مع الحسابات الأخرى للبنك نفسه
+### Use Case 2: تخصيص حساب لعملة محددة (وضع مشترك)
+1. فتح نافذة التحرير للمزوّد المشترك.
+2. ضمن قسم "تخصيص حسابات العملات" إضافة صف جديد لعملة SAR.
+3. إدخال رقم الحساب الخاص بتلك العملة (إذا كان مختلفًا).
+4. حفظ التعديلات.
 
-### Use Case 3: تعديل حساب
-1. الضغط على زر التحرير بجانب الحساب
-2. تعديل البيانات
-3. حفظ
+### Use Case 3: إنشاء مزوّد بحسابات منفصلة لكل عملة
+1. إضافة مزوّد جديد واختيار وضع الترقيم **لكل عملة**.
+2. إضافة صف لكل عملة مطلوبة (YER، SAR، USD) مع رقم الحساب الخاص بكل واحدة.
+3. ضبط ترتيب العرض والحالة لكل حساب.
+4. حفظ.
 
-### Use Case 4: حذف حساب
-1. الضغط على زر الحذف
-2. تأكيد الحذف
-3. يتم الحذف من قاعدة البيانات
+### Use Case 4: تعديل مزوّد موجود
+1. الضغط على زر التحرير المقابل للمزوّد.
+2. تحديث البيانات العامة أو الحسابات الفرعية (رقم حساب، ملاحظات، حالة...إلخ).
+3. حفظ التغييرات.
+
+### Use Case 5: حذف مزوّد
+1. الضغط على زر الحذف بجانب المزوّد.
+2. تأكيد العملية في مربع الحوار.
+3. يتم حذف المزوّد وجميع حساباته الفرعية من قاعدة البيانات.
 
 ---
 

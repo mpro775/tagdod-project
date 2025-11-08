@@ -451,8 +451,8 @@ export class Order {
   paidAt?: Date;
 
   // ===== الدفع المحلي =====
-  @Prop({ type: Types.ObjectId, ref: 'LocalPaymentAccount' })
-  localPaymentAccountId?: Types.ObjectId; // معرف الحساب المحلي المختار
+  @Prop({ type: String })
+  localPaymentAccountId?: string; // معرف الحساب المحلي المختار (قد يكون معرف المزود أو المركب)
 
   @Prop()
   paymentReference?: string; // رقم الحوالة/المرجع من العميل
