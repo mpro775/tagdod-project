@@ -459,6 +459,7 @@ export class PublicProductsPresenter {
       includePricingByCurrency?: boolean;
       includePriceRange?: boolean;
       includeDefaultPricing?: boolean;
+      includeDescriptions?: boolean;
     } = {},
   ): AnyRecord {
     const productId = this.extractIdString(product._id) ?? product._id;
@@ -487,6 +488,8 @@ export class PublicProductsPresenter {
     const attributes =
       includeAttributes && Array.isArray(product.attributes) ? product.attributes : [];
 
+    const includeDescriptions = extras.includeDescriptions ?? false;
+
     const includeCategory = extras.includeCategory ?? true;
     const includeBrand = extras.includeBrand ?? true;
     const includeImages = extras.includeImages ?? true;
@@ -498,6 +501,8 @@ export class PublicProductsPresenter {
       ...(productId ? { _id: productId } : {}),
       ...(product.name ? { name: product.name } : {}),
       ...(product.nameEn ? { nameEn: product.nameEn } : {}),
+      ...(includeDescriptions && product.description ? { description: product.description } : {}),
+      ...(includeDescriptions && product.descriptionEn ? { descriptionEn: product.descriptionEn } : {}),
       ...(includeCategory && category ? { category } : {}),
       ...(includeBrand && brand ? { brand } : {}),
       ...(mainImage ? { mainImage } : {}),
@@ -886,6 +891,7 @@ export class PublicProductsPresenter {
       includeImages: true,
       includeDefaultPricing: false,
       includePriceRange: false,
+      includeDescriptions: true,
     });
 
     const productWithAttributes: AnyRecord = {

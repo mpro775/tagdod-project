@@ -115,12 +115,33 @@
       "bank": "Bank",
       "wallet": "Wallet",
       "inactive": "Inactive",
+      "deleteTitle": "Delete Provider",
       "deleteConfirm": "Are you sure you want to delete this account?",
       "actions": "Actions",
       "accounts": "Accounts",
+      "numberingModeLabel": "Numbering Mode",
+      "numberingModeShared": "Shared Account",
+      "numberingModePerCurrency": "Account Per Currency",
+      "supportedCurrenciesLabel": "Supported Currencies",
+      "currencyOverridesTitle": "Currency Overrides",
+      "currencyAccountsTitle": "Accounts Per Currency",
+      "addCurrencyAccount": "Add Currency Account",
+      "noOverridesHint": "No overrides defined for the selected currencies.",
+      "noAccountsHint": "Add at least one account for the required currencies.",
+      "sharedAccountLabel": "Shared Account",
+      "overrideLabel": "Override",
+      "searchPlaceholder": "Search providers...",
+      "noResults": "No matching providers found.",
       "currencyYER": "Yemeni Rial (YER)",
       "currencySAR": "Saudi Riyal (SAR)",
-      "currencyUSD": "US Dollar (USD)"
+      "currencyUSD": "US Dollar (USD)",
+      "validation": {
+        "providerName": "Please enter the provider name",
+        "sharedAccountNumber": "Shared account number is required",
+        "supportedCurrencies": "Select at least one currency",
+        "accountsRequired": "Add at least one account",
+        "accountNumberRequired": "Every account must include an account number"
+      }
     }
   },
   "placeholders": {

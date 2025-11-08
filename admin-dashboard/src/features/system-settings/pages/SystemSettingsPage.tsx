@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTheme, useMediaQuery } from '@mui/material';
 import {
   Box,
@@ -20,6 +20,18 @@ import {
   Checkbox,
   FormGroup,
   FormHelperText,
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Avatar,
+  Alert,
 } from '@mui/material';
 import {
   Settings,
@@ -34,26 +46,6 @@ import {
   Edit,
   Delete,
 } from '@mui/icons-material';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Avatar,
-  Alert,
-} from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { systemSettingsApi, localPaymentAccountsApi } from '../api/systemSettingsApi';
 import type {
@@ -65,6 +57,7 @@ import type {
   CurrencyCode,
   PaymentAccountNumberingMode,
   ProviderAccountInput,
+  PaymentAccountType,
 } from '../api/systemSettingsApi';
 import { toast } from 'react-hot-toast';
 import { alpha } from '@mui/material/styles';
@@ -73,6 +66,14 @@ import { ConfirmDialog } from '@/shared/components';
 import { MediaPicker } from '@/features/media/components/MediaPicker';
 import type { Media } from '@/features/media/types/media.types';
 import { MediaCategory, MediaType } from '@/features/media/types/media.types';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
+import type {
+  GridColDef,
+  GridRenderCellParams,
+  GridPaginationModel,
+  GridSortModel,
+  GridValidRowModel,
+} from '@mui/x-data-grid';
 
 const CURRENCY_OPTIONS: CurrencyCode[] = ['YER', 'SAR', 'USD'];
 
@@ -98,6 +99,22 @@ export function SystemSettingsPage() {
     supportedCurrencies: CurrencyCode[];
     accounts: ProviderAccountInput[];
   };
+
+type PaymentProviderRow = GridValidRowModel & {
+  id: string;
+  providerName: string;
+  type: PaymentAccountType;
+  numberingMode: PaymentAccountNumberingMode;
+  sharedAccountNumber?: string;
+  supportedCurrencies: CurrencyCode[];
+  accounts: GroupedPaymentAccount['accounts'];
+  icon?: MediaReference;
+  isActive: boolean;
+  displayOrder: number;
+  notes?: string;
+  provider?: LocalPaymentAccount;
+};
+
   const createDefaultForm = (): PaymentProviderForm => ({
     providerName: '',
     iconMediaId: null,
@@ -113,6 +130,9 @@ export function SystemSettingsPage() {
   const [accountForm, setAccountForm] = useState<PaymentProviderForm>(createDefaultForm());
   const [selectedIcon, setSelectedIcon] = useState<MediaReference | null>(null);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({ page: 0, pageSize: 10 });
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchSettings = async () => {
     try {
@@ -328,6 +348,55 @@ export function SystemSettingsPage() {
     });
   };
 
+  const providerRows: PaymentProviderRow[] = useMemo(() => {
+    return paymentAccounts.map((group) => {
+      const provider = allAccounts.find((item) => item._id === group.providerId);
+      const providerId = group.providerId ?? provider?._id ?? group.providerName;
+      return {
+        id: providerId,
+        providerName: group.providerName,
+        type: group.type,
+        numberingMode: group.numberingMode,
+        sharedAccountNumber: group.sharedAccountNumber,
+        supportedCurrencies: group.supportedCurrencies,
+        accounts: group.accounts,
+        icon: group.icon ?? provider?.icon,
+        isActive: provider?.isActive ?? true,
+        displayOrder: provider?.displayOrder ?? 0,
+        notes: provider?.notes,
+        provider,
+      };
+    });
+  }, [paymentAccounts, allAccounts]);
+
+  const normalizedSearchQuery = useMemo(
+    () => searchQuery.trim().toLowerCase(),
+    [searchQuery],
+  );
+
+  const filteredRows = useMemo(() => {
+    if (!normalizedSearchQuery) {
+      return providerRows;
+    }
+
+    return providerRows.filter((row) => {
+      const haystack = [
+        row.providerName,
+        row.sharedAccountNumber ?? '',
+        row.supportedCurrencies.join(' '),
+        row.accounts.map((account) => account.accountNumber).join(' '),
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(normalizedSearchQuery);
+    });
+  }, [normalizedSearchQuery, providerRows]);
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
+
   const isSharedMode = accountForm.numberingMode === 'shared';
   const isPerCurrencyMode = accountForm.numberingMode === 'per_currency';
   const hasSharedRequirements =
@@ -452,6 +521,184 @@ export function SystemSettingsPage() {
       toast.error(t('sections.localPaymentAccounts.deleteFailed'));
     }
   };
+
+  const columns: GridColDef<PaymentProviderRow>[] = useMemo(
+    () => [
+      {
+        field: 'providerName',
+        headerName: t('sections.localPaymentAccounts.providerName'),
+        flex: 1.4,
+        minWidth: 220,
+        renderCell: (params: GridRenderCellParams<PaymentProviderRow>) => {
+          const row = params.row;
+          const providerIconUrl = row.icon?.url ?? row.provider?.icon?.url ?? '';
+          const fallbackInitial = row.providerName ? row.providerName.charAt(0).toUpperCase() : '?';
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              {providerIconUrl ? (
+                <Avatar src={providerIconUrl} sx={{ width: 36, height: 36 }} />
+              ) : (
+                <Avatar sx={{ width: 36, height: 36 }}>{fallbackInitial}</Avatar>
+              )}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  {row.providerName}
+                </Typography>
+                {!row.isActive && (
+                  <Chip
+                    label={t('sections.localPaymentAccounts.inactive')}
+                    size="small"
+                    color="error"
+                    sx={{ width: 'fit-content' }}
+                  />
+                )}
+              </Box>
+            </Box>
+          );
+        },
+      },
+      {
+        field: 'type',
+        headerName: t('sections.localPaymentAccounts.type'),
+        width: 140,
+        renderCell: (params: GridRenderCellParams<PaymentProviderRow, PaymentAccountType>) => (
+          <Chip
+            label={t(`sections.localPaymentAccounts.${params.value}`)}
+            color={params.value === 'bank' ? 'primary' : 'secondary'}
+            size="small"
+            sx={{ fontWeight: 500 }}
+          />
+        ),
+      },
+      {
+        field: 'numberingMode',
+        headerName: t('sections.localPaymentAccounts.numberingModeLabel', 'وضع الترقيم'),
+        width: 190,
+        renderCell: (params: GridRenderCellParams<PaymentProviderRow>) => (
+          <Chip
+            label={
+              params.value === 'shared'
+                ? t('sections.localPaymentAccounts.numberingModeShared', 'حساب مشترك')
+                : t('sections.localPaymentAccounts.numberingModePerCurrency', 'حساب لكل عملة')
+            }
+            color={params.value === 'shared' ? 'secondary' : 'primary'}
+            size="small"
+            sx={{ fontWeight: 500 }}
+          />
+        ),
+      },
+      {
+        field: 'accounts',
+        headerName: t('sections.localPaymentAccounts.accounts'),
+        flex: 1.8,
+        minWidth: 320,
+        sortable: false,
+        renderCell: (params: GridRenderCellParams<PaymentProviderRow>) => {
+          const row = params.row;
+          return (
+            <Stack spacing={0.75} sx={{ py: 1 }}>
+              {row.numberingMode === 'shared' && row.sharedAccountNumber && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  <Chip
+                    label={t('sections.localPaymentAccounts.sharedAccountLabel', 'رقم مشترك')}
+                    size="small"
+                    color="primary"
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    {row.sharedAccountNumber}
+                  </Typography>
+                  <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+                    {row.supportedCurrencies.map((currency) => (
+                      <Chip
+                        key={`${row.id}-${currency}`}
+                        label={currency}
+                        size="small"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+              {row.accounts.map((account) => (
+                <Box
+                  key={account.id}
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                >
+                  <Chip label={account.currency} size="small" variant="outlined" />
+                  <Typography variant="body2" color="text.secondary">
+                    {account.accountNumber}
+                  </Typography>
+                  {row.numberingMode === 'shared' && (
+                    <Chip
+                      label={t('sections.localPaymentAccounts.overrideLabel', 'تخصيص')}
+                      size="small"
+                      variant="outlined"
+                    />
+                  )}
+                  {!account.isActive && (
+                    <Chip
+                      label={t('sections.localPaymentAccounts.inactive')}
+                      size="small"
+                      color="error"
+                    />
+                  )}
+                  {account.notes && (
+                    <Typography variant="caption" color="text.secondary">
+                      {account.notes}
+                    </Typography>
+                  )}
+                </Box>
+              ))}
+            </Stack>
+          );
+        },
+      },
+      {
+        field: 'displayOrder',
+        headerName: t('sections.localPaymentAccounts.displayOrder'),
+        width: 140,
+        valueGetter: ({ row }) => (row as PaymentProviderRow).displayOrder ?? 0,
+      },
+      {
+        field: 'actions',
+        headerName: t('sections.localPaymentAccounts.actions'),
+        width: 140,
+        sortable: false,
+        filterable: false,
+        renderCell: (params: GridRenderCellParams<PaymentProviderRow>) => {
+          const row = params.row;
+          const provider = row.provider ?? allAccounts.find((item) => item._id === row.id);
+          return (
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (provider) {
+                    handleOpenAccountDialog(provider);
+                  }
+                }}
+              >
+                <Edit fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={async (event) => {
+                  event.stopPropagation();
+                  await handleDeleteAccount(row.id);
+                }}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            </Box>
+          );
+        },
+      },
+    ],
+    [allAccounts, handleDeleteAccount, handleOpenAccountDialog, t],
+  );
 
   const handleSave = async () => {
     try {
@@ -1134,149 +1381,28 @@ export function SystemSettingsPage() {
               </Button>
             </Box>
           )}
-          <CardContent>
-            {accountsLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                <CircularProgress />
-              </Box>
-            ) : paymentAccounts.length === 0 ? (
-              <Alert severity="info">{t('sections.localPaymentAccounts.noAccounts')}</Alert>
-            ) : (
-              <Box sx={{ overflowX: 'auto' }}>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ minWidth: 150 }}>{t('sections.localPaymentAccounts.providerName')}</TableCell>
-                        <TableCell>{t('sections.localPaymentAccounts.type')}</TableCell>
-                        <TableCell>{t('sections.localPaymentAccounts.numberingMode', 'وضع الترقيم')}</TableCell>
-                        {!isMobile && <TableCell>{t('sections.localPaymentAccounts.accounts')}</TableCell>}
-                        <TableCell align="right" sx={{ minWidth: isMobile ? 100 : 120 }}>
-                          {t('sections.localPaymentAccounts.actions')}
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {paymentAccounts.map((group) => {
-                        const provider = allAccounts.find((item) => item._id === group.providerId);
-                        return (
-                          <TableRow key={group.providerId}>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {group.icon?.url && (
-                                  <Avatar src={group.icon.url} sx={{ width: 32, height: 32 }} />
-                                )}
-                                <Typography variant="body1" fontWeight="medium">
-                                  {group.providerName}
-                                </Typography>
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={t(`sections.localPaymentAccounts.${group.type}`)}
-                                color={group.type === 'bank' ? 'primary' : 'secondary'}
-                                size="small"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={
-                                  group.numberingMode === 'shared'
-                                    ? t('sections.localPaymentAccounts.numberingModeShared', 'حساب مشترك')
-                                    : t('sections.localPaymentAccounts.numberingModePerCurrency', 'حساب لكل عملة')
-                                }
-                                color={group.numberingMode === 'shared' ? 'secondary' : 'primary'}
-                                size="small"
-                              />
-                            </TableCell>
-                            {!isMobile && (
-                              <TableCell>
-                                <Stack spacing={0.5}>
-                                  {group.numberingMode === 'shared' && group.sharedAccountNumber && (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                      <Chip
-                                        label={t('sections.localPaymentAccounts.sharedAccountLabel', 'رقم مشترك')}
-                                        size="small"
-                                        color="primary"
-                                      />
-                                      <Typography variant="body2" color="text.secondary">
-                                        {group.sharedAccountNumber}
-                                      </Typography>
-                                      <Stack direction="row" spacing={0.5}>
-                                        {group.supportedCurrencies.map((currency) => (
-                                          <Chip
-                                            key={`${group.providerId}-${currency}`}
-                                            label={currency}
-                                            size="small"
-                                            variant="outlined"
-                                          />
-                                        ))}
-                                      </Stack>
-                                    </Box>
-                                  )}
-                                  {group.accounts.map((account) => (
-                                    <Box
-                                      key={account.id}
-                                      sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
-                                    >
-                                      <Chip label={account.currency} size="small" variant="outlined" />
-                                      <Typography variant="body2" color="text.secondary">
-                                        {account.accountNumber}
-                                      </Typography>
-                                      {group.numberingMode === 'shared' && (
-                                        <Chip
-                                          label={t('sections.localPaymentAccounts.overrideLabel', 'تخصيص')}
-                                          size="small"
-                                          variant="outlined"
-                                        />
-                                      )}
-                                      {!account.isActive && (
-                                        <Chip
-                                          label={t('sections.localPaymentAccounts.inactive')}
-                                          size="small"
-                                          color="error"
-                                        />
-                                      )}
-                                      {account.notes && (
-                                        <Typography variant="caption" color="text.secondary">
-                                          {account.notes}
-                                        </Typography>
-                                      )}
-                                    </Box>
-                                  ))}
-                                </Stack>
-                              </TableCell>
-                            )}
-                            <TableCell align="right">
-                              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                                {provider && (
-                                  <>
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleOpenAccountDialog(provider)}
-                                      color="primary"
-                                    >
-                                      <Edit />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleDeleteAccount(provider._id)}
-                                      color="error"
-                                    >
-                                      <Delete />
-                                    </IconButton>
-                                  </>
-                                )}
-                              </Box>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
+          <CardContent sx={{ pt: 0 }}>
+            {!accountsLoading && filteredRows.length === 0 && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {providerRows.length === 0
+                  ? t('sections.localPaymentAccounts.noAccounts')
+                  : t('sections.localPaymentAccounts.noResults', 'لم يتم العثور على نتائج مطابقة.')}
+              </Alert>
             )}
+            <DataTable
+              columns={columns}
+              rows={filteredRows}
+              loading={accountsLoading}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              sortModel={sortModel}
+              onSortModelChange={setSortModel}
+              searchPlaceholder={t('sections.localPaymentAccounts.searchPlaceholder', 'ابحث عن مزود...')}
+              onSearch={handleSearch}
+              getRowId={(row) => (row as PaymentProviderRow).id}
+              height={filteredRows.length === 0 ? 420 : 520}
+              rowHeight={isMobile ? 132 : 108}
+            />
           </CardContent>
         </Card>
       )}
