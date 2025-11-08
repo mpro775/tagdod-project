@@ -6,31 +6,52 @@ The application was failing to deploy on Render with the error:
 Error: Could not load the "sharp" module using the linuxmusl-x64 runtime
 ```
 
-This error occurs because Sharp is a native Node.js module that requires platform-specific binaries. When deploying from Windows to a Linux-based container (Alpine Linux with musl libc), the binaries need to be compiled for the target platform.
+This error occurs because Sharp is a native Node.js module that requires platform-specific binaries. When deploying from Windows to a Linux-based container, the binaries need to be compiled for the target platform.
 
 ## Solution Implemented
 
-### 1. Updated Dockerfile (Runner Stage)
-Added runtime dependencies for Sharp in the production runner stage:
+### 1. Switched from Alpine to Debian
+Changed all Docker stages from `node:20-alpine` to `node:20-slim` (Debian-based):
 
 ```dockerfile
-# Install runtime dependencies for sharp and other native modules
-RUN apk add --no-cache \
-    vips-dev \
-    fftw-dev \
-    gcc \
-    g++ \
-    make \
-    libc6-compat
+# All stages now use Debian
+FROM node:20-slim AS deps
+FROM node:20-slim AS build
+FROM node:20-slim AS runner
 ```
 
-**Why this is needed:**
-- `vips-dev`: libvips is the image processing library that Sharp uses
-- `fftw-dev`: Fast Fourier Transform library (required by libvips)
-- `gcc`, `g++`, `make`: Compilers and build tools for native modules
-- `libc6-compat`: Compatibility layer for running binaries compiled with glibc on musl-based Alpine
+**Why Debian instead of Alpine:**
+- Debian uses **glibc** which Sharp prefers over musl (used by Alpine)
+- Better compatibility with native Node.js modules
+- More reliable Sharp binaries
+- Fewer cross-platform issues
 
-### 2. Added Postinstall Script
+### 2. Updated Dockerfile Dependencies
+**Deps stage:**
+```dockerfile
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    pkg-config \
+    libvips-dev \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+**Runner stage:**
+```dockerfile
+RUN apt-get update && apt-get install -y \
+    libvips-dev \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+**Why these packages:**
+- `libvips-dev`: libvips is the image processing library that Sharp uses
+- `python3`, `make`, `g++`: Build tools for compiling native modules
+- `pkg-config`: Helps find installed libraries
+- `rm -rf /var/lib/apt/lists/*`: Cleans up to reduce image size
+
+### 3. Added Postinstall Script
 Added to `package.json`:
 ```json
 "postinstall": "npm rebuild sharp"
@@ -58,31 +79,17 @@ This ensures Sharp is rebuilt for the current platform whenever dependencies are
    - Look for successful Sharp installation/rebuild messages
    - Wait for the health check to pass
 
-### Alternative: If Issues Persist
+### Alternative: If Issues Still Persist
 
-If you still encounter issues, you can try these alternatives:
+If you still encounter issues after deploying the Debian-based image, you can try:
 
-#### Option A: Use a Debian-based image instead of Alpine
-Debian uses glibc which Sharp prefers. Replace `node:20-alpine` with `node:20-slim`:
-
-```dockerfile
-FROM node:20-slim AS runner
-```
-
-Then install runtime dependencies:
-```dockerfile
-RUN apt-get update && apt-get install -y \
-    libvips-dev \
-    && rm -rf /var/lib/apt/lists/*
-```
-
-#### Option B: Use Sharp's prebuilt binaries
+#### Option A: Use Sharp's prebuilt binaries
 Ensure the installation uses prebuilt binaries:
 ```bash
 npm install --platform=linuxmusl --arch=x64 sharp
 ```
 
-#### Option C: Set environment variables in Render
+#### Option B: Set environment variables in Render
 Add these environment variables in your Render service settings:
 - `SHARP_IGNORE_GLOBAL_LIBVIPS=1`
 - `npm_config_sharp_binary_host=https://github.com/lovell/sharp-libvips/releases/download`
@@ -98,15 +105,17 @@ After successful deployment, verify Sharp is working:
 
 ## Technical Details
 
-### Why Alpine Linux with musl?
-- Alpine Linux is lightweight (smaller image size)
-- Uses musl libc instead of glibc
-- Sharp needs to compile native bindings for musl
+### Why Debian (node:20-slim)?
+- Debian uses **glibc** which is the standard C library on most Linux systems
+- Sharp has better support for glibc-based systems
+- More stable and reliable for native Node.js modules
+- Image size is still reasonable (~180MB vs Alpine's ~120MB)
 
 ### What the fix does:
-1. **Build stage**: Compiles Sharp with the correct binaries for Alpine/musl
-2. **Runtime stage**: Provides the necessary libraries for Sharp to run
-3. **Postinstall hook**: Ensures Sharp is always rebuilt for the current platform
+1. **Deps stage**: Installs libvips-dev and build tools for compiling Sharp
+2. **Build stage**: Compiles the application with proper dependencies
+3. **Runtime stage**: Provides only libvips-dev for Sharp to run
+4. **Postinstall hook**: Ensures Sharp is always rebuilt for the current platform
 
 ## Troubleshooting
 
