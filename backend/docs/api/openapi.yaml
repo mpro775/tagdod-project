@@ -2078,6 +2078,11 @@ paths:
           description: Filter new products
           schema:
             type: boolean
+        - name: currency
+          required: true
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: Products list retrieved successfully
@@ -2231,7 +2236,12 @@ paths:
     get:
       operationId: getFeatured
       summary: الحصول على المنتجات المميزة
-      parameters: []
+      parameters:
+        - name: currency
+          required: true
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: Featured products retrieved successfully
@@ -2241,7 +2251,12 @@ paths:
     get:
       operationId: getNew
       summary: الحصول على المنتجات الجديدة
-      parameters: []
+      parameters:
+        - name: currency
+          required: true
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: New products retrieved successfully

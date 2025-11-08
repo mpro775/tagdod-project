@@ -55,6 +55,16 @@ type RelatedProductPayload = Record<string, any> & {
   attributesDetails: AttributeSummary[];
   variants: Array<Record<string, any>>;
   pricingByCurrency?: Record<string, PriceWithDiscount>;
+  priceRangeByCurrency?: Record<
+    string,
+    {
+      minPrice: number;
+      maxPrice: number;
+      currency: string;
+      hasDiscountedVariant: boolean;
+    }
+  >;
+  defaultPricing?: PriceWithDiscount | null;
 };
 
 @ApiTags('المنتجات')
@@ -230,6 +240,55 @@ export class PublicProductsController {
     return basePrice !== undefined || compareAtPrice !== undefined || costPrice !== undefined;
   }
 
+  private computePriceRangeByCurrency(
+    pricesByCurrency: Record<string, PriceWithDiscountAndVariantId[]>,
+  ): Record<
+    string,
+    {
+      minPrice: number;
+      maxPrice: number;
+      currency: string;
+      hasDiscountedVariant: boolean;
+    }
+  > {
+    const summary: Record<
+      string,
+      { minPrice: number; maxPrice: number; currency: string; hasDiscountedVariant: boolean }
+    > = {};
+
+    Object.entries(pricesByCurrency).forEach(([currency, prices]) => {
+      if (!prices || prices.length === 0) {
+        return;
+      }
+
+      let minPrice = Number.POSITIVE_INFINITY;
+      let maxPrice = Number.NEGATIVE_INFINITY;
+      let hasDiscount = false;
+
+      prices.forEach((price) => {
+        const finalPrice = price.finalPrice ?? price.basePrice;
+        if (finalPrice < minPrice) {
+          minPrice = finalPrice;
+        }
+        if (finalPrice > maxPrice) {
+          maxPrice = finalPrice;
+        }
+        if (price.discountPercent > 0) {
+          hasDiscount = true;
+        }
+      });
+
+      summary[currency] = {
+        minPrice: Number.isFinite(minPrice) ? minPrice : 0,
+        maxPrice: Number.isFinite(maxPrice) ? maxPrice : 0,
+        currency,
+        hasDiscountedVariant: hasDiscount,
+      };
+    });
+
+    return summary;
+  }
+
   private async enrichVariantsPricing(
     productId: string,
     variants: Array<WithId & Record<string, any>>,
@@ -238,6 +297,7 @@ export class PublicProductsController {
   ): Promise<{
     variantsWithPricing: Array<Record<string, any>>;
     currenciesForPricing: string[];
+    pricesByCurrency: Record<string, PriceWithDiscountAndVariantId[]>;
   }> {
     const normalizedCurrency = this.normalizeCurrency(selectedCurrencyInput);
     const currenciesForPricing = Array.from(
@@ -284,7 +344,7 @@ export class PublicProductsController {
       };
     });
 
-    return { variantsWithPricing, currenciesForPricing };
+    return { variantsWithPricing, currenciesForPricing, pricesByCurrency };
   }
 
   private async buildRelatedProducts(
@@ -315,7 +375,11 @@ export class PublicProductsController {
           const productRecord = product as unknown as Record<string, unknown>;
           const variants = await this.variantService.findByProductId(id);
 
-          const { variantsWithPricing, currenciesForPricing } = await this.enrichVariantsPricing(
+          const {
+            variantsWithPricing,
+            currenciesForPricing,
+            pricesByCurrency,
+          } = await this.enrichVariantsPricing(
             id,
             variants as unknown as Array<WithId & Record<string, any>>,
             discountPercent,
@@ -327,6 +391,18 @@ export class PublicProductsController {
           );
 
           let pricingByCurrency: Record<string, PriceWithDiscount> | undefined;
+          let priceRangeByCurrency:
+            | Record<
+                string,
+                {
+                  minPrice: number;
+                  maxPrice: number;
+                  currency: string;
+                  hasDiscountedVariant: boolean;
+                }
+              >
+            | undefined;
+          let defaultPricing: PriceWithDiscount | null | undefined;
 
           if (variantsWithPricing.length === 0 && this.hasSimplePricing(productRecord)) {
             const basePriceUSD = this.normalizePrice(
@@ -346,12 +422,27 @@ export class PublicProductsController {
               currenciesForPricing,
               discountPercent,
             );
+            defaultPricing =
+              pricingByCurrency[this.normalizeCurrency(selectedCurrencyInput)] ??
+              pricingByCurrency.USD;
+          } else if (variantsWithPricing.length > 0) {
+            priceRangeByCurrency = this.computePriceRangeByCurrency(pricesByCurrency);
+            const selectedCurrency = this.normalizeCurrency(selectedCurrencyInput);
+            const fallbackCurrency =
+              selectedCurrency !== 'USD' && !pricesByCurrency[selectedCurrency]
+                ? 'USD'
+                : selectedCurrency;
+            const selectedVariantPrice =
+              pricesByCurrency[fallbackCurrency]?.[0] ?? pricesByCurrency.USD?.[0] ?? null;
+            defaultPricing = this.stripVariantId(selectedVariantPrice);
           }
 
           return {
             ...(productRecord as Record<string, any>),
             attributesDetails,
             ...(pricingByCurrency ? { pricingByCurrency } : {}),
+            ...(priceRangeByCurrency ? { priceRangeByCurrency } : {}),
+            defaultPricing,
             variants: variantsWithPricing,
           } as RelatedProductPayload;
         } catch (error) {
@@ -370,6 +461,87 @@ export class PublicProductsController {
     );
   }
 
+  private async buildProductsCollectionResponse(
+    products: Array<Record<string, any>>,
+    discountPercent: number,
+    selectedCurrencyInput: string,
+  ): Promise<Array<Record<string, any>>> {
+    if (!products || products.length === 0) {
+      return [];
+    }
+
+    const normalizedCurrency = this.normalizeCurrency(selectedCurrencyInput);
+
+    return Promise.all(
+      products.map(async (productRaw) => {
+        const productRecord = productRaw as Record<string, any>;
+        const productId = this.extractIdString(productRecord._id) ?? String(productRecord._id);
+        const variants = await this.variantService.findByProductId(productId);
+
+        if (variants.length === 0) {
+          if (!this.hasSimplePricing(productRecord)) {
+            return {
+              ...productRecord,
+              pricingByCurrency: undefined,
+              defaultPricing: undefined,
+            };
+          }
+
+          const basePriceUSD = this.normalizePrice(
+            productRecord.basePriceUSD ?? productRecord.basePrice,
+          );
+          const compareAtPriceUSD = this.normalizePrice(
+            productRecord.compareAtPriceUSD ?? productRecord.compareAtPrice,
+          );
+          const costPriceUSD = this.normalizePrice(
+            productRecord.costPriceUSD ?? productRecord.costPrice,
+          );
+
+          const currenciesForPricing = Array.from(
+            new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
+          );
+
+          const pricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
+            basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
+            compareAtPriceUSD,
+            costPriceUSD,
+            currenciesForPricing,
+            discountPercent,
+          );
+
+          return {
+            ...productRecord,
+            pricingByCurrency,
+            defaultPricing: pricingByCurrency[normalizedCurrency] ?? pricingByCurrency.USD,
+          };
+        }
+
+        const {
+          variantsWithPricing,
+          pricesByCurrency,
+        } = await this.enrichVariantsPricing(
+          productId,
+          variants as unknown as Array<WithId & Record<string, any>>,
+          discountPercent,
+          normalizedCurrency,
+        );
+
+        const priceRangeByCurrency = this.computePriceRangeByCurrency(pricesByCurrency);
+        const selectedVariantPricing =
+          pricesByCurrency[normalizedCurrency]?.[0] ??
+          pricesByCurrency.USD?.[0] ??
+          null;
+
+        return {
+          ...productRecord,
+          variants: variantsWithPricing,
+          priceRangeByCurrency,
+          defaultPricing: this.stripVariantId(selectedVariantPricing),
+        };
+      }),
+    );
+  }
+
   private async buildProductDetailResponse(
     productId: string,
     product: Record<string, any>,
@@ -377,7 +549,11 @@ export class PublicProductsController {
     discountPercent: number,
     selectedCurrencyInput: string,
   ) {
-    const { variantsWithPricing, currenciesForPricing } = await this.enrichVariantsPricing(
+    const {
+      variantsWithPricing,
+      currenciesForPricing,
+      pricesByCurrency,
+    } = await this.enrichVariantsPricing(
       productId,
       variants,
       discountPercent,
@@ -387,6 +563,18 @@ export class PublicProductsController {
     const attributesDetails = await this.getAttributeSummaries(product.attributes as unknown[]);
 
     let productPricingByCurrency: Record<string, PriceWithDiscount> | undefined;
+    let productPriceRangeByCurrency:
+      | Record<
+          string,
+          {
+            minPrice: number;
+            maxPrice: number;
+            currency: string;
+            hasDiscountedVariant: boolean;
+          }
+        >
+      | undefined;
+    let defaultPricing: PriceWithDiscount | null | undefined;
     const basePriceUSD = this.normalizePrice(product.basePriceUSD ?? product.basePrice);
     const compareAtPriceUSD = this.normalizePrice(
       product.compareAtPriceUSD ?? product.compareAtPrice,
@@ -401,12 +589,25 @@ export class PublicProductsController {
         currenciesForPricing,
         discountPercent,
       );
+      defaultPricing =
+        productPricingByCurrency[this.normalizeCurrency(selectedCurrencyInput)] ??
+        productPricingByCurrency.USD;
+    } else if (variantsWithPricing.length > 0) {
+      productPriceRangeByCurrency = this.computePriceRangeByCurrency(pricesByCurrency);
+      const selectedCurrency = this.normalizeCurrency(selectedCurrencyInput);
+      const fallbackCurrency =
+        selectedCurrency !== 'USD' && !pricesByCurrency[selectedCurrency] ? 'USD' : selectedCurrency;
+      const selectedVariantPrice =
+        pricesByCurrency[fallbackCurrency]?.[0] ?? pricesByCurrency.USD?.[0] ?? null;
+      defaultPricing = this.stripVariantId(selectedVariantPrice);
     }
 
     const productWithAttributes = {
       ...product,
       attributesDetails,
       ...(productPricingByCurrency ? { pricingByCurrency: productPricingByCurrency } : {}),
+      ...(productPriceRangeByCurrency ? { priceRangeByCurrency: productPriceRangeByCurrency } : {}),
+      defaultPricing,
     };
 
     const relatedProducts = await this.buildRelatedProducts(
@@ -506,8 +707,13 @@ export class PublicProductsController {
     @Query('brandId') brandId?: string,
     @Query('isFeatured') isFeatured?: string,
     @Query('isNew') isNew?: string,
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
   ) {
-    return this.productService.list({
+    const discountPercent = await this.getUserMerchantDiscount(req?.user?.sub);
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    const result = await this.productService.list({
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
       search,
@@ -517,6 +723,17 @@ export class PublicProductsController {
       isFeatured: isFeatured === 'true' ? true : undefined,
       isNew: isNew === 'true' ? true : undefined,
     });
+
+    const productsWithPricing = await this.buildProductsCollectionResponse(
+      (result.data as Array<Record<string, any>>) ?? [],
+      discountPercent,
+      selectedCurrency,
+    );
+
+    return {
+      ...result,
+      data: productsWithPricing,
+    };
   }
 
   // ==================== Product Details ====================
@@ -635,24 +852,58 @@ export class PublicProductsController {
   @ApiOperation({ summary: 'الحصول على المنتجات المميزة' })
   @ApiResponse({ status: 200, description: 'Featured products retrieved successfully' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getFeatured() {
-    return this.productService.list({
+  async getFeatured(
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
+  ) {
+    const discountPercent = await this.getUserMerchantDiscount(req?.user?.sub);
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    const result = await this.productService.list({
       isFeatured: true,
       status: ProductStatus.ACTIVE,
       limit: 12,
     });
+
+    const productsWithPricing = await this.buildProductsCollectionResponse(
+      (result.data as Array<Record<string, any>>) ?? [],
+      discountPercent,
+      selectedCurrency,
+    );
+
+    return {
+      ...result,
+      data: productsWithPricing,
+    };
   }
 
   @Get('new/list')
   @ApiOperation({ summary: 'الحصول على المنتجات الجديدة' })
   @ApiResponse({ status: 200, description: 'New products retrieved successfully' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getNew() {
-    return this.productService.list({
+  async getNew(
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
+  ) {
+    const discountPercent = await this.getUserMerchantDiscount(req?.user?.sub);
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    const result = await this.productService.list({
       isNew: true,
       status: ProductStatus.ACTIVE,
       limit: 12,
     });
+
+    const productsWithPricing = await this.buildProductsCollectionResponse(
+      (result.data as Array<Record<string, any>>) ?? [],
+      discountPercent,
+      selectedCurrency,
+    );
+
+    return {
+      ...result,
+      data: productsWithPricing,
+    };
   }
 
   // ==================== Variants ====================

@@ -254,14 +254,15 @@ export class CategoriesPublicController {
     @Query('isNew') isNew?: string,
   ) {
     // التحقق من وجود الفئة
-    await this.categoriesService.getCategory(id);
+    const category = await this.categoriesService.getCategory(id);
+    const resolvedCategoryId = String(category._id ?? id);
 
     // جلب المنتجات العامة فقط
     const result = await this.productService.list({
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
       search,
-      categoryId: id,
+      categoryId: resolvedCategoryId,
       brandId,
       status: ProductStatus.ACTIVE, // فقط المنتجات النشطة (public)
       isActive: true, // فقط المنتجات المفعلة (public)
