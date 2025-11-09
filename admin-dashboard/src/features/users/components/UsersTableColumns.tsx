@@ -143,8 +143,8 @@ export const useUsersTableColumns = ({
           const badges = [];
           if (caps.engineer_capable)
             badges.push(t('users:capabilities.engineer', 'مهندس'));
-          if (caps.wholesale_capable)
-            badges.push(t('users:capabilities.wholesale', 'تاجر جملة'));
+          if (caps.merchant_capable)
+            badges.push(t('users:capabilities.merchant', 'تاجر'));
           if (badges.length === 0) badges.push(t('users:capabilities.customer', 'عميل'));
 
           return (

@@ -40,7 +40,7 @@ export const createUserFormSchema = (t: any) => {
       .array(z.nativeEnum(UserRole))
       .min(1, translate('users:form.validation.roles.min', 'يجب تحديد دور واحد على الأقل')),
     permissions: z.array(z.string()).optional(),
-    wholesaleDiscountPercent: z
+    merchantDiscountPercent: z
       .number()
       .min(0, translate('users:form.validation.discount.min', 'النسبة يجب أن تكون 0 أو أكثر'))
       .max(100, translate('users:form.validation.discount.max', 'النسبة يجب أن تكون 100 أو أقل'))

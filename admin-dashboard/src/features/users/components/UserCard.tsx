@@ -105,9 +105,9 @@ export const UserCard: React.FC<UserCardProps> = ({
         />
       );
     }
-    if (user.capabilities?.wholesale_capable) {
+    if (user.capabilities?.merchant_capable) {
       icons.push(
-        <StoreIcon key="wholesale" color="info" sx={{ fontSize: { xs: 16, sm: 20 } }} />
+        <StoreIcon key="merchant" color="info" sx={{ fontSize: { xs: 16, sm: 20 } }} />
       );
     }
     if (user.capabilities?.admin_capable) {
@@ -257,8 +257,9 @@ export const UserCard: React.FC<UserCardProps> = ({
               </Typography>
             </Grid>
           )}
-          {user.capabilities?.wholesale_discount_percent &&
-            user.capabilities.wholesale_discount_percent > 0 && (
+          {((user.capabilities?.merchant_discount_percent &&
+            user.capabilities.merchant_discount_percent > 0) ||
+            (user as any).merchant_discount_percent > 0) && (
               <Grid component="div" size={{ xs: 12 }}>
                 <Typography
                   variant="body2"
@@ -267,8 +268,10 @@ export const UserCard: React.FC<UserCardProps> = ({
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   }}
                 >
-                  <strong>{t('users:card.wholesaleDiscount', 'خصم الجملة:')}</strong>{' '}
-                  {user.capabilities.wholesale_discount_percent}%
+                  <strong>{t('users:card.merchantDiscount', 'خصم التاجر:')}</strong>{' '}
+                  {user.capabilities?.merchant_discount_percent ??
+                    (user as any).merchant_discount_percent}
+                  %
                 </Typography>
               </Grid>
             )}

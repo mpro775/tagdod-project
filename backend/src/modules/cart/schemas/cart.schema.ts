@@ -38,6 +38,15 @@ export class CartItem {
     brandId?: string;
     brandName?: string;
     categoryId?: string;
+    averageRating?: number;
+    ratingValue?: number;
+    ratingSource?: 'manual' | 'average';
+    reviewsCount?: number;
+    price?: {
+      base: number;
+      final: number;
+      currency: string;
+    };
   };
 
   // 🆕 Cached pricing (updated on cart operations)

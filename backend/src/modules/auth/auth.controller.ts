@@ -93,8 +93,16 @@ export class AuthController {
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
+        status: user.status,
+        // Capability statuses
+        customerCapable: user.customer_capable,
+        engineerCapable: user.engineer_capable,
         engineerStatus: user.engineer_status,
+        merchantCapable: user.merchant_capable,
         merchantStatus: user.merchant_status,
+        merchantDiscountPercent: user.merchant_discount_percent,
+        adminCapable: user.admin_capable,
+        adminStatus: user.admin_status,
       },
     };
   }
@@ -288,8 +296,16 @@ export class AuthController {
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
+        status: user.status,
+        // Capability statuses
+        customerCapable: user.customer_capable,
+        engineerCapable: user.engineer_capable,
         engineerStatus: user.engineer_status,
+        merchantCapable: user.merchant_capable,
         merchantStatus: user.merchant_status,
+        merchantDiscountPercent: user.merchant_discount_percent,
+        adminCapable: user.admin_capable,
+        adminStatus: user.admin_status,
       },
     };
   }
@@ -400,6 +416,17 @@ export class AuthController {
         roles: user!.roles || [],
         permissions: user!.permissions || [],
         isAdmin: isAdminUser,
+        preferredCurrency: user!.preferredCurrency || 'USD',
+        status: user!.status,
+        // Capability statuses
+        customerCapable: user!.customer_capable,
+        engineerCapable: user!.engineer_capable,
+        engineerStatus: user!.engineer_status,
+        merchantCapable: user!.merchant_capable,
+        merchantStatus: user!.merchant_status,
+        merchantDiscountPercent: user!.merchant_discount_percent,
+        adminCapable: user!.admin_capable,
+        adminStatus: user!.admin_status,
       },
       capabilities: caps,
     };
@@ -734,6 +761,16 @@ export class AuthController {
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
+        status: user.status,
+        // Capability statuses
+        customerCapable: user.customer_capable,
+        engineerCapable: user.engineer_capable,
+        engineerStatus: user.engineer_status,
+        merchantCapable: user.merchant_capable,
+        merchantStatus: user.merchant_status,
+        merchantDiscountPercent: user.merchant_discount_percent,
+        adminCapable: user.admin_capable,
+        adminStatus: user.admin_status,
       },
     };
   }
@@ -875,8 +912,16 @@ export class AuthController {
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
+        status: user.status,
+        // Capability statuses
+        customerCapable: user.customer_capable,
+        engineerCapable: user.engineer_capable,
         engineerStatus: user.engineer_status,
+        merchantCapable: user.merchant_capable,
         merchantStatus: user.merchant_status,
+        merchantDiscountPercent: user.merchant_discount_percent,
+        adminCapable: user.admin_capable,
+        adminStatus: user.admin_status,
       },
     };
   }
@@ -1373,6 +1418,16 @@ export class AuthController {
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
         preferredCurrency: user.preferredCurrency || 'USD',
+        status: user.status,
+        // Capability statuses
+        customerCapable: user.customer_capable,
+        engineerCapable: user.engineer_capable,
+        engineerStatus: user.engineer_status,
+        merchantCapable: user.merchant_capable,
+        merchantStatus: user.merchant_status,
+        merchantDiscountPercent: user.merchant_discount_percent,
+        adminCapable: user.admin_capable,
+        adminStatus: user.admin_status,
       },
     };
   }

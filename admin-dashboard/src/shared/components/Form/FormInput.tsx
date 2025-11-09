@@ -8,7 +8,12 @@ interface FormInputProps extends Omit<TextFieldProps, 'name'> {
   rules?: Record<string, unknown>;
 }
 
-export const FormInput: React.FC<FormInputProps> = ({ name, label, rules, ...textFieldProps }) => {
+export const FormInput: React.FC<FormInputProps> = ({
+  name,
+  label,
+  rules,
+  ...textFieldProps
+}) => {
   const { control } = useFormContext();
 
   return (
@@ -16,17 +21,47 @@ export const FormInput: React.FC<FormInputProps> = ({ name, label, rules, ...tex
       name={name}
       control={control}
       rules={rules}
-      render={({ field, fieldState: { error } }) => (
-        <TextField
-          {...field}
-          {...textFieldProps}
-          label={label}
-          error={!!error}
-          helperText={error?.message as string}
-          fullWidth
-          value={field.value || ''}
-        />
-      )}
+      render={({ field, fieldState: { error } }) => {
+        const { onChange: propOnChange, ...restTextFieldProps } = textFieldProps;
+        const isNumberInput = textFieldProps.type === 'number';
+        const { onChange, value, ref, ...restField } = field;
+
+        return (
+          <TextField
+            {...restTextFieldProps}
+            {...restField}
+            inputRef={ref}
+            name={name}
+            label={label}
+            error={!!error}
+            helperText={error?.message as string}
+            fullWidth
+            value={value ?? ''}
+            onChange={(event) => {
+              propOnChange?.(event);
+
+              if (!isNumberInput) {
+                onChange(event);
+                return;
+              }
+
+              const inputValue = event.target.value;
+              if (inputValue === '') {
+                onChange(undefined);
+                return;
+              }
+
+              const numericValue = event.target.valueAsNumber;
+              if (Number.isNaN(numericValue)) {
+                onChange(undefined);
+                return;
+              }
+
+              onChange(numericValue);
+            }}
+          />
+        );
+      }}
     />
   );
 };

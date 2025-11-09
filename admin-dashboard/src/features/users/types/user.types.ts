@@ -58,9 +58,9 @@ export interface UserCapabilities {
   customer_capable: boolean;
   engineer_capable: boolean;
   engineer_status: CapabilityStatus;
-  wholesale_capable: boolean;
-  wholesale_status: CapabilityStatus;
-  wholesale_discount_percent: number;
+  merchant_capable: boolean;
+  merchant_status: CapabilityStatus;
+  merchant_discount_percent: number;
   admin_capable: boolean;
   admin_status: CapabilityStatus;
   createdAt: Date;
@@ -120,8 +120,8 @@ export interface CreateUserDto {
   roles?: UserRole[];
   permissions?: string[];
   status?: UserStatus;
-  capabilityRequest?: 'engineer' | 'wholesale';
-  wholesaleDiscountPercent?: number;
+  capabilityRequest?: 'engineer' | 'merchant';
+  merchantDiscountPercent?: number;
 }
 
 export interface UpdateUserDto {
@@ -134,8 +134,8 @@ export interface UpdateUserDto {
   roles?: UserRole[];
   permissions?: string[];
   status?: UserStatus;
-  capabilityRequest?: 'engineer' | 'wholesale';
-  wholesaleDiscountPercent?: number;
+  capabilityRequest?: 'engineer' | 'merchant';
+  merchantDiscountPercent?: number;
 }
 
 export interface ListUsersParams extends ListParams {
@@ -197,7 +197,7 @@ export interface VerificationRequest {
 export interface VerificationDetails extends VerificationRequest {
   jobTitle?: string;
   engineerStatus?: CapabilityStatus;
-  wholesaleStatus?: CapabilityStatus;
+  merchantStatus?: CapabilityStatus;
   updatedAt?: Date | string;
 }
 

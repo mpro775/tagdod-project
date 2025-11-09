@@ -7,6 +7,7 @@ import { Product } from '../products/schemas/product.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { MarketingService } from '../marketing/marketing.service';
 import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
+import { randomUUID } from 'crypto';
 
 type ItemView = {
   itemId: string;
@@ -20,9 +21,33 @@ type CartLine = {
   variantId?: string;
   productId?: string;
   qty: number;
-  unit: { base: number; final: number; currency: string; appliedRule: unknown };
+  unit: {
+    base: number;
+    final: number;
+    finalBeforeDiscount?: number;
+    currency: string;
+    appliedRule: unknown;
+  };
   lineTotal: number;
+  pricing?: CartItem['pricing'];
   snapshot?: CartItem['productSnapshot'];
+};
+
+type PriceSnapshot = {
+  basePrice?: number;
+  finalPrice?: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  currency?: string;
+  exchangeRate?: number;
+};
+
+type CartPricing = {
+  currency: string;
+  basePrice: number;
+  finalPrice: number;
+  discount: number;
+  appliedPromotionId?: string;
 };
 
 type AddItemInput = {
@@ -66,10 +91,11 @@ export class CartService {
     currency: string = 'YER',
     accountType: string = 'retail',
   ) {
-    let cart = await this.cartModel.findOne({ userId });
+    const userObjectId = new Types.ObjectId(userId);
+    let cart = await this.cartModel.findOne({ userId: userObjectId });
     if (!cart)
       cart = await this.cartModel.create({
-        userId: new Types.ObjectId(userId),
+        userId: userObjectId,
         items: [],
         currency,
         accountType,
@@ -100,19 +126,349 @@ export class CartService {
     }
   }
 
+  private normalizeCurrency(currency?: string): string {
+    if (!currency || typeof currency !== 'string') {
+      return 'USD';
+    }
+    return currency.trim().toUpperCase() || 'USD';
+  }
+
+  private normalizeNumber(value: unknown): number | undefined {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : undefined;
+    }
+    if (typeof value === 'bigint') {
+      const asNumber = Number(value);
+      return Number.isFinite(asNumber) ? asNumber : undefined;
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return undefined;
+
+      const arabicIndicDigits: Record<string, string> = {
+        '٠': '0',
+        '١': '1',
+        '٢': '2',
+        '٣': '3',
+        '٤': '4',
+        '٥': '5',
+        '٦': '6',
+        '٧': '7',
+        '٨': '8',
+        '٩': '9',
+        '۰': '0',
+        '۱': '1',
+        '۲': '2',
+        '۳': '3',
+        '۴': '4',
+        '۵': '5',
+        '۶': '6',
+        '۷': '7',
+        '۸': '8',
+        '۹': '9',
+      };
+
+      let normalized = trimmed
+        .split('')
+        .map((char) => arabicIndicDigits[char] ?? char)
+        .join('');
+
+      normalized = normalized.replace(/\s+/g, '');
+      normalized = normalized.replace(/[٬﹐﹑]/g, '');
+      normalized = normalized.replace(/٫/g, '.');
+
+      if (normalized.includes(',') && normalized.includes('.')) {
+        normalized = normalized.replace(/,/g, '');
+      } else if (normalized.includes(',') && !normalized.includes('.')) {
+        normalized = normalized.replace(/,/g, '.');
+      } else {
+        normalized = normalized.replace(/,/g, '');
+      }
+
+      normalized = normalized.replace(/[^0-9.-]/g, '');
+      if (!normalized || normalized === '-' || normalized === '.' || normalized === '-.') {
+        return undefined;
+      }
+
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    if (value instanceof Types.Decimal128) {
+      const parsed = Number(value.toString());
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    if (value && typeof value === 'object') {
+      if ('toString' in value && typeof (value as { toString: () => string }).toString === 'function') {
+        const asString = (value as { toString: () => string }).toString();
+        if (asString && asString !== '[object Object]') {
+          return this.normalizeNumber(asString);
+        }
+      }
+      if ('valueOf' in value && typeof (value as { valueOf: () => unknown }).valueOf === 'function') {
+        const asPrimitive = (value as { valueOf: () => unknown }).valueOf();
+        if (asPrimitive !== value) {
+          return this.normalizeNumber(asPrimitive);
+        }
+      }
+    }
+    return undefined;
+  }
+
+  private shouldRefreshPricing(pricing?: CartItem['pricing']): boolean {
+    if (!pricing) {
+      return true;
+    }
+    const base = pricing.basePrice;
+    const final = pricing.finalPrice;
+    if (base === undefined || final === undefined) {
+      return true;
+    }
+    if (!Number.isFinite(base) || !Number.isFinite(final)) {
+      return true;
+    }
+    if (base <= 0 || final <= 0) {
+      return true;
+    }
+    return false;
+  }
+
+  private roundPrice(value: number | undefined): number | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+    return Math.round(value * 100) / 100;
+  }
+
+  private getPricingRecord(pricingByCurrency: unknown, currency: string): PriceSnapshot | undefined {
+    if (!pricingByCurrency || typeof pricingByCurrency !== 'object') {
+      return undefined;
+    }
+
+    const normalizedCurrency = this.normalizeCurrency(currency);
+    let entry: unknown;
+
+    if (pricingByCurrency instanceof Map) {
+      const mapEntries = Array.from(pricingByCurrency.entries());
+      entry =
+        mapEntries.find(([key]) => this.normalizeCurrency(String(key)) === normalizedCurrency)?.[1] ??
+        mapEntries.find(([key]) => String(key).toLowerCase() === normalizedCurrency.toLowerCase())?.[1];
+    } else {
+      const pricingMap = pricingByCurrency as Record<string, unknown>;
+      const directKey =
+        pricingMap[normalizedCurrency] ??
+        pricingMap[normalizedCurrency.toLowerCase()] ??
+        pricingMap[normalizedCurrency.toUpperCase()] ??
+        pricingMap[currency];
+
+      if (!directKey) {
+        const matchedKey = Object.keys(pricingMap).find(
+          (key) => this.normalizeCurrency(key) === normalizedCurrency,
+        );
+        entry = matchedKey ? pricingMap[matchedKey] : undefined;
+      } else {
+        entry = directKey;
+      }
+    }
+
+    if (!entry || typeof entry !== 'object') {
+      return undefined;
+    }
+
+    const rec = entry as Record<string, unknown>;
+    const basePrice = this.normalizeNumber(rec['basePrice']);
+    const finalPrice = this.normalizeNumber(rec['finalPrice']);
+    const discountPercent = this.normalizeNumber(rec['discountPercent']);
+    const discountAmount = this.normalizeNumber(rec['discountAmount']);
+    const exchangeRate = this.normalizeNumber(rec['exchangeRate']);
+    const currencyCode =
+      typeof rec['currency'] === 'string'
+        ? this.normalizeCurrency(rec['currency'])
+        : normalizedCurrency;
+
+    return {
+      basePrice,
+      finalPrice,
+      discountPercent,
+      discountAmount,
+      exchangeRate,
+      currency: currencyCode,
+    };
+  }
+
+  private async buildPricingForCurrency(options: {
+    basePriceUSD?: number | null;
+    pricingByCurrency?: unknown;
+    currency: string;
+  }): Promise<{ basePriceUSD: number; pricing: CartPricing }> {
+    const targetCurrency = this.normalizeCurrency(options.currency);
+    const baseInputUSD = this.normalizeNumber(options.basePriceUSD ?? undefined);
+    const priceRecord = this.getPricingRecord(options.pricingByCurrency, targetCurrency);
+    const usdRecord =
+      targetCurrency === 'USD'
+        ? priceRecord
+        : this.getPricingRecord(options.pricingByCurrency, 'USD');
+
+    let basePriceUSD = baseInputUSD;
+    if (basePriceUSD === undefined) {
+      basePriceUSD = this.normalizeNumber(usdRecord?.basePrice);
+    }
+    if (basePriceUSD === undefined && priceRecord?.basePrice && priceRecord?.exchangeRate) {
+      basePriceUSD = priceRecord.basePrice / priceRecord.exchangeRate;
+    }
+    if (
+      basePriceUSD === undefined &&
+      priceRecord?.basePrice !== undefined &&
+      priceRecord?.currency &&
+      this.exchangeRatesService
+    ) {
+      try {
+        const conversion = await this.exchangeRatesService.convertCurrency({
+          amount: priceRecord.basePrice,
+          fromCurrency: priceRecord.currency,
+          toCurrency: 'USD',
+        });
+        basePriceUSD = conversion.result;
+      } catch {
+        // ignore and fallback
+      }
+    }
+
+    if (basePriceUSD === undefined && priceRecord?.finalPrice !== undefined) {
+      if (priceRecord.currency === 'USD' || targetCurrency === 'USD') {
+        basePriceUSD = priceRecord.finalPrice;
+      } else if (priceRecord.exchangeRate) {
+        basePriceUSD = priceRecord.finalPrice / priceRecord.exchangeRate;
+      } else if (this.exchangeRatesService) {
+        try {
+          const conversion = await this.exchangeRatesService.convertCurrency({
+            amount: priceRecord.finalPrice,
+            fromCurrency: priceRecord.currency ?? targetCurrency,
+            toCurrency: 'USD',
+          });
+          basePriceUSD = conversion.result;
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (basePriceUSD === undefined && usdRecord?.finalPrice !== undefined) {
+      basePriceUSD = usdRecord.finalPrice;
+    }
+
+    if (basePriceUSD === undefined) {
+      // As a final fallback assume zero price to avoid breaking the cart
+      basePriceUSD = 0;
+    }
+
+    if (basePriceUSD === undefined) {
+      throw new Error('لم يتم تحديد سعر لهذا المنتج');
+    }
+
+    let basePrice = this.normalizeNumber(priceRecord?.basePrice);
+    let finalPrice = this.normalizeNumber(priceRecord?.finalPrice);
+    let discountAmount = this.normalizeNumber(priceRecord?.discountAmount);
+    const discountPercent = this.normalizeNumber(priceRecord?.discountPercent);
+
+    if (
+      targetCurrency !== 'USD' &&
+      (basePrice === undefined || finalPrice === undefined) &&
+      this.exchangeRatesService
+    ) {
+      try {
+        const conversion = await this.exchangeRatesService.convertCurrency({
+          amount: basePriceUSD,
+          fromCurrency: 'USD',
+          toCurrency: targetCurrency,
+        });
+        if (basePrice === undefined) {
+          basePrice = conversion.result;
+        }
+        if (finalPrice === undefined) {
+          finalPrice = conversion.result;
+        }
+        if (discountAmount === undefined && discountPercent !== undefined) {
+          const discount = (conversion.result * discountPercent) / 100;
+          discountAmount = this.roundPrice(discount);
+          finalPrice = conversion.result - (discountAmount ?? 0);
+        }
+      } catch {
+        // ignore conversion errors and fallback to USD values
+      }
+    }
+
+    if (basePrice === undefined) {
+      basePrice = basePriceUSD;
+    }
+    if (finalPrice === undefined) {
+      if (discountAmount !== undefined) {
+        finalPrice = Math.max(0, basePrice - discountAmount);
+      } else if (discountPercent !== undefined) {
+        finalPrice = Math.max(0, basePrice * (1 - discountPercent / 100));
+      } else {
+        finalPrice = basePrice;
+      }
+    }
+    if (discountAmount === undefined) {
+      discountAmount = Math.max(0, basePrice - finalPrice);
+    }
+
+    const roundedBase = this.roundPrice(basePrice) ?? basePrice ?? 0;
+    const roundedFinal = this.roundPrice(finalPrice) ?? finalPrice ?? roundedBase;
+    const roundedDiscount =
+      this.roundPrice(discountAmount) ??
+      discountAmount ??
+      Math.max(0, roundedBase - roundedFinal);
+
+    return {
+      basePriceUSD,
+      pricing: {
+        currency: targetCurrency,
+        basePrice: roundedBase,
+        finalPrice: roundedFinal,
+        discount: roundedDiscount,
+      },
+    };
+  }
+
   private toView(cart: Cart): ItemView[] {
-    return (cart.items || []).map((ci: CartItem) => ({
-      itemId: String(ci._id),
-      variantId: ci.variantId ? String(ci.variantId) : undefined,
-      productId: ci.productId ? String(ci.productId) : undefined,
-      qty: ci.qty,
-    }));
+    return (cart.items || []).map((ci: CartItem) => {
+      const rawId =
+        (ci as unknown as { _id?: unknown })._id ??
+        (ci as unknown as { id?: unknown }).id ??
+        null;
+      const variantIdStr = ci.variantId ? this.toStringId(ci.variantId) : undefined;
+      const productIdStr = ci.productId ? this.toStringId(ci.productId) : undefined;
+      const itemId =
+        this.toStringId(rawId) ??
+        (variantIdStr
+          ? `variant-${variantIdStr}`
+          : productIdStr
+            ? `product-${productIdStr}`
+            : `temp-${randomUUID()}`);
+
+      return {
+        itemId,
+        variantId: variantIdStr,
+        productId: productIdStr,
+        qty: ci.qty,
+      };
+    });
   }
 
   // ---------- user cart
   async getUserCart(userId: string) {
     const cart = await this.getOrCreateUserCart(userId);
-    return { items: this.toView(cart) };
+    
+    // Return full cart details with pricing and product info
+    const preview = await this.previewByCart(
+      cart,
+      cart.currency || 'YER',
+      (cart.accountType as 'any' | 'customer' | 'engineer' | 'merchant') || 'any',
+      userId,
+    );
+    
+    return preview;
   }
 
   async updateCartSettings(
@@ -128,7 +484,7 @@ export class CartService {
     cart.lastActivityAt = new Date();
     await cart.save();
 
-    return { items: this.toView(cart) };
+    return this.getUserCart(userId);
   }
 
   async applyCoupon(userId: string, couponCode: string) {
@@ -182,7 +538,7 @@ export class CartService {
       await cart.save();
     }
 
-    return { items: this.toView(cart) };
+    return this.getUserCart(userId);
   }
 
   async removeCoupon(userId: string, couponCode?: string) {
@@ -217,7 +573,7 @@ export class CartService {
     await this.recalculatePricing(cart);
     await cart.save();
 
-    return { items: this.toView(cart) };
+    return this.getUserCart(userId);
   }
 
   private async recalculatePricing(cart: Cart) {
@@ -348,35 +704,89 @@ export class CartService {
 
   async addUserItem(userId: string, payload: AddItemInput) {
     const cart = await this.getOrCreateUserCart(userId);
-    const result = await this.addOrUpdateCartItem(cart, payload);
+    await this.addOrUpdateCartItem(cart, payload);
     await cart.save();
-    return result;
+    
+    // Return full cart details with pricing
+    return this.getUserCart(userId);
   }
   async updateUserItem(userId: string, itemId: string, qty: number) {
     const cart = await this.getOrCreateUserCart(userId);
-    const it = (cart.items as Types.DocumentArray<CartItem>).id(itemId);
-    if (!it) return { items: this.toView(cart) };
+    
+    // Parse itemId to find the actual item
+    let it: CartItem | undefined;
+    
+    if (itemId.startsWith('product-')) {
+      const productId = itemId.replace('product-', '');
+      it = cart.items.find(
+        (item: CartItem) =>
+          !item.variantId &&
+          item.productId &&
+          String(item.productId) === productId,
+      );
+    } else if (itemId.startsWith('variant-')) {
+      const variantId = itemId.replace('variant-', '');
+      it = cart.items.find(
+        (item: CartItem) =>
+          item.variantId &&
+          String(item.variantId) === variantId,
+      );
+    } else {
+      // Fallback to _id lookup for backward compatibility
+      it = (cart.items as Types.DocumentArray<CartItem>).id(itemId) ?? undefined;
+    }
+    
+    if (!it) return this.getUserCart(userId);
     it.qty = qty;
     cart.lastActivityAt = new Date();
     await cart.save();
-    return { items: this.toView(cart) };
+    return this.getUserCart(userId);
   }
   async removeUserItem(userId: string, itemId: string) {
     const cart = await this.getOrCreateUserCart(userId);
-    (
-      (cart.items as Types.DocumentArray<CartItem>).id(itemId) as unknown as Types.Subdocument & {
-        remove(): void;
+    
+    // Parse itemId to find the actual item
+    let itemIndex = -1;
+    
+    if (itemId.startsWith('product-')) {
+      const productId = itemId.replace('product-', '');
+      itemIndex = cart.items.findIndex(
+        (item: CartItem) =>
+          !item.variantId &&
+          item.productId &&
+          String(item.productId) === productId,
+      );
+    } else if (itemId.startsWith('variant-')) {
+      const variantId = itemId.replace('variant-', '');
+      itemIndex = cart.items.findIndex(
+        (item: CartItem) =>
+          item.variantId &&
+          String(item.variantId) === variantId,
+      );
+    } else {
+      // Fallback to _id lookup for backward compatibility
+      const foundItem = (cart.items as Types.DocumentArray<CartItem>).id(itemId);
+      if (foundItem) {
+        (foundItem as unknown as Types.Subdocument & { remove(): void })?.remove();
+        cart.lastActivityAt = new Date();
+        await cart.save();
+        return this.getUserCart(userId);
       }
-    )?.remove();
+    }
+    
+    if (itemIndex > -1) {
+      cart.items.splice(itemIndex, 1);
+    }
+    
     cart.lastActivityAt = new Date();
     await cart.save();
-    return { items: this.toView(cart) };
+    return this.getUserCart(userId);
   }
   async clearUserCart(userId: string) {
     const cart = await this.getOrCreateUserCart(userId);
     cart.items = [];
     await cart.save();
-    return { items: [] };
+    return this.getUserCart(userId);
   }
 
   // ---------- guest cart
@@ -395,7 +805,30 @@ export class CartService {
   }
   async updateGuestItem(deviceId: string, itemId: string, qty: number) {
     const cart = await this.getOrCreateGuestCart(deviceId);
-    const it = (cart.items as Types.DocumentArray<CartItem>).id(itemId);
+    
+    // Parse itemId to find the actual item
+    let it: CartItem | undefined;
+    
+    if (itemId.startsWith('product-')) {
+      const productId = itemId.replace('product-', '');
+      it = cart.items.find(
+        (item: CartItem) =>
+          !item.variantId &&
+          item.productId &&
+          String(item.productId) === productId,
+      );
+    } else if (itemId.startsWith('variant-')) {
+      const variantId = itemId.replace('variant-', '');
+      it = cart.items.find(
+        (item: CartItem) =>
+          item.variantId &&
+          String(item.variantId) === variantId,
+      );
+    } else {
+      // Fallback to _id lookup for backward compatibility
+      it = (cart.items as Types.DocumentArray<CartItem>).id(itemId) ?? undefined;
+    }
+    
     if (!it) return { items: this.toView(cart) };
     it.qty = qty;
     cart.lastActivityAt = new Date();
@@ -404,11 +837,40 @@ export class CartService {
   }
   async removeGuestItem(deviceId: string, itemId: string) {
     const cart = await this.getOrCreateGuestCart(deviceId);
-    (
-      (cart.items as Types.DocumentArray<CartItem>).id(itemId) as unknown as Types.Subdocument & {
-        remove(): void;
+    
+    // Parse itemId to find the actual item
+    let itemIndex = -1;
+    
+    if (itemId.startsWith('product-')) {
+      const productId = itemId.replace('product-', '');
+      itemIndex = cart.items.findIndex(
+        (item: CartItem) =>
+          !item.variantId &&
+          item.productId &&
+          String(item.productId) === productId,
+      );
+    } else if (itemId.startsWith('variant-')) {
+      const variantId = itemId.replace('variant-', '');
+      itemIndex = cart.items.findIndex(
+        (item: CartItem) =>
+          item.variantId &&
+          String(item.variantId) === variantId,
+      );
+    } else {
+      // Fallback to _id lookup for backward compatibility
+      const foundItem = (cart.items as Types.DocumentArray<CartItem>).id(itemId);
+      if (foundItem) {
+        (foundItem as unknown as Types.Subdocument & { remove(): void })?.remove();
+        cart.lastActivityAt = new Date();
+        await cart.save();
+        return { items: this.toView(cart) };
       }
-    )?.remove();
+    }
+    
+    if (itemIndex > -1) {
+      cart.items.splice(itemIndex, 1);
+    }
+    
     cart.lastActivityAt = new Date();
     await cart.save();
     return { items: this.toView(cart) };
@@ -458,7 +920,7 @@ export class CartService {
     await user.save();
     guest.items = [];
     await guest.save();
-    return { items: this.toView(user) };
+    return this.getUserCart(userId);
   }
 
   private async addOrUpdateCartItem(cart: Cart, input: AddItemInput) {
@@ -470,7 +932,11 @@ export class CartService {
       throw new Error('الكمية يجب أن تكون أكبر من صفر');
     }
 
-    const resolved = await this.resolveCartItemIdentifiers({ variantId, productId });
+    const resolved = await this.resolveCartItemIdentifiers({
+      variantId,
+      productId,
+      currency: cart.currency,
+    });
 
     let target: CartItem | undefined;
     if (resolved.variantId) {
@@ -493,29 +959,30 @@ export class CartService {
       target.variantId = resolved.variantId;
       target.itemType = resolved.itemType;
       target.productSnapshot = resolved.productSnapshot;
-      target.pricing = target.pricing || {
-        currency: cart.currency || 'USD',
-        basePrice: resolved.basePriceUSD,
-        finalPrice: resolved.basePriceUSD,
-        discount: 0,
+      const existingPromotionId = target.pricing?.appliedPromotionId;
+      target.pricing = {
+        ...resolved.pricing,
+        ...(existingPromotionId ? { appliedPromotionId: existingPromotionId } : {}),
       };
-      target.pricing.basePrice = resolved.basePriceUSD;
-      target.pricing.finalPrice = resolved.basePriceUSD;
+      if (typeof (cart as unknown as { markModified?: (path: string) => void }).markModified === 'function') {
+        (cart as unknown as { markModified: (path: string) => void }).markModified('items');
+      }
     } else {
-      cart.items.push({
+      const docItems = cart.items as Types.DocumentArray<CartItem>;
+      const newItem = docItems.create({
+        _id: new Types.ObjectId().toString(),
         variantId: resolved.variantId,
         productId: resolved.productId,
         itemType: resolved.itemType,
         qty,
         addedAt: new Date(),
         productSnapshot: resolved.productSnapshot,
-        pricing: {
-          currency: cart.currency || 'USD',
-          basePrice: resolved.basePriceUSD,
-          finalPrice: resolved.basePriceUSD,
-          discount: 0,
-        },
+        pricing: resolved.pricing,
       } as CartItem);
+      docItems.push(newItem);
+      if (typeof (cart as unknown as { markModified?: (path: string) => void }).markModified === 'function') {
+        (cart as unknown as { markModified: (path: string) => void }).markModified('items');
+      }
     }
 
     this.ensureCapacity(cart);
@@ -533,21 +1000,103 @@ export class CartService {
     return undefined;
   }
 
-  private buildProductSnapshot(product?: Product | null): CartItem['productSnapshot'] | undefined {
+  private buildProductSnapshot(
+    product?: Product | null,
+    currency: string = 'USD',
+  ): CartItem['productSnapshot'] | undefined {
     if (!product) return undefined;
 
+    const productRecord = product as unknown as Record<string, unknown>;
+    const targetCurrency = this.normalizeCurrency(currency);
+
     let image: string | undefined;
-    const mainImage: unknown = (product as unknown as { mainImageId?: unknown }).mainImageId;
-    if (mainImage && typeof mainImage === 'object' && 'url' in (mainImage as Record<string, unknown>)) {
-      image = (mainImage as { url?: string }).url;
+    const mainImageCandidate =
+      productRecord['mainImage'] ?? productRecord['mainImageId'] ?? productRecord['image'];
+    if (
+      mainImageCandidate &&
+      typeof mainImageCandidate === 'object' &&
+      'url' in (mainImageCandidate as Record<string, unknown>)
+    ) {
+      image = String((mainImageCandidate as { url?: unknown }).url ?? '');
+    } else if (typeof mainImageCandidate === 'string') {
+      image = mainImageCandidate;
     }
 
-    const brand = (product as unknown as { brandId?: unknown }).brandId;
-    const category = (product as unknown as { categoryId?: unknown }).categoryId;
+    const brand = productRecord['brandId'];
+    const category = productRecord['categoryId'];
+
+    const useManualRating =
+      typeof productRecord['useManualRating'] === 'boolean'
+        ? (productRecord['useManualRating'] as boolean)
+        : false;
+    const averageRating = this.normalizeNumber(productRecord['averageRating']);
+    const manualRating = this.normalizeNumber(productRecord['manualRating']);
+    const manualReviewsCount = this.normalizeNumber(productRecord['manualReviewsCount']);
+    const reviewsCountRaw = this.normalizeNumber(productRecord['reviewsCount']);
+
+    let ratingValue: number | undefined;
+    let ratingSource: 'manual' | 'average' | undefined;
+    if (useManualRating) {
+      if (manualRating !== undefined) {
+        ratingValue = manualRating;
+        ratingSource = 'manual';
+      } else if (averageRating !== undefined) {
+        ratingValue = averageRating;
+        ratingSource = 'average';
+      }
+    } else {
+      if (averageRating !== undefined) {
+        ratingValue = averageRating;
+        ratingSource = 'average';
+      } else if (manualRating !== undefined) {
+        ratingValue = manualRating;
+        ratingSource = 'manual';
+      }
+    }
+
+    const reviewsCount = useManualRating
+      ? manualReviewsCount ?? reviewsCountRaw ?? undefined
+      : reviewsCountRaw ?? manualReviewsCount ?? undefined;
+
+    let price: { base: number; final: number; currency: string } | undefined;
+    const priceBase =
+      this.normalizeNumber(productRecord['basePriceUSD']) ??
+      this.normalizeNumber(productRecord['basePrice']);
+    const pricingSource = productRecord['pricingByCurrency'];
+    const priceRecord =
+      this.getPricingRecord(pricingSource, targetCurrency) ??
+      this.getPricingRecord(pricingSource, 'USD');
+
+    if (priceRecord) {
+      const base =
+        this.roundPrice(priceRecord.basePrice ?? priceRecord.finalPrice) ??
+        priceRecord.basePrice ??
+        priceRecord.finalPrice ??
+        priceBase ??
+        0;
+      const final =
+        this.roundPrice(priceRecord.finalPrice ?? priceRecord.basePrice) ??
+        priceRecord.finalPrice ??
+        priceRecord.basePrice ??
+        base;
+      const currencyCode = priceRecord.currency ?? targetCurrency;
+      price = {
+        base,
+        final,
+        currency: currencyCode,
+      };
+    } else if (priceBase !== undefined) {
+      const convertedBase = this.roundPrice(priceBase) ?? priceBase;
+      price = {
+        base: convertedBase,
+        final: convertedBase,
+        currency: targetCurrency,
+      };
+    }
 
     return {
-      name: (product as unknown as { name: string }).name,
-      slug: (product as unknown as { slug: string }).slug,
+      name: (productRecord['name'] as string) ?? '',
+      slug: (productRecord['slug'] as string) ?? '',
       image,
       brandId: this.toStringId(brand),
       brandName:
@@ -555,55 +1104,86 @@ export class CartService {
           ? String((brand as { name?: unknown }).name ?? '')
           : undefined,
       categoryId: this.toStringId(category),
+      averageRating: averageRating,
+      ratingValue,
+      ratingSource,
+      reviewsCount,
+      ...(price ? { price } : {}),
     };
   }
 
   private async resolveCartItemIdentifiers(input: {
     variantId?: string;
     productId?: string;
+    currency?: string;
   }): Promise<{
     variantId?: Types.ObjectId;
     productId: Types.ObjectId;
     itemType: 'variant' | 'product';
     productSnapshot?: CartItem['productSnapshot'];
     basePriceUSD: number;
+    pricing: CartPricing;
   }> {
+    const targetCurrency = this.normalizeCurrency(input.currency);
+
     if (input.variantId) {
       const variant = await this.variantModel.findById(input.variantId).lean();
       if (!variant) {
         throw new Error('المتغير غير موجود');
       }
 
-      const product = await this.productModel.findById(variant.productId).lean();
+      const product = await this.productModel
+        .findById(variant.productId)
+        .populate('mainImageId')
+        .lean();
       if (!product) {
         throw new Error('المنتج المرتبط بالمتغير غير موجود');
       }
+
+      const variantRecord = variant as unknown as Record<string, unknown>;
+      const productRecord = product as unknown as Record<string, unknown>;
+      const pricingSource = variantRecord['pricingByCurrency'] ?? productRecord['pricingByCurrency'];
+
+      const { pricing, basePriceUSD } = await this.buildPricingForCurrency({
+        basePriceUSD: variant.basePriceUSD ?? this.normalizeNumber(productRecord['basePriceUSD']),
+        pricingByCurrency: pricingSource,
+        currency: targetCurrency,
+      });
 
       return {
         variantId: new Types.ObjectId(String(variant._id)),
         productId: new Types.ObjectId(String(variant.productId)),
         itemType: 'variant',
-        productSnapshot: this.buildProductSnapshot(product),
-        basePriceUSD: variant.basePriceUSD ?? 0,
+        productSnapshot: this.buildProductSnapshot(product, input.currency ?? 'USD'),
+        basePriceUSD,
+        pricing,
       };
     }
 
     if (input.productId) {
-      const product = await this.productModel.findById(input.productId).lean();
+      const product = await this.productModel
+        .findById(input.productId)
+        .populate('mainImageId')
+        .lean();
       if (!product) {
         throw new Error('المنتج غير موجود');
       }
 
-      const basePriceUSD = product.basePriceUSD;
-      if (basePriceUSD === undefined || basePriceUSD === null) {
-        throw new Error('لم يتم تحديد سعر لهذا المنتج');
-      }
+      const { pricing, basePriceUSD } = await this.buildPricingForCurrency({
+        basePriceUSD: this.normalizeNumber(
+          (product as unknown as Record<string, unknown>)['basePriceUSD'] ??
+            (product as unknown as Record<string, unknown>)['basePrice'],
+        ),
+        pricingByCurrency: (product as unknown as Record<string, unknown>)['pricingByCurrency'],
+        currency: targetCurrency,
+      });
 
       return {
         productId: new Types.ObjectId(String(product._id)),
         itemType: 'product',
-        productSnapshot: this.buildProductSnapshot(product),
+        productSnapshot: this.buildProductSnapshot(product, input.currency ?? 'USD'),
         basePriceUSD,
+        pricing,
       };
     }
 
@@ -617,9 +1197,10 @@ export class CartService {
     accountType: 'any' | 'customer' | 'engineer' | 'merchant',
     userId?: string,
   ) {
-    // Gather prices and totals
+    const normalizedCurrency = this.normalizeCurrency(currency);
     const lines: CartLine[] = [];
     let subtotal = 0;
+    let subtotalBeforeDiscount = 0;
     let merchantDiscountPercent = 0;
     let merchantDiscountAmount = 0;
 
@@ -632,90 +1213,301 @@ export class CartService {
     }
 
     for (const it of cart.items) {
-      let base = 0;
-      let final = 0;
-      let appliedRule: unknown = null;
-      let variantIdStr: string | undefined;
-      let productIdStr: string | undefined;
+      const rawId =
+        (it as unknown as { _id?: unknown })._id ?? (it as unknown as { id?: unknown }).id ?? null;
+      let variantIdStr = it.variantId ? this.toStringId(it.variantId) : undefined;
+      let productIdStr = it.productId ? this.toStringId(it.productId) : undefined;
       let snapshot = it.productSnapshot;
+      let appliedRule: unknown = null;
 
-      if (it.variantId) {
-        const variant = await this.variantModel.findById(it.variantId).lean();
-        if (!variant) continue;
+      let pricingDetails: CartItem['pricing'] | undefined = it.pricing
+        ? { ...it.pricing }
+        : undefined;
+      const existingPromotionId = pricingDetails?.appliedPromotionId ?? undefined;
 
-        const product = await this.productModel.findById(variant.productId).lean();
+      let lineCurrency = this.normalizeCurrency(pricingDetails?.currency ?? normalizedCurrency);
 
-        base = variant.basePriceUSD || 0;
-        final = base;
-        variantIdStr = String(variant._id);
-        productIdStr = String(variant.productId);
-        snapshot = snapshot ?? this.buildProductSnapshot(product);
+      let variant: Variant | null = null;
+      let product: Product | null = null;
 
-        if (this.marketingService && typeof this.marketingService.preview === 'function') {
+      if (variantIdStr) {
+        try {
+          variant = await this.variantModel.findById(it.variantId).lean();
+        } catch {
+          variant = null;
+        }
+        if (variant) {
+          const resolvedVariantId = this.toStringId(
+            (variant as unknown as { _id?: unknown })._id,
+          );
+          if (resolvedVariantId) {
+            variantIdStr = resolvedVariantId;
+          }
+          productIdStr =
+            this.toStringId((variant as unknown as { productId?: unknown }).productId) ??
+            productIdStr;
+          try {
+            product = await this.productModel
+              .findById(variant.productId)
+              .populate('mainImageId')
+              .lean();
+          } catch {
+            product = null;
+          }
+        }
+      }
+
+      if (!variant && productIdStr) {
+        try {
+          product = await this.productModel
+            .findById(it.productId ?? productIdStr)
+            .populate('mainImageId')
+            .lean();
+        } catch {
+          product = null;
+        }
+      }
+
+      const refreshedSnapshot =
+        this.buildProductSnapshot(product ?? undefined, normalizedCurrency) ?? snapshot;
+      snapshot = refreshedSnapshot;
+      const variantRecord = variant ? (variant as unknown as Record<string, unknown>) : undefined;
+      const productRecord = product ? (product as unknown as Record<string, unknown>) : undefined;
+
+      if (this.shouldRefreshPricing(pricingDetails)) {
+        const basePriceUSDSource =
+          this.normalizeNumber(variantRecord?.['basePriceUSD']) ??
+          this.normalizeNumber(productRecord?.['basePriceUSD']) ??
+          this.normalizeNumber(productRecord?.['basePrice']);
+        const pricingByCurrencySource =
+          (variantRecord?.['pricingByCurrency'] as unknown) ??
+          (productRecord?.['pricingByCurrency'] as unknown);
+
+        try {
+          const { pricing } = await this.buildPricingForCurrency({
+            basePriceUSD: basePriceUSDSource ?? undefined,
+            pricingByCurrency: pricingByCurrencySource,
+            currency: normalizedCurrency,
+          });
+
+          pricingDetails = {
+            currency: pricing.currency,
+            basePrice: pricing.basePrice,
+            finalPrice: pricing.finalPrice,
+            discount: pricing.discount,
+          };
+
+          if (existingPromotionId) {
+            pricingDetails.appliedPromotionId = existingPromotionId;
+          }
+
+          lineCurrency = this.normalizeCurrency(pricing.currency);
+        } catch {
+          // ignore pricing calculation errors and fallback to existing values
+        }
+      } else if (existingPromotionId && pricingDetails) {
+        pricingDetails.appliedPromotionId = existingPromotionId;
+      }
+
+      let base = pricingDetails?.basePrice;
+      let final = pricingDetails?.finalPrice;
+
+      if (base === undefined) {
+        if (pricingDetails?.basePrice !== undefined) {
+          base = pricingDetails.basePrice;
+        } else if (variantRecord) {
+          const variantBaseUSD = this.normalizeNumber(variantRecord['basePriceUSD']);
+          if (variantBaseUSD !== undefined) {
+            base = variantBaseUSD;
+            lineCurrency = 'USD';
+          }
+        } else if (productRecord) {
+          const productBaseUSD =
+            this.normalizeNumber(productRecord['basePriceUSD']) ??
+            this.normalizeNumber(productRecord['basePrice']);
+          if (productBaseUSD !== undefined) {
+            base = productBaseUSD;
+            lineCurrency = 'USD';
+          }
+        }
+      }
+
+      if (final === undefined) {
+        if (pricingDetails?.finalPrice !== undefined) {
+          final = pricingDetails.finalPrice;
+        } else {
+          final = base ?? 0;
+        }
+      }
+
+      base = base ?? 0;
+      final = final ?? base;
+
+      if (
+        variant &&
+        this.marketingService &&
+        typeof this.marketingService.preview === 'function' &&
+        variantIdStr
+      ) {
+        try {
           const res = await this.marketingService.preview({
-            variantId: String(variant._id),
-            currency,
+            variantId: variantIdStr,
+            currency: normalizedCurrency,
             qty: it.qty,
             accountType,
           });
           if (res) {
             final = res.finalPrice;
-            base = res.basePrice;
+            base = res.basePrice ?? base;
+            lineCurrency = normalizedCurrency;
             appliedRule = res.appliedRule;
           }
+        } catch {
+          // ignore marketing errors and fallback to existing pricing
         }
-      } else if (it.productId) {
-        const product = await this.productModel.findById(it.productId).lean();
-        if (!product) continue;
-
-        const productBasePrice = product.basePriceUSD;
-        if (productBasePrice === undefined || productBasePrice === null) continue;
-
-        base = productBasePrice;
-        final = productBasePrice;
-        productIdStr = String(product._id);
-        snapshot = snapshot ?? this.buildProductSnapshot(product);
-      } else {
-        continue;
       }
+
+      if (lineCurrency !== normalizedCurrency && this.exchangeRatesService) {
+        try {
+          const convertedFinal = await this.exchangeRatesService.convertCurrency({
+            amount: final,
+            fromCurrency: lineCurrency,
+            toCurrency: normalizedCurrency,
+          });
+          final = convertedFinal.result;
+
+          const convertedBase = await this.exchangeRatesService.convertCurrency({
+            amount: base,
+            fromCurrency: lineCurrency,
+            toCurrency: normalizedCurrency,
+          });
+          base = convertedBase.result;
+
+          lineCurrency = normalizedCurrency;
+        } catch {
+          // keep original currency if conversion fails
+        }
+      }
+
+      if (pricingDetails) {
+        pricingDetails.currency = normalizedCurrency;
+        pricingDetails.basePrice = base;
+        pricingDetails.finalPrice = final;
+        pricingDetails.discount =
+          this.roundPrice(Math.max(0, pricingDetails.basePrice - pricingDetails.finalPrice)) ??
+          Math.max(0, pricingDetails.basePrice - pricingDetails.finalPrice);
+      } else if (existingPromotionId !== undefined) {
+        pricingDetails = {
+          currency: normalizedCurrency,
+          basePrice: base,
+          finalPrice: final,
+          discount:
+            this.roundPrice(Math.max(0, base - final)) ?? Math.max(0, base - final),
+          appliedPromotionId: existingPromotionId,
+        };
+      }
+
+      const finalBeforeDiscount = final;
+      const roundedBase = this.roundPrice(base) ?? base;
+      const roundedFinalBefore = this.roundPrice(finalBeforeDiscount) ?? finalBeforeDiscount;
 
       if (merchantDiscountPercent > 0) {
-        final = final * (1 - merchantDiscountPercent / 100);
+        const merchantDiscountPerUnit = (roundedFinalBefore * merchantDiscountPercent) / 100;
+        const discountedFinal = Math.max(0, roundedFinalBefore - merchantDiscountPerUnit);
+        const roundedDiscountedFinal = this.roundPrice(discountedFinal) ?? discountedFinal;
+        const lineMerchantDiscount =
+          (roundedFinalBefore - roundedDiscountedFinal) * it.qty;
+        merchantDiscountAmount += lineMerchantDiscount;
+        final = roundedDiscountedFinal;
+      } else {
+        final = roundedFinalBefore;
       }
 
-      const lineTotal = final * it.qty;
+      const roundedFinal = this.roundPrice(final) ?? final;
+      const computedDiscount =
+        this.roundPrice(Math.max(0, roundedBase - roundedFinal)) ??
+        Math.max(0, roundedBase - roundedFinal);
+      const lineTotal = this.roundPrice(roundedFinal * it.qty) ?? roundedFinal * it.qty;
       subtotal += lineTotal;
+      subtotalBeforeDiscount += roundedFinalBefore * it.qty;
+
+      const itemId =
+        this.toStringId(rawId) ??
+        (variantIdStr
+          ? `variant-${variantIdStr}`
+          : productIdStr
+            ? `product-${productIdStr}`
+            : `temp-${randomUUID()}`);
+
+      const pricingForView: CartItem['pricing'] = {
+        currency: normalizedCurrency,
+        basePrice: roundedBase,
+        finalPrice: roundedFinal,
+        discount: computedDiscount,
+      };
+
+      if (pricingDetails?.appliedPromotionId) {
+        pricingForView.appliedPromotionId = pricingDetails.appliedPromotionId;
+      }
+
+      if (pricingDetails) {
+        pricingDetails.basePrice = roundedBase;
+        pricingDetails.finalPrice = roundedFinal;
+        pricingDetails.discount = computedDiscount;
+        pricingDetails.currency = normalizedCurrency;
+      }
 
       lines.push({
-        itemId: String((it as unknown as { _id: string })._id),
+        itemId,
         variantId: variantIdStr,
         productId: productIdStr,
         qty: it.qty,
-        unit: { base, final, currency, appliedRule },
+        unit: {
+          base: roundedBase,
+          final: roundedFinal,
+          finalBeforeDiscount: roundedFinalBefore,
+          currency: normalizedCurrency,
+          appliedRule: appliedRule ?? pricingDetails?.appliedPromotionId ?? null,
+        },
         lineTotal,
+        pricing: pricingForView,
         snapshot,
       });
+
+      if (snapshot) {
+        snapshot.price = {
+          base: roundedBase,
+          final: roundedFinal,
+          currency: normalizedCurrency,
+        };
+      }
     }
 
-    // حساب مبلغ الخصم الإجمالي للتاجر
-    if (merchantDiscountPercent > 0) {
-      const subtotalBeforeMerchantDiscount = lines.reduce((sum, line) => {
-        const priceBeforeMerchantDiscount = line.unit.final / (1 - merchantDiscountPercent / 100);
-        return sum + priceBeforeMerchantDiscount * line.qty;
-      }, 0);
-      merchantDiscountAmount = subtotalBeforeMerchantDiscount - subtotal;
-    }
+    const totalQuantity = lines.reduce((sum, line) => sum + line.qty, 0);
+    const roundedSubtotalBeforeDiscount =
+      this.roundPrice(subtotalBeforeDiscount) ?? subtotalBeforeDiscount;
+    const roundedSubtotal = this.roundPrice(subtotal) ?? subtotal;
+    const roundedMerchantDiscount = this.roundPrice(merchantDiscountAmount) ?? merchantDiscountAmount;
+
+    const couponDiscount = this.roundPrice(cart.pricingSummary?.couponDiscount ?? 0) ?? 0;
+    const promotionDiscount = this.roundPrice(cart.pricingSummary?.promotionDiscount ?? 0) ?? 0;
+    const autoDiscount = this.roundPrice(cart.pricingSummary?.autoDiscount ?? 0) ?? 0;
+    const additionalDiscounts = couponDiscount + promotionDiscount + autoDiscount;
+    const totalDiscountForConversion = roundedMerchantDiscount + additionalDiscounts;
 
     // 🆕 تحويل الإجماليات إلى USD أولاً ثم حسابها بالعملات الثلاث
     let totalsInAllCurrencies;
     if (this.exchangeRatesService) {
       // تحويل subtotal إلى USD
-      const usdSubtotal = await this.exchangeRatesService.convertToUSD(subtotal, currency);
+      const usdSubtotal = await this.exchangeRatesService.convertToUSD(
+        roundedSubtotal,
+        normalizedCurrency,
+      );
       const usdShipping = 0; // يمكن إضافة حساب الشحن لاحقاً
       const usdTax = 0; // يمكن إضافة حساب الضريبة لاحقاً
       const usdDiscount = await this.exchangeRatesService.convertToUSD(
-        merchantDiscountAmount,
-        currency,
+        totalDiscountForConversion,
+        normalizedCurrency,
       );
 
       totalsInAllCurrencies = await this.exchangeRatesService.calculateTotalsInAllCurrencies(
@@ -726,16 +1518,43 @@ export class CartService {
       );
     }
 
+    const appliedCoupons = [
+      ...(cart.appliedCouponCodes ?? []),
+      ...(cart.appliedCouponCode ? [cart.appliedCouponCode] : []),
+    ].filter((code): code is string => Boolean(code));
+    const uniqueAppliedCoupons = Array.from(new Set(appliedCoupons));
+
+    const pricingSummary = {
+      currency: normalizedCurrency,
+      itemsCount: totalQuantity,
+      subtotalBeforeDiscount: roundedSubtotalBeforeDiscount,
+      subtotal: roundedSubtotal,
+      merchantDiscountAmount: roundedMerchantDiscount,
+      couponDiscount,
+      promotionDiscount,
+      autoDiscount,
+      totalDiscount:
+        this.roundPrice(totalDiscountForConversion) ?? totalDiscountForConversion,
+      total:
+        this.roundPrice(
+          Math.max(0, roundedSubtotal - additionalDiscounts),
+        ) ?? Math.max(0, roundedSubtotal - additionalDiscounts),
+    };
+
     return {
-      currency,
-      subtotal,
+      currency: normalizedCurrency,
+      subtotal: roundedSubtotal,
+      subtotalBeforeDiscount: roundedSubtotalBeforeDiscount,
       items: lines,
+      appliedCoupons: uniqueAppliedCoupons,
       meta: {
         count: lines.length,
+        quantity: totalQuantity,
         merchantDiscountPercent,
-        merchantDiscountAmount: Math.round(merchantDiscountAmount * 100) / 100,
+        merchantDiscountAmount: roundedMerchantDiscount,
       },
       ...(totalsInAllCurrencies && { totalsInAllCurrencies }),
+      pricingSummary,
     };
   }
 

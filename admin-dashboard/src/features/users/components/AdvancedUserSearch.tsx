@@ -41,7 +41,7 @@ interface AdvancedSearchFilters {
   };
   capabilities?: {
     engineer?: boolean;
-    wholesale?: boolean;
+    merchant?: boolean;
     admin?: boolean;
   };
   sortBy?: string;
@@ -122,7 +122,7 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
     if (filters.dateRange?.start || filters.dateRange?.end) count++;
     if (
       filters.capabilities?.engineer ||
-      filters.capabilities?.wholesale ||
+      filters.capabilities?.merchant ||
       filters.capabilities?.admin
     )
       count++;
@@ -369,17 +369,17 @@ export const AdvancedUserSearch: React.FC<AdvancedUserSearchProps> = ({
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={filters.capabilities?.wholesale || false}
+                        checked={filters.capabilities?.merchant || false}
                         onChange={(e) =>
                           handleFilterChange('capabilities', {
                             ...filters.capabilities,
-                            wholesale: e.target.checked,
+                            merchant: e.target.checked,
                           })
                         }
                         size={isMobile ? 'small' : 'medium'}
                       />
                     }
-                    label={t('users:capabilities.wholesale', 'تاجر جملة')}
+                    label={t('users:capabilities.merchant', 'تاجر')}
                     sx={{
                       '& .MuiFormControlLabel-label': {
                         fontSize: { xs: '0.875rem', sm: '0.9375rem' },

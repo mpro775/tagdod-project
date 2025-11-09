@@ -39,6 +39,8 @@ import { CreateAdminDto, CreateRoleBasedAdminDto } from './dto/create-admin.dto'
 import { UpdateUserAdminDto } from './dto/update-user-admin.dto';
 import { ListUsersDto } from './dto/list-users.dto';
 import { SuspendUserDto } from './dto/suspend-user.dto';
+import { UpdateCapabilityStatusDto } from './dto/update-capability-status.dto';
+import { AdminResetPasswordDto } from './dto/reset-password.dto';
 import { ApproveVerificationDto } from '../dto/approve-verification.dto';
 
 @ApiTags('إدارة-المستخدمين')
@@ -1097,6 +1099,179 @@ export class UsersAdminController {
         verificationType: isEngineerPending ? 'engineer' : 'merchant',
         status: 'rejected',
         reason: dto.reason,
+      },
+    };
+  }
+
+  // ==================== تغيير حالة المهندس ====================
+  @RequirePermissions('users.update', 'admin.access')
+  @Patch(':id/engineer-status')
+  @ApiOperation({
+    summary: 'تغيير حالة توثيق المهندس',
+    description: 'يسمح للأدمن بتغيير حالة توثيق المهندس (none/unverified/pending/approved/rejected)',
+  })
+  async updateEngineerStatus(
+    @Param('id') userId: string,
+    @Body() dto: UpdateCapabilityStatusDto,
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new UserNotFoundException({ userId });
+    }
+
+    // تحديث حالة المهندس
+    const oldStatus = user.engineer_status;
+    user.engineer_status = dto.status;
+
+    // تحديث القدرة والدور حسب الحالة
+    if (dto.status === CapabilityStatus.APPROVED) {
+      user.engineer_capable = true;
+      if (!user.roles.includes(UserRole.ENGINEER)) {
+        user.roles.push(UserRole.ENGINEER);
+      }
+    } else if (dto.status === CapabilityStatus.REJECTED || dto.status === CapabilityStatus.NONE) {
+      user.engineer_capable = false;
+      user.roles = user.roles.filter(role => role !== UserRole.ENGINEER);
+      // مسح الملفات عند الرفض
+      if (dto.status === CapabilityStatus.REJECTED) {
+        user.cvFileUrl = undefined;
+      }
+    } else if (dto.status === CapabilityStatus.UNVERIFIED || dto.status === CapabilityStatus.PENDING) {
+      user.engineer_capable = true;
+      user.roles = user.roles.filter(role => role !== UserRole.ENGINEER);
+    }
+
+    await user.save();
+
+    // تحديث Capabilities في الجدول المنفصل
+    const caps = await this.capsModel.findOne({ userId });
+    if (caps) {
+      caps.engineer_status = user.engineer_status;
+      caps.engineer_capable = user.engineer_capable;
+      await caps.save();
+    }
+
+    return {
+      success: true,
+      message: `تم تغيير حالة المهندس من ${oldStatus} إلى ${dto.status}`,
+      data: {
+        userId: user._id,
+        engineerStatus: user.engineer_status,
+        engineerCapable: user.engineer_capable,
+        roles: user.roles,
+      },
+    };
+  }
+
+  // ==================== تغيير حالة التاجر ====================
+  @RequirePermissions('users.update', 'admin.access')
+  @Patch(':id/merchant-status')
+  @ApiOperation({
+    summary: 'تغيير حالة توثيق التاجر',
+    description: 'يسمح للأدمن بتغيير حالة توثيق التاجر ونسبة الخصم (none/unverified/pending/approved/rejected)',
+  })
+  async updateMerchantStatus(
+    @Param('id') userId: string,
+    @Body() dto: UpdateCapabilityStatusDto,
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new UserNotFoundException({ userId });
+    }
+
+    // تحديث حالة التاجر
+    const oldStatus = user.merchant_status;
+    user.merchant_status = dto.status;
+
+    // تحديث نسبة الخصم إذا تم توفيرها
+    if (dto.merchantDiscountPercent !== undefined) {
+      user.merchant_discount_percent = dto.merchantDiscountPercent;
+    }
+
+    // تحديث القدرة والدور حسب الحالة
+    if (dto.status === CapabilityStatus.APPROVED) {
+      user.merchant_capable = true;
+      if (!user.roles.includes(UserRole.MERCHANT)) {
+        user.roles.push(UserRole.MERCHANT);
+      }
+    } else if (dto.status === CapabilityStatus.REJECTED || dto.status === CapabilityStatus.NONE) {
+      user.merchant_capable = false;
+      user.roles = user.roles.filter(role => role !== UserRole.MERCHANT);
+      // مسح الملفات عند الرفض
+      if (dto.status === CapabilityStatus.REJECTED) {
+        user.storePhotoUrl = undefined;
+        user.storeName = undefined;
+      }
+      user.merchant_discount_percent = 0;
+    } else if (dto.status === CapabilityStatus.UNVERIFIED || dto.status === CapabilityStatus.PENDING) {
+      user.merchant_capable = true;
+      user.roles = user.roles.filter(role => role !== UserRole.MERCHANT);
+    }
+
+    await user.save();
+
+    // تحديث Capabilities في الجدول المنفصل
+    const caps = await this.capsModel.findOne({ userId });
+    if (caps) {
+      caps.merchant_status = user.merchant_status;
+      caps.merchant_capable = user.merchant_capable;
+      caps.merchant_discount_percent = user.merchant_discount_percent;
+      await caps.save();
+    }
+
+    return {
+      success: true,
+      message: `تم تغيير حالة التاجر من ${oldStatus} إلى ${dto.status}`,
+      data: {
+        userId: user._id,
+        merchantStatus: user.merchant_status,
+        merchantCapable: user.merchant_capable,
+        merchantDiscountPercent: user.merchant_discount_percent,
+        roles: user.roles,
+      },
+    };
+  }
+
+  // ==================== إعادة تعيين كلمة المرور (Admin) ====================
+  @RequirePermissions('users.update', 'admin.access')
+  @Post(':id/reset-password')
+  @ApiOperation({
+    summary: 'إعادة تعيين كلمة مرور المستخدم',
+    description: 'يسمح للأدمن بإعادة تعيين كلمة مرور أي مستخدم',
+  })
+  async resetUserPassword(
+    @Param('id') userId: string,
+    @Body() dto: AdminResetPasswordDto,
+    @Req() req: { user: { sub: string } },
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new UserNotFoundException({ userId });
+    }
+
+    // منع تغيير كلمة مرور Super Admin من قبل Admin عادي
+    const adminUser = await this.userModel.findById(req.user.sub);
+    if (
+      user.roles?.includes(UserRole.SUPER_ADMIN) &&
+      !adminUser?.roles?.includes(UserRole.SUPER_ADMIN)
+    ) {
+      throw new ForbiddenException({ reason: 'cannot_reset_super_admin_password' });
+    }
+
+    // تشفير كلمة المرور الجديدة
+    const hashedPassword = await hash(dto.newPassword, 10);
+    user.passwordHash = hashedPassword;
+
+    await user.save();
+
+    return {
+      success: true,
+      message: 'تم إعادة تعيين كلمة المرور بنجاح',
+      data: {
+        userId: user._id,
+        phone: user.phone,
+        resetAt: new Date(),
+        resetBy: req.user.sub,
       },
     };
   }

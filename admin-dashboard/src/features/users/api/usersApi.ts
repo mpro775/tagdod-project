@@ -164,4 +164,78 @@ export const usersApi = {
       },
     };
   },
+
+  /**
+   * Update engineer status
+   */
+  updateEngineerStatus: async (
+    id: string,
+    status: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    const { data } = await apiClient.patch<ApiResponse<{
+      success: boolean;
+      message: string;
+      data: {
+        userId: string;
+        engineerStatus: string;
+        engineerCapable: boolean;
+        roles: string[];
+      };
+    }>>(`/admin/users/${id}/engineer-status`, { status });
+    return {
+      success: data.data.success,
+      message: data.data.message,
+    };
+  },
+
+  /**
+   * Update merchant status
+   */
+  updateMerchantStatus: async (
+    id: string,
+    status: string,
+    merchantDiscountPercent?: number,
+  ): Promise<{ success: boolean; message: string }> => {
+    const { data } = await apiClient.patch<ApiResponse<{
+      success: boolean;
+      message: string;
+      data: {
+        userId: string;
+        merchantStatus: string;
+        merchantCapable: boolean;
+        merchantDiscountPercent: number;
+        roles: string[];
+      };
+    }>>(`/admin/users/${id}/merchant-status`, { 
+      status,
+      merchantDiscountPercent,
+    });
+    return {
+      success: data.data.success,
+      message: data.data.message,
+    };
+  },
+
+  /**
+   * Reset user password (Admin)
+   */
+  resetPassword: async (
+    id: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    const { data } = await apiClient.post<ApiResponse<{
+      success: boolean;
+      message: string;
+      data: {
+        userId: string;
+        phone: string;
+        resetAt: Date;
+        resetBy: string;
+      };
+    }>>(`/admin/users/${id}/reset-password`, { newPassword });
+    return {
+      success: data.data.success,
+      message: data.data.message,
+    };
+  },
 };

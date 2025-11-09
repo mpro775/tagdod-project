@@ -30,7 +30,7 @@ export const MerchantInfoSection: React.FC = () => {
             {t('users:form.sections.merchantInfo', 'معلومات التاجر')}
           </Typography>
           <FormInput
-            name="wholesaleDiscountPercent"
+            name="merchantDiscountPercent"
             label={t('users:form.fields.discountPercent', 'نسبة التخفيض للتاجر (%)')}
             type="number"
             placeholder={t('users:form.placeholders.discount', '0-100')}

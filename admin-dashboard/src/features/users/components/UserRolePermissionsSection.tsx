@@ -237,7 +237,7 @@ export const UserRolePermissionsSection: React.FC<UserRolePermissionsSectionProp
             })}
             {primaryRole === UserRole.MERCHANT && (
               <Box sx={{ mt: 1 }}>
-                • {t('users:form.capabilities.merchant.capable', 'سيحصل تلقائياً على قدرة "تاجر جملة" (wholesale_capable)')}
+                • {t('users:form.capabilities.merchant.capable', 'سيحصل تلقائياً على قدرة "تاجر" (merchant_capable)')}
                 <br />
                 • {t('users:form.capabilities.merchant.discount', 'يمكنك تحديد نسبة التخفيض الخاصة به أدناه')}
               </Box>

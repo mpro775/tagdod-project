@@ -11420,6 +11420,78 @@ paths:
         - إدارة-المستخدمين
       security:
         - bearer: []
+  /api/v1/admin/users/{id}/engineer-status:
+    patch:
+      operationId: updateEngineerStatus
+      summary: تغيير حالة توثيق المهندس
+      description: يسمح للأدمن بتغيير حالة توثيق المهندس (none/unverified/pending/approved/rejected)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCapabilityStatusDto'
+      responses:
+        '200':
+          description: ''
+      tags:
+        - إدارة-المستخدمين
+      security:
+        - bearer: []
+  /api/v1/admin/users/{id}/merchant-status:
+    patch:
+      operationId: updateMerchantStatus
+      summary: تغيير حالة توثيق التاجر
+      description: يسمح للأدمن بتغيير حالة توثيق التاجر ونسبة الخصم (none/unverified/pending/approved/rejected)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCapabilityStatusDto'
+      responses:
+        '200':
+          description: ''
+      tags:
+        - إدارة-المستخدمين
+      security:
+        - bearer: []
+  /api/v1/admin/users/{id}/reset-password:
+    post:
+      operationId: resetUserPassword
+      summary: إعادة تعيين كلمة مرور المستخدم
+      description: يسمح للأدمن بإعادة تعيين كلمة مرور أي مستخدم
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminResetPasswordDto'
+      responses:
+        '201':
+          description: ''
+      tags:
+        - إدارة-المستخدمين
+      security:
+        - bearer: []
   /api/v1/upload/file:
     post:
       operationId: uploadFile
@@ -20266,6 +20338,12 @@ components:
           description: سبب الرفض (اختياري - يظهر فقط عند الرفض)
           example: الوثائق غير واضحة أو غير مكتملة
           maxLength: 500
+    UpdateCapabilityStatusDto:
+      type: object
+      properties: {}
+    AdminResetPasswordDto:
+      type: object
+      properties: {}
     UploadFileDto:
       type: object
       properties:

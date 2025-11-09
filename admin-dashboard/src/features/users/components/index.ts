@@ -6,6 +6,8 @@ export { UserCard } from './UserCard';
 export { useUsersTableColumns } from './UsersTableColumns';
 export { DeleteUserDialog } from './DeleteUserDialog';
 export { VerificationRequestDialog } from './VerificationRequestDialog';
+export { ResetPasswordDialog } from './ResetPasswordDialog';
+export { StatusControlDialog } from './StatusControlDialog';
 export { UserBasicInfoSection } from './UserBasicInfoSection';
 export { UserRolePermissionsSection } from './UserRolePermissionsSection';
 export { EngineerInfoSection } from './EngineerInfoSection';

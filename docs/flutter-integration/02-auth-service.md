@@ -184,8 +184,15 @@ Future<Map<String, dynamic>> sendOtp({
       "permissions": [],
       "isAdmin": false,
       "preferredCurrency": "USD",
+      "status": "active",
+      "customerCapable": true,
+      "engineerCapable": true,
       "engineerStatus": "unverified",
-      "merchantStatus": "none"
+      "merchantCapable": false,
+      "merchantStatus": "none",
+      "merchantDiscountPercent": 0,
+      "adminCapable": false,
+      "adminStatus": "none"
     }
   },
   "requestId": "req_456"
@@ -340,8 +347,15 @@ class AuthUser {
   final List<String> permissions;
   final bool isAdmin;
   final String preferredCurrency;
-  final String? engineerStatus;
-  final String? merchantStatus;
+  final String status;
+  final bool customerCapable;
+  final bool engineerCapable;
+  final String engineerStatus;
+  final bool merchantCapable;
+  final String merchantStatus;
+  final double merchantDiscountPercent;
+  final bool adminCapable;
+  final String adminStatus;
 
   AuthUser({
     required this.id, 
@@ -355,8 +369,15 @@ class AuthUser {
     this.permissions = const [],
     this.isAdmin = false,
     required this.preferredCurrency,
-    this.engineerStatus,
-    this.merchantStatus,
+    this.status = 'active',
+    this.customerCapable = true,
+    this.engineerCapable = false,
+    this.engineerStatus = 'none',
+    this.merchantCapable = false,
+    this.merchantStatus = 'none',
+    this.merchantDiscountPercent = 0,
+    this.adminCapable = false,
+    this.adminStatus = 'none',
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -376,8 +397,15 @@ class AuthUser {
           : [],
       isAdmin: json['isAdmin'] ?? false,
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
-      engineerStatus: json['engineerStatus'],
-      merchantStatus: json['merchantStatus'],
+      status: json['status'] ?? 'active',
+      customerCapable: json['customerCapable'] ?? true,
+      engineerCapable: json['engineerCapable'] ?? false,
+      engineerStatus: json['engineerStatus'] ?? 'none',
+      merchantCapable: json['merchantCapable'] ?? false,
+      merchantStatus: json['merchantStatus'] ?? 'none',
+      merchantDiscountPercent: (json['merchantDiscountPercent'] ?? 0).toDouble(),
+      adminCapable: json['adminCapable'] ?? false,
+      adminStatus: json['adminStatus'] ?? 'none',
     );
   }
   
@@ -390,6 +418,10 @@ class AuthUser {
   bool get isMerchantPending => merchantStatus == 'pending';
   bool get isMerchantApproved => merchantStatus == 'approved';
   bool get isMerchantUnverified => merchantStatus == 'unverified';
+  
+  bool get isActive => status == 'active';
+  bool get isSuspended => status == 'suspended';
+  bool get isDeleted => status == 'deleted';
   
   bool hasRole(String role) => roles.contains(role);
   bool hasPermission(String permission) => permissions.contains(permission);
@@ -662,19 +694,30 @@ Future<bool> resetPassword({
       "firstName": "أحمد",
       "lastName": "محمد",
       "gender": "male",
+      "city": "صنعاء",
       "jobTitle": "مهندس كهرباء",
-      "roles": ["customer"],
+      "roles": ["user"],
       "permissions": [],
-      "isAdmin": false
+      "isAdmin": false,
+      "preferredCurrency": "USD",
+      "status": "active",
+      "customerCapable": true,
+      "engineerCapable": true,
+      "engineerStatus": "pending",
+      "merchantCapable": false,
+      "merchantStatus": "none",
+      "merchantDiscountPercent": 0,
+      "adminCapable": false,
+      "adminStatus": "none"
     },
     "capabilities": {
       "_id": "cap_123",
       "userId": "64a1b2c3d4e5f6789",
       "customer_capable": true,
-      "engineer_capable": false,
+      "engineer_capable": true,
       "engineer_status": "pending",
       "merchant_capable": false,
-      "merchant_status": null,
+      "merchant_status": "none",
       "merchant_discount_percent": 0
     }
   },
@@ -691,10 +734,21 @@ class User {
   final String? firstName;
   final String? lastName;
   final String? gender;
+  final String? city;
   final String? jobTitle;
   final List<String> roles;
   final List<String> permissions;
   final bool isAdmin;
+  final String preferredCurrency;
+  final String status;
+  final bool customerCapable;
+  final bool engineerCapable;
+  final String engineerStatus;
+  final bool merchantCapable;
+  final String merchantStatus;
+  final double merchantDiscountPercent;
+  final bool adminCapable;
+  final String adminStatus;
 
   User({
     required this.id,
@@ -702,10 +756,21 @@ class User {
     this.firstName,
     this.lastName,
     this.gender,
+    this.city,
     this.jobTitle,
     this.roles = const [],
     this.permissions = const [],
-    required this.isAdmin,
+    this.isAdmin = false,
+    this.preferredCurrency = 'USD',
+    this.status = 'active',
+    this.customerCapable = true,
+    this.engineerCapable = false,
+    this.engineerStatus = 'none',
+    this.merchantCapable = false,
+    this.merchantStatus = 'none',
+    this.merchantDiscountPercent = 0,
+    this.adminCapable = false,
+    this.adminStatus = 'none',
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -715,6 +780,7 @@ class User {
       firstName: json['firstName'],
       lastName: json['lastName'],
       gender: json['gender'],
+      city: json['city'],
       jobTitle: json['jobTitle'],
       roles: json['roles'] != null 
           ? List<String>.from(json['roles']) 
@@ -723,8 +789,29 @@ class User {
           ? List<String>.from(json['permissions']) 
           : [],
       isAdmin: json['isAdmin'] ?? false,
+      preferredCurrency: json['preferredCurrency'] ?? 'USD',
+      status: json['status'] ?? 'active',
+      customerCapable: json['customerCapable'] ?? true,
+      engineerCapable: json['engineerCapable'] ?? false,
+      engineerStatus: json['engineerStatus'] ?? 'none',
+      merchantCapable: json['merchantCapable'] ?? false,
+      merchantStatus: json['merchantStatus'] ?? 'none',
+      merchantDiscountPercent: (json['merchantDiscountPercent'] ?? 0).toDouble(),
+      adminCapable: json['adminCapable'] ?? false,
+      adminStatus: json['adminStatus'] ?? 'none',
     );
   }
+  
+  bool get isActive => status == 'active';
+  bool get isSuspended => status == 'suspended';
+  
+  bool get isEngineerPending => engineerStatus == 'pending';
+  bool get isEngineerApproved => engineerStatus == 'approved';
+  bool get isEngineerUnverified => engineerStatus == 'unverified';
+  
+  bool get isMerchantPending => merchantStatus == 'pending';
+  bool get isMerchantApproved => merchantStatus == 'approved';
+  bool get isMerchantUnverified => merchantStatus == 'unverified';
 }
 
 class Capabilities {
@@ -1062,8 +1149,15 @@ Future<void> _clearLocalData() async {
       "permissions": [],
       "isAdmin": false,
       "preferredCurrency": "USD",
+      "status": "active",
+      "customerCapable": true,
+      "engineerCapable": false,
       "engineerStatus": "none",
-      "merchantStatus": "none"
+      "merchantCapable": false,
+      "merchantStatus": "none",
+      "merchantDiscountPercent": 0,
+      "adminCapable": false,
+      "adminStatus": "none"
     }
   },
   "requestId": "req_701"
@@ -1088,12 +1182,19 @@ Future<void> _clearLocalData() async {
       "gender": "male",
       "city": "صنعاء",
       "jobTitle": "مهندس كهرباء",
-      "roles": ["user"],
+      "roles": ["user", "engineer"],
       "permissions": [],
       "isAdmin": false,
       "preferredCurrency": "USD",
+      "status": "active",
+      "customerCapable": true,
+      "engineerCapable": true,
       "engineerStatus": "approved",
-      "merchantStatus": "none"
+      "merchantCapable": false,
+      "merchantStatus": "none",
+      "merchantDiscountPercent": 0,
+      "adminCapable": false,
+      "adminStatus": "none"
     }
   },
   "requestId": "req_701"
@@ -1224,8 +1325,15 @@ Future<LoginResponse> userLogin({
       "permissions": [],
       "isAdmin": false,
       "preferredCurrency": "USD",
+      "status": "active",
+      "customerCapable": true,
+      "engineerCapable": false,
       "engineerStatus": "none",
-      "merchantStatus": "none"
+      "merchantCapable": false,
+      "merchantStatus": "none",
+      "merchantDiscountPercent": 0,
+      "adminCapable": false,
+      "adminStatus": "none"
     }
   },
   "requestId": "req_456"
@@ -1248,13 +1356,21 @@ Future<LoginResponse> userLogin({
       "firstName": "أحمد",
       "lastName": "محمد",
       "gender": "male",
+      "city": "صنعاء",
       "jobTitle": "مهندس كهرباء",
-      "roles": ["customer"],
+      "roles": ["user"],
       "permissions": [],
       "isAdmin": false,
       "preferredCurrency": "USD",
+      "status": "active",
+      "customerCapable": true,
+      "engineerCapable": true,
       "engineerStatus": "unverified",
-      "merchantStatus": "none"
+      "merchantCapable": false,
+      "merchantStatus": "none",
+      "merchantDiscountPercent": 0,
+      "adminCapable": false,
+      "adminStatus": "none"
     }
   },
   "requestId": "req_801"
@@ -1418,6 +1534,16 @@ class User {
   final List<String> roles;
   final List<String> permissions;
   final bool isAdmin;
+  final String preferredCurrency;
+  final String status;
+  final bool customerCapable;
+  final bool engineerCapable;
+  final String engineerStatus;
+  final bool merchantCapable;
+  final String merchantStatus;
+  final double merchantDiscountPercent;
+  final bool adminCapable;
+  final String adminStatus;
 
   User({
     required this.id,
@@ -1429,7 +1555,17 @@ class User {
     this.jobTitle,
     this.roles = const [],
     this.permissions = const [],
-    required this.isAdmin,
+    this.isAdmin = false,
+    this.preferredCurrency = 'USD',
+    this.status = 'active',
+    this.customerCapable = true,
+    this.engineerCapable = false,
+    this.engineerStatus = 'none',
+    this.merchantCapable = false,
+    this.merchantStatus = 'none',
+    this.merchantDiscountPercent = 0,
+    this.adminCapable = false,
+    this.adminStatus = 'none',
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -1448,10 +1584,32 @@ class User {
           ? List<String>.from(json['permissions']) 
           : [],
       isAdmin: json['isAdmin'] ?? false,
+      preferredCurrency: json['preferredCurrency'] ?? 'USD',
+      status: json['status'] ?? 'active',
+      customerCapable: json['customerCapable'] ?? true,
+      engineerCapable: json['engineerCapable'] ?? false,
+      engineerStatus: json['engineerStatus'] ?? 'none',
+      merchantCapable: json['merchantCapable'] ?? false,
+      merchantStatus: json['merchantStatus'] ?? 'none',
+      merchantDiscountPercent: (json['merchantDiscountPercent'] ?? 0).toDouble(),
+      adminCapable: json['adminCapable'] ?? false,
+      adminStatus: json['adminStatus'] ?? 'none',
     );
   }
 
   String get fullName => '${firstName ?? ''} ${lastName ?? ''}'.trim();
+  
+  bool get isActive => status == 'active';
+  bool get isSuspended => status == 'suspended';
+  bool get isDeleted => status == 'deleted';
+  
+  bool get isEngineerPending => engineerStatus == 'pending';
+  bool get isEngineerApproved => engineerStatus == 'approved';
+  bool get isEngineerUnverified => engineerStatus == 'unverified';
+  
+  bool get isMerchantPending => merchantStatus == 'pending';
+  bool get isMerchantApproved => merchantStatus == 'approved';
+  bool get isMerchantUnverified => merchantStatus == 'unverified';
   
   bool hasRole(String role) => roles.contains(role);
   bool hasPermission(String permission) => permissions.contains(permission);
@@ -1530,27 +1688,82 @@ class LoginResponse {
 class AuthUser {
   final String id;
   final String phone;
+  final String? firstName;
+  final String? lastName;
+  final String? gender;
+  final String? city;
+  final String? jobTitle;
+  final List<String> roles;
+  final List<String> permissions;
+  final bool isAdmin;
   final String preferredCurrency;
-  final String? engineerStatus;
-  final String? merchantStatus;
+  final String status;
+  final bool customerCapable;
+  final bool engineerCapable;
+  final String engineerStatus;
+  final bool merchantCapable;
+  final String merchantStatus;
+  final double merchantDiscountPercent;
+  final bool adminCapable;
+  final String adminStatus;
 
   AuthUser({
     required this.id, 
     required this.phone,
+    this.firstName,
+    this.lastName,
+    this.gender,
+    this.city,
+    this.jobTitle,
+    this.roles = const [],
+    this.permissions = const [],
+    this.isAdmin = false,
     required this.preferredCurrency,
-    this.engineerStatus,
-    this.merchantStatus,
+    this.status = 'active',
+    this.customerCapable = true,
+    this.engineerCapable = false,
+    this.engineerStatus = 'none',
+    this.merchantCapable = false,
+    this.merchantStatus = 'none',
+    this.merchantDiscountPercent = 0,
+    this.adminCapable = false,
+    this.adminStatus = 'none',
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
       id: json['id'],
       phone: json['phone'],
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      gender: json['gender'],
+      city: json['city'],
+      jobTitle: json['jobTitle'],
+      roles: json['roles'] != null 
+          ? List<String>.from(json['roles']) 
+          : [],
+      permissions: json['permissions'] != null 
+          ? List<String>.from(json['permissions']) 
+          : [],
+      isAdmin: json['isAdmin'] ?? false,
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
-      engineerStatus: json['engineerStatus'],
-      merchantStatus: json['merchantStatus'],
+      status: json['status'] ?? 'active',
+      customerCapable: json['customerCapable'] ?? true,
+      engineerCapable: json['engineerCapable'] ?? false,
+      engineerStatus: json['engineerStatus'] ?? 'none',
+      merchantCapable: json['merchantCapable'] ?? false,
+      merchantStatus: json['merchantStatus'] ?? 'none',
+      merchantDiscountPercent: (json['merchantDiscountPercent'] ?? 0).toDouble(),
+      adminCapable: json['adminCapable'] ?? false,
+      adminStatus: json['adminStatus'] ?? 'none',
     );
   }
+  
+  String get fullName => '${firstName ?? ''} ${lastName ?? ''}'.trim();
+  
+  bool get isActive => status == 'active';
+  bool get isSuspended => status == 'suspended';
+  bool get isDeleted => status == 'deleted';
   
   bool get isEngineerPending => engineerStatus == 'pending';
   bool get isEngineerApproved => engineerStatus == 'approved';
@@ -1559,6 +1772,9 @@ class AuthUser {
   bool get isMerchantPending => merchantStatus == 'pending';
   bool get isMerchantApproved => merchantStatus == 'approved';
   bool get isMerchantUnverified => merchantStatus == 'unverified';
+  
+  bool hasRole(String role) => roles.contains(role);
+  bool hasPermission(String permission) => permissions.contains(permission);
 }
 ```
 
@@ -1589,19 +1805,31 @@ class AuthUser {
    - **Engineer (مهندس):** يحتاج `capabilityRequest: "engineer"` + `jobTitle`
    - **Merchant (تاجر):** يحتاج `capabilityRequest: "merchant"`
 
-6. **حالات المهندس/التاجر (engineerStatus / merchantStatus):**
+6. **حالة الحساب (status):**
+   - `active`: حساب نشط ويمكن استخدامه ✅
+   - `suspended`: حساب موقوف مؤقتاً من قبل الأدمن ⚠️
+   - `pending`: في انتظار تفعيل ⏳
+   - `deleted`: تم حذف الحساب ❌
+
+7. **حقول الصلاحيات (Capability Fields):**
+   - **`customerCapable`**: هل المستخدم قادر على الشراء كزبون (افتراضي: true)
+   - **`engineerCapable`** + **`engineerStatus`**: صلاحية المهندس وحالة التوثيق
+   - **`merchantCapable`** + **`merchantStatus`** + **`merchantDiscountPercent`**: صلاحية التاجر وحالة التوثيق ونسبة الخصم
+   - **`adminCapable`** + **`adminStatus`**: صلاحية الأدمن وحالة التوثيق
+
+8. **حالات المهندس/التاجر (engineerStatus / merchantStatus):**
    - `none`: مستخدم عادي (customer)
    - `unverified`: طلب الصلاحية عند التسجيل لكن لم يرفع الوثائق ⚠️
    - `pending`: رفع الوثائق وفي انتظار موافقة الأدمن ⏳
    - `approved`: تمت الموافقة ✅
    - `rejected`: تم الرفض ❌
 
-7. **العملة المفضلة:**
+9. **العملة المفضلة:**
    - كل مستخدم لديه عملة مفضلة (افتراضي: USD)
    - يمكن تحديثها عبر endpoint `/auth/preferred-currency`
    - يتم إرجاعها في استجابة تسجيل الدخول
 
-8. **كيفية استخدام حالات المهندس/التاجر في Flutter:**
+10. **كيفية استخدام حالات المهندس/التاجر في Flutter:**
    ```dart
    // بعد تسجيل الدخول
    final loginResponse = await verifyOtp(...);
@@ -1670,6 +1898,18 @@ class AuthUser {
 11. ✅ تحديث `VALIDATION_ERROR` إلى `GENERAL_004`
 12. ✅ **حذف endpoints الأدمن** - هذا الملف للمستخدمين والتجار والمهندسين فقط
 13. ✅ **تحديث نوع capabilityRequest والتسميات** - تم تغيير `"wholesale"` إلى `"merchant"` في جميع endpoints والحقول (`merchantStatus`, `merchant_capable`, `merchant_discount_percent`)
+14. ✅ **إضافة حقول الحالة والصلاحيات الكاملة في جميع responses:**
+   - `status` - حالة الحساب (active/suspended/pending/deleted)
+   - `customerCapable` - قدرة المستخدم كزبون
+   - `engineerCapable` - قدرة المستخدم كمهندس
+   - `merchantCapable` - قدرة المستخدم كتاجر
+   - `merchantDiscountPercent` - نسبة خصم التاجر
+   - `adminCapable` - قدرة المستخدم كأدمن
+   - `adminStatus` - حالة توثيق الأدمن
+15. ✅ **تحديث Flutter Models** لتشمل جميع الحقول الجديدة مع getter methods لسهولة الاستخدام:
+   - `isActive`, `isSuspended`, `isDeleted` - للتحقق من حالة الحساب
+   - `isEngineerPending`, `isEngineerApproved`, `isEngineerUnverified` - للتحقق من حالة المهندس
+   - `isMerchantPending`, `isMerchantApproved`, `isMerchantUnverified` - للتحقق من حالة التاجر
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/auth/auth.controller.ts`

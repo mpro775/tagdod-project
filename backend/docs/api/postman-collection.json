@@ -8078,6 +8078,90 @@
             },
             "description": "رفض طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى REJECTED"
           }
+        },
+        {
+          "name": "تغيير حالة توثيق المهندس",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{id}/engineer-status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{id}",
+                "engineer-status"
+              ]
+            },
+            "description": "يسمح للأدمن بتغيير حالة توثيق المهندس (none/unverified/pending/approved/rejected)"
+          }
+        },
+        {
+          "name": "تغيير حالة توثيق التاجر",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{id}/merchant-status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{id}",
+                "merchant-status"
+              ]
+            },
+            "description": "يسمح للأدمن بتغيير حالة توثيق التاجر ونسبة الخصم (none/unverified/pending/approved/rejected)"
+          }
+        },
+        {
+          "name": "إعادة تعيين كلمة مرور المستخدم",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{id}/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{id}",
+                "reset-password"
+              ]
+            },
+            "description": "يسمح للأدمن بإعادة تعيين كلمة مرور أي مستخدم"
+          }
         }
       ],
       "description": "Endpoints for إدارة-المستخدمين functionality"

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,17 +12,20 @@ import {
   Grid,
   Alert,
   useTheme,
+  Chip,
 } from '@mui/material';
-import { Save, Cancel, AdminPanelSettings } from '@mui/icons-material';
+import { Save, Cancel, AdminPanelSettings, LockReset, VerifiedUser, Store } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useUser, useCreateUser, useUpdateUser } from '../hooks/useUsers';
-import { UserRole, UserStatus } from '../types/user.types';
+import { UserRole, UserStatus, CapabilityStatus } from '../types/user.types';
 import { useAuthStore } from '@/store/authStore';
 import { createUserFormSchema, type UserFormData } from '../schemas/userFormSchema';
 import { UserBasicInfoSection } from '../components/UserBasicInfoSection';
 import { UserRolePermissionsSection } from '../components/UserRolePermissionsSection';
 import { EngineerInfoSection } from '../components/EngineerInfoSection';
 import { MerchantInfoSection } from '../components/MerchantInfoSection';
+import { ResetPasswordDialog } from '../components/ResetPasswordDialog';
+import { StatusControlDialog } from '../components/StatusControlDialog';
 import { mapCityToArabic } from '@/shared/utils/cityMapper';
 import '../styles/responsive-users.css';
 
@@ -34,6 +37,11 @@ export const UserFormPage: React.FC = () => {
   const { hasPermission } = useAuthStore();
   const isEditMode = id !== 'new' && !!id;
   const [primaryRole, setPrimaryRole] = React.useState<UserRole>(UserRole.USER);
+  
+  // Dialog states
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [engineerStatusOpen, setEngineerStatusOpen] = useState(false);
+  const [merchantStatusOpen, setMerchantStatusOpen] = useState(false);
 
   // Form
   const schema = createUserFormSchema(t);
@@ -51,7 +59,7 @@ export const UserFormPage: React.FC = () => {
       status: UserStatus.ACTIVE,
       roles: [UserRole.USER],
       permissions: [],
-      wholesaleDiscountPercent: undefined,
+      merchantDiscountPercent: undefined,
     },
   });
 
@@ -62,6 +70,40 @@ export const UserFormPage: React.FC = () => {
 
   // Can create super admin
   const canCreateSuperAdmin = hasPermission('super_admin:access');
+
+  // Helper to get status chip color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case CapabilityStatus.APPROVED:
+        return 'success';
+      case CapabilityStatus.PENDING:
+        return 'warning';
+      case CapabilityStatus.REJECTED:
+        return 'error';
+      case CapabilityStatus.UNVERIFIED:
+        return 'info';
+      default:
+        return 'default';
+    }
+  };
+
+  // Helper to get status label
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case CapabilityStatus.APPROVED:
+        return t('users:status.approved', 'موافق عليه');
+      case CapabilityStatus.PENDING:
+        return t('users:status.pending', 'قيد المراجعة');
+      case CapabilityStatus.REJECTED:
+        return t('users:status.rejected', 'مرفوض');
+      case CapabilityStatus.UNVERIFIED:
+        return t('users:status.unverified', 'لم يتم التحقق');
+      case CapabilityStatus.NONE:
+        return t('users:status.none', 'غير مفعل');
+      default:
+        return status;
+    }
+  };
 
   // Handle primary role change
   const handlePrimaryRoleChange = (role: UserRole) => {
@@ -98,8 +140,10 @@ export const UserFormPage: React.FC = () => {
         status: user.status || UserStatus.ACTIVE,
         roles: user.roles || [UserRole.USER],
         permissions: user.permissions || [],
-        wholesaleDiscountPercent:
-          user.capabilities?.wholesale_discount_percent || undefined,
+        merchantDiscountPercent:
+          user.merchant_discount_percent ??
+          user.capabilities?.merchant_discount_percent ??
+          undefined,
       };
 
       methods.reset(formData);
@@ -130,16 +174,16 @@ export const UserFormPage: React.FC = () => {
     if (currentPrimaryRole === UserRole.ENGINEER) {
       userData.capabilityRequest = 'engineer';
     } else if (currentPrimaryRole === UserRole.MERCHANT) {
-      userData.capabilityRequest = 'wholesale';
+      userData.capabilityRequest = 'merchant';
       if (
-        data.wholesaleDiscountPercent !== undefined &&
-        data.wholesaleDiscountPercent !== null
+        data.merchantDiscountPercent !== undefined &&
+        data.merchantDiscountPercent !== null
       ) {
         // Convert to number if it's a string
-        userData.wholesaleDiscountPercent =
-          typeof data.wholesaleDiscountPercent === 'string'
-            ? parseFloat(data.wholesaleDiscountPercent)
-            : data.wholesaleDiscountPercent;
+        userData.merchantDiscountPercent =
+          typeof data.merchantDiscountPercent === 'string'
+            ? parseFloat(data.merchantDiscountPercent)
+            : data.merchantDiscountPercent;
       }
     }
 
@@ -286,6 +330,78 @@ export const UserFormPage: React.FC = () => {
               {/* Discount - Only for merchants */}
               {primaryRole === UserRole.MERCHANT && <MerchantInfoSection />}
 
+              {/* Status Control Section - Only in Edit Mode */}
+              {isEditMode && user && (
+                <Grid size={{ xs: 12 }}>
+                  <Divider sx={{ my: { xs: 2, sm: 3 } }} />
+                  <Typography variant="h6" gutterBottom>
+                    {t('users:sections.statusControl', 'إدارة الحالات والصلاحيات')}
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                    {/* Reset Password Button */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                      <Button
+                        variant="outlined"
+                        color="warning"
+                        startIcon={<LockReset />}
+                        onClick={() => setResetPasswordOpen(true)}
+                        size="small"
+                      >
+                        {t('users:actions.resetPassword', 'إعادة تعيين كلمة المرور')}
+                      </Button>
+                    </Box>
+
+                    {/* Engineer Status Control */}
+                    {(user.engineer_capable || user.engineer_status !== CapabilityStatus.NONE) && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          startIcon={<VerifiedUser />}
+                          onClick={() => setEngineerStatusOpen(true)}
+                          size="small"
+                        >
+                          {t('users:actions.manageEngineerStatus', 'إدارة حالة المهندس')}
+                        </Button>
+                        <Chip 
+                          label={getStatusLabel(user.engineer_status || CapabilityStatus.NONE)}
+                          color={getStatusColor(user.engineer_status || CapabilityStatus.NONE)}
+                          size="small"
+                        />
+                      </Box>
+                    )}
+
+                    {/* Merchant Status Control */}
+                    {(user.merchant_capable || user.merchant_status !== CapabilityStatus.NONE) && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          startIcon={<Store />}
+                          onClick={() => setMerchantStatusOpen(true)}
+                          size="small"
+                        >
+                          {t('users:actions.manageMerchantStatus', 'إدارة حالة التاجر')}
+                        </Button>
+                        <Chip 
+                          label={getStatusLabel(user.merchant_status || CapabilityStatus.NONE)}
+                          color={getStatusColor(user.merchant_status || CapabilityStatus.NONE)}
+                          size="small"
+                        />
+                        {user.merchant_discount_percent > 0 && (
+                          <Chip 
+                            label={`${user.merchant_discount_percent}% ${t('users:labels.discount', 'خصم')}`}
+                            color="success"
+                            size="small"
+                          />
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                </Grid>
+              )}
+
               {/* Action Buttons */}
               <Grid size={{ xs: 12 }}>
                 <Divider sx={{ my: { xs: 1.5, sm: 2 } }} />
@@ -334,6 +450,38 @@ export const UserFormPage: React.FC = () => {
           </form>
         </FormProvider>
       </Paper>
+
+      {/* Dialogs */}
+      {isEditMode && user && (
+        <>
+          <ResetPasswordDialog
+            open={resetPasswordOpen}
+            onClose={() => setResetPasswordOpen(false)}
+            userId={id!}
+            userPhone={user.phone}
+            userName={user.firstName || user.phone}
+          />
+
+          <StatusControlDialog
+            open={engineerStatusOpen}
+            onClose={() => setEngineerStatusOpen(false)}
+            userId={id!}
+            userName={user.firstName || user.phone}
+            type="engineer"
+            currentStatus={user.engineer_status || CapabilityStatus.NONE}
+          />
+
+          <StatusControlDialog
+            open={merchantStatusOpen}
+            onClose={() => setMerchantStatusOpen(false)}
+            userId={id!}
+            userName={user.firstName || user.phone}
+            type="merchant"
+            currentStatus={user.merchant_status || CapabilityStatus.NONE}
+            currentDiscountPercent={user.merchant_discount_percent}
+          />
+        </>
+      )}
     </Box>
   );
 };
