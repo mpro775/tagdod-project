@@ -63,9 +63,9 @@ export class FavoritesUserController {
     status: 401,
     description: 'غير مصرح لك بالوصول'
   })
-  async listFavorites(@Req() req: { user: { sub: string } }) {
+  async listFavorites(@Req() req: { user: { sub: string } }): Promise<Record<string, unknown>[]> {
     const data = await this.favoritesService.listUserFavorites(req.user.sub);
-    return data;
+    return data as Record<string, unknown>[];
   }
 
   @Post()

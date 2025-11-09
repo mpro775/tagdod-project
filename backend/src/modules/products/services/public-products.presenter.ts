@@ -501,6 +501,7 @@ export class PublicProductsPresenter {
       ...(productId ? { _id: productId } : {}),
       ...(product.name ? { name: product.name } : {}),
       ...(product.nameEn ? { nameEn: product.nameEn } : {}),
+      ...(product.status ? { status: product.status } : {}),
       ...(includeDescriptions && product.description ? { description: product.description } : {}),
       ...(includeDescriptions && product.descriptionEn ? { descriptionEn: product.descriptionEn } : {}),
       ...(includeCategory && category ? { category } : {}),
@@ -511,6 +512,7 @@ export class PublicProductsPresenter {
       ...(typeof product.isActive === 'boolean' ? { isActive: product.isActive } : {}),
       ...(typeof product.isFeatured === 'boolean' ? { isFeatured: product.isFeatured } : {}),
       ...(typeof product.isNew === 'boolean' ? { isNew: product.isNew } : {}),
+      ...(typeof product.isBestseller === 'boolean' ? { isBestseller: product.isBestseller } : {}),
       ...(typeof product.useManualRating === 'boolean'
         ? { useManualRating: product.useManualRating }
         : {}),
@@ -518,6 +520,8 @@ export class PublicProductsPresenter {
       ...(typeof product.manualReviewsCount === 'number'
         ? { manualReviewsCount: product.manualReviewsCount }
         : {}),
+      ...(typeof product.averageRating === 'number' ? { averageRating: product.averageRating } : {}),
+      ...(typeof product.reviewsCount === 'number' ? { reviewsCount: product.reviewsCount } : {}),
       ...(includePricingByCurrency
         ? cleanedPricingByCurrency
           ? { pricingByCurrency: cleanedPricingByCurrency }

@@ -58,13 +58,13 @@ export class FavoritesGuestController {
       ],
     },
   })
-  async listFavorites(@Query('deviceId') deviceId: string) {
+  async listFavorites(@Query('deviceId') deviceId: string): Promise<Record<string, unknown>[]> {
     if (!deviceId) {
       return [];
     }
 
     const data = await this.favoritesService.listGuestFavorites(deviceId);
-    return data;
+    return data as Record<string, unknown>[];
   }
 
   @Post()

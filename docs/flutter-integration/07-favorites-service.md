@@ -42,11 +42,39 @@
       "userId": "65f4f2bb0af4cf0012d8a001",
       "productId": {
         "_id": "65e1c12291c8d90012843321",
-        "nameAr": "لوح شمسي 550 واط",
-        "nameEn": "Solar Panel 550W",
-        "slug": "solar-panel-550w",
-        "mainImageId": {
-          "url": "https://cdn.example.com/products/solar-panel.jpg"
+        "name": "كونتاكتور AC من سلسلة CJX2s",
+        "nameEn": "CJX2s AC Contactor",
+        "status": "active",
+        "isActive": true,
+        "isFeatured": true,
+        "isNew": true,
+        "isBestseller": true,
+        "useManualRating": true,
+        "manualRating": 4.5,
+        "manualReviewsCount": 248,
+        "averageRating": 4.2,
+        "reviewsCount": 248,
+        "rating": 4.5,
+        "mainImage": {
+          "_id": "65e1bcae91c8d90012843241",
+          "url": "https://cdn.example.com/products/cjx2s.png"
+        },
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 13.6,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 13.6,
+            "currency": "USD"
+          },
+          "SAR": {
+            "basePrice": 51,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 51,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
         }
       },
       "note": "للمشروع الجديد",
@@ -59,7 +87,7 @@
 }
 ```
 
-> **ملاحظة:** يتم إرجاع المنتج `productId` بشكل populated تلقائياً. يتم إخفاء الحقول `viewsCount` و `lastViewedAt` و `updatedAt` في هذه الاستجابة لأنها غير مطلوبة في الواجهات.
+> **ملاحظة:** يتم إرجاع `productId` كمجموعة بيانات مختصرة تضم أهم الحقول فقط (الاسمين، الحالة، الأعلام، التقييم، الصورة الرئيسية، وخارطة الأسعار بحسب العملات). لا يتم تضمين جميع خصائص المنتج الأصلية لضمان استجابة خفيفة.
 
 ### كود Flutter
 
@@ -461,62 +489,109 @@ Future<bool> incrementFavoriteView(String favoriteId) async {
 ### ملف: `lib/models/favorite/favorite_models.dart`
 
 ```dart
+class FavoriteProductSummary {
+  final String id;
+  final String? name;
+  final String? nameEn;
+  final FavoriteImage? mainImage;
+  final bool? isActive;
+  final bool? isFeatured;
+  final bool? isNew;
+  final bool? isBestseller;
+  final bool? useManualRating;
+  final double? manualRating;
+  final double? manualReviewsCount;
+  final double? averageRating;
+  final double rating;
+  final Map<String, dynamic> pricingByCurrency;
+
+  FavoriteProductSummary({
+    required this.id,
+    this.name,
+    this.nameEn,
+    this.mainImage,
+    this.isActive,
+    this.isFeatured,
+    this.isNew,
+    this.isBestseller,
+    this.useManualRating,
+    this.manualRating,
+    this.manualReviewsCount,
+    this.averageRating,
+    required this.rating,
+    required this.pricingByCurrency,
+  });
+
+  factory FavoriteProductSummary.fromJson(Map<String, dynamic> json) {
+    return FavoriteProductSummary(
+      id: json['_id'] as String,
+      name: json['name'] as String?,
+      nameEn: json['nameEn'] as String?,
+      mainImage: json['mainImage'] != null
+          ? FavoriteImage.fromJson(json['mainImage'] as Map<String, dynamic>)
+          : null,
+      isActive: json['isActive'] as bool?,
+      isFeatured: json['isFeatured'] as bool?,
+      isNew: json['isNew'] as bool?,
+      isBestseller: json['isBestseller'] as bool?,
+      useManualRating: json['useManualRating'] as bool?,
+      manualRating: (json['manualRating'] as num?)?.toDouble(),
+      manualReviewsCount: (json['manualReviewsCount'] as num?)?.toDouble(),
+      averageRating: (json['averageRating'] as num?)?.toDouble(),
+      rating: (json['rating'] as num?)?.toDouble() ?? 0,
+      pricingByCurrency:
+          (json['pricingByCurrency'] as Map<String, dynamic>? ?? const {}),
+    );
+  }
+}
+
+class FavoriteImage {
+  final String id;
+  final String url;
+
+  FavoriteImage({required this.id, required this.url});
+
+  factory FavoriteImage.fromJson(Map<String, dynamic> json) => FavoriteImage(
+        id: json['_id'] as String,
+        url: json['url'] as String,
+      );
+}
+
 class Favorite {
   final String id;
-  final String userId;
-  final dynamic productId; // قد يكون String أو كائن populated
+  final String? userId;
+  final FavoriteProductSummary? product;
   final String? note;
   final bool isSynced;
   final DateTime? syncedAt;
   final DateTime createdAt;
-  final int viewsCount;
-  final DateTime? lastViewedAt;
 
   Favorite({
     required this.id,
-    required this.userId,
-    required this.productId,
+    this.userId,
+    this.product,
     this.note,
     required this.isSynced,
     this.syncedAt,
     required this.createdAt,
-    this.viewsCount = 0,
-    this.lastViewedAt,
   });
 
   factory Favorite.fromJson(Map<String, dynamic> json) {
+    final productJson = json['productId'];
     return Favorite(
-      id: json['_id'],
-      userId: json['userId'] is String ? json['userId'] : json['userId']?['_id'],
-      productId: json['productId'],
-      note: json['note'],
-      isSynced: json['isSynced'] ?? false,
-      syncedAt: json['syncedAt'] != null ? DateTime.parse(json['syncedAt']) : null,
-      createdAt: DateTime.parse(json['createdAt']),
-      viewsCount: json['viewsCount'] ?? 0,
-      lastViewedAt: json['lastViewedAt'] != null ? DateTime.parse(json['lastViewedAt']) : null,
+      id: json['_id'] as String,
+      userId: json['userId'] is String ? json['userId'] as String : null,
+      product: productJson is Map<String, dynamic>
+          ? FavoriteProductSummary.fromJson(productJson)
+          : null,
+      note: json['note'] as String?,
+      isSynced: json['isSynced'] as bool? ?? false,
+      syncedAt: json['syncedAt'] != null ? DateTime.parse(json['syncedAt'] as String) : null,
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 
   bool get hasNote => note != null && note!.isNotEmpty;
-
-  String getProductId() {
-    return productId is String ? productId : productId['_id'];
-  }
-
-  String? getProductName() {
-    if (productId is Map<String, dynamic>) {
-      return productId['nameAr'] ?? productId['nameEn'] ?? productId['name'];
-    }
-    return null;
-  }
-
-  String? getProductImage() {
-    if (productId is Map && productId['mainImageId'] is Map) {
-      return productId['mainImageId']['url'] as String?;
-    }
-    return null;
-  }
 }
 ```
 
@@ -592,18 +667,40 @@ class Favorite {
       "userId": "64user456",
       "productId": {
         "_id": "64prod789",
-        "nameAr": "لوح شمسي 550 واط",
-        "nameEn": "Solar Panel 550W",
-        "slug": "solar-panel-550w",
-        "mainImageId": {
-          "url": "https://cdn.example.com/products/solar-panel.jpg"
+        "name": "كونتاكتور AC من سلسلة CJX2s",
+        "nameEn": "CJX2s AC Contactor",
+        "status": "active",
+        "isActive": true,
+        "isFeatured": true,
+        "isNew": true,
+        "isBestseller": true,
+        "useManualRating": true,
+        "manualRating": 4.5,
+        "manualReviewsCount": 248,
+        "averageRating": 4.2,
+        "reviewsCount": 248,
+        "rating": 4.5,
+        "mainImage": {
+          "_id": "65e1bcae91c8d90012843241",
+          "url": "https://cdn.example.com/products/cjx2s.png"
+        },
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 13.6,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 13.6,
+            "currency": "USD"
+          },
+          "SAR": {
+            "basePrice": 51,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 51,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
         }
-      },
-      "variantId": {
-        "_id": "64var101",
-        "sku": "SP-550-BLK",
-        "basePriceUSD": 500,
-        "stock": 25
       },
       "note": "للمشروع الجديد",
       "viewsCount": 5,
