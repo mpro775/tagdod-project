@@ -58,6 +58,14 @@ export const AddressCard: React.FC<AddressCardProps> = ({ address, onClick }) =>
                   sx={{ fontSize: '0.65rem', height: 20 }}
                 />
               )}
+              {address.deletedAt && (
+                <Chip
+                  label={t('list.status.deleted', { defaultValue: 'محذوف' })}
+                  size="small"
+                  color="error"
+                  sx={{ fontSize: '0.65rem', height: 20 }}
+                />
+              )}
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
               {address.line1}

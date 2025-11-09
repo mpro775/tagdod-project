@@ -39,6 +39,7 @@ import {
   Monitor,
   BugReport,
   AdminPanelSettings,
+  Favorite,
   LocationOn,
   Search as SearchIcon,
   Policy,
@@ -108,6 +109,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           label: t('navigation.verificationRequests', 'طلبات التحقق'),
           icon: <VerifiedUser />,
           path: '/users/verification-requests',
+        },
+        {
+          id: 'users-addresses',
+          label: t('navigation.addresses', 'العناوين'),
+          icon: <LocationOn />,
+          path: '/admin/addresses',
+        },
+        {
+          id: 'users-favorites',
+          label: t('navigation.favorites', 'المفضلة'),
+          icon: <Favorite />,
+          path: '/admin/favorites',
         },
       ],
     },
@@ -480,12 +493,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       label: t('navigation.adminManagement'),
       icon: <AdminPanelSettings />,
       children: [
-        {
-          id: 'admin-addresses',
-          label: t('navigation.addresses'),
-          icon: <LocationOn />,
-          path: '/admin/addresses',
-        },
         {
           id: 'admin-search',
           label: t('navigation.search'),

@@ -19,9 +19,6 @@ export class Favorite {
   @Prop({ type: Types.ObjectId, ref: 'Product', index: true })
   productId!: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Variant', index: true, sparse: true })
-  variantId?: string | null;
-
   // معلومات إضافية
   @Prop({ default: '' })
   note?: string; // ملاحظة خاصة (مثل: "هدية لأحمد")
@@ -53,13 +50,13 @@ export const FavoriteSchema = SchemaFactory.createForClass(Favorite);
 // Performance indexes
 // منع التكرار للمستخدمين المسجلين
 FavoriteSchema.index(
-  { userId: 1, productId: 1, variantId: 1 },
+  { userId: 1, productId: 1 },
   { unique: true, sparse: true, partialFilterExpression: { userId: { $exists: true, $ne: null } } }
 );
 
 // منع التكرار للزوار
 FavoriteSchema.index(
-  { deviceId: 1, productId: 1, variantId: 1 },
+  { deviceId: 1, productId: 1 },
   { unique: true, sparse: true, partialFilterExpression: { deviceId: { $exists: true, $ne: null } } }
 );
 

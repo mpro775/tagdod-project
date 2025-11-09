@@ -944,34 +944,37 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          example: 507f1f77bcf86cd799439011
-                          description: معرف المفضلة
-                        productId:
-                          type: string
-                          example: 507f1f77bcf86cd799439012
-                          description: معرف المنتج
-                        variantId:
-                          type: string
-                          example: 507f1f77bcf86cd799439013
-                          description: معرف المتغير
-                        note:
-                          type: string
-                          example: منتج رائع!
-                          description: ملاحظة المستخدم
-                        addedAt:
-                          type: string
-                          format: date-time
-                          example: '2024-01-15T10:30:00Z'
-                          description: تاريخ الإضافة
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                      example: 65af1c91f2a7f20012d34567
+                      description: معرف عنصر المفضلة
+                    productId:
+                      type: string
+                      example: 65af1c91f2a7f20012d39999
+                      description: معرف المنتج
+                    note:
+                      type: string
+                      example: أحتاج التحقق من المخزون قبل الشراء
+                      description: ملاحظة المستخدم
+                    isSynced:
+                      type: boolean
+                      example: false
+                      description: هل تمت مزامنة هذا السجل من جهاز زائر
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: '2025-02-01T12:30:00.000Z'
+                      description: تاريخ الإضافة للمفضلة
+                example:
+                  - _id: 65af1c91f2a7f20012d34567
+                    productId: 65af1c91f2a7f20012d39999
+                    note: أحتاج التحقق من المخزون قبل الشراء
+                    isSynced: false
+                    createdAt: '2025-02-01T12:30:00.000Z'
         '401':
           description: غير مصرح لك بالوصول
       tags:
@@ -981,7 +984,7 @@ paths:
     post:
       operationId: addFavorite
       summary: إضافة منتج للمفضلة
-      description: إضافة منتج أو متغير منتج إلى قائمة المفضلات الخاصة بالمستخدم
+      description: إضافة منتج إلى قائمة المفضلات الخاصة بالمستخدم
       parameters: []
       requestBody:
         required: true
@@ -989,6 +992,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AddFavoriteDto'
+            examples:
+              default:
+                summary: إضافة منتج عادي
+                value:
+                  productId: 65af1c91f2a7f20012d39999
+                  note: هدية لعيد ميلاد أختي
       responses:
         '201':
           description: تم إضافة المنتج للمفضلة بنجاح
@@ -997,30 +1006,39 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        example: 507f1f77bcf86cd799439011
-                        description: معرف المفضلة الجديدة
-                      productId:
-                        type: string
-                        example: 507f1f77bcf86cd799439012
-                        description: معرف المنتج
-                      variantId:
-                        type: string
-                        example: 507f1f77bcf86cd799439013
-                        description: معرف المتغير
-                      note:
-                        type: string
-                        example: منتج رائع!
-                        description: ملاحظة المستخدم
-                      addedAt:
-                        type: string
-                        format: date-time
-                        example: '2024-01-15T10:30:00Z'
-                        description: تاريخ الإضافة
+                  _id:
+                    type: string
+                    example: 65af1c91f2a7f20012d35555
+                    description: معرف المفضلة الجديدة
+                  productId:
+                    type: string
+                    example: 65af1c91f2a7f20012d39999
+                    description: معرف المنتج
+                  note:
+                    type: string
+                    example: منتج رائع!
+                    description: ملاحظة المستخدم
+                  isSynced:
+                    type: boolean
+                    example: false
+                    description: هل تمت مزامنة هذا السجل من جهاز زائر
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: '2025-02-01T12:30:00.000Z'
+                    description: تاريخ الإضافة
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    example: '2025-02-01T12:30:00.000Z'
+                    description: آخر تحديث
+                example:
+                  _id: 65af1c91f2a7f20012d35555
+                  productId: 65af1c91f2a7f20012d39999
+                  note: منتج رائع!
+                  isSynced: false
+                  createdAt: '2025-02-01T12:30:00.000Z'
+                  updatedAt: '2025-02-01T12:30:00.000Z'
         '400':
           description: بيانات غير صحيحة أو المنتج موجود بالفعل في المفضلة
         '401':
@@ -1032,7 +1050,7 @@ paths:
     delete:
       operationId: removeFavorite
       summary: إزالة منتج من المفضلة
-      description: إزالة منتج أو متغير منتج من قائمة المفضلات الخاصة بالمستخدم
+      description: إزالة منتج من قائمة المفضلات الخاصة بالمستخدم
       parameters: []
       requestBody:
         required: true
@@ -1040,6 +1058,11 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/RemoveFavoriteDto'
+            examples:
+              removeByProduct:
+                summary: إزالة منتج أساسي
+                value:
+                  productId: 65af1c91f2a7f20012d39999
       responses:
         '200':
           description: تم إزالة المنتج من المفضلة بنجاح
@@ -1048,17 +1071,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      success:
-                        type: boolean
-                        example: true
-                        description: نجاح العملية
-                      removed:
-                        type: number
-                        example: 1
-                        description: عدد العناصر المزالة
+                  deleted:
+                    type: boolean
+                    example: true
+                    description: هل تم حذف المفضلة بنجاح
+                example:
+                  deleted: true
         '400':
           description: بيانات غير صحيحة
         '401':
@@ -1086,6 +1104,11 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateFavoriteDto'
+            examples:
+              updateNote:
+                summary: تحديث الملاحظة فقط
+                value:
+                  note: تم التأكد من السعر، مناسب للشراء
       responses:
         '200':
           description: تم تحديث المفضلة بنجاح
@@ -1094,30 +1117,28 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        example: 507f1f77bcf86cd799439011
-                        description: معرف المفضلة
-                      productId:
-                        type: string
-                        example: 507f1f77bcf86cd799439012
-                        description: معرف المنتج
-                      variantId:
-                        type: string
-                        example: 507f1f77bcf86cd799439013
-                        description: معرف المتغير
-                      note:
-                        type: string
-                        example: منتج ممتاز!
-                        description: الملاحظة المحدثة
-                      updatedAt:
-                        type: string
-                        format: date-time
-                        example: '2024-01-15T11:00:00Z'
-                        description: تاريخ التحديث
+                  _id:
+                    type: string
+                    example: 65af1c91f2a7f20012d34567
+                    description: معرف المفضلة
+                  productId:
+                    type: string
+                    example: 65af1c91f2a7f20012d39999
+                    description: معرف المنتج
+                  note:
+                    type: string
+                    example: منتج ممتاز!
+                    description: الملاحظة المحدثة
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    example: '2025-02-05T17:00:00.000Z'
+                    description: تاريخ التحديث
+                example:
+                  _id: 65af1c91f2a7f20012d34567
+                  productId: 65af1c91f2a7f20012d39999
+                  note: منتج ممتاز!
+                  updatedAt: '2025-02-05T17:00:00.000Z'
         '400':
           description: بيانات غير صحيحة
         '401':
@@ -1142,17 +1163,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      success:
-                        type: boolean
-                        example: true
-                        description: نجاح العملية
-                      deleted:
-                        type: number
-                        example: 15
-                        description: عدد العناصر المحذوفة
+                  cleared:
+                    type: number
+                    example: 15
+                    description: عدد العناصر المحذوفة
+                example:
+                  cleared: 15
         '401':
           description: غير مصرح لك بالوصول
       tags:
@@ -1173,13 +1189,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      count:
-                        type: number
-                        example: 15
-                        description: عدد المنتجات في المفضلة
+                  count:
+                    type: number
+                    example: 15
+                    description: عدد المنتجات في المفضلة
+                example:
+                  count: 15
         '401':
           description: غير مصرح لك بالوصول
       tags:
@@ -1189,6 +1204,8 @@ paths:
   /api/v1/favorites/sync:
     post:
       operationId: syncFromGuest
+      summary: مزامنة مفضلات الزائر مع حساب المستخدم
+      description: يحول المفضلات المخزنة بواسطة deviceId إلى حساب المستخدم الحالي مع احتساب العناصر المتكررة
       parameters: []
       requestBody:
         required: true
@@ -1196,9 +1213,37 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SyncFavoritesDto'
+            examples:
+              default:
+                summary: مزامنة قياسية
+                value:
+                  deviceId: device-abc-123
       responses:
-        '201':
-          description: ''
+        '200':
+          description: تمت المزامنة بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  synced:
+                    type: number
+                    example: 5
+                    description: عدد العناصر التي تمت إضافتها للمستخدم
+                  skipped:
+                    type: number
+                    example: 2
+                    description: عدد العناصر التي تم تجاوزها لأنها موجودة مسبقاً
+                  total:
+                    type: number
+                    example: 7
+                    description: إجمالي العناصر التي تمت قراءتها من جهاز الزائر
+                example:
+                  synced: 5
+                  skipped: 2
+                  total: 7
+        '400':
+          description: DeviceId مفقود أو غير صالح
       tags:
         - المفضلات-المستخدم
       security:
@@ -1206,15 +1251,32 @@ paths:
   /api/v1/favorites/{id}/view:
     post:
       operationId: incrementView
+      summary: زيادة عدد مرات مشاهدة عنصر المفضلة
+      description: يستخدم هذا النداء عادة عند فتح المستخدم لصفحة المنتج لإحصاء الاهتمام
       parameters:
         - name: id
           required: true
           in: path
+          description: معرف عنصر المفضلة
           schema:
+            example: 65af1c91f2a7f20012d34567
             type: string
       responses:
-        '201':
-          description: ''
+        '200':
+          description: تم تحديث عداد المشاهدات للمفضلة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  viewed:
+                    type: boolean
+                    example: true
+                    description: تأكيد نجاح العملية
+                example:
+                  viewed: true
+        '404':
+          description: المفضلة غير موجودة
       tags:
         - المفضلات-المستخدم
       security:
@@ -1238,40 +1300,44 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          example: 507f1f77bcf86cd799439011
-                          description: معرف المفضلة
-                        productId:
-                          type: string
-                          example: 507f1f77bcf86cd799439012
-                          description: معرف المنتج
-                        variantId:
-                          type: string
-                          example: 507f1f77bcf86cd799439013
-                          description: معرف المتغير
-                        note:
-                          type: string
-                          example: منتج رائع!
-                          description: ملاحظة الزائر
-                        addedAt:
-                          type: string
-                          format: date-time
-                          example: '2024-01-15T10:30:00Z'
-                          description: تاريخ الإضافة
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                      example: 65af1c91f2a7f20012d44444
+                      description: معرف المفضلة
+                    productId:
+                      type: string
+                      example: 65af1c91f2a7f20012d39999
+                      description: معرف المنتج
+                    note:
+                      type: string
+                      example: إضافة لمقارنة الأسعار لاحقاً
+                      description: ملاحظة الزائر
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: '2025-02-01T12:30:00.000Z'
+                      description: تاريخ الإضافة
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      example: '2025-02-02T09:41:12.000Z'
+                      description: آخر تحديث
+                example:
+                  - _id: 65af1c91f2a7f20012d44444
+                    productId: 65af1c91f2a7f20012d39999
+                    note: إضافة لمقارنة الأسعار لاحقاً
+                    createdAt: '2025-02-01T12:30:00.000Z'
+                    updatedAt: '2025-02-02T09:41:12.000Z'
       tags:
         - مفضلات-الزوار
     post:
       operationId: addFavorite
       summary: إضافة منتج لمفضلات الزائر
-      description: إضافة منتج أو متغير منتج إلى قائمة المفضلات للزائر غير المسجل
+      description: إضافة منتج إلى قائمة المفضلات للزائر غير المسجل
       parameters: []
       requestBody:
         required: true
@@ -1279,6 +1345,18 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/GuestAddFavoriteDto'
+            examples:
+              default:
+                summary: إضافة منتج كزائر
+                value:
+                  deviceId: device_123456789
+                  productId: 65af1c91f2a7f20012d39999
+              withNote:
+                summary: إضافة مع ملاحظة
+                value:
+                  deviceId: device_123456789
+                  productId: 65af1c91f2a7f20012d39999
+                  note: أحتاج هذا المقاس
       responses:
         '201':
           description: تم إضافة المنتج لمفضلات الزائر بنجاح
@@ -1287,30 +1365,32 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        example: 507f1f77bcf86cd799439011
-                        description: معرف المفضلة الجديدة
-                      productId:
-                        type: string
-                        example: 507f1f77bcf86cd799439012
-                        description: معرف المنتج
-                      variantId:
-                        type: string
-                        example: 507f1f77bcf86cd799439013
-                        description: معرف المتغير
-                      note:
-                        type: string
-                        example: منتج رائع!
-                        description: ملاحظة الزائر
-                      addedAt:
-                        type: string
-                        format: date-time
-                        example: '2024-01-15T10:30:00Z'
-                        description: تاريخ الإضافة
+                  _id:
+                    type: string
+                    example: 65af1c91f2a7f20012d44444
+                    description: معرف المفضلة الجديدة
+                  deviceId:
+                    type: string
+                    example: device_123456789
+                    description: معرف جهاز الزائر
+                  productId:
+                    type: string
+                    example: 65af1c91f2a7f20012d39999
+                    description: معرف المنتج
+                  note:
+                    type: string
+                    example: منتج رائع!
+                    description: ملاحظة الزائر
+                  isSynced:
+                    type: boolean
+                    example: false
+                    description: هل تمت مزامنة العنصر مع حساب مستخدم
+                example:
+                  _id: 65af1c91f2a7f20012d44444
+                  deviceId: device_123456789
+                  productId: 65af1c91f2a7f20012d39999
+                  note: منتج رائع!
+                  isSynced: false
         '400':
           description: بيانات غير صحيحة
       tags:
@@ -1318,7 +1398,7 @@ paths:
     delete:
       operationId: removeFavorite
       summary: إزالة منتج من مفضلات الزائر
-      description: إزالة منتج أو متغير منتج من قائمة المفضلات للزائر غير المسجل
+      description: إزالة منتج من قائمة المفضلات للزائر غير المسجل
       parameters: []
       requestBody:
         required: true
@@ -1326,6 +1406,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/GuestRemoveFavoriteDto'
+            examples:
+              default:
+                summary: إزالة منتج لزائر
+                value:
+                  deviceId: device_123456789
+                  productId: 65af1c91f2a7f20012d39999
       responses:
         '200':
           description: تم إزالة المنتج من مفضلات الزائر بنجاح
@@ -1334,17 +1420,17 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      success:
-                        type: boolean
-                        example: true
-                        description: نجاح العملية
-                      removed:
-                        type: number
-                        example: 1
-                        description: عدد العناصر المزالة
+                  deleted:
+                    type: boolean
+                    example: true
+                    description: هل تم حذف المفضلة بنجاح
+                  removed:
+                    type: number
+                    example: 1
+                    description: تم استخدامه للإشارة إلى عدد العناصر التي تمت إزالتها
+                example:
+                  deleted: true
+                  removed: 1
         '400':
           description: بيانات غير صحيحة
       tags:
@@ -1370,13 +1456,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      cleared:
-                        type: number
-                        example: 10
-                        description: عدد العناصر المحذوفة
+                  cleared:
+                    type: number
+                    example: 10
+                    description: عدد العناصر التي تم حذفها
+                example:
+                  cleared: 10
       tags:
         - مفضلات-الزوار
   /api/v1/favorites/guest/count:
@@ -1400,13 +1485,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      count:
-                        type: number
-                        example: 15
-                        description: عدد المنتجات في المفضلة
+                  count:
+                    type: number
+                    example: 5
+                    description: عدد المنتجات في المفضلة
+                example:
+                  count: 5
       tags:
         - مفضلات-الزوار
   /api/v1/admin/favorites/stats:
@@ -1423,29 +1507,31 @@ paths:
               schema:
                 type: object
                 properties:
-                  totalFavorites:
-                    type: number
-                    example: 1250
-                    description: إجمالي عدد المفضلات
-                  totalUsers:
-                    type: number
-                    example: 450
-                    description: عدد المستخدمين الذين لديهم مفضلات
-                  averagePerUser:
-                    type: number
-                    example: 2.8
-                    description: متوسط عدد المفضلات لكل مستخدم
-                  mostFavoritedProducts:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        productId:
-                          type: string
-                          example: 507f1f77bcf86cd799439011
-                        count:
-                          type: number
-                          example: 45
+                  data:
+                    type: object
+                    properties:
+                      totalUsers:
+                        type: number
+                        example: 450
+                        description: عدد المستخدمين الذين لديهم عناصر مفضلة
+                      totalGuests:
+                        type: number
+                        example: 320
+                        description: عدد أجهزة الزوار التي لديها مفضلات
+                      totalSynced:
+                        type: number
+                        example: 210
+                        description: عدد العناصر التي تمت مزامنتها بنجاح من الزوار إلى المستخدمين
+                      total:
+                        type: number
+                        example: 770
+                        description: إجمالي عناصر المفضلة النشطة (مستخدمين + زوار)
+                example:
+                  data:
+                    totalUsers: 450
+                    totalGuests: 320
+                    totalSynced: 210
+                    total: 770
         '403':
           description: غير مصرح لك بالوصول إلى هذه البيانات
       tags:
@@ -1471,29 +1557,36 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    productId:
+                      type: string
+                      example: 65af1c91f2a7f20012d39999
+                      description: معرف المنتج
+                    count:
+                      type: number
+                      example: 45
+                      description: عدد مرات الإضافة للمفضلة
+                    product:
                       type: object
+                      description: البيانات الأساسية للمنتج (Populated)
                       properties:
-                        productId:
+                        name:
                           type: string
-                          example: 507f1f77bcf86cd799439011
-                          description: معرف المنتج
-                        productName:
-                          type: string
-                          example: هاتف ذكي سامسونج
+                          example: هاتف ذكي سامسونج S25
                           description: اسم المنتج
-                        count:
-                          type: number
-                          example: 45
-                          description: عدد مرات الإضافة للمفضلة
-                        percentage:
-                          type: number
-                          example: 12.5
-                          description: النسبة المئوية من إجمالي المفضلات
+                        slug:
+                          type: string
+                          example: samsung-s25
+                          description: المعرف النصي للمنتج
+                example:
+                  - productId: 65af1c91f2a7f20012d39999
+                    count: 45
+                    product:
+                      name: هاتف ذكي سامسونج S25
+                      slug: samsung-s25
       tags:
         - إدارة-المفضلات
       security:
@@ -1519,13 +1612,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      count:
-                        type: number
-                        example: 45
-                        description: عدد مرات إضافة المنتج للمفضلة
+                  count:
+                    type: number
+                    example: 45
+                    description: عدد مرات إضافة المنتج للمفضلة
+                example:
+                  count: 45
         '404':
           description: المنتج غير موجود
       tags:
@@ -1553,13 +1645,12 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      count:
-                        type: number
-                        example: 15
-                        description: عدد المنتجات في مفضلات المستخدم
+                  count:
+                    type: number
+                    example: 15
+                    description: عدد المنتجات في مفضلات المستخدم
+                example:
+                  count: 15
         '404':
           description: المستخدم غير موجود
       tags:
@@ -4086,6 +4177,9 @@ paths:
                         order:
                           type: number
                           example: 1
+                        productsCount:
+                          type: number
+                          example: 12
   /api/v1/categories/tree:
     get:
       operationId: getCategoryTree
@@ -9621,7 +9715,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/LocalPaymentAccount'
+                  $ref: '#/components/schemas/LocalPaymentAccountResponseDto'
       tags:
         - إعدادات النظام
       security:
@@ -9643,7 +9737,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LocalPaymentAccount'
+                $ref: '#/components/schemas/LocalPaymentAccountResponseDto'
       tags:
         - إعدادات النظام
       security:
@@ -9719,7 +9813,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LocalPaymentAccount'
+                $ref: '#/components/schemas/LocalPaymentAccountResponseDto'
       tags:
         - إعدادات النظام
       security:
@@ -19414,9 +19508,6 @@ components:
             maintenance_mode: false
       required:
         - settings
-    LocalPaymentAccount:
-      type: object
-      properties: {}
     MediaReferenceDto:
       type: object
       properties:
@@ -19432,9 +19523,134 @@ components:
       required:
         - id
         - url
+    ProviderAccountItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        currency:
+          type: string
+          example: YER
+        accountNumber:
+          type: string
+          example: '1234567890'
+        isActive:
+          type: boolean
+          default: true
+        displayOrder:
+          type: number
+          default: 0
+        notes:
+          type: string
+        isOverride:
+          type: boolean
+          default: false
+      required:
+        - id
+        - currency
+        - accountNumber
+        - isActive
+        - displayOrder
+        - isOverride
+    LocalPaymentAccountResponseDto:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        providerName:
+          type: string
+          example: الكريمي
+        icon:
+          $ref: '#/components/schemas/MediaReferenceDto'
+        iconMediaId:
+          type: string
+          example: 64f9c0b5c1a2b3d4e5f67890
+        type:
+          type: string
+          enum:
+            - bank
+            - wallet
+        numberingMode:
+          type: string
+          enum:
+            - shared
+            - per_currency
+        supportedCurrencies:
+          type: array
+          items:
+            type: string
+            enum:
+              - YER
+              - SAR
+              - USD
+        sharedAccountNumber:
+          type: string
+          example: '1234567890'
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderAccountItemDto'
+        isActive:
+          type: boolean
+          default: true
+        notes:
+          type: string
+        displayOrder:
+          type: number
+          default: 0
+        updatedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - _id
+        - providerName
+        - type
+        - numberingMode
+        - supportedCurrencies
+        - accounts
+        - isActive
+        - displayOrder
+        - createdAt
+        - updatedAt
+    GroupedPaymentAccountItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        currency:
+          type: string
+          example: YER
+        accountNumber:
+          type: string
+          example: '1234567890'
+        isActive:
+          type: boolean
+          default: true
+        displayOrder:
+          type: number
+          default: 0
+        notes:
+          type: string
+      required:
+        - id
+        - currency
+        - accountNumber
+        - isActive
+        - displayOrder
     GroupedPaymentAccountDto:
       type: object
       properties:
+        providerId:
+          type: string
+          example: 507f1f77bcf86cd799439011
         providerName:
           type: string
           example: الكريمي
@@ -19447,25 +19663,61 @@ components:
           enum:
             - bank
             - wallet
+        numberingMode:
+          type: string
+          enum:
+            - shared
+            - per_currency
+        supportedCurrencies:
+          type: array
+          description: العملات المدعومة في وضع shared أو أي حسابات متاحة
+          items:
+            type: string
+            enum:
+              - YER
+              - SAR
+              - USD
+        sharedAccountNumber:
+          type: string
+          example: '1234567890'
+          description: رقم الحساب المشترك (في وضع shared)
         accounts:
+          description: تفاصيل الحسابات لكل عملة
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-              accountNumber:
-                type: string
-              currency:
-                type: string
-              isActive:
-                type: boolean
-              displayOrder:
-                type: number
+            $ref: '#/components/schemas/GroupedPaymentAccountItemDto'
       required:
+        - providerId
         - providerName
         - type
+        - numberingMode
+        - supportedCurrencies
         - accounts
+    ProviderCurrencyAccountDto:
+      type: object
+      properties:
+        currency:
+          type: string
+          enum:
+            - YER
+            - SAR
+            - USD
+          example: YER
+        accountNumber:
+          type: string
+          example: '1234567890'
+          description: رقم الحساب
+        isActive:
+          type: boolean
+          default: true
+        displayOrder:
+          type: number
+          default: 0
+        notes:
+          type: string
+      required:
+        - currency
+        - accountNumber
     CreateLocalPaymentAccountDto:
       type: object
       properties:
@@ -19477,23 +19729,36 @@ components:
           type: object
           example: 64f9c0b5c1a2b3d4e5f67890
           description: معرف الوسائط للأيقونة
-        accountNumber:
-          type: string
-          example: '1234567890'
-          description: رقم الحساب
         type:
           type: string
           enum:
             - bank
             - wallet
           example: bank
-        currency:
+        numberingMode:
           type: string
           enum:
-            - YER
-            - SAR
-            - USD
-          example: YER
+            - shared
+            - per_currency
+          example: shared
+        sharedAccountNumber:
+          type: string
+          example: '1234567890'
+          description: رقم حساب مشترك لكل العملات (في وضع shared)
+        supportedCurrencies:
+          type: array
+          description: العملات المدعومة عندما يكون الحساب مشتركاً
+          items:
+            type: string
+            enum:
+              - YER
+              - SAR
+              - USD
+        accounts:
+          description: الحسابات لكل عملة (في وضع per_currency أو عند وجود استثناءات)
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCurrencyAccountDto'
         isActive:
           type: boolean
           default: true
@@ -19504,9 +19769,8 @@ components:
           default: 0
       required:
         - providerName
-        - accountNumber
         - type
-        - currency
+        - numberingMode
     UpdateLocalPaymentAccountDto:
       type: object
       properties:
@@ -19514,19 +19778,30 @@ components:
           type: string
         iconMediaId:
           type: object
-        accountNumber:
-          type: string
         type:
           type: string
           enum:
             - bank
             - wallet
-        currency:
+        numberingMode:
           type: string
           enum:
-            - YER
-            - SAR
-            - USD
+            - shared
+            - per_currency
+        sharedAccountNumber:
+          type: string
+        supportedCurrencies:
+          type: array
+          items:
+            type: string
+            enum:
+              - YER
+              - SAR
+              - USD
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCurrencyAccountDto'
         isActive:
           type: boolean
         notes:

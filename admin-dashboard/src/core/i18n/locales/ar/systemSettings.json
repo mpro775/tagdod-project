@@ -115,12 +115,33 @@
       "bank": "بنك",
       "wallet": "محفظة",
       "inactive": "غير مفعل",
+      "deleteTitle": "حذف المزوّد",
       "deleteConfirm": "هل أنت متأكد من حذف هذا الحساب؟",
       "actions": "الإجراءات",
       "accounts": "الحسابات",
+      "numberingModeLabel": "وضع الترقيم",
+      "numberingModeShared": "حساب مشترك",
+      "numberingModePerCurrency": "حساب لكل عملة",
+      "supportedCurrenciesLabel": "العملات المدعومة",
+      "currencyOverridesTitle": "تخصيص حسابات العملات",
+      "currencyAccountsTitle": "حسابات لكل عملة",
+      "addCurrencyAccount": "إضافة حساب للعملة",
+      "noOverridesHint": "لا توجد تخصيصات حالية للعملات المحددة.",
+      "noAccountsHint": "أضف حساباً واحداً على الأقل لكل عملة مطلوبة.",
+      "sharedAccountLabel": "رقم مشترك",
+      "overrideLabel": "تخصيص",
+      "searchPlaceholder": "ابحث عن مزود...",
+      "noResults": "لم يتم العثور على مزودين مطابقين.",
       "currencyYER": "ريال يمني (YER)",
       "currencySAR": "ريال سعودي (SAR)",
-      "currencyUSD": "دولار (USD)"
+      "currencyUSD": "دولار (USD)",
+      "validation": {
+        "providerName": "الرجاء إدخال اسم المزود",
+        "sharedAccountNumber": "يجب إدخال رقم الحساب المشترك",
+        "supportedCurrencies": "اختر عملة واحدة على الأقل",
+        "accountsRequired": "أضف حسابًا واحدًا على الأقل",
+        "accountNumberRequired": "جميع الحسابات يجب أن تحتوي رقم حساب"
+      }
     }
   },
   "placeholders": {

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
 import { Address } from './schemas/address.schema';
+import { User } from '../users/schemas/user.schema';
 import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto';
 import { 
   AddressNotFoundException,
@@ -13,7 +14,10 @@ import {
 export class AddressesService {
   private readonly logger = new Logger(AddressesService.name);
 
-  constructor(@InjectModel(Address.name) private addressModel: Model<Address>) {}
+  constructor(
+    @InjectModel(Address.name) private readonly addressModel: Model<Address>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
+  ) {}
 
   /**
    * List all addresses for a user
@@ -127,17 +131,6 @@ export class AddressesService {
    */
   async remove(userId: string, id: string) {
     const address = await this.get(userId, id);
-
-    // Check if it's the only active address
-    const activeAddressesCount = await this.addressModel.countDocuments({
-      userId: new Types.ObjectId(userId),
-      deletedAt: null,
-      _id: { $ne: id },
-    });
-
-    if (activeAddressesCount === 0) {
-      throw new AddressException(ErrorCode.ADDRESS_DELETE_FAILED, { reason: 'only_address' });
-    }
 
     // If it's the default address, make another one default
     if (address.isDefault) {
@@ -359,13 +352,51 @@ export class AddressesService {
     }
 
     // Search in text fields
-    if (search) {
-      query.$or = [
-        { label: new RegExp(search, 'i') },
-        { line1: new RegExp(search, 'i') },
-        { city: new RegExp(search, 'i') },
-        { notes: new RegExp(search, 'i') },
+    const buildRegex = (value: string) => {
+      const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(escaped, 'i');
+    };
+
+    let userIdsMatchingSearch: Types.ObjectId[] = [];
+
+    if (search?.trim()) {
+      const searchRegex = buildRegex(search.trim());
+      const numericSearch = search.replace(/\D/g, '');
+
+      const userSearchConditions: FilterQuery<User>[] = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { name: searchRegex },
       ];
+
+      if (numericSearch) {
+        userSearchConditions.push({ phone: new RegExp(numericSearch, 'i') });
+      } else {
+        userSearchConditions.push({ phone: searchRegex });
+      }
+
+      const matchingUsers = await this.userModel
+        .find({ $or: userSearchConditions })
+        .select('_id')
+        .limit(200)
+        .lean();
+
+      if (matchingUsers.length) {
+        userIdsMatchingSearch = matchingUsers.map((user) => new Types.ObjectId(user._id));
+      }
+
+      const orConditions: FilterQuery<Address>[] = [
+        { label: searchRegex },
+        { line1: searchRegex },
+        { city: searchRegex },
+        { notes: searchRegex },
+      ];
+
+      if (userIdsMatchingSearch.length) {
+        orConditions.push({ userId: { $in: userIdsMatchingSearch } });
+      }
+
+      query.$or = orConditions;
     }
 
     // Pagination
@@ -379,7 +410,7 @@ export class AddressesService {
     const [addresses, total] = await Promise.all([
       this.addressModel
         .find(query)
-        .populate('userId', 'name phone email isActive createdAt')
+        .populate('userId', 'name firstName lastName phone email isActive createdAt')
         .sort(sortOptions)
         .skip(skip)
         .limit(limit)
@@ -387,8 +418,30 @@ export class AddressesService {
       this.addressModel.countDocuments(query),
     ]);
 
+    const enhancedAddresses = addresses.map((address) => {
+      const user: any = address.userId;
+
+      if (user && typeof user === 'object') {
+        const fullName =
+          user.name ||
+          [user.firstName, user.lastName].filter(Boolean).join(' ').trim() ||
+          user.phone ||
+          '';
+
+        return {
+          ...address,
+          userId: {
+            ...user,
+            name: fullName,
+          },
+        };
+      }
+
+      return address;
+    });
+
     return {
-      data: addresses,
+      data: enhancedAddresses,
       pagination: {
         total,
         page,
@@ -479,12 +532,6 @@ export class AddressesService {
           activeCount: 1,
           defaultCount: 1,
           totalUsage: 1,
-          percentage: {
-            $multiply: [
-              { $divide: ['$count', { $literal: 0 }] }, // Will be calculated after
-              100,
-            ],
-          },
         },
       },
     ]);
@@ -494,7 +541,8 @@ export class AddressesService {
 
     return cities.map((city) => ({
       ...city,
-      percentage: Number(((city.count / total) * 100).toFixed(2)),
+      percentage:
+        total > 0 ? Number(((city.count / total) * 100).toFixed(2)) : 0,
     }));
   }
 

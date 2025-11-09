@@ -6,10 +6,14 @@ import { AddressesService } from './addresses.service';
 import { Address, AddressSchema } from './schemas/address.schema';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
+import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Address.name, schema: AddressSchema }]),
+    MongooseModule.forFeature([
+      { name: Address.name, schema: AddressSchema },
+      { name: User.name, schema: UserSchema },
+    ]),
     AuthModule,
     SharedModule,
   ],

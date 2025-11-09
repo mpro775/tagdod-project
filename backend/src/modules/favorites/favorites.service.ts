@@ -2,10 +2,22 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Favorite } from './schemas/favorite.schema';
-import { 
+import {
   FavoriteNotFoundException,
-   
 } from '../../shared/exceptions';
+import { PublicProductsPresenter } from '../products/services/public-products.presenter';
+
+type SimplifiedProductRecord = Record<string, unknown>;
+
+interface FavoriteLean extends Record<string, unknown> {
+  _id: string;
+  userId?: Types.ObjectId | string | null;
+  deviceId?: string | null;
+  productId?: Record<string, unknown> | string | null;
+  note?: string | null;
+  createdAt?: Date;
+  deletedAt?: Date | null;
+}
 
 @Injectable()
 export class FavoritesService {
@@ -13,42 +25,71 @@ export class FavoritesService {
 
   constructor(
     @InjectModel(Favorite.name) private favoriteModel: Model<Favorite>,
+    private readonly publicProductsPresenter: PublicProductsPresenter,
   ) {}
+
+  private toObjectId(id: string) {
+    return new Types.ObjectId(id);
+  }
 
   // ==================== للمستخدمين المسجلين ====================
 
-  async listUserFavorites(userId: string) {
-    const favorites = await this.favoriteModel
-      .find({ userId, deletedAt: null })
-      .populate('productId')
-      .populate('variantId')
-      .sort({ createdAt: -1 })
-      .lean();
+  async listUserFavorites(userId: string): Promise<FavoriteLean[]> {
+    const objectUserId = this.toObjectId(userId);
 
-    return favorites;
+    const favorites = (await this.favoriteModel
+      .find({ userId: objectUserId, deletedAt: null })
+      .populate({
+        path: 'productId',
+        select:
+          'name nameEn status isActive isFeatured isNew isBestseller useManualRating manualRating manualReviewsCount averageRating basePriceUSD compareAtPriceUSD costPriceUSD',
+        populate: {
+          path: 'mainImageId',
+          select: 'url',
+        },
+      })
+      .sort({ createdAt: -1 })
+      .select('-viewsCount -lastViewedAt -updatedAt')
+      .lean<FavoriteLean>()) as unknown as FavoriteLean[];
+
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
+
+    return this.enrichFavoritesWithProductSummaries(favorites, {
+      discountPercent,
+      currency: 'USD',
+    });
   }
 
-  async addUserFavorite(userId: string, dto: { productId: string; variantId?: string; note?: string }) {
+  async addUserFavorite(userId: string, dto: { productId: string; note?: string }) {
     // التحقق من عدم التكرار
+    const objectUserId = this.toObjectId(userId);
+    const objectProductId = this.toObjectId(dto.productId);
+
     const existing = await this.favoriteModel.findOne({
-      userId,
-      productId: dto.productId,
-      variantId: dto.variantId || null,
-      deletedAt: null,
+      userId: objectUserId,
+      productId: objectProductId,
     });
 
     if (existing) {
-      // إذا كان موجوداً، نحدث البيانات فقط
-      if (dto.note) existing.note = dto.note;
+      // إذا كان موجوداً، وهذا يتضمن السجلات المحذوفة مسبقاً (soft delete)، نعيد تفعيلها
+      if (existing.deletedAt) {
+        existing.deletedAt = null;
+        existing.isSynced = existing.isSynced ?? false;
+        existing.viewsCount = existing.viewsCount ?? 0;
+      }
+
+      if (dto.note !== undefined) {
+        existing.note = dto.note;
+      }
+
       await existing.save();
       return existing;
     }
 
     // إنشاء مفضلة جديدة
     const favorite = await this.favoriteModel.create({
-      userId: new Types.ObjectId(userId),
-      productId: new Types.ObjectId(dto.productId),
-      variantId: dto.variantId ? new Types.ObjectId(dto.variantId) : null,
+      userId: objectUserId,
+      productId: objectProductId,
       note: dto.note || '',
       viewsCount: 0,
       isSynced: false,
@@ -57,12 +98,14 @@ export class FavoritesService {
     return favorite;
   }
 
-  async removeUserFavorite(userId: string, dto: { productId: string; variantId?: string }) {
+  async removeUserFavorite(userId: string, dto: { productId: string }) {
+    const objectUserId = this.toObjectId(userId);
+    const objectProductId = this.toObjectId(dto.productId);
+
     const result = await this.favoriteModel.updateOne(
       {
-        userId,
-        productId: dto.productId,
-        variantId: dto.variantId || null,
+        userId: objectUserId,
+        productId: objectProductId,
       },
       {
         $set: { deletedAt: new Date() }
@@ -73,9 +116,12 @@ export class FavoritesService {
   }
 
   async updateUserFavorite(userId: string, favoriteId: string, dto: { note?: string }) {
+    const objectUserId = this.toObjectId(userId);
+    const objectFavoriteId = this.toObjectId(favoriteId);
+
     const favorite = await this.favoriteModel.findOne({
-      _id: favoriteId,
-      userId,
+      _id: objectFavoriteId,
+      userId: objectUserId,
       deletedAt: null,
     });
 
@@ -91,8 +137,10 @@ export class FavoritesService {
   }
 
   async clearUserFavorites(userId: string) {
+    const objectUserId = this.toObjectId(userId);
+
     const result = await this.favoriteModel.updateMany(
-      { userId, deletedAt: null },
+      { userId: objectUserId, deletedAt: null },
       { $set: { deletedAt: new Date() } }
     );
 
@@ -101,29 +149,73 @@ export class FavoritesService {
 
   // ==================== للزوار (Guest users) ====================
 
-  async listGuestFavorites(deviceId: string) {
-    const favorites = await this.favoriteModel
+  async listGuestFavorites(deviceId: string): Promise<FavoriteLean[]> {
+    const favorites = (await this.favoriteModel
       .find({ deviceId, userId: null, deletedAt: null })
-      .populate('productId')
-      .populate('variantId')
+      .populate({
+        path: 'productId',
+        select:
+          'name nameEn status isActive isFeatured isNew isBestseller useManualRating manualRating manualReviewsCount averageRating basePriceUSD compareAtPriceUSD costPriceUSD',
+        populate: {
+          path: 'mainImageId',
+          select: 'url',
+        },
+      })
       .sort({ createdAt: -1 })
-      .lean();
+      .select('-viewsCount -lastViewedAt -updatedAt')
+      .lean<FavoriteLean>()) as unknown as FavoriteLean[];
 
-    return favorites;
+    return this.enrichFavoritesWithProductSummaries(favorites, {
+      discountPercent: 0,
+      currency: 'USD',
+    });
   }
 
-  async addGuestFavorite(deviceId: string, dto: { productId: string; variantId?: string; note?: string }) {
+  async listFavoritesByProduct(productId: string): Promise<FavoriteLean[]> {
+    const objectProductId = this.toObjectId(productId);
+
+    const favorites = (await this.favoriteModel
+      .find({ productId: objectProductId, deletedAt: null })
+      .populate({
+        path: 'productId',
+        select:
+          'name nameEn status isActive isFeatured isNew isBestseller useManualRating manualRating manualReviewsCount averageRating basePriceUSD compareAtPriceUSD costPriceUSD',
+        populate: {
+          path: 'mainImageId',
+          select: 'url',
+        },
+      })
+      .sort({ createdAt: -1 })
+      .select('-viewsCount -lastViewedAt -updatedAt')
+      .lean<FavoriteLean>()) as unknown as FavoriteLean[];
+
+    return this.enrichFavoritesWithProductSummaries(favorites, {
+      discountPercent: 0,
+      currency: 'USD',
+    });
+  }
+
+  async addGuestFavorite(deviceId: string, dto: { productId: string; note?: string }) {
     // التحقق من عدم التكرار
+    const objectProductId = this.toObjectId(dto.productId);
+
     const existing = await this.favoriteModel.findOne({
       deviceId,
       userId: null,
-      productId: dto.productId,
-      variantId: dto.variantId || null,
-      deletedAt: null,
+      productId: objectProductId,
     });
 
     if (existing) {
-      if (dto.note) existing.note = dto.note;
+      if (existing.deletedAt) {
+        existing.deletedAt = null;
+        existing.isSynced = existing.isSynced ?? false;
+        existing.viewsCount = existing.viewsCount ?? 0;
+      }
+
+      if (dto.note !== undefined) {
+        existing.note = dto.note;
+      }
+
       await existing.save();
       return existing;
     }
@@ -132,8 +224,7 @@ export class FavoritesService {
     const favorite = await this.favoriteModel.create({
       deviceId,
       userId: null,
-      productId: new Types.ObjectId(dto.productId),
-      variantId: dto.variantId ? new Types.ObjectId(dto.variantId) : null,
+      productId: objectProductId,
       note: dto.note || '',
       viewsCount: 0,
       isSynced: false,
@@ -142,13 +233,14 @@ export class FavoritesService {
     return favorite;
   }
 
-  async removeGuestFavorite(deviceId: string, dto: { productId: string; variantId?: string }) {
+  async removeGuestFavorite(deviceId: string, dto: { productId: string }) {
+    const objectProductId = this.toObjectId(dto.productId);
+
     const result = await this.favoriteModel.updateOne(
       {
         deviceId,
         userId: null,
-        productId: dto.productId,
-        variantId: dto.variantId || null,
+        productId: objectProductId,
       },
       {
         $set: { deletedAt: new Date() }
@@ -183,13 +275,13 @@ export class FavoritesService {
 
     let synced = 0;
     let skipped = 0;
+    const objectUserId = this.toObjectId(userId);
 
     for (const guestFav of guestFavorites) {
       // التحقق من عدم وجود نفس المفضلة للمستخدم
       const existing = await this.favoriteModel.findOne({
-        userId,
+        userId: objectUserId,
         productId: guestFav.productId,
-        variantId: guestFav.variantId || null,
         deletedAt: null,
       });
 
@@ -199,9 +291,8 @@ export class FavoritesService {
       } else {
         // نضيفها للمستخدم
         await this.favoriteModel.create({
-          userId: new Types.ObjectId(userId),
+          userId: objectUserId,
           productId: guestFav.productId,
-          variantId: guestFav.variantId,
           note: guestFav.note,
           viewsCount: guestFav.viewsCount || 0,
           isSynced: true,
@@ -229,7 +320,8 @@ export class FavoritesService {
   // ==================== التحليلات والإحصائيات ====================
 
   async getUserFavoritesCount(userId: string) {
-    return this.favoriteModel.countDocuments({ userId, deletedAt: null });
+    const objectUserId = this.toObjectId(userId);
+    return this.favoriteModel.countDocuments({ userId: objectUserId, deletedAt: null });
   }
 
   async getGuestFavoritesCount(deviceId: string) {
@@ -293,5 +385,204 @@ export class FavoritesService {
         total: totalUsers + totalGuests,
       },
     };
+  }
+
+  private async enrichFavoritesWithProductSummaries(
+    favorites: FavoriteLean[],
+    options: { discountPercent: number; currency: string },
+  ): Promise<FavoriteLean[]> {
+    if (!Array.isArray(favorites) || favorites.length === 0) {
+      return [];
+    }
+
+    const productRecords: Array<Record<string, unknown>> = [];
+    const productIdOrder: string[] = [];
+
+    for (const favorite of favorites) {
+      const product = favorite.productId;
+      if (product && typeof product === 'object') {
+        const productRecord = product as Record<string, unknown>;
+        const productId = this.extractIdString(productRecord['_id']);
+        if (productId) {
+          productRecords.push(productRecord);
+          productIdOrder.push(productId);
+        }
+      }
+    }
+
+    if (productRecords.length === 0) {
+      return favorites.map((favorite) => ({
+        ...favorite,
+        productId: null,
+      }));
+    }
+
+    const preparedProducts =
+      await this.publicProductsPresenter.buildProductsCollectionResponse(
+        productRecords,
+        options.discountPercent,
+        options.currency,
+      );
+
+    const simplifiedMap = new Map<string, SimplifiedProductRecord>();
+
+    preparedProducts.forEach((product, index) => {
+      const productRecord = product as Record<string, unknown>;
+      const id =
+        this.extractIdString(productRecord['_id']) ?? this.extractIdString(productRecord['id']);
+
+      if (id) {
+        const simplified = this.pickFavoriteProductFields(productRecord);
+        if (simplified) {
+          simplifiedMap.set(id, simplified);
+        }
+      } else {
+        // fallback to order index mapping when id is missing
+        const orderedId = productIdOrder[index];
+        if (orderedId) {
+          const simplified = this.pickFavoriteProductFields(productRecord);
+          if (simplified) {
+            simplifiedMap.set(orderedId, simplified);
+          }
+        }
+      }
+    });
+
+    return favorites.map((favorite) => {
+      const product = favorite.productId;
+      const productId =
+        product && typeof product === 'object'
+          ? this.extractIdString((product as Record<string, unknown>)['_id'])
+          : typeof product === 'string'
+          ? product
+          : null;
+
+      const simplifiedProduct = productId ? simplifiedMap.get(productId) ?? null : null;
+
+      const enrichedFavorite: FavoriteLean = {
+        ...favorite,
+        productId: simplifiedProduct,
+      };
+
+      return enrichedFavorite;
+    });
+  }
+
+  private extractIdString(value: unknown): string | null {
+    if (!value) {
+      return null;
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+
+      if (record._id) {
+        const innerId = record._id;
+        if (typeof innerId === 'string') {
+          return innerId;
+        }
+        if (innerId && typeof (innerId as { toString: () => string }).toString === 'function') {
+          const converted = (innerId as { toString: () => string }).toString();
+          return converted === '[object Object]' ? null : converted;
+        }
+      }
+
+      if (typeof (record as { toString?: () => string }).toString === 'function') {
+        const converted = (record as { toString: () => string }).toString();
+        return converted === '[object Object]' ? null : converted;
+      }
+    }
+
+    return null;
+  }
+
+  private pickFavoriteProductFields(product: Record<string, unknown>): SimplifiedProductRecord | null {
+    if (!product) {
+      return null;
+    }
+
+    const pricingRaw = product['pricingByCurrency'];
+    const pricingByCurrency =
+      pricingRaw && typeof pricingRaw === 'object'
+        ? (pricingRaw as Record<string, unknown>)
+        : {};
+
+    const useManualRating = typeof product['useManualRating'] === 'boolean'
+      ? (product['useManualRating'] as boolean)
+      : false;
+
+    const manualRating =
+      typeof product['manualRating'] === 'number' ? (product['manualRating'] as number) : undefined;
+    const averageRating =
+      typeof product['averageRating'] === 'number'
+        ? (product['averageRating'] as number)
+        : undefined;
+
+    const rating = useManualRating
+      ? manualRating ?? averageRating ?? 0
+      : averageRating ?? manualRating ?? 0;
+
+    const manualReviewsCount =
+      typeof product['manualReviewsCount'] === 'number'
+        ? (product['manualReviewsCount'] as number)
+        : undefined;
+    const reviewsCountRaw =
+      typeof product['reviewsCount'] === 'number' ? (product['reviewsCount'] as number) : undefined;
+
+    const reviewsCount = useManualRating
+      ? manualReviewsCount ?? 0
+      : reviewsCountRaw ?? manualReviewsCount ?? 0;
+
+    const result: SimplifiedProductRecord = {
+      rating,
+      pricingByCurrency,
+    };
+
+    if (product['_id']) {
+      result._id = product['_id'];
+    }
+    if (typeof product['name'] === 'string') {
+      result.name = product['name'];
+    }
+    if (typeof product['nameEn'] === 'string') {
+      result.nameEn = product['nameEn'];
+    }
+    if (product['mainImage']) {
+      result.mainImage = product['mainImage'];
+    }
+    if (product['status']) {
+      result.status = product['status'];
+    }
+    if (typeof product['isActive'] === 'boolean') {
+      result.isActive = product['isActive'] as boolean;
+    }
+    if (typeof product['isFeatured'] === 'boolean') {
+      result.isFeatured = product['isFeatured'] as boolean;
+    }
+    if (typeof product['isNew'] === 'boolean') {
+      result.isNew = product['isNew'] as boolean;
+    }
+    if (typeof product['isBestseller'] === 'boolean') {
+      result.isBestseller = product['isBestseller'] as boolean;
+    }
+    if (typeof product['useManualRating'] === 'boolean') {
+      result.useManualRating = useManualRating;
+    }
+    if (manualRating !== undefined) {
+      result.manualRating = manualRating;
+    }
+    if (manualReviewsCount !== undefined) {
+      result.manualReviewsCount = manualReviewsCount;
+    }
+    if (averageRating !== undefined) {
+      result.averageRating = averageRating;
+    }
+    result.reviewsCount = reviewsCount;
+
+    return result;
   }
 }

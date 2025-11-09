@@ -10,7 +10,6 @@ describe('FavoritesService', () => {
     _id: '507f1f77bcf86cd799439011',
     userId: '507f1f77bcf86cd799439015',
     productId: '507f1f77bcf86cd799439020',
-    variantId: null,
     note: '',
     viewsCount: 0,
     isSynced: false,
@@ -24,7 +23,6 @@ describe('FavoritesService', () => {
     deviceId: 'device-123',
     userId: null,
     productId: '507f1f77bcf86cd799439020',
-    variantId: null,
     note: '',
     viewsCount: 0,
     isSynced: false,
@@ -184,8 +182,8 @@ describe('FavoritesService', () => {
   describe('syncGuestToUser', () => {
     it('should sync guest favorites to user account', async () => {
       const guestFavorites = [
-        { productId: '507f1f77bcf86cd799439020', variantId: null },
-        { productId: '507f1f77bcf86cd799439021', variantId: null },
+        { productId: '507f1f77bcf86cd799439020' },
+        { productId: '507f1f77bcf86cd799439021' },
       ];
 
       mockFavoriteModel.find.mockReturnValue({
@@ -203,7 +201,7 @@ describe('FavoritesService', () => {
     });
 
     it('should skip duplicate favorites during sync', async () => {
-      const guestFavorites = [{ productId: '507f1f77bcf86cd799439020', variantId: null }];
+      const guestFavorites = [{ productId: '507f1f77bcf86cd799439020' }];
 
       mockFavoriteModel.find.mockReturnValue({
         lean: jest.fn().mockResolvedValue(guestFavorites),

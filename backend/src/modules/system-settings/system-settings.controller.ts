@@ -22,7 +22,10 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { SystemSettingsService } from './system-settings.service';
-import { LocalPaymentAccountService } from './services/local-payment-account.service';
+import {
+  LocalPaymentAccountService,
+  ProviderResponse,
+} from './services/local-payment-account.service';
 import {
   CreateSettingDto,
   UpdateSettingDto,
@@ -34,8 +37,8 @@ import {
   CreateLocalPaymentAccountDto,
   UpdateLocalPaymentAccountDto,
   GroupedPaymentAccountDto,
+  LocalPaymentAccountResponseDto,
 } from './dto/local-payment-account.dto';
-import { LocalPaymentAccount } from './schemas/local-payment-account.schema';
 
 @ApiTags('إعدادات النظام')
 @Controller('system-settings')
@@ -162,11 +165,11 @@ export class SystemSettingsController {
   @ApiResponse({
     status: 200,
     description: 'تم الحصول على الحسابات بنجاح',
-    type: [LocalPaymentAccount],
+    type: [LocalPaymentAccountResponseDto],
   })
   async getAllPaymentAccounts(
     @Query('activeOnly') activeOnly?: string,
-  ): Promise<LocalPaymentAccount[]> {
+  ): Promise<ProviderResponse[]> {
     return this.localPaymentAccountService.findAll(activeOnly === 'true');
   }
 
@@ -220,12 +223,12 @@ export class SystemSettingsController {
   @ApiResponse({
     status: 201,
     description: 'تم إنشاء الحساب بنجاح',
-    type: LocalPaymentAccount,
+    type: LocalPaymentAccountResponseDto,
   })
   async createPaymentAccount(
     @Body() dto: CreateLocalPaymentAccountDto,
     @Request() req: { user: { userId: string } },
-  ): Promise<LocalPaymentAccount> {
+  ): Promise<ProviderResponse> {
     return this.localPaymentAccountService.create(dto, req.user.userId);
   }
 
@@ -241,13 +244,13 @@ export class SystemSettingsController {
   @ApiResponse({
     status: 200,
     description: 'تم تحديث الحساب بنجاح',
-    type: LocalPaymentAccount,
+    type: LocalPaymentAccountResponseDto,
   })
   async updatePaymentAccount(
     @Param('id') id: string,
     @Body() dto: UpdateLocalPaymentAccountDto,
     @Request() req: { user: { userId: string } },
-  ): Promise<LocalPaymentAccount> {
+  ): Promise<ProviderResponse> {
     return this.localPaymentAccountService.update(id, dto, req.user.userId);
   }
 

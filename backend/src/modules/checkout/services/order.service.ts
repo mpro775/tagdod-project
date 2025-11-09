@@ -389,8 +389,12 @@ export class OrderService {
 
       // التحقق من الحساب المحلي إذا تم اختياره
       if (dto.paymentMethod === PaymentMethod.BANK_TRANSFER && dto.localPaymentAccountId) {
-        const account = await this.localPaymentAccountService.findById(dto.localPaymentAccountId);
-        if (!account || !account.isActive) {
+        const selection = await this.localPaymentAccountService.resolveAccountSelection(
+          dto.localPaymentAccountId,
+          dto.currency,
+        );
+
+        if (!selection || !selection.isActive) {
           throw new DomainException(ErrorCode.VALIDATION_ERROR, {
             reason: 'invalid_payment_account',
             message: 'الحساب المحدد غير موجود أو غير مفعل'
@@ -398,10 +402,10 @@ export class OrderService {
         }
 
         // التحقق من تطابق العملة
-        if (account.currency !== dto.currency) {
+        if (selection.currency !== dto.currency.toUpperCase()) {
           throw new DomainException(ErrorCode.VALIDATION_ERROR, {
             reason: 'currency_mismatch',
-            message: `العملة المحددة (${dto.currency}) لا تطابق عملة الحساب (${account.currency})`
+            message: `العملة المحددة (${dto.currency}) لا تطابق عملة الحساب (${selection.currency})`
           });
         }
 
@@ -477,7 +481,7 @@ export class OrderService {
         } : undefined,
         paymentMethod: dto.paymentMethod,
         paymentProvider: dto.paymentProvider,
-        localPaymentAccountId: dto.localPaymentAccountId ? new Types.ObjectId(dto.localPaymentAccountId) : undefined,
+        localPaymentAccountId: dto.localPaymentAccountId ?? undefined,
         paymentReference: dto.paymentReference,
         shippingMethod: dto.shippingMethod,
         customerNotes: dto.customerNotes,

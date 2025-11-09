@@ -353,7 +353,7 @@ export class WebhookController {
   ): Promise<Array<{ _id: string; name: string; email: string; phone: string }>> {
     try {
       // البحث عن العملاء الذين أضافوا المنتج للمفضلة
-      const favorites = await this.favoritesService.listUserFavorites(productId);
+      const favorites = await this.favoritesService.listFavoritesByProduct(productId);
 
       // استخراج معرفات المستخدمين من المفضلة
       const userIds = favorites

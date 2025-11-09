@@ -11,7 +11,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiQuery,
-  ApiParam
+  ApiParam,
 } from '@nestjs/swagger';
 import { FavoritesService } from './favorites.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -42,21 +42,25 @@ export class FavoritesAdminController {
     schema: {
       type: 'object',
       properties: {
-        totalFavorites: { type: 'number', example: 1250, description: 'إجمالي عدد المفضلات' },
-        totalUsers: { type: 'number', example: 450, description: 'عدد المستخدمين الذين لديهم مفضلات' },
-        averagePerUser: { type: 'number', example: 2.8, description: 'متوسط عدد المفضلات لكل مستخدم' },
-        mostFavoritedProducts: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              productId: { type: 'string', example: '507f1f77bcf86cd799439011' },
-              count: { type: 'number', example: 45 }
-            }
-          }
-        }
-      }
-    }
+        data: {
+          type: 'object',
+          properties: {
+            totalUsers: { type: 'number', example: 450, description: 'عدد المستخدمين الذين لديهم عناصر مفضلة' },
+            totalGuests: { type: 'number', example: 320, description: 'عدد أجهزة الزوار التي لديها مفضلات' },
+            totalSynced: { type: 'number', example: 210, description: 'عدد العناصر التي تمت مزامنتها بنجاح من الزوار إلى المستخدمين' },
+            total: { type: 'number', example: 770, description: 'إجمالي عناصر المفضلة النشطة (مستخدمين + زوار)' },
+          },
+        },
+      },
+      example: {
+        data: {
+          totalUsers: 450,
+          totalGuests: 320,
+          totalSynced: 210,
+          total: 770,
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 403,
@@ -81,22 +85,33 @@ export class FavoritesAdminController {
     status: 200,
     description: 'تم استرداد المنتجات الأكثر تفضيلاً بنجاح',
     schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'array',
-          items: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          productId: { type: 'string', example: '65af1c91f2a7f20012d39999', description: 'معرف المنتج' },
+          count: { type: 'number', example: 45, description: 'عدد مرات الإضافة للمفضلة' },
+          product: {
             type: 'object',
+            description: 'البيانات الأساسية للمنتج (Populated)',
             properties: {
-              productId: { type: 'string', example: '507f1f77bcf86cd799439011', description: 'معرف المنتج' },
-              productName: { type: 'string', example: 'هاتف ذكي سامسونج', description: 'اسم المنتج' },
-              count: { type: 'number', example: 45, description: 'عدد مرات الإضافة للمفضلة' },
-              percentage: { type: 'number', example: 12.5, description: 'النسبة المئوية من إجمالي المفضلات' }
-            }
-          }
-        }
-      }
-    }
+              name: { type: 'string', example: 'هاتف ذكي سامسونج S25', description: 'اسم المنتج' },
+              slug: { type: 'string', example: 'samsung-s25', description: 'المعرف النصي للمنتج' },
+            },
+          },
+        },
+      },
+      example: [
+        {
+          productId: '65af1c91f2a7f20012d39999',
+          count: 45,
+          product: {
+            name: 'هاتف ذكي سامسونج S25',
+            slug: 'samsung-s25',
+          },
+        },
+      ],
+    },
   })
   async getMostFavorited(@Query('limit') limit?: number) {
     const data = await this.favoritesService.getMostFavoritedProducts(limit || 10);
@@ -119,14 +134,10 @@ export class FavoritesAdminController {
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            count: { type: 'number', example: 45, description: 'عدد مرات إضافة المنتج للمفضلة' }
-          }
-        }
-      }
-    }
+        count: { type: 'number', example: 45, description: 'عدد مرات إضافة المنتج للمفضلة' },
+      },
+      example: { count: 45 },
+    },
   })
   @ApiResponse({
     status: 404,
@@ -153,14 +164,10 @@ export class FavoritesAdminController {
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            count: { type: 'number', example: 15, description: 'عدد المنتجات في مفضلات المستخدم' }
-          }
-        }
-      }
-    }
+        count: { type: 'number', example: 15, description: 'عدد المنتجات في مفضلات المستخدم' },
+      },
+      example: { count: 15 },
+    },
   })
   @ApiResponse({
     status: 404,

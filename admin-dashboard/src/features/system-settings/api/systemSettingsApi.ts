@@ -109,47 +109,79 @@ export const systemSettingsApi = {
 
 // ==================== Local Payment Accounts ====================
 
+export type CurrencyCode = 'YER' | 'SAR' | 'USD';
+export type PaymentAccountType = 'bank' | 'wallet';
+export type PaymentAccountNumberingMode = 'shared' | 'per_currency';
+
 export interface MediaReference {
   id: string;
   url: string;
   name?: string;
 }
 
+export interface ProviderAccountItem {
+  id: string;
+  currency: CurrencyCode;
+  accountNumber: string;
+  isActive: boolean;
+  displayOrder: number;
+  notes?: string;
+  isOverride: boolean;
+}
+
 export interface LocalPaymentAccount {
   _id: string;
   providerName: string;
-  iconMediaId?: string | null;
+  iconMediaId?: string;
   icon?: MediaReference;
-  accountNumber: string;
-  type: 'bank' | 'wallet';
-  currency: 'YER' | 'SAR' | 'USD';
+  type: PaymentAccountType;
+  numberingMode: PaymentAccountNumberingMode;
+  supportedCurrencies: CurrencyCode[];
+  sharedAccountNumber?: string;
+  accounts: ProviderAccountItem[];
   isActive: boolean;
   notes?: string;
   displayOrder: number;
   updatedBy?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface GroupedPaymentAccount {
+  providerId: string;
   providerName: string;
   icon?: MediaReference;
-  type: 'bank' | 'wallet';
+  type: PaymentAccountType;
+  numberingMode: PaymentAccountNumberingMode;
+  supportedCurrencies: CurrencyCode[];
+  sharedAccountNumber?: string;
   accounts: Array<{
     id: string;
     accountNumber: string;
-    currency: 'YER' | 'SAR' | 'USD';
+    currency: CurrencyCode;
     isActive: boolean;
     displayOrder: number;
+    notes?: string;
   }>;
+}
+
+export interface ProviderAccountInput {
+  id?: string;
+  currency: CurrencyCode;
+  accountNumber: string;
+  isActive?: boolean;
+  displayOrder?: number;
+  notes?: string;
 }
 
 export interface CreatePaymentAccountDto {
   providerName: string;
   iconMediaId?: string | null;
-  accountNumber: string;
-  type: 'bank' | 'wallet';
-  currency: 'YER' | 'SAR' | 'USD';
+  type: PaymentAccountType;
+  numberingMode: PaymentAccountNumberingMode;
+  sharedAccountNumber?: string;
+  supportedCurrencies?: CurrencyCode[];
+  accounts?: ProviderAccountInput[];
   isActive?: boolean;
   notes?: string;
   displayOrder?: number;
@@ -158,9 +190,11 @@ export interface CreatePaymentAccountDto {
 export interface UpdatePaymentAccountDto {
   providerName?: string;
   iconMediaId?: string | null;
-  accountNumber?: string;
-  type?: 'bank' | 'wallet';
-  currency?: 'YER' | 'SAR' | 'USD';
+  type?: PaymentAccountType;
+  numberingMode?: PaymentAccountNumberingMode;
+  sharedAccountNumber?: string;
+  supportedCurrencies?: CurrencyCode[];
+  accounts?: ProviderAccountInput[];
   isActive?: boolean;
   notes?: string;
   displayOrder?: number;
@@ -201,7 +235,7 @@ export const localPaymentAccountsApi = {
   },
 
   /**
-   * Create payment account
+   * Create payment account provider
    */
   createAccount: async (data: CreatePaymentAccountDto): Promise<LocalPaymentAccount> => {
     const response = await apiClient.post<ApiResponse<LocalPaymentAccount>>(
@@ -212,7 +246,7 @@ export const localPaymentAccountsApi = {
   },
 
   /**
-   * Update payment account
+   * Update payment account provider
    */
   updateAccount: async (id: string, data: UpdatePaymentAccountDto): Promise<LocalPaymentAccount> => {
     const response = await apiClient.put<ApiResponse<LocalPaymentAccount>>(
@@ -223,7 +257,7 @@ export const localPaymentAccountsApi = {
   },
 
   /**
-   * Delete payment account
+   * Delete payment account provider
    */
   deleteAccount: async (id: string): Promise<void> => {
     await apiClient.delete(`/system-settings/payment-accounts/${id}`);

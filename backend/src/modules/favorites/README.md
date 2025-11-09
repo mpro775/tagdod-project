@@ -39,7 +39,6 @@ Favorite {
   userId?: string;        // للمستخدمين
   deviceId?: string;      // للزوار
   productId: string;
-  variantId?: string;
   note?: string;          // ملاحظة خاصة
   viewsCount: number;     // عدد مرات العرض
   lastViewedAt?: Date;
@@ -158,7 +157,6 @@ await favoritesService.syncGuestToUser(deviceId, userId);
 ```typescript
 // populate تلقائي
 .populate('productId')
-.populate('variantId')
 ```
 
 ---
