@@ -312,6 +312,11 @@ const AddressesDashboardPage = lazy(() => import('@/features/addresses/pages/Add
 // Search Admin
 const SearchDashboardPage = lazy(() => import('@/features/search/pages/SearchDashboardPage').then((m) => ({ default: m.SearchDashboardPage })));
 
+// Favorites Admin
+const FavoritesAdminPage = lazy(() =>
+  import('@/features/favorites/pages/FavoritesAdminPage').then((m) => ({ default: m.FavoritesAdminPage }))
+);
+
 export const routes: RouteObject[] = [
   // ===========================================
   // PUBLIC ROUTES - Accessible without authentication
@@ -713,6 +718,12 @@ export const routes: RouteObject[] = [
       {
         path: 'admin/addresses',
         element: <AddressesDashboardPage />,
+      },
+
+      // Favorites Management
+      {
+        path: 'admin/favorites',
+        element: <FavoritesAdminPage />,
       },
 
       // Search Analytics

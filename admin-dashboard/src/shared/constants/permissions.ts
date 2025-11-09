@@ -206,6 +206,7 @@ export const MENU_PERMISSIONS = {
 
   // Users section
   users: [PERMISSIONS.USERS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'users-addresses': [PERMISSIONS.ADDRESSES_READ, PERMISSIONS.ADMIN_ACCESS],
 
   // Catalog section
   catalog: [PERMISSIONS.ADMIN_ACCESS], // Parent menu - visible if any child is visible

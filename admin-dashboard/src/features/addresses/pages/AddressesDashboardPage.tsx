@@ -1,7 +1,27 @@
-import { Box, Typography, Tab, Tabs, Chip, Pagination, Skeleton, Stack, TextField, InputAdornment } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Tab,
+  Tabs,
+  Chip,
+  Pagination,
+  Skeleton,
+  Stack,
+  TextField,
+  InputAdornment,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+  Tooltip,
+  Switch,
+  FormControlLabel,
+} from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
 import { Grid } from '@mui/material';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -46,6 +66,9 @@ export function AddressesDashboardPage() {
   const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'createdAt', sort: 'desc' }]);
   const [searchQuery, setSearchQuery] = useState('');
   const [screenSize, setScreenSize] = useState(window.innerWidth);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [showDeleted, setShowDeleted] = useState(false);
 
   // Listen to window resize
   useEffect(() => {
@@ -58,6 +81,16 @@ export function AddressesDashboardPage() {
     setCurrentTab(newValue);
   };
 
+  const handleOpenDetails = useCallback((address: Address) => {
+    setSelectedAddress(address);
+    setDetailsOpen(true);
+  }, []);
+
+  const handleCloseDetails = useCallback(() => {
+    setDetailsOpen(false);
+    setSelectedAddress(null);
+  }, []);
+
   // Fetch addresses data
   const { data, isLoading } = useAddressList({
     page: paginationModel.page + 1,
@@ -65,6 +98,7 @@ export function AddressesDashboardPage() {
     search: searchQuery || undefined,
     sortBy: (sortModel[0]?.field as 'createdAt' | 'usageCount' | 'lastUsedAt') || 'createdAt',
     sortOrder: (sortModel[0]?.sort as 'asc' | 'desc') || 'desc',
+    includeDeleted: showDeleted || undefined,
   });
 
   // Define columns
@@ -72,16 +106,15 @@ export function AddressesDashboardPage() {
     {
       field: 'userId',
       headerName: t('list.columns.user', { defaultValue: 'المستخدم' }),
-      minWidth: 180,
-      flex: 1.2,
+      width: 240,
       renderCell: (params) => {
         const address = params.row as Address;
         return (
           <Box>
-            <Typography variant="body2" fontWeight="medium">
+            <Typography variant="body2" fontWeight="medium" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
               {address.userId?.name || '-'}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
               {address.userId?.phone || '-'}
             </Typography>
           </Box>
@@ -91,8 +124,7 @@ export function AddressesDashboardPage() {
     {
       field: 'label',
       headerName: t('list.columns.label', { defaultValue: 'التسمية' }),
-      minWidth: 150,
-      flex: 1,
+      width: 200,
       renderCell: (params) => {
         const address = params.row as Address;
         return (
@@ -112,15 +144,20 @@ export function AddressesDashboardPage() {
     {
       field: 'line1',
       headerName: t('list.columns.address', { defaultValue: 'العنوان' }),
-      minWidth: 200,
-      flex: 1.5,
+      width: 420,
       renderCell: (params) => {
         const address = params.row as Address;
         return (
-          <Box>
-            <Typography variant="body2">{address.line1}</Typography>
+          <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+            <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+              {address.line1}
+            </Typography>
             {address.notes && (
-              <Typography variant="caption" color="text.secondary">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mt: 0.5, whiteSpace: 'normal', wordBreak: 'break-word' }}
+              >
                 {address.notes}
               </Typography>
             )}
@@ -131,14 +168,12 @@ export function AddressesDashboardPage() {
     {
       field: 'city',
       headerName: t('list.columns.city', { defaultValue: 'المدينة' }),
-      minWidth: 120,
-      flex: 0.8,
+      width: 160,
     },
     {
       field: 'usageCount',
       headerName: t('list.columns.usage', { defaultValue: 'الاستخدام' }),
-      minWidth: 100,
-      flex: 0.8,
+      width: 120,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -156,12 +191,21 @@ export function AddressesDashboardPage() {
     {
       field: 'isActive',
       headerName: t('list.columns.status', { defaultValue: 'الحالة' }),
-      minWidth: 100,
-      flex: 0.8,
+      width: 140,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
         const address = params.row as Address;
+        if (address.deletedAt) {
+          return (
+            <Chip
+              label={t('list.status.deleted', { defaultValue: 'محذوف' })}
+              size="small"
+              color="error"
+              variant="filled"
+            />
+          );
+        }
         return (
           <Chip
             label={
@@ -178,11 +222,37 @@ export function AddressesDashboardPage() {
     {
       field: 'createdAt',
       headerName: t('list.columns.createdAt', { defaultValue: 'تاريخ الإنشاء' }),
-      minWidth: 130,
-      flex: 1,
+      width: 170,
       valueFormatter: (value) => formatDate(value as Date),
     },
-  ], [t]);
+    {
+      field: 'actions',
+      headerName: t('list.columns.actions', { defaultValue: 'الإجراءات' }),
+      sortable: false,
+      filterable: false,
+      width: 140,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const address = params.row as Address;
+        return (
+          <Tooltip title={t('list.actions.viewDetails', { defaultValue: 'عرض التفاصيل' })}>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<VisibilityIcon fontSize="small" />}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleOpenDetails(address);
+              }}
+            >
+              {t('list.actions.view', { defaultValue: 'عرض' })}
+            </Button>
+          </Tooltip>
+        );
+      },
+    },
+  ], [handleOpenDetails, t]);
 
   // Calculate total pages for mobile pagination
   const totalPages = data?.pagination ? Math.ceil(data.pagination.total / paginationModel.pageSize) : 0;
@@ -260,7 +330,28 @@ export function AddressesDashboardPage() {
       {/* Tab 2: Address List */}
       <TabPanel value={currentTab} index={1}>
         {/* Desktop View - Table */}
-        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+        <Box sx={{ display: { xs: 'none', md: 'block' }, overflowX: 'auto' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              mb: 2,
+            }}
+          >
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showDeleted}
+                  onChange={(_, checked) => {
+                    setShowDeleted(checked);
+                    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                  }}
+                  color="primary"
+                />
+              }
+              label={t('list.filters.showDeleted', { defaultValue: 'إظهار المحذوفة' })}
+            />
+          </Box>
           <DataTable
             columns={columns}
             rows={data?.data || []}
@@ -276,6 +367,8 @@ export function AddressesDashboardPage() {
             }}
             getRowId={(row: any) => row._id}
             height={screenSize < 600 ? 'calc(100vh - 140px)' : 'calc(100vh - 180px)'}
+            rowHeight={88}
+            onRowClick={(params) => handleOpenDetails(params.row as Address)}
           />
         </Box>
 
@@ -307,6 +400,23 @@ export function AddressesDashboardPage() {
             />
           </Box>
 
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showDeleted}
+                  onChange={(_, checked) => {
+                    setShowDeleted(checked);
+                    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                  }}
+                  color="primary"
+                  size="small"
+                />
+              }
+              label={t('list.filters.showDeleted', { defaultValue: 'إظهار المحذوفة' })}
+            />
+          </Box>
+
           {/* Loading State */}
           {isLoading ? (
             <Stack spacing={2}>
@@ -318,7 +428,7 @@ export function AddressesDashboardPage() {
             <>
               <Stack spacing={2}>
                 {data.data.map((address: Address) => (
-                  <AddressCard key={address._id} address={address} />
+                <AddressCard key={address._id} address={address} />
                 ))}
               </Stack>
 
@@ -359,6 +469,27 @@ export function AddressesDashboardPage() {
           )}
         </Box>
       </TabPanel>
+
+      <Dialog
+        open={detailsOpen && !!selectedAddress}
+        onClose={handleCloseDetails}
+        fullWidth
+        maxWidth="md"
+        aria-labelledby="address-details-dialog-title"
+      >
+        <DialogTitle
+          id="address-details-dialog-title"
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          {t('details.title', { defaultValue: 'تفاصيل العنوان' })}
+          <IconButton onClick={handleCloseDetails} aria-label={t('details.close', { defaultValue: 'إغلاق' })}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ backgroundColor: (theme) => theme.palette.background.default }}>
+          {selectedAddress && <AddressCard address={selectedAddress} />}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

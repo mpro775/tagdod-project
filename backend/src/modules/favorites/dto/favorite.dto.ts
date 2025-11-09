@@ -6,20 +6,12 @@ export class AddFavoriteDto {
 
   @IsOptional()
   @IsString()
-  variantId?: string;
-
-  @IsOptional()
-  @IsString()
   note?: string; // ملاحظة خاصة
 }
 
 export class RemoveFavoriteDto {
   @IsString()
   productId!: string;
-
-  @IsOptional()
-  @IsString()
-  variantId?: string;
 }
 
 export class UpdateFavoriteDto {
@@ -37,10 +29,6 @@ export class GuestAddFavoriteDto {
 
   @IsOptional()
   @IsString()
-  variantId?: string;
-
-  @IsOptional()
-  @IsString()
   note?: string;
 }
 
@@ -50,10 +38,6 @@ export class GuestRemoveFavoriteDto {
 
   @IsString()
   productId!: string;
-
-  @IsOptional()
-  @IsString()
-  variantId?: string;
 }
 
 export class SyncFavoritesDto {

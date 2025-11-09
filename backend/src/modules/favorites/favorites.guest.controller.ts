@@ -11,7 +11,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiQuery,
-  ApiBody
+  ApiBody,
 } from '@nestjs/swagger';
 import { FavoritesService } from './favorites.service';
 import { GuestAddFavoriteDto, GuestRemoveFavoriteDto } from './dto/favorite.dto';
@@ -36,23 +36,27 @@ export class FavoritesGuestController {
     status: 200,
     description: 'تم استرداد مفضلات الزائر بنجاح',
     schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', example: '507f1f77bcf86cd799439011', description: 'معرف المفضلة' },
-              productId: { type: 'string', example: '507f1f77bcf86cd799439012', description: 'معرف المنتج' },
-              variantId: { type: 'string', example: '507f1f77bcf86cd799439013', description: 'معرف المتغير' },
-              note: { type: 'string', example: 'منتج رائع!', description: 'ملاحظة الزائر' },
-              addedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z', description: 'تاريخ الإضافة' }
-            }
-          }
-        }
-      }
-    }
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string', example: '65af1c91f2a7f20012d44444', description: 'معرف المفضلة' },
+          productId: { type: 'string', example: '65af1c91f2a7f20012d39999', description: 'معرف المنتج' },
+          note: { type: 'string', example: 'إضافة لمقارنة الأسعار لاحقاً', description: 'ملاحظة الزائر' },
+          createdAt: { type: 'string', format: 'date-time', example: '2025-02-01T12:30:00.000Z', description: 'تاريخ الإضافة' },
+          updatedAt: { type: 'string', format: 'date-time', example: '2025-02-02T09:41:12.000Z', description: 'آخر تحديث' },
+        },
+      },
+      example: [
+        {
+          _id: '65af1c91f2a7f20012d44444',
+          productId: '65af1c91f2a7f20012d39999',
+          note: 'إضافة لمقارنة الأسعار لاحقاً',
+          createdAt: '2025-02-01T12:30:00.000Z',
+          updatedAt: '2025-02-02T09:41:12.000Z',
+        },
+      ],
+    },
   })
   async listFavorites(@Query('deviceId') deviceId: string) {
     if (!deviceId) {
@@ -66,27 +70,48 @@ export class FavoritesGuestController {
   @Post()
   @ApiOperation({
     summary: 'إضافة منتج لمفضلات الزائر',
-    description: 'إضافة منتج أو متغير منتج إلى قائمة المفضلات للزائر غير المسجل'
+    description: 'إضافة منتج إلى قائمة المفضلات للزائر غير المسجل'
   })
-  @ApiBody({ type: GuestAddFavoriteDto })
+  @ApiBody({
+    type: GuestAddFavoriteDto,
+    examples: {
+      default: {
+        summary: 'إضافة منتج كزائر',
+        value: {
+          deviceId: 'device_123456789',
+          productId: '65af1c91f2a7f20012d39999',
+        },
+      },
+      withNote: {
+        summary: 'إضافة مع ملاحظة',
+        value: {
+          deviceId: 'device_123456789',
+          productId: '65af1c91f2a7f20012d39999',
+          note: 'أحتاج هذا المقاس',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'تم إضافة المنتج لمفضلات الزائر بنجاح',
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', example: '507f1f77bcf86cd799439011', description: 'معرف المفضلة الجديدة' },
-            productId: { type: 'string', example: '507f1f77bcf86cd799439012', description: 'معرف المنتج' },
-            variantId: { type: 'string', example: '507f1f77bcf86cd799439013', description: 'معرف المتغير' },
-            note: { type: 'string', example: 'منتج رائع!', description: 'ملاحظة الزائر' },
-            addedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z', description: 'تاريخ الإضافة' }
-          }
-        }
-      }
-    }
+        _id: { type: 'string', example: '65af1c91f2a7f20012d44444', description: 'معرف المفضلة الجديدة' },
+        deviceId: { type: 'string', example: 'device_123456789', description: 'معرف جهاز الزائر' },
+        productId: { type: 'string', example: '65af1c91f2a7f20012d39999', description: 'معرف المنتج' },
+        note: { type: 'string', example: 'منتج رائع!', description: 'ملاحظة الزائر' },
+        isSynced: { type: 'boolean', example: false, description: 'هل تمت مزامنة العنصر مع حساب مستخدم' },
+      },
+      example: {
+        _id: '65af1c91f2a7f20012d44444',
+        deviceId: 'device_123456789',
+        productId: '65af1c91f2a7f20012d39999',
+        note: 'منتج رائع!',
+        isSynced: false,
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -95,7 +120,6 @@ export class FavoritesGuestController {
   async addFavorite(@Body() dto: GuestAddFavoriteDto) {
     const favorite = await this.favoritesService.addGuestFavorite(dto.deviceId, {
       productId: dto.productId,
-      variantId: dto.variantId,
       note: dto.note,
     });
     return favorite;
@@ -104,24 +128,31 @@ export class FavoritesGuestController {
   @Delete()
   @ApiOperation({
     summary: 'إزالة منتج من مفضلات الزائر',
-    description: 'إزالة منتج أو متغير منتج من قائمة المفضلات للزائر غير المسجل'
+    description: 'إزالة منتج من قائمة المفضلات للزائر غير المسجل'
   })
-  @ApiBody({ type: GuestRemoveFavoriteDto })
+  @ApiBody({
+    type: GuestRemoveFavoriteDto,
+    examples: {
+      default: {
+        summary: 'إزالة منتج لزائر',
+        value: {
+          deviceId: 'device_123456789',
+          productId: '65af1c91f2a7f20012d39999',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'تم إزالة المنتج من مفضلات الزائر بنجاح',
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true, description: 'نجاح العملية' },
-            removed: { type: 'number', example: 1, description: 'عدد العناصر المزالة' }
-          }
-        }
-      }
-    }
+        deleted: { type: 'boolean', example: true, description: 'هل تم حذف المفضلة بنجاح' },
+        removed: { type: 'number', example: 1, description: 'تم استخدامه للإشارة إلى عدد العناصر التي تمت إزالتها' },
+      },
+      example: { deleted: true, removed: 1 },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -130,7 +161,6 @@ export class FavoritesGuestController {
   async removeFavorite(@Body() dto: GuestRemoveFavoriteDto) {
     const result = await this.favoritesService.removeGuestFavorite(dto.deviceId, {
       productId: dto.productId,
-      variantId: dto.variantId,
     });
     return {
       deleted: result.deleted,
@@ -155,14 +185,10 @@ export class FavoritesGuestController {
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            cleared: { type: 'number', example: 10, description: 'عدد العناصر المحذوفة' }
-          }
-        }
-      }
-    }
+        cleared: { type: 'number', example: 10, description: 'عدد العناصر التي تم حذفها' },
+      },
+      example: { cleared: 10 },
+    },
   })
   async clearFavorites(@Query('deviceId') deviceId: string) {
     if (!deviceId) {
@@ -190,14 +216,10 @@ export class FavoritesGuestController {
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            count: { type: 'number', example: 15, description: 'عدد المنتجات في المفضلة' }
-          }
-        }
-      }
-    }
+        count: { type: 'number', example: 5, description: 'عدد المنتجات في المفضلة' },
+      },
+      example: { count: 5 },
+    },
   })
   async getCount(@Query('deviceId') deviceId: string) {
     if (!deviceId) {

@@ -15,7 +15,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
-  ApiParam
+  ApiParam,
 } from '@nestjs/swagger';
 import { FavoritesService } from './favorites.service';
 import { AddFavoriteDto, RemoveFavoriteDto, UpdateFavoriteDto, SyncFavoritesDto } from './dto/favorite.dto';
@@ -37,23 +37,27 @@ export class FavoritesUserController {
     status: 200,
     description: 'تم استرداد قائمة المفضلات بنجاح',
     schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', example: '507f1f77bcf86cd799439011', description: 'معرف المفضلة' },
-              productId: { type: 'string', example: '507f1f77bcf86cd799439012', description: 'معرف المنتج' },
-              variantId: { type: 'string', example: '507f1f77bcf86cd799439013', description: 'معرف المتغير' },
-              note: { type: 'string', example: 'منتج رائع!', description: 'ملاحظة المستخدم' },
-              addedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z', description: 'تاريخ الإضافة' }
-            }
-          }
-        }
-      }
-    }
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string', example: '65af1c91f2a7f20012d34567', description: 'معرف عنصر المفضلة' },
+          productId: { type: 'string', example: '65af1c91f2a7f20012d39999', description: 'معرف المنتج' },
+          note: { type: 'string', example: 'أحتاج التحقق من المخزون قبل الشراء', description: 'ملاحظة المستخدم' },
+          isSynced: { type: 'boolean', example: false, description: 'هل تمت مزامنة هذا السجل من جهاز زائر' },
+          createdAt: { type: 'string', format: 'date-time', example: '2025-02-01T12:30:00.000Z', description: 'تاريخ الإضافة للمفضلة' },
+        },
+      },
+      example: [
+        {
+          _id: '65af1c91f2a7f20012d34567',
+          productId: '65af1c91f2a7f20012d39999',
+          note: 'أحتاج التحقق من المخزون قبل الشراء',
+          isSynced: false,
+          createdAt: '2025-02-01T12:30:00.000Z',
+        },
+      ],
+    },
   })
   @ApiResponse({
     status: 401,
@@ -67,27 +71,42 @@ export class FavoritesUserController {
   @Post()
   @ApiOperation({
     summary: 'إضافة منتج للمفضلة',
-    description: 'إضافة منتج أو متغير منتج إلى قائمة المفضلات الخاصة بالمستخدم'
+    description: 'إضافة منتج إلى قائمة المفضلات الخاصة بالمستخدم'
   })
-  @ApiBody({ type: AddFavoriteDto })
+  @ApiBody({
+    type: AddFavoriteDto,
+    examples: {
+      default: {
+        summary: 'إضافة منتج عادي',
+        value: {
+          productId: '65af1c91f2a7f20012d39999',
+          note: 'هدية لعيد ميلاد أختي',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'تم إضافة المنتج للمفضلة بنجاح',
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', example: '507f1f77bcf86cd799439011', description: 'معرف المفضلة الجديدة' },
-            productId: { type: 'string', example: '507f1f77bcf86cd799439012', description: 'معرف المنتج' },
-            variantId: { type: 'string', example: '507f1f77bcf86cd799439013', description: 'معرف المتغير' },
-            note: { type: 'string', example: 'منتج رائع!', description: 'ملاحظة المستخدم' },
-            addedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z', description: 'تاريخ الإضافة' }
-          }
-        }
-      }
-    }
+        _id: { type: 'string', example: '65af1c91f2a7f20012d35555', description: 'معرف المفضلة الجديدة' },
+        productId: { type: 'string', example: '65af1c91f2a7f20012d39999', description: 'معرف المنتج' },
+        note: { type: 'string', example: 'منتج رائع!', description: 'ملاحظة المستخدم' },
+        isSynced: { type: 'boolean', example: false, description: 'هل تمت مزامنة هذا السجل من جهاز زائر' },
+        createdAt: { type: 'string', format: 'date-time', example: '2025-02-01T12:30:00.000Z', description: 'تاريخ الإضافة' },
+        updatedAt: { type: 'string', format: 'date-time', example: '2025-02-01T12:30:00.000Z', description: 'آخر تحديث' },
+      },
+      example: {
+        _id: '65af1c91f2a7f20012d35555',
+        productId: '65af1c91f2a7f20012d39999',
+        note: 'منتج رائع!',
+        isSynced: false,
+        createdAt: '2025-02-01T12:30:00.000Z',
+        updatedAt: '2025-02-01T12:30:00.000Z',
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -108,24 +127,29 @@ export class FavoritesUserController {
   @Delete()
   @ApiOperation({
     summary: 'إزالة منتج من المفضلة',
-    description: 'إزالة منتج أو متغير منتج من قائمة المفضلات الخاصة بالمستخدم'
+    description: 'إزالة منتج من قائمة المفضلات الخاصة بالمستخدم'
   })
-  @ApiBody({ type: RemoveFavoriteDto })
+  @ApiBody({
+    type: RemoveFavoriteDto,
+    examples: {
+      removeByProduct: {
+        summary: 'إزالة منتج أساسي',
+        value: {
+          productId: '65af1c91f2a7f20012d39999',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'تم إزالة المنتج من المفضلة بنجاح',
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true, description: 'نجاح العملية' },
-            removed: { type: 'number', example: 1, description: 'عدد العناصر المزالة' }
-          }
-        }
-      }
-    }
+        deleted: { type: 'boolean', example: true, description: 'هل تم حذف المفضلة بنجاح' },
+      },
+      example: { deleted: true },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -153,25 +177,35 @@ export class FavoritesUserController {
     description: 'معرف المفضلة',
     example: '507f1f77bcf86cd799439011'
   })
-  @ApiBody({ type: UpdateFavoriteDto })
+  @ApiBody({
+    type: UpdateFavoriteDto,
+    examples: {
+      updateNote: {
+        summary: 'تحديث الملاحظة فقط',
+        value: {
+          note: 'تم التأكد من السعر، مناسب للشراء',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'تم تحديث المفضلة بنجاح',
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', example: '507f1f77bcf86cd799439011', description: 'معرف المفضلة' },
-            productId: { type: 'string', example: '507f1f77bcf86cd799439012', description: 'معرف المنتج' },
-            variantId: { type: 'string', example: '507f1f77bcf86cd799439013', description: 'معرف المتغير' },
-            note: { type: 'string', example: 'منتج ممتاز!', description: 'الملاحظة المحدثة' },
-            updatedAt: { type: 'string', format: 'date-time', example: '2024-01-15T11:00:00Z', description: 'تاريخ التحديث' }
-          }
-        }
-      }
-    }
+        _id: { type: 'string', example: '65af1c91f2a7f20012d34567', description: 'معرف المفضلة' },
+        productId: { type: 'string', example: '65af1c91f2a7f20012d39999', description: 'معرف المنتج' },
+        note: { type: 'string', example: 'منتج ممتاز!', description: 'الملاحظة المحدثة' },
+        updatedAt: { type: 'string', format: 'date-time', example: '2025-02-05T17:00:00.000Z', description: 'تاريخ التحديث' },
+      },
+      example: {
+        _id: '65af1c91f2a7f20012d34567',
+        productId: '65af1c91f2a7f20012d39999',
+        note: 'منتج ممتاز!',
+        updatedAt: '2025-02-05T17:00:00.000Z',
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -205,15 +239,10 @@ export class FavoritesUserController {
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true, description: 'نجاح العملية' },
-            deleted: { type: 'number', example: 15, description: 'عدد العناصر المحذوفة' }
-          }
-        }
-      }
-    }
+        cleared: { type: 'number', example: 15, description: 'عدد العناصر المحذوفة' },
+      },
+      example: { cleared: 15 },
+    },
   })
   @ApiResponse({
     status: 401,
@@ -235,14 +264,10 @@ export class FavoritesUserController {
     schema: {
       type: 'object',
       properties: {
-        data: {
-          type: 'object',
-          properties: {
-            count: { type: 'number', example: 15, description: 'عدد المنتجات في المفضلة' }
-          }
-        }
-      }
-    }
+        count: { type: 'number', example: 15, description: 'عدد المنتجات في المفضلة' },
+      },
+      example: { count: 15 },
+    },
   })
   @ApiResponse({
     status: 401,
@@ -256,6 +281,38 @@ export class FavoritesUserController {
 
   // ==================== مزامنة من الزائر ====================
   @Post('sync')
+  @ApiOperation({
+    summary: 'مزامنة مفضلات الزائر مع حساب المستخدم',
+    description: 'يحول المفضلات المخزنة بواسطة deviceId إلى حساب المستخدم الحالي مع احتساب العناصر المتكررة',
+  })
+  @ApiBody({
+    type: SyncFavoritesDto,
+    examples: {
+      default: {
+        summary: 'مزامنة قياسية',
+        value: {
+          deviceId: 'device-abc-123',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تمت المزامنة بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        synced: { type: 'number', example: 5, description: 'عدد العناصر التي تمت إضافتها للمستخدم' },
+        skipped: { type: 'number', example: 2, description: 'عدد العناصر التي تم تجاوزها لأنها موجودة مسبقاً' },
+        total: { type: 'number', example: 7, description: 'إجمالي العناصر التي تمت قراءتها من جهاز الزائر' },
+      },
+      example: { synced: 5, skipped: 2, total: 7 },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'DeviceId مفقود أو غير صالح',
+  })
   async syncFromGuest(
     @Req() req: { user: { sub: string } },
     @Body() dto: SyncFavoritesDto
@@ -266,6 +323,30 @@ export class FavoritesUserController {
 
   // ==================== زيادة عداد المشاهدات ====================
   @Post(':id/view')
+  @ApiOperation({
+    summary: 'زيادة عدد مرات مشاهدة عنصر المفضلة',
+    description: 'يستخدم هذا النداء عادة عند فتح المستخدم لصفحة المنتج لإحصاء الاهتمام',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'معرف عنصر المفضلة',
+    example: '65af1c91f2a7f20012d34567',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تحديث عداد المشاهدات للمفضلة',
+    schema: {
+      type: 'object',
+      properties: {
+        viewed: { type: 'boolean', example: true, description: 'تأكيد نجاح العملية' },
+      },
+      example: { viewed: true },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'المفضلة غير موجودة',
+  })
   async incrementView(@Param('id') id: string) {
     await this.favoritesService.incrementViews(id);
     return { viewed: true };

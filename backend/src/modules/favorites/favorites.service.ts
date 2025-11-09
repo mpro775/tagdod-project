@@ -21,19 +21,18 @@ export class FavoritesService {
     const favorites = await this.favoriteModel
       .find({ userId, deletedAt: null })
       .populate('productId')
-      .populate('variantId')
       .sort({ createdAt: -1 })
+      .select('-viewsCount -lastViewedAt -updatedAt')
       .lean();
 
     return favorites;
   }
 
-  async addUserFavorite(userId: string, dto: { productId: string; variantId?: string; note?: string }) {
+  async addUserFavorite(userId: string, dto: { productId: string; note?: string }) {
     // التحقق من عدم التكرار
     const existing = await this.favoriteModel.findOne({
       userId,
       productId: dto.productId,
-      variantId: dto.variantId || null,
       deletedAt: null,
     });
 
@@ -48,7 +47,6 @@ export class FavoritesService {
     const favorite = await this.favoriteModel.create({
       userId: new Types.ObjectId(userId),
       productId: new Types.ObjectId(dto.productId),
-      variantId: dto.variantId ? new Types.ObjectId(dto.variantId) : null,
       note: dto.note || '',
       viewsCount: 0,
       isSynced: false,
@@ -57,12 +55,11 @@ export class FavoritesService {
     return favorite;
   }
 
-  async removeUserFavorite(userId: string, dto: { productId: string; variantId?: string }) {
+  async removeUserFavorite(userId: string, dto: { productId: string }) {
     const result = await this.favoriteModel.updateOne(
       {
         userId,
         productId: dto.productId,
-        variantId: dto.variantId || null,
       },
       {
         $set: { deletedAt: new Date() }
@@ -105,20 +102,18 @@ export class FavoritesService {
     const favorites = await this.favoriteModel
       .find({ deviceId, userId: null, deletedAt: null })
       .populate('productId')
-      .populate('variantId')
       .sort({ createdAt: -1 })
       .lean();
 
     return favorites;
   }
 
-  async addGuestFavorite(deviceId: string, dto: { productId: string; variantId?: string; note?: string }) {
+  async addGuestFavorite(deviceId: string, dto: { productId: string; note?: string }) {
     // التحقق من عدم التكرار
     const existing = await this.favoriteModel.findOne({
       deviceId,
       userId: null,
       productId: dto.productId,
-      variantId: dto.variantId || null,
       deletedAt: null,
     });
 
@@ -133,7 +128,6 @@ export class FavoritesService {
       deviceId,
       userId: null,
       productId: new Types.ObjectId(dto.productId),
-      variantId: dto.variantId ? new Types.ObjectId(dto.variantId) : null,
       note: dto.note || '',
       viewsCount: 0,
       isSynced: false,
@@ -142,13 +136,12 @@ export class FavoritesService {
     return favorite;
   }
 
-  async removeGuestFavorite(deviceId: string, dto: { productId: string; variantId?: string }) {
+  async removeGuestFavorite(deviceId: string, dto: { productId: string }) {
     const result = await this.favoriteModel.updateOne(
       {
         deviceId,
         userId: null,
         productId: dto.productId,
-        variantId: dto.variantId || null,
       },
       {
         $set: { deletedAt: new Date() }
@@ -189,7 +182,6 @@ export class FavoritesService {
       const existing = await this.favoriteModel.findOne({
         userId,
         productId: guestFav.productId,
-        variantId: guestFav.variantId || null,
         deletedAt: null,
       });
 
@@ -201,7 +193,6 @@ export class FavoritesService {
         await this.favoriteModel.create({
           userId: new Types.ObjectId(userId),
           productId: guestFav.productId,
-          variantId: guestFav.variantId,
           note: guestFav.note,
           viewsCount: guestFav.viewsCount || 0,
           isSynced: true,
