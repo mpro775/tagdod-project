@@ -345,7 +345,7 @@ Future<CartItemsResponse> removeFromCart(String itemId) async {
 }
 ```
 
-> إذا لم يتم تمرير `currency` سيتم اعتماد `USD` تلقائياً للعرض، مع توفير ملخص بالعملات الثلاث (USD / YER / SAR) في نفس الاستجابة.
+> إذا لم يتم تمرير `currency` سيتم اعتماد `USD` تلقائياً للعرض، ويمكنك قراءة نفس القيم محوّلة داخل `pricingSummaryByCurrency` لكل من (USD / YER / SAR).
 
 ### Response - نجاح
 
@@ -354,8 +354,6 @@ Future<CartItemsResponse> removeFromCart(String itemId) async {
   "success": true,
   "data": {
     "currency": "USD",
-    "subtotalBeforeDiscount": 160,
-    "subtotal": 148,
     "items": [
       {
         "itemId": "item_001",
@@ -368,7 +366,32 @@ Future<CartItemsResponse> removeFromCart(String itemId) async {
           "currency": "USD",
           "appliedRule": null
         },
-        "lineTotal": 108
+        "lineTotal": 108,
+        "pricing": {
+          "currencies": {
+            "USD": { "base": 60, "final": 54, "discount": 6 },
+            "YER": { "base": 31740, "final": 28566, "discount": 3174 },
+            "SAR": { "base": 225, "final": 202.5, "discount": 22.5 }
+          }
+        },
+        "snapshot": {
+          "name": "قاطع تيار 3 فاز",
+          "slug": "breaker-3p",
+          "image": "https://cdn.example.com/products/breaker-3p.png",
+          "brandId": "brand-123",
+          "brandName": "Schneider",
+          "categoryId": "cat-breakers",
+          "variantAttributes": [
+            {
+              "attributeId": "attr-color",
+              "attributeName": "اللون",
+              "attributeNameEn": "Color",
+              "valueId": "val-red",
+              "value": "أحمر",
+              "valueEn": "Red"
+            }
+          ]
+        }
       },
       {
         "itemId": "item_002",
@@ -381,7 +404,22 @@ Future<CartItemsResponse> removeFromCart(String itemId) async {
           "currency": "USD",
           "appliedRule": null
         },
-        "lineTotal": 40
+        "lineTotal": 40,
+        "pricing": {
+          "currencies": {
+            "USD": { "base": 40, "final": 40, "discount": 0 },
+            "YER": { "base": 21160, "final": 21160, "discount": 0 },
+            "SAR": { "base": 150, "final": 150, "discount": 0 }
+          }
+        },
+        "snapshot": {
+          "name": "لوح توزيع",
+          "slug": "distribution-panel",
+          "image": "https://cdn.example.com/products/distribution-panel.png",
+          "brandId": "brand-456",
+          "brandName": "ABB",
+          "categoryId": "cat-panels"
+        }
       }
     ],
     "appliedCoupons": [],
@@ -390,41 +428,6 @@ Future<CartItemsResponse> removeFromCart(String itemId) async {
       "quantity": 3,
       "merchantDiscountPercent": 0,
       "merchantDiscountAmount": 0
-    },
-    "totalsInAllCurrencies": {
-      "USD": {
-        "subtotal": 148,
-        "shippingCost": 0,
-        "tax": 0,
-        "totalDiscount": 12,
-        "total": 148
-      },
-      "YER": {
-        "subtotal": 78440,
-        "shippingCost": 0,
-        "tax": 0,
-        "totalDiscount": 6360,
-        "total": 78440
-      },
-      "SAR": {
-        "subtotal": 555,
-        "shippingCost": 0,
-        "tax": 0,
-        "totalDiscount": 45,
-        "total": 555
-      }
-    },
-    "pricingSummary": {
-      "currency": "USD",
-      "itemsCount": 3,
-      "subtotalBeforeDiscount": 160,
-      "subtotal": 148,
-      "merchantDiscountAmount": 0,
-      "couponDiscount": 0,
-      "promotionDiscount": 12,
-      "autoDiscount": 0,
-      "totalDiscount": 12,
-      "total": 148
     },
     "pricingSummaryByCurrency": {
       "USD": {
@@ -442,26 +445,26 @@ Future<CartItemsResponse> removeFromCart(String itemId) async {
       "YER": {
         "currency": "YER",
         "itemsCount": 3,
-        "subtotalBeforeDiscount": 84800,
-        "subtotal": 78440,
+        "subtotalBeforeDiscount": 84460,
+        "subtotal": 79936,
         "merchantDiscountAmount": 0,
         "couponDiscount": 0,
-        "promotionDiscount": 6360,
+        "promotionDiscount": 4524,
         "autoDiscount": 0,
-        "totalDiscount": 6360,
-        "total": 78440
+        "totalDiscount": 4524,
+        "total": 79936
       },
       "SAR": {
         "currency": "SAR",
         "itemsCount": 3,
-        "subtotalBeforeDiscount": 600,
-        "subtotal": 555,
+        "subtotalBeforeDiscount": 575,
+        "subtotal": 552.5,
         "merchantDiscountAmount": 0,
         "couponDiscount": 0,
-        "promotionDiscount": 45,
+        "promotionDiscount": 22.5,
         "autoDiscount": 0,
-        "totalDiscount": 45,
-        "total": 555
+        "totalDiscount": 22.5,
+        "total": 552.5
       }
     }
   },
@@ -757,26 +760,31 @@ class UnitPrice {
    - للحصول على الأسعار والتفاصيل، استخدم `/cart/preview`
 
 2. **العملة الافتراضية والملخصات:**
-   - إذا لم يتم تمرير `currency` سيتم اعتماد `USD` تلقائياً
-   - الاستجابة تتضمن `totalsInAllCurrencies` و `pricingSummaryByCurrency` للعرض السريع بالعملات (USD / YER / SAR)
+- إذا لم يتم تمرير `currency` سيتم اعتماد `USD` تلقائياً
+- الاستجابة تتضمن خريطة `pricingSummaryByCurrency` للعرض السريع بالعملات (USD / YER / SAR)
 
 3. **الأسعار والتفاصيل:**
-   - `/cart/preview` يُرجع الأسعار الكاملة والخصومات
-   - `unit.base`: السعر الأساسي
-   - `unit.final`: السعر النهائي بعد الخصم
-   - `unit.finalBeforeDiscount`: السعر قبل أي خصومات مفصل لكل عنصر
-   - `lineTotal`: الإجمالي للسطر (unit.final × qty)
+- `/cart/preview` يُرجع الأسعار الكاملة والخصومات
+- `items[].pricing.currencies`: خريطة بالأسعار بعد التحويل لكل عملة مدعومة
+- `unit.base`: السعر الأساسي بالعملة المطلوبة في الطلب
+- `unit.final`: السعر النهائي بعد الخصم بالعملة المطلوبة
+- `unit.finalBeforeDiscount`: السعر قبل الخصم (بعد خصومات العروض فقط)
+- `lineTotal`: الإجمالي للسطر (unit.final × qty)
 
 4. **Wholesale Discount:**
    - يتم تطبيق خصم التاجر (إن وُجد) تلقائياً ويظهر في `pricingSummary`
    - يمكنك قراءة نسبة الخصم ومبلغها من `meta.merchantDiscountPercent` و `pricingSummary.merchantDiscountAmount`
 
-5. **State Management:**
+5. **سمات المتغيرات (Variants):**
+   - `items[].snapshot.variantAttributes` تضم الاسم والقيمة بالعربية والإنجليزية لكل سمة مختارة
+   - استخدمها لعرض الاختيارات للمستخدم بدون الحاجة لاستعلام إضافي
+
+6. **State Management:**
    - احفظ `items` في local state
    - عند الحاجة للأسعار، استدعِ `/cart/preview`
    - حدّث الـ state بعد كل عملية (add/update/remove)
 
-6. **Error Handling:**
+7. **Error Handling:**
    - الكود الحالي يستخدم `Error` عادي وليس `AppException`
    - قد تحصل على أخطاء عامة بدون كود محدد
    - دائماً تحقق من `success` في الـ response
@@ -789,8 +797,8 @@ class UnitPrice {
 
 ### التغييرات الرئيسية:
 1. ✅ مزامنة جميع الـ Responses مع الباك-إند الحالي (`{ items: [...] }` لعمليات CRUD الأساسية)
-2. ✅ توثيق الملخص المالي الجديد في `/cart/preview` بما يتضمن `totalsInAllCurrencies` و `pricingSummaryByCurrency`
-3. ✅ تحديث نماذج Flutter لدعم الحقول الجديدة والأسعار المتعددة العملات
+2. ✅ توثيق الملخص المالي الجديد في `/cart/preview` بما يتضمن `pricingSummaryByCurrency` فقط
+3. ✅ تحديث نماذج Flutter لدعم الأسعار المتعددة العملات والسمات الثنائية اللغة
 4. ✅ إزالة أي إشارات لسلة الزوار من الوثيقة للحفاظ على تركيز واجهة Flutter على المستخدمين المسجلين فقط
 
 ### الملفات المرجعية:
