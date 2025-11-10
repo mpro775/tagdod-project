@@ -13,7 +13,9 @@
 3. [تحديث كمية منتج](#3-تحديث-كمية-منتج)
 4. [حذف منتج من السلة](#4-حذف-منتج-من-السلة)
 5. [معاينة السلة (مع الأسعار)](#5-معاينة-السلة-مع-الأسعار)
-6. [Models في Flutter](#models-في-flutter)
+6. [تطبيق كوبون خصم](#6-تطبيق-كوبون-خصم)
+7. [إزالة كوبون الخصم](#7-إزالة-كوبون-الخصم)
+8. [Models في Flutter](#8-models-في-flutter)
 
 ---
 
@@ -498,7 +500,162 @@ Future<CartPreview> previewCart({String? currency}) async {
 
 ---
 
-## Models في Flutter
+## 6. تطبيق كوبون خصم
+
+يطبق كوبون خصم على السلة ويعيد لك ملخص الأسعار المحدّث بشكل مماثل لـ `/cart/preview`.
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/cart/coupon`
+- **Auth Required:** ✅ نعم (Bearer Token)
+
+### Request Body
+
+```json
+{
+  "couponCode": "SUMMER2025"
+}
+```
+
+| الحقل | النوع | مطلوب | الوصف |
+|-------|-------|-------|-------|
+| `couponCode` | `string` | ✅ نعم | كود الكوبون الذي أدخله المستخدم |
+
+> **ملاحظة:** الخدمة تتحقق من الكوبون داخلياً عبر `marketingService.validateCoupon`. في حال كان الكوبون غير صالح سيتم إرجاع خطأ (status 400) مع رسالة توضيحية.
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "currency": "USD",
+    "appliedCoupons": ["SUMMER2025"],
+    "pricingSummary": {
+      "subtotalBeforeDiscount": 200,
+      "subtotal": 160,
+      "couponDiscount": 40,
+      "promotionDiscount": 0,
+      "totalDiscount": 40,
+      "total": 160,
+      "currency": "USD"
+    },
+    "items": [
+      {
+        "itemId": "item_001",
+        "variantId": "var_789",
+        "qty": 2,
+        "unit": {
+          "base": 100,
+          "final": 80,
+          "currency": "USD",
+          "appliedRule": "coupon:SUMMER2025"
+        },
+        "lineTotal": 160,
+        "pricing": {
+          "currencies": {
+            "USD": { "base": 100, "final": 80, "discount": 20 },
+            "YER": { "base": 52900, "final": 42320, "discount": 10580 },
+            "SAR": { "base": 375, "final": 300, "discount": 75 }
+          }
+        }
+      }
+    ]
+  },
+  "requestId": "req_cart_coupon_apply_001"
+}
+```
+
+> **تذكير:** هيكل الاستجابة هو نفس `CartPreview`، ما يعني أنك تحصل على `appliedCoupons`, `pricingSummary`, و `pricingSummaryByCurrency`.
+
+### كود Flutter
+
+```dart
+Future<CartPreview> applyCoupon({required String code}) async {
+  final response = await _dio.post(
+    '/cart/coupon',
+    data: {'couponCode': code},
+  );
+
+  final apiResponse = ApiResponse<CartPreview>.fromJson(
+    response.data,
+    (json) => CartPreview.fromJson(json as Map<String, dynamic>),
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+#### أفضل ممارسات الواجهة
+
+- تحقق مبدئياً من الكوبون عبر [`/marketing/coupons/validate`](./12-coupons-service.md#1-التحقق-من-كوبون) لإظهار رسائل فورية للمستخدم.
+- بعد التحقق، استدعِ `/cart/coupon` لتطبيق الخصم وتحديث حالة السلة.
+- الكود يدعم تطبيق عدة كوبونات متتالية (`appliedCoupons` مصفوفة)، وتطبّق الخصومات بشكل تراكمي.
+
+---
+
+## 7. إزالة كوبون الخصم
+
+يحذف الكوبون (أو جميع الكوبونات) من السلة ويعيد ملخص الأسعار بعد التحديث.
+
+### معلومات الطلب
+
+- **Method:** `DELETE`
+- **Endpoint:** `/cart/coupon`
+- **Auth Required:** ✅ نعم (Bearer Token)
+
+> **ملاحظة حالية:** الـ Controller الحالي لا يستقبل `couponCode`، لذلك يتم مسح جميع الكوبونات المطبقة دفعة واحدة. في حال أُضيف دعم لاحق لتحديد كوبون معيّن، استخدم parameter `couponCode` في Query أو Body وفق ما سيتم اعتماده.
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "appliedCoupons": [],
+    "pricingSummary": {
+      "subtotalBeforeDiscount": 200,
+      "subtotal": 200,
+      "couponDiscount": 0,
+      "promotionDiscount": 0,
+      "totalDiscount": 0,
+      "total": 200,
+      "currency": "USD"
+    }
+  },
+  "requestId": "req_cart_coupon_remove_001"
+}
+```
+
+> **تنبيه:** مثل `applyCoupon`, هذه الاستجابة عبارة عن `CartPreview`. يمكن إعادة استخدام نفس نموذج البيانات في Flutter.
+
+### كود Flutter
+
+```dart
+Future<CartPreview> removeCoupons() async {
+  final response = await _dio.delete('/cart/coupon');
+
+  final apiResponse = ApiResponse<CartPreview>.fromJson(
+    response.data,
+    (json) => CartPreview.fromJson(json as Map<String, dynamic>),
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 8. Models في Flutter
 
 ### ملف: `lib/models/cart/cart_models.dart`
 

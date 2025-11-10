@@ -80,6 +80,7 @@ import { ar } from 'date-fns/locale';
 import { OrderTimeline, OrderStatusChip } from '../components';
 
 import { CreditCard } from '@mui/icons-material';
+import { useUser } from '@/features/users/hooks/useUsers';
 
 export const OrderDetailsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -129,6 +130,7 @@ export const OrderDetailsPage: React.FC = () => {
   const cancelMutation = useCancelOrder();
   const addNotesMutation = useAddOrderNotes();
   const verifyPaymentMutation = useVerifyPayment();
+  const { data: customer, isLoading: isCustomerLoading } = useUser(order?.userId ?? '');
 
   const handleUpdateStatus = async () => {
     if (!id || !order) return;
@@ -248,6 +250,20 @@ export const OrderDetailsPage: React.FC = () => {
       </Box>
     );
   }
+
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+  const deliveryAddress = order?.deliveryAddress;
+  const addressLabel = (deliveryAddress as { label?: string } | undefined)?.label;
+  const customerNameFromUser = [customer?.firstName, customer?.lastName].filter(Boolean).join(' ').trim();
+  const displayCustomerName =
+    customerNameFromUser ||
+    deliveryAddress?.recipientName ||
+    addressLabel ||
+    t('details.unknownCustomer', { defaultValue: 'عميل غير معروف' });
+  const displayCustomerPhone =
+    customer?.phone ||
+    deliveryAddress?.recipientPhone ||
+    t('details.noPhoneAvailable', { defaultValue: 'لا يوجد رقم هاتف' });
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ar}>
@@ -471,7 +487,7 @@ export const OrderDetailsPage: React.FC = () => {
                   {t('details.orderItems')}
                 </Typography>
                 <List sx={{ p: 0 }}>
-                  {order.items.map((item, index) => (
+                  {orderItems.map((item, index) => (
                     <ListItem
                       key={index}
                       divider
@@ -689,20 +705,36 @@ export const OrderDetailsPage: React.FC = () => {
                     <ListItemIcon>
                       <Person fontSize="small" />
                     </ListItemIcon>
-                    <ListItemText
-                      primary={t('details.customerName')}
-                      secondary={order.deliveryAddress.recipientName}
-                    />
+                  <ListItemText
+                    primary={t('details.customerName')}
+                    secondary={
+                      isCustomerLoading
+                        ? t('details.loadingCustomer', { defaultValue: 'جاري تحميل بيانات العميل...' })
+                        : displayCustomerName
+                    }
+                  />
                   </ListItem>
                   <ListItem>
                     <ListItemIcon>
                       <Phone fontSize="small" />
                     </ListItemIcon>
+                  <ListItemText
+                    primary={t('details.phone')}
+                    secondary={
+                      isCustomerLoading
+                        ? t('details.loadingCustomer', { defaultValue: 'جاري تحميل بيانات العميل...' })
+                        : displayCustomerPhone
+                    }
+                  />
+                  </ListItem>
+                {!customer && (
+                  <ListItem>
                     <ListItemText
-                      primary={t('details.phone')}
-                      secondary={order.deliveryAddress.recipientPhone}
+                      primary={t('details.customerId', { defaultValue: 'معرف العميل' })}
+                      secondary={order.userId}
                     />
                   </ListItem>
+                )}
                 </List>
               </CardContent>
             </Card>
@@ -722,34 +754,51 @@ export const OrderDetailsPage: React.FC = () => {
                   <LocationOn />
                   {t('details.deliveryAddress')}
                 </Typography>
-                <Box
-                  sx={{
-                    p: { xs: 1.5, sm: 2 },
-                    bgcolor:
-                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
-                    borderRadius: 1,
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                    {order.deliveryAddress.recipientName}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                    {order.deliveryAddress.line1}
-                  </Typography>
-                  {order.deliveryAddress.line2 && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                      {order.deliveryAddress.line2}
+                {deliveryAddress ? (
+                  <Box
+                    sx={{
+                      p: { xs: 1.5, sm: 2 },
+                      bgcolor:
+                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                      {deliveryAddress.recipientName || addressLabel || displayCustomerName}
                     </Typography>
-                  )}
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                    {order.deliveryAddress.city}, {order.deliveryAddress.country}
+                    {deliveryAddress.line1 && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        {deliveryAddress.line1}
+                      </Typography>
+                    )}
+                    {deliveryAddress.line2 && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        {deliveryAddress.line2}
+                      </Typography>
+                    )}
+                    {(deliveryAddress.city || deliveryAddress.region || deliveryAddress.country) && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                        {[deliveryAddress.city, deliveryAddress.region, deliveryAddress.country]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </Typography>
+                    )}
+                    {deliveryAddress.postalCode && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                        {t('details.postalCode')}: {deliveryAddress.postalCode}
+                      </Typography>
+                    )}
+                    {deliveryAddress.notes && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                        {t('details.addressNotes', { defaultValue: 'ملاحظات العنوان' })}: {deliveryAddress.notes}
+                      </Typography>
+                    )}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    {t('details.noDeliveryAddress', { defaultValue: 'لا توجد بيانات عنوان للتسليم' })}
                   </Typography>
-                  {order.deliveryAddress.postalCode && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      {t('details.postalCode')}: {order.deliveryAddress.postalCode}
-                    </Typography>
-                  )}
-                </Box>
+                )}
               </CardContent>
             </Card>
 

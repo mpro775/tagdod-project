@@ -26,20 +26,36 @@ export const ordersApi = {
   list: async (params: ListOrdersParams): Promise<PaginatedResponse<Order>> => {
     const response = await apiClient.get<ApiResponse<{
       orders: Order[];
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
+      page?: number;
+      limit?: number;
+      total?: number;
+      totalPages?: number;
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
     }>>('/admin/orders', {
       params: sanitizePaginationParams(params),
     });
+
+    const payload = response.data.data;
+    const orders = Array.isArray(payload.orders) ? payload.orders : [];
+    const pagination = payload.pagination ?? {
+      page: payload.page ?? params.page ?? 1,
+      limit: payload.limit ?? params.limit ?? orders.length ?? 0,
+      total: payload.total ?? orders.length ?? 0,
+      totalPages: payload.totalPages ?? 1,
+    };
+
     return {
-      data: response.data.data.orders,
+      data: orders,
       meta: {
-        page: response.data.data.page,
-        limit: response.data.data.limit,
-        total: response.data.data.total,
-        totalPages: response.data.data.totalPages,
+        page: pagination.page ?? 1,
+        limit: pagination.limit ?? orders.length ?? 0,
+        total: pagination.total ?? orders.length ?? 0,
+        totalPages: pagination.totalPages ?? 1,
       },
     };
   },
@@ -48,8 +64,14 @@ export const ordersApi = {
    * Get order by ID
    */
   getById: async (id: string): Promise<Order> => {
-    const response = await apiClient.get<ApiResponse<Order>>(`/admin/orders/${id}`);
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<Order | { order: Order }>>(`/admin/orders/${id}`);
+    const payload = response.data.data;
+
+    if (payload && typeof payload === 'object' && 'order' in payload) {
+      return (payload as { order: Order }).order;
+    }
+
+    return payload as Order;
   },
 
   /**
@@ -194,8 +216,14 @@ export const ordersApi = {
    * Get order statistics
    */
   getStats: async (): Promise<OrderStats> => {
-    const response = await apiClient.get<ApiResponse<OrderStats>>('/admin/orders/stats');
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<OrderStats | { stats: OrderStats }>>('/admin/orders/stats');
+    const payload = response.data.data;
+
+    if (payload && typeof payload === 'object' && 'stats' in payload) {
+      return (payload as { stats: OrderStats }).stats;
+    }
+
+    return payload as OrderStats;
   },
 
   /**

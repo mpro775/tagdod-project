@@ -91,6 +91,21 @@ export const OrdersListPage: React.FC = () => {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   const { data, isLoading, error, refetch } = useOrders(filters);
+  const orders = data?.data ?? [];
+  const usersMap = useMemo(() => {
+    const map = new Map<string, { firstName?: string; lastName?: string; phone?: string }>();
+    for (const order of orders) {
+      if (!map.has(order.userId)) {
+        const customer =
+          order.metadata?.customer ??
+          (order as unknown as { customer?: { firstName?: string; lastName?: string; phone?: string } }).customer;
+        if (customer) {
+          map.set(order.userId, customer);
+        }
+      }
+    }
+    return map;
+  }, [orders]);
   const { data: stats, isLoading: statsLoading } = useOrderStats();
   const bulkUpdateMutation = useBulkUpdateOrderStatus();
   const exportMutation = useExportOrders();
@@ -165,7 +180,14 @@ export const OrdersListPage: React.FC = () => {
         field: 'customerName',
         headerName: t('list.columns.customerName'),
         width: 180,
-        valueGetter: (_value, row) => row.deliveryAddress?.recipientName || t('list.user.notSpecified'),
+        valueGetter: (_value, row) => {
+          const customer = usersMap.get(row.userId) ?? null;
+          const nameParts = [customer?.firstName, customer?.lastName].filter(Boolean);
+          if (nameParts.length > 0) {
+            return nameParts.join(' ');
+          }
+          return row.customerName || t('list.user.notSpecified');
+        },
       },
       {
         field: 'items',

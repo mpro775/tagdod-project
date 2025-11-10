@@ -177,14 +177,32 @@ export class DeliveryAddress {
   @Prop({ required: true })
   label!: string;
 
+  @Prop()
+  recipientName?: string;
+
+  @Prop()
+  recipientPhone?: string;
+
   @Prop({ required: true })
   line1!: string;
+
+  @Prop()
+  line2?: string;
 
   @Prop({ required: true })
   city!: string;
 
+  @Prop()
+  region?: string;
+
+  @Prop()
+  country?: string;
+
   @Prop({ type: Object, required: true })
   coords!: { lat: number; lng: number };
+
+  @Prop()
+  postalCode?: string;
 
   @Prop()
   notes?: string;
@@ -281,6 +299,12 @@ export class Order {
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   userId!: Types.ObjectId;
+
+  @Prop()
+  customerName?: string;
+
+  @Prop()
+  customerPhone?: string;
 
   @Prop()
   accountType?: string; // retail/merchant/engineer

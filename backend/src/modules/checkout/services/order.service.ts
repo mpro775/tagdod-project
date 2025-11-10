@@ -87,18 +87,45 @@ export class OrderService {
     return crypto.createHmac('sha256', this.paymentSigningKey).update(payload).digest('hex');
   }
 
-  private async getUsersMap(userIds: Types.ObjectId[]): Promise<Map<string, { name: string; phone: string }>> {
+  private async getUsersMap(
+    userIds: Types.ObjectId[],
+  ): Promise<
+    Map<
+      string,
+      {
+        name: string;
+        fullName: string;
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+      }
+    >
+  > {
     const users = await this.userModel.find(
       { _id: { $in: userIds } },
-      { _id: 1, firstName: 1, lastName: 1, phone: 1 }
+      { _id: 1, firstName: 1, lastName: 1, phone: 1 },
     ).lean();
 
-    const usersMap = new Map<string, { name: string; phone: string }>();
-    users.forEach(user => {
-      const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'غير محدد';
+    const usersMap = new Map<
+      string,
+      {
+        name: string;
+        fullName: string;
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+      }
+    >();
+    users.forEach((user) => {
+      const firstName = user.firstName?.trim() || undefined;
+      const lastName = user.lastName?.trim() || undefined;
+      const fullName = [firstName, lastName].filter(Boolean).join(' ') || user.phone || 'غير محدد';
       usersMap.set(user._id.toString(), {
         name: fullName,
-        phone: user.phone || 'غير محدد'
+        fullName,
+        firstName,
+        lastName,
+        phone: user.phone || undefined,
       });
     });
 
@@ -618,8 +645,42 @@ export class OrderService {
       this.orderModel.countDocuments(filter)
     ]);
 
+    const userIds = orders
+      .map((order) => order.userId)
+      .filter((id): id is Types.ObjectId => !!id)
+      .map((id) => new Types.ObjectId(id));
+
+    const usersMap = userIds.length > 0 ? await this.getUsersMap(userIds) : new Map();
+
+    const enhancedOrders = orders.map((order) => {
+      const userInfo = order.userId ? usersMap.get(order.userId.toString()) : undefined;
+      const existingCustomerName = (order as { customerName?: string }).customerName;
+      const existingCustomerPhone = (order as { customerPhone?: string }).customerPhone;
+      const customerName =
+        userInfo?.fullName ||
+        existingCustomerName ||
+        order.deliveryAddress?.recipientName ||
+        'غير محدد';
+
+      const updatedMetadata = {
+        ...(order.metadata || {}),
+        customer: {
+          firstName: userInfo?.firstName ?? undefined,
+          lastName: userInfo?.lastName ?? undefined,
+          phone: userInfo?.phone ?? undefined,
+        },
+      };
+
+      return {
+        ...order,
+        customerName,
+        customerPhone: userInfo?.phone ?? existingCustomerPhone,
+        metadata: updatedMetadata,
+      };
+    });
+
     return {
-      orders,
+      orders: enhancedOrders,
       pagination: {
         total,
         page,

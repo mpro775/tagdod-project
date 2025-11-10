@@ -103,13 +103,14 @@ export interface StatusHistoryEntry {
 // Delivery Address
 export interface DeliveryAddress {
   addressId: string;
-  recipientName: string;
-  recipientPhone: string;
-  line1: string;
+  label?: string;
+  recipientName?: string;
+  recipientPhone?: string;
+  line1?: string;
   line2?: string;
-  city: string;
+  city?: string;
   region?: string;
-  country: string;
+  country?: string;
   postalCode?: string;
   coords?: { lat: number; lng: number };
   notes?: string;
@@ -147,6 +148,8 @@ export interface RatingInfo {
 export interface Order extends BaseEntity {
   orderNumber: string;
   userId: string;
+  customerName?: string;
+  customerPhone?: string;
   accountType?: string;
   source: string;
 
@@ -242,6 +245,13 @@ export interface Order extends BaseEntity {
     deviceInfo?: string;
     ipAddress?: string;
     userAgent?: string;
+    customer?: {
+      _id?: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      email?: string;
+    };
   };
 
   // Important Dates

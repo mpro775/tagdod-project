@@ -657,7 +657,7 @@ type PaymentProviderRow = GridValidRowModel & {
         field: 'displayOrder',
         headerName: t('sections.localPaymentAccounts.displayOrder'),
         width: 140,
-        valueGetter: ({ row }) => (row as PaymentProviderRow).displayOrder ?? 0,
+        valueGetter: ({ row }) => ((row as PaymentProviderRow | undefined)?.displayOrder ?? 0),
       },
       {
         field: 'actions',
