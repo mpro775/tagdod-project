@@ -26,7 +26,14 @@ import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { ConfirmDialog } from '@/shared/components';
 import { CartFilters, Cart, BulkActionRequest } from '../types/cart.types';
-import { useCartList, useCartFilters, useCartSelection, useBulkActions } from '../hooks/useCart';
+import {
+  useCartList,
+  useCartFilters,
+  useCartSelection,
+  useBulkActions,
+  useCartDashboard,
+  cartQueryKeys,
+} from '../hooks/useCart';
 import {
   CartStatsCards,
   CartFilters as CartFiltersComponent,
@@ -36,6 +43,7 @@ import { ConvertToOrderDialog } from './ConvertToOrderDialog';
 import { SendReminderDialog } from './SendReminderDialog';
 import { DataTable } from '@/shared/components';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   formatCurrency,
   formatDate,
@@ -50,6 +58,7 @@ export const CartManagementPage: React.FC = () => {
   const theme = useTheme();
   const { isMobile, isXs } = useBreakpoint();
   const { confirmDialog, dialogProps } = useConfirmDialog();
+  const queryClient = useQueryClient();
 
   // State management
   const [selectedCart, setSelectedCart] = useState<Cart | null>(null);
@@ -70,6 +79,13 @@ export const CartManagementPage: React.FC = () => {
   const { selectedCarts, selectAll, deselectAll } = useCartSelection();
 
   const { data: cartData, isLoading, error, refetch } = useCartList(filters);
+  const dashboardPeriod = '30';
+  const {
+    analytics,
+    statistics,
+    isLoading: dashboardLoading,
+    error: dashboardError,
+  } = useCartDashboard(dashboardPeriod);
 
   const bulkActionsMutation = useBulkActions();
 
@@ -192,6 +208,9 @@ export const CartManagementPage: React.FC = () => {
 
   const handleRefresh = () => {
     refetch();
+    queryClient.invalidateQueries({ queryKey: cartQueryKeys.analytics(dashboardPeriod) });
+    queryClient.invalidateQueries({ queryKey: cartQueryKeys.statistics() });
+    queryClient.invalidateQueries({ queryKey: cartQueryKeys.conversionRates(dashboardPeriod) });
   };
 
   // Data preparation
@@ -241,8 +260,39 @@ export const CartManagementPage: React.FC = () => {
     [t]
   );
 
-  const getCartItemsCount = useCallback((cart: Cart) => cart.items?.length || 0, []);
-  const getCartTotal = (cart: Cart) => cart.pricingSummary?.total || 0;
+  const getCartItemsCount = useCallback((cart?: Cart | null) => {
+    if (!cart?.items) return 0;
+    return cart.items.reduce((sum, item) => sum + (item.qty ?? 0), 0);
+  }, []);
+  const getCartDisplayTotals = useCallback(
+    (cart: Cart) => {
+      const desiredCurrency = cart.currency ? cart.currency.toUpperCase() : undefined;
+      const summaryByCurrency = cart.pricingSummaryByCurrency || {};
+      const primarySummary =
+        summaryByCurrency.USD ||
+        (desiredCurrency && summaryByCurrency[desiredCurrency]) ||
+        (cart.pricingSummary?.currency &&
+          summaryByCurrency[cart.pricingSummary.currency.toUpperCase()]) ||
+        Object.values(summaryByCurrency)[0] ||
+        cart.pricingSummary;
+
+      const currency =
+        primarySummary?.currency ||
+        desiredCurrency ||
+        cart.pricingSummary?.currency ||
+        'USD';
+      const total =
+        primarySummary?.total ??
+        cart.pricingSummary?.total ??
+        0;
+
+      return {
+        total,
+        currency,
+      };
+    },
+    []
+  );
   const getLastActivity = (cart: Cart) =>
     cart.lastActivityAt
       ? formatRelativeTime(cart.lastActivityAt)
@@ -334,7 +384,10 @@ export const CartManagementPage: React.FC = () => {
         headerName: t('list.columns.itemsCount') as string,
         width: isMobile ? 90 : 130,
         minWidth: 90,
-        valueGetter: (params: any) => getCartItemsCount(params.row as Cart),
+        valueGetter: (params: any) => {
+          const cart = params?.row as Cart | undefined;
+          return cart ? getCartItemsCount(cart) : 0;
+        },
       },
       {
         field: 'totalValue',
@@ -343,6 +396,7 @@ export const CartManagementPage: React.FC = () => {
         minWidth: 110,
         renderCell: (params) => {
           const cart = params.row as Cart;
+          const totals = getCartDisplayTotals(cart);
           return (
             <Typography 
               variant="body2" 
@@ -352,7 +406,7 @@ export const CartManagementPage: React.FC = () => {
                 color: 'text.primary',
               }}
             >
-              {formatCurrency(getCartTotal(cart), cart.currency)}
+              {formatCurrency(totals.total, totals.currency)}
             </Typography>
           );
         },
@@ -555,18 +609,19 @@ export const CartManagementPage: React.FC = () => {
       </Box>
 
       {/* Error Alert */}
-      {error && (
+      {(error || dashboardError) && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {error.message}
+          {error?.message ?? dashboardError ?? ''}
         </Alert>
       )}
 
       {/* Statistics Cards */}
       <CartStatsCards
-        statistics={undefined} // Will be fetched separately
-        analytics={undefined} // Will be fetched separately
-        isLoading={isLoading}
+        statistics={statistics}
+        analytics={analytics}
+        isLoading={isLoading || dashboardLoading}
         onRefresh={handleRefresh}
+        carts={cartData?.carts}
       />
 
       {/* Filters */}
@@ -767,7 +822,10 @@ export const CartManagementPage: React.FC = () => {
                                 {t('list.columns.totalValue')}
                               </Typography>
                               <Typography variant="body2" fontWeight="bold" color="primary.main">
-                                {formatCurrency(getCartTotal(cart), cart.currency)}
+                                {(() => {
+                                  const totals = getCartDisplayTotals(cart);
+                                  return formatCurrency(totals.total, totals.currency);
+                                })()}
                               </Typography>
                             </Box>
                             <Box>

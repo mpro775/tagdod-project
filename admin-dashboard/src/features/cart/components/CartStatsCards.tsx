@@ -18,7 +18,7 @@ import {
   Refresh,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { CartStatistics, CartAnalytics } from '../types/cart.types';
+import { CartStatistics, CartAnalytics, Cart } from '../types/cart.types';
 import { formatCurrency } from '../api/cartApi';
 
 interface CartStatsCardsProps {
@@ -26,6 +26,7 @@ interface CartStatsCardsProps {
   analytics?: CartAnalytics;
   isLoading?: boolean;
   onRefresh?: () => void;
+  carts?: Cart[];
 }
 
 interface StatCardProps {
@@ -161,57 +162,126 @@ export const CartStatsCards: React.FC<CartStatsCardsProps> = ({
   statistics,
   analytics,
   isLoading = false,
+  carts,
 }) => {
   const { t } = useTranslation('cart');
+  const overview = analytics?.overview;
+  const allTime = statistics?.allTime;
+  const conversionOverview = analytics?.trends?.recentActivity?.[0] as
+    | { totalValue?: number }
+    | undefined;
+
+  const fallback = React.useMemo(() => {
+    if (!carts || carts.length === 0) return null;
+
+    const selectUsdTotal = (cart: Cart): number => {
+      if (cart.pricingSummaryByCurrency?.USD) {
+        return cart.pricingSummaryByCurrency.USD.total ?? 0;
+      }
+      if (cart.totalsInAllCurrencies?.USD) {
+        return cart.totalsInAllCurrencies.USD.total ?? 0;
+      }
+      if (cart.pricingSummary?.currency?.toUpperCase() === 'USD') {
+        return cart.pricingSummary.total ?? 0;
+      }
+      return cart.pricingSummary?.total ?? 0;
+    };
+
+    const aggregates = carts.reduce(
+      (acc, cart) => {
+        acc.totalCarts += 1;
+        acc.totalValue += selectUsdTotal(cart);
+        switch (cart.status) {
+          case 'active':
+            acc.active += 1;
+            break;
+          case 'abandoned':
+            acc.abandoned += 1;
+            break;
+          case 'converted':
+            acc.converted += 1;
+            break;
+        }
+        return acc;
+      },
+      { totalCarts: 0, totalValue: 0, active: 0, abandoned: 0, converted: 0 },
+    );
+
+    const conversionRate =
+      aggregates.totalCarts > 0 ? (aggregates.converted / aggregates.totalCarts) * 100 : 0;
+
+    return {
+      totalCarts: aggregates.totalCarts,
+      totalValue: aggregates.totalValue,
+      active: aggregates.active,
+      abandoned: aggregates.abandoned,
+      converted: aggregates.converted,
+      conversionRate,
+    };
+  }, [carts]);
+
+  const totalCarts =
+    allTime?.total ?? overview?.totalCarts ?? fallback?.totalCarts ?? 0;
+  const activeCarts =
+    allTime?.active ?? overview?.activeCarts ?? fallback?.active ?? 0;
+  const abandonedCarts =
+    allTime?.abandoned ?? overview?.abandonedCarts ?? fallback?.abandoned ?? 0;
+  const convertedCarts =
+    allTime?.converted ?? overview?.convertedCarts ?? fallback?.converted ?? 0;
+  const totalValue =
+    allTime?.totalValue ?? conversionOverview?.totalValue ?? fallback?.totalValue ?? 0;
+  const averageCartValue =
+    overview?.avgCartValue ?? (totalCarts ? totalValue / totalCarts : 0);
+  const conversionRate =
+    overview?.conversionRate ?? allTime?.conversionRate ?? fallback?.conversionRate ?? 0;
+  const recoveryRate = conversionRate;
 
   const stats = [
     {
       title: t('stats.totalCarts'),
-      value: statistics?.totalCarts?.toLocaleString('en-US') || analytics?.totalCarts?.toLocaleString('en-US') || '0',
+      value: totalCarts.toLocaleString('en-US'),
       icon: <ShoppingCart />,
       color: '#2196f3',
     },
     {
       title: t('stats.activeCarts'),
-      value: statistics?.totalCarts ?
-        ((statistics.totalCarts - (analytics?.abandonedCarts || 0) - (analytics?.convertedCarts || 0))).toLocaleString('en-US') :
-          analytics?.activeCarts?.toLocaleString('en-US') || '0',
+      value: activeCarts.toLocaleString('en-US'),
       icon: <LooksOne />,
       color: '#4caf50',
     },
     {
       title: t('stats.abandonedCarts'),
-      value: analytics?.abandonedCarts?.toLocaleString('en-US') || '0',
+      value: abandonedCarts.toLocaleString('en-US'),
       icon: <Email />,
       color: '#ff9800',
     },
     {
       title: t('stats.convertedCarts'),
-      value: analytics?.convertedCarts?.toLocaleString('en-US') || '0',
+      value: convertedCarts.toLocaleString('en-US'),
       icon: <TrendingUp />,
       color: '#9c27b0',
     },
     {
       title: t('stats.totalValue'),
-      value: formatCurrency(statistics?.totalValue || analytics?.totalValue || 0),
+      value: formatCurrency(totalValue, 'USD'),
       icon: <MonetizationOn />,
       color: '#00bcd4',
     },
     {
       title: t('stats.averageValue'),
-      value: formatCurrency(statistics?.averageCartValue || analytics?.averageCartValue || 0),
+      value: formatCurrency(averageCartValue, 'USD'),
       icon: <TrendingUp />,
       color: '#795548',
     },
     {
       title: t('stats.conversionRate'),
-      value: `${((statistics?.conversionRate || analytics?.conversionRate || 0) * 100).toFixed(1)}%`,
+      value: `${(conversionRate ?? 0).toFixed(1)}%`,
       icon: <TrendingUp />,
       color: '#607d8b',
     },
     {
       title: t('stats.recoveryRate'),
-      value: `${((statistics?.recoveryRate || 0) * 100).toFixed(1)}%`,
+      value: `${(recoveryRate ?? 0).toFixed(1)}%`,
       icon: <Refresh />,
       color: '#e91e63',
     },

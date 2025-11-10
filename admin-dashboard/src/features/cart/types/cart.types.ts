@@ -26,19 +26,22 @@ export interface CartItem {
     finalPrice: number;
     discount: number;
     appliedPromotionId?: string;
+    finalBeforeDiscount?: number;
   };
 }
 
 export interface PricingSummary {
+  currency: string;
+  itemsCount: number;
+  subtotalBeforeDiscount: number;
   subtotal: number;
-  promotionDiscount: number;
+  merchantDiscountAmount: number;
   couponDiscount: number;
+  promotionDiscount: number;
   autoDiscount: number;
   totalDiscount: number;
   total: number;
-  itemsCount: number;
-  currency: string;
-  lastCalculatedAt: Date;
+  lastCalculatedAt?: Date;
 }
 
 export interface CartMetadata {
@@ -53,6 +56,9 @@ export interface CartMetadata {
 export interface UserInfo {
   _id: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
+  storeName?: string;
   email?: string;
   phone?: string;
   avatar?: string;
@@ -67,10 +73,28 @@ export interface Cart {
   currency: string;
   accountType?: string;
   appliedCouponCode?: string;
+  appliedCoupons?: string[];
   couponDiscount: number;
   autoAppliedCouponCodes?: string[];
   autoAppliedDiscounts?: number[];
   pricingSummary?: PricingSummary;
+  pricingSummaryByCurrency?: Record<string, PricingSummary>;
+  totalsInAllCurrencies?: Record<
+    string,
+    {
+      subtotal: number;
+      shippingCost: number;
+      tax: number;
+      totalDiscount: number;
+      total: number;
+    }
+  >;
+  meta?: {
+    count?: number;
+    quantity?: number;
+    merchantDiscountPercent?: number;
+    merchantDiscountAmount?: number;
+  };
   lastActivityAt?: Date;
   isAbandoned: boolean;
   abandonmentEmailsSent: number;
@@ -121,43 +145,49 @@ export interface CartFilters {
 }
 
 // Analytics Types
-export interface CartAnalytics {
+export interface CartAnalyticsOverview {
   totalCarts: number;
   activeCarts: number;
   abandonedCarts: number;
   convertedCarts: number;
-  expiredCarts: number;
-  totalValue: number;
-  averageCartValue: number;
+  avgCartValue: number;
+  avgItemsPerCart: number;
   conversionRate: number;
   abandonmentRate: number;
-  period: string;
-  dateRange: {
-    from: Date;
-    to: Date;
-  };
+}
+
+export interface CartAnalyticsTrends {
+  recentActivity: Array<Record<string, unknown>>;
+  hourlyActivity: Array<Record<string, unknown>>;
+}
+
+export interface CartAnalyticsInsights {
+  topProducts: Array<Record<string, unknown>>;
+  cartValueDistribution: Array<Record<string, unknown>>;
+}
+
+export interface CartAnalytics {
+  overview: CartAnalyticsOverview;
+  trends: CartAnalyticsTrends;
+  insights: CartAnalyticsInsights;
+  period: number;
+}
+
+export interface CartPeriodStatistics {
+  total: number;
+  active: number;
+  abandoned: number;
+  converted: number;
+  totalValue: number;
+  conversionRate: number;
+  abandonmentRate: number;
 }
 
 export interface CartStatistics {
-  totalCarts: number;
-  totalValue: number;
-  averageCartValue: number;
-  averageItemsPerCart: number;
-  conversionRate: number;
-  abandonmentRate: number;
-  recoveryRate: number;
-  topAbandonedCategories: Array<{
-    categoryId: string;
-    categoryName: string;
-    count: number;
-    value: number;
-  }>;
-  topConvertedCategories: Array<{
-    categoryId: string;
-    categoryName: string;
-    count: number;
-    value: number;
-  }>;
+  today: CartPeriodStatistics;
+  yesterday: CartPeriodStatistics;
+  lastWeek: CartPeriodStatistics;
+  allTime: CartPeriodStatistics;
 }
 
 export interface ConversionRates {

@@ -8468,21 +8468,16 @@
             "in": "query",
             "schema": {
               "enum": [
-                "draft",
                 "pending_payment",
                 "confirmed",
-                "payment_failed",
                 "processing",
-                "ready_to_ship",
                 "shipped",
-                "out_for_delivery",
                 "delivered",
                 "completed",
                 "on_hold",
                 "cancelled",
-                "refunded",
-                "partially_refunded",
-                "returned"
+                "returned",
+                "refunded"
               ],
               "type": "string"
             }
@@ -8841,21 +8836,16 @@
             "in": "query",
             "schema": {
               "enum": [
-                "draft",
                 "pending_payment",
                 "confirmed",
-                "payment_failed",
                 "processing",
-                "ready_to_ship",
                 "shipped",
-                "out_for_delivery",
                 "delivered",
                 "completed",
                 "on_hold",
                 "cancelled",
-                "refunded",
-                "partially_refunded",
-                "returned"
+                "returned",
+                "refunded"
               ],
               "type": "string"
             }
@@ -9385,21 +9375,16 @@
             "in": "query",
             "schema": {
               "enum": [
-                "draft",
                 "pending_payment",
                 "confirmed",
-                "payment_failed",
                 "processing",
-                "ready_to_ship",
                 "shipped",
-                "out_for_delivery",
                 "delivered",
                 "completed",
                 "on_hold",
                 "cancelled",
-                "refunded",
-                "partially_refunded",
-                "returned"
+                "returned",
+                "refunded"
               ],
               "type": "string"
             }
@@ -9638,21 +9623,16 @@
             "in": "query",
             "schema": {
               "enum": [
-                "draft",
                 "pending_payment",
                 "confirmed",
-                "payment_failed",
                 "processing",
-                "ready_to_ship",
                 "shipped",
-                "out_for_delivery",
                 "delivered",
                 "completed",
                 "on_hold",
                 "cancelled",
-                "refunded",
-                "partially_refunded",
-                "returned"
+                "returned",
+                "refunded"
               ],
               "type": "string"
             }
@@ -28741,8 +28721,6 @@
             "example": "COD",
             "enum": [
               "COD",
-              "ONLINE",
-              "WALLET",
               "BANK_TRANSFER"
             ]
           },
@@ -28841,21 +28819,16 @@
           "status": {
             "type": "string",
             "enum": [
-              "draft",
               "pending_payment",
               "confirmed",
-              "payment_failed",
               "processing",
-              "ready_to_ship",
               "shipped",
-              "out_for_delivery",
               "delivered",
               "completed",
               "on_hold",
               "cancelled",
-              "refunded",
-              "partially_refunded",
-              "returned"
+              "returned",
+              "refunded"
             ]
           },
           "notes": {
@@ -28955,21 +28928,16 @@
           "status": {
             "type": "string",
             "enum": [
-              "draft",
               "pending_payment",
               "confirmed",
-              "payment_failed",
               "processing",
-              "ready_to_ship",
               "shipped",
-              "out_for_delivery",
               "delivered",
               "completed",
               "on_hold",
               "cancelled",
-              "refunded",
-              "partially_refunded",
-              "returned"
+              "returned",
+              "refunded"
             ]
           },
           "notes": {

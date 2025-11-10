@@ -70,6 +70,7 @@ export const CartAnalyticsPage: React.FC = () => {
 
   // Custom hooks
   const { analytics, statistics, conversionRates, isLoading, error } = useCartDashboard(period);
+  const overview = analytics?.overview;
 
   // Event handlers
   const handlePeriodChange = (event: any) => {
@@ -352,9 +353,11 @@ export const CartAnalyticsPage: React.FC = () => {
                           mb: 0.5,
                         }}
                       >
-                        {statistics?.conversionRate
-                          ? `${(statistics.conversionRate * 100).toFixed(1)}%`
-                          : '0%'}
+                        {statistics?.allTime?.conversionRate !== undefined
+                          ? `${statistics.allTime.conversionRate.toFixed(1)}%`
+                          : overview?.conversionRate !== undefined
+                            ? `${overview.conversionRate.toFixed(1)}%`
+                            : '0%'}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -385,9 +388,11 @@ export const CartAnalyticsPage: React.FC = () => {
                           mb: 0.5,
                         }}
                       >
-                        {statistics?.abandonmentRate
-                          ? `${(statistics.abandonmentRate * 100).toFixed(1)}%`
-                          : '0%'}
+                        {statistics?.allTime?.abandonmentRate !== undefined
+                          ? `${statistics.allTime.abandonmentRate.toFixed(1)}%`
+                          : overview?.abandonmentRate !== undefined
+                            ? `${overview.abandonmentRate.toFixed(1)}%`
+                            : '0%'}
                       </Typography>
                       <Typography
                         variant="caption"

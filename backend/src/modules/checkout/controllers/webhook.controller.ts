@@ -166,10 +166,8 @@ export class WebhookController {
     switch (status as string) {
       case 'shipped':
       case 'in_transit':
-        orderStatus = OrderStatus.SHIPPED;
-        break;
       case 'out_for_delivery':
-        orderStatus = OrderStatus.OUT_FOR_DELIVERY;
+        orderStatus = OrderStatus.SHIPPED;
         break;
       case 'delivered':
         orderStatus = OrderStatus.DELIVERED;

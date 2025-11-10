@@ -22,9 +22,9 @@ import {
   OrderDocument, 
   OrderStatus, 
   PaymentStatus,
-  PaymentMethod,
-  OrderStateMachine 
+  PaymentMethod
 } from '../schemas/order.schema';
+import { OrderStateMachine } from '../utils/order-state-machine';
 import { Inventory } from '../schemas/inventory.schema';
 import { Reservation } from '../schemas/reservation.schema';
 import { InventoryLedger } from '../schemas/inventory-ledger.schema';
@@ -278,15 +278,17 @@ export class OrderService {
         }
       }
 
-      // Calculate items discount (from promotions)
+      // ملاحظة: data.subtotal يأتي من السلة بعد تطبيق خصومات العروض (item.unit.final)
+      // لذلك لا نحتاج لحساب itemsDiscount مرة أخرى، فقط نحسبها للعرض في التقارير
       const itemsDiscount = data.items.reduce((sum, item) => {
         const itemDiscount = (item.unit.base - item.unit.final) * item.qty;
         return sum + itemDiscount;
       }, 0);
 
       const shipping = 0; // رسوم الشحن تأتي من لوحة التحكم لكل طلب على حدى (افتراضي صفر)
+      // المجموع النهائي = subtotal (بعد خصم العروض) - خصم الكوبونات + الشحن
+      const total = data.subtotal - totalCouponDiscount + shipping;
       const totalDiscount = itemsDiscount + totalCouponDiscount;
-      const total = data.subtotal - totalDiscount + shipping;
 
       // التحقق من صلاحية COD
       const codEligibility = await this.checkCODEligibility(userId);
@@ -377,7 +379,8 @@ export class OrderService {
         const usdSubtotal = await this.exchangeRatesService.convertToUSD(subtotal, dto.currency);
         const usdShipping = await this.exchangeRatesService.convertToUSD(shipping, dto.currency);
         const usdTax = await this.exchangeRatesService.convertToUSD(tax, dto.currency);
-        const usdDiscount = await this.exchangeRatesService.convertToUSD(couponDiscount, dto.currency);
+        // تحويل إجمالي الخصومات (عروض + كوبونات) وليس الكوبونات فقط
+        const usdDiscount = await this.exchangeRatesService.convertToUSD(totalDiscount, dto.currency);
 
         totalsInAllCurrencies = await this.exchangeRatesService.calculateTotalsInAllCurrencies(
           usdSubtotal,
@@ -520,17 +523,30 @@ export class OrderService {
       // تحديث استخدام العنوان
       await this.addressesService.markAsUsed(dto.deliveryAddressId, userId);
 
-      this.logger.log(`Order created: ${order.orderNumber}`);
+      // تحديث السلة إلى حالة CONVERTED وربطها بالطلب
+      await this.cartModel.updateOne(
+        { userId: new Types.ObjectId(userId), status: 'active' },
+        {
+          $set: {
+            status: 'converted',
+            convertedToOrderId: order._id,
+            convertedAt: new Date(),
+            items: [], // تفريغ العناصر لمنع إعادة الاستخدام
+          }
+        }
+      );
+
+      this.logger.log(`Order created: ${order.orderNumber}, Cart converted`);
 
       return {
         orderId: order._id.toString(),
         orderNumber: order.orderNumber,
         status: order.status,
-        payment: dto.paymentMethod === 'ONLINE' ? {
-          intentId: `gw-${order._id}`,
-          provider: dto.paymentProvider,
+        payment: dto.paymentMethod === 'BANK_TRANSFER' ? {
+          intentId: `local-${order._id}`,
+          provider: 'local_bank',
           amount: total,
-          signature: this.hmac(`gw-${order._id}|PENDING|${total}`)
+          signature: this.hmac(`local-${order._id}|PENDING|${total}`)
         } : undefined
       };
     } catch (error) {
@@ -648,14 +664,12 @@ export class OrderService {
     }
 
     // التحقق من الدفع قبل السماح بتغيير الحالة
-    // الحالات الممنوعة بدون دفع: CONFIRMED, PROCESSING, READY_TO_SHIP, SHIPPED, OUT_FOR_DELIVERY, DELIVERED
+    // الحالات الممنوعة بدون دفع: CONFIRMED, PROCESSING, SHIPPED, DELIVERED
     // استثناء CANCELLED من هذا التحقق
     const statusesRequiringPayment = [
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
-      OrderStatus.READY_TO_SHIP,
       OrderStatus.SHIPPED,
-      OrderStatus.OUT_FOR_DELIVERY,
       OrderStatus.DELIVERED
     ];
 
@@ -734,7 +748,7 @@ export class OrderService {
   async shipOrder(orderId: string, dto: ShipOrderDto, adminId: string): Promise<OrderDocument> {
     const order = await this.getOrderDetails(orderId);
     
-    if (![OrderStatus.PROCESSING, OrderStatus.READY_TO_SHIP].includes(order.status)) {
+    if (order.status !== OrderStatus.PROCESSING) {
       throw new OrderNotReadyToShipException({ status: order.status });
     }
 
@@ -776,7 +790,8 @@ export class OrderService {
 
     // تحديث حالة الدفع
     order.paymentStatus = dto.amount === order.total ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED;
-    order.status = dto.amount === order.total ? OrderStatus.REFUNDED : OrderStatus.PARTIALLY_REFUNDED;
+    // ملاحظة: نستخدم REFUNDED فقط في OrderStatus (تم تبسيط الحالات)
+    order.status = OrderStatus.REFUNDED;
 
     await this.addStatusHistory(
       order,
@@ -973,12 +988,13 @@ export class OrderService {
       );
     } else {
       order.paymentStatus = PaymentStatus.FAILED;
-      await this.updateOrderStatus(
-        order._id.toString(),
-        OrderStatus.PAYMENT_FAILED,
+      // في حالة فشل الدفع، نبقي الطلب في حالة PENDING_PAYMENT
+      await this.addStatusHistory(
+        order,
+        order.status,
         new Types.ObjectId('system'),
         'system',
-        'فشل في الدفع'
+        'فشل في الدفع - يرجى المحاولة مرة أخرى'
       );
     }
 
@@ -1590,10 +1606,10 @@ export class OrderService {
     } else {
       order.paymentStatus = PaymentStatus.FAILED;
       
-      // إضافة إلى سجل الحالات
+      // إضافة إلى سجل الحالات (نبقي الطلب في حالته الحالية)
       await this.addStatusHistory(
         order,
-        OrderStatus.PAYMENT_FAILED,
+        order.status,
         new Types.ObjectId(adminId),
         'admin',
         `تم رفض الدفع - المبلغ غير كافٍ: ${dto.verifiedAmount} ${dto.verifiedCurrency} (المطلوب: ${order.total} ${order.currency})${dto.notes ? ` - ${dto.notes}` : ''}`

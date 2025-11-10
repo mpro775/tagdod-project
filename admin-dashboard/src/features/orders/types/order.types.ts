@@ -1,37 +1,29 @@
 import { BaseEntity, ListParams } from '@/shared/types/common.types';
 
-// Order Status - متطابق مع Backend
+// Order Status - متطابق مع Backend (مبسط - v2.0.0)
 export enum OrderStatus {
-  // eslint-disable-next-line no-unused-vars
-  DRAFT = 'draft',
+  // المسار الأساسي
   // eslint-disable-next-line no-unused-vars
   PENDING_PAYMENT = 'pending_payment',
   // eslint-disable-next-line no-unused-vars
   CONFIRMED = 'confirmed',
   // eslint-disable-next-line no-unused-vars
-  PAYMENT_FAILED = 'payment_failed',
-  // eslint-disable-next-line no-unused-vars
   PROCESSING = 'processing',
   // eslint-disable-next-line no-unused-vars
-  READY_TO_SHIP = 'ready_to_ship',
-  // eslint-disable-next-line no-unused-vars
   SHIPPED = 'shipped',
-  // eslint-disable-next-line no-unused-vars
-  OUT_FOR_DELIVERY = 'out_for_delivery',
   // eslint-disable-next-line no-unused-vars
   DELIVERED = 'delivered',
   // eslint-disable-next-line no-unused-vars
   COMPLETED = 'completed',
+  // حالات استثنائية
   // eslint-disable-next-line no-unused-vars
   ON_HOLD = 'on_hold',
   // eslint-disable-next-line no-unused-vars
   CANCELLED = 'cancelled',
   // eslint-disable-next-line no-unused-vars
-  REFUNDED = 'refunded',
-  // eslint-disable-next-line no-unused-vars
-  PARTIALLY_REFUNDED = 'partially_refunded',
-  // eslint-disable-next-line no-unused-vars
   RETURNED = 'returned',
+  // eslint-disable-next-line no-unused-vars
+  REFUNDED = 'refunded',
 }
 
 export enum PaymentStatus {
@@ -54,10 +46,6 @@ export enum PaymentStatus {
 export enum PaymentMethod {
   // eslint-disable-next-line no-unused-vars
   COD = 'COD',
-  // eslint-disable-next-line no-unused-vars
-  ONLINE = 'ONLINE',
-  // eslint-disable-next-line no-unused-vars
-  WALLET = 'WALLET',
   // eslint-disable-next-line no-unused-vars
   BANK_TRANSFER = 'BANK_TRANSFER',
 }

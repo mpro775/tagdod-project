@@ -13,21 +13,16 @@ const orderStatusColors: Record<
   OrderStatus,
   'default' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success'
 > = {
-  draft: 'default',
   pending_payment: 'warning',
   confirmed: 'info',
-  payment_failed: 'error',
   processing: 'primary',
-  ready_to_ship: 'secondary',
   shipped: 'info',
-  out_for_delivery: 'primary',
   delivered: 'success',
   completed: 'success',
   on_hold: 'warning',
   cancelled: 'error',
-  refunded: 'error',
-  partially_refunded: 'warning',
   returned: 'error',
+  refunded: 'error',
 };
 
 const getStatusIcon = (status: OrderStatus) => {
@@ -36,10 +31,8 @@ const getStatusIcon = (status: OrderStatus) => {
     case 'completed':
       return <CheckCircle />;
     case 'shipped':
-    case 'out_for_delivery':
       return <LocalShipping />;
     case 'processing':
-    case 'ready_to_ship':
       return <Schedule />;
     case 'cancelled':
     case 'refunded':

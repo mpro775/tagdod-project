@@ -1,6 +1,6 @@
 # 🛒 خدمة السلة (Cart Service)
 
-خدمة السلة توفر endpoints لإدارة سلة التسوق للمستخدمين المسجلين والزوار.
+خدمة السلة توفر endpoints لإدارة سلة التسوق للمستخدمين المسجلين فقط.
 
 > ✅ **تم التحقق وتحديث هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/cart`
 
@@ -12,9 +12,8 @@
 2. [إضافة منتج للسلة](#2-إضافة-منتج-للسلة)
 3. [تحديث كمية منتج](#3-تحديث-كمية-منتج)
 4. [حذف منتج من السلة](#4-حذف-منتج-من-السلة)
-5. [دمج سلة الزائر مع المستخدم](#5-دمج-سلة-الزائر-مع-المستخدم)
-6. [معاينة السلة (مع الأسعار)](#6-معاينة-السلة-مع-الأسعار)
-7. [Models في Flutter](#models-في-flutter)
+5. [معاينة السلة (مع الأسعار)](#5-معاينة-السلة-مع-الأسعار)
+6. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -328,72 +327,7 @@ Future<CartItemsResponse> removeFromCart(String itemId) async {
 
 ---
 
-## 5. دمج سلة الزائر مع المستخدم
-
-عند تسجيل الدخول، يدمج سلة الزائر (حسب deviceId) مع سلة المستخدم.
-
-### معلومات الطلب
-
-- **Method:** `POST`
-- **Endpoint:** `/cart/merge`
-- **Auth Required:** ✅ نعم (Bearer Token)
-
-### Request Body
-
-```json
-{
-  "deviceId": "device_abc123"
-}
-```
-
-### Response - نجاح
-
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "itemId": "item_001",
-        "variantId": "var_789",
-        "qty": 2
-      },
-      {
-        "itemId": "item_002",
-        "variantId": "var_012",
-        "qty": 1
-      }
-    ]
-  },
-  "requestId": "req_cart_005"
-}
-```
-
-### كود Flutter
-
-```dart
-Future<CartItemsResponse> mergeCart(String deviceId) async {
-  final response = await _dio.post(
-    '/cart/merge',
-    data: {'deviceId': deviceId},
-  );
-
-  final apiResponse = ApiResponse<CartItemsResponse>.fromJson(
-    response.data,
-    (json) => CartItemsResponse.fromJson(json as Map<String, dynamic>),
-  );
-
-  if (apiResponse.isSuccess) {
-    return apiResponse.data!;
-  } else {
-    throw ApiException(apiResponse.error!);
-  }
-}
-```
-
----
-
-## 6. معاينة السلة (مع الأسعار)
+## 5. معاينة السلة (مع الأسعار)
 
 يسترجع ملخص السلة مع حساب الأسعار والخصومات.
 
@@ -403,13 +337,15 @@ Future<CartItemsResponse> mergeCart(String deviceId) async {
 - **Endpoint:** `/cart/preview`
 - **Auth Required:** ✅ نعم (Bearer Token)
 
-### Request Body
+### Request Body (اختياري)
 
 ```json
 {
-  "currency": "YER"
+  "currency": "USD"
 }
 ```
+
+> إذا لم يتم تمرير `currency` سيتم اعتماد `USD` تلقائياً للعرض، مع توفير ملخص بالعملات الثلاث (USD / YER / SAR) في نفس الاستجابة.
 
 ### Response - نجاح
 
@@ -417,38 +353,116 @@ Future<CartItemsResponse> mergeCart(String deviceId) async {
 {
   "success": true,
   "data": {
-    "currency": "YER",
-    "subtotal": 1120000,
+    "currency": "USD",
+    "subtotalBeforeDiscount": 160,
+    "subtotal": 148,
     "items": [
       {
         "itemId": "item_001",
         "variantId": "var_789",
         "qty": 2,
         "unit": {
-          "base": 150000,
-          "final": 135000,
-          "currency": "YER",
+          "base": 60,
+          "final": 54,
+          "finalBeforeDiscount": 60,
+          "currency": "USD",
           "appliedRule": null
         },
-        "lineTotal": 270000
+        "lineTotal": 108
       },
       {
         "itemId": "item_002",
-        "variantId": "var_012",
+        "productId": "prod_456",
         "qty": 1,
         "unit": {
-          "base": 850000,
-          "final": 850000,
-          "currency": "YER",
+          "base": 40,
+          "final": 40,
+          "finalBeforeDiscount": 40,
+          "currency": "USD",
           "appliedRule": null
         },
-        "lineTotal": 850000
+        "lineTotal": 40
       }
     ],
+    "appliedCoupons": [],
     "meta": {
       "count": 2,
-      "wholesaleDiscountPercent": 0,
-      "wholesaleDiscountAmount": 0
+      "quantity": 3,
+      "merchantDiscountPercent": 0,
+      "merchantDiscountAmount": 0
+    },
+    "totalsInAllCurrencies": {
+      "USD": {
+        "subtotal": 148,
+        "shippingCost": 0,
+        "tax": 0,
+        "totalDiscount": 12,
+        "total": 148
+      },
+      "YER": {
+        "subtotal": 78440,
+        "shippingCost": 0,
+        "tax": 0,
+        "totalDiscount": 6360,
+        "total": 78440
+      },
+      "SAR": {
+        "subtotal": 555,
+        "shippingCost": 0,
+        "tax": 0,
+        "totalDiscount": 45,
+        "total": 555
+      }
+    },
+    "pricingSummary": {
+      "currency": "USD",
+      "itemsCount": 3,
+      "subtotalBeforeDiscount": 160,
+      "subtotal": 148,
+      "merchantDiscountAmount": 0,
+      "couponDiscount": 0,
+      "promotionDiscount": 12,
+      "autoDiscount": 0,
+      "totalDiscount": 12,
+      "total": 148
+    },
+    "pricingSummaryByCurrency": {
+      "USD": {
+        "currency": "USD",
+        "itemsCount": 3,
+        "subtotalBeforeDiscount": 160,
+        "subtotal": 148,
+        "merchantDiscountAmount": 0,
+        "couponDiscount": 0,
+        "promotionDiscount": 12,
+        "autoDiscount": 0,
+        "totalDiscount": 12,
+        "total": 148
+      },
+      "YER": {
+        "currency": "YER",
+        "itemsCount": 3,
+        "subtotalBeforeDiscount": 84800,
+        "subtotal": 78440,
+        "merchantDiscountAmount": 0,
+        "couponDiscount": 0,
+        "promotionDiscount": 6360,
+        "autoDiscount": 0,
+        "totalDiscount": 6360,
+        "total": 78440
+      },
+      "SAR": {
+        "currency": "SAR",
+        "itemsCount": 3,
+        "subtotalBeforeDiscount": 600,
+        "subtotal": 555,
+        "merchantDiscountAmount": 0,
+        "couponDiscount": 0,
+        "promotionDiscount": 45,
+        "autoDiscount": 0,
+        "totalDiscount": 45,
+        "total": 555
+      }
     }
   },
   "requestId": "req_cart_006"
@@ -458,12 +472,12 @@ Future<CartItemsResponse> mergeCart(String deviceId) async {
 ### كود Flutter
 
 ```dart
-Future<CartPreview> previewCart({
-  String currency = 'YER',
-}) async {
+Future<CartPreview> previewCart({String? currency}) async {
   final response = await _dio.post(
     '/cart/preview',
-    data: {'currency': currency},
+    data: {
+      if (currency != null) 'currency': currency,
+    },
   );
 
   final apiResponse = ApiResponse<CartPreview>.fromJson(
@@ -531,50 +545,144 @@ class CartItemSimple {
 // الـ Response من POST /cart/preview
 class CartPreviewMeta {
   final int count;
-  final double wholesaleDiscountPercent;
-  final double wholesaleDiscountAmount;
+  final int quantity;
+  final double merchantDiscountPercent;
+  final double merchantDiscountAmount;
 
   CartPreviewMeta({
     required this.count,
-    required this.wholesaleDiscountPercent,
-    required this.wholesaleDiscountAmount,
+    required this.quantity,
+    required this.merchantDiscountPercent,
+    required this.merchantDiscountAmount,
   });
 
   factory CartPreviewMeta.fromJson(Map<String, dynamic> json) {
     return CartPreviewMeta(
       count: json['count'] ?? 0,
-      wholesaleDiscountPercent: (json['wholesaleDiscountPercent'] ?? 0).toDouble(),
-      wholesaleDiscountAmount: (json['wholesaleDiscountAmount'] ?? 0).toDouble(),
+      quantity: json['quantity'] ?? 0,
+      merchantDiscountPercent: (json['merchantDiscountPercent'] ?? 0).toDouble(),
+      merchantDiscountAmount: (json['merchantDiscountAmount'] ?? 0).toDouble(),
+    );
+  }
+}
+
+class CartTotalsEntry {
+  final double subtotal;
+  final double shippingCost;
+  final double tax;
+  final double totalDiscount;
+  final double total;
+
+  CartTotalsEntry({
+    required this.subtotal,
+    required this.shippingCost,
+    required this.tax,
+    required this.totalDiscount,
+    required this.total,
+  });
+
+  factory CartTotalsEntry.fromJson(Map<String, dynamic> json) {
+    return CartTotalsEntry(
+      subtotal: (json['subtotal'] ?? 0).toDouble(),
+      shippingCost: (json['shippingCost'] ?? 0).toDouble(),
+      tax: (json['tax'] ?? 0).toDouble(),
+      totalDiscount: (json['totalDiscount'] ?? 0).toDouble(),
+      total: (json['total'] ?? 0).toDouble(),
+    );
+  }
+}
+
+class CartPricingSummary {
+  final String currency;
+  final int itemsCount;
+  final double subtotalBeforeDiscount;
+  final double subtotal;
+  final double merchantDiscountAmount;
+  final double couponDiscount;
+  final double promotionDiscount;
+  final double autoDiscount;
+  final double totalDiscount;
+  final double total;
+
+  CartPricingSummary({
+    required this.currency,
+    required this.itemsCount,
+    required this.subtotalBeforeDiscount,
+    required this.subtotal,
+    required this.merchantDiscountAmount,
+    required this.couponDiscount,
+    required this.promotionDiscount,
+    required this.autoDiscount,
+    required this.totalDiscount,
+    required this.total,
+  });
+
+  factory CartPricingSummary.fromJson(Map<String, dynamic> json) {
+    return CartPricingSummary(
+      currency: json['currency'] ?? 'USD',
+      itemsCount: json['itemsCount'] ?? 0,
+      subtotalBeforeDiscount: (json['subtotalBeforeDiscount'] ?? 0).toDouble(),
+      subtotal: (json['subtotal'] ?? 0).toDouble(),
+      merchantDiscountAmount: (json['merchantDiscountAmount'] ?? 0).toDouble(),
+      couponDiscount: (json['couponDiscount'] ?? 0).toDouble(),
+      promotionDiscount: (json['promotionDiscount'] ?? 0).toDouble(),
+      autoDiscount: (json['autoDiscount'] ?? 0).toDouble(),
+      totalDiscount: (json['totalDiscount'] ?? 0).toDouble(),
+      total: (json['total'] ?? 0).toDouble(),
     );
   }
 }
 
 class CartPreview {
   final String currency;
+  final double subtotalBeforeDiscount;
   final double subtotal;
   final List<CartLineItem> items;
+  final List<String> appliedCoupons;
   final CartPreviewMeta meta;
+  final Map<String, CartTotalsEntry> totalsInAllCurrencies;
+  final CartPricingSummary pricingSummary;
+  final Map<String, CartPricingSummary> pricingSummaryByCurrency;
 
   CartPreview({
     required this.currency,
+    required this.subtotalBeforeDiscount,
     required this.subtotal,
     required this.items,
+    required this.appliedCoupons,
     required this.meta,
+    required this.totalsInAllCurrencies,
+    required this.pricingSummary,
+    required this.pricingSummaryByCurrency,
   });
 
   factory CartPreview.fromJson(Map<String, dynamic> json) {
     return CartPreview(
-      currency: json['currency'] ?? 'YER',
+      currency: json['currency'] ?? 'USD',
+      subtotalBeforeDiscount: (json['subtotalBeforeDiscount'] ?? 0).toDouble(),
       subtotal: (json['subtotal'] ?? 0).toDouble(),
       items: (json['items'] as List)
           .map((item) => CartLineItem.fromJson(item))
           .toList(),
-      meta: CartPreviewMeta.fromJson(json['meta']),
+      appliedCoupons: (json['appliedCoupons'] as List? ?? const [])
+          .map((coupon) => coupon.toString())
+          .toList(),
+      meta: CartPreviewMeta.fromJson(json['meta'] ?? const {}),
+      totalsInAllCurrencies: (json['totalsInAllCurrencies'] as Map<String, dynamic>? ?? const {})
+          .map(
+        (key, value) => MapEntry(key, CartTotalsEntry.fromJson(value)),
+      ),
+      pricingSummary: CartPricingSummary.fromJson(json['pricingSummary'] ?? const {}),
+      pricingSummaryByCurrency:
+          (json['pricingSummaryByCurrency'] as Map<String, dynamic>? ?? const {}).map(
+        (key, value) => MapEntry(key, CartPricingSummary.fromJson(value)),
+      ),
     );
   }
 
-  bool get hasWholesaleDiscount => meta.wholesaleDiscountPercent > 0;
-  double get total => subtotal; // في الحالي، total = subtotal
+  bool get hasDiscounts =>
+      pricingSummary.totalDiscount > 0 || pricingSummary.merchantDiscountAmount > 0;
+  double get total => pricingSummary.total;
 }
 
 class CartLineItem {
@@ -611,12 +719,14 @@ class CartLineItem {
 class UnitPrice {
   final double base;
   final double final;
+  final double? finalBeforeDiscount;
   final String currency;
   final dynamic appliedRule;
 
   UnitPrice({
     required this.base,
     required this.final,
+    this.finalBeforeDiscount,
     required this.currency,
     this.appliedRule,
   });
@@ -625,7 +735,8 @@ class UnitPrice {
     return UnitPrice(
       base: (json['base'] ?? 0).toDouble(),
       final: (json['final'] ?? 0).toDouble(),
-      currency: json['currency'] ?? 'YER',
+      finalBeforeDiscount: (json['finalBeforeDiscount'] as num?)?.toDouble(),
+      currency: json['currency'] ?? 'USD',
       appliedRule: json['appliedRule'],
     );
   }
@@ -645,21 +756,20 @@ class UnitPrice {
    - كل عنصر يحتوي على `itemId`, وواحد على الأقل من (`variantId` أو `productId`) بالإضافة إلى `qty`
    - للحصول على الأسعار والتفاصيل، استخدم `/cart/preview`
 
-2. **سلة الزائر vs المستخدم:**
-   - للزوار: استخدم endpoints في `/cart/guest` مع `deviceId`
-   - للمستخدمين: استخدم endpoints في `/cart` مع Bearer Token
-   - عند تسجيل الدخول: استدعِ `/cart/merge` لدمج السلتين
+2. **العملة الافتراضية والملخصات:**
+   - إذا لم يتم تمرير `currency` سيتم اعتماد `USD` تلقائياً
+   - الاستجابة تتضمن `totalsInAllCurrencies` و `pricingSummaryByCurrency` للعرض السريع بالعملات (USD / YER / SAR)
 
 3. **الأسعار والتفاصيل:**
    - `/cart/preview` يُرجع الأسعار الكاملة والخصومات
    - `unit.base`: السعر الأساسي
    - `unit.final`: السعر النهائي بعد الخصم
+   - `unit.finalBeforeDiscount`: السعر قبل أي خصومات مفصل لكل عنصر
    - `lineTotal`: الإجمالي للسطر (unit.final × qty)
 
 4. **Wholesale Discount:**
-   - إذا كان المستخدم تاجر جملة، يتم تطبيق الخصم تلقائياً في preview
-   - `wholesaleDiscountPercent`: نسبة الخصم
-   - `wholesaleDiscountAmount`: مبلغ الخصم
+   - يتم تطبيق خصم التاجر (إن وُجد) تلقائياً ويظهر في `pricingSummary`
+   - يمكنك قراءة نسبة الخصم ومبلغها من `meta.merchantDiscountPercent` و `pricingSummary.merchantDiscountAmount`
 
 5. **State Management:**
    - احفظ `items` في local state
@@ -671,13 +781,6 @@ class UnitPrice {
    - قد تحصل على أخطاء عامة بدون كود محدد
    - دائماً تحقق من `success` في الـ response
 
-7. **Endpoints للزوار:**
-   - `GET /cart/guest?deviceId=xxx`
-   - `POST /cart/guest/items` (مع deviceId في body)
-   - `PATCH /cart/guest/items/:itemId` (مع deviceId في body)
-   - `DELETE /cart/guest/items/:itemId?deviceId=xxx`
-   - `POST /cart/guest/preview` (مع deviceId في body)
-
 ---
 
 ## 📝 ملاحظات التحديث
@@ -685,11 +788,10 @@ class UnitPrice {
 > ⚠️ **تم تحديث هذه الوثيقة بالكامل** - الوثيقة القديمة كانت تحتوي على response structure مختلف
 
 ### التغييرات الرئيسية:
-1. ✅ تحديث جميع الـ Responses لتُرجع `{ items: [...] }` فقط
-2. ✅ تحديث `/cart/preview` response ليطابق الكود (currency, subtotal, items, meta)
-3. ✅ تحديث Flutter Models لتطابق البنية الفعلية
-4. ✅ إزالة حقول غير موجودة في Response (pricingSummary, currency, appliedCouponCode)
-5. ✅ إضافة ملاحظة عن guest cart endpoints
+1. ✅ مزامنة جميع الـ Responses مع الباك-إند الحالي (`{ items: [...] }` لعمليات CRUD الأساسية)
+2. ✅ توثيق الملخص المالي الجديد في `/cart/preview` بما يتضمن `totalsInAllCurrencies` و `pricingSummaryByCurrency`
+3. ✅ تحديث نماذج Flutter لدعم الحقول الجديدة والأسعار المتعددة العملات
+4. ✅ إزالة أي إشارات لسلة الزوار من الوثيقة للحفاظ على تركيز واجهة Flutter على المستخدمين المسجلين فقط
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/cart/cart.controller.ts`

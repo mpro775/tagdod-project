@@ -2,7 +2,13 @@
 
 خدمة الدفع توفر endpoints لإتمام الطلبات وإدارتها.
 
-> ✅ **تم التحقق وتحديث هذه الوثيقة** - مطابقة للكود الفعلي في `backend/src/modules/checkout`
+> ✅ **تم التحقق وتحديث هذه الوثيقة (v2.0.0)** - مطابقة للكود الفعلي في `backend/src/modules/checkout`
+> 
+> 🆕 **التحديثات الجديدة:**
+> - تبسيط حالات الطلب من 15 إلى 10 حالات
+> - تبسيط طرق الدفع (COD و BANK_TRANSFER فقط)
+> - إضافة دعم التحويل البنكي المحلي
+> - تحديث قواعد الإلغاء
 
 ---
 
@@ -164,7 +170,21 @@ Future<CheckoutPreview> previewCheckout({
 {
   "currency": "YER",
   "paymentMethod": "COD",
-  "paymentProvider": null,
+  "deliveryAddressId": "addr_123",
+  "shippingMethod": "standard",
+  "customerNotes": "يرجى التوصيل في المساء",
+  "couponCode": "SUMMER20"
+}
+```
+
+**أو للتحويل البنكي:**
+
+```json
+{
+  "currency": "YER",
+  "paymentMethod": "BANK_TRANSFER",
+  "localPaymentAccountId": "account_123",
+  "paymentReference": "TRX-2025-001234",
   "deliveryAddressId": "addr_123",
   "shippingMethod": "standard",
   "customerNotes": "يرجى التوصيل في المساء",
@@ -175,8 +195,9 @@ Future<CheckoutPreview> previewCheckout({
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
 | `currency` | `string` | ✅ نعم | العملة |
-| `paymentMethod` | `string` | ✅ نعم | طريقة الدفع (`COD`, `ONLINE`) |
-| `paymentProvider` | `string` | ❌ لا | مزود الدفع (إذا كان ONLINE) |
+| `paymentMethod` | `string` | ✅ نعم | طريقة الدفع (`COD`, `BANK_TRANSFER`) |
+| `localPaymentAccountId` | `string` | ❌ لا | معرف الحساب المحلي (مطلوب مع BANK_TRANSFER) |
+| `paymentReference` | `string` | ❌ لا | رقم الحوالة (مطلوب مع BANK_TRANSFER) |
 | `deliveryAddressId` | `string` | ✅ نعم | ID عنوان التوصيل |
 | `shippingMethod` | `string` | ❌ لا | طريقة الشحن (standard, express) |
 | `customerNotes` | `string` | ❌ لا | ملاحظات العميل |
@@ -193,8 +214,8 @@ Future<CheckoutPreview> previewCheckout({
       "orderNumber": "ORD-2025-001234",
       "status": "pending_payment",
       "payment": {
-        "intentId": "pi_123456",
-        "provider": "stripe",
+        "intentId": "local-507f1f77bcf86cd799439011",
+        "provider": "local_bank",
         "amount": 1120000,
         "signature": "sig_abc123"
       }
@@ -300,7 +321,8 @@ Future<CheckoutPreview> previewCheckout({
 Future<OrderConfirmationResponse> confirmCheckout({
   required String currency,
   required String paymentMethod,
-  String? paymentProvider,
+  String? localPaymentAccountId,
+  String? paymentReference,
   required String deliveryAddressId,
   String? shippingMethod,
   String? customerNotes,
@@ -311,7 +333,8 @@ Future<OrderConfirmationResponse> confirmCheckout({
     data: {
       'currency': currency,
       'paymentMethod': paymentMethod,
-      if (paymentProvider != null) 'paymentProvider': paymentProvider,
+      if (localPaymentAccountId != null) 'localPaymentAccountId': localPaymentAccountId,
+      if (paymentReference != null) 'paymentReference': paymentReference,
       'deliveryAddressId': deliveryAddressId,
       if (shippingMethod != null) 'shippingMethod': shippingMethod,
       if (customerNotes != null) 'customerNotes': customerNotes,
@@ -920,7 +943,8 @@ class OrderDetails {
 
   int get totalItems => items.fold(0, (sum, item) => sum + item.qty);
   bool get isPending => status == 'pending_payment';
-  bool get canBeCancelled => status == 'pending_payment' || status == 'confirmed';
+  bool get canBeCancelled => ['pending_payment', 'confirmed', 'processing', 'on_hold'].contains(status);
+  bool get isActive => !['completed', 'cancelled', 'refunded', 'returned'].contains(status);
 }
 
 class OrderItem {
@@ -1067,19 +1091,19 @@ class OrderStatusHistory {
    - Checkout endpoints في `/orders/checkout/...` وليس `/checkout/...`
    - Orders endpoints في `/orders/...`
 
-2. **حالات الطلب:**
-   - `draft`: مسودة
-   - `pending_payment`: في انتظار الدفع (يمكن الإلغاء)
-   - `confirmed`: مؤكد (يمكن الإلغاء)
-   - `processing`: جاري التحضير
-   - `ready_to_ship`: جاهز للشحن
-   - `shipped`: تم الشحن
-   - `out_for_delivery`: في الطريق للتوصيل
-   - `delivered`: تم التسليم
-   - `completed`: مكتمل
-   - `cancelled`: ملغي
-   - `refunded`: مسترد
-   - `returned`: مرتجع
+2. **حالات الطلب (مبسط - v2.0.0):**
+   - **المسار الأساسي:**
+     - `pending_payment`: في انتظار الدفع (يمكن الإلغاء)
+     - `confirmed`: مؤكد ومدفوع (يمكن الإلغاء)
+     - `processing`: قيد التجهيز (يمكن الإلغاء)
+     - `shipped`: تم الشحن
+     - `delivered`: تم التسليم
+     - `completed`: مكتمل
+   - **حالات استثنائية:**
+     - `on_hold`: معلق
+     - `cancelled`: ملغي
+     - `returned`: مرتجع
+     - `refunded`: مسترد
 
 3. **حالات الدفع:**
    - `pending`: في الانتظار
@@ -1087,9 +1111,9 @@ class OrderStatusHistory {
    - `failed`: فشل
    - `refunded`: مسترد
 
-4. **طرق الدفع:**
+4. **طرق الدفع (مبسط - v2.0.0):**
    - `COD`: الدفع عند الاستلام (يتم التأكيد فوراً)
-   - `ONLINE`: الدفع الإلكتروني (يحتاج تأكيد الدفع)
+   - `BANK_TRANSFER`: تحويل بنكي محلي (يحتاج تأكيد من الإدارة)
 
 5. **الشحن:**
    - `shipping` افتراضياً 0
@@ -1097,8 +1121,8 @@ class OrderStatusHistory {
    - `deliveryOptions` فارغة حالياً (قيد التطوير)
 
 6. **الإلغاء:**
-   - يمكن الإلغاء في حالة `pending_payment` أو `confirmed`
-   - بعد `processing` لا يمكن الإلغاء
+   - يمكن الإلغاء في حالات: `pending_payment`, `confirmed`, `processing`, `on_hold`
+   - بعد `shipped` لا يمكن الإلغاء (يمكن الإرجاع فقط)
 
 7. **Endpoints إضافية:**
    - `GET /orders/recent?limit=5` - الطلبات الأخيرة
@@ -1120,6 +1144,9 @@ class OrderStatusHistory {
 4. ✅ تحديث orders list response (يحتوي على pagination)
 5. ✅ تحديث Flutter Models لتطابق البنية الفعلية
 6. ✅ إضافة ملاحظة عن endpoints إضافية
+7. ✅ **v2.0.0:** تبسيط حالات الطلب (10 حالات بدلاً من 15)
+8. ✅ **v2.0.0:** تبسيط طرق الدفع (COD و BANK_TRANSFER فقط)
+9. ✅ **v2.0.0:** إضافة دعم التحويل البنكي المحلي
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/checkout/controllers/order.controller.ts`

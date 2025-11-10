@@ -264,36 +264,32 @@ export class OrderController {
 
   private getStatusTitle(status: string): string {
     const titles: Record<string, string> = {
-      draft: 'مسودة',
       pending_payment: 'في انتظار الدفع',
       confirmed: 'مؤكد',
-      processing: 'قيد المعالجة',
-      ready_to_ship: 'جاهز للشحن',
+      processing: 'قيد التجهيز',
       shipped: 'تم الشحن',
-      out_for_delivery: 'جاري التوصيل',
       delivered: 'تم التسليم',
       completed: 'مكتمل',
+      on_hold: 'معلق',
       cancelled: 'ملغي',
-      refunded: 'مسترد',
       returned: 'مرتجع',
+      refunded: 'مسترد',
     };
     return titles[status] || status;
   }
 
   private getStatusIcon(status: string): string {
     const icons: Record<string, string> = {
-      draft: '📝',
       pending_payment: '⏳',
       confirmed: '✅',
       processing: '📦',
-      ready_to_ship: '🎁',
       shipped: '🚚',
-      out_for_delivery: '🏃',
       delivered: '🎉',
       completed: '✨',
+      on_hold: '⏸️',
       cancelled: '❌',
-      refunded: '💰',
       returned: '↩️',
+      refunded: '💰',
     };
     return icons[status] || '📋';
   }

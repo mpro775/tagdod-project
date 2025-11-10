@@ -76,7 +76,7 @@ export class Cart {
   items!: CartItem[];
 
   // 🆕 Cart Settings
-  @Prop({ default: 'YER' })
+  @Prop({ default: 'USD' })
   currency!: string;
 
   @Prop()

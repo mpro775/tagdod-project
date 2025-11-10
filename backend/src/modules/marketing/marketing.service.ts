@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { PriceRule, PriceRuleDocument } from './schemas/price-rule.schema';
@@ -241,9 +241,31 @@ export class MarketingService {
   }
 
   async updateCoupon(id: string, dto: UpdateCouponDto, adminId?: string): Promise<Coupon | null> {
+    const updateData: Record<string, unknown> = { ...dto };
+
+    if (dto.code) {
+      const normalizedCode = dto.code.toUpperCase();
+
+      const existing = await this.couponModel.findOne({
+        code: normalizedCode,
+        _id: { $ne: new Types.ObjectId(id) },
+        deletedAt: null,
+      });
+
+      if (existing) {
+        throw new BadRequestException('Coupon code already exists');
+      }
+
+      updateData.code = normalizedCode;
+    }
+
+    if (adminId) {
+      updateData.lastModifiedBy = adminId;
+    }
+
     return this.couponModel.findByIdAndUpdate(
       id,
-      { ...dto, lastModifiedBy: adminId },
+      updateData,
       { new: true }
     );
   }

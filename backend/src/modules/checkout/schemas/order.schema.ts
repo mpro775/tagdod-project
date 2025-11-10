@@ -4,33 +4,22 @@ import { HydratedDocument, Types } from 'mongoose';
 export type OrderDocument = HydratedDocument<Order>;
 
 /**
- * حالات الطلب - نظام موحد شامل
+ * حالات الطلب - نظام مبسط
  */
 export enum OrderStatus {
-  // مراحل الإنشاء
-  DRAFT = 'draft',
-  PENDING_PAYMENT = 'pending_payment',
+  // المسار الأساسي
+  PENDING_PAYMENT = 'pending_payment', // في انتظار الدفع
+  CONFIRMED = 'confirmed', // مؤكد ومدفوع
+  PROCESSING = 'processing', // قيد التجهيز
+  SHIPPED = 'shipped', // تم الشحن
+  DELIVERED = 'delivered', // تم التسليم
+  COMPLETED = 'completed', // مكتمل
   
-  // مراحل التأكيد
-  CONFIRMED = 'confirmed',
-  PAYMENT_FAILED = 'payment_failed',
-  
-  // مراحل التنفيذ
-  PROCESSING = 'processing',
-  READY_TO_SHIP = 'ready_to_ship',
-  SHIPPED = 'shipped',
-  OUT_FOR_DELIVERY = 'out_for_delivery',
-  
-  // مراحل التسليم
-  DELIVERED = 'delivered',
-  COMPLETED = 'completed',
-  
-  // حالات خاصة
-  ON_HOLD = 'on_hold',
-  CANCELLED = 'cancelled',
-  REFUNDED = 'refunded',
-  PARTIALLY_REFUNDED = 'partially_refunded',
-  RETURNED = 'returned',
+  // حالات استثنائية
+  ON_HOLD = 'on_hold', // معلق
+  CANCELLED = 'cancelled', // ملغي
+  RETURNED = 'returned', // مرتجع
+  REFUNDED = 'refunded', // مسترد
 }
 
 /**
@@ -57,34 +46,27 @@ export enum ShippingMethod {
 }
 
 /**
- * طرق الدفع - نظام موحد
+ * طرق الدفع - نظام مبسط
  */
 export enum PaymentMethod {
-  COD = 'COD',
-  ONLINE = 'ONLINE',
-  WALLET = 'WALLET',
-  BANK_TRANSFER = 'BANK_TRANSFER',
+  COD = 'COD', // الدفع عند الاستلام
+  BANK_TRANSFER = 'BANK_TRANSFER', // تحويل بنكي محلي
 }
 
 /**
- * State Machine للطلبات
+ * State Machine للطلبات - مبسط
  */
 export const ORDER_STATE_MACHINE = {
-  [OrderStatus.DRAFT]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CANCELLED],
-  [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.PAYMENT_FAILED, OrderStatus.CANCELLED],
+  [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
   [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
-  [OrderStatus.PROCESSING]: [OrderStatus.READY_TO_SHIP, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
-  [OrderStatus.READY_TO_SHIP]: [OrderStatus.SHIPPED, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
-  [OrderStatus.SHIPPED]: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED],
-  [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
+  [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
+  [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
   [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED, OrderStatus.RETURNED],
   [OrderStatus.COMPLETED]: [],
   [OrderStatus.ON_HOLD]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
   [OrderStatus.CANCELLED]: [],
-  [OrderStatus.REFUNDED]: [],
-  [OrderStatus.PARTIALLY_REFUNDED]: [OrderStatus.REFUNDED],
   [OrderStatus.RETURNED]: [OrderStatus.REFUNDED],
-  [OrderStatus.PAYMENT_FAILED]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CANCELLED],
+  [OrderStatus.REFUNDED]: [],
 };
 
 /**
@@ -558,28 +540,5 @@ OrderSchema.index({ updatedAt: -1 });
 OrderSchema.index({ 'deliveryAddress.city': 1, status: 1 });
 OrderSchema.index({ total: -1, currency: 1 });
 
-/**
- * Helper functions للـ State Machine
- */
-export class OrderStateMachine {
-  static canTransition(from: OrderStatus, to: OrderStatus): boolean {
-    return (ORDER_STATE_MACHINE as Record<OrderStatus, OrderStatus[]>)[from]?.includes(to) || false;
-  }
-
-  static getNextStates(current: OrderStatus): OrderStatus[] {
-    return (ORDER_STATE_MACHINE as Record<OrderStatus, OrderStatus[]>)[current] || [];
-  }
-
-  static isTerminalState(status: OrderStatus): boolean {
-    return [
-      OrderStatus.COMPLETED,
-      OrderStatus.CANCELLED,
-      OrderStatus.REFUNDED,
-      OrderStatus.RETURNED
-    ].includes(status);
-  }
-
-  static isActiveState(status: OrderStatus): boolean {
-    return !this.isTerminalState(status);
-  }
-}
+// ملاحظة: OrderStateMachine تم نقلها إلى utils/order-state-machine.ts
+// استخدم: import { OrderStateMachine } from '../utils/order-state-machine';

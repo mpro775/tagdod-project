@@ -63,21 +63,16 @@ const orderStatusColors: Record<
   OrderStatus,
   'default' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success'
 > = {
-  draft: 'default',
   pending_payment: 'warning',
   confirmed: 'info',
-  payment_failed: 'error',
   processing: 'primary',
-  ready_to_ship: 'secondary',
   shipped: 'info',
-  out_for_delivery: 'primary',
   delivered: 'success',
   completed: 'success',
   on_hold: 'warning',
   cancelled: 'error',
-  refunded: 'error',
-  partially_refunded: 'warning',
   returned: 'error',
+  refunded: 'error',
 };
 
 export const OrdersListPage: React.FC = () => {

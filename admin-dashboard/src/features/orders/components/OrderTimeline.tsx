@@ -43,10 +43,8 @@ const getStatusIcon = (status: OrderStatus) => {
     case 'completed':
       return <CheckCircle color="success" />;
     case 'shipped':
-    case 'out_for_delivery':
       return <LocalShipping color="info" />;
     case 'processing':
-    case 'ready_to_ship':
       return <Schedule color="primary" />;
     case 'cancelled':
     case 'refunded':
@@ -87,11 +85,11 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
   const getOrderTimeline = () => {
     const timeline = [
       {
-        label: t('orders.statusLabels.draft'),
+        label: t('orders.statusLabels.pending_payment'),
         date: order.createdAt,
         completed: true,
-        icon: getStatusIcon('draft' as OrderStatus),
-        status: 'draft' as OrderStatus,
+        icon: getStatusIcon('pending_payment' as OrderStatus),
+        status: 'pending_payment' as OrderStatus,
       },
       {
         label: t('orders.statusLabels.confirmed'),
@@ -120,6 +118,13 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
         completed: !!order.deliveredAt,
         icon: getStatusIcon('delivered' as OrderStatus),
         status: 'delivered' as OrderStatus,
+      },
+      {
+        label: t('orders.statusLabels.completed'),
+        date: order.completedAt,
+        completed: !!order.completedAt,
+        icon: getStatusIcon('completed' as OrderStatus),
+        status: 'completed' as OrderStatus,
       },
     ];
 

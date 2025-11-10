@@ -785,7 +785,7 @@ export class AdvancedReportsService {
         onTimeDeliveryRate: this.calculateOnTimeDeliveryRate(completedOrders),
         totalShipments: completedOrders.length,
         pendingShipments: orders.filter(
-          (o) => o.status === OrderStatus.PROCESSING || o.status === OrderStatus.READY_TO_SHIP,
+          (o) => o.status === OrderStatus.PROCESSING,
         ).length,
       },
       returnAnalytics: {
@@ -975,7 +975,7 @@ export class AdvancedReportsService {
       activeUsers: await this.getActiveUsersCount(),
       activeOrders: await this.orderModel.countDocuments({
         status: {
-          $in: [OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.OUT_FOR_DELIVERY],
+          $in: [OrderStatus.PROCESSING, OrderStatus.SHIPPED],
         },
       }),
       todaySales,

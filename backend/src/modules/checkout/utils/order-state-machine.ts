@@ -23,25 +23,20 @@ export interface StateValidation {
 }
 
 /**
- * State Machine للطلبات - نظام شامل
+ * State Machine للطلبات - نظام مبسط
  */
 export class OrderStateMachine {
   private static readonly TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-    [OrderStatus.DRAFT]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CANCELLED],
-    [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.PAYMENT_FAILED, OrderStatus.CANCELLED],
+    [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
     [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
-    [OrderStatus.PROCESSING]: [OrderStatus.READY_TO_SHIP, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
-    [OrderStatus.READY_TO_SHIP]: [OrderStatus.SHIPPED, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
-    [OrderStatus.SHIPPED]: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED],
-    [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
+    [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
+    [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
     [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED, OrderStatus.RETURNED],
     [OrderStatus.COMPLETED]: [],
     [OrderStatus.ON_HOLD]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
     [OrderStatus.CANCELLED]: [],
-    [OrderStatus.REFUNDED]: [],
-    [OrderStatus.PARTIALLY_REFUNDED]: [OrderStatus.REFUNDED],
     [OrderStatus.RETURNED]: [OrderStatus.REFUNDED],
-    [OrderStatus.PAYMENT_FAILED]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CANCELLED],
+    [OrderStatus.REFUNDED]: [],
   };
 
   private static readonly TERMINAL_STATES: OrderStatus[] = [
@@ -53,22 +48,17 @@ export class OrderStateMachine {
 
   private static readonly ADMIN_ONLY_STATES: OrderStatus[] = [
     OrderStatus.PROCESSING,
-    OrderStatus.READY_TO_SHIP,
     OrderStatus.SHIPPED,
-    OrderStatus.OUT_FOR_DELIVERY,
     OrderStatus.DELIVERED,
     OrderStatus.COMPLETED,
     OrderStatus.ON_HOLD,
     OrderStatus.REFUNDED,
-    OrderStatus.PARTIALLY_REFUNDED,
   ];
 
   private static readonly PAYMENT_REQUIRED_STATES: OrderStatus[] = [
     OrderStatus.CONFIRMED,
     OrderStatus.PROCESSING,
-    OrderStatus.READY_TO_SHIP,
     OrderStatus.SHIPPED,
-    OrderStatus.OUT_FOR_DELIVERY,
     OrderStatus.DELIVERED,
     OrderStatus.COMPLETED,
   ];
@@ -120,7 +110,6 @@ export class OrderStateMachine {
    */
   static canCancel(status: OrderStatus): boolean {
     return [
-      OrderStatus.DRAFT,
       OrderStatus.PENDING_PAYMENT,
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
@@ -155,7 +144,6 @@ export class OrderStateMachine {
   static canShip(status: OrderStatus): boolean {
     return [
       OrderStatus.PROCESSING,
-      OrderStatus.READY_TO_SHIP,
     ].includes(status);
   }
 
@@ -165,7 +153,6 @@ export class OrderStateMachine {
   static canDeliver(status: OrderStatus): boolean {
     return [
       OrderStatus.SHIPPED,
-      OrderStatus.OUT_FOR_DELIVERY,
     ].includes(status);
   }
 
@@ -204,21 +191,16 @@ export class OrderStateMachine {
    */
   static getRecommendedPath(current: OrderStatus): OrderStatus[] {
     const paths: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.DRAFT]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED],
       [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED],
       [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED],
-      [OrderStatus.PROCESSING]: [OrderStatus.READY_TO_SHIP, OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED],
-      [OrderStatus.READY_TO_SHIP]: [OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED],
-      [OrderStatus.SHIPPED]: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED, OrderStatus.COMPLETED],
-      [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED, OrderStatus.COMPLETED],
+      [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED],
+      [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.COMPLETED],
       [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED],
       [OrderStatus.COMPLETED]: [],
       [OrderStatus.ON_HOLD]: [OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED],
       [OrderStatus.CANCELLED]: [],
-      [OrderStatus.REFUNDED]: [],
-      [OrderStatus.PARTIALLY_REFUNDED]: [OrderStatus.REFUNDED],
       [OrderStatus.RETURNED]: [OrderStatus.REFUNDED],
-      [OrderStatus.PAYMENT_FAILED]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED],
+      [OrderStatus.REFUNDED]: [],
     };
 
     return paths[current] || [];
@@ -229,21 +211,16 @@ export class OrderStateMachine {
    */
   static getStateInfo(status: OrderStatus) {
     const stateInfo: Record<OrderStatus, { title: string; description: string; icon: string; color: string }> = {
-      [OrderStatus.DRAFT]: { title: 'مسودة', description: 'الطلب في مرحلة المسودة', icon: '📝', color: 'gray' },
       [OrderStatus.PENDING_PAYMENT]: { title: 'في انتظار الدفع', description: 'انتظار تأكيد الدفع', icon: '⏳', color: 'yellow' },
-      [OrderStatus.CONFIRMED]: { title: 'مؤكد', description: 'تم تأكيد الطلب', icon: '✅', color: 'green' },
-      [OrderStatus.PROCESSING]: { title: 'قيد المعالجة', description: 'الطلب قيد التحضير', icon: '📦', color: 'blue' },
-      [OrderStatus.READY_TO_SHIP]: { title: 'جاهز للشحن', description: 'الطلب جاهز للتسليم', icon: '🎁', color: 'purple' },
+      [OrderStatus.CONFIRMED]: { title: 'مؤكد', description: 'تم تأكيد الطلب والدفع', icon: '✅', color: 'green' },
+      [OrderStatus.PROCESSING]: { title: 'قيد التجهيز', description: 'الطلب قيد التحضير', icon: '📦', color: 'blue' },
       [OrderStatus.SHIPPED]: { title: 'تم الشحن', description: 'الطلب في الطريق', icon: '🚚', color: 'indigo' },
-      [OrderStatus.OUT_FOR_DELIVERY]: { title: 'جاري التوصيل', description: 'الطلب مع مندوب التوصيل', icon: '🏃', color: 'orange' },
       [OrderStatus.DELIVERED]: { title: 'تم التسليم', description: 'تم تسليم الطلب', icon: '🎉', color: 'green' },
       [OrderStatus.COMPLETED]: { title: 'مكتمل', description: 'الطلب مكتمل بنجاح', icon: '✨', color: 'emerald' },
-      [OrderStatus.ON_HOLD]: { title: 'معلق', description: 'الطلب معلق مؤقتاً', icon: '⏸️', color: 'red' },
+      [OrderStatus.ON_HOLD]: { title: 'معلق', description: 'الطلب معلق مؤقتاً', icon: '⏸️', color: 'orange' },
       [OrderStatus.CANCELLED]: { title: 'ملغي', description: 'تم إلغاء الطلب', icon: '❌', color: 'red' },
-      [OrderStatus.REFUNDED]: { title: 'مسترد', description: 'تم استرداد المبلغ', icon: '💰', color: 'yellow' },
-      [OrderStatus.PARTIALLY_REFUNDED]: { title: 'مسترد جزئياً', description: 'تم استرداد جزء من المبلغ', icon: '💸', color: 'yellow' },
       [OrderStatus.RETURNED]: { title: 'مرتجع', description: 'تم إرجاع الطلب', icon: '↩️', color: 'orange' },
-      [OrderStatus.PAYMENT_FAILED]: { title: 'فشل الدفع', description: 'فشل في معالجة الدفع', icon: '💳', color: 'red' },
+      [OrderStatus.REFUNDED]: { title: 'مسترد', description: 'تم استرداد المبلغ', icon: '💰', color: 'yellow' },
     };
 
     return stateInfo[status];

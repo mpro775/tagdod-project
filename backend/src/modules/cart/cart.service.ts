@@ -50,6 +50,19 @@ type CartPricing = {
   appliedPromotionId?: string;
 };
 
+type PricingSummaryView = {
+  currency: string;
+  itemsCount: number;
+  subtotalBeforeDiscount: number;
+  subtotal: number;
+  merchantDiscountAmount: number;
+  couponDiscount: number;
+  promotionDiscount: number;
+  autoDiscount: number;
+  totalDiscount: number;
+  total: number;
+};
+
 type AddItemInput = {
   variantId?: string;
   productId?: string;
@@ -88,7 +101,7 @@ export class CartService {
   // ---------- helpers
   private async getOrCreateUserCart(
     userId: string,
-    currency: string = 'YER',
+    currency: string = 'USD',
     accountType: string = 'retail',
   ) {
     const userObjectId = new Types.ObjectId(userId);
@@ -105,7 +118,7 @@ export class CartService {
   }
   private async getOrCreateGuestCart(
     deviceId: string,
-    currency: string = 'YER',
+    currency: string = 'USD',
     accountType: string = 'retail',
   ) {
     let cart = await this.cartModel.findOne({ deviceId });
@@ -297,18 +310,22 @@ export class CartService {
 
   private async buildPricingForCurrency(options: {
     basePriceUSD?: number | null;
+    compareAtPriceUSD?: number | null;
     pricingByCurrency?: unknown;
     currency: string;
   }): Promise<{ basePriceUSD: number; pricing: CartPricing }> {
     const targetCurrency = this.normalizeCurrency(options.currency);
-    const baseInputUSD = this.normalizeNumber(options.basePriceUSD ?? undefined);
+    const baseInputUSD = this.normalizeNumber(
+      options.basePriceUSD ?? options.compareAtPriceUSD ?? undefined,
+    );
+    const compareAtInputUSD = this.normalizeNumber(options.compareAtPriceUSD ?? undefined);
     const priceRecord = this.getPricingRecord(options.pricingByCurrency, targetCurrency);
     const usdRecord =
       targetCurrency === 'USD'
         ? priceRecord
         : this.getPricingRecord(options.pricingByCurrency, 'USD');
 
-    let basePriceUSD = baseInputUSD;
+    let basePriceUSD = baseInputUSD ?? compareAtInputUSD;
     if (basePriceUSD === undefined) {
       basePriceUSD = this.normalizeNumber(usdRecord?.basePrice);
     }
@@ -398,7 +415,7 @@ export class CartService {
     }
 
     if (basePrice === undefined) {
-      basePrice = basePriceUSD;
+      basePrice = basePriceUSD ?? compareAtInputUSD ?? 0;
     }
     if (finalPrice === undefined) {
       if (discountAmount !== undefined) {
@@ -459,15 +476,35 @@ export class CartService {
   // ---------- user cart
   async getUserCart(userId: string) {
     const cart = await this.getOrCreateUserCart(userId);
-    
+
+    const metadata =
+      (cart.metadata && typeof cart.metadata === 'object' ? cart.metadata : {}) as Record<string, unknown>;
+    const currencyManuallySet =
+      typeof metadata.currencyManuallySet === 'boolean' ? metadata.currencyManuallySet : false;
+    const cartCurrency = cart.currency ? this.normalizeCurrency(cart.currency) : undefined;
+
+    let preferredCurrency = 'USD';
+    if (cartCurrency) {
+      if (cartCurrency === 'USD') {
+        preferredCurrency = 'USD';
+      } else if (cartCurrency === 'YER') {
+        preferredCurrency = currencyManuallySet ? 'YER' : 'USD';
+      } else {
+        preferredCurrency = cartCurrency;
+      }
+    }
+
+    if (!currencyManuallySet && cartCurrency === 'YER') {
+      cart.currency = 'USD';
+      cart.metadata = { ...metadata };
+      await cart.save();
+    }
+
+    const accountType = (cart.accountType as 'any' | 'customer' | 'engineer' | 'merchant') || 'any';
+
     // Return full cart details with pricing and product info
-    const preview = await this.previewByCart(
-      cart,
-      cart.currency || 'YER',
-      (cart.accountType as 'any' | 'customer' | 'engineer' | 'merchant') || 'any',
-      userId,
-    );
-    
+    const preview = await this.previewByCart(cart, preferredCurrency, accountType, userId);
+
     return preview;
   }
 
@@ -477,9 +514,19 @@ export class CartService {
   ) {
     const cart = await this.getOrCreateUserCart(userId);
 
-    if (settings.currency) cart.currency = settings.currency;
+    const currentMetadata =
+      (cart.metadata && typeof cart.metadata === 'object' ? cart.metadata : {}) as Record<string, unknown>;
+
+    if (settings.currency) {
+      cart.currency = this.normalizeCurrency(settings.currency);
+      currentMetadata.currencyManuallySet = true;
+    }
     if (settings.accountType) cart.accountType = settings.accountType;
-    if (settings.metadata) cart.metadata = { ...cart.metadata, ...settings.metadata };
+    if (settings.metadata) {
+      Object.assign(currentMetadata, settings.metadata);
+    }
+
+    cart.metadata = currentMetadata;
 
     cart.lastActivityAt = new Date();
     await cart.save();
@@ -1000,6 +1047,64 @@ export class CartService {
     return undefined;
   }
 
+  private buildUserSummary(
+    user: unknown,
+  ):
+    | {
+        _id: string;
+        name?: string;
+        firstName?: string;
+        lastName?: string;
+        storeName?: string;
+        email?: string;
+        phone?: string;
+      }
+    | undefined {
+    if (!user || typeof user !== 'object') {
+      return undefined;
+    }
+
+    const userRecord = user as Record<string, unknown>;
+    const id = this.toStringId(userRecord['_id']);
+    if (!id) {
+      return undefined;
+    }
+
+    const firstName =
+      typeof userRecord['firstName'] === 'string' && userRecord['firstName'].trim().length > 0
+        ? (userRecord['firstName'] as string).trim()
+        : undefined;
+    const lastName =
+      typeof userRecord['lastName'] === 'string' && userRecord['lastName'].trim().length > 0
+        ? (userRecord['lastName'] as string).trim()
+        : undefined;
+    const storeName =
+      typeof userRecord['storeName'] === 'string' && userRecord['storeName'].trim().length > 0
+        ? (userRecord['storeName'] as string).trim()
+        : undefined;
+    const email =
+      typeof userRecord['email'] === 'string' && userRecord['email'].trim().length > 0
+        ? (userRecord['email'] as string).trim()
+        : undefined;
+    const phone =
+      typeof userRecord['phone'] === 'string' && userRecord['phone'].trim().length > 0
+        ? (userRecord['phone'] as string).trim()
+        : undefined;
+
+    const nameCandidate = storeName || [firstName, lastName].filter(Boolean).join(' ').trim();
+    const name = nameCandidate.length > 0 ? nameCandidate : email ?? phone;
+
+    return {
+      _id: id,
+      name,
+      firstName,
+      lastName,
+      storeName,
+      email,
+      phone,
+    };
+  }
+
   private buildProductSnapshot(
     product?: Product | null,
     currency: string = 'USD',
@@ -1061,7 +1166,8 @@ export class CartService {
     let price: { base: number; final: number; currency: string } | undefined;
     const priceBase =
       this.normalizeNumber(productRecord['basePriceUSD']) ??
-      this.normalizeNumber(productRecord['basePrice']);
+      this.normalizeNumber(productRecord['basePrice']) ??
+      this.normalizeNumber(productRecord['compareAtPriceUSD']);
     const pricingSource = productRecord['pricingByCurrency'];
     const priceRecord =
       this.getPricingRecord(pricingSource, targetCurrency) ??
@@ -1144,11 +1250,39 @@ export class CartService {
       const productRecord = product as unknown as Record<string, unknown>;
       const pricingSource = variantRecord['pricingByCurrency'] ?? productRecord['pricingByCurrency'];
 
-      const { pricing, basePriceUSD } = await this.buildPricingForCurrency({
-        basePriceUSD: variant.basePriceUSD ?? this.normalizeNumber(productRecord['basePriceUSD']),
-        pricingByCurrency: pricingSource,
-        currency: targetCurrency,
-      });
+      let pricing: CartPricing;
+      let basePriceUSD: number;
+      if (variantRecord?.['pricingByCurrency'] || productRecord?.['pricingByCurrency']) {
+        const resolved = await this.buildPricingForCurrency({
+          basePriceUSD: variant.basePriceUSD ?? this.normalizeNumber(productRecord['basePriceUSD']),
+          compareAtPriceUSD:
+            this.normalizeNumber(variantRecord['compareAtPriceUSD']) ??
+            this.normalizeNumber(productRecord['compareAtPriceUSD']),
+          pricingByCurrency: pricingSource,
+          currency: targetCurrency,
+        });
+        pricing = resolved.pricing;
+        basePriceUSD = resolved.basePriceUSD;
+      } else {
+        const priceUSD = this.normalizeNumber(variantRecord?.['basePriceUSD']) ?? 0;
+        basePriceUSD = priceUSD;
+        const converted =
+          targetCurrency === 'USD' || !this.exchangeRatesService
+            ? priceUSD
+            : (
+                await this.exchangeRatesService.convertCurrency({
+                  amount: priceUSD,
+                  fromCurrency: 'USD',
+                  toCurrency: targetCurrency,
+                })
+              ).result;
+        pricing = {
+          currency: targetCurrency,
+          basePrice: converted,
+          finalPrice: converted,
+          discount: 0,
+        };
+      }
 
       return {
         variantId: new Types.ObjectId(String(variant._id)),
@@ -1169,14 +1303,45 @@ export class CartService {
         throw new Error('المنتج غير موجود');
       }
 
-      const { pricing, basePriceUSD } = await this.buildPricingForCurrency({
-        basePriceUSD: this.normalizeNumber(
-          (product as unknown as Record<string, unknown>)['basePriceUSD'] ??
-            (product as unknown as Record<string, unknown>)['basePrice'],
-        ),
-        pricingByCurrency: (product as unknown as Record<string, unknown>)['pricingByCurrency'],
-        currency: targetCurrency,
-      });
+      const productRecord = product as unknown as Record<string, unknown>;
+      const pricingByCurrency = productRecord['pricingByCurrency'];
+
+      let pricing: CartPricing;
+      let basePriceUSD: number;
+
+      if (pricingByCurrency) {
+        const resolved = await this.buildPricingForCurrency({
+          basePriceUSD: this.normalizeNumber(productRecord['basePriceUSD'] ?? productRecord['basePrice']),
+          compareAtPriceUSD: this.normalizeNumber(productRecord['compareAtPriceUSD']),
+          pricingByCurrency,
+          currency: targetCurrency,
+        });
+        pricing = resolved.pricing;
+        basePriceUSD = resolved.basePriceUSD;
+      } else {
+        const priceUSD =
+          this.normalizeNumber(productRecord['basePriceUSD']) ??
+          this.normalizeNumber(productRecord['basePrice']) ??
+          this.normalizeNumber(productRecord['compareAtPriceUSD']) ??
+          0;
+        basePriceUSD = priceUSD;
+        const converted =
+          targetCurrency === 'USD' || !this.exchangeRatesService
+            ? priceUSD
+            : (
+                await this.exchangeRatesService.convertCurrency({
+                  amount: priceUSD,
+                  fromCurrency: 'USD',
+                  toCurrency: targetCurrency,
+                })
+              ).result;
+        pricing = {
+          currency: targetCurrency,
+          basePrice: converted,
+          finalPrice: converted,
+          discount: 0,
+        };
+      }
 
       return {
         productId: new Types.ObjectId(String(product._id)),
@@ -1199,14 +1364,14 @@ export class CartService {
   ) {
     const normalizedCurrency = this.normalizeCurrency(currency);
     const lines: CartLine[] = [];
-    let subtotal = 0;
-    let subtotalBeforeDiscount = 0;
+    let subtotalUSD = 0;
+    let subtotalBeforeDiscountUSD = 0;
     let merchantDiscountPercent = 0;
     let merchantDiscountAmount = 0;
 
     // جلب قدرات المستخدم لتطبيق خصم التاجر
-    if (userId) {
-      const caps = await this.capsModel.findOne({ userId }).lean();
+      if (userId) {
+        const caps = await this.capsModel.findOne({ userId }).lean();
       if (caps && caps.merchant_capable && caps.merchant_discount_percent > 0) {
         merchantDiscountPercent = caps.merchant_discount_percent;
       }
@@ -1286,6 +1451,9 @@ export class CartService {
         try {
           const { pricing } = await this.buildPricingForCurrency({
             basePriceUSD: basePriceUSDSource ?? undefined,
+            compareAtPriceUSD:
+              this.normalizeNumber(variantRecord?.['compareAtPriceUSD']) ??
+              this.normalizeNumber(productRecord?.['compareAtPriceUSD']),
             pricingByCurrency: pricingByCurrencySource,
             currency: normalizedCurrency,
           });
@@ -1428,8 +1596,26 @@ export class CartService {
         this.roundPrice(Math.max(0, roundedBase - roundedFinal)) ??
         Math.max(0, roundedBase - roundedFinal);
       const lineTotal = this.roundPrice(roundedFinal * it.qty) ?? roundedFinal * it.qty;
-      subtotal += lineTotal;
-      subtotalBeforeDiscount += roundedFinalBefore * it.qty;
+
+      if (this.exchangeRatesService) {
+        const { result: baseUSD } = await this.exchangeRatesService.convertCurrency({
+          amount: roundedBase,
+          fromCurrency: normalizedCurrency,
+          toCurrency: 'USD',
+        });
+        const { result: finalUSD } = await this.exchangeRatesService.convertCurrency({
+          amount: roundedFinal,
+          fromCurrency: normalizedCurrency,
+          toCurrency: 'USD',
+        });
+        const lineTotalUSD = finalUSD * it.qty;
+
+        subtotalUSD += lineTotalUSD;
+        subtotalBeforeDiscountUSD += baseUSD * it.qty;
+      } else {
+        subtotalUSD += lineTotal;
+        subtotalBeforeDiscountUSD += roundedBase * it.qty;
+      }
 
       const itemId =
         this.toStringId(rawId) ??
@@ -1485,38 +1671,16 @@ export class CartService {
 
     const totalQuantity = lines.reduce((sum, line) => sum + line.qty, 0);
     const roundedSubtotalBeforeDiscount =
-      this.roundPrice(subtotalBeforeDiscount) ?? subtotalBeforeDiscount;
-    const roundedSubtotal = this.roundPrice(subtotal) ?? subtotal;
+      this.roundPrice(subtotalBeforeDiscountUSD) ?? subtotalBeforeDiscountUSD;
+    const roundedSubtotal = this.roundPrice(subtotalUSD) ?? subtotalUSD;
     const roundedMerchantDiscount = this.roundPrice(merchantDiscountAmount) ?? merchantDiscountAmount;
 
-    const couponDiscount = this.roundPrice(cart.pricingSummary?.couponDiscount ?? 0) ?? 0;
-    const promotionDiscount = this.roundPrice(cart.pricingSummary?.promotionDiscount ?? 0) ?? 0;
-    const autoDiscount = this.roundPrice(cart.pricingSummary?.autoDiscount ?? 0) ?? 0;
-    const additionalDiscounts = couponDiscount + promotionDiscount + autoDiscount;
+    const storedCouponDiscount = this.roundPrice(cart.pricingSummary?.couponDiscount ?? 0) ?? 0;
+    const storedPromotionDiscount =
+      this.roundPrice(cart.pricingSummary?.promotionDiscount ?? 0) ?? 0;
+    const storedAutoDiscount = this.roundPrice(cart.pricingSummary?.autoDiscount ?? 0) ?? 0;
+    const additionalDiscounts = storedCouponDiscount + storedPromotionDiscount + storedAutoDiscount;
     const totalDiscountForConversion = roundedMerchantDiscount + additionalDiscounts;
-
-    // 🆕 تحويل الإجماليات إلى USD أولاً ثم حسابها بالعملات الثلاث
-    let totalsInAllCurrencies;
-    if (this.exchangeRatesService) {
-      // تحويل subtotal إلى USD
-      const usdSubtotal = await this.exchangeRatesService.convertToUSD(
-        roundedSubtotal,
-        normalizedCurrency,
-      );
-      const usdShipping = 0; // يمكن إضافة حساب الشحن لاحقاً
-      const usdTax = 0; // يمكن إضافة حساب الضريبة لاحقاً
-      const usdDiscount = await this.exchangeRatesService.convertToUSD(
-        totalDiscountForConversion,
-        normalizedCurrency,
-      );
-
-      totalsInAllCurrencies = await this.exchangeRatesService.calculateTotalsInAllCurrencies(
-        usdSubtotal,
-        usdShipping,
-        usdTax,
-        usdDiscount,
-      );
-    }
 
     const appliedCoupons = [
       ...(cart.appliedCouponCodes ?? []),
@@ -1524,36 +1688,161 @@ export class CartService {
     ].filter((code): code is string => Boolean(code));
     const uniqueAppliedCoupons = Array.from(new Set(appliedCoupons));
 
-    const pricingSummary = {
-      currency: normalizedCurrency,
-      itemsCount: totalQuantity,
-      subtotalBeforeDiscount: roundedSubtotalBeforeDiscount,
-      subtotal: roundedSubtotal,
-      merchantDiscountAmount: roundedMerchantDiscount,
-      couponDiscount,
-      promotionDiscount,
-      autoDiscount,
-      totalDiscount:
-        this.roundPrice(totalDiscountForConversion) ?? totalDiscountForConversion,
-      total:
-        this.roundPrice(
+    let totalsInAllCurrencies:
+      | Awaited<ReturnType<NonNullable<ExchangeRatesService>['calculateTotalsInAllCurrencies']>>
+      | undefined;
+    let pricingSummaryByCurrency: Record<string, PricingSummaryView> | undefined;
+    let pricingSummary: PricingSummaryView;
+
+    if (this.exchangeRatesService) {
+      const convertComponentToUSD = async (amount: number): Promise<number> => {
+        if (!amount) return 0;
+        if (normalizedCurrency === 'USD') return amount;
+        return this.exchangeRatesService!.convertToUSD(amount, normalizedCurrency);
+      };
+
+      const usdSubtotal =
+        normalizedCurrency === 'USD' ? roundedSubtotal : await convertComponentToUSD(roundedSubtotal);
+      const usdSubtotalBeforeDiscount =
+        normalizedCurrency === 'USD'
+          ? roundedSubtotalBeforeDiscount
+          : await convertComponentToUSD(roundedSubtotalBeforeDiscount);
+      const usdMerchantDiscount =
+        normalizedCurrency === 'USD'
+          ? roundedMerchantDiscount
+          : await convertComponentToUSD(roundedMerchantDiscount);
+      const usdCouponDiscount =
+        normalizedCurrency === 'USD'
+          ? storedCouponDiscount
+          : await convertComponentToUSD(storedCouponDiscount);
+      const usdPromotionDiscount =
+        normalizedCurrency === 'USD'
+          ? storedPromotionDiscount
+          : await convertComponentToUSD(storedPromotionDiscount);
+      const usdAutoDiscount =
+        normalizedCurrency === 'USD'
+          ? storedAutoDiscount
+          : await convertComponentToUSD(storedAutoDiscount);
+
+      const usdAdditionalDiscounts = usdCouponDiscount + usdPromotionDiscount + usdAutoDiscount;
+      const usdTotalDiscount = usdMerchantDiscount + usdAdditionalDiscounts;
+      const usdTotal = Math.max(0, usdSubtotal - usdAdditionalDiscounts);
+
+      totalsInAllCurrencies = await this.exchangeRatesService.calculateTotalsInAllCurrencies(
+        usdSubtotal,
+        0,
+        0,
+        usdTotalDiscount,
+      );
+
+      pricingSummary = {
+        currency: 'USD',
+        itemsCount: totalQuantity,
+        subtotalBeforeDiscount:
+          this.roundPrice(usdSubtotalBeforeDiscount) ?? usdSubtotalBeforeDiscount,
+        subtotal: this.roundPrice(usdSubtotal) ?? usdSubtotal,
+        merchantDiscountAmount: this.roundPrice(usdMerchantDiscount) ?? usdMerchantDiscount,
+        couponDiscount: this.roundPrice(usdCouponDiscount) ?? usdCouponDiscount,
+        promotionDiscount: this.roundPrice(usdPromotionDiscount) ?? usdPromotionDiscount,
+        autoDiscount: this.roundPrice(usdAutoDiscount) ?? usdAutoDiscount,
+        totalDiscount: this.roundPrice(usdTotalDiscount) ?? usdTotalDiscount,
+        total: this.roundPrice(usdTotal) ?? usdTotal,
+      };
+
+      const summaryCurrencies: Array<'USD' | 'YER' | 'SAR'> = ['USD', 'YER', 'SAR'];
+      pricingSummaryByCurrency = {};
+
+      for (const currencyCode of summaryCurrencies) {
+        const totals = totalsInAllCurrencies[currencyCode];
+        const ratio =
+          currencyCode === 'USD' || usdSubtotal === 0
+            ? currencyCode === 'USD'
+              ? 1
+              : undefined
+            : totals.subtotal / usdSubtotal;
+
+        const convertFromUSD = async (value: number): Promise<number> => {
+          if (!value) return 0;
+          if (currencyCode === 'USD') return value;
+          if (ratio !== undefined && Number.isFinite(ratio)) {
+            return value * ratio;
+          }
+          const conversion = await this.exchangeRatesService!.convertCurrency({
+            amount: value,
+            fromCurrency: 'USD',
+            toCurrency: currencyCode,
+          });
+          return conversion.result;
+        };
+
+        const subtotalBeforeDiscountConverted = await convertFromUSD(usdSubtotalBeforeDiscount);
+        const merchantDiscountConverted = await convertFromUSD(usdMerchantDiscount);
+        const couponDiscountConverted = await convertFromUSD(usdCouponDiscount);
+        const promotionDiscountConverted = await convertFromUSD(usdPromotionDiscount);
+        const autoDiscountConverted = await convertFromUSD(usdAutoDiscount);
+        const totalDiscountConverted = await convertFromUSD(usdTotalDiscount);
+        const subtotalConverted =
+          currencyCode === 'USD'
+            ? pricingSummary.subtotal
+            : this.roundPrice(totals.subtotal) ?? totals.subtotal;
+        const totalConverted =
+          currencyCode === 'USD'
+            ? pricingSummary.total
+            : this.roundPrice(totals.total) ?? totals.total;
+
+        pricingSummaryByCurrency[currencyCode] = {
+          currency: currencyCode,
+          itemsCount: totalQuantity,
+          subtotalBeforeDiscount:
+            this.roundPrice(subtotalBeforeDiscountConverted) ?? subtotalBeforeDiscountConverted,
+          subtotal: subtotalConverted,
+          merchantDiscountAmount:
+            this.roundPrice(merchantDiscountConverted) ?? merchantDiscountConverted,
+          couponDiscount: this.roundPrice(couponDiscountConverted) ?? couponDiscountConverted,
+          promotionDiscount:
+            this.roundPrice(promotionDiscountConverted) ?? promotionDiscountConverted,
+          autoDiscount: this.roundPrice(autoDiscountConverted) ?? autoDiscountConverted,
+          totalDiscount: this.roundPrice(totalDiscountConverted) ?? totalDiscountConverted,
+          total: totalConverted,
+        };
+      }
+    } else {
+      pricingSummary = {
+        currency: normalizedCurrency,
+        itemsCount: totalQuantity,
+        subtotalBeforeDiscount: roundedSubtotalBeforeDiscount,
+        subtotal: roundedSubtotal,
+        merchantDiscountAmount: roundedMerchantDiscount,
+        couponDiscount: storedCouponDiscount,
+        promotionDiscount: storedPromotionDiscount,
+        autoDiscount: storedAutoDiscount,
+        totalDiscount:
+          this.roundPrice(totalDiscountForConversion) ?? totalDiscountForConversion,
+        total:
+          this.roundPrice(Math.max(0, roundedSubtotal - additionalDiscounts)) ??
           Math.max(0, roundedSubtotal - additionalDiscounts),
-        ) ?? Math.max(0, roundedSubtotal - additionalDiscounts),
-    };
+      };
+    }
+
+    const effectiveCurrency = pricingSummary.currency;
+    const effectiveSubtotalBeforeDiscount = pricingSummary.subtotalBeforeDiscount;
+    const effectiveSubtotal = pricingSummary.subtotal;
+    const effectiveMerchantDiscount = pricingSummary.merchantDiscountAmount;
 
     return {
-      currency: normalizedCurrency,
-      subtotal: roundedSubtotal,
-      subtotalBeforeDiscount: roundedSubtotalBeforeDiscount,
+      currency: effectiveCurrency,
+      subtotal: effectiveSubtotal,
+      subtotalBeforeDiscount: effectiveSubtotalBeforeDiscount,
       items: lines,
       appliedCoupons: uniqueAppliedCoupons,
       meta: {
         count: lines.length,
         quantity: totalQuantity,
         merchantDiscountPercent,
-        merchantDiscountAmount: roundedMerchantDiscount,
+        merchantDiscountAmount: effectiveMerchantDiscount,
       },
       ...(totalsInAllCurrencies && { totalsInAllCurrencies }),
+      ...(pricingSummaryByCurrency && { pricingSummaryByCurrency }),
       pricingSummary,
     };
   }
@@ -1836,16 +2125,50 @@ export class CartService {
       if (filters.dateTo) (matchStage.createdAt as Record<string, unknown>).$lte = filters.dateTo;
     }
 
-    const [carts, total] = await Promise.all([
+    const [rawCarts, total] = await Promise.all([
       this.cartModel
         .find(matchStage)
-        .populate('userId', 'name email phone')
+        .populate('userId', 'firstName lastName storeName email phone')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
       this.cartModel.countDocuments(matchStage),
     ]);
+
+    const carts = await Promise.all(
+      rawCarts.map(async (cart) => {
+        const userSummary = this.buildUserSummary(cart.userId);
+        const enrichedCart = {
+          ...cart,
+          userId: userSummary?._id ?? this.toStringId(cart.userId) ?? cart.userId,
+          ...(userSummary ? { user: userSummary } : {}),
+        };
+
+        try {
+          const preview = await this.previewByCart(
+            {
+              ...(enrichedCart as unknown as Cart),
+              items: (cart.items ?? []) as Cart['items'],
+            },
+            'USD',
+            ((enrichedCart.accountType ?? 'any') as 'any' | 'customer' | 'engineer' | 'merchant') ||
+              'any',
+            userSummary?._id,
+          );
+
+          return {
+            ...enrichedCart,
+            pricingSummary: preview.pricingSummary,
+            pricingSummaryByCurrency: preview.pricingSummaryByCurrency,
+            totalsInAllCurrencies: preview.totalsInAllCurrencies,
+            meta: preview.meta,
+          };
+        } catch {
+          return enrichedCart;
+        }
+      }),
+    );
 
     return {
       carts,
@@ -1861,7 +2184,7 @@ export class CartService {
   async getCartById(cartId: string) {
     const cart = await this.cartModel
       .findById(cartId)
-      .populate('userId', 'name email phone')
+      .populate('userId', 'firstName lastName storeName email phone')
       .populate('items.variantId')
       .lean();
 
@@ -1869,7 +2192,13 @@ export class CartService {
       throw new Error('Cart not found');
     }
 
-    return cart;
+    const userSummary = this.buildUserSummary(cart.userId);
+
+    return {
+      ...cart,
+      userId: userSummary?._id ?? this.toStringId(cart.userId) ?? cart.userId,
+      ...(userSummary ? { user: userSummary } : {}),
+    };
   }
 
   async convertToOrder(cartId: string) {

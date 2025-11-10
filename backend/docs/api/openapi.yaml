@@ -5617,21 +5617,16 @@ paths:
           in: query
           schema:
             enum:
-              - draft
               - pending_payment
               - confirmed
-              - payment_failed
               - processing
-              - ready_to_ship
               - shipped
-              - out_for_delivery
               - delivered
               - completed
               - on_hold
               - cancelled
-              - refunded
-              - partially_refunded
               - returned
+              - refunded
             type: string
         - name: paymentStatus
           required: false
@@ -5856,21 +5851,16 @@ paths:
           in: query
           schema:
             enum:
-              - draft
               - pending_payment
               - confirmed
-              - payment_failed
               - processing
-              - ready_to_ship
               - shipped
-              - out_for_delivery
               - delivered
               - completed
               - on_hold
               - cancelled
-              - refunded
-              - partially_refunded
               - returned
+              - refunded
             type: string
         - name: paymentStatus
           required: false
@@ -6202,21 +6192,16 @@ paths:
           in: query
           schema:
             enum:
-              - draft
               - pending_payment
               - confirmed
-              - payment_failed
               - processing
-              - ready_to_ship
               - shipped
-              - out_for_delivery
               - delivered
               - completed
               - on_hold
               - cancelled
-              - refunded
-              - partially_refunded
               - returned
+              - refunded
             type: string
         - name: paymentStatus
           required: false
@@ -6371,21 +6356,16 @@ paths:
           in: query
           schema:
             enum:
-              - draft
               - pending_payment
               - confirmed
-              - payment_failed
               - processing
-              - ready_to_ship
               - shipped
-              - out_for_delivery
               - delivered
               - completed
               - on_hold
               - cancelled
-              - refunded
-              - partially_refunded
               - returned
+              - refunded
             type: string
         - name: paymentStatus
           required: false
@@ -19050,8 +19030,6 @@ components:
           example: COD
           enum:
             - COD
-            - ONLINE
-            - WALLET
             - BANK_TRANSFER
         paymentProvider:
           type: string
@@ -19121,21 +19099,16 @@ components:
         status:
           type: string
           enum:
-            - draft
             - pending_payment
             - confirmed
-            - payment_failed
             - processing
-            - ready_to_ship
             - shipped
-            - out_for_delivery
             - delivered
             - completed
             - on_hold
             - cancelled
-            - refunded
-            - partially_refunded
             - returned
+            - refunded
         notes:
           type: string
       required:
@@ -19205,21 +19178,16 @@ components:
         status:
           type: string
           enum:
-            - draft
             - pending_payment
             - confirmed
-            - payment_failed
             - processing
-            - ready_to_ship
             - shipped
-            - out_for_delivery
             - delivered
             - completed
             - on_hold
             - cancelled
-            - refunded
-            - partially_refunded
             - returned
+            - refunded
         notes:
           type: string
       required:
