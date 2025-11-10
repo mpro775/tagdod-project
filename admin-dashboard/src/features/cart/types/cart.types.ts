@@ -19,14 +19,25 @@ export interface CartItem {
     brandId?: string;
     brandName?: string;
     categoryId?: string;
+    variantAttributes?: Array<{
+      attributeId?: string;
+      attributeName?: string;
+      attributeNameEn?: string;
+      valueId?: string;
+      value?: string;
+      valueEn?: string;
+    }>;
   };
   pricing?: {
-    currency: string;
-    basePrice: number;
-    finalPrice: number;
-    discount: number;
     appliedPromotionId?: string;
-    finalBeforeDiscount?: number;
+    currencies: Record<
+      string,
+      {
+        base: number;
+        final: number;
+        discount: number;
+      }
+    >;
   };
 }
 
@@ -77,18 +88,8 @@ export interface Cart {
   couponDiscount: number;
   autoAppliedCouponCodes?: string[];
   autoAppliedDiscounts?: number[];
-  pricingSummary?: PricingSummary;
   pricingSummaryByCurrency?: Record<string, PricingSummary>;
-  totalsInAllCurrencies?: Record<
-    string,
-    {
-      subtotal: number;
-      shippingCost: number;
-      tax: number;
-      totalDiscount: number;
-      total: number;
-    }
-  >;
+  pricingSummary?: PricingSummary;
   meta?: {
     count?: number;
     quantity?: number;

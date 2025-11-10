@@ -195,6 +195,16 @@ export class OrderService {
   async previewCheckout(userId: string, currency: string, couponCode?: string, couponCodes?: string[]) {
     try {
       const data = await this.cartService.previewUser(userId, currency, 'any');
+
+      const summaryMap = data.pricingSummaryByCurrency ?? {};
+      const normalizedCurrency = currency.toUpperCase();
+      const summary =
+        summaryMap[normalizedCurrency] ??
+        summaryMap['USD'] ??
+        Object.values(summaryMap)[0];
+      const subtotalFromSummary =
+        summary?.subtotal ??
+        data.items.reduce((sum, item) => sum + (item.unit?.final ?? 0) * item.qty, 0);
       
       // Get coupon codes from cart or from parameters
       // We need to get cart to access appliedCouponCodes
@@ -225,7 +235,7 @@ export class OrderService {
         discount: number;
       }> = [];
       
-      let remainingSubtotal = data.subtotal;
+      let remainingSubtotal = subtotalFromSummary;
       
       // Extract product IDs from cart items
       const productIds = data.items
@@ -278,7 +288,7 @@ export class OrderService {
         }
       }
 
-      // ملاحظة: data.subtotal يأتي من السلة بعد تطبيق خصومات العروض (item.unit.final)
+      // ملاحظة: subtotalFromSummary يأتي من السلة بعد تطبيق خصومات العروض (item.unit.final)
       // لذلك لا نحتاج لحساب itemsDiscount مرة أخرى، فقط نحسبها للعرض في التقارير
       const itemsDiscount = data.items.reduce((sum, item) => {
         const itemDiscount = (item.unit.base - item.unit.final) * item.qty;
@@ -287,7 +297,7 @@ export class OrderService {
 
       const shipping = 0; // رسوم الشحن تأتي من لوحة التحكم لكل طلب على حدى (افتراضي صفر)
       // المجموع النهائي = subtotal (بعد خصم العروض) - خصم الكوبونات + الشحن
-      const total = data.subtotal - totalCouponDiscount + shipping;
+      const total = Math.max(0, subtotalFromSummary - totalCouponDiscount) + shipping;
       const totalDiscount = itemsDiscount + totalCouponDiscount;
 
       // التحقق من صلاحية COD
@@ -297,7 +307,7 @@ export class OrderService {
         success: true,
         data: {
           items: data.items,
-          subtotal: data.subtotal,
+          subtotal: subtotalFromSummary,
           shipping,
           total,
           currency,

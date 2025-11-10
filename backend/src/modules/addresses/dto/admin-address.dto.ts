@@ -39,6 +39,12 @@ export class AdminAddressFilterDto {
   @IsBoolean()
   includeDeleted?: boolean;
 
+  @ApiPropertyOptional({ description: 'العناوين المحذوفة فقط' })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  deletedOnly?: boolean;
+
   @ApiPropertyOptional({ description: 'البحث في النص', example: 'شارع' })
   @IsOptional()
   @IsString()

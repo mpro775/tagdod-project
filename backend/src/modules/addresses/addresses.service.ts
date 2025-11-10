@@ -304,6 +304,7 @@ export class AddressesService {
     isDefault?: boolean;
     isActive?: boolean;
     includeDeleted?: boolean;
+    deletedOnly?: boolean;
     search?: string;
     limit?: number;
     page?: number;
@@ -317,6 +318,7 @@ export class AddressesService {
       isDefault,
       isActive,
       includeDeleted,
+      deletedOnly,
       search,
       limit = 20,
       page = 1,
@@ -347,7 +349,9 @@ export class AddressesService {
       query.isActive = isActive;
     }
 
-    if (!includeDeleted) {
+    if (deletedOnly) {
+      query.deletedAt = { $ne: null };
+    } else if (includeDeleted !== true) {
       query.deletedAt = null;
     }
 

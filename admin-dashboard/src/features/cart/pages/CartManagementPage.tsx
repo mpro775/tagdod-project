@@ -50,6 +50,7 @@ import {
   formatRelativeTime,
   getStatusColor,
   formatCartStatus,
+  getCartSummary,
 } from '../api/cartApi';
 
 export const CartManagementPage: React.FC = () => {
@@ -264,35 +265,16 @@ export const CartManagementPage: React.FC = () => {
     if (!cart?.items) return 0;
     return cart.items.reduce((sum, item) => sum + (item.qty ?? 0), 0);
   }, []);
-  const getCartDisplayTotals = useCallback(
-    (cart: Cart) => {
-      const desiredCurrency = cart.currency ? cart.currency.toUpperCase() : undefined;
-      const summaryByCurrency = cart.pricingSummaryByCurrency || {};
-      const primarySummary =
-        summaryByCurrency.USD ||
-        (desiredCurrency && summaryByCurrency[desiredCurrency]) ||
-        (cart.pricingSummary?.currency &&
-          summaryByCurrency[cart.pricingSummary.currency.toUpperCase()]) ||
-        Object.values(summaryByCurrency)[0] ||
-        cart.pricingSummary;
+  const getCartDisplayTotals = useCallback((cart: Cart) => {
+    const summary = getCartSummary(cart, cart.currency);
+    const currency = summary?.currency || cart.currency || 'USD';
+    const total = summary?.total ?? 0;
 
-      const currency =
-        primarySummary?.currency ||
-        desiredCurrency ||
-        cart.pricingSummary?.currency ||
-        'USD';
-      const total =
-        primarySummary?.total ??
-        cart.pricingSummary?.total ??
-        0;
-
-      return {
-        total,
-        currency,
-      };
-    },
-    []
-  );
+    return {
+      total,
+      currency,
+    };
+  }, []);
   const getLastActivity = (cart: Cart) =>
     cart.lastActivityAt
       ? formatRelativeTime(cart.lastActivityAt)

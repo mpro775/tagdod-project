@@ -379,6 +379,12 @@ export class AddressesAdminController {
     type: Boolean,
     description: 'تضمين المحذوفة',
   })
+  @ApiQuery({
+    name: 'deletedOnly',
+    required: false,
+    type: Boolean,
+    description: 'عرض العناوين المحذوفة فقط',
+  })
   @ApiQuery({ name: 'search', required: false, description: 'البحث في النص' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'عدد النتائج' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'رقم الصفحة' })

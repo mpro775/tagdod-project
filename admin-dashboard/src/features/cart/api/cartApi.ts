@@ -11,6 +11,7 @@ import {
   BulkActionResponse,
   ConvertToOrderRequest,
   SendReminderRequest,
+  PricingSummary,
 } from '../types/cart.types';
 import apiClient from '@/core/api/client';
 import type { ApiResponse } from '@/shared/types/common.types';
@@ -221,8 +222,31 @@ export const getStatusColor = (status: string): string => {
   return colorMap[status] || '#757575';
 };
 
-export const calculateCartTotal = (cart: Cart): number => {
-  return cart.pricingSummary?.total || 0;
+export const getCartSummary = (
+  cart: Cart,
+  preferredCurrency?: string,
+): PricingSummary | undefined => {
+  const summaries = cart.pricingSummaryByCurrency;
+  const normalizedPreferred = preferredCurrency?.toUpperCase();
+
+  if (summaries) {
+    if (normalizedPreferred && summaries[normalizedPreferred]) {
+      return summaries[normalizedPreferred];
+    }
+    if (summaries.USD) {
+      return summaries.USD;
+    }
+    const [firstKey] = Object.keys(summaries);
+    if (firstKey) {
+      return summaries[firstKey];
+    }
+  }
+
+  return cart.pricingSummary;
+};
+
+export const calculateCartTotal = (cart: Cart, preferredCurrency = 'USD'): number => {
+  return getCartSummary(cart, preferredCurrency)?.total || 0;
 };
 
 export const getCartItemsCount = (cart: Cart): number => {

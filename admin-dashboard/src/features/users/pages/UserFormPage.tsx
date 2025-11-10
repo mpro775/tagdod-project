@@ -121,6 +121,7 @@ export const UserFormPage: React.FC = () => {
   const { data: user, isLoading } = useUser(id!);
   const { mutate: createUser, isPending: isCreating } = useCreateUser();
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
+  const userCapabilities = user?.capabilities;
 
   // Load user data in edit mode
   useEffect(() => {
@@ -141,9 +142,7 @@ export const UserFormPage: React.FC = () => {
         roles: user.roles || [UserRole.USER],
         permissions: user.permissions || [],
         merchantDiscountPercent:
-          user.merchant_discount_percent ??
-          user.capabilities?.merchant_discount_percent ??
-          undefined,
+          userCapabilities?.merchant_discount_percent ?? undefined,
       };
 
       methods.reset(formData);
@@ -353,7 +352,8 @@ export const UserFormPage: React.FC = () => {
                     </Box>
 
                     {/* Engineer Status Control */}
-                    {(user.engineer_capable || user.engineer_status !== CapabilityStatus.NONE) && (
+                    {(userCapabilities?.engineer_capable ||
+                      (userCapabilities?.engineer_status ?? CapabilityStatus.NONE) !== CapabilityStatus.NONE) && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                         <Button
                           variant="outlined"
@@ -364,16 +364,17 @@ export const UserFormPage: React.FC = () => {
                         >
                           {t('users:actions.manageEngineerStatus', 'إدارة حالة المهندس')}
                         </Button>
-                        <Chip 
-                          label={getStatusLabel(user.engineer_status || CapabilityStatus.NONE)}
-                          color={getStatusColor(user.engineer_status || CapabilityStatus.NONE)}
+                        <Chip
+                          label={getStatusLabel(userCapabilities?.engineer_status || CapabilityStatus.NONE)}
+                          color={getStatusColor(userCapabilities?.engineer_status || CapabilityStatus.NONE)}
                           size="small"
                         />
                       </Box>
                     )}
 
                     {/* Merchant Status Control */}
-                    {(user.merchant_capable || user.merchant_status !== CapabilityStatus.NONE) && (
+                    {(userCapabilities?.merchant_capable ||
+                      (userCapabilities?.merchant_status ?? CapabilityStatus.NONE) !== CapabilityStatus.NONE) && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                         <Button
                           variant="outlined"
@@ -384,14 +385,15 @@ export const UserFormPage: React.FC = () => {
                         >
                           {t('users:actions.manageMerchantStatus', 'إدارة حالة التاجر')}
                         </Button>
-                        <Chip 
-                          label={getStatusLabel(user.merchant_status || CapabilityStatus.NONE)}
-                          color={getStatusColor(user.merchant_status || CapabilityStatus.NONE)}
+                        <Chip
+                          label={getStatusLabel(userCapabilities?.merchant_status || CapabilityStatus.NONE)}
+                          color={getStatusColor(userCapabilities?.merchant_status || CapabilityStatus.NONE)}
                           size="small"
                         />
-                        {user.merchant_discount_percent > 0 && (
-                          <Chip 
-                            label={`${user.merchant_discount_percent}% ${t('users:labels.discount', 'خصم')}`}
+                        {userCapabilities?.merchant_discount_percent &&
+                          userCapabilities.merchant_discount_percent > 0 && (
+                          <Chip
+                            label={`${userCapabilities.merchant_discount_percent}% ${t('users:labels.discount', 'خصم')}`}
                             color="success"
                             size="small"
                           />
@@ -468,7 +470,7 @@ export const UserFormPage: React.FC = () => {
             userId={id!}
             userName={user.firstName || user.phone}
             type="engineer"
-            currentStatus={user.engineer_status || CapabilityStatus.NONE}
+            currentStatus={userCapabilities?.engineer_status || CapabilityStatus.NONE}
           />
 
           <StatusControlDialog
@@ -477,8 +479,8 @@ export const UserFormPage: React.FC = () => {
             userId={id!}
             userName={user.firstName || user.phone}
             type="merchant"
-            currentStatus={user.merchant_status || CapabilityStatus.NONE}
-            currentDiscountPercent={user.merchant_discount_percent}
+            currentStatus={userCapabilities?.merchant_status || CapabilityStatus.NONE}
+            currentDiscountPercent={userCapabilities?.merchant_discount_percent}
           />
         </>
       )}

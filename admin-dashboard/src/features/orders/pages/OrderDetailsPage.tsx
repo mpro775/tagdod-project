@@ -137,10 +137,9 @@ export const OrderDetailsPage: React.FC = () => {
     const statusesRequiringPayment = [
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
-      OrderStatus.READY_TO_SHIP,
       OrderStatus.SHIPPED,
-      OrderStatus.OUT_FOR_DELIVERY,
       OrderStatus.DELIVERED,
+      OrderStatus.COMPLETED,
     ];
 
     // استثناء CANCELLED من التحقق
@@ -1035,10 +1034,9 @@ export const OrderDetailsPage: React.FC = () => {
               const statusesRequiringPayment = [
                 OrderStatus.CONFIRMED,
                 OrderStatus.PROCESSING,
-                OrderStatus.READY_TO_SHIP,
                 OrderStatus.SHIPPED,
-                OrderStatus.OUT_FOR_DELIVERY,
                 OrderStatus.DELIVERED,
+                OrderStatus.COMPLETED,
               ];
 
               const requiresPayment = 

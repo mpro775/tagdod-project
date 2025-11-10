@@ -42,11 +42,14 @@ export class CartItem {
     ratingValue?: number;
     ratingSource?: 'manual' | 'average';
     reviewsCount?: number;
-    price?: {
-      base: number;
-      final: number;
-      currency: string;
-    };
+    variantAttributes?: Array<{
+      attributeId?: string;
+      attributeName?: string;
+      attributeNameEn?: string;
+      valueId?: string;
+      value?: string;
+      valueEn?: string;
+    }>;
   };
 
   // 🆕 Cached pricing (updated on cart operations)

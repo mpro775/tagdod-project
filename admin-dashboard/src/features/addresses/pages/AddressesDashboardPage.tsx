@@ -99,6 +99,7 @@ export function AddressesDashboardPage() {
     sortBy: (sortModel[0]?.field as 'createdAt' | 'usageCount' | 'lastUsedAt') || 'createdAt',
     sortOrder: (sortModel[0]?.sort as 'asc' | 'desc') || 'desc',
     includeDeleted: showDeleted || undefined,
+    deletedOnly: showDeleted || undefined,
   });
 
   // Define columns

@@ -19,7 +19,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { CartStatistics, CartAnalytics, Cart } from '../types/cart.types';
-import { formatCurrency } from '../api/cartApi';
+import { formatCurrency, getCartSummary } from '../api/cartApi';
 
 interface CartStatsCardsProps {
   statistics?: CartStatistics;
@@ -174,18 +174,8 @@ export const CartStatsCards: React.FC<CartStatsCardsProps> = ({
   const fallback = React.useMemo(() => {
     if (!carts || carts.length === 0) return null;
 
-    const selectUsdTotal = (cart: Cart): number => {
-      if (cart.pricingSummaryByCurrency?.USD) {
-        return cart.pricingSummaryByCurrency.USD.total ?? 0;
-      }
-      if (cart.totalsInAllCurrencies?.USD) {
-        return cart.totalsInAllCurrencies.USD.total ?? 0;
-      }
-      if (cart.pricingSummary?.currency?.toUpperCase() === 'USD') {
-        return cart.pricingSummary.total ?? 0;
-      }
-      return cart.pricingSummary?.total ?? 0;
-    };
+    const selectUsdTotal = (cart: Cart): number =>
+      getCartSummary(cart, 'USD')?.total ?? 0;
 
     const aggregates = carts.reduce(
       (acc, cart) => {

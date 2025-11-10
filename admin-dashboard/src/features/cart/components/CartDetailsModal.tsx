@@ -40,6 +40,7 @@ import {
   formatRelativeTime,
   getStatusColor,
   formatCartStatus,
+  getCartSummary,
 } from '../api/cartApi';
 
 interface CartDetailsModalProps {
@@ -67,9 +68,51 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
     return null;
   }
 
+  const selectedSummary = React.useMemo(
+    () => (cart ? getCartSummary(cart, cart.currency) : undefined),
+    [cart],
+  );
+
+  const summaryList = React.useMemo(() => {
+    if (!cart) return [];
+    if (cart.pricingSummaryByCurrency) {
+      return Object.values(cart.pricingSummaryByCurrency);
+    }
+    return cart?.pricingSummary ? [cart.pricingSummary] : [];
+  }, [cart]);
+
   const getCartTotal = () => {
-    return cart?.pricingSummary?.total || 0;
+    return selectedSummary?.total || 0;
   };
+
+  const resolveItemPricing = React.useCallback(
+    (item: Cart['items'][number]) => {
+      const pricingMap = item.pricing?.currencies;
+      const preferredCurrency = (selectedSummary?.currency || cart?.currency || 'USD').toUpperCase();
+
+      if (pricingMap) {
+        if (pricingMap[preferredCurrency]) {
+          return { currency: preferredCurrency, pricing: pricingMap[preferredCurrency] };
+        }
+        if (selectedSummary?.currency && pricingMap[selectedSummary.currency]) {
+          return { currency: selectedSummary.currency, pricing: pricingMap[selectedSummary.currency] };
+        }
+        if (pricingMap.USD) {
+          return { currency: 'USD', pricing: pricingMap.USD };
+        }
+        const [firstKey] = Object.keys(pricingMap);
+        if (firstKey) {
+          return { currency: firstKey, pricing: pricingMap[firstKey] };
+        }
+      }
+
+      return {
+        currency: preferredCurrency,
+        pricing: { base: 0, final: 0, discount: 0 },
+      };
+    },
+    [cart?.currency, selectedSummary],
+  );
 
   const getCartItemsCount = () => {
     return cart?.items?.length || 0;

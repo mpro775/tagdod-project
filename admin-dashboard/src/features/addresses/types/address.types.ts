@@ -95,6 +95,7 @@ export interface AddressFilters {
   isDefault?: boolean;
   isActive?: boolean;
   includeDeleted?: boolean;
+  deletedOnly?: boolean;
   search?: string;
   limit?: number;
   page?: number;

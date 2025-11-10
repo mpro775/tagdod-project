@@ -51,7 +51,8 @@ export const FormInput: React.FC<FormInputProps> = ({
                 return;
               }
 
-              const numericValue = event.target.valueAsNumber;
+              const target = event.target as HTMLInputElement;
+              const numericValue = target.valueAsNumber;
               if (Number.isNaN(numericValue)) {
                 onChange(undefined);
                 return;

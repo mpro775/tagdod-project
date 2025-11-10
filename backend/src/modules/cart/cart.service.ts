@@ -29,7 +29,7 @@ type CartLine = {
     appliedRule: unknown;
   };
   lineTotal: number;
-  pricing?: CartItem['pricing'];
+  pricing?: CartItemPricingView;
   snapshot?: CartItem['productSnapshot'];
 };
 
@@ -40,6 +40,26 @@ type PriceSnapshot = {
   discountAmount?: number;
   currency?: string;
   exchangeRate?: number;
+};
+
+type VariantAttributeView = {
+  attributeId?: string;
+  attributeName?: string;
+  attributeNameEn?: string;
+  valueId?: string;
+  value?: string;
+  valueEn?: string;
+};
+
+type CurrencyPriceView = {
+  base: number;
+  final: number;
+  discount: number;
+};
+
+type CartItemPricingView = {
+  currencies: Record<string, CurrencyPriceView>;
+  appliedPromotionId?: string;
 };
 
 type CartPricing = {
@@ -144,6 +164,22 @@ export class CartService {
       return 'USD';
     }
     return currency.trim().toUpperCase() || 'USD';
+  }
+
+  private pickPricingSummary(
+    summaries: Record<string, PricingSummaryView> | undefined,
+    preferredCurrency?: string,
+  ): PricingSummaryView | undefined {
+    if (!summaries) return undefined;
+    const normalizedPreferred = preferredCurrency?.toUpperCase();
+    if (normalizedPreferred && summaries[normalizedPreferred]) {
+      return summaries[normalizedPreferred];
+    }
+    if (summaries['USD']) {
+      return summaries['USD'];
+    }
+    const [firstKey] = Object.keys(summaries);
+    return firstKey ? summaries[firstKey] : undefined;
   }
 
   private normalizeNumber(value: unknown): number | undefined {
@@ -1107,12 +1143,10 @@ export class CartService {
 
   private buildProductSnapshot(
     product?: Product | null,
-    currency: string = 'USD',
   ): CartItem['productSnapshot'] | undefined {
     if (!product) return undefined;
 
     const productRecord = product as unknown as Record<string, unknown>;
-    const targetCurrency = this.normalizeCurrency(currency);
 
     let image: string | undefined;
     const mainImageCandidate =
@@ -1163,43 +1197,6 @@ export class CartService {
       ? manualReviewsCount ?? reviewsCountRaw ?? undefined
       : reviewsCountRaw ?? manualReviewsCount ?? undefined;
 
-    let price: { base: number; final: number; currency: string } | undefined;
-    const priceBase =
-      this.normalizeNumber(productRecord['basePriceUSD']) ??
-      this.normalizeNumber(productRecord['basePrice']) ??
-      this.normalizeNumber(productRecord['compareAtPriceUSD']);
-    const pricingSource = productRecord['pricingByCurrency'];
-    const priceRecord =
-      this.getPricingRecord(pricingSource, targetCurrency) ??
-      this.getPricingRecord(pricingSource, 'USD');
-
-    if (priceRecord) {
-      const base =
-        this.roundPrice(priceRecord.basePrice ?? priceRecord.finalPrice) ??
-        priceRecord.basePrice ??
-        priceRecord.finalPrice ??
-        priceBase ??
-        0;
-      const final =
-        this.roundPrice(priceRecord.finalPrice ?? priceRecord.basePrice) ??
-        priceRecord.finalPrice ??
-        priceRecord.basePrice ??
-        base;
-      const currencyCode = priceRecord.currency ?? targetCurrency;
-      price = {
-        base,
-        final,
-        currency: currencyCode,
-      };
-    } else if (priceBase !== undefined) {
-      const convertedBase = this.roundPrice(priceBase) ?? priceBase;
-      price = {
-        base: convertedBase,
-        final: convertedBase,
-        currency: targetCurrency,
-      };
-    }
-
     return {
       name: (productRecord['name'] as string) ?? '',
       slug: (productRecord['slug'] as string) ?? '',
@@ -1214,8 +1211,81 @@ export class CartService {
       ratingValue,
       ratingSource,
       reviewsCount,
-      ...(price ? { price } : {}),
     };
+  }
+
+  private buildVariantAttributes(variant?: Variant | null): VariantAttributeView[] | undefined {
+    if (!variant) return undefined;
+    const variantRecord = variant as unknown as Record<string, unknown>;
+    const rawAttributes = variantRecord['attributeValues'];
+
+    if (!Array.isArray(rawAttributes)) {
+      return undefined;
+    }
+
+    const normalized = rawAttributes.reduce<VariantAttributeView[]>((acc, attr) => {
+      if (!attr || typeof attr !== 'object') {
+        return acc;
+      }
+
+      const attrRecord = attr as Record<string, unknown>;
+      const attributeId = this.toStringId(attrRecord['attributeId']);
+      const valueId = this.toStringId(attrRecord['valueId']);
+      const attributeNameRaw =
+        typeof attrRecord['name'] === 'string' ? (attrRecord['name'] as string).trim() : undefined;
+      const attributeNameEnRaw =
+        typeof attrRecord['nameEn'] === 'string'
+          ? (attrRecord['nameEn'] as string).trim()
+          : undefined;
+      const valueRaw =
+        typeof attrRecord['value'] === 'string' ? (attrRecord['value'] as string).trim() : undefined;
+      const valueEnRaw =
+        typeof attrRecord['valueEn'] === 'string'
+          ? (attrRecord['valueEn'] as string).trim()
+          : undefined;
+
+      const attributeName =
+        attributeNameRaw && attributeNameRaw.length > 0
+          ? attributeNameRaw
+          : attributeNameEnRaw && attributeNameEnRaw.length > 0
+            ? attributeNameEnRaw
+            : undefined;
+      const attributeNameEn =
+        attributeNameEnRaw && attributeNameEnRaw.length > 0
+          ? attributeNameEnRaw
+          : attributeNameRaw && attributeNameRaw.length > 0
+            ? attributeNameRaw
+            : undefined;
+      const value =
+        valueRaw && valueRaw.length > 0
+          ? valueRaw
+          : valueEnRaw && valueEnRaw.length > 0
+            ? valueEnRaw
+            : undefined;
+      const valueEn =
+        valueEnRaw && valueEnRaw.length > 0
+          ? valueEnRaw
+          : valueRaw && valueRaw.length > 0
+            ? valueRaw
+            : undefined;
+
+      if (!attributeId && !attributeName && !attributeNameEn && !value && !valueEn && !valueId) {
+        return acc;
+      }
+
+      acc.push({
+        attributeId,
+        attributeName,
+        attributeNameEn,
+        valueId,
+        value,
+        valueEn,
+      });
+
+      return acc;
+    }, []);
+
+    return normalized.length > 0 ? normalized : undefined;
   }
 
   private async resolveCartItemIdentifiers(input: {
@@ -1288,7 +1358,7 @@ export class CartService {
         variantId: new Types.ObjectId(String(variant._id)),
         productId: new Types.ObjectId(String(variant.productId)),
         itemType: 'variant',
-        productSnapshot: this.buildProductSnapshot(product, input.currency ?? 'USD'),
+        productSnapshot: this.buildProductSnapshot(product),
         basePriceUSD,
         pricing,
       };
@@ -1346,7 +1416,7 @@ export class CartService {
       return {
         productId: new Types.ObjectId(String(product._id)),
         itemType: 'product',
-        productSnapshot: this.buildProductSnapshot(product, input.currency ?? 'USD'),
+        productSnapshot: this.buildProductSnapshot(product),
         basePriceUSD,
         pricing,
       };
@@ -1368,6 +1438,7 @@ export class CartService {
     let subtotalBeforeDiscountUSD = 0;
     let merchantDiscountPercent = 0;
     let merchantDiscountAmount = 0;
+    const supportedCurrencies: Array<'USD' | 'YER' | 'SAR'> = ['USD', 'YER', 'SAR'];
 
     // جلب قدرات المستخدم لتطبيق خصم التاجر
       if (userId) {
@@ -1434,10 +1505,20 @@ export class CartService {
       }
 
       const refreshedSnapshot =
-        this.buildProductSnapshot(product ?? undefined, normalizedCurrency) ?? snapshot;
+          this.buildProductSnapshot(product ?? undefined) ?? snapshot ?? {
+          name: (product as unknown as { name?: string })?.name ?? '',
+          slug: (product as unknown as { slug?: string })?.slug ?? '',
+        };
       snapshot = refreshedSnapshot;
       const variantRecord = variant ? (variant as unknown as Record<string, unknown>) : undefined;
       const productRecord = product ? (product as unknown as Record<string, unknown>) : undefined;
+      const variantAttributes = this.buildVariantAttributes(variant ?? undefined);
+      if (variantAttributes?.length) {
+        snapshot = {
+          ...snapshot,
+          variantAttributes,
+        };
+      }
 
       if (this.shouldRefreshPricing(pricingDetails)) {
         const basePriceUSDSource =
@@ -1625,12 +1706,44 @@ export class CartService {
             ? `product-${productIdStr}`
             : `temp-${randomUUID()}`);
 
-      const pricingForView: CartItem['pricing'] = {
-        currency: normalizedCurrency,
-        basePrice: roundedBase,
-        finalPrice: roundedFinal,
-        discount: computedDiscount,
+      const targetCurrencies = this.exchangeRatesService ? supportedCurrencies : [normalizedCurrency];
+      const convertAmountForCurrency = async (
+        amount: number,
+        currencyCode: string,
+      ): Promise<number> => {
+        if (currencyCode === normalizedCurrency || !this.exchangeRatesService) {
+          return amount;
+        }
+        try {
+          const { result } = await this.exchangeRatesService.convertCurrency({
+            amount,
+            fromCurrency: normalizedCurrency,
+            toCurrency: currencyCode,
+          });
+          const converted = this.roundPrice(result) ?? result;
+          return converted;
+        } catch {
+          return amount;
+        }
       };
+
+      const pricingForView: CartItemPricingView = {
+        currencies: {},
+      };
+
+      for (const currencyCode of targetCurrencies) {
+        const baseInCurrency = await convertAmountForCurrency(roundedBase, currencyCode);
+        const finalInCurrency = await convertAmountForCurrency(roundedFinal, currencyCode);
+        const discountInCurrency =
+          this.roundPrice(Math.max(0, baseInCurrency - finalInCurrency)) ??
+          Math.max(0, baseInCurrency - finalInCurrency);
+
+        pricingForView.currencies[currencyCode] = {
+          base: baseInCurrency,
+          final: finalInCurrency,
+          discount: discountInCurrency,
+        };
+      }
 
       if (pricingDetails?.appliedPromotionId) {
         pricingForView.appliedPromotionId = pricingDetails.appliedPromotionId;
@@ -1660,13 +1773,7 @@ export class CartService {
         snapshot,
       });
 
-      if (snapshot) {
-        snapshot.price = {
-          base: roundedBase,
-          final: roundedFinal,
-          currency: normalizedCurrency,
-        };
-      }
+
     }
 
     const totalQuantity = lines.reduce((sum, line) => sum + line.qty, 0);
@@ -1749,10 +1856,9 @@ export class CartService {
         total: this.roundPrice(usdTotal) ?? usdTotal,
       };
 
-      const summaryCurrencies: Array<'USD' | 'YER' | 'SAR'> = ['USD', 'YER', 'SAR'];
       pricingSummaryByCurrency = {};
 
-      for (const currencyCode of summaryCurrencies) {
+      for (const currencyCode of supportedCurrencies) {
         const totals = totalsInAllCurrencies[currencyCode];
         const ratio =
           currencyCode === 'USD' || usdSubtotal === 0
@@ -1822,28 +1928,27 @@ export class CartService {
           this.roundPrice(Math.max(0, roundedSubtotal - additionalDiscounts)) ??
           Math.max(0, roundedSubtotal - additionalDiscounts),
       };
+      pricingSummaryByCurrency = {
+        [normalizedCurrency]: pricingSummary,
+      };
     }
 
-    const effectiveCurrency = pricingSummary.currency;
-    const effectiveSubtotalBeforeDiscount = pricingSummary.subtotalBeforeDiscount;
-    const effectiveSubtotal = pricingSummary.subtotal;
-    const effectiveMerchantDiscount = pricingSummary.merchantDiscountAmount;
+    const summaryByCurrency =
+      pricingSummaryByCurrency ?? {
+        [pricingSummary.currency]: pricingSummary,
+      };
 
     return {
-      currency: effectiveCurrency,
-      subtotal: effectiveSubtotal,
-      subtotalBeforeDiscount: effectiveSubtotalBeforeDiscount,
+      currency: pricingSummary.currency,
       items: lines,
       appliedCoupons: uniqueAppliedCoupons,
       meta: {
         count: lines.length,
         quantity: totalQuantity,
         merchantDiscountPercent,
-        merchantDiscountAmount: effectiveMerchantDiscount,
+        merchantDiscountAmount: pricingSummary.merchantDiscountAmount,
       },
-      ...(totalsInAllCurrencies && { totalsInAllCurrencies }),
-      ...(pricingSummaryByCurrency && { pricingSummaryByCurrency }),
-      pricingSummary,
+      pricingSummaryByCurrency: summaryByCurrency,
     };
   }
 
@@ -1963,39 +2068,203 @@ export class CartService {
   async getCartAnalytics(periodDays: number) {
     const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
 
-    const [
-      totalCarts,
-      activeCarts,
-      abandonedCarts,
-      convertedCarts,
-      avgCartValue,
-      avgItemsPerCart,
-      conversionRate,
-      abandonmentRate,
-      recentActivity,
-      topProducts,
-      cartValueDistribution,
-      hourlyActivity,
-    ] = await Promise.all([
-      this.cartModel.countDocuments({ createdAt: { $gte: startDate } }),
-      this.cartModel.countDocuments({ status: CartStatus.ACTIVE, createdAt: { $gte: startDate } }),
-      this.cartModel.countDocuments({
-        status: CartStatus.ABANDONED,
-        createdAt: { $gte: startDate },
+    const carts = await this.cartModel
+      .find({ createdAt: { $gte: startDate } })
+      .populate('userId', 'firstName lastName storeName email phone')
+      .lean();
+
+    const enriched = await Promise.all(
+      carts.map(async (cart) => {
+        try {
+          const accountType =
+            ((cart.accountType ?? 'any') as 'any' | 'customer' | 'engineer' | 'merchant') || 'any';
+          const preview = await this.previewByCart(
+            {
+              ...(cart as unknown as Cart),
+              items: (cart.items ?? []) as Cart['items'],
+            },
+            'USD',
+            accountType,
+            this.toStringId(cart.userId),
+          );
+          const summary = this.pickPricingSummary(preview.pricingSummaryByCurrency, 'USD');
+          return {
+            cart,
+            preview,
+            total: summary?.total ?? 0,
+            itemsCount:
+              summary?.itemsCount ?? preview.items.reduce((sum, item) => sum + item.qty, 0),
+          };
+        } catch {
+          return {
+            cart,
+            preview: undefined,
+            total: 0,
+            itemsCount: 0,
+          };
+        }
       }),
-      this.cartModel.countDocuments({
-        status: CartStatus.CONVERTED,
-        createdAt: { $gte: startDate },
-      }),
-      this.getAverageCartValue(startDate),
-      this.getAverageItemsPerCart(startDate),
-      this.getConversionRate(startDate),
-      this.getAbandonmentRate(startDate),
-      this.getRecentCartActivity(7),
-      this.getTopProductsInCarts(startDate),
-      this.getCartValueDistribution(startDate),
-      this.getHourlyCartActivity(startDate),
-    ]);
+    );
+
+    const totalCarts = carts.length;
+    const activeCarts = carts.filter((cart) => cart.status === CartStatus.ACTIVE).length;
+    const abandonedCarts = carts.filter((cart) => cart.status === CartStatus.ABANDONED).length;
+    const convertedCarts = carts.filter((cart) => cart.status === CartStatus.CONVERTED).length;
+
+    const totalValue = enriched.reduce((sum, entry) => sum + entry.total, 0);
+    const totalItems = enriched.reduce((sum, entry) => sum + entry.itemsCount, 0);
+
+    const avgCartValue = totalCarts > 0 ? totalValue / totalCarts : 0;
+    const avgItemsPerCart = totalCarts > 0 ? totalItems / totalCarts : 0;
+    const conversionRate = totalCarts > 0 ? (convertedCarts / totalCarts) * 100 : 0;
+    const abandonmentRate = totalCarts > 0 ? (abandonedCarts / totalCarts) * 100 : 0;
+
+    const recentActivityMap = new Map<
+      string,
+      { year: number; month: number; day: number; count: number; totalValue: number }
+    >();
+    const hourlyActivityMap = new Map<number, { count: number; totalValue: number }>();
+    const productMap = new Map<
+      string,
+      {
+        key: string;
+        variantId?: string;
+        productId?: string;
+        name?: string;
+        totalQuantity: number;
+        cartIds: Set<string>;
+      }
+    >();
+
+    for (const entry of enriched) {
+      const cart = entry.cart as Cart & { createdAt?: Date };
+      const preview = entry.preview;
+      const createdAt = new Date(
+        cart.createdAt instanceof Date ? cart.createdAt : cart.createdAt ?? (cart as { updatedAt?: Date }).updatedAt ?? Date.now(),
+      );
+      const dateKey = `${createdAt.getUTCFullYear()}-${createdAt.getUTCMonth()}-${createdAt.getUTCDate()}`;
+      const hour = createdAt.getUTCHours();
+
+      const dateBucket =
+        recentActivityMap.get(dateKey) ??
+        {
+          year: createdAt.getUTCFullYear(),
+          month: createdAt.getUTCMonth() + 1,
+          day: createdAt.getUTCDate(),
+          count: 0,
+          totalValue: 0,
+        };
+      dateBucket.count += 1;
+      dateBucket.totalValue += entry.total;
+      recentActivityMap.set(dateKey, dateBucket);
+
+      const hourBucket =
+        hourlyActivityMap.get(hour) ?? {
+          count: 0,
+          totalValue: 0,
+        };
+      hourBucket.count += 1;
+      hourBucket.totalValue += entry.total;
+      hourlyActivityMap.set(hour, hourBucket);
+
+      if (preview) {
+        const cartId = this.toStringId((cart as { _id?: unknown })._id) ?? '';
+        for (const item of preview.items) {
+          const productKey = item.variantId ?? item.productId ?? item.itemId;
+          const existing =
+            productMap.get(productKey) ??
+            {
+              key: productKey,
+              variantId: item.variantId,
+              productId: item.productId,
+              name: item.snapshot?.name,
+              totalQuantity: 0,
+              cartIds: new Set<string>(),
+            };
+          existing.totalQuantity += item.qty;
+          if (cartId) {
+            existing.cartIds.add(cartId);
+          }
+          productMap.set(productKey, existing);
+        }
+      }
+    }
+
+    const recentActivity = Array.from(recentActivityMap.values())
+      .map((bucket) => ({
+        _id: {
+          year: bucket.year,
+          month: bucket.month,
+          day: bucket.day,
+        },
+        count: bucket.count,
+        totalValue: bucket.totalValue,
+      }))
+      .sort((a, b) => {
+        const dateA = new Date(Date.UTC(a._id.year, a._id.month - 1, a._id.day)).valueOf();
+        const dateB = new Date(Date.UTC(b._id.year, b._id.month - 1, b._id.day)).valueOf();
+        return dateA - dateB;
+      });
+
+    const hourlyActivity = Array.from(hourlyActivityMap.entries())
+      .map(([hour, bucket]) => ({
+        _id: hour,
+        count: bucket.count,
+        totalValue: bucket.totalValue,
+      }))
+      .sort((a, b) => a._id - b._id);
+
+    const topProducts = Array.from(productMap.values())
+      .map((entry) => ({
+        _id: entry.key,
+        variantId: entry.variantId,
+        productId: entry.productId,
+        name: entry.name,
+        totalQuantity: entry.totalQuantity,
+        cartCount: entry.cartIds.size,
+      }))
+      .sort((a, b) => b.totalQuantity - a.totalQuantity)
+      .slice(0, 10);
+
+    const boundaries = [0, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
+    const distributionBuckets = boundaries.map((value, index) => ({
+      min: value,
+      max: boundaries[index + 1],
+      count: 0,
+      totalValue: 0,
+    }));
+    const overflowBucket = { label: '10000+', count: 0, totalValue: 0 };
+
+    for (const entry of enriched) {
+      const total = entry.total;
+      const bucket = distributionBuckets.find((b) => total >= b.min && (b.max === undefined || total < b.max));
+      if (bucket) {
+        bucket.count += 1;
+        bucket.totalValue += total;
+      } else {
+        overflowBucket.count += 1;
+        overflowBucket.totalValue += total;
+      }
+    }
+
+    const cartValueDistribution = [
+      ...distributionBuckets
+        .filter((bucket) => bucket.count > 0)
+        .map((bucket) => ({
+          _id: `${bucket.min}-${bucket.max ?? ''}`.replace(/-undefined$/, '+'),
+          count: bucket.count,
+          totalValue: bucket.totalValue,
+        })),
+      ...(overflowBucket.count > 0
+        ? [
+            {
+              _id: overflowBucket.label,
+              count: overflowBucket.count,
+              totalValue: overflowBucket.totalValue,
+            },
+          ]
+        : []),
+    ];
 
     return {
       overview: {
@@ -2159,9 +2428,7 @@ export class CartService {
 
           return {
             ...enrichedCart,
-            pricingSummary: preview.pricingSummary,
             pricingSummaryByCurrency: preview.pricingSummaryByCurrency,
-            totalsInAllCurrencies: preview.totalsInAllCurrencies,
             meta: preview.meta,
           };
         } catch {

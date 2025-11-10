@@ -43,6 +43,7 @@ import {
   formatRelativeTime,
   getStatusColor,
   formatCartStatus,
+  getCartSummary,
 } from '../api/cartApi';
 
 export const AbandonedCartsPage: React.FC = () => {
@@ -175,8 +176,12 @@ export const AbandonedCartsPage: React.FC = () => {
   const totalPages = Math.ceil(total / paginationModel.pageSize);
 
   // Calculate statistics
-  const totalAbandonedValue = useMemo(() => 
-    carts.reduce((sum: number, cart: Cart) => sum + (cart.pricingSummary?.total || 0), 0),
+  const totalAbandonedValue = useMemo(
+    () =>
+      carts.reduce(
+        (sum: number, cart: Cart) => sum + (getCartSummary(cart, cart.currency)?.total || 0),
+        0,
+      ),
     [carts]
   );
   const averageAbandonedValue = carts.length > 0 ? totalAbandonedValue / carts.length : 0;
@@ -204,7 +209,10 @@ export const AbandonedCartsPage: React.FC = () => {
   }, [t]);
 
   const getCartItemsCount = useCallback((cart: Cart) => cart.items?.length || 0, []);
-  const getCartTotal = useCallback((cart: Cart) => cart.pricingSummary?.total || 0, []);
+  const getCartTotal = useCallback(
+    (cart: Cart) => getCartSummary(cart, cart.currency)?.total || 0,
+    [],
+  );
   const getLastActivity = useCallback((cart: Cart) => 
     cart.lastActivityAt ? formatRelativeTime(cart.lastActivityAt) : formatRelativeTime(cart.updatedAt),
     []

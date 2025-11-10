@@ -14144,6 +14144,15 @@
             }
           },
           {
+            "name": "deletedOnly",
+            "required": false,
+            "in": "query",
+            "description": "عرض العناوين المحذوفة فقط",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "search",
             "required": false,
             "in": "query",
