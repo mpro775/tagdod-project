@@ -1,16 +1,27 @@
 import { apiClient } from '@/core/api/client';
-import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
+import type { ApiResponse, PaginatedResponse, PaginationMeta } from '@/shared/types/common.types';
 
 function extractResponseData<T>(response: { data?: any }): T {
   const outer = response?.data;
 
-  if (outer && typeof outer === 'object') {
-    if (Array.isArray(outer)) {
-      return outer as T;
-    }
+  if (outer === undefined || outer === null) {
+    return outer as T;
+  }
 
-    if ('data' in outer) {
-      return extractResponseData<T>({ data: outer.data });
+  if (Array.isArray(outer)) {
+    return outer as T;
+  }
+
+  if (typeof outer === 'object') {
+    const keys = Object.keys(outer);
+
+    const isApiEnvelope =
+      'success' in outer && 'data' in outer && keys.every((key) => ['success', 'data', 'requestId'].includes(key));
+
+    const isDataOnlyWrapper = keys.length === 1 && 'data' in outer;
+
+    if (isApiEnvelope || isDataOnlyWrapper) {
+      return extractResponseData<T>({ data: (outer as { data?: unknown }).data });
     }
   }
 
@@ -383,14 +394,40 @@ export const marketingApi = {
   },
 
   listCoupons: async (params?: ListCouponsParams): Promise<PaginatedResponse<Coupon>> => {
-    const response = await apiClient.get<ApiResponse<{ data: Coupon[]; meta: any }>>(
+    const response = await apiClient.get<ApiResponse<{ data: Coupon[]; meta?: PaginationMeta; pagination?: any }>>(
       '/admin/marketing/coupons',
       { params }
     );
-    const result = extractResponseData<{ data: Coupon[]; meta: any }>(response);
+    const result = extractResponseData<{ data?: Coupon[]; meta?: PaginationMeta; pagination?: any }>(response);
+
+    const pagination = result.meta ?? result.pagination;
+
+    const meta: PaginationMeta = {
+      page: pagination?.page ?? pagination?.currentPage ?? params?.page ?? 1,
+      limit:
+        pagination?.limit ??
+        pagination?.pageSize ??
+        params?.limit ??
+        (Array.isArray(result.data) ? result.data.length : 0),
+      total: pagination?.total ?? pagination?.totalItems ?? (Array.isArray(result.data) ? result.data.length : 0),
+      totalPages:
+        pagination?.totalPages ??
+        pagination?.pages ??
+        Math.max(
+          1,
+          Math.ceil(
+            (pagination?.total ?? pagination?.totalItems ?? (Array.isArray(result.data) ? result.data.length : 0)) /
+              (pagination?.limit ??
+                pagination?.pageSize ??
+                params?.limit ??
+                (Array.isArray(result.data) && result.data.length > 0 ? result.data.length : 1)),
+          ),
+        ),
+    };
+
     return {
-      data: result.data,
-      meta: result.meta,
+      data: Array.isArray(result.data) ? result.data : [],
+      meta,
     };
   },
 

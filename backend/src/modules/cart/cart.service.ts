@@ -25,6 +25,8 @@ type CartLine = {
     base: number;
     final: number;
     finalBeforeDiscount?: number;
+    finalBeforeCoupon?: number;
+    couponDiscount?: number;
     currency: string;
     appliedRule: unknown;
   };
@@ -1434,6 +1436,13 @@ export class CartService {
   ) {
     const normalizedCurrency = this.normalizeCurrency(currency);
     const lines: CartLine[] = [];
+    const lineContexts: Array<{
+      line: CartLine;
+      qty: number;
+      currency: string;
+      finalBeforeCoupon: number;
+      lineTotalBeforeCoupon: number;
+    }> = [];
     let subtotalUSD = 0;
     let subtotalBeforeDiscountUSD = 0;
     let merchantDiscountPercent = 0;
@@ -1447,6 +1456,52 @@ export class CartService {
         merchantDiscountPercent = caps.merchant_discount_percent;
       }
     }
+
+    const convertAmountBetweenCurrencies = async (
+      amount: number,
+      fromCurrency: string,
+      toCurrency: string,
+    ): Promise<number> => {
+      if (!amount) return 0;
+      const normalizedFrom = this.normalizeCurrency(fromCurrency);
+      const normalizedTo = this.normalizeCurrency(toCurrency);
+      if (normalizedFrom === normalizedTo) {
+        return amount;
+      }
+      if (!this.exchangeRatesService) {
+        return amount;
+      }
+      try {
+        const { result } = await this.exchangeRatesService.convertCurrency({
+          amount,
+          fromCurrency: normalizedFrom,
+          toCurrency: normalizedTo,
+        });
+        return result;
+      } catch {
+        return amount;
+      }
+    };
+
+    const updatePricingForLine = async (line: CartLine, baseCurrency: string) => {
+      if (!line.pricing) return;
+      for (const [currencyCode, priceView] of Object.entries(line.pricing.currencies)) {
+        const finalInCurrency =
+          currencyCode === baseCurrency
+            ? line.unit.final
+            : await convertAmountBetweenCurrencies(line.unit.final, baseCurrency, currencyCode);
+        const roundedFinalInCurrency = this.roundPrice(finalInCurrency) ?? finalInCurrency;
+        const baseValue = this.roundPrice(priceView.base) ?? priceView.base;
+        const discountValue =
+          this.roundPrice(Math.max(0, baseValue - roundedFinalInCurrency)) ??
+          Math.max(0, baseValue - roundedFinalInCurrency);
+        line.pricing.currencies[currencyCode] = {
+          base: baseValue,
+          final: roundedFinalInCurrency,
+          discount: discountValue,
+        };
+      }
+    };
 
     for (const it of cart.items) {
       const rawId =
@@ -1765,6 +1820,8 @@ export class CartService {
           base: roundedBase,
           final: roundedFinal,
           finalBeforeDiscount: roundedFinalBefore,
+          finalBeforeCoupon: roundedFinal,
+          couponDiscount: 0,
           currency: normalizedCurrency,
           appliedRule: appliedRule ?? pricingDetails?.appliedPromotionId ?? null,
         },
@@ -1773,7 +1830,13 @@ export class CartService {
         snapshot,
       });
 
-
+      lineContexts.push({
+        line: lines[lines.length - 1],
+        qty: it.qty,
+        currency: normalizedCurrency,
+        finalBeforeCoupon: roundedFinal,
+        lineTotalBeforeCoupon: lineTotal,
+      });
     }
 
     const totalQuantity = lines.reduce((sum, line) => sum + line.qty, 0);
@@ -1786,6 +1849,109 @@ export class CartService {
     const storedPromotionDiscount =
       this.roundPrice(cart.pricingSummary?.promotionDiscount ?? 0) ?? 0;
     const storedAutoDiscount = this.roundPrice(cart.pricingSummary?.autoDiscount ?? 0) ?? 0;
+
+    let couponDiscountForAllocation = storedCouponDiscount;
+    const summaryCurrency = cart.pricingSummary?.currency
+      ? this.normalizeCurrency(cart.pricingSummary.currency)
+      : normalizedCurrency;
+    if (couponDiscountForAllocation > 0 && summaryCurrency !== normalizedCurrency) {
+      couponDiscountForAllocation =
+        this.roundPrice(
+          await convertAmountBetweenCurrencies(
+            couponDiscountForAllocation,
+            summaryCurrency,
+            normalizedCurrency,
+          ),
+        ) ?? couponDiscountForAllocation;
+    }
+
+    if (couponDiscountForAllocation > 0 && lineContexts.length > 0) {
+      const totalForAllocation = lineContexts.reduce(
+        (sum, ctx) => sum + ctx.lineTotalBeforeCoupon,
+        0,
+      );
+
+      if (totalForAllocation > 0) {
+        let remainingCoupon = couponDiscountForAllocation;
+        let lastAdjustableContext:
+          | {
+              line: CartLine;
+              qty: number;
+              currency: string;
+              finalBeforeCoupon: number;
+              lineTotalBeforeCoupon: number;
+            }
+          | undefined;
+
+        for (let i = 0; i < lineContexts.length; i++) {
+          const ctx = lineContexts[i];
+          if (ctx.qty <= 0 || remainingCoupon <= 0) {
+            continue;
+          }
+
+          const line = ctx.line;
+          const proportion =
+            totalForAllocation === 0 ? 0 : ctx.lineTotalBeforeCoupon / totalForAllocation;
+          let desiredLineDiscount =
+            i === lineContexts.length - 1
+              ? remainingCoupon
+              : couponDiscountForAllocation * proportion;
+          desiredLineDiscount = Math.min(
+            desiredLineDiscount,
+            ctx.lineTotalBeforeCoupon,
+            remainingCoupon,
+          );
+
+          if (desiredLineDiscount <= 0) {
+            line.unit.finalBeforeCoupon = ctx.finalBeforeCoupon;
+            line.unit.couponDiscount =
+              this.roundPrice(line.unit.couponDiscount ?? 0) ??
+              (line.unit.couponDiscount ?? 0);
+            continue;
+          }
+
+          const targetLineTotal = Math.max(0, ctx.lineTotalBeforeCoupon - desiredLineDiscount);
+          const perUnitFinalRaw = targetLineTotal / ctx.qty;
+          const roundedPerUnitFinal = this.roundPrice(perUnitFinalRaw) ?? perUnitFinalRaw;
+          const roundedLineTotal =
+            this.roundPrice(roundedPerUnitFinal * ctx.qty) ?? roundedPerUnitFinal * ctx.qty;
+          const actualLineDiscount = ctx.lineTotalBeforeCoupon - roundedLineTotal;
+
+          remainingCoupon =
+            this.roundPrice(Math.max(0, remainingCoupon - actualLineDiscount)) ??
+            Math.max(0, remainingCoupon - actualLineDiscount);
+
+          line.unit.finalBeforeCoupon = ctx.finalBeforeCoupon;
+          const perUnitCouponDiscount = Math.max(0, ctx.finalBeforeCoupon - roundedPerUnitFinal);
+          line.unit.couponDiscount =
+            this.roundPrice(perUnitCouponDiscount) ?? perUnitCouponDiscount;
+          line.unit.final = roundedPerUnitFinal;
+          line.lineTotal = roundedLineTotal;
+
+          await updatePricingForLine(line, ctx.currency);
+          lastAdjustableContext = ctx;
+        }
+
+        if (remainingCoupon > 0.0001 && lastAdjustableContext && lastAdjustableContext.qty > 0) {
+          const ctx = lastAdjustableContext;
+          const line = ctx.line;
+          const extraPerUnit = remainingCoupon / ctx.qty;
+          const adjustedFinalRaw = Math.max(0, line.unit.final - extraPerUnit);
+          const adjustedFinal = this.roundPrice(adjustedFinalRaw) ?? adjustedFinalRaw;
+          line.unit.final = adjustedFinal;
+          const perUnitCouponDiscount = Math.max(
+            0,
+            (line.unit.finalBeforeCoupon ?? adjustedFinal) - adjustedFinal,
+          );
+          line.unit.couponDiscount =
+            this.roundPrice(perUnitCouponDiscount) ?? perUnitCouponDiscount;
+          line.lineTotal =
+            this.roundPrice(adjustedFinal * ctx.qty) ?? adjustedFinal * ctx.qty;
+          await updatePricingForLine(line, ctx.currency);
+        }
+      }
+    }
+
     const additionalDiscounts = storedCouponDiscount + storedPromotionDiscount + storedAutoDiscount;
     const totalDiscountForConversion = roundedMerchantDiscount + additionalDiscounts;
 
@@ -1937,6 +2103,25 @@ export class CartService {
       pricingSummaryByCurrency ?? {
         [pricingSummary.currency]: pricingSummary,
       };
+
+    for (const [currencyCode, summary] of Object.entries(summaryByCurrency)) {
+      let totalForCurrency = 0;
+      for (const line of lines) {
+        const priceView = line.pricing?.currencies?.[currencyCode];
+        if (priceView) {
+          const finalPerUnit = this.roundPrice(priceView.final) ?? priceView.final;
+          totalForCurrency += finalPerUnit * line.qty;
+        } else if (currencyCode === line.unit.currency) {
+          totalForCurrency += line.lineTotal;
+        }
+      }
+      summary.total = this.roundPrice(totalForCurrency) ?? totalForCurrency;
+    }
+
+    const primarySummary = summaryByCurrency[pricingSummary.currency];
+    if (primarySummary) {
+      pricingSummary.total = primarySummary.total;
+    }
 
     return {
       currency: pricingSummary.currency,
