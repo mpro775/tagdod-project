@@ -28,7 +28,7 @@ import { OrderStateMachine } from '../utils/order-state-machine';
 import { Inventory } from '../schemas/inventory.schema';
 import { Reservation } from '../schemas/reservation.schema';
 import { InventoryLedger } from '../schemas/inventory-ledger.schema';
-import { Cart } from '../../cart/schemas/cart.schema';
+import { Cart, CartStatus } from '../../cart/schemas/cart.schema';
 import { CartService } from '../../cart/cart.service';
 import { MarketingService } from '../../marketing/marketing.service';
 import { AddressesService } from '../../addresses/addresses.service';
@@ -690,10 +690,13 @@ export class OrderService {
 
       // تحديث السلة إلى حالة CONVERTED وربطها بالطلب
       await this.cartModel.updateOne(
-        { userId: new Types.ObjectId(userId), status: 'active' },
+        {
+          userId: new Types.ObjectId(userId),
+          status: { $ne: CartStatus.CONVERTED },
+        },
         {
           $set: {
-            status: 'converted',
+            status: CartStatus.CONVERTED,
             convertedToOrderId: order._id,
             convertedAt: new Date(),
             items: [], // تفريغ العناصر لمنع إعادة الاستخدام

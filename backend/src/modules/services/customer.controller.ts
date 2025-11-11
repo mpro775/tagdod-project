@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -10,6 +10,8 @@ import {
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ServicesService } from './services.service';
@@ -191,10 +193,77 @@ export class CustomerServicesController {
     return { data };
   }
 
+  @Get(':requestId/offers/:offerId')
+  @ApiOperation({
+    summary: 'تفاصيل عرض مهندس',
+    description: 'استرداد تفاصيل عرض محدد مع بيانات المهندس والطلب'
+  })
+  @ApiParam({ name: 'requestId', description: 'معرف طلب الخدمة' })
+  @ApiParam({ name: 'offerId', description: 'معرف العرض' })
+  @ApiOkResponse({
+    description: 'تم استرداد تفاصيل العرض بنجاح',
+    schema: {
+      example: {
+        data: {
+          offer: {
+            _id: '6645f731dc490a317ad91884',
+            amountYER: 9000,
+            note: 'يشمل التركيب الكامل مع قطع الغيار',
+            status: 'OFFERED',
+            statusLabel: 'عرض مقدم',
+            engineer: {
+              id: '6637d50690fbb31de8d9c445',
+              name: 'حسن اللقلي',
+              jobTitle: 'مهندس كهرباء',
+              phone: '777123456',
+              whatsapp: 'https://wa.me/967777123456'
+            }
+          },
+          request: {
+            _id: '6645e1a5f2f0a02eab4d9c10',
+            title: 'تركيب منظومة شمسية',
+            type: 'installation',
+            description: 'عرض المشكلة: تركيب منظومة طاقة شمسية كاملة...',
+            images: ['https://cdn.example.com/uploads/request.jpg'],
+            status: 'OPEN',
+            statusLabel: 'بانتظار العروض',
+            scheduledAt: '2025-09-21T09:00:00.000Z',
+            address: {
+              label: 'المنزل',
+              line1: 'شارع تعز - جوار مستشفى ناصر',
+              city: 'صنعاء'
+            }
+          }
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'لم يتم العثور على الطلب أو العرض',
+    schema: {
+      example: {
+        data: { error: 'REQUEST_NOT_FOUND' },
+      },
+    },
+  })
+  async offerDetails(
+    @Req() req: RequestWithUser,
+    @Param('requestId') requestId: string,
+    @Param('offerId') offerId: string,
+  ) {
+    const data = await this.svc.getOfferDetails(req.user!.sub, requestId, offerId);
+    return { data };
+  }
+
   @Get('my/with-accepted-offer')
   @ApiOperation({
     summary: 'طلباتي مع عروض مقبولة',
     description: 'استرداد الطلبات التي تم قبول أحد عروضها'
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'فلترة حسب حالة الطلب (ASSIGNED, IN_PROGRESS, COMPLETED, RATED)',
   })
   @ApiOkResponse({
     description: 'تم استرداد الطلبات ذات العروض المقبولة بنجاح',
@@ -213,8 +282,8 @@ export class CustomerServicesController {
       },
     },
   })
-  async myWithAcceptedOffer(@Req() req: RequestWithUser) {
-    const data = await this.svc.myRequestsWithAcceptedOffers(req.user!.sub);
+  async myWithAcceptedOffer(@Req() req: RequestWithUser, @Query('status') status?: string | string[]) {
+    const data = await this.svc.myRequestsWithAcceptedOffers(req.user!.sub, status);
     return { data };
   }
 

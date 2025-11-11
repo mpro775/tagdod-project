@@ -11,6 +11,50 @@ import { CreateServiceRequestDto } from './dto/requests.dto';
 import { CreateOfferDto, UpdateOfferDto } from './dto/offers.dto';
 import { DistanceService } from './services/distance.service';
 
+type ServiceRequestLean = ServiceRequest & { _id: Types.ObjectId; createdAt: Date; updatedAt: Date };
+type EngineerOfferLean = EngineerOffer & { _id: Types.ObjectId; createdAt: Date; updatedAt: Date };
+
+interface PopulatedEngineer {
+  _id: Types.ObjectId;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  jobTitle?: string | null;
+}
+
+interface PopulatedAddress {
+  _id: Types.ObjectId;
+  label?: string;
+  line1?: string;
+  city?: string;
+}
+
+type ServiceRequestPopulated = ServiceRequestLean & {
+  engineerId?: PopulatedEngineer | Types.ObjectId | null;
+  addressId?: PopulatedAddress | Types.ObjectId | null;
+};
+
+type EngineerOfferPopulated = EngineerOfferLean & {
+  engineerId?: PopulatedEngineer | Types.ObjectId | null;
+};
+
+export interface OfferListItem {
+  _id: Types.ObjectId;
+  requestId: string;
+  amountYER: number;
+  note: string | null;
+  status: EngineerOffer['status'];
+  statusLabel: string;
+  createdAt: Date;
+  engineer: {
+    id: string;
+    name: string | null;
+    jobTitle: string | null;
+    phone: string | null;
+    whatsapp: string | null;
+  } | null;
+}
+
 @Injectable()
 export class ServicesService {
   private readonly logger = new Logger(ServicesService.name);
@@ -128,56 +172,158 @@ export class ServicesService {
 
   async myRequestsWithOffersPending(userId: string) {
     const userObjectId = new Types.ObjectId(userId);
-    const offersCollection = this.offers.collection.name;
-    return this.requests
-      .aggregate([
-        { $match: { userId: userObjectId } },
-        {
-          $lookup: {
-            from: offersCollection,
-            localField: '_id',
-            foreignField: 'requestId',
-            as: 'offers',
-          },
-        },
-        { $addFields: { offersCount: { $size: '$offers' } } },
-        {
-          $match: {
-            offersCount: { $gt: 0 },
-            acceptedOffer: null,
-          },
-        },
-        { $project: { offers: 0, offersCount: 0 } },
-        { $sort: { createdAt: -1 } },
-      ])
-      .exec();
+    const requests = (await this.requests
+      .find({
+        userId: userObjectId,
+        acceptedOffer: null,
+        status: { $in: ['OPEN', 'OFFERS_COLLECTING'] },
+      })
+      .populate('addressId', 'label line1 city')
+      .sort({ createdAt: -1 })
+      .lean()) as ServiceRequestPopulated[];
+
+    if (!requests.length) return [];
+
+    const requestIds = requests.map(r => r._id);
+    const offers = (await this.offers
+      .find({ requestId: { $in: requestIds }, status: 'OFFERED' })
+      .populate('engineerId', 'firstName lastName phone jobTitle')
+      .sort({ createdAt: 1 })
+      .lean()) as EngineerOfferPopulated[];
+
+    const offersByRequest = new Map<string, OfferListItem[]>();
+
+    for (const offer of offers) {
+      const key = String(offer.requestId);
+      const engineerData = this.extractEngineer(offer.engineerId);
+      const engineerPhone: string | null = engineerData?.phone ?? null;
+      const engineerName = engineerData
+        ? `${engineerData.firstName ?? ''} ${engineerData.lastName ?? ''}`.trim()
+        : null;
+      const whatsapp = engineerPhone ? this.makeWhatsappLink(engineerPhone) : null;
+
+      const formattedOffer: OfferListItem = {
+        _id: offer._id,
+        requestId: String(offer.requestId),
+        amountYER: offer.amount,
+        note: offer.note ?? null,
+        status: offer.status,
+        statusLabel: this.offerStatusLabel(offer.status),
+        createdAt: offer.createdAt,
+        engineer: engineerData
+          ? {
+              id: String(engineerData._id),
+              name: engineerName,
+              jobTitle: engineerData.jobTitle ?? null,
+              phone: engineerPhone,
+              whatsapp,
+            }
+          : null,
+      };
+
+      if (!offersByRequest.has(key)) {
+        offersByRequest.set(key, []);
+      }
+      offersByRequest.get(key)!.push(formattedOffer);
+    }
+
+    return requests
+      .map((req) => {
+        const addressData = this.extractAddress(req.addressId);
+
+        return {
+          _id: req._id,
+          userId: req.userId,
+          title: req.title,
+          type: req.type,
+          description: req.description,
+          images: req.images,
+          city: req.city,
+          status: req.status,
+          statusLabel: this.requestStatusLabel(req.status),
+          scheduledAt: req.scheduledAt,
+          createdAt: req.createdAt,
+          updatedAt: req.updatedAt,
+          address: addressData
+            ? {
+                label: addressData.label ?? null,
+                line1: addressData.line1 ?? null,
+                city: addressData.city ?? null,
+              }
+            : null,
+          offers: offersByRequest.get(String(req._id)) ?? [],
+        };
+      })
+      .filter((item) => item.offers.length > 0);
   }
 
-  async myRequestsWithAcceptedOffers(userId: string) {
+  async myRequestsWithAcceptedOffers(userId: string, status?: string | string[]) {
     const userObjectId = new Types.ObjectId(userId);
-    const offersCollection = this.offers.collection.name;
-    return this.requests
-      .aggregate([
-        { $match: { userId: userObjectId } },
-        {
-          $lookup: {
-            from: offersCollection,
-            localField: '_id',
-            foreignField: 'requestId',
-            as: 'offers',
-          },
-        },
-        { $addFields: { offersCount: { $size: '$offers' } } },
-        {
-          $match: {
-            offersCount: { $gt: 0 },
-            acceptedOffer: { $ne: null },
-          },
-        },
-        { $project: { offers: 0, offersCount: 0 } },
-        { $sort: { createdAt: -1 } },
-      ])
-      .exec();
+    const statuses = Array.isArray(status)
+      ? status
+      : status
+        ? [status]
+        : ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'RATED'];
+
+    const docs = (await this.requests
+      .find({
+        userId: userObjectId,
+        acceptedOffer: { $ne: null },
+        status: { $in: statuses },
+      })
+      .populate('engineerId', 'firstName lastName phone')
+      .populate('addressId', 'label line1 city')
+      .sort({ createdAt: -1 })
+      .lean()) as ServiceRequestPopulated[];
+
+    return docs.map((doc) => {
+      const engineerData = this.extractEngineer(doc.engineerId);
+      const engineerPhone: string | null = engineerData?.phone ?? null;
+      const engineerName = engineerData
+        ? `${engineerData.firstName ?? ''} ${engineerData.lastName ?? ''}`.trim()
+        : null;
+      const whatsapp = engineerPhone ? this.makeWhatsappLink(engineerPhone) : null;
+
+      const addressData = this.extractAddress(doc.addressId);
+
+      const engineerId = engineerData ? String(engineerData._id) : doc.engineerId ? String(doc.engineerId) : null;
+
+      return {
+        _id: doc._id,
+        userId: doc.userId,
+        title: doc.title,
+        type: doc.type,
+        description: doc.description,
+        images: doc.images,
+        city: doc.city,
+        status: doc.status,
+        statusLabel: this.requestStatusLabel(doc.status),
+        scheduledAt: doc.scheduledAt,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        address: addressData
+          ? {
+              label: addressData.label ?? null,
+              line1: addressData.line1 ?? null,
+              city: addressData.city ?? null,
+            }
+          : null,
+        engineer: engineerData
+          ? {
+              id: engineerId,
+              name: engineerName,
+              phone: engineerPhone,
+              whatsapp,
+            }
+          : null,
+        acceptedOffer: doc.acceptedOffer
+          ? {
+              ...doc.acceptedOffer,
+              amountYER: doc.acceptedOffer.amount,
+            }
+          : null,
+      };
+    });
   }
 
   async getRequest(userId: string, id: string) {
@@ -268,6 +414,71 @@ export class ServicesService {
     return offers;
   }
 
+  async getOfferDetails(userId: string, requestId: string, offerId: string) {
+    const request = await this.requests
+      .findOne({ _id: requestId, userId })
+      .populate('addressId', 'label line1 city')
+      .lean<ServiceRequestPopulated | null>();
+    if (!request) return { error: 'REQUEST_NOT_FOUND' };
+
+    const offer = await this.offers
+      .findOne({ _id: offerId, requestId: request._id })
+      .populate('engineerId', 'firstName lastName phone jobTitle city')
+      .lean<EngineerOfferPopulated | null>();
+    if (!offer) return { error: 'OFFER_NOT_FOUND' };
+
+    const engineerData = this.extractEngineer(offer.engineerId);
+    const engineerPhone: string | null = engineerData?.phone ?? null;
+    const engineerName = engineerData
+      ? `${engineerData.firstName ?? ''} ${engineerData.lastName ?? ''}`.trim()
+      : null;
+    const whatsapp = engineerPhone ? this.makeWhatsappLink(engineerPhone) : null;
+
+    const addressData = this.extractAddress(request.addressId);
+
+    const formattedOffer: OfferListItem = {
+      _id: offer._id,
+      requestId: String(offer.requestId),
+      amountYER: offer.amount,
+      note: offer.note ?? null,
+      status: offer.status,
+      statusLabel: this.offerStatusLabel(offer.status),
+      createdAt: offer.createdAt,
+      engineer: engineerData
+        ? {
+            id: String(engineerData._id),
+            name: engineerName,
+            jobTitle: engineerData.jobTitle ?? null,
+            phone: engineerPhone,
+            whatsapp,
+          }
+        : null,
+    };
+
+    return {
+      offer: formattedOffer,
+      request: {
+        _id: request._id,
+        title: request.title,
+        type: request.type ?? null,
+        description: request.description ?? null,
+        images: request.images ?? [],
+        status: request.status,
+        statusLabel: this.requestStatusLabel(request.status),
+        scheduledAt: request.scheduledAt ?? null,
+        createdAt: request.createdAt,
+        city: request.city,
+        address: addressData
+          ? {
+              label: addressData.label ?? null,
+              line1: addressData.line1 ?? null,
+              city: addressData.city ?? null,
+            }
+          : null,
+      },
+    };
+  }
+
   // ---- Engineer flows
   async nearby(engineerUserId: string, lat: number, lng: number, radiusKm: number) {
     const meters = radiusKm * 1000;
@@ -327,6 +538,55 @@ export class ServicesService {
     return this.distanceService.calculateDistance(lat1, lng1, lat2, lng2);
   }
 
+  private makeWhatsappLink(phone: string): string | null {
+    const digitsOnly = phone.replace(/\D+/g, '');
+    if (!digitsOnly) return null;
+
+    let normalized = digitsOnly;
+    if (normalized.startsWith('00')) normalized = normalized.slice(2);
+    if (normalized.startsWith('0')) normalized = normalized.slice(1);
+    if (!normalized.startsWith('967')) normalized = `967${normalized}`;
+
+    return `https://wa.me/${normalized}`;
+  }
+
+  private requestStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      OPEN: 'بانتظار العروض',
+      OFFERS_COLLECTING: 'تجميع العروض',
+      ASSIGNED: 'تم قبول العرض',
+      IN_PROGRESS: 'قيد التنفيذ',
+      COMPLETED: 'اكتملت الخدمة',
+      RATED: 'تم التقييم',
+      CANCELLED: 'ملغى',
+    };
+    return labels[status] ?? status;
+  }
+
+  private offerStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      OFFERED: 'عرض مقدم',
+      ACCEPTED: 'عرض مقبول',
+      REJECTED: 'عرض مرفوض',
+      CANCELLED: 'عرض ملغى',
+    };
+    return labels[status] ?? status;
+  }
+
+  private extractEngineer(
+    engineer: PopulatedEngineer | Types.ObjectId | null | undefined,
+  ): PopulatedEngineer | null {
+    if (!engineer) return null;
+    return engineer instanceof Types.ObjectId ? null : engineer;
+  }
+
+  private extractAddress(
+    address: PopulatedAddress | Types.ObjectId | null | undefined,
+  ): PopulatedAddress | null {
+    if (!address) return null;
+    return address instanceof Types.ObjectId ? null : address;
+  }
+
   async offer(engineerUserId: string, dto: CreateOfferDto) {
     const r = await this.requests.findById(dto.requestId);
     if (!r) return { error: 'REQUEST_NOT_FOUND' };
@@ -351,6 +611,7 @@ export class ServicesService {
           note: dto.note,
           distanceKm: Math.round(distanceKm * 100) / 100,
           status: 'OFFERED',
+          updatesCount: 0,
         },
       },
       { upsert: true, new: true },
@@ -369,10 +630,31 @@ export class ServicesService {
     const off = await this.offers.findOne({ _id: id, engineerId: engineerUserId });
     if (!off) return { error: 'NOT_FOUND' };
     if (off.status !== 'OFFERED') return { error: 'CANNOT_UPDATE' };
+    if ((off.updatesCount || 0) >= 1) return { error: 'UPDATE_LIMIT_REACHED' };
     if (patch.amount !== undefined) off.amount = patch.amount;
     if (patch.note !== undefined) off.note = patch.note;
+    off.updatesCount = (off.updatesCount || 0) + 1;
     await off.save();
     return off;
+  }
+
+  async deleteOffer(engineerUserId: string, id: string) {
+    const off = await this.offers.findOne({ _id: id, engineerId: engineerUserId });
+    if (!off) return { error: 'NOT_FOUND' };
+    if (off.status !== 'OFFERED') return { error: 'CANNOT_DELETE' };
+
+    await this.offers.deleteOne({ _id: off._id });
+
+    const stillAvailable = await this.offers.exists({ requestId: off.requestId, status: 'OFFERED' });
+    if (!stillAvailable) {
+      const req = await this.requests.findById(off.requestId);
+      if (req && req.status === 'OFFERS_COLLECTING') {
+        req.status = 'OPEN';
+        await req.save();
+      }
+    }
+
+    return { ok: true };
   }
 
   async start(engineerUserId: string, requestId: string) {

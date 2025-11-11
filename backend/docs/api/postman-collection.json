@@ -10493,6 +10493,35 @@
           }
         },
         {
+          "name": "تفاصيل عرض مهندس",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/customer/{requestId}/offers/{offerId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "customer",
+                "{requestId}",
+                "offers",
+                "{offerId}"
+              ]
+            },
+            "description": "استرداد تفاصيل عرض محدد مع بيانات المهندس والطلب"
+          }
+        },
+        {
           "name": "طلباتي مع عروض مقبولة",
           "request": {
             "method": "GET",
@@ -10802,6 +10831,34 @@
               ]
             },
             "description": "تحديث عرض مقدم سابقاً للعميل"
+          }
+        },
+        {
+          "name": "حذف عرض",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/engineer/offers/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "engineer",
+                "offers",
+                "{id}"
+              ]
+            },
+            "description": "تمكين الفني من حذف عرضه إذا لم يتم قبوله بعد"
           }
         },
         {

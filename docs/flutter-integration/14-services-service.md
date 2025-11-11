@@ -14,16 +14,23 @@
 ### للمستخدمين (Customers)
 1. [إنشاء طلب خدمة](#1-إنشاء-طلب-خدمة)
 2. [طلباتي](#2-طلباتي)
+   - [طلبات بلا عروض](#طلبات-بلا-عروض)
+   - [طلبات بعروض غير مقبولة](#طلبات-بعروض-غير-مقبولة)
+   - [طلبات بعروض مقبولة](#طلبات-بعروض-مقبولة)
 3. [تفاصيل طلب](#3-تفاصيل-طلب)
 4. [إلغاء طلب](#4-إلغاء-طلب)
 5. [العروض المقدمة على طلب](#5-العروض-المقدمة-على-طلب)
+   - [تفاصيل عرض محدد](#تفاصيل-عرض-محدد)
 6. [قبول عرض](#6-قبول-عرض)
 7. [تقييم الخدمة](#7-تقييم-الخدمة)
 
 ### للمهندسين (Engineers)
 8. [الطلبات القريبة](#8-الطلبات-القريبة)
+   - [الطلبات في مدينتي](#الطلبات-في-مدينتي)
+   - [جميع الطلبات المتاحة](#جميع-الطلبات-المتاحة)
 9. [تقديم عرض](#9-تقديم-عرض)
 10. [تحديث عرض](#10-تحديث-عرض)
+    - [حذف عرض](#حذف-عرض)
 11. [عروضي](#11-عروضي)
 12. [بدء تنفيذ الطلب](#12-بدء-تنفيذ-الطلب)
 13. [إكمال الطلب](#13-إكمال-الطلب)
@@ -50,7 +57,6 @@
   "title": "تركيب نظام طاقة شمسية",
   "type": "INSTALLATION",
   "description": "أحتاج تركيب نظام 10 كيلو واط",
-  "city": "صنعاء",
   "images": [
     "https://cdn.example.com/uploads/site-photo-1.jpg"
   ],
@@ -101,7 +107,6 @@ Future<ServiceRequest> createServiceRequest({
   required String title,
   String? type,
   String? description,
-  String city = 'صنعاء', // المدينة - إلزامي - افتراضي صنعاء ⭐ جديد
   List<String>? images,
   required String addressId,
   DateTime? scheduledAt,
@@ -110,7 +115,6 @@ Future<ServiceRequest> createServiceRequest({
     'title': title,
     if (type != null) 'type': type,
     if (description != null) 'description': description,
-    'city': city, // ⭐ جديد
     if (images != null) 'images': images,
     'addressId': addressId,
     if (scheduledAt != null) 'scheduledAt': scheduledAt.toIso8601String(),
@@ -128,6 +132,8 @@ Future<ServiceRequest> createServiceRequest({
   }
 }
 ```
+
+> ℹ️ **معلومة مهمة:** لا ترسل حقل `city` عند إنشاء الطلب. الخادم يستخرج المدينة تلقائياً من العنوان المحدد (`addressId`) ويعيدها ضمن الاستجابة.
 
 ---
 
@@ -180,6 +186,50 @@ Future<ServiceRequest> createServiceRequest({
 ```
 
 > ℹ️ يتم إرجاع `engineerId` ككائن `populated` يحتوي على `_id`, `firstName`, `lastName`, `phone`, `jobTitle`.
+
+#### 🔍 تصنيفات الطلبات
+
+##### طلبات بلا عروض
+- **Endpoint:** `GET /services/customer/my/no-offers`
+
+##### طلبات بعروض غير مقبولة
+- **Endpoint:** `GET /services/customer/my/with-offers`
+
+##### طلبات بعروض مقبولة
+- **Endpoint:** `GET /services/customer/my/with-accepted-offer?status=ASSIGNED|IN_PROGRESS|COMPLETED|RATED`
+
+جميع الاستجابات تُعيد هيكل الطلب نفسه مع الحقول الإضافية (`statusLabel`, `address`, `offers/engineer`) حسب الحالة:
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "_id": "64service123",
+        "title": "تركيب نظام طاقة شمسية",
+        "status": "OFFERS_COLLECTING",
+        "statusLabel": "تجميع العروض",
+        "address": { "line1": "شارع تعز", "city": "صنعاء" },
+        "offers": [
+          {
+            "_id": "64offer123",
+            "amountYER": 9000,
+            "statusLabel": "عرض مقدم",
+            "engineer": {
+              "name": "حسن اللقلي",
+              "phone": "777123456",
+              "whatsapp": "https://wa.me/967777123456"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+> ✅ استعمل هذه النهايات لبناء تبويب "الطلبات" كما في التصميم (الكل، في الطريق إليك، ...).
 
 ### كود Flutter
 
@@ -384,6 +434,53 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
 }
 ```
 
+#### تفاصيل عرض محدد
+
+- **Method:** `GET`
+- **Endpoint:** `/services/customer/:requestId/offers/:offerId`
+- **Auth Required:** ✅ نعم
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "offer": {
+        "_id": "64offer123",
+        "amountYER": 9000,
+        "note": "يشمل التركيب الكامل",
+        "status": "OFFERED",
+        "statusLabel": "عرض مقدم",
+        "engineer": {
+          "id": "64engineer123",
+          "name": "حسن اللقلي",
+          "jobTitle": "مهندس كهرباء",
+          "phone": "777123456",
+          "whatsapp": "https://wa.me/967777123456"
+        }
+      },
+      "request": {
+        "_id": "64service123",
+        "title": "تركيب منظومة شمسية",
+        "type": "INSTALLATION",
+        "description": "احتياج لتركيب منظومة طاقة شمسية كاملة...",
+        "images": ["https://cdn.example.com/uploads/site-photo-1.jpg"],
+        "status": "OPEN",
+        "statusLabel": "بانتظار العروض",
+        "scheduledAt": "2025-10-20T10:00:00.000Z",
+        "address": {
+          "label": "المنزل",
+          "line1": "شارع تعز - جوار مستشفى ناصر",
+          "city": "صنعاء"
+        }
+      }
+    }
+  }
+}
+```
+
+> استخدم هذا الـ endpoint لبناء شاشة "بيانات عرض المهندس".
+
 ---
 
 ### 6. قبول عرض
@@ -564,6 +661,18 @@ Future<bool> rateService(String requestId, int score, String? comment) async {
 }
 ```
 
+#### الطلبات في مدينتي
+
+- **Method:** `GET`
+- **Endpoint:** `/services/engineer/requests/city`
+- يعيد جميع الطلبات المتاحة في نفس مدينة المهندس (حالة `OPEN` أو `OFFERS_COLLECTING`) بدون فلترة حسب المسافة.
+
+#### جميع الطلبات المتاحة
+
+- **Method:** `GET`
+- **Endpoint:** `/services/engineer/requests/all`
+- يعيد كل الطلبات المتاحة بغض النظر عن المدينة أو المسافة (للاستخدام الإداري داخل التطبيق الميداني للمهندس).
+
 ### كود Flutter
 
 ```dart
@@ -735,6 +844,30 @@ Future<EngineerOffer> updateOffer({
 
   if (apiResponse.isSuccess) {
     return EngineerOffer.fromJson(apiResponse.data!['data']);
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+#### حذف عرض
+
+- **Method:** `DELETE`
+- **Endpoint:** `/services/engineer/offers/:id`
+- يسمح بحذف العرض طالما حالته `OFFERED`.
+
+```dart
+Future<bool> deleteOffer(String offerId) async {
+  final response = await _dio.delete('/services/engineer/offers/$offerId');
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    final result = apiResponse.data!['data'] as Map<String, dynamic>?;
+    return result?['ok'] == true;
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -931,7 +1064,7 @@ class ServiceRequest {
   final String title;
   final String? type;
   final String? description;
-  final String city; // المدينة اليمنية ⭐ جديد
+  final String city; // المدينة اليمنية (يتم تزويدها من الخادم)
   final List<String> images;
   final String? addressId;
   final ServiceLocation location;
@@ -950,7 +1083,7 @@ class ServiceRequest {
     required this.title,
     this.type,
     this.description,
-    this.city = 'صنعاء', // ⭐ جديد - افتراضي صنعاء
+    this.city = 'صنعاء',
     required this.images,
     this.addressId,
     required this.location,
@@ -971,7 +1104,7 @@ class ServiceRequest {
       title: json['title'] ?? '',
       type: json['type'],
       description: json['description'],
-      city: json['city'] ?? 'صنعاء', // ⭐ جديد
+      city: json['city'] ?? 'صنعاء',
       images: List<String>.from(json['images'] ?? []),
       addressId: json['addressId'],
       location: ServiceLocation.fromJson(json['location'] ?? {}),
@@ -1178,7 +1311,6 @@ class CreateServiceRequestDto {
   final String title;
   final String? type;
   final String? description;
-  final String city; // المدينة اليمنية ⭐ جديد
   final List<String>? images;
   final String addressId;
   final DateTime? scheduledAt;
@@ -1187,7 +1319,6 @@ class CreateServiceRequestDto {
     required this.title,
     this.type,
     this.description,
-    this.city = 'صنعاء', // ⭐ جديد - افتراضي صنعاء
     this.images,
     required this.addressId,
     this.scheduledAt,
@@ -1198,7 +1329,6 @@ class CreateServiceRequestDto {
       'title': title,
       if (type != null) 'type': type,
       if (description != null) 'description': description,
-      'city': city, // ⭐ جديد - إلزامي
       if (images != null) 'images': images,
       'addressId': addressId,
       if (scheduledAt != null) 'scheduledAt': scheduledAt!.toIso8601String(),
@@ -1311,7 +1441,7 @@ class NearbyQueryDto {
    - `title`: عنوان الطلب (مطلوب)
    - `type`: نوع الخدمة (اختياري)
    - `description`: وصف الطلب (اختياري)
-   - `city`: المدينة اليمنية (مطلوب - افتراضي: صنعاء) ⭐ جديد
+   - `city`: لا يتم إرساله؛ يتم تحديده تلقائياً من العنوان المختار
    - `images`: صور الطلب (اختياري)
    - `addressId`: معرف العنوان (مطلوب)
    - `scheduledAt`: موعد التنفيذ (اختياري)
@@ -1340,7 +1470,7 @@ class NearbyQueryDto {
 5. **الطلبات القريبة:**
    - `lat`, `lng`: موقع المهندس
    - `radiusKm`: نصف القطر بالكيلومتر
-   - **فلترة حسب المدينة:** يرى المهندس فقط طلبات مدينته ⭐ جديد
+   - **فلترة حسب المدينة:** يتم تطبيقها تلقائياً بناءً على مدينة المهندس
    - يتم ترتيب النتائج حسب المسافة
 
 6. **تقديم العروض:**
@@ -1461,7 +1591,7 @@ class NearbyQueryDto {
    - `OFFERED`, `ACCEPTED`, `REJECTED`, `CANCELLED`
 4. ✅ تحديث جميع return types - توثيق الحقول الفعلية المعادة من الـ Backend (بما في ذلك قيم `ok`)
 5. ✅ إزالة جميع الـ Cache flags (لا يوجد caching في endpoints الفعلية)
-6. ✅ **إضافة نظام المدن اليمنية** - فلترة الطلبات حسب المدينة ⭐ جديد
+6. ✅ **تحديث نظام المدن اليمنية** - فلترة الطلبات حسب المدينة تلقائياً اعتماداً على العنوان
 
 **Endpoints للعملاء (Customers):**
 - `POST /services/customer` - إنشاء طلب
@@ -1486,11 +1616,13 @@ class NearbyQueryDto {
 - `backend/src/modules/services/schemas/service-request.schema.ts` - ServiceRequest Schema
 - `backend/src/modules/services/schemas/engineer-offer.schema.ts` - EngineerOffer Schema
 - `backend/src/modules/services/enums/service-status.enum.ts` - Status Enums
-- `backend/src/modules/services/enums/yemeni-cities.enum.ts` - Yemeni Cities Enum ⭐ جديد
+- `backend/src/modules/services/enums/yemeni-cities.enum.ts` - Yemeni Cities Enum
 
 ---
 
-## 🏙️ نظام المدن اليمنية ⭐ جديد
+## 🏙️ نظام المدن اليمنية
+
+> ℹ️ هذه القائمة تُستخدم داخلياً لضمان مطابقة المدينة عند حفظ العنوان. لا حاجة لإرسال المدينة في طلبات الـ API؛ الخادم يحدِّدها تلقائياً من العنوان المرتبط.
 
 ### المدن المدعومة (22 مدينة)
 
@@ -1565,13 +1697,12 @@ class YemeniCities {
 
 ### آلية عمل الفلترة
 
-**عند إنشاء طلب:**
+**عند إنشاء طلب (لا ترسل المدينة):**
 ```dart
 final request = await servicesService.createServiceRequest(
   title: 'إصلاح لوح شمسي',
   type: 'REPAIR',
   description: 'يحتاج صيانة',
-  city: 'صنعاء', // ← إلزامي
   addressId: addressId,
 );
 ```

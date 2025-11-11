@@ -19,6 +19,9 @@ export class EngineerOffer {
 
   @Prop({ default: 'OFFERED', enum: ['OFFERED', 'ACCEPTED', 'REJECTED', 'CANCELLED'], index: true })
   status!: 'OFFERED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+
+  @Prop({ default: 0 })
+  updatesCount!: number;
 }
 export const EngineerOfferSchema = SchemaFactory.createForClass(EngineerOffer);
 EngineerOfferSchema.index({ requestId: 1, engineerId: 1 }, { unique: true });

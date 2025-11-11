@@ -21569,12 +21569,115 @@
         ]
       }
     },
+    "/api/v1/services/customer/{requestId}/offers/{offerId}": {
+      "get": {
+        "operationId": "offerDetails",
+        "summary": "تفاصيل عرض مهندس",
+        "description": "استرداد تفاصيل عرض محدد مع بيانات المهندس والطلب",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "description": "معرف طلب الخدمة",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offerId",
+            "required": true,
+            "in": "path",
+            "description": "معرف العرض",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تفاصيل العرض بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "offer": {
+                        "_id": "6645f731dc490a317ad91884",
+                        "amountYER": 9000,
+                        "note": "يشمل التركيب الكامل مع قطع الغيار",
+                        "status": "OFFERED",
+                        "statusLabel": "عرض مقدم",
+                        "engineer": {
+                          "id": "6637d50690fbb31de8d9c445",
+                          "name": "حسن اللقلي",
+                          "jobTitle": "مهندس كهرباء",
+                          "phone": "777123456",
+                          "whatsapp": "https://wa.me/967777123456"
+                        }
+                      },
+                      "request": {
+                        "_id": "6645e1a5f2f0a02eab4d9c10",
+                        "title": "تركيب منظومة شمسية",
+                        "type": "installation",
+                        "description": "عرض المشكلة: تركيب منظومة طاقة شمسية كاملة...",
+                        "images": [
+                          "https://cdn.example.com/uploads/request.jpg"
+                        ],
+                        "status": "OPEN",
+                        "statusLabel": "بانتظار العروض",
+                        "scheduledAt": "2025-09-21T09:00:00.000Z",
+                        "address": {
+                          "label": "المنزل",
+                          "line1": "شارع تعز - جوار مستشفى ناصر",
+                          "city": "صنعاء"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "لم يتم العثور على الطلب أو العرض",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "REQUEST_NOT_FOUND"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "خدمات-العملاء"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/services/customer/my/with-accepted-offer": {
       "get": {
         "operationId": "myWithAcceptedOffer",
         "summary": "طلباتي مع عروض مقبولة",
         "description": "استرداد الطلبات التي تم قبول أحد عروضها",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "فلترة حسب حالة الطلب (ASSIGNED, IN_PROGRESS, COMPLETED, RATED)",
+            "schema": {}
+          }
+        ],
         "responses": {
           "200": {
             "description": "تم استرداد الطلبات ذات العروض المقبولة بنجاح",
@@ -22382,6 +22485,59 @@
           },
           "403": {
             "description": "غير مصرح لك بتحديث هذا العرض"
+          },
+          "404": {
+            "description": "لم يتم العثور على العرض"
+          }
+        },
+        "tags": [
+          "خدمات-الفنيين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteOffer",
+        "summary": "حذف عرض",
+        "description": "تمكين الفني من حذف عرضه إذا لم يتم قبوله بعد",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف العرض",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف العرض بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "لا يمكن حذف العرض في حالته الحالية"
           },
           "404": {
             "description": "لم يتم العثور على العرض"

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -231,6 +231,40 @@ export class EngineerServicesController {
   })
   async updateOffer(@Req() req: RequestWithUser, @Param('id') id: string, @Body() dto: UpdateOfferDto) {
     const data = await this.svc.updateOffer(req.user!.sub, id, dto);
+    return { data };
+  }
+
+  @Delete('offers/:id')
+  @ApiOperation({
+    summary: 'حذف عرض',
+    description: 'تمكين الفني من حذف عرضه إذا لم يتم قبوله بعد'
+  })
+  @ApiParam({ name: 'id', description: 'معرف العرض' })
+  @ApiResponse({
+    status: 200,
+    description: 'تم حذف العرض بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            ok: { type: 'boolean', example: true },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'لا يمكن حذف العرض في حالته الحالية'
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'لم يتم العثور على العرض'
+  })
+  async deleteOffer(@Req() req: RequestWithUser, @Param('id') id: string) {
+    const data = await this.svc.deleteOffer(req.user!.sub, id);
     return { data };
   }
 
