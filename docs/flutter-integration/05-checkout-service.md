@@ -431,6 +431,50 @@ Future<CheckoutPreview> previewCheckout({
       "remainingForCOD": 0,
       "codEligible": true
     },
+    "paymentOptions": {
+      "cod": {
+        "method": "COD",
+        "status": "available",
+        "allowed": true,
+        "codEligibility": {
+          "eligible": true,
+          "requiredOrders": 3,
+          "remainingOrders": 0,
+          "totalOrders": 6,
+          "completedOrders": 4,
+          "inProgressOrders": 1,
+          "cancelledOrders": 1,
+          "progress": "4/3"
+        }
+      },
+      "customerOrderStats": {
+        "totalOrders": 6,
+        "completedOrders": 4,
+        "inProgressOrders": 1,
+        "cancelledOrders": 1,
+        "requiredForCOD": 3,
+        "remainingForCOD": 0,
+        "codEligible": true
+      },
+      "localPaymentProviders": [
+        {
+          "providerId": "ykb",
+          "providerName": "بنك اليمن والكويت",
+          "type": "bank",
+          "numberingMode": "per_currency",
+          "supportedCurrencies": ["YER"],
+          "accounts": [
+            {
+              "id": "ykb-yer",
+              "currency": "YER",
+              "accountNumber": "1234567890",
+              "isActive": true,
+              "displayOrder": 1
+            }
+          ]
+        }
+      ]
+    },
     "message": "تم إنشاء الطلب بنجاح"
   },
   "requestId": "req_checkout_confirm_001"
@@ -438,7 +482,7 @@ Future<CheckoutPreview> previewCheckout({
 ```
 
 > `payment` يُعاد فقط في حالة التحويل البنكي المحلي. لطلبات `COD` يبقى الحقل `null` ويتم ترقية الحالة إلى `confirmed` مباشرة عند النجاح.  
-> يتم إرجاع `codEligibility` و`customerOrderStats` بعد الإنشاء لتحديث الواجهات مباشرة دون استدعاءات إضافية.
+> يتم إرجاع `codEligibility` و`customerOrderStats` بعد الإنشاء لتحديث الواجهات مباشرة دون استدعاءات إضافية، بالإضافة إلى `paymentOptions` (نفس بنية Endpoint الخيارات العامة) لتحديث شاشة التأكيد فوراً دون طلب إضافي.
 
 ### Response الكامل (من `GET /orders/:id`)
 
@@ -704,6 +748,221 @@ class PaymentInfo {
       provider: json['provider'] as String?,
       amount: (json['amount'] ?? 0).toDouble(),
       signature: json['signature'] as String,
+    );
+  }
+}
+```
+
+---
+
+## 3. خيارات الدفع
+
+يعرض جميع خيارات الدفع المتاحة للمستخدم الحالي، بما في ذلك حالة أهلية الدفع عند الاستلام (COD) والحسابات البنكية/المحافظ المحلية المفعلّة. نفس البيانات تُعاد أيضاً داخل رد تأكيد الطلب لتسهيل تحديث الشاشة فوراً.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/orders/checkout/payment-options`
+- **Auth Required:** ✅ نعم (Bearer Token)
+
+| الاستعلام | النوع | الوصف |
+|----------|------|--------|
+| `currency` | `string` | ❌ لا | فلترة الحسابات المحلية حسب العملة (`YER`, `SAR`, `USD`). في حال الإغفال يعاد جميع المزودين المفعلين. |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "paymentOptions": {
+      "cod": {
+        "method": "COD",
+        "status": "available",
+        "allowed": true,
+        "reason": null,
+        "codEligibility": {
+          "eligible": true,
+          "requiredOrders": 3,
+          "remainingOrders": 0,
+          "totalOrders": 6,
+          "completedOrders": 4,
+          "inProgressOrders": 1,
+          "cancelledOrders": 1,
+          "progress": "4/3",
+          "message": null,
+          "isAdmin": false
+        }
+      },
+      "customerOrderStats": {
+        "totalOrders": 6,
+        "completedOrders": 4,
+        "inProgressOrders": 1,
+        "cancelledOrders": 1,
+        "requiredForCOD": 3,
+        "remainingForCOD": 0,
+        "codEligible": true
+      },
+      "localPaymentProviders": [
+        {
+          "providerId": "jaib-wallet",
+          "providerName": "محفظة جيب",
+          "type": "wallet",
+          "numberingMode": "per_currency",
+          "supportedCurrencies": ["YER"],
+          "icon": {
+            "id": "media_123",
+            "url": "https://cdn.example.com/icons/jaib.png",
+            "name": "Jaib Wallet"
+          },
+          "accounts": [
+            {
+              "id": "acc_123",
+              "currency": "YER",
+              "accountNumber": "777777777",
+              "isActive": true,
+              "displayOrder": 1,
+              "notes": "تحويل خلال دقائق"
+            }
+          ]
+        }
+      ]
+    },
+    "message": "تم الحصول على خيارات الدفع بنجاح"
+  },
+  "requestId": "req_payment_options_001"
+}
+```
+
+> **ملاحظة:** `customerOrderStats` داخل `paymentOptions` هي نفس الهيكل المعاد في ردود الطلبات الأخرى، ما يسمح بإظهار رسالة التقدم نحو أهلية COD بسهولة.
+
+### كود Flutter
+
+```dart
+Future<PaymentOptions> getPaymentOptions({String? currency}) async {
+  final response = await _dio.get(
+    '/orders/checkout/payment-options',
+    queryParameters: {
+      if (currency != null) 'currency': currency,
+    },
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return PaymentOptions.fromJson(apiResponse.data!['paymentOptions']);
+  }
+
+  throw ApiException(apiResponse.error!);
+}
+
+class PaymentOptions {
+  final CodOption cod;
+  final CustomerOrderStats customerOrderStats;
+  final List<LocalPaymentProvider> localPaymentProviders;
+
+  PaymentOptions({
+    required this.cod,
+    required this.customerOrderStats,
+    required this.localPaymentProviders,
+  });
+
+  factory PaymentOptions.fromJson(Map<String, dynamic> json) {
+    return PaymentOptions(
+      cod: CodOption.fromJson(json['cod'] as Map<String, dynamic>),
+      customerOrderStats:
+          CustomerOrderStats.fromJson(json['customerOrderStats'] as Map<String, dynamic>),
+      localPaymentProviders: (json['localPaymentProviders'] as List<dynamic>)
+          .map((item) => LocalPaymentProvider.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class CodOption {
+  final String status;
+  final bool allowed;
+  final String? reason;
+  final CodEligibility codEligibility;
+
+  CodOption({
+    required this.status,
+    required this.allowed,
+    this.reason,
+    required this.codEligibility,
+  });
+
+  factory CodOption.fromJson(Map<String, dynamic> json) {
+    return CodOption(
+      status: json['status'] as String? ?? 'restricted',
+      allowed: json['allowed'] as bool? ?? false,
+      reason: json['reason'] as String?,
+      codEligibility: CodEligibility.fromJson(json['codEligibility'] as Map<String, dynamic>?),
+    );
+  }
+}
+
+class LocalPaymentProvider {
+  final String providerId;
+  final String providerName;
+  final String type;
+  final String numberingMode;
+  final List<String> supportedCurrencies;
+  final List<LocalPaymentAccount> accounts;
+
+  LocalPaymentProvider({
+    required this.providerId,
+    required this.providerName,
+    required this.type,
+    required this.numberingMode,
+    required this.supportedCurrencies,
+    required this.accounts,
+  });
+
+  factory LocalPaymentProvider.fromJson(Map<String, dynamic> json) {
+    return LocalPaymentProvider(
+      providerId: json['providerId'] as String? ?? '',
+      providerName: json['providerName'] as String? ?? '',
+      type: json['type'] as String? ?? '',
+      numberingMode: json['numberingMode'] as String? ?? '',
+      supportedCurrencies: (json['supportedCurrencies'] as List<dynamic>? ?? const [])
+          .map((item) => item.toString())
+          .toList(),
+      accounts: (json['accounts'] as List<dynamic>? ?? const [])
+          .map((item) => LocalPaymentAccount.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class LocalPaymentAccount {
+  final String id;
+  final String currency;
+  final String accountNumber;
+  final bool isActive;
+  final int displayOrder;
+  final String? notes;
+
+  LocalPaymentAccount({
+    required this.id,
+    required this.currency,
+    required this.accountNumber,
+    required this.isActive,
+    required this.displayOrder,
+    this.notes,
+  });
+
+  factory LocalPaymentAccount.fromJson(Map<String, dynamic> json) {
+    return LocalPaymentAccount(
+      id: json['id'] as String? ?? '',
+      currency: json['currency'] as String? ?? '',
+      accountNumber: json['accountNumber'] as String? ?? '',
+      isActive: json['isActive'] as bool? ?? false,
+      displayOrder: (json['displayOrder'] ?? 0) as int,
+      notes: json['notes'] as String?,
     );
   }
 }
