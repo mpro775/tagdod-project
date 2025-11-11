@@ -5573,6 +5573,29 @@ paths:
         - الطلبات
       security:
         - bearer: []
+  /api/v1/orders/checkout/payment-options:
+    get:
+      operationId: getPaymentOptions
+      summary: خيارات الدفع
+      description: جلب خيارات الدفع للمستخدم مع حالة الأهلية
+      parameters:
+        - name: currency
+          required: false
+          in: query
+          description: العملة المطلوبة لحسابات الدفع المحلية
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم الحصول على خيارات الدفع بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutPaymentOptionsResponseDto'
+      tags:
+        - الطلبات
+      security:
+        - bearer: []
   /api/v1/orders/checkout/confirm:
     post:
       operationId: confirmCheckout
@@ -19251,6 +19274,218 @@ components:
             type: string
       required:
         - currency
+    CheckoutCODEligibilityDto:
+      type: object
+      properties:
+        eligible:
+          type: boolean
+          example: true
+        requiredOrders:
+          type: number
+          example: 3
+        remainingOrders:
+          type: number
+          example: 0
+        totalOrders:
+          type: number
+          example: 5
+        completedOrders:
+          type: number
+          example: 3
+        inProgressOrders:
+          type: number
+          example: 1
+        cancelledOrders:
+          type: number
+          example: 1
+        progress:
+          type: string
+          example: 3/3
+        message:
+          type: string
+          example: يجب إكمال 3 طلبات على الأقل لاستخدام الدفع عند الاستلام.
+        isAdmin:
+          type: boolean
+          example: false
+      required:
+        - eligible
+        - requiredOrders
+        - remainingOrders
+        - totalOrders
+        - completedOrders
+        - inProgressOrders
+        - cancelledOrders
+        - progress
+    CheckoutPaymentOptionStatusDto:
+      type: object
+      properties:
+        method:
+          type: string
+          enum:
+            - COD
+            - BANK_TRANSFER
+        status:
+          type: string
+          example: available
+          enum:
+            - available
+            - restricted
+            - unavailable
+        allowed:
+          type: boolean
+          example: true
+        reason:
+          type: string
+          example: يجب إكمال 3 طلبات لاستخدام الدفع عند الاستلام.
+        codEligibility:
+          $ref: '#/components/schemas/CheckoutCODEligibilityDto'
+      required:
+        - method
+        - status
+        - allowed
+    CheckoutCustomerOrderStatsDto:
+      type: object
+      properties:
+        totalOrders:
+          type: number
+          example: 5
+        completedOrders:
+          type: number
+          example: 3
+        inProgressOrders:
+          type: number
+          example: 1
+        cancelledOrders:
+          type: number
+          example: 1
+        requiredForCOD:
+          type: number
+          example: 3
+        remainingForCOD:
+          type: number
+          example: 0
+        codEligible:
+          type: boolean
+          example: true
+      required:
+        - totalOrders
+        - completedOrders
+        - inProgressOrders
+        - cancelledOrders
+        - requiredForCOD
+        - remainingForCOD
+        - codEligible
+    CheckoutProviderIconDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 64f9c0b5c1a2b3d4e5f67890
+        url:
+          type: string
+          example: https://cdn.example.com/icons/provider.png
+        name:
+          type: string
+          example: مزود الدفع
+      required:
+        - id
+        - url
+    CheckoutLocalPaymentAccountDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        currency:
+          type: string
+          example: YER
+        accountNumber:
+          type: string
+          example: '1234567890'
+        isActive:
+          type: boolean
+          default: true
+        displayOrder:
+          type: number
+          default: 0
+        notes:
+          type: string
+      required:
+        - id
+        - currency
+        - accountNumber
+        - isActive
+        - displayOrder
+    CheckoutLocalPaymentProviderDto:
+      type: object
+      properties:
+        providerId:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        providerName:
+          type: string
+          example: محفظة جيب
+        icon:
+          $ref: '#/components/schemas/CheckoutProviderIconDto'
+        type:
+          type: string
+          enum:
+            - bank
+            - wallet
+        numberingMode:
+          type: string
+          enum:
+            - shared
+            - per_currency
+        supportedCurrencies:
+          type: array
+          description: العملات التي يدعمها المزود
+          items:
+            type: string
+            enum:
+              - YER
+              - SAR
+              - USD
+        sharedAccountNumber:
+          type: string
+          example: '1234567890'
+          description: رقم الحساب في وضع shared
+        isActive:
+          type: boolean
+          default: true
+        displayOrder:
+          type: number
+          default: 0
+        accounts:
+          description: تفاصيل الحسابات لكل عملة
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutLocalPaymentAccountDto'
+      required:
+        - providerId
+        - providerName
+        - type
+        - numberingMode
+        - supportedCurrencies
+        - isActive
+        - displayOrder
+        - accounts
+    CheckoutPaymentOptionsResponseDto:
+      type: object
+      properties:
+        cod:
+          $ref: '#/components/schemas/CheckoutPaymentOptionStatusDto'
+        customerOrderStats:
+          $ref: '#/components/schemas/CheckoutCustomerOrderStatsDto'
+        localPaymentProviders:
+          description: مزودو الدفع المحليون المتاحون للتحويل البنكي أو المحافظ
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutLocalPaymentProviderDto'
+      required:
+        - cod
+        - customerOrderStats
+        - localPaymentProviders
     CheckoutConfirmDto:
       type: object
       properties:

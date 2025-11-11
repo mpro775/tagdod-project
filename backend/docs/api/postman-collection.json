@@ -3763,6 +3763,33 @@
           }
         },
         {
+          "name": "خيارات الدفع",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/checkout/payment-options",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "checkout",
+                "payment-options"
+              ]
+            },
+            "description": "جلب خيارات الدفع للمستخدم مع حالة الأهلية"
+          }
+        },
+        {
           "name": "تأكيد الطلب",
           "request": {
             "method": "POST",

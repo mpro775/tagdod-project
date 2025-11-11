@@ -13,6 +13,10 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus, PaymentStatus, ShippingMethod, PaymentMethod } from '../schemas/order.schema';
+import {
+  PaymentAccountNumberingMode,
+  PaymentAccountType,
+} from '../../system-settings/schemas/local-payment-account.schema';
 
 /**
  * DTOs للطلبات - نظام موحد
@@ -85,6 +89,169 @@ export class CheckoutConfirmDto {
   @IsArray()
   @IsString({ each: true })
   couponCodes?: string[];
+}
+
+export class CheckoutProviderIconDto {
+  @ApiProperty({ example: '64f9c0b5c1a2b3d4e5f67890' })
+  id!: string;
+
+  @ApiProperty({ example: 'https://cdn.example.com/icons/provider.png' })
+  url!: string;
+
+  @ApiPropertyOptional({ example: 'مزود الدفع' })
+  name?: string;
+}
+
+export class CheckoutLocalPaymentAccountDto {
+  @ApiProperty({ example: '507f1f77bcf86cd799439011' })
+  id!: string;
+
+  @ApiProperty({ example: 'YER' })
+  currency!: string;
+
+  @ApiProperty({ example: '1234567890' })
+  accountNumber!: string;
+
+  @ApiProperty({ default: true })
+  isActive!: boolean;
+
+  @ApiProperty({ default: 0 })
+  displayOrder!: number;
+
+  @ApiPropertyOptional()
+  notes?: string;
+}
+
+export class CheckoutLocalPaymentProviderDto {
+  @ApiProperty({ example: '507f1f77bcf86cd799439011' })
+  providerId!: string;
+
+  @ApiProperty({ example: 'محفظة جيب' })
+  providerName!: string;
+
+  @ApiPropertyOptional({ type: () => CheckoutProviderIconDto })
+  icon?: CheckoutProviderIconDto;
+
+  @ApiProperty({ enum: PaymentAccountType })
+  type!: PaymentAccountType;
+
+  @ApiProperty({ enum: PaymentAccountNumberingMode })
+  numberingMode!: PaymentAccountNumberingMode;
+
+  @ApiProperty({
+    type: [String],
+    enum: ['YER', 'SAR', 'USD'],
+    description: 'العملات التي يدعمها المزود',
+  })
+  supportedCurrencies!: string[];
+
+  @ApiPropertyOptional({
+    example: '1234567890',
+    description: 'رقم الحساب في وضع shared',
+  })
+  sharedAccountNumber?: string;
+
+  @ApiProperty({ default: true })
+  isActive!: boolean;
+
+  @ApiProperty({ default: 0 })
+  displayOrder!: number;
+
+  @ApiProperty({
+    type: [CheckoutLocalPaymentAccountDto],
+    description: 'تفاصيل الحسابات لكل عملة',
+  })
+  accounts!: CheckoutLocalPaymentAccountDto[];
+}
+
+export class CheckoutCustomerOrderStatsDto {
+  @ApiProperty({ example: 5 })
+  totalOrders!: number;
+
+  @ApiProperty({ example: 3 })
+  completedOrders!: number;
+
+  @ApiProperty({ example: 1 })
+  inProgressOrders!: number;
+
+  @ApiProperty({ example: 1 })
+  cancelledOrders!: number;
+
+  @ApiProperty({ example: 3 })
+  requiredForCOD!: number;
+
+  @ApiProperty({ example: 0 })
+  remainingForCOD!: number;
+
+  @ApiProperty({ example: true })
+  codEligible!: boolean;
+}
+
+export class CheckoutCODEligibilityDto {
+  @ApiProperty({ example: true })
+  eligible!: boolean;
+
+  @ApiProperty({ example: 3 })
+  requiredOrders!: number;
+
+  @ApiProperty({ example: 0 })
+  remainingOrders!: number;
+
+  @ApiProperty({ example: 5 })
+  totalOrders!: number;
+
+  @ApiProperty({ example: 3 })
+  completedOrders!: number;
+
+  @ApiProperty({ example: 1 })
+  inProgressOrders!: number;
+
+  @ApiProperty({ example: 1 })
+  cancelledOrders!: number;
+
+  @ApiProperty({ example: '3/3' })
+  progress!: string;
+
+  @ApiPropertyOptional({
+    example: 'يجب إكمال 3 طلبات على الأقل لاستخدام الدفع عند الاستلام.',
+  })
+  message?: string;
+
+  @ApiPropertyOptional({ example: false })
+  isAdmin?: boolean;
+}
+
+export class CheckoutPaymentOptionStatusDto {
+  @ApiProperty({ enum: PaymentMethod })
+  method!: PaymentMethod;
+
+  @ApiProperty({ example: 'available', enum: ['available', 'restricted', 'unavailable'] })
+  status!: 'available' | 'restricted' | 'unavailable';
+
+  @ApiProperty({ example: true })
+  allowed!: boolean;
+
+  @ApiPropertyOptional({
+    example: 'يجب إكمال 3 طلبات لاستخدام الدفع عند الاستلام.',
+  })
+  reason?: string;
+
+  @ApiPropertyOptional({ type: () => CheckoutCODEligibilityDto })
+  codEligibility?: CheckoutCODEligibilityDto;
+}
+
+export class CheckoutPaymentOptionsResponseDto {
+  @ApiProperty({ type: () => CheckoutPaymentOptionStatusDto })
+  cod!: CheckoutPaymentOptionStatusDto;
+
+  @ApiProperty({ type: () => CheckoutCustomerOrderStatsDto })
+  customerOrderStats!: CheckoutCustomerOrderStatsDto;
+
+  @ApiProperty({
+    type: [CheckoutLocalPaymentProviderDto],
+    description: 'مزودو الدفع المحليون المتاحون للتحويل البنكي أو المحافظ',
+  })
+  localPaymentProviders!: CheckoutLocalPaymentProviderDto[];
 }
 
 export class WebhookDto {

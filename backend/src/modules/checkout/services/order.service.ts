@@ -17,12 +17,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
 import * as XLSX from 'xlsx';
-import { 
-  Order, 
-  OrderDocument, 
-  OrderStatus, 
+import {
+  Order,
+  OrderDocument,
+  OrderStatus,
   PaymentStatus,
-  PaymentMethod
+  PaymentMethod,
 } from '../schemas/order.schema';
 import { OrderStateMachine } from '../utils/order-state-machine';
 import { Inventory } from '../schemas/inventory.schema';
@@ -45,7 +45,14 @@ import {
   ListOrdersDto,
   OrderAnalyticsDto,
   AddOrderNotesDto,
-  VerifyPaymentDto
+  VerifyPaymentDto,
+  CheckoutPaymentOptionsResponseDto,
+  CheckoutPaymentOptionStatusDto,
+  CheckoutCODEligibilityDto,
+  CheckoutCustomerOrderStatsDto,
+  CheckoutLocalPaymentProviderDto,
+  CheckoutLocalPaymentAccountDto,
+  CheckoutProviderIconDto,
 } from '../dto/order.dto';
 
 interface CartLine {
@@ -305,6 +312,100 @@ export class OrderService {
       message: eligible 
         ? undefined 
         : `يجب إكمال ${requiredOrders} طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك ${completedOrdersCount} طلب مكتمل`
+    };
+  }
+
+  /**
+   * جلب خيارات الدفع المتاحة للمستخدم مع حالة الأهلية
+   */
+  async getPaymentOptions(
+    userId: string,
+    currency?: string,
+  ): Promise<CheckoutPaymentOptionsResponseDto> {
+    const normalizedCurrency = currency?.toUpperCase();
+
+    const [codEligibility, providers] = await Promise.all([
+      this.checkCODEligibility(userId),
+      normalizedCurrency
+        ? this.localPaymentAccountService.findByCurrency(normalizedCurrency, true)
+        : this.localPaymentAccountService.findGrouped(true),
+    ]);
+
+    const codStatus: CheckoutPaymentOptionStatusDto = {
+      method: PaymentMethod.COD,
+      status: codEligibility.eligible ? 'available' : 'restricted',
+      allowed: codEligibility.eligible,
+      reason: codEligibility.eligible ? undefined : codEligibility.message,
+      codEligibility: this.mapCodEligibility(codEligibility),
+    };
+
+    const customerOrderStats: CheckoutCustomerOrderStatsDto = {
+      totalOrders: codEligibility.totalOrders,
+      completedOrders: codEligibility.completedOrders,
+      inProgressOrders: codEligibility.inProgressOrders,
+      cancelledOrders: codEligibility.cancelledOrders,
+      requiredForCOD: codEligibility.requiredOrders,
+      remainingForCOD: codEligibility.remainingOrders,
+      codEligible: codEligibility.eligible,
+    };
+
+    const localPaymentProviders: CheckoutLocalPaymentProviderDto[] = providers
+      .map((provider) => {
+        const accounts: CheckoutLocalPaymentAccountDto[] = provider.accounts
+          .map((account) => ({
+            id: account.id,
+            currency: account.currency,
+            accountNumber: account.accountNumber,
+            isActive: account.isActive,
+            displayOrder: account.displayOrder,
+            notes: account.notes,
+          }));
+
+        const primaryDisplayOrder =
+          accounts.reduce((min, account) => Math.min(min, account.displayOrder ?? 0), Number.POSITIVE_INFINITY) ||
+          0;
+
+        const icon: CheckoutProviderIconDto | undefined = provider.icon
+          ? {
+              id: provider.icon.id,
+              url: provider.icon.url,
+              ...(provider.icon.name ? { name: provider.icon.name } : {}),
+            }
+          : undefined;
+
+        return {
+          providerId: provider.providerId,
+          providerName: provider.providerName,
+          icon,
+          type: provider.type,
+          numberingMode: provider.numberingMode,
+          supportedCurrencies: provider.supportedCurrencies,
+          sharedAccountNumber: provider.sharedAccountNumber,
+          displayOrder: Number.isFinite(primaryDisplayOrder) ? primaryDisplayOrder : 0,
+          accounts,
+        } as CheckoutLocalPaymentProviderDto;
+      })
+      .sort((a, b) => a.displayOrder - b.displayOrder || a.providerName.localeCompare(b.providerName));
+
+    return {
+      cod: codStatus,
+      customerOrderStats,
+      localPaymentProviders,
+    };
+  }
+
+  private mapCodEligibility(eligibility: CODEligibilityResult): CheckoutCODEligibilityDto {
+    return {
+      eligible: eligibility.eligible,
+      requiredOrders: eligibility.requiredOrders,
+      remainingOrders: eligibility.remainingOrders,
+      totalOrders: eligibility.totalOrders,
+      completedOrders: eligibility.completedOrders,
+      inProgressOrders: eligibility.inProgressOrders,
+      cancelledOrders: eligibility.cancelledOrders,
+      progress: eligibility.progress,
+      message: eligibility.message,
+      isAdmin: eligibility.isAdmin,
     };
   }
 

@@ -18,6 +18,7 @@ import {
   RateOrderDto,
   AddOrderNotesDto,
   OrderTrackingDto,
+  CheckoutPaymentOptionsResponseDto,
 } from '../dto/order.dto';
 
 /**
@@ -60,6 +61,29 @@ export class OrderController {
     };
   }
 
+  @Get('checkout/payment-options')
+  @ApiOperation({
+    summary: 'خيارات الدفع',
+    description: 'جلب خيارات الدفع للمستخدم مع حالة الأهلية',
+  })
+  @ApiQuery({ name: 'currency', required: false, type: String, description: 'العملة المطلوبة لحسابات الدفع المحلية' })
+  @ApiResponse({
+    status: 200,
+    description: 'تم الحصول على خيارات الدفع بنجاح',
+    type: CheckoutPaymentOptionsResponseDto,
+  })
+  async getPaymentOptions(
+    @Req() req: ExpressRequest,
+    @Query('currency') currency?: string,
+  ) {
+    const paymentOptions = await this.orderService.getPaymentOptions(this.getUserId(req), currency);
+
+    return {
+      paymentOptions,
+      message: 'تم الحصول على خيارات الدفع بنجاح',
+    };
+  }
+
   @Post('checkout/confirm')
   @ApiOperation({
     summary: 'تأكيد الطلب',
@@ -71,10 +95,13 @@ export class OrderController {
     @Req() req: ExpressRequest,
     @Body() dto: CheckoutConfirmDto,
   ) {
-    const result = await this.orderService.confirmCheckout(this.getUserId(req), dto);
+    const userId = this.getUserId(req);
+    const result = await this.orderService.confirmCheckout(userId, dto);
+    const paymentOptions = await this.orderService.getPaymentOptions(userId, dto.currency);
 
     return {
       ...result,
+      paymentOptions,
       message: 'تم إنشاء الطلب بنجاح'
     };
   }
