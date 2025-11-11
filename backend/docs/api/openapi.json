@@ -21353,32 +21353,32 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
+                  "example": {
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "req123",
-                          "description": "معرف الطلب الجديد"
-                        },
-                        "title": {
-                          "type": "string",
-                          "example": "إصلاح جهاز تلفزيون",
-                          "description": "عنوان الطلب"
-                        },
-                        "status": {
-                          "type": "string",
-                          "example": "pending",
-                          "description": "حالة الطلب"
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T10:30:00Z"
-                        }
-                      }
+                      "_id": "6645e1a5f2f0a02eab4d9c10",
+                      "userId": "6637c4ed09d96f1d93f3b712",
+                      "title": "إصلاح جهاز تكييف",
+                      "type": "maintenance",
+                      "description": "الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل",
+                      "images": [
+                        "https://cdn.example.com/uploads/requests/ac-issue-1.jpg"
+                      ],
+                      "city": "صنعاء",
+                      "addressId": "662fa2ab5d97b30a4f8c1234",
+                      "status": "OPEN",
+                      "scheduledAt": "2024-06-05T09:00:00.000Z",
+                      "engineerId": null,
+                      "acceptedOffer": null,
+                      "rating": {},
+                      "location": {
+                        "type": "Point",
+                        "coordinates": [
+                          44.206521,
+                          15.353622
+                        ]
+                      },
+                      "createdAt": "2024-06-01T12:30:15.512Z",
+                      "updatedAt": "2024-06-01T12:30:15.512Z"
                     }
                   }
                 }
@@ -21386,7 +21386,20 @@
             }
           },
           "400": {
-            "description": "بيانات غير صحيحة"
+            "description": "بيانات غير صحيحة",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": [
+                      "addressId must be a mongodb id"
+                    ],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "غير مصرح لك بالوصول"
@@ -21414,51 +21427,53 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "example": "req123",
-                            "description": "معرف الطلب"
-                          },
-                          "title": {
-                            "type": "string",
-                            "example": "إصلاح جهاز تلفزيون",
-                            "description": "عنوان الطلب"
-                          },
-                          "description": {
-                            "type": "string",
-                            "example": "شاشة التلفزيون تظهر خطوطاً بيضاء",
-                            "description": "وصف المشكلة"
-                          },
-                          "status": {
-                            "type": "string",
-                            "example": "in_progress",
-                            "description": "حالة الطلب"
-                          },
-                          "type": {
-                            "type": "string",
-                            "example": "repair",
-                            "description": "نوع الخدمة"
-                          },
-                          "engineerName": {
-                            "type": "string",
-                            "example": "أحمد محمد",
-                            "description": "اسم الفني المسؤول"
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2024-01-15T10:30:00Z"
-                          }
-                        }
+                  "example": {
+                    "data": [
+                      {
+                        "_id": "6645e1a5f2f0a02eab4d9c10",
+                        "title": "إصلاح جهاز تكييف",
+                        "type": "maintenance",
+                        "description": "الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل",
+                        "images": [
+                          "https://cdn.example.com/uploads/requests/ac-issue-1.jpg"
+                        ],
+                        "city": "صنعاء",
+                        "addressId": "662fa2ab5d97b30a4f8c1234",
+                        "status": "ASSIGNED",
+                        "scheduledAt": "2024-06-05T09:00:00.000Z",
+                        "engineerId": "6637d50690fbb31de8d9c445",
+                        "acceptedOffer": {
+                          "offerId": "6645f731dc490a317ad91884",
+                          "amount": 180
+                        },
+                        "rating": {},
+                        "createdAt": "2024-06-01T12:30:15.512Z",
+                        "updatedAt": "2024-06-02T08:10:45.004Z"
+                      },
+                      {
+                        "_id": "6640b15457b44bb2d1f5ed98",
+                        "title": "تركيب سخان مياه",
+                        "type": "installation",
+                        "description": "تركيب سخان جديد مع اختبار ضغط المياه",
+                        "images": [],
+                        "city": "عدن",
+                        "addressId": "6640b11c57b44bb2d1f5ed97",
+                        "status": "COMPLETED",
+                        "scheduledAt": "2024-05-27T13:30:00.000Z",
+                        "engineerId": "6637d50690fbb31de8d9c445",
+                        "acceptedOffer": {
+                          "offerId": "6640b1d057b44bb2d1f5eda0",
+                          "amount": 220
+                        },
+                        "rating": {
+                          "score": 5,
+                          "comment": "خدمة ممتازة",
+                          "at": "2024-05-27T16:02:19.412Z"
+                        },
+                        "createdAt": "2024-05-25T09:14:03.921Z",
+                        "updatedAt": "2024-05-27T16:02:19.412Z"
                       }
-                    }
+                    ]
                   }
                 }
               }
@@ -21466,6 +21481,124 @@
           },
           "401": {
             "description": "غير مصرح لك بالوصول"
+          }
+        },
+        "tags": [
+          "خدمات-العملاء"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/services/customer/my/no-offers": {
+      "get": {
+        "operationId": "myWithoutOffers",
+        "summary": "طلباتي بدون عروض",
+        "description": "استرداد الطلبات التي لم يتم تقديم عروض عليها بعد",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الطلبات بدون عروض بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "_id": "6645e1a5f2f0a02eab4d9c10",
+                        "title": "إصلاح جهاز تكييف",
+                        "status": "OPEN",
+                        "createdAt": "2024-06-01T12:30:15.512Z",
+                        "updatedAt": "2024-06-01T12:30:15.512Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "خدمات-العملاء"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/services/customer/my/with-offers": {
+      "get": {
+        "operationId": "myWithOffers",
+        "summary": "طلباتي مع عروض قيد المراجعة",
+        "description": "استرداد الطلبات التي تحتوي على عروض ولم تُقبل بعد",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الطلبات ذات العروض بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "_id": "6645e1a5f2f0a02eab4d9c10",
+                        "title": "إصلاح جهاز تكييف",
+                        "status": "OFFERS_COLLECTING",
+                        "createdAt": "2024-06-01T12:30:15.512Z",
+                        "updatedAt": "2024-06-02T08:10:45.004Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "خدمات-العملاء"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/services/customer/my/with-accepted-offer": {
+      "get": {
+        "operationId": "myWithAcceptedOffer",
+        "summary": "طلباتي مع عروض مقبولة",
+        "description": "استرداد الطلبات التي تم قبول أحد عروضها",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الطلبات ذات العروض المقبولة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": [
+                      {
+                        "_id": "6645e1a5f2f0a02eab4d9c10",
+                        "title": "إصلاح جهاز تكييف",
+                        "status": "ASSIGNED",
+                        "acceptedOffer": {
+                          "offerId": "6645f731dc490a317ad91884",
+                          "amount": 180
+                        },
+                        "createdAt": "2024-06-01T12:30:15.512Z",
+                        "updatedAt": "2024-06-02T08:10:45.004Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -21499,71 +21632,36 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
+                  "example": {
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "req123",
-                          "description": "معرف الطلب"
-                        },
-                        "title": {
-                          "type": "string",
-                          "example": "إصلاح جهاز تلفزيون",
-                          "description": "عنوان الطلب"
-                        },
-                        "description": {
-                          "type": "string",
-                          "example": "شاشة التلفزيون تظهر خطوطاً بيضاء",
-                          "description": "وصف المشكلة"
-                        },
-                        "status": {
-                          "type": "string",
-                          "example": "in_progress",
-                          "description": "حالة الطلب"
-                        },
-                        "type": {
-                          "type": "string",
-                          "example": "repair",
-                          "description": "نوع الخدمة"
-                        },
-                        "location": {
-                          "type": "object",
-                          "properties": {
-                            "address": {
-                              "type": "string",
-                              "example": "شارع الملك فيصل، صنعاء"
-                            },
-                            "lat": {
-                              "type": "number",
-                              "example": 15.3695
-                            },
-                            "lng": {
-                              "type": "number",
-                              "example": 44.2019
-                            }
-                          }
-                        },
-                        "images": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "example": "https://example.com/image1.jpg"
-                          }
-                        },
-                        "engineerName": {
-                          "type": "string",
-                          "example": "أحمد محمد",
-                          "description": "اسم الفني المسؤول"
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T10:30:00Z"
-                        }
-                      }
+                      "_id": "6645e1a5f2f0a02eab4d9c10",
+                      "userId": "6637c4ed09d96f1d93f3b712",
+                      "title": "إصلاح جهاز تكييف",
+                      "type": "maintenance",
+                      "description": "الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل",
+                      "images": [
+                        "https://cdn.example.com/uploads/requests/ac-issue-1.jpg"
+                      ],
+                      "city": "صنعاء",
+                      "addressId": "662fa2ab5d97b30a4f8c1234",
+                      "status": "ASSIGNED",
+                      "scheduledAt": "2024-06-05T09:00:00.000Z",
+                      "engineerId": "6637d50690fbb31de8d9c445",
+                      "acceptedOffer": {
+                        "offerId": "6645f731dc490a317ad91884",
+                        "amount": 180,
+                        "note": "يشمل قطع الغيار"
+                      },
+                      "rating": {},
+                      "location": {
+                        "type": "Point",
+                        "coordinates": [
+                          44.206521,
+                          15.353622
+                        ]
+                      },
+                      "createdAt": "2024-06-01T12:30:15.512Z",
+                      "updatedAt": "2024-06-02T08:10:45.004Z"
                     }
                   }
                 }
@@ -21574,7 +21672,18 @@
             "description": "غير مصرح لك بالوصول إلى هذا الطلب"
           },
           "404": {
-            "description": "لم يتم العثور على الطلب"
+            "description": "لم يتم العثور على الطلب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 404,
+                    "message": "Service request not found",
+                    "error": "Not Found"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -21608,25 +21717,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
+                  "example": {
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "req123"
-                        },
-                        "status": {
-                          "type": "string",
-                          "example": "cancelled"
-                        },
-                        "cancelledAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T14:30:00Z"
-                        }
-                      }
+                      "ok": true
                     }
                   }
                 }
@@ -21634,10 +21727,32 @@
             }
           },
           "400": {
-            "description": "لا يمكن إلغاء هذا الطلب في حالته الحالية"
+            "description": "لا يمكن إلغاء هذا الطلب في حالته الحالية",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "CANNOT_CANCEL"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
-            "description": "لم يتم العثور على الطلب"
+            "description": "لم يتم العثور على الطلب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "NOT_FOUND"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -21681,37 +21796,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
+                  "example": {
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "req123"
-                        },
-                        "status": {
-                          "type": "string",
-                          "example": "assigned"
-                        },
-                        "engineerId": {
-                          "type": "string",
-                          "example": "eng456"
-                        },
-                        "engineerName": {
-                          "type": "string",
-                          "example": "أحمد محمد"
-                        },
-                        "acceptedPrice": {
-                          "type": "number",
-                          "example": 150
-                        },
-                        "acceptedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T15:00:00Z"
-                        }
-                      }
+                      "ok": true
                     }
                   }
                 }
@@ -21719,10 +21806,32 @@
             }
           },
           "400": {
-            "description": "العرض غير متاح أو منتهي الصلاحية"
+            "description": "العرض غير متاح أو تم رفضه",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "INVALID_STATUS"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
-            "description": "لم يتم العثور على الطلب أو العرض"
+            "description": "لم يتم العثور على الطلب أو العرض",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "OFFER_NOT_FOUND"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -21766,31 +21875,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
+                  "example": {
                     "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "req123"
-                        },
-                        "rating": {
-                          "type": "number",
-                          "example": 5,
-                          "description": "التقييم من 1-5"
-                        },
-                        "comment": {
-                          "type": "string",
-                          "example": "خدمة ممتازة وسريعة",
-                          "description": "التعليق"
-                        },
-                        "ratedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T16:00:00Z"
-                        }
-                      }
+                      "ok": true
                     }
                   }
                 }
@@ -21798,10 +21885,32 @@
             }
           },
           "400": {
-            "description": "الخدمة غير مكتملة أو تم تقييمها مسبقاً"
+            "description": "الخدمة غير مكتملة أو تم تقييمها مسبقاً",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "NOT_COMPLETED"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
-            "description": "لم يتم العثور على الطلب"
+            "description": "لم يتم العثور على الطلب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "NOT_FOUND"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -21835,56 +21944,43 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "example": "offer123",
-                            "description": "معرف العرض"
-                          },
-                          "engineerId": {
-                            "type": "string",
-                            "example": "eng456",
-                            "description": "معرف الفني"
-                          },
-                          "engineerName": {
-                            "type": "string",
-                            "example": "أحمد محمد",
-                            "description": "اسم الفني"
-                          },
-                          "price": {
-                            "type": "number",
-                            "example": 150,
-                            "description": "سعر العرض"
-                          },
-                          "estimatedHours": {
-                            "type": "number",
-                            "example": 3,
-                            "description": "عدد الساعات المقدرة"
-                          },
-                          "description": {
-                            "type": "string",
-                            "example": "سأصلح التلفزيون في غضون 3 ساعات",
-                            "description": "وصف العرض"
-                          },
-                          "status": {
-                            "type": "string",
-                            "example": "pending",
-                            "description": "حالة العرض"
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2024-01-15T11:00:00Z"
-                          }
-                        }
+                  "example": {
+                    "data": [
+                      {
+                        "_id": "6645f731dc490a317ad91884",
+                        "requestId": "6645e1a5f2f0a02eab4d9c10",
+                        "engineerId": {
+                          "_id": "6637d50690fbb31de8d9c445",
+                          "firstName": "أحمد",
+                          "lastName": "محمد",
+                          "phone": "+967711234567",
+                          "jobTitle": "مهندس تبريد وتكييف"
+                        },
+                        "amount": 180,
+                        "note": "يشمل قطع الغيار وضمان لمدة شهر",
+                        "distanceKm": 4.8,
+                        "status": "OFFERED",
+                        "createdAt": "2024-06-01T13:05:32.144Z",
+                        "updatedAt": "2024-06-01T13:05:32.144Z"
+                      },
+                      {
+                        "_id": "6645f921dc490a317ad9189b",
+                        "requestId": "6645e1a5f2f0a02eab4d9c10",
+                        "engineerId": {
+                          "_id": "6637d54890fbb31de8d9c54a",
+                          "firstName": "ليلى",
+                          "lastName": "الحسني",
+                          "phone": "+967733006677",
+                          "jobTitle": "فنية أجهزة كهربائية"
+                        },
+                        "amount": 200,
+                        "note": "يتم إصلاح العطل خلال ساعتين",
+                        "distanceKm": 7.1,
+                        "status": "OFFERED",
+                        "createdAt": "2024-06-01T13:22:01.998Z",
+                        "updatedAt": "2024-06-01T13:22:01.998Z"
                       }
-                    }
+                    ]
                   }
                 }
               }
@@ -21894,7 +21990,18 @@
             "description": "غير مصرح لك بالوصول إلى هذا الطلب"
           },
           "404": {
-            "description": "لم يتم العثور على الطلب"
+            "description": "لم يتم العثور على الطلب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "REQUEST_NOT_FOUND"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -21988,6 +22095,122 @@
           },
           "401": {
             "description": "غير مصرح لك بالوصول"
+          }
+        },
+        "tags": [
+          "خدمات-الفنيين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/services/engineer/requests/city": {
+      "get": {
+        "operationId": "listInCity",
+        "summary": "طلبات في نفس مدينة الفني",
+        "description": "استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الطلبات في المدينة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "req123"
+                          },
+                          "title": {
+                            "type": "string",
+                            "example": "صيانة مكيف هواء"
+                          },
+                          "city": {
+                            "type": "string",
+                            "example": "صنعاء"
+                          },
+                          "status": {
+                            "type": "string",
+                            "example": "OPEN"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "خدمات-الفنيين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/services/engineer/requests/all": {
+      "get": {
+        "operationId": "listAll",
+        "summary": "جميع طلبات الخدمات المتاحة",
+        "description": "استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد جميع الطلبات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "req789"
+                          },
+                          "title": {
+                            "type": "string",
+                            "example": "تركيب سخان مياه"
+                          },
+                          "city": {
+                            "type": "string",
+                            "example": "عدن"
+                          },
+                          "status": {
+                            "type": "string",
+                            "example": "OFFERS_COLLECTING"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [

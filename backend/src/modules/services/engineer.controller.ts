@@ -85,6 +85,72 @@ export class EngineerServicesController {
     return { data };
   }
 
+  @Get('requests/city')
+  @RequireServicePermission(ServicePermission.ENGINEER)
+  @ApiOperation({
+    summary: 'طلبات في نفس مدينة الفني',
+    description: 'استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد الطلبات في المدينة بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'req123' },
+              title: { type: 'string', example: 'صيانة مكيف هواء' },
+              city: { type: 'string', example: 'صنعاء' },
+              status: { type: 'string', example: 'OPEN' },
+              createdAt: { type: 'string', format: 'date-time' }
+            },
+          },
+        },
+      },
+    },
+  })
+  async listInCity(@Req() req: RequestWithUser) {
+    const data = await this.svc.listRequestsInEngineerCity(req.user!.sub);
+    return { data };
+  }
+
+  @Get('requests/all')
+  @RequireServicePermission(ServicePermission.ENGINEER)
+  @ApiOperation({
+    summary: 'جميع طلبات الخدمات المتاحة',
+    description: 'استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد جميع الطلبات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'req789' },
+              title: { type: 'string', example: 'تركيب سخان مياه' },
+              city: { type: 'string', example: 'عدن' },
+              status: { type: 'string', example: 'OFFERS_COLLECTING' },
+              createdAt: { type: 'string', format: 'date-time' }
+            },
+          },
+        },
+      },
+    },
+  })
+  async listAll(@Req() req: RequestWithUser) {
+    const data = await this.svc.listAllAvailableRequests();
+    return { data };
+  }
+
   @Post('offers')
   @ApiOperation({
     summary: 'إرسال عرض للعميل',

@@ -4,6 +4,16 @@ import { HydratedDocument, Types } from 'mongoose';
 export type ServiceRequestDocument = HydratedDocument<ServiceRequest>;
 
 @Schema({ _id: false })
+export class GeoPoint {
+  @Prop({ type: String, enum: ['Point'], default: 'Point' })
+  type!: 'Point';
+
+  @Prop({ type: [Number], default: [0, 0] })
+  coordinates!: [number, number];
+}
+export const GeoPointSchema = SchemaFactory.createForClass(GeoPoint);
+
+@Schema({ _id: false })
 export class ServiceRating {
   @Prop() score?: number; // 1..5
   @Prop() comment?: string;
@@ -26,8 +36,8 @@ export class ServiceRequest {
   @Prop({ type: Types.ObjectId, ref: 'Address' }) addressId?: string;
 
   // GeoJSON for nearby
-  @Prop({ type: { type: String, enum: ['Point'], default: 'Point' } })
-  location!: { type: 'Point'; coordinates: [number, number] }; // [lng, lat]
+  @Prop({ type: GeoPointSchema })
+  location!: GeoPoint; // [lng, lat]
 
   @Prop({
     default: 'OPEN',

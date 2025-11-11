@@ -451,6 +451,7 @@ export class PublicProductsPresenter {
         string,
         { minPrice: number; maxPrice: number; currency: string; hasDiscountedVariant: boolean }
       >;
+      hasVariants?: boolean;
       includeImages?: boolean;
       includeCategory?: boolean;
       includeBrand?: boolean;
@@ -483,6 +484,11 @@ export class PublicProductsPresenter {
       includeVariants && Array.isArray(extras.variants)
         ? extras.variants.map((variant) => this.sanitizeVariant(variant))
         : [];
+
+    const hasVariants =
+      extras.hasVariants ??
+      (Array.isArray(product.variants) && product.variants.length > 0) ??
+      variants.length > 0;
 
     const includeAttributes = extras.includeAttributes ?? true;
     const attributes =
@@ -534,6 +540,7 @@ export class PublicProductsPresenter {
         ? { priceRangeByCurrency: extras.priceRangeByCurrency }
         : {}),
       ...(includeVariants && variants.length > 0 ? { variants } : {}),
+      hasVariants: Boolean(hasVariants),
     };
 
     return sanitized;
@@ -618,6 +625,7 @@ export class PublicProductsPresenter {
           if (!this.hasSimplePricing(productRecord)) {
             return this.buildSimplifiedProduct(productRecord, {
               variants: [],
+              hasVariants: false,
               includeImages: false,
               includeCategory: false,
               includeBrand: false,
@@ -650,6 +658,7 @@ export class PublicProductsPresenter {
 
           return this.buildSimplifiedProduct(productRecord, {
             variants: [],
+            hasVariants: false,
             pricingByCurrency,
             defaultPricing: this.cleanPrice(
               pricingByCurrency[normalizedCurrency] ?? pricingByCurrency.USD,
@@ -681,6 +690,7 @@ export class PublicProductsPresenter {
 
         return this.buildSimplifiedProduct(productRecord, {
           variants: variantsWithPricing,
+          hasVariants: true,
           priceRangeByCurrency,
           pricingByCurrency: pricingByCurrencySummary,
           defaultPricing: this.cleanPrice(this.stripVariantId(selectedVariantPricing)),
@@ -792,6 +802,7 @@ export class PublicProductsPresenter {
 
           const simplifiedProduct = this.buildSimplifiedProduct(productRecord, {
             variants: [],
+            hasVariants: variantsWithPricing.length > 0,
             pricingByCurrency,
             priceRangeByCurrency,
             defaultPricing,
@@ -889,6 +900,7 @@ export class PublicProductsPresenter {
 
     const simplifiedProduct = this.buildSimplifiedProduct(product, {
       variants: variantsWithPricing,
+      hasVariants: variantsWithPricing.length > 0,
       pricingByCurrency: productPricingByCurrency,
       priceRangeByCurrency: productPriceRangeByCurrency,
       defaultPricing,

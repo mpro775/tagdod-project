@@ -73,14 +73,6 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
     [cart],
   );
 
-  const summaryList = React.useMemo(() => {
-    if (!cart) return [];
-    if (cart.pricingSummaryByCurrency) {
-      return Object.values(cart.pricingSummaryByCurrency);
-    }
-    return cart?.pricingSummary ? [cart.pricingSummary] : [];
-  }, [cart]);
-
   const getCartTotal = () => {
     return selectedSummary?.total || 0;
   };
@@ -607,8 +599,11 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {cart.items.map((item, index) => (
-                          <TableRow key={index}>
+                        {cart.items.map((item, index) => {
+                          const { pricing, currency } = resolveItemPricing(item);
+                          const displayCurrency = currency || cart.currency;
+                          return (
+                            <TableRow key={index}>
                             <TableCell>
                               <Box>
                                 <Typography 
@@ -638,7 +633,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                             <TableCell
                               sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                             >
-                              {formatCurrency(item.pricing?.finalPrice || 0, cart.currency)}
+                                {formatCurrency(pricing.final || 0, displayCurrency)}
                             </TableCell>
                             <TableCell
                               sx={{ 
@@ -646,13 +641,14 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                                 fontWeight: 'medium',
                               }}
                             >
-                              {formatCurrency(
-                                (item.pricing?.finalPrice || 0) * item.qty,
-                                cart.currency
-                              )}
+                                {formatCurrency(
+                                  (pricing.final || 0) * item.qty,
+                                  displayCurrency
+                                )}
                             </TableCell>
-                          </TableRow>
-                        ))}
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </TableContainer>

@@ -10437,6 +10437,90 @@
           }
         },
         {
+          "name": "طلباتي بدون عروض",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/customer/my/no-offers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "customer",
+                "my",
+                "no-offers"
+              ]
+            },
+            "description": "استرداد الطلبات التي لم يتم تقديم عروض عليها بعد"
+          }
+        },
+        {
+          "name": "طلباتي مع عروض قيد المراجعة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/customer/my/with-offers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "customer",
+                "my",
+                "with-offers"
+              ]
+            },
+            "description": "استرداد الطلبات التي تحتوي على عروض ولم تُقبل بعد"
+          }
+        },
+        {
+          "name": "طلباتي مع عروض مقبولة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/customer/my/with-accepted-offer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "customer",
+                "my",
+                "with-accepted-offer"
+              ]
+            },
+            "description": "استرداد الطلبات التي تم قبول أحد عروضها"
+          }
+        },
+        {
           "name": "تفاصيل طلب خدمة",
           "request": {
             "method": "GET",
@@ -10607,6 +10691,62 @@
               ]
             },
             "description": "البحث عن طلبات الخدمات القريبة من موقع الفني الحالي"
+          }
+        },
+        {
+          "name": "طلبات في نفس مدينة الفني",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/engineer/requests/city",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "engineer",
+                "requests",
+                "city"
+              ]
+            },
+            "description": "استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة"
+          }
+        },
+        {
+          "name": "جميع طلبات الخدمات المتاحة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/engineer/requests/all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "engineer",
+                "requests",
+                "all"
+              ]
+            },
+            "description": "استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة"
           }
         },
         {

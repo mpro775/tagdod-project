@@ -56,8 +56,19 @@ export class ServicesService {
     // جلب تفاصيل العنوان
     const addr = await this.addressesService.getAddressById(dto.addressId);
 
-    const location = addr.coords
-      ? { type: 'Point', coordinates: [addr.coords.lng, addr.coords.lat] as [number, number] }
+    const rawLng = (addr.coords as { lng?: unknown } | undefined)?.lng;
+    const rawLat = (addr.coords as { lat?: unknown } | undefined)?.lat;
+
+    const lng = typeof rawLng === 'number' ? rawLng : Number(rawLng);
+    const lat = typeof rawLat === 'number' ? rawLat : Number(rawLat);
+
+    const hasValidCoords = Number.isFinite(lng) && Number.isFinite(lat);
+    if (!hasValidCoords) {
+      this.logger.warn(`Address ${dto.addressId} is missing coordinates; using fallback [0,0].`);
+    }
+
+    const location = hasValidCoords
+      ? { type: 'Point', coordinates: [lng, lat] as [number, number] }
       : { type: 'Point', coordinates: [0, 0] as [number, number] };
 
     const doc = await this.requests.create({
@@ -66,7 +77,7 @@ export class ServicesService {
       type: dto.type,
       description: dto.description,
       images: dto.images || [],
-      city: dto.city || 'صنعاء', // المدينة مطلوبة، افتراضياً صنعاء
+      city: addr.city, // المدينة تُستمد من العنوان المختار
       addressId: addr._id,
       location,
       status: 'OPEN',
@@ -89,11 +100,89 @@ export class ServicesService {
   }
 
   async myRequests(userId: string) {
-    return this.requests.find({ userId }).sort({ createdAt: -1 }).lean();
+    const userObjectId = new Types.ObjectId(userId);
+    return this.requests.find({ userId: userObjectId }).sort({ createdAt: -1 }).lean();
+  }
+
+  async myRequestsWithoutOffers(userId: string) {
+    const userObjectId = new Types.ObjectId(userId);
+    const offersCollection = this.offers.collection.name;
+    return this.requests
+      .aggregate([
+        { $match: { userId: userObjectId } },
+        {
+          $lookup: {
+            from: offersCollection,
+            localField: '_id',
+            foreignField: 'requestId',
+            as: 'offers',
+          },
+        },
+        { $addFields: { offersCount: { $size: '$offers' } } },
+        { $match: { offersCount: 0 } },
+        { $project: { offers: 0, offersCount: 0 } },
+        { $sort: { createdAt: -1 } },
+      ])
+      .exec();
+  }
+
+  async myRequestsWithOffersPending(userId: string) {
+    const userObjectId = new Types.ObjectId(userId);
+    const offersCollection = this.offers.collection.name;
+    return this.requests
+      .aggregate([
+        { $match: { userId: userObjectId } },
+        {
+          $lookup: {
+            from: offersCollection,
+            localField: '_id',
+            foreignField: 'requestId',
+            as: 'offers',
+          },
+        },
+        { $addFields: { offersCount: { $size: '$offers' } } },
+        {
+          $match: {
+            offersCount: { $gt: 0 },
+            acceptedOffer: null,
+          },
+        },
+        { $project: { offers: 0, offersCount: 0 } },
+        { $sort: { createdAt: -1 } },
+      ])
+      .exec();
+  }
+
+  async myRequestsWithAcceptedOffers(userId: string) {
+    const userObjectId = new Types.ObjectId(userId);
+    const offersCollection = this.offers.collection.name;
+    return this.requests
+      .aggregate([
+        { $match: { userId: userObjectId } },
+        {
+          $lookup: {
+            from: offersCollection,
+            localField: '_id',
+            foreignField: 'requestId',
+            as: 'offers',
+          },
+        },
+        { $addFields: { offersCount: { $size: '$offers' } } },
+        {
+          $match: {
+            offersCount: { $gt: 0 },
+            acceptedOffer: { $ne: null },
+          },
+        },
+        { $project: { offers: 0, offersCount: 0 } },
+        { $sort: { createdAt: -1 } },
+      ])
+      .exec();
   }
 
   async getRequest(userId: string, id: string) {
-    return this.requests.findOne({ _id: id, userId }).lean();
+    const userObjectId = new Types.ObjectId(userId);
+    return this.requests.findOne({ _id: id, userId: userObjectId }).lean();
   }
 
   async cancel(userId: string, id: string) {
@@ -207,6 +296,30 @@ export class ServicesService {
       
     this.logger.log(`Found ${list.length} nearby requests in city ${engineerCity}`);
     return list;
+  }
+
+  async listRequestsInEngineerCity(engineerUserId: string) {
+    const engineer = await this.userModel.findById(engineerUserId).select('city').lean();
+    const engineerCity = engineer?.city || 'صنعاء';
+
+    return this.requests
+      .find({
+        status: { $in: ['OPEN', 'OFFERS_COLLECTING'] },
+        engineerId: null,
+        city: engineerCity,
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+  }
+
+  async listAllAvailableRequests() {
+    return this.requests
+      .find({
+        status: { $in: ['OPEN', 'OFFERS_COLLECTING'] },
+        engineerId: null,
+      })
+      .sort({ createdAt: -1 })
+      .lean();
   }
 
   // Helper: حساب المسافة بين نقطتين (Haversine formula)

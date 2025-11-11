@@ -58,6 +58,22 @@ interface CartLine {
   snapshot?: Record<string, unknown>;
 }
 
+interface UserOrderCounters {
+  totalOrders: number;
+  completedOrders: number;
+  inProgressOrders: number;
+  cancelledOrders: number;
+}
+
+export interface CODEligibilityResult extends UserOrderCounters {
+  eligible: boolean;
+  requiredOrders: number;
+  remainingOrders: number;
+  progress: string;
+  message?: string;
+  isAdmin?: boolean;
+}
+
 /**
  * خدمة الطلبات الموحدة - نظام احترافي شامل
  */
@@ -138,6 +154,78 @@ export class OrderService {
     return `ORD-${year}-${timestamp}`;
   }
 
+  private async calculateUserOrderCounters(userId: string): Promise<UserOrderCounters> {
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      return {
+        totalOrders: 0,
+        completedOrders: 0,
+        inProgressOrders: 0,
+        cancelledOrders: 0
+      };
+    }
+
+    const userObjectId = new Types.ObjectId(userId);
+
+    const [result] = await this.orderModel.aggregate<{
+      totalOrders: number;
+      completedOrders: number;
+      inProgressOrders: number;
+      cancelledOrders: number;
+    }>([
+      {
+        $match: {
+          userId: userObjectId
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          completedOrders: {
+            $sum: {
+              $cond: [
+                { $in: ['$status', [OrderStatus.DELIVERED, OrderStatus.COMPLETED]] },
+                1,
+                0
+              ]
+            }
+          },
+          inProgressOrders: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    '$status',
+                    [
+                      OrderStatus.PENDING_PAYMENT,
+                      OrderStatus.CONFIRMED,
+                      OrderStatus.PROCESSING,
+                      OrderStatus.SHIPPED
+                    ]
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          },
+          cancelledOrders: {
+            $sum: {
+              $cond: [{ $eq: ['$status', OrderStatus.CANCELLED] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]);
+
+    return {
+      totalOrders: result?.totalOrders ?? 0,
+      completedOrders: result?.completedOrders ?? 0,
+      inProgressOrders: result?.inProgressOrders ?? 0,
+      cancelledOrders: result?.cancelledOrders ?? 0
+    };
+  }
+
   private async addStatusHistory(
     order: OrderDocument,
     status: OrderStatus,
@@ -161,13 +249,7 @@ export class OrderService {
    * يجب أن يكون لدى المستخدم 3 طلبات مكتملة (DELIVERED) على الأقل
    * المستخدمون الذين لديهم صلاحيات Admin مستثنون من هذا التقييد
    */
-  async checkCODEligibility(userId: string): Promise<{
-    eligible: boolean;
-    completedOrders: number;
-    requiredOrders: number;
-    progress: string; // مثل "2/3"
-    message?: string;
-  }> {
+  async checkCODEligibility(userId: string): Promise<CODEligibilityResult> {
     const requiredOrders = 3;
     
     // التحقق من أن المستخدم ليس Admin
@@ -176,37 +258,49 @@ export class OrderService {
       return {
         eligible: false,
         completedOrders: 0,
+        totalOrders: 0,
+        inProgressOrders: 0,
+        cancelledOrders: 0,
         requiredOrders,
+        remainingOrders: requiredOrders,
         progress: '0/3',
         message: 'المستخدم غير موجود'
       };
     }
 
+    const counters = await this.calculateUserOrderCounters(userId);
+
     // إذا كان المستخدم Admin، فهو مؤهل دائماً
-    const isAdmin = user.roles?.includes(UserRole.ADMIN) || user.roles?.includes(UserRole.SUPER_ADMIN);
+    const isAdmin =
+      user.roles?.includes(UserRole.ADMIN) || user.roles?.includes(UserRole.SUPER_ADMIN);
     if (isAdmin) {
       return {
         eligible: true,
-        completedOrders: requiredOrders, // يعتبر أنه مؤهل دائماً
+        completedOrders: counters.completedOrders,
+        totalOrders: counters.totalOrders,
+        inProgressOrders: counters.inProgressOrders,
+        cancelledOrders: counters.cancelledOrders,
         requiredOrders,
-        progress: `${requiredOrders}/${requiredOrders}`,
-        message: 'المستخدم له صلاحيات إدارية'
+        remainingOrders: 0,
+        progress: `${Math.min(counters.completedOrders, requiredOrders)}/${requiredOrders}`,
+        message: 'المستخدم له صلاحيات إدارية',
+        isAdmin: true
       };
     }
 
-    // حساب عدد الطلبات المكتملة (DELIVERED)
-    const completedOrdersCount = await this.orderModel.countDocuments({
-      userId: new Types.ObjectId(userId),
-      status: OrderStatus.DELIVERED
-    });
-
+    const completedOrdersCount = counters.completedOrders;
     const eligible = completedOrdersCount >= requiredOrders;
-    const progress = `${completedOrdersCount}/${requiredOrders}`;
+    const progress = `${Math.min(completedOrdersCount, requiredOrders)}/${requiredOrders}`;
+    const remainingOrders = eligible ? 0 : Math.max(requiredOrders - completedOrdersCount, 0);
 
     return {
       eligible,
       completedOrders: completedOrdersCount,
+      totalOrders: counters.totalOrders,
+      inProgressOrders: counters.inProgressOrders,
+      cancelledOrders: counters.cancelledOrders,
       requiredOrders,
+      remainingOrders,
       progress,
       message: eligible 
         ? undefined 
@@ -329,6 +423,15 @@ export class OrderService {
 
       // التحقق من صلاحية COD
       const codEligibility = await this.checkCODEligibility(userId);
+      const customerOrderStats = {
+        totalOrders: codEligibility.totalOrders,
+        completedOrders: codEligibility.completedOrders,
+        inProgressOrders: codEligibility.inProgressOrders,
+        cancelledOrders: codEligibility.cancelledOrders,
+        requiredForCOD: codEligibility.requiredOrders,
+        remainingForCOD: codEligibility.remainingOrders,
+        codEligible: codEligibility.eligible
+      };
 
       return {
         success: true,
@@ -350,10 +453,15 @@ export class OrderService {
           codEligibility: {
             eligible: codEligibility.eligible,
             completedOrders: codEligibility.completedOrders,
+            totalOrders: codEligibility.totalOrders,
+            inProgressOrders: codEligibility.inProgressOrders,
+            cancelledOrders: codEligibility.cancelledOrders,
             requiredOrders: codEligibility.requiredOrders,
+            remainingOrders: codEligibility.remainingOrders,
             progress: codEligibility.progress,
             message: codEligibility.message
           },
+          customerOrderStats,
           // Backward compatibility
           appliedCoupon: appliedCoupons.length > 0 ? appliedCoupons[0] : null,
           couponDiscount: totalCouponDiscount
@@ -371,7 +479,24 @@ export class OrderService {
   async confirmCheckout(
     userId: string,
     dto: CreateOrderDto
-  ): Promise<{ orderId: string; orderNumber: string; status: OrderStatus; payment?: { intentId: string; provider?: string; amount: number; signature: string } }> {
+  ): Promise<{
+    order: {
+      orderId: string;
+      orderNumber: string;
+      status: OrderStatus;
+      payment?: { intentId: string; provider?: string; amount: number; signature: string };
+    };
+    codEligibility: CODEligibilityResult;
+    customerOrderStats: {
+      totalOrders: number;
+      completedOrders: number;
+      inProgressOrders: number;
+      cancelledOrders: number;
+      requiredForCOD: number;
+      remainingForCOD: number;
+      codEligible: boolean;
+    };
+  }> {
     try {
       // التحقق من ملكية العنوان
       const isValid = await this.addressesService.validateAddressOwnership(dto.deliveryAddressId, userId);
@@ -382,17 +507,20 @@ export class OrderService {
       // جلب تفاصيل العنوان
       const address = await this.addressesService.getAddressById(dto.deliveryAddressId);
 
+      const codEligibilityBefore = await this.checkCODEligibility(userId);
+
       // التحقق من صلاحية COD إذا كان المستخدم يريد استخدام الدفع عند الاستلام
       if (dto.paymentMethod === PaymentMethod.COD) {
-        const codEligibility = await this.checkCODEligibility(userId);
-        if (!codEligibility.eligible) {
+        if (!codEligibilityBefore.eligible) {
           throw new DomainException(ErrorCode.VALIDATION_ERROR, {
             reason: 'cod_not_eligible',
-            message: codEligibility.message || 'غير مؤهل لاستخدام الدفع عند الاستلام',
+            message: codEligibilityBefore.message || 'غير مؤهل لاستخدام الدفع عند الاستلام',
             codEligibility: {
-              completedOrders: codEligibility.completedOrders,
-              requiredOrders: codEligibility.requiredOrders,
-              progress: codEligibility.progress
+              completedOrders: codEligibilityBefore.completedOrders,
+              requiredOrders: codEligibilityBefore.requiredOrders,
+              progress: codEligibilityBefore.progress,
+              totalOrders: codEligibilityBefore.totalOrders,
+              remainingOrders: codEligibilityBefore.remainingOrders
             }
           });
         }
@@ -575,16 +703,31 @@ export class OrderService {
 
       this.logger.log(`Order created: ${order.orderNumber}, Cart converted`);
 
+      const codEligibilityAfter = await this.checkCODEligibility(userId);
+      const customerOrderStats = {
+        totalOrders: codEligibilityAfter.totalOrders,
+        completedOrders: codEligibilityAfter.completedOrders,
+        inProgressOrders: codEligibilityAfter.inProgressOrders,
+        cancelledOrders: codEligibilityAfter.cancelledOrders,
+        requiredForCOD: codEligibilityAfter.requiredOrders,
+        remainingForCOD: codEligibilityAfter.remainingOrders,
+        codEligible: codEligibilityAfter.eligible
+      };
+
       return {
-        orderId: order._id.toString(),
-        orderNumber: order.orderNumber,
-        status: order.status,
-        payment: dto.paymentMethod === 'BANK_TRANSFER' ? {
+        order: {
+          orderId: order._id.toString(),
+          orderNumber: order.orderNumber,
+          status: order.status,
+          payment: dto.paymentMethod === 'BANK_TRANSFER' ? {
           intentId: `local-${order._id}`,
           provider: 'local_bank',
           amount: total,
           signature: this.hmac(`local-${order._id}|PENDING|${total}`)
         } : undefined
+        },
+        codEligibility: codEligibilityAfter,
+        customerOrderStats
       };
     } catch (error) {
       this.logger.error('Confirm checkout failed:', error);

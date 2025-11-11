@@ -74,7 +74,7 @@ export class OrderController {
     const result = await this.orderService.confirmCheckout(this.getUserId(req), dto);
 
     return {
-      order: result,
+      ...result,
       message: 'تم إنشاء الطلب بنجاح'
     };
   }
@@ -91,11 +91,27 @@ export class OrderController {
     @Req() req: ExpressRequest,
     @Query() query: ListOrdersDto,
   ) {
-    const result = await this.orderService.getUserOrders(this.getUserId(req), query);
+    const userId = this.getUserId(req);
+    const [result, codEligibility] = await Promise.all([
+      this.orderService.getUserOrders(userId, query),
+      this.orderService.checkCODEligibility(userId),
+    ]);
+
+    const customerOrderStats = {
+      totalOrders: codEligibility.totalOrders,
+      completedOrders: codEligibility.completedOrders,
+      inProgressOrders: codEligibility.inProgressOrders,
+      cancelledOrders: codEligibility.cancelledOrders,
+      requiredForCOD: codEligibility.requiredOrders,
+      remainingForCOD: codEligibility.remainingOrders,
+      codEligible: codEligibility.eligible,
+    };
 
     return {
       orders: result.orders,
       pagination: result.pagination,
+      codEligibility,
+      customerOrderStats,
       message: 'تم الحصول على الطلبات بنجاح'
     };
   }
@@ -111,15 +127,31 @@ export class OrderController {
     @Req() req: ExpressRequest,
     @Query('limit') limit?: number,
   ) {
+    const userId = this.getUserId(req);
     const query: ListOrdersDto = {
       page: 1,
       limit: limit || 5,
     };
 
-    const result = await this.orderService.getUserOrders(this.getUserId(req), query);
+    const [result, codEligibility] = await Promise.all([
+      this.orderService.getUserOrders(userId, query),
+      this.orderService.checkCODEligibility(userId),
+    ]);
+
+    const customerOrderStats = {
+      totalOrders: codEligibility.totalOrders,
+      completedOrders: codEligibility.completedOrders,
+      inProgressOrders: codEligibility.inProgressOrders,
+      cancelledOrders: codEligibility.cancelledOrders,
+      requiredForCOD: codEligibility.requiredOrders,
+      remainingForCOD: codEligibility.remainingOrders,
+      codEligible: codEligibility.eligible,
+    };
 
     return {
       orders: result.orders,
+      codEligibility,
+      customerOrderStats,
       message: 'تم الحصول على الطلبات الأخيرة'
     };
   }
@@ -136,10 +168,36 @@ export class OrderController {
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
   ) {
-    const order = await this.orderService.getOrderDetails(orderId, this.getUserId(req));
+    const orderDoc = await this.orderService.getOrderDetails(orderId, this.getUserId(req));
+    const order = orderDoc.toObject();
+
+    const userIdForStats = orderDoc.userId ? orderDoc.userId.toString() : undefined;
+    let codEligibility;
+    let customerOrderStats;
+
+    if (userIdForStats) {
+      codEligibility = await this.orderService.checkCODEligibility(userIdForStats);
+      customerOrderStats = {
+        totalOrders: codEligibility.totalOrders,
+        completedOrders: codEligibility.completedOrders,
+        inProgressOrders: codEligibility.inProgressOrders,
+        cancelledOrders: codEligibility.cancelledOrders,
+        requiredForCOD: codEligibility.requiredOrders,
+        remainingForCOD: codEligibility.remainingOrders,
+        codEligible: codEligibility.eligible,
+      };
+    }
 
     return {
-      order,
+      order: {
+        ...order,
+        ...(codEligibility
+          ? {
+              codEligibility,
+              customerOrderStats,
+            }
+          : {}),
+      },
       message: 'تم الحصول على تفاصيل الطلب'
     };
   }
