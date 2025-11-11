@@ -243,8 +243,22 @@
       "codEligibility": {
         "eligible": true,
         "completedOrders": 4,
+        "totalOrders": 6,
+        "inProgressOrders": 1,
+        "cancelledOrders": 1,
         "requiredOrders": 3,
-        "progress": "4/3"
+        "remainingOrders": 0,
+        "progress": "4/3",
+        "message": null
+      },
+      "customerOrderStats": {
+        "totalOrders": 6,
+        "completedOrders": 4,
+        "inProgressOrders": 1,
+        "cancelledOrders": 1,
+        "requiredForCOD": 3,
+        "remainingForCOD": 0,
+        "codEligible": true
       },
       "appliedCoupon": {
         "code": "SUMMER20",
@@ -264,7 +278,8 @@
 **تفاصيل مهمة**
 - `discounts.itemsDiscount`: إجمالي خصومات العروض الترويجية على مستوى البنود.
 - `discounts.couponDiscount`: إجمالي خصومات جميع الكوبونات بعد تطبيقها بالتسلسل.
-- `codEligibility`: مؤشرات أهلية الدفع عند الاستلام (يجب اكتمال عدد طلبات معينة).
+- `codEligibility`: مؤشرات أهلية الدفع عند الاستلام (تشمل الآن إجمالي الطلبات، الجارية، الملغاة، المتبقي للوصول للحد الأدنى، ورسالة التوضيح).
+- `customerOrderStats`: ملخص كامل لطلبات المستخدم (إجمالي/مكتمل/جاري/ملغى) مع حقلين `requiredForCOD`, `remainingForCOD` لتسهيل العرض في الواجهة.
 - `appliedCoupon`: أول كوبون مطبق للحفاظ على التوافق مع الإصدارات القديمة.
 
 ### Response - فشل
@@ -392,13 +407,35 @@ Future<CheckoutPreview> previewCheckout({
         "signature": "sig_vW1n8qJ0lY"
       }
     },
+    "codEligibility": {
+      "eligible": true,
+      "completedOrders": 4,
+      "totalOrders": 6,
+      "inProgressOrders": 1,
+      "cancelledOrders": 1,
+      "requiredOrders": 3,
+      "remainingOrders": 0,
+      "progress": "4/3",
+      "message": null,
+      "isAdmin": false
+    },
+    "customerOrderStats": {
+      "totalOrders": 6,
+      "completedOrders": 4,
+      "inProgressOrders": 1,
+      "cancelledOrders": 1,
+      "requiredForCOD": 3,
+      "remainingForCOD": 0,
+      "codEligible": true
+    },
     "message": "تم إنشاء الطلب بنجاح"
   },
   "requestId": "req_checkout_confirm_001"
 }
 ```
 
-> `payment` يُعاد فقط في حالة التحويل البنكي المحلي. لطلبات `COD` يبقى الحقل `null` ويتم ترقية الحالة إلى `confirmed` مباشرة عند النجاح.
+> `payment` يُعاد فقط في حالة التحويل البنكي المحلي. لطلبات `COD` يبقى الحقل `null` ويتم ترقية الحالة إلى `confirmed` مباشرة عند النجاح.  
+> يتم إرجاع `codEligibility` و`customerOrderStats` بعد الإنشاء لتحديث الواجهات مباشرة دون استدعاءات إضافية.
 
 ### Response الكامل (من `GET /orders/:id`)
 
@@ -611,6 +648,8 @@ class OrderConfirmationResponse {
   final String orderNumber;
   final String status;
   final PaymentInfo? payment;
+  final CodEligibility? codEligibility;
+  final CustomerOrderStats? customerOrderStats;
   final String message;
 
   OrderConfirmationResponse({
@@ -618,6 +657,8 @@ class OrderConfirmationResponse {
     required this.orderNumber,
     required this.status,
     this.payment,
+    this.codEligibility,
+    this.customerOrderStats,
     required this.message,
   });
 
@@ -629,6 +670,12 @@ class OrderConfirmationResponse {
       status: order['status'] as String,
       payment: order['payment'] != null
           ? PaymentInfo.fromJson(order['payment'] as Map<String, dynamic>)
+          : null,
+      codEligibility: json['codEligibility'] != null
+          ? CodEligibility.fromJson(json['codEligibility'] as Map<String, dynamic>)
+          : null,
+      customerOrderStats: json['customerOrderStats'] != null
+          ? CustomerOrderStats.fromJson(json['customerOrderStats'] as Map<String, dynamic>)
           : null,
       message: json['message'] as String? ?? '',
     );
@@ -733,6 +780,27 @@ class PaymentInfo {
       "limit": 10,
       "totalPages": 3
     },
+    "codEligibility": {
+      "eligible": true,
+      "completedOrders": 4,
+      "totalOrders": 6,
+      "inProgressOrders": 1,
+      "cancelledOrders": 1,
+      "requiredOrders": 3,
+      "remainingOrders": 0,
+      "progress": "4/3",
+      "message": null,
+      "isAdmin": false
+    },
+    "customerOrderStats": {
+      "totalOrders": 6,
+      "completedOrders": 4,
+      "inProgressOrders": 1,
+      "cancelledOrders": 1,
+      "requiredForCOD": 3,
+      "remainingForCOD": 0,
+      "codEligible": true
+    },
     "message": "تم الحصول على الطلبات بنجاح"
   },
   "requestId": "req_orders_001"
@@ -740,6 +808,7 @@ class PaymentInfo {
 ```
 
 > يتم إرجاع مستند الطلب بالكامل (نفس بنية `Order` في قاعدة البيانات)، ويمكن تجاهل الحقول غير المطلوبة في الواجهة.
+- يتم إرجاع الحقول الجانبية `codEligibility` و`customerOrderStats` مع كل رد لتحديث واجهة المستخدم حول حالة الدفع عند الاستلام وعدد الطلبات السابقة.
 
 ### كود Flutter
 
@@ -787,11 +856,15 @@ Future<OrdersListResponse> getMyOrders({
 class OrdersListResponse {
   final List<OrderSummary> orders;
   final PaginationInfo pagination;
+  final CodEligibility? codEligibility;
+  final CustomerOrderStats? customerOrderStats;
   final String message;
 
   OrdersListResponse({
     required this.orders,
     required this.pagination,
+    this.codEligibility,
+    this.customerOrderStats,
     required this.message,
   });
 
@@ -801,6 +874,12 @@ class OrdersListResponse {
           .map((item) => OrderSummary.fromJson(item as Map<String, dynamic>))
           .toList(),
       pagination: PaginationInfo.fromJson(json['pagination'] as Map<String, dynamic>),
+      codEligibility: json['codEligibility'] != null
+          ? CodEligibility.fromJson(json['codEligibility'] as Map<String, dynamic>)
+          : null,
+      customerOrderStats: json['customerOrderStats'] != null
+          ? CustomerOrderStats.fromJson(json['customerOrderStats'] as Map<String, dynamic>)
+          : null,
       message: json['message'] as String? ?? '',
     );
   }
@@ -1025,6 +1104,7 @@ class CheckoutPreview {
   final List<DeliveryOption> deliveryOptions;
   final CheckoutDiscounts discounts;
   final CodEligibility codEligibility;
+  final CustomerOrderStats customerOrderStats;
   final CouponInfo? appliedCoupon;
   final double couponDiscount;
 
@@ -1037,6 +1117,7 @@ class CheckoutPreview {
     required this.deliveryOptions,
     required this.discounts,
     required this.codEligibility,
+    required this.customerOrderStats,
     this.appliedCoupon,
     required this.couponDiscount,
   });
@@ -1055,6 +1136,7 @@ class CheckoutPreview {
           .toList(),
       discounts: CheckoutDiscounts.fromJson(json['discounts'] as Map<String, dynamic>?),
       codEligibility: CodEligibility.fromJson(json['codEligibility'] as Map<String, dynamic>?),
+      customerOrderStats: CustomerOrderStats.fromJson(json['customerOrderStats'] as Map<String, dynamic>?),
       appliedCoupon: json['appliedCoupon'] != null
           ? CouponInfo.fromJson(json['appliedCoupon'] as Map<String, dynamic>)
           : null,
@@ -1095,16 +1177,26 @@ class CheckoutDiscounts {
 class CodEligibility {
   final bool eligible;
   final int completedOrders;
+  final int totalOrders;
+  final int inProgressOrders;
+  final int cancelledOrders;
   final int requiredOrders;
+  final int remainingOrders;
   final String progress;
   final String? message;
+  final bool? isAdmin;
 
   CodEligibility({
     required this.eligible,
     required this.completedOrders,
+    required this.totalOrders,
+    required this.inProgressOrders,
+    required this.cancelledOrders,
     required this.requiredOrders,
+    required this.remainingOrders,
     required this.progress,
     this.message,
+    this.isAdmin,
   });
 
   factory CodEligibility.fromJson(Map<String, dynamic>? json) {
@@ -1118,9 +1210,53 @@ class CodEligibility {
     return CodEligibility(
       eligible: data['eligible'] as bool? ?? false,
       completedOrders: _parseInt(data['completedOrders'], 0),
+      totalOrders: _parseInt(data['totalOrders'], 0),
+      inProgressOrders: _parseInt(data['inProgressOrders'], 0),
+      cancelledOrders: _parseInt(data['cancelledOrders'], 0),
       requiredOrders: _parseInt(data['requiredOrders'], 3),
+      remainingOrders: _parseInt(data['remainingOrders'], 0),
       progress: data['progress'] as String? ?? '0/3',
       message: data['message'] as String?,
+      isAdmin: data['isAdmin'] as bool?,
+    );
+  }
+}
+
+class CustomerOrderStats {
+  final int totalOrders;
+  final int completedOrders;
+  final int inProgressOrders;
+  final int cancelledOrders;
+  final int requiredForCOD;
+  final int remainingForCOD;
+  final bool codEligible;
+
+  CustomerOrderStats({
+    required this.totalOrders,
+    required this.completedOrders,
+    required this.inProgressOrders,
+    required this.cancelledOrders,
+    required this.requiredForCOD,
+    required this.remainingForCOD,
+    required this.codEligible,
+  });
+
+  factory CustomerOrderStats.fromJson(Map<String, dynamic>? json) {
+    final data = json ?? const <String, dynamic>{};
+    int _parseInt(dynamic value, int fallback) {
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? fallback;
+      return fallback;
+    }
+
+    return CustomerOrderStats(
+      totalOrders: _parseInt(data['totalOrders'], 0),
+      completedOrders: _parseInt(data['completedOrders'], 0),
+      inProgressOrders: _parseInt(data['inProgressOrders'], 0),
+      cancelledOrders: _parseInt(data['cancelledOrders'], 0),
+      requiredForCOD: _parseInt(data['requiredForCOD'], 3),
+      remainingForCOD: _parseInt(data['remainingForCOD'], 0),
+      codEligible: data['codEligible'] as bool? ?? false,
     );
   }
 }
@@ -1299,6 +1435,8 @@ class OrderDetails {
   final String? paymentProvider;
   final String? localPaymentAccountId;
   final String? paymentReference;
+  final CodEligibility? codEligibility;
+  final CustomerOrderStats? customerOrderStats;
   final List<OrderItem> items;
   final DeliveryAddress deliveryAddress;
   final double subtotal;
@@ -1335,6 +1473,8 @@ class OrderDetails {
     this.paymentProvider,
     this.localPaymentAccountId,
     this.paymentReference,
+    this.codEligibility,
+    this.customerOrderStats,
     required this.items,
     required this.deliveryAddress,
     required this.subtotal,
@@ -1373,6 +1513,12 @@ class OrderDetails {
       paymentProvider: json['paymentProvider'] as String?,
       localPaymentAccountId: json['localPaymentAccountId'] as String?,
       paymentReference: json['paymentReference'] as String?,
+      codEligibility: json['codEligibility'] != null
+          ? CodEligibility.fromJson(json['codEligibility'] as Map<String, dynamic>)
+          : null,
+      customerOrderStats: json['customerOrderStats'] != null
+          ? CustomerOrderStats.fromJson(json['customerOrderStats'] as Map<String, dynamic>)
+          : null,
       items: (json['items'] as List<dynamic>)
           .map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
           .toList(),

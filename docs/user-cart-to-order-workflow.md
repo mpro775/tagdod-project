@@ -67,6 +67,39 @@
      }
      ```
    - **الهدف:** التأكد من أن بيانات السلة، العنوان، والخصومات جاهزة قبل إنشاء الطلب الفعلي (قد يعيد تفاصيل إضافية خاصة بمرحلة الدفع أو التحقق).
+   - **معلومة مهمة:** الاستجابة تتضمن الآن كائنين جديدين:
+     - `codEligibility`: معلومات أهلية الدفع عند الاستلام، تشمل عدد الطلبات المكتملة الحالية، المتبقي للوصول إلى الحد الأدنى (3 طلبات مكتملة للمستخدمين العاديين)، حالة الأهلية، ورسالة توضيحية عند عدم استيفاء الشروط.
+     - `customerOrderStats`: ملخص طلبات المستخدم (إجمالي الطلبات، المكتملة، الجارية، الملغاة) لمساعدات الواجهة في عرض السياق للمستخدم.
+     - مثال مقتطف من الاستجابة:
+       ```json
+       {
+         "data": {
+           "subtotal": 250,
+           "total": 250,
+           "codEligibility": {
+             "eligible": false,
+             "completedOrders": 1,
+             "totalOrders": 4,
+             "inProgressOrders": 2,
+             "cancelledOrders": 1,
+             "requiredOrders": 3,
+             "remainingOrders": 2,
+             "progress": "1/3",
+             "message": "يجب إكمال 3 طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك 1 طلب مكتمل"
+           },
+           "customerOrderStats": {
+             "totalOrders": 4,
+             "completedOrders": 1,
+             "inProgressOrders": 2,
+             "cancelledOrders": 1,
+             "requiredForCOD": 3,
+             "remainingForCOD": 2,
+             "codEligible": false
+           }
+         }
+       }
+       ```
+     - ملاحظة: المستخدمون ذوو الصلاحيات الإدارية (`ADMIN`/`SUPER_ADMIN`) يتجاوزون هذا الشرط ويظهر لهم `codEligible: true`.
 
 7. **تأكيد الطلب وإنشاؤه**
    - **Endpoint:** `POST /orders/checkout/confirm`
@@ -84,6 +117,20 @@
    - **الهدف:** إنشاء الطلب النهائي مع طريقة الدفع المطلوبة. بالنسبة لطريقة الدفع:
      - `paymentMethod` يجب أن تكون قيمة من `PaymentMethod`.
      - بعض الطرق (مثل التحويل البنكي) قد تتطلب `paymentProvider`, `localPaymentAccountId`, أو `paymentReference`.
+   - **بعد التحديث الأخير:** الاستجابة ترجع الهيكل التالي
+     ```json
+     {
+       "order": {
+         "orderId": "65f123...",
+         "orderNumber": "ORD-2025-123456",
+         "status": "pending_payment"
+       },
+       "codEligibility": { ... },
+       "customerOrderStats": { ... },
+       "message": "تم إنشاء الطلب بنجاح"
+     }
+     ```
+     ما يسمح للواجهة بقراءة حالة الأهلية بعد إنشاء الطلب مباشرة (على سبيل المثال لتحديث تنبيه "المتبقي طلب واحد لتفعيل الدفع عند الاستلام").
 
 8. **متابعة الطلب (خارج نطاق هذا السيناريو)**
    - بعد الإنشاء يمكن استخدام `GET /orders/:id` أو `GET /orders/:id/track` للاطلاع على حالة الطلب، لكن ذلك ليس جزءًا من مسار التحويل من السلة إلى الطلب.
@@ -94,6 +141,7 @@
 - في حال تعدد الكوبونات، يدعم الـCheckout استخدام `couponCodes` (مصفوفة) إلى جانب أو بدلاً من `couponCode`.
 - الدفاعات في `CartController` و `OrderController` تعتمد على التحقق من هوية المستخدم (`req.user.sub`) لضمان عزلة بيانات كل مستخدم.
 - يفضّل استدعاء `POST /orders/checkout/preview` قبل `POST /orders/checkout/confirm` للتأكد من أن متطلبات الدفع والشحن مكتملة (مثلاً عند اختيار حساب محلي يجب إرفاق `paymentReference`).
+- أي استعلام للطلبات (`GET /orders`, `GET /orders/recent`, `GET /orders/:id`) يعيد الآن نفس هيكل `codEligibility` و `customerOrderStats` لتسهيل عرض حالة المستخدم عبر التطبيق دون استدعاءات إضافية.
 
 بهذا يكون المسار الكامل من السلة إلى الطلب موثقًا بوضوح مع نقاط التكامل الأساسية بين وحدتي السلة والـCheckout.
 
