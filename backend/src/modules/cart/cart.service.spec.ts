@@ -218,6 +218,45 @@ describe('CartService', () => {
     });
   });
 
+  describe('syncUserCart', () => {
+    it('should replace items and update metadata from payload', async () => {
+      const cart = {
+        ...mockCart,
+        items: [{ ...mockCartItem }],
+        save: jest.fn().mockResolvedValue(mockCart),
+      };
+
+      const getCartSpy = jest
+        .spyOn(service, 'getUserCart')
+        .mockResolvedValue({ items: [], currency: 'SAR' } as any);
+      const addOrUpdateSpy = jest
+        .spyOn<any, any>(service as any, 'addOrUpdateCartItem')
+        .mockImplementation(async () => undefined);
+
+      mockCartModel.findOne.mockResolvedValue(cart);
+
+      const result = await service.syncUserCart('507f1f77bcf86cd799439015', {
+        items: [{ variantId: '507f1f77bcf86cd799439011', qty: 3 }],
+        currency: 'sar',
+        accountType: 'merchant',
+      });
+
+      expect(cart.currency).toBe('SAR');
+      expect(cart.accountType).toBe('merchant');
+      expect(addOrUpdateSpy).toHaveBeenCalledTimes(1);
+      expect(addOrUpdateSpy).toHaveBeenCalledWith(cart, {
+        variantId: '507f1f77bcf86cd799439011',
+        qty: 3,
+      });
+      expect(cart.save).toHaveBeenCalled();
+      expect(getCartSpy).toHaveBeenCalledWith('507f1f77bcf86cd799439015');
+      expect(result).toEqual({ items: [], currency: 'SAR' });
+
+      getCartSpy.mockRestore();
+      addOrUpdateSpy.mockRestore();
+    });
+  });
+
   describe('updateUserItem', () => {
     it('should update item quantity in user cart', async () => {
       const cart = {

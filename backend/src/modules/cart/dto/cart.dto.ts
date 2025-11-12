@@ -7,6 +7,7 @@ import {
   Min,
   Max,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -166,4 +167,40 @@ export class PricingSummaryDto {
 
   @ApiProperty({ example: '2024-01-15T10:30:00Z' })
   lastCalculatedAt!: Date;
+}
+
+export class SyncCartItemDto {
+  @ApiProperty({ example: '65abc123def456789', required: false })
+  @ValidateIf(({ productId }: SyncCartItemDto) => !productId)
+  @IsMongoId()
+  variantId?: string;
+
+  @ApiProperty({ example: '65abc123def456780', required: false })
+  @ValidateIf(({ variantId }: SyncCartItemDto) => !variantId)
+  @IsMongoId()
+  productId?: string;
+
+  @ApiProperty({ example: 2, default: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(999)
+  qty!: number;
+}
+
+export class SyncCartDto {
+  @ApiProperty({ type: [SyncCartItemDto] })
+  @ValidateNested({ each: true })
+  @Type(() => SyncCartItemDto)
+  items!: SyncCartItemDto[];
+
+  @ApiProperty({ example: 'YER', enum: ['YER', 'SAR', 'USD'], required: false })
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @ApiProperty({ example: 'retail', enum: ['retail', 'merchant', 'engineer'], required: false })
+  @IsOptional()
+  @IsString()
+  accountType?: string;
 }

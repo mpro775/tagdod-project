@@ -6740,6 +6740,27 @@ paths:
           description: معرف الجهاز غير صحيح
       security:
         - bearer: []
+  /api/v1/cart/sync:
+    post:
+      operationId: sync
+      summary: مزامنة السلة الكاملة
+      description: إرسال كل عناصر السلة المحلية دفعة واحدة لإعادة بناء السلة على الخادم مع إعادة الحسابات.
+      tags:
+        - السلة
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncCartDto'
+      responses:
+        '200':
+          description: تمت مزامنة السلة بنجاح
+        '400':
+          description: قائمة العناصر غير صالحة
+      security:
+        - bearer: []
   /api/v1/cart/preview:
     post:
       operationId: preview
@@ -19727,6 +19748,44 @@ components:
           example: device_unique_id_123
       required:
         - deviceId
+    SyncCartItemDto:
+      type: object
+      properties:
+        variantId:
+          type: string
+          example: 65abc123def456789
+        productId:
+          type: string
+          example: 65abc123def456780
+        qty:
+          type: number
+          example: 2
+          default: 1
+      required:
+        - qty
+    SyncCartDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncCartItemDto'
+        currency:
+          type: string
+          example: YER
+          enum:
+            - YER
+            - SAR
+            - USD
+        accountType:
+          type: string
+          example: retail
+          enum:
+            - retail
+            - merchant
+            - engineer
+      required:
+        - items
     PreviewDto:
       type: object
       properties:

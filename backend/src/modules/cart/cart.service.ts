@@ -874,6 +874,37 @@ export class CartService {
     return this.getUserCart(userId);
   }
 
+  async syncUserCart(
+    userId: string,
+    payload: { items: AddItemInput[]; currency?: string; accountType?: string },
+  ) {
+    const cart = await this.getOrCreateUserCart(userId);
+    const normalizedCurrency = payload.currency
+      ? this.normalizeCurrency(payload.currency)
+      : undefined;
+    const normalizedAccountType = payload.accountType ?? undefined;
+
+    if (normalizedCurrency) {
+      cart.currency = normalizedCurrency;
+    }
+    if (normalizedAccountType) {
+      cart.accountType = normalizedAccountType;
+    }
+
+    cart.items = [];
+    const items = Array.isArray(payload.items) ? payload.items : [];
+
+    for (const item of items) {
+      await this.addOrUpdateCartItem(cart, item);
+    }
+
+    this.ensureCapacity(cart);
+    cart.lastActivityAt = new Date();
+    await cart.save();
+
+    return this.getUserCart(userId);
+  }
+
   // ---------- guest cart
   async getGuestCart(deviceId: string) {
     const cart = await this.getOrCreateGuestCart(deviceId);

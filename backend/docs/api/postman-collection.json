@@ -4699,6 +4699,32 @@
           }
         },
         {
+          "name": "مزامنة السلة الكاملة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cart/sync",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cart",
+                "sync"
+              ]
+            },
+            "description": "إرسال كل عناصر السلة المحلية دفعة واحدة لإعادة بناء السلة على الخادم مع إعادة الحسابات."
+          }
+        },
+        {
           "name": "معاينة السلة",
           "request": {
             "method": "POST",

@@ -11,7 +11,15 @@ import {
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { CartService } from './cart.service';
-import { AddItemDto, UpdateItemDto, DeviceDto, PreviewDto, UpdateCartSettingsDto, ApplyCouponDto } from './dto/cart.dto';
+import {
+  AddItemDto,
+  UpdateItemDto,
+  DeviceDto,
+  PreviewDto,
+  UpdateCartSettingsDto,
+  ApplyCouponDto,
+  SyncCartDto,
+} from './dto/cart.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('السلة')
@@ -220,6 +228,23 @@ export class CartController {
   @ApiBadRequestResponse({ description: 'معرف الجهاز غير صحيح' })
   async merge(@Req() req: { user: { sub: string } }, @Body() body: DeviceDto) {
     const data = await this.svc.merge(body.deviceId, req.user.sub);
+    return data;
+  }
+
+  @Post('sync')
+  @ApiOperation({
+    summary: 'مزامنة السلة الكاملة',
+    description:
+      'إرسال كل عناصر السلة المحلية دفعة واحدة لإعادة بناء السلة على الخادم مع إعادة الحسابات.',
+    tags: ['السلة'],
+  })
+  @ApiBody({ type: SyncCartDto })
+  @ApiOkResponse({
+    description: 'تمت مزامنة السلة بنجاح',
+  })
+  @ApiBadRequestResponse({ description: 'قائمة العناصر غير صالحة' })
+  async sync(@Req() req: { user: { sub: string } }, @Body() dto: SyncCartDto) {
+    const data = await this.svc.syncUserCart(req.user.sub, dto);
     return data;
   }
 

@@ -329,7 +329,111 @@ Future<CartItemsResponse> removeFromCart(String itemId) async {
 
 ---
 
-## 5. معاينة السلة (مع الأسعار)
+## 5. مزامنة السلة الكاملة
+
+تُستخدم لإرسال السلة المحلية (على الجهاز) دفعة واحدة إلى الخادم عند الضغط على "إتمام الشراء"، حيث يتم إعادة بناء السلة الحالية للمستخدم وإعادة احتساب الأسعار والخصومات.
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/cart/sync`
+- **Auth Required:** ✅ نعم (Bearer Token)
+
+### Request Body
+
+```json
+{
+  "items": [
+    { "variantId": "var_789", "qty": 2 },
+    { "productId": "prod_456", "qty": 1 }
+  ],
+  "currency": "SAR",
+  "accountType": "merchant"
+}
+```
+
+| الحقل | النوع | مطلوب | الوصف |
+|------|------|-------|-------|
+| `items` | `array` | ✅ نعم | قائمة العناصر المطلوب مزامنتها. يمكن إرسال مصفوفة فارغة لمسح السلة. |
+| `items[].variantId` | `string` | ✅ نعم (أو `productId`) | معرف المتغير في حالة المنتجات ذات الخيارات. |
+| `items[].productId` | `string` | ✅ نعم (أو `variantId`) | معرف المنتج البسيط بدون متغيرات. |
+| `items[].qty` | `number` | ✅ نعم | الكمية النهائية لكل عنصر (1-999). |
+| `currency` | `string` | ❌ اختياري | العملة المفضلة (`USD`, `YER`, `SAR`). يتم تحويلها إلى uppercase تلقائياً. |
+| `accountType` | `string` | ❌ اختياري | نوع الحساب (`retail`, `merchant`, `engineer`). |
+
+> ⚠️ يتم تجاهل أي أسعار مرسلة من الطرف العميل، حيث يعاد احتساب كل شيء من الباك-إند لضمان دقة الخصومات والكوبونات.
+
+### Response - نجاح
+
+يعيد نفس بنية `GET /cart` مع ملخص الأسعار updated:
+
+```json
+{
+  "success": true,
+  "data": {
+    "currency": "SAR",
+    "items": [
+      {
+        "itemId": "item_001",
+        "variantId": "var_789",
+        "qty": 2,
+        "unit": { "base": 225, "final": 202.5, "currency": "SAR" },
+        "lineTotal": 405
+      },
+      {
+        "itemId": "item_002",
+        "productId": "prod_456",
+        "qty": 1,
+        "unit": { "base": 150, "final": 150, "currency": "SAR" },
+        "lineTotal": 150
+      }
+    ],
+    "pricingSummaryByCurrency": {
+      "SAR": {
+        "currency": "SAR",
+        "subtotal": 555,
+        "total": 552.5,
+        "promotionDiscount": 2.5
+      }
+    }
+  },
+  "requestId": "req_cart_sync_001"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<CartResponse> syncCart({
+  required List<CartSyncItem> items,
+  String? currency,
+  String? accountType,
+}) async {
+  final response = await _dio.post(
+    '/cart/sync',
+    data: {
+      'items': items.map((e) => e.toJson()).toList(),
+      if (currency != null) 'currency': currency,
+      if (accountType != null) 'accountType': accountType,
+    },
+  );
+
+  final apiResponse = ApiResponse<CartResponse>.fromJson(
+    response.data,
+    (json) => CartResponse.fromJson(json as Map<String, dynamic>),
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 6. معاينة السلة (مع الأسعار)
 
 يسترجع ملخص السلة مع حساب الأسعار والخصومات.
 
