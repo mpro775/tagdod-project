@@ -5552,6 +5552,29 @@ paths:
         - تحقق-المستخدمين
       security:
         - bearer: []
+  /api/v1/orders/checkout/session:
+    post:
+      operationId: buildCheckoutSession
+      summary: جلسة الدفع
+      description: جمع جميع بيانات جلسة الدفع (السلة، القسائم، العناوين، خيارات الدفع)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutPreviewDto'
+      responses:
+        '200':
+          description: تم تجهيز جلسة الدفع بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSessionResponseDto'
+      tags:
+        - الطلبات
+      security:
+        - bearer: []
   /api/v1/orders/checkout/preview:
     post:
       operationId: previewCheckout
@@ -19295,6 +19318,94 @@ components:
             type: string
       required:
         - currency
+    CheckoutSessionCartPreviewDto:
+      type: object
+      properties:
+        pricingSummaryByCurrency:
+          type: object
+          additionalProperties: true
+        totalsInAllCurrencies:
+          type: object
+          additionalProperties: true
+        meta:
+          type: object
+          additionalProperties: true
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      required:
+        - pricingSummaryByCurrency
+        - items
+    CheckoutSessionTotalsDto:
+      type: object
+      properties:
+        subtotal:
+          type: number
+          example: 120000
+        shipping:
+          type: number
+          example: 0
+        total:
+          type: number
+          example: 120000
+        currency:
+          type: string
+          example: YER
+      required:
+        - subtotal
+        - shipping
+        - total
+        - currency
+    CheckoutSessionAppliedCouponDto:
+      type: object
+      properties:
+        code:
+          type: string
+          example: WELCOME10
+        name:
+          type: string
+          example: خصم الترحيب
+        discountValue:
+          type: number
+          example: 10
+        type:
+          type: string
+          example: percentage
+          enum:
+            - percentage
+            - fixed_amount
+        discount:
+          type: number
+          example: 5000
+      required:
+        - code
+        - name
+        - discountValue
+        - type
+        - discount
+    CheckoutSessionDiscountsDto:
+      type: object
+      properties:
+        itemsDiscount:
+          type: number
+          example: 2000
+        couponDiscount:
+          type: number
+          example: 5000
+        totalDiscount:
+          type: number
+          example: 7000
+        appliedCoupons:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutSessionAppliedCouponDto'
+      required:
+        - itemsDiscount
+        - couponDiscount
+        - totalDiscount
+        - appliedCoupons
     CheckoutCODEligibilityDto:
       type: object
       properties:
@@ -19507,6 +19618,87 @@ components:
         - cod
         - customerOrderStats
         - localPaymentProviders
+    CheckoutSessionAddressDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 65abc123def4567890
+        label:
+          type: string
+          example: المنزل
+        line1:
+          type: string
+          example: صنعاء - شارع تعز
+        city:
+          type: string
+          example: صنعاء
+        coords:
+          type: object
+          example:
+            lat: 15.3694
+            lng: 44.191
+        notes:
+          type: string
+          example: يرجى الاتصال قبل الوصول
+        isDefault:
+          type: boolean
+          example: true
+        isActive:
+          type: boolean
+          example: true
+      required:
+        - id
+        - label
+        - line1
+        - city
+        - coords
+        - isDefault
+        - isActive
+    CheckoutSessionExchangeRatesDto:
+      type: object
+      properties:
+        usdToYer:
+          type: number
+          example: 250
+        usdToSar:
+          type: number
+          example: 3.75
+        lastUpdatedAt:
+          type: string
+          format: date-time
+      required:
+        - usdToYer
+        - usdToSar
+    CheckoutSessionResponseDto:
+      type: object
+      properties:
+        cart:
+          $ref: '#/components/schemas/CheckoutSessionCartPreviewDto'
+        totals:
+          $ref: '#/components/schemas/CheckoutSessionTotalsDto'
+        discounts:
+          $ref: '#/components/schemas/CheckoutSessionDiscountsDto'
+        paymentOptions:
+          $ref: '#/components/schemas/CheckoutPaymentOptionsResponseDto'
+        codEligibility:
+          $ref: '#/components/schemas/CheckoutCODEligibilityDto'
+        customerOrderStats:
+          $ref: '#/components/schemas/CheckoutCustomerOrderStatsDto'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutSessionAddressDto'
+        exchangeRates:
+          $ref: '#/components/schemas/CheckoutSessionExchangeRatesDto'
+      required:
+        - cart
+        - totals
+        - discounts
+        - paymentOptions
+        - codEligibility
+        - customerOrderStats
+        - addresses
     CheckoutConfirmDto:
       type: object
       properties:

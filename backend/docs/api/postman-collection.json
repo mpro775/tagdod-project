@@ -3736,6 +3736,33 @@
       "name": "الطلبات",
       "item": [
         {
+          "name": "جلسة الدفع",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/checkout/session",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "checkout",
+                "session"
+              ]
+            },
+            "description": "جمع جميع بيانات جلسة الدفع (السلة، القسائم، العناوين، خيارات الدفع)"
+          }
+        },
+        {
           "name": "معاينة الطلب",
           "request": {
             "method": "POST",

@@ -53,6 +53,8 @@ import {
   CheckoutLocalPaymentProviderDto,
   CheckoutLocalPaymentAccountDto,
   CheckoutProviderIconDto,
+  CheckoutSessionResponseDto,
+  CheckoutPreviewDto,
 } from '../dto/order.dto';
 
 interface CartLine {
@@ -72,6 +74,9 @@ interface UserOrderCounters {
   cancelledOrders: number;
 }
 
+type CartPreviewResult = Awaited<ReturnType<CartService['previewUser']>>;
+type CouponValidationResult = Awaited<ReturnType<MarketingService['validateCoupon']>>;
+
 export interface CODEligibilityResult extends UserOrderCounters {
   eligible: boolean;
   requiredOrders: number;
@@ -89,6 +94,13 @@ export class OrderService {
   private readonly logger = new Logger(OrderService.name);
   private reservationTtlSec = Number(process.env.RESERVATION_TTL_SECONDS || 900);
   private paymentSigningKey = process.env.PAYMENT_SIGNING_KEY || 'dev_signing_key';
+  private readonly checkoutPreviewCache = new Map<string, { expiresAt: number; data: CartPreviewResult }>();
+  private readonly checkoutPreviewTtlMs = 60_000;
+  private readonly couponValidationCache = new Map<
+    string,
+    { expiresAt: number; data: CouponValidationResult }
+  >();
+  private readonly couponValidationTtlMs = 60_000;
 
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
@@ -108,6 +120,251 @@ export class OrderService {
 
   private hmac(payload: string): string {
     return crypto.createHmac('sha256', this.paymentSigningKey).update(payload).digest('hex');
+  }
+
+  private normalizeCurrency(currency?: string): string {
+    if (!currency) return 'USD';
+    return currency.toUpperCase();
+  }
+
+  private buildPreviewCacheKey(userId: string, currency: string): string {
+    return `${userId}:${this.normalizeCurrency(currency)}`;
+  }
+
+  private async getCartPreviewWithCache(userId: string, currency: string): Promise<CartPreviewResult> {
+    const key = this.buildPreviewCacheKey(userId, currency);
+    const now = Date.now();
+    const cached = this.checkoutPreviewCache.get(key);
+    if (cached && cached.expiresAt > now) {
+      return cached.data;
+    }
+
+    const preview = await this.cartService.previewUser(userId, currency, 'any');
+    this.checkoutPreviewCache.set(key, {
+      data: preview,
+      expiresAt: now + this.checkoutPreviewTtlMs,
+    });
+
+    return preview;
+  }
+
+  private buildCouponCacheKey(
+    userId: string,
+    code: string,
+    orderAmount: number,
+    productIds: string[],
+  ): string {
+    const normalizedProducts = [...productIds].sort().join(',');
+    const normalizedAmount = orderAmount.toFixed(2);
+    return `${userId}:${code}:${normalizedAmount}:${normalizedProducts}`;
+  }
+
+  private async validateCouponWithCache(params: {
+    code: string;
+    userId: string;
+    orderAmount: number;
+    productIds: string[];
+  }): Promise<CouponValidationResult> {
+    const key = this.buildCouponCacheKey(
+      params.userId,
+      params.code,
+      params.orderAmount,
+      params.productIds,
+    );
+    const now = Date.now();
+    const cached = this.couponValidationCache.get(key);
+    if (cached && cached.expiresAt > now) {
+      return cached.data;
+    }
+
+    const result = await this.marketingService.validateCoupon({
+      code: params.code,
+      userId: params.userId,
+      orderAmount: params.orderAmount,
+      productIds: params.productIds,
+    });
+
+    this.couponValidationCache.set(key, {
+      data: result,
+      expiresAt: now + this.couponValidationTtlMs,
+    });
+
+    return result;
+  }
+
+  private combineCouponCodes(
+    preview: CartPreviewResult,
+    couponCode?: string,
+    couponCodes?: string[],
+  ): string[] {
+    const combined = new Set<string>();
+    if (Array.isArray(preview.appliedCoupons)) {
+      preview.appliedCoupons
+        .filter((code): code is string => typeof code === 'string' && code.trim().length > 0)
+        .forEach((code) => combined.add(code));
+    }
+    if (couponCode && couponCode.trim()) {
+      combined.add(couponCode.trim());
+    }
+    if (Array.isArray(couponCodes)) {
+      couponCodes
+        .filter((code): code is string => typeof code === 'string' && code.trim().length > 0)
+        .forEach((code) => combined.add(code.trim()));
+    }
+    return Array.from(combined);
+  }
+
+  private async buildCheckoutComputation(params: {
+    userId: string;
+    currency: string;
+    preview: CartPreviewResult;
+    couponCode?: string;
+    couponCodes?: string[];
+    codEligibility?: CODEligibilityResult;
+  }): Promise<{
+    preview: CartPreviewResult;
+    subtotal: number;
+    shipping: number;
+    total: number;
+    discounts: {
+      itemsDiscount: number;
+      couponDiscount: number;
+      totalDiscount: number;
+      appliedCoupons: Array<{
+        code: string;
+        name: string;
+        discountValue: number;
+        type: string;
+        discount: number;
+      }>;
+    };
+    codEligibility: CODEligibilityResult;
+    customerOrderStats: CheckoutCustomerOrderStatsDto;
+  }> {
+    const normalizedCurrency = this.normalizeCurrency(params.currency);
+    const summaryMap = params.preview.pricingSummaryByCurrency ?? {};
+    const summary =
+      summaryMap[normalizedCurrency] ?? summaryMap['USD'] ?? Object.values(summaryMap)[0];
+
+    const subtotalFromSummary =
+      typeof summary?.subtotal === 'number'
+        ? summary.subtotal
+        : params.preview.items.reduce((sum: number, item: Partial<CartLine>) => {
+            const unitFinal =
+              typeof item.unit?.final === 'number'
+                ? item.unit.final
+                : typeof (item as { unit?: { finalBeforeDiscount?: number } }).unit
+                      ?.finalBeforeDiscount === 'number'
+                ? (item as { unit?: { finalBeforeDiscount?: number } }).unit!.finalBeforeDiscount!
+                : 0;
+            const qty = typeof item.qty === 'number' ? item.qty : 0;
+            return sum + unitFinal * qty;
+          }, 0);
+
+    const couponCodes = this.combineCouponCodes(
+      params.preview,
+      params.couponCode,
+      params.couponCodes,
+    );
+
+    let totalCouponDiscount = 0;
+    let remainingSubtotal = subtotalFromSummary;
+    const appliedCoupons: Array<{
+      code: string;
+      name: string;
+      discountValue: number;
+      type: string;
+      discount: number;
+    }> = [];
+
+    const productIds = params.preview.items
+      .map((item: Partial<CartLine>) => item.productId || item.variantId)
+      .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
+
+    for (const code of couponCodes) {
+      try {
+        if (!code) continue;
+
+        const validation = await this.validateCouponWithCache({
+          code,
+          userId: params.userId,
+          orderAmount: remainingSubtotal,
+          productIds,
+        });
+
+        if (validation.valid && validation.coupon) {
+          let couponDiscount = 0;
+          const coupon = validation.coupon;
+          if (coupon.type === 'percentage' && coupon.discountValue) {
+            couponDiscount = (remainingSubtotal * coupon.discountValue) / 100;
+            if (coupon.maximumDiscountAmount) {
+              couponDiscount = Math.min(couponDiscount, coupon.maximumDiscountAmount);
+            }
+          } else if (coupon.type === 'fixed_amount' && coupon.discountValue) {
+            couponDiscount = coupon.discountValue;
+          }
+
+          couponDiscount = Math.min(couponDiscount, remainingSubtotal);
+
+          if (couponDiscount > 0) {
+            totalCouponDiscount += couponDiscount;
+            remainingSubtotal = Math.max(0, remainingSubtotal - couponDiscount);
+          }
+
+          appliedCoupons.push({
+            code,
+            name: coupon.name,
+            discountValue: coupon.discountValue || 0,
+            type: coupon.type,
+            discount: couponDiscount,
+          });
+
+          this.logger.debug(`Applied coupon ${code} with discount ${couponDiscount}`);
+        } else {
+          this.logger.warn(`Invalid coupon: ${code} - ${validation.message}`);
+        }
+      } catch (error) {
+        this.logger.error(`Error applying coupon ${code}`, error as Error);
+      }
+    }
+
+    const itemsDiscount = params.preview.items.reduce((sum: number, item: Partial<CartLine>) => {
+      const unitBase = typeof item.unit?.base === 'number' ? item.unit.base : 0;
+      const unitFinal = typeof item.unit?.final === 'number' ? item.unit.final : unitBase;
+      const qty = typeof item.qty === 'number' ? item.qty : 0;
+      return sum + Math.max(0, unitBase - unitFinal) * qty;
+    }, 0);
+
+    const shipping = 0;
+    const total = Math.max(0, subtotalFromSummary - totalCouponDiscount) + shipping;
+    const totalDiscount = itemsDiscount + totalCouponDiscount;
+
+    const codEligibility = params.codEligibility ?? (await this.checkCODEligibility(params.userId));
+
+    const customerOrderStats: CheckoutCustomerOrderStatsDto = {
+      totalOrders: codEligibility.totalOrders,
+      completedOrders: codEligibility.completedOrders,
+      inProgressOrders: codEligibility.inProgressOrders,
+      cancelledOrders: codEligibility.cancelledOrders,
+      requiredForCOD: codEligibility.requiredOrders,
+      remainingForCOD: codEligibility.remainingOrders,
+      codEligible: codEligibility.eligible,
+    };
+
+    return {
+      preview: params.preview,
+      subtotal: subtotalFromSummary,
+      shipping,
+      total,
+      discounts: {
+        itemsDiscount,
+        couponDiscount: totalCouponDiscount,
+        totalDiscount,
+        appliedCoupons,
+      },
+      codEligibility,
+      customerOrderStats,
+    };
   }
 
   private async getUsersMap(
@@ -321,11 +578,12 @@ export class OrderService {
   async getPaymentOptions(
     userId: string,
     currency?: string,
+    codEligibilityOverride?: CODEligibilityResult,
   ): Promise<CheckoutPaymentOptionsResponseDto> {
     const normalizedCurrency = currency?.toUpperCase();
 
     const [codEligibility, providers] = await Promise.all([
-      this.checkCODEligibility(userId),
+      codEligibilityOverride ? Promise.resolve(codEligibilityOverride) : this.checkCODEligibility(userId),
       normalizedCurrency
         ? this.localPaymentAccountService.findByCurrency(normalizedCurrency, true)
         : this.localPaymentAccountService.findGrouped(true),
@@ -409,6 +667,149 @@ export class OrderService {
     };
   }
 
+  async getCheckoutSession(
+    userId: string,
+    dto: CheckoutPreviewDto,
+  ): Promise<CheckoutSessionResponseDto> {
+    const normalizedCurrency = this.normalizeCurrency(dto.currency);
+
+    const [preview, addresses, codEligibility, exchangeRatesDoc] = await Promise.all([
+      this.getCartPreviewWithCache(userId, normalizedCurrency),
+      this.addressesService.getActiveAddresses(userId),
+      this.checkCODEligibility(userId),
+      this.exchangeRatesService
+        ? this.exchangeRatesService.getCurrentRates()
+        : Promise.resolve(undefined),
+    ]);
+
+    const computation = await this.buildCheckoutComputation({
+      userId,
+      currency: normalizedCurrency,
+      preview,
+      couponCode: dto.couponCode,
+      couponCodes: dto.couponCodes,
+      codEligibility,
+    });
+
+    const paymentOptions = await this.getPaymentOptions(
+      userId,
+      normalizedCurrency,
+      codEligibility,
+    );
+
+    let totalsInAllCurrencies: Record<string, unknown> | undefined;
+    let exchangeRates:
+      | {
+          usdToYer: number;
+          usdToSar: number;
+          lastUpdatedAt?: Date;
+        }
+      | undefined;
+
+    if (exchangeRatesDoc) {
+      const toUSD = (amount: number, currencyCode: string): number => {
+        if (!amount) return 0;
+        switch (currencyCode) {
+          case 'USD':
+            return amount;
+          case 'YER':
+            return amount / exchangeRatesDoc.usdToYer;
+          case 'SAR':
+            return amount / exchangeRatesDoc.usdToSar;
+          default:
+            return amount;
+        }
+      };
+
+      const fromUSD = (amountUSD: number, currencyCode: string): number => {
+        switch (currencyCode) {
+          case 'USD':
+            return amountUSD;
+          case 'YER':
+            return amountUSD * exchangeRatesDoc.usdToYer;
+          case 'SAR':
+            return amountUSD * exchangeRatesDoc.usdToSar;
+          default:
+            return amountUSD;
+        }
+      };
+
+      const subtotalUSD = toUSD(computation.subtotal, normalizedCurrency);
+      const shippingUSD = toUSD(computation.shipping, normalizedCurrency);
+      const taxUSD = 0;
+      const discountUSD = toUSD(computation.discounts.totalDiscount, normalizedCurrency);
+      const totalUSD = Math.max(0, subtotalUSD + shippingUSD + taxUSD - discountUSD);
+
+      totalsInAllCurrencies = {
+        USD: {
+          subtotal: Math.round(subtotalUSD * 100) / 100,
+          shippingCost: Math.round(shippingUSD * 100) / 100,
+          tax: Math.round(taxUSD * 100) / 100,
+          totalDiscount: Math.round(discountUSD * 100) / 100,
+          total: Math.round(totalUSD * 100) / 100,
+        },
+        YER: {
+          subtotal: Math.round(fromUSD(subtotalUSD, 'YER')),
+          shippingCost: Math.round(fromUSD(shippingUSD, 'YER')),
+          tax: Math.round(fromUSD(taxUSD, 'YER')),
+          totalDiscount: Math.round(fromUSD(discountUSD, 'YER')),
+          total: Math.round(fromUSD(totalUSD, 'YER')),
+        },
+        SAR: {
+          subtotal: Math.round(fromUSD(subtotalUSD, 'SAR') * 100) / 100,
+          shippingCost: Math.round(fromUSD(shippingUSD, 'SAR') * 100) / 100,
+          tax: Math.round(fromUSD(taxUSD, 'SAR') * 100) / 100,
+          totalDiscount: Math.round(fromUSD(discountUSD, 'SAR') * 100) / 100,
+          total: Math.round(fromUSD(totalUSD, 'SAR') * 100) / 100,
+        },
+      };
+
+      exchangeRates = {
+        usdToYer: exchangeRatesDoc.usdToYer,
+        usdToSar: exchangeRatesDoc.usdToSar,
+        lastUpdatedAt: exchangeRatesDoc.lastUpdatedAt ?? undefined,
+      };
+    }
+
+    return {
+      cart: {
+        pricingSummaryByCurrency: preview.pricingSummaryByCurrency,
+        totalsInAllCurrencies,
+        meta: (preview as Record<string, unknown>).meta as Record<string, unknown> | undefined,
+        items: preview.items,
+      },
+      totals: {
+        subtotal: computation.subtotal,
+        shipping: computation.shipping,
+        total: computation.total,
+        currency: normalizedCurrency,
+      },
+      discounts: computation.discounts,
+      paymentOptions,
+      codEligibility: this.mapCodEligibility(codEligibility),
+      customerOrderStats: computation.customerOrderStats,
+      addresses: addresses.map((address) => ({
+        id: address._id.toString(),
+        label: address.label,
+        line1: address.line1,
+        city: address.city,
+        coords: address.coords,
+        notes: address.notes,
+        isDefault: Boolean(address.isDefault),
+        isActive: Boolean(address.isActive),
+      })),
+      ...(exchangeRates
+        ? {
+            exchangeRates: {
+              usdToYer: exchangeRates.usdToYer,
+              usdToSar: exchangeRates.usdToSar,
+              lastUpdatedAt: exchangeRates.lastUpdatedAt,
+            },
+          }
+        : {}),
+    };
+  }
+
   // ===== Checkout Methods =====
 
   /**
@@ -416,140 +817,27 @@ export class OrderService {
    */
   async previewCheckout(userId: string, currency: string, couponCode?: string, couponCodes?: string[]) {
     try {
-      const data = await this.cartService.previewUser(userId, currency, 'any');
-
-      const summaryMap = data.pricingSummaryByCurrency ?? {};
-      const normalizedCurrency = currency.toUpperCase();
-      const summary =
-        summaryMap[normalizedCurrency] ??
-        summaryMap['USD'] ??
-        Object.values(summaryMap)[0];
-      const subtotalFromSummary =
-        summary?.subtotal ??
-        data.items.reduce((sum, item) => sum + (item.unit?.final ?? 0) * item.qty, 0);
-      
-      // Get coupon codes from cart or from parameters
-      // We need to get cart to access appliedCouponCodes
-      const cart = await this.cartModel.findOne({ userId: new Types.ObjectId(userId) }).lean();
-      const cartCouponCodes: string[] = cart?.appliedCouponCodes || [];
-      
-      // Combine coupon codes: from cart, single couponCode, or array couponCodes
-      const allCouponCodes = new Set<string>();
-      if (cartCouponCodes.length > 0) {
-        cartCouponCodes.forEach((code: string) => allCouponCodes.add(code));
-      }
-      if (couponCode) {
-        allCouponCodes.add(couponCode);
-      }
-      if (couponCodes && couponCodes.length > 0) {
-        couponCodes.forEach(code => allCouponCodes.add(code));
-      }
-      
-      const couponCodesArray = Array.from(allCouponCodes);
-      
-      // Calculate discounts for all coupons cumulatively
-      let totalCouponDiscount = 0;
-      const appliedCoupons: Array<{
-        code: string;
-        name: string;
-        discountValue: number;
-        type: string;
-        discount: number;
-      }> = [];
-      
-      let remainingSubtotal = subtotalFromSummary;
-      
-      // Extract product IDs from cart items
-      const productIds = data.items
-        .map(item => item.productId || item.variantId)
-        .filter((id): id is string => Boolean(id));
-      
-      // Apply each coupon one by one
-      for (const code of couponCodesArray) {
-        try {
-          const couponValidation = await this.marketingService.validateCoupon({
-            code: code,
-            userId: userId,
-            orderAmount: remainingSubtotal,
-            productIds: productIds
-          });
-
-          if (couponValidation.valid && couponValidation.coupon) {
-            let couponDiscount = 0;
-            
-            // Calculate discount based on type
-            if (couponValidation.coupon.type === 'percentage' && couponValidation.coupon.discountValue) {
-              couponDiscount = (remainingSubtotal * couponValidation.coupon.discountValue) / 100;
-              if (couponValidation.coupon.maximumDiscountAmount) {
-                couponDiscount = Math.min(couponDiscount, couponValidation.coupon.maximumDiscountAmount);
-              }
-            } else if (couponValidation.coupon.type === 'fixed_amount' && couponValidation.coupon.discountValue) {
-              couponDiscount = couponValidation.coupon.discountValue;
-            }
-
-            // Ensure discount doesn't exceed remaining subtotal
-            couponDiscount = Math.min(couponDiscount, remainingSubtotal);
-            
-            totalCouponDiscount += couponDiscount;
-            remainingSubtotal = Math.max(0, remainingSubtotal - couponDiscount);
-            
-            appliedCoupons.push({
-              code: code,
-              name: couponValidation.coupon.name,
-              discountValue: couponValidation.coupon.discountValue || 0,
-              type: couponValidation.coupon.type,
-              discount: couponDiscount
-            });
-            
-            this.logger.log(`Applied coupon: ${code}, discount: ${couponDiscount}`);
-          } else {
-            this.logger.warn(`Invalid coupon: ${code} - ${couponValidation.message}`);
-          }
-        } catch (error) {
-          this.logger.error(`Error applying coupon ${code}:`, error);
-        }
-      }
-
-      // ملاحظة: subtotalFromSummary يأتي من السلة بعد تطبيق خصومات العروض (item.unit.final)
-      // لذلك لا نحتاج لحساب itemsDiscount مرة أخرى، فقط نحسبها للعرض في التقارير
-      const itemsDiscount = data.items.reduce((sum, item) => {
-        const itemDiscount = (item.unit.base - item.unit.final) * item.qty;
-        return sum + itemDiscount;
-      }, 0);
-
-      const shipping = 0; // رسوم الشحن تأتي من لوحة التحكم لكل طلب على حدى (افتراضي صفر)
-      // المجموع النهائي = subtotal (بعد خصم العروض) - خصم الكوبونات + الشحن
-      const total = Math.max(0, subtotalFromSummary - totalCouponDiscount) + shipping;
-      const totalDiscount = itemsDiscount + totalCouponDiscount;
-
-      // التحقق من صلاحية COD
-      const codEligibility = await this.checkCODEligibility(userId);
-      const customerOrderStats = {
-        totalOrders: codEligibility.totalOrders,
-        completedOrders: codEligibility.completedOrders,
-        inProgressOrders: codEligibility.inProgressOrders,
-        cancelledOrders: codEligibility.cancelledOrders,
-        requiredForCOD: codEligibility.requiredOrders,
-        remainingForCOD: codEligibility.remainingOrders,
-        codEligible: codEligibility.eligible
-      };
-
+      const normalizedCurrency = this.normalizeCurrency(currency);
+      const preview = await this.getCartPreviewWithCache(userId, normalizedCurrency);
+      const computation = await this.buildCheckoutComputation({
+        userId,
+        currency: normalizedCurrency,
+        preview,
+        couponCode,
+        couponCodes,
+      });
+      const codEligibility = computation.codEligibility;
       return {
         success: true,
         data: {
-          items: data.items,
-          subtotal: subtotalFromSummary,
-          shipping,
-          total,
-          currency,
+          items: computation.preview.items,
+          subtotal: computation.subtotal,
+          shipping: computation.shipping,
+          total: computation.total,
+          currency: normalizedCurrency,
           deliveryOptions: [], // خيارات التوصيل فارغة مؤقتاً حتى توقيع العقود
           // Detailed discounts breakdown
-          discounts: {
-            itemsDiscount: itemsDiscount, // خصومات المنتجات من العروض الترويجية
-            couponDiscount: totalCouponDiscount, // إجمالي خصم الكوبونات
-            totalDiscount: totalDiscount, // إجمالي الخصومات
-            appliedCoupons: appliedCoupons, // تفاصيل جميع الكوبونات المطبقة
-          },
+          discounts: computation.discounts,
           // COD Eligibility
           codEligibility: {
             eligible: codEligibility.eligible,
@@ -562,10 +850,13 @@ export class OrderService {
             progress: codEligibility.progress,
             message: codEligibility.message
           },
-          customerOrderStats,
+          customerOrderStats: computation.customerOrderStats,
           // Backward compatibility
-          appliedCoupon: appliedCoupons.length > 0 ? appliedCoupons[0] : null,
-          couponDiscount: totalCouponDiscount
+          appliedCoupon:
+            computation.discounts.appliedCoupons.length > 0
+              ? computation.discounts.appliedCoupons[0]
+              : null,
+          couponDiscount: computation.discounts.couponDiscount
         }
       };
     } catch (error) {

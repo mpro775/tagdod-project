@@ -41,6 +41,105 @@ export class CheckoutPreviewDto {
   couponCodes?: string[];
 }
 
+export class CheckoutSessionAddressDto {
+  @ApiProperty({ example: '65abc123def4567890' })
+  id!: string;
+
+  @ApiProperty({ example: 'المنزل' })
+  label!: string;
+
+  @ApiProperty({ example: 'صنعاء - شارع تعز' })
+  line1!: string;
+
+  @ApiProperty({ example: 'صنعاء' })
+  city!: string;
+
+  @ApiProperty({
+    type: 'object',
+    example: { lat: 15.3694, lng: 44.1910 },
+  })
+  coords!: { lat: number; lng: number };
+
+  @ApiPropertyOptional({ example: 'يرجى الاتصال قبل الوصول' })
+  notes?: string;
+
+  @ApiProperty({ example: true })
+  isDefault!: boolean;
+
+  @ApiProperty({ example: true })
+  isActive!: boolean;
+}
+
+export class CheckoutSessionTotalsDto {
+  @ApiProperty({ example: 120000 })
+  subtotal!: number;
+
+  @ApiProperty({ example: 0 })
+  shipping!: number;
+
+  @ApiProperty({ example: 120000 })
+  total!: number;
+
+  @ApiProperty({ example: 'YER' })
+  currency!: string;
+}
+
+export class CheckoutSessionAppliedCouponDto {
+  @ApiProperty({ example: 'WELCOME10' })
+  code!: string;
+
+  @ApiProperty({ example: 'خصم الترحيب' })
+  name!: string;
+
+  @ApiProperty({ example: 10 })
+  discountValue!: number;
+
+  @ApiProperty({ example: 'percentage', enum: ['percentage', 'fixed_amount'] })
+  type!: string;
+
+  @ApiProperty({ example: 5000 })
+  discount!: number;
+}
+
+export class CheckoutSessionDiscountsDto {
+  @ApiProperty({ example: 2000 })
+  itemsDiscount!: number;
+
+  @ApiProperty({ example: 5000 })
+  couponDiscount!: number;
+
+  @ApiProperty({ example: 7000 })
+  totalDiscount!: number;
+
+  @ApiProperty({ type: [CheckoutSessionAppliedCouponDto] })
+  appliedCoupons!: CheckoutSessionAppliedCouponDto[];
+}
+
+export class CheckoutSessionCartPreviewDto {
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  pricingSummaryByCurrency?: Record<string, unknown>;
+
+  @ApiProperty({ type: 'object', additionalProperties: true, required: false })
+  totalsInAllCurrencies?: Record<string, unknown>;
+
+  @ApiProperty({ type: 'object', additionalProperties: true, required: false })
+  meta?: Record<string, unknown>;
+
+  @ApiProperty({ type: 'array', items: { type: 'object', additionalProperties: true } })
+  items!: unknown[];
+}
+
+export class CheckoutSessionExchangeRatesDto {
+  @ApiProperty({ example: 250 })
+  usdToYer!: number;
+
+  @ApiProperty({ example: 3.75 })
+  usdToSar!: number;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  lastUpdatedAt?: Date;
+}
+
 export class CheckoutConfirmDto {
   @ApiProperty({ example: '65abc123def456789' })
   @IsString()
@@ -252,6 +351,32 @@ export class CheckoutPaymentOptionsResponseDto {
     description: 'مزودو الدفع المحليون المتاحون للتحويل البنكي أو المحافظ',
   })
   localPaymentProviders!: CheckoutLocalPaymentProviderDto[];
+}
+
+export class CheckoutSessionResponseDto {
+  @ApiProperty({ type: () => CheckoutSessionCartPreviewDto })
+  cart!: CheckoutSessionCartPreviewDto;
+
+  @ApiProperty({ type: () => CheckoutSessionTotalsDto })
+  totals!: CheckoutSessionTotalsDto;
+
+  @ApiProperty({ type: () => CheckoutSessionDiscountsDto })
+  discounts!: CheckoutSessionDiscountsDto;
+
+  @ApiProperty({ type: () => CheckoutPaymentOptionsResponseDto })
+  paymentOptions!: CheckoutPaymentOptionsResponseDto;
+
+  @ApiProperty({ type: () => CheckoutCODEligibilityDto })
+  codEligibility!: CheckoutCODEligibilityDto;
+
+  @ApiProperty({ type: () => CheckoutCustomerOrderStatsDto })
+  customerOrderStats!: CheckoutCustomerOrderStatsDto;
+
+  @ApiProperty({ type: [CheckoutSessionAddressDto] })
+  addresses!: CheckoutSessionAddressDto[];
+
+  @ApiPropertyOptional({ type: () => CheckoutSessionExchangeRatesDto })
+  exchangeRates?: CheckoutSessionExchangeRatesDto;
 }
 
 export class WebhookDto {

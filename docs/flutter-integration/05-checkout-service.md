@@ -5,36 +5,53 @@
 > ✅ **تم التحقق وتحديث هذه الوثيقة (v2.0.0)** - مطابقة للكود الفعلي في `backend/src/modules/checkout`
 > 
 > 🆕 **التحديثات الجديدة:**
-> - تبسيط حالات الطلب من 15 إلى 10 حالات
-> - تبسيط طرق الدفع (COD و BANK_TRANSFER فقط)
-> - إضافة دعم التحويل البنكي المحلي
-> - تحديث قواعد الإلغاء
-> - إضافة Endpoint `GET /orders/checkout/payment-options` لتجميع خيارات الدفع وحالة أهلية COD
-> - تحديث رد `POST /orders/checkout/confirm` ليعيد `paymentOptions` بعد إنشاء الطلب
+> - إضافة Endpoint موحد `POST /orders/checkout/session` لتجميع كل بيانات شاشة الدفع في استجابة واحدة.
+> - تبسيط حالات الطلب من 15 إلى 10 حالات.
+> - تبسيط طرق الدفع (COD و BANK_TRANSFER فقط).
+> - إضافة دعم التحويل البنكي المحلي.
+> - تحديث قواعد الإلغاء.
+> - تحسين Endpoint `GET /orders/checkout/payment-options` لتجميع خيارات الدفع وحالة أهلية COD.
+> - تحديث رد `POST /orders/checkout/confirm` ليعيد `paymentOptions` بعد إنشاء الطلب.
 
 ---
 
 ## 📋 جدول المحتويات
 
-1. [معاينة الطلب](#1-معاينة-الطلب)
-2. [تأكيد الطلب](#2-تأكيد-الطلب)
-3. [خيارات الدفع](#3-خيارات-الدفع)
-4. [قائمة طلباتي](#4-قائمة-طلباتي)
-5. [تفاصيل طلب](#5-تفاصيل-طلب)
-6. [إلغاء طلب](#6-إلغاء-طلب)
-6. [Models في Flutter](#models-في-flutter)
+1. [جلسة الدفع الموحدة](#1-جلسة-الدفع-الموحدة)
+2. [معاينة الطلب](#2-معاينة-الطلب)
+3. [تأكيد الطلب](#3-تأكيد-الطلب)
+4. [خيارات الدفع](#4-خيارات-الدفع)
+5. [قائمة طلباتي](#5-قائمة-طلباتي)
+6. [تفاصيل طلب](#6-تفاصيل-طلب)
+7. [إلغاء طلب](#7-إلغاء-طلب)
+8. [Models في Flutter](#8-models-في-flutter)
 
 ---
 
-## 1. معاينة الطلب
+## 1. جلسة الدفع الموحدة
 
-يُنشئ ملخص الطلب الحالي مع كل الخصومات المطبقة قبل التأكيد.
+Endpoint جديد يجمع كل ما تحتاجه شاشة الدفع في استدعاء واحد: عناصر السلة، ملخص الأسعار، القسائم المفعلة، خيارات الدفع، أهلية الدفع عند الاستلام، العناوين النشطة، وأسعار الصرف الحالية.
 
 ### معلومات الطلب
 
 - **Method:** `POST`
-- **Endpoint:** `/orders/checkout/preview`
+- **Endpoint:** `/orders/checkout/session`
 - **Auth Required:** ✅ نعم (Bearer Token)
+
+### Request Body
+
+```json
+{
+  "currency": "YER",
+  "couponCodes": ["SUMMER20", "VIP5"]
+}
+```
+
+| الحقل | النوع | مطلوب | الوصف |
+|------|------|-------|-------|
+| `currency` | `string` | ✅ نعم | العملة المفضلة لعرض الأسعار (`YER`, `SAR`, `USD`). |
+| `couponCode` | `string` | ❌ لا | كوبون واحد (للتوافق مع الإصدارات القديمة). |
+| `couponCodes` | `string[]` | ❌ لا | قائمة كوبونات تُطبّق بالتسلسل مع كوبونات السلة الحالية. |
 
 ### Response - نجاح
 
@@ -42,149 +59,144 @@
 {
   "success": true,
   "data": {
-    "order": {
-      "_id": "order_123",
-      "orderNumber": "ORD-2025-001234",
-      "userId": "user_456",
-      "status": "processing",
-      "paymentStatus": "paid",
-      "paymentMethod": "BANK_TRANSFER",
-      "paymentProvider": "local_bank",
-      "localPaymentAccountId": "account_123",
-      "paymentReference": "TRX-2025-001234",
-      "subtotal": 520000,
-      "itemsDiscount": 40000,
-      "couponDiscount": 12000,
-      "autoDiscountsTotal": 0,
-      "totalDiscount": 52000,
-      "tax": 0,
-      "shippingCost": 0,
-      "shippingDiscount": 0,
-      "total": 468000,
-      "currency": "YER",
-      "totalsInAllCurrencies": {
-        "USD": {
-          "subtotal": 208,
-          "shippingCost": 0,
-          "tax": 0,
-          "totalDiscount": 20.8,
-          "total": 187.2
+    "session": {
+      "cart": {
+        "pricingSummaryByCurrency": {
+          "YER": { "subtotal": 520000, "total": 468000 }
         },
-        "YER": {
-          "subtotal": 520000,
-          
-          "shippingCost": 0,
-          "tax": 0,
-          "totalDiscount": 52000,
-          "total": 468000
+        "totalsInAllCurrencies": {
+          "USD": { "subtotal": 208, "total": 187.2 },
+          "YER": { "subtotal": 520000, "total": 468000 },
+          "SAR": { "subtotal": 780, "total": 702 }
         },
-        "SAR": {
-          "subtotal": 780,
-          "shippingCost": 0,
-          "tax": 0,
-          "totalDiscount": 78,
-          "total": 702
-        }
-      },
-      "appliedCouponCodes": ["SUMMER20"],
-      "appliedCoupons": [
-        {
-          "code": "SUMMER20",
-          "discount": 12000,
-          "details": {
-            "code": "SUMMER20",
-            "title": "خصم الصيف",
-            "type": "percentage",
-            "discountPercentage": 10
+        "items": [
+          {
+            "itemId": "item_001",
+            "productId": "prod_123",
+            "qty": 2,
+            "unit": { "base": 150000, "final": 130000, "currency": "YER" },
+            "lineTotal": 260000
           }
-        }
-      ],
-      "autoAppliedCoupons": [],
-      "deliveryAddress": {
-        "addressId": "addr_123",
-        "label": "المنزل",
-        "line1": "شارع الزبيري",
-        "city": "صنعاء",
-        "coords": {
-          "lat": 15.3694,
-          "lng": 44.1910
-        },
-        "notes": "بجانب مسجد الرحمن"
+        ]
       },
-      "items": [
-        {
-          "productId": "prod_123",
-          "variantId": "var_789",
-          "qty": 2,
-          "basePrice": 150000,
-          "discount": 20000,
-          "finalPrice": 130000,
-          "lineTotal": 260000,
-          "currency": "YER",
-          "appliedPromotionId": "promo_123",
-          "snapshot": {
-            "name": "لوح شمسي 550 واط",
-            "sku": "SP-550-001",
-            "slug": "solar-panel-550w",
-            "image": "https://cdn.example.com/products/solar-panel.jpg",
-            "brandName": "SolarTech",
-            "categoryName": "الألواح الشمسية",
-            "attributes": {
-              "color": "أسود",
-              "size": "2m x 1m"
-            }
-          }
-        }
-      ],
-      "shippingMethod": "standard",
-      "shippingCompany": null,
-      "trackingNumber": null,
-      "trackingUrl": null,
-      "estimatedDeliveryDate": null,
-      "deliveredAt": null,
-      "statusHistory": [
-        {
-          "status": "pending_payment",
-          "changedAt": "2025-10-15T12:00:00.000Z",
-          "changedBy": "user_456",
-          "changedByRole": "customer",
-          "notes": "تم إنشاء الطلب"
+      "totals": {
+        "subtotal": 520000,
+        "shipping": 0,
+        "total": 468000,
+        "currency": "YER"
+      },
+      "discounts": {
+        "itemsDiscount": 40000,
+        "couponDiscount": 12000,
+        "totalDiscount": 52000,
+        "appliedCoupons": [
+          { "code": "SUMMER20", "type": "percentage", "discount": 12000 }
+        ]
+      },
+      "paymentOptions": {
+        "cod": { "method": "COD", "status": "available", "allowed": true },
+        "customerOrderStats": {
+          "totalOrders": 6,
+          "completedOrders": 4,
+          "remainingForCOD": 0
         },
+        "localPaymentProviders": [
+          {
+            "providerId": "ykb",
+            "providerName": "بنك اليمن والكويت",
+            "accounts": [{ "id": "ykb-yer", "currency": "YER" }]
+          }
+        ]
+      },
+      "codEligibility": {
+        "eligible": true,
+        "requiredOrders": 3,
+        "remainingOrders": 0,
+        "progress": "4/3"
+      },
+      "customerOrderStats": {
+        "totalOrders": 6,
+        "completedOrders": 4,
+        "remainingForCOD": 0,
+        "codEligible": true
+      },
+      "addresses": [
         {
-          "status": "processing",
-          "changedAt": "2025-10-16T08:15:00.000Z",
-          "changedBy": "admin_001",
-          "changedByRole": "admin",
-          "notes": "تم استلام الدفعة والتحضير للشحن"
+          "id": "addr_123",
+          "label": "المنزل",
+          "line1": "شارع الزبيري",
+          "city": "صنعاء",
+          "isDefault": true
         }
       ],
-      "customerNotes": "يرجى التوصيل في المساء",
-      "createdAt": "2025-10-15T12:00:00.000Z",
-      "updatedAt": "2025-10-16T08:15:00.000Z"
+      "exchangeRates": {
+        "usdToYer": 250,
+        "usdToSar": 3.75,
+        "lastUpdatedAt": "2025-11-01T10:00:00.000Z"
+      }
     },
-    "message": "تم الحصول على تفاصيل الطلب"
+    "message": "تم تجهيز جلسة الدفع بنجاح"
   },
-  "requestId": "req_orders_002"
+  "requestId": "req_checkout_session_001"
 }
 ```
+
+> 📌 **متى نستخدمه؟** عند فتح شاشة الدفع لأول مرة أو بعد تغيّر السلة/العملة. النتيجة تسد احتياج الواجهة للعرض الكامل دون استدعاءات إضافية. للمزيد راجع `docs/mobile/checkout-session-guide.md`.
+
+### كود Flutter
+
+```dart
+Future<CheckoutSession> buildCheckoutSession({
+  required String currency,
+  List<String>? couponCodes,
+  String? couponCode,
+}) async {
+  final response = await _dio.post(
+    '/orders/checkout/session',
+    data: {
+      'currency': currency,
+      if (couponCode != null) 'couponCode': couponCode,
+      if (couponCodes != null && couponCodes.isNotEmpty) 'couponCodes': couponCodes,
+    },
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return CheckoutSession.fromJson(apiResponse.data!['session']);
+  }
+
+  throw ApiException(apiResponse.error!);
+}
+```
+
+## 2. معاينة الطلب
+
+يُنشئ ملخص الطلب الحالي باستخدام نفس منطق جلسة الدفع لكن بدون إعادة جلب العناوين وخيارات الدفع. يُستخدم لتحديث الأسعار بسرعة بعد تغيير القسائم أو العملة أثناء بقاء الشاشة مفتوحة.
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/orders/checkout/preview`
+- **Auth Required:** ✅ نعم (Bearer Token)
 
 ### Request Body
 
 ```json
 {
   "currency": "YER",
-  "couponCode": "SUMMER20",
-  "couponCodes": ["VIP-5"]
+  "couponCodes": ["SUMMER20"]
 }
 ```
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `currency` | `string` | ✅ نعم | العملة (`YER`, `SAR`, `USD`، …) |
-| `couponCode` | `string` | ❌ لا | كوبون واحد (للخلفية التوافقية) |
-| `couponCodes` | `string[]` | ❌ لا | كوبونات متعددة تطبق تراكمياً |
-
-> ✅ يدعم النظام الجمع بين كوبونات محفوظة في السلة (تم تطبيقها مسبقاً) وأي كوبونات يتم إرسالها في الطلب.
+| `currency` | `string` | ✅ نعم | العملة الأساسية للحساب. |
+| `couponCode` | `string` | ❌ لا | كوبون واحد للتوافق الخلفي. |
+| `couponCodes` | `string[]` | ❌ لا | كوبونات إضافية تطبق بعد كوبونات السلة. |
 
 ### Response - نجاح
 
@@ -196,70 +208,34 @@
       "items": [
         {
           "itemId": "item_001",
-          "productId": "prod_123",
           "variantId": "var_789",
           "qty": 2,
-          "unit": {
-            "base": 150000,
-            "final": 130000,
-            "currency": "YER",
-            "appliedRule": {
-              "type": "bundle",
-              "value": 20000,
-              "name": "عرض حزمة 2×"
-            }
-          },
-          "lineTotal": 260000,
-          "snapshot": {
-            "name": "لوح شمسي 550 واط",
-            "sku": "SP-550-001",
-            "slug": "solar-panel-550w",
-            "image": "https://cdn.example.com/products/solar-panel.jpg",
-            "brandName": "SolarTech",
-            "categoryName": "الألواح الشمسية",
-            "attributes": {
-              "color": "أسود",
-              "size": "2m x 1m"
-            }
-          }
+          "unit": { "base": 150000, "final": 130000, "currency": "YER" },
+          "lineTotal": 260000
         }
       ],
       "subtotal": 520000,
       "shipping": 0,
       "total": 468000,
       "currency": "YER",
-      "deliveryOptions": [],
       "discounts": {
         "itemsDiscount": 40000,
         "couponDiscount": 12000,
         "totalDiscount": 52000,
         "appliedCoupons": [
-          {
-            "code": "SUMMER20",
-            "name": "خصم الصيف",
-            "discountValue": 10,
-            "type": "percentage",
-            "discount": 12000
-          }
+          { "code": "SUMMER20", "name": "خصم الصيف", "discount": 12000 }
         ]
       },
       "codEligibility": {
         "eligible": true,
         "completedOrders": 4,
-        "totalOrders": 6,
-        "inProgressOrders": 1,
-        "cancelledOrders": 1,
         "requiredOrders": 3,
         "remainingOrders": 0,
-        "progress": "4/3",
-        "message": null
+        "progress": "4/3"
       },
       "customerOrderStats": {
         "totalOrders": 6,
         "completedOrders": 4,
-        "inProgressOrders": 1,
-        "cancelledOrders": 1,
-        "requiredForCOD": 3,
         "remainingForCOD": 0,
         "codEligible": true
       },
@@ -278,34 +254,13 @@
 }
 ```
 
-**تفاصيل مهمة**
-- `discounts.itemsDiscount`: إجمالي خصومات العروض الترويجية على مستوى البنود.
-- `discounts.couponDiscount`: إجمالي خصومات جميع الكوبونات بعد تطبيقها بالتسلسل.
-- `codEligibility`: مؤشرات أهلية الدفع عند الاستلام (تشمل الآن إجمالي الطلبات، الجارية، الملغاة، المتبقي للوصول للحد الأدنى، ورسالة التوضيح).
-- `customerOrderStats`: ملخص كامل لطلبات المستخدم (إجمالي/مكتمل/جاري/ملغى) مع حقلين `requiredForCOD`, `remainingForCOD` لتسهيل العرض في الواجهة.
-- `appliedCoupon`: أول كوبون مطبق للحفاظ على التوافق مع الإصدارات القديمة.
-
-### Response - فشل
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "ORDER_PREVIEW_FAILED",
-    "message": "فشل في إنشاء معاينة الطلب",
-    "details": null
-  },
-  "requestId": "req_checkout_preview_001"
-}
-```
-
-> في أغلب الحالات يحدث الفشل عند تعذر جلب بيانات السلة أو احتساب الكوبونات. يمكن التحقق من الـ logs عند الحاجة.
+> ✔️ استخدم المتغيرات `discounts`, `codEligibility`, و `customerOrderStats` لتحديث الواجهة مباشرة بدون استدعاء جلسة كاملة من جديد.
 
 ### كود Flutter
 
 ```dart
 Future<CheckoutPreview> previewCheckout({
-  String currency = 'YER',
+  required String currency,
   String? couponCode,
   List<String>? couponCodes,
 }) async {
@@ -314,8 +269,7 @@ Future<CheckoutPreview> previewCheckout({
     data: {
       'currency': currency,
       if (couponCode != null) 'couponCode': couponCode,
-      if (couponCodes != null && couponCodes.isNotEmpty)
-        'couponCodes': couponCodes,
+      if (couponCodes != null && couponCodes.isNotEmpty) 'couponCodes': couponCodes,
     },
   );
 
@@ -334,7 +288,7 @@ Future<CheckoutPreview> previewCheckout({
 
 ---
 
-## 2. تأكيد الطلب
+## 3. تأكيد الطلب
 
 يؤكد الطلب ويقوم بإنشائه.
 
@@ -755,7 +709,7 @@ class PaymentInfo {
 
 ---
 
-## 3. خيارات الدفع
+## 4. خيارات الدفع
 
 يعرض جميع خيارات الدفع المتاحة للمستخدم الحالي، بما في ذلك حالة أهلية الدفع عند الاستلام (COD) والحسابات البنكية/المحافظ المحلية المفعلّة. نفس البيانات تُعاد أيضاً داخل رد تأكيد الطلب لتسهيل تحديث الشاشة فوراً.
 
@@ -970,7 +924,7 @@ class LocalPaymentAccount {
 
 ---
 
-## 4. قائمة طلباتي
+## 5. قائمة طلباتي
 
 يسترجع جميع طلبات المستخدم مع دعم الفلترة والترقيم.
 
@@ -1217,7 +1171,7 @@ class PaginationInfo {
 
 ---
 
-## 5. تفاصيل طلب
+## 6. تفاصيل طلب
 
 يسترجع تفاصيل طلب محدد.
 
@@ -1249,7 +1203,7 @@ Future<OrderDetails> getOrderDetails(String orderId) async {
 
 ---
 
-## 6. إلغاء طلب
+## 7. إلغاء طلب
 
 يلغي طلب (يُسمح بالإلغاء في الحالات `pending_payment`, `confirmed`, `processing`, `on_hold` فقط).
 
@@ -1352,7 +1306,7 @@ Future<OrderDetails> cancelOrder({
 
 ---
 
-## Models في Flutter
+## 8. Models في Flutter
 
 ### ملف: `lib/models/order/order_models.dart`
 

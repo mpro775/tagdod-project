@@ -19,6 +19,7 @@ import {
   AddOrderNotesDto,
   OrderTrackingDto,
   CheckoutPaymentOptionsResponseDto,
+  CheckoutSessionResponseDto,
 } from '../dto/order.dto';
 
 /**
@@ -36,6 +37,28 @@ export class OrderController {
   }
 
   // ===== Checkout =====
+
+  @Post('checkout/session')
+  @ApiOperation({
+    summary: 'جلسة الدفع',
+    description: 'جمع جميع بيانات جلسة الدفع (السلة، القسائم، العناوين، خيارات الدفع)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تجهيز جلسة الدفع بنجاح',
+    type: CheckoutSessionResponseDto,
+  })
+  async buildCheckoutSession(
+    @Req() req: ExpressRequest,
+    @Body() dto: CheckoutPreviewDto,
+  ) {
+    const session = await this.orderService.getCheckoutSession(this.getUserId(req), dto);
+
+    return {
+      session,
+      message: 'تم تجهيز جلسة الدفع بنجاح',
+    };
+  }
 
   @Post('checkout/preview')
   @ApiOperation({
