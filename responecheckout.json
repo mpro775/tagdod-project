@@ -10,11 +10,11 @@
                         "subtotalBeforeDiscount": 316.33,
                         "subtotal": 316.33,
                         "merchantDiscountAmount": 0,
-                        "couponDiscount": 50,
+                        "couponDiscount": 0,
                         "promotionDiscount": 0,
                         "autoDiscount": 0,
-                        "totalDiscount": 50,
-                        "total": 266.33
+                        "totalDiscount": 0,
+                        "total": 316.33
                     },
                     "YER": {
                         "currency": "YER",
@@ -22,11 +22,11 @@
                         "subtotalBeforeDiscount": 167655,
                         "subtotal": 167655,
                         "merchantDiscountAmount": 0,
-                        "couponDiscount": 26500.02,
+                        "couponDiscount": 0,
                         "promotionDiscount": 0,
                         "autoDiscount": 0,
-                        "totalDiscount": 26500.02,
-                        "total": 141154.9
+                        "totalDiscount": 0,
+                        "total": 167655
                     },
                     "SAR": {
                         "currency": "SAR",
@@ -34,11 +34,11 @@
                         "subtotalBeforeDiscount": 1186.24,
                         "subtotal": 1186.24,
                         "merchantDiscountAmount": 0,
-                        "couponDiscount": 187.5,
+                        "couponDiscount": 0,
                         "promotionDiscount": 0,
                         "autoDiscount": 0,
-                        "totalDiscount": 187.5,
-                        "total": 998.74
+                        "totalDiscount": 0,
+                        "total": 1186.24
                     }
                 },
                 "totalsInAllCurrencies": {
@@ -46,22 +46,22 @@
                         "subtotal": 316.33,
                         "shippingCost": 0,
                         "tax": 0,
-                        "totalDiscount": 126.63,
-                        "total": 189.7
+                        "totalDiscount": 183.17,
+                        "total": 133.17
                     },
                     "YER": {
                         "subtotal": 167655,
                         "shippingCost": 0,
                         "tax": 0,
-                        "totalDiscount": 67115,
-                        "total": 100539
+                        "totalDiscount": 97077,
+                        "total": 70577
                     },
                     "SAR": {
                         "subtotal": 1186.24,
                         "shippingCost": 0,
                         "tax": 0,
-                        "totalDiscount": 474.87,
-                        "total": 711.36
+                        "totalDiscount": 686.87,
+                        "total": 499.37
                     }
                 },
                 "meta": {
@@ -77,32 +77,19 @@
                         "qty": 3,
                         "unit": {
                             "base": 99.99,
-                            "final": 84.19,
+                            "final": 99.99,
                             "finalBeforeDiscount": 99.99,
                             "finalBeforeCoupon": 99.99,
-                            "couponDiscount": 15.8,
+                            "couponDiscount": 0,
                             "currency": "USD",
                             "appliedRule": null
                         },
-                        "lineTotal": 252.57,
+                        "lineTotal": 299.97,
                         "pricing": {
-                            "currencies": {
-                                "USD": {
-                                    "base": 99.99,
-                                    "final": 84.19,
-                                    "discount": 15.8
-                                },
-                                "YER": {
-                                    "base": 52994.7,
-                                    "final": 44620.7,
-                                    "discount": 8374
-                                },
-                                "SAR": {
-                                    "base": 374.96,
-                                    "final": 315.71,
-                                    "discount": 59.25
-                                }
-                            }
+                            "currency": "USD",
+                            "basePrice": 99.99,
+                            "finalPrice": 99.99,
+                            "discount": 0
                         },
                         "snapshot": {
                             "name": "فيوز جهد منخفض RT18",
@@ -123,32 +110,19 @@
                         "qty": 1,
                         "unit": {
                             "base": 6.86,
-                            "final": 5.78,
+                            "final": 6.86,
                             "finalBeforeDiscount": 6.86,
                             "finalBeforeCoupon": 6.86,
-                            "couponDiscount": 1.08,
+                            "couponDiscount": 0,
                             "currency": "USD",
                             "appliedRule": null
                         },
-                        "lineTotal": 5.78,
+                        "lineTotal": 6.86,
                         "pricing": {
-                            "currencies": {
-                                "USD": {
-                                    "base": 6.86,
-                                    "final": 5.78,
-                                    "discount": 1.08
-                                },
-                                "YER": {
-                                    "base": 3635.8,
-                                    "final": 3063.4,
-                                    "discount": 572.4
-                                },
-                                "SAR": {
-                                    "base": 25.73,
-                                    "final": 21.68,
-                                    "discount": 4.05
-                                }
-                            }
+                            "currency": "USD",
+                            "basePrice": 6.86,
+                            "finalPrice": 6.86,
+                            "discount": 0
                         },
                         "snapshot": {
                             "name": "محول التيار MSQ ",
@@ -179,32 +153,19 @@
                         "qty": 1,
                         "unit": {
                             "base": 9.5,
-                            "final": 7.98,
+                            "final": 9.5,
                             "finalBeforeDiscount": 9.5,
                             "finalBeforeCoupon": 9.5,
-                            "couponDiscount": 1.52,
+                            "couponDiscount": 0,
                             "currency": "USD",
                             "appliedRule": null
                         },
-                        "lineTotal": 7.98,
+                        "lineTotal": 9.5,
                         "pricing": {
-                            "currencies": {
-                                "USD": {
-                                    "base": 9.5,
-                                    "final": 7.98,
-                                    "discount": 1.52
-                                },
-                                "YER": {
-                                    "base": 5035,
-                                    "final": 4229.4,
-                                    "discount": 805.6
-                                },
-                                "SAR": {
-                                    "base": 35.63,
-                                    "final": 29.93,
-                                    "discount": 5.7
-                                }
-                            }
+                            "currency": "USD",
+                            "basePrice": 9.5,
+                            "finalPrice": 9.5,
+                            "discount": 0
                         },
                         "snapshot": {
                             "name": "محول التيار MSQ ",
@@ -233,13 +194,13 @@
             "totals": {
                 "subtotal": 316.33,
                 "shipping": 0,
-                "total": 239.697,
+                "total": 133.165,
                 "currency": "USD"
             },
             "discounts": {
-                "itemsDiscount": 49.999999999999986,
-                "couponDiscount": 76.633,
-                "totalDiscount": 126.63299999999998,
+                "itemsDiscount": 0,
+                "couponDiscount": 183.165,
+                "totalDiscount": 183.165,
                 "appliedCoupons": [
                     {
                         "code": "TEST",
@@ -249,11 +210,11 @@
                         "discount": 50
                     },
                     {
-                        "code": "COUPON-TEST",
-                        "name": "كوبون تجريبي",
-                        "discountValue": 10,
+                        "code": "COUPON-VLJ6CHPI",
+                        "name": "TEST2",
+                        "discountValue": 50,
                         "type": "percentage",
-                        "discount": 26.632999999999996
+                        "discount": 133.165
                     }
                 ]
             },
@@ -461,5 +422,5 @@
         },
         "message": "تم تجهيز جلسة الدفع بنجاح"
     },
-    "requestId": "bf0598a4-8b1a-4ffa-afe4-bf0fe178f83c"
+    "requestId": "fd47d04b-c6a2-4abe-8c2d-45a40452ea94"
 }

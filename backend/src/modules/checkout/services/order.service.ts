@@ -198,11 +198,6 @@ export class OrderService {
     couponCodes?: string[],
   ): string[] {
     const combined = new Set<string>();
-    if (Array.isArray(preview.appliedCoupons)) {
-      preview.appliedCoupons
-        .filter((code): code is string => typeof code === 'string' && code.trim().length > 0)
-        .forEach((code) => combined.add(code));
-    }
     if (couponCode && couponCode.trim()) {
       combined.add(couponCode.trim());
     }
@@ -212,6 +207,54 @@ export class OrderService {
         .forEach((code) => combined.add(code.trim()));
     }
     return Array.from(combined);
+  }
+
+  private async prioritizeCouponCodes(params: {
+    codes: string[];
+    userId: string;
+    orderAmount: number;
+    productIds: string[];
+  }): Promise<string[]> {
+    const fixed: string[] = [];
+    const percentage: string[] = [];
+    const others: string[] = [];
+
+    for (const code of params.codes) {
+      if (!code) continue;
+
+      try {
+        const validation = await this.validateCouponWithCache({
+          code,
+          userId: params.userId,
+          orderAmount: params.orderAmount,
+          productIds: params.productIds,
+        });
+
+        const type = validation.coupon?.type;
+        if (type === 'fixed_amount') {
+          fixed.push(code);
+        } else if (type === 'percentage') {
+          percentage.push(code);
+        } else {
+          others.push(code);
+        }
+      } catch {
+        others.push(code);
+      }
+    }
+
+    const ordered = [...fixed, ...percentage, ...others];
+    const uniqueOrdered: string[] = [];
+    const seen = new Set<string>();
+
+    for (const code of ordered) {
+      if (!seen.has(code)) {
+        seen.add(code);
+        uniqueOrdered.push(code);
+      }
+    }
+
+    return uniqueOrdered;
   }
 
   private async buildCheckoutComputation(params: {
@@ -266,6 +309,17 @@ export class OrderService {
       params.couponCode,
       params.couponCodes,
     );
+
+    const roundForCurrency = (amount: number, currencyCode: string): number => {
+      if (!Number.isFinite(amount)) {
+        return amount;
+      }
+      const normalized = this.normalizeCurrency(currencyCode);
+      if (normalized === 'YER') {
+        return Math.round(amount);
+      }
+      return Math.round(amount * 100) / 100;
+    };
 
     const sanitizedItems = Array.isArray(params.preview.items)
       ? params.preview.items.map((item: Partial<CartLine>) => {
@@ -322,7 +376,14 @@ export class OrderService {
       .map((item: Partial<CartLine>) => item.productId || item.variantId)
       .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
 
-    for (const code of couponCodes) {
+    const prioritizedCouponCodes = await this.prioritizeCouponCodes({
+      codes: couponCodes,
+      userId: params.userId,
+      orderAmount: subtotalFromSummary,
+      productIds,
+    });
+
+    for (const code of prioritizedCouponCodes) {
       try {
         if (!code) continue;
 
@@ -391,6 +452,157 @@ export class OrderService {
       remainingForCOD: codEligibility.remainingOrders,
       codEligible: codEligibility.eligible,
     };
+
+    type PricingSummaryView =
+      CartPreviewResult['pricingSummaryByCurrency'] extends Record<string, infer T>
+        ? NonNullable<T>
+        : Record<string, unknown>;
+
+    const itemsCount = Array.isArray(sanitizedItems)
+      ? sanitizedItems.length
+      : params.preview.items.length;
+
+    const currenciesSet = new Set<string>();
+    currenciesSet.add(normalizedCurrency);
+
+    if (this.exchangeRatesService) {
+      const baseCurrencies = ['USD', 'YER', 'SAR'];
+      baseCurrencies.forEach((code) => currenciesSet.add(this.normalizeCurrency(code)));
+    }
+
+    const previewSummaryMap = params.preview.pricingSummaryByCurrency;
+    if (previewSummaryMap) {
+      Object.keys(previewSummaryMap).forEach((code) =>
+        currenciesSet.add(this.normalizeCurrency(code)),
+      );
+    }
+
+    const previewTotalsMap = (params.preview as Record<string, unknown>)
+      .totalsInAllCurrencies as Record<string, unknown> | undefined;
+    if (previewTotalsMap) {
+      Object.keys(previewTotalsMap).forEach((code) =>
+        currenciesSet.add(this.normalizeCurrency(code)),
+      );
+    }
+
+    const baseTotals = {
+      subtotal: roundForCurrency(subtotalFromSummary, normalizedCurrency),
+      totalDiscount: roundForCurrency(totalDiscount, normalizedCurrency),
+      total: roundForCurrency(total, normalizedCurrency),
+    };
+
+    const convertAmount = async (amount: number, targetCurrency: string): Promise<number> => {
+      const normalizedTarget = this.normalizeCurrency(targetCurrency);
+      if (normalizedTarget === normalizedCurrency) {
+        return roundForCurrency(amount, normalizedTarget);
+      }
+      if (!this.exchangeRatesService) {
+        return roundForCurrency(amount, normalizedTarget);
+      }
+      const conversion = await this.exchangeRatesService.convertCurrency({
+        amount,
+        fromCurrency: normalizedCurrency,
+        toCurrency: normalizedTarget,
+      });
+      return roundForCurrency(conversion.result, normalizedTarget);
+    };
+
+    const toCurrencyTotals = async (
+      currencyCode: string,
+    ): Promise<{ subtotal: number; totalDiscount: number; total: number }> => {
+      const normalizedCode = this.normalizeCurrency(currencyCode);
+      const subtotalConverted = await convertAmount(baseTotals.subtotal, normalizedCode);
+      const totalDiscountConverted =
+        totalDiscount > 0 ? await convertAmount(totalDiscount, normalizedCode) : 0;
+      const totalConverted = roundForCurrency(
+        Math.max(0, subtotalConverted - totalDiscountConverted),
+        normalizedCode,
+      );
+      return {
+        subtotal: subtotalConverted,
+        totalDiscount: totalDiscountConverted,
+        total: totalConverted,
+      };
+    };
+
+    const totalsEntries = await Promise.all(
+      Array.from(currenciesSet).map(async (currencyCode) => {
+        const totalsForCurrency = await toCurrencyTotals(currencyCode);
+        return [this.normalizeCurrency(currencyCode), totalsForCurrency] as const;
+      }),
+    );
+
+    const totalsByCurrency: Record<
+      string,
+      { subtotal: number; totalDiscount: number; total: number }
+    > = Object.fromEntries(totalsEntries);
+
+    const normalizedBaseTotals =
+      totalsByCurrency[normalizedCurrency] ?? {
+        subtotal: baseTotals.subtotal,
+        totalDiscount: baseTotals.totalDiscount,
+        total: baseTotals.total,
+      };
+
+    const summaryEntries = await Promise.all(
+      Object.entries(totalsByCurrency).map(async ([currencyCode, totalsForCurrency]) => {
+        const subtotalConverted = totalsForCurrency.subtotal;
+        const totalDiscountConverted = totalsForCurrency.totalDiscount;
+        const totalConverted = totalsForCurrency.total;
+
+        const couponDiscountConverted =
+          totalDiscount > 0
+            ? roundForCurrency(
+                (totalCouponDiscount / totalDiscount) * totalDiscountConverted,
+                currencyCode,
+              )
+            : 0;
+        const subtotalBeforeDiscountConverted = roundForCurrency(
+          subtotalConverted + totalDiscountConverted,
+          currencyCode,
+        );
+
+        const summary: PricingSummaryView = {
+          currency: currencyCode,
+          itemsCount,
+          subtotalBeforeDiscount: subtotalBeforeDiscountConverted,
+          subtotal: subtotalConverted,
+          merchantDiscountAmount: 0,
+          couponDiscount: couponDiscountConverted,
+          promotionDiscount: 0,
+          autoDiscount: 0,
+          totalDiscount: totalDiscountConverted,
+          total: totalConverted,
+        } as PricingSummaryView;
+
+        return [currencyCode, summary] as const;
+      }),
+    );
+
+    const summaryByCurrency: Record<string, PricingSummaryView> =
+      Object.fromEntries(summaryEntries);
+
+    const previewRecord = previewWithSanitizedItems as Record<string, unknown>;
+    previewRecord.pricingSummaryByCurrency = summaryByCurrency;
+    previewRecord.pricingSummary = summaryByCurrency[normalizedCurrency];
+    previewRecord.totals = {
+      subtotal: normalizedBaseTotals.subtotal,
+      shipping,
+      total: normalizedBaseTotals.total,
+      currency: normalizedCurrency,
+    };
+    previewRecord.totalsInAllCurrencies = Object.fromEntries(
+      Object.entries(totalsByCurrency).map(([currencyCode, totalsForCurrency]) => [
+        currencyCode,
+        {
+          subtotal: totalsForCurrency.subtotal,
+          shippingCost: 0,
+          tax: 0,
+          totalDiscount: totalsForCurrency.totalDiscount,
+          total: totalsForCurrency.total,
+        },
+      ]),
+    );
 
     return {
       preview: previewWithSanitizedItems,
@@ -812,12 +1024,17 @@ export class OrderService {
       };
     }
 
+    const computationPreviewRecord = computation.preview as Record<string, unknown>;
+    const previewMeta = computationPreviewRecord.meta as Record<string, unknown> | undefined;
+    const previewTotalsInAllCurrencies =
+      computationPreviewRecord.totalsInAllCurrencies as Record<string, unknown> | undefined;
+
     return {
       cart: {
-        pricingSummaryByCurrency: preview.pricingSummaryByCurrency,
-        totalsInAllCurrencies,
-        meta: (preview as Record<string, unknown>).meta as Record<string, unknown> | undefined,
-        items: preview.items,
+        pricingSummaryByCurrency: computation.preview.pricingSummaryByCurrency,
+        totalsInAllCurrencies: totalsInAllCurrencies ?? previewTotalsInAllCurrencies,
+        meta: previewMeta,
+        items: computation.preview.items,
       },
       totals: {
         subtotal: computation.subtotal,
