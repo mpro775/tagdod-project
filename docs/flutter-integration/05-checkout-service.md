@@ -32,6 +32,11 @@
 
 Endpoint جديد يجمع كل ما تحتاجه شاشة الدفع في استدعاء واحد: عناصر السلة، ملخص الأسعار، القسائم المفعلة، خيارات الدفع، أهلية الدفع عند الاستلام، العناوين النشطة، وأسعار الصرف الحالية.
 
+> **ما الجديد؟**
+> - منطق القسائم أصبح محصورًا في جلسة الدفع (لا يتم قبول تطبيق أو إزالة الكوبون عبر `CartService` بعد الآن).
+> - الأسعار التفصيلية للمنتجات تُعاد فقط بالعملة المطلوبة في الطلب، بينما تبقى الإجماليات متاحة بكل العملات الثلاث (USD/YER/SAR) في `pricingSummaryByCurrency` و`totalsInAllCurrencies`.
+> - يتم احتساب خصم القسائم على الإجمالي (بعد خصومات العناصر) وتوزيعه على باقي العملات مرة واحدة باستخدام أسعار الصرف، مما يقلل الاستدعاءات المتكررة ويضمن التوافق بين الحقول.
+
 ### معلومات الطلب
 
 - **Method:** `POST`
@@ -62,63 +67,184 @@ Endpoint جديد يجمع كل ما تحتاجه شاشة الدفع في اس�
     "session": {
       "cart": {
         "pricingSummaryByCurrency": {
-          "YER": { "subtotal": 520000, "total": 468000 }
+          "USD": {
+            "currency": "USD",
+            "itemsCount": 5,
+            "subtotalBeforeDiscount": 316.33,
+            "subtotal": 316.33,
+            "merchantDiscountAmount": 0,
+            "couponDiscount": 183.17,
+            "promotionDiscount": 0,
+            "autoDiscount": 0,
+            "totalDiscount": 183.17,
+            "total": 133.16
+          },
+          "YER": {
+            "currency": "YER",
+            "itemsCount": 5,
+            "subtotalBeforeDiscount": 167655,
+            "subtotal": 167655,
+            "merchantDiscountAmount": 0,
+            "couponDiscount": 97077,
+            "promotionDiscount": 0,
+            "autoDiscount": 0,
+            "totalDiscount": 97077,
+            "total": 70578
+          },
+          "SAR": {
+            "currency": "SAR",
+            "itemsCount": 5,
+            "subtotalBeforeDiscount": 1186.24,
+            "subtotal": 1186.24,
+            "merchantDiscountAmount": 0,
+            "couponDiscount": 686.87,
+            "promotionDiscount": 0,
+            "autoDiscount": 0,
+            "totalDiscount": 686.87,
+            "total": 499.37
+          }
         },
         "totalsInAllCurrencies": {
-          "USD": { "subtotal": 208, "total": 187.2 },
-          "YER": { "subtotal": 520000, "total": 468000 },
-          "SAR": { "subtotal": 780, "total": 702 }
+          "USD": {
+            "subtotal": 316.33,
+            "shippingCost": 0,
+            "tax": 0,
+            "totalDiscount": 183.17,
+            "total": 133.16
+          },
+          "YER": {
+            "subtotal": 167655,
+            "shippingCost": 0,
+            "tax": 0,
+            "totalDiscount": 97077,
+            "total": 70578
+          },
+          "SAR": {
+            "subtotal": 1186.24,
+            "shippingCost": 0,
+            "tax": 0,
+            "totalDiscount": 686.87,
+            "total": 499.37
+          }
+        },
+        "meta": {
+          "count": 3,
+          "quantity": 5,
+          "merchantDiscountPercent": 0,
+          "merchantDiscountAmount": 0
         },
         "items": [
           {
-            "itemId": "item_001",
-            "productId": "prod_123",
-            "qty": 2,
-            "unit": { "base": 150000, "final": 130000, "currency": "YER" },
-            "lineTotal": 260000
+            "itemId": "product-001",
+            "productId": "product-001",
+            "qty": 3,
+            "unit": {
+              "base": 99.99,
+              "final": 84.19,
+              "finalBeforeDiscount": 99.99,
+              "finalBeforeCoupon": 99.99,
+              "couponDiscount": 15.8,
+              "currency": "USD",
+              "appliedRule": null
+            },
+            "lineTotal": 252.57,
+            "pricing": {
+              "currency": "USD",
+              "basePrice": 99.99,
+              "finalPrice": 84.19,
+              "discount": 15.8
+            }
+          },
+          {
+            "itemId": "variant-002",
+            "variantId": "variant-002",
+            "productId": "product-002",
+            "qty": 1,
+            "unit": {
+              "base": 6.86,
+              "final": 6.86,
+              "finalBeforeDiscount": 6.86,
+              "finalBeforeCoupon": 6.86,
+              "couponDiscount": 0,
+              "currency": "USD",
+              "appliedRule": null
+            },
+            "lineTotal": 6.86,
+            "pricing": {
+              "currency": "USD",
+              "basePrice": 6.86,
+              "finalPrice": 6.86,
+              "discount": 0
+            }
           }
         ]
       },
       "totals": {
-        "subtotal": 520000,
+        "subtotal": 316.33,
         "shipping": 0,
-        "total": 468000,
-        "currency": "YER"
+        "total": 133.16,
+        "currency": "USD"
       },
       "discounts": {
-        "itemsDiscount": 40000,
-        "couponDiscount": 12000,
-        "totalDiscount": 52000,
+        "itemsDiscount": 0,
+        "couponDiscount": 183.17,
+        "totalDiscount": 183.17,
         "appliedCoupons": [
-          { "code": "SUMMER20", "type": "percentage", "discount": 12000 }
+          {
+            "code": "TEST",
+            "name": "كوبون تجريبي",
+            "discountValue": 50,
+            "type": "fixed_amount",
+            "discount": 50
+          },
+          {
+            "code": "COUPON-VLJ6CHPI",
+            "name": "TEST2",
+            "discountValue": 50,
+            "type": "percentage",
+            "discount": 133.17
+          }
         ]
       },
       "paymentOptions": {
-        "cod": { "method": "COD", "status": "available", "allowed": true },
+        "cod": {
+          "method": "COD",
+          "status": "restricted",
+          "allowed": false,
+          "reason": "يجب إكمال 3 طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك 0 طلب مكتمل"
+        },
         "customerOrderStats": {
-          "totalOrders": 6,
-          "completedOrders": 4,
-          "remainingForCOD": 0
+          "totalOrders": 1,
+          "completedOrders": 0,
+          "remainingForCOD": 3,
+          "codEligible": false
         },
         "localPaymentProviders": [
           {
             "providerId": "ykb",
             "providerName": "بنك اليمن والكويت",
-            "accounts": [{ "id": "ykb-yer", "currency": "YER" }]
+            "accounts": [
+              {
+                "id": "ykb-usd",
+                "currency": "USD",
+                "accountNumber": "771250000",
+                "isActive": true
+              }
+            ]
           }
         ]
       },
       "codEligibility": {
-        "eligible": true,
+        "eligible": false,
         "requiredOrders": 3,
-        "remainingOrders": 0,
-        "progress": "4/3"
+        "remainingOrders": 3,
+        "progress": "0/3"
       },
       "customerOrderStats": {
-        "totalOrders": 6,
-        "completedOrders": 4,
-        "remainingForCOD": 0,
-        "codEligible": true
+        "totalOrders": 1,
+        "completedOrders": 0,
+        "remainingForCOD": 3,
+        "codEligible": false
       },
       "addresses": [
         {
@@ -130,9 +256,9 @@ Endpoint جديد يجمع كل ما تحتاجه شاشة الدفع في اس�
         }
       ],
       "exchangeRates": {
-        "usdToYer": 250,
+        "usdToYer": 530,
         "usdToSar": 3.75,
-        "lastUpdatedAt": "2025-11-01T10:00:00.000Z"
+        "lastUpdatedAt": "2025-11-02T16:45:04.526Z"
       }
     },
     "message": "تم تجهيز جلسة الدفع بنجاح"
@@ -141,7 +267,14 @@ Endpoint جديد يجمع كل ما تحتاجه شاشة الدفع في اس�
 }
 ```
 
-> 📌 **متى نستخدمه؟** عند فتح شاشة الدفع لأول مرة أو بعد تغيّر السلة/العملة. النتيجة تسد احتياج الواجهة للعرض الكامل دون استدعاءات إضافية. للمزيد راجع `docs/mobile/checkout-session-guide.md`.
+- **`cart.pricingSummaryByCurrency`:** يشمل **دائمًا** العملات الثلاث (USD/YER/SAR) مع خصومات القسائم موزّعة بشكل متسق. إذا تم إرسال العملة `SAR` فسيبقى عنصر `items` بالـ `SAR` فقط بينما تبقى الإجماليات بالعملات الثلاث.
+- **`cart.items[].pricing`:** تم تبسيطها لتعرض العملة المطلوبة فقط. لم تعد الحقول تحتوي على خريطة `currencies` متعددة.
+- **`discounts.appliedCoupons`:** القسائم تطبق حسب الأولوية (مبالغ ثابتة ثم نسبة مئوية) وتُعاد بالترتيب الفعلي للتطبيق.
+- **الكوبونات:** يتم تمريرها عبر جسلة الدفع (`checkout/session` أو `checkout/preview`) فقط. استدعاءات السلة (`CartService`) سترفض الآن محاولة تطبيق أو إزالة كوبون.
+- **إعادة تطبيق/إزالة الكوبونات:** لإضافة كوبون جديد أو إزالة الحالي، أعد استدعاء الـ endpoint نفسه مع قائمة القسائم الجديدة. مثال: لإزالة جميع القسائم أرسل جسلة الدفع مع `couponCode` فارغة و`couponCodes: []`.
+- **التخزين المؤقت:** يتم إعادة استخدام معاينة السلة والتحقق من القسائم وأسعار الصرف من الذاكرة قصيرة الأجل لتسريع الاستجابة (ثوانٍ معدودة). يضمن هذا أن `pricingSummaryByCurrency` و`totalsInAllCurrencies` متطابقان دائمًا.
+
+> 📌 **متى نستخدمه؟** عند فتح شاشة الدفع لأول مرة أو بعد تغيّر السلة/العملة أو القسائم. النتيجة تسد احتياج الواجهة للعرض الكامل دون استدعاءات إضافية. للمزيد راجع `docs/mobile/checkout-session-guide.md`.
 
 ### كود Flutter
 
