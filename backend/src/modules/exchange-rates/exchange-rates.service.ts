@@ -8,6 +8,13 @@ import { UpdateExchangeRateDto, ConvertCurrencyDto, CurrencyConversionResult } f
 @Injectable()
 export class ExchangeRatesService {
   private readonly logger = new Logger(ExchangeRatesService.name);
+  private readonly ratesCacheTtlMs = 60_000;
+  private readonly conversionCacheTtlMs = 30_000;
+  private currentRatesCache?: { data: ExchangeRate; expiresAt: number };
+  private readonly conversionCache = new Map<
+    string,
+    { data: CurrencyConversionResult; expiresAt: number }
+  >();
 
   constructor(
     @InjectModel(ExchangeRate.name) 
@@ -17,21 +24,35 @@ export class ExchangeRatesService {
   /**
    * الحصول على أسعار الصرف الحالية
    */
-  async getCurrentRates(): Promise<ExchangeRateDocument> {
-    let rates = await this.exchangeRateModel.findOne().sort({ lastUpdatedAt: -1 });
-    
+  async getCurrentRates(): Promise<ExchangeRate> {
+    const now = Date.now();
+    if (this.currentRatesCache && this.currentRatesCache.expiresAt > now) {
+      return this.currentRatesCache.data;
+    }
+
+    let rates = await this.exchangeRateModel
+      .findOne()
+      .sort({ lastUpdatedAt: -1 })
+      .lean<ExchangeRate>();
+
     // إذا لم توجد أسعار، أنشئ أسعار افتراضية
     if (!rates) {
-      rates = new this.exchangeRateModel({
+      const newRates = new this.exchangeRateModel({
         usdToYer: 250, // سعر افتراضي
         usdToSar: 3.75, // سعر افتراضي
         lastUpdatedBy: 'system',
         lastUpdatedAt: new Date(),
         notes: 'أسعار افتراضية'
       });
-      await rates.save();
+      await newRates.save();
+      rates = newRates.toObject();
       this.logger.log('تم إنشاء أسعار افتراضية');
     }
+
+    this.currentRatesCache = {
+      data: rates,
+      expiresAt: now + this.ratesCacheTtlMs,
+    };
 
     return rates;
   }
@@ -60,6 +81,12 @@ export class ExchangeRatesService {
         `تم تحديث أسعار الصرف: USD->YER: ${updateDto.usdToYer}, USD->SAR: ${updateDto.usdToSar}`
       );
 
+      this.currentRatesCache = {
+        data: newRates.toObject(),
+        expiresAt: Date.now() + this.ratesCacheTtlMs,
+      };
+      this.conversionCache.clear();
+
       return newRates;
     } catch (error) {
       this.logger.error('فشل في تحديث أسعار الصرف:', error);
@@ -73,7 +100,14 @@ export class ExchangeRatesService {
   async convertCurrency(convertDto: ConvertCurrencyDto): Promise<CurrencyConversionResult> {
     try {
       const rates = await this.getCurrentRates();
-      
+
+      const cacheKey = this.buildConversionCacheKey(convertDto, rates);
+      const now = Date.now();
+      const cached = this.conversionCache.get(cacheKey);
+      if (cached && cached.expiresAt > now) {
+        return cached.data;
+      }
+
       let rate: number;
       let formatted: string;
 
@@ -119,7 +153,7 @@ export class ExchangeRatesService {
         `تحويل العملة: ${convertDto.amount} ${convertDto.fromCurrency} = ${result} ${convertDto.toCurrency}`
       );
 
-      return {
+      const conversion: CurrencyConversionResult = {
         fromCurrency: convertDto.fromCurrency,
         toCurrency: convertDto.toCurrency,
         amount: convertDto.amount,
@@ -127,10 +161,40 @@ export class ExchangeRatesService {
         result: Math.round(result * 100) / 100,
         formatted,
       };
+
+      this.conversionCache.set(cacheKey, {
+        data: conversion,
+        expiresAt: now + this.conversionCacheTtlMs,
+      });
+
+      return conversion;
     } catch (error) {
       this.logger.error('فشل في تحويل العملة:', error);
       throw error;
     }
+  }
+
+  private buildConversionCacheKey(
+    convertDto: ConvertCurrencyDto,
+    rates: ExchangeRate,
+  ): string {
+    const amountKey = Number.isInteger(convertDto.amount)
+      ? convertDto.amount.toString()
+      : convertDto.amount.toFixed(6);
+    const lastUpdated =
+      rates.lastUpdatedAt instanceof Date
+        ? rates.lastUpdatedAt.getTime()
+        : rates.lastUpdatedAt
+        ? new Date(rates.lastUpdatedAt).getTime()
+        : 0;
+    return [
+      convertDto.fromCurrency,
+      convertDto.toCurrency,
+      amountKey,
+      lastUpdated,
+      rates.usdToYer,
+      rates.usdToSar,
+    ].join(':');
   }
 
   /**
@@ -201,21 +265,13 @@ export class ExchangeRatesService {
     YER: { subtotal: number; shippingCost: number; tax: number; totalDiscount: number; total: number };
     SAR: { subtotal: number; shippingCost: number; tax: number; totalDiscount: number; total: number };
   }> {
+    const rates = await this.getCurrentRates();
     const usdTotal = usdSubtotal + usdShipping + usdTax - usdDiscount;
 
-    // تحويل إلى YER
-    const yerSubtotal = await this.convertFromUSDToYER(usdSubtotal);
-    const yerShipping = usdShipping > 0 ? await this.convertFromUSDToYER(usdShipping) : { result: 0 } as CurrencyConversionResult;
-    const yerTax = usdTax > 0 ? await this.convertFromUSDToYER(usdTax) : { result: 0 } as CurrencyConversionResult;
-    const yerDiscount = usdDiscount > 0 ? await this.convertFromUSDToYER(usdDiscount) : { result: 0 } as CurrencyConversionResult;
-    const yerTotal = await this.convertFromUSDToYER(usdTotal);
-
-    // تحويل إلى SAR
-    const sarSubtotal = await this.convertFromUSDToSAR(usdSubtotal);
-    const sarShipping = usdShipping > 0 ? await this.convertFromUSDToSAR(usdShipping) : { result: 0 } as CurrencyConversionResult;
-    const sarTax = usdTax > 0 ? await this.convertFromUSDToSAR(usdTax) : { result: 0 } as CurrencyConversionResult;
-    const sarDiscount = usdDiscount > 0 ? await this.convertFromUSDToSAR(usdDiscount) : { result: 0 } as CurrencyConversionResult;
-    const sarTotal = await this.convertFromUSDToSAR(usdTotal);
+    const toYer = (amount: number): number =>
+      Math.round((amount || 0) * (rates.usdToYer || 0));
+    const toSar = (amount: number): number =>
+      Math.round(((amount || 0) * (rates.usdToSar || 0)) * 100) / 100;
 
     return {
       USD: {
@@ -226,18 +282,18 @@ export class ExchangeRatesService {
         total: Math.round(usdTotal * 100) / 100,
       },
       YER: {
-        subtotal: Math.round(yerSubtotal.result),
-        shippingCost: Math.round(yerShipping.result),
-        tax: Math.round(yerTax.result),
-        totalDiscount: Math.round(yerDiscount.result),
-        total: Math.round(yerTotal.result),
+        subtotal: toYer(usdSubtotal),
+        shippingCost: toYer(usdShipping),
+        tax: toYer(usdTax),
+        totalDiscount: toYer(usdDiscount),
+        total: toYer(usdTotal),
       },
       SAR: {
-        subtotal: Math.round(sarSubtotal.result * 100) / 100,
-        shippingCost: Math.round(sarShipping.result * 100) / 100,
-        tax: Math.round(sarTax.result * 100) / 100,
-        totalDiscount: Math.round(sarDiscount.result * 100) / 100,
-        total: Math.round(sarTotal.result * 100) / 100,
+        subtotal: toSar(usdSubtotal),
+        shippingCost: toSar(usdShipping),
+        tax: toSar(usdTax),
+        totalDiscount: toSar(usdDiscount),
+        total: toSar(usdTotal),
       },
     };
   }

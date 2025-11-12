@@ -1,0 +1,465 @@
+{
+    "success": true,
+    "data": {
+        "session": {
+            "cart": {
+                "pricingSummaryByCurrency": {
+                    "USD": {
+                        "currency": "USD",
+                        "itemsCount": 5,
+                        "subtotalBeforeDiscount": 316.33,
+                        "subtotal": 316.33,
+                        "merchantDiscountAmount": 0,
+                        "couponDiscount": 50,
+                        "promotionDiscount": 0,
+                        "autoDiscount": 0,
+                        "totalDiscount": 50,
+                        "total": 266.33
+                    },
+                    "YER": {
+                        "currency": "YER",
+                        "itemsCount": 5,
+                        "subtotalBeforeDiscount": 167655,
+                        "subtotal": 167655,
+                        "merchantDiscountAmount": 0,
+                        "couponDiscount": 26500.02,
+                        "promotionDiscount": 0,
+                        "autoDiscount": 0,
+                        "totalDiscount": 26500.02,
+                        "total": 141154.9
+                    },
+                    "SAR": {
+                        "currency": "SAR",
+                        "itemsCount": 5,
+                        "subtotalBeforeDiscount": 1186.24,
+                        "subtotal": 1186.24,
+                        "merchantDiscountAmount": 0,
+                        "couponDiscount": 187.5,
+                        "promotionDiscount": 0,
+                        "autoDiscount": 0,
+                        "totalDiscount": 187.5,
+                        "total": 998.74
+                    }
+                },
+                "totalsInAllCurrencies": {
+                    "USD": {
+                        "subtotal": 316.33,
+                        "shippingCost": 0,
+                        "tax": 0,
+                        "totalDiscount": 126.63,
+                        "total": 189.7
+                    },
+                    "YER": {
+                        "subtotal": 167655,
+                        "shippingCost": 0,
+                        "tax": 0,
+                        "totalDiscount": 67115,
+                        "total": 100539
+                    },
+                    "SAR": {
+                        "subtotal": 1186.24,
+                        "shippingCost": 0,
+                        "tax": 0,
+                        "totalDiscount": 474.87,
+                        "total": 711.36
+                    }
+                },
+                "meta": {
+                    "count": 3,
+                    "quantity": 5,
+                    "merchantDiscountPercent": 0,
+                    "merchantDiscountAmount": 0
+                },
+                "items": [
+                    {
+                        "itemId": "product-690d2625567068e48ce60873",
+                        "productId": "690d2625567068e48ce60873",
+                        "qty": 3,
+                        "unit": {
+                            "base": 99.99,
+                            "final": 84.19,
+                            "finalBeforeDiscount": 99.99,
+                            "finalBeforeCoupon": 99.99,
+                            "couponDiscount": 15.8,
+                            "currency": "USD",
+                            "appliedRule": null
+                        },
+                        "lineTotal": 252.57,
+                        "pricing": {
+                            "currencies": {
+                                "USD": {
+                                    "base": 99.99,
+                                    "final": 84.19,
+                                    "discount": 15.8
+                                },
+                                "YER": {
+                                    "base": 52994.7,
+                                    "final": 44620.7,
+                                    "discount": 8374
+                                },
+                                "SAR": {
+                                    "base": 374.96,
+                                    "final": 315.71,
+                                    "discount": 59.25
+                                }
+                            }
+                        },
+                        "snapshot": {
+                            "name": "فيوز جهد منخفض RT18",
+                            "slug": "rt18-low-voltage-fuse",
+                            "image": "https://tagadod.b-cdn.net/media/product/8797eb5d-e205-4837-ab61-acfd516eccdf-68ca940852add_Remove background project (4).png",
+                            "brandId": "68ffa9a355755bbf62105206",
+                            "categoryId": "690c90c7ab011a233776cb78",
+                            "averageRating": 0,
+                            "ratingValue": 5,
+                            "ratingSource": "manual",
+                            "reviewsCount": 0
+                        }
+                    },
+                    {
+                        "itemId": "variant-690d285b567068e48ce60930",
+                        "variantId": "690d285b567068e48ce60930",
+                        "productId": "690d2858567068e48ce6091f",
+                        "qty": 1,
+                        "unit": {
+                            "base": 6.86,
+                            "final": 5.78,
+                            "finalBeforeDiscount": 6.86,
+                            "finalBeforeCoupon": 6.86,
+                            "couponDiscount": 1.08,
+                            "currency": "USD",
+                            "appliedRule": null
+                        },
+                        "lineTotal": 5.78,
+                        "pricing": {
+                            "currencies": {
+                                "USD": {
+                                    "base": 6.86,
+                                    "final": 5.78,
+                                    "discount": 1.08
+                                },
+                                "YER": {
+                                    "base": 3635.8,
+                                    "final": 3063.4,
+                                    "discount": 572.4
+                                },
+                                "SAR": {
+                                    "base": 25.73,
+                                    "final": 21.68,
+                                    "discount": 4.05
+                                }
+                            }
+                        },
+                        "snapshot": {
+                            "name": "محول التيار MSQ ",
+                            "slug": "msq-current-transformer",
+                            "image": "https://tagadod.b-cdn.net/media/product/bb2a3e56-d41b-46b8-9a58-d4cef9bbe004-68ca93d4f2bce_Remove background project (3).png",
+                            "brandId": "68ffa9a355755bbf62105206",
+                            "categoryId": "690c90c7ab011a233776cb78",
+                            "averageRating": 0,
+                            "ratingValue": 0,
+                            "ratingSource": "average",
+                            "reviewsCount": 0,
+                            "variantAttributes": [
+                                {
+                                    "attributeId": "690d26ae567068e48ce60895",
+                                    "attributeName": "قدرات MSQ :",
+                                    "attributeNameEn": "قدرات MSQ :",
+                                    "valueId": "690d2707567068e48ce608ad",
+                                    "value": "400/5 امبير",
+                                    "valueEn": "400/5 امبير"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "itemId": "variant-690d285c567068e48ce60935",
+                        "variantId": "690d285c567068e48ce60935",
+                        "productId": "690d2858567068e48ce6091f",
+                        "qty": 1,
+                        "unit": {
+                            "base": 9.5,
+                            "final": 7.98,
+                            "finalBeforeDiscount": 9.5,
+                            "finalBeforeCoupon": 9.5,
+                            "couponDiscount": 1.52,
+                            "currency": "USD",
+                            "appliedRule": null
+                        },
+                        "lineTotal": 7.98,
+                        "pricing": {
+                            "currencies": {
+                                "USD": {
+                                    "base": 9.5,
+                                    "final": 7.98,
+                                    "discount": 1.52
+                                },
+                                "YER": {
+                                    "base": 5035,
+                                    "final": 4229.4,
+                                    "discount": 805.6
+                                },
+                                "SAR": {
+                                    "base": 35.63,
+                                    "final": 29.93,
+                                    "discount": 5.7
+                                }
+                            }
+                        },
+                        "snapshot": {
+                            "name": "محول التيار MSQ ",
+                            "slug": "msq-current-transformer",
+                            "image": "https://tagadod.b-cdn.net/media/product/bb2a3e56-d41b-46b8-9a58-d4cef9bbe004-68ca93d4f2bce_Remove background project (3).png",
+                            "brandId": "68ffa9a355755bbf62105206",
+                            "categoryId": "690c90c7ab011a233776cb78",
+                            "averageRating": 0,
+                            "ratingValue": 0,
+                            "ratingSource": "average",
+                            "reviewsCount": 0,
+                            "variantAttributes": [
+                                {
+                                    "attributeId": "690d26ae567068e48ce60895",
+                                    "attributeName": "قدرات MSQ :",
+                                    "attributeNameEn": "قدرات MSQ :",
+                                    "valueId": "690d2721567068e48ce608bb",
+                                    "value": "1000/5 امبير",
+                                    "valueEn": "1000/5 امبير"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "totals": {
+                "subtotal": 316.33,
+                "shipping": 0,
+                "total": 239.697,
+                "currency": "USD"
+            },
+            "discounts": {
+                "itemsDiscount": 49.999999999999986,
+                "couponDiscount": 76.633,
+                "totalDiscount": 126.63299999999998,
+                "appliedCoupons": [
+                    {
+                        "code": "TEST",
+                        "name": "كوبون تجريبي",
+                        "discountValue": 50,
+                        "type": "fixed_amount",
+                        "discount": 50
+                    },
+                    {
+                        "code": "COUPON-TEST",
+                        "name": "كوبون تجريبي",
+                        "discountValue": 10,
+                        "type": "percentage",
+                        "discount": 26.632999999999996
+                    }
+                ]
+            },
+            "paymentOptions": {
+                "cod": {
+                    "method": "COD",
+                    "status": "restricted",
+                    "allowed": false,
+                    "reason": "يجب إكمال 3 طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك 0 طلب مكتمل",
+                    "codEligibility": {
+                        "eligible": false,
+                        "requiredOrders": 3,
+                        "remainingOrders": 3,
+                        "totalOrders": 1,
+                        "completedOrders": 0,
+                        "inProgressOrders": 1,
+                        "cancelledOrders": 0,
+                        "progress": "0/3",
+                        "message": "يجب إكمال 3 طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك 0 طلب مكتمل"
+                    }
+                },
+                "customerOrderStats": {
+                    "totalOrders": 1,
+                    "completedOrders": 0,
+                    "inProgressOrders": 1,
+                    "cancelledOrders": 0,
+                    "requiredForCOD": 3,
+                    "remainingForCOD": 3,
+                    "codEligible": false
+                },
+                "localPaymentProviders": [
+                    {
+                        "providerId": "690f800ddb4049101f52d598",
+                        "providerName": "بنك اليمن والكويت",
+                        "icon": {
+                            "id": "690f754e8c4d0ba472a11218",
+                            "url": "https://tagadod.b-cdn.net/media/other/09794124-7d34-418b-a071-0e6c6bf29722-ykb.png",
+                            "name": "ykb"
+                        },
+                        "type": "bank",
+                        "numberingMode": "per_currency",
+                        "supportedCurrencies": [
+                            "USD"
+                        ],
+                        "displayOrder": 0,
+                        "accounts": [
+                            {
+                                "id": "6913600b4f2f26446a34539f",
+                                "currency": "USD",
+                                "accountNumber": "771250000",
+                                "isActive": true,
+                                "displayOrder": 0
+                            }
+                        ]
+                    },
+                    {
+                        "providerId": "691340dada5d77738b98d7a8",
+                        "providerName": "محفظة جيب",
+                        "icon": {
+                            "id": "691340a7da5d77738b98d796",
+                            "url": "https://tagadod.b-cdn.net/media/other/5a50d112-c097-434f-aa10-5254a14b4113-jaib.png",
+                            "name": "jaib"
+                        },
+                        "type": "wallet",
+                        "numberingMode": "shared",
+                        "supportedCurrencies": [
+                            "SAR",
+                            "USD",
+                            "YER"
+                        ],
+                        "sharedAccountNumber": "771250000",
+                        "displayOrder": 1,
+                        "accounts": [
+                            {
+                                "id": "691340dada5d77738b98d7a8:USD",
+                                "currency": "USD",
+                                "accountNumber": "771250000",
+                                "isActive": true,
+                                "displayOrder": 1
+                            }
+                        ]
+                    },
+                    {
+                        "providerId": "691341d8da5d77738b98da16",
+                        "providerName": "محفظة جوالي",
+                        "icon": {
+                            "id": "691341c4da5d77738b98da08",
+                            "url": "https://tagadod.b-cdn.net/media/other/70ee8968-9aac-400f-94ad-b53ea6bedac2-jawali.png",
+                            "name": "jawali"
+                        },
+                        "type": "wallet",
+                        "numberingMode": "shared",
+                        "supportedCurrencies": [
+                            "SAR",
+                            "USD",
+                            "YER"
+                        ],
+                        "sharedAccountNumber": "771250000",
+                        "displayOrder": 3,
+                        "accounts": [
+                            {
+                                "id": "691341d8da5d77738b98da16:USD",
+                                "currency": "USD",
+                                "accountNumber": "771250000",
+                                "isActive": true,
+                                "displayOrder": 3
+                            }
+                        ]
+                    },
+                    {
+                        "providerId": "69134211da5d77738b98da30",
+                        "providerName": "محفظة فلوسك",
+                        "icon": {
+                            "id": "69134200da5d77738b98da26",
+                            "url": "https://tagadod.b-cdn.net/media/other/7c25fed5-34ce-4241-92cd-b2a7c62f5dc2-floosak.png",
+                            "name": "floosak"
+                        },
+                        "type": "wallet",
+                        "numberingMode": "shared",
+                        "supportedCurrencies": [
+                            "SAR",
+                            "USD",
+                            "YER"
+                        ],
+                        "sharedAccountNumber": "771250000",
+                        "displayOrder": 4,
+                        "accounts": [
+                            {
+                                "id": "69134211da5d77738b98da30:USD",
+                                "currency": "USD",
+                                "accountNumber": "771250000",
+                                "isActive": true,
+                                "displayOrder": 4
+                            }
+                        ]
+                    }
+                ]
+            },
+            "codEligibility": {
+                "eligible": false,
+                "requiredOrders": 3,
+                "remainingOrders": 3,
+                "totalOrders": 1,
+                "completedOrders": 0,
+                "inProgressOrders": 1,
+                "cancelledOrders": 0,
+                "progress": "0/3",
+                "message": "يجب إكمال 3 طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك 0 طلب مكتمل"
+            },
+            "customerOrderStats": {
+                "totalOrders": 1,
+                "completedOrders": 0,
+                "inProgressOrders": 1,
+                "cancelledOrders": 0,
+                "requiredForCOD": 3,
+                "remainingForCOD": 3,
+                "codEligible": false
+            },
+            "addresses": [
+                {
+                    "id": "6911f5fffc6f322a089a7e2b",
+                    "label": "نون",
+                    "line1": "باءسمستةينست",
+                    "city": "صنعاء",
+                    "coords": {
+                        "lat": 15.3403829,
+                        "lng": 44.1920499
+                    },
+                    "notes": "الدائري امام مكتبة الجيل الجديد, Sana'a, Sana'a City",
+                    "isDefault": true,
+                    "isActive": true
+                },
+                {
+                    "id": "6911f536fc6f322a089a7df2",
+                    "label": "تجريب",
+                    "line1": "شارع الجن",
+                    "city": "صنعاء",
+                    "coords": {
+                        "lat": 15.3404013,
+                        "lng": 44.1920536
+                    },
+                    "notes": "الدائري امام مكتبة الجيل الجديد, Sana'a, Sana'a City",
+                    "isDefault": false,
+                    "isActive": true
+                },
+                {
+                    "id": "6911f4d7fc6f322a089a7dce",
+                    "label": "تجريب",
+                    "line1": "شارع الجن",
+                    "city": "صنعاء",
+                    "coords": {
+                        "lat": 15.3404016,
+                        "lng": 44.1920546
+                    },
+                    "notes": "الدائري امام مكتبة الجيل الجديد, Sana'a, Sana'a City",
+                    "isDefault": false,
+                    "isActive": true
+                }
+            ],
+            "exchangeRates": {
+                "usdToYer": 530,
+                "usdToSar": 3.75,
+                "lastUpdatedAt": "2025-11-02T16:45:04.526Z"
+            }
+        },
+        "message": "تم تجهيز جلسة الدفع بنجاح"
+    },
+    "requestId": "bf0598a4-8b1a-4ffa-afe4-bf0fe178f83c"
+}

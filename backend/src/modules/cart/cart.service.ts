@@ -7,6 +7,7 @@ import { Product } from '../products/schemas/product.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { MarketingService } from '../marketing/marketing.service';
 import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
+import { ExchangeRate } from '../exchange-rates/schemas/exchange-rate.schema';
 import { randomUUID } from 'crypto';
 
 type ItemView = {
@@ -346,6 +347,53 @@ export class CartService {
     };
   }
 
+  private convertUsingRates(
+    amount: number,
+    fromCurrency: string,
+    toCurrency: string,
+    rates?: ExchangeRate,
+  ): number | undefined {
+    if (!rates) {
+      return undefined;
+    }
+
+    const normalizedFrom = this.normalizeCurrency(fromCurrency);
+    const normalizedTo = this.normalizeCurrency(toCurrency);
+
+    if (!Number.isFinite(amount) || normalizedFrom === normalizedTo) {
+      return amount;
+    }
+
+    const usdToYer = rates.usdToYer || 0;
+    const usdToSar = rates.usdToSar || 0;
+
+    let result: number | undefined;
+
+    if (normalizedFrom === 'USD' && normalizedTo === 'YER') {
+      result = amount * usdToYer;
+    } else if (normalizedFrom === 'USD' && normalizedTo === 'SAR') {
+      result = amount * usdToSar;
+    } else if (normalizedFrom === 'YER' && normalizedTo === 'USD') {
+      result = usdToYer ? amount / usdToYer : undefined;
+    } else if (normalizedFrom === 'SAR' && normalizedTo === 'USD') {
+      result = usdToSar ? amount / usdToSar : undefined;
+    } else if (normalizedFrom === 'YER' && normalizedTo === 'SAR') {
+      result = usdToYer && usdToSar ? (amount / usdToYer) * usdToSar : undefined;
+    } else if (normalizedFrom === 'SAR' && normalizedTo === 'YER') {
+      result = usdToSar && usdToYer ? (amount / usdToSar) * usdToYer : undefined;
+    }
+
+    if (result === undefined) {
+      return undefined;
+    }
+
+    if (normalizedTo === 'YER') {
+      return Math.round(result);
+    }
+
+    return Math.round(result * 100) / 100;
+  }
+
   private async buildPricingForCurrency(options: {
     basePriceUSD?: number | null;
     compareAtPriceUSD?: number | null;
@@ -370,21 +418,29 @@ export class CartService {
     if (basePriceUSD === undefined && priceRecord?.basePrice && priceRecord?.exchangeRate) {
       basePriceUSD = priceRecord.basePrice / priceRecord.exchangeRate;
     }
+    let exchangeRates: ExchangeRate | undefined;
+    const ensureRates = async (): Promise<ExchangeRate | undefined> => {
+      if (!exchangeRates && this.exchangeRatesService) {
+        exchangeRates = await this.exchangeRatesService.getCurrentRates().catch(() => undefined);
+      }
+      return exchangeRates;
+    };
+
     if (
       basePriceUSD === undefined &&
       priceRecord?.basePrice !== undefined &&
       priceRecord?.currency &&
       this.exchangeRatesService
     ) {
-      try {
-        const conversion = await this.exchangeRatesService.convertCurrency({
-          amount: priceRecord.basePrice,
-          fromCurrency: priceRecord.currency,
-          toCurrency: 'USD',
-        });
-        basePriceUSD = conversion.result;
-      } catch {
-        // ignore and fallback
+      await ensureRates();
+      const converted = this.convertUsingRates(
+        priceRecord.basePrice,
+        priceRecord.currency,
+        'USD',
+        exchangeRates,
+      );
+      if (converted !== undefined) {
+        basePriceUSD = converted;
       }
     }
 
@@ -394,15 +450,15 @@ export class CartService {
       } else if (priceRecord.exchangeRate) {
         basePriceUSD = priceRecord.finalPrice / priceRecord.exchangeRate;
       } else if (this.exchangeRatesService) {
-        try {
-          const conversion = await this.exchangeRatesService.convertCurrency({
-            amount: priceRecord.finalPrice,
-            fromCurrency: priceRecord.currency ?? targetCurrency,
-            toCurrency: 'USD',
-          });
-          basePriceUSD = conversion.result;
-        } catch {
-          // ignore
+        await ensureRates();
+        const converted = this.convertUsingRates(
+          priceRecord.finalPrice,
+          priceRecord.currency ?? targetCurrency,
+          'USD',
+          exchangeRates,
+        );
+        if (converted !== undefined) {
+          basePriceUSD = converted;
         }
       }
     }
@@ -430,25 +486,20 @@ export class CartService {
       (basePrice === undefined || finalPrice === undefined) &&
       this.exchangeRatesService
     ) {
-      try {
-        const conversion = await this.exchangeRatesService.convertCurrency({
-          amount: basePriceUSD,
-          fromCurrency: 'USD',
-          toCurrency: targetCurrency,
-        });
+      await ensureRates();
+      const converted = this.convertUsingRates(basePriceUSD, 'USD', targetCurrency, exchangeRates);
+      if (converted !== undefined) {
         if (basePrice === undefined) {
-          basePrice = conversion.result;
+          basePrice = converted;
         }
         if (finalPrice === undefined) {
-          finalPrice = conversion.result;
+          finalPrice = converted;
         }
         if (discountAmount === undefined && discountPercent !== undefined) {
-          const discount = (conversion.result * discountPercent) / 100;
+          const discount = (converted * discountPercent) / 100;
           discountAmount = this.roundPrice(discount);
-          finalPrice = conversion.result - (discountAmount ?? 0);
+          finalPrice = converted - (discountAmount ?? 0);
         }
-      } catch {
-        // ignore conversion errors and fallback to USD values
       }
     }
 
@@ -1369,16 +1420,16 @@ export class CartService {
       } else {
         const priceUSD = this.normalizeNumber(variantRecord?.['basePriceUSD']) ?? 0;
         basePriceUSD = priceUSD;
-        const converted =
-          targetCurrency === 'USD' || !this.exchangeRatesService
-            ? priceUSD
-            : (
-                await this.exchangeRatesService.convertCurrency({
-                  amount: priceUSD,
-                  fromCurrency: 'USD',
-                  toCurrency: targetCurrency,
-                })
-              ).result;
+        let converted = priceUSD;
+        if (targetCurrency !== 'USD' && this.exchangeRatesService) {
+          const rates = await this.exchangeRatesService
+            .getCurrentRates()
+            .catch(() => undefined);
+          const result = this.convertUsingRates(priceUSD, 'USD', targetCurrency, rates);
+          if (result !== undefined) {
+            converted = result;
+          }
+        }
         pricing = {
           currency: targetCurrency,
           basePrice: converted,
@@ -1428,16 +1479,16 @@ export class CartService {
           this.normalizeNumber(productRecord['compareAtPriceUSD']) ??
           0;
         basePriceUSD = priceUSD;
-        const converted =
-          targetCurrency === 'USD' || !this.exchangeRatesService
-            ? priceUSD
-            : (
-                await this.exchangeRatesService.convertCurrency({
-                  amount: priceUSD,
-                  fromCurrency: 'USD',
-                  toCurrency: targetCurrency,
-                })
-              ).result;
+        let converted = priceUSD;
+        if (targetCurrency !== 'USD' && this.exchangeRatesService) {
+          const rates = await this.exchangeRatesService
+            .getCurrentRates()
+            .catch(() => undefined);
+          const result = this.convertUsingRates(priceUSD, 'USD', targetCurrency, rates);
+          if (result !== undefined) {
+            converted = result;
+          }
+        }
         pricing = {
           currency: targetCurrency,
           basePrice: converted,

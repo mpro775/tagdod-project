@@ -267,6 +267,47 @@ export class OrderService {
       params.couponCodes,
     );
 
+    const sanitizedItems = Array.isArray(params.preview.items)
+      ? params.preview.items.map((item: Partial<CartLine>) => {
+          if (!item || typeof item !== 'object') {
+            return item;
+          }
+
+          const clonedItem: Partial<CartLine> & Record<string, unknown> = { ...item };
+          const pricingValue = (clonedItem as unknown as { pricing?: unknown }).pricing;
+
+          if (pricingValue && typeof pricingValue === 'object') {
+            const pricingRecord = { ...(pricingValue as Record<string, unknown>) };
+            const currencies = pricingRecord['currencies'];
+            if (currencies && typeof currencies === 'object') {
+              const currencyMap = currencies as Record<string, unknown>;
+              const selected =
+                currencyMap[normalizedCurrency] ??
+                currencyMap[normalizedCurrency.toUpperCase()] ??
+                currencyMap[normalizedCurrency.toLowerCase()];
+
+              delete pricingRecord['currencies'];
+              pricingRecord['currency'] = normalizedCurrency;
+
+              if (selected && typeof selected === 'object') {
+                Object.entries(selected as Record<string, unknown>).forEach(([key, value]) => {
+                  pricingRecord[key] = value;
+                });
+              }
+            }
+
+            clonedItem['pricing'] = pricingRecord;
+          }
+
+          return clonedItem;
+        })
+      : params.preview.items;
+
+    const previewWithSanitizedItems = {
+      ...(params.preview as Record<string, unknown>),
+      items: sanitizedItems,
+    } as CartPreviewResult;
+
     let totalCouponDiscount = 0;
     let remainingSubtotal = subtotalFromSummary;
     const appliedCoupons: Array<{
@@ -352,7 +393,7 @@ export class OrderService {
     };
 
     return {
-      preview: params.preview,
+      preview: previewWithSanitizedItems,
       subtotal: subtotalFromSummary,
       shipping,
       total,
