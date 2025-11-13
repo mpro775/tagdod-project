@@ -8,6 +8,7 @@ import {
   ErrorCode 
 } from '../../../shared/exceptions';
 import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.service';
+import { ExchangeRate } from '../../exchange-rates/schemas/exchange-rate.schema';
 
 export interface PriceWithDiscount {
   basePrice: number;
@@ -29,8 +30,16 @@ export interface PriceWithDiscountAndVariantId extends PriceWithDiscount {
 type VariantPricingSnapshot = {
   _id: Types.ObjectId | string;
   basePriceUSD: number;
+  basePriceSAR?: number;
+  basePriceYER?: number;
   compareAtPriceUSD?: number;
+  compareAtPriceSAR?: number;
+  compareAtPriceYER?: number;
   costPriceUSD?: number;
+  costPriceSAR?: number;
+  costPriceYER?: number;
+  exchangeRateVersion?: string;
+  lastExchangeRateSyncAt?: Date | string;
 };
 
 @Injectable()
@@ -61,55 +70,122 @@ export class PricingService {
       throw new VariantNotFoundException({ variantId });
     }
 
-    if (currency === 'USD') {
-      return {
-        basePrice: variant.basePriceUSD,
-        compareAtPrice: variant.compareAtPriceUSD,
-        costPrice: variant.costPriceUSD,
-        currency: 'USD',
-      };
+    const normalizedCurrency = (currency || 'USD').toUpperCase();
+
+    let rates: ExchangeRate | undefined;
+    const ensureRates = async (): Promise<ExchangeRate> => {
+      if (!rates) {
+        rates = await this.exchangeRatesService.getCurrentRates();
+      }
+      return rates;
+    };
+
+    const storedBasePrice = this.pickStoredAmount(normalizedCurrency, {
+      usd: variant.basePriceUSD,
+      sar: (variant as unknown as { basePriceSAR?: number }).basePriceSAR,
+      yer: (variant as unknown as { basePriceYER?: number }).basePriceYER,
+    });
+
+    let basePrice =
+      normalizedCurrency === 'USD'
+        ? variant.basePriceUSD
+        : storedBasePrice !== undefined
+        ? storedBasePrice
+        : undefined;
+    let exchangeRate =
+      normalizedCurrency === 'USD'
+        ? undefined
+        : this.computeStoredExchangeRate(normalizedCurrency, variant.basePriceUSD, basePrice);
+    let formattedPrice =
+      normalizedCurrency === 'USD' ? undefined : this.formatStoredPrice(normalizedCurrency, basePrice);
+
+    const resolveFallbackConversion = async (
+      amountUSD: number | undefined,
+    ): Promise<{ value?: number; formatted?: string; rate?: number }> => {
+      if (amountUSD === undefined || amountUSD === null) {
+        return { value: undefined, formatted: undefined, rate: undefined };
+      }
+      const currentRates = await ensureRates();
+      return this.convertUsdAmount(amountUSD, normalizedCurrency, currentRates);
+    };
+
+    if (basePrice === undefined) {
+      try {
+        const converted = await resolveFallbackConversion(variant.basePriceUSD);
+        basePrice = converted.value ?? 0;
+        exchangeRate = converted.rate;
+        formattedPrice = converted.formatted ?? this.formatStoredPrice(normalizedCurrency, basePrice);
+      } catch (error) {
+        this.logger.error(`Error converting base price for variant ${variantId}:`, error);
+        throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, {
+          variantId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
+
+    const pickStored = (field: 'compareAtPrice' | 'costPrice'): number | undefined => {
+      if (normalizedCurrency === 'USD') {
+        return field === 'compareAtPrice' ? variant.compareAtPriceUSD : variant.costPriceUSD;
+      }
+
+      const castVariant = variant as unknown as {
+        compareAtPriceSAR?: number;
+        compareAtPriceYER?: number;
+        costPriceSAR?: number;
+        costPriceYER?: number;
+      };
+
+      return this.pickStoredAmount(normalizedCurrency, {
+        usd:
+          field === 'compareAtPrice' ? variant.compareAtPriceUSD : variant.costPriceUSD,
+        sar:
+          field === 'compareAtPrice'
+            ? castVariant.compareAtPriceSAR
+            : castVariant.costPriceSAR,
+        yer:
+          field === 'compareAtPrice'
+            ? castVariant.compareAtPriceYER
+            : castVariant.costPriceYER,
+      });
+    };
+
+    let compareAtPrice = pickStored('compareAtPrice');
+    let costPrice = pickStored('costPrice');
+
+    const needsCompareConversion =
+      compareAtPrice === undefined && variant.compareAtPriceUSD !== undefined && normalizedCurrency !== 'USD';
+    const needsCostConversion =
+      costPrice === undefined && variant.costPriceUSD !== undefined && normalizedCurrency !== 'USD';
 
     try {
-      // تحويل السعر الأساسي
-      const basePriceConverted = await this.exchangeRatesService.convertCurrency({
-        amount: variant.basePriceUSD,
-        fromCurrency: 'USD',
-        toCurrency: currency,
-      });
-
-      // تحويل السعر المقارن إذا كان موجوداً
-      let compareAtPriceConverted;
-      if (variant.compareAtPriceUSD) {
-        compareAtPriceConverted = await this.exchangeRatesService.convertCurrency({
-          amount: variant.compareAtPriceUSD,
-          fromCurrency: 'USD',
-          toCurrency: currency,
-        });
+      if (needsCompareConversion) {
+        const converted = await resolveFallbackConversion(variant.compareAtPriceUSD);
+        compareAtPrice = converted.value;
       }
 
-      // تحويل سعر التكلفة إذا كان موجوداً
-      let costPriceConverted;
-      if (variant.costPriceUSD) {
-        costPriceConverted = await this.exchangeRatesService.convertCurrency({
-          amount: variant.costPriceUSD,
-          fromCurrency: 'USD',
-          toCurrency: currency,
-        });
+      if (needsCostConversion) {
+        const converted = await resolveFallbackConversion(variant.costPriceUSD);
+        costPrice = converted.value;
       }
-
-      return {
-        basePrice: basePriceConverted.result,
-        compareAtPrice: compareAtPriceConverted?.result,
-        costPrice: costPriceConverted?.result,
-        currency,
-        exchangeRate: basePriceConverted.rate,
-        formattedPrice: basePriceConverted.formatted,
-      };
     } catch (error) {
-      this.logger.error(`Error converting prices for variant ${variantId}:`, error);
-      throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, { variantId, error: error instanceof Error ? error.message : String(error) });
+      this.logger.error(`Error converting comparison prices for variant ${variantId}:`, error);
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, {
+        variantId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
+
+    const safeBasePrice = basePrice ?? 0;
+
+    return {
+      basePrice: safeBasePrice,
+      compareAtPrice,
+      costPrice,
+      currency: normalizedCurrency,
+      exchangeRate,
+      formattedPrice,
+    };
   }
 
   async getProductPrices(
@@ -126,10 +202,14 @@ export class PricingService {
   }>> {
     const variants = await this.variantModel
       .find({ productId, deletedAt: null, isActive: true })
-      .select('_id basePriceUSD compareAtPriceUSD costPriceUSD')
+      .select(
+        '_id basePriceUSD basePriceSAR basePriceYER compareAtPriceUSD compareAtPriceSAR compareAtPriceYER costPriceUSD costPriceSAR costPriceYER',
+      )
       .lean();
 
-    if (currency === 'USD') {
+    const normalizedCurrency = (currency || 'USD').toUpperCase();
+
+    if (normalizedCurrency === 'USD') {
       return variants.map(variant => ({
         variantId: variant._id.toString(),
         basePrice: variant.basePriceUSD,
@@ -140,45 +220,129 @@ export class PricingService {
     }
 
     try {
-      const convertedPrices = await Promise.all(
-        variants.map(async (variant) => {
-          const converted = await this.exchangeRatesService.convertCurrency({
-            amount: variant.basePriceUSD,
-            fromCurrency: 'USD',
-            toCurrency: currency,
+      const needsConversion =
+        normalizedCurrency !== 'USD' &&
+        variants.some((variant) => {
+          const variantSnapshot = variant as VariantPricingSnapshot;
+
+          const hasBaseStored = this.hasStoredAmount(normalizedCurrency, {
+            sar: variantSnapshot.basePriceSAR,
+            yer: variantSnapshot.basePriceYER,
           });
 
-          let compareAtPriceConverted;
-          if (variant.compareAtPriceUSD) {
-            compareAtPriceConverted = await this.exchangeRatesService.convertCurrency({
-              amount: variant.compareAtPriceUSD,
-              fromCurrency: 'USD',
-              toCurrency: currency,
-            });
+          const hasCompareStored =
+            variantSnapshot.compareAtPriceUSD === undefined
+              ? true
+              : this.hasStoredAmount(normalizedCurrency, {
+                  sar: variantSnapshot.compareAtPriceSAR,
+                  yer: variantSnapshot.compareAtPriceYER,
+                });
+
+          const hasCostStored =
+            variantSnapshot.costPriceUSD === undefined
+              ? true
+              : this.hasStoredAmount(normalizedCurrency, {
+                  sar: variantSnapshot.costPriceSAR,
+                  yer: variantSnapshot.costPriceYER,
+                });
+
+          return !hasBaseStored || !hasCompareStored || !hasCostStored;
+        });
+
+      const rates = needsConversion
+        ? await this.exchangeRatesService.getCurrentRates()
+        : undefined;
+
+      return variants.map((variant) => {
+        const variantSnapshot = variant as VariantPricingSnapshot;
+
+        const storedBase = this.pickStoredAmount(normalizedCurrency, {
+          usd: variantSnapshot.basePriceUSD,
+          sar: variantSnapshot.basePriceSAR,
+          yer: variantSnapshot.basePriceYER,
+        });
+
+        let basePrice =
+          normalizedCurrency === 'USD'
+            ? variantSnapshot.basePriceUSD
+            : storedBase !== undefined
+            ? storedBase
+            : undefined;
+        let exchangeRate =
+          normalizedCurrency === 'USD'
+            ? undefined
+            : this.computeStoredExchangeRate(
+                normalizedCurrency,
+                variantSnapshot.basePriceUSD,
+                basePrice,
+              );
+        let formattedPrice =
+          normalizedCurrency === 'USD'
+            ? undefined
+            : this.formatStoredPrice(normalizedCurrency, basePrice);
+
+        if (basePrice === undefined && rates) {
+          const converted = this.convertUsdAmount(
+            variantSnapshot.basePriceUSD,
+            normalizedCurrency,
+            rates,
+          );
+          basePrice = converted.value ?? 0;
+          exchangeRate = converted.rate;
+          formattedPrice =
+            converted.formatted ?? this.formatStoredPrice(normalizedCurrency, basePrice);
+        } else if (basePrice === undefined) {
+          basePrice = 0;
+        }
+
+        const resolveAdditionalPrice = (
+          usdAmount?: number,
+          storedSar?: number,
+          storedYer?: number,
+        ): number | undefined => {
+          if (normalizedCurrency === 'USD') {
+            return usdAmount;
           }
 
-          let costPriceConverted;
-          if (variant.costPriceUSD) {
-            costPriceConverted = await this.exchangeRatesService.convertCurrency({
-              amount: variant.costPriceUSD,
-              fromCurrency: 'USD',
-              toCurrency: currency,
-            });
+          const stored = this.pickStoredAmount(normalizedCurrency, {
+            usd: usdAmount,
+            sar: storedSar,
+            yer: storedYer,
+          });
+
+          if (stored !== undefined) {
+            return stored;
           }
 
-          return {
-            variantId: variant._id.toString(),
-            basePrice: converted.result,
-            compareAtPrice: compareAtPriceConverted?.result,
-            costPrice: costPriceConverted?.result,
-            currency,
-            exchangeRate: converted.rate,
-            formattedPrice: converted.formatted,
-          };
-        })
-      );
+          if (usdAmount === undefined || usdAmount === null || !rates) {
+            return undefined;
+          }
 
-      return convertedPrices;
+          const converted = this.convertUsdAmount(usdAmount, normalizedCurrency, rates);
+          return converted.value;
+        };
+
+        const compareAtPrice = resolveAdditionalPrice(
+          variantSnapshot.compareAtPriceUSD,
+          variantSnapshot.compareAtPriceSAR,
+          variantSnapshot.compareAtPriceYER,
+        );
+        const costPrice = resolveAdditionalPrice(
+          variantSnapshot.costPriceUSD,
+          variantSnapshot.costPriceSAR,
+          variantSnapshot.costPriceYER,
+        );
+
+        return {
+          variantId: variant._id.toString(),
+          basePrice: basePrice ?? 0,
+          compareAtPrice,
+          costPrice,
+          currency: normalizedCurrency,
+          exchangeRate,
+          formattedPrice,
+        };
+      });
     } catch (error) {
       this.logger.error(`Error converting product prices for ${productId}:`, error);
       throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, { productId, error: error instanceof Error ? error.message : String(error) });
@@ -199,7 +363,7 @@ export class PricingService {
   }> {
     const variants = await this.variantModel
       .find({ productId, deletedAt: null, isActive: true })
-      .select('basePriceUSD')
+      .select('basePriceUSD basePriceSAR basePriceYER')
       .lean();
 
     if (variants.length === 0) {
@@ -210,30 +374,80 @@ export class PricingService {
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
 
-    if (currency === 'USD') {
+    const normalizedCurrency = (currency || 'USD').toUpperCase();
+
+    if (normalizedCurrency === 'USD') {
       return { minPrice, maxPrice, currency };
     }
 
     try {
-      const [minConverted, maxConverted] = await Promise.all([
-        this.exchangeRatesService.convertCurrency({
-          amount: minPrice,
-          fromCurrency: 'USD',
-          toCurrency: currency,
-        }),
-        this.exchangeRatesService.convertCurrency({
-          amount: maxPrice,
-          fromCurrency: 'USD',
-          toCurrency: currency,
-        }),
-      ]);
+      const variantSnapshots = variants as Array<
+        { basePriceUSD: number; basePriceSAR?: number; basePriceYER?: number }
+      >;
+
+      const needsConversion = variantSnapshots.some((variant) => {
+        const hasStored = this.hasStoredAmount(normalizedCurrency, {
+          sar: variant.basePriceSAR,
+          yer: variant.basePriceYER,
+        });
+        return !hasStored;
+      });
+
+      const rates = needsConversion
+        ? await this.exchangeRatesService.getCurrentRates()
+        : undefined;
+
+      let resolvedMin: number | undefined;
+      let resolvedMax: number | undefined;
+      let formattedMin: string | undefined;
+      let formattedMax: string | undefined;
+
+      variantSnapshots.forEach((variant) => {
+        const storedValue = this.pickStoredAmount(normalizedCurrency, {
+          usd: variant.basePriceUSD,
+          sar: variant.basePriceSAR,
+          yer: variant.basePriceYER,
+        });
+
+        let price: number;
+        let formatted: string | undefined;
+
+        if (storedValue !== undefined) {
+          price = storedValue;
+          formatted = this.formatStoredPrice(normalizedCurrency, storedValue);
+        } else if (rates) {
+          const converted = this.convertUsdAmount(
+            variant.basePriceUSD,
+            normalizedCurrency,
+            rates,
+          );
+          price = converted.value ?? 0;
+          formatted = converted.formatted;
+        } else {
+          price = 0;
+          formatted = undefined;
+        }
+
+        if (price < (resolvedMin ?? Number.POSITIVE_INFINITY)) {
+          resolvedMin = price;
+          formattedMin = formatted;
+        }
+
+        if (price > (resolvedMax ?? Number.NEGATIVE_INFINITY)) {
+          resolvedMax = price;
+          formattedMax = formatted;
+        }
+      });
+
+      const safeMin = resolvedMin ?? 0;
+      const safeMax = resolvedMax ?? 0;
 
       return {
-        minPrice: minConverted.result,
-        maxPrice: maxConverted.result,
-        currency,
-        formattedMinPrice: minConverted.formatted,
-        formattedMaxPrice: maxConverted.formatted,
+        minPrice: safeMin,
+        maxPrice: safeMax,
+        currency: normalizedCurrency,
+        formattedMinPrice: formattedMin,
+        formattedMaxPrice: formattedMax,
       };
     } catch (error) {
       this.logger.error(`Error converting price range for product ${productId}:`, error);
@@ -306,6 +520,77 @@ export class PricingService {
     return basePrice * (1 - discountPercent / 100);
   }
 
+  private pickStoredAmount(
+    currency: string,
+    values: { usd?: number; sar?: number; yer?: number },
+  ): number | undefined {
+    switch (currency) {
+      case 'USD':
+        return values.usd;
+      case 'SAR':
+        return values.sar;
+      case 'YER':
+        return values.yer;
+      default:
+        return undefined;
+    }
+  }
+
+  private hasStoredAmount(currency: string, values: { sar?: number; yer?: number }): boolean {
+    switch (currency) {
+      case 'USD':
+        return true;
+      case 'SAR':
+        return values.sar !== undefined;
+      case 'YER':
+        return values.yer !== undefined;
+      default:
+        return false;
+    }
+  }
+
+  private computeStoredExchangeRate(
+    currency: string,
+    usdAmount?: number,
+    storedAmount?: number,
+  ): number | undefined {
+    if (currency === 'USD') {
+      return undefined;
+    }
+
+    if (
+      usdAmount === undefined ||
+      usdAmount === null ||
+      usdAmount === 0 ||
+      storedAmount === undefined ||
+      storedAmount === null
+    ) {
+      return undefined;
+    }
+
+    return storedAmount / usdAmount;
+  }
+
+  private formatStoredPrice(currency: string, amount?: number): string | undefined {
+    if (amount === undefined || amount === null) {
+      return undefined;
+    }
+
+    if (currency === 'YER') {
+      return `${Math.round(amount).toLocaleString()} $`;
+    }
+
+    if (currency === 'SAR') {
+      return `${amount.toFixed(2)} $`;
+    }
+
+    if (currency === 'USD') {
+      return `$${amount.toFixed(2)}`;
+    }
+
+    return amount.toString();
+  }
+
   /**
    * جلب سعر المتغير مع خصم التاجر
    */
@@ -361,7 +646,9 @@ export class PricingService {
       options.variants ??
       (await this.variantModel
         .find({ productId, deletedAt: null, isActive: true })
-        .select('_id basePriceUSD compareAtPriceUSD costPriceUSD')
+        .select(
+          '_id basePriceUSD basePriceSAR basePriceYER compareAtPriceUSD compareAtPriceSAR compareAtPriceYER costPriceUSD costPriceSAR costPriceYER',
+        )
         .lean());
 
     if (!variants || variants.length === 0) {
@@ -389,61 +676,148 @@ export class PricingService {
     }
 
     try {
-      const pricesWithDiscount = await Promise.all(
-        variants.map(async (variant) => {
-          const converted = await this.exchangeRatesService.convertCurrency({
-            amount: variant.basePriceUSD,
-            fromCurrency: 'USD',
-            toCurrency: normalizedCurrency,
+      const variantSnapshots = variants as VariantPricingSnapshot[];
+
+      const needsConversion =
+        normalizedCurrency !== 'USD' &&
+        variantSnapshots.some((variant) => {
+          const hasBaseStored = this.hasStoredAmount(normalizedCurrency, {
+            sar: variant.basePriceSAR,
+            yer: variant.basePriceYER,
           });
 
-          let compareAtPriceConverted;
-          if (variant.compareAtPriceUSD) {
-            compareAtPriceConverted = await this.exchangeRatesService.convertCurrency({
-              amount: variant.compareAtPriceUSD,
-              fromCurrency: 'USD',
-              toCurrency: normalizedCurrency,
-            });
-          }
+          const hasCompareStored =
+            variant.compareAtPriceUSD === undefined
+              ? true
+              : this.hasStoredAmount(normalizedCurrency, {
+                  sar: variant.compareAtPriceSAR,
+                  yer: variant.compareAtPriceYER,
+                });
 
-          let costPriceConverted;
-          if (variant.costPriceUSD) {
-            costPriceConverted = await this.exchangeRatesService.convertCurrency({
-              amount: variant.costPriceUSD,
-              fromCurrency: 'USD',
-              toCurrency: normalizedCurrency,
-            });
-          }
+          const hasCostStored =
+            variant.costPriceUSD === undefined
+              ? true
+              : this.hasStoredAmount(normalizedCurrency, {
+                  sar: variant.costPriceSAR,
+                  yer: variant.costPriceYER,
+                });
 
-          const basePrice = converted.result;
-          const discountAmount = discountPercent > 0 
-            ? basePrice * (discountPercent / 100)
-            : 0;
-          const finalPrice = this.calculatePriceWithDiscount(basePrice, discountPercent);
+          return !hasBaseStored || !hasCompareStored || !hasCostStored;
+        });
 
-          // تنسيق السعر النهائي
-          const formattedFinalPrice = converted.formatted.replace(
-            basePrice.toFixed(2),
-            finalPrice.toFixed(2)
+      const rates = needsConversion
+        ? await this.exchangeRatesService.getCurrentRates()
+        : undefined;
+
+      return variantSnapshots.map((variant) => {
+        const storedBase = this.pickStoredAmount(normalizedCurrency, {
+          usd: variant.basePriceUSD,
+          sar: variant.basePriceSAR,
+          yer: variant.basePriceYER,
+        });
+
+        let basePrice =
+          normalizedCurrency === 'USD'
+            ? variant.basePriceUSD
+            : storedBase !== undefined
+            ? storedBase
+            : undefined;
+        let exchangeRate =
+          normalizedCurrency === 'USD'
+            ? undefined
+            : this.computeStoredExchangeRate(
+                normalizedCurrency,
+                variant.basePriceUSD,
+                basePrice,
+              );
+        let formattedPrice =
+          normalizedCurrency === 'USD'
+            ? undefined
+            : this.formatStoredPrice(normalizedCurrency, basePrice);
+
+        if (basePrice === undefined && rates) {
+          const converted = this.convertUsdAmount(
+            variant.basePriceUSD,
+            normalizedCurrency,
+            rates,
           );
+          basePrice = converted.value ?? 0;
+          exchangeRate = converted.rate;
+          formattedPrice =
+            converted.formatted ?? this.formatStoredPrice(normalizedCurrency, basePrice);
+        } else if (basePrice === undefined) {
+          basePrice = 0;
+        }
 
-          return {
-            variantId: variant._id.toString(),
-            basePrice,
-            compareAtPrice: compareAtPriceConverted?.result,
-            costPrice: costPriceConverted?.result,
-            discountPercent,
-            discountAmount,
-            finalPrice,
-            currency: normalizedCurrency,
-            exchangeRate: converted.rate,
-            formattedPrice: converted.formatted,
-            formattedFinalPrice,
-          };
-        })
-      );
+        const resolveAdditionalPrice = (
+          usdAmount?: number,
+          storedSar?: number,
+          storedYer?: number,
+        ): number | undefined => {
+          if (normalizedCurrency === 'USD') {
+            return usdAmount;
+          }
 
-      return pricesWithDiscount;
+          const stored = this.pickStoredAmount(normalizedCurrency, {
+            usd: usdAmount,
+            sar: storedSar,
+            yer: storedYer,
+          });
+
+          if (stored !== undefined) {
+            return stored;
+          }
+
+          if (usdAmount === undefined || usdAmount === null || !rates) {
+            return undefined;
+          }
+
+          const converted = this.convertUsdAmount(usdAmount, normalizedCurrency, rates);
+          return converted.value;
+        };
+
+        const compareAtPrice = resolveAdditionalPrice(
+          variant.compareAtPriceUSD,
+          variant.compareAtPriceSAR,
+          variant.compareAtPriceYER,
+        );
+        const costPrice = resolveAdditionalPrice(
+          variant.costPriceUSD,
+          variant.costPriceSAR,
+          variant.costPriceYER,
+        );
+
+        const discountAmount =
+          discountPercent > 0 ? basePrice * (discountPercent / 100) : 0;
+        const finalPrice = this.calculatePriceWithDiscount(basePrice, discountPercent);
+
+        let formattedFinalPrice: string | undefined;
+        if (formattedPrice) {
+          formattedFinalPrice = formattedPrice.replace(
+            basePrice.toFixed(2),
+            finalPrice.toFixed(2),
+          );
+        }
+
+        const variantId =
+          typeof variant._id === 'string'
+            ? variant._id
+            : (variant._id as Types.ObjectId).toString();
+
+        return {
+          variantId,
+          basePrice,
+          compareAtPrice,
+          costPrice,
+          discountPercent,
+          discountAmount,
+          finalPrice,
+          currency: normalizedCurrency,
+          exchangeRate,
+          formattedPrice,
+          formattedFinalPrice,
+        };
+      });
     } catch (error) {
       this.logger.error(`Error converting product prices with discount for ${productId}:`, error);
       throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, { productId, error: error instanceof Error ? error.message : String(error) });
@@ -476,7 +850,9 @@ export class PricingService {
       options.variants ??
       (await this.variantModel
         .find({ productId, deletedAt: null, isActive: true })
-        .select('_id basePriceUSD compareAtPriceUSD costPriceUSD')
+        .select(
+          '_id basePriceUSD basePriceSAR basePriceYER compareAtPriceUSD compareAtPriceSAR compareAtPriceYER costPriceUSD costPriceSAR costPriceYER',
+        )
         .lean());
 
     if (!variants || variants.length === 0) {
@@ -507,6 +883,16 @@ export class PricingService {
     costPriceUSD?: number,
     currencies: string[] = ['USD'],
     discountPercent: number = 0,
+    derived?: {
+      basePriceSAR?: number;
+      basePriceYER?: number;
+      compareAtPriceSAR?: number;
+      compareAtPriceYER?: number;
+      costPriceSAR?: number;
+      costPriceYER?: number;
+      exchangeRateVersion?: string;
+      lastExchangeRateSyncAt?: Date | string;
+    },
   ): Promise<Record<string, PriceWithDiscount>> {
     if (!currencies || currencies.length === 0) {
       return {};
@@ -515,8 +901,11 @@ export class PricingService {
     const normalizedCurrencies = Array.from(
       new Set(
         currencies
-          .filter((currency): currency is string => typeof currency === 'string' && currency.trim().length > 0)
-          .map(currency => currency.toUpperCase()),
+          .filter(
+            (currency): currency is string =>
+              typeof currency === 'string' && currency.trim().length > 0,
+          )
+          .map((currency) => currency.toUpperCase()),
       ),
     );
 
@@ -524,52 +913,130 @@ export class PricingService {
       return {};
     }
 
+    const derivedValues = derived ?? {};
+
+    const needsConversion = normalizedCurrencies.some((currencyCode) => {
+      if (currencyCode === 'USD') {
+        return false;
+      }
+
+      const hasBaseStored = this.hasStoredAmount(currencyCode, {
+        sar: derivedValues.basePriceSAR,
+        yer: derivedValues.basePriceYER,
+      });
+
+      const hasCompareStored =
+        compareAtPriceUSD === undefined
+          ? true
+          : this.hasStoredAmount(currencyCode, {
+              sar: derivedValues.compareAtPriceSAR,
+              yer: derivedValues.compareAtPriceYER,
+            });
+
+      const hasCostStored =
+        costPriceUSD === undefined
+          ? true
+          : this.hasStoredAmount(currencyCode, {
+              sar: derivedValues.costPriceSAR,
+              yer: derivedValues.costPriceYER,
+            });
+
+      return !(hasBaseStored && hasCompareStored && hasCostStored);
+    });
+
+    const rates = needsConversion ? await this.exchangeRatesService.getCurrentRates() : undefined;
     const results: Record<string, PriceWithDiscount> = {};
 
     await Promise.all(
-      normalizedCurrencies.map(async (currency) => {
+      normalizedCurrencies.map(async (currencyCode) => {
         let basePrice = basePriceUSD;
         let compareAtPrice = compareAtPriceUSD;
         let costPrice = costPriceUSD;
         let exchangeRate: number | undefined;
         let formattedPrice: string | undefined;
 
-        if (currency !== 'USD') {
-          try {
-            const baseConverted = await this.exchangeRatesService.convertCurrency({
-              amount: basePriceUSD,
-              fromCurrency: 'USD',
-              toCurrency: currency,
-            });
-            basePrice = baseConverted.result;
-            exchangeRate = baseConverted.rate;
-            formattedPrice = baseConverted.formatted;
+        if (currencyCode !== 'USD') {
+          const storedBase = this.pickStoredAmount(currencyCode, {
+            usd: basePriceUSD,
+            sar: derivedValues.basePriceSAR,
+            yer: derivedValues.basePriceYER,
+          });
 
-            if (compareAtPriceUSD !== undefined) {
-              const compareConverted = await this.exchangeRatesService.convertCurrency({
-                amount: compareAtPriceUSD,
-                fromCurrency: 'USD',
-                toCurrency: currency,
-              });
-              compareAtPrice = compareConverted.result;
-            }
-
-            if (costPriceUSD !== undefined) {
-              const costConverted = await this.exchangeRatesService.convertCurrency({
-                amount: costPriceUSD,
-                fromCurrency: 'USD',
-                toCurrency: currency,
-              });
-              costPrice = costConverted.result;
-            }
-          } catch (error) {
-            this.logger.error(
-              `Error converting simple product prices to ${currency}:`,
-              error,
+          if (storedBase !== undefined) {
+            basePrice = storedBase;
+            exchangeRate = this.computeStoredExchangeRate(
+              currencyCode,
+              basePriceUSD,
+              storedBase,
             );
-            throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, {
-              error: error instanceof Error ? error.message : String(error),
+            formattedPrice = this.formatStoredPrice(currencyCode, storedBase);
+          } else if (rates) {
+            try {
+              const baseConverted = this.convertUsdAmount(
+                basePriceUSD,
+                currencyCode,
+                rates,
+              );
+              basePrice = baseConverted.value ?? 0;
+              exchangeRate = baseConverted.rate;
+              formattedPrice =
+                baseConverted.formatted ?? this.formatStoredPrice(currencyCode, basePrice);
+            } catch (error) {
+              this.logger.error(
+                `Error converting simple product base price to ${currencyCode}:`,
+                error,
+              );
+              throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, {
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
+          } else {
+            basePrice = 0;
+          }
+
+          const resolveAdditionalPrice = (
+            usdAmount?: number,
+            storedSar?: number,
+            storedYer?: number,
+          ): number | undefined => {
+            const stored = this.pickStoredAmount(currencyCode, {
+              usd: usdAmount,
+              sar: storedSar,
+              yer: storedYer,
             });
+
+            if (stored !== undefined) {
+              return stored;
+            }
+
+            if (usdAmount === undefined || usdAmount === null) {
+              return undefined;
+            }
+
+            if (!rates) {
+              throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, {
+                error: 'Missing exchange rates snapshot',
+              });
+            }
+
+            const converted = this.convertUsdAmount(usdAmount, currencyCode, rates);
+            return converted.value;
+          };
+
+          if (compareAtPriceUSD !== undefined) {
+            compareAtPrice = resolveAdditionalPrice(
+              compareAtPriceUSD,
+              derivedValues.compareAtPriceSAR,
+              derivedValues.compareAtPriceYER,
+            );
+          }
+
+          if (costPriceUSD !== undefined) {
+            costPrice = resolveAdditionalPrice(
+              costPriceUSD,
+              derivedValues.costPriceSAR,
+              derivedValues.costPriceYER,
+            );
           }
         }
 
@@ -584,14 +1051,14 @@ export class PricingService {
           );
         }
 
-        results[currency] = {
+        results[currencyCode] = {
           basePrice,
           compareAtPrice,
           costPrice,
           discountPercent,
           discountAmount,
           finalPrice,
-          currency,
+          currency: currencyCode,
           exchangeRate,
           formattedPrice,
           formattedFinalPrice,
@@ -600,5 +1067,30 @@ export class PricingService {
     );
 
     return results;
+  }
+
+  private convertUsdAmount(
+    amount: number | undefined,
+    currency: string,
+    rates: ExchangeRate,
+  ): { value?: number; formatted?: string; rate?: number } {
+    if (amount === undefined || amount === null) {
+      return { value: undefined, formatted: undefined, rate: undefined };
+    }
+
+    const conversion = this.exchangeRatesService.calculateConversionWithRates(
+      {
+        amount,
+        fromCurrency: 'USD',
+        toCurrency: currency,
+      },
+      rates,
+    );
+
+    return {
+      value: conversion.result,
+      formatted: conversion.formatted,
+      rate: conversion.rate,
+    };
   }
 }

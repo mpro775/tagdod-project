@@ -12,6 +12,7 @@ import {
 import { AttributesService } from '../../attributes/attributes.service';
 import { Attribute } from '../../attributes/schemas/attribute.schema';
 import { AttributeValue } from '../../attributes/schemas/attribute-value.schema';
+import { ProductPricingCalculatorService } from './product-pricing-calculator.service';
 
 // Local, explicit types to eliminate 'any' usage and align with real data
 type AttributeValueInput = {
@@ -57,6 +58,7 @@ export class VariantService {
     @InjectModel(Variant.name) private variantModel: Model<Variant>,
     @InjectModel(Product.name) private productModel: Model<Product>,
     private attributesService: AttributesService,
+    private productPricingCalculator: ProductPricingCalculatorService,
   ) {}
 
   // ==================== CRUD Operations ====================
@@ -87,6 +89,17 @@ export class VariantService {
       }),
     );
 
+    const rates = await this.productPricingCalculator.getLatestRates();
+
+    const pricingFields = await this.productPricingCalculator.calculateVariantPricing(
+      {
+        basePriceUSD: dto.price ?? dto.basePriceUSD ?? 0,
+        compareAtPriceUSD: dto.compareAtPrice ?? dto.compareAtPriceUSD,
+        costPriceUSD: dto.costPrice ?? dto.costPriceUSD,
+      },
+      rates,
+    );
+
     const variant = await this.variantModel.create({
       ...dto,
       attributeValues: enrichedAttributes,
@@ -94,6 +107,7 @@ export class VariantService {
       basePriceUSD: dto.price ?? 0,
       compareAtPriceUSD: dto.compareAtPrice,
       costPriceUSD: dto.costPrice,
+      ...pricingFields,
     });
 
     // تحديث عدد الـ variants
@@ -209,6 +223,31 @@ export class VariantService {
       delete (updateData as UpdateVariantDto).costPrice;
     }
 
+    const priceFieldsTouched =
+      Object.prototype.hasOwnProperty.call(updateData, 'basePriceUSD') ||
+      Object.prototype.hasOwnProperty.call(updateData, 'compareAtPriceUSD') ||
+      Object.prototype.hasOwnProperty.call(updateData, 'costPriceUSD');
+
+    if (priceFieldsTouched) {
+      const rates = await this.productPricingCalculator.getLatestRates();
+      const pricingFields = await this.productPricingCalculator.calculateVariantPricing(
+        {
+          basePriceUSD: Object.prototype.hasOwnProperty.call(updateData, 'basePriceUSD')
+            ? (updateData.basePriceUSD as number | undefined)
+            : variant.basePriceUSD,
+          compareAtPriceUSD: Object.prototype.hasOwnProperty.call(updateData, 'compareAtPriceUSD')
+            ? (updateData.compareAtPriceUSD as number | undefined)
+            : variant.compareAtPriceUSD,
+          costPriceUSD: Object.prototype.hasOwnProperty.call(updateData, 'costPriceUSD')
+            ? (updateData.costPriceUSD as number | undefined)
+            : variant.costPriceUSD,
+        },
+        rates,
+      );
+
+      Object.assign(updateData, pricingFields);
+    }
+
     await this.variantModel.updateOne({ _id: id }, { $set: updateData });
     return this.findById(id);
   }
@@ -275,6 +314,15 @@ export class VariantService {
       await this.variantModel.deleteMany({ productId: new Types.ObjectId(productId) } as FilterQuery<Variant>);
     }
 
+    const rates = await this.productPricingCalculator.getLatestRates();
+    const defaultPricingFields =
+      await this.productPricingCalculator.calculateVariantPricing(
+        {
+          basePriceUSD: defaultPrice,
+        },
+        rates,
+      );
+
     // إنشاء الـ variants
     const variants: Variant[] = [];
     for (const combo of combinations) {
@@ -297,6 +345,7 @@ export class VariantService {
           productId: new Types.ObjectId(productId),
           attributeValues: combo,
           basePriceUSD: defaultPrice,
+          ...defaultPricingFields,
           stock: defaultStock,
           trackInventory: true,
           isActive: true,

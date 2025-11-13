@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ProductService } from './services/product.service';
 import { VariantService } from './services/variant.service';
 import { PricingService } from './services/pricing.service';
+import { ProductPricingCalculatorService } from './services/product-pricing-calculator.service';
 import { InventoryService } from './services/inventory.service';
 import { StockAlertService } from './services/stock-alert.service';
 import { PublicProductsPresenter } from './services/public-products.presenter';
@@ -44,6 +45,7 @@ import { SharedModule } from '../../shared/shared.module';
     ProductService,
     VariantService,
     PricingService,
+    ProductPricingCalculatorService,
     InventoryService,
     StockAlertService,
     PublicProductsPresenter,
@@ -52,6 +54,7 @@ import { SharedModule } from '../../shared/shared.module';
     ProductService,
     VariantService,
     PricingService,
+    ProductPricingCalculatorService,
     InventoryService,
     StockAlertService,
     PublicProductsPresenter,

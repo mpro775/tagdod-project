@@ -53,7 +53,7 @@ export const OrderStatusChip: React.FC<OrderStatusChipProps> = ({
   ...props
 }) => {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t } = useTranslation('orders');
   
   const chipColor = orderStatusColors[status];
   const borderColor = 
@@ -63,7 +63,7 @@ export const OrderStatusChip: React.FC<OrderStatusChipProps> = ({
   
   return (
     <Chip
-      label={t(`orders.status.${status}`)}
+      label={t(`status.${status}`)}
       color={chipColor}
       icon={showIcon ? getStatusIcon(status) : undefined}
       size={size}

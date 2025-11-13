@@ -152,7 +152,7 @@ export const OrderDetailsPage: React.FC = () => {
     ) {
       // إظهار تحذير للمستخدم
       toast.error(
-        `لا يمكن تغيير حالة الطلب إلى ${t(`orders.status.${statusForm.status}`)} بدون إتمام الدفع. حالة الدفع الحالية: ${t(`orders.payment.status.${order.paymentStatus}`)}`
+        `لا يمكن تغيير حالة الطلب إلى ${t(`status.${statusForm.status}`)} بدون إتمام الدفع. حالة الدفع الحالية: ${t(`payment.status.${order.paymentStatus}`)}`
       );
       return;
     }
@@ -334,7 +334,7 @@ export const OrderDetailsPage: React.FC = () => {
                         setMobileActionsOpen(false);
                         setShipDialog(true);
                       }}
-                      disabled={!['processing', 'ready_to_ship'].includes(order.status)}
+                      disabled={order.status !== OrderStatus.PROCESSING}
                     >
                       {t('actions.shipOrder')}
                     </Button>
@@ -346,7 +346,9 @@ export const OrderDetailsPage: React.FC = () => {
                         setMobileActionsOpen(false);
                         setRefundDialog(true);
                       }}
-                      disabled={!['delivered', 'completed'].includes(order.status)}
+                      disabled={
+                        ![OrderStatus.DELIVERED, OrderStatus.COMPLETED].includes(order.status)
+                      }
                     >
                       {t('actions.refundOrder')}
                     </Button>
@@ -358,7 +360,11 @@ export const OrderDetailsPage: React.FC = () => {
                         setMobileActionsOpen(false);
                         setCancelDialog(true);
                       }}
-                      disabled={['cancelled', 'delivered', 'completed'].includes(order.status)}
+                      disabled={
+                        [OrderStatus.CANCELLED, OrderStatus.DELIVERED, OrderStatus.COMPLETED].includes(
+                          order.status
+                        )
+                      }
                     >
                       {t('actions.cancelOrder')}
                     </Button>
@@ -381,7 +387,7 @@ export const OrderDetailsPage: React.FC = () => {
                 size={isMobile ? 'small' : 'medium'}
                 startIcon={<LocalShipping />}
                 onClick={() => setShipDialog(true)}
-                disabled={!['processing', 'ready_to_ship'].includes(order.status)}
+                disabled={order.status !== OrderStatus.PROCESSING}
               >
                 {t('actions.shipOrder')}
               </Button>
@@ -390,7 +396,10 @@ export const OrderDetailsPage: React.FC = () => {
                 size={isMobile ? 'small' : 'medium'}
                 startIcon={<Refresh />}
                 onClick={() => setRefundDialog(true)}
-                disabled={!['delivered', 'completed'].includes(order.status)}
+                disabled={![
+                  OrderStatus.DELIVERED,
+                  OrderStatus.COMPLETED,
+                ].includes(order.status)}
               >
                 {t('actions.refundOrder')}
               </Button>
@@ -399,7 +408,11 @@ export const OrderDetailsPage: React.FC = () => {
                 size={isMobile ? 'small' : 'medium'}
                 startIcon={<Cancel />}
                 onClick={() => setCancelDialog(true)}
-                disabled={['cancelled', 'delivered', 'completed'].includes(order.status)}
+                disabled={
+                  [OrderStatus.CANCELLED, OrderStatus.DELIVERED, OrderStatus.COMPLETED].includes(
+                    order.status
+                  )
+                }
               >
                 {t('actions.cancelOrder')}
               </Button>
@@ -439,7 +452,7 @@ export const OrderDetailsPage: React.FC = () => {
                         {t('details.paymentStatus')}
                       </Typography>
                       <Chip
-                        label={t(`orders.payment.status.${order.paymentStatus}`)}
+                        label={t(`payment.status.${order.paymentStatus}`)}
                         color={order.paymentStatus === PaymentStatus.PAID ? 'success' : 'warning'}
                         size={isMobile ? 'small' : 'medium'}
                       />
@@ -451,7 +464,7 @@ export const OrderDetailsPage: React.FC = () => {
                         {t('details.paymentMethod')}
                       </Typography>
                       <Chip
-                        label={t(`orders.payment.method.${order.paymentMethod}`)}
+                        label={t(`payment.method.${order.paymentMethod}`)}
                         variant="outlined"
                         size={isMobile ? 'small' : 'medium'}
                       />
@@ -1107,7 +1120,7 @@ export const OrderDetailsPage: React.FC = () => {
                   <Typography variant="caption" color="text.secondary">
                     {t('dialogs.updateStatus.paymentRequiredMessage', {
                       defaultValue: 'حالة الدفع الحالية: {status}',
-                      status: t(`orders.payment.status.${order.paymentStatus}`)
+                      status: t(`payment.status.${order.paymentStatus}`)
                     })}
                   </Typography>
                   {order.paymentMethod === PaymentMethod.BANK_TRANSFER && (

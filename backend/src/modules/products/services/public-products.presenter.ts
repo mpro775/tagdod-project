@@ -8,6 +8,7 @@ import {
 } from './pricing.service';
 import { VariantService } from './variant.service';
 import { AttributesService } from '../../attributes/attributes.service';
+import { AttributeValue } from '../../attributes/schemas/attribute-value.schema';
 import { ProductService } from './product.service';
 import { User } from '../../users/schemas/user.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
@@ -46,14 +47,27 @@ export type RelatedProductPayload = AnyRecord & {
 type VariantPricingInput = {
   _id: Types.ObjectId | string;
   basePriceUSD: number;
+  basePriceSAR?: number;
+  basePriceYER?: number;
   compareAtPriceUSD?: number;
+  compareAtPriceSAR?: number;
+  compareAtPriceYER?: number;
   costPriceUSD?: number;
+  costPriceSAR?: number;
+  costPriceYER?: number;
+  exchangeRateVersion?: string;
+  lastExchangeRateSyncAt?: Date | string;
 };
 
 @Injectable()
 export class PublicProductsPresenter {
   private readonly logger = new Logger(PublicProductsPresenter.name);
   private readonly BASE_PRICING_CURRENCIES = ['USD', 'YER', 'SAR'] as const;
+  private readonly ATTRIBUTE_SUMMARY_TTL_MS = 5 * 60 * 1000;
+  private readonly attributeSummaryCache = new Map<
+    string,
+    { summary: AttributeSummary; expiresAt: number }
+  >();
 
   constructor(
     private productService: ProductService,
@@ -170,37 +184,103 @@ export class PublicProductsPresenter {
       return [];
     }
 
-    const summaries = await Promise.all(
-      uniqueIds.map(async (attributeId) => {
-        try {
-          const attribute = await this.attributesService.getAttribute(attributeId);
-          const attributeRecord = attribute as Record<string, unknown>;
-          const valuesList =
-            (attributeRecord.values as Array<Record<string, unknown>> | undefined) ?? [];
+    const now = Date.now();
+    const cachedSummaries: AttributeSummary[] = [];
+    const missingIds: string[] = [];
+
+    uniqueIds.forEach((attributeId) => {
+      const cached = this.attributeSummaryCache.get(attributeId);
+      if (cached && cached.expiresAt > now) {
+        cachedSummaries.push(cached.summary);
+      } else {
+        if (cached) {
+          this.attributeSummaryCache.delete(attributeId);
+        }
+        missingIds.push(attributeId);
+      }
+    });
+
+    let fetchedSummaries: AttributeSummary[] = [];
+
+    if (missingIds.length > 0) {
+      try {
+        const attributes = await this.attributesService.getAttributesWithValues(missingIds);
+
+        fetchedSummaries = attributes.map((attributeRecord) => {
+          const attributeRecordWithId = attributeRecord as {
+            _id?: unknown;
+            name?: unknown;
+            nameEn?: unknown;
+            values?: AttributeValue[];
+          };
+
+          const candidateId = this.extractIdString(attributeRecordWithId._id);
+          const id =
+            candidateId ??
+            missingIds.find(
+              (missingId) => missingId === String(attributeRecordWithId._id),
+            ) ??
+            '';
+
+          const values =
+            attributeRecordWithId.values?.map((valueRecord) => {
+              const valueRecordWithId = valueRecord as {
+                _id?: unknown;
+                value?: unknown;
+                valueEn?: unknown;
+              };
+
+              const valueId = this.extractIdString(valueRecordWithId._id) ?? '';
+              const value =
+                (valueRecordWithId.value as string | undefined) ??
+                '';
+              const valueEn =
+                (valueRecordWithId.valueEn as string | undefined) ??
+                value;
+
+              return {
+                id: valueId,
+                value,
+                valueEn,
+              };
+            }) ?? [];
 
           return {
-            id: this.extractIdString(attributeRecord._id) ?? attributeId,
-            name: (attributeRecord.name as string) ?? '',
-            nameEn: (attributeRecord.nameEn as string) ?? '',
-            values: valuesList.map((valueRecord) => ({
-              id: this.extractIdString(valueRecord._id) ?? '',
-              value: (valueRecord.value as string) ?? '',
-              valueEn:
-                (valueRecord.valueEn as string | undefined) ?? (valueRecord.value as string) ?? '',
-            })),
+            id,
+            name: (attributeRecordWithId.name as string) ?? '',
+            nameEn: (attributeRecordWithId.nameEn as string) ?? '',
+            values,
           } as AttributeSummary;
-        } catch (error) {
-          this.logger.warn(
-            `Failed to load attribute ${attributeId}: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
-          );
-          return null;
-        }
-      }),
-    );
+        });
 
-    return summaries.filter((summary): summary is AttributeSummary => Boolean(summary));
+        fetchedSummaries.forEach((summary) => {
+          if (!summary.id) {
+            return;
+          }
+          this.attributeSummaryCache.set(summary.id, {
+            summary,
+            expiresAt: now + this.ATTRIBUTE_SUMMARY_TTL_MS,
+          });
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Failed to load attributes ${missingIds.join(', ')}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
+    const summariesById = new Map<string, AttributeSummary>();
+    [...cachedSummaries, ...fetchedSummaries].forEach((summary) => {
+      if (summary.id) {
+        summariesById.set(summary.id, summary);
+      }
+    });
+
+    return uniqueIds
+      .map((attributeId) => summariesById.get(attributeId))
+      .filter((summary): summary is AttributeSummary => Boolean(summary));
   }
 
   private normalizePrice(value: unknown): number | undefined {
@@ -218,6 +298,28 @@ export class PublicProductsPresenter {
     const costPrice = this.normalizePrice(product.costPriceUSD ?? product.costPrice);
 
     return basePrice !== undefined || compareAtPrice !== undefined || costPrice !== undefined;
+  }
+
+  private buildSimpleProductDerivedPricing(product: AnyRecord): {
+    basePriceSAR?: number;
+    basePriceYER?: number;
+    compareAtPriceSAR?: number;
+    compareAtPriceYER?: number;
+    costPriceSAR?: number;
+    costPriceYER?: number;
+    exchangeRateVersion?: string;
+    lastExchangeRateSyncAt?: Date | string;
+  } {
+    return {
+      basePriceSAR: this.normalizePrice(product.basePriceSAR),
+      basePriceYER: this.normalizePrice(product.basePriceYER),
+      compareAtPriceSAR: this.normalizePrice(product.compareAtPriceSAR),
+      compareAtPriceYER: this.normalizePrice(product.compareAtPriceYER),
+      costPriceSAR: this.normalizePrice(product.costPriceSAR),
+      costPriceYER: this.normalizePrice(product.costPriceYER),
+      exchangeRateVersion: product.exchangeRateVersion as string | undefined,
+      lastExchangeRateSyncAt: product.lastExchangeRateSyncAt as Date | string | undefined,
+    };
   }
 
   private summarizeCurrencyPricing(
@@ -564,8 +666,16 @@ export class PublicProductsPresenter {
     const variantSnapshots: VariantPricingInput[] = variants.map((variant) => ({
       _id: variant._id,
       basePriceUSD: this.normalizePrice(variant.basePriceUSD) ?? 0,
+      basePriceSAR: this.normalizePrice(variant.basePriceSAR),
+      basePriceYER: this.normalizePrice(variant.basePriceYER),
       compareAtPriceUSD: this.normalizePrice(variant.compareAtPriceUSD),
+      compareAtPriceSAR: this.normalizePrice(variant.compareAtPriceSAR),
+      compareAtPriceYER: this.normalizePrice(variant.compareAtPriceYER),
       costPriceUSD: this.normalizePrice(variant.costPriceUSD),
+      costPriceSAR: this.normalizePrice(variant.costPriceSAR),
+      costPriceYER: this.normalizePrice(variant.costPriceYER),
+      exchangeRateVersion: variant.exchangeRateVersion as string | undefined,
+      lastExchangeRateSyncAt: variant.lastExchangeRateSyncAt as Date | string | undefined,
     }));
 
     const pricesByCurrency = await this.pricingService.getProductPricesWithDiscountByCurrencies(
@@ -648,12 +758,15 @@ export class PublicProductsPresenter {
             new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
           );
 
+          const derivedPricing = this.buildSimpleProductDerivedPricing(productRecord);
+
           const pricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
             basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
             compareAtPriceUSD,
             costPriceUSD,
             currenciesForPricing,
             discountPercent,
+            derivedPricing,
           );
 
           return this.buildSimplifiedProduct(productRecord, {
@@ -772,12 +885,15 @@ export class PublicProductsPresenter {
               productRecord.costPriceUSD ?? productRecord.costPrice,
             );
 
+            const derivedPricing = this.buildSimpleProductDerivedPricing(productRecord);
+
             pricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
               basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
               compareAtPriceUSD,
               costPriceUSD,
               currenciesForPricing,
               discountPercent,
+              derivedPricing,
             );
             defaultPricing =
               pricingByCurrency[this.normalizeCurrency(selectedCurrencyInput)] ??
@@ -874,12 +990,15 @@ export class PublicProductsPresenter {
     const costPriceUSD = this.normalizePrice(product.costPriceUSD ?? product.costPrice);
 
     if (variantsWithPricing.length === 0 && this.hasSimplePricing(product)) {
+      const derivedPricing = this.buildSimpleProductDerivedPricing(product);
+
       productPricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
         basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
         compareAtPriceUSD,
         costPriceUSD,
         currenciesForPricing,
         discountPercent,
+        derivedPricing,
       );
       defaultPricing =
         productPricingByCurrency[this.normalizeCurrency(selectedCurrencyInput)] ??

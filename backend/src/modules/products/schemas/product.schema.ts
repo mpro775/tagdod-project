@@ -95,10 +95,34 @@ export class Product {
   basePriceUSD?: number;
 
   @Prop({ type: Number, min: 0 })
+  basePriceSAR?: number;
+
+  @Prop({ type: Number, min: 0 })
+  basePriceYER?: number;
+
+  @Prop({ type: Number, min: 0 })
   compareAtPriceUSD?: number;
 
   @Prop({ type: Number, min: 0 })
+  compareAtPriceSAR?: number;
+
+  @Prop({ type: Number, min: 0 })
+  compareAtPriceYER?: number;
+
+  @Prop({ type: Number, min: 0 })
   costPriceUSD?: number;
+
+  @Prop({ type: Number, min: 0 })
+  costPriceSAR?: number;
+
+  @Prop({ type: Number, min: 0 })
+  costPriceYER?: number;
+
+  @Prop({ type: Date })
+  lastExchangeRateSyncAt?: Date;
+
+  @Prop({ type: String })
+  exchangeRateVersion?: string;
 
   // SEO
   @Prop()

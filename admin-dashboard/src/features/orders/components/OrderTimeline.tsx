@@ -73,54 +73,54 @@ const getRoleIcon = (role: 'customer' | 'admin' | 'system') => {
 };
 
 const getRoleLabel = (role: 'customer' | 'admin' | 'system', t: (key: string) => string) => {
-  return t(`orders.timeline.roles.${role}`);
+  return t(`timeline.roles.${role}`);
 };
 
 export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory = true }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
-  const { t } = useTranslation();
+  const { t } = useTranslation('orders');
   
   const getOrderTimeline = () => {
     const timeline = [
       {
-        label: t('orders.statusLabels.pending_payment'),
+        label: t('statusLabels.pending_payment'),
         date: order.createdAt,
         completed: true,
         icon: getStatusIcon('pending_payment' as OrderStatus),
         status: 'pending_payment' as OrderStatus,
       },
       {
-        label: t('orders.statusLabels.confirmed'),
+        label: t('statusLabels.confirmed'),
         date: order.confirmedAt,
         completed: !!order.confirmedAt,
         icon: getStatusIcon('confirmed' as OrderStatus),
         status: 'confirmed' as OrderStatus,
       },
       {
-        label: t('orders.statusLabels.processing'),
+        label: t('statusLabels.processing'),
         date: order.processingStartedAt,
         completed: !!order.processingStartedAt,
         icon: getStatusIcon('processing' as OrderStatus),
         status: 'processing' as OrderStatus,
       },
       {
-        label: t('orders.statusLabels.shipped'),
+        label: t('statusLabels.shipped'),
         date: order.shippedAt,
         completed: !!order.shippedAt,
         icon: getStatusIcon('shipped' as OrderStatus),
         status: 'shipped' as OrderStatus,
       },
       {
-        label: t('orders.statusLabels.delivered'),
+        label: t('statusLabels.delivered'),
         date: order.deliveredAt,
         completed: !!order.deliveredAt,
         icon: getStatusIcon('delivered' as OrderStatus),
         status: 'delivered' as OrderStatus,
       },
       {
-        label: t('orders.statusLabels.completed'),
+        label: t('statusLabels.completed'),
         date: order.completedAt,
         completed: !!order.completedAt,
         icon: getStatusIcon('completed' as OrderStatus),
@@ -171,7 +171,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
             fontWeight: 'bold',
           }}
         >
-          {t('orders.details.timeline')}
+          {t('details.timeline')}
         </Typography>
         {isMobile ? (
           // Mobile: Vertical Stepper with compact layout
@@ -286,7 +286,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
               fontWeight: 'bold',
             }}
           >
-            {t('orders.details.history')}
+            {t('details.history')}
           </Typography>
           <List sx={{ p: 0 }}>
             {statusHistory.map((entry, index) => (

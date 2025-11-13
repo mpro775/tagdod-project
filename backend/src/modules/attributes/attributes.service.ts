@@ -81,6 +81,71 @@ export class AttributesService {
     };
   }
 
+  async getAttributesWithValues(attributeIds: string[]): Promise<Array<Attribute & { values: AttributeValue[] }>> {
+    if (!Array.isArray(attributeIds) || attributeIds.length === 0) {
+      return [];
+    }
+
+    const normalizedIds = Array.from(
+      new Set(
+        attributeIds
+          .map((id) => (typeof id === 'string' ? id : String(id)))
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    if (normalizedIds.length === 0) {
+      return [];
+    }
+
+    const objectIds = normalizedIds
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    const attributes = await this.attributeModel
+      .find({
+        _id: {
+          $in: [...normalizedIds, ...objectIds],
+        },
+      })
+      .populate('groupId')
+      .lean();
+
+    if (attributes.length === 0) {
+      return [];
+    }
+
+    const attributeObjectIds = attributes
+      .map((attr) => attr._id)
+      .filter((id): id is Types.ObjectId => Types.ObjectId.isValid(String(id)))
+      .map((id) => new Types.ObjectId(String(id)));
+
+    const values = await this.valueModel
+      .find({
+        attributeId: { $in: attributeObjectIds },
+        deletedAt: null,
+      })
+      .sort({ order: 1, value: 1 })
+      .lean();
+
+    const valuesByAttribute = new Map<string, AttributeValue[]>();
+    values.forEach((value) => {
+      const key = String(value.attributeId);
+      if (!valuesByAttribute.has(key)) {
+        valuesByAttribute.set(key, []);
+      }
+      valuesByAttribute.get(key)!.push(value);
+    });
+
+    return attributes.map((attribute) => {
+      const key = String(attribute._id);
+      return {
+        ...(attribute as Attribute),
+        values: valuesByAttribute.get(key) ?? [],
+      };
+    });
+  }
+
   async listAttributes(query: { 
     search?: string; 
     isActive?: boolean; 

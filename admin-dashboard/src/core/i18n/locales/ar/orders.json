@@ -243,6 +243,13 @@
     "paymentStatus": "حالة الدفع",
     "paymentMethod": "طريقة الدفع",
     "total": "المجموع",
+    "discountsAndCoupons": "الخصومات والكوبونات",
+    "itemsDiscount": "خصم المنتجات (من العروض الترويجية)",
+    "appliedCoupons": "الكوبونات المطبقة",
+    "totalCouponDiscount": "إجمالي خصم الكوبونات",
+    "coupon": "كوبون",
+    "couponDiscount": "خصم الكوبون",
+    "totalDiscount": "إجمالي الخصومات",
     "orderItems": "منتجات الطلب",
     "orderTracking": "تتبع الطلب",
     "deliveryAddress": "عنوان التوصيل",
@@ -282,7 +289,13 @@
     "refundInfo": "معلومات الاسترداد",
     "refundAmount": "مبلغ الاسترداد",
     "refundReason": "سبب الاسترداد",
-    "refundedAt": "تاريخ الاسترداد"
+    "refundedAt": "تاريخ الاسترداد",
+    "addressNotes": "ملاحظات العنوان",
+    "noDeliveryAddress": "لا توجد بيانات عنوان للتسليم",
+    "unknownCustomer": "عميل غير معروف",
+    "noPhoneAvailable": "لا يوجد رقم هاتف",
+    "loadingCustomer": "جاري تحميل بيانات العميل...",
+    "customerId": "معرّف العميل"
   },
   "summary": {
     "orderNumber": "طلب #{{number}}",
@@ -321,7 +334,10 @@
       "currentStatus": "الحالة الحالية",
       "newStatus": "الحالة الجديدة",
       "notes": "ملاحظات (اختياري)",
-      "confirm": "تحديث"
+      "confirm": "تحديث",
+      "paymentRequired": "تحذير: هذه الحالة تتطلب إتمام الدفع",
+      "paymentRequiredMessage": "حالة الدفع الحالية: {{status}}",
+      "verifyPaymentFirst": "يرجى التحقق من الدفع أولاً قبل تغيير الحالة"
     },
     "shipOrder": {
       "title": "شحن الطلب",
