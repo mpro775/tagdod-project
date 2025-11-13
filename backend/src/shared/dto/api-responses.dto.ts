@@ -448,8 +448,8 @@ export class OrderDto {
   orderNumber!: string;
 
   @ApiProperty({ 
-    example: 'pending', 
-    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'], 
+    example: 'pending_payment', 
+    enum: ['pending_payment', 'confirmed', 'processing', 'completed', 'on_hold', 'cancelled', 'returned', 'refunded'], 
     description: 'Order status' 
   })
   status!: string;

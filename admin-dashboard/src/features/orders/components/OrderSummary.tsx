@@ -37,7 +37,7 @@ interface OrderSummaryProps {
 export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails = true }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { t } = useTranslation();
+  const { t } = useTranslation('orders');
   
   const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
@@ -247,7 +247,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
               }}
             >
               <LocalShipping />
-              {t('orders.details.shippingInfo')}
+              {t('details.shippingInfo')}
             </Typography>
             <Paper
               sx={{

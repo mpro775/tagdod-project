@@ -24,7 +24,8 @@
 5. [قائمة طلباتي](#5-قائمة-طلباتي)
 6. [تفاصيل طلب](#6-تفاصيل-طلب)
 7. [إلغاء طلب](#7-إلغاء-طلب)
-8. [Models في Flutter](#8-models-في-flutter)
+8. [تقييم طلب](#8-تقييم-طلب)
+9. [Models في Flutter](#9-models-في-flutter)
 
 ---
 
@@ -1325,7 +1326,78 @@ Future<OrderDetails> cancelOrder({
 
 ---
 
-## 8. Models في Flutter
+## 8. تقييم طلب
+
+يتيح للعميل تقييم الطلب بعد استلامه، مع إمكانية إضافة مراجعة نصية. لا يُسمح بالتقييم إلا للحالات `delivered` أو `completed`. إذا تم تقييم طلب في حالة `delivered`، فسيتم ترقيته تلقائياً إلى `completed`.
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/orders/:id/rate`
+- **Auth Required:** ✅ نعم (Bearer Token)
+
+### Request Body
+
+```json
+{
+  "rating": 5,
+  "review": "التغليف ممتاز والتسليم سريع"
+}
+```
+
+| الحقل | النوع | مطلوب | الوصف |
+|-------|-------|-------|-------|
+| `rating` | `number` | ✅ نعم | تقييم من 1 إلى 5. |
+| `review` | `string` | ❌ لا | ملاحظة أو مراجعة قصيرة من العميل. |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "order": {
+      "_id": "order_123",
+      "orderNumber": "ORD-2025-001234",
+      "status": "completed",
+      "ratingInfo": {
+        "rating": 5,
+        "review": "التغليف ممتاز والتسليم سريع",
+        "ratedAt": "2025-11-13T15:20:00.000Z"
+      },
+      "updatedAt": "2025-11-13T15:20:00.000Z"
+      // ... بقية بيانات الطلب
+    },
+    "message": "شكراً لتقييمك!"
+  },
+  "requestId": "req_orders_rate_001"
+}
+```
+
+- يتم تحديث `ratingInfo` داخل مستند الطلب (`rating`, `review`, `ratedAt`).
+- إذا كان الطلب في حالة `delivered` فسيتم تحديث الحالة إلى `completed` تلقائياً وإضافة سجل إلى `statusHistory`.
+
+### Response - فشل (الحالة لا تسمح بالتقييم)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ORDER_RATING_NOT_ALLOWED",
+    "message": "لا يمكن تقييم الطلب في هذه الحالة",
+    "details": {
+      "status": "processing"
+    }
+  },
+  "requestId": "req_orders_rate_002"
+}
+```
+
+> ✔️ بعد نجاح التقييم تقوم الواجهة بتحديث عرض الطلب مباشرة باستخدام بيانات `order` المعادة أو من خلال استدعاء `GET /orders/:id` للحصول على تفاصيل محدثة (يشمل `ratingInfo` و`statusHistory`).
+
+---
+
+## 9. Models في Flutter
 
 ### ملف: `lib/models/order/order_models.dart`
 

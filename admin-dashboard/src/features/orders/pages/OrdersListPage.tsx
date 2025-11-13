@@ -33,9 +33,11 @@ import {
   Clear,
   Assignment,
   TrendingUp,
-  LocalShipping,
   CheckCircle,
   Cancel,
+  Warning,
+  Replay,
+  Paid,
   ExpandMore,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -66,12 +68,10 @@ const orderStatusColors: Record<
   pending_payment: 'warning',
   confirmed: 'info',
   processing: 'primary',
-  shipped: 'info',
-  delivered: 'success',
   completed: 'success',
   on_hold: 'warning',
   cancelled: 'error',
-  returned: 'error',
+  returned: 'info',
   refunded: 'error',
 };
 
@@ -302,22 +302,34 @@ export const OrdersListPage: React.FC = () => {
         color: 'warning' as const,
       },
       {
-        title: t('stats.shipped'),
-        value: stats.shipped || 0,
-        icon: <LocalShipping color="info" />,
-        color: 'info' as const,
-      },
-      {
-        title: t('stats.delivered'),
-        value: stats.delivered || 0,
+        title: t('stats.completed'),
+        value: stats.completed || 0,
         icon: <CheckCircle color="success" />,
         color: 'success' as const,
+      },
+      {
+        title: t('stats.onHold'),
+        value: stats.onHold || 0,
+        icon: <Warning color="warning" />,
+        color: 'warning' as const,
       },
       {
         title: t('stats.cancelled'),
         value: stats.cancelled || 0,
         icon: <Cancel color="error" />,
         color: 'error' as const,
+      },
+      {
+        title: t('stats.returned'),
+        value: stats.returned || 0,
+        icon: <Replay color="info" />,
+        color: 'info' as const,
+      },
+      {
+        title: t('stats.refunded'),
+        value: stats.refunded || 0,
+        icon: <Paid color="success" />,
+        color: 'success' as const,
       },
     ];
 
@@ -581,12 +593,12 @@ export const OrdersListPage: React.FC = () => {
               </Button>
               <Button
                 variant="contained"
-                color="info"
+                color="success"
                 size="small"
-                onClick={() => handleBulkStatusUpdate('shipped' as OrderStatus)}
+                onClick={() => handleBulkStatusUpdate('completed' as OrderStatus)}
                 disabled={bulkUpdateMutation.isPending}
               >
-                {t('bulk.markAsShipped')}
+                {t('bulk.markAsCompleted')}
               </Button>
               <Button
                 variant="contained"

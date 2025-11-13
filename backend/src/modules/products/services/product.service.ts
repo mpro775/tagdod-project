@@ -11,6 +11,7 @@ import {
 } from '../../../shared/exceptions';
 import { CacheService } from '../../../shared/cache/cache.service';
 import { CategoriesService } from '../../categories/categories.service';
+import { ProductPricingCalculatorService } from './product-pricing-calculator.service';
 
 @Injectable()
 export class ProductService {
@@ -21,6 +22,7 @@ export class ProductService {
     @InjectModel(Variant.name) private variantModel: Model<Variant>,
     private cacheService: CacheService,
     private categoriesService: CategoriesService,
+    private productPricingCalculator: ProductPricingCalculatorService,
   ) {}
 
   // ==================== CRUD Operations ====================
@@ -34,8 +36,11 @@ export class ProductService {
       throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { slug: dto.slug, reason: 'already_exists' });
     }
 
+    const pricingFields = await this.buildDerivedPricingFields(dto);
+
     const product = await this.productModel.create({
       ...dto,
+      ...pricingFields,
       slug,
       variantsCount: 0,
       viewsCount: 0,
@@ -85,6 +90,29 @@ export class ProductService {
     return product;
   }
 
+  async findByIds(ids: string[]): Promise<Product[]> {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return [];
+    }
+
+    const objectIds = ids
+      .filter((id): id is string => typeof id === 'string' && Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    if (objectIds.length === 0) {
+      return [];
+    }
+
+    const products = await this.productModel
+      .find({
+        _id: { $in: objectIds },
+        deletedAt: null,
+      })
+      .lean();
+
+    return products as unknown as Product[];
+  }
+
   async update(id: string, dto: Partial<Product>): Promise<Product> {
     const product = await this.productModel.findById(id);
 
@@ -108,7 +136,19 @@ export class ProductService {
       await this.categoriesService.incrementProductsCount(dto.categoryId, 1);
     }
 
-    await this.productModel.updateOne({ _id: id }, { $set: dto });
+    const pricingFieldsTouched =
+      Object.prototype.hasOwnProperty.call(dto, 'basePriceUSD') ||
+      Object.prototype.hasOwnProperty.call(dto, 'compareAtPriceUSD') ||
+      Object.prototype.hasOwnProperty.call(dto, 'costPriceUSD');
+
+    const pricingFields = pricingFieldsTouched
+      ? await this.buildDerivedPricingFields({ ...product.toObject(), ...dto })
+      : {};
+
+    await this.productModel.updateOne(
+      { _id: id },
+      { $set: { ...dto, ...pricingFields } },
+    );
     await this.clearCache();
 
     return this.findById(id);
@@ -441,6 +481,27 @@ export class ProductService {
       .lean();
 
     return relatedProducts;
+  }
+
+  private async buildDerivedPricingFields(
+    source: Partial<Product>,
+  ): Promise<Partial<Product>> {
+    const hasUsdPricing =
+      source.basePriceUSD !== undefined ||
+      source.compareAtPriceUSD !== undefined ||
+      source.costPriceUSD !== undefined;
+
+    if (!hasUsdPricing) {
+      return {};
+    }
+
+    const derived = await this.productPricingCalculator.calculateProductPricing({
+      basePriceUSD: source.basePriceUSD,
+      compareAtPriceUSD: source.compareAtPriceUSD,
+      costPriceUSD: source.costPriceUSD,
+    });
+
+    return derived;
   }
 
   // ==================== Cache Management ====================

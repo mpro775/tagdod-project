@@ -67,9 +67,10 @@ export const STATUS_COLORS = {
   suspended: 'error',
   confirmed: 'info',
   processing: 'warning',
-  shipped: 'info',
-  delivered: 'success',
+  completed: 'success',
+  on_hold: 'warning',
   cancelled: 'error',
+  returned: 'info',
   refunded: 'warning',
 } as const;
 

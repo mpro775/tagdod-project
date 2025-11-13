@@ -41,10 +41,34 @@ export class Variant {
   basePriceUSD!: number;
 
   @Prop({ min: 0 })
+  basePriceSAR?: number;
+
+  @Prop({ min: 0 })
+  basePriceYER?: number;
+
+  @Prop({ min: 0 })
   compareAtPriceUSD?: number; // السعر قبل التخفيض
 
   @Prop({ min: 0 })
+  compareAtPriceSAR?: number; // السعر قبل التخفيض بالريال السعودي
+
+  @Prop({ min: 0 })
+  compareAtPriceYER?: number; // السعر قبل التخفيض بالريال اليمني
+
+  @Prop({ min: 0 })
   costPriceUSD?: number; // سعر التكلفة
+
+  @Prop({ min: 0 })
+  costPriceSAR?: number; // سعر التكلفة بالريال السعودي
+
+  @Prop({ min: 0 })
+  costPriceYER?: number; // سعر التكلفة بالريال اليمني
+
+  @Prop({ type: Date })
+  lastExchangeRateSyncAt?: Date;
+
+  @Prop({ type: String })
+  exchangeRateVersion?: string;
 
   // المخزون (مبسط)
   @Prop({ required: true, default: 0, min: 0 })

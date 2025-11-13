@@ -6,9 +6,12 @@ export type ReservationDocument = HydratedDocument<Reservation>;
 @Schema({ timestamps: true })
 export class Reservation {
   @Prop({ type: Types.ObjectId, ref: 'Variant', index: true })
-  variantId!: string;
+  variantId?: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Order', index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Product', index: true })
+  productId?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Order', index: true, required: true })
   orderId!: string;
 
   @Prop({ required: true, min: 1 })

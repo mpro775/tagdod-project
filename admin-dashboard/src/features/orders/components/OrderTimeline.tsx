@@ -20,17 +20,19 @@ import {
 import {
   CheckCircle,
   Schedule,
-  LocalShipping,
   Error,
   Warning,
   Info,
   Person,
   AdminPanelSettings,
   Settings,
+  Replay,
+  Paid,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '@/shared/utils/formatters';
-import type { Order, OrderStatus } from '../types/order.types';
+import type { Order } from '../types/order.types';
+import { OrderStatus } from '../types/order.types';
 
 interface OrderTimelineProps {
   order: Order;
@@ -39,19 +41,18 @@ interface OrderTimelineProps {
 
 const getStatusIcon = (status: OrderStatus) => {
   switch (status) {
-    case 'delivered':
     case 'completed':
       return <CheckCircle color="success" />;
-    case 'shipped':
-      return <LocalShipping color="info" />;
     case 'processing':
       return <Schedule color="primary" />;
-    case 'cancelled':
-    case 'refunded':
-    case 'returned':
-      return <Error color="error" />;
     case 'on_hold':
       return <Warning color="warning" />;
+    case 'returned':
+      return <Replay color="info" />;
+    case 'refunded':
+      return <Paid color="success" />;
+    case 'cancelled':
+      return <Error color="error" />;
     default:
       return <Info color="info" />;
   }
@@ -73,83 +74,140 @@ const getRoleIcon = (role: 'customer' | 'admin' | 'system') => {
 };
 
 const getRoleLabel = (role: 'customer' | 'admin' | 'system', t: (key: string) => string) => {
-  return t(`orders.timeline.roles.${role}`);
+  return t(`timeline.roles.${role}`);
 };
 
 export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory = true }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
-  const { t } = useTranslation();
+  const { t } = useTranslation('orders');
+  const statusHistory = React.useMemo(
+    () =>
+      Array.isArray(order.statusHistory)
+        ? [...order.statusHistory].sort(
+            (a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime(),
+          )
+        : [],
+    [order.statusHistory],
+  );
+
+  const findStatusChangeDate = React.useCallback(
+    (status: OrderStatus): Date | undefined => {
+      const entry = [...statusHistory].reverse().find((item) => item.status === status);
+      return entry ? new Date(entry.changedAt) : undefined;
+    },
+    [statusHistory],
+  );
+
+  const getStatusDate = (status: OrderStatus): Date | undefined => {
+    switch (status) {
+      case 'pending_payment':
+        return order.createdAt ? new Date(order.createdAt) : undefined;
+      case 'confirmed':
+        return order.confirmedAt ? new Date(order.confirmedAt) : findStatusChangeDate(status);
+      case 'processing':
+        return order.processingStartedAt
+          ? new Date(order.processingStartedAt)
+          : findStatusChangeDate(status);
+      case 'completed':
+        return order.completedAt ? new Date(order.completedAt) : findStatusChangeDate(status);
+      case 'on_hold':
+        return findStatusChangeDate(status);
+      case 'cancelled':
+        return order.cancelledAt ? new Date(order.cancelledAt) : findStatusChangeDate(status);
+      case 'returned':
+        return order.returnInfo?.returnedAt
+          ? new Date(order.returnInfo.returnedAt)
+          : findStatusChangeDate(status);
+      case 'refunded':
+        return order.returnInfo?.refundedAt
+          ? new Date(order.returnInfo.refundedAt)
+          : findStatusChangeDate(status);
+      default:
+        return undefined;
+    }
+  };
+
+  const statusProgressMap: Record<OrderStatus, number> = {
+    pending_payment: 0,
+    confirmed: 1,
+    processing: 2,
+    completed: 3,
+    on_hold: 2,
+    cancelled: 2,
+    returned: 3,
+    refunded: 3,
+  };
+
+  const baseStatuses: OrderStatus[] = [
+    OrderStatus.PENDING_PAYMENT,
+    OrderStatus.CONFIRMED,
+    OrderStatus.PROCESSING,
+    OrderStatus.COMPLETED,
+  ];
   
   const getOrderTimeline = () => {
-    const timeline = [
-      {
-        label: t('orders.statusLabels.pending_payment'),
-        date: order.createdAt,
-        completed: true,
-        icon: getStatusIcon('pending_payment' as OrderStatus),
-        status: 'pending_payment' as OrderStatus,
-      },
-      {
-        label: t('orders.statusLabels.confirmed'),
-        date: order.confirmedAt,
-        completed: !!order.confirmedAt,
-        icon: getStatusIcon('confirmed' as OrderStatus),
-        status: 'confirmed' as OrderStatus,
-      },
-      {
-        label: t('orders.statusLabels.processing'),
-        date: order.processingStartedAt,
-        completed: !!order.processingStartedAt,
-        icon: getStatusIcon('processing' as OrderStatus),
-        status: 'processing' as OrderStatus,
-      },
-      {
-        label: t('orders.statusLabels.shipped'),
-        date: order.shippedAt,
-        completed: !!order.shippedAt,
-        icon: getStatusIcon('shipped' as OrderStatus),
-        status: 'shipped' as OrderStatus,
-      },
-      {
-        label: t('orders.statusLabels.delivered'),
-        date: order.deliveredAt,
-        completed: !!order.deliveredAt,
-        icon: getStatusIcon('delivered' as OrderStatus),
-        status: 'delivered' as OrderStatus,
-      },
-      {
-        label: t('orders.statusLabels.completed'),
-        date: order.completedAt,
-        completed: !!order.completedAt,
-        icon: getStatusIcon('completed' as OrderStatus),
-        status: 'completed' as OrderStatus,
-      },
+    const currentProgress = statusProgressMap[order.status] ?? 0;
+
+    const timeline = baseStatuses.map((status, index) => {
+      const date = getStatusDate(status);
+      return {
+        label: t(`statusLabels.${status}`),
+        date,
+        completed: index <= currentProgress && (!!date || currentProgress > index),
+        icon: getStatusIcon(status),
+        status,
+      };
+    });
+
+    const exceptionalStatuses: OrderStatus[] = [
+      OrderStatus.ON_HOLD,
+      OrderStatus.CANCELLED,
+      OrderStatus.RETURNED,
+      OrderStatus.REFUNDED,
     ];
+
+    if (exceptionalStatuses.includes(order.status)) {
+      const status = order.status;
+      timeline.push({
+        label: t(`statusLabels.${status}`),
+        date: getStatusDate(status),
+        completed: true,
+        icon: getStatusIcon(status),
+        status,
+      });
+    }
 
     return timeline;
   };
 
   const getCurrentStep = () => {
     const timeline = getOrderTimeline();
-    const currentIndex = timeline.findIndex(
-      (step) => step.completed && step.status === order.status
+    const currentIndex = timeline.findIndex((step) => step.status === order.status);
+    if (currentIndex >= 0) {
+      return currentIndex;
+    }
+
+    const lastCompletedIndex = timeline.reduce(
+      (acc, step, index) => (step.completed ? index : acc),
+      0,
     );
-    return currentIndex >= 0 ? currentIndex : 0;
+
+    return lastCompletedIndex;
   };
 
   const getStatusHistory = () => {
-    if (!showHistory || !order.statusHistory || order.statusHistory.length === 0) {
+    if (!showHistory || statusHistory.length === 0) {
       return null;
     }
 
-    return order.statusHistory
+    return [...statusHistory]
       .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())
-      .slice(0, 10); // Show last 10 status changes
+      .slice(0, 10);
   };
 
-  const statusHistory = getStatusHistory();
+  const recentStatusHistory = getStatusHistory();
 
   return (
     <Box>
@@ -171,7 +229,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
             fontWeight: 'bold',
           }}
         >
-          {t('orders.details.timeline')}
+          {t('details.timeline')}
         </Typography>
         {isMobile ? (
           // Mobile: Vertical Stepper with compact layout
@@ -269,7 +327,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
       </Paper>
 
       {/* Status History */}
-      {statusHistory && (
+      {recentStatusHistory && (
         <Paper
           sx={{
             p: { xs: 2, sm: 3 },
@@ -286,10 +344,10 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
               fontWeight: 'bold',
             }}
           >
-            {t('orders.details.history')}
+            {t('details.history')}
           </Typography>
           <List sx={{ p: 0 }}>
-            {statusHistory.map((entry, index) => (
+            {recentStatusHistory.map((entry, index) => (
               <React.Fragment key={index}>
                 <ListItem
                   sx={{

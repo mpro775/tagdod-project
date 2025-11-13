@@ -9,6 +9,8 @@ import { Cart, CartDocument } from '../cart/schemas/cart.schema';
 import { AdvancedReport, AdvancedReportDocument, ReportCategory, ReportPriority } from './schemas/advanced-report.schema';
 import { SystemMonitoringService } from '../system-monitoring/system-monitoring.service';
 
+const COMPLETED_STATUSES = ['completed'] as const;
+
 /**
  * Advanced Analytics Service
  * 
@@ -145,7 +147,7 @@ export class AdvancedAnalyticsService {
       const dayOrders = await this.orderModel
         .find({
           createdAt: { $gte: date, $lt: nextDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         })
         .lean();
@@ -171,7 +173,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -224,7 +226,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -255,7 +257,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -305,7 +307,7 @@ export class AdvancedAnalyticsService {
       this.orderModel
         .find({
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         })
         .lean(),
@@ -315,7 +317,7 @@ export class AdvancedAnalyticsService {
             $gte: new Date(startDate.getTime() - (endDate.getTime() - startDate.getTime())),
             $lt: startDate,
           },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         })
         .lean(),
@@ -593,7 +595,7 @@ export class AdvancedAnalyticsService {
           roles: { $in: ['user'] },
           status: 'active',
           deletedAt: null,
-          'orders.status': { $in: ['completed', 'delivered'] },
+          'orders.status': { $in: COMPLETED_STATUSES },
           'orders.paymentStatus': 'paid',
         },
       },
@@ -741,7 +743,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
         },
       },
       { $unwind: '$items' },
@@ -810,7 +812,7 @@ export class AdvancedAnalyticsService {
         {
           $match: {
             createdAt: { $gte: startDate, $lte: endDate },
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           },
         },
@@ -826,7 +828,7 @@ export class AdvancedAnalyticsService {
         {
           $match: {
             createdAt: { $gte: previousStartDate, $lt: previousEndDate },
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           },
         },
@@ -1026,7 +1028,7 @@ export class AdvancedAnalyticsService {
         {
           $match: {
             createdAt: { $gte: startDate, $lte: endDate },
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           },
         },
@@ -1046,7 +1048,7 @@ export class AdvancedAnalyticsService {
         {
           $match: {
             createdAt: { $gte: previousStartDate, $lt: previousEndDate },
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           },
         },
@@ -1138,7 +1140,7 @@ export class AdvancedAnalyticsService {
     const todayOrders = await this.orderModel
       .find({
         createdAt: { $gte: todayStart, $lt: todayEnd },
-        status: { $in: ['completed', 'delivered'] },
+        status: { $in: COMPLETED_STATUSES },
         paymentStatus: 'paid',
       })
       .lean();
@@ -1152,7 +1154,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: weekStart },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -1201,7 +1203,7 @@ export class AdvancedAnalyticsService {
     const revenueData = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -1756,7 +1758,7 @@ export class AdvancedAnalyticsService {
           const dayOrders = await this.orderModel
             .find({
               createdAt: { $gte: date, $lt: nextDate },
-              status: { $in: ['completed', 'delivered'] },
+              status: { $in: COMPLETED_STATUSES },
               paymentStatus: 'paid',
             })
             .lean();
@@ -1777,7 +1779,7 @@ export class AdvancedAnalyticsService {
 
           const orderCount = await this.orderModel.countDocuments({
             createdAt: { $gte: date, $lt: nextDate },
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           });
 
@@ -1869,7 +1871,7 @@ export class AdvancedAnalyticsService {
           roles: { $in: ['user'] },
           status: 'active',
           deletedAt: null,
-          'orders.status': { $in: ['completed', 'delivered'] },
+          'orders.status': { $in: COMPLETED_STATUSES },
           'orders.paymentStatus': 'paid',
         },
       },
@@ -1915,7 +1917,7 @@ export class AdvancedAnalyticsService {
                     { $eq: ['$userId', '$$userId'] },
                     { $gte: ['$createdAt', startDate] },
                     { $lt: ['$createdAt', endDate] },
-                    { $in: ['$status', ['completed', 'delivered']] },
+                    { $in: ['$status', COMPLETED_STATUSES] },
                     { $eq: ['$paymentStatus', 'paid'] },
                   ],
                 },
@@ -1975,7 +1977,7 @@ export class AdvancedAnalyticsService {
         $match: {
           _id: { $in: previousCustomers.map((c) => c._id) },
           'orders.createdAt': { $gte: startDate, $lte: endDate },
-          'orders.status': { $in: ['completed', 'delivered'] },
+          'orders.status': { $in: COMPLETED_STATUSES },
         },
       },
       { $count: 'retained' },
@@ -2026,7 +2028,7 @@ export class AdvancedAnalyticsService {
                     as: 'order',
                     cond: {
                       $and: [
-                        { $in: ['$$order.status', ['completed', 'delivered']] },
+                        { $in: ['$$order.status', COMPLETED_STATUSES] },
                         { $eq: ['$$order.paymentStatus', 'paid'] },
                       ],
                     },
@@ -2044,7 +2046,7 @@ export class AdvancedAnalyticsService {
                 as: 'order',
                 cond: {
                   $and: [
-                    { $in: ['$$order.status', ['completed', 'delivered']] },
+                    { $in: ['$$order.status', COMPLETED_STATUSES] },
                     { $eq: ['$$order.paymentStatus', 'paid'] },
                   ],
                 },
@@ -2175,7 +2177,7 @@ export class AdvancedAnalyticsService {
       const dailyOrders = await this.orderModel
         .find({
           createdAt: { $gte: date, $lt: nextDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         })
         .lean();
@@ -2201,7 +2203,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -2232,7 +2234,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -2302,7 +2304,7 @@ export class AdvancedAnalyticsService {
           status: 'active',
           deletedAt: null,
           'orders.createdAt': { $gte: startDate, $lte: endDate },
-          'orders.status': { $in: ['completed', 'delivered'] },
+          'orders.status': { $in: COMPLETED_STATUSES },
         },
       },
       {
@@ -2460,7 +2462,7 @@ export class AdvancedAnalyticsService {
     const lastOrder = await this.orderModel
       .findOne({
         userId: customerId,
-        status: { $in: ['completed', 'delivered'] },
+        status: { $in: COMPLETED_STATUSES },
       })
       .sort({ createdAt: -1 })
       .select('createdAt')
@@ -2479,7 +2481,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -2549,7 +2551,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -2610,7 +2612,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -2641,7 +2643,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
           'shippingAddress.city': { $exists: true, $ne: null },
         },
@@ -2690,7 +2692,7 @@ export class AdvancedAnalyticsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -2757,7 +2759,7 @@ export class AdvancedAnalyticsService {
         const salesData = await this.orderModel.aggregate([
           {
             $match: {
-              status: { $in: ['completed', 'delivered'] },
+              status: { $in: COMPLETED_STATUSES },
               paymentStatus: 'paid',
             },
           },
@@ -2854,7 +2856,7 @@ export class AdvancedAnalyticsService {
             $match: {
               userId: { $in: segment.customerIds },
               createdAt: { $gte: startDate, $lte: endDate },
-              status: { $in: ['completed', 'delivered'] },
+              status: { $in: COMPLETED_STATUSES },
               paymentStatus: 'paid',
             },
           },

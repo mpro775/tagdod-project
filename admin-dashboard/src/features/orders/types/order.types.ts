@@ -10,10 +10,6 @@ export enum OrderStatus {
   // eslint-disable-next-line no-unused-vars
   PROCESSING = 'processing',
   // eslint-disable-next-line no-unused-vars
-  SHIPPED = 'shipped',
-  // eslint-disable-next-line no-unused-vars
-  DELIVERED = 'delivered',
-  // eslint-disable-next-line no-unused-vars
   COMPLETED = 'completed',
   // حالات استثنائية
   // eslint-disable-next-line no-unused-vars
@@ -330,9 +326,10 @@ export interface OrderStats {
   total: number;
   pending: number;
   processing: number;
-  shipped: number;
-  delivered: number;
+  completed: number;
+  onHold: number;
   cancelled: number;
+  returned: number;
   refunded: number;
   totalRevenue: number;
   averageOrderValue: number;

@@ -5,8 +5,11 @@ export type InventoryDocument = HydratedDocument<Inventory>;
 
 @Schema({ timestamps: true })
 export class Inventory {
-  @Prop({ type: Types.ObjectId, ref: 'Variant', unique: true, index: true })
-  variantId!: string;
+  @Prop({ type: Types.ObjectId, ref: 'Variant', unique: true, sparse: true, index: true })
+  variantId?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Product', unique: true, sparse: true, index: true })
+  productId?: string;
 
   @Prop({ default: 0 }) on_hand!: number;
   @Prop({ default: 0 }) reserved!: number;

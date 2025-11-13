@@ -3,8 +3,6 @@ import { BaseEntity, ListParams } from '@/shared/types/common.types';
 // Enums matching backend
 export enum NotificationType {
   ORDER_CONFIRMED = 'ORDER_CONFIRMED',
-  ORDER_SHIPPED = 'ORDER_SHIPPED',
-  ORDER_DELIVERED = 'ORDER_DELIVERED',
   ORDER_CANCELLED = 'ORDER_CANCELLED',
   ORDER_REFUNDED = 'ORDER_REFUNDED',
   SERVICE_REQUEST_OPENED = 'SERVICE_REQUEST_OPENED',

@@ -1,9 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { CurrencyNotSupportedException } from '../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ExchangeRate, ExchangeRateDocument } from './schemas/exchange-rate.schema';
 import { UpdateExchangeRateDto, ConvertCurrencyDto, CurrencyConversionResult } from './dto/exchange-rate.dto';
+import { ExchangeRateSyncService } from './exchange-rate-sync.service';
+import { ExchangeRateSyncJobReason } from './schemas/exchange-rate-sync-job.schema';
 
 @Injectable()
 export class ExchangeRatesService {
@@ -19,6 +21,8 @@ export class ExchangeRatesService {
   constructor(
     @InjectModel(ExchangeRate.name) 
     private exchangeRateModel: Model<ExchangeRateDocument>,
+    @Inject(forwardRef(() => ExchangeRateSyncService))
+    private readonly exchangeRateSyncService: ExchangeRateSyncService,
   ) {}
 
   /**
@@ -87,11 +91,24 @@ export class ExchangeRatesService {
       };
       this.conversionCache.clear();
 
+      this.scheduleSyncJob(updatedBy);
+
       return newRates;
     } catch (error) {
       this.logger.error('فشل في تحديث أسعار الصرف:', error);
       throw error;
     }
+  }
+
+  private scheduleSyncJob(updatedBy: string): void {
+    this.exchangeRateSyncService
+      .triggerSync(updatedBy, ExchangeRateSyncJobReason.RATE_UPDATE)
+      .catch((error) => {
+        this.logger.error(
+          `Failed to trigger exchange rate pricing sync after rates update`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
   }
 
   /**
@@ -108,59 +125,11 @@ export class ExchangeRatesService {
         return cached.data;
       }
 
-      let rate: number;
-      let formatted: string;
-
-      // التحويل من USD
-      if (convertDto.fromCurrency === 'USD' && convertDto.toCurrency === 'YER') {
-        rate = rates.usdToYer;
-        formatted = `${Math.round(convertDto.amount * rate).toLocaleString()} $`;
-      } else if (convertDto.fromCurrency === 'USD' && convertDto.toCurrency === 'SAR') {
-        rate = rates.usdToSar;
-        formatted = `${(convertDto.amount * rate).toFixed(2)} $`;
-      } 
-      // التحويل العكسي إلى USD
-      else if (convertDto.fromCurrency === 'YER' && convertDto.toCurrency === 'USD') {
-        rate = 1 / rates.usdToYer;
-        formatted = `$${(convertDto.amount * rate).toFixed(2)}`;
-      } else if (convertDto.fromCurrency === 'SAR' && convertDto.toCurrency === 'USD') {
-        rate = 1 / rates.usdToSar;
-        formatted = `$${(convertDto.amount * rate).toFixed(2)}`;
-      }
-      // التحويل بين YER و SAR (عبر USD)
-      else if (convertDto.fromCurrency === 'YER' && convertDto.toCurrency === 'SAR') {
-        // أولاً تحويل YER إلى USD ثم USD إلى SAR
-        rate = rates.usdToSar / rates.usdToYer;
-        formatted = `${(convertDto.amount * rate).toFixed(2)} $`;
-      } else if (convertDto.fromCurrency === 'SAR' && convertDto.toCurrency === 'YER') {
-        // أولاً تحويل SAR إلى USD ثم USD إلى YER
-        rate = rates.usdToYer / rates.usdToSar;
-        formatted = `${Math.round(convertDto.amount * rate).toLocaleString()} $`;
-      }
-      // نفس العملة
-      else if (convertDto.fromCurrency === convertDto.toCurrency) {
-        rate = 1;
-        const symbol = convertDto.fromCurrency === 'USD' ? '$' : '$';
-        const decimals = convertDto.fromCurrency === 'USD' ? 2 : (convertDto.fromCurrency === 'SAR' ? 2 : 0);
-        formatted = `${symbol}${(convertDto.amount * rate).toFixed(decimals)}`;
-      } else {
-        throw new CurrencyNotSupportedException({ from: convertDto.fromCurrency, to: convertDto.toCurrency });
-      }
-
-      const result = convertDto.amount * rate;
+      const conversion = this.performConversion(convertDto, rates);
 
       this.logger.log(
-        `تحويل العملة: ${convertDto.amount} ${convertDto.fromCurrency} = ${result} ${convertDto.toCurrency}`
+        `تحويل العملة: ${convertDto.amount} ${convertDto.fromCurrency} = ${conversion.result} ${convertDto.toCurrency}`
       );
-
-      const conversion: CurrencyConversionResult = {
-        fromCurrency: convertDto.fromCurrency,
-        toCurrency: convertDto.toCurrency,
-        amount: convertDto.amount,
-        rate,
-        result: Math.round(result * 100) / 100,
-        formatted,
-      };
 
       this.conversionCache.set(cacheKey, {
         data: conversion,
@@ -172,6 +141,67 @@ export class ExchangeRatesService {
       this.logger.error('فشل في تحويل العملة:', error);
       throw error;
     }
+  }
+
+  private performConversion(
+    convertDto: ConvertCurrencyDto,
+    rates: ExchangeRate,
+  ): CurrencyConversionResult {
+    let rate: number;
+    let formatted: string;
+
+    if (convertDto.fromCurrency === 'USD' && convertDto.toCurrency === 'YER') {
+      rate = rates.usdToYer;
+      formatted = `${Math.round(convertDto.amount * rate).toLocaleString()} $`;
+    } else if (convertDto.fromCurrency === 'USD' && convertDto.toCurrency === 'SAR') {
+      rate = rates.usdToSar;
+      formatted = `${(convertDto.amount * rate).toFixed(2)} $`;
+    } else if (convertDto.fromCurrency === 'YER' && convertDto.toCurrency === 'USD') {
+      rate = 1 / rates.usdToYer;
+      formatted = `$${(convertDto.amount * rate).toFixed(2)}`;
+    } else if (convertDto.fromCurrency === 'SAR' && convertDto.toCurrency === 'USD') {
+      rate = 1 / rates.usdToSar;
+      formatted = `$${(convertDto.amount * rate).toFixed(2)}`;
+    } else if (convertDto.fromCurrency === 'YER' && convertDto.toCurrency === 'SAR') {
+      rate = rates.usdToSar / rates.usdToYer;
+      formatted = `${(convertDto.amount * rate).toFixed(2)} $`;
+    } else if (convertDto.fromCurrency === 'SAR' && convertDto.toCurrency === 'YER') {
+      rate = rates.usdToYer / rates.usdToSar;
+      formatted = `${Math.round(convertDto.amount * rate).toLocaleString()} $`;
+    } else if (convertDto.fromCurrency === convertDto.toCurrency) {
+      rate = 1;
+      const symbol = convertDto.fromCurrency === 'USD' ? '$' : '$';
+      const decimals =
+        convertDto.fromCurrency === 'USD'
+          ? 2
+          : convertDto.fromCurrency === 'SAR'
+          ? 2
+          : 0;
+      formatted = `${symbol}${(convertDto.amount * rate).toFixed(decimals)}`;
+    } else {
+      throw new CurrencyNotSupportedException({
+        from: convertDto.fromCurrency,
+        to: convertDto.toCurrency,
+      });
+    }
+
+    const result = convertDto.amount * rate;
+
+    return {
+      fromCurrency: convertDto.fromCurrency,
+      toCurrency: convertDto.toCurrency,
+      amount: convertDto.amount,
+      rate,
+      result: Math.round(result * 100) / 100,
+      formatted,
+    };
+  }
+
+  calculateConversionWithRates(
+    convertDto: ConvertCurrencyDto,
+    rates: ExchangeRate,
+  ): CurrencyConversionResult {
+    return this.performConversion(convertDto, rates);
   }
 
   private buildConversionCacheKey(

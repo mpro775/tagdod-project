@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import {
   OrderNotFoundException,
   OrderPreviewFailedException,
@@ -34,6 +34,9 @@ import { MarketingService } from '../../marketing/marketing.service';
 import { AddressesService } from '../../addresses/addresses.service';
 import { LocalPaymentAccountService } from '../../system-settings/services/local-payment-account.service';
 import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.service';
+import { InventoryService as ProductsInventoryService } from '../../products/services/inventory.service';
+import { VariantService } from '../../products/services/variant.service';
+import { ProductService } from '../../products/services/product.service';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -77,6 +80,12 @@ interface UserOrderCounters {
 type CartPreviewResult = Awaited<ReturnType<CartService['previewUser']>>;
 type CouponValidationResult = Awaited<ReturnType<MarketingService['validateCoupon']>>;
 
+interface InventoryReservationTarget {
+  variantId?: string;
+  productId?: string;
+  qty: number;
+}
+
 export interface CODEligibilityResult extends UserOrderCounters {
   eligible: boolean;
   requiredOrders: number;
@@ -114,6 +123,12 @@ export class OrderService {
     private addressesService: AddressesService,
     private localPaymentAccountService: LocalPaymentAccountService,
     private exchangeRatesService: ExchangeRatesService,
+    @Inject(forwardRef(() => ProductsInventoryService))
+    private productsInventoryService: ProductsInventoryService,
+    @Inject(forwardRef(() => VariantService))
+    private variantService: VariantService,
+    @Inject(forwardRef(() => ProductService))
+    private productService: ProductService,
   ) {}
 
   // ===== Helper Methods =====
@@ -700,11 +715,7 @@ export class OrderService {
           totalOrders: { $sum: 1 },
           completedOrders: {
             $sum: {
-              $cond: [
-                { $in: ['$status', [OrderStatus.DELIVERED, OrderStatus.COMPLETED]] },
-                1,
-                0
-              ]
+              $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0]
             }
           },
           inProgressOrders: {
@@ -716,8 +727,7 @@ export class OrderService {
                     [
                       OrderStatus.PENDING_PAYMENT,
                       OrderStatus.CONFIRMED,
-                      OrderStatus.PROCESSING,
-                      OrderStatus.SHIPPED
+                      OrderStatus.PROCESSING
                     ]
                   ]
                 },
@@ -759,6 +769,555 @@ export class OrderService {
       notes,
       metadata
     });
+  }
+
+  private normalizeObjectId(ref: unknown): string | undefined {
+    if (!ref) {
+      return undefined;
+    }
+
+    if (typeof ref === 'string') {
+      return ref;
+    }
+
+    if (typeof ref === 'object' && ref !== null) {
+      const maybeObjectId = ref as Types.ObjectId;
+      if (typeof maybeObjectId.toString === 'function') {
+        return maybeObjectId.toString();
+      }
+    }
+
+    return undefined;
+  }
+
+  private buildInventoryFilter(target: { variantId?: string; productId?: string }): Record<string, unknown> {
+    if (target.variantId) {
+      return { variantId: target.variantId };
+    }
+
+    if (target.productId) {
+      return { productId: target.productId };
+    }
+
+    throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+      reason: 'inventory_target_missing',
+    });
+  }
+
+  private getInventoryTargets(order: OrderDocument): InventoryReservationTarget[] {
+    if (!order || !Array.isArray(order.items)) {
+      return [];
+    }
+
+    const map = new Map<string, InventoryReservationTarget>();
+
+    order.items.forEach((item) => {
+      const variantId = this.normalizeObjectId(item.variantId);
+      const productId = this.normalizeObjectId(item.productId);
+      const qty = Number(item.qty ?? 0);
+
+      if ((!variantId && !productId) || !Number.isFinite(qty) || qty <= 0) {
+        return;
+      }
+
+      const key = variantId ? `variant:${variantId}` : `product:${productId}`;
+      const existing = map.get(key);
+
+      if (existing) {
+        existing.qty += qty;
+      } else {
+        map.set(key, {
+          variantId,
+          productId: variantId ? undefined : productId,
+          qty,
+        });
+      }
+    });
+
+    return Array.from(map.values());
+  }
+
+  private async ensureInventoryRecord(
+    target: { variantId?: string; productId?: string },
+    params: { onHand?: number; safetyStock?: number } = {},
+  ): Promise<void> {
+    const filter = this.buildInventoryFilter(target);
+    const existing = await this.inventoryModel.findOne(filter).lean();
+    if (existing) {
+      const updates: Record<string, unknown> = {};
+      if (
+        typeof params.safetyStock === 'number' &&
+        Number.isFinite(params.safetyStock) &&
+        params.safetyStock >= 0 &&
+        existing.safety_stock !== params.safetyStock
+      ) {
+        updates.safety_stock = params.safetyStock;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await this.inventoryModel.updateOne(filter, { $set: updates });
+      }
+      return;
+    }
+
+    const onHand =
+      typeof params.onHand === 'number' && Number.isFinite(params.onHand)
+        ? Math.max(0, Math.round(params.onHand))
+        : 0;
+    const safetyStock =
+      typeof params.safetyStock === 'number' && Number.isFinite(params.safetyStock)
+        ? Math.max(0, Math.round(params.safetyStock))
+        : 0;
+
+    try {
+      await this.inventoryModel.create({
+        ...filter,
+        on_hand: onHand,
+        reserved: 0,
+        safety_stock: safetyStock,
+      });
+    } catch (error) {
+      const mongoError = error as { code?: number };
+      if (mongoError?.code === 11000) {
+        // Record already created by another concurrent request
+        return;
+      }
+      throw error;
+    }
+  }
+
+  private async rollbackInventoryReservations(
+    orderId: string,
+    entries: Array<{
+      variantId?: string;
+      productId?: string;
+      qty: number;
+      reservationId?: string;
+      ledgerId?: string;
+    }>,
+  ): Promise<void> {
+    if (!entries || entries.length === 0) {
+      return;
+    }
+
+    // Rollback in reverse order to mitigate dependency issues
+    for (const entry of [...entries].reverse()) {
+      const filter = this.buildInventoryFilter({
+        variantId: entry.variantId,
+        productId: entry.productId,
+      });
+
+      try {
+        await this.inventoryModel.updateOne(
+          filter,
+          { $inc: { on_hand: entry.qty, reserved: -entry.qty } },
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to rollback inventory counts for target ${JSON.stringify(filter)} (order ${orderId})`,
+          error as Error,
+        );
+      }
+
+      try {
+        if (entry.variantId) {
+          await this.productsInventoryService.updateStock(entry.variantId, entry.qty, 'add');
+        } else if (entry.productId) {
+          await this.productsInventoryService.updateProductStock(entry.productId, entry.qty, 'add');
+        }
+      } catch (error) {
+        this.logger.error(
+          `Failed to rollback stock for target ${JSON.stringify(filter)} (order ${orderId})`,
+          error as Error,
+        );
+      }
+
+      if (entry.reservationId) {
+        await this.reservationModel.deleteOne({ _id: entry.reservationId });
+      }
+
+      if (entry.ledgerId) {
+        await this.ledgerModel.deleteOne({ _id: entry.ledgerId });
+      }
+    }
+  }
+
+  private async reserveOrderInventory(order: OrderDocument): Promise<void> {
+    const orderId = order?._id ? order._id.toString() : undefined;
+    if (!orderId) {
+      return;
+    }
+
+    const existingReservations = await this.reservationModel.countDocuments({
+      orderId,
+      status: { $in: ['ACTIVE', 'COMMITTED'] },
+    });
+
+    if (existingReservations > 0) {
+      this.logger.debug(
+        `Reservations already exist for order ${orderId}. Skipping duplicate reservation creation.`,
+      );
+      return;
+    }
+
+    const targets = this.getInventoryTargets(order);
+    if (targets.length === 0) {
+      this.logger.debug(
+        `Order ${orderId} does not contain items that require inventory reservation.`,
+      );
+      return;
+    }
+
+    const expirationDate = new Date(Date.now() + this.reservationTtlSec * 1000);
+    const successful: Array<{
+      variantId?: string;
+      productId?: string;
+      qty: number;
+      reservationId?: string;
+      ledgerId?: string;
+    }> = [];
+
+    for (const target of targets) {
+      const { variantId, productId, qty } = target;
+      let inventoryAdjusted = false;
+      let stockAdjusted = false;
+      let reservationId: string | undefined;
+      let ledgerId: string | undefined;
+
+      try {
+        let availability:
+          | Awaited<ReturnType<typeof this.productsInventoryService.checkAvailability>>
+          | Awaited<ReturnType<typeof this.productsInventoryService.checkProductAvailability>>;
+        let initialOnHand = 0;
+        let safetyStock: number | undefined;
+
+        if (variantId) {
+          const variantDetails = await this.variantService.findById(variantId);
+          if (!variantDetails.trackInventory) {
+            this.logger.debug(
+              `Variant ${variantId} does not track inventory. Reservation skipped for order ${orderId}.`,
+            );
+            continue;
+          }
+
+          availability = await this.productsInventoryService.checkAvailability(variantId, qty);
+
+          if (!availability.available && !availability.canBackorder) {
+            throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+              reason: 'insufficient_stock',
+              variantId,
+              requestedQty: qty,
+              availableStock: availability.availableStock ?? 0,
+            });
+          }
+
+          initialOnHand =
+            typeof availability.availableStock === 'number'
+              ? availability.availableStock
+              : typeof variantDetails.stock === 'number'
+              ? variantDetails.stock
+              : 0;
+
+          safetyStock =
+            typeof variantDetails.minStock === 'number' && Number.isFinite(variantDetails.minStock)
+              ? variantDetails.minStock
+              : undefined;
+        } else if (productId) {
+          const productDetails = await this.productService.findById(productId);
+
+          availability = await this.productsInventoryService.checkProductAvailability(
+            productId,
+            qty,
+          );
+
+          if (!availability.available && !availability.canBackorder) {
+            throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+              reason: 'insufficient_stock',
+              productId,
+              requestedQty: qty,
+              availableStock: availability.availableStock ?? 0,
+            });
+          }
+
+          initialOnHand =
+            typeof availability.availableStock === 'number'
+              ? availability.availableStock
+              : typeof productDetails.stock === 'number'
+              ? productDetails.stock
+              : 0;
+
+          safetyStock =
+            typeof productDetails.minStock === 'number' && Number.isFinite(productDetails.minStock)
+              ? productDetails.minStock
+              : undefined;
+        } else {
+          throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+            reason: 'inventory_target_missing',
+          });
+        }
+
+        await this.ensureInventoryRecord({ variantId, productId }, { onHand: initialOnHand, safetyStock });
+
+        const inventoryFilter = this.buildInventoryFilter({ variantId, productId });
+        if (!availability.canBackorder) {
+          inventoryFilter.on_hand = { $gte: qty };
+        }
+
+        const inventoryDoc = await this.inventoryModel.findOneAndUpdate(
+          inventoryFilter,
+          { $inc: { on_hand: -qty, reserved: qty } },
+          { new: true },
+        );
+
+        if (!inventoryDoc) {
+          throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+            reason: 'inventory_reservation_failed',
+            variantId,
+            productId,
+            requestedQty: qty,
+          });
+        }
+        inventoryAdjusted = true;
+
+        if (variantId) {
+          const stockUpdate = await this.productsInventoryService.updateStock(
+            variantId,
+            qty,
+            'subtract',
+          );
+          if (!stockUpdate?.success) {
+            throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+              reason: 'variant_stock_update_failed',
+              variantId,
+              requestedQty: qty,
+            });
+          }
+        } else if (productId) {
+          const stockUpdate = await this.productsInventoryService.updateProductStock(
+            productId,
+            qty,
+            'subtract',
+          );
+          if (!stockUpdate?.success) {
+            throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+              reason: 'product_stock_update_failed',
+              productId,
+              requestedQty: qty,
+            });
+          }
+        }
+        stockAdjusted = true;
+
+        const reservation = await this.reservationModel.create({
+          variantId,
+          productId,
+          orderId,
+          qty,
+          expiresAt: expirationDate,
+          status: 'ACTIVE',
+        });
+        reservationId = reservation._id.toString();
+
+        const ledger = await this.ledgerModel.create({
+          variantId,
+          productId,
+          change: -qty,
+          reason: 'ORDER_RESERVED',
+          refId: orderId,
+        });
+        ledgerId = ledger._id.toString();
+
+        successful.push({ variantId, productId, qty, reservationId, ledgerId });
+      } catch (error) {
+        this.logger.error(
+          `Failed to reserve inventory for order ${orderId} target ${JSON.stringify({
+            variantId,
+            productId,
+          })}`,
+          error as Error,
+        );
+
+        if (inventoryAdjusted) {
+          await this.inventoryModel.updateOne(
+            this.buildInventoryFilter({ variantId, productId }),
+            { $inc: { on_hand: qty, reserved: -qty } },
+          );
+        }
+
+        if (stockAdjusted) {
+          try {
+            if (variantId) {
+              await this.productsInventoryService.updateStock(variantId, qty, 'add');
+            } else if (productId) {
+              await this.productsInventoryService.updateProductStock(productId, qty, 'add');
+            }
+          } catch (rollbackError) {
+            this.logger.error(
+              `Failed to rollback stock update for target ${JSON.stringify({
+                variantId,
+                productId,
+              })} during reservation rollback`,
+              rollbackError as Error,
+            );
+          }
+        }
+
+        if (reservationId) {
+          await this.reservationModel.deleteOne({ _id: reservationId });
+        }
+
+        if (ledgerId) {
+          await this.ledgerModel.deleteOne({ _id: ledgerId });
+        }
+
+        await this.rollbackInventoryReservations(orderId, successful);
+
+        if (error instanceof DomainException) {
+          throw error;
+        }
+
+        throw new DomainException(ErrorCode.ORDER_CONFIRM_FAILED, {
+          reason: 'inventory_reservation_failed',
+          message: (error as Error).message,
+        });
+      }
+    }
+  }
+
+  private async commitInventoryReservations(orderId: string): Promise<void> {
+    const reservations = await this.reservationModel.find({
+      orderId,
+      status: 'ACTIVE',
+    });
+
+    if (reservations.length === 0) {
+      return;
+    }
+
+    const committedExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // keep record for ~30 days
+
+    for (const reservation of reservations) {
+      const target = {
+        variantId: this.normalizeObjectId(reservation.variantId),
+        productId: this.normalizeObjectId(reservation.productId),
+      };
+
+      const inventoryFilter = this.buildInventoryFilter(target);
+      const updateResult = await this.inventoryModel.updateOne(
+        { ...inventoryFilter, reserved: { $gte: reservation.qty } },
+        { $inc: { reserved: -reservation.qty } },
+      );
+
+      if (updateResult.modifiedCount === 0) {
+        this.logger.warn(
+          `Failed to decrement reserved quantity for target ${JSON.stringify(
+            inventoryFilter,
+          )} while committing order ${orderId}`,
+        );
+      }
+
+      await this.reservationModel.updateOne(
+        { _id: reservation._id },
+        {
+          $set: {
+            status: 'COMMITTED',
+            expiresAt: committedExpiry,
+          },
+        },
+      );
+
+      await this.ledgerModel.create({
+        variantId: target.variantId,
+        productId: target.productId,
+        change: 0,
+        reason: 'ORDER_COMMITTED',
+        refId: orderId,
+      });
+    }
+  }
+
+  private async releaseInventoryReservations(orderId: string): Promise<void> {
+    const reservations = await this.reservationModel.find({
+      orderId,
+      status: { $in: ['ACTIVE', 'COMMITTED'] },
+    });
+
+    if (reservations.length === 0) {
+      return;
+    }
+
+    for (const reservation of reservations) {
+      const target = {
+        variantId: this.normalizeObjectId(reservation.variantId),
+        productId: this.normalizeObjectId(reservation.productId),
+      };
+
+      const inventoryFilter = this.buildInventoryFilter(target);
+
+      if (reservation.status === 'ACTIVE') {
+        const releaseResult = await this.inventoryModel.updateOne(
+          { ...inventoryFilter, reserved: { $gte: reservation.qty } },
+          { $inc: { on_hand: reservation.qty, reserved: -reservation.qty } },
+        );
+
+        if (releaseResult.modifiedCount === 0) {
+          this.logger.warn(
+            `Inventory release skipped for target ${JSON.stringify(
+              inventoryFilter,
+            )} (order ${orderId}) due to insufficient reserved quantity`,
+          );
+        }
+      } else {
+        await this.inventoryModel.updateOne(inventoryFilter, {
+          $inc: { on_hand: reservation.qty },
+        });
+      }
+
+      let stockUpdate:
+        | Awaited<ReturnType<typeof this.productsInventoryService.updateStock>>
+        | Awaited<ReturnType<typeof this.productsInventoryService.updateProductStock>>
+        | undefined;
+
+      if (target.variantId) {
+        stockUpdate = await this.productsInventoryService.updateStock(
+          target.variantId,
+          reservation.qty,
+          'add',
+        );
+      } else if (target.productId) {
+        stockUpdate = await this.productsInventoryService.updateProductStock(
+          target.productId,
+          reservation.qty,
+          'add',
+        );
+      }
+
+      if (stockUpdate && !stockUpdate.success) {
+        this.logger.warn(
+          `Stock update returned unsuccessful while releasing reservation for target ${JSON.stringify(
+            inventoryFilter,
+          )} (order ${orderId})`,
+        );
+      }
+
+      await this.reservationModel.updateOne(
+        { _id: reservation._id },
+        {
+          $set: {
+            status: 'CANCELLED',
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        },
+      );
+
+      await this.ledgerModel.create({
+        variantId: target.variantId,
+        productId: target.productId,
+        change: reservation.qty,
+        reason: 'ORDER_CANCELLED_RELEASE',
+        refId: orderId,
+      });
+    }
   }
 
   /**
@@ -1309,6 +1868,23 @@ export class OrderService {
 
       await order.save();
 
+      try {
+        await this.reserveOrderInventory(order);
+      } catch (inventoryError) {
+        this.logger.error(
+          `Inventory reservation failed for order ${order.orderNumber}`,
+          inventoryError as Error,
+        );
+        await this.orderModel.deleteOne({ _id: order._id });
+        if (inventoryError instanceof DomainException) {
+          throw inventoryError;
+        }
+        throw new DomainException(ErrorCode.ORDER_CONFIRM_FAILED, {
+          reason: 'inventory_reservation_failed',
+          message: (inventoryError as Error).message,
+        });
+      }
+
       // إضافة سجل الحالة
       await this.addStatusHistory(
         order,
@@ -1525,19 +2101,20 @@ export class OrderService {
       throw new OrderNotFoundException();
     }
 
+    const previousStatus = order.status;
+
     // التحقق من صحة الانتقال
     if (!OrderStateMachine.canTransition(order.status, newStatus)) {
       throw new OrderException(ErrorCode.ORDER_INVALID_STATUS, { from: order.status, to: newStatus });
     }
 
     // التحقق من الدفع قبل السماح بتغيير الحالة
-    // الحالات الممنوعة بدون دفع: CONFIRMED, PROCESSING, SHIPPED, DELIVERED
+    // الحالات الممنوعة بدون دفع: CONFIRMED, PROCESSING, COMPLETED
     // استثناء CANCELLED من هذا التحقق
     const statusesRequiringPayment = [
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
-      OrderStatus.SHIPPED,
-      OrderStatus.DELIVERED
+      OrderStatus.COMPLETED
     ];
 
     if (statusesRequiringPayment.includes(newStatus) && newStatus !== OrderStatus.CANCELLED) {
@@ -1549,6 +2126,17 @@ export class OrderService {
           requiredPaymentStatus: PaymentStatus.PAID
         });
       }
+    }
+
+    if (
+      newStatus === OrderStatus.CONFIRMED &&
+      previousStatus === OrderStatus.PENDING_PAYMENT
+    ) {
+      await this.commitInventoryReservations(orderId);
+    }
+
+    if (newStatus === OrderStatus.CANCELLED) {
+      await this.releaseInventoryReservations(orderId);
     }
 
     // تحديث الحالة
@@ -1566,14 +2154,9 @@ export class OrderService {
       case OrderStatus.PROCESSING:
         order.processingStartedAt = now;
         break;
-      case OrderStatus.SHIPPED:
-        order.shippedAt = now;
-        break;
-      case OrderStatus.DELIVERED:
-        order.deliveredAt = now;
-        break;
       case OrderStatus.COMPLETED:
         order.completedAt = now;
+        order.deliveredAt = now;
         break;
       case OrderStatus.CANCELLED:
         order.cancelledAt = now;
@@ -1623,14 +2206,22 @@ export class OrderService {
     order.trackingUrl = dto.trackingUrl;
     order.shippingCompany = dto.shippingCompany;
     order.estimatedDeliveryDate = dto.estimatedDeliveryDate ? new Date(dto.estimatedDeliveryDate) : undefined;
+    order.shippedAt = new Date();
 
-    await this.updateOrderStatus(
-      orderId,
-      OrderStatus.SHIPPED,
+    await this.addStatusHistory(
+      order,
+      order.status,
       new Types.ObjectId(adminId),
       'admin',
-      dto.notes
+      dto.notes ?? 'تم تحديث معلومات الشحن',
+      {
+        trackingNumber: order.trackingNumber,
+        shippingCompany: order.shippingCompany,
+        estimatedDeliveryDate: order.estimatedDeliveryDate,
+      }
     );
+
+    await order.save();
 
     return order;
   }
@@ -1678,24 +2269,13 @@ export class OrderService {
   async rateOrder(orderId: string, userId: string, dto: RateOrderDto): Promise<OrderDocument> {
     const order = await this.getOrderDetails(orderId, userId);
     
-    if (![OrderStatus.DELIVERED, OrderStatus.COMPLETED].includes(order.status)) {
+    if (order.status !== OrderStatus.COMPLETED) {
       throw new OrderRatingNotAllowedException({ status: order.status });
     }
 
     order.ratingInfo.rating = dto.rating;
     order.ratingInfo.review = dto.review;
     order.ratingInfo.ratedAt = new Date();
-
-    // إكمال الطلب تلقائياً عند التقييم
-    if (order.status === OrderStatus.DELIVERED) {
-      await this.updateOrderStatus(
-        orderId,
-        OrderStatus.COMPLETED,
-        new Types.ObjectId(userId),
-        'customer',
-        `تم التقييم: ${dto.rating}/5`
-      );
-    }
 
     return order;
   }
@@ -1734,7 +2314,7 @@ export class OrderService {
       this.orderModel.countDocuments({ userId: new Types.ObjectId(userId) }),
       this.orderModel.countDocuments({
         userId: new Types.ObjectId(userId),
-        status: { $in: [OrderStatus.DELIVERED, OrderStatus.COMPLETED] }
+        status: OrderStatus.COMPLETED
       }),
       this.orderModel.countDocuments({
         userId: new Types.ObjectId(userId),
@@ -1744,7 +2324,7 @@ export class OrderService {
         {
           $match: {
             userId: new Types.ObjectId(userId),
-            status: { $in: [OrderStatus.DELIVERED, OrderStatus.COMPLETED] }
+            status: OrderStatus.COMPLETED
           }
         },
         { $group: { _id: null, total: { $sum: '$total' } } }
@@ -1776,7 +2356,7 @@ export class OrderService {
     const [totalOrders, totalRevenue, ordersByStatus, recentOrders] = await Promise.all([
       this.orderModel.countDocuments(matchFilter),
       this.orderModel.aggregate([
-        { $match: { ...matchFilter, status: { $in: [OrderStatus.DELIVERED, OrderStatus.COMPLETED] } } },
+        { $match: { ...matchFilter, status: OrderStatus.COMPLETED } },
         { $group: { _id: null, total: { $sum: '$total' } } }
       ]),
       this.orderModel.aggregate([
@@ -2283,9 +2863,10 @@ export class OrderService {
     total: number;
     pending: number;
     processing: number;
-    shipped: number;
-    delivered: number;
+    completed: number;
+    onHold: number;
     cancelled: number;
+    returned: number;
     refunded: number;
     totalRevenue: number;
     averageOrderValue: number;
@@ -2304,12 +2885,13 @@ export class OrderService {
             total: { $sum: 1 },
             pending: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.PENDING_PAYMENT] }, 1, 0] } },
             processing: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.PROCESSING] }, 1, 0] } },
-            shipped: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.SHIPPED] }, 1, 0] } },
-            delivered: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.DELIVERED] }, 1, 0] } },
+            completed: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0] } },
+            onHold: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.ON_HOLD] }, 1, 0] } },
             cancelled: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.CANCELLED] }, 1, 0] } },
+            returned: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.RETURNED] }, 1, 0] } },
             refunded: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.REFUNDED] }, 1, 0] } },
-            totalRevenue: { $sum: { $cond: [{ $in: ['$status', [OrderStatus.DELIVERED, OrderStatus.COMPLETED]] }, '$total', 0] } },
-            orderValues: { $push: { $cond: [{ $in: ['$status', [OrderStatus.DELIVERED, OrderStatus.COMPLETED]] }, '$total', null] } }
+            totalRevenue: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, '$total', 0] } },
+            orderValues: { $push: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, '$total', null] } }
           }
         }
       ]);
@@ -2318,9 +2900,10 @@ export class OrderService {
         total: 0,
         pending: 0,
         processing: 0,
-        shipped: 0,
-        delivered: 0,
+        completed: 0,
+        onHold: 0,
         cancelled: 0,
+        returned: 0,
         refunded: 0,
         totalRevenue: 0,
         orderValues: []
@@ -2336,9 +2919,10 @@ export class OrderService {
         total: result.total,
         pending: result.pending,
         processing: result.processing,
-        shipped: result.shipped,
-        delivered: result.delivered,
+        completed: result.completed,
+        onHold: result.onHold,
         cancelled: result.cancelled,
+        returned: result.returned,
         refunded: result.refunded,
         totalRevenue: result.totalRevenue,
         averageOrderValue
@@ -2352,9 +2936,10 @@ export class OrderService {
         total: 0,
         pending: 0,
         processing: 0,
-        shipped: 0,
-        delivered: 0,
+        completed: 0,
+        onHold: 0,
         cancelled: 0,
+        returned: 0,
         refunded: 0,
         totalRevenue: 0,
         averageOrderValue: 0

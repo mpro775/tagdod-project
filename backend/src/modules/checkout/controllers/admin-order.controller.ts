@@ -120,8 +120,8 @@ export class AdminOrderController {
 
   @Post(':id([0-9a-fA-F]{24})/ship')
   @ApiOperation({ 
-    summary: 'شحن الطلب',
-    description: 'تحديث معلومات الشحن للطلب'
+    summary: 'تحديث معلومات الشحن',
+    description: 'تسجيل بيانات الشحن للطلب مع بقاء الحالة الحالية'
   })
   @ApiParam({ name: 'id', description: 'معرف الطلب' })
   @ApiResponse({ status: 200, description: 'تم شحن الطلب بنجاح' })
@@ -142,7 +142,7 @@ export class AdminOrderController {
       trackingNumber: order.trackingNumber,
       trackingUrl: order.trackingUrl,
       estimatedDelivery: order.estimatedDeliveryDate,
-      message: 'تم شحن الطلب بنجاح'
+      message: 'تم تحديث معلومات الشحن'
     };
   }
 

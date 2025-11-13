@@ -114,8 +114,8 @@ export class AnalyticsCalculationService {
       pendingOrders,
       cancelledOrders,
       processingOrders,
-      shippedOrders,
-      deliveredOrders,
+      onHoldOrders,
+      returnedOrders,
       ordersByStatus,
       ordersByPaymentMethod,
     ] = await Promise.all([
@@ -139,11 +139,11 @@ export class AnalyticsCalculationService {
         createdAt: { $gte: startDate, $lte: endDate } 
       }),
       this.orderModel.countDocuments({ 
-        status: 'shipped',
+        status: 'on_hold',
         createdAt: { $gte: startDate, $lte: endDate } 
       }),
       this.orderModel.countDocuments({ 
-        status: 'delivered',
+        status: 'returned',
         createdAt: { $gte: startDate, $lte: endDate } 
       }),
       this.orderModel.aggregate([
@@ -169,7 +169,7 @@ export class AnalyticsCalculationService {
     // Calculate revenue
     const revenueData = await this.orderModel.aggregate([
       { $match: { 
-        status: { $in: ['completed', 'delivered'] },
+        status: 'completed',
         createdAt: { $gte: startDate, $lte: endDate } 
       }},
       { $group: { _id: null, totalRevenue: { $sum: '$total' } } }
@@ -184,8 +184,8 @@ export class AnalyticsCalculationService {
       pending: pendingOrders,
       cancelled: cancelledOrders,
       processing: processingOrders,
-      shipped: shippedOrders,
-      delivered: deliveredOrders,
+      onHold: onHoldOrders,
+      returned: returnedOrders,
       totalRevenue,
       averageOrderValue,
       byStatus,

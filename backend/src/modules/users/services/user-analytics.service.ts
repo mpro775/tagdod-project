@@ -420,7 +420,7 @@ export class UserAnalyticsService {
   }
 
   private calculateOrderStats(orders: Order[]) {
-    const completedOrders = orders.filter((o) => [OrderStatus.COMPLETED, OrderStatus.DELIVERED].includes(o.status));
+    const completedOrders = orders.filter((o) => o.status === OrderStatus.COMPLETED);
     const totalSpent = completedOrders.reduce((sum, order) => sum + order.total, 0);
     const averageOrderValue = completedOrders.length > 0 ? totalSpent / completedOrders.length : 0;
 
@@ -554,7 +554,7 @@ export class UserAnalyticsService {
 
   private async getTopSpenders(limit: number) {
     return this.orderModel.aggregate([
-      { $match: { status: { $in: ['completed', 'delivered'] } } },
+      { $match: { status: OrderStatus.COMPLETED } },
       {
         $group: {
           _id: '$userId',
@@ -605,7 +605,7 @@ export class UserAnalyticsService {
 
   private async getAverageOrderValue(): Promise<number> {
     const result = await this.orderModel.aggregate([
-      { $match: { status: { $in: ['completed', 'delivered'] } } },
+      { $match: { status: OrderStatus.COMPLETED } },
       {
         $group: {
           _id: null,

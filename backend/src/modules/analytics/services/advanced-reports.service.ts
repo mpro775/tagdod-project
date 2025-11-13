@@ -454,7 +454,7 @@ export class AdvancedReportsService {
     // Build match query with payment status filter
     const matchQuery: Record<string, unknown> = {
       createdAt: { $gte: startDate, $lte: endDate },
-      status: { $in: ['COMPLETED', 'DELIVERED'] },
+      status: OrderStatus.COMPLETED,
       paymentStatus: 'paid',
     };
 
@@ -641,7 +641,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -774,7 +774,7 @@ export class AdvancedReportsService {
     });
 
     const completedOrders = orders.filter(
-      (o) => o.status === OrderStatus.COMPLETED || o.status === OrderStatus.DELIVERED,
+      (o) => o.status === OrderStatus.COMPLETED,
     );
     const returnedOrders = orders.filter((o) => o.returnInfo.isReturned);
 
@@ -933,7 +933,7 @@ export class AdvancedReportsService {
     const [todayOrders, todayNewCustomers, recentOrders, topViewedProducts] = await Promise.all([
       this.orderModel.find({
         createdAt: { $gte: today, $lte: now },
-        status: { $in: ['COMPLETED', 'DELIVERED'] },
+        status: OrderStatus.COMPLETED,
         paymentStatus: 'paid'
       }),
       this.userModel.countDocuments({
@@ -961,7 +961,7 @@ export class AdvancedReportsService {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthOrders = await this.orderModel.find({
       createdAt: { $gte: monthStart, $lte: now },
-      status: { $in: ['COMPLETED', 'DELIVERED'] },
+      status: OrderStatus.COMPLETED,
       paymentStatus: 'paid'
     });
     const monthSales = monthOrders.reduce((sum, order) => sum + order.total, 0);
@@ -975,7 +975,12 @@ export class AdvancedReportsService {
       activeUsers: await this.getActiveUsersCount(),
       activeOrders: await this.orderModel.countDocuments({
         status: {
-          $in: [OrderStatus.PROCESSING, OrderStatus.SHIPPED],
+          $in: [
+            OrderStatus.PENDING_PAYMENT,
+            OrderStatus.CONFIRMED,
+            OrderStatus.PROCESSING,
+            OrderStatus.ON_HOLD,
+          ],
         },
       }),
       todaySales,
@@ -1374,7 +1379,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -1444,7 +1449,7 @@ export class AdvancedReportsService {
       {
         $match: {
           'items.productId': { $in: productIds },
-          status: { $in: ['completed', 'delivered'] }
+          status: OrderStatus.COMPLETED
         }
       },
       {
@@ -1484,7 +1489,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -1522,7 +1527,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -1570,7 +1575,7 @@ export class AdvancedReportsService {
     const [orderCustomers, activeUsers] = await Promise.all([
       this.orderModel.distinct('userId', {
         createdAt: { $gte: startDate, $lte: endDate },
-        status: { $in: ['COMPLETED', 'DELIVERED'] },
+        status: OrderStatus.COMPLETED,
         paymentStatus: 'paid'
       }),
       this.userModel.distinct('_id', {
@@ -1591,7 +1596,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -1618,7 +1623,7 @@ export class AdvancedReportsService {
     const result = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -1648,7 +1653,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -1695,7 +1700,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -1742,7 +1747,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -1770,7 +1775,7 @@ export class AdvancedReportsService {
   ): Promise<ProfitByCategoryItem[]> {
     const revenue = await this.getSalesByCategory(startDate, endDate, {
       createdAt: { $gte: startDate, $lte: endDate },
-      status: { $in: ['COMPLETED', 'DELIVERED'] },
+      status: OrderStatus.COMPLETED,
       paymentStatus: 'paid'
     });
 
@@ -1797,7 +1802,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -1836,7 +1841,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         },
       },
@@ -2218,7 +2223,7 @@ export class AdvancedReportsService {
     const result = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid',
           createdAt: { $gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) } // Last year
         }
@@ -2309,7 +2314,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] }
+          status: OrderStatus.COMPLETED
         }
       },
       {
@@ -2363,7 +2368,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid',
           'items.snapshot.categoryId': categoryId
         }
@@ -2391,7 +2396,7 @@ export class AdvancedReportsService {
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: ['COMPLETED', 'DELIVERED'] },
+          status: OrderStatus.COMPLETED,
           paymentStatus: 'paid'
         }
       },

@@ -6,7 +6,7 @@
 ## المشاكل التي تم إصلاحها
 
 ### 1. حالات الطلبات (Order Status)
-- **المشكلة**: كان الكود يبحث عن حالات بأحرف كبيرة `'COMPLETED'`, `'DELIVERED'` بينما في قاعدة البيانات الحالات بأحرف صغيرة `'completed'`, `'delivered'`
+- **المشكلة**: كان الكود يبحث عن حالات بأحرف كبيرة (مثل `'COMPLETED'`) بينما في قاعدة البيانات الحالات بأحرف صغيرة (مثل `'completed'`)
 - **الحل**: تم تحديث جميع الاستعلامات لاستخدام الأحرف الصغيرة مع إضافة شرط `paymentStatus: 'paid'` للتأكد من احتساب الطلبات المدفوعة فقط
 
 ### 2. حقل المبلغ الإجمالي
@@ -75,21 +75,21 @@ curl http://localhost:3000/api/v1/analytics/dashboard \
 
 ### إذا كانت البيانات لا تزال تظهر كأصفار:
 1. **تأكد من وجود بيانات في قاعدة البيانات**:
-   - يجب أن يكون هناك طلبات بحالة `'completed'` أو `'delivered'`
+   - يجب أن يكون هناك طلبات بحالة `'completed'`
    - يجب أن تكون هذه الطلبات لها `paymentStatus: 'paid'`
    - يجب أن تكون الطلبات تم إنشاؤها في آخر 30 يوم للظهور في الرسوم البيانية اليومية
 
 2. **تحقق من حالة الطلبات في قاعدة البيانات**:
    ```javascript
    // في MongoDB shell أو MongoDB Compass
-   db.orders.find({ status: { $in: ['completed', 'delivered'] }, paymentStatus: 'paid' }).count()
+   db.orders.find({ status: 'completed', paymentStatus: 'paid' }).count()
    ```
 
 3. **تحقق من تواريخ الطلبات**:
    ```javascript
    // في MongoDB shell
-   db.orders.find({ 
-     status: { $in: ['completed', 'delivered'] }, 
+  db.orders.find({ 
+    status: 'completed', 
      paymentStatus: 'paid' 
    }).sort({ createdAt: -1 }).limit(5)
    ```
