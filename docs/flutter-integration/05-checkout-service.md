@@ -1161,146 +1161,32 @@ class LocalPaymentAccount {
 
 ### كود Flutter
 
+- **طبقة البيانات**: تمت إضافة `OrdersRemoteDataSource.getOrdersList` لاستدعاء `/orders` عبر `ApiClient` وإرجاع `OrdersListResponse` المبنية في الملف `lib/features/orders/data/models/orders_list_models.dart`. جميع الحقول المضمنة في رد الـ API (العناصر، العناوين، إجماليات العملات، إحصاءات الدفع عند الاستلام) يتم تحويلها إلى كائنات غنية يمكن إعادة استخدامها في الواجهة.
+- **طبقة الدومين**: يوفر الـ use case الجديد `GetOrders` واجهة موحدة لاسترجاع الطلبات مع دعم الترقيم، البحث، والفلترة حسب الحالة.
+- **طبقة العرض**: `OrdersCubit` يتكفل بتحميل البيانات، إدارة حالات التحميل/الخطأ، التحديث عبر السحب للتحديث، وتحميل المزيد عند الوصول لنهاية القائمة. يتم حقن الكيوبت في `OrdersPage` عبر `GetIt` ويتعامل مع تحديث التبويبات والبحث.
+
 ```dart
-Future<OrdersListResponse> getMyOrders({
-  int page = 1,
-  int limit = 10,
-  String? status,
-  String? paymentStatus,
-  String? search,
-  String sortBy = 'createdAt',
-  String sortOrder = 'desc',
-  DateTime? fromDate,
-  DateTime? toDate,
-}) async {
-  final query = <String, dynamic>{
-    'page': page,
-    'limit': limit,
-    'sortBy': sortBy,
-    'sortOrder': sortOrder,
-    if (status != null) 'status': status,
-    if (paymentStatus != null) 'paymentStatus': paymentStatus,
-    if (search != null && search.isNotEmpty) 'search': search,
-    if (fromDate != null) 'fromDate': fromDate.toIso8601String(),
-    if (toDate != null) 'toDate': toDate.toIso8601String(),
-  };
+final cubit = sl<OrdersCubit>()..loadInitial();
 
-  final response = await _dio.get(
-    '/orders',
-    queryParameters: query,
-  );
-
-  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
-    response.data,
-    (json) => json as Map<String, dynamic>,
-  );
-
-  if (apiResponse.isSuccess) {
-    return OrdersListResponse.fromJson(apiResponse.data!);
-  }
-
-  throw ApiException(apiResponse.error!);
-}
-
-class OrdersListResponse {
-  final List<OrderSummary> orders;
-  final PaginationInfo pagination;
-  final CodEligibility? codEligibility;
-  final CustomerOrderStats? customerOrderStats;
-  final String message;
-
-  OrdersListResponse({
-    required this.orders,
-    required this.pagination,
-    this.codEligibility,
-    this.customerOrderStats,
-    required this.message,
-  });
-
-  factory OrdersListResponse.fromJson(Map<String, dynamic> json) {
-    return OrdersListResponse(
-      orders: (json['orders'] as List)
-          .map((item) => OrderSummary.fromJson(item as Map<String, dynamic>))
-          .toList(),
-      pagination: PaginationInfo.fromJson(json['pagination'] as Map<String, dynamic>),
-      codEligibility: json['codEligibility'] != null
-          ? CodEligibility.fromJson(json['codEligibility'] as Map<String, dynamic>)
-          : null,
-      customerOrderStats: json['customerOrderStats'] != null
-          ? CustomerOrderStats.fromJson(json['customerOrderStats'] as Map<String, dynamic>)
-          : null,
-      message: json['message'] as String? ?? '',
-    );
-  }
-}
-
-class OrderSummary {
-  final String id;
-  final String orderNumber;
-  final String status;
-  final String paymentStatus;
-  final double total;
-  final double subtotal;
-  final double totalDiscount;
-  final double shippingCost;
-  final String currency;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  OrderSummary({
-    required this.id,
-    required this.orderNumber,
-    required this.status,
-    required this.paymentStatus,
-    required this.total,
-    required this.subtotal,
-    required this.totalDiscount,
-    required this.shippingCost,
-    required this.currency,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory OrderSummary.fromJson(Map<String, dynamic> json) {
-    return OrderSummary(
-      id: json['_id'] as String,
-      orderNumber: json['orderNumber'] as String,
-      status: json['status'] as String,
-      paymentStatus: json['paymentStatus'] as String,
-      total: (json['total'] ?? 0).toDouble(),
-      subtotal: (json['subtotal'] ?? 0).toDouble(),
-      totalDiscount: (json['totalDiscount'] ?? 0).toDouble(),
-      shippingCost: (json['shippingCost'] ?? 0).toDouble(),
-      currency: json['currency'] as String? ?? 'YER',
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-    );
-  }
-}
-
-class PaginationInfo {
-  final int total;
-  final int page;
-  final int limit;
-  final int totalPages;
-
-  PaginationInfo({
-    required this.total,
-    required this.page,
-    required this.limit,
-    required this.totalPages,
-  });
-
-  factory PaginationInfo.fromJson(Map<String, dynamic> json) {
-    return PaginationInfo(
-      total: json['total'] as int? ?? 0,
-      page: json['page'] as int? ?? 1,
-      limit: json['limit'] as int? ?? 10,
-      totalPages: json['totalPages'] as int? ?? 1,
-    );
-  }
-}
+BlocBuilder<OrdersCubit, OrdersState>(
+  builder: (context, state) {
+    if (state is OrdersLoaded) {
+      return OrdersList(
+        orders: state.orders,
+        onOrderDetailsPressed: (order) =>
+            GoRouter.of(context).push('/order-details', extra: order.id),
+      );
+    }
+    if (state is OrdersError) {
+      return Center(child: Text(state.message));
+    }
+    return const Center(child: CircularProgressIndicator());
+  },
+);
 ```
+
+- يتم ربط تبويبات الفلترة بالقيم المعتمدة في الـ API (`pending_payment`, `processing`, `completed`, `cancelled`) مع إبقاء الخيار الأول لعرض كل الطلبات.
+- البحث يعتمد على نفس الكيوبت (`OrdersCubit.applySearch`) ويستخدم نفس المعايير (`page=1`, `sortOrder=desc`) لضمان تطابق النتائج مع واجهة الويب.
 
 ---
 
