@@ -163,14 +163,18 @@ export class WebhookController {
 
     // تحديث حالة الطلب بناءً على حالة الشحن
     let orderStatus = order.status;
+    let shippedAt: Date | undefined;
+    let deliveredAt: Date | undefined;
     switch (status as string) {
       case 'shipped':
       case 'in_transit':
       case 'out_for_delivery':
-        orderStatus = OrderStatus.SHIPPED;
+        orderStatus = OrderStatus.PROCESSING;
+        shippedAt = shippingUpdate.lastUpdated;
         break;
       case 'delivered':
-        orderStatus = OrderStatus.DELIVERED;
+        orderStatus = OrderStatus.COMPLETED;
+        deliveredAt = shippingUpdate.lastUpdated;
         break;
       case 'failed_delivery':
       case 'delivery_failed':
@@ -182,7 +186,7 @@ export class WebhookController {
     }
 
     // تحديث الطلب في قاعدة البيانات
-    await this.orderModel.findByIdAndUpdate(order._id, {
+    const updatePayload: Record<string, unknown> = {
       status: orderStatus,
       shippingCompany: shippingUpdate.carrier,
       estimatedDeliveryDate: shippingUpdate.estimatedDelivery,
@@ -193,30 +197,28 @@ export class WebhookController {
         shippingLastUpdated: shippingUpdate.lastUpdated,
       },
       updatedAt: new Date(),
-    });
+    };
 
-    // إرسال إشعار للعميل
-    try {
-      await this.notificationsService.createNotification({
-        type: NotificationType.ORDER_SHIPPED,
-        title: 'تحديث حالة الشحن',
-        message: `تم تحديث حالة شحن طلبك رقم ${order.orderNumber} إلى: ${status}`,
-        messageEn: `Your order ${order.orderNumber} shipping status updated to: ${status}`,
-        recipientId: order.userId._id.toString(),
-        data: {
-          orderId: order._id.toString(),
-          trackingNumber,
-          status,
-          location,
-          estimatedDelivery: shippingUpdate.estimatedDelivery,
-        },
-        channel: NotificationChannel.DASHBOARD,
-        priority: NotificationPriority.HIGH,
-      });
-    } catch (notificationError) {
-      this.logger.error('Failed to send shipping notification:', notificationError);
-      // لا نريد إيقاف العملية إذا فشل الإشعار
+    if (shippedAt) {
+      updatePayload.shippedAt = shippedAt;
     }
+
+    if (orderStatus === OrderStatus.PROCESSING && !order.processingStartedAt) {
+      updatePayload.processingStartedAt = shippingUpdate.lastUpdated;
+    }
+
+    if (orderStatus === OrderStatus.COMPLETED) {
+      const completionDate = deliveredAt ?? new Date();
+      updatePayload.completedAt = completionDate;
+      updatePayload.deliveredAt = completionDate;
+    }
+
+    if (orderStatus === OrderStatus.RETURNED) {
+      updatePayload['returnInfo.isReturned'] = true;
+      updatePayload['returnInfo.returnedAt'] = shippingUpdate.lastUpdated;
+    }
+
+    await this.orderModel.findByIdAndUpdate(order._id, updatePayload);
 
     this.logger.log(`Shipping update processed for order ${order._id}: ${status}`);
 

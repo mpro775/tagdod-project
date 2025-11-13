@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Query, Param } from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -12,9 +12,12 @@ import { RequirePermissions } from '../../shared/decorators/permissions.decorato
 import { ExchangeRatesService } from './exchange-rates.service';
 import { AdminPermission } from '../../shared/constants/permissions';
 import { UpdateExchangeRateDto, ConvertCurrencyDto } from './dto/exchange-rate.dto';
+import { RetrySyncJobDto } from './dto/retry-sync-job.dto';
 import { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserRole } from '../users/schemas/user.schema';
+import { ExchangeRateSyncService } from './exchange-rate-sync.service';
+import { ExchangeRateSyncJobReason } from './schemas/exchange-rate-sync-job.schema';
 
 interface AuthenticatedRequest extends ExpressRequest {
   user: RequestUser;
@@ -34,7 +37,10 @@ interface RequestUser {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminExchangeRatesController {
-  constructor(private readonly exchangeRatesService: ExchangeRatesService) {}
+  constructor(
+    private readonly exchangeRatesService: ExchangeRatesService,
+    private readonly exchangeRateSyncService: ExchangeRateSyncService,
+  ) {}
 
   @RequirePermissions(AdminPermission.EXCHANGE_RATES_READ, AdminPermission.ADMIN_ACCESS)
   @Get()
@@ -175,5 +181,69 @@ export class AdminExchangeRatesController {
   async getUSDToSARRate() {
     const rate = await this.exchangeRatesService.getUSDToSARRate();
     return { rate, currency: 'SAR', formatted: `1 USD = ${rate} $` };
+  }
+
+  @Post('sync')
+  @RequirePermissions(AdminPermission.EXCHANGE_RATES_UPDATE, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({
+    summary: 'إطلاق مزامنة أسعار المنتجات',
+    description: 'يبدأ عملية إعادة حساب أسعار المنتجات بالاعتماد على أسعار الصرف الحالية',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'تم إنشاء مهمة المزامنة بنجاح',
+  })
+  async triggerSync(@Request() req: AuthenticatedRequest) {
+    const job = await this.exchangeRateSyncService.triggerSync(
+      req.user?.id,
+      ExchangeRateSyncJobReason.MANUAL,
+    );
+    return job;
+  }
+
+  @Get('sync-jobs')
+  @RequirePermissions(AdminPermission.EXCHANGE_RATES_READ, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({
+    summary: 'قائمة مهام مزامنة الأسعار',
+    description: 'يعرض قائمة بآخر مهام مزامنة أسعار المنتجات مع حالات كل مهمة',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد قائمة المهام بنجاح',
+  })
+  async listSyncJobs(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? Number(limit) : undefined;
+    return this.exchangeRateSyncService.listJobs(parsedLimit);
+  }
+
+  @Get('sync-jobs/:id')
+  @RequirePermissions(AdminPermission.EXCHANGE_RATES_READ, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({
+    summary: 'تفاصيل مهمة مزامنة الأسعار',
+    description: 'يعرض تفاصيل مهمة محددة بما في ذلك التقدم والأخطاء',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد تفاصيل المهمة بنجاح',
+  })
+  async getSyncJob(@Param('id') id: string) {
+    return this.exchangeRateSyncService.getJob(id);
+  }
+
+  @Post('sync-jobs/:id/retry-product')
+  @RequirePermissions(AdminPermission.EXCHANGE_RATES_UPDATE, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({
+    summary: 'إعادة محاولة المزامنة لمنتج محدد',
+    description: 'إعادة حساب أسعار منتج أو متغيرات محددة ضمن مهمة المزامنة',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تمت إعادة المحاولة وتحديث المهمة بنجاح',
+  })
+  async retrySyncJobProduct(
+    @Param('id') id: string,
+    @Body() dto: RetrySyncJobDto,
+  ) {
+    return this.exchangeRateSyncService.retryProduct(id, dto.productId);
   }
 }

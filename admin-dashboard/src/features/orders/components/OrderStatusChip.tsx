@@ -1,6 +1,6 @@
 import React from 'react';
 import { Chip, ChipProps, useTheme } from '@mui/material';
-import { CheckCircle, Schedule, LocalShipping, Error, Warning, Info } from '@mui/icons-material';
+import { CheckCircle, Schedule, Error, Warning, Info } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { OrderStatus } from '../types/order.types';
 
@@ -16,30 +16,25 @@ const orderStatusColors: Record<
   pending_payment: 'warning',
   confirmed: 'info',
   processing: 'primary',
-  shipped: 'info',
-  delivered: 'success',
   completed: 'success',
   on_hold: 'warning',
   cancelled: 'error',
-  returned: 'error',
+  returned: 'info',
   refunded: 'error',
 };
 
 const getStatusIcon = (status: OrderStatus) => {
   switch (status) {
-    case 'delivered':
     case 'completed':
       return <CheckCircle />;
-    case 'shipped':
-      return <LocalShipping />;
     case 'processing':
       return <Schedule />;
+    case 'on_hold':
+      return <Warning />;
     case 'cancelled':
     case 'refunded':
     case 'returned':
       return <Error />;
-    case 'on_hold':
-      return <Warning />;
     default:
       return <Info />;
   }

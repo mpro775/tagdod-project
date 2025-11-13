@@ -299,6 +299,11 @@ const CartAnalyticsPage = lazy(() =>
 );
 const NotFoundPage = lazy(() => import('@/features/auth/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const ExchangeRatesPage = lazy(() => import('@/features/exchange-rates/pages/ExchangeRatesPage').then((m) => ({ default: m.default })));
+const ExchangeRateSyncJobDetailsPage = lazy(() =>
+  import('@/features/exchange-rates/pages/ExchangeRateSyncJobDetailsPage').then((m) => ({
+    default: m.ExchangeRateSyncJobDetailsPage,
+  })),
+);
 const SystemMonitoringPage = lazy(() => import('@/features/system-monitoring/pages/SystemMonitoringPage').then((m) => ({ default: m.SystemMonitoringPage })));
 const ErrorLogsPage = lazy(() => import('@/features/error-logs/pages/ErrorLogsPage').then((m) => ({ default: m.ErrorLogsPage })));
 const SystemSettingsPage = lazy(() => import('@/features/system-settings/pages/SystemSettingsPage').then((m) => ({ default: m.SystemSettingsPage })));
@@ -678,6 +683,10 @@ export const routes: RouteObject[] = [
       {
         path: 'exchange-rates',
         element: <ExchangeRatesPage />,
+      },
+      {
+        path: 'exchange-rates/sync-jobs/:id',
+        element: <ExchangeRateSyncJobDetailsPage />,
       },
 
      

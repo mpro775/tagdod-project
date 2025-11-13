@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.service';
 import { ExchangeRate } from '../../exchange-rates/schemas/exchange-rate.schema';
 
@@ -21,7 +21,10 @@ export type DerivedMonetaryFields = {
 
 @Injectable()
 export class ProductPricingCalculatorService {
-  constructor(private readonly exchangeRatesService: ExchangeRatesService) {}
+  constructor(
+    @Inject(forwardRef(() => ExchangeRatesService))
+    private readonly exchangeRatesService: ExchangeRatesService,
+  ) {}
 
   async calculateProductPricing<T extends MonetaryFields>(
     product: T,

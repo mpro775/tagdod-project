@@ -31,6 +31,8 @@ import { CacheService } from '../../shared/cache/cache.service';
 import { SystemMonitoringService } from '../system-monitoring/system-monitoring.service';
 import { ErrorLogsService } from '../error-logs/error-logs.service';
 
+const COMPLETED_STATUSES = ['completed'] as const;
+
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
@@ -199,13 +201,13 @@ export class AnalyticsService {
         ]
       }),
       this.orderModel.countDocuments({ 
-        status: { $in: ['completed', 'delivered'] },
+        status: { $in: COMPLETED_STATUSES },
         paymentStatus: 'paid'
       }),
       this.orderModel.aggregate([
         {
           $match: {
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           },
         },
@@ -431,21 +433,21 @@ export class AnalyticsService {
       pendingOrders,
       cancelledOrders,
       processingOrders,
-      shippedOrders,
-      deliveredOrders,
+      onHoldOrders,
+      returnedOrders,
     ] = await Promise.all([
       this.orderModel.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
       this.orderModel.countDocuments({ status: 'completed', createdAt: { $gte: startDate, $lte: endDate } }),
       this.orderModel.countDocuments({ status: 'pending_payment', createdAt: { $gte: startDate, $lte: endDate } }),
       this.orderModel.countDocuments({ status: 'cancelled', createdAt: { $gte: startDate, $lte: endDate } }),
       this.orderModel.countDocuments({ status: 'processing', createdAt: { $gte: startDate, $lte: endDate } }),
-      this.orderModel.countDocuments({ status: 'shipped', createdAt: { $gte: startDate, $lte: endDate } }),
-      this.orderModel.countDocuments({ status: 'delivered', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.orderModel.countDocuments({ status: 'on_hold', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.orderModel.countDocuments({ status: 'returned', createdAt: { $gte: startDate, $lte: endDate } }),
     ]);
 
     // Revenue calculations
     const revenueResult = await this.orderModel.aggregate([
-      { $match: { status: { $in: ['completed', 'delivered'] }, paymentStatus: 'paid', createdAt: { $gte: startDate, $lte: endDate } } },
+      { $match: { status: 'completed', paymentStatus: 'paid', createdAt: { $gte: startDate, $lte: endDate } } },
       {
         $group: {
           _id: null,
@@ -526,8 +528,8 @@ export class AnalyticsService {
       pending: pendingOrders,
       cancelled: cancelledOrders,
       processing: processingOrders,
-      shipped: shippedOrders,
-      delivered: deliveredOrders,
+      onHold: onHoldOrders,
+      returned: returnedOrders,
       totalRevenue,
       averageOrderValue,
       byStatus,
@@ -880,7 +882,7 @@ export class AnalyticsService {
     const totalRevenueResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -903,7 +905,7 @@ export class AnalyticsService {
       {
         $match: {
           createdAt: { $gte: twelveMonthsAgo },
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -929,7 +931,7 @@ export class AnalyticsService {
     const categoryRevenueResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -969,7 +971,7 @@ export class AnalyticsService {
     const paymentMethodResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -1013,7 +1015,7 @@ export class AnalyticsService {
         {
           $match: {
             createdAt: { $gte: thirtyDaysAgo },
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           },
         },
@@ -1028,7 +1030,7 @@ export class AnalyticsService {
         {
           $match: {
             createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo },
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           },
         },
@@ -1141,7 +1143,7 @@ export class AnalyticsService {
     const topLocationsResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
           'deliveryAddress.city': { $exists: true, $ne: null },
         },
@@ -1362,7 +1364,7 @@ export class AnalyticsService {
         {
           $match: {
             createdAt: { $gte: thirtyDaysAgo },
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           },
         },
@@ -1377,7 +1379,7 @@ export class AnalyticsService {
         {
           $match: {
             createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo },
-            status: { $in: ['completed', 'delivered'] },
+            status: { $in: COMPLETED_STATUSES },
             paymentStatus: 'paid',
           },
         },
@@ -1415,7 +1417,7 @@ export class AnalyticsService {
     // Calculate order conversion rate (orders per customer)
     const [totalOrders, totalCustomers] = await Promise.all([
       this.orderModel.countDocuments({
-        status: { $in: ['completed', 'delivered'] },
+        status: { $in: COMPLETED_STATUSES },
         paymentStatus: 'paid',
       }),
       this.userModel.countDocuments({
@@ -1579,7 +1581,7 @@ export class AnalyticsService {
     const dailyAgg = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
           createdAt: { $gte: startOfDay(thirtyDaysAgo), $lte: endOfDay(today) },
         },
@@ -1769,7 +1771,7 @@ export class AnalyticsService {
     const revenueByLocation = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
           'deliveryAddress.city': { $exists: true, $ne: null },
         },
@@ -1801,7 +1803,7 @@ export class AnalyticsService {
     const topSellingResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },
@@ -1837,7 +1839,7 @@ export class AnalyticsService {
     const categoryPerformanceResult = await this.orderModel.aggregate([
       {
         $match: {
-          status: { $in: ['completed', 'delivered'] },
+          status: { $in: COMPLETED_STATUSES },
           paymentStatus: 'paid',
         },
       },

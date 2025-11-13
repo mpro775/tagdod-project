@@ -207,8 +207,6 @@ UnifiedNotificationSchema.pre('save', function(next) {
   if (!this.category) {
     const typeToCategoryMap: Record<NotificationType, NotificationCategory> = {
       [NotificationType.ORDER_CONFIRMED]: NotificationCategory.ORDER,
-      [NotificationType.ORDER_SHIPPED]: NotificationCategory.ORDER,
-      [NotificationType.ORDER_DELIVERED]: NotificationCategory.ORDER,
       [NotificationType.ORDER_CANCELLED]: NotificationCategory.ORDER,
       [NotificationType.ORDER_REFUNDED]: NotificationCategory.ORDER,
       [NotificationType.SERVICE_REQUEST_OPENED]: NotificationCategory.SERVICE,

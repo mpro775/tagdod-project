@@ -6,16 +6,6 @@ export const TEMPLATES: Record<string, Tpl> = {
     body: 'رقم الطلب {{orderId}} بمبلغ {{amount}} {{currency}}',
     link: (p) => p.orderId ? `/orders/${p.orderId}` : undefined,
   },
-  ORDER_SHIPPED: {
-    title: 'تم شحن طلبك',
-    body: 'طلب {{orderId}} في الطريق إليك',
-    link: (p) => p.orderId ? `/orders/${p.orderId}` : undefined,
-  },
-  ORDER_DELIVERED: {
-    title: 'تم التسليم',
-    body: 'تم تسليم طلب {{orderId}}. نتمنى لك يوماً سعيداً!',
-    link: (p) => p.orderId ? `/orders/${p.orderId}` : undefined,
-  },
   ORDER_CANCELLED: {
     title: 'تم إلغاء الطلب',
     body: 'تم إلغاء طلبك {{orderId}} وسيتم إرجاع المبلغ خلال 3-5 أيام عمل',

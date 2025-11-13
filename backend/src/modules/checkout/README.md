@@ -37,8 +37,6 @@ checkout/
 - `PENDING_PAYMENT` - في انتظار الدفع
 - `CONFIRMED` - مؤكد ومدفوع
 - `PROCESSING` - قيد التجهيز
-- `SHIPPED` - تم الشحن
-- `DELIVERED` - تم التسليم
 - `COMPLETED` - مكتمل
 
 ### حالات استثنائية
@@ -78,7 +76,7 @@ checkout/
 - تتبع تاريخ التغييرات
 
 ### المسار الأساسي:
-`PENDING_PAYMENT → CONFIRMED → PROCESSING → SHIPPED → DELIVERED → COMPLETED`
+`PENDING_PAYMENT → CONFIRMED → PROCESSING → COMPLETED`
 
 ### مثال على الاستخدام:
 

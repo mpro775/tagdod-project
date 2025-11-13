@@ -198,8 +198,6 @@
     },
     "descriptions": {
       "ORDER_CONFIRMED": "Order Confirmation Notification",
-      "ORDER_SHIPPED": "Order Shipping Notification",
-      "ORDER_DELIVERED": "Order Delivery Notification",
       "SERVICE_REQUEST_OPENED": "Service Request Opened Notification",
       "NEW_ENGINEER_OFFER": "New Engineer Offer Notification",
       "OFFER_ACCEPTED": "Offer Accepted Notification",

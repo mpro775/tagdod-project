@@ -572,31 +572,54 @@ export class UsersAdminController {
     }
 
     // تحديث القدرات في User نفسه حسب النوع
-    if (dto.roles && dto.roles.length > 0) {
+    // ⚠️ فقط عند تغيير الأدوار بشكل صريح (وليس فارغ)
+    if (dto.roles !== undefined && dto.roles.length > 0) {
       const mainRole = dto.roles[0];
 
-      // تنظيف القدرات القديمة أولاً
-      user.engineer_capable = false;
-      user.engineer_status = CapabilityStatus.NONE;
-      user.merchant_capable = false;
-      user.merchant_status = CapabilityStatus.NONE;
-      user.merchant_discount_percent = 0;
+      // حفظ الحالات الخاصة (unverified/pending) قبل إعادة التعيين
+      const preserveEngineerStatus = 
+        user.engineer_capable && 
+        (user.engineer_status === CapabilityStatus.UNVERIFIED || 
+         user.engineer_status === CapabilityStatus.PENDING);
+
+      const preserveMerchantStatus = 
+        user.merchant_capable && 
+        (user.merchant_status === CapabilityStatus.UNVERIFIED || 
+         user.merchant_status === CapabilityStatus.PENDING);
+
+      // تنظيف القدرات القديمة أولاً (ما عدا الحالات المحفوظة)
+      if (!preserveEngineerStatus) {
+        user.engineer_capable = false;
+        user.engineer_status = CapabilityStatus.NONE;
+      }
+      if (!preserveMerchantStatus) {
+        user.merchant_capable = false;
+        user.merchant_status = CapabilityStatus.NONE;
+        user.merchant_discount_percent = 0;
+      }
       user.admin_capable = false;
       user.admin_status = CapabilityStatus.NONE;
 
       // إضافة القدرات حسب النوع الجديد
       if (mainRole === UserRole.ENGINEER) {
-        user.engineer_capable = true;
-        user.engineer_status = CapabilityStatus.APPROVED;
+        // فقط إذا لم تكن الحالة محفوظة (unverified/pending)
+        if (!preserveEngineerStatus) {
+          user.engineer_capable = true;
+          user.engineer_status = CapabilityStatus.APPROVED;
+        }
       } else if (mainRole === UserRole.MERCHANT) {
-        user.merchant_capable = true;
-        user.merchant_status = CapabilityStatus.APPROVED;
-        user.merchant_discount_percent = dto.merchantDiscountPercent || 0;
+        // فقط إذا لم تكن الحالة محفوظة (unverified/pending)
+        if (!preserveMerchantStatus) {
+          user.merchant_capable = true;
+          user.merchant_status = CapabilityStatus.APPROVED;
+          user.merchant_discount_percent = dto.merchantDiscountPercent || 0;
+        }
       } else if (mainRole === UserRole.ADMIN || mainRole === UserRole.SUPER_ADMIN) {
         user.admin_capable = true;
         user.admin_status = CapabilityStatus.APPROVED;
       }
     }
+    // إذا لم يتم إرسال roles أو كان فارغاً، لا تغير القدرات على الإطلاق
 
     await user.save();
 

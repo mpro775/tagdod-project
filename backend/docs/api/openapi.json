@@ -7342,6 +7342,127 @@
         ]
       }
     },
+    "/api/v1/admin/exchange-rates/sync": {
+      "post": {
+        "operationId": "triggerSync",
+        "summary": "إطلاق مزامنة أسعار المنتجات",
+        "description": "يبدأ عملية إعادة حساب أسعار المنتجات بالاعتماد على أسعار الصرف الحالية",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "تم إنشاء مهمة المزامنة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/sync-jobs": {
+      "get": {
+        "operationId": "listSyncJobs",
+        "summary": "قائمة مهام مزامنة الأسعار",
+        "description": "يعرض قائمة بآخر مهام مزامنة أسعار المنتجات مع حالات كل مهمة",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد قائمة المهام بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/sync-jobs/{id}": {
+      "get": {
+        "operationId": "getSyncJob",
+        "summary": "تفاصيل مهمة مزامنة الأسعار",
+        "description": "يعرض تفاصيل مهمة محددة بما في ذلك التقدم والأخطاء",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تفاصيل المهمة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/sync-jobs/{id}/retry-product": {
+      "post": {
+        "operationId": "retrySyncJobProduct",
+        "summary": "إعادة محاولة المزامنة لمنتج محدد",
+        "description": "إعادة حساب أسعار منتج أو متغيرات محددة ضمن مهمة المزامنة",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrySyncJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تمت إعادة المحاولة وتحديث المهمة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/notifications": {
       "get": {
         "operationId": "getUserNotifications",
@@ -8547,8 +8668,6 @@
                 "pending_payment",
                 "confirmed",
                 "processing",
-                "shipped",
-                "delivered",
                 "completed",
                 "on_hold",
                 "cancelled",
@@ -8915,8 +9034,6 @@
                 "pending_payment",
                 "confirmed",
                 "processing",
-                "shipped",
-                "delivered",
                 "completed",
                 "on_hold",
                 "cancelled",
@@ -9085,8 +9202,8 @@
     "/api/v1/admin/orders/{id}/ship": {
       "post": {
         "operationId": "shipOrder",
-        "summary": "شحن الطلب",
-        "description": "تحديث معلومات الشحن للطلب",
+        "summary": "تحديث معلومات الشحن",
+        "description": "تسجيل بيانات الشحن للطلب مع بقاء الحالة الحالية",
         "parameters": [
           {
             "name": "id",
@@ -9454,8 +9571,6 @@
                 "pending_payment",
                 "confirmed",
                 "processing",
-                "shipped",
-                "delivered",
                 "completed",
                 "on_hold",
                 "cancelled",
@@ -9702,8 +9817,6 @@
                 "pending_payment",
                 "confirmed",
                 "processing",
-                "shipped",
-                "delivered",
                 "completed",
                 "on_hold",
                 "cancelled",
@@ -28680,6 +28793,10 @@
         "type": "object",
         "properties": {}
       },
+      "RetrySyncJobDto": {
+        "type": "object",
+        "properties": {}
+      },
       "MarkAsReadDto": {
         "type": "object",
         "properties": {}
@@ -29836,8 +29953,6 @@
               "pending_payment",
               "confirmed",
               "processing",
-              "shipped",
-              "delivered",
               "completed",
               "on_hold",
               "cancelled",
@@ -29945,8 +30060,6 @@
               "pending_payment",
               "confirmed",
               "processing",
-              "shipped",
-              "delivered",
               "completed",
               "on_hold",
               "cancelled",

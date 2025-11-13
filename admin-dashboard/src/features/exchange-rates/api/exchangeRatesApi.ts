@@ -37,6 +37,41 @@ export interface ExchangeRateResponse {
   formatted: string;
 }
 
+export type ExchangeRateSyncJobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type ExchangeRateSyncJobReason = 'rate_update' | 'manual';
+
+export interface ExchangeRateSyncJobError {
+  productId?: string;
+  variantId?: string;
+  message: string;
+  occurredAt: string;
+}
+
+export interface ExchangeRateSyncJob {
+  _id: string;
+  status: ExchangeRateSyncJobStatus;
+  reason: ExchangeRateSyncJobReason;
+  triggeredBy?: string;
+  exchangeRateVersion?: string;
+  totalProducts: number;
+  processedProducts: number;
+  processedVariants: number;
+  failedProducts: number;
+  failedVariants: number;
+  lastProcessedProductId?: string;
+  startedAt?: string;
+  completedAt?: string;
+  failedAt?: string;
+  enqueuedAt: string;
+  errors: ExchangeRateSyncJobError[];
+}
+
+export interface TriggerSyncJobResponse extends ExchangeRateSyncJob {}
+
+export interface ExchangeRateSyncJobListResponse {
+  jobs: ExchangeRateSyncJob[];
+}
+
 // Exchange Rates API Service
 export class ExchangeRatesApiService {
   /**
@@ -76,6 +111,48 @@ export class ExchangeRatesApiService {
    */
   static async getUSDToSARRate(): Promise<ExchangeRateResponse> {
     const response = await apiClient.get<ApiResponse<ExchangeRateResponse>>('/admin/exchange-rates/usd-to-sar');
+    return response.data.data;
+  }
+
+  /**
+   * Trigger exchange rate sync job
+   */
+  static async triggerSyncJob(): Promise<ExchangeRateSyncJob> {
+    const response = await apiClient.post<ApiResponse<ExchangeRateSyncJob>>('/admin/exchange-rates/sync');
+    return response.data.data;
+  }
+
+  /**
+   * List recent exchange rate sync jobs
+   */
+  static async listSyncJobs(limit?: number): Promise<ExchangeRateSyncJob[]> {
+    const response = await apiClient.get<ApiResponse<ExchangeRateSyncJob[]>>(
+      '/admin/exchange-rates/sync-jobs',
+      {
+        params: limit ? { limit } : undefined,
+      },
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Get a single sync job details
+   */
+  static async getSyncJob(jobId: string): Promise<ExchangeRateSyncJob> {
+    const response = await apiClient.get<ApiResponse<ExchangeRateSyncJob>>(
+      `/admin/exchange-rates/sync-jobs/${jobId}`,
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Retry syncing prices for a specific product within a job
+   */
+  static async retrySyncJobProduct(jobId: string, productId: string): Promise<ExchangeRateSyncJob> {
+    const response = await apiClient.post<ApiResponse<ExchangeRateSyncJob>>(
+      `/admin/exchange-rates/sync-jobs/${jobId}/retry-product`,
+      { productId },
+    );
     return response.data.data;
   }
 }

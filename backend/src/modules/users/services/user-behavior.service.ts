@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Order, OrderItem } from '../../checkout/schemas/order.schema';
+import { Order, OrderItem, OrderStatus } from '../../checkout/schemas/order.schema';
 
 export interface UserBehavior {
   preferredPaymentMethod: string;
@@ -14,7 +14,7 @@ export class UserBehaviorService {
    * تحليل سلوك المستخدم
    */
   analyzeUserBehavior(orders: Order[]): UserBehavior {
-    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
+    const completedOrders = orders.filter(o => o.status === OrderStatus.COMPLETED);
     
     // طريقة الدفع المفضلة
     const preferredPaymentMethod = this.analyzePaymentMethod(completedOrders);
@@ -123,7 +123,7 @@ export class UserBehaviorService {
    * تحليل مخاطر فقدان العميل
    */
   analyzeChurnRisk(orders: Order[]): 'low' | 'medium' | 'high' {
-    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
+    const completedOrders = orders.filter(o => o.status === OrderStatus.COMPLETED);
     
     if (completedOrders.length === 0) {
       return 'high';
@@ -141,7 +141,7 @@ export class UserBehaviorService {
    * حساب احتمالية الشراء القادم
    */
   calculateNextPurchaseProbability(orders: Order[], churnRisk: 'low' | 'medium' | 'high'): number {
-    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
+    const completedOrders = orders.filter(o => o.status === OrderStatus.COMPLETED);
     
     let probability = 1;
     
@@ -166,7 +166,7 @@ export class UserBehaviorService {
    * حساب القيمة المتوقعة للعميل
    */
   calculateEstimatedLifetimeValue(orders: Order[]): number {
-    const completedOrders = orders.filter(o => ['completed', 'delivered'].includes(o.status));
+    const completedOrders = orders.filter(o => o.status === OrderStatus.COMPLETED);
     const totalSpent = completedOrders.reduce((sum, order) => sum + order.total, 0);
     
     // تقدير بسيط: القيمة الحالية × 1.5

@@ -3085,6 +3085,117 @@
             },
             "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال السعودي الحالي مع تفاصيل إضافية"
           }
+        },
+        {
+          "name": "إطلاق مزامنة أسعار المنتجات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/exchange-rates/sync",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "exchange-rates",
+                "sync"
+              ]
+            },
+            "description": "يبدأ عملية إعادة حساب أسعار المنتجات بالاعتماد على أسعار الصرف الحالية"
+          }
+        },
+        {
+          "name": "قائمة مهام مزامنة الأسعار",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/exchange-rates/sync-jobs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "exchange-rates",
+                "sync-jobs"
+              ]
+            },
+            "description": "يعرض قائمة بآخر مهام مزامنة أسعار المنتجات مع حالات كل مهمة"
+          }
+        },
+        {
+          "name": "تفاصيل مهمة مزامنة الأسعار",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/exchange-rates/sync-jobs/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "exchange-rates",
+                "sync-jobs",
+                "{id}"
+              ]
+            },
+            "description": "يعرض تفاصيل مهمة محددة بما في ذلك التقدم والأخطاء"
+          }
+        },
+        {
+          "name": "إعادة محاولة المزامنة لمنتج محدد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/exchange-rates/sync-jobs/{id}/retry-product",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "exchange-rates",
+                "sync-jobs",
+                "{id}",
+                "retry-product"
+              ]
+            },
+            "description": "إعادة حساب أسعار منتج أو متغيرات محددة ضمن مهمة المزامنة"
+          }
         }
       ],
       "description": "Endpoints for إدارة-أسعار-الصرف functionality"
@@ -4143,7 +4254,7 @@
           }
         },
         {
-          "name": "شحن الطلب",
+          "name": "تحديث معلومات الشحن",
           "request": {
             "method": "POST",
             "header": [
@@ -4167,7 +4278,7 @@
                 "ship"
               ]
             },
-            "description": "تحديث معلومات الشحن للطلب"
+            "description": "تسجيل بيانات الشحن للطلب مع بقاء الحالة الحالية"
           }
         },
         {

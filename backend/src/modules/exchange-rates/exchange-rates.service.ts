@@ -1,9 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { CurrencyNotSupportedException } from '../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ExchangeRate, ExchangeRateDocument } from './schemas/exchange-rate.schema';
 import { UpdateExchangeRateDto, ConvertCurrencyDto, CurrencyConversionResult } from './dto/exchange-rate.dto';
+import { ExchangeRateSyncService } from './exchange-rate-sync.service';
+import { ExchangeRateSyncJobReason } from './schemas/exchange-rate-sync-job.schema';
 
 @Injectable()
 export class ExchangeRatesService {
@@ -19,6 +21,8 @@ export class ExchangeRatesService {
   constructor(
     @InjectModel(ExchangeRate.name) 
     private exchangeRateModel: Model<ExchangeRateDocument>,
+    @Inject(forwardRef(() => ExchangeRateSyncService))
+    private readonly exchangeRateSyncService: ExchangeRateSyncService,
   ) {}
 
   /**
@@ -87,11 +91,24 @@ export class ExchangeRatesService {
       };
       this.conversionCache.clear();
 
+      this.scheduleSyncJob(updatedBy);
+
       return newRates;
     } catch (error) {
       this.logger.error('فشل في تحديث أسعار الصرف:', error);
       throw error;
     }
+  }
+
+  private scheduleSyncJob(updatedBy: string): void {
+    this.exchangeRateSyncService
+      .triggerSync(updatedBy, ExchangeRateSyncJobReason.RATE_UPDATE)
+      .catch((error) => {
+        this.logger.error(
+          `Failed to trigger exchange rate pricing sync after rates update`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
   }
 
   /**

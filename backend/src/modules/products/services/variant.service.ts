@@ -10,8 +10,6 @@ import {
   ErrorCode 
 } from '../../../shared/exceptions';
 import { AttributesService } from '../../attributes/attributes.service';
-import { Attribute } from '../../attributes/schemas/attribute.schema';
-import { AttributeValue } from '../../attributes/schemas/attribute-value.schema';
 import { ProductPricingCalculatorService } from './product-pricing-calculator.service';
 
 // Local, explicit types to eliminate 'any' usage and align with real data
@@ -132,72 +130,69 @@ export class VariantService {
   }
 
   async findByProductId(productId: string, includeDeleted = false): Promise<Variant[]> {
-    const filter: FilterQuery<Variant> = { productId: new Types.ObjectId(productId) } as FilterQuery<Variant>;
+    const filter: FilterQuery<Variant> = {
+      productId: new Types.ObjectId(productId),
+    } as FilterQuery<Variant>;
 
     if (!includeDeleted) {
       filter.deletedAt = null;
     }
 
-    const variants = await this.variantModel
+    const documents = await this.variantModel
       .find(filter)
-      .populate('imageId')
-      .populate('attributeValues.attributeId', 'name nameEn slug')
-      .populate('attributeValues.valueId', 'value valueEn slug')
-      .sort({ basePriceUSD: 1 });
+      .sort({ basePriceUSD: 1 })
+      .lean();
 
-    return variants.map(variantDoc => {
-      const variantObject = variantDoc.toObject() as Variant & Record<string, unknown>;
+    return this.transformVariantDocuments(documents);
+  }
 
-      if (Array.isArray(variantObject.attributeValues)) {
-        const attributeValues = variantObject.attributeValues as unknown as Array<Record<string, unknown>>;
+  async findByProductIds(
+    productIds: string[],
+    includeDeleted = false,
+  ): Promise<Record<string, Variant[]>> {
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return {};
+    }
 
-        variantObject.attributeValues = attributeValues.map((av) => {
-          const attributeRaw = (av as { attributeId?: unknown }).attributeId;
-          const valueRaw = (av as { valueId?: unknown }).valueId;
+    const objectIds = productIds
+      .filter((id): id is string => typeof id === 'string' && Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
 
-          const attributeDoc =
-            attributeRaw && typeof attributeRaw === 'object' && '_id' in (attributeRaw as Record<string, unknown>)
-              ? (attributeRaw as Attribute & { _id: Types.ObjectId })
-              : undefined;
+    if (objectIds.length === 0) {
+      return {};
+    }
 
-          const valueDoc =
-            valueRaw && typeof valueRaw === 'object' && '_id' in (valueRaw as Record<string, unknown>)
-              ? (valueRaw as AttributeValue & { _id: Types.ObjectId })
-              : undefined;
+    const filter: FilterQuery<Variant> = {
+      productId: { $in: objectIds },
+    } as FilterQuery<Variant>;
 
-          const attributeId = this.normalizeReferenceId(attributeRaw);
-          const valueId = this.normalizeReferenceId(valueRaw);
+    if (!includeDeleted) {
+      filter.deletedAt = null;
+    }
 
-          const avLocalized = av as {
-            name?: string;
-            nameEn?: string;
-            value?: string;
-            valueEn?: string;
-          };
+    const documents = await this.variantModel
+      .find(filter)
+      .sort({ productId: 1, basePriceUSD: 1 })
+      .lean();
 
-          return {
-            attributeId,
-            valueId,
-            name: attributeDoc?.name ?? avLocalized.name ?? '',
-            nameEn:
-              attributeDoc?.nameEn ??
-              avLocalized.nameEn ??
-              attributeDoc?.name ??
-              avLocalized.name ??
-              '',
-            value: valueDoc?.value ?? avLocalized.value ?? '',
-            valueEn:
-              valueDoc?.valueEn ??
-              avLocalized.valueEn ??
-              valueDoc?.value ??
-              avLocalized.value ??
-              '',
-          } as VariantAttribute;
-        }) as VariantAttribute[];
+    const transformed = this.transformVariantDocuments(documents);
+    const grouped: Record<string, Variant[]> = {};
+
+    transformed.forEach((variant) => {
+      const productId = this.normalizeReferenceId((variant as unknown as { productId?: unknown }).productId);
+
+      if (!productId) {
+        return;
       }
 
-      return variantObject;
+      if (!grouped[productId]) {
+        grouped[productId] = [];
+      }
+
+      grouped[productId].push(variant);
     });
+
+    return grouped;
   }
 
   async update(id: string, dto: UpdateVariantDto): Promise<Variant> {
@@ -496,6 +491,54 @@ export class VariantService {
     }
 
     return result;
+  }
+
+  private transformVariantDocuments(
+    documents: Array<Record<string, unknown>>,
+  ): Variant[] {
+    if (!documents || documents.length === 0) {
+      return [];
+    }
+
+    return documents.map((document) => {
+      const variantRecord = { ...document } as Record<string, unknown>;
+
+      if (Array.isArray(variantRecord.attributeValues)) {
+        const attributeValues = variantRecord.attributeValues as Array<Record<string, unknown>>;
+
+        variantRecord.attributeValues = attributeValues.map((attributeValueRecord) => {
+          const attributeRaw = attributeValueRecord['attributeId'];
+          const valueRaw = attributeValueRecord['valueId'];
+
+          const attributeId = this.normalizeReferenceId(attributeRaw);
+          const valueId = this.normalizeReferenceId(valueRaw);
+
+          const name =
+            typeof attributeValueRecord['name'] === 'string' ? (attributeValueRecord['name'] as string) : '';
+          const nameEn =
+            typeof attributeValueRecord['nameEn'] === 'string'
+              ? (attributeValueRecord['nameEn'] as string)
+              : name;
+          const value =
+            typeof attributeValueRecord['value'] === 'string' ? (attributeValueRecord['value'] as string) : '';
+          const valueEn =
+            typeof attributeValueRecord['valueEn'] === 'string'
+              ? (attributeValueRecord['valueEn'] as string)
+              : value;
+
+          return {
+            attributeId,
+            valueId,
+            name,
+            nameEn,
+            value,
+            valueEn,
+          } as VariantAttribute;
+        });
+      }
+
+      return variantRecord as unknown as Variant;
+    });
   }
 
   private normalizeReferenceId(ref: unknown): string {

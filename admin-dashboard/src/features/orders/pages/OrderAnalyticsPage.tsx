@@ -32,10 +32,11 @@ import {
   FilterList,
   AttachMoney,
   ShoppingCart,
-  LocalShipping,
   CheckCircle,
   Cancel,
   Schedule,
+  Warning,
+  Replay,
   ExpandMore,
   ExpandLess,
 } from '@mui/icons-material';
@@ -96,18 +97,17 @@ export const OrderAnalyticsPage: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'delivered':
       case 'completed':
         return <CheckCircle color="success" />;
-      case 'shipped':
-      case 'out_for_delivery':
-        return <LocalShipping color="info" />;
       case 'processing':
-      case 'ready_to_ship':
         return <Schedule color="primary" />;
+      case 'on_hold':
+        return <Warning color="warning" />;
       case 'cancelled':
       case 'refunded':
         return <Cancel color="error" />;
+      case 'returned':
+        return <Replay color="info" />;
       default:
         return <ShoppingCart color="primary" />;
     }
@@ -115,18 +115,21 @@ export const OrderAnalyticsPage: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'delivered':
+      case 'pending_payment':
+        return 'warning';
+      case 'confirmed':
+        return 'info';
       case 'completed':
         return 'success';
-      case 'shipped':
-      case 'out_for_delivery':
-        return 'info';
       case 'processing':
-      case 'ready_to_ship':
         return 'primary';
+      case 'on_hold':
+        return 'warning';
       case 'cancelled':
       case 'refunded':
         return 'error';
+      case 'returned':
+        return 'info';
       default:
         return 'default';
     }
@@ -608,56 +611,6 @@ export const OrderAnalyticsPage: React.FC = () => {
                     </Typography>
                     <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary">
                       {t('analytics.averageProcessingTime')}
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-                  <Paper
-                    sx={{
-                      p: { xs: 1.5, sm: 2 },
-                      textAlign: 'center',
-                      bgcolor:
-                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
-                    }}
-                  >
-                    <Box sx={{ color: 'info.main', mb: 1 }}>
-                      <LocalShipping fontSize={isMobile ? 'medium' : 'large'} />
-                    </Box>
-                    <Typography
-                      variant={isMobile ? 'h6' : 'h5'}
-                      component="div"
-                      sx={{ fontWeight: 'bold' }}
-                    >
-                      {formatNumber(performanceAnalytics.averageShippingTime ?? 0)}{' '}
-                      {t('analytics.day')}
-                    </Typography>
-                    <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary">
-                      {t('analytics.averageShippingTime')}
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-                  <Paper
-                    sx={{
-                      p: { xs: 1.5, sm: 2 },
-                      textAlign: 'center',
-                      bgcolor:
-                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
-                    }}
-                  >
-                    <Box sx={{ color: 'success.main', mb: 1 }}>
-                      <CheckCircle fontSize={isMobile ? 'medium' : 'large'} />
-                    </Box>
-                    <Typography
-                      variant={isMobile ? 'h6' : 'h5'}
-                      component="div"
-                      sx={{ fontWeight: 'bold' }}
-                    >
-                      {formatNumber(performanceAnalytics.averageDeliveryTime ?? 0)}{' '}
-                      {t('analytics.day')}
-                    </Typography>
-                    <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary">
-                      {t('analytics.averageDeliveryTime')}
                     </Typography>
                   </Paper>
                 </Grid>

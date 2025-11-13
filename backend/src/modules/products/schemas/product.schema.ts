@@ -138,6 +138,22 @@ export class Product {
   @Prop({ default: 0 })
   order!: number;
 
+  // إدارة المخزون للمنتجات البسيطة (بدون Variants)
+  @Prop({ default: 0, min: 0 })
+  stock?: number;
+
+  @Prop({ default: 0, min: 0 })
+  minStock?: number;
+
+  @Prop({ default: 0, min: 0 })
+  maxStock?: number;
+
+  @Prop({ default: false })
+  trackStock?: boolean;
+
+  @Prop({ default: false })
+  allowBackorder?: boolean;
+
   // المنتجات الشبيهة
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Product' }], default: [] })
   relatedProducts!: string[]; // IDs of related/similar products

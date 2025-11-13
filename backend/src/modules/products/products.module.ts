@@ -32,7 +32,7 @@ import { SharedModule } from '../../shared/shared.module';
     CacheModule,
     AttributesModule,
     CategoriesModule,
-    ExchangeRatesModule,
+    forwardRef(() => ExchangeRatesModule),
     NotificationsCompleteModule,
     forwardRef(() => AuthModule),
     SharedModule,

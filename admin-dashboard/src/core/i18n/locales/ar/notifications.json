@@ -198,8 +198,6 @@
     },
     "descriptions": {
       "ORDER_CONFIRMED": "إشعار تأكيد الطلب",
-      "ORDER_SHIPPED": "إشعار شحن الطلب",
-      "ORDER_DELIVERED": "إشعار تسليم الطلب",
       "SERVICE_REQUEST_OPENED": "إشعار فتح طلب خدمة",
       "NEW_ENGINEER_OFFER": "إشعار عرض مهندس جديد",
       "OFFER_ACCEPTED": "إشعار قبول العرض",

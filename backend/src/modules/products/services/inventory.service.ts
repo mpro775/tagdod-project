@@ -2,8 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {  Model, Types } from 'mongoose';
 import { Variant, VariantAttribute } from '../schemas/variant.schema';
+import { Product } from '../schemas/product.schema';
 import { 
   VariantNotFoundException,
+  ProductNotFoundException,
  
 } from '../../../shared/exceptions';
 import { NotificationService } from '../../notifications/services/notification.service';
@@ -25,6 +27,7 @@ export class InventoryService {
 
   constructor(
     @InjectModel(Variant.name) private variantModel: Model<Variant>,
+    @InjectModel(Product.name) private productModel: Model<Product>,
     private notificationService: NotificationService,
   ) {}
 
@@ -64,6 +67,39 @@ export class InventoryService {
       success: true,
       newStock,
       message: `تم ${operation === 'add' ? 'إضافة' : 'خصم'} ${quantity} وحدة. المخزون الجديد: ${newStock}`
+    };
+  }
+
+  async updateProductStock(
+    productId: string,
+    quantity: number,
+    operation: 'add' | 'subtract' = 'subtract',
+    reason?: string
+  ): Promise<{ success: boolean; newStock: number; message?: string }> {
+    const product = await this.productModel.findById(productId);
+
+    if (!product) {
+      throw new ProductNotFoundException({ productId });
+    }
+
+    const update =
+      operation === 'add' ? { $inc: { stock: quantity } } : { $inc: { stock: -quantity } };
+
+    await this.productModel.updateOne({ _id: productId }, update);
+
+    const updatedProduct = await this.productModel.findById(productId);
+    const newStock = updatedProduct?.stock ?? 0;
+
+    await this.checkProductLowStock(productId);
+
+    this.logger.log(
+      `Stock ${operation} for product ${productId}: ${quantity} units. New stock: ${newStock}. Reason: ${reason || 'Manual update'}`,
+    );
+
+    return {
+      success: true,
+      newStock,
+      message: `تم ${operation === 'add' ? 'إضافة' : 'خصم'} ${quantity} وحدة للمنتج. المخزون الجديد: ${newStock}`,
     };
   }
 
@@ -150,6 +186,60 @@ export class InventoryService {
       available: true, 
       availableStock: variant.stock,
       canBackorder: variant.allowBackorder
+    };
+  }
+
+  async checkProductAvailability(
+    productId: string,
+    requestedQuantity: number
+  ): Promise<{
+    available: boolean;
+    reason?: string;
+    availableStock?: number;
+    canBackorder?: boolean;
+  }> {
+    const product = await this.productModel.findById(productId).lean();
+
+    if (!product) {
+      return { available: false, reason: 'PRODUCT_NOT_FOUND' };
+    }
+
+    if (!product.trackStock) {
+      return {
+        available: true,
+        availableStock: product.stock ?? 0,
+        canBackorder: true,
+      };
+    }
+
+    if (isNaN(product.stock as number)) {
+      this.logger.warn(`Invalid stock value for product ${productId}: ${product.stock}`);
+      return { available: false, reason: 'INVALID_STOCK_VALUE' };
+    }
+
+    const currentStock = Number(product.stock ?? 0);
+    if (currentStock < requestedQuantity) {
+      if (!product.allowBackorder) {
+        return {
+          available: false,
+          reason: 'INSUFFICIENT_STOCK',
+          availableStock: currentStock,
+          canBackorder: false,
+        };
+      }
+
+      return {
+        available: true,
+        reason: 'BACKORDER_ALLOWED',
+        availableStock: currentStock,
+        canBackorder: true,
+      };
+    }
+
+    return {
+      available: true,
+      availableStock: currentStock,
+      canBackorder: product.allowBackorder,
     };
   }
 
@@ -245,6 +335,89 @@ export class InventoryService {
       this.logger.error(`OUT OF STOCK ALERT: Variant ${variant._id.toString()} is out of stock`);
     } catch (error) {
       this.logger.error(`Failed to send out of stock alert for variant ${variant._id.toString()}:`, error);
+    }
+  }
+
+  private async checkProductLowStock(productId: string): Promise<void> {
+    const product = await this.productModel.findById(productId).lean();
+
+    if (!product || !product.trackStock) {
+      return;
+    }
+
+    const stock = Number(product.stock ?? 0);
+    const minStock = Number(product.minStock ?? 0);
+
+    if (!Number.isFinite(stock) || stock < 0) {
+      this.logger.warn(`Invalid stock values for product ${productId}: stock=${product.stock}`);
+      return;
+    }
+
+    if (!Number.isFinite(minStock) || minStock < 0) {
+      this.logger.warn(`Invalid minStock values for product ${productId}: minStock=${product.minStock}`);
+      return;
+    }
+
+    if (stock <= minStock) {
+      await this.sendProductLowStockAlert(productId, stock, minStock);
+    }
+
+    if (stock === 0) {
+      await this.sendProductOutOfStockAlert(productId, product.name);
+    }
+  }
+
+  private async sendProductLowStockAlert(
+    productId: string,
+    stock: number,
+    minStock: number,
+  ): Promise<void> {
+    try {
+      const product = await this.productModel.findById(productId).lean();
+      if (!product) {
+        return;
+      }
+
+      await this.notificationService.createNotification({
+        type: NotificationType.LOW_STOCK,
+        title: 'تنبيه مخزون منخفض',
+        message: `المنتج ${product.name} يحتوي على مخزون منخفض: ${stock} (الحد الأدنى: ${minStock})`,
+        messageEn: `Product ${product.nameEn ?? product.name} has low stock: ${stock} (minimum: ${minStock})`,
+        channel: NotificationChannel.DASHBOARD,
+        priority: NotificationPriority.HIGH,
+        data: {
+          productId,
+          currentStock: stock,
+          minStock,
+        },
+        isSystemGenerated: true,
+      });
+
+      this.logger.warn(`LOW STOCK ALERT: Product ${productId} has ${stock} units (minimum: ${minStock})`);
+    } catch (error) {
+      this.logger.error(`Failed to send low stock alert for product ${productId}:`, error);
+    }
+  }
+
+  private async sendProductOutOfStockAlert(productId: string, productName?: string): Promise<void> {
+    try {
+      await this.notificationService.createNotification({
+        type: NotificationType.OUT_OF_STOCK,
+        title: 'تنبيه نفاد المخزون',
+        message: `المنتج ${productName ?? productId} نفد من المخزون`,
+        messageEn: `Product ${productName ?? productId} is out of stock`,
+        channel: NotificationChannel.DASHBOARD,
+        priority: NotificationPriority.HIGH,
+        data: {
+          productId,
+          currentStock: 0,
+        },
+        isSystemGenerated: true,
+      });
+
+      this.logger.error(`OUT OF STOCK ALERT: Product ${productId} is out of stock`);
+    } catch (error) {
+      this.logger.error(`Failed to send out of stock alert for product ${productId}:`, error);
     }
   }
 

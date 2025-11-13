@@ -11,8 +11,6 @@ export enum OrderStatus {
   PENDING_PAYMENT = 'pending_payment', // في انتظار الدفع
   CONFIRMED = 'confirmed', // مؤكد ومدفوع
   PROCESSING = 'processing', // قيد التجهيز
-  SHIPPED = 'shipped', // تم الشحن
-  DELIVERED = 'delivered', // تم التسليم
   COMPLETED = 'completed', // مكتمل
   
   // حالات استثنائية
@@ -59,9 +57,7 @@ export enum PaymentMethod {
 export const ORDER_STATE_MACHINE = {
   [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
   [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
-  [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
-  [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
-  [OrderStatus.DELIVERED]: [OrderStatus.COMPLETED, OrderStatus.RETURNED],
+  [OrderStatus.PROCESSING]: [OrderStatus.COMPLETED, OrderStatus.RETURNED, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
   [OrderStatus.COMPLETED]: [],
   [OrderStatus.ON_HOLD]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
   [OrderStatus.CANCELLED]: [],

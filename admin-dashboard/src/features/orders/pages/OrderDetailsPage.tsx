@@ -139,8 +139,6 @@ export const OrderDetailsPage: React.FC = () => {
     const statusesRequiringPayment = [
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
-      OrderStatus.SHIPPED,
-      OrderStatus.DELIVERED,
       OrderStatus.COMPLETED,
     ];
 
@@ -347,7 +345,7 @@ export const OrderDetailsPage: React.FC = () => {
                         setRefundDialog(true);
                       }}
                       disabled={
-                        ![OrderStatus.DELIVERED, OrderStatus.COMPLETED].includes(order.status)
+                        ![OrderStatus.COMPLETED, OrderStatus.RETURNED].includes(order.status)
                       }
                     >
                       {t('actions.refundOrder')}
@@ -361,9 +359,12 @@ export const OrderDetailsPage: React.FC = () => {
                         setCancelDialog(true);
                       }}
                       disabled={
-                        [OrderStatus.CANCELLED, OrderStatus.DELIVERED, OrderStatus.COMPLETED].includes(
-                          order.status
-                        )
+                        [
+                          OrderStatus.CANCELLED,
+                          OrderStatus.COMPLETED,
+                          OrderStatus.RETURNED,
+                          OrderStatus.REFUNDED,
+                        ].includes(order.status)
                       }
                     >
                       {t('actions.cancelOrder')}
@@ -397,8 +398,8 @@ export const OrderDetailsPage: React.FC = () => {
                 startIcon={<Refresh />}
                 onClick={() => setRefundDialog(true)}
                 disabled={![
-                  OrderStatus.DELIVERED,
                   OrderStatus.COMPLETED,
+                  OrderStatus.RETURNED,
                 ].includes(order.status)}
               >
                 {t('actions.refundOrder')}
@@ -409,9 +410,12 @@ export const OrderDetailsPage: React.FC = () => {
                 startIcon={<Cancel />}
                 onClick={() => setCancelDialog(true)}
                 disabled={
-                  [OrderStatus.CANCELLED, OrderStatus.DELIVERED, OrderStatus.COMPLETED].includes(
-                    order.status
-                  )
+                  [
+                    OrderStatus.CANCELLED,
+                    OrderStatus.COMPLETED,
+                    OrderStatus.RETURNED,
+                    OrderStatus.REFUNDED,
+                  ].includes(order.status)
                 }
               >
                 {t('actions.cancelOrder')}
@@ -1096,8 +1100,6 @@ export const OrderDetailsPage: React.FC = () => {
               const statusesRequiringPayment = [
                 OrderStatus.CONFIRMED,
                 OrderStatus.PROCESSING,
-                OrderStatus.SHIPPED,
-                OrderStatus.DELIVERED,
                 OrderStatus.COMPLETED,
               ];
 

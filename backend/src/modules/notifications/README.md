@@ -72,8 +72,6 @@ GET    /notifications/stats              # إحصائيات المستخدم
 
 ### طلبات المنتجات
 - `ORDER_CONFIRMED`: تأكيد الطلب
-- `ORDER_SHIPPED`: شحن الطلب
-- `ORDER_DELIVERED`: تسليم الطلب
 - `ORDER_CANCELLED`: إلغاء الطلب
 - `ORDER_REFUNDED`: إرجاع المبلغ
 

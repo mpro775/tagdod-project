@@ -90,6 +90,29 @@ export class ProductService {
     return product;
   }
 
+  async findByIds(ids: string[]): Promise<Product[]> {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return [];
+    }
+
+    const objectIds = ids
+      .filter((id): id is string => typeof id === 'string' && Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    if (objectIds.length === 0) {
+      return [];
+    }
+
+    const products = await this.productModel
+      .find({
+        _id: { $in: objectIds },
+        deletedAt: null,
+      })
+      .lean();
+
+    return products as unknown as Product[];
+  }
+
   async update(id: string, dto: Partial<Product>): Promise<Product> {
     const product = await this.productModel.findById(id);
 

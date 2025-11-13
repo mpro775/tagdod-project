@@ -11,6 +11,7 @@ import {
   Fade,
   CircularProgress,
   Backdrop,
+  Stack,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -19,12 +20,16 @@ import {
   AttachMoney,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useExchangeRates } from '../hooks/useExchangeRates';
+import { useExchangeRateSyncJobs } from '../hooks/useExchangeRateSyncJobs';
 import {
   ExchangeRateCard,
   ExchangeRateForm,
   CurrencyConverter,
   ExchangeRateStats,
+  ExchangeRateSyncSummary,
+  ExchangeRateSyncJobsTable,
 } from '../components';
 
 interface TabPanelProps {
@@ -62,6 +67,7 @@ function a11yProps(index: number) {
 
 export default function ExchangeRatesPage() {
   const { t } = useTranslation('exchangeRates');
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -83,8 +89,38 @@ export default function ExchangeRatesPage() {
     isConverting,
   } = useExchangeRates();
 
+  const {
+    jobs,
+    latestJob,
+    loading: syncLoading,
+    error: syncError,
+    triggerSync,
+    triggering: isTriggeringSync,
+  } = useExchangeRateSyncJobs();
+
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+  };
+
+  const handleTriggerSync = async () => {
+    try {
+      await triggerSync();
+      setSnackbar({
+        open: true,
+        message: 'تم إطلاق مزامنة أسعار المنتجات بنجاح',
+        severity: 'success',
+      });
+    } catch {
+      setSnackbar({
+        open: true,
+        message: 'فشل في إطلاق مزامنة الأسعار',
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleViewJobDetails = (jobId: string) => {
+    navigate(`/exchange-rates/sync-jobs/${jobId}`);
   };
 
   const handleUpdateRates = async (data: any) => {
@@ -226,49 +262,71 @@ export default function ExchangeRatesPage() {
 
         {/* Current Rates Tab */}
         <TabPanel value={activeTab} index={0}>
-          <Box sx={{ mb: { xs: 2, sm: 3 } }}>
-            <Typography 
-              variant="h6" 
-              gutterBottom
-              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
-            >
-              {t('tabs.currentRates', { defaultValue: 'الأسعار الحالية' })}
-            </Typography>
-            <Typography 
-              variant="body2" 
-              color="text.secondary"
-              sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-            >
-              {t('tabs.currentRatesDesc', { defaultValue: 'عرض أسعار الصرف الحالية للعملات المدعومة' })}
-            </Typography>
-          </Box>
+          <Stack spacing={{ xs: 2, sm: 3 }}>
+            <ExchangeRateSyncSummary
+              latestJob={latestJob}
+              onTriggerSync={handleTriggerSync}
+              triggering={isTriggeringSync}
+            />
 
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, sm: 3 } }}>
-            <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 300px' }, minWidth: { xs: 0, sm: 300 } }}>
-              <ExchangeRateCard
-                rates={rates}
-                loading={loading}
-                error={error}
-                title={t('exchangeRates.usdToYerTitle')}
-                currency="YER"
-                rate={rates?.usdToYer || 0}
-                icon={<TrendingUp />}
-                color="primary"
-              />
+            {syncError && (
+              <Alert severity="error">
+                {syncError}
+              </Alert>
+            )}
+
+            <Box>
+              <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                >
+                  {t('tabs.currentRates', { defaultValue: 'الأسعار الحالية' })}
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+                >
+                  {t('tabs.currentRatesDesc', { defaultValue: 'عرض أسعار الصرف الحالية للعملات المدعومة' })}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 2, sm: 3 } }}>
+                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 300px' }, minWidth: { xs: 0, sm: 300 } }}>
+                  <ExchangeRateCard
+                    rates={rates}
+                    loading={loading}
+                    error={error}
+                    title={t('exchangeRates.usdToYerTitle')}
+                    currency="YER"
+                    rate={rates?.usdToYer || 0}
+                    icon={<TrendingUp />}
+                    color="primary"
+                  />
+                </Box>
+                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 300px' }, minWidth: { xs: 0, sm: 300 } }}>
+                  <ExchangeRateCard
+                    rates={rates}
+                    loading={loading}
+                    error={error}
+                    title={t('exchangeRates.usdToSarTitle')}
+                    currency="SAR"
+                    rate={rates?.usdToSar || 0}
+                    icon={<TrendingUp />}
+                    color="secondary"
+                  />
+                </Box>
+              </Box>
             </Box>
-            <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 300px' }, minWidth: { xs: 0, sm: 300 } }}>
-              <ExchangeRateCard
-                rates={rates}
-                loading={loading}
-                error={error}
-                title={t('exchangeRates.usdToSarTitle')}
-                currency="SAR"
-                rate={rates?.usdToSar || 0}
-                icon={<TrendingUp />}
-                color="secondary"
-              />
-            </Box>
-          </Box>
+
+            <ExchangeRateSyncJobsTable
+              jobs={jobs}
+              loading={syncLoading}
+              onViewDetails={handleViewJobDetails}
+            />
+          </Stack>
         </TabPanel>
 
         {/* Update Rates Tab */}
@@ -286,7 +344,7 @@ export default function ExchangeRatesPage() {
               color="text.secondary"
               sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
             >
-              {t('tabs.updateRatesDesc', { defaultValue: 'قم بتحديث أسعار الصرف للعملات المدعومة' })}   
+              {t('tabs.updateRatesDesc', { defaultValue: 'قم بتحديث أسعار الصرف للعملات المدعومة' })}
             </Typography>
           </Box>
 

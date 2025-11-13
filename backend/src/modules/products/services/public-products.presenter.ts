@@ -840,12 +840,32 @@ export class PublicProductsPresenter {
       return [];
     }
 
+    const [relatedProductsRawData, variantsByProductId] = await Promise.all([
+      this.productService.findByIds(relatedIds),
+      this.variantService.findByProductIds(relatedIds),
+    ]);
+
+    const relatedProductsMap = new Map<string, AnyRecord>();
+    relatedProductsRawData.forEach((product) => {
+      const productRecord = product as unknown as AnyRecord;
+      const productId = this.extractIdString(productRecord._id) ?? '';
+
+      if (productId) {
+        relatedProductsMap.set(productId, productRecord);
+      }
+    });
+
     const relatedProducts = await Promise.all(
       relatedIds.map(async (id) => {
+        const productRecord = relatedProductsMap.get(id);
+
+        if (!productRecord) {
+          return undefined;
+        }
+
         try {
-          const product = await this.productService.findById(id);
-          const productRecord = product as unknown as AnyRecord;
-          const variants = await this.variantService.findByProductId(id);
+          const variantsForProduct =
+            variantsByProductId[id]?.map((variant) => variant as unknown as WithId & AnyRecord) ?? [];
 
           const {
             variantsWithPricing,
@@ -853,7 +873,7 @@ export class PublicProductsPresenter {
             pricesByCurrency,
           } = await this.enrichVariantsPricing(
             id,
-          variants as unknown as Array<WithId & AnyRecord>,
+            variantsForProduct,
             discountPercent,
             selectedCurrencyInput,
           );
