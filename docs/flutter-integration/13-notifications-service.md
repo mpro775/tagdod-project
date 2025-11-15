@@ -610,135 +610,836 @@ class PaginatedNotifications {
 
 ---
 
-## Firebase Cloud Messaging (FCM) Integration
+## 🔔 دليل التكامل الكامل مع Push Notifications (FCM)
 
-### 1. إضافة Firebase للمشروع
+هذا الدليل يشرح كيفية ربط تطبيق Flutter مع خدمة الإشعارات بشكل صحيح، بحيث تظهر الإشعارات داخل وخارج التطبيق.
+
+---
+
+## 📦 1. إعداد المشروع
+
+### 1.1 إضافة Dependencies
 
 في `pubspec.yaml`:
 ```yaml
 dependencies:
   firebase_core: ^2.24.0
   firebase_messaging: ^14.7.6
+  flutter_local_notifications: ^16.3.0
+  device_info_plus: ^9.1.0
+  package_info_plus: ^5.0.1
+  shared_preferences: ^2.2.2
 ```
 
-### 2. تهيئة Firebase
+### 1.2 إعداد Firebase
+
+#### Android:
+
+> **📥 تحميل ملف `google-services.json`:**
+> 
+> تمت تهيئة Android app في Firebase. يمكنك تحميل الملف مباشرة من الرابط التالي:
+> 
+> **[⬇️ تحميل google-services.json](https://console.firebase.google.com/project/tagadod-5932b/settings/general/android:com.tagadod.app)**
+> 
+> سيجد الملف جاهزاً للتحميل في الصفحة (ستجد زر "Download google-services.json" في أعلى الصفحة).
+
+1. حمّل ملف `google-services.json` من الرابط أعلاه (أو من Firebase Console)
+2. ضعه في `android/app/`
+3. أضف في `android/build.gradle`:
+```gradle
+dependencies {
+    classpath 'com.google.gms:google-services:4.4.0'
+}
+```
+4. أضف في `android/app/build.gradle`:
+```gradle
+apply plugin: 'com.google.gms.google-services'
+```
+
+#### iOS:
+1. حمّل ملف `GoogleService-Info.plist` من Firebase Console
+2. ضعه في `ios/Runner/`
+3. في `ios/Runner/Info.plist` أضف:
+```xml
+<key>FirebaseAppDelegateProxyEnabled</key>
+<false/>
+```
+
+---
+
+## 🚀 2. تهيئة Firebase في التطبيق
+
+### 2.1 إعداد Background Handler
 
 ```dart
 // lib/main.dart
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+// Handler للإشعارات في الخلفية (يجب أن يكون top-level function)
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print('Handling background message: ${message.messageId}');
+  print('Message data: ${message.data}');
+  
+  // يمكنك إضافة منطق إضافي هنا (مثل تحديث قاعدة البيانات المحلية)
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // تهيئة Firebase
   await Firebase.initializeApp();
   
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // تسجيل Background Handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   
   runApp(MyApp());
 }
 ```
 
-### 3. طلب الأذونات وتسجيل الجهاز
+---
+
+## 🎯 3. إنشاء خدمة الإشعارات الكاملة
+
+### 3.1 ملف الخدمة الأساسي
 
 ```dart
+// lib/services/notifications_service.dart
+import 'dart:io';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../api/api_client.dart';
+import '../models/notification/notification_models.dart';
+
 class NotificationsService {
+  static final NotificationsService _instance = NotificationsService._internal();
+  factory NotificationsService() => _instance;
+  NotificationsService._internal();
+
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
-  final ApiClient _apiClient;
+  final FlutterLocalNotificationsPlugin _localNotifications = 
+      FlutterLocalNotificationsPlugin();
+  final ApiClient _apiClient = ApiClient();
+  
+  bool _isInitialized = false;
+  String? _currentToken;
+  
+  // Callback للتنقل عند النقر على الإشعار
+  Function(Map<String, dynamic>)? onNotificationTapped;
 
-  NotificationsService(this._apiClient);
-
+  /// تهيئة خدمة الإشعارات
   Future<void> initialize() async {
-    // طلب الأذونات
-    NotificationSettings settings = await _fcm.requestPermission(
+    if (_isInitialized) return;
+    
+    try {
+      // 1. تهيئة Local Notifications
+      await _initializeLocalNotifications();
+      
+      // 2. طلب الأذونات
+      final settings = await _requestPermissions();
+      
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        
+        // 3. الحصول على Token وتسجيله
+        await _setupToken();
+        
+        // 4. إعداد Listeners للإشعارات
+        await _setupNotificationListeners();
+        
+        _isInitialized = true;
+        print('✅ NotificationsService initialized successfully');
+      } else {
+        print('❌ Notification permissions denied');
+      }
+    } catch (e) {
+      print('❌ Error initializing NotificationsService: $e');
+    }
+  }
+
+  /// تهيئة Local Notifications
+  Future<void> _initializeLocalNotifications() async {
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+    
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+    
+    await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: _onNotificationTapped,
+    );
+    
+    // إنشاء Notification Channel للـ Android
+    if (Platform.isAndroid) {
+      const androidChannel = AndroidNotificationChannel(
+        'high_importance_channel',
+        'High Importance Notifications',
+        description: 'This channel is used for important notifications',
+        importance: Importance.high,
+        playSound: true,
+        enableVibration: true,
+      );
+      
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(androidChannel);
+    }
+  }
+
+  /// طلب أذونات الإشعارات
+  Future<NotificationSettings> _requestPermissions() async {
+    return await _fcm.requestPermission(
       alert: true,
       badge: true,
       sound: true,
+      provisional: false,
+      announcement: false,
+      carPlay: false,
+      criticalAlert: false,
     );
-
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('User granted permission');
-      
-      // الحصول على التوكن
-      String? token = await _fcm.getToken();
-      if (token != null) {
-        await registerDevice(token);
-      }
-
-      // الاستماع لتحديثات التوكن
-      _fcm.onTokenRefresh.listen(registerDevice);
-      
-      // الاستماع للإشعارات
-      setupNotificationListeners();
-    }
   }
 
-  Future<void> registerDevice(String token) async {
+  /// إعداد Token وتسجيله
+  Future<void> _setupToken() async {
     try {
-      final deviceInfo = await getDeviceInfo();
-      final registration = DeviceRegistration(
-        deviceToken: token,
-        platform: Platform.isAndroid ? 'ANDROID' : 'IOS',
-        deviceId: deviceInfo.id,
-        deviceName: deviceInfo.name,
-      );
-
-      await _apiClient.dio.post(
-        '/devices/register',
-        data: registration.toJson(),
-      );
+      // الحصول على Token الحالي
+      _currentToken = await _fcm.getToken();
+      
+      if (_currentToken != null) {
+        print('📱 FCM Token: ${_currentToken.substring(0, 20)}...');
+        
+        // تسجيل الجهاز في Backend
+        await _registerDevice(_currentToken!);
+        
+        // حفظ Token محلياً
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', _currentToken!);
+      }
+      
+      // الاستماع لتحديثات Token
+      _fcm.onTokenRefresh.listen((newToken) async {
+        print('🔄 FCM Token refreshed');
+        _currentToken = newToken;
+        
+        // تحديث Token في Backend
+        await _registerDevice(newToken);
+        
+        // حفظ Token الجديد
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', newToken);
+      });
     } catch (e) {
-      print('Error registering device: $e');
+      print('❌ Error setting up token: $e');
     }
   }
 
-  void setupNotificationListeners() {
-    // عند استلام إشعار والتطبيق مفتوح
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Got a message whilst in the foreground!');
-      print('Message data: ${message.data}');
-
-      if (message.notification != null) {
-        _showLocalNotification(message);
+  /// تسجيل الجهاز في Backend
+  Future<void> _registerDevice(String token) async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      final packageInfo = await PackageInfo.fromPlatform();
+      
+      String platform;
+      String? userAgent;
+      
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        platform = 'android';
+        userAgent = 'Android ${androidInfo.version.release}';
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        platform = 'ios';
+        userAgent = 'iOS ${iosInfo.systemVersion}';
+      } else {
+        platform = 'web';
       }
-    });
-
-    // عند النقر على الإشعار والتطبيق في الخلفية
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('Message clicked!');
-      _handleNotificationClick(message);
-    });
-
-    // التحقق من الإشعار الذي فتح التطبيق
-    _fcm.getInitialMessage().then((RemoteMessage? message) {
-      if (message != null) {
-        _handleNotificationClick(message);
+      
+      final response = await _apiClient.dio.post(
+        '/notifications/devices/register',
+        data: {
+          'platform': platform,
+          'token': token,
+          'userAgent': userAgent,
+          'appVersion': packageInfo.version,
+        },
+      );
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Device registered successfully');
       }
-    });
+    } catch (e) {
+      print('❌ Error registering device: $e');
+      // لا نرمي خطأ هنا لأن التطبيق يجب أن يعمل حتى لو فشل التسجيل
+    }
   }
 
-  void _handleNotificationClick(RemoteMessage message) {
+  /// إعداد Listeners للإشعارات
+  Future<void> _setupNotificationListeners() async {
+    // 1. إشعارات Foreground (التطبيق مفتوح)
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('📨 Foreground notification received');
+      _handleForegroundNotification(message);
+    });
+    
+    // 2. إشعارات Background (التطبيق في الخلفية)
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print('📨 Background notification tapped');
+      _handleNotificationTap(message);
+    });
+    
+    // 3. إشعار فتح التطبيق (التطبيق كان مغلقاً)
+    final initialMessage = await _fcm.getInitialMessage();
+    if (initialMessage != null) {
+      print('📨 App opened from notification');
+      _handleNotificationTap(initialMessage);
+    }
+  }
+
+  /// معالجة إشعار Foreground
+  Future<void> _handleForegroundNotification(RemoteMessage message) async {
+    // عرض إشعار محلي
+    await _showLocalNotification(message);
+    
+    // تحديث حالة الإشعار في Backend (delivered)
+    if (message.data['notificationId'] != null) {
+      await _markAsDelivered(message.data['notificationId']);
+    }
+  }
+
+  /// عرض إشعار محلي
+  Future<void> _showLocalNotification(RemoteMessage message) async {
+    final notification = message.notification;
     final data = message.data;
     
-    if (data['orderId'] != null) {
-      // الانتقال لصفحة الطلب
-      // navigatorKey.currentState?.pushNamed('/order/${data['orderId']}');
+    if (notification == null) return;
+    
+    const androidDetails = AndroidNotificationDetails(
+      'high_importance_channel',
+      'High Importance Notifications',
+      channelDescription: 'This channel is used for important notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      enableVibration: true,
+      playSound: true,
+    );
+    
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+    
+    await _localNotifications.show(
+      message.hashCode,
+      notification.title ?? 'إشعار جديد',
+      notification.body ?? '',
+      details,
+      payload: data.toString(),
+    );
+  }
+
+  /// معالجة النقر على الإشعار
+  void _onNotificationTapped(NotificationResponse response) {
+    if (response.payload != null) {
+      // يمكنك parse الـ payload هنا
+      print('Notification tapped: ${response.payload}');
     }
   }
 
-  void _showLocalNotification(RemoteMessage message) {
-    // عرض إشعار محلي باستخدام flutter_local_notifications
+  /// معالجة النقر على إشعار FCM
+  void _handleNotificationTap(RemoteMessage message) {
+    final data = message.data;
+    
+    // استدعاء Callback للتنقل
+    if (onNotificationTapped != null) {
+      onNotificationTapped!(data);
+    }
+    
+    // تحديث حالة الإشعار في Backend (clicked)
+    if (data['notificationId'] != null) {
+      _markAsClicked(data['notificationId']);
+    }
+  }
+
+  /// تحديث حالة الإشعار كمقروء
+  Future<void> markAsRead(String notificationId) async {
+    try {
+      await _apiClient.dio.post(
+        '/notifications/mark-read',
+        data: {
+          'notificationIds': [notificationId],
+        },
+      );
+    } catch (e) {
+      print('❌ Error marking notification as read: $e');
+    }
+  }
+
+  /// تحديث حالة الإشعار كمقروء (متعدد)
+  Future<void> markMultipleAsRead(List<String> notificationIds) async {
+    try {
+      await _apiClient.dio.post(
+        '/notifications/mark-read',
+        data: {
+          'notificationIds': notificationIds,
+        },
+      );
+    } catch (e) {
+      print('❌ Error marking notifications as read: $e');
+    }
+  }
+
+  /// تحديث حالة الإشعار كـ delivered
+  Future<void> _markAsDelivered(String notificationId) async {
+    // يمكنك إضافة endpoint خاص لهذا إذا كان متوفراً
+    // أو يمكنك استخدام markAsRead
+  }
+
+  /// تحديث حالة الإشعار كـ clicked
+  Future<void> _markAsClicked(String notificationId) async {
+    // يمكنك إضافة endpoint خاص لهذا إذا كان متوفراً
+    // أو يمكنك استخدام markAsRead
+  }
+
+  /// الحصول على Token الحالي
+  String? get currentToken => _currentToken;
+
+  /// التحقق من حالة التهيئة
+  bool get isInitialized => _isInitialized;
+}
+```
+
+---
+
+## 🎨 4. استخدام الخدمة في التطبيق
+
+### 4.1 تهيئة الخدمة في main.dart
+
+```dart
+// lib/main.dart
+import 'package:flutter/material.dart';
+import 'services/notifications_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // ... تهيئة Firebase ...
+  
+  // تهيئة خدمة الإشعارات
+  final notificationsService = NotificationsService();
+  await notificationsService.initialize();
+  
+  // إعداد Callback للتنقل
+  notificationsService.onNotificationTapped = (data) {
+    _handleNotificationNavigation(data);
+  };
+  
+  runApp(MyApp());
+}
+
+void _handleNotificationNavigation(Map<String, dynamic> data) {
+  // معالجة التنقل حسب نوع الإشعار
+  final navigatorKey = GlobalKey<NavigatorState>();
+  
+  if (data['orderId'] != null) {
+    navigatorKey.currentState?.pushNamed('/orders/${data['orderId']}');
+  } else if (data['productId'] != null) {
+    navigatorKey.currentState?.pushNamed('/products/${data['productId']}');
+  } else if (data['serviceId'] != null) {
+    navigatorKey.currentState?.pushNamed('/services/${data['serviceId']}');
+  } else if (data['ticketId'] != null) {
+    navigatorKey.currentState?.pushNamed('/support/${data['ticketId']}');
+  }
+  // ... إلخ
+}
+```
+
+### 4.2 استخدام الخدمة في Widget
+
+```dart
+// lib/screens/notifications_screen.dart
+import 'package:flutter/material.dart';
+import '../services/notifications_service.dart';
+import '../api/notifications_api.dart';
+
+class NotificationsScreen extends StatefulWidget {
+  @override
+  _NotificationsScreenState createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  final NotificationsService _notificationsService = NotificationsService();
+  final NotificationsApi _api = NotificationsApi();
+  
+  List<Notification> _notifications = [];
+  bool _isLoading = true;
+  int _unreadCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      setState(() => _isLoading = true);
+      final result = await _api.getNotifications();
+      setState(() {
+        _notifications = result.notifications;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ في تحميل الإشعارات: $e')),
+      );
+    }
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final count = await _api.getUnreadCount();
+      setState(() => _unreadCount = count);
+    } catch (e) {
+      print('Error loading unread count: $e');
+    }
+  }
+
+  Future<void> _markAsRead(String notificationId) async {
+    try {
+      await _notificationsService.markAsRead(notificationId);
+      await _loadNotifications();
+      await _loadUnreadCount();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ في تحديث الإشعار')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('الإشعارات'),
+        actions: [
+          if (_unreadCount > 0)
+            Center(
+              child: Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: Text(
+                  '$_unreadCount',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _notifications.isEmpty
+              ? Center(child: Text('لا توجد إشعارات'))
+              : RefreshIndicator(
+                  onRefresh: _loadNotifications,
+                  child: ListView.builder(
+                    itemCount: _notifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = _notifications[index];
+                      return ListTile(
+                        leading: _getNotificationIcon(notification),
+                        title: Text(notification.title),
+                        subtitle: Text(notification.getMessage('ar')),
+                        trailing: notification.isUnread
+                            ? Icon(Icons.circle, color: Colors.blue, size: 12)
+                            : null,
+                        onTap: () {
+                          _markAsRead(notification.id);
+                          _handleNotificationTap(notification);
+                        },
+                      );
+                    },
+                  ),
+                ),
+    );
+  }
+
+  Widget _getNotificationIcon(Notification notification) {
+    if (notification.isOrderType) {
+      return Icon(Icons.shopping_cart, color: Colors.blue);
+    } else if (notification.isServiceType) {
+      return Icon(Icons.build, color: Colors.orange);
+    } else if (notification.isProductType) {
+      return Icon(Icons.shopping_bag, color: Colors.green);
+    } else {
+      return Icon(Icons.notifications, color: Colors.grey);
+    }
+  }
+
+  void _handleNotificationTap(Notification notification) {
+    // التنقل حسب نوع الإشعار
+    if (notification.orderId != null) {
+      Navigator.pushNamed(context, '/orders/${notification.orderId}');
+    } else if (notification.productId != null) {
+      Navigator.pushNamed(context, '/products/${notification.productId}');
+    } else if (notification.serviceId != null) {
+      Navigator.pushNamed(context, '/services/${notification.serviceId}');
+    }
   }
 }
 ```
 
-### 4. استخدام الخدمة
+---
 
-راجع الـ Flutter code examples في الأقسام أعلاه لكل endpoint.
+## 📱 5. معالجة الإشعارات حسب الحالة
+
+### 5.1 داخل التطبيق (Foreground)
+
+عندما يكون التطبيق مفتوحاً، يتم استقبال الإشعارات عبر `FirebaseMessaging.onMessage` ويتم عرضها كإشعارات محلية.
+
+### 5.2 في الخلفية (Background)
+
+عندما يكون التطبيق في الخلفية، يتم استقبال الإشعارات عبر `FirebaseMessaging.onMessageOpenedApp` عند النقر عليها.
+
+### 5.3 التطبيق مغلق (Terminated)
+
+عندما يكون التطبيق مغلقاً تماماً، يتم استقبال الإشعارات عبر `FirebaseMessaging.getInitialMessage()` عند فتح التطبيق.
+
+---
+
+## 🔧 6. إعدادات إضافية
+
+### 6.1 إعدادات Android (android/app/src/main/AndroidManifest.xml)
+
+```xml
+<manifest>
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  
+  <application>
+    <!-- ... -->
+    
+    <!-- إشعارات FCM -->
+    <service
+      android:name="com.google.firebase.messaging.FirebaseMessagingService"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+      </intent-filter>
+    </service>
+  </application>
+</manifest>
+```
+
+### 6.2 إعدادات iOS (ios/Runner/Info.plist)
+
+```xml
+<key>UIBackgroundModes</key>
+<array>
+  <string>remote-notification</string>
+</array>
+```
+
+---
+
+## ✅ 7. التحقق من التكامل
+
+### 7.1 التحقق من Token
+
+```dart
+final token = await NotificationsService().currentToken;
+print('FCM Token: $token');
+```
+
+### 7.2 اختبار الإشعارات
+
+1. **من Firebase Console**: أرسل إشعار تجريبي
+2. **من Backend**: استخدم endpoint إرسال الإشعارات
+3. **تحقق من**:
+   - ظهور الإشعار داخل التطبيق
+   - ظهور الإشعار في الخلفية
+   - فتح التطبيق عند النقر على الإشعار
+   - تحديث حالة الإشعار في Backend
+
+---
+
+## 🎯 8. أفضل الممارسات
+
+1. **احفظ Token محلياً**: لتجنب إعادة التسجيل عند كل تشغيل
+2. **عالج الأخطاء**: لا ترمي أخطاء عند فشل التسجيل
+3. **استخدم Callbacks**: للتنقل عند النقر على الإشعارات
+4. **حدّث الحالة**: حدّث حالة الإشعارات (read, clicked) في Backend
+5. **اختبر جميع الحالات**: Foreground, Background, Terminated
+
+---
+
+## 📝 ملاحظات مهمة
+
+- **Background Handler**: يجب أن يكون top-level function
+- **Token Refresh**: استمع لتحديثات Token وأعد التسجيل
+- **Permissions**: اطلب الأذونات بشكل مناسب حسب المنصة
+- **Navigation**: استخدم NavigatorKey للتنقل من أي مكان
+- **Error Handling**: تعامل مع الأخطاء بشكل مناسب
+
+---
+
+## 🎛️ إرسال الإشعارات من لوحة التحكم (Admin Dashboard)
+
+بعد إعداد Firebase في تطبيق Flutter وتسجيل الأجهزة، يمكن للمسؤولين إرسال إشعارات إلى العملاء من لوحة التحكم.
+
+### ✅ المتطلبات
+
+1. **Backend مُعد بشكل صحيح:**
+   - متغيرات FCM موجودة في `.env`
+   - Firebase Admin SDK مُهيأ
+   - Endpoints الإدارية متاحة
+
+2. **تطبيق Flutter مُعد:**
+   - Firebase مُهيأ
+   - الأجهزة مسجلة (`/notifications/devices/register`)
+   - Token محفوظ في Backend
+
+### 📤 كيفية الإرسال من لوحة التحكم
+
+#### الطريقة 1: إنشاء وإرسال إشعار واحد
+
+1. **من لوحة التحكم:**
+   - اذهب إلى صفحة الإشعارات
+   - اضغط "إنشاء إشعار جديد"
+   - املأ البيانات:
+     ```json
+     {
+       "type": "SYSTEM_ALERT",
+       "title": "إعلان مهم",
+       "message": "رسالة مهمة لجميع المستخدمين",
+       "messageEn": "Important announcement for all users",
+       "channel": "push",
+       "priority": "high",
+       "category": "system",
+       "recipientId": "user_id_here"
+     }
+     ```
+
+2. **الإرسال:**
+   - بعد إنشاء الإشعار، اضغط "إرسال"
+   - سيتم إرسال الإشعار عبر FCM إلى الجهاز المسجل
+
+#### الطريقة 2: إرسال مجمع (Bulk Send)
+
+لإرسال إشعار لعدة مستخدمين دفعة واحدة:
+
+```json
+POST /notifications/admin/bulk-send
+{
+  "type": "PROMOTION_STARTED",
+  "title": "عرض جديد",
+  "message": "عرض خاص على جميع المنتجات",
+  "messageEn": "Special offer on all products",
+  "channel": "push",
+  "priority": "medium",
+  "category": "promotion",
+  "targetUserIds": [
+    "user_id_1",
+    "user_id_2",
+    "user_id_3"
+  ],
+  "data": {
+    "promotionId": "promo_123",
+    "discount": 30
+  }
+}
+```
+
+### 🔄 تدفق الإرسال
+
+```
+لوحة التحكم (Admin Dashboard)
+    ↓
+POST /notifications/admin/create
+    ↓
+Backend يحفظ الإشعار في قاعدة البيانات
+    ↓
+POST /notifications/admin/{id}/send
+    ↓
+Backend يبحث عن Device Tokens للمستخدم
+    ↓
+Backend يرسل عبر FCM إلى Firebase
+    ↓
+Firebase يرسل إلى الأجهزة المسجلة
+    ↓
+تطبيق Flutter يستقبل الإشعار
+    ↓
+يظهر الإشعار للمستخدم
+```
+
+### 📋 البيانات المطلوبة للإرسال
+
+عند إنشاء إشعار من لوحة التحكم، تأكد من:
+
+1. **`channel`**: يجب أن يكون `"push"` لإرسال Push Notification
+2. **`recipientId`**: معرف المستخدم المستلم (مطلوب)
+3. **`title`** و **`message`**: محتوى الإشعار
+4. **`data`**: بيانات إضافية (اختياري) مثل:
+   ```json
+   {
+     "orderId": "order_123",
+     "productId": "product_456",
+     "serviceId": "service_789"
+   }
+   ```
+
+### ✅ التحقق من نجاح الإرسال
+
+بعد إرسال الإشعار، يمكنك التحقق من:
+
+1. **في لوحة التحكم:**
+   - حالة الإشعار (sent, delivered, failed)
+   - وقت الإرسال
+   - أي أخطاء حدثت
+
+2. **في تطبيق Flutter:**
+   - يجب أن يظهر الإشعار للمستخدم
+   - يمكن التحقق من سجل الإشعارات في التطبيق
+
+### ⚠️ ملاحظات مهمة
+
+1. **Device Token مطلوب:**
+   - يجب أن يكون المستخدم قد سجل جهازه أولاً
+   - بدون Device Token، لن يتم إرسال الإشعار
+
+2. **Channel مهم:**
+   - استخدم `"push"` للإشعارات الفورية
+   - استخدم `"inApp"` للإشعارات داخل التطبيق فقط
+
+3. **الأذونات:**
+   - يجب أن يكون المستخدم قد منح أذونات الإشعارات
+   - على Android 13+، يجب طلب الأذونات صراحة
+
+4. **الحالة:**
+   - الإشعارات تُحفظ في قاعدة البيانات أولاً
+   - ثم تُرسل عبر FCM
+   - يمكن تتبع حالة كل إشعار
 
 ---
 
