@@ -22,6 +22,9 @@ import {
   NotificationException,
   ErrorCode 
 } from '../../../shared/exceptions';
+import { WebSocketService } from '../../../shared/websocket/websocket.service';
+import { PushNotificationAdapter } from '../adapters/notification.adapters';
+import { DeviceToken, DeviceTokenDocument } from '../schemas/device-token.schema';
 
 @Injectable()
 export class NotificationService {
@@ -30,6 +33,10 @@ export class NotificationService {
   constructor(
     @InjectModel(UnifiedNotification.name)
     private notificationModel: Model<UnifiedNotificationDocument>,
+    @InjectModel(DeviceToken.name)
+    private deviceTokenModel: Model<DeviceTokenDocument>,
+    private readonly webSocketService: WebSocketService,
+    private readonly pushNotificationAdapter: PushNotificationAdapter,
   ) {}
 
   // ===== Core CRUD Operations =====
@@ -51,6 +58,36 @@ export class NotificationService {
 
       const savedNotification = await notification.save();
       this.logger.log(`Notification created: ${savedNotification._id} (${dto.type})`);
+
+      // إرسال الإشعار حسب القناة
+      if (dto.recipientId) {
+        // إرسال عبر WebSocket إذا كان IN_APP
+        if (dto.channel === NotificationChannel.IN_APP) {
+          this.webSocketService.sendToUser(
+            dto.recipientId,
+            'notification:new',
+            {
+              id: savedNotification._id.toString(),
+              title: savedNotification.title,
+              message: savedNotification.message,
+              messageEn: savedNotification.messageEn,
+              type: savedNotification.type,
+              category: savedNotification.category,
+              priority: savedNotification.priority,
+              data: savedNotification.data,
+              createdAt: savedNotification.createdAt,
+              isRead: false,
+            },
+          );
+        }
+
+        // إرسال Push Notification إذا كان PUSH
+        if (dto.channel === NotificationChannel.PUSH) {
+          this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
+            this.logger.error(`Failed to send push notification: ${error instanceof Error ? error.message : String(error)}`);
+          });
+        }
+      }
 
       return savedNotification;
     } catch (error) {
@@ -460,6 +497,64 @@ export class NotificationService {
         readRate: 0,
         deliveryRate: 0,
       };
+    }
+  }
+
+  // ===== Push Notification Sending =====
+
+  /**
+   * إرسال Push Notification للمستخدم
+   */
+  async sendPushNotification(
+    notification: UnifiedNotificationDocument,
+    userId: string,
+  ): Promise<void> {
+    try {
+      // جلب Device Tokens النشطة للمستخدم
+      const deviceTokens = await this.deviceTokenModel.find({
+        userId: new Types.ObjectId(userId),
+        isActive: true,
+      }).lean();
+
+      if (deviceTokens.length === 0) {
+        this.logger.debug(`No active device tokens found for user ${userId}`);
+        return;
+      }
+
+      // إرسال الإشعار لكل جهاز
+      const sendPromises = deviceTokens.map(async (deviceToken) => {
+        try {
+          const result = await this.pushNotificationAdapter.send({
+            id: notification._id.toString(),
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            messageEn: notification.messageEn,
+            channel: NotificationChannel.PUSH,
+            priority: notification.priority,
+            recipientId: userId,
+            deviceToken: deviceToken.token,
+            data: notification.data || {},
+          });
+
+          if (result.success) {
+            this.logger.log(`Push notification sent to device ${deviceToken.token.substring(0, 20)}...`);
+            // تحديث حالة الإشعار
+            await this.updateNotificationStatus(
+              notification._id.toString(),
+              NotificationStatus.SENT,
+            );
+          } else {
+            this.logger.warn(`Failed to send push notification to device ${deviceToken.token.substring(0, 20)}...`);
+          }
+        } catch (error) {
+          this.logger.error(`Error sending push to device ${deviceToken.token.substring(0, 20)}...: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      });
+
+      await Promise.allSettled(sendPromises);
+    } catch (error) {
+      this.logger.error(`Failed to send push notifications: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

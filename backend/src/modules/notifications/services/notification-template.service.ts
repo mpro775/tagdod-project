@@ -101,10 +101,36 @@ export class NotificationTemplateService {
   }
 
   /**
+   * تحديث قالب بالمفتاح
+   */
+  async updateTemplateByKey(key: string, dto: UpdateTemplateDto): Promise<NotificationTemplate> {
+    const template = await this.templateModel.findOneAndUpdate(
+      { key },
+      { $set: dto },
+      { new: true }
+    );
+
+    if (!template) {
+      throw new NotificationException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND, { key });
+    }
+
+    this.logger.log(`Template updated by key: ${key}`);
+    return template;
+  }
+
+  /**
    * حذف قالب
    */
   async deleteTemplate(id: string): Promise<boolean> {
     const result = await this.templateModel.findByIdAndDelete(id);
+    return !!result;
+  }
+
+  /**
+   * حذف قالب بالمفتاح
+   */
+  async deleteTemplateByKey(key: string): Promise<boolean> {
+    const result = await this.templateModel.findOneAndDelete({ key });
     return !!result;
   }
 

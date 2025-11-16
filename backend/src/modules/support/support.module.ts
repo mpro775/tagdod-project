@@ -8,6 +8,7 @@ import { SupportMessage, SupportMessageSchema } from './schemas/support-message.
 import { CannedResponse, CannedResponseSchema } from './schemas/canned-response.schema';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
+import { SupportMessagesGateway } from './gateways/support-messages.gateway';
   
 @Module({
   imports: [
@@ -20,7 +21,10 @@ import { SharedModule } from '../../shared/shared.module';
     SharedModule,
   ],
   controllers: [CustomerSupportController, AdminSupportController],
-  providers: [SupportService],
+  providers: [
+    SupportService,
+    SupportMessagesGateway,
+  ],
   exports: [SupportService], // Export for use in other modules
 })
 export class SupportModule {}

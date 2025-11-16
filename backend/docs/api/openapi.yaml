@@ -3909,6 +3909,24 @@ paths:
         - الإشعارات
       security:
         - bearer: []
+    post:
+      operationId: adminCreateTemplate
+      summary: 'الإدارة: إنشاء قالب إشعار'
+      description: إنشاء قالب إشعار جديد (للإداريين فقط)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateDto'
+      responses:
+        '201':
+          description: Template created successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
   /api/v1/notifications/admin/cleanup:
     post:
       operationId: adminCleanup
@@ -3923,6 +3941,234 @@ paths:
       responses:
         '200':
           description: Cleanup completed successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/{id}:
+    get:
+      operationId: adminGetNotification
+      summary: 'الإدارة: تفاصيل إشعار'
+      description: استرداد تفاصيل إشعار محدد (للإداريين فقط)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الإشعار
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification retrieved successfully
+        '404':
+          description: Notification not found
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+    put:
+      operationId: adminUpdateNotification
+      summary: 'الإدارة: تحديث إشعار'
+      description: تحديث تفاصيل إشعار محدد (للإداريين فقط)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الإشعار
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotificationDto'
+      responses:
+        '200':
+          description: Notification updated successfully
+        '404':
+          description: Notification not found
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+    delete:
+      operationId: adminDeleteNotification
+      summary: 'الإدارة: حذف إشعار'
+      description: حذف إشعار محدد (للإداريين فقط)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الإشعار
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification deleted successfully
+        '404':
+          description: Notification not found
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/{id}/send:
+    post:
+      operationId: adminSendNotification
+      summary: 'الإدارة: إرسال إشعار محدد'
+      description: إرسال إشعار محدد للمستخدمين (للإداريين فقط)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الإشعار
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification sent successfully
+        '404':
+          description: Notification not found
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/bulk-send:
+    post:
+      operationId: adminBulkSend
+      summary: 'الإدارة: إرسال إشعارات مجمعة'
+      description: إرسال إشعارات لعدة مستخدمين دفعة واحدة (للإداريين فقط)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkSendNotificationDto'
+      responses:
+        '200':
+          description: Bulk send completed
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/test:
+    post:
+      operationId: adminTestNotification
+      summary: 'الإدارة: اختبار إشعار'
+      description: إرسال إشعار تجريبي لمستخدم محدد (للإداريين فقط)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: معرف المستخدم
+                templateKey:
+                  type: string
+                  description: مفتاح القالب
+                payload:
+                  type: object
+                  description: بيانات القالب
+      responses:
+        '200':
+          description: Test notification sent successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/templates/{key}:
+    put:
+      operationId: adminUpdateTemplate
+      summary: 'الإدارة: تحديث قالب إشعار'
+      description: تحديث قالب إشعار موجود (للإداريين فقط)
+      parameters:
+        - name: key
+          required: true
+          in: path
+          description: مفتاح القالب
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateDto'
+      responses:
+        '200':
+          description: Template updated successfully
+        '404':
+          description: Template not found
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+    delete:
+      operationId: adminDeleteTemplate
+      summary: 'الإدارة: حذف قالب إشعار'
+      description: حذف قالب إشعار (للإداريين فقط)
+      parameters:
+        - name: key
+          required: true
+          in: path
+          description: مفتاح القالب
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template deleted successfully
+        '404':
+          description: Template not found
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/templates/{key}/stats:
+    get:
+      operationId: adminGetTemplateStats
+      summary: 'الإدارة: إحصائيات قالب'
+      description: استرداد إحصائيات استخدام قالب محدد (للإداريين فقط)
+      parameters:
+        - name: key
+          required: true
+          in: path
+          description: مفتاح القالب
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template stats retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/stats/overview:
+    get:
+      operationId: adminGetStatsOverview
+      summary: 'الإدارة: نظرة عامة على الإحصائيات'
+      description: استرداد نظرة عامة سريعة على إحصائيات الإشعارات (للإداريين فقط)
+      parameters: []
+      responses:
+        '200':
+          description: Overview stats retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/logs:
+    get:
+      operationId: adminGetLogs
+      summary: 'الإدارة: سجل الإشعارات'
+      description: استرداد سجل مفصل لجميع الإشعارات مع تفاصيل الإرسال (للإداريين فقط)
+      parameters: []
+      responses:
+        '200':
+          description: Logs retrieved successfully
       tags:
         - الإشعارات
       security:
@@ -19305,6 +19551,18 @@ components:
       type: object
       properties: {}
     CreateNotificationDto:
+      type: object
+      properties: {}
+    UpdateNotificationDto:
+      type: object
+      properties: {}
+    BulkSendNotificationDto:
+      type: object
+      properties: {}
+    CreateTemplateDto:
+      type: object
+      properties: {}
+    UpdateTemplateDto:
       type: object
       properties: {}
     CreateCategoryDto:

@@ -2666,6 +2666,33 @@
           }
         },
         {
+          "name": "الإدارة: إنشاء قالب إشعار",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/templates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "templates"
+              ]
+            },
+            "description": "إنشاء قالب إشعار جديد (للإداريين فقط)"
+          }
+        },
+        {
           "name": "الإدارة: تنظيف الإشعارات القديمة",
           "request": {
             "method": "POST",
@@ -2690,6 +2717,309 @@
               ]
             },
             "description": "حذف الإشعارات القديمة والغير مهمة من النظام (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: تفاصيل إشعار",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "{id}"
+              ]
+            },
+            "description": "استرداد تفاصيل إشعار محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: تحديث إشعار",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "{id}"
+              ]
+            },
+            "description": "تحديث تفاصيل إشعار محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: حذف إشعار",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "{id}"
+              ]
+            },
+            "description": "حذف إشعار محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: إرسال إشعار محدد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/{id}/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "{id}",
+                "send"
+              ]
+            },
+            "description": "إرسال إشعار محدد للمستخدمين (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: إرسال إشعارات مجمعة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/bulk-send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "bulk-send"
+              ]
+            },
+            "description": "إرسال إشعارات لعدة مستخدمين دفعة واحدة (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: اختبار إشعار",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/test",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "test"
+              ]
+            },
+            "description": "إرسال إشعار تجريبي لمستخدم محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: تحديث قالب إشعار",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/templates/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "templates",
+                "{key}"
+              ]
+            },
+            "description": "تحديث قالب إشعار موجود (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: حذف قالب إشعار",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/templates/{key}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "templates",
+                "{key}"
+              ]
+            },
+            "description": "حذف قالب إشعار (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: إحصائيات قالب",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/templates/{key}/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "templates",
+                "{key}",
+                "stats"
+              ]
+            },
+            "description": "استرداد إحصائيات استخدام قالب محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: نظرة عامة على الإحصائيات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/stats/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "stats",
+                "overview"
+              ]
+            },
+            "description": "استرداد نظرة عامة سريعة على إحصائيات الإشعارات (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: سجل الإشعارات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "logs"
+              ]
+            },
+            "description": "استرداد سجل مفصل لجميع الإشعارات مع تفاصيل الإرسال (للإداريين فقط)"
           }
         }
       ],

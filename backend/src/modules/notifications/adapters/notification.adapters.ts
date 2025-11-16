@@ -26,6 +26,7 @@ import { NotificationChannel } from '../enums/notification.enums';
 import { FCMAdapter, FCMNotification } from './fcm.adapter';
 import { EmailAdapter, EmailNotification } from './email.adapter';
 import { SMSAdapter, SMSNotification } from './sms.adapter';
+import { WebSocketService } from '../../../shared/websocket/websocket.service';
 
 // ===== Base Notification Adapter =====
 @Injectable()
@@ -95,12 +96,37 @@ export class BaseNotificationAdapter implements INotificationPort {
 // ===== In-App Notification Adapter =====
 @Injectable()
 export class InAppNotificationAdapter extends BaseNotificationAdapter implements IInAppNotificationPort {
+  constructor(
+    private readonly webSocketService?: WebSocketService,
+  ) {
+    super();
+  }
+
   async send(notification: InAppNotificationData): Promise<InAppNotificationResult> {
     this.logger.log(`Sending in-app notification: ${notification.id} to user: ${notification.recipientId}`);
     
-    // Implementation for in-app notifications
-    // This would typically store the notification in the database
-    // and trigger real-time updates via WebSocket or Server-Sent Events
+    // إرسال عبر WebSocket في الوقت الفعلي
+    let websocketDelivered = false;
+    if (this.webSocketService) {
+      websocketDelivered = this.webSocketService.sendToUser(
+        notification.recipientId,
+        'notification:new',
+        {
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          messageEn: notification.messageEn,
+          type: notification.type,
+          priority: notification.priority,
+          data: notification.data,
+          createdAt: new Date().toISOString(),
+        },
+      );
+
+      if (!websocketDelivered) {
+        this.logger.debug(`User ${notification.recipientId} is not connected via WebSocket`);
+      }
+    }
     
     return {
       success: true,
@@ -110,7 +136,8 @@ export class InAppNotificationAdapter extends BaseNotificationAdapter implements
       metadata: { 
         adapter: 'InAppNotificationAdapter',
         recipientId: notification.recipientId,
-        channel: 'inapp'
+        channel: 'inapp',
+        websocketDelivered,
       }
     };
   }

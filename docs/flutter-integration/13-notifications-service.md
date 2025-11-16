@@ -1,7 +1,8 @@
 # 🔔 خدمة الإشعارات (Notifications Service)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: أكتوبر 2025
+> 📅 **آخر تحديث**: نوفمبر 2025  
+> 🆕 **محدث**: إضافة WebSocket للإشعارات الفورية
 
 خدمة الإشعارات توفر endpoints لإدارة الإشعارات وتسجيل الأجهزة مع دعم قنوات متعددة.
 
@@ -13,7 +14,8 @@
 2. [تحديد كمقروء (متعدد)](#2-تحديد-كمقروء-متعدد)
 3. [تحديد الكل كمقروء](#3-تحديد-الكل-كمقروء)
 4. [عدد الإشعارات غير المقروءة](#4-عدد-الإشعارات-غير-المقروءة)
-5. [Models في Flutter](#models-في-flutter)
+5. [WebSocket - الإشعارات الفورية](#5-websocket---الإشعارات-الفورية)
+6. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -256,6 +258,297 @@ Future<int> getUnreadCount() async {
   }
 }
 ```
+
+---
+
+## 5. WebSocket - الإشعارات الفورية
+
+يوفر النظام اتصال WebSocket في الوقت الفعلي لاستقبال الإشعارات فوراً دون الحاجة لـ polling.
+
+### معلومات الاتصال
+
+- **Namespace:** `/notifications`
+- **URL:** `ws://your-api-url/notifications` أو `wss://your-api-url/notifications`
+- **Auth Required:** ✅ نعم (JWT Token)
+- **Reconnection:** ✅ تلقائي
+
+### إعداد Dependencies
+
+في `pubspec.yaml`:
+```yaml
+dependencies:
+  socket_io_client: ^2.0.3+1
+```
+
+### كود Flutter - خدمة WebSocket
+
+```dart
+// lib/services/notifications_websocket_service.dart
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:shared_preferences/shared_preferences.dart';
+
+class NotificationsWebSocketService {
+  static final NotificationsWebSocketService _instance = 
+      NotificationsWebSocketService._internal();
+  factory NotificationsWebSocketService() => _instance;
+  NotificationsWebSocketService._internal();
+
+  IO.Socket? _socket;
+  bool _isConnected = false;
+  
+  // Callbacks
+  Function(Map<String, dynamic>)? onNotificationReceived;
+  Function(int)? onUnreadCountChanged;
+  Function()? onConnected;
+  Function()? onDisconnected;
+  Function(String)? onError;
+
+  /// الاتصال بـ WebSocket
+  Future<void> connect() async {
+    if (_isConnected && _socket?.connected == true) {
+      return;
+    }
+
+    try {
+      // الحصول على Token
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      
+      if (token == null) {
+        throw Exception('No access token found');
+      }
+
+      // إنشاء الاتصال
+      _socket = IO.io(
+        'http://your-api-url/notifications', // أو wss:// للـ HTTPS
+        IO.OptionBuilder()
+            .setTransports(['websocket', 'polling'])
+            .enableAutoConnect()
+            .setExtraHeaders({'authorization': 'Bearer $token'})
+            .setAuth({'token': token})
+            .build(),
+      );
+
+      // إعداد Event Listeners
+      _setupEventListeners();
+      
+      _isConnected = true;
+      print('✅ Connected to notifications WebSocket');
+    } catch (e) {
+      print('❌ Error connecting to WebSocket: $e');
+      if (onError != null) {
+        onError!(e.toString());
+      }
+    }
+  }
+
+  /// إعداد Event Listeners
+  void _setupEventListeners() {
+    if (_socket == null) return;
+
+    // الاتصال الناجح
+    _socket!.onConnect((_) {
+      print('✅ WebSocket connected');
+      if (onConnected != null) {
+        onConnected!();
+      }
+    });
+
+    // رسالة الاتصال الناجح مع البيانات
+    _socket!.on('connected', (data) {
+      print('✅ Authenticated: $data');
+    });
+
+    // إشعار جديد
+    _socket!.on('notification:new', (data) {
+      print('🔔 New notification received: $data');
+      if (onNotificationReceived != null) {
+        onNotificationReceived!(data as Map<String, dynamic>);
+      }
+    });
+
+    // تحديث عدد الإشعارات غير المقروءة
+    _socket!.on('unread-count', (data) {
+      final count = (data as Map<String, dynamic>)['count'] as int? ?? 0;
+      print('📊 Unread count: $count');
+      if (onUnreadCountChanged != null) {
+        onUnreadCountChanged!(count);
+      }
+    });
+
+    // انقطاع الاتصال
+    _socket!.onDisconnect((_) {
+      print('❌ WebSocket disconnected');
+      _isConnected = false;
+      if (onDisconnected != null) {
+        onDisconnected!();
+      }
+    });
+
+    // خطأ
+    _socket!.onError((error) {
+      print('❌ WebSocket error: $error');
+      if (onError != null) {
+        onError!(error.toString());
+      }
+    });
+
+    // Ping/Pong
+    _socket!.on('pong', (data) {
+      print('🏓 Pong received');
+    });
+  }
+
+  /// طلب عدد الإشعارات غير المقروءة
+  void getUnreadCount() {
+    _socket?.emit('get-unread-count');
+  }
+
+  /// تحديد إشعارات كمقروءة
+  void markAsRead(List<String> notificationIds) {
+    _socket?.emit('mark-as-read', {'notificationIds': notificationIds});
+  }
+
+  /// تحديد جميع الإشعارات كمقروءة
+  void markAllAsRead() {
+    _socket?.emit('mark-all-as-read');
+  }
+
+  /// إرسال Ping
+  void ping() {
+    _socket?.emit('ping');
+  }
+
+  /// قطع الاتصال
+  void disconnect() {
+    _socket?.disconnect();
+    _isConnected = false;
+    print('🔌 WebSocket disconnected');
+  }
+
+  /// التحقق من حالة الاتصال
+  bool get isConnected => _isConnected && (_socket?.connected ?? false);
+}
+```
+
+### استخدام الخدمة في التطبيق
+
+```dart
+// lib/main.dart
+import 'services/notifications_websocket_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // ... تهيئة أخرى ...
+  
+  // تهيئة WebSocket للإشعارات
+  final wsService = NotificationsWebSocketService();
+  
+  // إعداد Callbacks
+  wsService.onNotificationReceived = (notification) {
+    // عرض الإشعار في UI
+    _showNotification(notification);
+  };
+  
+  wsService.onUnreadCountChanged = (count) {
+    // تحديث Badge
+    _updateUnreadBadge(count);
+  };
+  
+  wsService.onConnected = () {
+    print('✅ Connected to real-time notifications');
+  };
+  
+  wsService.onDisconnected = () {
+    print('❌ Disconnected from notifications');
+    // إعادة الاتصال بعد 5 ثوان
+    Future.delayed(Duration(seconds: 5), () => wsService.connect());
+  };
+  
+  // الاتصال
+  await wsService.connect();
+  
+  runApp(MyApp());
+}
+```
+
+### استخدام في Widget
+
+```dart
+// lib/screens/notifications_screen.dart
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  final _wsService = NotificationsWebSocketService();
+  final _notificationsApi = NotificationsApi();
+  
+  List<Notification> _notifications = [];
+  int _unreadCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupWebSocket();
+    _loadNotifications();
+  }
+
+  void _setupWebSocket() {
+    _wsService.onNotificationReceived = (data) {
+      // إضافة الإشعار الجديد للقائمة
+      setState(() {
+        _notifications.insert(0, Notification.fromJson(data));
+        _unreadCount++;
+      });
+      
+      // عرض إشعار محلي
+      _showLocalNotification(data);
+    };
+    
+    _wsService.onUnreadCountChanged = (count) {
+      setState(() {
+        _unreadCount = count;
+      });
+    };
+    
+    _wsService.connect();
+  }
+
+  @override
+  void dispose() {
+    _wsService.disconnect();
+    super.dispose();
+  }
+
+  // ... باقي الكود ...
+}
+```
+
+### الأحداث المتاحة
+
+| الحدث | الوصف | البيانات |
+|------|-------|---------|
+| `connected` | اتصال ناجح | `{ success: true, userId: string, timestamp: string }` |
+| `notification:new` | إشعار جديد | `{ id, title, message, messageEn, type, priority, data, createdAt, isRead }` |
+| `unread-count` | عدد غير مقروء | `{ count: number }` |
+| `marked-as-read` | تم تحديد كمقروء | `{ success: true, markedCount: number }` |
+| `marked-all-as-read` | تم تحديد الكل كمقروء | `{ success: true, markedCount: number }` |
+| `pong` | رد على ping | `{ pong: true, timestamp: string }` |
+
+### الأوامر المتاحة
+
+| الأمر | الوصف | البيانات |
+|------|-------|---------|
+| `ping` | اختبار الاتصال | لا |
+| `get-unread-count` | طلب عدد غير مقروء | لا |
+| `mark-as-read` | تحديد كمقروء | `{ notificationIds: string[] }` |
+| `mark-all-as-read` | تحديد الكل كمقروء | لا |
+
+### ملاحظات مهمة
+
+1. **Authentication**: يجب إرسال JWT Token في `authorization` header أو `auth.token`
+2. **Reconnection**: Socket.IO يعيد الاتصال تلقائياً عند الانقطاع
+3. **Fallback**: إذا فشل WebSocket، استخدم REST API كـ fallback
+4. **Token Refresh**: عند تحديث Token، أعد الاتصال
+5. **Background**: في الخلفية، استخدم Push Notifications بدلاً من WebSocket
 
 ---
 
@@ -1011,6 +1304,7 @@ class NotificationsService {
 
   /// تحديث حالة الإشعار كـ delivered
   Future<void> _markAsDelivered(String notificationId) async {
+
     // يمكنك إضافة endpoint خاص لهذا إذا كان متوفراً
     // أو يمكنك استخدام markAsRead
   }
@@ -1607,7 +1901,12 @@ Firebase يرسل إلى الأجهزة المسجلة
 3. ✅ تصحيح mark-all-read endpoint - `/notifications/mark-all-read`
 4. ✅ تصحيح unread-count response - `{ unreadCount: number }` بدلاً من البنية المعقدة
 5. ✅ تصحيح Response Structure - إضافة pagination fields في نفس المستوى
-6. ✅ **توسيع كبير في الـ Enums**:
+6. ✅ **إضافة WebSocket للإشعارات الفورية**:
+   - Namespace: `/notifications`
+   - Events: `notification:new`, `unread-count`, `marked-as-read`, `marked-all-as-read`
+   - Commands: `ping`, `get-unread-count`, `mark-as-read`, `mark-all-as-read`
+   - Real-time notifications بدون polling
+7. ✅ **توسيع كبير في الـ Enums**:
    - NotificationType: من 6 أنواع إلى 43 نوع
    - NotificationStatus: من 4 حالات إلى 11 حالة
    - NotificationChannel: إضافة inApp

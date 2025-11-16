@@ -28,6 +28,7 @@ import { AddSupportMessageDto } from './dto/add-message.dto';
 import { UpdateSupportTicketDto } from './dto/update-ticket.dto';
 import { RateTicketDto } from './dto/rate-ticket.dto';
 import { CreateCannedResponseDto, UpdateCannedResponseDto } from './dto/canned-response.dto';
+import { WebSocketService } from '../../shared/websocket/websocket.service';
 
 @Injectable()
 export class SupportService {
@@ -35,6 +36,7 @@ export class SupportService {
     @InjectModel(SupportTicket.name) private ticketModel: Model<SupportTicketDocument>,
     @InjectModel(SupportMessage.name) private messageModel: Model<SupportMessageDocument>,
     @InjectModel(CannedResponse.name) private cannedResponseModel: Model<CannedResponseDocument>,
+    private readonly webSocketService: WebSocketService,
   ) {}
 
   /**
@@ -657,6 +659,41 @@ export class SupportService {
       metadata: data.metadata || {},
     });
 
-    return message.save();
+    const savedMessage = await message.save();
+
+    // إرسال الرسالة عبر WebSocket إلى جميع المشتركين في التذكرة
+    if (!data.isInternal) {
+      const ticket = await this.ticketModel.findById(ticketId);
+      if (ticket) {
+        const messageObj = savedMessage.toObject();
+        const messageData = {
+          id: savedMessage._id.toString(),
+          ticketId: ticketId,
+          senderId: senderId,
+          content: data.content,
+          attachments: data.attachments || [],
+          messageType: data.messageType,
+          createdAt: (messageObj as { createdAt?: Date }).createdAt || new Date(),
+        };
+
+        // إرسال إلى room التذكرة (استثناء المرسل)
+        this.webSocketService.sendToTicket(ticketId, 'message:new', messageData, senderId);
+
+        // إرسال إشعار للمستخدم الآخر إذا لم يكن هو المرسل
+        if (ticket.userId.toString() !== senderId) {
+          this.webSocketService.sendToUser(
+            ticket.userId.toString(),
+            'support:new-message',
+            {
+              ticketId: ticketId,
+              ticketTitle: ticket.title,
+              message: messageData,
+            },
+          );
+        }
+      }
+    }
+
+    return savedMessage;
   }
 }

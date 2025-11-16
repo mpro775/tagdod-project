@@ -2,11 +2,12 @@ import {
   Controller,
   Get,
   Post,
-
+  Put,
+  Delete,
   Body,
   Query,
+  Param,
   UseGuards,
- 
   Request
 } from '@nestjs/common';
 import { Request as ExpressRequest } from 'express';
@@ -33,15 +34,22 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
-  ApiBody
+  ApiBody,
+  ApiParam
 } from '@nestjs/swagger';
 import { NotificationService } from '../services/notification.service';
+import { NotificationTemplateService } from '../services/notification-template.service';
+import { NotificationTemplate } from '../schemas/notification-template.schema';
 import { 
   CreateNotificationDto, 
+  UpdateNotificationDto,
   ListNotificationsDto,
   MarkAsReadDto,
-
+  BulkSendNotificationDto,
+  CreateTemplateDto,
+  UpdateTemplateDto,
 } from '../dto/unified-notification.dto';
+import { NotificationChannel, NotificationStatus } from '../enums/notification.enums';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { UserRole } from '../../users/schemas/user.schema';
@@ -52,7 +60,10 @@ import { AdminGuard } from '../../../shared/guards/admin.guard';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UnifiedNotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(
+    private readonly notificationService: NotificationService,
+    private readonly templateService: NotificationTemplateService,
+  ) {}
 
   // ===== User Endpoints =====
 
@@ -492,6 +503,268 @@ export class UnifiedNotificationController {
     return {
       deletedCount,
       message: `${deletedCount} old notifications deleted`
+    };
+  }
+
+  @Get('admin/:id')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: تفاصيل إشعار',
+    description: 'استرداد تفاصيل إشعار محدد (للإداريين فقط)'
+  })
+  @ApiParam({ name: 'id', description: 'معرف الإشعار' })
+  @ApiResponse({ status: 200, description: 'Notification retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Notification not found' })
+  async adminGetNotification(@Param('id') id: string) {
+    const notification = await this.notificationService.getNotificationById(id);
+    return { success: true, data: notification };
+  }
+
+  @Put('admin/:id')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: تحديث إشعار',
+    description: 'تحديث تفاصيل إشعار محدد (للإداريين فقط)'
+  })
+  @ApiParam({ name: 'id', description: 'معرف الإشعار' })
+  @ApiBody({ type: UpdateNotificationDto })
+  @ApiResponse({ status: 200, description: 'Notification updated successfully' })
+  @ApiResponse({ status: 404, description: 'Notification not found' })
+  async adminUpdateNotification(
+    @Param('id') id: string,
+    @Body() dto: UpdateNotificationDto
+  ) {
+    const notification = await this.notificationService.updateNotification(id, dto);
+    return { success: true, data: notification };
+  }
+
+  @Delete('admin/:id')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: حذف إشعار',
+    description: 'حذف إشعار محدد (للإداريين فقط)'
+  })
+  @ApiParam({ name: 'id', description: 'معرف الإشعار' })
+  @ApiResponse({ status: 200, description: 'Notification deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Notification not found' })
+  async adminDeleteNotification(@Param('id') id: string) {
+    const deleted = await this.notificationService.deleteNotification(id);
+    return { success: deleted, message: deleted ? 'Notification deleted successfully' : 'Notification not found' };
+  }
+
+  @Post('admin/:id/send')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: إرسال إشعار محدد',
+    description: 'إرسال إشعار محدد للمستخدمين (للإداريين فقط)'
+  })
+  @ApiParam({ name: 'id', description: 'معرف الإشعار' })
+  @ApiResponse({ status: 200, description: 'Notification sent successfully' })
+  @ApiResponse({ status: 404, description: 'Notification not found' })
+  async adminSendNotification(@Param('id') id: string) {
+    const notification = await this.notificationService.getNotificationById(id);
+    
+    // إعادة إرسال الإشعار
+    if (notification.recipientId) {
+      if (notification.channel === NotificationChannel.PUSH) {
+        await this.notificationService.sendPushNotification(
+          notification as any,
+          notification.recipientId.toString()
+        );
+      } else if (notification.channel === NotificationChannel.IN_APP) {
+        // إرسال عبر WebSocket
+        // سيتم إرساله تلقائياً عند التحديث
+      }
+    }
+
+    // تحديث حالة الإشعار
+    await this.notificationService.updateNotificationStatus(
+      id,
+      notification.status === NotificationStatus.PENDING ? NotificationStatus.SENT : notification.status
+    );
+
+    return { success: true, message: 'Notification sent successfully' };
+  }
+
+  @Post('admin/bulk-send')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: إرسال إشعارات مجمعة',
+    description: 'إرسال إشعارات لعدة مستخدمين دفعة واحدة (للإداريين فقط)'
+  })
+  @ApiBody({ type: BulkSendNotificationDto })
+  @ApiResponse({ status: 200, description: 'Bulk send completed' })
+  async adminBulkSend(@Body() dto: BulkSendNotificationDto) {
+    const result = await this.notificationService.bulkSendNotifications(dto);
+    return { success: true, data: result };
+  }
+
+  @Post('admin/test')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: اختبار إشعار',
+    description: 'إرسال إشعار تجريبي لمستخدم محدد (للإداريين فقط)'
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'string', description: 'معرف المستخدم' },
+        templateKey: { type: 'string', description: 'مفتاح القالب' },
+        payload: { type: 'object', description: 'بيانات القالب' }
+      }
+    }
+  })
+  @ApiResponse({ status: 200, description: 'Test notification sent successfully' })
+  async adminTestNotification(
+    @Body() body: { userId: string; templateKey: string; payload?: Record<string, unknown> }
+  ) {
+    const { userId, templateKey, payload = {} } = body;
+    
+    // استخدام القالب لإرسال إشعار تجريبي
+    const rendered = await this.templateService.renderTemplate(templateKey, payload);
+    
+    const notification = await this.notificationService.createNotification({
+      type: 'SYSTEM_ALERT' as any,
+      title: `[TEST] ${rendered.title}`,
+      message: `[TEST] ${rendered.message}`,
+      messageEn: `[TEST] ${rendered.messageEn}`,
+      recipientId: userId,
+      channel: 'inApp' as any,
+      priority: 'medium' as any,
+      isSystemGenerated: true,
+    });
+
+    return { success: true, data: notification, message: 'Test notification sent successfully' };
+  }
+
+  @Post('admin/templates')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: إنشاء قالب إشعار',
+    description: 'إنشاء قالب إشعار جديد (للإداريين فقط)'
+  })
+  @ApiBody({ type: CreateTemplateDto })
+  @ApiResponse({ status: 201, description: 'Template created successfully' })
+  async adminCreateTemplate(@Body() dto: CreateTemplateDto) {
+    const template = await this.templateService.createTemplate(dto);
+    return { success: true, data: template };
+  }
+
+  @Put('admin/templates/:key')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: تحديث قالب إشعار',
+    description: 'تحديث قالب إشعار موجود (للإداريين فقط)'
+  })
+  @ApiParam({ name: 'key', description: 'مفتاح القالب' })
+  @ApiBody({ type: UpdateTemplateDto })
+  @ApiResponse({ status: 200, description: 'Template updated successfully' })
+  @ApiResponse({ status: 404, description: 'Template not found' })
+  async adminUpdateTemplate(
+    @Param('key') key: string,
+    @Body() dto: UpdateTemplateDto
+  ) {
+    const updated = await this.templateService.updateTemplateByKey(key, dto);
+    return { success: true, data: updated };
+  }
+
+  @Delete('admin/templates/:key')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: حذف قالب إشعار',
+    description: 'حذف قالب إشعار (للإداريين فقط)'
+  })
+  @ApiParam({ name: 'key', description: 'مفتاح القالب' })
+  @ApiResponse({ status: 200, description: 'Template deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Template not found' })
+  async adminDeleteTemplate(@Param('key') key: string) {
+    const deleted = await this.templateService.deleteTemplateByKey(key);
+    return { success: deleted, message: deleted ? 'Template deleted successfully' : 'Template not found' };
+  }
+
+  @Get('admin/templates/:key/stats')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: إحصائيات قالب',
+    description: 'استرداد إحصائيات استخدام قالب محدد (للإداريين فقط)'
+  })
+  @ApiParam({ name: 'key', description: 'مفتاح القالب' })
+  @ApiResponse({ status: 200, description: 'Template stats retrieved successfully' })
+  async adminGetTemplateStats(@Param('key') key: string) {
+    const template = await this.templateService.getTemplateByKey(key);
+    
+    // إحصائيات استخدام القالب
+    // استخدام type assertion للوصول إلى _id و key من lean document
+    const templateDoc = template as NotificationTemplate & { _id: string; key?: string };
+    const stats = {
+      templateId: templateDoc._id || (template as any)._id,
+      templateKey: templateDoc.key || key,
+      usageCount: template.usageCount || 0,
+      lastUsedAt: template.lastUsedAt,
+      isActive: template.isActive,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    };
+
+    return { success: true, data: stats };
+  }
+
+  @Get('admin/stats/overview')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: نظرة عامة على الإحصائيات',
+    description: 'استرداد نظرة عامة سريعة على إحصائيات الإشعارات (للإداريين فقط)'
+  })
+  @ApiResponse({ status: 200, description: 'Overview stats retrieved successfully' })
+  async adminGetStatsOverview() {
+    const stats = await this.notificationService.getNotificationStats();
+    
+    // إضافة معلومات إضافية
+    const overview = {
+      ...stats,
+      recentActivity: {
+        last24Hours: 0, // يمكن إضافتها لاحقاً
+        last7Days: 0,
+        last30Days: 0,
+      },
+      topTypes: Object.entries(stats.byType || {})
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 5)
+        .map(([type, count]) => ({ type, count })),
+    };
+
+    return { success: true, data: overview };
+  }
+
+  @Get('admin/logs')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: سجل الإشعارات',
+    description: 'استرداد سجل مفصل لجميع الإشعارات مع تفاصيل الإرسال (للإداريين فقط)'
+  })
+  @ApiQuery({ type: ListNotificationsDto })
+  @ApiResponse({ status: 200, description: 'Logs retrieved successfully' })
+  async adminGetLogs(@Query() query: ListNotificationsDto) {
+    // نفس endpoint القائمة لكن مع تفاصيل أكثر
+    const result = await this.notificationService.listNotifications(query);
+    
+    return {
+      notifications: result.notifications,
+      total: result.meta.total,
+      meta: result.meta
     };
   }
 }

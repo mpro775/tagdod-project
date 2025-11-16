@@ -14,6 +14,7 @@ import {
 } from './schemas/notification-preference.schema';
 import { DeviceToken, DeviceTokenSchema } from './schemas/device-token.schema';
 import { NotificationLog, NotificationLogSchema } from './schemas/notification-log.schema';
+import { PushNotificationAdapter } from './adapters/notification.adapters';
 
 // Services
 import { NotificationService } from './services/notification.service';
@@ -26,12 +27,12 @@ import { UnifiedNotificationController } from './controllers/unified-notificatio
 // Adapters
 import {
   InAppNotificationAdapter,
-  PushNotificationAdapter,
   EmailNotificationAdapter,
   SmsNotificationAdapter,
   NotificationAdapterFactory,
   MockNotificationAdapter,
 } from './adapters/notification.adapters';
+
 import { FCMAdapter } from './adapters/fcm.adapter';
 import { EmailAdapter } from './adapters/email.adapter';
 import { SMSAdapter } from './adapters/sms.adapter';
@@ -43,6 +44,11 @@ import {} from './ports/notification.ports';
 // Auth
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
+
+// Gateways
+import { NotificationsGateway } from './gateways/notifications.gateway';
+import { WebSocketService } from '../../shared/websocket/websocket.service';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -67,12 +73,21 @@ import { SharedModule } from '../../shared/shared.module';
     EmailAdapter, // Email Adapter for email notifications
     AlawaelSMSAdapter, // Alawael SMS Adapter for SMS notifications
     SMSAdapter, // SMS Adapter for SMS notifications (supports multiple providers)
-    InAppNotificationAdapter,
+    {
+      provide: InAppNotificationAdapter,
+      useFactory: (webSocketService: WebSocketService) => {
+        return new InAppNotificationAdapter(webSocketService);
+      },
+      inject: [WebSocketService],
+    },
     PushNotificationAdapter, // Uses FCMAdapter internally
     EmailNotificationAdapter, // Uses EmailAdapter internally
     SmsNotificationAdapter, // Uses SMSAdapter internally
     NotificationAdapterFactory,
     MockNotificationAdapter,
+
+    // WebSocket Gateway
+    NotificationsGateway,
 
     // Port Providers
     {
@@ -119,6 +134,9 @@ import { SharedModule } from '../../shared/shared.module';
     'EMAIL_NOTIFICATION_PORT',
     'SMS_NOTIFICATION_PORT',
     'MOCK_NOTIFICATION_PORT',
+
+    // WebSocket Gateway
+    NotificationsGateway,
   ],
 })
 export class NotificationsCompleteModule {}

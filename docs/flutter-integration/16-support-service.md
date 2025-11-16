@@ -1,7 +1,8 @@
 # 🎧 خدمة الدعم (Support Service)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: أكتوبر 2025
+> 📅 **آخر تحديث**: نوفمبر 2025  
+> 🆕 **محدث**: إضافة WebSocket للرسائل الفورية
 
 خدمة الدعم توفر endpoints لإدارة تذاكر الدعم والرسائل.
 
@@ -15,7 +16,8 @@
 4. [رسائل التذكرة](#4-رسائل-التذكرة)
 5. [إضافة رسالة](#5-إضافة-رسالة)
 6. [أرشفة تذكرة](#6-أرشفة-تذكرة)
-7. [Models في Flutter](#models-في-flutter)
+7. [WebSocket - الرسائل الفورية](#7-websocket---الرسائل-الفورية)
+8. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -475,6 +477,347 @@ Future<bool> archiveTicket(String ticketId) async {
 
 ---
 
+## 7. WebSocket - الرسائل الفورية
+
+يوفر النظام اتصال WebSocket في الوقت الفعلي لاستقبال الرسائل فوراً في التذاكر.
+
+### معلومات الاتصال
+
+- **Namespace:** `/support`
+- **URL:** `ws://your-api-url/support` أو `wss://your-api-url/support`
+- **Auth Required:** ✅ نعم (JWT Token)
+- **Reconnection:** ✅ تلقائي
+
+### إعداد Dependencies
+
+في `pubspec.yaml`:
+```yaml
+dependencies:
+  socket_io_client: ^2.0.3+1
+```
+
+### كود Flutter - خدمة WebSocket
+
+```dart
+// lib/services/support_websocket_service.dart
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:shared_preferences/shared_preferences.dart';
+
+class SupportWebSocketService {
+  static final SupportWebSocketService _instance = 
+      SupportWebSocketService._internal();
+  factory SupportWebSocketService() => _instance;
+  SupportWebSocketService._internal();
+
+  IO.Socket? _socket;
+  bool _isConnected = false;
+  String? _currentTicketId;
+  
+  // Callbacks
+  Function(Map<String, dynamic>)? onMessageReceived;
+  Function(Map<String, dynamic>)? onNewMessageNotification;
+  Function(Map<String, dynamic>)? onUserTyping;
+  Function()? onConnected;
+  Function()? onDisconnected;
+  Function(String)? onError;
+
+  /// الاتصال بـ WebSocket
+  Future<void> connect() async {
+    if (_isConnected && _socket?.connected == true) {
+      return;
+    }
+
+    try {
+      // الحصول على Token
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      
+      if (token == null) {
+        throw Exception('No access token found');
+      }
+
+      // إنشاء الاتصال
+      _socket = IO.io(
+        'http://your-api-url/support', // أو wss:// للـ HTTPS
+        IO.OptionBuilder()
+            .setTransports(['websocket', 'polling'])
+            .enableAutoConnect()
+            .setExtraHeaders({'authorization': 'Bearer $token'})
+            .setAuth({'token': token})
+            .build(),
+      );
+
+      // إعداد Event Listeners
+      _setupEventListeners();
+      
+      _isConnected = true;
+      print('✅ Connected to support WebSocket');
+    } catch (e) {
+      print('❌ Error connecting to WebSocket: $e');
+      if (onError != null) {
+        onError!(e.toString());
+      }
+    }
+  }
+
+  /// إعداد Event Listeners
+  void _setupEventListeners() {
+    if (_socket == null) return;
+
+    // الاتصال الناجح
+    _socket!.onConnect((_) {
+      print('✅ WebSocket connected');
+      if (onConnected != null) {
+        onConnected!();
+      }
+      
+      // إعادة الانضمام للتذكرة إذا كانت موجودة
+      if (_currentTicketId != null) {
+        joinTicket(_currentTicketId!);
+      }
+    });
+
+    // رسالة جديدة في التذكرة
+    _socket!.on('message:new', (data) {
+      print('💬 New message received: $data');
+      if (onMessageReceived != null) {
+        onMessageReceived!(data as Map<String, dynamic>);
+      }
+    });
+
+    // إشعار برسالة جديدة (للتذاكر الأخرى)
+    _socket!.on('support:new-message', (data) {
+      print('🔔 New message notification: $data');
+      if (onNewMessageNotification != null) {
+        onNewMessageNotification!(data as Map<String, dynamic>);
+      }
+    });
+
+    // مؤشر الكتابة
+    _socket!.on('user-typing', (data) {
+      print('⌨️ User typing: $data');
+      if (onUserTyping != null) {
+        onUserTyping!(data as Map<String, dynamic>);
+      }
+    });
+
+    // انضمام ناجح
+    _socket!.on('joined-ticket', (data) {
+      print('✅ Joined ticket: $data');
+    });
+
+    // مغادرة ناجحة
+    _socket!.on('left-ticket', (data) {
+      print('👋 Left ticket: $data');
+    });
+
+    // انقطاع الاتصال
+    _socket!.onDisconnect((_) {
+      print('❌ WebSocket disconnected');
+      _isConnected = false;
+      if (onDisconnected != null) {
+        onDisconnected!();
+      }
+    });
+
+    // خطأ
+    _socket!.onError((error) {
+      print('❌ WebSocket error: $error');
+      if (onError != null) {
+        onError!(error.toString());
+      }
+    });
+
+    // Ping/Pong
+    _socket!.on('pong', (data) {
+      print('🏓 Pong received');
+    });
+  }
+
+  /// الانضمام لتذكرة
+  void joinTicket(String ticketId) {
+    _currentTicketId = ticketId;
+    _socket?.emit('join-ticket', {'ticketId': ticketId});
+    print('🔗 Joining ticket: $ticketId');
+  }
+
+  /// مغادرة تذكرة
+  void leaveTicket(String ticketId) {
+    if (_currentTicketId == ticketId) {
+      _currentTicketId = null;
+    }
+    _socket?.emit('leave-ticket', {'ticketId': ticketId});
+    print('👋 Leaving ticket: $ticketId');
+  }
+
+  /// إرسال مؤشر الكتابة
+  void sendTyping(String ticketId, bool isTyping) {
+    _socket?.emit('typing', {
+      'ticketId': ticketId,
+      'isTyping': isTyping,
+    });
+  }
+
+  /// إرسال Ping
+  void ping() {
+    _socket?.emit('ping');
+  }
+
+  /// قطع الاتصال
+  void disconnect() {
+    if (_currentTicketId != null) {
+      leaveTicket(_currentTicketId!);
+    }
+    _socket?.disconnect();
+    _isConnected = false;
+    print('🔌 WebSocket disconnected');
+  }
+
+  /// التحقق من حالة الاتصال
+  bool get isConnected => _isConnected && (_socket?.connected ?? false);
+  
+  /// الحصول على التذكرة الحالية
+  String? get currentTicketId => _currentTicketId;
+}
+```
+
+### استخدام الخدمة في Widget
+
+```dart
+// lib/screens/support_ticket_details_screen.dart
+class _SupportTicketDetailsScreenState extends State<SupportTicketDetailsScreen> {
+  final _wsService = SupportWebSocketService();
+  final _supportApi = SupportApi();
+  
+  List<SupportMessage> _messages = [];
+  bool _isTyping = false;
+  String? _typingUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupWebSocket();
+    _loadMessages();
+  }
+
+  void _setupWebSocket() {
+    // رسالة جديدة
+    _wsService.onMessageReceived = (data) {
+      setState(() {
+        _messages.add(SupportMessage.fromJson(data));
+      });
+      
+      // إعادة تحميل الرسائل للتأكد من الترتيب
+      _loadMessages();
+    };
+    
+    // مؤشر الكتابة
+    _wsService.onUserTyping = (data) {
+      if (data['ticketId'] == widget.ticketId) {
+        setState(() {
+          _isTyping = data['isTyping'] == true;
+          _typingUserId = data['userId'];
+        });
+      }
+    };
+    
+    // الاتصال والانضمام للتذكرة
+    _wsService.connect().then((_) {
+      _wsService.joinTicket(widget.ticketId);
+    });
+  }
+
+  void _sendMessage(String content) async {
+    try {
+      // إرسال الرسالة عبر REST API
+      await _supportApi.addMessage(
+        widget.ticketId,
+        content: content,
+      );
+      
+      // الرسالة ستصل عبر WebSocket تلقائياً
+    } catch (e) {
+      print('Error sending message: $e');
+    }
+  }
+
+  void _onTypingChanged(bool isTyping) {
+    _wsService.sendTyping(widget.ticketId, isTyping);
+  }
+
+  @override
+  void dispose() {
+    _wsService.leaveTicket(widget.ticketId);
+    _wsService.disconnect();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('تفاصيل التذكرة')),
+      body: Column(
+        children: [
+          // قائمة الرسائل
+          Expanded(
+            child: ListView.builder(
+              itemCount: _messages.length + (_isTyping ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _messages.length && _isTyping) {
+                  return ListTile(
+                    leading: CircularProgressIndicator(),
+                    title: Text('${_typingUserId} is typing...'),
+                  );
+                }
+                return MessageTile(message: _messages[index]);
+              },
+            ),
+          ),
+          
+          // حقل الإدخال
+          MessageInputField(
+            onSend: _sendMessage,
+            onTypingChanged: _onTypingChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### الأحداث المتاحة
+
+| الحدث | الوصف | البيانات |
+|------|-------|---------|
+| `connected` | اتصال ناجح | `{ success: true, userId: string, timestamp: string }` |
+| `message:new` | رسالة جديدة في التذكرة | `{ id, ticketId, senderId, content, attachments, messageType, createdAt }` |
+| `support:new-message` | إشعار برسالة جديدة (لتذاكر أخرى) | `{ ticketId, ticketTitle, message: {...} }` |
+| `user-typing` | مؤشر الكتابة | `{ userId, ticketId, isTyping: bool, userName }` |
+| `joined-ticket` | انضمام ناجح | `{ success: true, ticketId: string }` |
+| `left-ticket` | مغادرة ناجحة | `{ success: true, ticketId: string }` |
+| `pong` | رد على ping | `{ pong: true, timestamp: string }` |
+
+### الأوامر المتاحة
+
+| الأمر | الوصف | البيانات |
+|------|-------|---------|
+| `ping` | اختبار الاتصال | لا |
+| `join-ticket` | الانضمام لتذكرة | `{ ticketId: string }` |
+| `leave-ticket` | مغادرة تذكرة | `{ ticketId: string }` |
+| `typing` | إرسال مؤشر الكتابة | `{ ticketId: string, isTyping: bool }` |
+
+### ملاحظات مهمة
+
+1. **Authentication**: يجب إرسال JWT Token في `authorization` header أو `auth.token`
+2. **Room Management**: يجب الانضمام للتذكرة (`join-ticket`) قبل استقبال الرسائل
+3. **Typing Indicators**: أرسل `typing: true` عند البدء بالكتابة و `typing: false` عند التوقف
+4. **Reconnection**: Socket.IO يعيد الاتصال تلقائياً، لكن يجب إعادة الانضمام للتذاكر
+5. **Multiple Tickets**: يمكن الانضمام لتذكرة واحدة في كل مرة
+6. **Message Sending**: استخدم REST API لإرسال الرسائل، WebSocket للاستقبال فقط
+
+---
+
 ## Models في Flutter
 
 ### ملف: `lib/models/support/support_models.dart`
@@ -931,6 +1274,11 @@ class PaginatedSupportMessages {
 5. ✅ تصحيح archive response - `{ message }` بدلاً من `{ data: { message } }`
 6. ✅ تحديث جميع أكواد Flutter - استخدام `apiResponse.data!['data']` حيثما مناسب
 7. ✅ إزالة `limit` من response (ليس موجود في list response)
+8. ✅ **إضافة WebSocket للرسائل الفورية**:
+   - Namespace: `/support`
+   - Events: `message:new`, `support:new-message`, `user-typing`, `joined-ticket`, `left-ticket`
+   - Commands: `ping`, `join-ticket`, `leave-ticket`, `typing`
+   - Real-time messages مع مؤشرات الكتابة
 
 **ملاحظات مهمة:**
 - endpoint لإنشاء تذكرة: `POST /support/tickets`
