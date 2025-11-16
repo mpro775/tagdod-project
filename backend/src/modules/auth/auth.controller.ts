@@ -215,7 +215,7 @@ export class AuthController {
 
     // Verify OTP using normalized phone (OTP was stored with normalized phone)
     const ok = await this.otp.verifyOtp(normalizedPhone, dto.code, 'register');
-    if (!ok) throw new InvalidOTPException({ phone: normalizedPhone });
+    if (!ok) throw new InvalidOTPException({ phone: dto.phone });
 
     // التحقق من أن المسمى الوظيفي موجود عند طلب أن يكون مهندساً
     if (dto.capabilityRequest === 'engineer' && !dto.jobTitle) {
@@ -292,7 +292,7 @@ export class AuthController {
 
       // التحقق من حالة الحساب
       if (user.status === UserStatus.SUSPENDED || user.status === UserStatus.DELETED) {
-        throw new AuthException(ErrorCode.AUTH_USER_BLOCKED, { phone: normalizedPhone });
+        throw new AuthException(ErrorCode.AUTH_USER_BLOCKED, { phone: dto.phone });
       }
     }
 
@@ -432,8 +432,8 @@ export class AuthController {
     // Verify OTP using normalized phone (OTP was stored with normalized phone)
     const ok = await this.otp.verifyOtp(normalizedPhone, dto.code, 'reset');
     if (!ok) {
-      this.logger.warn(`Reset password failed - invalid OTP for ${normalizedPhone}`);
-      throw new InvalidOTPException({ phone: normalizedPhone });
+      this.logger.warn(`Reset password failed - invalid OTP for ${dto.phone}`);
+      throw new InvalidOTPException({ phone: dto.phone });
     }
 
     // البحث في قاعدة البيانات بالرقم كما هو (بدون +967) أو بالرقم المحول

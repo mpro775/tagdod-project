@@ -211,7 +211,7 @@ Future<Map<String, dynamic>> sendOtp({
 > - إذا كان الحساب كان `PENDING` من `/auth/user-signup`، يتم تفعيله إلى `ACTIVE` تلقائياً
 > - التحويل إلى +967 يحدث فقط عند إرسال/التحقق من OTP عبر SMS
 
-### Response - فشل
+### Response - فشل (OTP غير صحيح)
 
 ```json
 {
@@ -219,7 +219,9 @@ Future<Map<String, dynamic>> sendOtp({
   "error": {
     "code": "AUTH_100",
     "message": "رمز التحقق غير صالح",
-    "details": null,
+    "details": {
+      "phone": "775815074"
+    },
     "fieldErrors": null
   },
   "requestId": "550e8400-e29b-41d4-a716-446655440000",
@@ -228,11 +230,31 @@ Future<Map<String, dynamic>> sendOtp({
 }
 ```
 
+### Response - فشل (المستخدم محظور)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_106",
+    "message": "تم حظر المستخدم",
+    "details": {
+      "phone": "775019485"
+    },
+    "fieldErrors": null
+  },
+  "requestId": "29415d34-a328-458d-b796-be480aebfd3e",
+  "timestamp": "2025-11-16T20:54:36.722Z",
+  "path": "/api/v1/auth/verify-otp"
+}
+```
+
 ### أكواد الأخطاء
 
 | الكود | الوصف | HTTP Status |
 |------|-------|-------------|
 | `AUTH_100` | رمز OTP غير صحيح | 401 |
+| `AUTH_106` | تم حظر المستخدم (الحساب محظور أو محذوف) | 403 |
 | `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
 | `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
 
@@ -718,13 +740,32 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
     "code": "AUTH_100",
     "message": "رمز التحقق غير صالح",
     "details": {
-      "phone": "+967775815074"
+      "phone": "775815074"
     },
     "fieldErrors": null
   },
   "requestId": "550e8400-e29b-41d4-a716-446655440000",
   "timestamp": "2023-12-01T10:33:00.000Z",
   "path": "/api/auth/reset-password"
+}
+```
+
+### Response - فشل (المستخدم محظور)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_106",
+    "message": "تم حظر المستخدم",
+    "details": {
+      "phone": "775019485"
+    },
+    "fieldErrors": null
+  },
+  "requestId": "29415d34-a328-458d-b796-be480aebfd3e",
+  "timestamp": "2025-11-16T20:54:36.722Z",
+  "path": "/api/v1/auth/verify-otp"
 }
 ```
 
