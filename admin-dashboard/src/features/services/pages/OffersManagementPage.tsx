@@ -146,12 +146,30 @@ export const OffersManagementPage: React.FC = () => {
       minWidth: 150,
       flex: 1,
       renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" fontWeight="medium">
+        <Box sx={{ py: 0.5 }}>
+          <Typography 
+            variant="body2" 
+            fontWeight="medium"
+            sx={{ 
+              lineHeight: 1.4,
+              mb: 0.25,
+            }}
+          >
             {formatCurrency(params.row.amount)}
           </Typography>
           {params.row.note && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ 
+                lineHeight: 1.3,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
               {params.row.note.length > 50 
                 ? `${params.row.note.substring(0, 50)}...` 
                 : params.row.note
@@ -167,16 +185,44 @@ export const OffersManagementPage: React.FC = () => {
       minWidth: 180,
       flex: 1.2,
       renderCell: (params) => (
-        <Box display="flex" alignItems="center">
-          <Avatar sx={{ mr: 1, bgcolor: 'primary.main', width: 32, height: 32 }}>
-            {params.row.engineer?.firstName?.charAt(0) || '?'}
+        <Box 
+          display="flex" 
+          alignItems="center" 
+          gap={1.5}
+          sx={{ 
+            width: '100%',
+            height: '100%',
+            py: 0.5,
+          }}
+        >
+          <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, flexShrink: 0 }}>
+            {params.row.engineer?.firstName?.charAt(0) || params.row.engineerId?.firstName?.charAt(0) || '?'}
           </Avatar>
-          <Box>
-            <Typography variant="body2" fontWeight="medium">
-              {params.row.engineer?.firstName} {params.row.engineer?.lastName}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography 
+              variant="body2" 
+              fontWeight="medium"
+              sx={{ 
+                lineHeight: 1.4,
+                mb: 0.25,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
+              {params.row.engineer?.firstName || params.row.engineerId?.firstName || ''} {params.row.engineer?.lastName || params.row.engineerId?.lastName || ''}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {params.row.engineer?.phone}
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ 
+                lineHeight: 1.3,
+                display: 'block',
+              }}
+            >
+              {params.row.engineer?.phone || params.row.engineerId?.phone || '-'}
             </Typography>
           </Box>
         </Box>
@@ -188,12 +234,31 @@ export const OffersManagementPage: React.FC = () => {
       minWidth: 150,
       flex: 1,
       renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" fontWeight="medium">
-            {params.row.request?.title}
+        <Box sx={{ py: 0.5 }}>
+          <Typography 
+            variant="body2" 
+            fontWeight="medium"
+            sx={{ 
+              lineHeight: 1.4,
+              mb: 0.25,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {params.row.request?.title || params.row.requestId?.title || '-'}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {params.row.request?.type}
+          <Typography 
+            variant="caption" 
+            color="text.secondary"
+            sx={{ 
+              lineHeight: 1.3,
+              display: 'block',
+            }}
+          >
+            {params.row.request?.type || params.row.requestId?.type || '-'}
           </Typography>
         </Box>
       ),
@@ -614,6 +679,7 @@ export const OffersManagementPage: React.FC = () => {
             onSearch={(search) => handleFilterChange('search', search)}
             getRowId={(row: any) => row._id}
             height="calc(100vh - 450px)"
+            rowHeight={90}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
           />

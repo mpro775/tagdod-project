@@ -9,6 +9,8 @@ import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabi
 import { FavoritesModule } from '../favorites/favorites.module';
 import { SharedModule } from '../../shared/shared.module';
 import { BiometricService } from './biometric.service';
+import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
+
 @Module({
   imports: [
     forwardRef(() => FavoritesModule),
@@ -17,6 +19,7 @@ import { BiometricService } from './biometric.service';
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
     SharedModule,
+    NotificationsCompleteModule, // Import notifications module to access SMSAdapter
   ],
   controllers: [AuthController],
   providers: [OtpService, TokensService, JwtAuthGuard, BiometricService],

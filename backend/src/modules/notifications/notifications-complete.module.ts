@@ -35,6 +35,7 @@ import {
 import { FCMAdapter } from './adapters/fcm.adapter';
 import { EmailAdapter } from './adapters/email.adapter';
 import { SMSAdapter } from './adapters/sms.adapter';
+import { AlawaelSMSAdapter } from './adapters/alawael-sms.adapter';
 
 // Ports
 import {} from './ports/notification.ports';
@@ -64,7 +65,8 @@ import { SharedModule } from '../../shared/shared.module';
     // Adapters
     FCMAdapter, // FCM Adapter for push notifications
     EmailAdapter, // Email Adapter for email notifications
-    SMSAdapter, // SMS Adapter for SMS notifications
+    AlawaelSMSAdapter, // Alawael SMS Adapter for SMS notifications
+    SMSAdapter, // SMS Adapter for SMS notifications (supports multiple providers)
     InAppNotificationAdapter,
     PushNotificationAdapter, // Uses FCMAdapter internally
     EmailNotificationAdapter, // Uses EmailAdapter internally
@@ -104,6 +106,7 @@ import { SharedModule } from '../../shared/shared.module';
     NotificationAdapterFactory,
     FCMAdapter, // Export FCMAdapter for direct use if needed
     EmailAdapter, // Export EmailAdapter for direct use if needed
+    AlawaelSMSAdapter, // Export AlawaelSMSAdapter for direct use if needed
     SMSAdapter, // Export SMSAdapter for direct use if needed
     InAppNotificationAdapter,
     PushNotificationAdapter,

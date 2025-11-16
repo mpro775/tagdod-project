@@ -17,6 +17,11 @@ const UnauthorizedPage = lazy(() =>
     default: m.default,
   }))
 );
+const ProfilePage = lazy(() =>
+  import('@/features/auth/pages/ProfilePage').then((m) => ({
+    default: m.ProfilePage,
+  }))
+);
 const DashboardPage = lazy(() =>
   import('@/features/dashboard/pages/DashboardPage').then((m) => ({
     default: m.DashboardPage,
@@ -358,6 +363,13 @@ export const routes: RouteObject[] = [
       {
         path: 'dashboard',
         element: <DashboardPage />,
+      },
+      // ===========================================
+      // PROFILE
+      // ===========================================
+      {
+        path: 'profile',
+        element: <ProfilePage />,
       },
       // ===========================================
       // USER MANAGEMENT

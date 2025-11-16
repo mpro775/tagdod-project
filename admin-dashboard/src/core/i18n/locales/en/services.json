@@ -14,6 +14,7 @@
     "title": "Title",
     "type": "Type",
     "description": "Description",
+    "images": "Images",
     "status": "Status",
     "customer": "Customer",
     "engineer": "Engineer",

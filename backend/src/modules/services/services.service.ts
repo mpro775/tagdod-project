@@ -1180,18 +1180,44 @@ export class ServicesService {
   // === إدارة المهندسين ===
   async getEngineersList(params: { page: number; limit: number; search?: string }) {
     const { page, limit, search } = params;
-    const matchStage: Record<string, unknown> = {};
+    
+    // بناء استعلام البحث للمهندسين
+    const matchStage: Record<string, unknown> = {
+      $or: [
+        { roles: { $in: ['engineer'] } },
+        { engineer_capable: true },
+      ],
+      status: { $ne: 'deleted' },
+    };
 
     if (search) {
-      matchStage.$or = [
-        { 'engineer.firstName': { $regex: search, $options: 'i' } },
-        { 'engineer.lastName': { $regex: search, $options: 'i' } },
-        { 'engineer.phone': { $regex: search, $options: 'i' } },
+      matchStage.$and = [
+        {
+          $or: [
+            { firstName: { $regex: search, $options: 'i' } },
+            { lastName: { $regex: search, $options: 'i' } },
+            { phone: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+          ],
+        },
       ];
     }
 
-    const pipeline = [
-      { $match: { engineerId: { $ne: null } } },
+    // جلب المهندسين من جدول المستخدمين
+    const engineersQuery = this.userModel.find(matchStage);
+    const total = await this.userModel.countDocuments(matchStage);
+    
+    const engineers = await engineersQuery
+      .select('_id firstName lastName phone email jobTitle engineer_status')
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    // جلب إحصائيات المهندسين من جدول الخدمات
+    const engineerIds = engineers.map((e) => e._id);
+    
+    const statsPipeline = [
+      { $match: { engineerId: { $in: engineerIds } } },
       {
         $group: {
           _id: '$engineerId',
@@ -1217,41 +1243,44 @@ export class ServicesService {
           },
         },
       },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'engineer',
-        },
-      },
-      { $unwind: '$engineer' },
-      {
-        $project: {
-          engineerId: '$_id',
-          engineerName: { $concat: ['$engineer.firstName', ' ', '$engineer.lastName'] },
-          engineerPhone: '$engineer.phone',
-          engineerEmail: '$engineer.email',
-          totalRequests: 1,
-          completedRequests: 1,
-          completionRate: {
-            $multiply: [{ $divide: ['$completedRequests', '$totalRequests'] }, 100],
-          },
-          averageRating: { $round: ['$averageRating', 1] },
-          totalRevenue: 1,
-        },
-      },
-      { $match: matchStage },
-      { $sort: { totalRequests: -1 as const } },
     ];
 
-    const skip = (page - 1) * limit;
-    const [items, total] = await Promise.all([
-      this.requests.aggregate([...pipeline, { $skip: skip }, { $limit: limit }]),
-      this.requests
-        .aggregate([...pipeline, { $count: 'total' }])
-        .then((result) => result[0]?.total || 0),
-    ]);
+    const statsMap = new Map();
+    const stats = await this.requests.aggregate(statsPipeline);
+    
+    stats.forEach((stat) => {
+      statsMap.set(stat._id.toString(), {
+        totalRequests: stat.totalRequests || 0,
+        completedRequests: stat.completedRequests || 0,
+        completionRate: stat.totalRequests > 0 
+          ? Math.round((stat.completedRequests / stat.totalRequests) * 100 * 10) / 10 
+          : 0,
+        averageRating: stat.averageRating ? Math.round(stat.averageRating * 10) / 10 : 0,
+        totalRevenue: stat.totalRevenue || 0,
+      });
+    });
+
+    // دمج البيانات
+    const items = engineers.map((engineer) => {
+      const stats = statsMap.get(engineer._id.toString()) || {
+        totalRequests: 0,
+        completedRequests: 0,
+        completionRate: 0,
+        averageRating: 0,
+        totalRevenue: 0,
+      };
+
+      return {
+        engineerId: engineer._id.toString(),
+        engineerName: `${engineer.firstName || ''} ${engineer.lastName || ''}`.trim() || 'بدون اسم',
+        engineerPhone: engineer.phone,
+        totalRequests: stats.totalRequests,
+        completedRequests: stats.completedRequests,
+        completionRate: stats.completionRate,
+        averageRating: stats.averageRating,
+        totalRevenue: stats.totalRevenue,
+      };
+    });
 
     return { items, meta: { page, limit, total } };
   }

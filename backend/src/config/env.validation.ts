@@ -44,6 +44,21 @@ export const envSchema = z.object({
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
   ENABLE_SECURITY_LOGGING: z.coerce.boolean().default(true),
   VERBOSE_SECURITY_LOGGING: z.coerce.boolean().optional(),
+
+  // SMS Provider Configuration
+  SMS_PROVIDER: z.enum(['twilio', 'alawael']).default('alawael'),
+  
+  // Twilio Configuration (optional if using Alawael)
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_PHONE_NUMBER: z.string().optional(),
+  TWILIO_WHATSAPP_NUMBER: z.string().optional(),
+  
+  // Alawael SMS Configuration
+  ALAWAEL_SMS_ORG_NAME: z.string().optional(),
+  ALAWAEL_SMS_USER_NAME: z.string().optional(),
+  ALAWAEL_SMS_PASSWORD: z.string().optional(),
+  ALAWAEL_SMS_BASE_URL: z.string().url().optional(),
 });
 
 export type EnvType = z.infer<typeof envSchema>;

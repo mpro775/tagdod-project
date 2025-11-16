@@ -46,6 +46,7 @@ import {
   RefundOrderDto,
   RateOrderDto,
   ListOrdersDto,
+  ListRatingsDto,
   OrderAnalyticsDto,
   AddOrderNotesDto,
   VerifyPaymentDto,
@@ -1979,7 +1980,9 @@ export class OrderService {
       sortBy = 'createdAt',
       sortOrder = 'desc',
       fromDate,
-      toDate
+      toDate,
+      hasRating,
+      minRating
     } = query;
 
     const skip = (page - 1) * limit;
@@ -2004,6 +2007,33 @@ export class OrderService {
       ];
     }
 
+    // فلترة حسب التقييم
+    if (hasRating !== undefined) {
+      if (hasRating) {
+        filter['ratingInfo.rating'] = { $exists: true, $ne: null };
+      } else {
+        const existingOr = filter.$or as unknown[] | undefined;
+        const ratingOr = [
+          { 'ratingInfo.rating': { $exists: false } },
+          { 'ratingInfo.rating': null }
+        ];
+        if (existingOr) {
+          filter.$or = [...existingOr, ...ratingOr];
+        } else {
+          filter.$or = ratingOr;
+        }
+      }
+    }
+    if (minRating !== undefined) {
+      const ratingFilter: Record<string, unknown> = { $gte: minRating };
+      if (filter['ratingInfo.rating']) {
+        const existingRatingFilter = filter['ratingInfo.rating'] as Record<string, unknown>;
+        filter['ratingInfo.rating'] = { ...existingRatingFilter, ...ratingFilter };
+      } else {
+        filter['ratingInfo.rating'] = ratingFilter;
+      }
+    }
+
     const sort: Record<string, 1 | -1> = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
@@ -2024,6 +2054,41 @@ export class OrderService {
 
     const usersMap = userIds.length > 0 ? await this.getUsersMap(userIds) : new Map();
 
+    // جلب أنواع الحسابات المحلية للطلبات التي تستخدمها
+    const localPaymentAccountIds = orders
+      .map((order) => order.localPaymentAccountId)
+      .filter((id): id is string => Boolean(id));
+    
+    const accountTypesMap = new Map<string, string>();
+    if (localPaymentAccountIds.length > 0) {
+      try {
+        const uniqueAccountIds = Array.from(new Set(localPaymentAccountIds));
+        // جلب نوع الحساب لكل حساب محلي
+        await Promise.all(
+          uniqueAccountIds.map(async (accountId) => {
+            try {
+              // البحث عن الطلب الذي يستخدم هذا الحساب للحصول على العملة
+              const orderWithAccount = orders.find((o) => o.localPaymentAccountId === accountId);
+              const currency = orderWithAccount?.currency || 'USD';
+              
+              const selection = await this.localPaymentAccountService.resolveAccountSelection(
+                accountId,
+                currency,
+              );
+              if (selection) {
+                accountTypesMap.set(accountId, selection.type);
+              }
+            } catch (error) {
+              // تجاهل الأخطاء في جلب نوع الحساب
+              this.logger.debug(`Failed to resolve account type for ${accountId}: ${error}`);
+            }
+          })
+        );
+      } catch (error) {
+        this.logger.warn(`Failed to load account types: ${error}`);
+      }
+    }
+
     const enhancedOrders = orders.map((order) => {
       const userInfo = order.userId ? usersMap.get(order.userId.toString()) : undefined;
       const existingCustomerName = (order as { customerName?: string }).customerName;
@@ -2043,11 +2108,17 @@ export class OrderService {
         },
       };
 
+      // إضافة نوع الحساب المحلي إذا كان موجوداً
+      const localPaymentAccountType = order.localPaymentAccountId
+        ? accountTypesMap.get(order.localPaymentAccountId)
+        : undefined;
+
       return {
         ...order,
         customerName,
         customerPhone: userInfo?.phone ?? existingCustomerPhone,
         metadata: updatedMetadata,
+        ...(localPaymentAccountType ? { localPaymentAccountType } : {}),
       };
     });
 
@@ -2081,6 +2152,27 @@ export class OrderService {
     const order = await this.orderModel.findOne(filter);
     if (!order) {
       throw new OrderNotFoundException();
+    }
+
+    // إضافة نوع الحساب المحلي إذا كان موجوداً
+    let localPaymentAccountType: string | undefined;
+    if (order.localPaymentAccountId) {
+      try {
+        const selection = await this.localPaymentAccountService.resolveAccountSelection(
+          order.localPaymentAccountId,
+          order.currency || 'USD',
+        );
+        if (selection) {
+          localPaymentAccountType = selection.type;
+        }
+      } catch (error) {
+        this.logger.debug(`Failed to resolve account type for order ${orderId}: ${error}`);
+      }
+    }
+
+    // إضافة نوع الحساب للطلب
+    if (localPaymentAccountType) {
+      (order as unknown as { localPaymentAccountType?: string }).localPaymentAccountType = localPaymentAccountType;
     }
 
     return order;
@@ -2389,6 +2481,200 @@ export class OrderService {
    */
   async getAllOrders(query: ListOrdersDto) {
     return this.getUserOrders('', query); // استخدام نفس المنطق بدون فلتر المستخدم
+  }
+
+  /**
+   * الحصول على تقييمات الطلبات (للإدارة)
+   */
+  async getRatings(query: ListRatingsDto) {
+    const {
+      page = 1,
+      limit = 20,
+      minRating,
+      maxRating,
+      search,
+      sortOrder = 'desc',
+      fromDate,
+      toDate
+    } = query;
+
+    const skip = (page - 1) * limit;
+    const filter: Record<string, unknown> = {
+      'ratingInfo.rating': { $exists: true, $ne: null }
+    };
+
+    // فلترة حسب التقييم
+    if (minRating !== undefined || maxRating !== undefined) {
+      const ratingFilter: Record<string, unknown> = {};
+      if (minRating !== undefined) ratingFilter.$gte = minRating;
+      if (maxRating !== undefined) ratingFilter.$lte = maxRating;
+      filter['ratingInfo.rating'] = ratingFilter;
+    }
+
+    // فلترة حسب التاريخ
+    if (fromDate || toDate) {
+      filter['ratingInfo.ratedAt'] = {} as Record<string, unknown>;
+      if (fromDate) (filter['ratingInfo.ratedAt'] as Record<string, unknown>).$gte = new Date(fromDate);
+      if (toDate) (filter['ratingInfo.ratedAt'] as Record<string, unknown>).$lte = new Date(toDate);
+    }
+
+    // البحث في رقم الطلب أو التقييم
+    if (search) {
+      filter.$or = [
+        { orderNumber: { $regex: search, $options: 'i' } },
+        { 'ratingInfo.review': { $regex: search, $options: 'i' } },
+        { 'deliveryAddress.recipientName': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const sort: Record<string, 1 | -1> = {};
+    sort['ratingInfo.ratedAt'] = sortOrder === 'desc' ? -1 : 1;
+
+    const [orders, total] = await Promise.all([
+      this.orderModel
+        .find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.orderModel.countDocuments(filter)
+    ]);
+
+    const userIds = orders
+      .map((order) => order.userId)
+      .filter((id): id is Types.ObjectId => !!id)
+      .map((id) => new Types.ObjectId(id));
+
+    const usersMap = userIds.length > 0 ? await this.getUsersMap(userIds) : new Map();
+
+    const ratings = orders.map((order) => {
+      const userInfo = order.userId ? usersMap.get(order.userId.toString()) : undefined;
+      const customerName =
+        userInfo?.fullName ||
+        (order as { customerName?: string }).customerName ||
+        order.deliveryAddress?.recipientName ||
+        'غير محدد';
+
+      return {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        customerName,
+        customerPhone: userInfo?.phone,
+        rating: order.ratingInfo?.rating,
+        review: order.ratingInfo?.review,
+        ratedAt: order.ratingInfo?.ratedAt,
+        orderStatus: order.status,
+        orderTotal: order.total,
+        orderCurrency: order.currency,
+        createdAt: order.createdAt
+      };
+    });
+
+    return {
+      ratings,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  /**
+   * الحصول على إحصائيات التقييمات (للإدارة)
+   */
+  async getRatingsStats() {
+    const [
+      totalRatings,
+      averageRating,
+      ratingsByValue,
+      recentRatings,
+      ratingsWithReviews
+    ] = await Promise.all([
+      // إجمالي التقييمات
+      this.orderModel.countDocuments({
+        'ratingInfo.rating': { $exists: true, $ne: null }
+      }),
+      // متوسط التقييم
+      this.orderModel.aggregate([
+        {
+          $match: {
+            'ratingInfo.rating': { $exists: true, $ne: null }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            averageRating: { $avg: '$ratingInfo.rating' },
+            totalRatings: { $sum: 1 }
+          }
+        }
+      ]),
+      // التوزيع حسب القيمة
+      this.orderModel.aggregate([
+        {
+          $match: {
+            'ratingInfo.rating': { $exists: true, $ne: null }
+          }
+        },
+        {
+          $group: {
+            _id: '$ratingInfo.rating',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { _id: -1 }
+        }
+      ]),
+      // آخر التقييمات
+      this.orderModel
+        .find({
+          'ratingInfo.rating': { $exists: true, $ne: null }
+        })
+        .sort({ 'ratingInfo.ratedAt': -1 })
+        .limit(5)
+        .select('orderNumber ratingInfo.rating ratingInfo.review ratingInfo.ratedAt')
+        .lean(),
+      // التقييمات مع مراجعات
+      this.orderModel.countDocuments({
+        'ratingInfo.rating': { $exists: true, $ne: null },
+        'ratingInfo.review': { $exists: true, $nin: [null, ''] }
+      })
+    ]);
+
+    const avgRatingResult = averageRating[0];
+    const avgRating = avgRatingResult?.averageRating
+      ? Math.round(avgRatingResult.averageRating * 10) / 10
+      : 0;
+
+    const ratingsDistribution = ratingsByValue.reduce(
+      (acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      },
+      {} as Record<number, number>
+    );
+
+    return {
+      totalRatings,
+      averageRating: avgRating,
+      ratingsDistribution: {
+        5: ratingsDistribution[5] || 0,
+        4: ratingsDistribution[4] || 0,
+        3: ratingsDistribution[3] || 0,
+        2: ratingsDistribution[2] || 0,
+        1: ratingsDistribution[1] || 0
+      },
+      ratingsWithReviews,
+      recentRatings: recentRatings.map((order) => ({
+        orderNumber: order.orderNumber,
+        rating: order.ratingInfo?.rating,
+        review: order.ratingInfo?.review,
+        ratedAt: order.ratingInfo?.ratedAt
+      }))
+    };
   }
 
   /**

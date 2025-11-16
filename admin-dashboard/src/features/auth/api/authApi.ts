@@ -72,6 +72,7 @@ export const authApi = {
     firstName?: string;
     lastName?: string;
     gender?: string;
+    city?: string;
     jobTitle?: string;
   }) => {
     const response = await apiClient.patch<ApiResponse<{ updated: boolean }>>('/auth/me', data);

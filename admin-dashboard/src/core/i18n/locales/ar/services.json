@@ -13,6 +13,7 @@
     "title": "العنوان",
     "description": "الوصف",
     "type": "النوع",
+    "images": "الصور",
     "status": "الحالة",
     "customer": "العميل",
     "engineer": "المهندس",

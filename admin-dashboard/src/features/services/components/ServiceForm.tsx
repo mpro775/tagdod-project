@@ -189,16 +189,6 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
         />
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <TextField
-          fullWidth
-          label={t('form.engineerEmail')}
-          type="email"
-          value={formData.engineerEmail || ''}
-          onChange={(e) => handleInputChange('engineerEmail', e.target.value)}
-          size={isMobile ? 'small' : 'medium'}
-        />
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
         <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
           <InputLabel>{t('form.specialization')}</InputLabel>
           <Select

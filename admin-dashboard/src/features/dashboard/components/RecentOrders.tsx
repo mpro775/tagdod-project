@@ -40,16 +40,39 @@ interface RecentOrdersProps {
 export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading }) => {
   const theme = useTheme();
   const { t, i18n } = useTranslation(['dashboard']);
-  // Always use English numbers, regardless of language
-  const locale = React.useMemo(() => (i18n.language === 'ar' ? 'ar-SA' : 'en-US'), [i18n.language]);
+  // Use Gregorian calendar (Miladi) - 'ar' uses Gregorian, 'ar-SA' uses Hijri
+  const dateFormatter = React.useMemo(
+    () =>
+      new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar' : 'en-US', {
+        day: 'numeric',
+        month: 'short',
+        calendar: 'gregory', // Explicitly use Gregorian calendar
+      }),
+    [i18n.language]
+  );
   const currencyFormatter = React.useMemo(
     () =>
       new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: i18n.language === 'ar' ? 'YER' : 'USD',
+        currency: 'USD', // دائماً استخدام الدولار
         maximumFractionDigits: 0,
       }),
-    [i18n.language]
+    []
+  );
+
+  // Format date using Gregorian calendar - يجب أن يكون قبل أي early returns
+  const formatDate = React.useCallback(
+    (dateString: string): string => {
+      try {
+        const date = new Date(dateString);
+        return dateFormatter.format(date);
+      } catch {
+        // Fallback to simple format if Intl API fails
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      }
+    },
+    [dateFormatter]
   );
 
   const getStatusConfig = (status: string) => {
@@ -112,12 +135,6 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
       </Card>
     );
   }
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
-  };
 
   return (
     <Card>

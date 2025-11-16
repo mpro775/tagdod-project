@@ -11,11 +11,15 @@ interface CategoryData {
 
 interface CategoryDistributionProps {
   salesData?: any;
+  revenueCharts?: {
+    byCategory?: Array<{ category: string; revenue: number; percentage?: number }>;
+  };
   isLoading?: boolean;
 }
 
 export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({ 
   salesData,
+  revenueCharts,
   isLoading 
 }) => {
   const theme = useTheme();
@@ -31,15 +35,48 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
   ];
 
   // Use real data from API or fallback to empty
-  // Priority: salesByCategory > categoryBreakdown > revenueByCategory
+  // Priority: salesByCategory > revenueCharts.byCategory > categoryBreakdown > revenueByCategory
   let categoryData: any[] = [];
   
-  if (salesData) {
-    categoryData = 
-      salesData?.salesByCategory || 
-      salesData?.categoryBreakdown || 
-      salesData?.revenueByCategory || 
-      [];
+  // Debug logging (يمكن إزالتها لاحقاً)
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log('CategoryDistribution - salesData:', salesData);
+    // eslint-disable-next-line no-console
+    console.log('CategoryDistribution - revenueCharts:', revenueCharts);
+    // eslint-disable-next-line no-console
+    console.log('CategoryDistribution - isLoading:', isLoading);
+  }
+  
+  // معالجة البيانات فقط إذا لم تكن قيد التحميل
+  if (!isLoading) {
+    if (salesData && typeof salesData === 'object') {
+      // جرب جميع الحقول المحتملة
+      if (Array.isArray(salesData.salesByCategory) && salesData.salesByCategory.length > 0) {
+        categoryData = salesData.salesByCategory;
+      } else if (Array.isArray(salesData.categoryBreakdown) && salesData.categoryBreakdown.length > 0) {
+        categoryData = salesData.categoryBreakdown;
+      } else if (Array.isArray(salesData.revenueByCategory) && salesData.revenueByCategory.length > 0) {
+        categoryData = salesData.revenueByCategory;
+      }
+    }
+    
+    // Fallback to dashboard revenueCharts.byCategory if salesData is empty
+    if (categoryData.length === 0 && revenueCharts && typeof revenueCharts === 'object') {
+      if (Array.isArray(revenueCharts.byCategory) && revenueCharts.byCategory.length > 0) {
+        categoryData = revenueCharts.byCategory.map((cat) => ({
+          categoryName: cat.category,
+          category: cat.category,
+          revenue: cat.revenue || 0,
+          percentage: cat.percentage,
+        }));
+      }
+    }
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log('CategoryDistribution - categoryData:', categoryData);
   }
   
   const totalRevenue = salesData?.totalRevenue || 
@@ -47,16 +84,26 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
                        1;
 
   const chartData: CategoryData[] = categoryData.length > 0 
-    ? categoryData.map((cat: any, index: number) => {
-        const revenue = cat.revenue || cat.totalRevenue || 0;
-        const percentage = cat.percentage || Math.round((revenue / totalRevenue) * 100);
-        
-        return {
-          name: cat.categoryName || cat.category || cat.name || t('categoryDistribution.unknown', 'غير محدد'),
-          value: percentage || 0,
-          color: PREDEFINED_COLORS[index % PREDEFINED_COLORS.length],
-        };
-      })
+    ? categoryData
+        .filter((cat: any) => {
+          // تصفية الفئات التي لديها إيرادات أكبر من 0
+          const revenue = cat.revenue || cat.totalRevenue || 0;
+          return revenue > 0;
+        })
+        .map((cat: any, index: number) => {
+          const revenue = cat.revenue || cat.totalRevenue || 0;
+          const percentage = cat.percentage !== undefined 
+            ? cat.percentage 
+            : totalRevenue > 0 
+              ? Math.round((revenue / totalRevenue) * 100) 
+              : 0;
+          
+          return {
+            name: cat.categoryName || cat.category || cat.name || t('categoryDistribution.unknown', 'غير محدد'),
+            value: percentage || 0,
+            color: PREDEFINED_COLORS[index % PREDEFINED_COLORS.length],
+          };
+        })
     : [];
 
   const COLORS = chartData.map(item => item.color || theme.palette.primary.main);

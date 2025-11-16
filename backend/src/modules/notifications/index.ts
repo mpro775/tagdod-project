@@ -14,4 +14,5 @@ export * from './adapters/notification.adapters';
 export * from './adapters/fcm.adapter';
 export * from './adapters/email.adapter';
 export * from './adapters/sms.adapter';
+export * from './adapters/alawael-sms.adapter';
 export * from './templates';

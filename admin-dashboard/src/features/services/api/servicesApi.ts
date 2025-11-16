@@ -24,8 +24,8 @@ import type {
 
 export const servicesApi = {
   // === إدارة الطلبات ===
-  list: async (params: ListServicesParams = {}): Promise<{ data: ServiceRequest[]; meta: any }> => {
-    const response = await apiClient.get<ApiResponse<{ data: ServiceRequest[]; meta: any }>>(
+  list: async (params: ListServicesParams = {}): Promise<{ items: ServiceRequest[]; meta: any }> => {
+    const response = await apiClient.get<ApiResponse<{ items: ServiceRequest[]; meta: any }>>(
       '/services/admin/requests',
       {
         params: sanitizePaginationParams(params),
@@ -130,8 +130,8 @@ export const servicesApi = {
 
   getEngineersList: async (
     params: ListEngineersParams = {}
-  ): Promise<{ data: EngineerDetails[]; meta: any }> => {
-    const response = await apiClient.get<ApiResponse<{ data: EngineerDetails[]; meta: any }>>(
+  ): Promise<{ items: EngineerDetails[]; meta: any }> => {
+    const response = await apiClient.get<ApiResponse<{ items: EngineerDetails[]; meta: any }>>(
       '/services/admin/engineers',
       {
         params,
@@ -174,8 +174,8 @@ export const servicesApi = {
 
   getOffersList: async (
     params: ListOffersParams = {}
-  ): Promise<{ data: EngineerOffer[]; meta: any }> => {
-    const response = await apiClient.get<ApiResponse<{ data: EngineerOffer[]; meta: any }>>(
+  ): Promise<{ items: EngineerOffer[]; meta: any }> => {
+    const response = await apiClient.get<ApiResponse<{ items: EngineerOffer[]; meta: any }>>(
       '/services/admin/offers',
       {
         params,

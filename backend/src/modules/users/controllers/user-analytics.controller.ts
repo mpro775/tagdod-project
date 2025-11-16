@@ -240,19 +240,63 @@ export class UserAnalyticsController {
       // جلب العملاء المعرضين لخطر الفقدان
       const rankings = await this.userAnalyticsService.getCustomerRankings(100);
 
-      // تحليل مخاطر الفقدان (سيتم تطويره لاحقاً)
-      const churnRiskCustomers = rankings.slice(0, 10).map((customer) => ({
-        ...customer,
-        churnRisk: 'medium' as const,
-        lastOrderDays: 45, // سيتم حسابها من البيانات الفعلية
-        recommendedAction: 'تواصل شخصي مع العميل',
-      }));
+      const now = new Date();
+
+      // تحليل مخاطر الفقدان بناءً على البيانات الفعلية
+      const churnRiskCustomers = rankings.map((customer) => {
+        // حساب الأيام منذ آخر طلب
+        let lastOrderDays = 0;
+        if (customer.lastOrderDate) {
+          const lastOrderDate = typeof customer.lastOrderDate === 'string' 
+            ? new Date(customer.lastOrderDate) 
+            : customer.lastOrderDate;
+          const diffTime = now.getTime() - lastOrderDate.getTime();
+          lastOrderDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        // تحديد مستوى المخاطرة بناءً على الأيام منذ آخر طلب
+        let churnRisk: 'low' | 'medium' | 'high' = 'low';
+        let recommendedAction = 'لا يوجد إجراء مطلوب';
+
+        if (lastOrderDays > 90) {
+          churnRisk = 'high';
+          recommendedAction = 'إرسال عرض خاص أو كوبون خصم لاستعادة العميل';
+        } else if (lastOrderDays > 30) {
+          churnRisk = 'medium';
+          recommendedAction = 'تواصل شخصي مع العميل وإرسال تذكير بالمنتجات الجديدة';
+        } else if (lastOrderDays > 14) {
+          churnRisk = 'low';
+          recommendedAction = 'إرسال تذكير لطيف بالمنتجات الجديدة';
+        } else {
+          churnRisk = 'low';
+          recommendedAction = 'العميل نشط - لا يوجد إجراء مطلوب';
+        }
+
+        return {
+          ...customer,
+          churnRisk,
+          lastOrderDays,
+          recommendedAction,
+        };
+      });
+
+      // ترتيب العملاء حسب مستوى المخاطرة (الأعلى أولاً)
+      churnRiskCustomers.sort((a, b) => {
+        const riskOrder = { high: 3, medium: 2, low: 1 };
+        if (riskOrder[a.churnRisk] !== riskOrder[b.churnRisk]) {
+          return riskOrder[b.churnRisk] - riskOrder[a.churnRisk];
+        }
+        return b.lastOrderDays - a.lastOrderDays;
+      });
+
+      // إرجاع أفضل 10 عملاء معرضين للخطر
+      const topAtRisk = churnRiskCustomers.slice(0, 10);
 
       return {
         alertType: 'churn_risk',
-        customers: churnRiskCustomers,
-        totalAtRisk: churnRiskCustomers.length,
-        generatedAt: new Date(),
+        customers: topAtRisk,
+        totalAtRisk: churnRiskCustomers.filter(c => c.churnRisk !== 'low').length,
+        generatedAt: now,
       };
     } catch (error) {
       throw new HttpException(

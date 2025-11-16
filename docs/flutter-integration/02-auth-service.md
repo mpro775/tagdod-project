@@ -45,7 +45,7 @@
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام بدون 967+) |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (يمكن بدون +967، سيتم إضافتها تلقائياً) |
 | `context` | `string` | ❌ لا | `register` أو `reset` (افتراضي: `register`) |
 
 ### Response - نجاح
@@ -119,7 +119,11 @@ Future<Map<String, dynamic>> sendOtp({
 
 ## 2. التحقق من OTP وتسجيل الدخول
 
-يتحقق من رمز OTP ويقوم بإنشاء حساب جديد أو تسجيل الدخول.
+يتحقق من رمز OTP ويقوم بإنشاء حساب جديد أو تفعيل حساب موجود.
+
+> ⚠️ **مهم:** إذا كان الحساب بحالة `PENDING` (من `/auth/user-signup`)، سيتم تفعيله إلى `ACTIVE` تلقائياً!
+>
+> 📱 **تطبيع الأرقام:** يمكنك إدخال الرقم بدون `+967` - سيتم تطبيعه تلقائياً
 
 > 💡 **أنواع الحسابات التي يمكن إنشاؤها:**
 > - **Customer (زبون عادي)** - الافتراضي - لا تحتاج `capabilityRequest`
@@ -152,7 +156,7 @@ Future<Map<String, dynamic>> sendOtp({
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (يمكن بدون +967، سيتم تطبيعه تلقائياً) |
 | `code` | `string` | ✅ نعم | رمز OTP (6 أرقام) |
 | `firstName` | `string` | ❌ لا | الاسم الأول (مطلوب للمستخدمين الجدد) |
 | `lastName` | `string` | ❌ لا | اسم العائلة |
@@ -173,10 +177,10 @@ Future<Map<String, dynamic>> sendOtp({
       "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     },
     "me": {
-      "id": "64a1b2c3d4e5f6789",
-      "phone": "777123456",
-      "firstName": "أحمد",
-      "lastName": "محمد",
+      "id": "6919f0ab09109803961fe85a",
+      "phone": "+967775815074",
+      "firstName": "محمد",
+      "lastName": "مراد",
       "gender": "male",
       "city": "صنعاء",
       "jobTitle": "مهندس كهرباء",
@@ -195,9 +199,13 @@ Future<Map<String, dynamic>> sendOtp({
       "adminStatus": "none"
     }
   },
-  "requestId": "req_456"
+  "requestId": "8d724a06-514a-4312-95ba-0fe4a1509a4b"
 }
 ```
+
+> **ملاحظة:** 
+> - الرقم يتم إرجاعه بصيغة `+967XXXXXXXXX` (مطبيع)
+> - إذا كان الحساب كان `PENDING` من `/auth/user-signup`، يتم تفعيله إلى `ACTIVE` تلقائياً
 
 ### Response - فشل
 
@@ -542,7 +550,9 @@ Future<bool> setPassword(String password) async {
 
 ## 4. نسيت كلمة المرور
 
-يرسل OTP لإعادة تعيين كلمة المرور.
+يرسل OTP لإعادة تعيين كلمة المرور عبر SMS.
+
+> 📱 **تطبيع الأرقام:** يمكنك إدخال الرقم بدون `+967` - سيتم إضافتها تلقائياً
 
 ### معلومات الطلب
 
@@ -554,9 +564,11 @@ Future<bool> setPassword(String password) async {
 
 ```json
 {
-  "phone": "777123456"
+  "phone": "775815074"
 }
 ```
+
+> **ملاحظة:** يمكنك إدخال الرقم بدون `+967` - سيتم تطبيعه تلقائياً إلى `+967775815074`
 
 ### Response - نجاح
 
@@ -571,7 +583,9 @@ Future<bool> setPassword(String password) async {
 }
 ```
 
-### Response - فشل
+> **ملاحظة:** `devCode` موجود فقط في بيئة التطوير (`OTP_DEV_ECHO=true`)
+
+### Response - فشل (المستخدم غير موجود)
 
 ```json
 {
@@ -588,13 +602,40 @@ Future<bool> setPassword(String password) async {
 }
 ```
 
+### Response - فشل (رقم هاتف غير صحيح)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "GENERAL_004",
+    "message": "خطأ في التحقق من البيانات",
+    "details": {
+      "phone": "775815074",
+      "message": "رقم الهاتف غير صحيح"
+    },
+    "fieldErrors": null
+  },
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:32:00.000Z",
+  "path": "/api/auth/forgot-password"
+}
+```
+
+### ما يحدث:
+
+1. ✅ يتم تطبيع الرقم من `775815074` إلى `+967775815074`
+2. ✅ يتم التحقق من وجود المستخدم في قاعدة البيانات
+3. ✅ يتم إرسال OTP عبر SMS إلى `+967775815074`
+4. ✅ يتم حفظ OTP في Redis لمدة محددة (افتراضي: 5 دقائق)
+
 ### كود Flutter
 
 ```dart
 Future<Map<String, dynamic>> forgotPassword(String phone) async {
   final response = await _dio.post(
     '/auth/forgot-password',
-    data: {'phone': phone},
+    data: {'phone': phone},  // يمكن بدون +967
   );
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
@@ -614,7 +655,11 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
 
 ## 5. إعادة تعيين كلمة المرور
 
-يعيد تعيين كلمة المرور باستخدام OTP.
+يعيد تعيين كلمة المرور باستخدام OTP المرسل عبر SMS.
+
+> 📱 **تطبيع الأرقام:** يمكنك إدخال الرقم بدون `+967` - سيتم تطبيعه تلقائياً
+>
+> ⚠️ **مهم:** يجب استخدام OTP المرسل من `/auth/forgot-password` أولاً!
 
 ### معلومات الطلب
 
@@ -626,11 +671,19 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
 
 ```json
 {
-  "phone": "777123456",
+  "phone": "775815074",
   "code": "123456",
   "newPassword": "MyNewPassword123!"
 }
 ```
+
+> **ملاحظة:** يمكنك إدخال الرقم بدون `+967` - سيتم تطبيعه تلقائياً
+
+| الحقل | النوع | مطلوب | الوصف |
+|------|------|-------|-------|
+| `phone` | `string` | ✅ نعم | رقم الهاتف (يمكن بدون +967) |
+| `code` | `string` | ✅ نعم | رمز OTP المرسل عبر SMS (6 أرقام) |
+| `newPassword` | `string` | ✅ نعم | كلمة المرور الجديدة (8 أحرف على الأقل) |
 
 ### Response - نجاح
 
@@ -644,6 +697,60 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
 }
 ```
 
+### Response - فشل (OTP غير صحيح)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_100",
+    "message": "رمز التحقق غير صالح",
+    "details": {
+      "phone": "+967775815074"
+    },
+    "fieldErrors": null
+  },
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:33:00.000Z",
+  "path": "/api/auth/reset-password"
+}
+```
+
+### Response - فشل (المستخدم غير موجود)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_103",
+    "message": "المستخدم غير موجود",
+    "details": null,
+    "fieldErrors": null
+  },
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:33:00.000Z",
+  "path": "/api/auth/reset-password"
+}
+```
+
+### ما يحدث:
+
+1. ✅ يتم تطبيع الرقم من `775815074` إلى `+967775815074`
+2. ✅ يتم التحقق من OTP في Redis
+3. ✅ يتم التحقق من وجود المستخدم في قاعدة البيانات
+4. ✅ يتم تحديث كلمة المرور في قاعدة البيانات
+5. ✅ يتم حذف OTP من Redis (لا يمكن استخدامه مرة أخرى)
+
+### التدفق الكامل:
+
+```
+1. POST /auth/forgot-password
+   → إرسال OTP عبر SMS
+   
+2. POST /auth/reset-password
+   → التحقق من OTP + تحديث كلمة المرور
+```
+
 ### كود Flutter
 
 ```dart
@@ -655,7 +762,7 @@ Future<bool> resetPassword({
   final response = await _dio.post(
     '/auth/reset-password',
     data: {
-      'phone': phone,
+      'phone': phone,  // يمكن بدون +967
       'code': code,
       'newPassword': newPassword,
     },
@@ -667,6 +774,24 @@ Future<bool> resetPassword({
   );
 
   return apiResponse.isSuccess && apiResponse.data!['updated'] == true;
+}
+
+// مثال الاستخدام الكامل:
+Future<void> resetPasswordFlow(String phone) async {
+  // 1. طلب OTP
+  final forgotResult = await forgotPassword(phone);
+  // Response: { sent: true, devCode: "123456" }
+  
+  // 2. إعادة تعيين كلمة المرور باستخدام OTP
+  final resetSuccess = await resetPassword(
+    phone: phone,
+    code: '123456',  // OTP المرسل عبر SMS
+    newPassword: 'MyNewPassword123!',
+  );
+  
+  if (resetSuccess) {
+    print('تم تحديث كلمة المرور بنجاح');
+  }
 }
 ```
 
@@ -1122,7 +1247,7 @@ Future<void> _clearLocalData() async {
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام) |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (يمكن بدون +967، سيتم تطبيعه تلقائياً) |
 | `password` | `string` | ✅ نعم | كلمة المرور |
 
 ### Response - نجاح
@@ -1218,13 +1343,36 @@ Future<void> _clearLocalData() async {
 }
 ```
 
+### Response - فشل (حساب PENDING)
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_126",
+    "message": "الحساب غير نشط",
+    "details": {
+      "phone": "+967775815074",
+      "status": "pending",
+      "message": "الحساب في انتظار التحقق من رقم الهاتف. يرجى التحقق من OTP المرسل"
+    },
+    "fieldErrors": null
+  },
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2023-12-01T10:34:00.000Z",
+  "path": "/api/auth/user-login"
+}
+```
+
+> ⚠️ **مهم:** إذا كان الحساب `PENDING`، يجب التحقق من OTP أولاً عبر `/auth/verify-otp` قبل تسجيل الدخول بكلمة المرور!
+
 ### أكواد الأخطاء
 
 | الكود | الوصف | HTTP Status |
 |------|-------|-------------|
 | `AUTH_104` | كلمة المرور غير صحيحة | 401 |
 | `AUTH_125` | كلمة المرور غير محددة | 400 |
-| `AUTH_126` | الحساب غير نشط | 400 |
+| `AUTH_126` | الحساب غير نشط (PENDING/SUSPENDED/DELETED) | 400 |
 
 ### كود Flutter
 
@@ -1260,12 +1408,16 @@ Future<LoginResponse> userLogin({
 
 ## 11. إنشاء حساب جديد بكلمة المرور
 
-يسمح بإنشاء حساب جديد مباشرة باستخدام كلمة مرور (بدون OTP).
+يسمح بإنشاء حساب جديد باستخدام كلمة مرور مع إرسال OTP تلقائياً للتحقق من رقم الهاتف.
 
+> ⚠️ **مهم:** الحساب يُنشأ بحالة `PENDING` ويحتاج التحقق من OTP قبل تسجيل الدخول!
+> 
 > 💡 **أنواع الحسابات:**
 > - **Customer (زبون عادي)** - لا تحتاج `capabilityRequest`
 > - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle`
 > - **Merchant (تاجر)** - تحتاج `capabilityRequest: "merchant"`
+>
+> 📱 **تطبيع الأرقام:** يمكنك إدخال الرقم بدون `+967` - سيتم إضافتها تلقائياً (مثال: `775815074` → `+967775815074`)
 
 ### معلومات الطلب
 
@@ -1291,7 +1443,7 @@ Future<LoginResponse> userLogin({
 
 | الحقل | النوع | مطلوب | الوصف |
 |------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (9 أرقام) |
+| `phone` | `string` | ✅ نعم | رقم الهاتف (يمكن بدون +967، سيتم إضافتها تلقائياً) |
 | `password` | `string` | ✅ نعم | كلمة المرور |
 | `firstName` | `string` | ✅ نعم | الاسم الأول |
 | `lastName` | `string` | ✅ نعم | اسم العائلة |
@@ -1303,79 +1455,28 @@ Future<LoginResponse> userLogin({
 
 ### Response - نجاح
 
-#### مثال 1: تسجيل كـ Customer عادي (بدون capabilityRequest)
+> ⚠️ **مهم:** Response لا يحتوي على Tokens - يجب التحقق من OTP أولاً!
 
 ```json
 {
   "success": true,
   "data": {
-    "tokens": {
-      "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    },
-    "me": {
-      "id": "64a1b2c3d4e5f6789",
-      "phone": "777123456",
-      "firstName": "أحمد",
-      "lastName": "محمد",
-      "gender": "male",
-      "city": "صنعاء",
-      "jobTitle": null,
-      "roles": ["user"],
-      "permissions": [],
-      "isAdmin": false,
-      "preferredCurrency": "USD",
-      "status": "active",
-      "customerCapable": true,
-      "engineerCapable": false,
-      "engineerStatus": "none",
-      "merchantCapable": false,
-      "merchantStatus": "none",
-      "merchantDiscountPercent": 0,
-      "adminCapable": false,
-      "adminStatus": "none"
-    }
+    "success": true,
+    "message": "تم إنشاء الحساب بنجاح. يرجى التحقق من رقم الهاتف عبر رمز OTP المرسل",
+    "phone": "+967775815074",
+    "requiresVerification": true
   },
-  "requestId": "req_456"
+  "requestId": "72035727-ada1-458b-8530-790f92b30b59"
 }
 ```
 
-#### مثال 2: تسجيل كمهندس (مع capabilityRequest: "engineer")
+**ما يحدث:**
+1. ✅ يتم تطبيع الرقم من `775815074` إلى `+967775815074`
+2. ✅ يتم إنشاء الحساب بحالة `PENDING` (غير مفعّل)
+3. ✅ يتم إرسال OTP عبر SMS تلقائياً إلى `+967775815074`
+4. ⚠️ **لا يتم إرجاع Tokens** - يجب التحقق من OTP أولاً عبر `/auth/verify-otp`
 
-```json
-{
-  "success": true,
-  "data": {
-    "tokens": {
-      "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    },
-    "me": {
-      "id": "64a1b2c3d4e5f6789",
-      "phone": "777123456",
-      "firstName": "أحمد",
-      "lastName": "محمد",
-      "gender": "male",
-      "city": "صنعاء",
-      "jobTitle": "مهندس كهرباء",
-      "roles": ["user"],
-      "permissions": [],
-      "isAdmin": false,
-      "preferredCurrency": "USD",
-      "status": "active",
-      "customerCapable": true,
-      "engineerCapable": true,
-      "engineerStatus": "unverified",
-      "merchantCapable": false,
-      "merchantStatus": "none",
-      "merchantDiscountPercent": 0,
-      "adminCapable": false,
-      "adminStatus": "none"
-    }
-  },
-  "requestId": "req_801"
-}
-```
+**الخطوة التالية:** استخدم `/auth/verify-otp` للتحقق من OTP وتفعيل الحساب
 
 ### Response - فشل
 
@@ -1402,26 +1503,42 @@ Future<LoginResponse> userLogin({
 | `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
 | `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
 
+### ⚠️ ملاحظة مهمة عن التدفق
+
+**الخطوات المطلوبة:**
+1. **إنشاء الحساب** → `/auth/user-signup` → الحساب `PENDING` + إرسال OTP
+2. **التحقق من OTP** → `/auth/verify-otp` → تفعيل الحساب إلى `ACTIVE` + إرجاع Tokens
+3. **تسجيل الدخول** → `/auth/user-login` → الآن ممكن لأن الحساب `ACTIVE`
+
 ### ⚠️ ملاحظة مهمة عن أنواع الحسابات
 
 #### **1. Customer (زبون عادي) - الافتراضي:**
 ```dart
 // لا تحتاج إرسال capabilityRequest
-final response = await userSignup(
-  phone: '777123456',
+final signupResponse = await userSignup(
+  phone: '775815074',  // بدون +967
   password: 'MyPassword123!',
   firstName: 'أحمد',
   lastName: 'محمد',
   gender: 'male',
   // لا نرسل capabilityRequest
 );
-// النتيجة: customer عادي يمكنه الشراء مباشرة
+
+// Response: { success: true, requiresVerification: true, phone: "+967775815074" }
+// الحساب PENDING - يجب التحقق من OTP
+
+// الخطوة التالية: التحقق من OTP
+final verifyResponse = await verifyOtp(
+  phone: '775815074',
+  code: '123456',  // OTP المرسل عبر SMS
+);
+// الآن الحساب ACTIVE + Tokens متاحة
 ```
 
 #### **2. Engineer (مهندس):**
 ```dart
-final response = await userSignup(
-  phone: '777123456',
+final signupResponse = await userSignup(
+  phone: '775815074',
   password: 'MyPassword123!',
   firstName: 'أحمد',
   lastName: 'محمد',
@@ -1429,24 +1546,47 @@ final response = await userSignup(
   capabilityRequest: 'engineer',    // ✨ طلب صلاحية مهندس
   jobTitle: 'مهندس كهرباء',         // ✨ مطلوب
 );
+
+// Response: { success: true, requiresVerification: true }
+// الحساب PENDING - يجب التحقق من OTP
+
+// التحقق من OTP
+final verifyResponse = await verifyOtp(
+  phone: '775815074',
+  code: '123456',
+  capabilityRequest: 'engineer',
+  jobTitle: 'مهندس كهرباء',
+);
+
 // النتيجة: engineerStatus = "unverified" - يجب رفع CV
-if (response.me.isEngineerUnverified) {
+if (verifyResponse.me.isEngineerUnverified) {
   navigateToUploadCV();
 }
 ```
 
 #### **3. Merchant (تاجر):**
 ```dart
-final response = await userSignup(
-  phone: '777123456',
+final signupResponse = await userSignup(
+  phone: '775815074',
   password: 'MyPassword123!',
   firstName: 'أحمد',
   lastName: 'محمد',
   gender: 'male',
   capabilityRequest: 'merchant',    // ✨ طلب صلاحية تاجر
 );
+
+// Response: { success: true, requiresVerification: true }
+// الحساب PENDING - يجب التحقق من OTP
+
+// التحقق من OTP
+final verifyResponse = await verifyOtp(
+  phone: '775815074',
+  code: '123456',
+  capabilityRequest: 'merchant',
+);
+
 // النتيجة: merchantStatus = "unverified" - يجب رفع معلومات المحل
-if (response.me.isMerchantUnverified) {
+if (verifyResponse.me.isMerchantUnverified) {
   navigateToUploadStoreInfo();
 }
 ```
@@ -1454,7 +1594,30 @@ if (response.me.isMerchantUnverified) {
 ### كود Flutter
 
 ```dart
-Future<LoginResponse> userSignup({
+class SignupResponse {
+  final bool success;
+  final String message;
+  final String phone;
+  final bool requiresVerification;
+
+  SignupResponse({
+    required this.success,
+    required this.message,
+    required this.phone,
+    required this.requiresVerification,
+  });
+
+  factory SignupResponse.fromJson(Map<String, dynamic> json) {
+    return SignupResponse(
+      success: json['success'] ?? false,
+      message: json['message'] ?? '',
+      phone: json['phone'] ?? '',
+      requiresVerification: json['requiresVerification'] ?? false,
+    );
+  }
+}
+
+Future<SignupResponse> userSignup({
   required String phone,
   required String password,
   required String firstName,
@@ -1468,7 +1631,7 @@ Future<LoginResponse> userSignup({
   final response = await _dio.post(
     '/auth/user-signup',
     data: {
-      'phone': phone,
+      'phone': phone,  // يمكن بدون +967
       'password': password,
       'firstName': firstName,
       'lastName': lastName,
@@ -1480,18 +1643,39 @@ Future<LoginResponse> userSignup({
     },
   );
 
-  final apiResponse = ApiResponse<LoginResponse>.fromJson(
+  final apiResponse = ApiResponse<SignupResponse>.fromJson(
     response.data,
-    (data) => LoginResponse.fromJson(data),
+    (data) => SignupResponse.fromJson(data),
   );
 
   if (apiResponse.isSuccess) {
-    // احفظ التوكنات
-    await _saveTokens(apiResponse.data!.tokens);
+    // الحساب تم إنشاؤه لكن يحتاج التحقق من OTP
+    // لا Tokens هنا - يجب استدعاء verifyOtp بعد ذلك
     return apiResponse.data!;
   } else {
     throw ApiException(apiResponse.error!);
   }
+}
+
+// مثال الاستخدام الكامل:
+Future<void> completeSignup() async {
+  // 1. إنشاء الحساب
+  final signupResult = await userSignup(
+    phone: '775815074',
+    password: 'MyPassword123!',
+    firstName: 'أحمد',
+    lastName: 'محمد',
+    gender: 'male',
+  );
+  
+  // 2. التحقق من OTP (استخدم OTP المرسل عبر SMS)
+  final loginResponse = await verifyOtp(
+    phone: signupResult.phone,  // أو '775815074'
+    code: '123456',  // OTP المرسل
+  );
+  
+  // 3. الآن الحساب مفعّل و Tokens متاحة
+  await _saveTokens(loginResponse.tokens);
 }
 ```
 
@@ -1808,8 +1992,22 @@ class AuthUser {
 6. **حالة الحساب (status):**
    - `active`: حساب نشط ويمكن استخدامه ✅
    - `suspended`: حساب موقوف مؤقتاً من قبل الأدمن ⚠️
-   - `pending`: في انتظار تفعيل ⏳
+   - `pending`: في انتظار التحقق من OTP ⏳ (يتم إنشاؤه عند `/auth/user-signup`)
    - `deleted`: تم حذف الحساب ❌
+
+7. **التدفق الكامل لإنشاء الحساب:**
+   ```
+   1. POST /auth/user-signup
+      → الحساب PENDING + إرسال OTP عبر SMS
+      → Response: { requiresVerification: true } (لا Tokens)
+   
+   2. POST /auth/verify-otp
+      → التحقق من OTP + تفعيل الحساب إلى ACTIVE
+      → Response: Tokens + بيانات المستخدم
+   
+   3. POST /auth/user-login
+      → تسجيل الدخول بكلمة المرور (الآن ممكن لأن الحساب ACTIVE)
+   ```
 
 7. **حقول الصلاحيات (Capability Fields):**
    - **`customerCapable`**: هل المستخدم قادر على الشراء كزبون (افتراضي: true)
@@ -1817,19 +2015,25 @@ class AuthUser {
    - **`merchantCapable`** + **`merchantStatus`** + **`merchantDiscountPercent`**: صلاحية التاجر وحالة التوثيق ونسبة الخصم
    - **`adminCapable`** + **`adminStatus`**: صلاحية الأدمن وحالة التوثيق
 
-8. **حالات المهندس/التاجر (engineerStatus / merchantStatus):**
+9. **حالات المهندس/التاجر (engineerStatus / merchantStatus):**
    - `none`: مستخدم عادي (customer)
    - `unverified`: طلب الصلاحية عند التسجيل لكن لم يرفع الوثائق ⚠️
    - `pending`: رفع الوثائق وفي انتظار موافقة الأدمن ⏳
    - `approved`: تمت الموافقة ✅
    - `rejected`: تم الرفض ❌
 
-9. **العملة المفضلة:**
+10. **العملة المفضلة:**
    - كل مستخدم لديه عملة مفضلة (افتراضي: USD)
    - يمكن تحديثها عبر endpoint `/auth/preferred-currency`
    - يتم إرجاعها في استجابة تسجيل الدخول
 
-10. **كيفية استخدام حالات المهندس/التاجر في Flutter:**
+11. **تطبيع أرقام الهواتف:**
+   - جميع endpoints تقبل الأرقام بدون `+967` (مثال: `775815074`)
+   - يتم إضافة `+967` تلقائياً للأرقام اليمنية
+   - الصيغ المدعومة: `05XXXXXXXX`, `5XXXXXXXX`, `7XXXXXXXX`, `+967XXXXXXXXX`
+   - المشغلون المدعومون: `+96773` (MTN), `+96771` (Sabafon), `+96770` (Y Telecom), `+96777` (Yemen Mobile)
+
+12. **كيفية استخدام حالات المهندس/التاجر في Flutter:**
    ```dart
    // بعد تسجيل الدخول
    final loginResponse = await verifyOtp(...);
@@ -1910,6 +2114,17 @@ class AuthUser {
    - `isActive`, `isSuspended`, `isDeleted` - للتحقق من حالة الحساب
    - `isEngineerPending`, `isEngineerApproved`, `isEngineerUnverified` - للتحقق من حالة المهندس
    - `isMerchantPending`, `isMerchantApproved`, `isMerchantUnverified` - للتحقق من حالة التاجر
+16. ✅ **تحديث `/auth/user-signup` Response:**
+   - لا يتم إرجاع Tokens عند إنشاء الحساب
+   - Response يحتوي على `requiresVerification: true` و `phone` (مطبيع)
+   - الحساب يُنشأ بحالة `PENDING` ويحتاج التحقق من OTP
+17. ✅ **تحديث `/auth/verify-otp` لتفعيل الحساب:**
+   - إذا كان الحساب `PENDING`، يتم تفعيله إلى `ACTIVE` تلقائياً
+   - تطبيع أرقام الهواتف في جميع endpoints
+18. ✅ **إضافة تطبيع تلقائي لأرقام الهواتف:**
+   - جميع endpoints تقبل الأرقام بدون `+967`
+   - يتم إضافة `+967` تلقائياً للأرقام اليمنية
+   - الصيغ المدعومة: `05XXXXXXXX`, `5XXXXXXXX`, `7XXXXXXXX`, `+967XXXXXXXXX`
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/auth/auth.controller.ts`

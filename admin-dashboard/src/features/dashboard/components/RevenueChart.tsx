@@ -13,24 +13,117 @@ import {
 import { useTranslation } from 'react-i18next';
 
 interface RevenueChartProps {
-  data: Array<{ date: string; revenue: number; orders?: number }>;
+  revenueCharts?: {
+    daily?: Array<{ date: string; revenue: number; orders?: number }>;
+    monthly?: Array<{ month: string; revenue: number; growth?: number }>;
+  };
   isLoading?: boolean;
 }
 
-export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) => {
+export const RevenueChart: React.FC<RevenueChartProps> = ({ revenueCharts, isLoading }) => {
   const [period, setPeriod] = React.useState<'daily' | 'weekly' | 'monthly'>('daily');
   const { t, i18n } = useTranslation(['dashboard']);
-  // Always use English numbers, regardless of language
-  const locale = React.useMemo(() => (i18n.language === 'ar' ? 'ar-SA' : 'en-US'), [i18n.language]);
+  // Use Gregorian calendar (Miladi) - 'ar' uses Gregorian, 'ar-SA' uses Hijri
+  // Always use 'en-US' locale for dates to ensure Gregorian calendar
+  const dateFormatter = React.useMemo(
+    () =>
+      new Intl.DateTimeFormat(i18n.language === 'ar' ? 'ar' : 'en-US', {
+        day: 'numeric',
+        month: 'short',
+        calendar: 'gregory', // Explicitly use Gregorian calendar
+      }),
+    [i18n.language]
+  );
   const currencyFormatter = React.useMemo(
     () =>
       new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: i18n.language === 'ar' ? 'USD' : 'USD',
+        currency: 'USD',
         maximumFractionDigits: 0,
       }),
-    [i18n.language]
+    []
   );
+
+  // Helper function to format date using Gregorian calendar
+  const formatDate = React.useCallback(
+    (date: Date): string => {
+      try {
+        return dateFormatter.format(date);
+      } catch {
+        // Fallback to simple format if Intl API fails
+        return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      }
+    },
+    [dateFormatter]
+  );
+
+  // Helper function to get week number and year from date
+  const getWeekKey = (date: Date): string => {
+    const year = date.getFullYear();
+    const oneJan = new Date(year, 0, 1);
+    const numberOfDays = Math.floor((date.getTime() - oneJan.getTime()) / (24 * 60 * 60 * 1000));
+    const week = Math.ceil((numberOfDays + oneJan.getDay() + 1) / 7);
+    return `${year}-W${week}`;
+  };
+
+  // Transform data based on selected period
+  const chartData = React.useMemo(() => {
+    if (!revenueCharts) return [];
+
+    if (period === 'daily') {
+      const dailyData = revenueCharts.daily || [];
+      return dailyData.slice(-14).map(item => ({
+        date: formatDate(new Date(item.date)),
+        revenue: item.revenue || 0,
+        orders: item.orders || 0,
+      }));
+    }
+
+    if (period === 'weekly') {
+      const dailyData = revenueCharts.daily || [];
+      const weeklyMap = new Map<string, { revenue: number; orders: number; startDate: Date }>();
+      
+      dailyData.forEach(item => {
+        const date = new Date(item.date);
+        const weekKey = getWeekKey(date);
+        const existing = weeklyMap.get(weekKey);
+        
+        if (existing) {
+          existing.revenue += item.revenue || 0;
+          existing.orders += item.orders || 0;
+        } else {
+          weeklyMap.set(weekKey, {
+            revenue: item.revenue || 0,
+            orders: item.orders || 0,
+            startDate: date,
+          });
+        }
+      });
+
+      return Array.from(weeklyMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-12)
+        .map(([weekKey, data]) => ({
+          date: formatDate(data.startDate),
+          revenue: data.revenue,
+          orders: data.orders,
+        }));
+    }
+
+    if (period === 'monthly') {
+      const monthlyData = revenueCharts.monthly || [];
+      return monthlyData.slice(-12).map(item => ({
+        date: item.month,
+        revenue: item.revenue || 0,
+        orders: 0,
+      }));
+    }
+
+    return [];
+  }, [revenueCharts, period, formatDate]);
+
+  const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
+  const avgRevenue = chartData.length > 0 ? totalRevenue / chartData.length : 0;
 
   if (isLoading) {
     return (
@@ -48,17 +141,6 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
     );
   }
 
-  const chartData = Array.isArray(data) 
-    ? data.slice(-14).map(item => ({
-        date: new Date(item.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' }),
-        revenue: item.revenue || 0,
-        orders: item.orders || 0,
-      }))
-    : [];
-
-  const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
-  const avgRevenue = chartData.length > 0 ? totalRevenue / chartData.length : 0;
-
   return (
     <Card>
       <CardContent>
@@ -68,7 +150,13 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, isLoading }) =
               {t('revenueChart.title', 'نظرة عامة على الإيرادات')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {t('revenueChart.average', 'متوسط {{value}} يومياً', {
+              {period === 'daily' && t('revenueChart.average', 'متوسط {{value}} يومياً', {
+                value: currencyFormatter.format(avgRevenue),
+              })}
+              {period === 'weekly' && t('revenueChart.averageWeekly', 'متوسط {{value}} أسبوعياً', {
+                value: currencyFormatter.format(avgRevenue),
+              })}
+              {period === 'monthly' && t('revenueChart.averageMonthly', 'متوسط {{value}} شهرياً', {
                 value: currencyFormatter.format(avgRevenue),
               })}
             </Typography>

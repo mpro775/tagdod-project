@@ -23,6 +23,7 @@ export type AttributeSummary = {
     id: string;
     value: string;
     valueEn?: string;
+    hexCode?: string;
   }>;
 };
 
@@ -211,6 +212,7 @@ export class PublicProductsPresenter {
             _id?: unknown;
             name?: unknown;
             nameEn?: unknown;
+            type?: unknown;
             values?: AttributeValue[];
           };
 
@@ -222,12 +224,16 @@ export class PublicProductsPresenter {
             ) ??
             '';
 
+          const attributeType = attributeRecordWithId.type as string | undefined;
+          const isColorAttribute = attributeType === 'color';
+
           const values =
             attributeRecordWithId.values?.map((valueRecord) => {
               const valueRecordWithId = valueRecord as {
                 _id?: unknown;
                 value?: unknown;
                 valueEn?: unknown;
+                hexCode?: unknown;
               };
 
               const valueId = this.extractIdString(valueRecordWithId._id) ?? '';
@@ -238,11 +244,22 @@ export class PublicProductsPresenter {
                 (valueRecordWithId.valueEn as string | undefined) ??
                 value;
 
-              return {
+              const result: {
+                id: string;
+                value: string;
+                valueEn?: string;
+                hexCode?: string;
+              } = {
                 id: valueId,
                 value,
                 valueEn,
               };
+
+              if (isColorAttribute && valueRecordWithId.hexCode) {
+                result.hexCode = valueRecordWithId.hexCode as string;
+              }
+
+              return result;
             }) ?? [];
 
           return {

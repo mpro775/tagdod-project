@@ -225,6 +225,9 @@ export class CustomerRankingDto {
   @ApiProperty({ description: 'إجمالي الطلبات' })
   totalOrders!: number;
 
+  @ApiPropertyOptional({ description: 'تاريخ آخر طلب' })
+  lastOrderDate?: Date;
+
   @ApiProperty({ description: 'الترتيب' })
   rank!: number;
 

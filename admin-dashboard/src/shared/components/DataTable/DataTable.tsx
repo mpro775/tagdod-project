@@ -213,7 +213,13 @@ export const DataTable: React.FC<DataTableProps> = ({
           },
           '& .MuiDataGrid-cell': {
             fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            padding: { xs: '4px 8px', sm: '8px 16px' },
+            padding: { xs: '8px', sm: '12px 16px' },
+            display: 'flex',
+            alignItems: 'center',
+            overflow: 'visible',
+            '& > *': {
+              width: '100%',
+            },
           },
           '& .MuiDataGrid-columnHeader': {
             fontSize: { xs: '0.75rem', sm: '0.875rem' },

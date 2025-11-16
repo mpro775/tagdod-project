@@ -54,9 +54,9 @@ import type {
   Order,
   OrderStatus,
   PaymentStatus,
-  PaymentMethod,
   ListOrdersParams,
 } from '../types/order.types';
+import { PaymentMethod } from '../types/order.types';
 import { ar } from 'date-fns/locale';
 
 // Order Status Labels and Colors
@@ -218,13 +218,38 @@ export const OrdersListPage: React.FC = () => {
         field: 'paymentMethod',
         headerName: t('list.columns.paymentMethod'),
         width: 120,
-        renderCell: (params) => (
-          <Chip
-            label={t(`payment.method.${params.row.paymentMethod as PaymentMethod}`) || params.row.paymentMethod}
-            size="small"
-            variant="outlined"
-          />
-        ),
+        renderCell: (params) => {
+          const order = params.row as Order;
+          // إذا كان هناك localPaymentAccountType وكان wallet، اعرض "محفظة"
+          if (order.localPaymentAccountType === 'wallet' && order.paymentMethod === PaymentMethod.BANK_TRANSFER) {
+            return (
+              <Chip
+                label={t('payment.method.WALLET', { defaultValue: 'محفظة' })}
+                size="small"
+                variant="outlined"
+                color="primary"
+              />
+            );
+          }
+          // إذا كان bank، اعرض "تحويل بنكي"
+          if (order.localPaymentAccountType === 'bank' && order.paymentMethod === PaymentMethod.BANK_TRANSFER) {
+            return (
+              <Chip
+                label={t('payment.method.BANK_TRANSFER', { defaultValue: 'تحويل بنكي' })}
+                size="small"
+                variant="outlined"
+              />
+            );
+          }
+          // القيمة الافتراضية
+          return (
+            <Chip
+              label={t(`payment.method.${order.paymentMethod as PaymentMethod}`) || order.paymentMethod}
+              size="small"
+              variant="outlined"
+            />
+          );
+        },
       },
       {
         field: 'paymentStatus',

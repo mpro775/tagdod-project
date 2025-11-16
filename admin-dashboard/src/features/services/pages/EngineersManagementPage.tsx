@@ -28,7 +28,6 @@ import {
   TrendingUp,
   Visibility,
   Phone,
-  Email,
   Refresh,
   Download,
   CheckCircle,
@@ -120,23 +119,53 @@ export const EngineersManagementPage: React.FC = () => {
       minWidth: 200,
       flex: 1.5,
       renderCell: (params) => (
-        <Box display="flex" alignItems="center">
-          <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
-            {params.row.engineerName.charAt(0)}
+        <Box 
+          display="flex" 
+          alignItems="center" 
+          gap={1.5}
+          sx={{ 
+            width: '100%',
+            height: '100%',
+            py: 0.5,
+          }}
+        >
+          <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, flexShrink: 0 }}>
+            {params.row.engineerName?.charAt(0) || '?'}
           </Avatar>
-          <Box>
-            <Typography variant="body2" fontWeight="medium">
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography 
+              variant="body2" 
+              fontWeight="medium"
+              sx={{ 
+                lineHeight: 1.4,
+                mb: 0.25,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
               {params.row.engineerName}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ 
+                lineHeight: 1.3,
+                mb: 0.25,
+                display: 'block',
+              }}
+            >
               {params.row.engineerPhone}
             </Typography>
-            <Box display="flex" alignItems="center" mt={0.5}>
+            <Box display="flex" alignItems="center" mt={0.25}>
               <Chip 
                 label={params.row.specialization || t('services:engineers.general')} 
                 size="small" 
                 color="info" 
                 variant="outlined"
+                sx={{ height: 20, fontSize: '0.65rem' }}
               />
             </Box>
           </Box>
@@ -149,11 +178,25 @@ export const EngineersManagementPage: React.FC = () => {
       minWidth: 120,
       flex: 0.8,
       renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" fontWeight="medium">
+        <Box sx={{ py: 0.5 }}>
+          <Typography 
+            variant="body2" 
+            fontWeight="medium"
+            sx={{ 
+              lineHeight: 1.4,
+              mb: 0.25,
+            }}
+          >
             {formatNumber(params.row.totalRequests)}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography 
+            variant="caption" 
+            color="text.secondary"
+            sx={{ 
+              lineHeight: 1.3,
+              display: 'block',
+            }}
+          >
             {formatNumber(params.row.completedRequests)} {t('services:engineers.completed')}
           </Typography>
         </Box>
@@ -507,6 +550,7 @@ export const EngineersManagementPage: React.FC = () => {
             searchPlaceholder={t('services:engineers.searchPlaceholder')}
             onSearch={setSearchTerm}
             getRowId={(row: any) => row.engineerId}
+            rowHeight={90}
             height="calc(100vh - 450px)"
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
@@ -553,14 +597,6 @@ export const EngineersManagementPage: React.FC = () => {
                               {selectedEngineer.engineerPhone}
                             </Typography>
                           </Box>
-                          {selectedEngineer.engineerEmail && (
-                            <Box display="flex" alignItems="center">
-                              <Email sx={{ mr: 1, fontSize: '1rem', color: 'text.secondary' }} />
-                              <Typography variant="body2" color="text.secondary">
-                                {selectedEngineer.engineerEmail}
-                              </Typography>
-                            </Box>
-                          )}
                         </Box>
                       </Box>
                     </CardContent>

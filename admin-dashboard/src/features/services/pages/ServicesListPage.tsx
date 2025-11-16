@@ -29,6 +29,9 @@ import {
   Divider,
   Pagination,
   Collapse,
+  ImageList,
+  ImageListItem,
+  Paper,
 } from '@mui/material';
 import {
   Search,
@@ -48,6 +51,8 @@ import {
   LocationCity,
   ExpandMore,
   ExpandLess,
+  Image as ImageIcon,
+  CalendarToday,
 } from '@mui/icons-material';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -84,6 +89,21 @@ const getStatusLabel = (status: ServiceStatus, t: any): string => {
     CANCELLED: 'cancelled',
   };
   return t(`status.${statusMap[status]}`, status);
+};
+
+const getServiceTypeLabel = (type: string, t: any): string => {
+  const typeMap: Record<string, string> = {
+    INSTALLATION: 'installation',
+    MAINTENANCE: 'maintenance',
+    REPAIR: 'repair',
+    CONSULTATION: 'consultation',
+    maintenance: 'maintenance',
+    installation: 'installation',
+    repair: 'repair',
+    consultation: 'consultation',
+  };
+  const key = typeMap[type?.toUpperCase()] || type?.toLowerCase() || type;
+  return t(`serviceTypes.${key}`, type);
 };
 
 const statusIcons: Record<ServiceStatus, React.ReactNode> = {
@@ -463,15 +483,43 @@ export const ServicesListPage: React.FC = () => {
       headerName: t('labels.title', { defaultValue: 'العنوان' }),
       width: 250,
       renderCell: (params) => (
-        <Box display="flex" alignItems="center" gap={1}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
-            <Assignment />
+        <Box 
+          display="flex" 
+          alignItems="center" 
+          gap={1.5}
+          sx={{ 
+            width: '100%',
+            height: '100%',
+            py: 0.5,
+          }}
+        >
+          <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, flexShrink: 0 }}>
+            <Assignment fontSize="small" />
           </Avatar>
-          <Box>
-            <Typography variant="body2" fontWeight="medium">
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography 
+              variant="body2" 
+              fontWeight="medium"
+              sx={{ 
+                lineHeight: 1.4,
+                mb: 0.25,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
               {params.value}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ 
+                lineHeight: 1.3,
+                display: 'block',
+              }}
+            >
               {params.row.type}
             </Typography>
           </Box>
@@ -483,15 +531,43 @@ export const ServicesListPage: React.FC = () => {
       headerName: t('labels.customer', { defaultValue: 'العميل' }),
       width: 200,
       renderCell: (params) => (
-        <Box display="flex" alignItems="center" gap={1}>
-          <Avatar sx={{ bgcolor: 'info.main', width: 32, height: 32 }}>
+        <Box 
+          display="flex" 
+          alignItems="center" 
+          gap={1.5}
+          sx={{ 
+            width: '100%',
+            height: '100%',
+            py: 0.5,
+          }}
+        >
+          <Avatar sx={{ bgcolor: 'info.main', width: 36, height: 36, flexShrink: 0 }}>
             {params.value?.firstName?.charAt(0) || '?'}
           </Avatar>
-          <Box>
-            <Typography variant="body2" fontWeight="medium">
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography 
+              variant="body2" 
+              fontWeight="medium"
+              sx={{ 
+                lineHeight: 1.4,
+                mb: 0.25,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
               {params.value?.firstName} {params.value?.lastName}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ 
+                lineHeight: 1.3,
+                display: 'block',
+              }}
+            >
               {params.value?.phone}
             </Typography>
           </Box>
@@ -893,6 +969,7 @@ export const ServicesListPage: React.FC = () => {
           }}
           getRowId={(row) => (row as any)._id}
           height="calc(100vh - 300px)"
+          rowHeight={90}
         />
       )}
 
@@ -1024,165 +1101,430 @@ export const ServicesListPage: React.FC = () => {
           {selectedService && (
             <Box>
               {dialogType === 'view' && (
-                <Grid container spacing={{ xs: 2, sm: 2 }}>
+                <Grid container spacing={{ xs: 2, sm: 3 }}>
+                  {/* الصور */}
+                  {selectedService.images && selectedService.images.length > 0 && (
+                    <Grid size={{ xs: 12 }}>
+                      <Paper 
+                        elevation={0}
+                        sx={{ 
+                          p: 2,
+                          bgcolor: theme.palette.mode === 'dark' 
+                            ? 'rgba(255,255,255,0.05)' 
+                            : 'grey.50',
+                          borderRadius: 2,
+                        }}
+                      >
+                        <Typography 
+                          variant="subtitle1" 
+                          gutterBottom
+                          sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <ImageIcon fontSize="small" />
+                          {t('labels.images', { defaultValue: 'الصور' })}
+                        </Typography>
+                        <ImageList 
+                          cols={isMobile ? 2 : 3} 
+                          gap={8}
+                          sx={{ 
+                            m: 0,
+                            '& .MuiImageListItem-root': {
+                              borderRadius: 1,
+                              overflow: 'hidden',
+                            },
+                          }}
+                        >
+                          {selectedService.images.map((image: string, index: number) => (
+                            <ImageListItem key={index}>
+                              <img
+                                src={image}
+                                alt={`${selectedService.title} - ${index + 1}`}
+                                loading="lazy"
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() => window.open(image, '_blank')}
+                              />
+                            </ImageListItem>
+                          ))}
+                        </ImageList>
+                      </Paper>
+                    </Grid>
+                  )}
+
+                  {/* تفاصيل الطلب */}
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography 
-                      variant={isMobile ? 'subtitle1' : 'h6'} 
-                      gutterBottom
-                      sx={{ fontWeight: 600, mb: 1.5 }}
+                    <Card 
+                      elevation={0}
+                      sx={{ 
+                        height: '100%',
+                        bgcolor: theme.palette.mode === 'dark' 
+                          ? 'rgba(255,255,255,0.05)' 
+                          : 'grey.50',
+                      }}
                     >
-                      {t('messages.requestDetails')}
-                    </Typography>
-                    <Stack spacing={1.5}>
-                      <Typography variant="body2">
-                        <strong>{t('labels.title')}:</strong> {selectedService.title}
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong>{t('labels.type')}:</strong> {selectedService.type}
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong>{t('labels.description')}:</strong> {selectedService.description}
-                      </Typography>
-                      <Box>
-                        <strong>{t('labels.city')}:</strong>{' '}
-                        <Chip
-                          label={`${getCityEmoji(selectedService.city || 'صنعاء')} ${
-                            selectedService.city || 'صنعاء'
-                          }`}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                          sx={{ mt: 0.5 }}
-                        />
-                      </Box>
-                      <Typography variant="body2">
-                        <strong>{t('labels.status')}:</strong>{' '}
-                        {getStatusLabel(selectedService.status as ServiceStatus, t)}
-                      </Typography>
-                    </Stack>
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography 
-                      variant={isMobile ? 'subtitle1' : 'h6'} 
-                      gutterBottom
-                      sx={{ fontWeight: 600, mb: 1.5 }}
-                    >
-                      {t('messages.customerInfo')}
-                    </Typography>
-                    <Stack spacing={1.5}>
-                      <Typography variant="body2">
-                        <strong>{t('labels.customer')}:</strong>{' '}
-                        {selectedService.user?.firstName} {selectedService.user?.lastName}
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong>{t('labels.phone')}:</strong> {selectedService.user?.phone}
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong>{t('labels.email')}:</strong> {selectedService.user?.email}
-                      </Typography>
-                    </Stack>
-                  </Grid>
-                  {selectedService.engineer && (
-                    <Grid size={{ xs: 12 }}>
-                      <Typography 
-                        variant={isMobile ? 'subtitle1' : 'h6'} 
-                        gutterBottom
-                        sx={{ fontWeight: 600, mb: 1.5 }}
-                      >
-                        {t('messages.engineerInfo')}
-                      </Typography>
-                      <Stack spacing={1.5}>
-                        <Typography variant="body2">
-                          <strong>{t('labels.engineer')}:</strong>{' '}
-                          {selectedService.engineer.firstName} {selectedService.engineer.lastName}
+                      <CardContent>
+                        <Typography 
+                          variant="subtitle1" 
+                          gutterBottom
+                          sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <Assignment fontSize="small" />
+                          {t('messages.requestDetails')}
                         </Typography>
-                        <Typography variant="body2">
-                          <strong>{t('labels.phone')}:</strong> {selectedService.engineer.phone}
-                        </Typography>
-                        <Typography variant="body2">
-                          <strong>{t('labels.email')}:</strong>{' '}
-                          {selectedService.engineer.email || t('labels.notSpecified')}
-                        </Typography>
-                        <Typography variant="body2">
-                          <strong>{t('labels.jobTitle')}:</strong>{' '}
-                          {selectedService.engineer.jobTitle || t('labels.notSpecified')}
-                        </Typography>
-                      </Stack>
-                    </Grid>
-                  )}
-                  {selectedService.acceptedOffer && (
-                    <Grid size={{ xs: 12 }}>
-                      <Typography 
-                        variant={isMobile ? 'subtitle1' : 'h6'} 
-                        gutterBottom
-                        sx={{ fontWeight: 600, mb: 1.5 }}
-                      >
-                        {t('messages.acceptedOfferInfo')}
-                      </Typography>
-                      <Stack spacing={1.5}>
-                        <Typography variant="body2">
-                          <strong>{t('labels.amount')}:</strong>{' '}
-                          {formatCurrency(selectedService.acceptedOffer.amount)}
-                        </Typography>
-                        <Typography variant="body2">
-                          <strong>{t('labels.note')}:</strong>{' '}
-                          {selectedService.acceptedOffer.note}
-                        </Typography>
-                      </Stack>
-                    </Grid>
-                  )}
-                  {selectedService.rating && (
-                    <Grid size={{ xs: 12 }}>
-                      <Typography 
-                        variant={isMobile ? 'subtitle1' : 'h6'} 
-                        gutterBottom
-                        sx={{ fontWeight: 600, mb: 1.5 }}
-                      >
-                        {t('messages.serviceRating')}
-                      </Typography>
-                      <Stack spacing={1.5}>
-                        <Typography variant="body2">
-                          <strong>{t('labels.rating')}:</strong> {selectedService.rating.score} / 5
-                        </Typography>
-                        {selectedService.rating.comment && (
-                          <Typography variant="body2">
-                            <strong>{t('labels.comment')}:</strong> {selectedService.rating.comment}
-                          </Typography>
-                        )}
-                        <Typography variant="caption" color="text.secondary">
-                          {formatDate(selectedService.rating.at)}
-                        </Typography>
-                      </Stack>
-                    </Grid>
-                  )}
-                  {selectedService.adminNotes && selectedService.adminNotes.length > 0 && (
-                    <Grid size={{ xs: 12 }}>
-                      <Typography 
-                        variant={isMobile ? 'subtitle1' : 'h6'} 
-                        gutterBottom
-                        sx={{ fontWeight: 600, mb: 1.5 }}
-                      >
-                        {t('messages.adminNotes')}
-                      </Typography>
-                      <Stack spacing={2}>
-                        {selectedService.adminNotes.map((note: any, index: number) => (
-                          <Box 
-                            key={index} 
-                            sx={{ 
-                              p: 2, 
-                              bgcolor: theme.palette.mode === 'dark' 
-                                ? 'rgba(255,255,255,0.05)' 
-                                : 'grey.100', 
-                              borderRadius: 1 
-                            }}
-                          >
-                            <Typography variant="body2">{note.note}</Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                              {formatDate(note.at)}
+                        <Stack spacing={2}>
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                              {t('labels.title')}
+                            </Typography>
+                            <Typography variant="body1" fontWeight="medium">
+                              {selectedService.title}
                             </Typography>
                           </Box>
-                        ))}
-                      </Stack>
+                          
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                              {t('labels.type')}
+                            </Typography>
+                            <Chip
+                              label={getServiceTypeLabel(selectedService.type, t)}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          </Box>
+
+                          {selectedService.description && (
+                            <Box>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                {t('labels.description')}
+                              </Typography>
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word',
+                                }}
+                              >
+                                {selectedService.description}
+                              </Typography>
+                            </Box>
+                          )}
+
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                              {t('labels.city')}
+                            </Typography>
+                            <Chip
+                              icon={<LocationCity fontSize="small" />}
+                              label={`${getCityEmoji(selectedService.city || 'صنعاء')} ${
+                                selectedService.city || 'صنعاء'
+                              }`}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          </Box>
+
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                              {t('labels.status')}
+                            </Typography>
+                            <Chip
+                              icon={statusIcons[selectedService.status as ServiceStatus] as React.ReactElement}
+                              label={getStatusLabel(selectedService.status as ServiceStatus, t)}
+                              color={statusColors[selectedService.status as ServiceStatus]}
+                              size="small"
+                            />
+                          </Box>
+
+                          {selectedService.scheduledAt && (
+                            <Box>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                {t('labels.scheduledAt')}
+                              </Typography>
+                              <Box display="flex" alignItems="center" gap={0.5}>
+                                <CalendarToday fontSize="small" color="action" />
+                                <Typography variant="body2">
+                                  {formatDate(selectedService.scheduledAt)}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          )}
+
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                              {t('labels.createdAt')}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {formatDate(selectedService.createdAt)}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  {/* معلومات العميل */}
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Card 
+                      elevation={0}
+                      sx={{ 
+                        height: '100%',
+                        bgcolor: theme.palette.mode === 'dark' 
+                          ? 'rgba(255,255,255,0.05)' 
+                          : 'grey.50',
+                      }}
+                    >
+                      <CardContent>
+                        <Typography 
+                          variant="subtitle1" 
+                          gutterBottom
+                          sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <Avatar sx={{ bgcolor: 'info.main', width: 24, height: 24 }}>
+                            {selectedService.user?.firstName?.charAt(0) || '?'}
+                          </Avatar>
+                          {t('messages.customerInfo')}
+                        </Typography>
+                        <Stack spacing={2}>
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                              {t('labels.customer')}
+                            </Typography>
+                            <Typography variant="body1" fontWeight="medium">
+                              {selectedService.user?.firstName} {selectedService.user?.lastName}
+                            </Typography>
+                          </Box>
+                          
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                              {t('labels.phone')}
+                            </Typography>
+                            <Typography variant="body2">
+                              {selectedService.user?.phone}
+                            </Typography>
+                          </Box>
+
+                          {selectedService.user?.email && (
+                            <Box>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                {t('labels.email')}
+                              </Typography>
+                              <Typography variant="body2">
+                                {selectedService.user.email}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  {/* معلومات المهندس */}
+                  {selectedService.engineer && (
+                    <Grid size={{ xs: 12 }}>
+                      <Card 
+                        elevation={0}
+                        sx={{ 
+                          bgcolor: theme.palette.mode === 'dark' 
+                            ? 'rgba(255,255,255,0.05)' 
+                            : 'grey.50',
+                        }}
+                      >
+                        <CardContent>
+                          <Typography 
+                            variant="subtitle1" 
+                            gutterBottom
+                            sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+                          >
+                            <Avatar sx={{ bgcolor: 'success.main', width: 24, height: 24 }}>
+                              <Engineering fontSize="small" />
+                            </Avatar>
+                            {t('messages.engineerInfo')}
+                          </Typography>
+                          <Stack spacing={2}>
+                            <Box>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                {t('labels.engineer')}
+                              </Typography>
+                              <Typography variant="body1" fontWeight="medium">
+                                {selectedService.engineer.firstName} {selectedService.engineer.lastName}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                {t('labels.phone')}
+                              </Typography>
+                              <Typography variant="body2">
+                                {selectedService.engineer.phone}
+                              </Typography>
+                            </Box>
+                            {selectedService.engineer.email && (
+                              <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                  {t('labels.email')}
+                                </Typography>
+                                <Typography variant="body2">
+                                  {selectedService.engineer.email}
+                                </Typography>
+                              </Box>
+                            )}
+                            {selectedService.engineer.jobTitle && (
+                              <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                  {t('labels.jobTitle')}
+                                </Typography>
+                                <Typography variant="body2">
+                                  {selectedService.engineer.jobTitle}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+                  {/* العرض المقبول */}
+                  {selectedService.acceptedOffer && (
+                    <Grid size={{ xs: 12 }}>
+                      <Card 
+                        elevation={0}
+                        sx={{ 
+                          bgcolor: theme.palette.mode === 'dark' 
+                            ? 'rgba(255,255,255,0.05)' 
+                            : 'grey.50',
+                        }}
+                      >
+                        <CardContent>
+                          <Typography 
+                            variant="subtitle1" 
+                            gutterBottom
+                            sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+                          >
+                            <AttachMoney fontSize="small" color="success" />
+                            {t('messages.acceptedOfferInfo')}
+                          </Typography>
+                          <Stack spacing={2}>
+                            <Box>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                {t('labels.amount')}
+                              </Typography>
+                              <Typography variant="h6" color="success.main" fontWeight="bold">
+                                {formatCurrency(selectedService.acceptedOffer.amount)}
+                              </Typography>
+                            </Box>
+                            {selectedService.acceptedOffer.note && (
+                              <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                  {t('labels.note')}
+                                </Typography>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                  {selectedService.acceptedOffer.note}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+                  {/* التقييم */}
+                  {selectedService.rating && (
+                    <Grid size={{ xs: 12 }}>
+                      <Card 
+                        elevation={0}
+                        sx={{ 
+                          bgcolor: theme.palette.mode === 'dark' 
+                            ? 'rgba(255,255,255,0.05)' 
+                            : 'grey.50',
+                        }}
+                      >
+                        <CardContent>
+                          <Typography 
+                            variant="subtitle1" 
+                            gutterBottom
+                            sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+                          >
+                            <CheckCircle fontSize="small" color="warning" />
+                            {t('messages.serviceRating')}
+                          </Typography>
+                          <Stack spacing={2}>
+                            <Box>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                {t('labels.rating')}
+                              </Typography>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Chip
+                                  label={`${selectedService.rating.score} / 5`}
+                                  color="warning"
+                                  size="small"
+                                />
+                              </Box>
+                            </Box>
+                            {selectedService.rating.comment && (
+                              <Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                  {t('labels.comment')}
+                                </Typography>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                  {selectedService.rating.comment}
+                                </Typography>
+                              </Box>
+                            )}
+                            <Typography variant="caption" color="text.secondary">
+                              {formatDate(selectedService.rating.at)}
+                            </Typography>
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+                  {/* الملاحظات الإدارية */}
+                  {selectedService.adminNotes && selectedService.adminNotes.length > 0 && (
+                    <Grid size={{ xs: 12 }}>
+                      <Card 
+                        elevation={0}
+                        sx={{ 
+                          bgcolor: theme.palette.mode === 'dark' 
+                            ? 'rgba(255,255,255,0.05)' 
+                            : 'grey.50',
+                        }}
+                      >
+                        <CardContent>
+                          <Typography 
+                            variant="subtitle1" 
+                            gutterBottom
+                            sx={{ fontWeight: 600, mb: 2 }}
+                          >
+                            {t('messages.adminNotes')}
+                          </Typography>
+                          <Stack spacing={2}>
+                            {selectedService.adminNotes.map((note: any, index: number) => (
+                              <Paper 
+                                key={index}
+                                elevation={0}
+                                sx={{ 
+                                  p: 2, 
+                                  bgcolor: theme.palette.mode === 'dark' 
+                                    ? 'rgba(255,255,255,0.08)' 
+                                    : 'white', 
+                                  borderRadius: 1,
+                                  border: `1px solid ${theme.palette.divider}`,
+                                }}
+                              >
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 1 }}>
+                                  {note.note}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {formatDate(note.at)}
+                                </Typography>
+                              </Paper>
+                            ))}
+                          </Stack>
+                        </CardContent>
+                      </Card>
                     </Grid>
                   )}
                 </Grid>

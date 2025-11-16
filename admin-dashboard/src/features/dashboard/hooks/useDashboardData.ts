@@ -18,7 +18,18 @@ export const useRecentOrders = (limit: number = 5) => {
     queryKey: ['recent-orders', limit],
     queryFn: async () => {
       const response = await apiClient.get(`/admin/orders?limit=${limit}&page=1`);
-      return response.data.data || [];
+      // الباك إند يرجع { orders: [...], pagination: {...}, message: '...' } داخل data
+      // response.data = { success: true, data: { orders: [...], pagination: {...} }, requestId: '...' }
+      const responseData = response.data.data;
+      // إذا كان responseData مصفوفة مباشرة (legacy format)
+      if (Array.isArray(responseData)) {
+        return responseData;
+      }
+      // إذا كان responseData كائن يحتوي على orders
+      if (responseData && typeof responseData === 'object' && 'orders' in responseData) {
+        return Array.isArray(responseData.orders) ? responseData.orders : [];
+      }
+      return [];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
@@ -80,15 +91,34 @@ export const useSalesAnalytics = () => {
     queryFn: async () => {
       try {
         const response = await apiClient.get('/analytics/advanced/sales');
-        return response.data.data;
-      } catch (error) {
+        // response.data = { success: true, data: {...}, requestId: '...' }
+        const data = response.data?.data;
+        
+        // Debug logging
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('useSalesAnalytics - response:', response);
+          // eslint-disable-next-line no-console
+          console.log('useSalesAnalytics - data:', data);
+        }
+        
+        // التأكد من أن البيانات موجودة
+        if (data && typeof data === 'object') {
+          return data;
+        }
+        
+        // إذا كانت البيانات فارغة أو null، نرجع كائن فارغ بدلاً من null
+        return {};
+      } catch (error: any) {
         // eslint-disable-next-line no-console
-        console.warn('Failed to fetch sales analytics, using fallback data:', error);
+        console.error('Failed to fetch sales analytics:', error);
+        // eslint-disable-next-line no-console
+        console.error('Error details:', error?.response?.data || error?.message);
         // Return empty object to allow component to handle gracefully
-        return null;
+        return {};
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false, // Don't retry on error since backend has issues
+    retry: 1, // Retry once on error
   });
 };

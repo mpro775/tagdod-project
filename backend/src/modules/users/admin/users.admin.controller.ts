@@ -1160,8 +1160,13 @@ export class UsersAdminController {
         user.cvFileUrl = undefined;
       }
     } else if (dto.status === CapabilityStatus.UNVERIFIED || dto.status === CapabilityStatus.PENDING) {
+      // في حالة UNVERIFIED أو PENDING، يبقى المستخدم مهندساً (دور ENGINEER موجود)
+      // فقط حالة التوثيق تتغير، ولا يتم حذف الدور
       user.engineer_capable = true;
-      user.roles = user.roles.filter(role => role !== UserRole.ENGINEER);
+      // التأكد من وجود دور ENGINEER إذا لم يكن موجوداً
+      if (!user.roles.includes(UserRole.ENGINEER)) {
+        user.roles.push(UserRole.ENGINEER);
+      }
     }
 
     await user.save();
@@ -1227,8 +1232,13 @@ export class UsersAdminController {
       }
       user.merchant_discount_percent = 0;
     } else if (dto.status === CapabilityStatus.UNVERIFIED || dto.status === CapabilityStatus.PENDING) {
+      // في حالة UNVERIFIED أو PENDING، يبقى المستخدم تاجراً (دور MERCHANT موجود)
+      // فقط حالة التوثيق تتغير، ولا يتم حذف الدور
       user.merchant_capable = true;
-      user.roles = user.roles.filter(role => role !== UserRole.MERCHANT);
+      // التأكد من وجود دور MERCHANT إذا لم يكن موجوداً
+      if (!user.roles.includes(UserRole.MERCHANT)) {
+        user.roles.push(UserRole.MERCHANT);
+      }
     }
 
     await user.save();

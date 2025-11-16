@@ -153,14 +153,6 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
                 </Typography>
               </Box>
             </Box>
-            {service.engineerEmail && (
-              <Box display="flex" alignItems="center" mb={1}>
-                <Email sx={{ mr: 1, fontSize: '1rem', color: 'text.secondary' }} />
-                <Typography variant="body2" color="textSecondary">
-                  {service.engineerEmail}
-                </Typography>
-              </Box>
-            )}
           </CardContent>
         </Card>
       </Grid>

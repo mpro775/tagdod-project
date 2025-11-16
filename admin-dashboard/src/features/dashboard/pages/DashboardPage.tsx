@@ -23,7 +23,6 @@ import {
   RevenueChart,
   TopProductsWidget,
   ActivityTimeline,
-  CategoryDistribution,
   RecentOrders,
   QuickActions
 } from '../components';
@@ -53,8 +52,19 @@ export const DashboardPage: React.FC = () => {
   const { data: performanceData, isLoading: performanceLoading } = usePerformanceMetrics();
 
   // Extract dashboard data
-  const dashboardData = dashboardResponse ?? dashboardResponse?.data;
+  // dashboardResponse هو بالفعل البيانات بعد select في useDashboardOverview
+  const dashboardData = dashboardResponse;
   const isOverviewLoading = isLoading && !dashboardData;
+
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log('DashboardPage - dashboardResponse:', dashboardResponse);
+    // eslint-disable-next-line no-console
+    console.log('DashboardPage - dashboardData:', dashboardData);
+    // eslint-disable-next-line no-console
+    console.log('DashboardPage - salesAnalyticsData:', salesAnalyticsData);
+  }
 
   const formatNumber = React.useCallback(
     (value?: number | null) => {
@@ -203,7 +213,7 @@ export const DashboardPage: React.FC = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <RevenueChart
-            data={dashboardData?.revenueCharts?.daily || []}
+            revenueCharts={dashboardData?.revenueCharts}
             isLoading={isLoading}
           />
         </Grid>
@@ -221,40 +231,34 @@ export const DashboardPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Top Products & Category Distribution */}
+      {/* Top Products */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12 }}>
           <TopProductsWidget
             products={topProductsData}
             isLoading={topProductsLoading}
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <CategoryDistribution
-            salesData={salesAnalyticsData}
-            isLoading={salesLoading}
-          />
-        </Grid>
       </Grid>
 
-      {/* Recent Orders, Activity Timeline & Quick Actions */}
+      {/* Recent Orders & Activity Timeline */}
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, lg: 5 }}>
+        <Grid size={{ xs: 12, lg: 7 }}>
           <RecentOrders
             orders={recentOrdersData}
             isLoading={ordersLoading}
           />
         </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
+        <Grid size={{ xs: 12, lg: 5 }}>
           <ActivityTimeline 
             recentOrders={recentOrdersData}
             isLoading={ordersLoading}
           />
         </Grid>
-        <Grid size={{ xs: 12, lg: 3 }}>
-          <QuickActions />
-        </Grid>
       </Grid>
+
+      {/* Floating Quick Actions Button */}
+      <QuickActions />
     </Box>
   );
 };

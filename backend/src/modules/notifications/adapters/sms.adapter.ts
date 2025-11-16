@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as twilio from 'twilio';
+import { AlawaelSMSAdapter, AlawaelSMSNotification, AlawaelSMSResult } from './alawael-sms.adapter';
 
 export interface SMSNotification {
   to: string;
@@ -16,13 +17,33 @@ export interface SMSResult {
   cost?: number;
 }
 
+type SMSProvider = 'twilio' | 'alawael';
+
 @Injectable()
 export class SMSAdapter {
   private readonly logger = new Logger(SMSAdapter.name);
   private twilioClient!: twilio.Twilio;
+  private readonly provider: SMSProvider;
 
-  constructor(private configService: ConfigService) {
-    this.initializeTwilio();
+  constructor(
+    private configService: ConfigService,
+    @Optional() private readonly alawaelAdapter?: AlawaelSMSAdapter,
+  ) {
+    // Determine which provider to use
+    const smsProvider = this.configService.get('SMS_PROVIDER')?.toLowerCase() || 'alawael';
+    
+    if (smsProvider === 'twilio') {
+      this.provider = 'twilio';
+      this.initializeTwilio();
+    } else {
+      this.provider = 'alawael';
+      if (this.alawaelAdapter?.isInitialized()) {
+        this.logger.log('Using Alawael SMS provider');
+      } else {
+        this.logger.warn('Alawael SMS not configured, falling back to Twilio');
+        this.initializeTwilio();
+      }
+    }
   }
 
   private initializeTwilio() {
@@ -46,6 +67,35 @@ export class SMSAdapter {
    * Send SMS notification
    */
   async sendSMS(notification: SMSNotification): Promise<SMSResult> {
+    if (this.provider === 'alawael' && this.alawaelAdapter?.isInitialized()) {
+      return this.sendViaAlawael(notification);
+    } else if (this.twilioClient) {
+      return this.sendViaTwilio(notification);
+    } else {
+      return {
+        success: false,
+        error: 'No SMS provider configured',
+      };
+    }
+  }
+
+  private async sendViaAlawael(notification: SMSNotification): Promise<SMSResult> {
+    const alawaelNotification: AlawaelSMSNotification = {
+      to: notification.to,
+      message: notification.message,
+    };
+
+    const result = await this.alawaelAdapter!.sendSMS(alawaelNotification);
+    
+    return {
+      success: result.success,
+      messageId: result.messageId,
+      error: result.error,
+      cost: undefined, // Alawael doesn't provide cost in response
+    };
+  }
+
+  private async sendViaTwilio(notification: SMSNotification): Promise<SMSResult> {
     try {
       if (!this.twilioClient) {
         return {
@@ -87,6 +137,26 @@ export class SMSAdapter {
     failureCount: number;
     results: SMSResult[];
   }> {
+    if (this.provider === 'alawael' && this.alawaelAdapter?.isInitialized()) {
+      const alawaelNotifications: AlawaelSMSNotification[] = notifications.map(n => ({
+        to: n.to,
+        message: n.message,
+      }));
+      
+      const bulkResult = await this.alawaelAdapter.sendBulkSMS(alawaelNotifications);
+      
+      return {
+        successCount: bulkResult.successCount,
+        failureCount: bulkResult.failureCount,
+        results: bulkResult.results.map(r => ({
+          success: r.success,
+          messageId: r.messageId,
+          error: r.error,
+        })),
+      };
+    }
+
+    // Fallback to Twilio or individual sends
     const results = {
       successCount: 0,
       failureCount: 0,
@@ -151,6 +221,11 @@ export class SMSAdapter {
    * Get SMS delivery status
    */
   async getDeliveryStatus(messageId: string): Promise<unknown> {
+    if (this.provider === 'alawael' && this.alawaelAdapter?.isInitialized()) {
+      return await this.alawaelAdapter.getDeliveryStatus(messageId);
+    }
+
+    // Twilio fallback
     try {
       if (!this.twilioClient) {
         return null;
@@ -194,6 +269,11 @@ export class SMSAdapter {
    * Get account balance
    */
   async getAccountBalance(): Promise<number | null> {
+    if (this.provider === 'alawael' && this.alawaelAdapter?.isInitialized()) {
+      return await this.alawaelAdapter.getAccountBalance();
+    }
+
+    // Twilio fallback
     try {
       if (!this.twilioClient) {
         return null;

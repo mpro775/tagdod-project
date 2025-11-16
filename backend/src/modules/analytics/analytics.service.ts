@@ -1650,6 +1650,7 @@ export class AnalyticsService {
     }
 
     // Calculate revenue by category from actual order data
+    // Use categoryId from snapshot to lookup category name from categories collection
     const categoryRevenueAgg = await this.orderModel.aggregate([
       {
         $match: {
@@ -1659,20 +1660,147 @@ export class AnalyticsService {
       },
       { $unwind: '$items' },
       {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'product',
+        },
+      },
+      { $unwind: { path: '$product', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'product.categoryId',
+          foreignField: '_id',
+          as: 'productCategory',
+        },
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          let: { 
+            catIdStr: { $toString: '$items.snapshot.categoryId' },
+            catIdObj: '$items.snapshot.categoryId'
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ['$_id', '$$catIdObj'] },
+                    { $eq: [{ $toString: '$_id' }, '$$catIdStr'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'snapshotCategory',
+        },
+      },
+      {
+        $addFields: {
+          finalCategoryName: {
+            $cond: {
+              if: {
+                $and: [
+                  { $ne: ['$items.snapshot.categoryName', null] },
+                  { $ne: ['$items.snapshot.categoryName', ''] },
+                  { $ne: ['$items.snapshot.categoryName', 'undefined'] },
+                ],
+              },
+              then: '$items.snapshot.categoryName',
+              else: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $ne: [{ $size: '$snapshotCategory' }, 0] },
+                      { $ne: [{ $arrayElemAt: ['$snapshotCategory.name', 0] }, null] },
+                      { $ne: [{ $arrayElemAt: ['$snapshotCategory.name', 0] }, ''] },
+                    ],
+                  },
+                  then: { $arrayElemAt: ['$snapshotCategory.name', 0] },
+                  else: {
+                    $cond: {
+                      if: {
+                        $and: [
+                          { $ne: [{ $size: '$productCategory' }, 0] },
+                          { $ne: [{ $arrayElemAt: ['$productCategory.name', 0] }, null] },
+                          { $ne: [{ $arrayElemAt: ['$productCategory.name', 0] }, ''] },
+                        ],
+                      },
+                      then: { $arrayElemAt: ['$productCategory.name', 0] },
+                      else: 'غير محدد',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
         $group: {
-          _id: '$items.snapshot.categoryName',
+          _id: '$finalCategoryName',
+          categoryName: { $first: '$finalCategoryName' },
           revenue: { $sum: '$items.lineTotal' },
+        },
+      },
+      {
+        $match: {
+          $and: [
+            { categoryName: { $ne: null } },
+            { categoryName: { $ne: '' } },
+            { categoryName: { $ne: 'غير محدد' } },
+            { categoryName: { $ne: 'undefined' } },
+            { revenue: { $gt: 0 } },
+          ],
         },
       },
       { $sort: { revenue: -1 } },
     ]);
 
-    const totalCategoryRevenue = categoryRevenueAgg.reduce((sum, cat) => sum + cat.revenue, 0);
+    // Debug logging
+    this.logger.debug(`Category aggregation found ${categoryRevenueAgg.length} categories`);
+    if (categoryRevenueAgg.length > 0) {
+      this.logger.debug('Category data:', JSON.stringify(categoryRevenueAgg.slice(0, 3), null, 2));
+    } else {
+      this.logger.warn('No category data found in aggregation. Checking raw data...');
+      const sampleOrder = await this.orderModel.findOne({ status: 'completed' }).lean();
+      if (sampleOrder && sampleOrder.items && sampleOrder.items.length > 0) {
+        const firstItem = sampleOrder.items[0];
+        this.logger.debug('Sample order item snapshot:', JSON.stringify(firstItem.snapshot, null, 2));
+        
+        // Check if categoryName exists
+        const hasCategoryName = sampleOrder.items.some(item => 
+          item.snapshot && item.snapshot.categoryName && item.snapshot.categoryName.trim() !== ''
+        );
+        this.logger.debug(`Has categoryName in snapshot: ${hasCategoryName}`);
+        
+        // Check if categoryId exists and try to lookup category
+        if (firstItem.snapshot && firstItem.snapshot.categoryId) {
+          try {
+            const CategoryModel = this.orderModel.db.model('Category');
+            const category = await CategoryModel.findById(firstItem.snapshot.categoryId).lean() as any;
+            this.logger.debug(`Category lookup result: ${category ? JSON.stringify({ _id: category._id, name: category.name }) : 'null'}`);
+          } catch (error: any) {
+            this.logger.error(`Error looking up category: ${error?.message || String(error)}`);
+          }
+        }
+      }
+    }
+
+    const totalCategoryRevenue = categoryRevenueAgg.reduce((sum, cat) => sum + (cat.revenue || 0), 0);
     const byCategory = categoryRevenueAgg.map(cat => ({
-      category: cat._id || 'غير محدد',
-      revenue: cat.revenue,
+      category: cat.categoryName || 'غير محدد',
+      revenue: cat.revenue || 0,
       percentage: totalCategoryRevenue > 0 ? Math.round((cat.revenue / totalCategoryRevenue) * 100) : 0,
     }));
+
+    this.logger.debug(`Final byCategory array length: ${byCategory.length}`);
+    if (byCategory.length > 0) {
+      this.logger.debug('Final category data:', JSON.stringify(byCategory, null, 2));
+    }
 
     return { daily, monthly, byCategory };
   }

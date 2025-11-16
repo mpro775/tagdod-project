@@ -28,6 +28,7 @@ import { Request as ExpressRequest } from 'express';
 import { OrderService } from '../services/order.service';
 import {
   ListOrdersDto,
+  ListRatingsDto,
   UpdateOrderStatusDto,
   ShipOrderDto,
   RefundOrderDto,
@@ -282,6 +283,110 @@ export class AdminOrderController {
     return {
       stats,
       message: 'تم الحصول على إحصائيات الطلبات'
+    };
+  }
+
+  // ===== Ratings =====
+
+  @RequirePermissions(AdminPermission.ORDERS_READ, AdminPermission.ADMIN_ACCESS)
+  @Get('ratings')
+  @ApiOperation({
+    summary: 'قائمة تقييمات الطلبات',
+    description: 'الحصول على جميع تقييمات الطلبات مع إمكانية الفلترة والبحث'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم الحصول على التقييمات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        ratings: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              orderId: { type: 'string' },
+              orderNumber: { type: 'string' },
+              customerName: { type: 'string' },
+              customerPhone: { type: 'string' },
+              rating: { type: 'number', minimum: 1, maximum: 5 },
+              review: { type: 'string' },
+              ratedAt: { type: 'string', format: 'date-time' },
+              orderStatus: { type: 'string' },
+              orderTotal: { type: 'number' },
+              orderCurrency: { type: 'string' },
+              createdAt: { type: 'string', format: 'date-time' }
+            }
+          }
+        },
+        pagination: {
+          type: 'object',
+          properties: {
+            total: { type: 'number' },
+            page: { type: 'number' },
+            limit: { type: 'number' },
+            totalPages: { type: 'number' }
+          }
+        }
+      }
+    }
+  })
+  async getRatings(@Query() query: ListRatingsDto) {
+    const result = await this.orderService.getRatings(query);
+
+    return {
+      ratings: result.ratings,
+      pagination: result.pagination,
+      message: 'تم الحصول على التقييمات بنجاح'
+    };
+  }
+
+  @RequirePermissions(AdminPermission.ORDERS_READ, AdminPermission.ADMIN_ACCESS)
+  @Get('ratings/stats')
+  @ApiOperation({
+    summary: 'إحصائيات التقييمات',
+    description: 'الحصول على إحصائيات شاملة لتقييمات الطلبات'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم الحصول على إحصائيات التقييمات',
+    schema: {
+      type: 'object',
+      properties: {
+        totalRatings: { type: 'number', description: 'إجمالي التقييمات' },
+        averageRating: { type: 'number', description: 'متوسط التقييم' },
+        ratingsDistribution: {
+          type: 'object',
+          properties: {
+            5: { type: 'number', description: 'عدد التقييمات 5 نجوم' },
+            4: { type: 'number', description: 'عدد التقييمات 4 نجوم' },
+            3: { type: 'number', description: 'عدد التقييمات 3 نجوم' },
+            2: { type: 'number', description: 'عدد التقييمات نجمتين' },
+            1: { type: 'number', description: 'عدد التقييمات نجمة واحدة' }
+          }
+        },
+        ratingsWithReviews: { type: 'number', description: 'عدد التقييمات مع مراجعات نصية' },
+        recentRatings: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              orderNumber: { type: 'string' },
+              rating: { type: 'number' },
+              review: { type: 'string' },
+              ratedAt: { type: 'string', format: 'date-time' }
+            }
+          }
+        }
+      }
+    }
+  })
+  async getRatingsStats() {
+    const stats = await this.orderService.getRatingsStats();
+
+    return {
+      stats,
+      message: 'تم الحصول على إحصائيات التقييمات'
     };
   }
 

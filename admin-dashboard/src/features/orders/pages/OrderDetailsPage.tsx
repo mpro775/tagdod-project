@@ -77,7 +77,7 @@ import {
   PaymentMethod,
 } from '../types/order.types';
 import { ar } from 'date-fns/locale';
-import { OrderTimeline, OrderStatusChip } from '../components';
+import { OrderTimeline, OrderStatusChip, RatingCard } from '../components';
 
 import { CreditCard } from '@mui/icons-material';
 import { useUser } from '@/features/users/hooks/useUsers';
@@ -207,7 +207,15 @@ export const OrderDetailsPage: React.FC = () => {
   const handleVerifyPayment = async () => {
     if (!id) return;
     try {
-      await verifyPaymentMutation.mutateAsync({ id, data: verifyPaymentForm });
+      // التأكد من تقريب المبلغ قبل الإرسال
+      const roundedAmount = roundToTwoDecimals(verifyPaymentForm.verifiedAmount);
+      await verifyPaymentMutation.mutateAsync({
+        id,
+        data: {
+          ...verifyPaymentForm,
+          verifiedAmount: roundedAmount,
+        },
+      });
       setVerifyPaymentDialog(false);
       setVerifyPaymentForm({
         verifiedAmount: 0,
@@ -219,12 +227,18 @@ export const OrderDetailsPage: React.FC = () => {
     }
   };
 
+  // Helper function to round to 2 decimal places
+  const roundToTwoDecimals = (value: number): number => {
+    return Math.round(value * 100) / 100;
+  };
+
   // Initialize verify payment form when order loads or dialog opens
   useEffect(() => {
     if (order) {
       if (verifyPaymentDialog) {
+        const initialAmount = order.verifiedPaymentAmount || order.total || 0;
         setVerifyPaymentForm({
-          verifiedAmount: order.verifiedPaymentAmount || order.total || 0,
+          verifiedAmount: roundToTwoDecimals(initialAmount),
           verifiedCurrency: (order.verifiedPaymentCurrency || order.currency || 'YER') as 'YER' | 'SAR' | 'USD',
           notes: order.paymentVerificationNotes || '',
         });
@@ -468,9 +482,16 @@ export const OrderDetailsPage: React.FC = () => {
                         {t('details.paymentMethod')}
                       </Typography>
                       <Chip
-                        label={t(`payment.method.${order.paymentMethod}`)}
+                        label={
+                          order.localPaymentAccountType === 'wallet' && order.paymentMethod === PaymentMethod.BANK_TRANSFER
+                            ? t('payment.method.WALLET', { defaultValue: 'محفظة' })
+                            : order.localPaymentAccountType === 'bank' && order.paymentMethod === PaymentMethod.BANK_TRANSFER
+                            ? t('payment.method.BANK_TRANSFER', { defaultValue: 'تحويل بنكي' })
+                            : t(`payment.method.${order.paymentMethod}`)
+                        }
                         variant="outlined"
                         size={isMobile ? 'small' : 'medium'}
+                        color={order.localPaymentAccountType === 'wallet' ? 'primary' : undefined}
                       />
                     </Box>
                   </Grid>
@@ -698,6 +719,16 @@ export const OrderDetailsPage: React.FC = () => {
 
             {/* Order Timeline */}
             {order && <OrderTimeline order={order} showHistory={true} />}
+
+            {/* Rating Card */}
+            <RatingCard
+              ratingInfo={order.ratingInfo || {}}
+              orderNumber={order.orderNumber}
+              orderStatus={order.status}
+              orderTotal={order.total}
+              orderCurrency={order.currency}
+              ratedAt={order.ratingInfo?.ratedAt}
+            />
           </Grid>
 
           {/* Order Details Sidebar */}
@@ -1366,13 +1397,40 @@ export const OrderDetailsPage: React.FC = () => {
               <TextField
                 label={t('dialogs.verifyPayment.verifiedAmount')}
                 type="number"
-                value={verifyPaymentForm.verifiedAmount}
-                onChange={(e) =>
-                  setVerifyPaymentForm({
-                    ...verifyPaymentForm,
-                    verifiedAmount: parseFloat(e.target.value) || 0,
-                  })
-                }
+                value={roundToTwoDecimals(verifyPaymentForm.verifiedAmount)}
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  // السماح بإدخال فارغ أثناء الكتابة
+                  if (inputValue === '' || inputValue === '.') {
+                    setVerifyPaymentForm({
+                      ...verifyPaymentForm,
+                      verifiedAmount: 0,
+                    });
+                    return;
+                  }
+                  const parsedValue = parseFloat(inputValue);
+                  if (!isNaN(parsedValue)) {
+                    // تقريب إلى منزلتين عشريتين
+                    const roundedValue = roundToTwoDecimals(parsedValue);
+                    setVerifyPaymentForm({
+                      ...verifyPaymentForm,
+                      verifiedAmount: roundedValue,
+                    });
+                  }
+                }}
+                onBlur={(e) => {
+                  // التأكد من التقريب عند فقدان التركيز
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value)) {
+                    const roundedValue = roundToTwoDecimals(value);
+                    if (Math.abs(roundedValue - verifyPaymentForm.verifiedAmount) > 0.001) {
+                      setVerifyPaymentForm({
+                        ...verifyPaymentForm,
+                        verifiedAmount: roundedValue,
+                      });
+                    }
+                  }
+                }}
                 fullWidth
                 required
                 inputProps={{ step: '0.01', min: 0 }}

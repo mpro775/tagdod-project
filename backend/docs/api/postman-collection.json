@@ -214,7 +214,7 @@
           }
         },
         {
-          "name": "PATCH /api/v1/auth/me",
+          "name": "تحديث الملف الشخصي",
           "request": {
             "method": "PATCH",
             "header": [
@@ -236,7 +236,7 @@
                 "me"
               ]
             },
-            "description": ""
+            "description": "تحديث بيانات الملف الشخصي للمستخدم الحالي"
           }
         },
         {
@@ -2426,6 +2426,276 @@
       "description": "Endpoints for السمات-العامة functionality"
     },
     {
+      "name": "الإشعارات",
+      "item": [
+        {
+          "name": "الحصول على إشعارات المستخدم",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications"
+              ]
+            },
+            "description": "استرداد قائمة إشعارات المستخدم مع إمكانية التصفح والترقيم"
+          }
+        },
+        {
+          "name": "الحصول على عدد الإشعارات غير المقروءة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/unread-count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "unread-count"
+              ]
+            },
+            "description": "استرداد عدد الإشعارات التي لم يقرأها المستخدم بعد"
+          }
+        },
+        {
+          "name": "تحديد الإشعارات كمقروءة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/mark-read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "mark-read"
+              ]
+            },
+            "description": "تحديد إشعارات محددة كمقروءة"
+          }
+        },
+        {
+          "name": "تحديد جميع الإشعارات كمقروءة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/mark-all-read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "mark-all-read"
+              ]
+            },
+            "description": "تحديد جميع إشعارات المستخدم كمقروءة"
+          }
+        },
+        {
+          "name": "الحصول على إحصائيات إشعارات المستخدم",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "stats"
+              ]
+            },
+            "description": "استرداد إحصائيات مفصلة حول إشعارات المستخدم"
+          }
+        },
+        {
+          "name": "الإدارة: قائمة جميع الإشعارات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/list",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "list"
+              ]
+            },
+            "description": "استرداد قائمة بجميع الإشعارات في النظام (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: إنشاء إشعار",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/create",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "create"
+              ]
+            },
+            "description": "إنشاء إشعار جديد للمستخدمين (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: الحصول على إحصائيات الإشعارات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "stats"
+              ]
+            },
+            "description": "استرداد إحصائيات شاملة حول جميع الإشعارات في النظام (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: الحصول على قوالب الإشعارات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/templates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "templates"
+              ]
+            },
+            "description": "استرداد قائمة بقوالب الإشعارات المتاحة في النظام (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: تنظيف الإشعارات القديمة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/cleanup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "cleanup"
+              ]
+            },
+            "description": "حذف الإشعارات القديمة والغير مهمة من النظام (للإداريين فقط)"
+          }
+        }
+      ],
+      "description": "Endpoints for الإشعارات functionality"
+    },
+    {
       "name": "إدارة-الفئات",
       "item": [
         {
@@ -3199,276 +3469,6 @@
         }
       ],
       "description": "Endpoints for إدارة-أسعار-الصرف functionality"
-    },
-    {
-      "name": "الإشعارات",
-      "item": [
-        {
-          "name": "الحصول على إشعارات المستخدم",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications"
-              ]
-            },
-            "description": "استرداد قائمة إشعارات المستخدم مع إمكانية التصفح والترقيم"
-          }
-        },
-        {
-          "name": "الحصول على عدد الإشعارات غير المقروءة",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/unread-count",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "unread-count"
-              ]
-            },
-            "description": "استرداد عدد الإشعارات التي لم يقرأها المستخدم بعد"
-          }
-        },
-        {
-          "name": "تحديد الإشعارات كمقروءة",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/mark-read",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "mark-read"
-              ]
-            },
-            "description": "تحديد إشعارات محددة كمقروءة"
-          }
-        },
-        {
-          "name": "تحديد جميع الإشعارات كمقروءة",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/mark-all-read",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "mark-all-read"
-              ]
-            },
-            "description": "تحديد جميع إشعارات المستخدم كمقروءة"
-          }
-        },
-        {
-          "name": "الحصول على إحصائيات إشعارات المستخدم",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/stats",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "stats"
-              ]
-            },
-            "description": "استرداد إحصائيات مفصلة حول إشعارات المستخدم"
-          }
-        },
-        {
-          "name": "الإدارة: قائمة جميع الإشعارات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/list",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "admin",
-                "list"
-              ]
-            },
-            "description": "استرداد قائمة بجميع الإشعارات في النظام (للإداريين فقط)"
-          }
-        },
-        {
-          "name": "الإدارة: إنشاء إشعار",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/create",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "admin",
-                "create"
-              ]
-            },
-            "description": "إنشاء إشعار جديد للمستخدمين (للإداريين فقط)"
-          }
-        },
-        {
-          "name": "الإدارة: الحصول على إحصائيات الإشعارات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/stats",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "admin",
-                "stats"
-              ]
-            },
-            "description": "استرداد إحصائيات شاملة حول جميع الإشعارات في النظام (للإداريين فقط)"
-          }
-        },
-        {
-          "name": "الإدارة: الحصول على قوالب الإشعارات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/templates",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "admin",
-                "templates"
-              ]
-            },
-            "description": "استرداد قائمة بقوالب الإشعارات المتاحة في النظام (للإداريين فقط)"
-          }
-        },
-        {
-          "name": "الإدارة: تنظيف الإشعارات القديمة",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/cleanup",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "notifications",
-                "admin",
-                "cleanup"
-              ]
-            },
-            "description": "حذف الإشعارات القديمة والغير مهمة من النظام (للإداريين فقط)"
-          }
-        }
-      ],
-      "description": "Endpoints for الإشعارات functionality"
     },
     {
       "name": "تحليلات-المستخدمين",
@@ -4418,6 +4418,61 @@
               ]
             },
             "description": "الحصول على إحصائيات أساسية للطلبات"
+          }
+        },
+        {
+          "name": "قائمة تقييمات الطلبات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/ratings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "ratings"
+              ]
+            },
+            "description": "الحصول على جميع تقييمات الطلبات مع إمكانية الفلترة والبحث"
+          }
+        },
+        {
+          "name": "إحصائيات التقييمات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/ratings/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "ratings",
+                "stats"
+              ]
+            },
+            "description": "الحصول على إحصائيات شاملة لتقييمات الطلبات"
           }
         },
         {

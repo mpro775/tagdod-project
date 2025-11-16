@@ -44,10 +44,10 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     () =>
       new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: i18n.language === 'ar' ? 'USD' : 'USD',
+        currency: 'USD', // دائماً استخدام الدولار
         maximumFractionDigits: 0,
       }),
-    [i18n.language]
+    []
   );
 
   // Ensure recentOrders is an array

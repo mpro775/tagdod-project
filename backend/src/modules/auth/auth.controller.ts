@@ -18,6 +18,7 @@ import { SetPasswordDto } from './dto/set-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdatePreferredCurrencyDto } from './dto/update-preferred-currency.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { AdminLoginDto } from './dto/admin-login.dto';
 import { UserLoginDto } from './dto/user-login.dto';
@@ -47,6 +48,7 @@ import {
 } from '../../shared/exceptions';
 import { FavoritesService } from '../favorites/favorites.service';
 import { BiometricService } from './biometric.service';
+import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
 
 @ApiTags('المصادقة')
 @Controller('auth')
@@ -198,15 +200,27 @@ export class AuthController {
     },
   })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
-    const ok = await this.otp.verifyOtp(dto.phone, dto.code, 'register');
-    if (!ok) throw new InvalidOTPException({ phone: dto.phone });
+    // Normalize phone number for verification
+    let normalizedPhone: string;
+    try {
+      normalizedPhone = normalizeYemeniPhone(dto.phone);
+    } catch (error) {
+      this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
+      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+        phone: dto.phone,
+        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+      });
+    }
+
+    const ok = await this.otp.verifyOtp(normalizedPhone, dto.code, 'register');
+    if (!ok) throw new InvalidOTPException({ phone: normalizedPhone });
 
     // التحقق من أن المسمى الوظيفي موجود عند طلب أن يكون مهندساً
     if (dto.capabilityRequest === 'engineer' && !dto.jobTitle) {
       throw new AuthException(ErrorCode.AUTH_JOB_TITLE_REQUIRED);
     }
 
-    let user = await this.userModel.findOne({ phone: dto.phone });
+    let user = await this.userModel.findOne({ phone: normalizedPhone });
     if (!user) {
       const userData: {
         phone: string;
@@ -239,7 +253,11 @@ export class AuthController {
         }
       }
 
-      user = await this.userModel.create(userData);
+      user = await this.userModel.create({
+        ...userData,
+        phone: normalizedPhone, // استخدام الرقم المطبيع
+        status: UserStatus.ACTIVE, // تفعيل الحساب بعد التحقق من OTP
+      });
       
       // إنشاء capabilities للمستخدم
       await this.capsModel.create({
@@ -251,10 +269,24 @@ export class AuthController {
         merchant_status: user.merchant_status || 'none',
         merchant_discount_percent: 0,
       });
-    } else if (dto.capabilityRequest === 'engineer' && dto.jobTitle && !user.jobTitle) {
+    } else {
+      // المستخدم موجود - تفعيل الحساب إذا كان PENDING
+      if (user.status === UserStatus.PENDING) {
+        user.status = UserStatus.ACTIVE;
+        await user.save();
+        this.logger.log(`Account activated via OTP verification: ${normalizedPhone}`);
+      }
+
       // تحديث المسمى الوظيفي إذا كان المستخدم موجوداً ولكن ليس لديه مسمى
-      user.jobTitle = dto.jobTitle;
-      await user.save();
+      if (dto.capabilityRequest === 'engineer' && dto.jobTitle && !user.jobTitle) {
+        user.jobTitle = dto.jobTitle;
+        await user.save();
+      }
+
+      // التحقق من حالة الحساب
+      if (user.status === UserStatus.SUSPENDED || user.status === UserStatus.DELETED) {
+        throw new AuthException(ErrorCode.AUTH_USER_BLOCKED, { phone: normalizedPhone });
+      }
     }
 
     // مزامنة المفضلات تلقائياً عند التسجيل
@@ -343,19 +375,68 @@ export class AuthController {
   }
 
   @Post('forgot-password') async forgot(@Body() dto: ForgotPasswordDto) {
-    const user = await this.userModel.findOne({ phone: dto.phone });
-    if (!user) throw new UserNotFoundException();
-    const result = await this.otp.sendOtp(dto.phone, 'reset');
+    this.logger.log(`Forgot password request for phone: ${dto.phone}`);
+
+    // Normalize phone number for Yemen (+967)
+    let normalizedPhone: string;
+    try {
+      normalizedPhone = normalizeYemeniPhone(dto.phone);
+    } catch (error) {
+      this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
+      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+        phone: dto.phone,
+        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+      });
+    }
+
+    // Check if user exists
+    const user = await this.userModel.findOne({ phone: normalizedPhone });
+    if (!user) {
+      this.logger.warn(`Forgot password failed - user not found: ${normalizedPhone}`);
+      throw new UserNotFoundException();
+    }
+
+    // Send OTP via SMS
+    const result = await this.otp.sendOtp(normalizedPhone, 'reset');
+    this.logger.log(`OTP sent for password reset to ${normalizedPhone}`);
+    
     return { sent: result.sent, devCode: result.devCode };
   }
 
   @Post('reset-password') async reset(@Body() dto: ResetPasswordDto) {
-    const ok = await this.otp.verifyOtp(dto.phone, dto.code, 'reset');
-    if (!ok) throw new InvalidOTPException({ phone: dto.phone });
-    const user = await this.userModel.findOne({ phone: dto.phone });
-    if (!user) throw new UserNotFoundException();
+    this.logger.log(`Reset password request for phone: ${dto.phone}`);
+
+    // Normalize phone number for Yemen (+967)
+    let normalizedPhone: string;
+    try {
+      normalizedPhone = normalizeYemeniPhone(dto.phone);
+    } catch (error) {
+      this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
+      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+        phone: dto.phone,
+        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+      });
+    }
+
+    // Verify OTP
+    const ok = await this.otp.verifyOtp(normalizedPhone, dto.code, 'reset');
+    if (!ok) {
+      this.logger.warn(`Reset password failed - invalid OTP for ${normalizedPhone}`);
+      throw new InvalidOTPException({ phone: normalizedPhone });
+    }
+
+    // Check if user exists
+    const user = await this.userModel.findOne({ phone: normalizedPhone });
+    if (!user) {
+      this.logger.warn(`Reset password failed - user not found: ${normalizedPhone}`);
+      throw new UserNotFoundException();
+    }
+
+    // Update password
     const hashedPassword = await hash(dto.newPassword, 10);
     await this.userModel.updateOne({ _id: user._id }, { $set: { passwordHash: hashedPassword } });
+    this.logger.log(`Password reset successful for ${normalizedPhone}`);
+    
     return { updated: true };
   }
 
@@ -435,9 +516,25 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Patch('me')
+  @ApiOperation({
+    summary: 'تحديث الملف الشخصي',
+    description: 'تحديث بيانات الملف الشخصي للمستخدم الحالي',
+  })
+  @ApiBody({ type: UpdateProfileDto })
+  @ApiOkResponse({
+    description: 'تم تحديث الملف الشخصي بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        updated: { type: 'boolean', example: true },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'بيانات غير صحيحة' })
+  @ApiUnauthorizedResponse({ description: 'غير مصرح لك' })
   async updateMe(
     @Req() req: { user: { sub: string } },
-    @Body() body: { firstName?: string; lastName?: string; gender?: string; city?: string; jobTitle?: string },
+    @Body() body: UpdateProfileDto,
   ) {
     const allowed = ['firstName', 'lastName', 'gender', 'city', 'jobTitle'] as const;
     const $set: { firstName?: string; lastName?: string; gender?: string; city?: string; jobTitle?: string } = {};
@@ -822,11 +919,23 @@ export class AuthController {
   async userSignup(@Body() dto: UserSignupDto) {
     this.logger.log(`User signup attempt for phone: ${dto.phone}`);
 
+    // Normalize phone number for Yemen (+967)
+    let normalizedPhone: string;
+    try {
+      normalizedPhone = normalizeYemeniPhone(dto.phone);
+    } catch (error) {
+      this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
+      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+        phone: dto.phone,
+        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+      });
+    }
+
     // التحقق من أن رقم الهاتف غير موجود مسبقاً
-    const existingUser = await this.userModel.findOne({ phone: dto.phone });
+    const existingUser = await this.userModel.findOne({ phone: normalizedPhone });
     if (existingUser) {
-      this.logger.warn(`User signup failed - phone already exists: ${dto.phone}`);
-      throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
+      this.logger.warn(`User signup failed - phone already exists: ${normalizedPhone}`);
+      throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: normalizedPhone });
     }
 
     // التحقق من صحة البيانات عند طلب أن يكون مهندساً
@@ -837,15 +946,16 @@ export class AuthController {
     // تشفير كلمة المرور
     const hashedPassword = await hash(dto.password, 10);
 
-    // إنشاء المستخدم الجديد
+    // إنشاء المستخدم الجديد بحالة PENDING (يحتاج التحقق من OTP)
     const user = await this.userModel.create({
-      phone: dto.phone,
+      phone: normalizedPhone,
       firstName: dto.firstName,
       lastName: dto.lastName,
       gender: dto.gender,
       city: dto.city || 'صنعاء',
       jobTitle: dto.capabilityRequest === 'engineer' ? dto.jobTitle : undefined,
       passwordHash: hashedPassword,
+      status: UserStatus.PENDING, // الحساب بحالة PENDING حتى يتم التحقق من OTP
     });
 
     // تحديث User model مباشرة إذا طلب المستخدم أن يكون مهندساً أو تاجراً
@@ -871,58 +981,23 @@ export class AuthController {
       merchant_discount_percent: 0,
     });
 
-    // مزامنة المفضلات تلقائياً عند التسجيل
-    if (dto.deviceId) {
-      try {
-        await this.favoritesService.syncGuestToUser(dto.deviceId, String(user._id));
-      } catch (error) {
-        // نتجاهل الأخطاء في المزامنة لأنها ليست حرجة
-        this.logger.error('Favorites sync error during signup:', error);
-      }
+    // إرسال OTP عبر SMS بعد إنشاء الحساب
+    try {
+      await this.otp.sendOtp(normalizedPhone, 'register');
+      this.logger.log(`OTP sent to ${normalizedPhone} after signup - account pending verification`);
+    } catch (error) {
+      this.logger.warn(`Failed to send OTP after signup to ${normalizedPhone}:`, error);
+      // Continue anyway - account is created, OTP sending failure is not critical
     }
 
-    // حساب صلاحية الأدمن من الأدوار (سوف تكون false للمستخدمين العاديين الجدد)
-    const isAdminUser = false;
-
-    // إنشاء الـ Tokens
-    const payload = {
-      sub: String(user._id),
-      phone: user.phone,
-      isAdmin: isAdminUser,
-      roles: user.roles || [],
-      permissions: user.permissions || [],
-      preferredCurrency: user.preferredCurrency || 'USD',
-    };
-    const access = this.tokens.signAccess(payload);
-    const refresh = this.tokens.signRefresh(payload);
-
-    this.logger.log(`User signup successful: ${dto.phone}`);
+    // لا نعيد Tokens هنا - يجب التحقق من OTP أولاً
+    this.logger.log(`User signup successful but pending verification: ${normalizedPhone}`);
 
     return {
-      tokens: { access, refresh },
-      me: {
-        id: String(user._id),
-        phone: user.phone,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        gender: user.gender,
-        city: user.city,
-        jobTitle: user.jobTitle,
-        roles: user.roles || [],
-        permissions: user.permissions || [],
-        isAdmin: isAdminUser,
-        preferredCurrency: user.preferredCurrency || 'USD',
-        status: user.status,
-        // Capability statuses
-        customerCapable: user.customer_capable,
-        engineerCapable: user.engineer_capable,
-        engineerStatus: user.engineer_status,
-        merchantCapable: user.merchant_capable,
-        merchantStatus: user.merchant_status,
-        merchantDiscountPercent: user.merchant_discount_percent,
-        adminCapable: user.admin_capable,
-        adminStatus: user.admin_status,
-      },
+      success: true,
+      message: 'تم إنشاء الحساب بنجاح. يرجى التحقق من رقم الهاتف عبر رمز OTP المرسل',
+      phone: normalizedPhone,
+      requiresVerification: true,
     };
   }
 
@@ -1331,11 +1406,23 @@ export class AuthController {
   async userLogin(@Body() body: UserLoginDto) {
     this.logger.log(`User login attempt for phone: ${body.phone}`);
 
+    // Normalize phone number for Yemen (+967)
+    let normalizedPhone: string;
+    try {
+      normalizedPhone = normalizeYemeniPhone(body.phone);
+    } catch (error) {
+      this.logger.error(`Failed to normalize phone number ${body.phone}:`, error);
+      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+        phone: body.phone,
+        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+      });
+    }
+
     // البحث عن المستخدم
-    const user = await this.userModel.findOne({ phone: body.phone });
+    const user = await this.userModel.findOne({ phone: normalizedPhone });
     if (!user) {
-      this.logger.warn(`User login failed - user not found: ${body.phone}`);
-      throw new InvalidPasswordException({ phone: body.phone });
+      this.logger.warn(`User login failed - user not found: ${normalizedPhone}`);
+      throw new InvalidPasswordException({ phone: normalizedPhone });
     }
 
     // التحقق من كلمة المرور
@@ -1351,12 +1438,21 @@ export class AuthController {
     }
 
     // التحقق من حالة المستخدم
-    if (user.status !== UserStatus.ACTIVE) {
-      this.logger.warn(`User login failed - user not active: ${body.phone}`);
-      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: body.phone, status: user.status });
+    if (user.status === UserStatus.PENDING) {
+      this.logger.warn(`User login failed - account pending verification: ${normalizedPhone}`);
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { 
+        phone: normalizedPhone, 
+        status: user.status,
+        message: 'الحساب في انتظار التحقق من رقم الهاتف. يرجى التحقق من OTP المرسل'
+      });
     }
 
-    this.logger.log(`User login successful: ${body.phone}`);
+    if (user.status !== UserStatus.ACTIVE) {
+      this.logger.warn(`User login failed - user not active: ${normalizedPhone}`);
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: normalizedPhone, status: user.status });
+    }
+
+    this.logger.log(`User login successful: ${normalizedPhone}`);
     return this.buildAuthResponse(user);
   }
 

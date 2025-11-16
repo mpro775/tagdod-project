@@ -1,12 +1,23 @@
-import React from 'react';
-import { Card, CardContent, Typography, Button, alpha, useTheme, Grid } from '@mui/material';
-import { 
-  Add, 
-  Inventory, 
-  LocalOffer, 
+import React, { useState } from 'react';
+import {
+  Fab,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  alpha,
+  useTheme,
+  Box,
+  Paper,
+  ClickAwayListener,
+} from '@mui/material';
+import {
+  Add,
+  Inventory,
+  LocalOffer,
   Category,
   Assessment,
-  ShoppingCart
+  ShoppingCart,
+  Close,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -22,82 +33,177 @@ export const QuickActions: React.FC = () => {
   const theme = useTheme();
   const { t } = useTranslation(['dashboard']);
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
   const actions: QuickAction[] = [
     {
       icon: <Add />,
       label: t('quickActions.addProduct', 'إضافة منتج'),
       color: theme.palette.primary.main,
-      onClick: () => navigate('/products/new'),
+      onClick: () => {
+        navigate('/products/new');
+        setOpen(false);
+      },
     },
     {
       icon: <ShoppingCart />,
       label: t('quickActions.orders', 'الطلبات'),
       color: theme.palette.success.main,
-      onClick: () => navigate('/orders'),
+      onClick: () => {
+        navigate('/orders');
+        setOpen(false);
+      },
     },
     {
       icon: <LocalOffer />,
       label: t('quickActions.discount', 'كوبون خصم'),
       color: theme.palette.warning.main,
-      onClick: () => navigate('/coupons/new'),
+      onClick: () => {
+        navigate('/coupons/new');
+        setOpen(false);
+      },
     },
     {
       icon: <Category />,
       label: t('quickActions.newCategory', 'فئة جديدة'),
       color: theme.palette.info.main,
-      onClick: () => navigate('/categories/new'),
+      onClick: () => {
+        navigate('/categories/new');
+        setOpen(false);
+      },
     },
     {
       icon: <Inventory />,
       label: t('quickActions.inventory', 'إدارة المخزون'),
       color: theme.palette.error.main,
-      onClick: () => navigate('/products/inventory'),
+      onClick: () => {
+        navigate('/products/inventory');
+        setOpen(false);
+      },
     },
     {
       icon: <Assessment />,
       label: t('quickActions.reports', 'التقارير'),
       color: theme.palette.secondary.main,
-      onClick: () => navigate('/analytics/reports'),
+      onClick: () => {
+        navigate('/analytics/reports');
+        setOpen(false);
+      },
     },
   ];
 
-  return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" fontWeight="bold" gutterBottom>
-          {t('quickActions.title', 'إجراءات سريعة')}
-        </Typography>
+  const handleClick = () => {
+    setOpen(!open);
+  };
 
-        <Grid container spacing={1.5} sx={{ mt: 2 }}>
-          {actions.map((action, index) => (
-            <Grid size={{ xs: 6, sm: 12 }} key={index}>
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={action.icon}
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <Fab
+        color="primary"
+        aria-label={t('quickActions.title', 'إجراءات سريعة')}
+        onClick={handleClick}
+        sx={{
+          position: 'fixed',
+          bottom: 32,
+          right: 32,
+          zIndex: 1000,
+          boxShadow: `0 8px 16px ${alpha(theme.palette.primary.main, 0.4)}`,
+          '&:hover': {
+            transform: 'scale(1.1)',
+            boxShadow: `0 12px 24px ${alpha(theme.palette.primary.main, 0.5)}`,
+          },
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
+        {open ? <Close /> : <Add />}
+      </Fab>
+
+      {open && (
+        <ClickAwayListener onClickAway={handleClose}>
+          <Paper
+            elevation={8}
+            sx={{
+              position: 'fixed',
+              bottom: 100,
+              right: 32,
+              zIndex: 999,
+              minWidth: 240,
+              maxWidth: 300,
+              borderRadius: 2,
+              overflow: 'hidden',
+              boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.2)}`,
+              animation: 'slideUp 0.3s ease-out',
+              '@keyframes slideUp': {
+                from: {
+                  opacity: 0,
+                  transform: 'translateY(20px)',
+                },
+                to: {
+                  opacity: 1,
+                  transform: 'translateY(0)',
+                },
+              },
+            }}
+          >
+            <Box
+              sx={{
+                p: 1.5,
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              }}
+            >
+              <Box
+                component="span"
+                sx={{
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  color: theme.palette.text.primary,
+                }}
+              >
+                {t('quickActions.title', 'إجراءات سريعة')}
+              </Box>
+            </Box>
+            {actions.map((action, index) => (
+              <MenuItem
+                key={index}
                 onClick={action.onClick}
                 sx={{
-                  justifyContent: 'flex-start',
                   py: 1.5,
                   px: 2,
-                  borderColor: alpha(action.color, 0.3),
-                  color: action.color,
                   transition: 'all 0.2s',
                   '&:hover': {
-                    borderColor: action.color,
                     bgcolor: alpha(action.color, 0.08),
                     transform: 'translateX(-4px)',
                   },
                 }}
               >
-                {action.label}
-              </Button>
-            </Grid>
-          ))}
-        </Grid>
-      </CardContent>
-    </Card>
+                <ListItemIcon
+                  sx={{
+                    color: action.color,
+                    minWidth: 40,
+                  }}
+                >
+                  {action.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={action.label}
+                  primaryTypographyProps={{
+                    sx: {
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                    },
+                  }}
+                />
+              </MenuItem>
+            ))}
+          </Paper>
+        </ClickAwayListener>
+      )}
+    </>
   );
 };
 

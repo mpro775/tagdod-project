@@ -18,10 +18,24 @@ export const useServices = (params: ListServicesParams = {}) => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'list', params],
     queryFn: () => servicesApi.list(params),
-    select: (data) => ({
-      data: data.data,
-      meta: data.meta,
-    }),
+    select: (data) => {
+      const items = data.items || data.data || [];
+      // Normalize data: map userId (when it's an object) to user field
+      const normalizedItems = items.map((item: any) => {
+        if (item.userId && typeof item.userId === 'object' && item.userId._id) {
+          return {
+            ...item,
+            user: item.userId,
+            userId: item.userId._id,
+          };
+        }
+        return item;
+      });
+      return {
+        data: normalizedItems,
+        meta: data.meta,
+      };
+    },
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -165,7 +179,7 @@ export const useEngineers = (params: ListEngineersParams = {}) => {
     queryKey: [SERVICES_KEY, 'engineers', params],
     queryFn: () => servicesApi.getEngineersList(params),
     select: (data) => ({
-      data: data.data,
+      data: data.items || data.data || [],
       meta: data.meta,
     }),
     retry: 2,
@@ -218,10 +232,26 @@ export const useOffers = (params: ListOffersParams = {}) => {
   return useQuery({
     queryKey: [SERVICES_KEY, 'offers', params],
     queryFn: () => servicesApi.getOffersList(params),
-    select: (data) => ({
-      data: data.data,
-      meta: data.meta,
-    }),
+    select: (data) => {
+      const items = data.items || data.data || [];
+      // Normalize data: map engineerId and requestId to engineer and request
+      const normalizedItems = items.map((item: any) => {
+        const normalized: any = { ...item };
+        // Map engineerId (when populated) to engineer
+        if (item.engineerId && typeof item.engineerId === 'object' && item.engineerId._id) {
+          normalized.engineer = item.engineerId;
+        }
+        // Map requestId (when populated) to request
+        if (item.requestId && typeof item.requestId === 'object' && item.requestId._id) {
+          normalized.request = item.requestId;
+        }
+        return normalized;
+      });
+      return {
+        data: normalizedItems,
+        meta: data.meta,
+      };
+    },
     retry: 2,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,

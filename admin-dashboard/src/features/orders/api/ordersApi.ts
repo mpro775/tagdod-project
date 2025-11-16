@@ -3,6 +3,9 @@ import { sanitizePaginationParams } from '@/shared/utils/formatters';
 import type {
   Order,
   ListOrdersParams,
+  ListRatingsParams,
+  OrderRating,
+  RatingsStats,
   UpdateOrderStatusDto,
   ShipOrderDto,
   RefundOrderDto,
@@ -232,5 +235,57 @@ export const ordersApi = {
   verifyPayment: async (id: string, data: VerifyPaymentDto): Promise<Order> => {
     const response = await apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/verify-payment`, data);
     return response.data.data;
+  },
+
+  /**
+   * Get order ratings
+   */
+  getRatings: async (params: ListRatingsParams): Promise<PaginatedResponse<OrderRating>> => {
+    const response = await apiClient.get<ApiResponse<{
+      ratings: OrderRating[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }>>('/admin/orders/ratings', {
+      params: sanitizePaginationParams(params),
+    });
+
+    const payload = response.data.data;
+    const ratings = Array.isArray(payload.ratings) ? payload.ratings : [];
+    const pagination = payload.pagination ?? {
+      page: params.page ?? 1,
+      limit: params.limit ?? ratings.length ?? 0,
+      total: ratings.length ?? 0,
+      totalPages: 1,
+    };
+
+    return {
+      data: ratings,
+      meta: {
+        page: pagination.page ?? 1,
+        limit: pagination.limit ?? ratings.length ?? 0,
+        total: pagination.total ?? ratings.length ?? 0,
+        totalPages: pagination.totalPages ?? 1,
+      },
+    };
+  },
+
+  /**
+   * Get ratings statistics
+   */
+  getRatingsStats: async (): Promise<RatingsStats> => {
+    const response = await apiClient.get<ApiResponse<RatingsStats | { stats: RatingsStats }>>(
+      '/admin/orders/ratings/stats'
+    );
+    const payload = response.data.data;
+
+    if (payload && typeof payload === 'object' && 'stats' in payload) {
+      return (payload as { stats: RatingsStats }).stats;
+    }
+
+    return payload as RatingsStats;
   },
 };

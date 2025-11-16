@@ -201,7 +201,6 @@ export interface EngineerDetails {
   engineerId: string;
   engineerName: string;
   engineerPhone: string;
-  engineerEmail?: string;
   totalRequests: number;
   completedRequests: number;
   completionRate: number;

@@ -169,6 +169,8 @@ export class AdvancedAnalyticsService {
    * Get sales by category
    */
   private async getSalesByCategory(startDate: Date, endDate: Date) {
+    // استخدام lookup من products أولاً (أكثر موثوقية)
+    // ثم fallback إلى snapshot إذا كان موجوداً
     const pipeline = [
       {
         $match: {
@@ -186,36 +188,145 @@ export class AdvancedAnalyticsService {
           as: 'product',
         },
       },
-      { $unwind: '$product' },
+      {
+        $unwind: {
+          path: '$product',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
       {
         $lookup: {
           from: 'categories',
           localField: 'product.categoryId',
           foreignField: '_id',
-          as: 'category',
+          as: 'categoryFromProduct',
         },
       },
-      { $unwind: '$category' },
+      {
+        $lookup: {
+          from: 'categories',
+          let: {
+            snapshotCategoryId: {
+              $cond: {
+                if: { $ne: ['$items.snapshot.categoryId', null] },
+                then: {
+                  $cond: {
+                    if: { $eq: [{ $type: '$items.snapshot.categoryId' }, 'string'] },
+                    then: { $toObjectId: '$items.snapshot.categoryId' },
+                    else: '$items.snapshot.categoryId',
+                  },
+                },
+                else: null,
+              },
+            },
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $ne: ['$$snapshotCategoryId', null] },
+                    { $eq: ['$_id', '$$snapshotCategoryId'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'categoryFromSnapshot',
+        },
+      },
+      {
+        $addFields: {
+          // استخدام categoryName من snapshot أولاً، ثم من product
+          categoryName: {
+            $cond: {
+              if: {
+                $and: [
+                  { $ne: ['$items.snapshot.categoryName', null] },
+                  { $ne: ['$items.snapshot.categoryName', ''] },
+                  { $ne: ['$items.snapshot.categoryName', 'undefined'] },
+                ],
+              },
+              then: '$items.snapshot.categoryName',
+              else: {
+                $cond: {
+                  if: { $gt: [{ $size: '$categoryFromSnapshot' }, 0] },
+                  then: { $arrayElemAt: ['$categoryFromSnapshot.name', 0] },
+                  else: {
+                    $cond: {
+                      if: { $gt: [{ $size: '$categoryFromProduct' }, 0] },
+                      then: { $arrayElemAt: ['$categoryFromProduct.name', 0] },
+                      else: null,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          $and: [
+            { categoryName: { $ne: null } },
+            { categoryName: { $ne: '' } },
+            { categoryName: { $ne: 'undefined' } },
+            { categoryName: { $exists: true } },
+          ],
+        },
+      },
       {
         $group: {
-          _id: '$category._id',
-          categoryName: { $first: '$category.name' },
-          revenue: { $sum: { $multiply: ['$items.qty', '$items.finalPrice'] } },
+          _id: '$categoryName',
+          categoryName: { $first: '$categoryName' },
+          revenue: { $sum: '$items.lineTotal' },
           sales: { $sum: '$items.qty' },
         },
       },
       { $sort: { revenue: -1 as 1 | -1 } },
     ];
 
-    const results = await this.orderModel.aggregate(pipeline);
-    const totalRevenue = results.reduce((sum, item) => sum + item.revenue, 0);
+    try {
+      // Debug: تحقق من الطلبات المطابقة
+      const matchingOrdersCount = await this.orderModel.countDocuments({
+        createdAt: { $gte: startDate, $lte: endDate },
+        status: { $in: COMPLETED_STATUSES },
+        paymentStatus: 'paid',
+      });
+      this.logger.debug(`getSalesByCategory: Found ${matchingOrdersCount} matching orders`);
 
-    return results.map((item) => ({
-      category: item.categoryName,
-      revenue: item.revenue,
-      percentage: totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0,
-      sales: item.sales,
-    }));
+      const results = await this.orderModel.aggregate(pipeline);
+      const totalRevenue = results.reduce((sum, item) => sum + (item.revenue || 0), 0);
+
+      this.logger.debug(`getSalesByCategory found ${results.length} categories with total revenue: ${totalRevenue}`);
+      
+      if (results.length === 0) {
+        // Debug: تحقق من البيانات الخام
+        const sampleOrder = await this.orderModel.findOne({
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: { $in: COMPLETED_STATUSES },
+          paymentStatus: 'paid',
+        }).lean();
+        
+        if (sampleOrder && sampleOrder.items && sampleOrder.items.length > 0) {
+          const firstItem = sampleOrder.items[0];
+          this.logger.debug(`Sample order item snapshot.categoryId: ${firstItem.snapshot?.categoryId}`);
+          this.logger.debug(`Sample order item productId: ${firstItem.productId}`);
+        }
+      }
+
+      return results.map((item) => ({
+        category: item.categoryName,
+        revenue: item.revenue || 0,
+        percentage: totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0,
+        sales: item.sales || 0,
+      }));
+    } catch (error: any) {
+      this.logger.error(`Error in getSalesByCategory: ${error?.message || String(error)}`);
+      this.logger.error(`Error stack: ${error?.stack || 'No stack trace'}`);
+      // Return empty array on error
+      return [];
+    }
   }
 
   /**

@@ -181,6 +181,7 @@ export class UserAnalyticsService {
       userInfo: { phone: string; firstName?: string; lastName?: string };
       totalSpent: number;
       totalOrders: number;
+      lastOrderDate?: Date;
       rank: number;
       score: number;
     }>
@@ -194,6 +195,7 @@ export class UserAnalyticsService {
           userInfo: { phone: string; firstName?: string; lastName?: string };
           totalSpent: number;
           totalOrders: number;
+          lastOrderDate?: Date;
           rank: number;
           score: number;
         }>
@@ -208,7 +210,8 @@ export class UserAnalyticsService {
       const pipeline: mongoose.PipelineStage[] = [
         {
           $match: {
-            status: { $in: ['COMPLETED', 'DELIVERED'] },
+            status: OrderStatus.COMPLETED,
+            paymentStatus: 'paid',
           },
         },
         {
@@ -225,10 +228,20 @@ export class UserAnalyticsService {
             localField: '_id',
             foreignField: '_id',
             as: 'user',
+            pipeline: [
+              {
+                $match: {
+                  deletedAt: null,
+                },
+              },
+            ],
           },
         },
         {
-          $unwind: '$user',
+          $unwind: {
+            path: '$user',
+            preserveNullAndEmptyArrays: false,
+          },
         },
         {
           $project: {
@@ -271,12 +284,16 @@ export class UserAnalyticsService {
         lastOrderDate?: Date;
       }>;
 
+      this.logger.debug(`Found ${customerStats.length} customers with completed orders`);
+
       // إضافة الترتيب والنقاط
       const finalResult = customerStats.map((customer, index) => ({
         ...customer,
         rank: index + 1,
         score: this.calculateCustomerScore(customer.totalSpent, customer.totalOrders),
       }));
+
+      this.logger.debug(`Generated rankings for ${finalResult.length} customers`);
 
       // حفظ البيانات في التخزين المؤقت (10 دقائق)
       this.userCacheService.set(cacheKey, finalResult, 600);

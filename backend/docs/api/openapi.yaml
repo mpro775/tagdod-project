@@ -245,10 +245,30 @@ paths:
         - bearer: []
     patch:
       operationId: updateMe
+      summary: تحديث الملف الشخصي
+      description: تحديث بيانات الملف الشخصي للمستخدم الحالي
       parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileDto'
       responses:
         '200':
-          description: ''
+          description: تم تحديث الملف الشخصي بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: boolean
+                    example: true
+        '400':
+          description: بيانات غير صحيحة
+        '401':
+          description: غير مصرح لك
       tags:
         - المصادقة
       security:
@@ -3496,6 +3516,417 @@ paths:
                   error:
                     type: string
                     example: Not Found
+  /api/v1/notifications:
+    get:
+      operationId: getUserNotifications
+      summary: الحصول على إشعارات المستخدم
+      description: استرداد قائمة إشعارات المستخدم مع إمكانية التصفح والترقيم
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: عدد الإشعارات في الصفحة
+          schema:
+            example: 20
+            type: number
+        - name: offset
+          required: false
+          in: query
+          description: عدد الإشعارات التي تم تخطيها
+          schema:
+            example: 0
+            type: number
+      responses:
+        '200':
+          description: تم استرداد الإشعارات بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: notif123
+                              description: معرف الإشعار
+                            title:
+                              type: string
+                              example: طلب جديد
+                              description: عنوان الإشعار
+                            message:
+                              type: string
+                              example: لديك طلب جديد
+                              description: محتوى الإشعار
+                            type:
+                              type: string
+                              example: order
+                              description: نوع الإشعار
+                            isRead:
+                              type: boolean
+                              example: false
+                              description: حالة القراءة
+                            createdAt:
+                              type: string
+                              format: date-time
+                              example: '2024-01-15T10:30:00Z'
+                      total:
+                        type: number
+                        example: 150
+                        description: إجمالي عدد الإشعارات
+                  meta:
+                    type: object
+                    properties:
+                      page:
+                        type: number
+                        example: 1
+                        description: رقم الصفحة الحالية
+                      limit:
+                        type: number
+                        example: 20
+                        description: عدد العناصر في الصفحة
+                      total:
+                        type: number
+                        example: 150
+                        description: إجمالي العناصر
+                      totalPages:
+                        type: number
+                        example: 8
+                        description: إجمالي الصفحات
+                      hasNextPage:
+                        type: boolean
+                        example: true
+                        description: هل يوجد صفحة تالية
+                      hasPrevPage:
+                        type: boolean
+                        example: false
+                        description: هل يوجد صفحة سابقة
+        '401':
+          description: غير مصرح لك بالوصول
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/unread-count:
+    get:
+      operationId: getUnreadCount
+      summary: الحصول على عدد الإشعارات غير المقروءة
+      description: استرداد عدد الإشعارات التي لم يقرأها المستخدم بعد
+      parameters: []
+      responses:
+        '200':
+          description: تم استرداد عدد الإشعارات غير المقروءة بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: number
+                        example: 5
+                        description: عدد الإشعارات غير المقروءة
+        '401':
+          description: غير مصرح لك بالوصول
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/mark-read:
+    post:
+      operationId: markAsRead
+      summary: تحديد الإشعارات كمقروءة
+      description: تحديد إشعارات محددة كمقروءة
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkAsReadDto'
+      responses:
+        '200':
+          description: تم تحديد الإشعارات كمقروءة بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      markedCount:
+                        type: number
+                        example: 3
+                        description: عدد الإشعارات المحددة كمقروءة
+                  message:
+                    type: string
+                    example: 3 notifications marked as read
+                    description: رسالة النتيجة
+        '401':
+          description: غير مصرح لك بالوصول
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/mark-all-read:
+    post:
+      operationId: markAllAsRead
+      summary: تحديد جميع الإشعارات كمقروءة
+      description: تحديد جميع إشعارات المستخدم كمقروءة
+      parameters: []
+      responses:
+        '200':
+          description: تم تحديد جميع الإشعارات كمقروءة بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      markedCount:
+                        type: number
+                        example: 15
+                        description: عدد الإشعارات المحددة كمقروءة
+                  message:
+                    type: string
+                    example: 15 notifications marked as read
+                    description: رسالة النتيجة
+        '401':
+          description: غير مصرح لك بالوصول
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/stats:
+    get:
+      operationId: getUserStats
+      summary: الحصول على إحصائيات إشعارات المستخدم
+      description: استرداد إحصائيات مفصلة حول إشعارات المستخدم
+      parameters: []
+      responses:
+        '200':
+          description: تم استرداد الإحصائيات بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                        example: 150
+                        description: إجمالي الإشعارات
+                      unread:
+                        type: number
+                        example: 5
+                        description: الإشعارات غير المقروءة
+                      read:
+                        type: number
+                        example: 145
+                        description: الإشعارات المقروءة
+                      byType:
+                        type: object
+                        properties:
+                          order:
+                            type: number
+                            example: 50
+                            description: إشعارات الطلبات
+                          system:
+                            type: number
+                            example: 30
+                            description: إشعارات النظام
+                          promotion:
+                            type: number
+                            example: 20
+                            description: إشعارات العروض
+        '401':
+          description: غير مصرح لك بالوصول
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/list:
+    get:
+      operationId: adminListNotifications
+      summary: 'الإدارة: قائمة جميع الإشعارات'
+      description: استرداد قائمة بجميع الإشعارات في النظام (للإداريين فقط)
+      parameters: []
+      responses:
+        '200':
+          description: تم استرداد قائمة الإشعارات بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: notif123
+                            userId:
+                              type: string
+                              example: user456
+                            title:
+                              type: string
+                              example: طلب جديد
+                            message:
+                              type: string
+                              example: لديك طلب جديد
+                            type:
+                              type: string
+                              example: order
+                            isRead:
+                              type: boolean
+                              example: false
+                      total:
+                        type: number
+                        example: 500
+                  meta:
+                    type: object
+                    description: بيانات الترقيم
+        '403':
+          description: غير مصرح لك بالوصول إلى هذه البيانات
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/create:
+    post:
+      operationId: adminCreateNotification
+      summary: 'الإدارة: إنشاء إشعار'
+      description: إنشاء إشعار جديد للمستخدمين (للإداريين فقط)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotificationDto'
+      responses:
+        '201':
+          description: تم إنشاء الإشعار بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: notif123
+                        description: معرف الإشعار الجديد
+                      title:
+                        type: string
+                        example: إعلان مهم
+                        description: عنوان الإشعار
+                      message:
+                        type: string
+                        example: رسالة مهمة لجميع المستخدمين
+                        description: محتوى الإشعار
+                      type:
+                        type: string
+                        example: announcement
+                        description: نوع الإشعار
+        '400':
+          description: بيانات غير صحيحة
+        '403':
+          description: غير مصرح لك بإنشاء إشعارات
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/stats:
+    get:
+      operationId: adminGetStats
+      summary: 'الإدارة: الحصول على إحصائيات الإشعارات'
+      description: استرداد إحصائيات شاملة حول جميع الإشعارات في النظام (للإداريين فقط)
+      parameters:
+        - name: userId
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/templates:
+    get:
+      operationId: adminGetTemplates
+      summary: 'الإدارة: الحصول على قوالب الإشعارات'
+      description: استرداد قائمة بقوالب الإشعارات المتاحة في النظام (للإداريين فقط)
+      parameters: []
+      responses:
+        '200':
+          description: Templates retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/cleanup:
+    post:
+      operationId: adminCleanup
+      summary: 'الإدارة: تنظيف الإشعارات القديمة'
+      description: حذف الإشعارات القديمة والغير مهمة من النظام (للإداريين فقط)
+      parameters:
+        - name: olderThanDays
+          required: true
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Cleanup completed successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
   /api/v1/admin/categories:
     post:
       operationId: createCategory
@@ -4960,417 +5391,6 @@ paths:
         - إدارة-أسعار-الصرف
       security:
         - bearer: []
-  /api/v1/notifications:
-    get:
-      operationId: getUserNotifications
-      summary: الحصول على إشعارات المستخدم
-      description: استرداد قائمة إشعارات المستخدم مع إمكانية التصفح والترقيم
-      parameters:
-        - name: limit
-          required: false
-          in: query
-          description: عدد الإشعارات في الصفحة
-          schema:
-            example: 20
-            type: number
-        - name: offset
-          required: false
-          in: query
-          description: عدد الإشعارات التي تم تخطيها
-          schema:
-            example: 0
-            type: number
-      responses:
-        '200':
-          description: تم استرداد الإشعارات بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      notifications:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              example: notif123
-                              description: معرف الإشعار
-                            title:
-                              type: string
-                              example: طلب جديد
-                              description: عنوان الإشعار
-                            message:
-                              type: string
-                              example: لديك طلب جديد
-                              description: محتوى الإشعار
-                            type:
-                              type: string
-                              example: order
-                              description: نوع الإشعار
-                            isRead:
-                              type: boolean
-                              example: false
-                              description: حالة القراءة
-                            createdAt:
-                              type: string
-                              format: date-time
-                              example: '2024-01-15T10:30:00Z'
-                      total:
-                        type: number
-                        example: 150
-                        description: إجمالي عدد الإشعارات
-                  meta:
-                    type: object
-                    properties:
-                      page:
-                        type: number
-                        example: 1
-                        description: رقم الصفحة الحالية
-                      limit:
-                        type: number
-                        example: 20
-                        description: عدد العناصر في الصفحة
-                      total:
-                        type: number
-                        example: 150
-                        description: إجمالي العناصر
-                      totalPages:
-                        type: number
-                        example: 8
-                        description: إجمالي الصفحات
-                      hasNextPage:
-                        type: boolean
-                        example: true
-                        description: هل يوجد صفحة تالية
-                      hasPrevPage:
-                        type: boolean
-                        example: false
-                        description: هل يوجد صفحة سابقة
-        '401':
-          description: غير مصرح لك بالوصول
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
-  /api/v1/notifications/unread-count:
-    get:
-      operationId: getUnreadCount
-      summary: الحصول على عدد الإشعارات غير المقروءة
-      description: استرداد عدد الإشعارات التي لم يقرأها المستخدم بعد
-      parameters: []
-      responses:
-        '200':
-          description: تم استرداد عدد الإشعارات غير المقروءة بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      count:
-                        type: number
-                        example: 5
-                        description: عدد الإشعارات غير المقروءة
-        '401':
-          description: غير مصرح لك بالوصول
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
-  /api/v1/notifications/mark-read:
-    post:
-      operationId: markAsRead
-      summary: تحديد الإشعارات كمقروءة
-      description: تحديد إشعارات محددة كمقروءة
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MarkAsReadDto'
-      responses:
-        '200':
-          description: تم تحديد الإشعارات كمقروءة بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      markedCount:
-                        type: number
-                        example: 3
-                        description: عدد الإشعارات المحددة كمقروءة
-                  message:
-                    type: string
-                    example: 3 notifications marked as read
-                    description: رسالة النتيجة
-        '401':
-          description: غير مصرح لك بالوصول
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
-  /api/v1/notifications/mark-all-read:
-    post:
-      operationId: markAllAsRead
-      summary: تحديد جميع الإشعارات كمقروءة
-      description: تحديد جميع إشعارات المستخدم كمقروءة
-      parameters: []
-      responses:
-        '200':
-          description: تم تحديد جميع الإشعارات كمقروءة بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      markedCount:
-                        type: number
-                        example: 15
-                        description: عدد الإشعارات المحددة كمقروءة
-                  message:
-                    type: string
-                    example: 15 notifications marked as read
-                    description: رسالة النتيجة
-        '401':
-          description: غير مصرح لك بالوصول
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
-  /api/v1/notifications/stats:
-    get:
-      operationId: getUserStats
-      summary: الحصول على إحصائيات إشعارات المستخدم
-      description: استرداد إحصائيات مفصلة حول إشعارات المستخدم
-      parameters: []
-      responses:
-        '200':
-          description: تم استرداد الإحصائيات بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      total:
-                        type: number
-                        example: 150
-                        description: إجمالي الإشعارات
-                      unread:
-                        type: number
-                        example: 5
-                        description: الإشعارات غير المقروءة
-                      read:
-                        type: number
-                        example: 145
-                        description: الإشعارات المقروءة
-                      byType:
-                        type: object
-                        properties:
-                          order:
-                            type: number
-                            example: 50
-                            description: إشعارات الطلبات
-                          system:
-                            type: number
-                            example: 30
-                            description: إشعارات النظام
-                          promotion:
-                            type: number
-                            example: 20
-                            description: إشعارات العروض
-        '401':
-          description: غير مصرح لك بالوصول
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
-  /api/v1/notifications/admin/list:
-    get:
-      operationId: adminListNotifications
-      summary: 'الإدارة: قائمة جميع الإشعارات'
-      description: استرداد قائمة بجميع الإشعارات في النظام (للإداريين فقط)
-      parameters: []
-      responses:
-        '200':
-          description: تم استرداد قائمة الإشعارات بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      notifications:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              example: notif123
-                            userId:
-                              type: string
-                              example: user456
-                            title:
-                              type: string
-                              example: طلب جديد
-                            message:
-                              type: string
-                              example: لديك طلب جديد
-                            type:
-                              type: string
-                              example: order
-                            isRead:
-                              type: boolean
-                              example: false
-                      total:
-                        type: number
-                        example: 500
-                  meta:
-                    type: object
-                    description: بيانات الترقيم
-        '403':
-          description: غير مصرح لك بالوصول إلى هذه البيانات
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
-  /api/v1/notifications/admin/create:
-    post:
-      operationId: adminCreateNotification
-      summary: 'الإدارة: إنشاء إشعار'
-      description: إنشاء إشعار جديد للمستخدمين (للإداريين فقط)
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateNotificationDto'
-      responses:
-        '201':
-          description: تم إنشاء الإشعار بنجاح
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        example: notif123
-                        description: معرف الإشعار الجديد
-                      title:
-                        type: string
-                        example: إعلان مهم
-                        description: عنوان الإشعار
-                      message:
-                        type: string
-                        example: رسالة مهمة لجميع المستخدمين
-                        description: محتوى الإشعار
-                      type:
-                        type: string
-                        example: announcement
-                        description: نوع الإشعار
-        '400':
-          description: بيانات غير صحيحة
-        '403':
-          description: غير مصرح لك بإنشاء إشعارات
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
-  /api/v1/notifications/admin/stats:
-    get:
-      operationId: adminGetStats
-      summary: 'الإدارة: الحصول على إحصائيات الإشعارات'
-      description: استرداد إحصائيات شاملة حول جميع الإشعارات في النظام (للإداريين فقط)
-      parameters:
-        - name: userId
-          required: true
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Statistics retrieved successfully
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
-  /api/v1/notifications/admin/templates:
-    get:
-      operationId: adminGetTemplates
-      summary: 'الإدارة: الحصول على قوالب الإشعارات'
-      description: استرداد قائمة بقوالب الإشعارات المتاحة في النظام (للإداريين فقط)
-      parameters: []
-      responses:
-        '200':
-          description: Templates retrieved successfully
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
-  /api/v1/notifications/admin/cleanup:
-    post:
-      operationId: adminCleanup
-      summary: 'الإدارة: تنظيف الإشعارات القديمة'
-      description: حذف الإشعارات القديمة والغير مهمة من النظام (للإداريين فقط)
-      parameters:
-        - name: olderThanDays
-          required: true
-          in: query
-          schema:
-            type: number
-      responses:
-        '200':
-          description: Cleanup completed successfully
-      tags:
-        - الإشعارات
-      security:
-        - bearer: []
   /api/v1/admin/user-analytics/user/{userId}:
     get:
       operationId: getUserDetailedStats
@@ -5787,6 +5807,20 @@ paths:
           in: query
           schema:
             type: string
+        - name: hasRating
+          required: false
+          in: query
+          description: فلترة الطلبات التي لديها تقييم
+          schema:
+            type: boolean
+        - name: minRating
+          required: false
+          in: query
+          description: الحد الأدنى للتقييم (1-5)
+          schema:
+            minimum: 1
+            maximum: 5
+            type: number
       responses:
         '200':
           description: تم الحصول على الطلبات بنجاح
@@ -6019,6 +6053,20 @@ paths:
           in: query
           schema:
             type: string
+        - name: hasRating
+          required: false
+          in: query
+          description: فلترة الطلبات التي لديها تقييم
+          schema:
+            type: boolean
+        - name: minRating
+          required: false
+          in: query
+          description: الحد الأدنى للتقييم (1-5)
+          schema:
+            minimum: 1
+            maximum: 5
+            type: number
       responses:
         '200':
           description: تم الحصول على الطلبات بنجاح
@@ -6214,6 +6262,177 @@ paths:
         - إدارة-الطلبات
       security:
         - bearer: []
+  /api/v1/admin/orders/ratings:
+    get:
+      operationId: getRatings
+      summary: قائمة تقييمات الطلبات
+      description: الحصول على جميع تقييمات الطلبات مع إمكانية الفلترة والبحث
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            default: 1
+            type: number
+        - name: limit
+          required: false
+          in: query
+          schema:
+            default: 20
+            type: number
+        - name: minRating
+          required: false
+          in: query
+          description: الحد الأدنى للتقييم (1-5)
+          schema:
+            minimum: 1
+            maximum: 5
+            type: number
+        - name: maxRating
+          required: false
+          in: query
+          description: الحد الأعلى للتقييم (1-5)
+          schema:
+            minimum: 1
+            maximum: 5
+            type: number
+        - name: search
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            enum:
+              - asc
+              - desc
+            type: string
+        - name: fromDate
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: toDate
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم الحصول على التقييمات بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ratings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        orderId:
+                          type: string
+                        orderNumber:
+                          type: string
+                        customerName:
+                          type: string
+                        customerPhone:
+                          type: string
+                        rating:
+                          type: number
+                          minimum: 1
+                          maximum: 5
+                        review:
+                          type: string
+                        ratedAt:
+                          type: string
+                          format: date-time
+                        orderStatus:
+                          type: string
+                        orderTotal:
+                          type: number
+                        orderCurrency:
+                          type: string
+                        createdAt:
+                          type: string
+                          format: date-time
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                      page:
+                        type: number
+                      limit:
+                        type: number
+                      totalPages:
+                        type: number
+      tags:
+        - إدارة-الطلبات
+      security:
+        - bearer: []
+  /api/v1/admin/orders/ratings/stats:
+    get:
+      operationId: getRatingsStats
+      summary: إحصائيات التقييمات
+      description: الحصول على إحصائيات شاملة لتقييمات الطلبات
+      parameters: []
+      responses:
+        '200':
+          description: تم الحصول على إحصائيات التقييمات
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalRatings:
+                    type: number
+                    description: إجمالي التقييمات
+                  averageRating:
+                    type: number
+                    description: متوسط التقييم
+                  ratingsDistribution:
+                    type: object
+                    properties:
+                      '1':
+                        type: number
+                        description: عدد التقييمات نجمة واحدة
+                      '2':
+                        type: number
+                        description: عدد التقييمات نجمتين
+                      '3':
+                        type: number
+                        description: عدد التقييمات 3 نجوم
+                      '4':
+                        type: number
+                        description: عدد التقييمات 4 نجوم
+                      '5':
+                        type: number
+                        description: عدد التقييمات 5 نجوم
+                  ratingsWithReviews:
+                    type: number
+                    description: عدد التقييمات مع مراجعات نصية
+                  recentRatings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        orderNumber:
+                          type: string
+                        rating:
+                          type: number
+                        review:
+                          type: string
+                        ratedAt:
+                          type: string
+                          format: date-time
+      tags:
+        - إدارة-الطلبات
+      security:
+        - bearer: []
   /api/v1/admin/orders/analytics/summary:
     get:
       operationId: getAnalytics
@@ -6358,6 +6577,20 @@ paths:
           in: query
           schema:
             type: string
+        - name: hasRating
+          required: false
+          in: query
+          description: فلترة الطلبات التي لديها تقييم
+          schema:
+            type: boolean
+        - name: minRating
+          required: false
+          in: query
+          description: الحد الأدنى للتقييم (1-5)
+          schema:
+            minimum: 1
+            maximum: 5
+            type: number
         - name: format
           required: false
           in: query
@@ -6520,6 +6753,20 @@ paths:
           in: query
           schema:
             type: string
+        - name: hasRating
+          required: false
+          in: query
+          description: فلترة الطلبات التي لديها تقييم
+          schema:
+            type: boolean
+        - name: minRating
+          required: false
+          in: query
+          description: الحد الأدنى للتقييم (1-5)
+          schema:
+            minimum: 1
+            maximum: 5
+            type: number
         - name: format
           required: false
           in: query
@@ -18599,6 +18846,39 @@ components:
         - phone
         - code
         - newPassword
+    UpdateProfileDto:
+      type: object
+      properties:
+        firstName:
+          type: string
+          description: الاسم الأول
+          example: أحمد
+          minLength: 2
+          maxLength: 50
+        lastName:
+          type: string
+          description: الاسم الأخير
+          example: محمد
+          minLength: 2
+          maxLength: 50
+        gender:
+          type: string
+          description: الجنس
+          enum:
+            - male
+            - female
+            - other
+          example: male
+        city:
+          type: string
+          description: المدينة
+          example: صنعاء
+          maxLength: 100
+        jobTitle:
+          type: string
+          description: المسمى الوظيفي
+          example: مهندس كهرباء
+          maxLength: 100
     DeleteAccountDto:
       type: object
       properties:
@@ -18995,6 +19275,12 @@ components:
           description: هل القيمة نشطة؟
           example: true
           default: true
+    MarkAsReadDto:
+      type: object
+      properties: {}
+    CreateNotificationDto:
+      type: object
+      properties: {}
     CreateCategoryDto:
       type: object
       properties: {}
@@ -19008,12 +19294,6 @@ components:
       type: object
       properties: {}
     RetrySyncJobDto:
-      type: object
-      properties: {}
-    MarkAsReadDto:
-      type: object
-      properties: {}
-    CreateNotificationDto:
       type: object
       properties: {}
     UserInfoDto:
@@ -19271,6 +19551,10 @@ components:
         totalOrders:
           type: number
           description: إجمالي الطلبات
+        lastOrderDate:
+          format: date-time
+          type: string
+          description: تاريخ آخر طلب
         rank:
           type: number
           description: الترتيب

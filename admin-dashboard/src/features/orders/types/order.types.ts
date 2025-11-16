@@ -198,6 +198,7 @@ export interface Order extends BaseEntity {
 
   // Local Payment
   localPaymentAccountId?: string;
+  localPaymentAccountType?: 'bank' | 'wallet';
   paymentReference?: string;
   verifiedPaymentAmount?: number;
   verifiedPaymentCurrency?: string;
@@ -313,6 +314,50 @@ export interface ListOrdersParams extends ListParams {
   sortOrder?: 'asc' | 'desc';
   fromDate?: string;
   toDate?: string;
+  hasRating?: boolean;
+  minRating?: number;
+}
+
+export interface ListRatingsParams extends ListParams {
+  minRating?: number;
+  maxRating?: number;
+  search?: string;
+  sortOrder?: 'asc' | 'desc';
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface OrderRating {
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone?: string;
+  rating: number;
+  review?: string;
+  ratedAt?: Date;
+  orderStatus: OrderStatus;
+  orderTotal: number;
+  orderCurrency: string;
+  createdAt: Date;
+}
+
+export interface RatingsStats {
+  totalRatings: number;
+  averageRating: number;
+  ratingsDistribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+  ratingsWithReviews: number;
+  recentRatings: Array<{
+    orderNumber: string;
+    rating: number;
+    review?: string;
+    ratedAt?: Date;
+  }>;
 }
 
 export interface OrderAnalyticsParams {

@@ -53,6 +53,7 @@ import type {
   LocalPaymentAccount,
   GroupedPaymentAccount,
   CreatePaymentAccountDto,
+  UpdatePaymentAccountDto,
   MediaReference,
   CurrencyCode,
   PaymentAccountNumberingMode,
@@ -350,8 +351,18 @@ type PaymentProviderRow = GridValidRowModel & {
 
   const providerRows: PaymentProviderRow[] = useMemo(() => {
     return paymentAccounts.map((group) => {
-      const provider = allAccounts.find((item) => item._id === group.providerId);
+      // البحث عن الحساب الكامل باستخدام providerId
+      const provider = allAccounts.find((item) => {
+        // محاولة المطابقة بعدة طرق
+        return (
+          item._id === group.providerId ||
+          item._id?.toString() === group.providerId?.toString() ||
+          (group.providerId && item._id && String(item._id) === String(group.providerId))
+        );
+      });
+      
       const providerId = group.providerId ?? provider?._id ?? group.providerName;
+      
       return {
         id: providerId,
         providerName: group.providerName,
@@ -364,7 +375,7 @@ type PaymentProviderRow = GridValidRowModel & {
         isActive: provider?.isActive ?? true,
         displayOrder: provider?.displayOrder ?? 0,
         notes: provider?.notes,
-        provider,
+        provider, // إضافة provider للوصول السريع
       };
     });
   }, [paymentAccounts, allAccounts]);
@@ -424,8 +435,8 @@ type PaymentProviderRow = GridValidRowModel & {
       .filter((account) => account.accountNumber.length > 0);
   };
 
-  const buildPayload = (): CreatePaymentAccountDto => {
-    const payload: CreatePaymentAccountDto = {
+  const buildPayload = (): CreatePaymentAccountDto | UpdatePaymentAccountDto => {
+    const basePayload: CreatePaymentAccountDto | UpdatePaymentAccountDto = {
       providerName: accountForm.providerName.trim(),
       iconMediaId: accountForm.iconMediaId ?? null,
       type: accountForm.type,
@@ -438,16 +449,19 @@ type PaymentProviderRow = GridValidRowModel & {
     const accounts = normalizeAccountsForPayload();
 
     if (accountForm.numberingMode === 'shared') {
-      payload.sharedAccountNumber = accountForm.sharedAccountNumber?.trim();
-      payload.supportedCurrencies = accountForm.supportedCurrencies;
+      basePayload.sharedAccountNumber = accountForm.sharedAccountNumber?.trim();
+      basePayload.supportedCurrencies = accountForm.supportedCurrencies;
       if (accounts.length) {
-        payload.accounts = accounts;
+        basePayload.accounts = accounts;
+      } else {
+        // عند التعديل في وضع shared، إذا لم تكن هناك حسابات مخصصة، أرسل مصفوفة فارغة
+        basePayload.accounts = [];
       }
     } else {
-      payload.accounts = accounts;
+      basePayload.accounts = accounts;
     }
 
-    return payload;
+    return basePayload;
   };
 
   const validateAccountForm = (): boolean => {
@@ -491,16 +505,18 @@ type PaymentProviderRow = GridValidRowModel & {
       const payload = buildPayload();
 
       if (editingAccount) {
-        await localPaymentAccountsApi.updateAccount(editingAccount._id, payload);
+        await localPaymentAccountsApi.updateAccount(editingAccount._id, payload as UpdatePaymentAccountDto);
         toast.success(t('sections.localPaymentAccounts.accountUpdated'));
       } else {
-        await localPaymentAccountsApi.createAccount(payload);
+        await localPaymentAccountsApi.createAccount(payload as CreatePaymentAccountDto);
         toast.success(t('sections.localPaymentAccounts.accountAdded'));
       }
       handleCloseAccountDialog();
       fetchPaymentAccounts();
-    } catch {
-      toast.error(t('sections.localPaymentAccounts.saveFailed'));
+    } catch (error: any) {
+      console.error('Failed to save account:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || t('sections.localPaymentAccounts.saveFailed');
+      toast.error(errorMessage);
     }
   };
 
@@ -667,7 +683,18 @@ type PaymentProviderRow = GridValidRowModel & {
         filterable: false,
         renderCell: (params: GridRenderCellParams<PaymentProviderRow>) => {
           const row = params.row;
-          const provider = row.provider ?? allAccounts.find((item) => item._id === row.id);
+          // استخدام provider الموجود في row أولاً، ثم البحث في allAccounts
+          let provider = row.provider;
+          
+          if (!provider) {
+            // البحث بعدة طرق للمطابقة
+            provider = allAccounts.find((item) => {
+              const itemId = String(item._id);
+              const rowId = String(row.id);
+              return itemId === rowId || item._id === row.id || itemId === rowId;
+            });
+          }
+          
           return (
             <Box sx={{ display: 'flex', gap: 0.5 }}>
               <IconButton
@@ -677,8 +704,13 @@ type PaymentProviderRow = GridValidRowModel & {
                   event.stopPropagation();
                   if (provider) {
                     handleOpenAccountDialog(provider);
+                  } else {
+                    console.error('Provider not found:', { rowId: row.id, providerName: row.providerName, allAccountIds: allAccounts.map(a => a._id) });
+                    toast.error(t('sections.localPaymentAccounts.providerNotFound', 'لم يتم العثور على بيانات الحساب'));
                   }
                 }}
+                disabled={!provider}
+                title={provider ? t('sections.localPaymentAccounts.editAccount') : t('sections.localPaymentAccounts.providerNotFound', 'لم يتم العثور على بيانات الحساب')}
               >
                 <Edit fontSize="small" />
               </IconButton>

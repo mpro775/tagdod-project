@@ -53,18 +53,21 @@ export interface UserProfile {
     firstName?: string;
     lastName?: string;
     gender?: string;
+    city?: string;
     jobTitle?: string;
     roles: string[];
     permissions: string[];
     isAdmin: boolean;
+    preferredCurrency?: string;
+    status?: string;
   };
   capabilities?: {
     customer_capable?: boolean;
     engineer_capable?: boolean;
     engineer_status?: string;
-    wholesale_capable?: boolean;
-    wholesale_status?: string;
-    wholesale_discount_percent?: number;
+    merchant_capable?: boolean;
+    merchant_status?: string;
+    merchant_discount_percent?: number;
     admin_capable?: boolean;
     admin_status?: string;
   };
