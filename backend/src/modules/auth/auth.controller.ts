@@ -200,7 +200,8 @@ export class AuthController {
     },
   })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
-    // Normalize phone number for verification
+    // Normalize phone number for OTP verification only (SMS sending)
+    // OTP is stored in Redis with normalized phone (+967 format)
     let normalizedPhone: string;
     try {
       normalizedPhone = normalizeYemeniPhone(dto.phone);
@@ -212,6 +213,7 @@ export class AuthController {
       });
     }
 
+    // Verify OTP using normalized phone (OTP was stored with normalized phone)
     const ok = await this.otp.verifyOtp(normalizedPhone, dto.code, 'register');
     if (!ok) throw new InvalidOTPException({ phone: normalizedPhone });
 
@@ -220,7 +222,12 @@ export class AuthController {
       throw new AuthException(ErrorCode.AUTH_JOB_TITLE_REQUIRED);
     }
 
-    let user = await this.userModel.findOne({ phone: normalizedPhone });
+    // البحث في قاعدة البيانات بالرقم كما هو (بدون +967) أو بالرقم المحول
+    // نبحث بالرقم الأصلي أولاً، ثم بالرقم المحول إذا لم نجد
+    let user = await this.userModel.findOne({ phone: dto.phone });
+    if (!user) {
+      user = await this.userModel.findOne({ phone: normalizedPhone });
+    }
     if (!user) {
       const userData: {
         phone: string;
@@ -255,7 +262,7 @@ export class AuthController {
 
       user = await this.userModel.create({
         ...userData,
-        phone: normalizedPhone, // استخدام الرقم المطبيع
+        phone: dto.phone, // حفظ الرقم كما هو (بدون +967)
         status: UserStatus.ACTIVE, // تفعيل الحساب بعد التحقق من OTP
       });
       
@@ -377,7 +384,7 @@ export class AuthController {
   @Post('forgot-password') async forgot(@Body() dto: ForgotPasswordDto) {
     this.logger.log(`Forgot password request for phone: ${dto.phone}`);
 
-    // Normalize phone number for Yemen (+967)
+    // Normalize phone number for OTP sending (SMS requires +967 format)
     let normalizedPhone: string;
     try {
       normalizedPhone = normalizeYemeniPhone(dto.phone);
@@ -389,14 +396,18 @@ export class AuthController {
       });
     }
 
-    // Check if user exists
-    const user = await this.userModel.findOne({ phone: normalizedPhone });
+    // البحث في قاعدة البيانات بالرقم كما هو (بدون +967) أو بالرقم المحول
+    let user = await this.userModel.findOne({ phone: dto.phone });
     if (!user) {
-      this.logger.warn(`Forgot password failed - user not found: ${normalizedPhone}`);
+      user = await this.userModel.findOne({ phone: normalizedPhone });
+    }
+
+    if (!user) {
+      this.logger.warn(`Forgot password failed - user not found: ${dto.phone}`);
       throw new UserNotFoundException();
     }
 
-    // Send OTP via SMS
+    // Send OTP via SMS (requires normalized phone)
     const result = await this.otp.sendOtp(normalizedPhone, 'reset');
     this.logger.log(`OTP sent for password reset to ${normalizedPhone}`);
     
@@ -406,7 +417,7 @@ export class AuthController {
   @Post('reset-password') async reset(@Body() dto: ResetPasswordDto) {
     this.logger.log(`Reset password request for phone: ${dto.phone}`);
 
-    // Normalize phone number for Yemen (+967)
+    // Normalize phone number for OTP verification only (OTP was stored with normalized phone)
     let normalizedPhone: string;
     try {
       normalizedPhone = normalizeYemeniPhone(dto.phone);
@@ -418,17 +429,20 @@ export class AuthController {
       });
     }
 
-    // Verify OTP
+    // Verify OTP using normalized phone (OTP was stored with normalized phone)
     const ok = await this.otp.verifyOtp(normalizedPhone, dto.code, 'reset');
     if (!ok) {
       this.logger.warn(`Reset password failed - invalid OTP for ${normalizedPhone}`);
       throw new InvalidOTPException({ phone: normalizedPhone });
     }
 
-    // Check if user exists
-    const user = await this.userModel.findOne({ phone: normalizedPhone });
+    // البحث في قاعدة البيانات بالرقم كما هو (بدون +967) أو بالرقم المحول
+    let user = await this.userModel.findOne({ phone: dto.phone });
     if (!user) {
-      this.logger.warn(`Reset password failed - user not found: ${normalizedPhone}`);
+      user = await this.userModel.findOne({ phone: normalizedPhone });
+    }
+    if (!user) {
+      this.logger.warn(`Reset password failed - user not found: ${dto.phone}`);
       throw new UserNotFoundException();
     }
 
@@ -919,23 +933,25 @@ export class AuthController {
   async userSignup(@Body() dto: UserSignupDto) {
     this.logger.log(`User signup attempt for phone: ${dto.phone}`);
 
-    // Normalize phone number for Yemen (+967)
-    let normalizedPhone: string;
-    try {
-      normalizedPhone = normalizeYemeniPhone(dto.phone);
-    } catch (error) {
-      this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
-      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
-        phone: dto.phone,
-        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
-      });
+    // التحقق من أن رقم الهاتف غير موجود مسبقاً (البحث بالرقم كما هو أو بالرقم المحول)
+    let existingUser = await this.userModel.findOne({ phone: dto.phone });
+    if (!existingUser) {
+      // Normalize phone number to check with +967 format
+      let normalizedPhone: string;
+      try {
+        normalizedPhone = normalizeYemeniPhone(dto.phone);
+        existingUser = await this.userModel.findOne({ phone: normalizedPhone });
+      } catch (error) {
+        this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
+        throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+          phone: dto.phone,
+          message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+        });
+      }
     }
-
-    // التحقق من أن رقم الهاتف غير موجود مسبقاً
-    const existingUser = await this.userModel.findOne({ phone: normalizedPhone });
     if (existingUser) {
-      this.logger.warn(`User signup failed - phone already exists: ${normalizedPhone}`);
-      throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: normalizedPhone });
+      this.logger.warn(`User signup failed - phone already exists: ${dto.phone}`);
+      throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
     }
 
     // التحقق من صحة البيانات عند طلب أن يكون مهندساً
@@ -947,8 +963,9 @@ export class AuthController {
     const hashedPassword = await hash(dto.password, 10);
 
     // إنشاء المستخدم الجديد بحالة PENDING (يحتاج التحقق من OTP)
+    // حفظ الرقم كما هو (بدون +967) في قاعدة البيانات
     const user = await this.userModel.create({
-      phone: normalizedPhone,
+      phone: dto.phone,
       firstName: dto.firstName,
       lastName: dto.lastName,
       gender: dto.gender,
@@ -981,22 +998,24 @@ export class AuthController {
       merchant_discount_percent: 0,
     });
 
-    // إرسال OTP عبر SMS بعد إنشاء الحساب
+    // إرسال OTP عبر SMS بعد إنشاء الحساب (يتطلب الرقم بصيغة +967)
+    let normalizedPhone: string;
     try {
+      normalizedPhone = normalizeYemeniPhone(dto.phone);
       await this.otp.sendOtp(normalizedPhone, 'register');
       this.logger.log(`OTP sent to ${normalizedPhone} after signup - account pending verification`);
     } catch (error) {
-      this.logger.warn(`Failed to send OTP after signup to ${normalizedPhone}:`, error);
+      this.logger.warn(`Failed to send OTP after signup to ${dto.phone}:`, error);
       // Continue anyway - account is created, OTP sending failure is not critical
     }
 
     // لا نعيد Tokens هنا - يجب التحقق من OTP أولاً
-    this.logger.log(`User signup successful but pending verification: ${normalizedPhone}`);
+    this.logger.log(`User signup successful but pending verification: ${dto.phone}`);
 
     return {
       success: true,
       message: 'تم إنشاء الحساب بنجاح. يرجى التحقق من رقم الهاتف عبر رمز OTP المرسل',
-      phone: normalizedPhone,
+      phone: dto.phone,
       requiresVerification: true,
     };
   }
@@ -1406,23 +1425,12 @@ export class AuthController {
   async userLogin(@Body() body: UserLoginDto) {
     this.logger.log(`User login attempt for phone: ${body.phone}`);
 
-    // Normalize phone number for Yemen (+967)
-    let normalizedPhone: string;
-    try {
-      normalizedPhone = normalizeYemeniPhone(body.phone);
-    } catch (error) {
-      this.logger.error(`Failed to normalize phone number ${body.phone}:`, error);
-      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
-        phone: body.phone,
-        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
-      });
-    }
-
-    // البحث عن المستخدم
-    const user = await this.userModel.findOne({ phone: normalizedPhone });
+    // البحث عن المستخدم بالرقم كما هو (بدون تحويل إلى +967)
+    // التحويل إلى +967 يحدث فقط عند إرسال OTP
+    const user = await this.userModel.findOne({ phone: body.phone });
     if (!user) {
-      this.logger.warn(`User login failed - user not found: ${normalizedPhone}`);
-      throw new InvalidPasswordException({ phone: normalizedPhone });
+      this.logger.warn(`User login failed - user not found: ${body.phone}`);
+      throw new InvalidPasswordException({ phone: body.phone });
     }
 
     // التحقق من كلمة المرور
@@ -1439,20 +1447,20 @@ export class AuthController {
 
     // التحقق من حالة المستخدم
     if (user.status === UserStatus.PENDING) {
-      this.logger.warn(`User login failed - account pending verification: ${normalizedPhone}`);
+      this.logger.warn(`User login failed - account pending verification: ${body.phone}`);
       throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { 
-        phone: normalizedPhone, 
+        phone: body.phone, 
         status: user.status,
         message: 'الحساب في انتظار التحقق من رقم الهاتف. يرجى التحقق من OTP المرسل'
       });
     }
 
     if (user.status !== UserStatus.ACTIVE) {
-      this.logger.warn(`User login failed - user not active: ${normalizedPhone}`);
-      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: normalizedPhone, status: user.status });
+      this.logger.warn(`User login failed - user not active: ${body.phone}`);
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: body.phone, status: user.status });
     }
 
-    this.logger.log(`User login successful: ${normalizedPhone}`);
+    this.logger.log(`User login successful: ${body.phone}`);
     return this.buildAuthResponse(user);
   }
 
