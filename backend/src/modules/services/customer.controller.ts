@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -12,6 +13,7 @@ import {
   ApiNotFoundResponse,
   ApiQuery,
   ApiParam,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ServicesService } from './services.service';
@@ -42,12 +44,31 @@ export class CustomerServicesController {
   constructor(private svc: ServicesService) {}
 
   @Post()
+  @UseInterceptors(FilesInterceptor('images', 10)) // قبول حتى 10 صور
   @RequireServicePermission(ServicePermission.CUSTOMER)
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'إنشاء طلب خدمة جديد',
-    description: 'إنشاء طلب خدمة جديد من قبل العميل'
+    description: 'إنشاء طلب خدمة جديد من قبل العميل مع رفع الصور تلقائياً إلى Bunny.net'
   })
-  @ApiBody({ type: CreateServiceRequestDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['title', 'addressId'],
+      properties: {
+        title: { type: 'string', example: 'إصلاح جهاز تكييف' },
+        type: { type: 'string', example: 'maintenance' },
+        description: { type: 'string', example: 'الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل' },
+        images: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          description: 'صور الطلب (حتى 10 صور) - يتم رفعها تلقائياً إلى Bunny.net',
+        },
+        addressId: { type: 'string', example: '662fa2ab5d97b30a4f8c1234' },
+        scheduledAt: { type: 'string', format: 'date-time', example: '2024-06-05T09:00:00.000Z' },
+      },
+    },
+  })
   @ApiCreatedResponse({
     description: 'تم إنشاء طلب الخدمة بنجاح',
     schema: {
@@ -58,7 +79,7 @@ export class CustomerServicesController {
           title: 'إصلاح جهاز تكييف',
           type: 'maintenance',
           description: 'الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل',
-          images: ['https://cdn.example.com/uploads/requests/ac-issue-1.jpg'],
+          images: ['https://cdn.example.com/uploads/services/requests/uuid-ac-issue-1.jpg'],
           city: 'صنعاء',
           addressId: '662fa2ab5d97b30a4f8c1234',
           status: 'OPEN',
@@ -84,8 +105,12 @@ export class CustomerServicesController {
     },
   })
   @ApiUnauthorizedResponse({ description: 'غير مصرح لك بالوصول' })
-  async create(@Req() req: RequestWithUser, @Body() dto: CreateServiceRequestDto) {
-    const data = await this.svc.createRequest(req.user!.sub, dto);
+  async create(
+    @Req() req: RequestWithUser,
+    @Body() dto: CreateServiceRequestDto,
+    @UploadedFiles() images?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
+  ) {
+    const data = await this.svc.createRequest(req.user!.sub, dto, images);
     return { data };
   }
 

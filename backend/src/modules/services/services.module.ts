@@ -15,6 +15,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { AddressesModule } from '../addresses/addresses.module';
 import { SharedModule } from '../../shared/shared.module';
+import { UploadModule } from '../upload/upload.module';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -27,6 +28,7 @@ import { SharedModule } from '../../shared/shared.module';
     NotificationsCompleteModule,
     AddressesModule,
     SharedModule,
+    UploadModule,
   ],
   controllers: [CustomerServicesController, EngineerServicesController, AdminServicesController],
   providers: [ServicesService, DistanceService, ServicesPermissionGuard, EngineerGuard],

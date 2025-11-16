@@ -21927,14 +21927,49 @@
       "post": {
         "operationId": "create",
         "summary": "إنشاء طلب خدمة جديد",
-        "description": "إنشاء طلب خدمة جديد من قبل العميل",
+        "description": "إنشاء طلب خدمة جديد من قبل العميل مع رفع الصور تلقائياً إلى Bunny.net",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/CreateServiceRequestDto"
+                "type": "object",
+                "required": [
+                  "title",
+                  "addressId"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "إصلاح جهاز تكييف"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "maintenance"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل"
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "صور الطلب (حتى 10 صور) - يتم رفعها تلقائياً إلى Bunny.net"
+                  },
+                  "addressId": {
+                    "type": "string",
+                    "example": "662fa2ab5d97b30a4f8c1234"
+                  },
+                  "scheduledAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2024-06-05T09:00:00.000Z"
+                  }
+                }
               }
             }
           }
@@ -21953,7 +21988,7 @@
                       "type": "maintenance",
                       "description": "الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل",
                       "images": [
-                        "https://cdn.example.com/uploads/requests/ac-issue-1.jpg"
+                        "https://cdn.example.com/uploads/services/requests/uuid-ac-issue-1.jpg"
                       ],
                       "city": "صنعاء",
                       "addressId": "662fa2ab5d97b30a4f8c1234",
@@ -32921,10 +32956,6 @@
           "trend",
           "changePercentage"
         ]
-      },
-      "CreateServiceRequestDto": {
-        "type": "object",
-        "properties": {}
       },
       "AcceptOfferDto": {
         "type": "object",

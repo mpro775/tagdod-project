@@ -41,7 +41,7 @@
 
 ### 1. إنشاء طلب خدمة
 
-ينشئ طلب خدمة جديد للمهندسين.
+ينشئ طلب خدمة جديد للمهندسين مع رفع الصور تلقائياً إلى Bunny.net.
 
 ### معلومات الطلب
 
@@ -49,20 +49,30 @@
 - **Endpoint:** `/services/customer`
 - **Auth Required:** ✅ نعم
 - **Cache:** ❌ لا
+- **Content-Type:** `multipart/form-data` (لرفع الصور)
 
-### Request Body
+### Request Body (multipart/form-data)
 
-```json
-{
-  "title": "تركيب نظام طاقة شمسية",
-  "type": "INSTALLATION",
-  "description": "أحتاج تركيب نظام 10 كيلو واط",
-  "images": [
-    "https://cdn.example.com/uploads/site-photo-1.jpg"
-  ],
-  "addressId": "64address123",
-  "scheduledAt": "2025-10-20T10:00:00.000Z"
-}
+| الحقل | النوع | مطلوب | الوصف |
+|------|------|-------|-------|
+| `title` | `string` | ✅ | عنوان الطلب |
+| `type` | `string` | ❌ | نوع الخدمة |
+| `description` | `string` | ❌ | وصف الطلب |
+| `images` | `File[]` | ❌ | صور الطلب (حتى 10 صور) - يتم رفعها تلقائياً إلى Bunny.net |
+| `addressId` | `string` | ✅ | معرف العنوان |
+| `scheduledAt` | `string` (ISO 8601) | ❌ | موعد التنفيذ |
+
+> ✅ **ميزة جديدة:** يمكنك الآن رفع الصور مباشرة مع الطلب. يتم رفعها تلقائياً إلى Bunny.net CDN وإرجاع روابط CDN في الاستجابة. لا حاجة لرفع الصور مسبقاً عبر endpoint منفصل.
+
+### مثال Request (multipart/form-data)
+
+```
+title: "تركيب نظام طاقة شمسية"
+type: "INSTALLATION"
+description: "أحتاج تركيب نظام 10 كيلو واط"
+images: [File1, File2, File3]  // ملفات الصور
+addressId: "64address123"
+scheduledAt: "2025-10-20T10:00:00.000Z"
 ```
 
 ### Response - نجاح
@@ -78,7 +88,7 @@
       "type": "INSTALLATION",
       "description": "أحتاج تركيب نظام 10 كيلو واط",
       "images": [
-        "https://cdn.example.com/uploads/site-photo-1.jpg"
+        "https://cdn.example.com/services/requests/uuid-site-photo-1.jpg"
       ],
       "city": "صنعاء",
       "addressId": "64address123",
@@ -103,22 +113,47 @@
 ### كود Flutter
 
 ```dart
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+
 Future<ServiceRequest> createServiceRequest({
   required String title,
   String? type,
   String? description,
-  List<String>? images,
+  List<String>? imagePaths, // مسارات الملفات المحلية
   required String addressId,
   DateTime? scheduledAt,
 }) async {
-  final response = await _dio.post('/services/customer', data: {
+  // إنشاء FormData لرفع الملفات
+  final formData = FormData.fromMap({
     'title': title,
     if (type != null) 'type': type,
     if (description != null) 'description': description,
-    if (images != null) 'images': images,
     'addressId': addressId,
     if (scheduledAt != null) 'scheduledAt': scheduledAt.toIso8601String(),
   });
+
+  // إضافة الصور إذا كانت موجودة
+  if (imagePaths != null && imagePaths.isNotEmpty) {
+    for (final imagePath in imagePaths) {
+      final file = await MultipartFile.fromFile(
+        imagePath,
+        filename: imagePath.split('/').last,
+        contentType: MediaType('image', 'jpeg'), // أو 'png', 'webp' حسب النوع
+      );
+      formData.files.add(MapEntry('images', file));
+    }
+  }
+
+  final response = await _dio.post(
+    '/services/customer',
+    data: formData,
+    options: Options(
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    ),
+  );
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
@@ -132,6 +167,29 @@ Future<ServiceRequest> createServiceRequest({
   }
 }
 ```
+
+### مثال الاستخدام في Flutter
+
+```dart
+// رفع طلب مع صور
+final request = await servicesService.createServiceRequest(
+  title: 'إصلاح لوح شمسي',
+  type: 'REPAIR',
+  description: 'يحتاج صيانة عاجلة',
+  imagePaths: [
+    '/path/to/image1.jpg',
+    '/path/to/image2.jpg',
+  ],
+  addressId: '64address123',
+  scheduledAt: DateTime.now().add(Duration(days: 1)),
+);
+
+// الصور ستكون متاحة في request.images كروابط CDN
+print('Uploaded images: ${request.images}');
+// Output: [https://cdn.example.com/services/requests/uuid-image1.jpg, ...]
+```
+
+> ✅ **ميزة جديدة:** الصور تُرفع تلقائياً إلى Bunny.net CDN عند إنشاء الطلب. لا حاجة لرفعها مسبقاً عبر endpoint منفصل.
 
 > ℹ️ **معلومة مهمة:** لا ترسل حقل `city` عند إنشاء الطلب. الخادم يستخرج المدينة تلقائياً من العنوان المحدد (`addressId`) ويعيدها ضمن الاستجابة.
 
@@ -278,7 +336,7 @@ Future<List<ServiceRequest>> getMyRequests() async {
       "type": "INSTALLATION",
       "description": "أحتاج تركيب نظام 10 كيلو واط",
       "images": [
-        "https://cdn.example.com/uploads/site-photo-1.jpg"
+        "https://cdn.example.com/services/requests/uuid-site-photo-1.jpg"
       ],
       "city": "صنعاء",
       "addressId": "64address123",
@@ -1442,7 +1500,7 @@ class NearbyQueryDto {
    - `type`: نوع الخدمة (اختياري)
    - `description`: وصف الطلب (اختياري)
    - `city`: لا يتم إرساله؛ يتم تحديده تلقائياً من العنوان المختار
-   - `images`: صور الطلب (اختياري)
+   - `images`: صور الطلب (اختياري) - **يمكن رفعها مباشرة كملفات** (حتى 10 صور) أو إرسالها كروابط CDN. عند الرفع المباشر، يتم رفعها تلقائياً إلى Bunny.net وإرجاع روابط CDN في الاستجابة.
    - `addressId`: معرف العنوان (مطلوب)
    - `scheduledAt`: موعد التنفيذ (اختياري)
 

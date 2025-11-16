@@ -10,6 +10,7 @@ import { NotificationType, NotificationChannel, NotificationPriority } from '../
 import { CreateServiceRequestDto } from './dto/requests.dto';
 import { CreateOfferDto, UpdateOfferDto } from './dto/offers.dto';
 import { DistanceService } from './services/distance.service';
+import { UploadService } from '../upload/upload.service';
 
 type ServiceRequestLean = ServiceRequest & { _id: Types.ObjectId; createdAt: Date; updatedAt: Date };
 type EngineerOfferLean = EngineerOffer & { _id: Types.ObjectId; createdAt: Date; updatedAt: Date };
@@ -65,6 +66,7 @@ export class ServicesService {
     @InjectConnection() private conn: Connection,
     private distanceService: DistanceService,
     private addressesService: AddressesService,
+    private uploadService: UploadService,
     @Optional() private notificationService?: NotificationService,
   ) {}
 
@@ -90,7 +92,11 @@ export class ServicesService {
   }
 
   // ---- Customer flows
-  async createRequest(userId: string, dto: CreateServiceRequestDto) {
+  async createRequest(
+    userId: string,
+    dto: CreateServiceRequestDto,
+    uploadedFiles?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
+  ) {
     // التحقق من ملكية العنوان
     const isValid = await this.addressesService.validateAddressOwnership(dto.addressId, userId);
     if (!isValid) {
@@ -115,12 +121,41 @@ export class ServicesService {
       ? { type: 'Point', coordinates: [lng, lat] as [number, number] }
       : { type: 'Point', coordinates: [0, 0] as [number, number] };
 
+    // رفع الصور تلقائياً إلى Bunny.net إذا كانت موجودة
+    const imageUrls: string[] = [];
+    
+    // إذا كانت هناك ملفات مرفوعة، ارفعها أولاً
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      this.logger.log(`Uploading ${uploadedFiles.length} image(s) to Bunny.net for service request`);
+      for (const file of uploadedFiles) {
+        try {
+          const uploadResult = await this.uploadService.uploadFile(
+            {
+              buffer: file.buffer,
+              originalname: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size,
+            },
+            'services/requests', // مجلد خاص بطلبات الخدمات
+          );
+          imageUrls.push(uploadResult.url);
+          this.logger.log(`Successfully uploaded image: ${uploadResult.url}`);
+        } catch (error) {
+          this.logger.error(`Failed to upload image ${file.originalname}:`, error);
+          // لا نوقف العملية إذا فشل رفع صورة واحدة، نكمل مع الصور الأخرى
+        }
+      }
+    }
+    
+    // دمج الصور المرفوعة مع الصور المرسلة كروابط (إن وجدت)
+    const allImages = [...imageUrls, ...(dto.images || [])];
+
     const doc = await this.requests.create({
       userId: new Types.ObjectId(userId),
       title: dto.title,
       type: dto.type,
       description: dto.description,
-      images: dto.images || [],
+      images: allImages,
       city: addr.city, // المدينة تُستمد من العنوان المختار
       addressId: addr._id,
       location,
