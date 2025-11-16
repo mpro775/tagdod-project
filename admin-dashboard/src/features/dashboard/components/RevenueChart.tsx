@@ -103,7 +103,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ revenueCharts, isLoa
       return Array.from(weeklyMap.entries())
         .sort(([a], [b]) => a.localeCompare(b))
         .slice(-12)
-        .map(([weekKey, data]) => ({
+        .map(([, data]) => ({
           date: formatDate(data.startDate),
           revenue: data.revenue,
           orders: data.orders,

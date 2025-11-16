@@ -66,6 +66,7 @@ export const OrderAnalyticsPage: React.FC = () => {
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(true);
+  const [exportFormat, setExportFormat] = useState<string>('csv');
 
   const { data: analytics, isLoading: analyticsLoading } = useOrderAnalytics(analyticsParams);
   const { data: revenueAnalytics, isLoading: revenueLoading } = useRevenueAnalytics(
@@ -85,7 +86,7 @@ export const OrderAnalyticsPage: React.FC = () => {
   const handleExportAnalytics = async () => {
     try {
       await exportMutation.mutateAsync({
-        format: 'csv',
+        format: exportFormat,
         days: analyticsParams.days,
         fromDate: fromDate?.toISOString(),
         toDate: toDate?.toISOString(),
@@ -152,7 +153,11 @@ export const OrderAnalyticsPage: React.FC = () => {
           <Typography variant={isMobile ? 'h5' : 'h4'} component="h1" sx={{ fontWeight: 'bold' }}>
             {t('analytics.title')}
           </Typography>
-          <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}
+          >
             <Button
               variant="outlined"
               size={isMobile ? 'small' : 'medium'}
@@ -162,6 +167,24 @@ export const OrderAnalyticsPage: React.FC = () => {
             >
               {t('actions.refresh')}
             </Button>
+            <FormControl
+              size={isMobile ? 'small' : 'medium'}
+              sx={{ minWidth: { xs: '100%', sm: 120 }, order: { xs: 3, sm: 2 } }}
+            >
+              <Select
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value)}
+                sx={{
+                  bgcolor:
+                    theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
+                }}
+              >
+                <MenuItem value="csv">CSV</MenuItem>
+                <MenuItem value="xlsx">Excel</MenuItem>
+                <MenuItem value="pdf">PDF</MenuItem>
+                <MenuItem value="json">JSON</MenuItem>
+              </Select>
+            </FormControl>
             <Button
               variant="contained"
               size={isMobile ? 'small' : 'medium'}
@@ -169,6 +192,7 @@ export const OrderAnalyticsPage: React.FC = () => {
               onClick={handleExportAnalytics}
               disabled={exportMutation.isPending}
               fullWidth={isMobile}
+              sx={{ order: { xs: 2, sm: 3 } }}
             >
               {exportMutation.isPending ? t('actions.exporting') : t('analytics.exportReport')}
             </Button>
@@ -483,7 +507,11 @@ export const OrderAnalyticsPage: React.FC = () => {
                       <ListItem>
                         <ListItemText
                           primary={t('analytics.metrics.totalRevenue')}
-                          secondary={formatCurrency(revenueAnalytics.totalRevenue ?? 0, 'USD', 'en')}
+                          secondary={formatCurrency(
+                            revenueAnalytics.totalRevenue ?? 0,
+                            'USD',
+                            'en'
+                          )}
                           primaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
                           secondaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
                         />
@@ -499,7 +527,11 @@ export const OrderAnalyticsPage: React.FC = () => {
                       <ListItem>
                         <ListItemText
                           primary={t('analytics.metrics.averageOrderValue')}
-                          secondary={formatCurrency(revenueAnalytics.averageOrderValue ?? 0, 'USD', 'en')}
+                          secondary={formatCurrency(
+                            revenueAnalytics.averageOrderValue ?? 0,
+                            'USD',
+                            'en'
+                          )}
                           primaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
                           secondaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
                         />
@@ -727,7 +759,12 @@ export const OrderAnalyticsPage: React.FC = () => {
                             color="text.secondary"
                             sx={{ display: 'block' }}
                           >
-                            {t('analytics.client')}: {order.deliveryAddress.recipientName}
+                            {t('analytics.client')}:{' '}
+                            {order.deliveryAddress.recipientName ||
+                              order.deliveryAddress.label ||
+                              order.customerName ||
+                              order.metadata?.customer?.firstName ||
+                              'N/A'}
                           </Typography>
                           <Typography
                             variant="caption"

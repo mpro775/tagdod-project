@@ -192,24 +192,39 @@ export interface CartStatistics {
 }
 
 export interface ConversionRates {
-  daily: Array<{
+  dailyRates?: Array<{
+    _id: {
+      year: number;
+      month: number;
+      day: number;
+    };
+    totalCarts: number;
+    convertedCarts: number;
+    totalValue: number;
+    convertedValue: number;
+    conversionRate: number;
+    date: string;
+  }>;
+  daily?: Array<{
     date: string;
     conversionRate: number;
     abandonedCarts: number;
     convertedCarts: number;
   }>;
-  weekly: Array<{
+  weekly?: Array<{
     week: string;
     conversionRate: number;
     abandonedCarts: number;
     convertedCarts: number;
   }>;
-  monthly: Array<{
+  monthly?: Array<{
     month: string;
     conversionRate: number;
     abandonedCarts: number;
     convertedCarts: number;
   }>;
+  averageRate?: number;
+  period?: number;
 }
 
 export interface RecoveryCampaignAnalytics {

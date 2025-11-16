@@ -38,10 +38,18 @@ import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useCoupons, useDeleteCoupon, useToggleCouponStatus } from '@/features/marketing/hooks/useMarketing';
 import { BulkGenerateDialog } from '../components/BulkGenerateDialog';
-import { formatDate } from '@/shared/utils/formatters';
 import { toast } from 'react-hot-toast';
 import type { Coupon } from '@/features/marketing/api/marketingApi';
 import type { TFunction } from 'i18next';
+
+const formatDateGregorian = (date: string | Date) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
 
 // Type definitions for coupon types
 type CouponType = 'percentage' | 'fixed_amount' | 'free_shipping' | 'buy_x_get_y';
@@ -138,9 +146,11 @@ export const CouponsListPage: React.FC = () => {
     {
       field: 'code',
       headerName: t('table.columns.code'),
-      width: 180,
+      width: 200,
+      flex: 0.2,
+      minWidth: 180,
       renderCell: (params) => (
-        <Box display="flex" alignItems="center" gap={1}>
+        <Box display="flex" alignItems="flex-start" gap={1} py={1} width="100%">
           <Box
             sx={{
               fontFamily: 'monospace',
@@ -150,6 +160,7 @@ export const CouponsListPage: React.FC = () => {
               padding: '4px 8px',
               borderRadius: '4px',
               fontSize: '0.875rem',
+              wordBreak: 'break-word',
             }}
           >
             {params.row.code}
@@ -169,14 +180,34 @@ export const CouponsListPage: React.FC = () => {
     {
       field: 'name',
       headerName: t('table.columns.name'),
-      width: 200,
+      width: 250,
+      flex: 0.3,
+      minWidth: 220,
       renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" fontWeight="medium">
+        <Box sx={{ py: 1, width: '100%' }}>
+          <Typography 
+            variant="body2" 
+            fontWeight="medium"
+            sx={{
+              wordBreak: 'break-word',
+              whiteSpace: 'normal',
+              lineHeight: 1.4,
+            }}
+          >
             {params.row.name}
           </Typography>
           {params.row.description && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{
+                display: 'block',
+                wordBreak: 'break-word',
+                whiteSpace: 'normal',
+                lineHeight: 1.4,
+                mt: 0.5,
+              }}
+            >
               {params.row.description}
             </Typography>
           )}
@@ -187,38 +218,60 @@ export const CouponsListPage: React.FC = () => {
       field: 'type',
       headerName: t('table.columns.type'),
       width: 150,
+      flex: 0.15,
+      minWidth: 130,
       renderCell: (params) => (
-        <Chip
-          label={couponTypeLabels[params.row.type as CouponType]}
-          size="small"
-          variant="outlined"
-        />
+        <Box sx={{ py: 1 }}>
+          <Chip
+            label={couponTypeLabels[params.row.type as CouponType]}
+            size="small"
+            variant="outlined"
+          />
+        </Box>
       ),
     },
     {
       field: 'discount',
       headerName: t('table.columns.discount'),
-      width: 120,
+      width: 140,
+      flex: 0.15,
+      minWidth: 120,
       renderCell: (params) => {
         const coupon = params.row as Coupon;
-        if (coupon.type === 'percentage' && coupon.discountValue) {
-          return `${coupon.discountValue}%`;
-        }
-        if (coupon.type === 'fixed_amount' && coupon.discountValue) {
-          return `$${coupon.discountValue}`;
-        }
-        if (coupon.type === 'free_shipping') {
-          return t('messages.freeShipping');
-        }
-        return '-';
+        return (
+          <Box sx={{ py: 1 }}>
+            {coupon.type === 'percentage' && coupon.discountValue && (
+              <Typography variant="body2" fontWeight="medium">
+                {coupon.discountValue}%
+              </Typography>
+            )}
+            {coupon.type === 'fixed_amount' && coupon.discountValue && (
+              <Typography variant="body2" fontWeight="medium">
+                ${coupon.discountValue}
+              </Typography>
+            )}
+            {coupon.type === 'free_shipping' && (
+              <Typography variant="body2" fontWeight="medium">
+                {t('messages.freeShipping')}
+              </Typography>
+            )}
+            {!coupon.discountValue && coupon.type !== 'free_shipping' && (
+              <Typography variant="body2" color="text.secondary">
+                -
+              </Typography>
+            )}
+          </Box>
+        );
       },
     },
     {
       field: 'usedCount',
       headerName: t('table.columns.usage'),
-      width: 120,
+      width: 130,
+      flex: 0.15,
+      minWidth: 110,
       renderCell: (params) => (
-        <Box>
+        <Box sx={{ py: 1 }}>
           <Typography variant="body2" fontWeight="medium">
             {params.row.usedCount}
           </Typography>
@@ -233,14 +286,33 @@ export const CouponsListPage: React.FC = () => {
     {
       field: 'validFrom',
       headerName: t('table.columns.period'),
-      width: 180,
+      width: 200,
+      flex: 0.2,
+      minWidth: 180,
       renderCell: (params) => (
-        <Box sx={{ fontSize: '0.85rem' }}>
-          <Typography variant="body2">
-            {formatDate(params.row.validFrom)}
+        <Box sx={{ py: 1, fontSize: '0.85rem', width: '100%' }}>
+          <Typography 
+            variant="body2"
+            sx={{
+              wordBreak: 'break-word',
+              whiteSpace: 'normal',
+              lineHeight: 1.4,
+            }}
+          >
+            {formatDateGregorian(params.row.validFrom)}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {t('fields.to')} {formatDate(params.row.validUntil)}
+          <Typography 
+            variant="caption" 
+            color="text.secondary"
+            sx={{
+              display: 'block',
+              wordBreak: 'break-word',
+              whiteSpace: 'normal',
+              lineHeight: 1.4,
+              mt: 0.5,
+            }}
+          >
+            {t('fields.to')} {formatDateGregorian(params.row.validUntil)}
           </Typography>
         </Box>
       ),
@@ -248,7 +320,9 @@ export const CouponsListPage: React.FC = () => {
     {
       field: 'status',
       headerName: t('table.columns.status'),
-      width: 120,
+      width: 130,
+      flex: 0.15,
+      minWidth: 110,
       renderCell: (params) => {
         const statusLabels = {
           active: t('status.active'),
@@ -257,36 +331,44 @@ export const CouponsListPage: React.FC = () => {
           exhausted: t('status.exhausted'),
         };
         return (
-          <Chip
-            label={statusLabels[params.row.status as CouponStatus]}
-            color={couponStatusColors[params.row.status as CouponStatus]}
-            size="small"
-          />
+          <Box sx={{ py: 1 }}>
+            <Chip
+              label={statusLabels[params.row.status as CouponStatus]}
+              color={couponStatusColors[params.row.status as CouponStatus]}
+              size="small"
+            />
+          </Box>
         );
       },
     },
     {
       field: 'visibility',
       headerName: t('table.columns.visibility'),
-      width: 100,
+      width: 130,
+      flex: 0.15,
+      minWidth: 110,
       renderCell: (params) => (
-        <Chip
-          label={couponVisibilityLabels[params.row.visibility]}
-          variant="outlined"
-          size="small"
-          icon={params.row.visibility === 'public' ? <Visibility /> : <VisibilityOff />}
-        />
+        <Box sx={{ py: 1 }}>
+          <Chip
+            label={couponVisibilityLabels[params.row.visibility]}
+            variant="outlined"
+            size="small"
+            icon={params.row.visibility === 'public' ? <Visibility /> : <VisibilityOff />}
+          />
+        </Box>
       ),
     },
     {
       field: 'actions',
       headerName: t('table.columns.actions'),
       width: 200,
+      flex: 0.2,
+      minWidth: 180,
       sortable: false,
       renderCell: (params) => {
         const coupon = params.row as Coupon;
         return (
-          <Box display="flex" gap={0.5}>
+          <Box display="flex" gap={0.5} alignItems="flex-start" py={1}>
             <Tooltip title={t('tooltips.edit')}>
               <IconButton
                 size="small"
@@ -371,6 +453,26 @@ export const CouponsListPage: React.FC = () => {
             navigate(`/coupons/${row._id}`);
           }}
           height="calc(100vh - 200px)"
+          getRowHeight={() => 'auto'}
+          sx={{
+            '& .MuiDataGrid-cell': {
+              py: 1,
+              display: 'flex',
+              alignItems: 'flex-start',
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+            },
+            '& .MuiDataGrid-row': {
+              maxHeight: 'none !important',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+              },
+            },
+            '& .MuiDataGrid-cellContent': {
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+            },
+          }}
         />
       ) : (
         /* Card View - Mobile */
@@ -517,7 +619,7 @@ export const CouponsListPage: React.FC = () => {
 
                       {/* Period */}
                       <Typography variant="caption" color="text.secondary">
-                        {formatDate(coupon.validFrom)} - {formatDate(coupon.validUntil)}
+                        {formatDateGregorian(coupon.validFrom)} - {formatDateGregorian(coupon.validUntil)}
                       </Typography>
                     </CardContent>
 

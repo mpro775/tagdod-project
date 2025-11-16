@@ -33,7 +33,7 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
   isLoading 
 }) => {
   const theme = useTheme();
-  const { t, i18n } = useTranslation(['dashboard']);
+  const { t } = useTranslation(['dashboard']);
   // Always use English numbers, regardless of language
   const numberFormatter = React.useMemo(() => new Intl.NumberFormat('en-US'), []);
   const currencyFormatter = React.useMemo(

@@ -191,7 +191,7 @@ export const BannerStatsCards: React.FC = () => {
           value={totalClicks.toLocaleString()}
           icon={<AdsClick />}
           color="success"
-          subtitle={t('stats.clickRate', { rate: ctrPercentage.toFixed(1) })}
+          subtitle={`CTR: ${ctrPercentage.toFixed(1)}%`}
         />
       </Grid>
 
@@ -201,7 +201,7 @@ export const BannerStatsCards: React.FC = () => {
           value={totalConversions.toLocaleString()}
           icon={<TrendingUp />}
           color="warning"
-          subtitle={t('stats.conversionRate', { rate: conversionPercentage.toFixed(1) })}
+          subtitle={`تحويل: ${conversionPercentage.toFixed(1)}%`}
         />
       </Grid>
 

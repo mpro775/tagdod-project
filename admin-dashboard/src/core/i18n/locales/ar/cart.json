@@ -4,6 +4,12 @@
     "abandonedCarts": "السلال المتروكة",
     "analytics": "تحليلات السلة"
   },
+  "status": {
+    "active": "نشطة",
+    "abandoned": "متروكة",
+    "converted": "محولة",
+    "expired": "منتهية الصلاحية"
+  },
   "list": {
     "title": "إدارة السلال",
     "subtitle": "إدارة سلال التسوق الخاصة بالعملاء والمشتريات المتروكة",
@@ -211,7 +217,22 @@
       "abandonedCartsContent": "محتوى السلات المتروكة",
       "revenueContent": "محتوى الإيرادات",
       "customerBehaviorContent": "محتوى سلوك العملاء",
-      "recoveryContent": "محتوى حملات الاسترداد"
+      "recoveryContent": "محتوى حملات الاسترداد",
+      "averageRate": "المعدل المتوسط",
+      "totalAbandoned": "إجمالي المتروكة",
+      "totalCarts": "إجمالي السلات",
+      "revenue": "الإيرادات",
+      "avgCartValue": "متوسط قيمة السلة",
+      "avgItemsPerCart": "متوسط المنتجات لكل سلة",
+      "hourlyActivity": "النشاط الساعي",
+      "cartCount": "عدد السلات",
+      "topProducts": "المنتجات الأكثر مبيعاً",
+      "product": "المنتج",
+      "quantity": "الكمية",
+      "cartValueDistribution": "توزيع قيمة السلة",
+      "abandonedCarts": "السلات المتروكة",
+      "convertedCarts": "السلات المحولة",
+      "abandonmentRate": "معدل الهجر"
     },
     "conversion": {
       "title": "معدلات التحويل",

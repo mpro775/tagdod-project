@@ -19,7 +19,7 @@ export const useServices = (params: ListServicesParams = {}) => {
     queryKey: [SERVICES_KEY, 'list', params],
     queryFn: () => servicesApi.list(params),
     select: (data) => {
-      const items = data.items || data.data || [];
+      const items = data.items || [];
       // Normalize data: map userId (when it's an object) to user field
       const normalizedItems = items.map((item: any) => {
         if (item.userId && typeof item.userId === 'object' && item.userId._id) {
@@ -179,7 +179,7 @@ export const useEngineers = (params: ListEngineersParams = {}) => {
     queryKey: [SERVICES_KEY, 'engineers', params],
     queryFn: () => servicesApi.getEngineersList(params),
     select: (data) => ({
-      data: data.items || data.data || [],
+      data: data.items || [],
       meta: data.meta,
     }),
     retry: 2,
@@ -233,7 +233,7 @@ export const useOffers = (params: ListOffersParams = {}) => {
     queryKey: [SERVICES_KEY, 'offers', params],
     queryFn: () => servicesApi.getOffersList(params),
     select: (data) => {
-      const items = data.items || data.data || [];
+      const items = data.items || [];
       // Normalize data: map engineerId and requestId to engineer and request
       const normalizedItems = items.map((item: any) => {
         const normalized: any = { ...item };

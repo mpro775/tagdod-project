@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   Box,
-  Paper,
   Typography,
   Button,
   Divider,
@@ -26,7 +25,6 @@ import {
   Cancel,
   Person,
   Phone,
-  Email,
   Badge,
   Security,
   AdminPanelSettings,
@@ -40,17 +38,29 @@ import { authApi } from '../api/authApi';
 import toast from 'react-hot-toast';
 
 const profileSchema = z.object({
-  firstName: z.string().min(2, 'الاسم الأول يجب أن يكون حرفين على الأقل').max(50, 'الاسم الأول يجب أن يكون أقل من 50 حرف'),
-  lastName: z.string().min(2, 'الاسم الأخير يجب أن يكون حرفين على الأقل').max(50, 'الاسم الأخير يجب أن يكون أقل من 50 حرف').optional().or(z.literal('')),
+  firstName: z
+    .string()
+    .min(2, 'الاسم الأول يجب أن يكون حرفين على الأقل')
+    .max(50, 'الاسم الأول يجب أن يكون أقل من 50 حرف'),
+  lastName: z
+    .string()
+    .min(2, 'الاسم الأخير يجب أن يكون حرفين على الأقل')
+    .max(50, 'الاسم الأخير يجب أن يكون أقل من 50 حرف')
+    .optional()
+    .or(z.literal('')),
   gender: z.enum(['male', 'female', 'other']).optional(),
-  jobTitle: z.string().max(100, 'المسمى الوظيفي يجب أن يكون أقل من 100 حرف').optional().or(z.literal('')),
+  jobTitle: z
+    .string()
+    .max(100, 'المسمى الوظيفي يجب أن يكون أقل من 100 حرف')
+    .optional()
+    .or(z.literal('')),
   city: z.string().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export const ProfilePage: React.FC = () => {
-  const { t, i18n } = useTranslation(['common', 'auth']);
+  const { t } = useTranslation(['common', 'auth']);
   const { user, refreshProfile } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,8 +79,7 @@ export const ProfilePage: React.FC = () => {
     },
   });
 
-  const { handleSubmit, reset, watch } = methods;
-  const watchedValues = watch();
+  const { handleSubmit, reset } = methods;
 
   useEffect(() => {
     loadProfile();
@@ -82,7 +91,7 @@ export const ProfilePage: React.FC = () => {
       setError(null);
       const data = await authApi.getProfile();
       setProfileData(data);
-      
+
       const formData: ProfileFormData = {
         firstName: data.user?.firstName || '',
         lastName: data.user?.lastName || '',
@@ -90,10 +99,11 @@ export const ProfilePage: React.FC = () => {
         jobTitle: data.user?.jobTitle || '',
         city: data.user?.city || '',
       };
-      
+
       reset(formData);
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'فشل في تحميل بيانات الملف الشخصي';
+      const errorMessage =
+        err?.response?.data?.message || err?.message || 'فشل في تحميل بيانات الملف الشخصي';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -105,7 +115,7 @@ export const ProfilePage: React.FC = () => {
     try {
       setIsSaving(true);
       setError(null);
-      
+
       const updateData: any = {};
       if (data.firstName) updateData.firstName = data.firstName;
       if (data.lastName) updateData.lastName = data.lastName;
@@ -114,14 +124,15 @@ export const ProfilePage: React.FC = () => {
       if (data.city) updateData.city = data.city;
 
       await authApi.updateProfile(updateData);
-      
+
       await refreshProfile();
       await loadProfile();
-      
+
       setIsEditing(false);
       toast.success(t('common.profile_updated', 'تم تحديث الملف الشخصي بنجاح'));
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || 'فشل في تحديث الملف الشخصي';
+      const errorMessage =
+        err?.response?.data?.message || err?.message || 'فشل في تحديث الملف الشخصي';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -174,11 +185,7 @@ export const ProfilePage: React.FC = () => {
             <Refresh />
           </IconButton>
           {!isEditing && (
-            <Button
-              variant="contained"
-              startIcon={<Edit />}
-              onClick={() => setIsEditing(true)}
-            >
+            <Button variant="contained" startIcon={<Edit />} onClick={() => setIsEditing(true)}>
               {t('common.edit', 'تعديل')}
             </Button>
           )}
@@ -195,10 +202,12 @@ export const ProfilePage: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <Grid container spacing={3}>
             {/* Profile Card */}
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Card>
                 <CardContent>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}
+                  >
                     <Avatar
                       sx={{
                         width: 120,
@@ -233,7 +242,7 @@ export const ProfilePage: React.FC = () => {
                         {t('common.roles', 'الأدوار')}
                       </Typography>
                       <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                        {profileUser.roles.map((role) => (
+                        {profileUser.roles.map((role: string) => (
                           <Chip
                             key={role}
                             label={role}
@@ -246,7 +255,9 @@ export const ProfilePage: React.FC = () => {
                   )}
 
                   {/* Capabilities */}
-                  {(capabilities.engineer_capable || capabilities.merchant_capable || capabilities.admin_capable) && (
+                  {(capabilities.engineer_capable ||
+                    capabilities.merchant_capable ||
+                    capabilities.admin_capable) && (
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         {t('common.capabilities', 'القدرات')}
@@ -257,7 +268,9 @@ export const ProfilePage: React.FC = () => {
                             icon={<Work />}
                             label={t('common.engineer', 'مهندس')}
                             size="small"
-                            color={capabilities.engineer_status === 'approved' ? 'success' : 'default'}
+                            color={
+                              capabilities.engineer_status === 'approved' ? 'success' : 'default'
+                            }
                           />
                         )}
                         {capabilities.merchant_capable && (
@@ -265,7 +278,9 @@ export const ProfilePage: React.FC = () => {
                             icon={<Badge />}
                             label={t('common.merchant', 'تاجر')}
                             size="small"
-                            color={capabilities.merchant_status === 'approved' ? 'success' : 'default'}
+                            color={
+                              capabilities.merchant_status === 'approved' ? 'success' : 'default'
+                            }
                           />
                         )}
                         {capabilities.admin_capable && (
@@ -284,7 +299,7 @@ export const ProfilePage: React.FC = () => {
             </Grid>
 
             {/* Form Card */}
-            <Grid item xs={12} md={8}>
+            <Grid size={{ xs: 12, md: 8 }}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
@@ -293,7 +308,7 @@ export const ProfilePage: React.FC = () => {
 
                   <Grid container spacing={3}>
                     {/* Phone (Read-only) */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label={t('common.phone', 'رقم الهاتف')}
@@ -307,7 +322,7 @@ export const ProfilePage: React.FC = () => {
                     </Grid>
 
                     {/* First Name */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label={t('common.first_name', 'الاسم الأول')}
@@ -323,7 +338,7 @@ export const ProfilePage: React.FC = () => {
                     </Grid>
 
                     {/* Last Name */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label={t('common.last_name', 'الاسم الأخير')}
@@ -338,7 +353,7 @@ export const ProfilePage: React.FC = () => {
                     </Grid>
 
                     {/* Gender */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         select
@@ -355,7 +370,7 @@ export const ProfilePage: React.FC = () => {
                     </Grid>
 
                     {/* Job Title */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label={t('common.job_title', 'المسمى الوظيفي')}
@@ -370,7 +385,7 @@ export const ProfilePage: React.FC = () => {
                     </Grid>
 
                     {/* City */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         label={t('common.city', 'المدينة')}
@@ -425,13 +440,8 @@ export const ProfilePage: React.FC = () => {
                       {t('common.permissions', 'الصلاحيات')}
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-                      {profileUser.permissions.map((permission) => (
-                        <Chip
-                          key={permission}
-                          label={permission}
-                          size="small"
-                          variant="outlined"
-                        />
+                      {profileUser.permissions.map((permission: string) => (
+                        <Chip key={permission} label={permission} size="small" variant="outlined" />
                       ))}
                     </Stack>
                   </CardContent>
@@ -444,4 +454,3 @@ export const ProfilePage: React.FC = () => {
     </Box>
   );
 };
-

@@ -38,7 +38,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   isLoading,
 }) => {
   const theme = useTheme();
-  const { t, i18n } = useTranslation(['dashboard']);
+  const { t } = useTranslation(['dashboard']);
   // Always use English numbers, regardless of language
   const currencyFormatter = React.useMemo(
     () =>

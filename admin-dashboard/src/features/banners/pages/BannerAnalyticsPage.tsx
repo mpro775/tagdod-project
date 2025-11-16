@@ -620,7 +620,7 @@ export const BannerAnalyticsPage: React.FC = () => {
           <StatCard
             title={t('stats.totalClicks')}
             value={formatNumber(totalClicks)}
-            subtitle={t('stats.clickRate', { rate: formatPercentage(ctrPercentage) })}
+            subtitle={`CTR: ${ctrPercentage.toFixed(1)}%`}
             icon={<AdsClick />}
             color="success"
           />
@@ -630,7 +630,7 @@ export const BannerAnalyticsPage: React.FC = () => {
           <StatCard
             title={t('stats.totalConversions')}
             value={formatNumber(totalConversions)}
-            subtitle={t('stats.conversionRate', { rate: formatPercentage(conversionPercentage) })}
+            subtitle={`تحويل: ${conversionPercentage.toFixed(1)}%`}
             icon={<TrendingUp />}
             color="warning"
           />

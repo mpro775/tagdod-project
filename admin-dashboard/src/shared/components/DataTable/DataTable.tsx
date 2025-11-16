@@ -40,7 +40,8 @@ export interface DataTableProps {
 
   // Height
   height?: number | string;
-  rowHeight?: number;
+  rowHeight?: number | 'auto' | ((params: { id: string | number }) => number | 'auto');
+  getRowHeight?: (params: { id: string | number }) => number | 'auto';
 
   // Row actions
   // eslint-disable-next-line no-unused-vars
@@ -49,6 +50,9 @@ export interface DataTableProps {
   // Row ID
   // eslint-disable-next-line no-unused-vars
   getRowId?: (row: unknown) => string | number;
+
+  // Custom styles
+  sx?: object;
 }
 
 export const DataTable: React.FC<DataTableProps> = ({
@@ -68,8 +72,10 @@ export const DataTable: React.FC<DataTableProps> = ({
   addButtonText = 'إضافة',
   height = 600,
   rowHeight,
+  getRowHeight,
   onRowClick,
   getRowId,
+  sx,
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
 
@@ -163,8 +169,12 @@ export const DataTable: React.FC<DataTableProps> = ({
           loading={loading}
           // Row ID
           getRowId={getRowId}
-          // Row height
-          rowHeight={rowHeight}
+          // Row height - use getRowHeight if provided, otherwise use rowHeight
+          {...(getRowHeight 
+            ? { getRowHeight } 
+            : rowHeight && typeof rowHeight !== 'function'
+              ? { rowHeight: rowHeight === 'auto' ? undefined : rowHeight }
+              : {})}
           // Pagination
           paginationMode="client"
           paginationModel={paginationModel}
@@ -248,6 +258,7 @@ export const DataTable: React.FC<DataTableProps> = ({
           '& .MuiDataGrid-virtualScrollerContent:first-of-type': {
             minHeight: '100%',
           },
+          ...sx,
         }}
         // Responsive settings
         disableColumnMenu={false}

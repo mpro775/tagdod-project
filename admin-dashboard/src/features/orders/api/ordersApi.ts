@@ -132,10 +132,25 @@ export const ordersApi = {
    * Get order analytics summary
    */
   getAnalytics: async (params: OrderAnalyticsParams): Promise<OrderAnalytics> => {
-    const response = await apiClient.get<ApiResponse<OrderAnalytics>>('/admin/orders/analytics/summary', {
+    const response = await apiClient.get<ApiResponse<{ analytics: OrderAnalytics; message?: string }>>('/admin/orders/analytics/summary', {
       params,
     });
-    return response.data.data;
+    const payload = response.data.data;
+    
+    // Handle nested analytics object
+    if (payload && typeof payload === 'object' && 'analytics' in payload) {
+      const analytics = (payload as { analytics: OrderAnalytics }).analytics;
+      // Transform ordersByStatus from MongoDB aggregation format (_id) to expected format (status)
+      if (analytics.ordersByStatus) {
+        analytics.ordersByStatus = analytics.ordersByStatus.map((item: any) => ({
+          status: item._id || item.status,
+          count: item.count,
+        }));
+      }
+      return analytics;
+    }
+    
+    return payload as OrderAnalytics;
   },
 
   /**
@@ -152,8 +167,15 @@ export const ordersApi = {
    * Get performance analytics
    */
   getPerformanceAnalytics: async (): Promise<PerformanceAnalytics> => {
-    const response = await apiClient.get<ApiResponse<PerformanceAnalytics>>('/admin/orders/analytics/performance');
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<{ analytics: PerformanceAnalytics; message?: string }>>('/admin/orders/analytics/performance');
+    const payload = response.data.data;
+    
+    // Handle nested analytics object
+    if (payload && typeof payload === 'object' && 'analytics' in payload) {
+      return (payload as { analytics: PerformanceAnalytics }).analytics;
+    }
+    
+    return payload as PerformanceAnalytics;
   },
 
   /**
@@ -165,14 +187,51 @@ export const ordersApi = {
     fromDate?: string,
     toDate?: string
   ) => {
-    const response = await apiClient.post<ApiResponse<any>>(
+    const response = await apiClient.post<ApiResponse<{
+      success?: boolean;
+      data?: {
+        fileUrl: string;
+        format: string;
+        exportedAt: string;
+        fileName: string;
+        recordCount: number;
+        summary?: any;
+      };
+    }>>(
       '/admin/orders/analytics/export',
       {},
       {
         params: { format, days, fromDate, toDate },
       }
     );
-    return response.data.data;
+    
+    const payload = response.data.data;
+    
+    // Handle nested data structure (data.data.fileUrl)
+    if (payload && typeof payload === 'object') {
+      if ('data' in payload && payload.data && typeof payload.data === 'object' && 'fileUrl' in payload.data) {
+        return payload.data as {
+          fileUrl: string;
+          format: string;
+          exportedAt: string;
+          fileName: string;
+          recordCount: number;
+          summary?: any;
+        };
+      }
+      if ('fileUrl' in payload) {
+        return payload as {
+          fileUrl: string;
+          format: string;
+          exportedAt: string;
+          fileName: string;
+          recordCount: number;
+          summary?: any;
+        };
+      }
+    }
+    
+    return payload as any;
   },
 
   /**

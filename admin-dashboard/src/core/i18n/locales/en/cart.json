@@ -4,6 +4,12 @@
     "abandonedCarts": "Abandoned Carts",
     "analytics": "Cart Analytics"
   },
+  "status": {
+    "active": "Active",
+    "abandoned": "Abandoned",
+    "converted": "Converted",
+    "expired": "Expired"
+  },
   "list": {
     "title": "Cart Management",
     "subtitle": "Manage customer shopping carts and abandoned purchases",
@@ -211,7 +217,22 @@
       "abandonedCartsContent": "Abandoned Carts Content",
       "revenueContent": "Revenue Content",
       "customerBehaviorContent": "Customer Behavior Content",
-      "recoveryContent": "Recovery Campaigns Content"
+      "recoveryContent": "Recovery Campaigns Content",
+      "averageRate": "Average Rate",
+      "totalAbandoned": "Total Abandoned",
+      "totalCarts": "Total Carts",
+      "revenue": "Revenue",
+      "avgCartValue": "Average Cart Value",
+      "avgItemsPerCart": "Average Items Per Cart",
+      "hourlyActivity": "Hourly Activity",
+      "cartCount": "Cart Count",
+      "topProducts": "Top Products",
+      "product": "Product",
+      "quantity": "Quantity",
+      "cartValueDistribution": "Cart Value Distribution",
+      "abandonedCarts": "Abandoned Carts",
+      "convertedCarts": "Converted Carts",
+      "abandonmentRate": "Abandonment Rate"
     },
     "conversion": {
       "title": "Conversion Rates",
