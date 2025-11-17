@@ -20,30 +20,42 @@ export class KeepAliveService implements OnModuleInit, OnModuleDestroy {
     // Only enable keep-alive in production (for Render free tier)
     if (isProduction) {
       const port = this.configService.get<number>('PORT') || 3000;
-      // Ping every 10 minutes (less than Render's 15-minute idle timeout)
-      const intervalMs = 10 * 60 * 1000;
+      // Ping every 5 minutes (less than Render's 15-minute idle timeout)
+      // Reduced from 10 to 5 minutes for better reliability
+      const intervalMs = 5 * 60 * 1000;
+      
+      // Try to get external URL from Render environment variable
+      const renderExternalUrl = this.configService.get<string>('RENDER_EXTERNAL_URL');
       
       this.intervalId = setInterval(async () => {
         try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
           
-          const response = await fetch(`http://localhost:${port}/health/live`, {
+          // Use external URL if available (Render), otherwise use localhost
+          // IMPORTANT: Use /api/v1/health/live because of global prefix
+          const healthUrl = renderExternalUrl 
+            ? `${renderExternalUrl}/api/v1/health/live`
+            : `http://localhost:${port}/api/v1/health/live`;
+          
+          const response = await fetch(healthUrl, {
             method: 'GET',
             signal: controller.signal,
+            headers: {
+              'User-Agent': 'Keep-Alive-Service/1.0',
+            },
           });
           
           clearTimeout(timeoutId);
           
           if (!response.ok) {
-            this.logger.warn(`Keep-alive ping failed with status ${response.status}`);
+            this.logger.warn(`Keep-alive ping failed with status ${response.status} for ${healthUrl}`);
           } else {
-            this.logger.debug('Keep-alive ping successful');
+            this.logger.log(`Keep-alive ping successful: ${healthUrl}`);
           }
         } catch (error) {
-          // Silently ignore errors (network may be temporarily unavailable)
-          // Only log at debug level to avoid noise
-          this.logger.debug(
+          // Log errors to help debug issues
+          this.logger.error(
             `Keep-alive ping error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           );
         }
@@ -52,6 +64,9 @@ export class KeepAliveService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(
         `Keep-alive service started (pinging every ${intervalMs / 1000 / 60} minutes)`,
       );
+      if (renderExternalUrl) {
+        this.logger.log(`Using external URL: ${renderExternalUrl}`);
+      }
     } else {
       this.logger.debug('Keep-alive service disabled in non-production environment');
     }
