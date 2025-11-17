@@ -213,11 +213,6 @@ export const ProductsListPage: React.FC = () => {
       },
     },
     {
-      field: 'sku',
-      headerName: t('list.columns.sku'),
-      width: 120,
-    },
-    {
       field: 'category',
       headerName: t('list.columns.category'),
       width: 150,
@@ -380,6 +375,52 @@ export const ProductsListPage: React.FC = () => {
     },
   ];
 
+  // Show full page loading state
+  if (isLoading) {
+    return (
+      <Box>
+        {/* Header Skeleton */}
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
+          <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+            <Skeleton variant="rectangular" width={120} height={36} />
+            <Skeleton variant="rectangular" width={180} height={36} />
+          </Box>
+          <Box display="flex" gap={1} alignItems="center">
+            <Skeleton variant="rectangular" width={100} height={36} />
+            <Skeleton variant="rectangular" width={120} height={36} />
+          </Box>
+        </Box>
+
+        {/* Content Skeleton */}
+        {isMobile ? (
+          <Box>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Paper key={index} sx={{ p: 2, mb: 2 }}>
+                <Box display="flex" gap={2}>
+                  <Skeleton variant="rounded" width={80} height={80} />
+                  <Box flex={1}>
+                    <Skeleton variant="text" width="80%" height={28} />
+                    <Skeleton variant="text" width="60%" height={20} />
+                    <Skeleton variant="text" width="40%" height={20} />
+                  </Box>
+                </Box>
+                <Box mt={2} display="flex" gap={1}>
+                  <Skeleton variant="text" width="60%" height={32} />
+                  <Skeleton variant="text" width="30%" height={32} />
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        ) : (
+          <Box>
+            <Skeleton variant="rectangular" height={60} sx={{ mb: 2 }} />
+            <Skeleton variant="rectangular" height="calc(100vh - 200px)" />
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box>
       {/* Header with filters */}
@@ -434,27 +475,7 @@ export const ProductsListPage: React.FC = () => {
       {isMobile ? (
         /* Mobile Card Layout */
         <Box>
-          {isLoading ? (
-            /* Loading Skeleton */
-            <Box>
-              {Array.from({ length: 5 }).map((_, index) => (
-                <Paper key={index} sx={{ p: 2, mb: 2 }}>
-                  <Box display="flex" gap={2}>
-                    <Skeleton variant="rounded" width={80} height={80} />
-                    <Box flex={1}>
-                      <Skeleton variant="text" width="80%" height={28} />
-                      <Skeleton variant="text" width="60%" height={20} />
-                      <Skeleton variant="text" width="40%" height={20} />
-                    </Box>
-                  </Box>
-                  <Box mt={2} display="flex" gap={1}>
-                    <Skeleton variant="text" width="60%" height={32} />
-                    <Skeleton variant="text" width="30%" height={32} />
-                  </Box>
-                </Paper>
-              ))}
-            </Box>
-          ) : !data?.data || data.data.length === 0 ? (
+          {!data?.data || data.data.length === 0 ? (
             /* Empty State */
             <Paper sx={{ p: 4, textAlign: 'center' }}>
               <Inventory sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -514,7 +535,7 @@ export const ProductsListPage: React.FC = () => {
           title={t('list.title')}
           columns={columns}
           rows={data?.data || []}
-          loading={isLoading}
+          loading={false}
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
           sortModel={sortModel}

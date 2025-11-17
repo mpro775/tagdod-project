@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
-  Paper,
   Typography,
   Chip,
   IconButton,
@@ -137,21 +136,27 @@ export const AttributesListPage: React.FC = () => {
     {
       field: 'name',
       headerName: t('fields.name'),
-      width: 250,
+      minWidth: 200,
+      flex: 1.5,
       renderCell: (params) => (
-        <Box>
-          <Box sx={{ fontWeight: 'medium' }}>{params.row.name}</Box>
-          <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{params.row.nameEn}</Box>
+        <Box sx={{ py: 1 }}>
+          <Typography variant="body2" fontWeight="medium">
+            {params.row.name}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+            {params.row.nameEn}
+          </Typography>
         </Box>
       ),
     },
     {
       field: 'type',
       headerName: t('fields.type'),
-      width: 150,
+      minWidth: 130,
+      flex: 0.8,
       renderCell: (params) => (
         <Chip
-          label={attributeTypeLabels[params.row.type as AttributeType]}
+          label={String(attributeTypeLabels[params.row.type as AttributeType])}
           color={attributeTypeColors[params.row.type as AttributeType]}
           size="small"
         />
@@ -160,34 +165,52 @@ export const AttributesListPage: React.FC = () => {
     {
       field: 'usageCount',
       headerName: t('fields.usage'),
-      width: 100,
+      minWidth: 100,
+      flex: 0.6,
       align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => (
+        <Typography variant="body2">
+          {params.value || 0}
+        </Typography>
+      ),
     },
     {
       field: 'isFilterable',
       headerName: t('fields.filterable'),
-      width: 120,
+      minWidth: 110,
+      flex: 0.7,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) =>
         params.row.isFilterable ? (
-          <Chip label={t('common.yes', { ns: 'common' })} color="success" size="small" />
+          <Chip label={String(t('common.yes', { ns: 'common' }))} color="success" size="small" />
         ) : (
-          <Chip label={t('common.no', { ns: 'common' })} color="default" size="small" />
+          <Chip label={String(t('common.no', { ns: 'common' }))} color="default" size="small" />
         ),
     },
     {
       field: 'isRequired',
       headerName: t('fields.required'),
-      width: 100,
+      minWidth: 100,
+      flex: 0.6,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) =>
-        params.row.isRequired ? <Chip label={t('common.yes', { ns: 'common' })} color="error" size="small" /> : null,
+        params.row.isRequired ? (
+          <Chip label={String(t('common.yes', { ns: 'common' }))} color="error" size="small" />
+        ) : null,
     },
     {
       field: 'isActive',
       headerName: t('fields.status'),
-      width: 100,
+      minWidth: 100,
+      flex: 0.7,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => (
         <Chip
-          label={params.row.isActive ? t('status.active') : t('status.inactive')}
+          label={String(params.row.isActive ? t('status.active') : t('status.inactive'))}
           color={params.row.isActive ? 'success' : 'default'}
           size="small"
         />
@@ -196,14 +219,23 @@ export const AttributesListPage: React.FC = () => {
     {
       field: 'createdAt',
       headerName: t('fields.createdAt'),
-      width: 140,
+      minWidth: 140,
+      flex: 0.8,
       valueFormatter: (value) => formatDate(value as Date),
+      renderCell: (params) => (
+        <Typography variant="body2" color="text.secondary">
+          {params.formattedValue || '-'}
+        </Typography>
+      ),
     },
     {
       field: 'actions',
       headerName: t('fields.actions'),
-      width: 200,
+      minWidth: 180,
+      flex: 1,
       sortable: false,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => {
         const attr = params.row as Attribute;
         const isDeleted = !!attr.deletedAt;
@@ -282,6 +314,50 @@ export const AttributesListPage: React.FC = () => {
   // Calculate total pages for mobile pagination
   const totalPages = attributesResponse?.meta ? Math.ceil(attributesResponse.meta.total / paginationModel.pageSize) : 0;
 
+  // Show full page loading state
+  const isPageLoading = isLoading || statsLoading;
+
+  if (isPageLoading) {
+    return (
+      <Box sx={{ px: { xs: 1, sm: 2, md: 3 }, pb: { xs: 2, sm: 3 } }}>
+        {/* Header Skeleton */}
+        <Box sx={{ mb: { xs: 2, sm: 3, md: 4 }, mt: { xs: 1, sm: 2 } }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', gap: 2 }}>
+            <Box>
+              <Skeleton variant="text" width={200} height={40} sx={{ mb: 1 }} />
+              <Skeleton variant="text" width={300} height={24} sx={{ display: { xs: 'none', sm: 'block' } }} />
+            </Box>
+            <Skeleton variant="rectangular" width={{ xs: '100%', sm: 150 }} height={42} />
+          </Box>
+        </Box>
+
+        {/* Statistics Cards Skeleton */}
+        <Box sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
+          <AttributeStatsCards stats={undefined} isLoading={true} />
+        </Box>
+
+        {/* Filters Skeleton */}
+        <Box sx={{ mb: { xs: 2, sm: 3 } }}>
+          <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1 }} />
+        </Box>
+
+        {/* Content Skeleton */}
+        {breakpoint.isMobile ? (
+          <Stack spacing={2}>
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
+            ))}
+          </Stack>
+        ) : (
+          <Box>
+            <Skeleton variant="rectangular" height={60} sx={{ mb: 2, borderRadius: 1 }} />
+            <Skeleton variant="rectangular" height={600} sx={{ borderRadius: 1 }} />
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ px: { xs: 1, sm: 2, md: 3 }, pb: { xs: 2, sm: 3 } }}>
       {/* Header Section - Responsive */}
@@ -326,7 +402,7 @@ export const AttributesListPage: React.FC = () => {
 
       {/* Statistics Cards - Enhanced */}
       <Box sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
-        <AttributeStatsCards stats={stats} isLoading={statsLoading} />
+        <AttributeStatsCards stats={stats} isLoading={false} />
       </Box>
 
       {/* Filters */}
@@ -339,38 +415,43 @@ export const AttributesListPage: React.FC = () => {
       </Box>
 
       {/* Desktop View - Table */}
-      <Box sx={{ display: { xs: 'none', md: 'block' }, height: 'calc(100vh - 400px)', minHeight: 600, width: '100%' }}>
-        <Paper sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative', height: '100%' }}>
-            <DataTable
-              title=""
-              columns={columns}
-              rows={attributes}
-              loading={isLoading}
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              onAdd={() => navigate('/attributes/new')}
-              addButtonText={t('attributes.addNew')}
-              onRowClick={(params) => {
-                const row = params.row as Attribute;
-                navigate(`/attributes/${row._id}`);
-              }}
-              height="100%"
-              getRowId={(row) => (row as Attribute)._id}
-            />
-          </Box>
-        </Paper>
+      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+        <DataTable
+          title=""
+          columns={columns}
+          rows={attributes}
+          loading={false}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+          onAdd={() => navigate('/attributes/new')}
+          addButtonText={t('attributes.addNew')}
+          onRowClick={(params) => {
+            const row = params.row as Attribute;
+            navigate(`/attributes/${row._id}`);
+          }}
+          height={600}
+          getRowId={(row) => (row as Attribute)._id}
+          sx={{
+            '& .MuiDataGrid-cell': {
+              py: 1,
+              display: 'flex',
+              alignItems: 'center',
+            },
+            '& .MuiDataGrid-row': {
+              '&:hover': {
+                backgroundColor: (theme: { palette: { mode: string } }) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(0, 0, 0, 0.02)',
+              },
+            },
+          }}
+        />
       </Box>
 
       {/* Mobile/Tablet View - Cards */}
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-        {isLoading ? (
-          <Stack spacing={2}>
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
-            ))}
-          </Stack>
-        ) : attributes && attributes.length > 0 ? (
+        {attributes && attributes.length > 0 ? (
           <>
             <Stack spacing={2}>
               {attributes.map((attribute: Attribute) => (

@@ -8,6 +8,22 @@ import type {
   BrandStats,
 } from '../types/brand.types';
 
+// Helper function to extract nested data from API response
+function extractData<T>(response: any): T {
+  const outer = response?.data;
+  if (outer && typeof outer === 'object') {
+    if (Array.isArray(outer)) {
+      return outer as T;
+    }
+
+    if ('data' in outer) {
+      return extractData<T>({ data: outer.data });
+    }
+  }
+
+  return outer as T;
+}
+
 // Brands API - متطابق تماماً مع Backend Endpoints
 export const brandsApi = {
   // إنشاء علامة تجارية جديدة
@@ -53,7 +69,7 @@ export const brandsApi = {
     const response = await apiClient.get<ApiResponse<BrandStats>>(
       '/admin/brands/stats/summary'
     );
-    return response.data.data;
+    return extractData<BrandStats>(response);
   },
 
   // البحث في العلامات التجارية (للاستخدام في Select components)

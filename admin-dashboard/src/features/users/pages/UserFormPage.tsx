@@ -24,6 +24,7 @@ import { UserBasicInfoSection } from '../components/UserBasicInfoSection';
 import { UserRolePermissionsSection } from '../components/UserRolePermissionsSection';
 import { EngineerInfoSection } from '../components/EngineerInfoSection';
 import { MerchantInfoSection } from '../components/MerchantInfoSection';
+import { VerificationFilesSection } from '../components/VerificationFilesSection';
 import { ResetPasswordDialog } from '../components/ResetPasswordDialog';
 import { StatusControlDialog } from '../components/StatusControlDialog';
 import { mapCityToArabic } from '@/shared/utils/cityMapper';
@@ -328,6 +329,11 @@ export const UserFormPage: React.FC = () => {
 
               {/* Discount - Only for merchants */}
               {primaryRole === UserRole.MERCHANT && <MerchantInfoSection />}
+
+              {/* Verification Files Section - Only in Edit Mode when files exist */}
+              {isEditMode && user && (
+                <VerificationFilesSection user={user} />
+              )}
 
               {/* Status Control Section - Only in Edit Mode */}
               {isEditMode && user && (

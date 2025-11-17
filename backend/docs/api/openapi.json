@@ -11835,12 +11835,12 @@
         ],
         "parameters": [
           {
-            "name": "hours",
+            "name": "page",
             "required": false,
             "in": "query",
-            "description": "عدد الساعات للاعتبار سلة مهجورة",
+            "description": "رقم الصفحة",
             "schema": {
-              "example": "24",
+              "example": "1",
               "type": "string"
             }
           },
@@ -11850,7 +11850,67 @@
             "in": "query",
             "description": "عدد السلات المراد عرضها",
             "schema": {
-              "example": "50",
+              "example": "25",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "تصفية حسب الحالة",
+            "schema": {
+              "example": "abandoned",
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "تصفية حسب معرف المستخدم",
+            "schema": {
+              "example": "507f1f77bcf86cd799439012",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية",
+            "schema": {
+              "example": "2024-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية",
+            "schema": {
+              "example": "2024-12-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "ترتيب حسب",
+            "schema": {
+              "example": "lastActivityAt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "description": "اتجاه الترتيب",
+            "schema": {
+              "example": "desc",
               "type": "string"
             }
           }
@@ -11868,52 +11928,24 @@
                       "example": true
                     },
                     "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "_id": {
-                            "type": "string",
-                            "example": "507f1f77bcf86cd799439011"
-                          },
-                          "userId": {
-                            "type": "string",
-                            "example": "507f1f77bcf86cd799439012"
-                          },
-                          "items": {
-                            "type": "array"
-                          },
-                          "pricingSummary": {
-                            "type": "object",
-                            "properties": {
-                              "total": {
-                                "type": "number",
-                                "example": 599.98
-                              }
-                            }
-                          },
-                          "lastActivity": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
+                      "type": "object",
+                      "properties": {
+                        "carts": {
+                          "type": "array"
+                        },
+                        "count": {
+                          "type": "number",
+                          "example": 25
+                        },
+                        "totalCarts": {
+                          "type": "number",
+                          "example": 50
+                        },
+                        "totalValue": {
+                          "type": "number",
+                          "example": 14999.5
                         }
                       }
-                    },
-                    "count": {
-                      "type": "number",
-                      "example": 25
-                    },
-                    "totalCarts": {
-                      "type": "number",
-                      "example": 50
-                    },
-                    "totalValue": {
-                      "type": "number",
-                      "example": 14999.5
                     }
                   }
                 }

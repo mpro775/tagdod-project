@@ -50,10 +50,24 @@ export class MarketingService {
   // ==================== PRICE RULES ====================
 
   async createPriceRule(dto: CreatePriceRuleDto): Promise<PriceRule> {
+    // Generate badge automatically based on discount type
+    let badge = '';
+    if (dto.effects?.percentOff) {
+      badge = `خصم ${dto.effects.percentOff}%`;
+    } else if (dto.effects?.amountOff) {
+      badge = `خصم ${dto.effects.amountOff}$`;
+    } else if (dto.effects?.specialPrice) {
+      badge = 'عرض خاص';
+    }
+
     return this.priceRuleModel.create({
       ...dto,
       startAt: new Date(dto.startAt),
       endAt: new Date(dto.endAt),
+      effects: {
+        ...dto.effects,
+        badge: badge || undefined,
+      },
       usageLimits: dto.usageLimits ? {
         ...dto.usageLimits,
         currentUses: 0,
@@ -67,6 +81,24 @@ export class MarketingService {
     const updateData: Record<string, unknown> = { ...dto };
     if (dto.startAt) updateData.startAt = new Date(dto.startAt);
     if (dto.endAt) updateData.endAt = new Date(dto.endAt);
+    
+    // Generate badge automatically if effects are being updated
+    if (dto.effects) {
+      let badge = '';
+      if (dto.effects.percentOff) {
+        badge = `خصم ${dto.effects.percentOff}%`;
+      } else if (dto.effects.amountOff) {
+        badge = `خصم ${dto.effects.amountOff}$`;
+      } else if (dto.effects.specialPrice) {
+        badge = 'عرض خاص';
+      }
+      
+      updateData.effects = {
+        ...dto.effects,
+        badge: badge || dto.effects.badge || undefined,
+      };
+    }
+    
     return this.priceRuleModel.findByIdAndUpdate(id, updateData, { new: true });
   }
 

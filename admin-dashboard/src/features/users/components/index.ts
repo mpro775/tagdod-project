@@ -12,6 +12,7 @@ export { UserBasicInfoSection } from './UserBasicInfoSection';
 export { UserRolePermissionsSection } from './UserRolePermissionsSection';
 export { EngineerInfoSection } from './EngineerInfoSection';
 export { MerchantInfoSection } from './MerchantInfoSection';
+export { VerificationFilesSection } from './VerificationFilesSection';
 export { AnalyticsKPICards } from './AnalyticsKPICards';
 export { CustomerRankingsTable } from './CustomerRankingsTable';
 export { TopCustomersCards } from './TopCustomersCards';

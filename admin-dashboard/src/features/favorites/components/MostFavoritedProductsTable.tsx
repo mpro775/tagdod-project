@@ -1,21 +1,15 @@
 import {
-  Card,
-  CardHeader,
-  CardContent,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   Avatar,
   Typography,
   Box,
-  Skeleton,
   Chip,
-  Stack,
+  Alert,
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import PercentIcon from '@mui/icons-material/Percent';
+import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
+import { useState, useMemo } from 'react';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
 import type { MostFavoritedProduct } from '../types/favorites.types';
 import { useFavoritesStats, useMostFavoritedProducts } from '../hooks/useFavoritesAdmin';
 
@@ -29,125 +23,122 @@ const getProductName = (product: MostFavoritedProduct['product']) =>
 export function MostFavoritedProductsTable({ limit = 10 }: MostFavoritedProductsTableProps) {
   const { data: stats } = useFavoritesStats();
   const { data, isLoading } = useMostFavoritedProducts(limit);
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader
-          title="المنتجات الأكثر إضافة للمفضلة"
-          subheader="عرض لأكثر المنتجات شعبية بين المستخدمين"
-        />
-        <CardContent>
-          <Stack spacing={2}>
-            {[1, 2, 3, 4, 5].map((row) => (
-              <Skeleton key={row} variant="rectangular" height={48} sx={{ borderRadius: 2 }} />
-            ))}
-          </Stack>
-        </CardContent>
-      </Card>
-    );
-  }
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 10,
+  });
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   const totalFavorites = stats?.total ?? data?.reduce((acc, item) => acc + item.count, 0) ?? 0;
 
-  return (
-    <Card>
-      <CardHeader
-        title="المنتجات الأكثر إضافة للمفضلة"
-        subheader="استخدم النتائج لتنسيق الحملات التسويقية وتحديث المخزون"
-      />
-      <CardContent sx={{ px: 0 }}>
-        {data && data.length > 0 ? (
-          <Table
-            sx={{
-              minWidth: 600,
-              '& th': { fontWeight: 600 },
-              '& td, & th': { direction: 'rtl' },
-            }}
-          >
-            <TableHead>
-              <TableRow>
-                <TableCell align="right">#</TableCell>
-                <TableCell>المنتج</TableCell>
-                <TableCell align="center">عدد الإضافات</TableCell>
-                <TableCell align="center">نسبة المساهمة</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.map((item, index) => {
-                const name = getProductName(item.product) ?? item.productId;
-                const percentage =
-                  totalFavorites > 0 ? Math.round((item.count / totalFavorites) * 1000) / 10 : 0;
-                const imageUrl = item.product?.mainImageId?.url;
+  const columns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: 'rank',
+        headerName: '#',
+        width: 80,
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: (params) => {
+          const rowIndex = params.api.getRowIndexRelativeToVisibleRows(params.id);
+          const rank = paginationModel.page * paginationModel.pageSize + rowIndex + 1;
+          return (
+            <Typography variant="body2" fontWeight="bold">
+              {rank}
+            </Typography>
+          );
+        },
+      },
+      {
+        field: 'product',
+        headerName: 'المنتج',
+        flex: 1,
+        minWidth: 300,
+        renderCell: (params) => {
+          const item = params.row as MostFavoritedProduct;
+          const name = getProductName(item.product) ?? item.productId;
+          const imageUrl = item.product?.mainImageId?.url;
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1 }}>
+              <Avatar
+                src={imageUrl}
+                alt={name || 'product'}
+                sx={{ width: 48, height: 48, borderRadius: 2 }}
+                variant={imageUrl ? 'rounded' : 'circular'}
+              >
+                <StarIcon />
+              </Avatar>
+              <Typography variant="subtitle1" fontWeight={600}>
+                {name}
+              </Typography>
+            </Box>
+          );
+        },
+      },
+      {
+        field: 'count',
+        headerName: 'عدد الإضافات',
+        width: 150,
+        align: 'center',
+        headerAlign: 'center',
+        type: 'number',
+        renderCell: (params) => (
+          <Typography variant="body1" fontWeight="medium">
+            {params.value.toLocaleString('en-US')}
+          </Typography>
+        ),
+      },
+      {
+        field: 'percentage',
+        headerName: 'نسبة المساهمة',
+        width: 180,
+        align: 'center',
+        headerAlign: 'center',
+        valueGetter: (_value, row: MostFavoritedProduct) => {
+          return totalFavorites > 0 ? Math.round((row.count / totalFavorites) * 1000) / 10 : 0;
+        },
+        renderCell: (params) => {
+          const percentage = params.value as number;
+          return (
+            <Chip
+              icon={<PercentIcon sx={{ fontSize: '1rem !important' }} />}
+              label={`${percentage.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
+              color={percentage > 15 ? 'success' : percentage > 5 ? 'primary' : 'default'}
+              variant="outlined"
+            />
+          );
+        },
+      },
+    ],
+    [paginationModel, totalFavorites]
+  );
 
-                return (
-                  <TableRow key={item.productId} hover>
-                    <TableCell align="right">
-                      <Typography variant="body2" fontWeight="bold">
-                        {index + 1}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar
-                          src={imageUrl}
-                          alt={name || 'product'}
-                          sx={{ width: 48, height: 48, borderRadius: 2 }}
-                          variant={imageUrl ? 'rounded' : 'circular'}
-                        >
-                          <StarIcon />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle1" fontWeight={600}>
-                            {name}
-                          </Typography>
-                          {item.product?.slug && (
-                            <Chip
-                              size="small"
-                              label={item.product.slug}
-                              sx={{ mt: 0.5, maxWidth: 'fit-content' }}
-                              color="default"
-                            />
-                          )}
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Typography variant="body1" fontWeight="medium">
-                        {item.count.toLocaleString('ar-SA')}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        icon={<PercentIcon sx={{ fontSize: '1rem !important' }} />}
-                        label={`${percentage.toLocaleString('ar-SA', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
-                        color={percentage > 15 ? 'success' : percentage > 5 ? 'primary' : 'default'}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        ) : (
-          <Box
-            sx={{
-              textAlign: 'center',
-              py: 6,
-              px: 3,
-            }}
-          >
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              لا توجد بيانات متاحة حالياً
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              سيظهر هنا أكثر المنتجات التي يضيفها المستخدمون إلى قوائم المفضلة بمجرد توفر البيانات.
-            </Typography>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
+  if (!data || data.length === 0) {
+    return (
+      <Alert severity="info" sx={{ mt: 2 }}>
+        <Typography variant="h6" gutterBottom>
+          لا توجد بيانات متاحة حالياً
+        </Typography>
+        <Typography variant="body2">
+          سيظهر هنا أكثر المنتجات التي يضيفها المستخدمون إلى قوائم المفضلة بمجرد توفر البيانات.
+        </Typography>
+      </Alert>
+    );
+  }
+
+  return (
+    <DataTable
+      title="المنتجات الأكثر إضافة للمفضلة"
+      columns={columns}
+      rows={data}
+      loading={isLoading}
+      paginationModel={paginationModel}
+      onPaginationModelChange={setPaginationModel}
+      sortModel={sortModel}
+      onSortModelChange={setSortModel}
+      getRowId={(row) => (row as MostFavoritedProduct).productId}
+      height={600}
+    />
   );
 }
 

@@ -93,7 +93,7 @@ export const CartAnalyticsPage: React.FC = () => {
   const conversionRateChartData = useMemo(() => {
     if (!conversionRates?.dailyRates) return [];
     return conversionRates.dailyRates.map((item: any) => ({
-      name: new Date(item.date).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' }),
+      name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       value: item.conversionRate,
       converted: item.convertedCarts,
       total: item.totalCarts,
@@ -101,12 +101,31 @@ export const CartAnalyticsPage: React.FC = () => {
   }, [conversionRates]);
 
   const revenueTrendsData = useMemo(() => {
-    if (!analytics?.trends?.recentActivity) return [];
-    return analytics.trends.recentActivity.map((item: any) => ({
-      name: new Date(`${item._id.year}-${item._id.month}-${item._id.day}`).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' }),
-      value: item.totalValue || 0,
-      count: item.count || 0,
-    }));
+    if (!analytics?.trends?.recentActivity || !Array.isArray(analytics.trends.recentActivity)) return [];
+    return analytics.trends.recentActivity.map((item: any) => {
+      // Build date string with proper zero-padding
+      const year = item._id?.year || new Date().getFullYear();
+      const month = String(item._id?.month || 1).padStart(2, '0');
+      const day = String(item._id?.day || 1).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      const date = new Date(dateStr);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date:', dateStr, item);
+        return {
+          name: `${day}/${month}/${year}`,
+          value: item.totalValue || 0,
+          count: item.count || 0,
+        };
+      }
+      
+      return {
+        name: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        value: Number(item.totalValue) || 0,
+        count: Number(item.count) || 0,
+      };
+    }).filter(item => item.value !== undefined && item.value !== null);
   }, [analytics]);
 
   const cartValueDistributionData = useMemo(() => {
@@ -866,14 +885,17 @@ export const CartAnalyticsPage: React.FC = () => {
                       <CircularProgress />
                     </Box>
                   ) : hourlyActivityData.length > 0 ? (
-                    <BarChartComponent
-                      data={hourlyActivityData}
-                      height={300}
-                      bars={[
-                        { dataKey: 'value', fill: '#2196f3', name: t('analytics.charts.cartCount') },
-                      ]}
-                      xAxisKey="name"
-                    />
+                    <Box sx={{ mt: 2 }}>
+                      <BarChartComponent
+                        data={hourlyActivityData}
+                        height={300}
+                        bars={[
+                          { dataKey: 'value', fill: '#2196f3', name: t('analytics.charts.cartCount') },
+                        ]}
+                        xAxisKey="name"
+                        disableCard={true}
+                      />
+                    </Box>
                   ) : (
                     <Typography 
                       color="text.secondary"
@@ -968,14 +990,17 @@ export const CartAnalyticsPage: React.FC = () => {
                       <CircularProgress />
                     </Box>
                   ) : cartValueDistributionData.length > 0 ? (
-                    <BarChartComponent
-                      data={cartValueDistributionData}
-                      height={300}
-                      bars={[
-                        { dataKey: 'value', fill: '#ff9800', name: t('analytics.charts.cartCount') },
-                      ]}
-                      xAxisKey="name"
-                    />
+                    <Box sx={{ mt: 2 }}>
+                      <BarChartComponent
+                        data={cartValueDistributionData}
+                        height={300}
+                        bars={[
+                          { dataKey: 'value', fill: '#ff9800', name: t('analytics.charts.cartCount') },
+                        ]}
+                        xAxisKey="name"
+                        disableCard={true}
+                      />
+                    </Box>
                   ) : (
                     <Typography 
                       color="text.secondary"

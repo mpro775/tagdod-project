@@ -143,7 +143,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onVarian
                 <Warning color="warning" sx={{ fontSize: { xs: 28, sm: 40 } }} />
                 <Box sx={{ textAlign: { xs: 'center', sm: 'left' }, flex: 1 }}>
                   <Typography variant="h4" component="div" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
-                    {summary?.lowStock || 0}
+                    {lowStockVariants?.length || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                     {t('products:inventory.lowStock', 'مخزون منخفض')}
@@ -161,7 +161,7 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onVarian
                 <TrendingDown color="error" sx={{ fontSize: { xs: 28, sm: 40 } }} />
                 <Box sx={{ textAlign: { xs: 'center', sm: 'left' }, flex: 1 }}>
                   <Typography variant="h4" component="div" sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
-                    {summary?.outOfStock || 0}
+                    {outOfStockVariants?.length || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                     {t('products:inventory.outOfStock', 'نفذ من المخزون')}

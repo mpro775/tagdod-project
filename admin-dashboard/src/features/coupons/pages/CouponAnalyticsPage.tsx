@@ -228,7 +228,7 @@ export const CouponAnalyticsPage: React.FC = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={t('analytics.totalCoupons')}
-            value={analytics?.totalCoupons || 0}
+            value={statistics?.totalCoupons || analytics?.totalInPeriod || 0}
             icon={ConfirmationNumber}
             color="primary"
           />
@@ -237,7 +237,7 @@ export const CouponAnalyticsPage: React.FC = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={t('analytics.activeCoupons')}
-            value={analytics?.activeCoupons || 0}
+            value={statistics?.activeCoupons || analytics?.statusBreakdown?.active || 0}
             icon={TrendingUp}
             color="success"
           />
@@ -245,8 +245,8 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title={t('analytics.totalRedemptions')}
-            value={statistics?.totalRedemptions || 0}
+            title={t('analytics.totalUses')}
+            value={statistics?.totalUses || 0}
             icon={People}
             color="info"
           />
@@ -254,13 +254,111 @@ export const CouponAnalyticsPage: React.FC = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title={t('analytics.totalSavings')}
-            value={formatCurrency(statistics?.totalSavings || 0)}
+            title={t('analytics.usageRate')}
+            value={`${statistics?.usageRate || '0.00'}%`}
             icon={AttachMoney}
             color="warning"
           />
         </Grid>
       </Grid>
+
+      {/* Additional Statistics Cards */}
+      <Grid container spacing={{ xs: 2, sm: 3 }} mb={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard
+            title={t('analytics.expiredCoupons')}
+            value={statistics?.expiredCoupons || analytics?.statusBreakdown?.expired || 0}
+            icon={ConfirmationNumber}
+            color="error"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard
+            title={t('analytics.inactiveCoupons')}
+            value={analytics?.statusBreakdown?.inactive || 0}
+            icon={ConfirmationNumber}
+            color="secondary"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard
+            title={t('analytics.scheduledCoupons')}
+            value={analytics?.statusBreakdown?.scheduled || 0}
+            icon={ConfirmationNumber}
+            color="info"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard
+            title={t('analytics.totalLimit')}
+            value={statistics?.totalLimit || 0}
+            icon={BarChart}
+            color="primary"
+          />
+        </Grid>
+      </Grid>
+
+      {/* Status Breakdown */}
+      {analytics?.statusBreakdown && (
+        <Grid container spacing={{ xs: 2, sm: 3 }} mb={4}>
+          <Grid size={{ xs: 12 }}>
+            <Card>
+              <CardHeader sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1, sm: 1.5 } }}>
+                <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                  {t('analytics.statusBreakdown')}
+                </Typography>
+              </CardHeader>
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1.5 } }}>
+                <Grid container spacing={{ xs: 2, sm: 3 }}>
+                  <Grid size={{ xs: 6, sm: 3 }}>
+                    <Box textAlign="center" p={2} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                      <Typography variant="h4" fontWeight="bold" color="success.main" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+                        {analytics.statusBreakdown.active || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 1 }}>
+                        {t('analytics.statusActive')}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 6, sm: 3 }}>
+                    <Box textAlign="center" p={2} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                      <Typography variant="h4" fontWeight="bold" color="error.main" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+                        {analytics.statusBreakdown.expired || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 1 }}>
+                        {t('analytics.statusExpired')}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 6, sm: 3 }}>
+                    <Box textAlign="center" p={2} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                      <Typography variant="h4" fontWeight="bold" color="text.secondary" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+                        {analytics.statusBreakdown.inactive || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 1 }}>
+                        {t('analytics.statusInactive')}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 6, sm: 3 }}>
+                    <Box textAlign="center" p={2} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                      <Typography variant="h4" fontWeight="bold" color="info.main" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+                        {analytics.statusBreakdown.scheduled || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 1 }}>
+                        {t('analytics.statusScheduled')}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
 
       {/* Detailed Analytics */}
       <Grid container spacing={{ xs: 2, sm: 3 }}>
@@ -268,15 +366,15 @@ export const CouponAnalyticsPage: React.FC = () => {
           <Card>
             <CardHeader sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1, sm: 1.5 } }}>
               <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                {t('analytics.couponTypePerformance')}
+                {t('analytics.typeBreakdown')}
               </Typography>
             </CardHeader>
             <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1.5 } }}>
-              {statistics?.couponTypePerformance?.length > 0 ? (
+              {analytics?.typeBreakdown ? (
                 <Stack spacing={2}>
-                  {statistics.couponTypePerformance.map((item: any) => (
+                  {Object.entries(analytics.typeBreakdown).map(([type, count]: [string, any]) => (
                     <Box
-                      key={item.type}
+                      key={type}
                       display="flex"
                       justifyContent="space-between"
                       alignItems="center"
@@ -285,19 +383,21 @@ export const CouponAnalyticsPage: React.FC = () => {
                     >
                       <Box>
                         <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                          {item.type}
+                          {type === 'percentage' ? t('analytics.typePercentage') : 
+                           type === 'fixed' ? t('analytics.typeFixed') : 
+                           type === 'freeShipping' ? t('analytics.typeFreeShipping') : type}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {item.usageCount} {t('analytics.usageCount')}
+                          {t('analytics.count')}: {count}
                         </Typography>
                       </Box>
                       <Box textAlign="right">
-                        <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                          {formatCurrency(item.totalDiscount)}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {item.conversionRate}% {t('analytics.conversionRate')}
-                        </Typography>
+                        <Chip 
+                          label={count} 
+                          size="small" 
+                          color={type === 'percentage' ? 'primary' : type === 'fixed' ? 'secondary' : 'info'}
+                          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                        />
                       </Box>
                     </Box>
                   ))}
@@ -315,38 +415,62 @@ export const CouponAnalyticsPage: React.FC = () => {
           <Card>
             <CardHeader sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1, sm: 1.5 } }}>
               <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                {t('analytics.topCoupons')}
+                {t('analytics.topUsedCoupons')}
               </Typography>
             </CardHeader>
             <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1.5 } }}>
-              {statistics?.topCoupons?.length > 0 ? (
+              {analytics?.topUsedCoupons && analytics.topUsedCoupons.length > 0 ? (
                 <Stack spacing={2}>
-                  {statistics.topCoupons.slice(0, 5).map((coupon: any, index: number) => (
+                  {analytics.topUsedCoupons.map((coupon: any, index: number) => (
                     <Box
-                      key={coupon._id}
+                      key={coupon._id || index}
                       display="flex"
                       justifyContent="space-between"
-                      alignItems="center"
+                      alignItems="flex-start"
                       flexWrap={{ xs: 'wrap', sm: 'nowrap' }}
                       gap={1}
+                      p={1.5}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                      }}
                     >
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <Chip label={index + 1} size="small" color="primary" variant="outlined" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }} />
-                        <Box>
+                      <Box display="flex" alignItems="flex-start" gap={2} flex={1}>
+                        <Chip 
+                          label={index + 1} 
+                          size="small" 
+                          color="primary" 
+                          variant="outlined" 
+                          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }} 
+                        />
+                        <Box flex={1}>
                           <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                            {coupon.name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                             {coupon.code}
                           </Typography>
+                          <Box display="flex" gap={1} flexWrap="wrap" mt={0.5}>
+                            <Chip 
+                              label={coupon.type === 'percentage' ? t('analytics.typePercentage') : 
+                                     coupon.type === 'fixed_amount' ? t('analytics.typeFixed') : 
+                                     coupon.type}
+                              size="small"
+                              variant="outlined"
+                              sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
+                            />
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                              {coupon.type === 'percentage' 
+                                ? `${coupon.discountValue}%`
+                                : formatCurrency(coupon.discountValue)}
+                            </Typography>
+                          </Box>
                         </Box>
                       </Box>
-                      <Box textAlign="right">
-                        <Typography variant="body1" fontWeight="medium" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                          {coupon.usageCount} {t('analytics.usageCount')}
+                      <Box textAlign="right" minWidth={{ xs: '100%', sm: 'auto' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                          {t('analytics.usedCount')}: {coupon.usedCount || 0}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {formatCurrency(coupon.totalDiscount)}
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                          {t('analytics.usageLimit')}: {coupon.usageLimit || t('analytics.unlimited')}
                         </Typography>
                       </Box>
                     </Box>
@@ -366,7 +490,7 @@ export const CouponAnalyticsPage: React.FC = () => {
             <Card>
               <CardHeader sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1, sm: 1.5 } }}>
                 <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                  {t('analytics.detailedPerformance')}
+                  {t('analytics.detailedStatistics')}
                 </Typography>
               </CardHeader>
               <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1.5 } }}>
@@ -382,115 +506,91 @@ export const CouponAnalyticsPage: React.FC = () => {
                     >
                       <TableRow>
                         <TableCell sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {t('analytics.index')}
+                          {t('analytics.metric')}
                         </TableCell>
                         <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                           {t('analytics.value')}
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {t('analytics.change')}
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {t('analytics.percentage')}
                         </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       <TableRow>
                         <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {t('analytics.conversionRate')}
+                          {t('analytics.totalCoupons')}
                         </TableCell>
-                        <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{statistics?.conversionRate || 0}%</TableCell>
-                        <TableCell align="right">
-                          {statistics?.conversionRateChange !== undefined ? (
-                            <Box display="flex" alignItems="center" justifyContent="flex-end">
-                              {statistics.conversionRateChange >= 0 ? (
-                                <ArrowUpward color="success" fontSize="small" />
-                              ) : (
-                                <ArrowDownward color="error" fontSize="small" />
-                              )}
-                              <Typography
-                                variant="body2"
-                                color={statistics.conversionRateChange >= 0 ? 'success.main' : 'error.main'}
-                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                              >
-                                {`${Math.abs(statistics.conversionRateChange)}%`}
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          <LinearProgress
-                            variant="determinate"
-                            value={statistics?.conversionRate || 0}
-                            sx={{ width: { xs: 60, sm: 100 } }}
-                          />
+                        <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {statistics?.totalCoupons || analytics?.totalInPeriod || 0}
                         </TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {t('analytics.averageOrderValue')}
+                          {t('analytics.activeCoupons')}
                         </TableCell>
                         <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {formatCurrency(statistics?.averageOrderValue || 0)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {statistics?.averageOrderValueChange !== undefined ? (
-                            <Box display="flex" alignItems="center" justifyContent="flex-end">
-                              {statistics.averageOrderValueChange >= 0 ? (
-                                <ArrowUpward color="success" fontSize="small" />
-                              ) : (
-                                <ArrowDownward color="error" fontSize="small" />
-                              )}
-                              <Typography
-                                variant="body2"
-                                color={statistics.averageOrderValueChange >= 0 ? 'success.main' : 'error.main'}
-                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                              >
-                                {`${Math.abs(statistics.averageOrderValueChange)}%`}
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
+                          {statistics?.activeCoupons || analytics?.statusBreakdown?.active || 0}
                         </TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {t('analytics.totalRevenue')}
+                          {t('analytics.expiredCoupons')}
                         </TableCell>
                         <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          {formatCurrency(statistics?.totalRevenue || 0)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {statistics?.totalRevenueChange !== undefined ? (
-                            <Box display="flex" alignItems="center" justifyContent="flex-end">
-                              {statistics.totalRevenueChange >= 0 ? (
-                                <ArrowUpward color="success" fontSize="small" />
-                              ) : (
-                                <ArrowDownward color="error" fontSize="small" />
-                              )}
-                              <Typography
-                                variant="body2"
-                                color={statistics.totalRevenueChange >= 0 ? 'success.main' : 'error.main'}
-                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                              >
-                                {`${Math.abs(statistics.totalRevenueChange)}%`}
-                              </Typography>
-                            </Box>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>—</Typography>
+                          {statistics?.expiredCoupons || analytics?.statusBreakdown?.expired || 0}
                         </TableCell>
                       </TableRow>
+                      <TableRow>
+                        <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.totalUses')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {statistics?.totalUses || 0}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.totalLimit')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {statistics?.totalLimit || 0}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {t('analytics.usageRate')}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          {statistics?.usageRate ? `${statistics.usageRate}%` : '0.00%'}
+                          {statistics?.usageRate !== undefined && (
+                            <Box mt={1}>
+                              <LinearProgress
+                                variant="determinate"
+                                value={parseFloat(statistics.usageRate) || 0}
+                                sx={{ width: { xs: 60, sm: 100 } }}
+                              />
+                            </Box>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {analytics?.totalInPeriod !== undefined && (
+                        <TableRow>
+                          <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                            {t('analytics.totalInPeriod')}
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                            {analytics.totalInPeriod}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {analytics?.period !== undefined && (
+                        <TableRow>
+                          <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                            {t('analytics.period')}
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                            {analytics.period} {t('analytics.days')}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </TableContainer>

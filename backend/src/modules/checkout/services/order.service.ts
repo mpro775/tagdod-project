@@ -231,33 +231,43 @@ export class OrderService {
     orderAmount: number;
     productIds: string[];
   }): Promise<string[]> {
+    // جلب جميع التحققات في batch واحد بدلاً من loop متسلسل
+    const validations = await Promise.all(
+      params.codes.map((code) =>
+        code
+          ? this.validateCouponWithCache({
+              code,
+              userId: params.userId,
+              orderAmount: params.orderAmount,
+              productIds: params.productIds,
+            }).catch(() => null)
+          : Promise.resolve(null),
+      ),
+    );
+
     const fixed: string[] = [];
     const percentage: string[] = [];
     const others: string[] = [];
 
-    for (const code of params.codes) {
-      if (!code) continue;
+    validations.forEach((validation, index) => {
+      if (!validation) {
+        const code = params.codes[index];
+        if (code) others.push(code);
+        return;
+      }
 
-      try {
-        const validation = await this.validateCouponWithCache({
-          code,
-          userId: params.userId,
-          orderAmount: params.orderAmount,
-          productIds: params.productIds,
-        });
+      const code = params.codes[index];
+      if (!code) return;
 
-        const type = validation.coupon?.type;
-        if (type === 'fixed_amount') {
-          fixed.push(code);
-        } else if (type === 'percentage') {
-          percentage.push(code);
-        } else {
-          others.push(code);
-        }
-      } catch {
+      const type = validation.coupon?.type;
+      if (type === 'fixed_amount') {
+        fixed.push(code);
+      } else if (type === 'percentage') {
+        percentage.push(code);
+      } else {
         others.push(code);
       }
-    }
+    });
 
     const ordered = [...fixed, ...percentage, ...others];
     const uniqueOrdered: string[] = [];
@@ -392,6 +402,7 @@ export class OrderService {
       .map((item: Partial<CartLine>) => item.productId || item.variantId)
       .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
 
+    // جلب التحققات مرة واحدة فقط مع prioritizeCouponCodes
     const prioritizedCouponCodes = await this.prioritizeCouponCodes({
       codes: couponCodes,
       userId: params.userId,
@@ -399,48 +410,60 @@ export class OrderService {
       productIds,
     });
 
-    for (const code of prioritizedCouponCodes) {
-      try {
-        if (!code) continue;
+    // جلب جميع التحققات للكوبونات المُرتبة في batch واحد
+    // ملاحظة: نستخدم remainingSubtotal الأولي للتحقق، ثم نحدثه أثناء التطبيق
+    const initialValidations = await Promise.all(
+      prioritizedCouponCodes.map((code) =>
+        code
+          ? this.validateCouponWithCache({
+              code,
+              userId: params.userId,
+              orderAmount: subtotalFromSummary,
+              productIds,
+            }).catch(() => null)
+          : Promise.resolve(null),
+      ),
+    );
 
-        const validation = await this.validateCouponWithCache({
+    // تطبيق الكوبونات باستخدام النتائج المحفوظة
+    for (let i = 0; i < prioritizedCouponCodes.length; i++) {
+      const code = prioritizedCouponCodes[i];
+      if (!code) continue;
+
+      const validation = initialValidations[i];
+      if (!validation || !validation.valid || !validation.coupon) {
+        this.logger.warn(`Invalid coupon: ${code} - ${validation?.message || 'Unknown error'}`);
+        continue;
+      }
+
+      try {
+        let couponDiscount = 0;
+        const coupon = validation.coupon;
+        if (coupon.type === 'percentage' && coupon.discountValue) {
+          couponDiscount = (remainingSubtotal * coupon.discountValue) / 100;
+          if (coupon.maximumDiscountAmount) {
+            couponDiscount = Math.min(couponDiscount, coupon.maximumDiscountAmount);
+          }
+        } else if (coupon.type === 'fixed_amount' && coupon.discountValue) {
+          couponDiscount = coupon.discountValue;
+        }
+
+        couponDiscount = Math.min(couponDiscount, remainingSubtotal);
+
+        if (couponDiscount > 0) {
+          totalCouponDiscount += couponDiscount;
+          remainingSubtotal = Math.max(0, remainingSubtotal - couponDiscount);
+        }
+
+        appliedCoupons.push({
           code,
-          userId: params.userId,
-          orderAmount: remainingSubtotal,
-          productIds,
+          name: coupon.name,
+          discountValue: coupon.discountValue || 0,
+          type: coupon.type,
+          discount: couponDiscount,
         });
 
-        if (validation.valid && validation.coupon) {
-          let couponDiscount = 0;
-          const coupon = validation.coupon;
-          if (coupon.type === 'percentage' && coupon.discountValue) {
-            couponDiscount = (remainingSubtotal * coupon.discountValue) / 100;
-            if (coupon.maximumDiscountAmount) {
-              couponDiscount = Math.min(couponDiscount, coupon.maximumDiscountAmount);
-            }
-          } else if (coupon.type === 'fixed_amount' && coupon.discountValue) {
-            couponDiscount = coupon.discountValue;
-          }
-
-          couponDiscount = Math.min(couponDiscount, remainingSubtotal);
-
-          if (couponDiscount > 0) {
-            totalCouponDiscount += couponDiscount;
-            remainingSubtotal = Math.max(0, remainingSubtotal - couponDiscount);
-          }
-
-          appliedCoupons.push({
-            code,
-            name: coupon.name,
-            discountValue: coupon.discountValue || 0,
-            type: coupon.type,
-            discount: couponDiscount,
-          });
-
-          this.logger.debug(`Applied coupon ${code} with discount ${couponDiscount}`);
-        } else {
-          this.logger.warn(`Invalid coupon: ${code} - ${validation.message}`);
-        }
+        this.logger.debug(`Applied coupon ${code} with discount ${couponDiscount}`);
       } catch (error) {
         this.logger.error(`Error applying coupon ${code}`, error as Error);
       }
@@ -1495,20 +1518,22 @@ export class OrderService {
         : Promise.resolve(undefined),
     ]);
 
-    const computation = await this.buildCheckoutComputation({
-      userId,
-      currency: normalizedCurrency,
-      preview,
-      couponCode: dto.couponCode,
-      couponCodes: dto.couponCodes,
-      codEligibility,
-    });
-
-    const paymentOptions = await this.getPaymentOptions(
-      userId,
-      normalizedCurrency,
-      codEligibility,
-    );
+    // جلب computation و paymentOptions في parallel (باستخدام codEligibility الممرر)
+    const [computation, paymentOptions] = await Promise.all([
+      this.buildCheckoutComputation({
+        userId,
+        currency: normalizedCurrency,
+        preview,
+        couponCode: dto.couponCode,
+        couponCodes: dto.couponCodes,
+        codEligibility,
+      }),
+      this.getPaymentOptions(
+        userId,
+        normalizedCurrency,
+        codEligibility,
+      ),
+    ]);
 
     let totalsInAllCurrencies: Record<string, unknown> | undefined;
     let exchangeRates:
@@ -2149,30 +2174,29 @@ export class OrderService {
       filter.userId = new Types.ObjectId(userId);
     }
 
+    // جلب الطلب
     const order = await this.orderModel.findOne(filter);
+
     if (!order) {
       throw new OrderNotFoundException();
     }
 
-    // إضافة نوع الحساب المحلي إذا كان موجوداً
-    let localPaymentAccountType: string | undefined;
+    // جلب نوع الحساب المحلي إذا كان موجوداً (مع timeout لتجنب التأخير)
     if (order.localPaymentAccountId) {
       try {
-        const selection = await this.localPaymentAccountService.resolveAccountSelection(
-          order.localPaymentAccountId,
-          order.currency || 'USD',
-        );
+        const selection = await Promise.race([
+          this.localPaymentAccountService.resolveAccountSelection(
+            order.localPaymentAccountId,
+            order.currency || 'USD',
+          ),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)), // timeout 1 ثانية
+        ]);
         if (selection) {
-          localPaymentAccountType = selection.type;
+          (order as unknown as { localPaymentAccountType?: string }).localPaymentAccountType = selection.type;
         }
       } catch (error) {
         this.logger.debug(`Failed to resolve account type for order ${orderId}: ${error}`);
       }
-    }
-
-    // إضافة نوع الحساب للطلب
-    if (localPaymentAccountType) {
-      (order as unknown as { localPaymentAccountType?: string }).localPaymentAccountType = localPaymentAccountType;
     }
 
     return order;

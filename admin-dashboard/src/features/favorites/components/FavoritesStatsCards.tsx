@@ -14,7 +14,7 @@ import type { FavoritesStats } from '../types/favorites.types';
 import { useFavoritesStats } from '../hooks/useFavoritesAdmin';
 
 const formatNumber = (value: number | undefined) =>
-  (value ?? 0).toLocaleString('ar-SA');
+  (value ?? 0).toLocaleString('en-US');
 
 interface StatCard {
   title: string;
@@ -63,7 +63,12 @@ export function FavoritesStatsCards() {
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {[1, 2, 3, 4].map((i) => (
           <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card>
+            <Card
+              sx={{
+                bgcolor: 'background.paper',
+                backgroundImage: 'none',
+              }}
+            >
               <CardContent>
                 <Skeleton variant="rectangular" height={120} />
               </CardContent>
@@ -83,6 +88,8 @@ export function FavoritesStatsCards() {
               height: '100%',
               position: 'relative',
               overflow: 'hidden',
+              bgcolor: 'background.paper',
+              backgroundImage: 'none',
               '&:hover': {
                 boxShadow: 6,
                 transform: 'translateY(-4px)',

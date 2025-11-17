@@ -157,10 +157,39 @@ export const ordersApi = {
    * Get revenue analytics
    */
   getRevenueAnalytics: async (fromDate?: string, toDate?: string): Promise<RevenueAnalytics> => {
-    const response = await apiClient.get<ApiResponse<RevenueAnalytics>>('/admin/orders/analytics/revenue', {
+    const response = await apiClient.get<ApiResponse<{ analytics: RevenueAnalytics; message?: string }>>('/admin/orders/analytics/revenue', {
       params: { fromDate, toDate },
     });
-    return response.data.data;
+    const payload = response.data.data;
+    
+    // Handle nested analytics object
+    let analytics: any;
+    if (payload && typeof payload === 'object' && 'analytics' in payload) {
+      analytics = (payload as { analytics: any }).analytics;
+    } else {
+      analytics = payload;
+    }
+    
+    // Transform topProducts to match expected format
+    if (analytics && analytics.topProducts && Array.isArray(analytics.topProducts)) {
+      analytics.topProducts = analytics.topProducts.map((product: any) => ({
+        productId: product.productId,
+        productName: product.name || product.productName,
+        revenue: product.totalRevenue || product.revenue,
+        orders: product.orderCount || product.orders,
+      }));
+    }
+    
+    // Transform revenueByPeriod if it's revenueByDay
+    if (analytics && analytics.revenueByDay && !analytics.revenueByPeriod) {
+      analytics.revenueByPeriod = analytics.revenueByDay.map((item: any) => ({
+        period: item._id || item.period,
+        revenue: item.revenue,
+        orders: item.orders,
+      }));
+    }
+    
+    return analytics as RevenueAnalytics;
   },
 
   /**
@@ -171,11 +200,22 @@ export const ordersApi = {
     const payload = response.data.data;
     
     // Handle nested analytics object
+    let analytics: any;
     if (payload && typeof payload === 'object' && 'analytics' in payload) {
-      return (payload as { analytics: PerformanceAnalytics }).analytics;
+      analytics = (payload as { analytics: any }).analytics;
+    } else {
+      analytics = payload;
     }
     
-    return payload as PerformanceAnalytics;
+    // Transform field names to match expected format
+    return {
+      averageProcessingTime: analytics.averageProcessingTime ?? 0,
+      averageShippingTime: analytics.averageShippingTime ?? 0,
+      averageDeliveryTime: analytics.averageDeliveryTime ?? 0,
+      cancellationRate: analytics.cancellationRate ?? 0,
+      refundRate: analytics.returnRate ?? analytics.refundRate ?? 0,
+      customerSatisfactionScore: analytics.customerSatisfaction ?? analytics.customerSatisfactionScore ?? 0,
+    } as PerformanceAnalytics;
   },
 
   /**

@@ -196,7 +196,11 @@ export const AbandonedCartsPage: React.FC = () => {
 
   const getUserDisplayName = useCallback((cart: Cart) => {
     if (cart.user) {
-      return cart.user.name || cart.user.email || t('list.user.unknown');
+      return cart.user.name || cart.user.email || cart.user.phone || t('list.user.unknown');
+    }
+    // If user object is not populated but userId exists, show loading or fetch user info
+    if (cart.userId) {
+      return t('list.user.loading', 'جاري التحميل...');
     }
     return cart.deviceId ? `${t('list.user.device')} ${cart.deviceId.slice(-8)}` : t('list.user.guest');
   }, [t]);
@@ -204,6 +208,10 @@ export const AbandonedCartsPage: React.FC = () => {
   const getUserContact = useCallback((cart: Cart) => {
     if (cart.user) {
       return cart.user.email || cart.user.phone || t('list.user.noContact');
+    }
+    // If user object is not populated but userId exists
+    if (cart.userId) {
+      return t('list.user.noContact');
     }
     return t('list.user.noContact');
   }, [t]);
@@ -304,7 +312,7 @@ export const AbandonedCartsPage: React.FC = () => {
         headerName: t('list.columns.itemsCount') as string,
         width: isMobile ? 90 : 130,
         minWidth: 90,
-        valueGetter: (params: any) => getCartItemsCount(params.row as Cart),
+        valueGetter: (_value, row) => getCartItemsCount(row as Cart),
       },
       {
         field: 'totalValue',

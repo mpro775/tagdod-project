@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Card, CardContent } from '@mui/material';
+import { Typography, Card, CardContent, Box } from '@mui/material';
 import {
   BarChart,
   Bar,
@@ -44,6 +44,7 @@ interface BarChartComponentProps {
   xAxisKey?: string;
   yAxisLabel?: string;
   orientation?: 'horizontal' | 'vertical';
+  disableCard?: boolean;
 }
 
 export const BarChartComponent: React.FC<BarChartComponentProps> = ({
@@ -56,6 +57,7 @@ export const BarChartComponent: React.FC<BarChartComponentProps> = ({
   xAxisKey = 'name',
   yAxisLabel,
   orientation = 'vertical',
+  disableCard = false,
 }) => {
   const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
@@ -76,17 +78,27 @@ export const BarChartComponent: React.FC<BarChartComponentProps> = ({
   const needsRotation = orientation === 'vertical' && (breakpoint.isXs || breakpoint.isSm);
 
   if (!data || data.length === 0) {
+    const noDataContent = (
+      <Box sx={{ p: cardPadding }}>
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          textAlign="center"
+          sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
+        >
+          {t('charts.noData')}
+        </Typography>
+      </Box>
+    );
+    
+    if (disableCard) {
+      return noDataContent;
+    }
+    
     return (
       <Card>
         <CardContent sx={{ p: cardPadding }}>
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            textAlign="center"
-            sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-          >
-            {t('charts.noData')}
-          </Typography>
+          {noDataContent}
         </CardContent>
       </Card>
     );
@@ -98,10 +110,10 @@ export const BarChartComponent: React.FC<BarChartComponentProps> = ({
     bottom: orientation === 'horizontal' && breakpoint.isXs ? 60 : chartMargin.bottom,
   };
 
-  return (
-    <Card>
+  const chartContent = (
+    <>
       {title && (
-        <CardContent sx={{ pb: 1, p: cardPadding }}>
+        <Box sx={{ pb: 1, p: cardPadding }}>
           <Typography 
             variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
             gutterBottom
@@ -109,9 +121,9 @@ export const BarChartComponent: React.FC<BarChartComponentProps> = ({
           >
             {title}
           </Typography>
-        </CardContent>
+        </Box>
       )}
-      <CardContent sx={{ pt: 0, p: cardPadding }}>
+      <Box sx={{ pt: title ? 0 : 0, p: cardPadding }}>
         <ResponsiveContainer width="100%" height={chartHeight}>
           <BarChart
             data={data}
@@ -150,7 +162,7 @@ export const BarChartComponent: React.FC<BarChartComponentProps> = ({
                 fontSize: `${tooltipFontSize}px`,
                 padding: breakpoint.isXs ? '8px' : '12px',
               }}
-              formatter={(value: number) => [value.toLocaleString(), '']}
+              formatter={(value: number) => [typeof value === 'number' ? value.toLocaleString('en-US') : value, '']}
               position={{ x: breakpoint.isXs ? 10 : undefined, y: breakpoint.isXs ? -10 : undefined }}
             />
             {showLegend && !hideLegend && (
@@ -175,6 +187,18 @@ export const BarChartComponent: React.FC<BarChartComponentProps> = ({
             ))}
           </BarChart>
         </ResponsiveContainer>
+      </Box>
+    </>
+  );
+
+  if (disableCard) {
+    return chartContent;
+  }
+
+  return (
+    <Card>
+      <CardContent sx={{ p: 0 }}>
+        {chartContent}
       </CardContent>
     </Card>
   );

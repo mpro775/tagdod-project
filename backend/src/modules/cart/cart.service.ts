@@ -396,6 +396,7 @@ export class CartService {
     compareAtPriceUSD?: number | null;
     pricingByCurrency?: unknown;
     currency: string;
+    exchangeRates?: ExchangeRate;
   }): Promise<{ basePriceUSD: number; pricing: CartPricing }> {
     const targetCurrency = this.normalizeCurrency(options.currency);
     const baseInputUSD = this.normalizeNumber(
@@ -415,7 +416,8 @@ export class CartService {
     if (basePriceUSD === undefined && priceRecord?.basePrice && priceRecord?.exchangeRate) {
       basePriceUSD = priceRecord.basePrice / priceRecord.exchangeRate;
     }
-    let exchangeRates: ExchangeRate | undefined;
+    // استخدام أسعار الصرف الممررة أو جلبها إذا لم تكن موجودة
+    let exchangeRates: ExchangeRate | undefined = options.exchangeRates;
     const ensureRates = async (): Promise<ExchangeRate | undefined> => {
       if (!exchangeRates && this.exchangeRatesService) {
         exchangeRates = await this.exchangeRatesService.getCurrentRates().catch(() => undefined);
@@ -592,6 +594,60 @@ export class CartService {
     const preview = await this.previewByCart(cart, preferredCurrency, accountType, userId);
 
     return preview;
+  }
+
+  // إرجاع بيانات بسيطة للسلة بدون حسابات معقدة (للمزامنة السريعة)
+  async getUserCartSimple(userId: string) {
+    const cart = await this.getOrCreateUserCart(userId);
+
+    const metadata =
+      (cart.metadata && typeof cart.metadata === 'object' ? cart.metadata : {}) as Record<string, unknown>;
+    const currencyManuallySet =
+      typeof metadata.currencyManuallySet === 'boolean' ? metadata.currencyManuallySet : false;
+    const cartCurrency = cart.currency ? this.normalizeCurrency(cart.currency) : undefined;
+
+    let preferredCurrency = 'USD';
+    if (cartCurrency) {
+      if (cartCurrency === 'USD') {
+        preferredCurrency = 'USD';
+      } else if (cartCurrency === 'YER') {
+        preferredCurrency = currencyManuallySet ? 'YER' : 'USD';
+      } else {
+        preferredCurrency = cartCurrency;
+      }
+    }
+
+    if (!currencyManuallySet && cartCurrency === 'YER') {
+      cart.currency = 'USD';
+      cart.metadata = { ...metadata };
+      await cart.save();
+    }
+
+    const totalItems = cart.items.reduce((sum, item) => sum + item.qty, 0);
+    const appliedCoupons = [
+      ...(cart.appliedCouponCodes ?? []),
+      ...(cart.appliedCouponCode ? [cart.appliedCouponCode] : []),
+    ].filter((code): code is string => Boolean(code));
+
+    // إرجاع بيانات بسيطة بدون previewByCart - Frontend سيجلب preview من checkout/session
+    // نفس الشكل الذي يعيده previewByCart لكن بدون حسابات معقدة
+    return {
+      currency: preferredCurrency,
+      items: cart.items.map((item) => ({
+        itemId: item._id?.toString() || new Types.ObjectId().toString(),
+        variantId: item.variantId?.toString(),
+        productId: item.productId?.toString(),
+        qty: item.qty,
+        snapshot: item.productSnapshot,
+        pricing: item.pricing,
+      })),
+      appliedCoupons: Array.from(new Set(appliedCoupons)),
+      meta: {
+        count: cart.items.length,
+        quantity: totalItems,
+        synced: true,
+      },
+    };
   }
 
   async updateCartSettings(
@@ -865,15 +921,136 @@ export class CartService {
     cart.items = [];
     const items = Array.isArray(payload.items) ? payload.items : [];
 
+    if (items.length === 0) {
+      cart.lastActivityAt = new Date();
+      await cart.save();
+      
+      // إرجاع تأكيد بسيط جداً - فقط للتأكيد أن المزامنة تمت
+      return {
+        synced: true,
+        message: 'تمت مزامنة السلة بنجاح',
+        itemsCount: 0,
+      };
+    }
+
+    // تجميع جميع IDs لاستخدام Batch Queries
+    const variantIds: string[] = [];
+    const productIds: string[] = [];
+    const productIdsFromVariants: Set<string> = new Set();
+
     for (const item of items) {
-      await this.addOrUpdateCartItem(cart, item);
+      if (item.variantId) {
+        variantIds.push(item.variantId);
+      } else if (item.productId) {
+        productIds.push(item.productId);
+      }
+    }
+
+    // جلب جميع المتغيرات في استعلام واحد
+    const variants = variantIds.length > 0
+      ? await this.variantModel.find({ _id: { $in: variantIds } }).lean().exec()
+      : [];
+
+    // جمع productIds من المتغيرات
+    for (const variant of variants) {
+      if (variant.productId) {
+        productIdsFromVariants.add(String(variant.productId));
+      }
+    }
+
+    // دمج جميع productIds
+    const allProductIds = [
+      ...new Set([...productIds, ...Array.from(productIdsFromVariants)]),
+    ];
+
+    // جلب جميع المنتجات في استعلام واحد
+    const products = allProductIds.length > 0
+      ? await this.productModel
+          .find({ _id: { $in: allProductIds } })
+          .populate('mainImageId')
+          .lean()
+          .exec()
+      : [];
+
+    // إنشاء Maps للوصول السريع
+    const variantMap = new Map<string, unknown>(
+      variants.map((v) => [String(v._id), v]),
+    );
+    const productMap = new Map<string, unknown>(
+      products.map((p) => [String(p._id), p]),
+    );
+
+    // جلب أسعار الصرف مرة واحدة فقط (إذا لزم الأمر)
+    const targetCurrency = normalizedCurrency || cart.currency || 'USD';
+    let exchangeRates: ExchangeRate | undefined;
+    if (targetCurrency !== 'USD' && this.exchangeRatesService) {
+      exchangeRates = await this.exchangeRatesService.getCurrentRates().catch(() => undefined);
+    }
+
+    // معالجة جميع العناصر بدون استدعاءات قاعدة بيانات إضافية
+    for (const item of items) {
+      const resolved = await this.resolveCartItemIdentifiersBatch({
+        variantId: item.variantId,
+        productId: item.productId,
+        currency: targetCurrency,
+        variantMap,
+        productMap,
+        exchangeRates,
+      });
+
+      let target: CartItem | undefined;
+      if (resolved.variantId) {
+        target = cart.items.find(
+          (it: CartItem) =>
+            it.variantId && String(it.variantId) === String(resolved.variantId),
+        );
+      } else {
+        target = cart.items.find(
+          (it: CartItem) =>
+            !it.variantId &&
+            it.productId &&
+            String(it.productId) === String(resolved.productId),
+        );
+      }
+
+      if (target) {
+        target.qty = Math.min(999, target.qty + item.qty);
+        target.productId = resolved.productId;
+        target.variantId = resolved.variantId;
+        target.itemType = resolved.itemType;
+        target.productSnapshot = resolved.productSnapshot;
+        const existingPromotionId = target.pricing?.appliedPromotionId;
+        target.pricing = {
+          ...resolved.pricing,
+          ...(existingPromotionId ? { appliedPromotionId: existingPromotionId } : {}),
+        };
+      } else {
+        const docItems = cart.items as Types.DocumentArray<CartItem>;
+        const newItem = docItems.create({
+          _id: new Types.ObjectId().toString(),
+          variantId: resolved.variantId,
+          productId: resolved.productId,
+          itemType: resolved.itemType,
+          qty: item.qty,
+          addedAt: new Date(),
+          productSnapshot: resolved.productSnapshot,
+          pricing: resolved.pricing,
+        } as CartItem);
+        docItems.push(newItem);
+      }
     }
 
     this.ensureCapacity(cart);
     cart.lastActivityAt = new Date();
     await cart.save();
 
-    return this.getUserCart(userId);
+    // إرجاع تأكيد بسيط جداً - فقط للتأكيد أن المزامنة تمت
+    // الجلسة ستحصل على بيانات السلة الكاملة من checkout/session
+    return {
+      synced: true,
+      message: 'تمت مزامنة السلة بنجاح',
+      itemsCount: cart.items.length,
+    };
   }
 
   // ---------- guest cart
@@ -1347,7 +1524,14 @@ export class CartService {
         const priceUSD = this.normalizeNumber(variantRecord?.['basePriceUSD']) ?? 0;
         basePriceUSD = priceUSD;
         let converted = priceUSD;
-        if (targetCurrency !== 'USD' && this.exchangeRatesService) {
+        
+        // استخدام السعر المخزن للعملة المطلوبة مباشرة
+        if (targetCurrency === 'SAR' && variantRecord['basePriceSAR'] !== undefined) {
+          converted = this.normalizeNumber(variantRecord['basePriceSAR']) ?? priceUSD;
+        } else if (targetCurrency === 'YER' && variantRecord['basePriceYER'] !== undefined) {
+          converted = this.normalizeNumber(variantRecord['basePriceYER']) ?? priceUSD;
+        } else if (targetCurrency !== 'USD' && this.exchangeRatesService) {
+          // Fallback: تحويل من USD إذا لم يكن السعر مخزناً
           const rates = await this.exchangeRatesService
             .getCurrentRates()
             .catch(() => undefined);
@@ -1412,7 +1596,14 @@ export class CartService {
           0;
         basePriceUSD = priceUSD;
         let converted = priceUSD;
-        if (targetCurrency !== 'USD' && this.exchangeRatesService) {
+        
+        // استخدام السعر المخزن للعملة المطلوبة مباشرة
+        if (targetCurrency === 'SAR' && productRecord['basePriceSAR'] !== undefined) {
+          converted = this.normalizeNumber(productRecord['basePriceSAR']) ?? priceUSD;
+        } else if (targetCurrency === 'YER' && productRecord['basePriceYER'] !== undefined) {
+          converted = this.normalizeNumber(productRecord['basePriceYER']) ?? priceUSD;
+        } else if (targetCurrency !== 'USD' && this.exchangeRatesService) {
+          // Fallback: تحويل من USD إذا لم يكن السعر مخزناً
           const rates = await this.exchangeRatesService
             .getCurrentRates()
             .catch(() => undefined);
@@ -1441,6 +1632,121 @@ export class CartService {
     throw new Error('يجب تحديد معرف المتغير أو المنتج');
   }
 
+  private async resolveCartItemIdentifiersBatch(input: {
+    variantId?: string;
+    productId?: string;
+    currency?: string;
+    variantMap: Map<string, unknown>;
+    productMap: Map<string, unknown>;
+    exchangeRates?: ExchangeRate;
+  }): Promise<{
+    variantId?: Types.ObjectId;
+    productId: Types.ObjectId;
+    itemType: 'variant' | 'product';
+    productSnapshot?: CartItem['productSnapshot'];
+    basePriceUSD: number;
+    pricing: CartPricing;
+  }> {
+    const targetCurrency = this.normalizeCurrency(input.currency || 'USD');
+
+    if (input.variantId) {
+      const variant = input.variantMap.get(input.variantId);
+      if (!variant) {
+        throw new Error('المتغير غير موجود');
+      }
+
+      const variantRecord = variant as unknown as Record<string, unknown>;
+      const productIdStr = String(variantRecord['productId']);
+      const product = input.productMap.get(productIdStr);
+      if (!product) {
+        throw new Error('المنتج المرتبط بالمتغير غير موجود');
+      }
+
+      // استخدام الأسعار المخزنة مباشرة
+      const basePriceUSD = this.normalizeNumber(variantRecord['basePriceUSD']) ?? 0;
+
+      // استخدام السعر المخزن للعملة المطلوبة مباشرة
+      let basePrice = basePriceUSD;
+      if (targetCurrency === 'SAR' && variantRecord['basePriceSAR'] !== undefined) {
+        basePrice = this.normalizeNumber(variantRecord['basePriceSAR']) ?? basePriceUSD;
+      } else if (targetCurrency === 'YER' && variantRecord['basePriceYER'] !== undefined) {
+        basePrice = this.normalizeNumber(variantRecord['basePriceYER']) ?? basePriceUSD;
+      } else if (targetCurrency !== 'USD' && input.exchangeRates) {
+        // Fallback: تحويل من USD إذا لم يكن السعر مخزناً
+        const converted = this.convertUsingRates(
+          basePriceUSD,
+          'USD',
+          targetCurrency,
+          input.exchangeRates,
+        );
+        if (converted !== undefined) {
+          basePrice = converted;
+        }
+      }
+
+      return {
+        variantId: new Types.ObjectId(String(variantRecord['_id'])),
+        productId: new Types.ObjectId(productIdStr),
+        itemType: 'variant',
+        productSnapshot: this.buildProductSnapshot(product as unknown as Product),
+        basePriceUSD,
+        pricing: {
+          currency: targetCurrency,
+          basePrice,
+          finalPrice: basePrice,
+          discount: 0,
+        },
+      };
+    }
+
+    if (input.productId) {
+      const product = input.productMap.get(input.productId);
+      if (!product) {
+        throw new Error('المنتج غير موجود');
+      }
+
+      const productRecord = product as unknown as Record<string, unknown>;
+
+      // استخدام الأسعار المخزنة مباشرة
+      const basePriceUSD =
+        this.normalizeNumber(productRecord['basePriceUSD']) ?? 0;
+
+      // استخدام السعر المخزن للعملة المطلوبة مباشرة
+      let basePrice = basePriceUSD;
+      if (targetCurrency === 'SAR' && productRecord['basePriceSAR'] !== undefined) {
+        basePrice = this.normalizeNumber(productRecord['basePriceSAR']) ?? basePriceUSD;
+      } else if (targetCurrency === 'YER' && productRecord['basePriceYER'] !== undefined) {
+        basePrice = this.normalizeNumber(productRecord['basePriceYER']) ?? basePriceUSD;
+      } else if (targetCurrency !== 'USD' && input.exchangeRates) {
+        // Fallback: تحويل من USD إذا لم يكن السعر مخزناً
+        const converted = this.convertUsingRates(
+          basePriceUSD,
+          'USD',
+          targetCurrency,
+          input.exchangeRates,
+        );
+        if (converted !== undefined) {
+          basePrice = converted;
+        }
+      }
+
+      return {
+        productId: new Types.ObjectId(String(productRecord['_id'])),
+        itemType: 'product',
+        productSnapshot: this.buildProductSnapshot(product as unknown as Product),
+        basePriceUSD,
+        pricing: {
+          currency: targetCurrency,
+          basePrice,
+          finalPrice: basePrice,
+          discount: 0,
+        },
+      };
+    }
+
+    throw new Error('يجب تحديد معرف المتغير أو المنتج');
+  }
+
   // ---------- preview
   async previewByCart(
     cart: Cart,
@@ -1463,21 +1769,83 @@ export class CartService {
     let merchantDiscountAmount = 0;
     const supportedCurrencies: Array<'USD' | 'YER' | 'SAR'> = ['USD', 'YER', 'SAR'];
 
-    // جلب قدرات المستخدم لتطبيق خصم التاجر
-      if (userId) {
-        const caps = await this.capsModel.findOne({ userId }).lean();
-      if (caps && caps.merchant_capable && caps.merchant_discount_percent > 0) {
-        merchantDiscountPercent = caps.merchant_discount_percent;
+    // جلب قدرات المستخدم وأسعار الصرف في parallel
+    const [caps, exchangeRates] = await Promise.all([
+      userId
+        ? this.capsModel.findOne({ userId }).lean().catch(() => null)
+        : Promise.resolve(null),
+      this.exchangeRatesService
+        ? this.exchangeRatesService.getCurrentRates().catch(() => undefined)
+        : Promise.resolve(undefined),
+    ]);
+
+    if (caps && caps.merchant_capable && caps.merchant_discount_percent > 0) {
+      merchantDiscountPercent = caps.merchant_discount_percent;
+    }
+
+    // تجميع جميع IDs لاستخدام Batch Queries
+    const variantIds: string[] = [];
+    const productIds: string[] = [];
+    const productIdsFromVariants: Set<string> = new Set();
+
+    for (const it of cart.items) {
+      const variantIdStr = it.variantId ? this.toStringId(it.variantId) : undefined;
+      const productIdStr = it.productId ? this.toStringId(it.productId) : undefined;
+      
+      if (variantIdStr) {
+        variantIds.push(variantIdStr);
+      }
+      if (productIdStr) {
+        productIds.push(productIdStr);
       }
     }
 
+    // جلب جميع المتغيرات في batch واحد
+    const variants = variantIds.length > 0
+      ? await this.variantModel.find({ _id: { $in: variantIds } }).lean().exec()
+      : [];
+
+    // جمع productIds من المتغيرات
+    for (const variant of variants) {
+      if (variant.productId) {
+        productIdsFromVariants.add(String(variant.productId));
+      }
+    }
+
+    // دمج جميع productIds
+    const allProductIds = [
+      ...new Set([...productIds, ...Array.from(productIdsFromVariants)]),
+    ];
+
+    // جلب جميع المنتجات في batch واحد
+    const products = allProductIds.length > 0
+      ? await this.productModel
+          .find({ _id: { $in: allProductIds } })
+          .populate('mainImageId')
+          .lean()
+          .exec()
+      : [];
+
+    // إنشاء Maps للوصول السريع
+    const variantMap = new Map(
+      variants.map((v) => [String(v._id), v]),
+    );
+    const productMap = new Map(
+      products.map((p) => [String(p._id), p]),
+    );
+
+    // ملاحظة: تم تعطيل batch processing لـ marketingService.preview
+    // لأنها تجلب priceRules في كل استدعاء مما يسبب بطء
+    // يمكن تفعيلها لاحقاً بعد تحسين marketingService
+
+    // الآن نستخدم البيانات المجمعة بدلاً من إعادة الجلب
     for (const it of cart.items) {
       const rawId =
         (it as unknown as { _id?: unknown })._id ?? (it as unknown as { id?: unknown }).id ?? null;
       let variantIdStr = it.variantId ? this.toStringId(it.variantId) : undefined;
       let productIdStr = it.productId ? this.toStringId(it.productId) : undefined;
       let snapshot = it.productSnapshot;
-      let appliedRule: unknown = null;
+      const appliedRule: unknown = null;
 
       let pricingDetails: CartItem['pricing'] | undefined = it.pricing
         ? { ...it.pricing }
@@ -1486,15 +1854,12 @@ export class CartService {
 
       let lineCurrency = this.normalizeCurrency(pricingDetails?.currency ?? normalizedCurrency);
 
+      // استخدام البيانات المجمعة بدلاً من إعادة الجلب
       let variant: Variant | null = null;
       let product: Product | null = null;
 
       if (variantIdStr) {
-        try {
-          variant = await this.variantModel.findById(it.variantId).lean();
-        } catch {
-          variant = null;
-        }
+        variant = (variantMap.get(variantIdStr) as Variant) ?? null;
         if (variant) {
           const resolvedVariantId = this.toStringId(
             (variant as unknown as { _id?: unknown })._id,
@@ -1505,26 +1870,14 @@ export class CartService {
           productIdStr =
             this.toStringId((variant as unknown as { productId?: unknown }).productId) ??
             productIdStr;
-          try {
-            product = await this.productModel
-              .findById(variant.productId)
-              .populate('mainImageId')
-              .lean();
-          } catch {
-            product = null;
+          if (productIdStr) {
+            product = (productMap.get(productIdStr) as Product) ?? null;
           }
         }
       }
 
       if (!variant && productIdStr) {
-        try {
-          product = await this.productModel
-            .findById(it.productId ?? productIdStr)
-            .populate('mainImageId')
-            .lean();
-        } catch {
-          product = null;
-        }
+        product = (productMap.get(productIdStr) as Product) ?? null;
       }
 
       const refreshedSnapshot =
@@ -1560,6 +1913,7 @@ export class CartService {
               this.normalizeNumber(productRecord?.['compareAtPriceUSD']),
             pricingByCurrency: pricingByCurrencySource,
             currency: normalizedCurrency,
+            exchangeRates,
           });
 
           pricingDetails = {
@@ -1615,49 +1969,76 @@ export class CartService {
       base = base ?? 0;
       final = final ?? base;
 
-      if (
-        variant &&
-        this.marketingService &&
-        typeof this.marketingService.preview === 'function' &&
-        variantIdStr
-      ) {
-        try {
-          const res = await this.marketingService.preview({
-            variantId: variantIdStr,
-            currency: normalizedCurrency,
-            qty: it.qty,
-            accountType,
-          });
-          if (res) {
-            final = res.finalPrice;
-            base = res.basePrice ?? base;
-            lineCurrency = normalizedCurrency;
-            appliedRule = res.appliedRule;
+      // تعطيل marketingService.preview مؤقتاً بسبب البطء
+      // يمكن تفعيلها لاحقاً بعد تحسين marketingService ليقبل variant/product كمعاملات
+      // if (
+      //   variant &&
+      //   this.marketingService &&
+      //   typeof this.marketingService.preview === 'function' &&
+      //   variantIdStr
+      // ) {
+      //   try {
+      //     const res = await this.marketingService.preview({
+      //       variantId: variantIdStr,
+      //       currency: normalizedCurrency,
+      //       qty: it.qty,
+      //       accountType,
+      //     });
+      //     if (res) {
+      //       final = res.finalPrice;
+      //       base = res.basePrice ?? base;
+      //       lineCurrency = normalizedCurrency;
+      //       appliedRule = res.appliedRule;
+      //     }
+      //   } catch {
+      //     // ignore marketing errors and fallback to existing pricing
+      //   }
+      // }
+
+      // استخدام الأسعار المخزنة مباشرة أو convertUsingRates إذا كانت exchangeRates موجودة
+      if (lineCurrency !== normalizedCurrency) {
+        if (exchangeRates) {
+          const convertedFinal = this.convertUsingRates(
+            final,
+            lineCurrency,
+            normalizedCurrency,
+            exchangeRates,
+          );
+          if (convertedFinal !== undefined) {
+            final = convertedFinal;
           }
-        } catch {
-          // ignore marketing errors and fallback to existing pricing
-        }
-      }
 
-      if (lineCurrency !== normalizedCurrency && this.exchangeRatesService) {
-        try {
-          const convertedFinal = await this.exchangeRatesService.convertCurrency({
-            amount: final,
-            fromCurrency: lineCurrency,
-            toCurrency: normalizedCurrency,
-          });
-          final = convertedFinal.result;
-
-          const convertedBase = await this.exchangeRatesService.convertCurrency({
-            amount: base,
-            fromCurrency: lineCurrency,
-            toCurrency: normalizedCurrency,
-          });
-          base = convertedBase.result;
+          const convertedBase = this.convertUsingRates(
+            base,
+            lineCurrency,
+            normalizedCurrency,
+            exchangeRates,
+          );
+          if (convertedBase !== undefined) {
+            base = convertedBase;
+          }
 
           lineCurrency = normalizedCurrency;
-        } catch {
-          // keep original currency if conversion fails
+        } else if (this.exchangeRatesService) {
+          try {
+            const convertedFinal = await this.exchangeRatesService.convertCurrency({
+              amount: final,
+              fromCurrency: lineCurrency,
+              toCurrency: normalizedCurrency,
+            });
+            final = convertedFinal.result;
+
+            const convertedBase = await this.exchangeRatesService.convertCurrency({
+              amount: base,
+              fromCurrency: lineCurrency,
+              toCurrency: normalizedCurrency,
+            });
+            base = convertedBase.result;
+
+            lineCurrency = normalizedCurrency;
+          } catch {
+            // keep original currency if conversion fails
+          }
         }
       }
 
@@ -1701,7 +2082,18 @@ export class CartService {
         Math.max(0, roundedBase - roundedFinal);
       const lineTotal = this.roundPrice(roundedFinal * it.qty) ?? roundedFinal * it.qty;
 
-      if (this.exchangeRatesService) {
+      // استخدام الأسعار المخزنة مباشرة لتجنب استدعاءات convertCurrency المتعددة
+      if (normalizedCurrency === 'USD') {
+        subtotalUSD += roundedFinal * it.qty;
+        subtotalBeforeDiscountUSD += roundedBase * it.qty;
+      } else if (exchangeRates) {
+        const baseUSD = this.convertUsingRates(roundedBase, normalizedCurrency, 'USD', exchangeRates) ?? roundedBase;
+        const finalUSD = this.convertUsingRates(roundedFinal, normalizedCurrency, 'USD', exchangeRates) ?? roundedFinal;
+        const lineTotalUSD = finalUSD * it.qty;
+
+        subtotalUSD += lineTotalUSD;
+        subtotalBeforeDiscountUSD += baseUSD * it.qty;
+      } else if (this.exchangeRatesService) {
         const { result: baseUSD } = await this.exchangeRatesService.convertCurrency({
           amount: roundedBase,
           fromCurrency: normalizedCurrency,
@@ -2114,6 +2506,101 @@ export class CartService {
       })
       .sort({ updatedAt: -1 })
       .lean();
+  }
+
+  async getAbandonedCarts(
+    page: number,
+    limit: number,
+    filters: Record<string, unknown>,
+  ): Promise<{
+    carts: unknown[];
+    count: number;
+    totalCarts: number;
+    totalValue: number;
+  }> {
+    const skip = (page - 1) * limit;
+    const matchStage: Record<string, unknown> = {
+      $or: [
+        { isAbandoned: true },
+        { status: CartStatus.ABANDONED },
+      ],
+    };
+
+    if (filters.status && typeof filters.status === 'string') {
+      matchStage.status = filters.status;
+    }
+    if (filters.userId && typeof filters.userId === 'string') {
+      matchStage.userId = new Types.ObjectId(filters.userId);
+    }
+    if (filters.dateFrom || filters.dateTo) {
+      matchStage.createdAt = {} as Record<string, unknown>;
+      if (filters.dateFrom)
+        (matchStage.createdAt as Record<string, unknown>).$gte = filters.dateFrom;
+      if (filters.dateTo) (matchStage.createdAt as Record<string, unknown>).$lte = filters.dateTo;
+    }
+
+    const sortField = (filters.sortBy as string) || 'lastActivityAt';
+    const sortOrder = (filters.sortOrder as 'asc' | 'desc') || 'desc';
+    const sort: Record<string, 1 | -1> = { [sortField]: sortOrder === 'asc' ? 1 : -1 };
+
+    const [rawCarts, total] = await Promise.all([
+      this.cartModel
+        .find(matchStage)
+        .populate('userId', 'firstName lastName storeName email phone')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.cartModel.countDocuments(matchStage),
+    ]);
+
+    const carts = await Promise.all(
+      rawCarts.map(async (cart) => {
+        const userSummary = this.buildUserSummary(cart.userId);
+        const enrichedCart = {
+          ...cart,
+          userId: userSummary?._id ?? this.toStringId(cart.userId) ?? cart.userId,
+          ...(userSummary ? { user: userSummary } : {}),
+        };
+
+        try {
+          const preview = await this.previewByCart(
+            {
+              ...(enrichedCart as unknown as Cart),
+              items: (cart.items ?? []) as Cart['items'],
+            },
+            enrichedCart.currency || 'USD',
+            ((enrichedCart.accountType ?? 'any') as 'any' | 'customer' | 'engineer' | 'merchant') ||
+              'any',
+            userSummary?._id,
+          );
+
+          const currency = enrichedCart.currency || 'USD';
+          const pricingSummary = preview.pricingSummaryByCurrency?.[currency];
+
+          return {
+            ...enrichedCart,
+            ...(pricingSummary ? { pricingSummary } : {}),
+            pricingSummaryByCurrency: preview.pricingSummaryByCurrency,
+          };
+        } catch {
+          return enrichedCart;
+        }
+      }),
+    );
+
+    type CartLean = { pricingSummary?: { total?: number } };
+    const totalValue = carts.reduce(
+      (sum, cart: CartLean) => sum + (cart.pricingSummary?.total || 0),
+      0,
+    );
+
+    return {
+      carts,
+      count: carts.length,
+      totalCarts: total,
+      totalValue,
+    };
   }
 
   async sendAbandonmentReminder(cartId: string) {

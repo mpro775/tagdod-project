@@ -107,15 +107,35 @@ export function AddressesDashboardPage() {
     {
       field: 'userId',
       headerName: t('list.columns.user', { defaultValue: 'المستخدم' }),
-      width: 240,
+      minWidth: 200,
+      flex: 1.2,
       renderCell: (params) => {
         const address = params.row as Address;
         return (
-          <Box>
-            <Typography variant="body2" fontWeight="medium" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+          <Box sx={{ py: 1 }}>
+            <Typography 
+              variant="body2" 
+              fontWeight="medium" 
+              sx={{ 
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+              }}
+            >
               {address.userId?.name || '-'}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ 
+                display: 'block',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+              }}
+            >
               {address.userId?.phone || '-'}
             </Typography>
           </Box>
@@ -125,17 +145,29 @@ export function AddressesDashboardPage() {
     {
       field: 'label',
       headerName: t('list.columns.label', { defaultValue: 'التسمية' }),
-      width: 200,
+      minWidth: 150,
+      flex: 0.8,
       renderCell: (params) => {
         const address = params.row as Address;
         return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {address.label}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
+            <Typography 
+              variant="body2"
+              sx={{
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+              }}
+            >
+              {address.label}
+            </Typography>
             {address.isDefault && (
               <Chip 
-                label={t('list.status.default', { defaultValue: 'افتراضي' })} 
+                label={String(t('list.status.default', { defaultValue: 'افتراضي' }))} 
                 size="small" 
-                color="primary" 
+                color="primary"
+                sx={{ flexShrink: 0 }}
               />
             )}
           </Box>
@@ -145,19 +177,39 @@ export function AddressesDashboardPage() {
     {
       field: 'line1',
       headerName: t('list.columns.address', { defaultValue: 'العنوان' }),
-      width: 420,
+      minWidth: 300,
+      flex: 2,
       renderCell: (params) => {
         const address = params.row as Address;
         return (
-          <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-            <Typography variant="body2" sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+          <Box sx={{ py: 1, width: '100%' }}>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                lineHeight: 1.5,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+              title={address.line1}
+            >
               {address.line1}
             </Typography>
             {address.notes && (
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ display: 'block', mt: 0.5, whiteSpace: 'normal', wordBreak: 'break-word' }}
+                sx={{ 
+                  display: 'block', 
+                  mt: 0.5,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+                title={address.notes}
               >
                 {address.notes}
               </Typography>
@@ -169,12 +221,24 @@ export function AddressesDashboardPage() {
     {
       field: 'city',
       headerName: t('list.columns.city', { defaultValue: 'المدينة' }),
-      width: 160,
+      minWidth: 120,
+      flex: 0.7,
+      renderCell: (params) => {
+        const address = params.row as Address;
+        return (
+          <Box sx={{ py: 1 }}>
+            <Typography variant="body2">
+              {address.city || '-'}
+            </Typography>
+          </Box>
+        );
+      },
     },
     {
       field: 'usageCount',
       headerName: t('list.columns.usage', { defaultValue: 'الاستخدام' }),
-      width: 120,
+      minWidth: 100,
+      flex: 0.6,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -192,7 +256,8 @@ export function AddressesDashboardPage() {
     {
       field: 'isActive',
       headerName: t('list.columns.status', { defaultValue: 'الحالة' }),
-      width: 140,
+      minWidth: 120,
+      flex: 0.7,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -200,20 +265,19 @@ export function AddressesDashboardPage() {
         if (address.deletedAt) {
           return (
             <Chip
-              label={t('list.status.deleted', { defaultValue: 'محذوف' })}
+              label={String(t('list.status.deleted', { defaultValue: 'محذوف' }))}
               size="small"
               color="error"
               variant="filled"
             />
           );
         }
+        const statusLabel = address.isActive
+          ? String(t('list.status.active', { defaultValue: 'نشط' }))
+          : String(t('list.status.inactive', { defaultValue: 'غير نشط' }));
         return (
           <Chip
-            label={
-              address.isActive
-                ? t('list.status.active', { defaultValue: 'نشط' })
-                : t('list.status.inactive', { defaultValue: 'غير نشط' })
-            }
+            label={statusLabel}
             size="small"
             color={address.isActive ? 'success' : 'default'}
           />
@@ -223,15 +287,24 @@ export function AddressesDashboardPage() {
     {
       field: 'createdAt',
       headerName: t('list.columns.createdAt', { defaultValue: 'تاريخ الإنشاء' }),
-      width: 170,
+      minWidth: 140,
+      flex: 0.8,
       valueFormatter: (value) => formatDate(value as Date),
+      renderCell: (params) => (
+        <Box sx={{ py: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {params.formattedValue || '-'}
+          </Typography>
+        </Box>
+      ),
     },
     {
       field: 'actions',
       headerName: t('list.columns.actions', { defaultValue: 'الإجراءات' }),
       sortable: false,
       filterable: false,
-      width: 140,
+      minWidth: 120,
+      flex: 0.7,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -246,6 +319,7 @@ export function AddressesDashboardPage() {
                 event.stopPropagation();
                 handleOpenDetails(address);
               }}
+              sx={{ minWidth: 'auto' }}
             >
               {t('list.actions.view', { defaultValue: 'عرض' })}
             </Button>
@@ -368,8 +442,22 @@ export function AddressesDashboardPage() {
             }}
             getRowId={(row: any) => row._id}
             height={screenSize < 600 ? 'calc(100vh - 140px)' : 'calc(100vh - 180px)'}
-            rowHeight={88}
+            getRowHeight={() => 'auto'}
             onRowClick={(params) => handleOpenDetails(params.row as Address)}
+            sx={{
+              '& .MuiDataGrid-cell': {
+                py: 1,
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiDataGrid-row': {
+                '&:hover': {
+                  backgroundColor: (theme: { palette: { mode: string } }) => theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.05)' 
+                    : 'rgba(0, 0, 0, 0.02)',
+                },
+              },
+            }}
           />
         </Box>
 

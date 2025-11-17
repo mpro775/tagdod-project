@@ -21,7 +21,7 @@ import { MostFavoritedProductsTable } from '../components/MostFavoritedProductsT
 import { useFavoritesStats } from '../hooks/useFavoritesAdmin';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 
-const formatNumber = (value?: number) => (value ?? 0).toLocaleString('ar-SA');
+const formatNumber = (value?: number) => (value ?? 0).toLocaleString('en-US');
 
 export function FavoritesAdminPage() {
   const breakpoint = useBreakpoint();
@@ -77,7 +77,13 @@ export function FavoritesAdminPage() {
           <MostFavoritedProductsTable />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ height: '100%' }}>
+          <Card
+            sx={{
+              height: '100%',
+              bgcolor: 'background.paper',
+              backgroundImage: 'none',
+            }}
+          >
             <CardHeader
               avatar={<InsightsIcon color="primary" />}
               title="مؤشرات سريعة"

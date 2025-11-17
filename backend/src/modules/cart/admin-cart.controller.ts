@@ -36,16 +36,52 @@ export class AdminCartController {
     tags: ['إدارة السلات'],
   })
   @ApiQuery({
-    name: 'hours',
+    name: 'page',
     required: false,
-    description: 'عدد الساعات للاعتبار سلة مهجورة',
-    example: '24',
+    description: 'رقم الصفحة',
+    example: '1',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
     description: 'عدد السلات المراد عرضها',
-    example: '50',
+    example: '25',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'تصفية حسب الحالة',
+    example: 'abandoned',
+  })
+  @ApiQuery({
+    name: 'userId',
+    required: false,
+    description: 'تصفية حسب معرف المستخدم',
+    example: '507f1f77bcf86cd799439012',
+  })
+  @ApiQuery({
+    name: 'dateFrom',
+    required: false,
+    description: 'تاريخ البداية',
+    example: '2024-01-01',
+  })
+  @ApiQuery({
+    name: 'dateTo',
+    required: false,
+    description: 'تاريخ النهاية',
+    example: '2024-12-31',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'ترتيب حسب',
+    example: 'lastActivityAt',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'اتجاه الترتيب',
+    example: 'desc',
   })
   @ApiOkResponse({
     description: 'تم الحصول على السلات المهجورة بنجاح',
@@ -54,56 +90,40 @@ export class AdminCartController {
       properties: {
         success: { type: 'boolean', example: true },
         data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
-              userId: { type: 'string', example: '507f1f77bcf86cd799439012' },
-              items: { type: 'array' },
-              pricingSummary: {
-                type: 'object',
-                properties: {
-                  total: { type: 'number', example: 599.98 },
-                },
-              },
-              lastActivity: { type: 'string', format: 'date-time' },
-              createdAt: { type: 'string', format: 'date-time' },
-            },
+          type: 'object',
+          properties: {
+            carts: { type: 'array' },
+            count: { type: 'number', example: 25 },
+            totalCarts: { type: 'number', example: 50 },
+            totalValue: { type: 'number', example: 14999.5 },
           },
         },
-        count: { type: 'number', example: 25 },
-        totalCarts: { type: 'number', example: 50 },
-        totalValue: { type: 'number', example: 14999.5 },
       },
     },
   })
   @ApiUnauthorizedResponse({ description: 'غير مصرح - مطلوب تسجيل دخول' })
   @ApiForbiddenResponse({ description: 'ممنوع - مطلوب صلاحيات إدارية' })
   async getAbandonedCarts(
-    @Query('hours') hours: string = '24',
-    @Query('limit') limit: string = '50',
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '25',
+    @Query('status') status?: string,
+    @Query('userId') userId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
-    const hoursInactive = parseInt(hours);
-    const carts = await this.cartService.findAbandonedCarts(hoursInactive);
-
-    // Apply limit
-    const limitNum = parseInt(limit);
-    const limitedCarts = carts.slice(0, limitNum);
-
-    // Calculate total value
-    type CartLean = { pricingSummary?: { total?: number } };
-    const totalValue = limitedCarts.reduce(
-      (sum, cart: CartLean) => sum + (cart.pricingSummary?.total || 0),
-      0,
-    );
-
-    return {
-      carts: limitedCarts,
-      count: limitedCarts.length,
-      totalCarts: carts.length,
-      totalValue,
+    const filters = {
+      isAbandoned: true,
+      status: status || 'abandoned',
+      userId,
+      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+      dateTo: dateTo ? new Date(dateTo) : undefined,
+      sortBy: (sortBy as 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'total') || 'lastActivityAt',
+      sortOrder: (sortOrder as 'asc' | 'desc') || 'desc',
     };
+
+    return await this.cartService.getAbandonedCarts(parseInt(page), parseInt(limit), filters);
   }
 
   @RequirePermissions(AdminPermission.CARTS_SEND_REMINDERS, AdminPermission.ADMIN_ACCESS)

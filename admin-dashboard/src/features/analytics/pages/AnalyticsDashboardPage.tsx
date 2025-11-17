@@ -45,7 +45,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ px: { xs: 1, sm: 0 } }}>
+    <Box sx={{ p: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
       {/* Header */}
       <Stack
         direction={isMobile ? 'column' : 'row'}
@@ -107,7 +107,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
           <StatsCard
             title={t('salesAnalytics.totalOrders')}
             value={formatNumber(data?.overview?.totalOrders || 0, 'en')}
-            change={data?.kpis?.orderGrowth}
+            change={data?.kpis?.orderConversion}
             icon={<ShoppingCart sx={{ fontSize: isMobile ? 28 : 32, color: 'success.main' }} />}
             color="success"
           />
@@ -116,7 +116,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
           <StatsCard
             title={t('dashboard.totalUsers')}
             value={formatNumber(data?.overview?.totalUsers || 0, 'en')}
-            change={data?.kpis?.userGrowth}
+            change={data?.kpis?.customerSatisfaction}
             icon={<People sx={{ fontSize: isMobile ? 28 : 32, color: 'info.main' }} />}
             color="info"
           />
@@ -124,13 +124,60 @@ export const AnalyticsDashboardPage: React.FC = () => {
         <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatsCard
             title={t('salesAnalytics.averageOrderValue')}
-            value={formatCurrency(data?.overview?.averageOrderValue || 0, 'USD', 'en')}
-            change={data?.kpis?.conversionRate}
+            value={formatCurrency(
+              data?.overview?.totalOrders > 0 
+                ? (data?.overview?.totalRevenue || 0) / data.overview.totalOrders 
+                : 0, 
+              'USD', 
+              'en'
+            )}
+            change={data?.kpis?.orderConversion}
             icon={<TrendingUp sx={{ fontSize: isMobile ? 28 : 32, color: 'warning.main' }} />}
             color="warning"
           />
         </Grid>
       </Grid>
+
+      {/* Additional Stats Cards */}
+      {(data?.overview?.activeServices !== undefined || 
+        data?.overview?.openSupportTickets !== undefined || 
+        data?.overview?.systemHealth !== undefined) && (
+        <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: { xs: 2, sm: 3 } }}>
+          {data?.overview?.activeServices !== undefined && (
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+              <StatsCard
+                title={t('dashboard.activeServices')}
+                value={formatNumber(data.overview.activeServices || 0, 'en')}
+                change={data?.kpis?.serviceEfficiency}
+                icon={<TrendingUp sx={{ fontSize: isMobile ? 28 : 32, color: 'success.main' }} />}
+                color="success"
+              />
+            </Grid>
+          )}
+          {data?.overview?.openSupportTickets !== undefined && (
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+              <StatsCard
+                title={t('dashboard.openSupportTickets')}
+                value={formatNumber(data.overview.openSupportTickets || 0, 'en')}
+                change={data?.kpis?.supportResolution}
+                icon={<People sx={{ fontSize: isMobile ? 28 : 32, color: 'error.main' }} />}
+                color="error"
+              />
+            </Grid>
+          )}
+          {data?.overview?.systemHealth !== undefined && (
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+              <StatsCard
+                title={t('dashboard.systemHealth')}
+                value={`${data.overview.systemHealth || 0}%`}
+                change={data?.kpis?.systemUptime}
+                icon={<TrendingUp sx={{ fontSize: isMobile ? 28 : 32, color: 'info.main' }} />}
+                color="info"
+              />
+            </Grid>
+          )}
+        </Grid>
+      )}
 
       {/* Charts */}
       <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: { xs: 2, sm: 3 } }}>
@@ -166,8 +213,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
           <PieChartComponent
             data={
               data?.productCharts?.topSelling?.slice(0, 5).map((item) => ({
-                name: item.product,
-                value: item.sales,
+                name: item.name || item.product,
+                value: item.sold || item.sales || 0,
               })) || []
             }
             title={t('productPerformance.topProducts')}
@@ -189,6 +236,23 @@ export const AnalyticsDashboardPage: React.FC = () => {
           />
         </Grid>
       </Grid>
+
+      {/* User Registration Trends */}
+      {data?.userCharts?.registrationTrend && data.userCharts.registrationTrend.length > 0 && (
+        <Grid container spacing={isMobile ? 2 : 3} sx={{ mt: { xs: 2, sm: 3 } }}>
+          <Grid size={{ xs: 12 }}>
+            <RevenueChart
+              data={data.userCharts.registrationTrend.map((item: any) => ({
+                date: item.date,
+                revenue: item.newUsers || 0,
+              }))}
+              title={t('dashboard.userRegistrationTrend')}
+              type="area"
+              height={isMobile ? 280 : 350}
+            />
+          </Grid>
+        </Grid>
+      )}
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   Box,
   Container,
@@ -11,15 +11,17 @@ import {
   Alert,
   useTheme,
   useMediaQuery,
+  Chip,
 } from '@mui/material';
-import { Warning, EmojiEvents, Timeline, Assessment, Refresh } from '@mui/icons-material';
+import { Warning, EmojiEvents, Timeline, Assessment, Refresh, Star } from '@mui/icons-material';
+import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { AnalyticsKPICards } from '../components/AnalyticsKPICards';
-import { CustomerRankingsTable } from '../components/CustomerRankingsTable';
 import { TopCustomersCards } from '../components/TopCustomersCards';
 import { CustomerSegmentsSection } from '../components/CustomerSegmentsSection';
 import { ChurnRiskAlerts } from '../components/ChurnRiskAlerts';
-import { useUserAnalytics } from '../hooks/useUserAnalytics';
+import { useUserAnalytics, CustomerRanking } from '../hooks/useUserAnalytics';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -41,6 +43,11 @@ export const UserAnalyticsPage: React.FC = () => {
   const { t } = useTranslation(['users', 'common']);
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedTab, setSelectedTab] = React.useState(0);
+  const [paginationModel, setPaginationModel] = React.useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 10,
+  });
+  const [sortModel, setSortModel] = React.useState<GridSortModel>([]);
 
   const {
     loading,
@@ -73,6 +80,128 @@ export const UserAnalyticsPage: React.FC = () => {
     if (selectedTab === 2) fetchCustomerSegments();
     if (selectedTab === 3) fetchChurnRiskAlerts();
   };
+
+  const getTierColor = (tier: string): 'error' | 'warning' | 'info' | 'default' => {
+    switch (tier?.toLowerCase()) {
+      case 'vip':
+        return 'error';
+      case 'premium':
+        return 'warning';
+      case 'regular':
+        return 'info';
+      default:
+        return 'default';
+    }
+  };
+
+  const columns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: 'rank',
+        headerName: t('users:analytics.table.rank', 'الترتيب'),
+        width: 100,
+        align: 'center',
+        renderCell: (params) => {
+          const row = params.row as CustomerRanking & { userInfo?: { phone?: string; firstName?: string; lastName?: string } };
+          const rank = row.rank || (paginationModel.page * paginationModel.pageSize) + params.api.getRowIndexRelativeToVisibleRows(params.id) + 1;
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+              {rank <= 3 && <Star sx={{ color: 'gold', fontSize: { xs: 16, sm: 20 } }} />}
+              <span>#{rank}</span>
+            </Box>
+          );
+        },
+      },
+      {
+        field: 'name',
+        headerName: t('users:analytics.table.customer', 'العميل'),
+        width: 200,
+        flex: 1,
+        minWidth: 150,
+        valueGetter: (_value, row) => {
+          const customerRow = row as CustomerRanking & { userInfo?: { phone?: string; firstName?: string; lastName?: string } };
+          return (
+            customerRow.name ||
+            (customerRow.userInfo?.firstName && customerRow.userInfo?.lastName
+              ? `${customerRow.userInfo.firstName} ${customerRow.userInfo.lastName}`
+              : customerRow.userInfo?.firstName || customerRow.userInfo?.phone || t('users:analytics.unknown', 'غير معروف'))
+          );
+        },
+      },
+      {
+        field: 'email',
+        headerName: t('users:analytics.table.email', 'البريد الإلكتروني'),
+        width: 200,
+        minWidth: 150,
+        valueGetter: (_value, row) => {
+          const customerRow = row as CustomerRanking & { userInfo?: { phone?: string } };
+          return customerRow.email || customerRow.userInfo?.phone || '-';
+        },
+      },
+      {
+        field: 'tier',
+        headerName: t('users:analytics.table.tier', 'الفئة'),
+        width: 120,
+        align: 'center',
+        renderCell: (params) => {
+          const tier = params.row.tier || (params.row.totalSpent >= 5000 ? 'vip' : params.row.totalSpent >= 2000 ? 'premium' : params.row.totalSpent >= 500 ? 'regular' : 'new');
+          const tierLabel = String(t(`users:analytics.tiers.${tier.toLowerCase()}`, tier));
+          return (
+            <Chip
+              label={tierLabel}
+              size="small"
+              color={getTierColor(tier)}
+              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+            />
+          );
+        },
+      },
+      {
+        field: 'totalSpent',
+        headerName: t('users:analytics.table.totalSpent', 'إجمالي الإنفاق'),
+        width: 150,
+        align: 'right',
+        type: 'number',
+        valueFormatter: (value) => {
+          if (!value || value === null || value === undefined) return '0.00 $';
+          return `${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
+        },
+        renderCell: (params) => (
+          <Typography sx={{ fontWeight: 'bold', color: 'success.main' }}>
+            {params.formattedValue}
+          </Typography>
+        ),
+      },
+      {
+        field: 'orderCount',
+        headerName: t('users:analytics.table.orderCount', 'عدد الطلبات'),
+        width: 120,
+        align: 'center',
+        type: 'number',
+        valueGetter: (_value, row) => {
+          const customerRow = row as CustomerRanking & { totalOrders?: number };
+          return customerRow.orderCount || customerRow.totalOrders || 0;
+        },
+      },
+      {
+        field: 'averageOrderValue',
+        headerName: t('users:analytics.table.averageOrder', 'متوسط الطلب'),
+        width: 150,
+        align: 'right',
+        type: 'number',
+        valueGetter: (_value, row) => {
+          const customerRow = row as CustomerRanking & { totalOrders?: number };
+          const orderCount = customerRow.orderCount || customerRow.totalOrders || 0;
+          return customerRow.averageOrderValue ?? (orderCount > 0 ? customerRow.totalSpent / orderCount : 0);
+        },
+        valueFormatter: (value) => {
+          if (!value || value === null || value === undefined) return '0.00 $';
+          return `${Number(value).toFixed(2)} $`;
+        },
+      },
+    ],
+    [t, paginationModel]
+  );
 
   return (
     <Container
@@ -186,15 +315,25 @@ export const UserAnalyticsPage: React.FC = () => {
 
       {/* Tab Panels */}
       <TabPanel value={selectedTab} index={0}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-            <CircularProgress />
-          </Box>
-        ) : customerRankings.length > 0 ? (
-          <CustomerRankingsTable rankings={customerRankings} />
-        ) : (
+        {customerRankings.length > 0 ? (
+          <DataTable
+            columns={columns}
+            rows={customerRankings}
+            loading={loading}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            sortModel={sortModel}
+            onSortModelChange={setSortModel}
+            getRowId={(row) => (row as CustomerRanking).userId}
+            height={600}
+            searchPlaceholder={t('users:analytics.search', 'بحث في العملاء...')}
+            onSearch={() => {
+              // يمكن إضافة منطق البحث هنا إذا لزم الأمر
+            }}
+          />
+        ) : !loading ? (
           <Alert severity="info">{t('users:analytics.noData', 'لا توجد بيانات متاحة')}</Alert>
-        )}
+        ) : null}
       </TabPanel>
 
       <TabPanel value={selectedTab} index={1}>
