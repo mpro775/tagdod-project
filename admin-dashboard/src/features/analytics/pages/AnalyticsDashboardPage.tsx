@@ -125,8 +125,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
           <StatsCard
             title={t('salesAnalytics.averageOrderValue')}
             value={formatCurrency(
-              data?.overview?.totalOrders > 0 
-                ? (data?.overview?.totalRevenue || 0) / data.overview.totalOrders 
+              (data?.overview?.totalOrders ?? 0) > 0 
+                ? (data?.overview?.totalRevenue || 0) / (data?.overview?.totalOrders ?? 1) 
                 : 0, 
               'USD', 
               'en'
@@ -213,8 +213,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
           <PieChartComponent
             data={
               data?.productCharts?.topSelling?.slice(0, 5).map((item) => ({
-                name: item.name || item.product,
-                value: item.sold || item.sales || 0,
+                name: item.product,
+                value: item.sales || 0,
               })) || []
             }
             title={t('productPerformance.topProducts')}
@@ -238,13 +238,13 @@ export const AnalyticsDashboardPage: React.FC = () => {
       </Grid>
 
       {/* User Registration Trends */}
-      {data?.userCharts?.registrationTrend && data.userCharts.registrationTrend.length > 0 && (
+      {data?.userCharts?.registrations && data.userCharts.registrations.length > 0 && (
         <Grid container spacing={isMobile ? 2 : 3} sx={{ mt: { xs: 2, sm: 3 } }}>
           <Grid size={{ xs: 12 }}>
             <RevenueChart
-              data={data.userCharts.registrationTrend.map((item: any) => ({
+              data={data.userCharts.registrations.map((item) => ({
                 date: item.date,
-                revenue: item.newUsers || 0,
+                revenue: item.count || 0,
               }))}
               title={t('dashboard.userRegistrationTrend')}
               type="area"

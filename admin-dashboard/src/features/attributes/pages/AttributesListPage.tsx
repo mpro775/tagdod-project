@@ -327,7 +327,7 @@ export const AttributesListPage: React.FC = () => {
               <Skeleton variant="text" width={200} height={40} sx={{ mb: 1 }} />
               <Skeleton variant="text" width={300} height={24} sx={{ display: { xs: 'none', sm: 'block' } }} />
             </Box>
-            <Skeleton variant="rectangular" width={{ xs: '100%', sm: 150 }} height={42} />
+            <Skeleton variant="rectangular" width={breakpoint.isMobile ? '100%' : 150} height={42} />
           </Box>
         </Box>
 

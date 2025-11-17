@@ -37,6 +37,7 @@ import { HealthModule } from './health/health.module';
 // Shared modules
 import { CacheModule } from './shared/cache/cache.module';
 import { SharedModule } from './shared/shared.module';
+import { KeepAliveService } from './shared/services/keep-alive.service';
 
 // Middleware
 import { ActivityTrackingMiddleware } from './shared/middleware/activity-tracking.middleware';
@@ -56,8 +57,18 @@ import { SecurityLoggingInterceptor } from './modules/security/interceptors/secu
       envFilePath: '.env',
     }),
 
-    // Database
-    MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/solar-commerce'),
+    // Database with connection pool configuration for stability and security
+    MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/solar-commerce', {
+      maxPoolSize: parseInt(process.env.DB_POOL_MAX || '10'),
+      minPoolSize: parseInt(process.env.DB_POOL_MIN || '2'),
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      heartbeatFrequencyMS: 10000, // Important: periodic ping to maintain connection
+      maxIdleTimeMS: 30000,
+      retryWrites: true,
+      retryReads: true,
+    }),
     
     // Global schemas for middleware
     MongooseModule.forFeature([
@@ -67,10 +78,10 @@ import { SecurityLoggingInterceptor } from './modules/security/interceptors/secu
     // Scheduling
     ScheduleModule.forRoot(),
 
-    // Throttling - Global rate limiting (100 requests per minute)
+    // Throttling - Global rate limiting (increased for background jobs while maintaining security)
     ThrottlerModule.forRoot([{
       ttl: 60,
-      limit: 100,
+      limit: 300, // Increased from 100 to 300 requests/minute for polling endpoints
     }]),
 
     // Core modules
@@ -112,6 +123,7 @@ import { SecurityLoggingInterceptor } from './modules/security/interceptors/secu
     { provide: APP_INTERCEPTOR, useClass: ResponseEnvelopeInterceptor },
     { provide: APP_INTERCEPTOR, useClass: SecurityLoggingInterceptor },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    KeepAliveService,
   ],
 })
 export class AppModule implements NestModule {

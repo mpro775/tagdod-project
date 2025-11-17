@@ -47,7 +47,7 @@ export function MetricsChart({ metricType, title, color }: MetricsChartProps) {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Update every minute
+    const interval = setInterval(fetchData, 120000); // Update every 2 minutes (reduced from 60s)
 
     return () => clearInterval(interval);
   }, [metricType, t, i18n.language]);

@@ -61,12 +61,20 @@ export interface DashboardData {
     totalRevenue: number;
     totalOrders: number;
     averageOrderValue: number;
+    activeServices?: number;
+    openSupportTickets?: number;
+    systemHealth?: number;
   };
   kpis: {
     revenueGrowth: number;
     userGrowth: number;
     orderGrowth: number;
     conversionRate: number;
+    orderConversion?: number;
+    customerSatisfaction?: number;
+    serviceEfficiency?: number;
+    supportResolution?: number;
+    systemUptime?: number;
   };
   revenueCharts: {
     daily: Array<{ date: string; revenue: number }>;

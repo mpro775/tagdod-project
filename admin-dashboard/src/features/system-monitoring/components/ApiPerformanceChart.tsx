@@ -36,7 +36,7 @@ export function ApiPerformanceChart() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Update every 30 seconds
+    const interval = setInterval(fetchData, 60000); // Update every 60 seconds (reduced from 30s)
 
     return () => clearInterval(interval);
   }, [t]);

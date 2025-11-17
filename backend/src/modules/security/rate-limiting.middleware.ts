@@ -18,7 +18,13 @@ export class RateLimitingMiddleware implements NestMiddleware {
     const method = req.method;
 
     // Skip rate limiting for health checks and docs
-    if (path === '/health' || path.startsWith('/docs')) {
+    if (
+      path === '/health' ||
+      path === '/health/live' ||
+      path === '/health/ready' ||
+      path === '/health/simple' ||
+      path.startsWith('/docs')
+    ) {
       return next();
     }
 

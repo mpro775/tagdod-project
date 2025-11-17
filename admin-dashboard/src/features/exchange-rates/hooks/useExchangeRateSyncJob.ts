@@ -4,7 +4,7 @@ import ExchangeRatesApiService, {
   ExchangeRateSyncJobStatus,
 } from '../api/exchangeRatesApi';
 
-const POLLING_INTERVAL = 5000;
+const POLLING_INTERVAL = 15000; // Increased from 5s to 15s to reduce server load
 
 interface UseExchangeRateSyncJobResult {
   job: ExchangeRateSyncJob | null;

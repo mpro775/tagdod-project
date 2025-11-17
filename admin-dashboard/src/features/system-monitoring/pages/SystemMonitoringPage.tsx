@@ -63,7 +63,7 @@ export function SystemMonitoringPage() {
     fetchData();
 
     if (autoRefresh) {
-      const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+      const interval = setInterval(fetchData, 60000); // Refresh every 60 seconds (reduced from 30s)
       return () => clearInterval(interval);
     }
   }, [autoRefresh]);

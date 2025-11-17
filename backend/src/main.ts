@@ -96,7 +96,13 @@ async function bootstrap() {
     logger.log(`📍 Attempting to bind to: 0.0.0.0:${port}`);
     logger.log('⏳ This may take a few seconds...');
     
-    await app.listen(port, '0.0.0.0');
+    const server = await app.listen(port, '0.0.0.0');
+    
+    // Critical server timeout settings for stability and security
+    server.keepAliveTimeout = 65000;  // 65 seconds (more than load balancer timeout)
+    server.headersTimeout = 66000;    // 66 seconds (more than keepAliveTimeout)
+    server.timeout = 120000;          // 2 minutes for request timeout
+    server.maxHeadersCount = 50;      // Limit headers for security
     
     logger.log('✅ Server started successfully!');
     logger.log(`🚀 Application is running on: http://localhost:${port}`);

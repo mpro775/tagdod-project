@@ -28,6 +28,7 @@ import { useBrands } from '@/features/brands/hooks/useBrands';
 import { productsApi } from '@/features/products/api/productsApi';
 import toast from 'react-hot-toast';
 import type { Category } from '@/features/categories/types/category.types';
+import { ProductStatus } from '@/features/products/types/product.types';
 import type { Product, Variant } from '@/features/products/types/product.types';
 import type { Brand } from '@/features/brands/types/brand.types';
 
@@ -87,7 +88,7 @@ const CreatePriceRulePage: React.FC = () => {
     page: 1,
     limit: 100,
     search: productSearchQuery || undefined,
-    isActive: true,
+    status: ProductStatus.ACTIVE,
   });
   const products = productsResponse?.data || [];
   const { data: brandsResponse, isLoading: brandsLoading } = useBrands({ isActive: true, limit: 100 });

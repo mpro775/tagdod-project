@@ -332,7 +332,8 @@ export class SystemMonitoringService {
 
   // ==================== Metric Collection (Cron Jobs) ====================
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  // Reduced frequency from every minute to every 5 minutes to reduce database load
+  @Cron('*/5 * * * *')
   async collectSystemMetrics() {
     try {
       const resourceUsage = await this.getResourceUsage();

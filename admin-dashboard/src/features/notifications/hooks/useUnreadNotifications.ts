@@ -31,11 +31,11 @@ export const useUnreadNotifications = (autoRefresh: boolean = true) => {
   useEffect(() => {
     fetchUnreadCount();
 
-    // Auto-refresh every 30 seconds if enabled
+    // Auto-refresh every 60 seconds if enabled (reduced frequency for server stability)
     if (autoRefresh) {
       const interval = setInterval(() => {
         fetchUnreadCount();
-      }, 30000); // 30 seconds
+      }, 60000); // 60 seconds (reduced from 30s to reduce load)
 
       return () => clearInterval(interval);
     }

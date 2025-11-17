@@ -1,15 +1,27 @@
 # اجعل index.html هو الصفحة الرئيسية
 DirectoryIndex index.html
 
+# Ensure proper MIME types for JavaScript modules
+<IfModule mod_mime.c>
+  AddType application/javascript .js
+  AddType application/javascript .mjs
+  AddType text/css .css
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # إذا كان الملف أو المجلد موجود فعلاً → قدّمه مباشرة
+  # Serve static assets directly (js, css, images, fonts, etc.)
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteCond %{REQUEST_URI} \.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json|map)$ [NC]
+  RewriteRule ^ - [L]
+
+  # If file or directory exists → serve it directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # غير ذلك → وجّه كل شيء إلى index.html (للـ router في SPA)
+  # Otherwise → redirect everything to index.html (for SPA routing)
   RewriteRule ^ index.html [L]
 </IfModule>
