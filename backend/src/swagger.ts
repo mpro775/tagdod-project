@@ -60,6 +60,8 @@ export function setupSwagger(app: INestApplication) {
     .addTag('upload', 'File upload and media management')
     .addServer('http://localhost:3000', 'Development server')
     .addServer('https://tagdod-project.onrender.com', 'Production server')
+    .addServer('http://api.allawzi.net', 'VPS Server')  // أضف هذا
+    .addServer('https://api.allawzi.net', 'VPS Server (HTTPS)')  // وأضف هذا
     .build();
 
   const document = SwaggerModule.createDocument(app, config, {

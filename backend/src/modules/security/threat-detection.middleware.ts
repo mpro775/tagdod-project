@@ -92,8 +92,53 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
         this.checkForThreats(req.body, 'request body', req);
       }
 
-      // Check headers
-      this.checkForThreats(req.headers, 'headers', req);
+      // Check headers - استثناء headers آمنة من Nginx و Postman
+      const safeHeaders = [
+        'host',
+        'user-agent',
+        'accept',
+        'accept-language',
+        'accept-encoding',
+        'connection',
+        'content-type',
+        'content-length',
+        'authorization',
+        'x-forwarded-for',
+        'x-forwarded-proto',
+        'x-real-ip',
+        'x-forwarded-host',
+        'x-forwarded-port',
+        'cache-control',
+        'origin',
+        'referer',
+        'referrer-policy',
+        'sec-fetch-site',
+        'sec-fetch-mode',
+        'sec-fetch-dest',
+        'sec-ch-ua',
+        'sec-ch-ua-mobile',
+        'sec-ch-ua-platform',
+        'upgrade-insecure-requests',
+        'dnt',
+        'x-requested-with',
+        'x-api-key',
+        'x-request-id',
+        'x-correlation-id',
+      ];
+
+      const filteredHeaders: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(req.headers)) {
+        const lowerKey = key.toLowerCase();
+        // فحص فقط الـ headers غير الآمنة
+        if (!safeHeaders.includes(lowerKey)) {
+          filteredHeaders[key] = value;
+        }
+      }
+
+      // فحص فقط الـ headers غير الآمنة
+      if (Object.keys(filteredHeaders).length > 0) {
+        this.checkForThreats(filteredHeaders, 'headers', req);
+      }
 
       // Check URL path
       if (this.containsPathTraversal(req.path)) {
