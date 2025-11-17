@@ -176,6 +176,221 @@ export class MarketingService {
     }
   }
 
+  /**
+   * Batch preview for multiple items - optimized for cart preview
+   * Accepts pre-fetched variants and products to avoid N+1 queries
+   */
+  async previewBatch(inputs: Array<{
+    variantId?: string;
+    productId?: string;
+    currency: string;
+    qty: number;
+    accountType: 'any' | 'customer' | 'engineer' | 'merchant';
+  }>, preloadedData?: {
+    variants?: Map<string, unknown>;
+    products?: Map<string, unknown>;
+  }): Promise<Map<string, {
+    finalPrice: number;
+    basePrice: number;
+    appliedRule: unknown;
+  }>> {
+    const results = new Map<string, {
+      finalPrice: number;
+      basePrice: number;
+      appliedRule: unknown;
+    }>();
+
+    if (inputs.length === 0) {
+      return results;
+    }
+
+    const now = new Date();
+    
+    // جلب جميع priceRules مرة واحدة فقط
+    const applicableRules = await this.priceRuleModel.find({
+      active: true,
+      startAt: { $lte: now },
+      endAt: { $gte: now },
+    }).sort({ priority: -1 }).lean();
+
+    // جلب جميع variants و products المطلوبة إذا لم تكن محملة مسبقاً
+    const variantIds = new Set<string>();
+    const productIds = new Set<string>();
+    
+    for (const input of inputs) {
+      if (input.variantId) variantIds.add(input.variantId);
+      if (input.productId) productIds.add(input.productId);
+    }
+
+    // جمع productIds من variants
+    const variantsMap = preloadedData?.variants || new Map();
+    const productsMap = preloadedData?.products || new Map();
+
+    if (!preloadedData) {
+      // جلب variants
+      if (variantIds.size > 0) {
+        const variants = await this.variantModel
+          .find({ _id: { $in: Array.from(variantIds).map(id => new Types.ObjectId(id)) } })
+          .lean();
+        for (const variant of variants) {
+          variantsMap.set(String(variant._id), variant);
+          if (variant.productId) {
+            productIds.add(String(variant.productId));
+          }
+        }
+      }
+
+      // جلب products
+      if (productIds.size > 0) {
+        const products = await this.productModel
+          .find({ _id: { $in: Array.from(productIds).map(id => new Types.ObjectId(id)) } })
+          .lean();
+        for (const product of products) {
+          productsMap.set(String(product._id), product);
+        }
+      }
+    }
+
+    // معالجة كل عنصر
+    for (const input of inputs) {
+      const key = input.variantId || input.productId || '';
+      if (!key) continue;
+
+      try {
+        let variant: unknown = null;
+        let product: unknown = null;
+        let variantIdStr = input.variantId;
+        let productIdStr = input.productId;
+
+        if (input.variantId) {
+          variant = variantsMap.get(input.variantId);
+          if (variant) {
+            const variantRecord = variant as Record<string, unknown>;
+            productIdStr = String(variantRecord.productId || '');
+            if (productIdStr) {
+              product = productsMap.get(productIdStr);
+            }
+          }
+        } else if (input.productId) {
+          product = productsMap.get(input.productId);
+        }
+
+        if (!variant && !product) {
+          // Fallback: استخدام السعر الأساسي بدون قواعد
+          const basePrice = await this.getBasePrice(key, input.currency);
+          if (basePrice !== null) {
+            results.set(key, {
+              finalPrice: basePrice,
+              basePrice: basePrice,
+              appliedRule: null,
+            });
+          }
+          continue;
+        }
+
+        // الحصول على السعر الأساسي
+        let originalPrice: number | null = null;
+        if (variant) {
+          const variantRecord = variant as Record<string, unknown>;
+          if (input.currency === 'USD') {
+            originalPrice = (variantRecord.basePriceUSD as number) ?? null;
+          } else if (input.currency === 'SAR') {
+            originalPrice = (variantRecord.basePriceSAR as number) ?? null;
+          } else if (input.currency === 'YER') {
+            originalPrice = (variantRecord.basePriceYER as number) ?? null;
+          }
+          if (originalPrice === null) {
+            originalPrice = (variantRecord.basePriceUSD as number) ?? null;
+          }
+        } else if (product) {
+          const productRecord = product as Record<string, unknown>;
+          if (input.currency === 'USD') {
+            originalPrice = (productRecord.basePriceUSD as number) ?? null;
+          } else if (input.currency === 'SAR') {
+            originalPrice = (productRecord.basePriceSAR as number) ?? null;
+          } else if (input.currency === 'YER') {
+            originalPrice = (productRecord.basePriceYER as number) ?? null;
+          }
+          if (originalPrice === null) {
+            originalPrice = (productRecord.basePriceUSD as number) ?? 
+                           (productRecord.basePrice as number) ?? null;
+          }
+        }
+
+        if (originalPrice === null) {
+          continue;
+        }
+
+        // البحث عن القواعد المطابقة
+        const matchingRules = applicableRules.filter(rule => {
+          const cond = rule.conditions;
+          
+          // Variant check
+          if (cond.variantId && variantIdStr && cond.variantId !== variantIdStr) return false;
+          
+          // Product check
+          if (cond.productId && productIdStr && cond.productId !== productIdStr) return false;
+          
+          // Category check
+          if (cond.categoryId && product) {
+            const productRecord = product as Record<string, unknown>;
+            const categoryId = String(productRecord.categoryId || '');
+            if (cond.categoryId !== categoryId) return false;
+          }
+          
+          // Brand check
+          if (cond.brandId && product) {
+            const productRecord = product as Record<string, unknown>;
+            const brandId = productRecord.brandId ? String(productRecord.brandId) : '';
+            if (cond.brandId !== brandId) return false;
+          }
+          
+          // Currency check
+          if (cond.currency && cond.currency !== input.currency) return false;
+          
+          // Min quantity check
+          if (cond.minQty && input.qty < cond.minQty) return false;
+          
+          // Account type check
+          if (cond.accountType && cond.accountType !== input.accountType) return false;
+          
+          return true;
+        });
+
+        // تطبيق أعلى أولوية قاعدة
+        const appliedRule = matchingRules[0];
+        let effectivePrice = originalPrice;
+        
+        if (appliedRule) {
+          effectivePrice = this.calculateEffectivePriceFromRule(originalPrice, appliedRule);
+        }
+
+        results.set(key, {
+          finalPrice: effectivePrice,
+          basePrice: originalPrice,
+          appliedRule: appliedRule || null,
+        });
+      } catch (error) {
+        this.logger.error(`Error in batch preview for ${key}:`, error);
+        // Fallback: استخدام السعر الأساسي
+        try {
+          const basePrice = await this.getBasePrice(key, input.currency);
+          if (basePrice !== null) {
+            results.set(key, {
+              finalPrice: basePrice,
+              basePrice: basePrice,
+              appliedRule: null,
+            });
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    return results;
+  }
+
   async calculateEffectivePrice(dto: PricingQueryDto): Promise<EffectivePriceResult> {
     const now = new Date();
     const { variantId, currency = 'YER', qty = 1, accountType } = dto;

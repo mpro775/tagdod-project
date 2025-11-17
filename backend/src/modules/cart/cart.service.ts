@@ -1834,9 +1834,37 @@ export class CartService {
       products.map((p) => [String(p._id), p]),
     );
 
-    // ملاحظة: تم تعطيل batch processing لـ marketingService.preview
-    // لأنها تجلب priceRules في كل استدعاء مما يسبب بطء
-    // يمكن تفعيلها لاحقاً بعد تحسين marketingService
+    // جلب قواعد التسعير لجميع العناصر دفعة واحدة (batch)
+    const marketingPreviewInputs: Array<{
+      variantId?: string;
+      productId?: string;
+      currency: string;
+      qty: number;
+      accountType: 'any' | 'customer' | 'engineer' | 'merchant';
+    }> = [];
+
+    for (const it of cart.items) {
+      const variantIdStr = it.variantId ? this.toStringId(it.variantId) : undefined;
+      const productIdStr = it.productId ? this.toStringId(it.productId) : undefined;
+      
+      if (variantIdStr || productIdStr) {
+        marketingPreviewInputs.push({
+          variantId: variantIdStr,
+          productId: productIdStr,
+          currency: normalizedCurrency,
+          qty: it.qty,
+          accountType,
+        });
+      }
+    }
+
+    // جلب قواعد التسعير لجميع العناصر دفعة واحدة
+    const marketingResults = this.marketingService && typeof this.marketingService.previewBatch === 'function'
+      ? await this.marketingService.previewBatch(marketingPreviewInputs, {
+          variants: variantMap,
+          products: productMap,
+        }).catch(() => new Map())
+      : new Map();
 
     // الآن نستخدم البيانات المجمعة بدلاً من إعادة الجلب
     for (const it of cart.items) {
@@ -1845,7 +1873,7 @@ export class CartService {
       let variantIdStr = it.variantId ? this.toStringId(it.variantId) : undefined;
       let productIdStr = it.productId ? this.toStringId(it.productId) : undefined;
       let snapshot = it.productSnapshot;
-      const appliedRule: unknown = null;
+      let appliedRule: unknown = null;
 
       let pricingDetails: CartItem['pricing'] | undefined = it.pricing
         ? { ...it.pricing }
@@ -1969,71 +1997,73 @@ export class CartService {
       base = base ?? 0;
       final = final ?? base;
 
-      // تعطيل marketingService.preview مؤقتاً بسبب البطء
-      // يمكن تفعيلها لاحقاً بعد تحسين marketingService ليقبل variant/product كمعاملات
-      // if (
-      //   variant &&
-      //   this.marketingService &&
-      //   typeof this.marketingService.preview === 'function' &&
-      //   variantIdStr
-      // ) {
-      //   try {
-      //     const res = await this.marketingService.preview({
-      //       variantId: variantIdStr,
-      //       currency: normalizedCurrency,
-      //       qty: it.qty,
-      //       accountType,
-      //     });
-      //     if (res) {
-      //       final = res.finalPrice;
-      //       base = res.basePrice ?? base;
-      //       lineCurrency = normalizedCurrency;
-      //       appliedRule = res.appliedRule;
-      //     }
-      //   } catch {
-      //     // ignore marketing errors and fallback to existing pricing
-      //   }
-      // }
+      // تطبيق قواعد التسعير من marketingService (batch)
+      const marketingKey = variantIdStr || productIdStr || '';
+      if (marketingKey && marketingResults.has(marketingKey)) {
+        const marketingResult = marketingResults.get(marketingKey);
+        if (marketingResult && typeof marketingResult.finalPrice === 'number' && typeof marketingResult.basePrice === 'number') {
+          final = marketingResult.finalPrice;
+          base = marketingResult.basePrice;
+          lineCurrency = normalizedCurrency;
+          appliedRule = marketingResult.appliedRule;
+          
+          // حفظ appliedPromotionId إذا كان هناك قاعدة مطبقة
+          if (marketingResult.appliedRule && pricingDetails) {
+            const ruleId = (marketingResult.appliedRule as { _id?: unknown })?._id;
+            if (ruleId) {
+              pricingDetails.appliedPromotionId = String(ruleId);
+            }
+          }
+        }
+      }
 
       // استخدام الأسعار المخزنة مباشرة أو convertUsingRates إذا كانت exchangeRates موجودة
       if (lineCurrency !== normalizedCurrency) {
         if (exchangeRates) {
-          const convertedFinal = this.convertUsingRates(
-            final,
-            lineCurrency,
-            normalizedCurrency,
-            exchangeRates,
-          );
-          if (convertedFinal !== undefined) {
-            final = convertedFinal;
+          if (typeof final === 'number') {
+            const convertedFinal = this.convertUsingRates(
+              final,
+              lineCurrency,
+              normalizedCurrency,
+              exchangeRates,
+            );
+            if (convertedFinal !== undefined) {
+              final = convertedFinal;
+            }
           }
 
-          const convertedBase = this.convertUsingRates(
-            base,
-            lineCurrency,
-            normalizedCurrency,
-            exchangeRates,
-          );
-          if (convertedBase !== undefined) {
-            base = convertedBase;
+          if (typeof base === 'number') {
+            const convertedBase = this.convertUsingRates(
+              base,
+              lineCurrency,
+              normalizedCurrency,
+              exchangeRates,
+            );
+            if (convertedBase !== undefined) {
+              base = convertedBase;
+            }
           }
 
           lineCurrency = normalizedCurrency;
         } else if (this.exchangeRatesService) {
           try {
-            const convertedFinal = await this.exchangeRatesService.convertCurrency({
-              amount: final,
-              fromCurrency: lineCurrency,
-              toCurrency: normalizedCurrency,
-            });
-            final = convertedFinal.result;
+            if (typeof final === 'number') {
+              const convertedFinal = await this.exchangeRatesService.convertCurrency({
+                amount: final,
+                fromCurrency: lineCurrency,
+                toCurrency: normalizedCurrency,
+              });
+              final = convertedFinal.result;
+            }
 
-            const convertedBase = await this.exchangeRatesService.convertCurrency({
-              amount: base,
-              fromCurrency: lineCurrency,
-              toCurrency: normalizedCurrency,
-            });
-            base = convertedBase.result;
+            if (typeof base === 'number') {
+              const convertedBase = await this.exchangeRatesService.convertCurrency({
+                amount: base,
+                fromCurrency: lineCurrency,
+                toCurrency: normalizedCurrency,
+              });
+              base = convertedBase.result;
+            }
 
             lineCurrency = normalizedCurrency;
           } catch {
@@ -2044,24 +2074,26 @@ export class CartService {
 
       if (pricingDetails) {
         pricingDetails.currency = normalizedCurrency;
-        pricingDetails.basePrice = base;
-        pricingDetails.finalPrice = final;
+        pricingDetails.basePrice = base ?? 0;
+        pricingDetails.finalPrice = final ?? 0;
         pricingDetails.discount =
           this.roundPrice(Math.max(0, pricingDetails.basePrice - pricingDetails.finalPrice)) ??
           Math.max(0, pricingDetails.basePrice - pricingDetails.finalPrice);
       } else if (existingPromotionId !== undefined) {
+        const safeBase = base ?? 0;
+        const safeFinal = final ?? 0;
         pricingDetails = {
           currency: normalizedCurrency,
-          basePrice: base,
-          finalPrice: final,
+          basePrice: safeBase,
+          finalPrice: safeFinal,
           discount:
-            this.roundPrice(Math.max(0, base - final)) ?? Math.max(0, base - final),
+            this.roundPrice(Math.max(0, safeBase - safeFinal)) ?? Math.max(0, safeBase - safeFinal),
           appliedPromotionId: existingPromotionId,
         };
       }
 
-      const finalBeforeDiscount = final;
-      const roundedBase = this.roundPrice(base) ?? base;
+      const finalBeforeDiscount = final ?? 0;
+      const roundedBase = this.roundPrice(base ?? 0) ?? (base ?? 0);
       const roundedFinalBefore = this.roundPrice(finalBeforeDiscount) ?? finalBeforeDiscount;
 
       if (merchantDiscountPercent > 0) {
