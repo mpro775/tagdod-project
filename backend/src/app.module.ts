@@ -2,8 +2,7 @@ import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/c
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { User, UserSchema } from './modules/users/schemas/user.schema';
 
 // Core modules
@@ -79,10 +78,11 @@ import { SecurityLoggingInterceptor } from './modules/security/interceptors/secu
     ScheduleModule.forRoot(),
 
     // Throttling - Global rate limiting (increased for background jobs while maintaining security)
-    ThrottlerModule.forRoot([{
-      ttl: 60,
-      limit: 300, // Increased from 100 to 300 requests/minute for polling endpoints
-    }]),
+    // TODO: إعادة تفعيل rate limiting بعد الاختبار
+    // ThrottlerModule.forRoot([{
+    //   ttl: 60,
+    //   limit: 300, // Increased from 100 to 300 requests/minute for polling endpoints
+    // }]),
 
     // Core modules
     AuthModule,
@@ -122,7 +122,8 @@ import { SecurityLoggingInterceptor } from './modules/security/interceptors/secu
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ResponseEnvelopeInterceptor },
     { provide: APP_INTERCEPTOR, useClass: SecurityLoggingInterceptor },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // TODO: إعادة تفعيل rate limiting بعد الاختبار
+    // { provide: APP_GUARD, useClass: ThrottlerGuard },
     KeepAliveService,
   ],
 })

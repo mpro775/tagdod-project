@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { RateLimitingService } from './rate-limiting.service';
 import { CORSService } from './cors.service';
 import { ClientIPService } from './services/client-ip.service';
-import { RateLimitingMiddleware } from './rate-limiting.middleware';
 import { SecurityHeadersMiddleware } from './security-headers.middleware';
 import { ThreatDetectionMiddleware } from './threat-detection.middleware';
 import { SecurityLoggingInterceptor } from './interceptors/security-logging.interceptor';
@@ -44,10 +43,11 @@ export class SecurityModule implements NestModule {
 
       // 2. Threat detection (early detection)
       .apply(ThreatDetectionMiddleware)
-      .forRoutes('*')
+      .forRoutes('*');
 
       // 3. Rate limiting (after basic validation) - Made optional if Redis unavailable
-      .apply(RateLimitingMiddleware)
-      .forRoutes('*');
+      // TODO: إعادة تفعيل rate limiting بعد الاختبار
+      // .apply(RateLimitingMiddleware)
+      // .forRoutes('*');
   }
 }
