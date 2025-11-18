@@ -42,16 +42,23 @@
 | `page` | `number` | ❌ | رقم الصفحة (افتراضي: 1) |
 | `limit` | `number` | ❌ | عدد العناصر في الصفحة (افتراضي: 20) |
 | `search` | `string` | ❌ | نص البحث |
-| `categoryId` | `string` | ❌ | ID الفئة للفلترة |
+| `categoryId` | `string` | ❌ | ID الفئة للفلترة (يتضمن الفئات الفرعية افتراضياً) |
+| `includeSubcategories` | `boolean` | ❌ | تضمين المنتجات من الفئات الفرعية (افتراضي: `true`) |
 | `brandId` | `string` | ❌ | ID البراند للفلترة |
 | `isFeatured` | `boolean` | ❌ | فقط المنتجات المميزة |
 | `isNew` | `boolean` | ❌ | فقط المنتجات الجديدة |
+| `sortBy` | `string` | ❌ | حقل الترتيب (افتراضي: `createdAt`) |
+| `sortOrder` | `string` | ❌ | اتجاه الترتيب: `asc` أو `desc` (افتراضي: `desc` - الأحدث أولاً) |
 
 ### مثال الطلب
 
 ```
 GET /products?page=1&limit=20&categoryId=64abc123&search=solar
+GET /products?categoryId=64abc123&includeSubcategories=true&sortBy=createdAt&sortOrder=desc
+GET /products?sortBy=name&sortOrder=asc
 ```
+
+> **ملاحظة:** الترتيب الافتراضي هو الأحدث أولاً (`createdAt: desc`). عند تحديد `categoryId`، يتم تضمين المنتجات من الفئات الفرعية تلقائياً ما لم يتم تعطيل `includeSubcategories=false`.
 
 ### Response - نجاح
 
@@ -129,18 +136,24 @@ class ProductsFilter {
   final int limit;
   final String? search;
   final String? categoryId;
+  final bool? includeSubcategories; // افتراضي: true
   final String? brandId;
   final bool? isFeatured;
   final bool? isNew;
+  final String? sortBy; // مثل: 'createdAt', 'name', 'basePriceUSD'
+  final String? sortOrder; // 'asc' أو 'desc'
 
   ProductsFilter({
     this.page = 1,
     this.limit = 20,
     this.search,
     this.categoryId,
+    this.includeSubcategories = true, // افتراضي: true
     this.brandId,
     this.isFeatured,
     this.isNew,
+    this.sortBy,
+    this.sortOrder,
   });
 
   Map<String, dynamic> toQueryParams() {
@@ -149,9 +162,12 @@ class ProductsFilter {
       'limit': limit,
       if (search != null) 'search': search,
       if (categoryId != null) 'categoryId': categoryId,
+      if (includeSubcategories != null) 'includeSubcategories': includeSubcategories.toString(),
       if (brandId != null) 'brandId': brandId,
       if (isFeatured != null) 'isFeatured': isFeatured.toString(),
       if (isNew != null) 'isNew': isNew.toString(),
+      if (sortBy != null) 'sortBy': sortBy,
+      if (sortOrder != null) 'sortOrder': sortOrder,
     };
   }
 }
@@ -1627,7 +1643,15 @@ class PaginationMeta {
 
 > ✅ **تم تحديث هذه الوثيقة بالكامل** لتطابق الكود الفعلي
 
-### التحديثات المضافة في هذه النسخة:
+### التحديثات المضافة في هذه النسخة (آخر تحديث):
+1. ✅ **إضافة parameters جديدة:**
+   - `includeSubcategories` - تضمين المنتجات من الفئات الفرعية (افتراضي: `true`)
+   - `sortBy` و `sortOrder` - للترتيب المخصص
+2. ✅ **تحديث الترتيب الافتراضي:**
+   - الأحدث أولاً (`createdAt: desc`) تلقائياً
+   - يمكن تخصيص الترتيب باستخدام `sortBy` و `sortOrder`
+
+### التحديثات السابقة:
 1. ✅ **إضافة 7 endpoints جديدة:**
    - `GET /products/slug/:slug` - البحث بالـ slug
    - `GET /products/:id/variants` - جلب variants المنتج

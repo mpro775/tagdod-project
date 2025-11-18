@@ -1698,6 +1698,13 @@ paths:
     get:
       operationId: listProducts
       summary: قائمة المنتجات مع التصفية
+      description: |-
+        جلب قائمة المنتجات مع إمكانية التصفية. في لوحة التحكم، يتم عرض جميع المنتجات بما في ذلك:
+        - المنتجات في الفئات الفرعية (افتراضي: includeSubcategories=true)
+        - المنتجات التي نفذت (out of stock)
+        - المنتجات التي كميتها صفر
+        - المنتجات غير النشطة (إذا لم يتم تحديد isActive)
+        - المنتجات المحذوفة (إذا includeDeleted=true)
       parameters: []
       responses:
         '200':
@@ -2199,6 +2206,22 @@ paths:
           required: true
           in: query
           schema:
+            type: string
+        - name: sortBy
+          required: false
+          in: query
+          description: 'Field to sort by (default: createdAt)'
+          schema:
+            example: createdAt
+            type: string
+        - name: sortOrder
+          required: false
+          in: query
+          description: 'Sort order (default: desc - newest first)'
+          schema:
+            enum:
+              - asc
+              - desc
             type: string
       responses:
         '200':
@@ -5013,6 +5036,22 @@ paths:
           schema:
             example: true
             type: boolean
+        - name: sortBy
+          required: false
+          in: query
+          description: 'حقل الترتيب (افتراضي: createdAt)'
+          schema:
+            example: createdAt
+            type: string
+        - name: sortOrder
+          required: false
+          in: query
+          description: 'اتجاه الترتيب (افتراضي: desc - الأحدث أولاً)'
+          schema:
+            enum:
+              - asc
+              - desc
+            type: string
         - name: force
           required: false
           in: query

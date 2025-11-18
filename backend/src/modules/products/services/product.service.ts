@@ -334,6 +334,8 @@ export class ProductService {
     isNew?: boolean;
     includeDeleted?: boolean;
     includeSubcategories?: boolean;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   } = {}): Promise<{ data: Product[]; meta: { page: number; limit: number; total: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean } }> {
     const {
       page = 1,
@@ -346,7 +348,9 @@ export class ProductService {
       isFeatured,
       isNew,
       includeDeleted = false,
-      includeSubcategories = true,
+      includeSubcategories = true, // افتراضي: true لتضمين الفئات الفرعية في admin و public
+      sortBy,
+      sortOrder,
     } = query;
 
     const skip = (page - 1) * limit;
@@ -417,13 +421,24 @@ export class ProductService {
       filter.isNew = isNew;
     }
 
+    // تحديد الترتيب: إذا تم تحديد sortBy و sortOrder، نستخدمهما، وإلا نستخدم الترتيب الافتراضي (الأحدث أولاً)
+    let sortCriteria: Record<string, 1 | -1> = {};
+    
+    if (sortBy && sortOrder) {
+      // ترتيب مخصص من المستخدم
+      sortCriteria[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    } else {
+      // الترتيب الافتراضي: الأحدث أولاً (createdAt: -1)، ثم الترتيب اليدوي (order: 1)
+      sortCriteria = { createdAt: -1, order: 1 };
+    }
+
     const [data, total] = await Promise.all([
       this.productModel
         .find(filter)
         .populate('categoryId')
         .populate('brandId')
         .populate('mainImageId')
-        .sort({ order: 1, createdAt: -1 })
+        .sort(sortCriteria)
         .skip(skip)
         .limit(limit)
         .lean(),

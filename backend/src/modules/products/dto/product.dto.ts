@@ -102,15 +102,17 @@ export class ListProductsDto {
   @IsOptional() @IsNumber() @Min(1) limit?: number = 20;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() categoryId?: string;
+  @IsOptional() @IsBoolean() includeSubcategories?: boolean = true; // افتراضي: true لتضمين الفئات الفرعية
   @IsOptional() @IsString() brandId?: string;
   @IsOptional() @IsEnum(ProductStatus) status?: ProductStatus;
+  @IsOptional() @IsBoolean() isActive?: boolean; // في admin، يمكن عرض المنتجات غير النشطة أيضاً
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsBoolean() isNew?: boolean;
-  @IsOptional() @IsBoolean() includeDeleted?: boolean;
+  @IsOptional() @IsBoolean() includeDeleted?: boolean = false; // في admin، يمكن عرض المحذوفة
   @IsOptional() @IsString() sortBy?: string;
   @IsOptional() @IsString() sortOrder?: 'asc' | 'desc';
   
-  // فلاتر المخزون
+  // فلاتر المخزون (للعرض فقط، لا تفلتر المنتجات)
   @IsOptional() @IsBoolean() lowStock?: boolean;
   @IsOptional() @IsBoolean() outOfStock?: boolean;
   @IsOptional() @IsBoolean() trackStock?: boolean;

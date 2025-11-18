@@ -87,6 +87,20 @@ export class PublicProductsController {
     description: 'Filter featured products',
   })
   @ApiQuery({ name: 'isNew', required: false, type: Boolean, description: 'Filter new products' })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field to sort by (default: createdAt)',
+    example: 'createdAt',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['asc', 'desc'],
+    description: 'Sort order (default: desc - newest first)',
+    example: 'desc',
+  })
   @ApiOkResponse({
     description: 'Products list retrieved successfully',
     schema: {
@@ -130,6 +144,8 @@ export class PublicProductsController {
     @Query('isFeatured') isFeatured?: string,
     @Query('isNew') isNew?: string,
     @Query('currency') currency?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     @Req() req?: RequestWithUser,
   ) {
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
@@ -150,6 +166,8 @@ export class PublicProductsController {
       isFeatured: isFeatured === 'true' ? true : undefined,
       isNew: isNew === 'true' ? true : undefined,
       includeSubcategories: includeSubcats,
+      sortBy,
+      sortOrder,
     });
 
     const rawData = Array.isArray(result.data)

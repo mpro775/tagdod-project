@@ -209,6 +209,20 @@ export class CategoriesPublicController {
     description: 'رمز العملة المطلوبة (افتراضي USD)',
     example: 'SAR',
   })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'حقل الترتيب (افتراضي: createdAt)',
+    example: 'createdAt',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['asc', 'desc'],
+    description: 'اتجاه الترتيب (افتراضي: desc - الأحدث أولاً)',
+    example: 'desc',
+  })
   @ApiOkResponse({
     description: 'تم الحصول على المنتجات بنجاح',
     schema: {
@@ -286,6 +300,8 @@ export class CategoriesPublicController {
     @Query('isNew') isNew?: string,
     @Query('currency') currency?: string,
     @Query('includeSubcategories') includeSubcategories?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     @Req() req?: { user?: { sub?: string; preferredCurrency?: string } },
   ) {
     // التحقق من وجود الفئة
@@ -312,6 +328,8 @@ export class CategoriesPublicController {
       isNew: isNew === 'true' ? true : undefined,
       includeDeleted: false, // فقط المنتجات غير المحذوفة
       includeSubcategories: includeSubcats, // تضمين الفئات الفرعية
+      sortBy,
+      sortOrder,
     });
 
     const rawData = Array.isArray(result.data)

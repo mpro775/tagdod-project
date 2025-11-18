@@ -47,9 +47,21 @@ export class ProductsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'قائمة المنتجات مع التصفية' })
+  @ApiOperation({ 
+    summary: 'قائمة المنتجات مع التصفية',
+    description: 'جلب قائمة المنتجات مع إمكانية التصفية. في لوحة التحكم، يتم عرض جميع المنتجات بما في ذلك:\n' +
+                 '- المنتجات في الفئات الفرعية (افتراضي: includeSubcategories=true)\n' +
+                 '- المنتجات التي نفذت (out of stock)\n' +
+                 '- المنتجات التي كميتها صفر\n' +
+                 '- المنتجات غير النشطة (إذا لم يتم تحديد isActive)\n' +
+                 '- المنتجات المحذوفة (إذا includeDeleted=true)'
+  })
   @ApiResponse({ status: 200, description: 'Products list retrieved successfully' })
   async listProducts(@Query() dto: ListProductsDto) {
+    // في admin، نمرر جميع المعاملات مباشرة من DTO
+    // includeSubcategories افتراضي: true (يتم تضمين الفئات الفرعية)
+    // includeDeleted افتراضي: false (يمكن تفعيله لعرض المحذوفة)
+    // لا يتم فلترة المنتجات حسب المخزون - جميع المنتجات تظهر
     return this.productService.list(dto);
   }
 

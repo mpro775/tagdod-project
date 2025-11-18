@@ -11,8 +11,9 @@
 1. [قائمة التصنيفات](#1-قائمة-التصنيفات)
 2. [شجرة التصنيفات الكاملة](#2-شجرة-التصنيفات-الكاملة)
 3. [تفاصيل تصنيف](#3-تفاصيل-تصنيف)
-4. [التصنيفات المميزة](#4-التصنيفات-المميزة)
-5. [Models في Flutter](#models-في-flutter)
+4. [المنتجات حسب الفئة](#4-المنتجات-حسب-الفئة)
+5. [التصنيفات المميزة](#5-التصنيفات-المميزة)
+6. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -324,7 +325,183 @@ Future<Category> getCategory(String id) async {
 
 ---
 
-## 4. التصنيفات المميزة
+## 4. المنتجات حسب الفئة
+
+يسترجع قائمة المنتجات التي تنتمي إلى فئة معينة مع إمكانية تضمين الفئات الفرعية.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/categories/:id/products`
+- **Auth Required:** ❌ لا
+- **Cache:** ✅ نعم (5 دقائق)
+
+### Path Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `id` | `string` | ✅ | ID الفئة أو Slug |
+
+### Query Parameters
+
+| المعامل | النوع | مطلوب | الوصف |
+|---------|------|-------|-------|
+| `page` | `number` | ❌ | رقم الصفحة (افتراضي: 1) |
+| `limit` | `number` | ❌ | عدد العناصر في الصفحة (افتراضي: 20) |
+| `search` | `string` | ❌ | نص البحث في أسماء المنتجات |
+| `brandId` | `string` | ❌ | تصفية حسب البراند |
+| `isFeatured` | `boolean` | ❌ | تصفية المنتجات المميزة فقط |
+| `isNew` | `boolean` | ❌ | تصفية المنتجات الجديدة فقط |
+| `currency` | `string` | ❌ | رمز العملة المطلوبة (افتراضي: USD) |
+| `includeSubcategories` | `boolean` | ❌ | تضمين المنتجات من الفئات الفرعية (افتراضي: `true`) |
+| `sortBy` | `string` | ❌ | حقل الترتيب (افتراضي: `createdAt`) |
+| `sortOrder` | `string` | ❌ | اتجاه الترتيب: `asc` أو `desc` (افتراضي: `desc` - الأحدث أولاً) |
+| `force` | `boolean` | ❌ | تجاوز التخزين المؤقت وإرجاع البيانات المحدثة فوراً |
+
+### مثال الطلب
+
+```
+GET /categories/64cat123/products
+GET /categories/solar-panels/products?page=1&limit=20
+GET /categories/64cat123/products?includeSubcategories=true&sortBy=createdAt&sortOrder=desc
+GET /categories/64cat123/products?includeSubcategories=false
+```
+
+> **ملاحظة:** عند تحديد فئة، يتم تضمين المنتجات من الفئات الفرعية تلقائياً (`includeSubcategories=true`). الترتيب الافتراضي هو الأحدث أولاً.
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "_id": "64prod123",
+        "name": "لوح شمسي 550 واط",
+        "nameEn": "Solar Panel 550W",
+        "slug": "solar-panel-550w",
+        "description": "لوح شمسي عالي الكفاءة",
+        "descriptionEn": "High efficiency solar panel",
+        "categoryId": {
+          "_id": "64cat123",
+          "name": "الألواح الشمسية",
+          "nameEn": "Solar Panels"
+        },
+        "brandId": {
+          "_id": "64brand123",
+          "name": "Brand Name"
+        },
+        "mainImageId": {
+          "_id": "64img123",
+          "url": "https://cdn.example.com/products/solar-panel-1.jpg"
+        },
+        "isActive": true,
+        "isFeatured": true,
+        "isNew": false,
+        "status": "active",
+        "createdAt": "2025-01-15T10:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 20,
+      "total": 50,
+      "totalPages": 3,
+      "hasNextPage": true,
+      "hasPrevPage": false
+    }
+  },
+  "requestId": "req_cat_prod_001"
+}
+```
+
+### Response - فشل
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CATEGORY_300",
+    "message": "الفئة غير موجودة أو غير نشطة",
+    "details": null,
+    "fieldErrors": null
+  },
+  "requestId": "req_cat_prod_002",
+  "timestamp": "2025-01-20T10:30:00.000Z",
+  "path": "/api/categories/64cat123/products"
+}
+```
+
+### كود Flutter
+
+```dart
+class CategoryProductsFilter {
+  final int page;
+  final int limit;
+  final String? search;
+  final String? brandId;
+  final bool? isFeatured;
+  final bool? isNew;
+  final String? currency;
+  final bool? includeSubcategories;
+  final String? sortBy;
+  final String? sortOrder;
+
+  CategoryProductsFilter({
+    this.page = 1,
+    this.limit = 20,
+    this.search,
+    this.brandId,
+    this.isFeatured,
+    this.isNew,
+    this.currency,
+    this.includeSubcategories = true, // افتراضي: true
+    this.sortBy,
+    this.sortOrder,
+  });
+
+  Map<String, dynamic> toQueryParams() {
+    return {
+      'page': page,
+      'limit': limit,
+      if (search != null) 'search': search,
+      if (brandId != null) 'brandId': brandId,
+      if (isFeatured != null) 'isFeatured': isFeatured.toString(),
+      if (isNew != null) 'isNew': isNew.toString(),
+      if (currency != null) 'currency': currency,
+      if (includeSubcategories != null) 'includeSubcategories': includeSubcategories.toString(),
+      if (sortBy != null) 'sortBy': sortBy,
+      if (sortOrder != null) 'sortOrder': sortOrder,
+    };
+  }
+}
+
+Future<PaginatedProducts> getCategoryProducts(
+  String categoryId,
+  CategoryProductsFilter filter,
+) async {
+  final response = await _dio.get(
+    '/categories/$categoryId/products',
+    queryParameters: filter.toQueryParams(),
+  );
+
+  final apiResponse = ApiResponse<PaginatedProducts>.fromJson(
+    response.data,
+    (json) => PaginatedProducts.fromJson((json as Map<String, dynamic>)['data']),
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 5. التصنيفات المميزة
 
 يسترجع التصنيفات المميزة فقط.
 
@@ -633,18 +810,29 @@ class CategorySEO {
 
 ## 📝 ملاحظات التحديث
 
-> ✅ **هذه الوثيقة دقيقة 100%** - لم تحتاج لأي تحديثات
+> ✅ **تم تحديث هذه الوثيقة** - مطابقة 100% للكود الفعلي
+
+### التحديثات المضافة في هذه النسخة:
+1. ✅ **إضافة endpoint جديد:**
+   - `GET /categories/:id/products` - جلب المنتجات حسب الفئة مع دعم الفئات الفرعية
+2. ✅ **إضافة parameters جديدة:**
+   - `includeSubcategories` - تضمين الفئات الفرعية (افتراضي: `true`)
+   - `sortBy` و `sortOrder` - للترتيب المخصص
+3. ✅ **تحديث الترتيب الافتراضي:**
+   - الأحدث أولاً (`createdAt: desc`) تلقائياً
 
 ### تم التحقق من:
-- ✅ جميع الـ 4 endpoints موجودة
+- ✅ جميع الـ 5 endpoints موجودة
 - ✅ Query parameters مطابقة
 - ✅ Response structures صحيحة
-- ✅ Cache TTL مطابق (30 min للـ list، 60 min للـ tree)
+- ✅ Cache TTL مطابق (30 min للـ list، 60 min للـ tree، 5 min للمنتجات)
 - ✅ Flutter Models شاملة ومفيدة
+- ✅ دعم الفئات الفرعية في فلترة المنتجات
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/categories/public.controller.ts`
 - **Service:** `backend/src/modules/categories/categories.service.ts`
+- **Products Service:** `backend/src/modules/products/services/product.service.ts`
 
 ---
 
