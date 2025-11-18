@@ -1064,6 +1064,12 @@ export class OrderService {
               : undefined;
         } else if (productId) {
           const productDetails = await this.productService.findById(productId);
+          if (!productDetails.trackStock) {
+            this.logger.debug(
+              `Product ${productId} does not track stock. Reservation skipped for order ${orderId}.`,
+            );
+            continue;
+          }
 
           availability = await this.productsInventoryService.checkProductAvailability(
             productId,

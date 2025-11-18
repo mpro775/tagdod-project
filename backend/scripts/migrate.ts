@@ -329,6 +329,42 @@ class DatabaseMigrator {
           
           console.log('✅ Rollback completed: rename_wholesale_to_merchant');
         }
+      },
+      {
+        name: 'update_stock_to_200',
+        up: async () => {
+          console.log('🔄 Updating stock to 200 for Products and Variants...');
+          
+          // 1. Update Products collection
+          console.log('📝 Updating Products collection...');
+          const productResult = await this.models.Product.collection.updateMany(
+            {},
+            {
+              $set: {
+                stock: 200
+              }
+            }
+          );
+          console.log(`✅ Updated ${productResult.modifiedCount} products (matched: ${productResult.matchedCount})`);
+          
+          // 2. Update Variants collection
+          console.log('📝 Updating Variants collection...');
+          const variantResult = await this.models.Variant.collection.updateMany(
+            {},
+            {
+              $set: {
+                stock: 200
+              }
+            }
+          );
+          console.log(`✅ Updated ${variantResult.modifiedCount} variants (matched: ${variantResult.matchedCount})`);
+          
+          console.log('✅ Migration completed: update_stock_to_200');
+        },
+        down: async () => {
+          console.log('⚠️ Rollback not implemented for stock update');
+          console.log('   Stock values will remain at 200');
+        }
       }
     ];
   }
