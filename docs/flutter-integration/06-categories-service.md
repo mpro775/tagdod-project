@@ -19,7 +19,7 @@
 
 ## 1. قائمة التصنيفات
 
-يسترجع قائمة التصنيفات مع إمكانية الفلترة.
+يسترجع قائمة التصنيفات مع إمكانية الفلترة. **بدون parameters، يعيد الفئات الرئيسية فقط** (parentId = null).
 
 ### معلومات الطلب
 
@@ -32,16 +32,26 @@
 
 | المعامل | النوع | مطلوب | الوصف |
 |---------|------|-------|-------|
-| `parentId` | `string` | ❌ | ID الفئة الأب (`null` للفئات الرئيسية) |
+| `parentId` | `string` | ❌ | ID الفئة الأب. **بدون هذا المعامل، يتم إرجاع الفئات الرئيسية فقط** (parentId = null). يمكن تمرير ID فئة للحصول على الفئات الفرعية، أو `"null"` صراحة للفئات الرئيسية. |
 | `isFeatured` | `boolean` | ❌ | فقط المميزة (`true`/`false`) |
 
 ### مثال الطلب
 
 ```
-GET /categories?parentId=null
+GET /categories
+# يعيد الفئات الرئيسية فقط (parentId = null)
+
 GET /categories?parentId=64cat123
+# يعيد الفئات الفرعية للفئة المحددة
+
+GET /categories?parentId=null
+# يعيد الفئات الرئيسية فقط (صراحة)
+
 GET /categories?isFeatured=true
+# يعيد الفئات المميزة الرئيسية فقط
 ```
+
+> **ملاحظة مهمة:** عند استدعاء `/categories` بدون أي parameters، يتم إرجاع **الفئات الرئيسية فقط** (parentId = null) تلقائياً. للحصول على الفئات الفرعية، يجب تمرير `parentId` مع ID الفئة الأب.
 
 ### Response - نجاح
 
@@ -109,13 +119,64 @@ GET /categories?isFeatured=true
 ### كود Flutter
 
 ```dart
+/// جلب الفئات الرئيسية فقط (بدون parameters)
+Future<List<Category>> getRootCategories({bool? isFeatured}) async {
+  final queryParams = <String, dynamic>{};
+  if (isFeatured != null) {
+    queryParams['isFeatured'] = isFeatured.toString();
+  }
+
+  final response = await _dio.get(
+    '/categories',
+    queryParameters: queryParams,
+  );
+
+  final apiResponse = ApiResponse<List<Category>>.fromJson(
+    response.data,
+    (json) => ((json as Map<String, dynamic>)['data'] as List)
+        .map((item) => Category.fromJson(item))
+        .toList(),
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+
+/// جلب الفئات الفرعية لفئة معينة
+Future<List<Category>> getSubCategories(String parentId) async {
+  final response = await _dio.get(
+    '/categories',
+    queryParameters: {'parentId': parentId},
+  );
+
+  final apiResponse = ApiResponse<List<Category>>.fromJson(
+    response.data,
+    (json) => ((json as Map<String, dynamic>)['data'] as List)
+        .map((item) => Category.fromJson(item))
+        .toList(),
+  );
+
+  if (apiResponse.isSuccess) {
+    return apiResponse.data!;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+
+/// جلب الفئات مع فلترة متقدمة
 Future<List<Category>> getCategories({
-  String? parentId,
+  String? parentId, // null للفئات الرئيسية، أو ID للفئات الفرعية
   bool? isFeatured,
 }) async {
   final queryParams = <String, dynamic>{};
   if (parentId != null) {
-    queryParams['parentId'] = parentId == 'root' ? 'null' : parentId;
+    queryParams['parentId'] = parentId;
+  } else {
+    // بدون parentId، يعيد الفئات الرئيسية فقط (السلوك الافتراضي)
+    // لا حاجة لإضافة parentId=null صراحة
   }
   if (isFeatured != null) {
     queryParams['isFeatured'] = isFeatured.toString();
@@ -775,33 +836,38 @@ class CategorySEO {
    - `depth` يحدد مستوى التعمق (0 للرئيسية، 1 للفرعية، إلخ)
    - استخدم `/categories/tree` للحصول على الهيكل الكامل
 
-2. **اللغات:**
+2. **السلوك الافتراضي:**
+   - **مهم:** عند استدعاء `/categories` بدون parameters، يتم إرجاع **الفئات الرئيسية فقط** (parentId = null) تلقائياً
+   - للحصول على الفئات الفرعية، يجب تمرير `parentId` مع ID الفئة الأب
+   - هذا السلوك يضمن أن التطبيق يعرض الفئات الرئيسية أولاً، ثم يمكن التنقل للفئات الفرعية
+
+3. **اللغات:**
    - `name` و `nameEn`: الأسماء بالعربي والإنجليزي
    - `description` و `descriptionEn`: الأوصاف بالعربي والإنجليزي
    - استخدم `getName(locale)` و `getDescription(locale)` للحصول على النص المناسب
 
-3. **الصور والأيقونات:**
+4. **الصور والأيقونات:**
    - `icon` و `iconId`: أيقونة صغيرة (SVG أو PNG)
    - `image` و `imageId`: صورة كبيرة للتصنيف
    - `iconId` و `imageId` من مستودع الصور
 
-4. **SEO:**
+5. **SEO:**
    - `metaTitle`: عنوان الصفحة
    - `metaDescription`: وصف الصفحة
    - `metaKeywords`: كلمات مفتاحية للبحث
 
-5. **العرض في التطبيق:**
+6. **العرض في التطبيق:**
    - استخدم `order` للترتيب
    - `showInMenu`: عرض في القائمة الرئيسية
    - `isFeatured`: عرض في الصفحة الرئيسية
    - `productsCount`: عدد المنتجات في الفئة
    - `childrenCount`: عدد الفئات الفرعية
 
-6. **Cache:**
+7. **Cache:**
    - جميع الـ endpoints مع cache طويل (30 دقيقة - ساعة)
    - يمكنك cache البيانات محلياً أيضاً
 
-7. **التنقل:**
+8. **التنقل:**
    - عند النقر على تصنيف رئيسي، اعرض الفئات الفرعية
    - استخدم `slug` في الـ URLs
    - استخدم `path` للتنقل الهرمي
@@ -813,12 +879,15 @@ class CategorySEO {
 > ✅ **تم تحديث هذه الوثيقة** - مطابقة 100% للكود الفعلي
 
 ### التحديثات المضافة في هذه النسخة:
-1. ✅ **إضافة endpoint جديد:**
+1. ✅ **تحديث السلوك الافتراضي:**
+   - `GET /categories` بدون parameters يعيد **الفئات الرئيسية فقط** (parentId = null) تلقائياً
+   - هذا يضمن أن التطبيق يعرض الفئات الرئيسية أولاً
+2. ✅ **إضافة endpoint جديد:**
    - `GET /categories/:id/products` - جلب المنتجات حسب الفئة مع دعم الفئات الفرعية
-2. ✅ **إضافة parameters جديدة:**
-   - `includeSubcategories` - تضمين الفئات الفرعية (افتراضي: `true`)
+3. ✅ **إضافة parameters جديدة:**
+   - `includeSubcategories` - تضمين الفئات الفرعية في فلترة المنتجات (افتراضي: `true`)
    - `sortBy` و `sortOrder` - للترتيب المخصص
-3. ✅ **تحديث الترتيب الافتراضي:**
+4. ✅ **تحديث الترتيب الافتراضي:**
    - الأحدث أولاً (`createdAt: desc`) تلقائياً
 
 ### تم التحقق من:

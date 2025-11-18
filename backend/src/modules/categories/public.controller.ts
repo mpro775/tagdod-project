@@ -30,13 +30,13 @@ export class CategoriesPublicController {
   @Get()
   @ApiOperation({
     summary: 'الحصول على قائمة الفئات النشطة',
-    description: 'الحصول على قائمة بجميع الفئات النشطة مع إمكانية التصفية حسب الفئة الأب أو الفئات المميزة. النتائج مخزنة مؤقتاً لمدة 30 دقيقة.',
+    description: 'الحصول على قائمة بالفئات النشطة. بدون parameters، يعيد الفئات الرئيسية فقط (parentId = null). يمكن التصفية حسب الفئة الأب أو الفئات المميزة. النتائج مخزنة مؤقتاً لمدة 30 دقيقة.',
     tags: ['الفئات العامة']
   })
   @ApiQuery({
     name: 'parentId',
     required: false,
-    description: 'تصفية حسب الفئة الأب (null للفئات الجذرية)',
+    description: 'تصفية حسب الفئة الأب. بدون هذا المعامل، يتم إرجاع الفئات الرئيسية فقط (parentId = null). يمكن تمرير ID فئة للحصول على الفئات الفرعية، أو "null" صراحة للفئات الرئيسية.',
     example: '64a1b2c3d4e5f6789abcdef0'
   })
   @ApiQuery({
@@ -81,7 +81,9 @@ export class CategoriesPublicController {
     @Query('parentId') parentId?: string,
     @Query('isFeatured') isFeatured?: string,
   ) {
-    const pid = parentId === 'null' ? null : parentId;
+    // إذا لم يتم تمرير parentId، نعيد الفئات الرئيسية فقط (parentId = null)
+    // إذا تم تمرير parentId، نستخدم القيمة المحددة
+    const pid = parentId === undefined ? null : (parentId === 'null' ? null : parentId);
     const featured = isFeatured === 'true' ? true : undefined;
 
     const data = await this.categoriesService.listCategories({
