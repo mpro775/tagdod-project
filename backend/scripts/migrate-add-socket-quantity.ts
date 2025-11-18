@@ -7,6 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 /**
  * Migration script to update stock value to 200 for all Products and Variants
+ * and set trackStock to true for products with stock > 0
  */
 async function migrateUpdateStockTo200() {
   console.log('🚀 Starting migration: update stock to 200 for Products and Variants');
@@ -24,20 +25,36 @@ async function migrateUpdateStockTo200() {
     
     const db = client.db();
     
-    // 1. Update Products collection - set stock to 200 and trackStock to true for products with stock
-    console.log('📝 Updating Products collection...');
+    // 1. Update Products collection - set stock to 200 for all products
+    console.log('📝 Updating Products collection - setting stock to 200...');
     const productResult = await db.collection('products').updateMany(
       {},
       {
         $set: {
-          stock: 200,
+          stock: 200
+        }
+      }
+    );
+    console.log(`✅ Updated stock for ${productResult.modifiedCount} products (matched: ${productResult.matchedCount})`);
+    
+    // 2. Set trackStock to true for products with stock > 0
+    console.log('📝 Setting trackStock to true for products with stock > 0...');
+    const trackStockResult = await db.collection('products').updateMany(
+      {
+        $or: [
+          { stock: { $gt: 0 } },
+          { stock: { $exists: false } } // Products without stock field
+        ]
+      },
+      {
+        $set: {
           trackStock: true
         }
       }
     );
-    console.log(`✅ Updated ${productResult.modifiedCount} products (matched: ${productResult.matchedCount})`);
+    console.log(`✅ Set trackStock=true for ${trackStockResult.modifiedCount} products (matched: ${trackStockResult.matchedCount})`);
     
-    // 2. Update Variants collection - set stock to 200
+    // 3. Update Variants collection - set stock to 200
     console.log('📝 Updating Variants collection...');
     const variantResult = await db.collection('variants').updateMany(
       {},
@@ -50,7 +67,8 @@ async function migrateUpdateStockTo200() {
     console.log(`✅ Updated ${variantResult.modifiedCount} variants (matched: ${variantResult.matchedCount})`);
     
     console.log('\n✅ Migration completed successfully!');
-    console.log(`   - Products updated: ${productResult.modifiedCount}`);
+    console.log(`   - Products stock updated: ${productResult.modifiedCount}`);
+    console.log(`   - Products trackStock enabled: ${trackStockResult.modifiedCount}`);
     console.log(`   - Variants updated: ${variantResult.modifiedCount}`);
     
   } catch (error) {

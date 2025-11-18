@@ -217,18 +217,38 @@ export class AuthController {
     const ok = await this.otp.verifyOtp(normalizedPhone, dto.code, 'register');
     if (!ok) throw new InvalidOTPException({ phone: dto.phone });
 
-    // التحقق من أن المسمى الوظيفي موجود عند طلب أن يكون مهندساً
-    if (dto.capabilityRequest === 'engineer' && !dto.jobTitle) {
-      throw new AuthException(ErrorCode.AUTH_JOB_TITLE_REQUIRED);
-    }
-
     // البحث في قاعدة البيانات بالرقم كما هو (بدون +967) أو بالرقم المحول
     // نبحث بالرقم الأصلي أولاً، ثم بالرقم المحول إذا لم نجد
     let user = await this.userModel.findOne({ phone: dto.phone });
     if (!user) {
       user = await this.userModel.findOne({ phone: normalizedPhone });
     }
-    if (!user) {
+    
+    // إذا كان المستخدم موجوداً بالفعل، رفض محاولة إنشاء حساب جديد
+    if (user) {
+      // التحقق من حالة الحساب أولاً
+      if (user.status === UserStatus.SUSPENDED || user.status === UserStatus.DELETED) {
+        throw new AuthException(ErrorCode.AUTH_USER_BLOCKED, { phone: dto.phone });
+      }
+
+      // المستخدم موجود - تفعيل الحساب إذا كان PENDING فقط
+      if (user.status === UserStatus.PENDING) {
+        user.status = UserStatus.ACTIVE;
+        await user.save();
+        this.logger.log(`Account activated via OTP verification: ${normalizedPhone}`);
+      } else {
+        // المستخدم موجود بحالة غير PENDING - رفض محاولة التسجيل
+        this.logger.warn(`Registration attempt with existing phone: ${dto.phone} (status: ${user.status})`);
+        throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
+      }
+
+      // تحديث المسمى الوظيفي إذا كان المستخدم موجوداً ولكن ليس لديه مسمى
+      if (dto.capabilityRequest === 'engineer' && dto.jobTitle && !user.jobTitle) {
+        user.jobTitle = dto.jobTitle;
+        await user.save();
+      }
+    } else {
+      // المستخدم غير موجود - إنشاء حساب جديد
       const userData: {
         phone: string;
         firstName?: string;
@@ -276,24 +296,6 @@ export class AuthController {
         merchant_status: user.merchant_status || 'none',
         merchant_discount_percent: 0,
       });
-    } else {
-      // المستخدم موجود - تفعيل الحساب إذا كان PENDING
-      if (user.status === UserStatus.PENDING) {
-        user.status = UserStatus.ACTIVE;
-        await user.save();
-        this.logger.log(`Account activated via OTP verification: ${normalizedPhone}`);
-      }
-
-      // تحديث المسمى الوظيفي إذا كان المستخدم موجوداً ولكن ليس لديه مسمى
-      if (dto.capabilityRequest === 'engineer' && dto.jobTitle && !user.jobTitle) {
-        user.jobTitle = dto.jobTitle;
-        await user.save();
-      }
-
-      // التحقق من حالة الحساب
-      if (user.status === UserStatus.SUSPENDED || user.status === UserStatus.DELETED) {
-        throw new AuthException(ErrorCode.AUTH_USER_BLOCKED, { phone: dto.phone });
-      }
     }
 
     // مزامنة المفضلات تلقائياً عند التسجيل
@@ -952,11 +954,6 @@ export class AuthController {
     if (existingUser) {
       this.logger.warn(`User signup failed - phone already exists: ${dto.phone}`);
       throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
-    }
-
-    // التحقق من صحة البيانات عند طلب أن يكون مهندساً
-    if (dto.capabilityRequest === 'engineer' && !dto.jobTitle) {
-      throw new AuthException(ErrorCode.AUTH_JOB_TITLE_REQUIRED);
     }
 
     // تشفير كلمة المرور

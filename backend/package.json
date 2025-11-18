@@ -36,7 +36,9 @@
     "db:backfill-product-timestamps": "ts-node scripts/backfill-product-timestamps.ts",
     "migration:full": "npm run migrate:capabilities && echo 'Migration completed. Run npm run migrate:cleanup to remove old data.'",
     "update:super-admin": "ts-node scripts/update-super-admin-permissions.ts",
-    "fix-nan-values": "ts-node scripts/fix-nan-stock-values.ts"
+    "fix-nan-values": "ts-node scripts/fix-nan-stock-values.ts",
+    "migrate:stock": "ts-node scripts/migrate-add-socket-quantity.ts",
+    "migrate:inventory-objectid": "ts-node scripts/migrate-inventory-to-objectid.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

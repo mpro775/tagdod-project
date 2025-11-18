@@ -29374,7 +29374,7 @@
           },
           "jobTitle": {
             "type": "string",
-            "description": "المسمى الوظيفي للمهندس (مطلوب إذا كان capabilityRequest = \"engineer\")",
+            "description": "المسمى الوظيفي للمهندس (اختياري)",
             "example": "مهندس ميكانيكي",
             "minLength": 3,
             "maxLength": 100
@@ -29610,7 +29610,7 @@
           },
           "jobTitle": {
             "type": "string",
-            "description": "المسمى الوظيفي للمهندس (مطلوب إذا كان capabilityRequest = \"engineer\")",
+            "description": "المسمى الوظيفي للمهندس (اختياري)",
             "example": "مهندس كهرباء",
             "minLength": 3,
             "maxLength": 100

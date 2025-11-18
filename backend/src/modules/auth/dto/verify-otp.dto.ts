@@ -59,12 +59,12 @@ export class VerifyOtpDto {
   @IsOptional() @IsIn(['engineer', 'merchant']) capabilityRequest?: 'engineer' | 'merchant';
 
   @ApiPropertyOptional({
-    description: 'المسمى الوظيفي للمهندس (مطلوب إذا كان capabilityRequest = "engineer")',
+    description: 'المسمى الوظيفي للمهندس (اختياري)',
     example: 'مهندس ميكانيكي',
     minLength: 3,
     maxLength: 100
   })
-  @IsOptional() @IsString() jobTitle?: string; // المسمى الوظيفي للمهندس (مطلوب إذا كان capabilityRequest = 'engineer')
+  @IsOptional() @IsString() jobTitle?: string; // المسمى الوظيفي للمهندس (اختياري)
 
   @ApiPropertyOptional({
     description: 'معرف الجهاز للمزامنة التلقائية للمفضلات',

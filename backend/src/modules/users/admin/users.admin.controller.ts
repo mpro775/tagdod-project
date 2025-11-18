@@ -482,9 +482,6 @@ export class UsersAdminController {
 
     // معالجة طلبات القدرات - تحديث userData مباشرة
     if (dto.capabilityRequest === 'engineer') {
-      if (!dto.jobTitle) {
-        throw new AuthException(ErrorCode.AUTH_JOB_TITLE_REQUIRED);
-      }
       userData.engineer_capable = true;
       userData.engineer_status = CapabilityStatus.APPROVED;
     }

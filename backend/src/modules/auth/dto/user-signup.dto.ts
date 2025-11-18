@@ -84,14 +84,13 @@ export class UserSignupDto {
   capabilityRequest?: 'engineer' | 'merchant';
 
   @ApiPropertyOptional({
-    description: 'المسمى الوظيفي للمهندس (مطلوب إذا كان capabilityRequest = "engineer")',
+    description: 'المسمى الوظيفي للمهندس (اختياري)',
     example: 'مهندس كهرباء',
     minLength: 3,
     maxLength: 100,
   })
   @IsOptional()
   @IsString({ message: 'المسمى الوظيفي يجب أن يكون نصاً' })
-  @MinLength(3, { message: 'المسمى الوظيفي يجب أن يكون 3 أحرف على الأقل' })
   @MaxLength(100, { message: 'المسمى الوظيفي يجب أن يكون أقل من 100 حرف' })
   jobTitle?: string;
 
