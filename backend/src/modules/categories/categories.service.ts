@@ -543,6 +543,68 @@ export class CategoriesService {
     return false;
   }
 
+  // ==================== جلب جميع الفئات الفرعية (Descendants) ====================
+  /**
+   * جلب جميع الفئات الفرعية (الأطفال والأحفاد) لفئة معينة بشكل recursive
+   * يستخدم aggregation pipeline لتحسين الأداء
+   * @param categoryId - معرف الفئة الرئيسية
+   * @param includeSelf - هل يتم تضمين الفئة نفسها في النتائج (افتراضي: true)
+   * @returns قائمة بمعرفات جميع الفئات الفرعية
+   */
+  async getCategoryDescendants(categoryId: string, includeSelf: boolean = true): Promise<string[]> {
+    const categoryIds: string[] = [];
+    
+    if (includeSelf) {
+      categoryIds.push(categoryId);
+    }
+
+    // استخدام recursive aggregation لتحسين الأداء
+    const objectId = Types.ObjectId.isValid(categoryId) 
+      ? new Types.ObjectId(categoryId) 
+      : categoryId;
+
+    // جلب جميع الفئات الفرعية باستخدام aggregation
+    const descendants = await this.categoryModel.aggregate([
+      {
+        $match: {
+          _id: objectId,
+          deletedAt: null,
+          isActive: true,
+        },
+      },
+      {
+        $graphLookup: {
+          from: 'categories',
+          startWith: '$_id',
+          connectFromField: '_id',
+          connectToField: 'parentId',
+          as: 'descendants',
+          restrictSearchWithMatch: {
+            deletedAt: null,
+            isActive: true,
+          },
+        },
+      },
+      {
+        $project: {
+          descendants: {
+            $map: {
+              input: '$descendants',
+              as: 'desc',
+              in: { $toString: '$$desc._id' },
+            },
+          },
+        },
+      },
+    ]);
+
+    if (descendants.length > 0 && descendants[0].descendants) {
+      categoryIds.push(...descendants[0].descendants);
+    }
+
+    return categoryIds;
+  }
+
 
   // ==================== Cache Versioning ====================
   private async getCacheVersion(): Promise<number> {

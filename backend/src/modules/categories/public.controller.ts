@@ -256,6 +256,13 @@ export class CategoriesPublicController {
   })
   @ApiNotFoundResponse({ description: 'الفئة غير موجودة أو غير نشطة' })
   @ApiQuery({
+    name: 'includeSubcategories',
+    required: false,
+    type: Boolean,
+    description: 'تضمين المنتجات من الفئات الفرعية (افتراضي: true)',
+    example: true,
+  })
+  @ApiQuery({
     name: 'force',
     required: false,
     type: Boolean,
@@ -278,6 +285,7 @@ export class CategoriesPublicController {
     @Query('isFeatured') isFeatured?: string,
     @Query('isNew') isNew?: string,
     @Query('currency') currency?: string,
+    @Query('includeSubcategories') includeSubcategories?: string,
     @Req() req?: { user?: { sub?: string; preferredCurrency?: string } },
   ) {
     // التحقق من وجود الفئة
@@ -288,7 +296,10 @@ export class CategoriesPublicController {
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
     const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    // جلب المنتجات العامة فقط
+    // تحديد ما إذا كان يجب تضمين الفئات الفرعية (افتراضي: true)
+    const includeSubcats = includeSubcategories === 'false' ? false : true;
+
+    // جلب المنتجات العامة مع الفئات الفرعية
     const result = await this.productService.list({
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
@@ -300,6 +311,7 @@ export class CategoriesPublicController {
       isFeatured: isFeatured === 'true' ? true : undefined,
       isNew: isNew === 'true' ? true : undefined,
       includeDeleted: false, // فقط المنتجات غير المحذوفة
+      includeSubcategories: includeSubcats, // تضمين الفئات الفرعية
     });
 
     const rawData = Array.isArray(result.data)

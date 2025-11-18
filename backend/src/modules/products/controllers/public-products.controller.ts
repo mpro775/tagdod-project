@@ -71,7 +71,13 @@ export class PublicProductsController {
     name: 'categoryId',
     required: false,
     type: String,
-    description: 'Filter by category ID',
+    description: 'Filter by category ID (includes subcategories by default)',
+  })
+  @ApiQuery({
+    name: 'includeSubcategories',
+    required: false,
+    type: Boolean,
+    description: 'Include products from subcategories (default: true)',
   })
   @ApiQuery({ name: 'brandId', required: false, type: String, description: 'Filter by brand ID' })
   @ApiQuery({
@@ -119,6 +125,7 @@ export class PublicProductsController {
     @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('categoryId') categoryId?: string,
+    @Query('includeSubcategories') includeSubcategories?: string,
     @Query('brandId') brandId?: string,
     @Query('isFeatured') isFeatured?: string,
     @Query('isNew') isNew?: string,
@@ -130,6 +137,9 @@ export class PublicProductsController {
     );
     const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
+    // تحديد ما إذا كان يجب تضمين الفئات الفرعية (افتراضي: true)
+    const includeSubcats = includeSubcategories === 'false' ? false : true;
+
     const result = await this.productService.list({
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
@@ -139,6 +149,7 @@ export class PublicProductsController {
       status: ProductStatus.ACTIVE,
       isFeatured: isFeatured === 'true' ? true : undefined,
       isNew: isNew === 'true' ? true : undefined,
+      includeSubcategories: includeSubcats,
     });
 
     const rawData = Array.isArray(result.data)

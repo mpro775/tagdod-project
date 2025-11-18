@@ -333,6 +333,7 @@ export class ProductService {
     isFeatured?: boolean;
     isNew?: boolean;
     includeDeleted?: boolean;
+    includeSubcategories?: boolean;
   } = {}): Promise<{ data: Product[]; meta: { page: number; limit: number; total: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean } }> {
     const {
       page = 1,
@@ -345,6 +346,7 @@ export class ProductService {
       isFeatured,
       isNew,
       includeDeleted = false,
+      includeSubcategories = true,
     } = query;
 
     const skip = (page - 1) * limit;
@@ -359,18 +361,40 @@ export class ProductService {
     }
 
     if (categoryId) {
-      const candidates: Array<string | Types.ObjectId> = [];
+      let categoryIds: Array<string | Types.ObjectId> = [];
 
-      if (Types.ObjectId.isValid(categoryId)) {
-        const objectId = new Types.ObjectId(categoryId);
-        candidates.push(objectId);
-        candidates.push(objectId.toHexString());
+      // إذا كان includeSubcategories مفعل، نجلب جميع الفئات الفرعية
+      if (includeSubcategories) {
+        try {
+          // جلب جميع الفئات الفرعية (descendants)
+          const descendants = await this.categoriesService.getCategoryDescendants(categoryId, true);
+          categoryIds = descendants.map((id) => {
+            if (Types.ObjectId.isValid(id)) {
+              return new Types.ObjectId(id);
+            }
+            return id;
+          });
+        } catch (error) {
+          this.logger.warn(`Failed to get category descendants for ${categoryId}, using direct category only`, {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          // في حالة الخطأ، نستخدم الفئة المباشرة فقط
+          if (Types.ObjectId.isValid(categoryId)) {
+            categoryIds = [new Types.ObjectId(categoryId)];
+          } else {
+            categoryIds = [categoryId];
+          }
+        }
       } else {
-        candidates.push(categoryId);
+        // استخدام الفئة المباشرة فقط
+        if (Types.ObjectId.isValid(categoryId)) {
+          categoryIds = [new Types.ObjectId(categoryId)];
+        } else {
+          categoryIds = [categoryId];
+        }
       }
 
-      filter.categoryId =
-        candidates.length === 1 ? candidates[0] : { $in: candidates };
+      filter.categoryId = categoryIds.length === 1 ? categoryIds[0] : { $in: categoryIds };
     }
 
     if (brandId) {

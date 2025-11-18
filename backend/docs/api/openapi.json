@@ -3344,9 +3344,18 @@
             "name": "categoryId",
             "required": false,
             "in": "query",
-            "description": "Filter by category ID",
+            "description": "Filter by category ID (includes subcategories by default)",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "includeSubcategories",
+            "required": false,
+            "in": "query",
+            "description": "Include products from subcategories (default: true)",
+            "schema": {
+              "type": "boolean"
             }
           },
           {
@@ -7565,6 +7574,16 @@
             "schema": {
               "example": "SAR",
               "type": "string"
+            }
+          },
+          {
+            "name": "includeSubcategories",
+            "required": false,
+            "in": "query",
+            "description": "تضمين المنتجات من الفئات الفرعية (افتراضي: true)",
+            "schema": {
+              "example": true,
+              "type": "boolean"
             }
           },
           {
