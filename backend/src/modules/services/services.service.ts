@@ -28,11 +28,20 @@ interface PopulatedAddress {
   label?: string;
   line1?: string;
   city?: string;
+  coords?: { lat?: number; lng?: number } | null;
+}
+
+interface PopulatedCustomer {
+  _id: Types.ObjectId;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
 }
 
 type ServiceRequestPopulated = ServiceRequestLean & {
   engineerId?: PopulatedEngineer | Types.ObjectId | null;
   addressId?: PopulatedAddress | Types.ObjectId | null;
+  userId?: PopulatedCustomer | Types.ObjectId | null;
 };
 
 type EngineerOfferPopulated = EngineerOfferLean & {
@@ -205,7 +214,26 @@ export class ServicesService {
       .exec();
   }
 
-  async myRequestsWithOffersPending(userId: string) {
+  async myRequestsWithOffersPending(userId: string): Promise<Array<{
+    _id: Types.ObjectId;
+    userId: Types.ObjectId | string;
+    title: string;
+    type?: string;
+    description?: string;
+    images?: string[];
+    city: string;
+    status: string;
+    statusLabel: string;
+    scheduledAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    address: {
+      label: string | null;
+      line1: string | null;
+      city: string | null;
+    } | null;
+    offers: OfferListItem[];
+  }>> {
     const userObjectId = new Types.ObjectId(userId);
     const requests = (await this.requests
       .find({
@@ -292,7 +320,37 @@ export class ServicesService {
       .filter((item) => item.offers.length > 0);
   }
 
-  async myRequestsWithAcceptedOffers(userId: string, status?: string | string[]) {
+  async myRequestsWithAcceptedOffers(userId: string, status?: string | string[]): Promise<Array<{
+    _id: Types.ObjectId;
+    userId: Types.ObjectId | string;
+    title: string;
+    type?: string;
+    description?: string;
+    images?: string[];
+    city: string;
+    status: string;
+    statusLabel: string;
+    scheduledAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    address: {
+      label: string | null;
+      line1: string | null;
+      city: string | null;
+    } | null;
+    engineer: {
+      id: string | null;
+      name: string | null;
+      phone: string | null;
+      whatsapp: string | null;
+    } | null;
+    acceptedOffer: {
+      offerId: string;
+      amount: number;
+      note?: string;
+      amountYER: number;
+    } | null;
+  }>> {
     const userObjectId = new Types.ObjectId(userId);
     const statuses = Array.isArray(status)
       ? status
@@ -321,7 +379,11 @@ export class ServicesService {
 
       const addressData = this.extractAddress(doc.addressId);
 
-      const engineerId = engineerData ? String(engineerData._id) : doc.engineerId ? String(doc.engineerId) : null;
+      const engineerId: string | null = engineerData 
+        ? String(engineerData._id) 
+        : doc.engineerId 
+          ? String(doc.engineerId) 
+          : null;
 
       return {
         _id: doc._id,
@@ -345,7 +407,7 @@ export class ServicesService {
           : null,
         engineer: engineerData
           ? {
-              id: engineerId,
+              id: engineerId ?? String(engineerData._id),
               name: engineerName,
               phone: engineerPhone,
               whatsapp,
@@ -622,6 +684,13 @@ export class ServicesService {
     return address instanceof Types.ObjectId ? null : address;
   }
 
+  private extractCustomer(
+    customer: PopulatedCustomer | Types.ObjectId | null | undefined,
+  ): PopulatedCustomer | null {
+    if (!customer) return null;
+    return customer instanceof Types.ObjectId ? null : customer;
+  }
+
   async offer(engineerUserId: string, dto: CreateOfferDto) {
     const r = await this.requests.findById(dto.requestId);
     if (!r) return { error: 'REQUEST_NOT_FOUND' };
@@ -733,6 +802,78 @@ export class ServicesService {
       .populate('requestId')
       .sort({ createdAt: -1 })
       .lean();
+  }
+
+  // جلب تفاصيل الطلب للمهندس
+  async getRequestForEngineer(engineerUserId: string, requestId: string) {
+    const request = await this.requests
+      .findById(requestId)
+      .populate('userId', 'firstName lastName phone')
+      .populate('addressId', 'label line1 city coords')
+      .lean<ServiceRequestPopulated | null>();
+
+    if (!request) {
+      return { error: 'REQUEST_NOT_FOUND' };
+    }
+
+    // جلب عرض المهندس إن وجد
+    const engineerOffer = await this.offers
+      .findOne({
+        requestId: request._id,
+        engineerId: new Types.ObjectId(engineerUserId),
+      })
+      .lean<EngineerOfferLean | null>();
+
+    const addressData = this.extractAddress(request.addressId);
+    const customerData = this.extractCustomer(request.userId);
+
+    return {
+      _id: request._id,
+      title: request.title,
+      type: request.type ?? null,
+      description: request.description ?? null,
+      images: request.images ?? [],
+      city: request.city,
+      status: request.status,
+      statusLabel: this.requestStatusLabel(request.status),
+      scheduledAt: request.scheduledAt ?? null,
+      createdAt: request.createdAt,
+      updatedAt: request.updatedAt,
+      location: request.location,
+      address: addressData
+        ? {
+            label: addressData.label ?? null,
+            line1: addressData.line1 ?? null,
+            city: addressData.city ?? null,
+            coords: addressData.coords ?? null,
+          }
+        : null,
+      customer: customerData
+        ? {
+            id: String(customerData._id),
+            name: customerData.firstName && customerData.lastName
+              ? `${customerData.firstName} ${customerData.lastName}`.trim()
+              : null,
+            phone: customerData.phone ?? null,
+            whatsapp: customerData.phone ? this.makeWhatsappLink(customerData.phone) : null,
+          }
+        : null,
+      engineerId: request.engineerId ? String(request.engineerId) : null,
+      acceptedOffer: request.acceptedOffer ?? null,
+      rating: request.rating ?? null,
+      distanceKm: engineerOffer?.distanceKm ?? null,
+      myOffer: engineerOffer
+        ? {
+            _id: engineerOffer._id,
+            amount: engineerOffer.amount,
+            note: engineerOffer.note ?? null,
+            status: engineerOffer.status,
+            statusLabel: this.offerStatusLabel(engineerOffer.status),
+            distanceKm: engineerOffer.distanceKm ?? null,
+            createdAt: engineerOffer.createdAt,
+          }
+        : null,
+    };
   }
 
   // ---- Admin - إدارة متقدمة

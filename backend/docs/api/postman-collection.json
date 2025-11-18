@@ -11522,6 +11522,34 @@
             },
             "description": "استرداد جميع العروض المقدمة من قبل الفني"
           }
+        },
+        {
+          "name": "تفاصيل طلب خدمة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/engineer/requests/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "engineer",
+                "requests",
+                "{id}"
+              ]
+            },
+            "description": "استرداد تفاصيل طلب خدمة محدد للمهندس"
+          }
         }
       ],
       "description": "Endpoints for خدمات-الفنيين functionality"

@@ -28,12 +28,13 @@
 8. [الطلبات القريبة](#8-الطلبات-القريبة)
    - [الطلبات في مدينتي](#الطلبات-في-مدينتي)
    - [جميع الطلبات المتاحة](#جميع-الطلبات-المتاحة)
-9. [تقديم عرض](#9-تقديم-عرض)
-10. [تحديث عرض](#10-تحديث-عرض)
+9. [تفاصيل طلب خدمة](#9-تفاصيل-طلب-خدمة)
+10. [تقديم عرض](#10-تقديم-عرض)
+11. [تحديث عرض](#11-تحديث-عرض)
     - [حذف عرض](#حذف-عرض)
-11. [عروضي](#11-عروضي)
-12. [بدء تنفيذ الطلب](#12-بدء-تنفيذ-الطلب)
-13. [إكمال الطلب](#13-إكمال-الطلب)
+12. [عروضي](#12-عروضي)
+13. [بدء تنفيذ الطلب](#13-بدء-تنفيذ-الطلب)
+14. [إكمال الطلب](#14-إكمال-الطلب)
 
 ---
 
@@ -762,7 +763,149 @@ Future<List<ServiceRequest>> getNearbyRequests({
 
 ---
 
-### 9. تقديم عرض
+### 9. تفاصيل طلب خدمة
+
+يسترجع المهندس تفاصيل طلب خدمة محدد بما في ذلك معلومات العميل والعنوان وعرضه إن وجد.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/services/engineer/requests/:id`
+- **Auth Required:** ✅ نعم (Engineer)
+- **Cache:** ❌ لا
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "_id": "64service123",
+      "title": "إصلاح جهاز تلفزيون",
+      "type": "repair",
+      "description": "شاشة التلفزيون تظهر خطوطاً بيضاء",
+      "images": [
+        "https://cdn.example.com/image1.jpg"
+      ],
+      "city": "صنعاء",
+      "status": "OPEN",
+      "statusLabel": "بانتظار العروض",
+      "scheduledAt": "2024-01-15T10:00:00.000Z",
+      "createdAt": "2024-01-15T09:00:00.000Z",
+      "updatedAt": "2024-01-15T09:00:00.000Z",
+      "location": {
+        "type": "Point",
+        "coordinates": [44.2019, 15.3695]
+      },
+      "address": {
+        "label": "المنزل",
+        "line1": "شارع الملك فيصل، صنعاء",
+        "city": "صنعاء",
+        "coords": {
+          "lat": 15.3695,
+          "lng": 44.2019
+        }
+      },
+      "customer": {
+        "id": "user123",
+        "name": "محمد أحمد",
+        "phone": "+967711234567",
+        "whatsapp": "https://wa.me/967711234567"
+      },
+      "engineerId": null,
+      "acceptedOffer": null,
+      "rating": null,
+      "distanceKm": 2.5,
+      "myOffer": {
+        "_id": "offer123",
+        "amount": 150.00,
+        "note": "سأصلح التلفزيون خلال 3 ساعات",
+        "status": "OFFERED",
+        "statusLabel": "عرض مقدم",
+        "distanceKm": 2.5,
+        "createdAt": "2024-01-15T11:00:00.000Z"
+      }
+    }
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
+}
+```
+
+> ℹ️ الحقل `myOffer` يحتوي على عرض المهندس الحالي على هذا الطلب إن وجد. إذا لم يقدم المهندس عرضاً بعد، يكون `null`.
+
+> ✅ **ميزة:** يتضمن الاستجابة معلومات العميل للتواصل المباشر (الاسم، الهاتف، رابط واتساب) والعنوان الكامل مع الإحداثيات.
+
+### Response - خطأ (404)
+
+```json
+{
+  "success": false,
+  "data": {
+    "data": {
+      "error": "REQUEST_NOT_FOUND"
+    }
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<ServiceRequestDetails> getRequestForEngineer(String requestId) async {
+  final response = await _dio.get('/services/engineer/requests/$requestId');
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return ServiceRequestDetails.fromJson(apiResponse.data!['data']);
+  } else {
+    final errorData = apiResponse.data!['data'] as Map<String, dynamic>?;
+    if (errorData?['error'] == 'REQUEST_NOT_FOUND') {
+      throw NotFoundException('Request not found');
+    }
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+### مثال الاستخدام في Flutter
+
+```dart
+// عرض تفاصيل الطلب للمهندس
+final requestDetails = await servicesService.getRequestForEngineer('64service123');
+
+// عرض معلومات العميل
+if (requestDetails.customer != null) {
+  print('Customer: ${requestDetails.customer!.name}');
+  print('Phone: ${requestDetails.customer!.phone}');
+  print('WhatsApp: ${requestDetails.customer!.whatsapp}');
+}
+
+// التحقق من وجود عرض سابق
+if (requestDetails.myOffer != null) {
+  print('You already submitted an offer: ${requestDetails.myOffer!.amount} YER');
+  print('Status: ${requestDetails.myOffer!.statusLabel}');
+} else {
+  print('You haven\'t submitted an offer yet');
+}
+
+// عرض العنوان الكامل
+if (requestDetails.address != null) {
+  print('Address: ${requestDetails.address!.line1}');
+  print('Distance: ${requestDetails.distanceKm} km');
+}
+```
+
+> ✅ استخدم هذا الـ endpoint عند عرض شاشة تفاصيل الطلب للمهندس. يتضمن جميع المعلومات اللازمة للتواصل مع العميل ومعرفة موقع الطلب.
+
+---
+
+### 10. تقديم عرض
 
 يقدم المهندس عرض على طلب.
 
@@ -840,7 +983,7 @@ Future<EngineerOffer> createOffer({
 
 ---
 
-### 10. تحديث عرض
+### 11. تحديث عرض
 
 يحدث المهندس عرضه.
 
@@ -934,7 +1077,7 @@ Future<bool> deleteOffer(String offerId) async {
 
 ---
 
-### 11. عروضي
+### 12. عروضي
 
 يسترجع عروض المهندس.
 
@@ -996,7 +1139,7 @@ Future<List<EngineerOffer>> getMyOffers() async {
 
 ---
 
-### 12. بدء تنفيذ الطلب
+### 13. بدء تنفيذ الطلب
 
 يبدأ المهندس تنفيذ الطلب.
 
@@ -1045,7 +1188,7 @@ Future<bool> startServiceRequest(String requestId) async {
 
 ---
 
-### 13. إكمال الطلب
+### 14. إكمال الطلب
 
 يكمل المهندس تنفيذ الطلب.
 
@@ -1487,6 +1630,202 @@ class NearbyQueryDto {
     };
   }
 }
+
+// نموذج تفاصيل الطلب للمهندس (يشمل معلومات إضافية)
+class ServiceRequestDetails {
+  final String id;
+  final String title;
+  final String? type;
+  final String? description;
+  final List<String> images;
+  final String city;
+  final String status;
+  final String statusLabel;
+  final DateTime? scheduledAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final ServiceLocation location;
+  final ServiceRequestAddress? address;
+  final ServiceRequestCustomer? customer;
+  final String? engineerId;
+  final AcceptedOffer? acceptedOffer;
+  final ServiceRating? rating;
+  final double? distanceKm;
+  final EngineerMyOffer? myOffer;
+
+  ServiceRequestDetails({
+    required this.id,
+    required this.title,
+    this.type,
+    this.description,
+    required this.images,
+    required this.city,
+    required this.status,
+    required this.statusLabel,
+    this.scheduledAt,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.location,
+    this.address,
+    this.customer,
+    this.engineerId,
+    this.acceptedOffer,
+    this.rating,
+    this.distanceKm,
+    this.myOffer,
+  });
+
+  factory ServiceRequestDetails.fromJson(Map<String, dynamic> json) {
+    return ServiceRequestDetails(
+      id: json['_id'] ?? '',
+      title: json['title'] ?? '',
+      type: json['type'],
+      description: json['description'],
+      images: List<String>.from(json['images'] ?? []),
+      city: json['city'] ?? 'صنعاء',
+      status: json['status'] ?? 'OPEN',
+      statusLabel: json['statusLabel'] ?? '',
+      scheduledAt: json['scheduledAt'] != null ? DateTime.parse(json['scheduledAt']) : null,
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+      location: ServiceLocation.fromJson(json['location'] ?? {}),
+      address: json['address'] != null ? ServiceRequestAddress.fromJson(json['address']) : null,
+      customer: json['customer'] != null ? ServiceRequestCustomer.fromJson(json['customer']) : null,
+      engineerId: json['engineerId'],
+      acceptedOffer: json['acceptedOffer'] != null 
+          ? AcceptedOffer.fromJson(json['acceptedOffer']) 
+          : null,
+      rating: json['rating'] != null 
+          ? ServiceRating.fromJson(json['rating']) 
+          : null,
+      distanceKm: json['distanceKm']?.toDouble(),
+      myOffer: json['myOffer'] != null 
+          ? EngineerMyOffer.fromJson(json['myOffer']) 
+          : null,
+    );
+  }
+
+  bool get hasMyOffer => myOffer != null;
+  bool get hasCustomer => customer != null;
+  bool get hasAddress => address != null;
+  bool get hasDistance => distanceKm != null;
+}
+
+class ServiceRequestAddress {
+  final String? label;
+  final String? line1;
+  final String? city;
+  final AddressCoords? coords;
+
+  ServiceRequestAddress({
+    this.label,
+    this.line1,
+    this.city,
+    this.coords,
+  });
+
+  factory ServiceRequestAddress.fromJson(Map<String, dynamic> json) {
+    return ServiceRequestAddress(
+      label: json['label'],
+      line1: json['line1'],
+      city: json['city'],
+      coords: json['coords'] != null ? AddressCoords.fromJson(json['coords']) : null,
+    );
+  }
+
+  String get fullAddress {
+    final parts = <String>[];
+    if (line1 != null && line1!.isNotEmpty) parts.add(line1!);
+    if (city != null && city!.isNotEmpty) parts.add(city!);
+    return parts.join('، ');
+  }
+}
+
+class AddressCoords {
+  final double? lat;
+  final double? lng;
+
+  AddressCoords({
+    this.lat,
+    this.lng,
+  });
+
+  factory AddressCoords.fromJson(Map<String, dynamic> json) {
+    return AddressCoords(
+      lat: json['lat']?.toDouble(),
+      lng: json['lng']?.toDouble(),
+    );
+  }
+
+  bool get isValid => lat != null && lng != null;
+}
+
+class ServiceRequestCustomer {
+  final String? id;
+  final String? name;
+  final String? phone;
+  final String? whatsapp;
+
+  ServiceRequestCustomer({
+    this.id,
+    this.name,
+    this.phone,
+    this.whatsapp,
+  });
+
+  factory ServiceRequestCustomer.fromJson(Map<String, dynamic> json) {
+    return ServiceRequestCustomer(
+      id: json['id'],
+      name: json['name'],
+      phone: json['phone'],
+      whatsapp: json['whatsapp'],
+    );
+  }
+
+  bool get hasContactInfo => phone != null && phone!.isNotEmpty;
+  bool get hasWhatsapp => whatsapp != null && whatsapp!.isNotEmpty;
+}
+
+class EngineerMyOffer {
+  final String id;
+  final double amount;
+  final String? note;
+  final String status;
+  final String statusLabel;
+  final double? distanceKm;
+  final DateTime createdAt;
+
+  EngineerMyOffer({
+    required this.id,
+    required this.amount,
+    this.note,
+    required this.status,
+    required this.statusLabel,
+    this.distanceKm,
+    required this.createdAt,
+  });
+
+  factory EngineerMyOffer.fromJson(Map<String, dynamic> json) {
+    return EngineerMyOffer(
+      id: json['_id'] ?? '',
+      amount: (json['amount'] ?? 0).toDouble(),
+      note: json['note'],
+      status: json['status'] ?? 'OFFERED',
+      statusLabel: json['statusLabel'] ?? '',
+      distanceKm: json['distanceKm']?.toDouble(),
+      createdAt: DateTime.parse(json['createdAt']),
+    );
+  }
+
+  bool get isOffered => status == 'OFFERED';
+  bool get isAccepted => status == 'ACCEPTED';
+  bool get isRejected => status == 'REJECTED';
+  bool get isCancelled => status == 'CANCELLED';
+  bool get hasNote => note != null && note!.isNotEmpty;
+  bool get hasDistance => distanceKm != null;
+  String get formattedAmount => '${amount.toStringAsFixed(0)} ريال';
+  String get formattedDistance => hasDistance ? '${distanceKm!.toStringAsFixed(1)} كم' : 'غير محدد';
+}
 ```
 
 ---
@@ -1543,38 +1882,45 @@ class NearbyQueryDto {
    - `REJECTED`: تم رفضه
    - `CANCELLED`: تم إلغاؤه
 
-8. **تنفيذ الطلب:**
+8. **تفاصيل الطلب:**
+   - يمكن للمهندس رؤية تفاصيل أي طلب متاح
+   - يتضمن معلومات العميل للتواصل المباشر
+   - يتضمن العنوان الكامل مع الإحداثيات
+   - يعرض عرض المهندس الحالي إن وجد (`myOffer`)
+   - يعرض المسافة من موقع الطلب
+
+9. **تنفيذ الطلب:**
    - `start`: بدء التنفيذ
    - `complete`: إكمال التنفيذ
    - يجب أن يكون المهندس معين على الطلب
 
 ### البيانات والهيكل
 
-9. **الموقع:**
+10. **الموقع:**
    - `location`: إحداثيات جغرافية (GeoJSON)
    - `coordinates`: [longitude, latitude]
    - `hasCoordinates`: التحقق من وجود الإحداثيات
 
-10. **العرض المقبول:**
+11. **العرض المقبول:**
     - `acceptedOffer`: تفاصيل العرض المقبول
     - `offerId`: معرف العرض
     - `amount`: المبلغ
     - `note`: ملاحظة
 
-11. **التقييم:**
+12. **التقييم:**
     - `rating`: تقييم الخدمة
     - `score`: النقاط (1-5)
     - `comment`: التعليق
     - `at`: وقت التقييم
 
-12. **ملاحظات الأدمن:**
+13. **ملاحظات الأدمن:**
     - `adminNotes`: ملاحظات إدارية
     - `note`: نص الملاحظة
     - `at`: وقت إضافة الملاحظة
 
 ### الوظائف المساعدة
 
-13. **حالات الطلب:**
+14. **حالات الطلب:**
     - `isOpen`: مفتوح
     - `isOffersCollecting`: جمع العروض
     - `isAssigned`: معين
@@ -1583,7 +1929,7 @@ class NearbyQueryDto {
     - `isRated`: تم التقييم
     - `isCancelled`: ملغي
 
-14. **البيانات:**
+15. **البيانات:**
     - `hasType`: له نوع
     - `hasDescription`: له وصف
     - `hasImages`: له صور
@@ -1594,13 +1940,13 @@ class NearbyQueryDto {
     - `hasRating`: له تقييم
     - `hasAdminNotes`: له ملاحظات إدارية
 
-15. **الصلاحيات:**
+16. **الصلاحيات:**
     - `canBeCancelled`: يمكن إلغاؤه
     - `canAcceptOffers`: يمكن قبول العروض
     - `canBeRated`: يمكن تقييمه
     - `isActive`: نشط
 
-16. **العروض:**
+17. **العروض:**
     - `isOffered`: تم تقديمه
     - `isAccepted`: تم قبوله
     - `isRejected`: تم رفضه
@@ -1610,14 +1956,14 @@ class NearbyQueryDto {
     - `isActive`: نشط
     - `isFinal`: نهائي
 
-17. **التنسيق:**
+18. **التنسيق:**
     - `formattedAmount`: المبلغ منسق
     - `formattedDistance`: المسافة منسقة
     - `longitude`: خط الطول
     - `latitude`: خط العرض
     - `hasCoordinates`: له إحداثيات
 
-18. **الاستخدام:**
+19. **الاستخدام:**
     - استخدم `CreateServiceRequestDto` لإنشاء طلب
     - استخدم `CreateOfferDto` لتقديم عرض
     - استخدم `UpdateOfferDto` لتحديث عرض
@@ -1625,12 +1971,12 @@ class NearbyQueryDto {
     - استخدم `RateServiceDto` لتقييم خدمة
     - استخدم `NearbyQueryDto` للبحث القريب
 
-19. **الأمان:**
+20. **الأمان:**
     - يجب أن يكون المستخدم مسجل كمهندس للوصول لـ Engineer endpoints
     - يجب أن يكون المستخدم صاحب الطلب للوصول لتفاصيله
     - يجب أن يكون المهندس معين على الطلب لتنفيذه
 
-20. **الأداء:**
+21. **الأداء:**
     - يتم ترتيب الطلبات القريبة حسب المسافة
     - يتم ترتيب العروض حسب المسافة والسعر
     - يتم حفظ الإحداثيات في قاعدة البيانات للبحث السريع
@@ -1650,6 +1996,7 @@ class NearbyQueryDto {
 4. ✅ تحديث جميع return types - توثيق الحقول الفعلية المعادة من الـ Backend (بما في ذلك قيم `ok`)
 5. ✅ إزالة جميع الـ Cache flags (لا يوجد caching في endpoints الفعلية)
 6. ✅ **تحديث نظام المدن اليمنية** - فلترة الطلبات حسب المدينة تلقائياً اعتماداً على العنوان
+7. ✅ **إضافة endpoint جديد للمهندسين** - `GET /services/engineer/requests/:id` لعرض تفاصيل الطلب مع معلومات العميل والعنوان وعرض المهندس الحالي
 
 **Endpoints للعملاء (Customers):**
 - `POST /services/customer` - إنشاء طلب
@@ -1662,8 +2009,12 @@ class NearbyQueryDto {
 
 **Endpoints للمهندسين (Engineers):**
 - `GET /services/engineer/requests/nearby` - الطلبات القريبة
+- `GET /services/engineer/requests/city` - الطلبات في مدينتي
+- `GET /services/engineer/requests/all` - جميع الطلبات المتاحة
+- `GET /services/engineer/requests/:id` - تفاصيل طلب خدمة ✅ جديد
 - `POST /services/engineer/offers` - تقديم عرض
 - `PATCH /services/engineer/offers/:id` - تحديث عرض
+- `DELETE /services/engineer/offers/:id` - حذف عرض
 - `GET /services/engineer/offers/my` - عروضي
 - `POST /services/engineer/requests/:id/start` - بدء تنفيذ
 - `POST /services/engineer/requests/:id/complete` - إكمال الطلب

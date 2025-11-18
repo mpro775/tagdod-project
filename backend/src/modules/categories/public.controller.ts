@@ -318,6 +318,10 @@ export class CategoriesPublicController {
     const includeSubcats = includeSubcategories === 'false' ? false : true;
 
     // جلب المنتجات العامة مع الفئات الفرعية
+    // ملاحظة: إذا لم يتم العثور على منتجات، قد تكون المشكلة في:
+    // 1. المنتجات غير نشطة (isActive = false)
+    // 2. المنتجات محذوفة (deletedAt != null)
+    // 3. status != ACTIVE
     const result = await this.productService.list({
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,

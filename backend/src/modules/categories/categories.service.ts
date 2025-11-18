@@ -554,52 +554,91 @@ export class CategoriesService {
   async getCategoryDescendants(categoryId: string, includeSelf: boolean = true): Promise<string[]> {
     const categoryIds: string[] = [];
     
+    // استخدام recursive aggregation لتحسين الأداء
+    if (!Types.ObjectId.isValid(categoryId)) {
+      this.logger.warn(`Invalid categoryId format: ${categoryId}`);
+      // إذا كان categoryId غير صالح، نعيده فقط إذا كان includeSelf = true
+      if (includeSelf) {
+        return [categoryId];
+      }
+      return [];
+    }
+
+    const objectId = new Types.ObjectId(categoryId);
+
+    // التحقق من وجود الفئة أولاً
+    const categoryExists = await this.categoryModel.findOne({
+      _id: objectId,
+      deletedAt: null,
+      isActive: true,
+    }).select('_id').lean();
+
+    if (!categoryExists) {
+      this.logger.warn(`Category not found or inactive: ${categoryId}`);
+      // إذا لم توجد الفئة، نعيدها فقط إذا كان includeSelf = true
+      if (includeSelf) {
+        return [categoryId];
+      }
+      return [];
+    }
+
+    // إضافة الفئة نفسها إذا كان includeSelf = true
     if (includeSelf) {
       categoryIds.push(categoryId);
     }
 
-    // استخدام recursive aggregation لتحسين الأداء
-    const objectId = Types.ObjectId.isValid(categoryId) 
-      ? new Types.ObjectId(categoryId) 
-      : categoryId;
-
     // جلب جميع الفئات الفرعية باستخدام aggregation
-    const descendants = await this.categoryModel.aggregate([
-      {
-        $match: {
-          _id: objectId,
-          deletedAt: null,
-          isActive: true,
-        },
-      },
-      {
-        $graphLookup: {
-          from: 'categories',
-          startWith: '$_id',
-          connectFromField: '_id',
-          connectToField: 'parentId',
-          as: 'descendants',
-          restrictSearchWithMatch: {
+    try {
+      const descendants = await this.categoryModel.aggregate([
+        {
+          $match: {
+            _id: objectId,
             deletedAt: null,
             isActive: true,
           },
         },
-      },
-      {
-        $project: {
-          descendants: {
-            $map: {
-              input: '$descendants',
-              as: 'desc',
-              in: { $toString: '$$desc._id' },
+        {
+          $graphLookup: {
+            from: 'categories',
+            startWith: '$_id',
+            connectFromField: '_id',
+            connectToField: 'parentId',
+            as: 'descendants',
+            restrictSearchWithMatch: {
+              deletedAt: null,
+              isActive: true,
             },
           },
         },
-      },
-    ]);
+        {
+          $project: {
+            descendants: {
+              $map: {
+                input: '$descendants',
+                as: 'desc',
+                in: { $toString: '$$desc._id' },
+              },
+            },
+          },
+        },
+      ]);
 
-    if (descendants.length > 0 && descendants[0].descendants) {
-      categoryIds.push(...descendants[0].descendants);
+      if (descendants.length > 0 && descendants[0].descendants && Array.isArray(descendants[0].descendants)) {
+        const descendantIds = descendants[0].descendants as string[];
+        // إضافة الفئات الفرعية (تجنب التكرار)
+        for (const descId of descendantIds) {
+          if (!categoryIds.includes(descId)) {
+            categoryIds.push(descId);
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Error getting category descendants for ${categoryId}:`, error);
+      // في حالة الخطأ، نعيد الفئة نفسها فقط إذا كان includeSelf = true
+      if (includeSelf) {
+        return [categoryId];
+      }
+      return [];
     }
 
     return categoryIds;

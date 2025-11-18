@@ -23894,6 +23894,306 @@
         ]
       }
     },
+    "/api/v1/services/engineer/requests/{id}": {
+      "get": {
+        "operationId": "getRequest",
+        "summary": "تفاصيل طلب خدمة",
+        "description": "استرداد تفاصيل طلب خدمة محدد للمهندس",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف طلب الخدمة",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تفاصيل الطلب بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "_id": {
+                          "type": "string",
+                          "example": "req123",
+                          "description": "معرف الطلب"
+                        },
+                        "title": {
+                          "type": "string",
+                          "example": "إصلاح جهاز تلفزيون",
+                          "description": "عنوان الطلب"
+                        },
+                        "type": {
+                          "type": "string",
+                          "example": "repair",
+                          "description": "نوع الخدمة"
+                        },
+                        "description": {
+                          "type": "string",
+                          "example": "شاشة التلفزيون تظهر خطوطاً بيضاء",
+                          "description": "وصف المشكلة"
+                        },
+                        "images": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": [
+                            "https://cdn.example.com/image1.jpg"
+                          ],
+                          "description": "صور الطلب"
+                        },
+                        "city": {
+                          "type": "string",
+                          "example": "صنعاء",
+                          "description": "المدينة"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "OPEN",
+                          "description": "حالة الطلب"
+                        },
+                        "statusLabel": {
+                          "type": "string",
+                          "example": "بانتظار العروض",
+                          "description": "نص حالة الطلب"
+                        },
+                        "scheduledAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true,
+                          "example": "2024-01-15T10:00:00Z",
+                          "description": "تاريخ الجدولة"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-15T09:00:00Z"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-15T09:00:00Z"
+                        },
+                        "location": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "Point"
+                            },
+                            "coordinates": {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              },
+                              "example": [
+                                44.2019,
+                                15.3695
+                              ]
+                            }
+                          },
+                          "description": "إحداثيات الموقع"
+                        },
+                        "address": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "label": {
+                              "type": "string",
+                              "example": "المنزل",
+                              "description": "تسمية العنوان"
+                            },
+                            "line1": {
+                              "type": "string",
+                              "example": "شارع الملك فيصل، صنعاء",
+                              "description": "عنوان كامل"
+                            },
+                            "city": {
+                              "type": "string",
+                              "example": "صنعاء",
+                              "description": "المدينة"
+                            },
+                            "coords": {
+                              "type": "object",
+                              "nullable": true,
+                              "properties": {
+                                "lat": {
+                                  "type": "number",
+                                  "example": 15.3695
+                                },
+                                "lng": {
+                                  "type": "number",
+                                  "example": 44.2019
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "customer": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "user123",
+                              "description": "معرف العميل"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "محمد أحمد",
+                              "description": "اسم العميل"
+                            },
+                            "phone": {
+                              "type": "string",
+                              "example": "+967711234567",
+                              "description": "رقم الهاتف"
+                            },
+                            "whatsapp": {
+                              "type": "string",
+                              "example": "https://wa.me/967711234567",
+                              "description": "رابط واتساب",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "engineerId": {
+                          "type": "string",
+                          "nullable": true,
+                          "example": "eng123",
+                          "description": "معرف المهندس المعين"
+                        },
+                        "acceptedOffer": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "offerId": {
+                              "type": "string",
+                              "example": "offer123"
+                            },
+                            "amount": {
+                              "type": "number",
+                              "example": 150
+                            },
+                            "note": {
+                              "type": "string",
+                              "example": "ملاحظات",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "rating": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "score": {
+                              "type": "number",
+                              "example": 5
+                            },
+                            "comment": {
+                              "type": "string",
+                              "example": "خدمة ممتازة",
+                              "nullable": true
+                            },
+                            "at": {
+                              "type": "string",
+                              "format": "date-time",
+                              "nullable": true
+                            }
+                          }
+                        },
+                        "distanceKm": {
+                          "type": "number",
+                          "nullable": true,
+                          "example": 2.5,
+                          "description": "المسافة بالكيلومتر"
+                        },
+                        "myOffer": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "_id": {
+                              "type": "string",
+                              "example": "offer123"
+                            },
+                            "amount": {
+                              "type": "number",
+                              "example": 150
+                            },
+                            "note": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "status": {
+                              "type": "string",
+                              "example": "OFFERED"
+                            },
+                            "statusLabel": {
+                              "type": "string",
+                              "example": "عرض مقدم"
+                            },
+                            "distanceKm": {
+                              "type": "number",
+                              "nullable": true,
+                              "example": 2.5
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "description": "عرض المهندس الحالي إن وجد"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "غير مصرح لك بالوصول"
+          },
+          "404": {
+            "description": "لم يتم العثور على الطلب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "example": "REQUEST_NOT_FOUND"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "خدمات-الفنيين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/services/admin/requests": {
       "get": {
         "operationId": "list",

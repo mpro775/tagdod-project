@@ -372,6 +372,7 @@ export class ProductService {
         try {
           // جلب جميع الفئات الفرعية (descendants)
           const descendants = await this.categoriesService.getCategoryDescendants(categoryId, true);
+          this.logger.debug(`Category descendants for ${categoryId}:`, { count: descendants.length, ids: descendants });
           categoryIds = descendants.map((id) => {
             if (Types.ObjectId.isValid(id)) {
               return new Types.ObjectId(id);
@@ -398,11 +399,64 @@ export class ProductService {
         }
       }
 
-      filter.categoryId = categoryIds.length === 1 ? categoryIds[0] : { $in: categoryIds };
+      this.logger.debug(`Filtering products by categoryIds:`, { 
+        categoryId, 
+        categoryIdsCount: categoryIds.length,
+        categoryIds: categoryIds.map(id => id.toString()),
+        includeSubcategories 
+      });
+
+      // تحويل جميع IDs إلى ObjectId للتأكد من التطابق
+      const objectIds = categoryIds.map((id) => {
+        if (id instanceof Types.ObjectId) {
+          return id;
+        }
+        if (Types.ObjectId.isValid(String(id))) {
+          return new Types.ObjectId(String(id));
+        }
+        this.logger.warn(`Invalid categoryId format: ${id}`);
+        return id;
+      });
+
+      this.logger.debug(`Converted categoryIds to ObjectIds:`, {
+        original: categoryIds.map(id => String(id)),
+        converted: objectIds.map(id => id instanceof Types.ObjectId ? id.toString() : String(id)),
+      });
+
+      // التأكد من أن جميع IDs هي ObjectId صحيحة
+      const validObjectIds = objectIds.filter(id => id instanceof Types.ObjectId);
+      
+      if (validObjectIds.length === 0) {
+        this.logger.warn(`No valid ObjectIds found for categoryId: ${categoryId}`);
+      } else {
+        // استخدام $in مع string فقط لأن MongoDB قد لا يطابق ObjectId مع string بشكل موثوق في $in
+        // المنتجات في قاعدة البيانات تحتوي على categoryId كـ string
+        const categoryIdStrs = validObjectIds.map(id => id.toString());
+        
+        // استخدام $in مع string فقط للتأكد من المطابقة
+        if (categoryIdStrs.length === 1) {
+          filter.categoryId = categoryIdStrs[0];
+        } else {
+          filter.categoryId = { $in: categoryIdStrs };
+        }
+      }
+      
+      this.logger.debug(`Final categoryId filter:`, {
+        type: validObjectIds.length === 1 ? 'single' : 'array',
+        value: validObjectIds.length === 1 
+          ? validObjectIds[0].toString()
+          : validObjectIds.map(id => id.toString()),
+        usingInWithBothTypes: true,
+      });
     }
 
     if (brandId) {
-      filter.brandId = brandId;
+      // تحويل brandId إلى ObjectId أيضاً للتأكد من التطابق
+      if (Types.ObjectId.isValid(brandId)) {
+        filter.brandId = new Types.ObjectId(brandId);
+      } else {
+        filter.brandId = brandId;
+      }
     }
 
     if (status) {
@@ -432,6 +486,60 @@ export class ProductService {
       sortCriteria = { createdAt: -1, order: 1 };
     }
 
+    // تحويل filter إلى format يمكن loggingه بشكل صحيح
+    const filterForLogging: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(filter)) {
+      if (key === '$and' || key === '$or') {
+        // معالجة خاصة لـ $and و $or
+        const arrayValue = value as unknown[];
+        filterForLogging[key] = arrayValue.map((item: unknown) => {
+          if (typeof item === 'object' && item !== null) {
+            const itemRecord = item as Record<string, unknown>;
+            const loggedItem: Record<string, unknown> = {};
+            for (const [subKey, subValue] of Object.entries(itemRecord)) {
+              if (subKey === '$or' || subKey === '$in') {
+                const subArray = subValue as unknown[];
+                loggedItem[subKey] = subArray.map((v: unknown) => {
+                  if (v instanceof Types.ObjectId) {
+                    return `ObjectId("${v.toString()}")`;
+                  } else if (typeof v === 'object' && v !== null && '$in' in v) {
+                    const inArray = (v as { $in: unknown[] }).$in;
+                    return {
+                      $in: inArray.map((iv: unknown) =>
+                        iv instanceof Types.ObjectId ? `ObjectId("${iv.toString()}")` : String(iv)
+                      )
+                    };
+                  }
+                  return String(v);
+                });
+              } else if (subValue instanceof Types.ObjectId) {
+                loggedItem[subKey] = `ObjectId("${subValue.toString()}")`;
+              } else {
+                loggedItem[subKey] = subValue;
+              }
+            }
+            return loggedItem;
+          }
+          return item;
+        });
+      } else if (value instanceof Types.ObjectId) {
+        filterForLogging[key] = `ObjectId("${value.toString()}")`;
+      } else if (typeof value === 'object' && value !== null && '$in' in value && Array.isArray(value.$in)) {
+        // معالجة $in operator
+        filterForLogging[key] = { 
+          $in: (value.$in as unknown[]).map((v: unknown) => 
+            v instanceof Types.ObjectId ? `ObjectId("${v.toString()}")` : String(v)
+          ) 
+        };
+      } else if (Array.isArray(value) && value.length > 0 && value[0] instanceof Types.ObjectId) {
+        filterForLogging[key] = value.map((v: Types.ObjectId) => `ObjectId("${v.toString()}")`);
+      } else {
+        filterForLogging[key] = value;
+      }
+    }
+    
+    this.logger.debug(`Product list filter:`, filterForLogging);
+
     const [data, total] = await Promise.all([
       this.productModel
         .find(filter)
@@ -444,6 +552,125 @@ export class ProductService {
         .lean(),
       this.productModel.countDocuments(filter),
     ]);
+
+    // إذا لم يتم العثور على منتجات، نتحقق من المنتجات بدون فلترة صارمة
+    // التحقق من وجود categoryId في filter أو في $and/$or
+    const hasCategoryFilter = !!filter.categoryId || 
+      (filter.$and && Array.isArray(filter.$and) && filter.$and.some((item: unknown) => {
+        if (typeof item === 'object' && item !== null) {
+          const itemRecord = item as Record<string, unknown>;
+          return '$or' in itemRecord || 'categoryId' in itemRecord;
+        }
+        return false;
+      })) ||
+      (filter.$or && Array.isArray(filter.$or) && filter.$or.some((item: unknown) => {
+        if (typeof item === 'object' && item !== null) {
+          const itemRecord = item as Record<string, unknown>;
+          return 'categoryId' in itemRecord;
+        }
+        return false;
+      }));
+    
+    if (total === 0 && hasCategoryFilter) {
+      let categoryIdForCheck: Types.ObjectId;
+      const categoryIdFilter = filter.categoryId;
+      
+      if (categoryIdFilter instanceof Types.ObjectId) {
+        categoryIdForCheck = categoryIdFilter;
+      } else if (categoryIdFilter && typeof categoryIdFilter === 'object' && '$in' in categoryIdFilter && Array.isArray(categoryIdFilter.$in)) {
+        // إذا كان $in operator، نستخدم أول ObjectId من المصفوفة
+        const inArray = categoryIdFilter.$in as unknown[];
+        const firstObjectId = inArray.find((id: unknown) => id instanceof Types.ObjectId);
+        if (firstObjectId instanceof Types.ObjectId) {
+          categoryIdForCheck = firstObjectId;
+        } else {
+          // إذا لم يكن هناك ObjectId، نستخدم أول عنصر ونحوله إلى ObjectId
+          categoryIdForCheck = new Types.ObjectId(String(inArray[0]));
+        }
+      } else if (categoryIdFilter) {
+        categoryIdForCheck = new Types.ObjectId(String(categoryIdFilter));
+      } else if (categoryId && Types.ObjectId.isValid(categoryId)) {
+        // إذا لم يكن هناك categoryId في الفلتر، نستخدم categoryId الأصلي من الـ query
+        categoryIdForCheck = new Types.ObjectId(categoryId);
+      } else {
+        // إذا لم يكن هناك categoryId صالح، نستخدم categoryId الأصلي كـ string
+        this.logger.warn(`Cannot determine categoryIdForCheck, skipping debug check`);
+        return {
+          data,
+          meta: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+            hasNextPage: page < Math.ceil(total / limit),
+            hasPrevPage: page > 1,
+          },
+        };
+      }
+      
+      // التحقق من المنتجات مع ObjectId
+      const productsWithObjectId = await this.productModel.countDocuments({
+        categoryId: categoryIdForCheck,
+      });
+      
+      // التحقق من المنتجات مع string (في حالة أن categoryId مخزن كـ string في قاعدة البيانات)
+      const categoryIdString = categoryIdForCheck.toString();
+      const productsWithString = await this.productModel.countDocuments({
+        categoryId: categoryIdString,
+      });
+      
+      // التحقق من المنتجات النشطة
+      const activeProductsWithObjectId = await this.productModel.countDocuments({
+        categoryId: categoryIdForCheck,
+        status: ProductStatus.ACTIVE,
+        isActive: true,
+        deletedAt: null,
+      });
+      
+      const activeProductsWithString = await this.productModel.countDocuments({
+        categoryId: categoryIdString,
+        status: ProductStatus.ACTIVE,
+        isActive: true,
+        deletedAt: null,
+      });
+      
+      // جلب عينة من منتج واحد لفحص نوع categoryId
+      const sampleProduct = await this.productModel.findOne({ categoryId: categoryIdForCheck }).lean();
+      let sampleCategoryIdType = 'N/A';
+      if (sampleProduct?.categoryId) {
+        const catId = sampleProduct.categoryId;
+        // التحقق من نوع categoryId
+        if (typeof catId === 'string') {
+          sampleCategoryIdType = 'string';
+        } else if (catId && typeof catId === 'object') {
+          // التحقق من خصائص ObjectId
+          const objId = catId as { constructor?: { name?: string }; _bsontype?: string };
+          if (objId.constructor?.name === 'ObjectId' || objId._bsontype === 'ObjectId') {
+            sampleCategoryIdType = 'ObjectId';
+          } else {
+            sampleCategoryIdType = typeof catId;
+          }
+        } else {
+          sampleCategoryIdType = typeof catId;
+        }
+      }
+      
+      this.logger.warn(`No products found with filters. Debug info:`, {
+        categoryId: categoryIdForCheck.toString(),
+        totalProductsInCategoryWithObjectId: productsWithObjectId,
+        totalProductsInCategoryWithString: productsWithString,
+        activeProductsInCategoryWithObjectId: activeProductsWithObjectId,
+        activeProductsInCategoryWithString: activeProductsWithString,
+        sampleCategoryIdType,
+        filter: filterForLogging,
+      });
+    }
+
+    this.logger.debug(`Product list result:`, { 
+      found: data.length, 
+      total, 
+      filter: filterForLogging
+    });
 
     return {
       data,
