@@ -48,12 +48,18 @@ export class ServicesPermissionGuard implements CanActivate {
         return true;
 
       case ServicePermission.ENGINEER:
-        // Check if user has engineer role or is verified engineer
-        return user.role === 'engineer' || user.isEngineer === true;
+        // Check if user has engineer role in roles array or is verified engineer
+        return (
+          (user.roles && Array.isArray(user.roles) && user.roles.includes('engineer')) ||
+          user.isEngineer === true
+        );
 
       case ServicePermission.ADMIN:
-        // Check if user has admin role
-        return user.role === 'admin' || user.isAdmin === true;
+        // Check if user has admin role in roles array or isAdmin flag
+        return (
+          (user.roles && Array.isArray(user.roles) && user.roles.includes('admin')) ||
+          user.isAdmin === true
+        );
 
       default:
         return false;
