@@ -18979,6 +18979,10 @@ servers:
     description: Development server
   - url: https://tagdod-project.onrender.com
     description: Production server
+  - url: http://api.allawzi.net
+    description: VPS Server
+  - url: https://api.allawzi.net
+    description: VPS Server (HTTPS)
 components:
   securitySchemes:
     JWT-auth:

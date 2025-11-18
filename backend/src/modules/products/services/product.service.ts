@@ -12,6 +12,7 @@ import {
 import { CacheService } from '../../../shared/cache/cache.service';
 import { CategoriesService } from '../../categories/categories.service';
 import { ProductPricingCalculatorService } from './product-pricing-calculator.service';
+import { VariantService } from './variant.service';
 
 @Injectable()
 export class ProductService {
@@ -23,6 +24,7 @@ export class ProductService {
     private cacheService: CacheService,
     private categoriesService: CategoriesService,
     private productPricingCalculator: ProductPricingCalculatorService,
+    private variantService: VariantService,
   ) {}
 
   // ==================== CRUD Operations ====================
@@ -124,32 +126,77 @@ export class ProductService {
       throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND, { productId: id, reason: 'deleted' });
     }
 
+    // استخراج الحقول المتعلقة بتوليد المتغيرات قبل التحديث
+    const autoGenerateVariants = (dto as any).autoGenerateVariants;
+    const variantDefaultPrice = (dto as any).variantDefaultPrice;
+    const variantDefaultStock = (dto as any).variantDefaultStock;
+    const overwriteExistingVariants = (dto as any).overwriteExistingVariants ?? false;
+
+    // إزالة الحقول المتعلقة بتوليد المتغيرات من dto لأنها ليست حقول في Product
+    const { autoGenerateVariants: _, variantDefaultPrice: __, variantDefaultStock: ___, overwriteExistingVariants: ____, ...productUpdateDto } = dto as any;
+
+    // التحقق من تغيير السمات
+    const oldAttributes = (product.attributes || []).map(String).sort();
+    const newAttributes = (productUpdateDto.attributes || product.attributes || []).map(String).sort();
+    const attributesChanged = JSON.stringify(oldAttributes) !== JSON.stringify(newAttributes);
+
     // تحديث الـ slug إذا تغير الاسم
-    if (dto.nameEn && dto.nameEn !== product.nameEn) {
-      dto.slug = slugify(dto.nameEn);
+    if (productUpdateDto.nameEn && productUpdateDto.nameEn !== product.nameEn) {
+      productUpdateDto.slug = slugify(productUpdateDto.nameEn);
     }
 
     // إذا تغيرت الفئة
     const oldCategoryId = product.categoryId;
-    if (dto.categoryId && String(oldCategoryId) !== String(dto.categoryId)) {
+    if (productUpdateDto.categoryId && String(oldCategoryId) !== String(productUpdateDto.categoryId)) {
       await this.categoriesService.incrementProductsCount(String(oldCategoryId), -1);
-      await this.categoriesService.incrementProductsCount(dto.categoryId, 1);
+      await this.categoriesService.incrementProductsCount(productUpdateDto.categoryId, 1);
     }
 
     const pricingFieldsTouched =
-      Object.prototype.hasOwnProperty.call(dto, 'basePriceUSD') ||
-      Object.prototype.hasOwnProperty.call(dto, 'compareAtPriceUSD') ||
-      Object.prototype.hasOwnProperty.call(dto, 'costPriceUSD');
+      Object.prototype.hasOwnProperty.call(productUpdateDto, 'basePriceUSD') ||
+      Object.prototype.hasOwnProperty.call(productUpdateDto, 'compareAtPriceUSD') ||
+      Object.prototype.hasOwnProperty.call(productUpdateDto, 'costPriceUSD');
 
     const pricingFields = pricingFieldsTouched
-      ? await this.buildDerivedPricingFields({ ...product.toObject(), ...dto })
+      ? await this.buildDerivedPricingFields({ ...product.toObject(), ...productUpdateDto })
       : {};
 
     await this.productModel.updateOne(
       { _id: id },
-      { $set: { ...dto, ...pricingFields } },
+      { $set: { ...productUpdateDto, ...pricingFields } },
     );
     await this.clearCache();
+
+    // توليد المتغيرات تلقائياً إذا تم تحديث السمات
+    const finalAttributes = productUpdateDto.attributes || product.attributes || [];
+    if (attributesChanged && finalAttributes.length > 0) {
+      const shouldAutoGenerate = autoGenerateVariants !== false; // افتراضياً true إذا لم يتم تحديده
+      
+      if (shouldAutoGenerate) {
+        try {
+          // استخدام القيم المحددة أو القيم الافتراضية من المنتج
+          const defaultPrice = variantDefaultPrice ?? productUpdateDto.basePriceUSD ?? product.basePriceUSD ?? 0;
+          const defaultStock = variantDefaultStock ?? productUpdateDto.stock ?? product.stock ?? 0;
+
+          if (defaultPrice > 0) {
+            await this.variantService.generateVariants(
+              id,
+              defaultPrice,
+              defaultStock,
+              overwriteExistingVariants,
+            );
+            this.logger.log(`Auto-generated variants for product ${id} after attributes update`);
+          } else {
+            this.logger.warn(`Skipping auto-generation for product ${id}: defaultPrice is 0 or not set`);
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorStack = error instanceof Error ? error.stack : undefined;
+          this.logger.error(`Failed to auto-generate variants for product ${id}: ${errorMessage}`, errorStack);
+          // لا نرمي الخطأ لأن التحديث تم بنجاح، فقط نسجل الخطأ
+        }
+      }
+    }
 
     return this.findById(id);
   }

@@ -89,6 +89,12 @@ export class UpdateProductDto {
   @IsOptional() @IsBoolean() useManualRating?: boolean;
   @IsOptional() @IsNumber() @Min(0) manualRating?: number;
   @IsOptional() @IsNumber() @Min(0) manualReviewsCount?: number;
+
+  // توليد المتغيرات تلقائياً عند تحديث السمات
+  @IsOptional() @IsBoolean() autoGenerateVariants?: boolean; // تفعيل/إيقاف التوليد التلقائي
+  @IsOptional() @IsNumber() @Min(0.01) variantDefaultPrice?: number; // السعر الافتراضي للمتغيرات
+  @IsOptional() @IsNumber() @Min(0) variantDefaultStock?: number; // المخزون الافتراضي للمتغيرات
+  @IsOptional() @IsBoolean() overwriteExistingVariants?: boolean; // الكتابة فوق المتغيرات الموجودة
 }
 
 export class ListProductsDto {

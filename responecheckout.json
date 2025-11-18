@@ -6,75 +6,118 @@
                 "pricingSummaryByCurrency": {
                     "USD": {
                         "currency": "USD",
-                        "itemsCount": 5,
-                        "subtotalBeforeDiscount": 316.33,
-                        "subtotal": 316.33,
+                        "itemsCount": 2,
+                        "subtotalBeforeDiscount": 166.99,
+                        "subtotal": 116.99,
                         "merchantDiscountAmount": 0,
-                        "couponDiscount": 0,
+                        "couponDiscount": 50,
                         "promotionDiscount": 0,
                         "autoDiscount": 0,
-                        "totalDiscount": 0,
-                        "total": 316.33
+                        "totalDiscount": 50,
+                        "total": 66.99
                     },
                     "YER": {
                         "currency": "YER",
-                        "itemsCount": 5,
-                        "subtotalBeforeDiscount": 167655,
-                        "subtotal": 167655,
+                        "itemsCount": 2,
+                        "subtotalBeforeDiscount": 88505,
+                        "subtotal": 62005,
                         "merchantDiscountAmount": 0,
-                        "couponDiscount": 0,
+                        "couponDiscount": 26500,
                         "promotionDiscount": 0,
                         "autoDiscount": 0,
-                        "totalDiscount": 0,
-                        "total": 167655
+                        "totalDiscount": 26500,
+                        "total": 35505
                     },
                     "SAR": {
                         "currency": "SAR",
-                        "itemsCount": 5,
-                        "subtotalBeforeDiscount": 1186.24,
-                        "subtotal": 1186.24,
+                        "itemsCount": 2,
+                        "subtotalBeforeDiscount": 626.21,
+                        "subtotal": 438.71,
                         "merchantDiscountAmount": 0,
-                        "couponDiscount": 0,
+                        "couponDiscount": 187.5,
                         "promotionDiscount": 0,
                         "autoDiscount": 0,
-                        "totalDiscount": 0,
-                        "total": 1186.24
+                        "totalDiscount": 187.5,
+                        "total": 251.21
                     }
                 },
                 "totalsInAllCurrencies": {
                     "USD": {
-                        "subtotal": 316.33,
+                        "subtotal": 116.99,
                         "shippingCost": 0,
                         "tax": 0,
-                        "totalDiscount": 183.17,
-                        "total": 133.17
+                        "totalDiscount": 50,
+                        "total": 66.99
                     },
                     "YER": {
-                        "subtotal": 167655,
+                        "subtotal": 62005,
                         "shippingCost": 0,
                         "tax": 0,
-                        "totalDiscount": 97077,
-                        "total": 70577
+                        "totalDiscount": 26500,
+                        "total": 35505
                     },
                     "SAR": {
-                        "subtotal": 1186.24,
+                        "subtotal": 438.71,
                         "shippingCost": 0,
                         "tax": 0,
-                        "totalDiscount": 686.87,
-                        "total": 499.37
+                        "totalDiscount": 187.5,
+                        "total": 251.21
                     }
                 },
                 "meta": {
-                    "count": 3,
-                    "quantity": 5,
+                    "count": 2,
+                    "quantity": 2,
                     "merchantDiscountPercent": 0,
                     "merchantDiscountAmount": 0
                 },
                 "items": [
                     {
+                        "itemId": "variant-690dd8c5567068e48ce625e2",
+                        "variantId": "690dd8c5567068e48ce625e2",
+                        "productId": "690dd8c2567068e48ce625d1",
+                        "qty": 1,
+                        "unit": {
+                            "base": 17,
+                            "final": 17,
+                            "finalBeforeDiscount": 17,
+                            "finalBeforeCoupon": 17,
+                            "couponDiscount": 0,
+                            "currency": "USD",
+                            "appliedRule": null
+                        },
+                        "lineTotal": 17,
+                        "pricing": {
+                            "currency": "USD",
+                            "basePrice": 17,
+                            "finalPrice": 17,
+                            "discount": 0
+                        },
+                        "snapshot": {
+                            "name": "علبة التثبيت الجداري YCS1",
+                            "slug": "ycs1-enclosure",
+                            "image": "https://tagadod.b-cdn.net/media/product/803de19f-5243-4f90-a5c0-03c7b93a80f7-68ce7230bb189_Remove background project (58).png",
+                            "brandId": "68ffa9a355755bbf62105206",
+                            "categoryId": "690c8fafab011a233776cb3c",
+                            "averageRating": 0,
+                            "ratingValue": 4,
+                            "ratingSource": "manual",
+                            "reviewsCount": 0,
+                            "variantAttributes": [
+                                {
+                                    "attributeId": "690dd66c567068e48ce624f6",
+                                    "attributeName": "مقاسات YCS1:",
+                                    "attributeNameEn": "مقاسات YCS1:",
+                                    "valueId": "690dd6eb567068e48ce62516",
+                                    "value": "20 × 30 × 20 سم",
+                                    "valueEn": "20 × 30 × 20 سم"
+                                }
+                            ]
+                        }
+                    },
+                    {
                         "itemId": "product-690d2625567068e48ce60873",
                         "productId": "690d2625567068e48ce60873",
-                        "qty": 3,
+                        "qty": 1,
                         "unit": {
                             "base": 99.99,
                             "final": 99.99,
@@ -84,7 +127,7 @@
                             "currency": "USD",
                             "appliedRule": null
                         },
-                        "lineTotal": 299.97,
+                        "lineTotal": 99.99,
                         "pricing": {
                             "currency": "USD",
                             "basePrice": 99.99,
@@ -102,105 +145,19 @@
                             "ratingSource": "manual",
                             "reviewsCount": 0
                         }
-                    },
-                    {
-                        "itemId": "variant-690d285b567068e48ce60930",
-                        "variantId": "690d285b567068e48ce60930",
-                        "productId": "690d2858567068e48ce6091f",
-                        "qty": 1,
-                        "unit": {
-                            "base": 6.86,
-                            "final": 6.86,
-                            "finalBeforeDiscount": 6.86,
-                            "finalBeforeCoupon": 6.86,
-                            "couponDiscount": 0,
-                            "currency": "USD",
-                            "appliedRule": null
-                        },
-                        "lineTotal": 6.86,
-                        "pricing": {
-                            "currency": "USD",
-                            "basePrice": 6.86,
-                            "finalPrice": 6.86,
-                            "discount": 0
-                        },
-                        "snapshot": {
-                            "name": "محول التيار MSQ ",
-                            "slug": "msq-current-transformer",
-                            "image": "https://tagadod.b-cdn.net/media/product/bb2a3e56-d41b-46b8-9a58-d4cef9bbe004-68ca93d4f2bce_Remove background project (3).png",
-                            "brandId": "68ffa9a355755bbf62105206",
-                            "categoryId": "690c90c7ab011a233776cb78",
-                            "averageRating": 0,
-                            "ratingValue": 0,
-                            "ratingSource": "average",
-                            "reviewsCount": 0,
-                            "variantAttributes": [
-                                {
-                                    "attributeId": "690d26ae567068e48ce60895",
-                                    "attributeName": "قدرات MSQ :",
-                                    "attributeNameEn": "قدرات MSQ :",
-                                    "valueId": "690d2707567068e48ce608ad",
-                                    "value": "400/5 امبير",
-                                    "valueEn": "400/5 امبير"
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "itemId": "variant-690d285c567068e48ce60935",
-                        "variantId": "690d285c567068e48ce60935",
-                        "productId": "690d2858567068e48ce6091f",
-                        "qty": 1,
-                        "unit": {
-                            "base": 9.5,
-                            "final": 9.5,
-                            "finalBeforeDiscount": 9.5,
-                            "finalBeforeCoupon": 9.5,
-                            "couponDiscount": 0,
-                            "currency": "USD",
-                            "appliedRule": null
-                        },
-                        "lineTotal": 9.5,
-                        "pricing": {
-                            "currency": "USD",
-                            "basePrice": 9.5,
-                            "finalPrice": 9.5,
-                            "discount": 0
-                        },
-                        "snapshot": {
-                            "name": "محول التيار MSQ ",
-                            "slug": "msq-current-transformer",
-                            "image": "https://tagadod.b-cdn.net/media/product/bb2a3e56-d41b-46b8-9a58-d4cef9bbe004-68ca93d4f2bce_Remove background project (3).png",
-                            "brandId": "68ffa9a355755bbf62105206",
-                            "categoryId": "690c90c7ab011a233776cb78",
-                            "averageRating": 0,
-                            "ratingValue": 0,
-                            "ratingSource": "average",
-                            "reviewsCount": 0,
-                            "variantAttributes": [
-                                {
-                                    "attributeId": "690d26ae567068e48ce60895",
-                                    "attributeName": "قدرات MSQ :",
-                                    "attributeNameEn": "قدرات MSQ :",
-                                    "valueId": "690d2721567068e48ce608bb",
-                                    "value": "1000/5 امبير",
-                                    "valueEn": "1000/5 امبير"
-                                }
-                            ]
-                        }
                     }
                 ]
             },
             "totals": {
-                "subtotal": 316.33,
+                "subtotal": 116.99,
                 "shipping": 0,
-                "total": 133.165,
+                "total": 66.99,
                 "currency": "USD"
             },
             "discounts": {
                 "itemsDiscount": 0,
-                "couponDiscount": 183.165,
-                "totalDiscount": 183.165,
+                "couponDiscount": 50,
+                "totalDiscount": 50,
                 "appliedCoupons": [
                     {
                         "code": "TEST",
@@ -208,13 +165,6 @@
                         "discountValue": 50,
                         "type": "fixed_amount",
                         "discount": 50
-                    },
-                    {
-                        "code": "COUPON-VLJ6CHPI",
-                        "name": "TEST2",
-                        "discountValue": 50,
-                        "type": "percentage",
-                        "discount": 133.165
                     }
                 ]
             },
@@ -228,18 +178,18 @@
                         "eligible": false,
                         "requiredOrders": 3,
                         "remainingOrders": 3,
-                        "totalOrders": 1,
+                        "totalOrders": 0,
                         "completedOrders": 0,
-                        "inProgressOrders": 1,
+                        "inProgressOrders": 0,
                         "cancelledOrders": 0,
                         "progress": "0/3",
                         "message": "يجب إكمال 3 طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك 0 طلب مكتمل"
                     }
                 },
                 "customerOrderStats": {
-                    "totalOrders": 1,
+                    "totalOrders": 0,
                     "completedOrders": 0,
-                    "inProgressOrders": 1,
+                    "inProgressOrders": 0,
                     "cancelledOrders": 0,
                     "requiredForCOD": 3,
                     "remainingForCOD": 3,
@@ -247,8 +197,8 @@
                 },
                 "localPaymentProviders": [
                     {
-                        "providerId": "690f800ddb4049101f52d598",
-                        "providerName": "بنك اليمن والكويت",
+                        "providerId": "6915eb77cf5b554a859eb61f",
+                        "providerName": "بنك اليمن",
                         "icon": {
                             "id": "690f754e8c4d0ba472a11218",
                             "url": "https://tagadod.b-cdn.net/media/other/09794124-7d34-418b-a071-0e6c6bf29722-ykb.png",
@@ -262,9 +212,9 @@
                         "displayOrder": 0,
                         "accounts": [
                             {
-                                "id": "6913600b4f2f26446a34539f",
+                                "id": "6915eb77cf5b554a859eb622",
                                 "currency": "USD",
-                                "accountNumber": "771250000",
+                                "accountNumber": "771250002",
                                 "isActive": true,
                                 "displayOrder": 0
                             }
@@ -357,17 +307,17 @@
                 "eligible": false,
                 "requiredOrders": 3,
                 "remainingOrders": 3,
-                "totalOrders": 1,
+                "totalOrders": 0,
                 "completedOrders": 0,
-                "inProgressOrders": 1,
+                "inProgressOrders": 0,
                 "cancelledOrders": 0,
                 "progress": "0/3",
                 "message": "يجب إكمال 3 طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك 0 طلب مكتمل"
             },
             "customerOrderStats": {
-                "totalOrders": 1,
+                "totalOrders": 0,
                 "completedOrders": 0,
-                "inProgressOrders": 1,
+                "inProgressOrders": 0,
                 "cancelledOrders": 0,
                 "requiredForCOD": 3,
                 "remainingForCOD": 3,
@@ -375,42 +325,16 @@
             },
             "addresses": [
                 {
-                    "id": "6911f5fffc6f322a089a7e2b",
-                    "label": "نون",
-                    "line1": "باءسمستةينست",
+                    "id": "691c60286dcd46f8a5850007",
+                    "label": "المطار",
+                    "line1": "تجريب",
                     "city": "صنعاء",
                     "coords": {
-                        "lat": 15.3403829,
-                        "lng": 44.1920499
+                        "lat": 15.3404426,
+                        "lng": 44.1919933
                     },
                     "notes": "الدائري امام مكتبة الجيل الجديد, Sana'a, Sana'a City",
                     "isDefault": true,
-                    "isActive": true
-                },
-                {
-                    "id": "6911f536fc6f322a089a7df2",
-                    "label": "تجريب",
-                    "line1": "شارع الجن",
-                    "city": "صنعاء",
-                    "coords": {
-                        "lat": 15.3404013,
-                        "lng": 44.1920536
-                    },
-                    "notes": "الدائري امام مكتبة الجيل الجديد, Sana'a, Sana'a City",
-                    "isDefault": false,
-                    "isActive": true
-                },
-                {
-                    "id": "6911f4d7fc6f322a089a7dce",
-                    "label": "تجريب",
-                    "line1": "شارع الجن",
-                    "city": "صنعاء",
-                    "coords": {
-                        "lat": 15.3404016,
-                        "lng": 44.1920546
-                    },
-                    "notes": "الدائري امام مكتبة الجيل الجديد, Sana'a, Sana'a City",
-                    "isDefault": false,
                     "isActive": true
                 }
             ],
@@ -422,5 +346,5 @@
         },
         "message": "تم تجهيز جلسة الدفع بنجاح"
     },
-    "requestId": "fd47d04b-c6a2-4abe-8c2d-45a40452ea94"
+    "requestId": "6d7ef575-cd3f-4565-b68e-7acc55fbb069"
 }
