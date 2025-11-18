@@ -147,6 +147,22 @@ export class OrderService {
     return `${userId}:${this.normalizeCurrency(currency)}`;
   }
 
+  invalidateCheckoutPreviewCache(userId: string, currency?: string): void {
+    if (currency) {
+      const key = this.buildPreviewCacheKey(userId, currency);
+      this.checkoutPreviewCache.delete(key);
+    } else {
+      // إبطال جميع الـ cache entries لهذا المستخدم (لجميع العملات)
+      const keysToDelete: string[] = [];
+      for (const key of this.checkoutPreviewCache.keys()) {
+        if (key.startsWith(`${userId}:`)) {
+          keysToDelete.push(key);
+        }
+      }
+      keysToDelete.forEach((key) => this.checkoutPreviewCache.delete(key));
+    }
+  }
+
   private async getCartPreviewWithCache(userId: string, currency: string): Promise<CartPreviewResult> {
     const key = this.buildPreviewCacheKey(userId, currency);
     const now = Date.now();

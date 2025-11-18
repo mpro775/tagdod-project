@@ -15,6 +15,7 @@ import { CartCronService } from './cart.cron';
 import { SharedModule } from '../../shared/shared.module';
 import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 import { MarketingModule } from '../marketing/marketing.module';
+import { CheckoutModule } from '../checkout/checkout.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MarketingModule } from '../marketing/marketing.module';
     ]),
     forwardRef(() => AuthModule),
     forwardRef(() => ExchangeRatesModule),
+    forwardRef(() => CheckoutModule),
     MarketingModule,
     SharedModule,
   ],

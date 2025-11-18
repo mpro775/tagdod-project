@@ -8,6 +8,7 @@ import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { MarketingService } from '../marketing/marketing.service';
 import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import { ExchangeRate } from '../exchange-rates/schemas/exchange-rate.schema';
+import { OrderService } from '../checkout/services/order.service';
 import { randomUUID } from 'crypto';
 
 type ItemView = {
@@ -116,6 +117,9 @@ export class CartService {
     @Optional() private marketingService?: MarketingService,
     @Inject(forwardRef(() => ExchangeRatesService))
     private exchangeRatesService?: ExchangeRatesService,
+    @Optional()
+    @Inject(forwardRef(() => OrderService))
+    private orderService?: OrderService,
   ) {}
 
   // ---------- helpers
@@ -156,6 +160,13 @@ export class CartService {
   private ensureCapacity(cart: Cart) {
     if (cart.items.length > this.MAX_ITEMS) {
       throw new Error('Cart capacity exceeded');
+    }
+  }
+
+  private invalidateCheckoutCache(userId: string, currency?: string): void {
+    if (this.orderService) {
+      const targetCurrency = currency || 'USD';
+      this.orderService.invalidateCheckoutPreviewCache(userId, targetCurrency);
     }
   }
 
@@ -672,6 +683,7 @@ export class CartService {
 
     cart.lastActivityAt = new Date();
     await cart.save();
+    this.invalidateCheckoutCache(userId, cart.currency);
 
     return this.getUserCart(userId);
   }
@@ -818,6 +830,7 @@ export class CartService {
     const cart = await this.getOrCreateUserCart(userId);
     await this.addOrUpdateCartItem(cart, payload);
     await cart.save();
+    this.invalidateCheckoutCache(userId, cart.currency);
     
     // Return full cart details with pricing
     return this.getUserCart(userId);
@@ -852,6 +865,7 @@ export class CartService {
     it.qty = qty;
     cart.lastActivityAt = new Date();
     await cart.save();
+    this.invalidateCheckoutCache(userId, cart.currency);
     return this.getUserCart(userId);
   }
   async removeUserItem(userId: string, itemId: string) {
@@ -882,6 +896,7 @@ export class CartService {
         (foundItem as unknown as Types.Subdocument & { remove(): void })?.remove();
         cart.lastActivityAt = new Date();
         await cart.save();
+        this.invalidateCheckoutCache(userId, cart.currency);
         return this.getUserCart(userId);
       }
     }
@@ -892,12 +907,14 @@ export class CartService {
     
     cart.lastActivityAt = new Date();
     await cart.save();
+    this.invalidateCheckoutCache(userId, cart.currency);
     return this.getUserCart(userId);
   }
   async clearUserCart(userId: string) {
     const cart = await this.getOrCreateUserCart(userId);
     cart.items = [];
     await cart.save();
+    this.invalidateCheckoutCache(userId, cart.currency);
     return this.getUserCart(userId);
   }
 
@@ -1043,6 +1060,9 @@ export class CartService {
     this.ensureCapacity(cart);
     cart.lastActivityAt = new Date();
     await cart.save();
+
+    // إبطال الـ cache بعد تحديث السلة
+    this.invalidateCheckoutCache(userId, targetCurrency);
 
     // إرجاع تأكيد بسيط جداً - فقط للتأكيد أن المزامنة تمت
     // الجلسة ستحصل على بيانات السلة الكاملة من checkout/session
