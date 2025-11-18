@@ -153,9 +153,12 @@
   "messages": {
     "deleteConfirm": "هل تريد حذف السمة \"{{name}}\"؟",
     "deleteValueConfirm": "هل تريد حذف القيمة \"{{name}}\"؟",
+    "deleteValueTitle": "تأكيد حذف القيمة",
     "deleteSuccess": "تم حذف {{item}} بنجاح",
     "restoreSuccess": "تم استعادة {{item}} بنجاح",
     "deleteError": "فشل في حذف {{item}}: {{error}}",
+    "deleteValueInUse": "لا يمكن حذف القيمة \"{{name}}\" لأنها مستخدمة في {{count}} منتج",
+    "deleteValueInUsePlural": "لا يمكن حذف القيمة \"{{name}}\" لأنها مستخدمة في {{count}} منتجات",
     "restoreError": "فشل في استعادة {{item}}: {{error}}",
     "updateSuccess": "تم تحديث {{item}} بنجاح",
     "createSuccess": "تم إضافة {{item}} بنجاح",
@@ -172,6 +175,8 @@
   "tooltips": {
     "edit": "تعديل",
     "delete": "حذف",
+    "deleteDisabled": "لا يمكن الحذف - القيمة مستخدمة في {{count}} منتج",
+    "deleteDisabledPlural": "لا يمكن الحذف - القيمة مستخدمة في {{count}} منتجات",
     "restore": "استعادة",
     "manageValues": "إدارة القيم"
   },

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { AxiosError } from 'axios';
 import {
   Box,
   Paper,
@@ -40,6 +41,7 @@ import AttributeValueDialog from '../components/AttributeValueDialog';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { ConfirmDialog } from '@/shared/components';
 import type { AttributeValue, AttributeValueFormData } from '../types/attribute.types';
+import type { ApiErrorResponse } from '@/shared/types/common.types';
 
 export const AttributeValuesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -123,13 +125,29 @@ export const AttributeValuesPage: React.FC = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = (valueId: string) => {
+  const handleDelete = (valueId: string, valueName?: string) => {
     deleteValue(valueId, {
       onSuccess: () => {
         showSnackbar(t('messages.deleteSuccess', { item: t('messages.value') }), 'success');
         refetch();
       },
       onError: (error) => {
+        // Check if error is from Axios and has the in_use reason
+        if (error instanceof AxiosError) {
+          const errorData = error.response?.data as ApiErrorResponse | undefined;
+          const details = errorData?.error?.details as { reason?: string; usageCount?: number } | undefined;
+          
+          if (details?.reason === 'in_use' && details.usageCount !== undefined) {
+            const count = details.usageCount;
+            const message = count === 1
+              ? t('messages.deleteValueInUse', { name: valueName || t('messages.value'), count })
+              : t('messages.deleteValueInUsePlural', { name: valueName || t('messages.value'), count });
+            showSnackbar(message, 'error');
+            return;
+          }
+        }
+        
+        // Fallback to generic error
         showSnackbar(
           t('messages.deleteError', {
             item: t('messages.value'),
@@ -284,24 +302,35 @@ export const AttributeValuesPage: React.FC = () => {
                 <Edit fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title={t('tooltips.delete')}>
-              <IconButton
-                size="small"
-                color="error"
-                onClick={async () => {
-                  const confirmed = await confirmDialog({
-                    title: t('messages.deleteValueTitle', 'تأكيد حذف القيمة'),
-                    message: t('messages.deleteValueConfirm', { name: value.value }),
-                    type: 'warning',
-                    confirmColor: 'error',
-                  });
-                  if (confirmed) {
-                    handleDelete(value._id);
-                  }
-                }}
-              >
-                <Delete fontSize="small" />
-              </IconButton>
+            <Tooltip 
+              title={
+                (value.usageCount || 0) > 0
+                  ? (value.usageCount === 1
+                      ? t('tooltips.deleteDisabled', { count: value.usageCount })
+                      : t('tooltips.deleteDisabledPlural', { count: value.usageCount }))
+                  : t('tooltips.delete')
+              }
+            >
+              <span>
+                <IconButton
+                  size="small"
+                  color="error"
+                  disabled={(value.usageCount || 0) > 0}
+                  onClick={async () => {
+                    const confirmed = await confirmDialog({
+                      title: t('messages.deleteValueTitle', 'تأكيد حذف القيمة'),
+                      message: t('messages.deleteValueConfirm', { name: value.value }),
+                      type: 'warning',
+                      confirmColor: 'error',
+                    });
+                    if (confirmed) {
+                      handleDelete(value._id, value.value);
+                    }
+                  }}
+                >
+                  <Delete fontSize="small" />
+                </IconButton>
+              </span>
             </Tooltip>
           </Box>
         );
@@ -593,7 +622,7 @@ export const AttributeValuesPage: React.FC = () => {
                     confirmColor: 'error',
                   });
                   if (confirmed) {
-                    handleDelete(value._id);
+                    handleDelete(value._id, value.value);
                   }
                 }}
               />

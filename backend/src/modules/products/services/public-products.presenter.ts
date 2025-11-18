@@ -92,6 +92,21 @@ export class PublicProductsPresenter {
     return trimmed.length === 0 ? 'USD' : trimmed.toUpperCase();
   }
 
+  /**
+   * Filters out variants with stock/quantity 0 for public endpoints
+   * Admin endpoints should see all variants including those with stock 0
+   */
+  filterVariantsWithStock(variants: Array<WithId & AnyRecord>): Array<WithId & AnyRecord> {
+    if (!Array.isArray(variants) || variants.length === 0) {
+      return [];
+    }
+
+    return variants.filter((variant) => {
+      const stock = this.normalizePrice(variant.stock);
+      return stock !== undefined && stock > 0;
+    });
+  }
+
   async getUserMerchantDiscount(userId?: string): Promise<number> {
     if (!userId) {
       return 0;
@@ -670,6 +685,7 @@ export class PublicProductsPresenter {
     variants: Array<WithId & AnyRecord>,
     discountPercent: number,
     selectedCurrencyInput: string,
+    filterZeroStock = true,
   ): Promise<{
     variantsWithPricing: Array<AnyRecord>;
     currenciesForPricing: string[];
@@ -680,7 +696,11 @@ export class PublicProductsPresenter {
       new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
     );
 
-    const variantSnapshots: VariantPricingInput[] = variants.map((variant) => ({
+    const filteredVariants = filterZeroStock
+      ? this.filterVariantsWithStock(variants)
+      : variants;
+
+    const variantSnapshots: VariantPricingInput[] = filteredVariants.map((variant) => ({
       _id: variant._id,
       basePriceUSD: this.normalizePrice(variant.basePriceUSD) ?? 0,
       basePriceSAR: this.normalizePrice(variant.basePriceSAR),
@@ -702,7 +722,7 @@ export class PublicProductsPresenter {
       { variants: variantSnapshots },
     );
 
-    const variantsWithPricing = variants.map((variant) => {
+    const variantsWithPricing = filteredVariants.map((variant) => {
       const variantId = variant._id.toString();
 
       const pricingByCurrency = this.BASE_PRICING_CURRENCIES.reduce<
@@ -746,7 +766,10 @@ export class PublicProductsPresenter {
       products.map(async (productRaw) => {
         const productRecord = productRaw as AnyRecord;
         const productId = this.extractIdString(productRecord._id) ?? String(productRecord._id);
-        const variants = await this.variantService.findByProductId(productId);
+        const allVariants = await this.variantService.findByProductId(productId);
+        const variants = this.filterVariantsWithStock(
+          allVariants as unknown as Array<WithId & AnyRecord>,
+        );
 
         if (variants.length === 0) {
           if (!this.hasSimplePricing(productRecord)) {
@@ -811,6 +834,7 @@ export class PublicProductsPresenter {
           variants as unknown as Array<WithId & AnyRecord>,
           discountPercent,
           normalizedCurrency,
+          true,
         );
 
         const priceRangeByCurrency = this.computePriceRangeByCurrency(pricesByCurrency);
@@ -881,8 +905,9 @@ export class PublicProductsPresenter {
         }
 
         try {
-          const variantsForProduct =
+          const allVariantsForProduct =
             variantsByProductId[id]?.map((variant) => variant as unknown as WithId & AnyRecord) ?? [];
+          const variantsForProduct = this.filterVariantsWithStock(allVariantsForProduct);
 
           const {
             variantsWithPricing,
@@ -893,6 +918,7 @@ export class PublicProductsPresenter {
             variantsForProduct,
             discountPercent,
             selectedCurrencyInput,
+            true,
           );
 
           void (await this.getAttributeSummaries(productRecord.attributes as unknown[]));
@@ -992,15 +1018,17 @@ export class PublicProductsPresenter {
     discountPercent: number,
     selectedCurrencyInput: string,
   ) {
+    const filteredVariants = this.filterVariantsWithStock(variants);
     const {
       variantsWithPricing,
       currenciesForPricing,
       pricesByCurrency,
     } = await this.enrichVariantsPricing(
       productId,
-      variants,
+      filteredVariants,
       discountPercent,
       selectedCurrencyInput,
+      true,
     );
 
     const attributesDetails = await this.getAttributeSummaries(

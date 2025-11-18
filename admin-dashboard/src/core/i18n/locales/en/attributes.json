@@ -153,9 +153,12 @@
   "messages": {
     "deleteConfirm": "Do you want to delete the attribute \"{{name}}\"?",
     "deleteValueConfirm": "Do you want to delete the value \"{{name}}\"?",
+    "deleteValueTitle": "Confirm Delete Value",
     "deleteSuccess": "{{item}} deleted successfully",
     "restoreSuccess": "{{item}} restored successfully",
     "deleteError": "Failed to delete {{item}}: {{error}}",
+    "deleteValueInUse": "Cannot delete value \"{{name}}\" because it is used in {{count}} product",
+    "deleteValueInUsePlural": "Cannot delete value \"{{name}}\" because it is used in {{count}} products",
     "restoreError": "Failed to restore {{item}}: {{error}}",
     "updateSuccess": "{{item}} updated successfully",
     "createSuccess": "{{item}} added successfully",
@@ -172,6 +175,8 @@
   "tooltips": {
     "edit": "Edit",
     "delete": "Delete",
+    "deleteDisabled": "Cannot delete - Value is used in {{count}} product",
+    "deleteDisabledPlural": "Cannot delete - Value is used in {{count}} products",
     "restore": "Restore",
     "manageValues": "Manage Values"
   },

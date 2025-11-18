@@ -39,7 +39,7 @@ import { VariantCard } from '../components/VariantCard';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { ConfirmDialog } from '@/shared/components';
-import type { Variant, CreateVariantDto, UpdateVariantDto } from '../types/product.types';
+import type { Variant, CreateVariantDto } from '../types/product.types';
 
 // Validation Schema for Variant (مبسط - فقط الأساسيات)
 const variantSchema = z.object({
@@ -57,8 +57,6 @@ export const ProductVariantsPage: React.FC = () => {
   const { isMobile } = useBreakpoint();
   const { confirmDialog, dialogProps } = useConfirmDialog();
   const [variantDialogOpen, setVariantDialogOpen] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<{ price: number; stock: number }>({ price: 0, stock: 0 });
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -85,22 +83,10 @@ export const ProductVariantsPage: React.FC = () => {
   const { mutate: deleteVariant } = useDeleteVariant();
 
   const handleAddVariant = () => {
-    setIsEditMode(false);
     methods.reset({
       sku: '',
       price: 0,
       stock: 0,
-    });
-    setVariantDialogOpen(true);
-  };
-
-  const handleEditVariant = (variant: Variant) => {
-    setIsEditMode(true);
-    setSelectedVariant(variant);
-    methods.reset({
-      sku: variant.sku || '',
-      price: variant.price,
-      stock: variant.stock,
     });
     setVariantDialogOpen(true);
   };
@@ -130,7 +116,7 @@ export const ProductVariantsPage: React.FC = () => {
   const handleStartEdit = (variant: Variant) => {
     setEditingId(variant._id);
     setEditingData({
-      price: variant.price || 0,
+      price: variant.price ?? variant.basePriceUSD ?? 0,
       stock: variant.stock || 0,
     });
   };
@@ -166,47 +152,43 @@ export const ProductVariantsPage: React.FC = () => {
   };
 
   const onSubmit = (data: VariantFormData) => {
-    if (isEditMode && selectedVariant) {
-      const updateData: UpdateVariantDto = {
-        sku: data.sku,
-        price: data.price,
-        stock: data.stock,
-        isActive: selectedVariant.isActive,
-      };
-
-      updateVariant(
-        { productId: id!, variantId: selectedVariant._id, data: updateData },
-        {
-          onSuccess: () => {
-            toast.success(t('products:messages.updateSuccess', 'تم التحديث بنجاح'));
-            refetch();
-            setVariantDialogOpen(false);
-            setSelectedVariant(null);
-          },
-        }
-      );
-    } else {
-      const createData: CreateVariantDto = {
-        productId: id!,
-        sku: data.sku,
-        attributeValues: [], // سيتم إضافة السمات لاحقاً
-        price: data.price,
-        stock: data.stock,
-      };
-
-      addVariant(createData, {
-        onSuccess: () => {
-          toast.success(t('products:messages.createSuccess', 'تم الإنشاء بنجاح'));
-          refetch();
-          setVariantDialogOpen(false);
-        },
-      });
+    // التحقق من صحة البيانات قبل الإرسال
+    if (isNaN(data.price) || data.price < 0) {
+      toast.error(t('products:messages.invalidPrice', 'السعر غير صحيح'));
+      return;
     }
+    
+    if (isNaN(data.stock) || data.stock < 0) {
+      toast.error(t('products:messages.invalidStock', 'المخزون غير صحيح'));
+      return;
+    }
+
+    const createData: CreateVariantDto = {
+      productId: id!,
+      sku: data.sku?.trim() || undefined,
+      attributeValues: [], // سيتم إضافة السمات لاحقاً
+      price: Number(data.price),
+      stock: Number(data.stock),
+    };
+
+    addVariant(createData, {
+      onSuccess: () => {
+        toast.success(t('products:messages.createSuccess', 'تم الإنشاء بنجاح'));
+        refetch();
+        setVariantDialogOpen(false);
+      },
+      onError: (error: any) => {
+        // معالجة أفضل للأخطاء
+        const errorMessage = error?.response?.data?.message || 
+                            error?.message || 
+                            t('products:messages.createError', 'حدث خطأ أثناء إضافة المتغير');
+        toast.error(errorMessage);
+      },
+    });
   };
 
   const handleCloseDialog = () => {
     setVariantDialogOpen(false);
-    setSelectedVariant(null);
     methods.reset();
   };
 
@@ -218,31 +200,101 @@ export const ProductVariantsPage: React.FC = () => {
     );
   }
 
+  // Helper function to convert Arabic color names to hex
+  const getColorValue = (colorName: string): string | null => {
+    if (!colorName) return null;
+    
+    const colorMap: Record<string, string> = {
+      'اسود': '#000000',
+      'أسود': '#000000',
+      'ابيض': '#FFFFFF',
+      'أبيض': '#FFFFFF',
+      'احمر': '#FF0000',
+      'أحمر': '#FF0000',
+      'ازرق': '#0000FF',
+      'أزرق': '#0000FF',
+      'اخضر': '#00FF00',
+      'أخضر': '#00FF00',
+      'اصفر': '#FFFF00',
+      'أصفر': '#FFFF00',
+      'برتقالي': '#FFA500',
+      'بنفسجي': '#800080',
+      'وردي': '#FFC0CB',
+      'رمادي': '#808080',
+      'بني': '#A52A2A',
+      'black': '#000000',
+      'white': '#FFFFFF',
+      'red': '#FF0000',
+      'blue': '#0000FF',
+      'green': '#00FF00',
+      'yellow': '#FFFF00',
+    };
+    
+    const normalized = colorName.toLowerCase().trim();
+    return colorMap[normalized] || (normalized.startsWith('#') ? normalized : null);
+  };
+
   // Prepare data for DataTable
   const getAttributeDisplay = (variant: Variant) => {
     if (!variant.attributeValues || variant.attributeValues.length === 0) {
-      return t('products:variants.noAttributes', 'بدون سمات');
+      return (
+        <Typography variant="body2" color="text.secondary">
+          {t('products:variants.noAttributes', 'بدون سمات')}
+        </Typography>
+      );
     }
-    return variant.attributeValues.map((attr) => {
-      if (attr.name?.toLowerCase().includes('لون') || attr.name?.toLowerCase().includes('color')) {
-        return (
-          <Box key={attr.valueId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    
+    return (
+      <Stack spacing={0.5} direction="column">
+        {variant.attributeValues.map((attr, index) => {
+          const isColorAttribute = attr.name?.toLowerCase().includes('لون') || 
+                                   attr.name?.toLowerCase().includes('color');
+          const colorValue = isColorAttribute ? getColorValue(attr.value || '') : null;
+          const hasValidColor = colorValue !== null;
+          const key = attr.valueId || `${attr.attributeId}-${index}`;
+          
+          return (
             <Box 
+              key={key} 
               sx={{ 
-                width: 20, 
-                height: 20, 
-                borderRadius: '50%', 
-                bgcolor: attr.value, 
-                border: '1px solid',
-                borderColor: 'divider'
-              }} 
-            />
-            <Typography variant="body2">{attr.value}</Typography>
-          </Box>
-        );
-      }
-      return `${attr.name}: ${attr.value}`;
-    });
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                flexWrap: 'nowrap'
+              }}
+            >
+              {isColorAttribute && hasValidColor && (
+                <Box 
+                  sx={{ 
+                    width: 18, 
+                    height: 18, 
+                    borderRadius: '50%', 
+                    bgcolor: colorValue,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    flexShrink: 0
+                  }} 
+                />
+              )}
+              <Typography 
+                variant="body2" 
+                component="span"
+                sx={{ 
+                  fontSize: '0.875rem',
+                  lineHeight: 1.4,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '100%'
+                }}
+              >
+                <strong>{attr.name}:</strong> {attr.value}
+              </Typography>
+            </Box>
+          );
+        })}
+      </Stack>
+    );
   };
 
   const getStockChip = (variant: Variant) => {
@@ -278,12 +330,17 @@ export const ProductVariantsPage: React.FC = () => {
       field: 'attributes',
       headerName: t('products:variants.columns.attributes', 'السمات'),
       flex: 1,
-      minWidth: 200,
+      minWidth: 250,
       renderCell: (params) => (
-        <Box>
+        <Box sx={{ py: 0.5, width: '100%' }}>
           {getAttributeDisplay(params.row)}
           {params.row.sku && (
-            <Typography variant="caption" color="text.secondary" display="block">
+            <Typography 
+              variant="caption" 
+              color="text.secondary" 
+              display="block" 
+              sx={{ mt: 0.5 }}
+            >
               SKU: {params.row.sku}
             </Typography>
           )}
@@ -298,6 +355,7 @@ export const ProductVariantsPage: React.FC = () => {
       headerAlign: 'center',
       renderCell: (params) => {
         const isEditing = editingId === params.row._id;
+        const price = params.row.price ?? params.row.basePriceUSD ?? 0;
         return isEditing ? (
           <TextField
             type="number"
@@ -310,7 +368,7 @@ export const ProductVariantsPage: React.FC = () => {
           />
         ) : (
           <Typography variant="h6" color="primary">
-            ${params.row.price}
+            ${price}
           </Typography>
         );
       },
@@ -380,15 +438,6 @@ export const ProductVariantsPage: React.FC = () => {
           </Box>
         ) : (
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-            <Tooltip title={t('products:variants.edit', 'تعديل متغير')}>
-              <IconButton 
-                color="primary" 
-                size="small"
-                onClick={() => handleEditVariant(variant)}
-              >
-                <Edit />
-              </IconButton>
-            </Tooltip>
             <Tooltip title={t('products:variants.form.quickEdit', 'تعديل سريع')}>
               <IconButton 
                 color="primary" 
@@ -503,7 +552,6 @@ export const ProductVariantsPage: React.FC = () => {
                   <Grid size={{ xs: 6 }} key={variant._id}>
                     <VariantCard
                       variant={variant}
-                      onEdit={handleEditVariant}
                       onDelete={handleDeleteVariant}
                       showActions={true}
                     />
@@ -593,9 +641,7 @@ export const ProductVariantsPage: React.FC = () => {
         fullScreen={isMobile}
       >
         <DialogTitle>
-          {isEditMode
-            ? t('products:variants.edit', 'تعديل متغير')
-            : t('products:variants.addVariant', 'إضافة متغير')}
+          {t('products:variants.addVariant', 'إضافة متغير')}
         </DialogTitle>
         <DialogContent>
           <FormProvider {...methods}>
@@ -651,11 +697,11 @@ export const ProductVariantsPage: React.FC = () => {
           <Button
             onClick={methods.handleSubmit(onSubmit)}
             variant="contained"
-            startIcon={addingVariant || updatingVariant ? <CircularProgress size={20} /> : <Save />}
-            disabled={addingVariant || updatingVariant}
+            startIcon={addingVariant ? <CircularProgress size={20} /> : <Save />}
+            disabled={addingVariant}
             fullWidth={isMobile}
           >
-            {isEditMode ? t('common:actions.edit', 'تعديل') : t('common:actions.add', 'إضافة')}
+            {t('common:actions.add', 'إضافة')}
           </Button>
         </DialogActions>
       </Dialog>

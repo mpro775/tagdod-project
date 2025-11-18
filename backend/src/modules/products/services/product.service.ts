@@ -30,34 +30,104 @@ export class ProductService {
   // ==================== CRUD Operations ====================
 
   async create(dto: Partial<Product>): Promise<Product> {
-    const slug = slugify(dto.nameEn!);
-
-    // التحقق من عدم التكرار
-    const existing = await this.productModel.findOne({ slug, deletedAt: null });
-    if (existing) {
-      throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { slug: dto.slug, reason: 'already_exists' });
-    }
-
-    const pricingFields = await this.buildDerivedPricingFields(dto);
-
-    const product = await this.productModel.create({
-      ...dto,
-      ...pricingFields,
-      slug,
-      variantsCount: 0,
-      viewsCount: 0,
-      salesCount: 0,
-      reviewsCount: 0,
-      averageRating: 0,
+    this.logger.log(`Creating product: ${dto.nameEn}`, {
+      name: dto.name,
+      nameEn: dto.nameEn,
+      categoryId: dto.categoryId,
+      basePriceUSD: dto.basePriceUSD,
     });
 
-    // تحديث عدد المنتجات في الفئة
-    if (dto.categoryId) {
-      await this.categoriesService.incrementProductsCount(dto.categoryId, 1);
-    }
+    try {
+      const slug = slugify(dto.nameEn!);
 
-    await this.clearCache();
-    return product;
+      // التحقق من عدم التكرار
+      const existing = await this.productModel.findOne({ slug, deletedAt: null });
+      if (existing) {
+        this.logger.warn(`Product with slug ${slug} already exists`);
+        throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { slug: dto.slug, reason: 'already_exists' });
+      }
+
+      // إضافة retry logic لـ buildDerivedPricingFields
+      let pricingFields: Partial<Product> = {};
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          pricingFields = await this.buildDerivedPricingFields(dto);
+          this.logger.log(`Pricing fields calculated successfully`);
+          break;
+        } catch (error) {
+          retries--;
+          const err = error instanceof Error ? error : new Error(String(error));
+          if (retries === 0) {
+            this.logger.error('Failed to calculate pricing fields after 3 attempts', {
+              error: err.message,
+              productName: dto.nameEn,
+            });
+            // لا نرمي خطأ هنا، نستخدم البيانات الأساسية فقط
+            this.logger.warn('Continuing with base pricing only');
+          } else {
+            this.logger.warn(`Retrying pricing calculation, ${retries} attempts remaining`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+      }
+
+      const product = await this.productModel.create({
+        ...dto,
+        ...pricingFields,
+        slug,
+        variantsCount: 0,
+        viewsCount: 0,
+        salesCount: 0,
+        reviewsCount: 0,
+        averageRating: 0,
+      });
+
+      this.logger.log(`Product created successfully: ${product._id}`);
+
+      // تحديث عدد المنتجات في الفئة
+      if (dto.categoryId) {
+        try {
+          await this.categoriesService.incrementProductsCount(dto.categoryId, 1);
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          this.logger.warn(`Failed to increment category products count: ${err.message}`);
+        }
+      }
+
+      await this.clearCache();
+      return product;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Error creating product: ${err.message}`, {
+        error: err.message,
+        stack: err.stack,
+        dto: {
+          name: dto.name,
+          nameEn: dto.nameEn,
+          categoryId: dto.categoryId,
+          basePriceUSD: dto.basePriceUSD,
+        },
+      });
+
+      // إعادة رمي الخطأ
+      if (error instanceof ProductException || error instanceof ProductNotFoundException) {
+        throw error;
+      }
+
+      // معالجة أخطاء MongoDB
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        const mongoError = error as { keyPattern?: Record<string, unknown> };
+        const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+          reason: 'duplicate_field',
+          field,
+          message: `${field} موجود مسبقاً`,
+        });
+      }
+
+      throw err;
+    }
   }
 
   async findById(id: string): Promise<Product> {
@@ -542,13 +612,24 @@ export class ProductService {
       return {};
     }
 
-    const derived = await this.productPricingCalculator.calculateProductPricing({
-      basePriceUSD: source.basePriceUSD,
-      compareAtPriceUSD: source.compareAtPriceUSD,
-      costPriceUSD: source.costPriceUSD,
-    });
+    try {
+      const derived = await this.productPricingCalculator.calculateProductPricing({
+        basePriceUSD: source.basePriceUSD,
+        compareAtPriceUSD: source.compareAtPriceUSD,
+        costPriceUSD: source.costPriceUSD,
+      });
 
-    return derived;
+      return derived;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Error calculating derived pricing fields: ${err.message}`, {
+        error: err.message,
+        basePriceUSD: source.basePriceUSD,
+        compareAtPriceUSD: source.compareAtPriceUSD,
+        costPriceUSD: source.costPriceUSD,
+      });
+      throw err;
+    }
   }
 
   // ==================== Cache Management ====================

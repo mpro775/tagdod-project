@@ -46,9 +46,12 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [open, setOpen] = useState(false);
-  const [price, setPrice] = useState(variant.price.toString());
-  const [compareAtPrice, setCompareAtPrice] = useState(variant.compareAtPrice?.toString() || '');
-  const [costPrice, setCostPrice] = useState(variant.costPrice?.toString() || '');
+  const variantPrice = variant.price ?? variant.basePriceUSD ?? 0;
+  const variantCompareAtPrice = variant.compareAtPrice ?? variant.compareAtPriceUSD;
+  const variantCostPrice = variant.costPrice ?? variant.costPriceUSD;
+  const [price, setPrice] = useState(variantPrice.toString());
+  const [compareAtPrice, setCompareAtPrice] = useState(variantCompareAtPrice?.toString() || '');
+  const [costPrice, setCostPrice] = useState(variantCostPrice?.toString() || '');
 
   const { selectedCurrency } = useSimpleCurrency();
   const { data: priceInfo, isLoading: loadingPrice } = useVariantPrice(variant._id, selectedCurrency);
@@ -61,15 +64,15 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
   };
 
   const getDiscountPercentage = () => {
-    if (variant.compareAtPrice && variant.compareAtPrice > variant.price) {
-      return Math.round(((variant.compareAtPrice - variant.price) / variant.compareAtPrice) * 100);
+    if (variantCompareAtPrice && variantCompareAtPrice > variantPrice) {
+      return Math.round(((variantCompareAtPrice - variantPrice) / variantCompareAtPrice) * 100);
     }
     return 0;
   };
 
   const getProfitMargin = () => {
-    if (variant.costPrice && variant.costPrice > 0) {
-      return Math.round(((variant.price - variant.costPrice) / variant.costPrice) * 100);
+    if (variantCostPrice && variantCostPrice > 0) {
+      return Math.round(((variantPrice - variantCostPrice) / variantCostPrice) * 100);
     }
     return null;
   };
@@ -92,13 +95,13 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
             {t('products:variants.form.currentPrice', 'السعر الحالي')}:
           </Typography>
           <Chip
-            label={loadingPrice ? t('common:loading', 'جاري التحميل...') : priceInfo?.formatted || `${variant.price} $`}
+            label={loadingPrice ? t('common:loading', 'جاري التحميل...') : priceInfo?.formatted || `${variantPrice} $`}
             color="primary"
             variant="outlined"
           />
         </Box>
 
-        {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
+        {variantCompareAtPrice && variantCompareAtPrice > variantPrice && (
           <Box display="flex" alignItems="center" gap={2} mb={2} flexWrap="wrap">
             <Typography variant="body2" color="text.secondary">
               {t('products:variants.form.originalPrice', 'السعر الأصلي')}:
@@ -107,7 +110,7 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
               variant="body2"
               sx={{ textDecoration: 'line-through', color: 'text.secondary' }}
             >
-              {variant.compareAtPrice} $
+              {variantCompareAtPrice} $
             </Typography>
             <Chip
               label={t('products:variants.form.discount', 'خصم {{percent}}%', { percent: discountPercentage })}
@@ -118,13 +121,13 @@ export const PricingManager: React.FC<PricingManagerProps> = ({
           </Box>
         )}
 
-        {variant.costPrice && (
+        {variantCostPrice && (
           <Box display="flex" alignItems="center" gap={2} mb={2} flexWrap="wrap">
             <Typography variant="body2" color="text.secondary">
               {t('products:variants.form.costPrice', 'سعر التكلفة')}:
             </Typography>
             <Typography variant="body2" fontWeight="medium">
-              {variant.costPrice} $
+              {variantCostPrice} $
             </Typography>
             {profitMargin !== null && (
               <Chip

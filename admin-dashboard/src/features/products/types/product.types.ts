@@ -158,10 +158,23 @@ export interface Variant extends BaseEntity {
   // السمات
   attributeValues: VariantAttribute[];
 
-  // التسعير (محفوظ بالدولار في الباك إند)
-  price: number;
-  compareAtPrice?: number;
-  costPrice?: number;
+  // التسعير (الحقول الفعلية من الـ API)
+  basePriceUSD: number;
+  basePriceSAR?: number;
+  basePriceYER?: number;
+  compareAtPriceUSD?: number;
+  compareAtPriceSAR?: number;
+  compareAtPriceYER?: number;
+  costPriceUSD?: number;
+  costPriceSAR?: number;
+  costPriceYER?: number;
+  lastExchangeRateSyncAt?: string;
+  exchangeRateVersion?: string;
+
+  // حقول التسعير القديمة (للتوافق مع الكود القديم - يتم حسابها من basePriceUSD)
+  price?: number; // computed from basePriceUSD for backward compatibility
+  compareAtPrice?: number; // computed from compareAtPriceUSD
+  costPrice?: number; // computed from costPriceUSD
 
   // المخزون
   stock: number;

@@ -188,6 +188,22 @@ export const ProductFormPage: React.FC = () => {
           costPriceUSD: costValue,
         };
 
+        // التحقق من صحة البيانات قبل الإرسال
+        if (basePriceValue !== undefined && (isNaN(basePriceValue) || basePriceValue < 0)) {
+          toast.error(t('products:messages.invalidPrice', 'السعر غير صحيح'), { id: 'save-product' });
+          return;
+        }
+
+        if (compareAtValue !== undefined && (isNaN(compareAtValue) || compareAtValue < 0)) {
+          toast.error(t('products:messages.invalidCompareAtPrice', 'سعر المقارنة غير صحيح'), { id: 'save-product' });
+          return;
+        }
+
+        if (costValue !== undefined && (isNaN(costValue) || costValue < 0)) {
+          toast.error(t('products:messages.invalidCostPrice', 'سعر التكلفة غير صحيح'), { id: 'save-product' });
+          return;
+        }
+
         // حفظ المنتج والحصول على الـ ID
         const savedProduct = await new Promise<any>((resolve, reject) => {
           createProduct(productData, {
@@ -195,8 +211,11 @@ export const ProductFormPage: React.FC = () => {
               toast.success(t('products:messages.productSaved', 'تم حفظ المنتج بنجاح'), { id: 'save-product' });
               resolve(data);
             },
-            onError: (error) => {
-              toast.error(t('products:messages.productSaveFailed', 'فشل حفظ المنتج'), { id: 'save-product' });
+            onError: (error: any) => {
+              const errorMessage = error?.response?.data?.message || 
+                                  error?.message || 
+                                  t('products:messages.productSaveFailed', 'فشل حفظ المنتج');
+              toast.error(errorMessage, { id: 'save-product' });
               reject(error);
             },
           });

@@ -11,6 +11,7 @@ import {
 } from '../../../shared/exceptions';
 import { AttributesService } from '../../attributes/attributes.service';
 import { ProductPricingCalculatorService } from './product-pricing-calculator.service';
+import { ExchangeRate } from '../../exchange-rates/schemas/exchange-rate.schema';
 
 // Local, explicit types to eliminate 'any' usage and align with real data
 type AttributeValueInput = {
@@ -62,61 +63,157 @@ export class VariantService {
   // ==================== CRUD Operations ====================
 
   async create(dto: CreateVariantDto): Promise<Variant> {
-    const product = await this.productModel.findById(dto.productId);
-
-    if (!product) {
-      throw new ProductNotFoundException({ productId: dto.productId });
-    }
-
-    // حفظ name و value للعرض السريع
-    const enrichedAttributes: EnrichedAttributeValue[] = await Promise.all(
-      (dto.attributeValues || []).map(async (av: AttributeValueInput) => {
-        const attr = await this.attributesService.getAttribute(av.attributeId);
-        const value = attr.values?.find(
-          (v: { _id: Types.ObjectId }) => String(v._id) === String(av.valueId),
-        );
-
-        return {
-          attributeId: av.attributeId,
-          valueId: av.valueId,
-          name: attr.name,
-          nameEn: attr.nameEn,
-          value: value?.value || '',
-          valueEn: value?.valueEn || value?.value || '',
-        };
-      }),
-    );
-
-    const rates = await this.productPricingCalculator.getLatestRates();
-
-    const pricingFields = await this.productPricingCalculator.calculateVariantPricing(
-      {
-        basePriceUSD: dto.price ?? dto.basePriceUSD ?? 0,
-        compareAtPriceUSD: dto.compareAtPrice ?? dto.compareAtPriceUSD,
-        costPriceUSD: dto.costPrice ?? dto.costPriceUSD,
-      },
-      rates,
-    );
-
-    const variant = await this.variantModel.create({
-      ...dto,
-      attributeValues: enrichedAttributes,
-      productId: new Types.ObjectId(dto.productId as string),
-      basePriceUSD: dto.price ?? 0,
-      compareAtPriceUSD: dto.compareAtPrice,
-      costPriceUSD: dto.costPrice,
-      ...pricingFields,
+    this.logger.log(`Creating variant for product ${dto.productId}`, {
+      productId: dto.productId,
+      price: dto.price,
+      stock: dto.stock,
+      sku: dto.sku,
+      attributeValuesCount: dto.attributeValues?.length || 0,
     });
 
-    // تحديث عدد الـ variants
-    await this.updateProductVariantCount(dto.productId as string);
+    try {
+      const product = await this.productModel.findById(dto.productId);
 
-    // تحديث usage count للسمات
-    for (const av of enrichedAttributes) {
-      await this.attributesService.incrementUsage(av.attributeId, av.valueId);
+      if (!product) {
+        throw new ProductNotFoundException({ productId: dto.productId });
+      }
+
+      // حفظ name و value للعرض السريع
+      const enrichedAttributes: EnrichedAttributeValue[] = await Promise.all(
+        (dto.attributeValues || []).map(async (av: AttributeValueInput) => {
+          try {
+            const attr = await this.attributesService.getAttribute(av.attributeId);
+            const value = attr.values?.find(
+              (v: { _id: Types.ObjectId }) => String(v._id) === String(av.valueId),
+            );
+
+            return {
+              attributeId: av.attributeId,
+              valueId: av.valueId,
+              name: attr.name,
+              nameEn: attr.nameEn,
+              value: value?.value || '',
+              valueEn: value?.valueEn || value?.value || '',
+            };
+          } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            this.logger.error(`Error enriching attribute ${av.attributeId}: ${err.message}`);
+            throw err;
+          }
+        }),
+      );
+
+      // إضافة retry logic للـ exchange rates
+      let rates: ExchangeRate | undefined;
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          rates = await this.productPricingCalculator.getLatestRates();
+          this.logger.log(`Exchange rates fetched successfully`);
+          break;
+        } catch (error) {
+          retries--;
+          const err = error instanceof Error ? error : new Error(String(error));
+          if (retries === 0) {
+            this.logger.error('Failed to fetch exchange rates after 3 attempts', {
+              error: err.message,
+              productId: dto.productId,
+            });
+            throw new Error('فشل في جلب أسعار الصرف. يرجى المحاولة مرة أخرى');
+          }
+          this.logger.warn(`Retrying exchange rates fetch, ${retries} attempts remaining`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      if (!rates) {
+        throw new Error('فشل في جلب أسعار الصرف');
+      }
+
+      const pricingFields = await this.productPricingCalculator.calculateVariantPricing(
+        {
+          basePriceUSD: dto.price ?? dto.basePriceUSD ?? 0,
+          compareAtPriceUSD: dto.compareAtPrice ?? dto.compareAtPriceUSD,
+          costPriceUSD: dto.costPrice ?? dto.costPriceUSD,
+        },
+        rates,
+      );
+
+      // التحقق من SKU المكرر قبل الإنشاء
+      if (dto.sku && dto.sku.trim()) {
+        const existingVariant = await this.variantModel.findOne({
+          sku: dto.sku.trim(),
+          deletedAt: null,
+        });
+        
+        if (existingVariant) {
+          this.logger.warn(`Duplicate SKU detected: ${dto.sku}`, {
+            existingVariantId: existingVariant._id,
+            productId: dto.productId,
+          });
+          throw new Error(`SKU ${dto.sku} موجود مسبقاً`);
+        }
+      }
+
+      const variant = await this.variantModel.create({
+        ...dto,
+        attributeValues: enrichedAttributes,
+        productId: new Types.ObjectId(dto.productId as string),
+        basePriceUSD: dto.price ?? 0,
+        compareAtPriceUSD: dto.compareAtPrice,
+        costPriceUSD: dto.costPrice,
+        ...pricingFields,
+      });
+
+      this.logger.log(`Variant created successfully: ${variant._id}`);
+
+      // تحديث عدد الـ variants
+      try {
+        await this.updateProductVariantCount(dto.productId as string);
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        this.logger.warn(`Failed to update variant count, but variant was created: ${err.message}`);
+      }
+
+      // تحديث usage count للسمات
+      for (const av of enrichedAttributes) {
+        try {
+          await this.attributesService.incrementUsage(av.attributeId, av.valueId);
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          this.logger.warn(`Failed to increment usage for attribute ${av.attributeId}: ${err.message}`);
+        }
+      }
+
+      return variant;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Error creating variant: ${err.message}`, {
+        error: err.message,
+        stack: err.stack,
+        dto: {
+          productId: dto.productId,
+          price: dto.price,
+          stock: dto.stock,
+          sku: dto.sku,
+          attributeValuesCount: dto.attributeValues?.length || 0,
+        },
+      });
+
+      // إعادة رمي الخطأ مع معلومات أفضل
+      if (error instanceof ProductNotFoundException) {
+        throw error;
+      }
+
+      // معالجة أخطاء MongoDB
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        const mongoError = error as { keyPattern?: Record<string, unknown> };
+        const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        throw new Error(`${field === 'sku' ? 'SKU' : field} موجود مسبقاً`);
+      }
+
+      throw err;
     }
-
-    return variant;
   }
 
   async findById(id: string): Promise<Variant> {

@@ -161,10 +161,25 @@ export const AttributeValueCard: React.FC<AttributeValueCardProps> = ({
                 <Edit fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title={t('tooltips.delete')}>
-              <IconButton size="small" color="error" onClick={onDelete}>
-                <Delete fontSize="small" />
-              </IconButton>
+            <Tooltip 
+              title={
+                (value.usageCount || 0) > 0
+                  ? (value.usageCount === 1
+                      ? t('tooltips.deleteDisabled', { count: value.usageCount })
+                      : t('tooltips.deleteDisabledPlural', { count: value.usageCount }))
+                  : t('tooltips.delete')
+              }
+            >
+              <span>
+                <IconButton
+                  size="small"
+                  color="error"
+                  disabled={(value.usageCount || 0) > 0}
+                  onClick={onDelete}
+                >
+                  <Delete fontSize="small" />
+                </IconButton>
+              </span>
             </Tooltip>
           </Box>
         </Box>

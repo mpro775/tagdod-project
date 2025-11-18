@@ -351,7 +351,10 @@ export class PublicProductsController {
     @Query('currency') currency?: string,
     @Req() req?: RequestWithUser,
   ) {
-    const variants = await this.variantService.findByProductId(productId);
+    const allVariants = await this.variantService.findByProductId(productId);
+    const variants = this.publicProductsPresenter.filterVariantsWithStock(
+      allVariants as unknown as Array<WithId & Record<string, unknown>>,
+    );
 
     // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
@@ -360,9 +363,10 @@ export class PublicProductsController {
 
     const { variantsWithPricing } = await this.publicProductsPresenter.enrichVariantsPricing(
       productId,
-      variants as unknown as Array<WithId & Record<string, unknown>>,
+      variants,
       discountPercent,
       requestedCurrency,
+      true,
     );
 
     return {

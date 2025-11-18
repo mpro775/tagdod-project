@@ -154,7 +154,15 @@ export const productsApi = {
       `/admin/products/${productId}/variants`
     );
     const payload = response.data.data as Variant[] | { data: Variant[] };
-    return Array.isArray(payload) ? payload : payload?.data ?? [];
+    const variants = Array.isArray(payload) ? payload : payload?.data ?? [];
+    
+    // Transform variants to add price field for backward compatibility
+    return variants.map((variant) => ({
+      ...variant,
+      price: variant.price ?? variant.basePriceUSD,
+      compareAtPrice: variant.compareAtPrice ?? variant.compareAtPriceUSD,
+      costPrice: variant.costPrice ?? variant.costPriceUSD,
+    }));
   },
 
   // ==================== Pricing Management ====================

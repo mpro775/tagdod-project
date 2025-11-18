@@ -40,12 +40,38 @@ export const useCreateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateProductDto) => productsApi.create(data),
+    mutationFn: async (data: CreateProductDto) => {
+      // التأكد من تحويل البيانات بشكل صحيح
+      const payload: CreateProductDto = {
+        ...data,
+        basePriceUSD: data.basePriceUSD ? Number(data.basePriceUSD) : undefined,
+        compareAtPriceUSD: data.compareAtPriceUSD ? Number(data.compareAtPriceUSD) : undefined,
+        costPriceUSD: data.costPriceUSD ? Number(data.costPriceUSD) : undefined,
+        sku: data.sku?.trim() || undefined,
+      };
+      return productsApi.create(payload);
+    },
     onSuccess: () => {
       toast.success('تم إنشاء المنتج بنجاح');
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY] });
     },
-    onError: ErrorHandler.showError,
+    onError: (error: any) => {
+      // معالجة أفضل للأخطاء
+      const status = error?.response?.status;
+      const errorMessage = error?.response?.data?.message || error?.message;
+
+      if (status === 400) {
+        toast.error(`خطأ في التحقق من البيانات: ${errorMessage || 'البيانات المرسلة غير صحيحة'}`);
+      } else if (status === 409 || errorMessage?.includes('موجود مسبقاً') || errorMessage?.includes('already_exists') || errorMessage?.includes('duplicate')) {
+        toast.error('المنتج موجود مسبقاً أو هناك حقل مكرر');
+      } else if (status === 404) {
+        toast.error('الفئة أو العلامة التجارية غير موجودة');
+      } else if (status >= 500) {
+        toast.error('حدث خطأ في الخادم. يرجى المحاولة مرة أخرى');
+      } else {
+        ErrorHandler.showError(error);
+      }
+    },
   });
 };
 
@@ -108,12 +134,39 @@ export const useAddVariant = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateVariantDto) => productsApi.addVariant(data),
+    mutationFn: async (data: CreateVariantDto) => {
+      // التأكد من تحويل البيانات بشكل صحيح
+      const payload: CreateVariantDto = {
+        ...data,
+        price: Number(data.price),
+        stock: Number(data.stock),
+        sku: data.sku?.trim() || undefined,
+        attributeValues: data.attributeValues || [],
+      };
+      return productsApi.addVariant(payload);
+    },
     onSuccess: (_, variables) => {
       toast.success('تم إضافة الخيار بنجاح');
       queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, variables.productId] });
+      queryClient.invalidateQueries({ queryKey: [PRODUCTS_KEY, variables.productId, 'variants'] });
     },
-    onError: ErrorHandler.showError,
+    onError: (error: any) => {
+      // معالجة أفضل للأخطاء
+      const status = error?.response?.status;
+      const errorMessage = error?.response?.data?.message || error?.message;
+
+      if (status === 400) {
+        toast.error(`خطأ في التحقق من البيانات: ${errorMessage || 'البيانات المرسلة غير صحيحة'}`);
+      } else if (status === 409 || errorMessage?.includes('موجود مسبقاً') || errorMessage?.includes('duplicate')) {
+        toast.error('SKU موجود مسبقاً. يرجى استخدام SKU آخر');
+      } else if (status === 404) {
+        toast.error('المنتج غير موجود');
+      } else if (status >= 500) {
+        toast.error('حدث خطأ في الخادم. يرجى المحاولة مرة أخرى');
+      } else {
+        ErrorHandler.showError(error);
+      }
+    },
   });
 };
 
