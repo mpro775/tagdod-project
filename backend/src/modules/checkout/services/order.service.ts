@@ -2504,10 +2504,6 @@ export class OrderService {
       case OrderStatus.COMPLETED:
         order.completedAt = now;
         order.deliveredAt = now;
-        // إنشاء وإرسال الفاتورة عند إكمال الطلب
-        this.handleOrderCompletion(order).catch(err => {
-          this.logger.error(`Failed to handle order completion for ${order.orderNumber}:`, err);
-        });
         break;
       case OrderStatus.CANCELLED:
         order.cancelledAt = now;
@@ -2516,6 +2512,14 @@ export class OrderService {
 
     await order.save();
     this.logger.log(`Order ${order.orderNumber} status updated to ${newStatus}`);
+
+    // معالجة إكمال الطلب بعد حفظ التغييرات
+    if (newStatus === OrderStatus.COMPLETED) {
+      // استخدام orderId بدلاً من order object لتجنب ParallelSaveError
+      this.handleOrderCompletion(order._id.toString()).catch(err => {
+        this.logger.error(`Failed to handle order completion for ${order.orderNumber}:`, err);
+      });
+    }
 
     // تسجيل تغيير حالة الطلب في audit
     if (this.auditService) {
@@ -3848,8 +3852,18 @@ export class OrderService {
   /**
    * معالجة إكمال الطلب - إنشاء وإرسال الفاتورة
    */
-  private async handleOrderCompletion(order: OrderDocument): Promise<void> {
+  private async handleOrderCompletion(orderId: string): Promise<void> {
+    let orderNumber = orderId; // للاستخدام في catch block
     try {
+      // جلب نسخة جديدة من الطلب لتجنب ParallelSaveError
+      const order = await this.orderModel.findById(orderId);
+      if (!order) {
+        this.logger.warn(`Order ${orderId} not found for completion handling`);
+        return;
+      }
+
+      orderNumber = order.orderNumber; // حفظ orderNumber للاستخدام في catch block
+
       // إنشاء رقم فاتورة إذا لم يكن موجوداً
       if (!order.invoiceNumber) {
         const year = new Date().getFullYear();
@@ -3869,7 +3883,7 @@ export class OrderService {
 
       this.logger.log(`Order completion handled successfully for ${order.orderNumber}`);
     } catch (error) {
-      this.logger.error(`Error handling order completion for ${order.orderNumber}:`, error);
+      this.logger.error(`Error handling order completion for ${orderNumber}:`, error);
       // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
     }
   }

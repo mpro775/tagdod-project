@@ -51,23 +51,25 @@ export class EmailAdapter {
         return;
       }
 
+      const smtpPort = parseInt(this.configService.get('SMTP_PORT') || '587');
+      const smtpSecure = this.configService.get('SMTP_SECURE') === 'true';
+      
       const smtpConfig = {
         host: smtpHost,
-        port: parseInt(this.configService.get('SMTP_PORT') || '587'),
-        secure: this.configService.get('SMTP_SECURE') === 'true',
+        port: smtpPort,
+        secure: smtpSecure,
         auth: {
           user: smtpUser,
           pass: smtpPass,
         },
         tls: {
           rejectUnauthorized: false,
-          ciphers: 'SSLv3',
         },
-        connectionTimeout: 10000, // 10 seconds
-        greetingTimeout: 10000, // 10 seconds
-        socketTimeout: 10000, // 10 seconds
-        debug: process.env.NODE_ENV === 'development', // Enable debug in development
-        logger: process.env.NODE_ENV === 'development', // Enable logger in development
+        connectionTimeout: 30000, // زيادة إلى 30 ثانية
+        greetingTimeout: 30000,   // زيادة إلى 30 ثانية
+        socketTimeout: 30000,     // زيادة إلى 30 ثانية
+        debug: process.env.NODE_ENV === 'development',
+        logger: process.env.NODE_ENV === 'development',
       };
 
       this.transporter = nodemailer.createTransport(smtpConfig);
