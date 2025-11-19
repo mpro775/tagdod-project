@@ -32,8 +32,6 @@ import { WebSocketService } from '../../shared/websocket/websocket.service';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
 import { User, UserRole } from '../users/schemas/user.schema';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 
 @Injectable()
 export class SupportService {

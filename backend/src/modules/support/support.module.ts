@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CustomerSupportController } from './customer.controller';
 import { AdminSupportController } from './admin.controller';
@@ -6,9 +6,11 @@ import { SupportService } from './support.service';
 import { SupportTicket, SupportTicketSchema } from './schemas/support-ticket.schema';
 import { SupportMessage, SupportMessageSchema } from './schemas/support-message.schema';
 import { CannedResponse, CannedResponseSchema } from './schemas/canned-response.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
 import { SupportMessagesGateway } from './gateways/support-messages.gateway';
+import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
   
 @Module({
   imports: [
@@ -16,9 +18,11 @@ import { SupportMessagesGateway } from './gateways/support-messages.gateway';
       { name: SupportTicket.name, schema: SupportTicketSchema },
       { name: SupportMessage.name, schema: SupportMessageSchema },
       { name: CannedResponse.name, schema: CannedResponseSchema },
+      { name: User.name, schema: UserSchema },
     ]),
     AuthModule,
     SharedModule,
+    forwardRef(() => NotificationsCompleteModule),
   ],
   controllers: [CustomerSupportController, AdminSupportController],
   providers: [

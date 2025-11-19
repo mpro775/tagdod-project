@@ -206,9 +206,11 @@ UnifiedNotificationSchema.pre('save', function(next) {
   // Set category based on type if not provided
   if (!this.category) {
     const typeToCategoryMap: Record<NotificationType, NotificationCategory> = {
+      [NotificationType.ORDER_CREATED]: NotificationCategory.ORDER,
       [NotificationType.ORDER_CONFIRMED]: NotificationCategory.ORDER,
       [NotificationType.ORDER_CANCELLED]: NotificationCategory.ORDER,
       [NotificationType.ORDER_REFUNDED]: NotificationCategory.ORDER,
+      [NotificationType.ORDER_RATED]: NotificationCategory.ORDER,
       [NotificationType.SERVICE_REQUEST_OPENED]: NotificationCategory.SERVICE,
       [NotificationType.NEW_ENGINEER_OFFER]: NotificationCategory.SERVICE,
       [NotificationType.OFFER_ACCEPTED]: NotificationCategory.SERVICE,
@@ -230,6 +232,7 @@ UnifiedNotificationSchema.pre('save', function(next) {
       [NotificationType.TICKET_CREATED]: NotificationCategory.SUPPORT,
       [NotificationType.TICKET_UPDATED]: NotificationCategory.SUPPORT,
       [NotificationType.TICKET_RESOLVED]: NotificationCategory.SUPPORT,
+      [NotificationType.SUPPORT_MESSAGE_RECEIVED]: NotificationCategory.SUPPORT,
       [NotificationType.SYSTEM_MAINTENANCE]: NotificationCategory.SYSTEM,
       [NotificationType.NEW_FEATURE]: NotificationCategory.SYSTEM,
       [NotificationType.SYSTEM_ALERT]: NotificationCategory.SYSTEM,
@@ -238,6 +241,8 @@ UnifiedNotificationSchema.pre('save', function(next) {
       [NotificationType.CART_ABANDONMENT]: NotificationCategory.MARKETING,
       [NotificationType.PAYMENT_FAILED]: NotificationCategory.PAYMENT,
       [NotificationType.PAYMENT_SUCCESS]: NotificationCategory.PAYMENT,
+      [NotificationType.INVOICE_CREATED]: NotificationCategory.ORDER,
+      [NotificationType.COUPON_USED]: NotificationCategory.PROMOTION,
     };
     
     this.category = typeToCategoryMap[this.type] || NotificationCategory.SYSTEM;
