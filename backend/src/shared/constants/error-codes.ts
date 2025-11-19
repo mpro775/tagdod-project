@@ -46,6 +46,7 @@ export enum ErrorCode {
   AUTH_USER_NOT_ACTIVE = 'AUTH_126',
   AUTH_NOT_ADMIN = 'AUTH_127',
   AUTH_PHONE_EXISTS = 'AUTH_128',
+  AUTH_INVALID_PHONE = 'AUTH_129',
 
   // ==================== المستخدمون (USERS: 200-299) ====================
   USER_NOT_FOUND = 'USER_200',
@@ -73,6 +74,10 @@ export enum ErrorCode {
   VARIANT_NOT_FOUND = 'PRODUCT_311',
   VARIANT_OUT_OF_STOCK = 'PRODUCT_312',
   VARIANT_INACTIVE = 'PRODUCT_313',
+  VARIANT_DUPLICATE_SKU = 'PRODUCT_314',
+  VARIANT_CREATE_FAILED = 'PRODUCT_315',
+  VARIANT_UPDATE_FAILED = 'PRODUCT_316',
+  VARIANT_DELETE_FAILED = 'PRODUCT_317',
 
   // ==================== الفئات (CATEGORIES: 400-449) ====================
   CATEGORY_NOT_FOUND = 'CATEGORY_400',
@@ -85,6 +90,10 @@ export enum ErrorCode {
   BRAND_NOT_FOUND = 'BRAND_450',
   BRAND_ALREADY_EXISTS = 'BRAND_451',
   BRAND_HAS_PRODUCTS = 'BRAND_452',
+  BRAND_INVALID_DATA = 'BRAND_453',
+  BRAND_CREATE_FAILED = 'BRAND_454',
+  BRAND_UPDATE_FAILED = 'BRAND_455',
+  BRAND_DELETE_FAILED = 'BRAND_456',
 
   // ==================== السلة (CART: 500-549) ====================
   CART_NOT_FOUND = 'CART_500',
@@ -97,6 +106,14 @@ export enum ErrorCode {
   CART_REMOVE_FAILED = 'CART_507',
   CART_CLEAR_FAILED = 'CART_508',
   CART_EXPIRED = 'CART_509',
+  CART_CAPACITY_EXCEEDED = 'CART_510',
+  CART_PRODUCT_PRICE_MISSING = 'CART_511',
+  CART_VARIANT_NOT_FOUND = 'CART_512',
+  CART_PRODUCT_NOT_FOUND = 'CART_513',
+  CART_ALREADY_CONVERTED = 'CART_514',
+  CART_INVALID_DATA = 'CART_515',
+  CART_MERGE_FAILED = 'CART_516',
+  CART_SYNC_FAILED = 'CART_517',
 
   // ==================== الطلبات (ORDERS: 550-649) ====================
   ORDER_NOT_FOUND = 'ORDER_600',
@@ -192,6 +209,36 @@ export enum ErrorCode {
   EXCHANGE_RATE_UPDATE_FAILED = 'EXCHANGE_1101',
   CURRENCY_NOT_SUPPORTED = 'EXCHANGE_1102',
   CONVERSION_FAILED = 'EXCHANGE_1103',
+  EXCHANGE_RATE_FETCH_FAILED = 'EXCHANGE_1104',
+
+  // ==================== التحليلات (ANALYTICS: 1150-1199) ====================
+  ANALYTICS_REPORT_NOT_FOUND = 'ANALYTICS_1150',
+  ANALYTICS_REPORT_GENERATION_FAILED = 'ANALYTICS_1151',
+  ANALYTICS_SNAPSHOT_GENERATION_FAILED = 'ANALYTICS_1152',
+  ANALYTICS_CACHE_ERROR = 'ANALYTICS_1153',
+  ANALYTICS_INVALID_DATE_RANGE = 'ANALYTICS_1154',
+  ANALYTICS_QUERY_FAILED = 'ANALYTICS_1155',
+  ANALYTICS_CALCULATION_FAILED = 'ANALYTICS_1156',
+  ANALYTICS_USER_CALCULATION_FAILED = 'ANALYTICS_1157',
+  ANALYTICS_PRODUCT_CALCULATION_FAILED = 'ANALYTICS_1158',
+  ANALYTICS_ORDER_CALCULATION_FAILED = 'ANALYTICS_1159',
+  ANALYTICS_SERVICE_CALCULATION_FAILED = 'ANALYTICS_1160',
+  ANALYTICS_SUPPORT_CALCULATION_FAILED = 'ANALYTICS_1161',
+  ANALYTICS_CRON_JOB_FAILED = 'ANALYTICS_1162',
+
+  // ==================== السمات (ATTRIBUTES: 1200-1249) ====================
+  ATTRIBUTE_NOT_FOUND = 'ATTRIBUTE_1200',
+  ATTRIBUTE_ALREADY_EXISTS = 'ATTRIBUTE_1201',
+  ATTRIBUTE_IN_USE = 'ATTRIBUTE_1202',
+  ATTRIBUTE_INVALID_DATA = 'ATTRIBUTE_1203',
+  ATTRIBUTE_CREATE_FAILED = 'ATTRIBUTE_1204',
+  ATTRIBUTE_UPDATE_FAILED = 'ATTRIBUTE_1205',
+  ATTRIBUTE_DELETE_FAILED = 'ATTRIBUTE_1206',
+  ATTRIBUTE_VALUE_NOT_FOUND = 'ATTRIBUTE_1207',
+  ATTRIBUTE_VALUE_ALREADY_EXISTS = 'ATTRIBUTE_1208',
+  ATTRIBUTE_VALUE_IN_USE = 'ATTRIBUTE_1209',
+  ATTRIBUTE_VALUE_INVALID_HEX = 'ATTRIBUTE_1210',
+  ATTRIBUTE_VALUE_HEX_REQUIRED = 'ATTRIBUTE_1211',
 }
 
 /**
@@ -238,6 +285,7 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.AUTH_USER_NOT_ACTIVE]: 'هذا الحساب غير نشط',
   [ErrorCode.AUTH_NOT_ADMIN]: 'هذا الحساب غير مصرح له بالدخول للوحة التحكم',
   [ErrorCode.AUTH_PHONE_EXISTS]: 'رقم الهاتف موجود مسبقاً',
+  [ErrorCode.AUTH_INVALID_PHONE]: 'رقم الهاتف غير صحيح',
 
   // ==================== المستخدمون ====================
   [ErrorCode.USER_NOT_FOUND]: 'المستخدم غير موجود',
@@ -265,6 +313,10 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.VARIANT_NOT_FOUND]: 'خيار المنتج غير موجود',
   [ErrorCode.VARIANT_OUT_OF_STOCK]: 'خيار المنتج غير متوفر',
   [ErrorCode.VARIANT_INACTIVE]: 'خيار المنتج غير نشط',
+  [ErrorCode.VARIANT_DUPLICATE_SKU]: 'رمز SKU موجود مسبقاً',
+  [ErrorCode.VARIANT_CREATE_FAILED]: 'فشل إنشاء خيار المنتج',
+  [ErrorCode.VARIANT_UPDATE_FAILED]: 'فشل تحديث خيار المنتج',
+  [ErrorCode.VARIANT_DELETE_FAILED]: 'فشل حذف خيار المنتج',
 
   // ==================== الفئات ====================
   [ErrorCode.CATEGORY_NOT_FOUND]: 'الفئة غير موجودة',
@@ -277,6 +329,10 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.BRAND_NOT_FOUND]: 'العلامة التجارية غير موجودة',
   [ErrorCode.BRAND_ALREADY_EXISTS]: 'العلامة التجارية موجودة بالفعل',
   [ErrorCode.BRAND_HAS_PRODUCTS]: 'لا يمكن حذف العلامة التجارية لوجود منتجات بها',
+  [ErrorCode.BRAND_INVALID_DATA]: 'بيانات العلامة التجارية غير صالحة',
+  [ErrorCode.BRAND_CREATE_FAILED]: 'فشل إنشاء العلامة التجارية',
+  [ErrorCode.BRAND_UPDATE_FAILED]: 'فشل تحديث العلامة التجارية',
+  [ErrorCode.BRAND_DELETE_FAILED]: 'فشل حذف العلامة التجارية',
 
   // ==================== السلة ====================
   [ErrorCode.CART_NOT_FOUND]: 'السلة غير موجودة',
@@ -289,6 +345,14 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.CART_REMOVE_FAILED]: 'فشل إزالة المنتج من السلة',
   [ErrorCode.CART_CLEAR_FAILED]: 'فشل تفريغ السلة',
   [ErrorCode.CART_EXPIRED]: 'انتهت صلاحية السلة',
+  [ErrorCode.CART_CAPACITY_EXCEEDED]: 'تم تجاوز الحد الأقصى لعدد العناصر في السلة',
+  [ErrorCode.CART_PRODUCT_PRICE_MISSING]: 'لم يتم تحديد سعر لهذا المنتج',
+  [ErrorCode.CART_VARIANT_NOT_FOUND]: 'المتغير غير موجود',
+  [ErrorCode.CART_PRODUCT_NOT_FOUND]: 'المنتج غير موجود',
+  [ErrorCode.CART_ALREADY_CONVERTED]: 'تم تحويل السلة إلى طلب بالفعل',
+  [ErrorCode.CART_INVALID_DATA]: 'بيانات السلة غير صالحة',
+  [ErrorCode.CART_MERGE_FAILED]: 'فشل دمج السلات',
+  [ErrorCode.CART_SYNC_FAILED]: 'فشل مزامنة السلة',
 
   // ==================== الطلبات ====================
   [ErrorCode.ORDER_NOT_FOUND]: 'الطلب غير موجود',
@@ -384,6 +448,36 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.EXCHANGE_RATE_UPDATE_FAILED]: 'فشل تحديث سعر الصرف',
   [ErrorCode.CURRENCY_NOT_SUPPORTED]: 'العملة غير مدعومة',
   [ErrorCode.CONVERSION_FAILED]: 'فشل تحويل العملة',
+  [ErrorCode.EXCHANGE_RATE_FETCH_FAILED]: 'فشل في جلب أسعار الصرف. يرجى المحاولة مرة أخرى',
+
+  // ==================== التحليلات ====================
+  [ErrorCode.ANALYTICS_REPORT_NOT_FOUND]: 'التقرير غير موجود',
+  [ErrorCode.ANALYTICS_REPORT_GENERATION_FAILED]: 'فشل إنشاء التقرير',
+  [ErrorCode.ANALYTICS_SNAPSHOT_GENERATION_FAILED]: 'فشل إنشاء لقطة التحليلات',
+  [ErrorCode.ANALYTICS_CACHE_ERROR]: 'خطأ في ذاكرة التخزين المؤقت للتحليلات',
+  [ErrorCode.ANALYTICS_INVALID_DATE_RANGE]: 'نطاق التاريخ غير صالح',
+  [ErrorCode.ANALYTICS_QUERY_FAILED]: 'فشل استعلام التحليلات',
+  [ErrorCode.ANALYTICS_CALCULATION_FAILED]: 'فشل حساب التحليلات',
+  [ErrorCode.ANALYTICS_USER_CALCULATION_FAILED]: 'فشل حساب تحليلات المستخدمين',
+  [ErrorCode.ANALYTICS_PRODUCT_CALCULATION_FAILED]: 'فشل حساب تحليلات المنتجات',
+  [ErrorCode.ANALYTICS_ORDER_CALCULATION_FAILED]: 'فشل حساب تحليلات الطلبات',
+  [ErrorCode.ANALYTICS_SERVICE_CALCULATION_FAILED]: 'فشل حساب تحليلات الخدمات',
+  [ErrorCode.ANALYTICS_SUPPORT_CALCULATION_FAILED]: 'فشل حساب تحليلات الدعم الفني',
+  [ErrorCode.ANALYTICS_CRON_JOB_FAILED]: 'فشل تنفيذ مهمة التحليلات المجدولة',
+
+  // ==================== السمات ====================
+  [ErrorCode.ATTRIBUTE_NOT_FOUND]: 'السمة غير موجودة',
+  [ErrorCode.ATTRIBUTE_ALREADY_EXISTS]: 'السمة موجودة بالفعل',
+  [ErrorCode.ATTRIBUTE_IN_USE]: 'لا يمكن حذف السمة لاستخدامها في منتجات',
+  [ErrorCode.ATTRIBUTE_INVALID_DATA]: 'بيانات السمة غير صالحة',
+  [ErrorCode.ATTRIBUTE_CREATE_FAILED]: 'فشل إنشاء السمة',
+  [ErrorCode.ATTRIBUTE_UPDATE_FAILED]: 'فشل تحديث السمة',
+  [ErrorCode.ATTRIBUTE_DELETE_FAILED]: 'فشل حذف السمة',
+  [ErrorCode.ATTRIBUTE_VALUE_NOT_FOUND]: 'قيمة السمة غير موجودة',
+  [ErrorCode.ATTRIBUTE_VALUE_ALREADY_EXISTS]: 'قيمة السمة موجودة بالفعل',
+  [ErrorCode.ATTRIBUTE_VALUE_IN_USE]: 'لا يمكن حذف قيمة السمة لاستخدامها في منتجات',
+  [ErrorCode.ATTRIBUTE_VALUE_INVALID_HEX]: 'كود اللون غير صالح',
+  [ErrorCode.ATTRIBUTE_VALUE_HEX_REQUIRED]: 'كود اللون مطلوب للسمات من نوع لون',
 };
 
 /**

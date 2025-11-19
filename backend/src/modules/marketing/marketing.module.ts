@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MarketingService } from './marketing.service';
 import { MarketingAdminController } from './admin.controller';
 import { MarketingPublicController } from './public.controller';
+import { MarketingCronService } from './marketing.cron';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
 
@@ -26,7 +27,7 @@ import { Product, ProductSchema } from '../products/schemas/product.schema';
     SharedModule,
   ],
   controllers: [MarketingAdminController, MarketingPublicController],
-  providers: [MarketingService],
+  providers: [MarketingService, MarketingCronService],
   exports: [MongooseModule, MarketingService],
 })
 export class MarketingModule {}

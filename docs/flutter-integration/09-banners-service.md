@@ -1,9 +1,9 @@
 # 🎨 خدمة البنرات (Banners Service)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: أكتوبر 2025
+> 📅 **آخر تحديث**: نوفمبر 2025
 
-خدمة البنرات توفر endpoints لعرض البنرات الإعلانية مع دعم التتبع والإحصائيات.
+خدمة البنرات توفر endpoints لعرض البنرات الإعلانية مع دعم التتبع والإحصائيات. **ملاحظة مهمة**: البنرات تتطلب توكن مصادقة صالح وتُفلتر حسب نوع المستخدم من التوكن.
 
 ---
 
@@ -18,13 +18,13 @@
 
 ## 1. قائمة البنرات النشطة
 
-يسترجع البنرات النشطة حسب الموقع المحدد.
+يسترجع البنرات النشطة حسب الموقع المحدد ونوع المستخدم من التوكن. **يتطلب توكن مصادقة صالح** - إذا لم يكن المستخدم مسجل دخول، سيرجع array فارغ.
 
 ### معلومات الطلب
 
 - **Method:** `GET`
 - **Endpoint:** `/marketing/banners`
-- **Auth Required:** ❌ لا
+- **Auth Required:** ✅ **نعم** (توكن مصادقة مطلوب)
 - **Cache:** ✅ نعم (5 دقائق)
 
 ### Query Parameters
@@ -54,48 +54,52 @@
   "success": true,
   "data": [
     {
-      "_id": "64banner123",
-      "title": "عرض خاص على الألواح الشمسية",
-      "description": "خصم 20% على جميع الألواح الشمسية",
-      "imageUrl": "https://cdn.example.com/banners/solar-panels-offer.jpg",
+      "id": "64banner123",
+      "image": {
+        "id": "64img123",
+        "url": "https://cdn.example.com/banners/solar-panels-offer.jpg"
+      },
       "linkUrl": "/products?categoryId=64cat123",
-      "altText": "عرض الألواح الشمسية",
       "navigationType": "category",
       "navigationTarget": "64cat123",
       "navigationParams": {},
       "location": "home_top",
-      "promotionType": "discount",
-      "isActive": true,
       "sortOrder": 1,
-      "startDate": "2025-01-01T00:00:00.000Z",
-      "endDate": "2025-01-31T23:59:59.000Z",
-      "displayDuration": 30,
-      "targetAudiences": ["wholesale", "retail"],
-      "targetUserTypes": ["user", "engineer"],
-      "targetCategories": ["64cat123", "64cat124"],
-      "targetProducts": ["64prod123", "64prod124"],
-      "viewCount": 1520,
-      "clickCount": 245,
-      "conversionCount": 15,
-      "createdBy": "64admin123",
-      "lastModifiedBy": "64admin123",
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "updatedAt": "2025-01-15T10:00:00.000Z"
+      "isActive": true,
+      "altText": "عرض الألواح الشمسية"
     }
   ],
   "requestId": "req_banner_001"
 }
 ```
 
+### Response - بدون توكن أو توكن غير صالح
+
+```json
+{
+  "success": true,
+  "data": [],
+  "requestId": "req_banner_002"
+}
+```
+
+> **ملاحظة**: إذا لم يكن المستخدم مسجل دخول أو كان التوكن غير صالح، سيرجع array فارغ `[]`.
+
 ### كود Flutter
 
 ```dart
 Future<List<Banner>> getActiveBanners({String? location}) async {
+  // تأكد من إضافة Authorization header مع التوكن
   final response = await _dio.get(
     '/marketing/banners',
     queryParameters: {
       if (location != null) 'location': location,
     },
+    options: Options(
+      headers: {
+        'Authorization': 'Bearer ${await _getAccessToken()}', // تأكد من إضافة التوكن
+      },
+    ),
   );
 
   final apiResponse = ApiResponse<List<Banner>>.fromJson(
@@ -106,12 +110,14 @@ Future<List<Banner>> getActiveBanners({String? location}) async {
   );
 
   if (apiResponse.isSuccess) {
-    return apiResponse.data!;
+    return apiResponse.data ?? []; // قد يكون فارغاً إذا لم يكن المستخدم مسجل دخول
   } else {
     throw ApiException(apiResponse.error!);
   }
 }
 ```
+
+> **مهم**: تأكد من إضافة `Authorization: Bearer <token>` header في كل طلب. إذا لم يكن المستخدم مسجل دخول، سيرجع array فارغ `[]`.
 
 ---
 
@@ -385,9 +391,11 @@ class Banner {
   });
 
   factory Banner.fromJson(Map<String, dynamic> json) {
-    // Handle imageId - could be populated Media object or just ID
+    // Handle image - could be object with id and url, or legacy imageId/imageUrl
     String imageUrl = '';
-    if (json['imageId'] != null) {
+    if (json['image'] != null && json['image'] is Map) {
+      imageUrl = json['image']['url'] ?? '';
+    } else if (json['imageId'] != null) {
       if (json['imageId'] is Map) {
         imageUrl = json['imageId']['url'] ?? json['imageId']['path'] ?? '';
       } else if (json['imageUrl'] != null) {
@@ -398,7 +406,7 @@ class Banner {
     }
 
     return Banner(
-      id: json['_id'],
+      id: json['id'] ?? json['_id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'],
       imageUrl: imageUrl,
@@ -575,9 +583,12 @@ class Banner {
    - يمكنك cache البيانات محلياً أيضاً
    - استخدم `location` parameter للفلترة
 
-10. **الأداء:**
-   - جميع الـ endpoints لا تتطلب مصادقة
-   - استخدم `getActiveBanners()` للحصول على البنرات النشطة
+10. **المصادقة والفلترة:**
+   - **`getActiveBanners()` يتطلب توكن مصادقة صالح** - إذا لم يكن المستخدم مسجل دخول، سيرجع array فارغ
+   - البنرات تُفلتر تلقائياً حسب نوع المستخدم من التوكن (`targetUserTypes`)
+   - البنرات بدون `targetUserTypes` (فارغ) تظهر لجميع المستخدمين المسجلين
+   - البنرات مع `targetUserTypes` تظهر فقط للمستخدمين الذين لديهم أحد الأدوار المحددة
+   - استخدم `getActiveBanners()` للحصول على البنرات النشطة المناسبة للمستخدم
    - استخدم `trackBannerView()` و `trackBannerClick()` للتتبع
 
 11. **التحسين:**
@@ -598,6 +609,9 @@ class Banner {
 6. ✅ **جديد**: إضافة `targetUserTypes` لاستهداف أنواع المستخدمين
 7. ✅ **جديد**: إضافة `BannerNavigationType` enum و `UserRole` enum
 8. ✅ **جديد**: إضافة helper methods للتنقل والاستهداف
+9. ✅ **تحديث نوفمبر 2025**: **`getActiveBanners()` يتطلب الآن توكن مصادقة** - البنرات لا تظهر للمستخدمين غير المسجلين
+10. ✅ **تحديث نوفمبر 2025**: تحديث response structure - استخدام `image` object بدلاً من `imageUrl` مباشرة
+11. ✅ **تحديث نوفمبر 2025**: البنرات تُفلتر تلقائياً حسب نوع المستخدم من التوكن
 
 **ملفات Backend المرجعية:**
 - `backend/src/modules/marketing/public.controller.ts` - جميع endpoints

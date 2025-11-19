@@ -45,6 +45,61 @@ paths:
                     example: Bad Request
       tags:
         - المصادقة
+  /api/v1/auth/check-phone:
+    post:
+      operationId: checkPhone
+      summary: التحقق من وجود رقم الهاتف
+      description: يتحقق من وجود رقم الهاتف في النظام بغض النظر عن نوع المستخدم (عميل، مهندس، تاجر، أو أدمن)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckPhoneDto'
+      responses:
+        '200':
+          description: تم التحقق من رقم الهاتف بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+                    example: true
+                    description: هل الرقم مسجل مسبقاً
+                  phone:
+                    type: string
+                    example: '+967777123456'
+                    description: رقم الهاتف المدخل
+                  status:
+                    type: string
+                    example: ACTIVE
+                    enum:
+                      - ACTIVE
+                      - PENDING
+                      - SUSPENDED
+                      - DELETED
+                    description: حالة الحساب (إن وجد)
+        '400':
+          description: رقم الهاتف غير صحيح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 400
+                  message:
+                    type: string
+                    example: صيغة رقم الهاتف غير صحيحة
+                  error:
+                    type: string
+                    example: Bad Request
+      tags:
+        - المصادقة
   /api/v1/auth/verify-otp:
     post:
       operationId: verifyOtp
@@ -82,7 +137,7 @@ paths:
                         example: 507f1f77bcf86cd799439011
                       phone:
                         type: string
-                        example: '+966501234567'
+                        example: '+967777123456'
                       preferredCurrency:
                         type: string
                         example: USD
@@ -206,7 +261,7 @@ paths:
                         example: 507f1f77bcf86cd799439011
                       phone:
                         type: string
-                        example: '+966501234567'
+                        example: '+967777123456'
                       firstName:
                         type: string
                         example: أحمد
@@ -508,10 +563,10 @@ paths:
                             example: base64-encoded-user-id
                           name:
                             type: string
-                            example: '+966501234567'
+                            example: '+967777123456'
                           displayName:
                             type: string
-                            example: '+966501234567'
+                            example: '+967777123456'
                       pubKeyCredParams:
                         type: array
                         items:
@@ -613,7 +668,7 @@ paths:
                         example: 507f1f77bcf86cd799439011
                       phone:
                         type: string
-                        example: '+966501234567'
+                        example: '+967777123456'
                       firstName:
                         type: string
                         example: أحمد
@@ -809,7 +864,7 @@ paths:
                         example: 507f1f77bcf86cd799439011
                       phone:
                         type: string
-                        example: '+966501234567'
+                        example: '+967777123456'
                       firstName:
                         type: string
                         example: أحمد
@@ -9345,8 +9400,8 @@ paths:
       operationId: getActiveBanners
       summary: الحصول على البانرات النشطة
       description: >-
-        استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. إذا كان المستخدم مسجل دخول، سيتم عرض البانرات
-        المتوافقة مع أدواره. للمستخدمين غير المسجلين، سيتم عرض البانرات العامة فقط.
+        استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. يتطلب توكن مصادقة لتحديد نوع المستخدم وعرض
+        البانرات المناسبة له.
       parameters:
         - name: location
           required: false
@@ -9381,14 +9436,15 @@ paths:
                           type: string
                           example: banner123
                           description: معرف البانر
-                        title:
-                          type: string
-                          example: عرض خاص
-                          description: عنوان البانر
-                        imageUrl:
-                          type: string
-                          example: https://cdn.example.com/banner.jpg
-                          description: رابط صورة البانر
+                        image:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: img123
+                            url:
+                              type: string
+                              example: https://cdn.example.com/banner.jpg
                         linkUrl:
                           type: string
                           example: https://example.com/special-offer
@@ -9423,14 +9479,26 @@ paths:
                             - checkout_page
                             - sidebar
                             - footer
-                          example: home
+                          example: home_top
                           description: موقع البانر
+                        sortOrder:
+                          type: number
+                          example: 1
+                          description: ترتيب العرض
                         isActive:
                           type: boolean
                           example: true
                           description: حالة البانر
+                        altText:
+                          type: string
+                          example: عرض خاص
+                          description: النص البديل للصورة
+        '401':
+          description: توكن غير صالح أو منتهي الصلاحية
       tags:
         - التسويق-العام
+      security:
+        - bearer: []
   /api/v1/marketing/banners/{id}/view:
     get:
       operationId: trackBannerView
@@ -19271,7 +19339,7 @@ components:
         phone:
           type: string
           description: رقم الهاتف لإرسال كود التحقق إليه
-          example: '+966501234567'
+          example: '+967777123456'
           pattern: ^\+?[1-9]\d{1,14}$
           minLength: 10
           maxLength: 15
@@ -19285,13 +19353,25 @@ components:
           default: register
       required:
         - phone
+    CheckPhoneDto:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: رقم الهاتف للتحقق من وجوده
+          example: '+967777123456'
+          pattern: ^\+?[1-9]\d{1,14}$
+          minLength: 10
+          maxLength: 15
+      required:
+        - phone
     VerifyOtpDto:
       type: object
       properties:
         phone:
           type: string
           description: رقم الهاتف المرتبط بكود التحقق
-          example: '+966501234567'
+          example: '+967777123456'
           pattern: ^\+?[1-9]\d{1,14}$
           minLength: 10
           maxLength: 15
@@ -19383,7 +19463,7 @@ components:
         phone:
           type: string
           description: رقم الهاتف المرتبط بالحساب
-          example: '+966501234567'
+          example: '+967777123456'
           pattern: ^\+?[1-9]\d{1,14}$
           minLength: 10
           maxLength: 15
@@ -19395,7 +19475,7 @@ components:
         phone:
           type: string
           description: رقم الهاتف المرتبط بالحساب
-          example: '+966501234567'
+          example: '+967777123456'
           pattern: ^\+?[1-9]\d{1,14}$
           minLength: 10
           maxLength: 15

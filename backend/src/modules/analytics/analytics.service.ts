@@ -30,6 +30,11 @@ import { SupportTicket, SupportTicketDocument } from '../support/schemas/support
 import { CacheService } from '../../shared/cache/cache.service';
 import { SystemMonitoringService } from '../system-monitoring/system-monitoring.service';
 import { ErrorLogsService } from '../error-logs/error-logs.service';
+import {
+  AnalyticsSnapshotGenerationFailedException,
+  AnalyticsException,
+  ErrorCode
+} from '../../shared/exceptions';
 
 const COMPLETED_STATUSES = ['completed'] as const;
 
@@ -142,8 +147,24 @@ export class AnalyticsService {
       this.logger.log(`Analytics snapshot generated in ${Date.now() - startTime}ms`);
       return existing;
     } catch (error) {
-      this.logger.error('Failed to generate analytics snapshot', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to generate analytics snapshot', {
+        error: err.message,
+        stack: err.stack,
+        date: format(date, 'yyyy-MM-dd'),
+        period,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع AnalyticsException
+      if (error instanceof AnalyticsException) {
+        throw error;
+      }
+
+      throw new AnalyticsSnapshotGenerationFailedException({
+        date: format(date, 'yyyy-MM-dd'),
+        period,
+        error: err.message,
+      });
     }
   }
 
@@ -2375,8 +2396,21 @@ export class AnalyticsService {
 
       this.logger.log(`Regenerated ${snapshots.length} analytics snapshots`);
     } catch (error) {
-      this.logger.error('Error regenerating analytics snapshots:', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Error regenerating analytics snapshots:', {
+        error: err.message,
+        stack: err.stack,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع AnalyticsException
+      if (error instanceof AnalyticsException) {
+        throw error;
+      }
+
+      throw new AnalyticsSnapshotGenerationFailedException({
+        reason: 'regeneration_failed',
+        error: err.message,
+      });
     }
   }
 

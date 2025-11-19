@@ -28,6 +28,7 @@ import { BiometricLoginChallengeDto } from './dto/biometric-login-challenge.dto'
 import { BiometricLoginVerifyDto } from './dto/biometric-login-verify.dto';
 
 import { UserSignupDto } from './dto/user-signup.dto';
+import { CheckPhoneDto } from './dto/check-phone.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserRole, UserStatus, CapabilityStatus, UserDocument } from '../users/schemas/user.schema';
@@ -43,6 +44,7 @@ import {
   SuperAdminExistsException,
   InvalidSecretException,
   NotAllowedInProductionException,
+  InvalidPhoneException,
   AuthException,
   ErrorCode 
 } from '../../shared/exceptions';
@@ -148,6 +150,73 @@ export class AuthController {
     return { sent: result.sent, devCode: result.devCode };
   }
 
+  @Post('check-phone')
+  @ApiOperation({
+    summary: 'التحقق من وجود رقم الهاتف',
+    description: 'يتحقق من وجود رقم الهاتف في النظام بغض النظر عن نوع المستخدم (عميل، مهندس، تاجر، أو أدمن)',
+  })
+  @ApiBody({ type: CheckPhoneDto })
+  @ApiOkResponse({
+    description: 'تم التحقق من رقم الهاتف بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        exists: { type: 'boolean', example: true, description: 'هل الرقم مسجل مسبقاً' },
+        phone: { type: 'string', example: '+967777123456', description: 'رقم الهاتف المدخل' },
+        status: {
+          type: 'string',
+          example: 'ACTIVE',
+          enum: ['ACTIVE', 'PENDING', 'SUSPENDED', 'DELETED'],
+          description: 'حالة الحساب (إن وجد)',
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'رقم الهاتف غير صحيح',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'صيغة رقم الهاتف غير صحيحة' },
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
+  })
+  async checkPhone(@Body() dto: CheckPhoneDto) {
+    this.logger.log(`Checking phone existence: ${dto.phone}`);
+
+    // البحث في قاعدة البيانات بالرقم كما هو (بدون +967) أو بالرقم المحول
+    let user = await this.userModel.findOne({ phone: dto.phone });
+    if (!user) {
+      // محاولة البحث بالرقم المحول إلى +967
+      try {
+        const normalizedPhone = normalizeYemeniPhone(dto.phone);
+        user = await this.userModel.findOne({ phone: normalizedPhone });
+      } catch (error) {
+        this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
+        throw new InvalidPhoneException({
+          phone: dto.phone,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    if (!user) {
+      return {
+        exists: false,
+        phone: dto.phone,
+        status: null,
+      };
+    }
+
+    return {
+      exists: true,
+      phone: dto.phone,
+      status: user.status,
+    };
+  }
+
   @Post('verify-otp')
   @ApiOperation({
     summary: 'التحقق من رمز OTP وإتمام التسجيل/الدخول',
@@ -170,7 +239,7 @@ export class AuthController {
           type: 'object',
           properties: {
             id: { type: 'string', example: '507f1f77bcf86cd799439011' },
-            phone: { type: 'string', example: '+966501234567' },
+            phone: { type: 'string', example: '+967777123456' },
             preferredCurrency: { type: 'string', example: 'USD' },
           },
         },
@@ -207,9 +276,9 @@ export class AuthController {
       normalizedPhone = normalizeYemeniPhone(dto.phone);
     } catch (error) {
       this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
-      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+      throw new InvalidPhoneException({
         phone: dto.phone,
-        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+        error: error instanceof Error ? error.message : String(error),
       });
     }
 
@@ -392,9 +461,9 @@ export class AuthController {
       normalizedPhone = normalizeYemeniPhone(dto.phone);
     } catch (error) {
       this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
-      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+      throw new InvalidPhoneException({
         phone: dto.phone,
-        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+        error: error instanceof Error ? error.message : String(error),
       });
     }
 
@@ -425,9 +494,9 @@ export class AuthController {
       normalizedPhone = normalizeYemeniPhone(dto.phone);
     } catch (error) {
       this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
-      throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+      throw new InvalidPhoneException({
         phone: dto.phone,
-        message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+        error: error instanceof Error ? error.message : String(error),
       });
     }
 
@@ -472,7 +541,7 @@ export class AuthController {
           type: 'object',
           properties: {
             id: { type: 'string', example: '507f1f77bcf86cd799439011' },
-            phone: { type: 'string', example: '+966501234567' },
+            phone: { type: 'string', example: '+967777123456' },
             firstName: { type: 'string', example: 'أحمد' },
             lastName: { type: 'string', example: 'محمد' },
             gender: { type: 'string', example: 'male', enum: ['male', 'female'] },
@@ -945,9 +1014,9 @@ export class AuthController {
         existingUser = await this.userModel.findOne({ phone: normalizedPhone });
       } catch (error) {
         this.logger.error(`Failed to normalize phone number ${dto.phone}:`, error);
-        throw new AuthException(ErrorCode.VALIDATION_ERROR, { 
+        throw new InvalidPhoneException({
           phone: dto.phone,
-          message: error instanceof Error ? error.message : 'رقم الهاتف غير صحيح'
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -1044,8 +1113,8 @@ export class AuthController {
               type: 'object',
               properties: {
                 id: { type: 'string', example: 'base64-encoded-user-id' },
-                name: { type: 'string', example: '+966501234567' },
-                displayName: { type: 'string', example: '+966501234567' },
+                name: { type: 'string', example: '+967777123456' },
+                displayName: { type: 'string', example: '+967777123456' },
               },
             },
             pubKeyCredParams: {
@@ -1142,7 +1211,7 @@ export class AuthController {
           type: 'object',
           properties: {
             id: { type: 'string', example: '507f1f77bcf86cd799439011' },
-            phone: { type: 'string', example: '+966501234567' },
+            phone: { type: 'string', example: '+967777123456' },
             firstName: { type: 'string', example: 'أحمد' },
             lastName: { type: 'string', example: 'محمد' },
             gender: { type: 'string', example: 'male' },
@@ -1313,7 +1382,7 @@ export class AuthController {
           type: 'object',
           properties: {
             id: { type: 'string', example: '507f1f77bcf86cd799439011' },
-            phone: { type: 'string', example: '+966501234567' },
+            phone: { type: 'string', example: '+967777123456' },
             firstName: { type: 'string', example: 'أحمد' },
             lastName: { type: 'string', example: 'محمد' },
             gender: { type: 'string', example: 'male' },

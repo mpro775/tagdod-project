@@ -3,6 +3,7 @@ import Redis from 'ioredis';
 import * as crypto from 'crypto';
 import { SMSAdapter } from '../notifications/adapters/sms.adapter';
 import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
+import { InvalidPhoneException } from '../../shared/exceptions';
 
 @Injectable()
 export class OtpService {
@@ -40,7 +41,10 @@ export class OtpService {
       normalizedPhone = normalizeYemeniPhone(phone);
     } catch (error) {
       this.logger.error(`Failed to normalize phone number ${phone}:`, error);
-      throw error;
+      throw new InvalidPhoneException({
+        phone,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
 
     // Store OTP in Redis using normalized phone

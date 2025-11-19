@@ -97,6 +97,12 @@ export class NotAllowedInProductionException extends AuthException {
   }
 }
 
+export class InvalidPhoneException extends AuthException {
+  constructor(details?: unknown) {
+    super(ErrorCode.AUTH_INVALID_PHONE, details);
+  }
+}
+
 // ==================== Product Exceptions ====================
 
 export class ProductException extends DomainException {
@@ -152,6 +158,42 @@ export class CartEmptyException extends CartException {
 export class CartItemNotFoundException extends CartException {
   constructor(details?: unknown) {
     super(ErrorCode.CART_ITEM_NOT_FOUND, details);
+  }
+}
+
+export class CartInvalidQuantityException extends CartException {
+  constructor(details?: unknown) {
+    super(ErrorCode.CART_INVALID_QUANTITY, details);
+  }
+}
+
+export class CartCapacityExceededException extends CartException {
+  constructor(details?: unknown) {
+    super(ErrorCode.CART_CAPACITY_EXCEEDED, details);
+  }
+}
+
+export class CartProductPriceMissingException extends CartException {
+  constructor(details?: unknown) {
+    super(ErrorCode.CART_PRODUCT_PRICE_MISSING, details);
+  }
+}
+
+export class CartVariantNotFoundException extends CartException {
+  constructor(details?: unknown) {
+    super(ErrorCode.CART_VARIANT_NOT_FOUND, details);
+  }
+}
+
+export class CartProductNotFoundException extends CartException {
+  constructor(details?: unknown) {
+    super(ErrorCode.CART_PRODUCT_NOT_FOUND, details);
+  }
+}
+
+export class CartAlreadyConvertedException extends CartException {
+  constructor(details?: unknown) {
+    super(ErrorCode.CART_ALREADY_CONVERTED, details);
   }
 }
 
@@ -430,6 +472,154 @@ export class ExchangeRateNotFoundException extends ExchangeRateException {
 export class CurrencyNotSupportedException extends ExchangeRateException {
   constructor(details?: unknown) {
     super(ErrorCode.CURRENCY_NOT_SUPPORTED, details);
+  }
+}
+
+export class ExchangeRateFetchFailedException extends ExchangeRateException {
+  constructor(details?: unknown) {
+    super(ErrorCode.EXCHANGE_RATE_FETCH_FAILED, details);
+  }
+}
+
+// ==================== Analytics Exceptions ====================
+
+export class AnalyticsException extends DomainException {
+  constructor(code: ErrorCode, details?: unknown) {
+    super(code, details);
+  }
+}
+
+export class AnalyticsReportNotFoundException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_REPORT_NOT_FOUND, details);
+  }
+}
+
+export class AnalyticsReportGenerationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_REPORT_GENERATION_FAILED, details);
+  }
+}
+
+export class AnalyticsSnapshotGenerationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_SNAPSHOT_GENERATION_FAILED, details);
+  }
+}
+
+export class AnalyticsCacheException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_CACHE_ERROR, details);
+  }
+}
+
+export class AnalyticsInvalidDateRangeException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_INVALID_DATE_RANGE, details);
+  }
+}
+
+export class AnalyticsQueryFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_QUERY_FAILED, details);
+  }
+}
+
+export class AnalyticsCalculationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_CALCULATION_FAILED, details);
+  }
+}
+
+export class AnalyticsUserCalculationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_USER_CALCULATION_FAILED, details);
+  }
+}
+
+export class AnalyticsProductCalculationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_PRODUCT_CALCULATION_FAILED, details);
+  }
+}
+
+export class AnalyticsOrderCalculationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_ORDER_CALCULATION_FAILED, details);
+  }
+}
+
+export class AnalyticsServiceCalculationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_SERVICE_CALCULATION_FAILED, details);
+  }
+}
+
+export class AnalyticsSupportCalculationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_SUPPORT_CALCULATION_FAILED, details);
+  }
+}
+
+export class AnalyticsCronJobFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_CRON_JOB_FAILED, details);
+  }
+}
+
+// ==================== Attribute Exceptions ====================
+
+export class AttributeException extends DomainException {
+  constructor(code: ErrorCode, details?: unknown) {
+    super(code, details);
+  }
+}
+
+export class AttributeNotFoundException extends AttributeException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ATTRIBUTE_NOT_FOUND, details);
+  }
+}
+
+export class AttributeAlreadyExistsException extends AttributeException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ATTRIBUTE_ALREADY_EXISTS, details);
+  }
+}
+
+export class AttributeInUseException extends AttributeException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ATTRIBUTE_IN_USE, details);
+  }
+}
+
+export class AttributeValueNotFoundException extends AttributeException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ATTRIBUTE_VALUE_NOT_FOUND, details);
+  }
+}
+
+export class AttributeValueAlreadyExistsException extends AttributeException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ATTRIBUTE_VALUE_ALREADY_EXISTS, details);
+  }
+}
+
+export class AttributeValueInUseException extends AttributeException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ATTRIBUTE_VALUE_IN_USE, details);
+  }
+}
+
+export class AttributeValueInvalidHexException extends AttributeException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ATTRIBUTE_VALUE_INVALID_HEX, details);
+  }
+}
+
+export class AttributeValueHexRequiredException extends AttributeException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ATTRIBUTE_VALUE_HEX_REQUIRED, details);
   }
 }
 

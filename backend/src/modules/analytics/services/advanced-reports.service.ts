@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DomainException, ErrorCode } from '../../../shared/exceptions';
+import {
+  AnalyticsReportGenerationFailedException,
+  AnalyticsException,
+  ErrorCode,
+  DomainException
+} from '../../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -274,12 +279,13 @@ export class AdvancedReportsService {
     const startTime = Date.now();
     this.logger.log(`Generating advanced report: ${dto.title}`);
 
+    let reportId: string | undefined;
     try {
       const startDate = parseISO(dto.startDate);
       const endDate = parseISO(dto.endDate);
 
       // Generate report ID
-      const reportId = await this.generateReportId();
+      reportId = await this.generateReportId();
 
       // Initialize report
       const report = new this.reportModel({
@@ -354,8 +360,28 @@ export class AdvancedReportsService {
       this.logger.log(`Report generated successfully: ${reportId} in ${Date.now() - startTime}ms`);
       return report;
     } catch (error) {
-      this.logger.error('Failed to generate advanced report', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to generate advanced report', {
+        error: err.message,
+        stack: err.stack,
+        reportId: reportId || 'not_generated',
+        category: dto.category,
+        title: dto.title,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع AnalyticsException
+      if (error instanceof AnalyticsException) {
+        throw error;
+      }
+
+      throw new AnalyticsReportGenerationFailedException({
+        reportId: reportId || 'not_generated',
+        category: dto.category,
+        startDate: dto.startDate,
+        endDate: dto.endDate,
+        title: dto.title,
+        error: err.message,
+      });
     }
   }
 

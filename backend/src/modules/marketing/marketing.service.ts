@@ -7,6 +7,7 @@ import { Banner, BannerDocument, BannerLocation, BannerNavigationType } from './
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Media } from '../upload/schemas/media.schema';
+import { UserRole } from '../users/schemas/user.schema';
 
 // DTOs
 import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto, PricingQueryDto } from './dto/price-rule.dto';
@@ -900,17 +901,53 @@ export class MarketingService {
     return !!result;
   }
 
+  /**
+   * Deactivate expired banners automatically
+   * Called by cron job to update banners that have passed their endDate
+   */
+  async deactivateExpiredBanners(): Promise<{ deactivated: number }> {
+    const now = new Date();
+    
+    const result = await this.bannerModel.updateMany(
+      {
+        isActive: true,
+        deletedAt: null,
+        endDate: { $exists: true, $lt: now },
+      },
+      {
+        $set: { isActive: false },
+      },
+    );
+
+    return { deactivated: result.modifiedCount };
+  }
+
   async getActiveBanners(
     location?: BannerLocation,
     userRoles?: string[],
   ): Promise<PublicBannerResponse[]> {
+    if (!userRoles || userRoles.length === 0) {
+      // No user roles provided - return empty array (authentication required)
+      return [];
+    }
+
     const now = new Date();
     const query: Record<string, unknown> = {
       isActive: true,
       deletedAt: null,
-      $or: [
-        { startDate: { $exists: false } }, { startDate: { $lte: now } },
-        { endDate: { $exists: false } }, { endDate: { $gte: now } },
+      $and: [
+        {
+          $or: [
+            { startDate: { $exists: false } },
+            { startDate: { $lte: now } },
+          ],
+        },
+        {
+          $or: [
+            { endDate: { $exists: false } },
+            { endDate: { $gte: now } },
+          ],
+        },
       ],
     };
 
@@ -919,18 +956,18 @@ export class MarketingService {
     // Get all banners that match the query
     const allBanners = await this.bannerModel.find(query).populate('imageId').sort({ sortOrder: 1 }).lean<BannerWithPopulatedImage[]>();
 
-    // Filter by user types if provided
-    const visibleBanners =
-      userRoles && userRoles.length > 0
-        ? allBanners.filter((banner) => {
-            if (!banner.targetUserTypes || banner.targetUserTypes.length === 0) {
-              return true;
-            }
-            return banner.targetUserTypes.some((targetType) => userRoles.includes(targetType));
-          })
-        : allBanners.filter(
-            (banner) => !banner.targetUserTypes || banner.targetUserTypes.length === 0,
-          );
+    // Filter by user types
+    // If banner has no targetUserTypes (empty array), it's visible to everyone
+    // If banner has targetUserTypes, it's visible only if user has one of the target roles
+    const visibleBanners = allBanners.filter((banner) => {
+      // Banner with no targeting is visible to everyone
+      if (!banner.targetUserTypes || banner.targetUserTypes.length === 0) {
+        return true;
+      }
+
+      // Check if user has matching roles
+      return banner.targetUserTypes.some((targetType) => userRoles.includes(targetType));
+    });
 
     return visibleBanners.map((banner) => this.mapPublicBannerResponse(banner));
   }

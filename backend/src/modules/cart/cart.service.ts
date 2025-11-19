@@ -1,4 +1,4 @@
-import { Injectable, Optional, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Optional, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cart, CartItem, CartStatus } from './schemas/cart.schema';
@@ -10,6 +10,17 @@ import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import { ExchangeRate } from '../exchange-rates/schemas/exchange-rate.schema';
 import { OrderService } from '../checkout/services/order.service';
 import { randomUUID } from 'crypto';
+import {
+  CartException,
+  CartNotFoundException,
+  CartCapacityExceededException,
+  CartProductPriceMissingException,
+  CartVariantNotFoundException,
+  CartProductNotFoundException,
+  CartAlreadyConvertedException,
+  CartInvalidQuantityException,
+  ErrorCode,
+} from '../../shared/exceptions';
 
 type ItemView = {
   itemId: string;
@@ -106,6 +117,7 @@ interface PromotionsLike {
 
 @Injectable()
 export class CartService {
+  private readonly logger = new Logger(CartService.name);
   private MAX_ITEMS = 200;
 
   constructor(
@@ -159,7 +171,10 @@ export class CartService {
 
   private ensureCapacity(cart: Cart) {
     if (cart.items.length > this.MAX_ITEMS) {
-      throw new Error('Cart capacity exceeded');
+      throw new CartCapacityExceededException({
+        currentItems: cart.items.length,
+        maxItems: this.MAX_ITEMS,
+      });
     }
   }
 
@@ -483,7 +498,10 @@ export class CartService {
     }
 
     if (basePriceUSD === undefined) {
-      throw new Error('لم يتم تحديد سعر لهذا المنتج');
+      throw new CartProductPriceMissingException({
+        currency: targetCurrency,
+        variantId: options.pricingByCurrency ? 'unknown' : undefined,
+      });
     }
 
     let basePrice = this.normalizeNumber(priceRecord?.basePrice);
@@ -691,13 +709,19 @@ export class CartService {
   async applyCoupon(userId: string, couponCode: string) {
     void userId;
     void couponCode;
-    throw new Error('Coupon handling is managed at checkout level.');
+    throw new CartException(ErrorCode.CART_INVALID_DATA, {
+      reason: 'coupon_handled_at_checkout',
+      message: 'Coupon handling is managed at checkout level.',
+    });
   }
 
   async removeCoupon(userId: string, couponCode?: string) {
     void userId;
     void couponCode;
-    throw new Error('Coupon handling is managed at checkout level.');
+    throw new CartException(ErrorCode.CART_INVALID_DATA, {
+      reason: 'coupon_handled_at_checkout',
+      message: 'Coupon handling is managed at checkout level.',
+    });
   }
 
   private async recalculatePricing(cart: Cart) {
@@ -1208,13 +1232,20 @@ export class CartService {
   }
 
   private async addOrUpdateCartItem(cart: Cart, input: AddItemInput) {
-    const { variantId, productId, qty } = input;
-    if (!variantId && !productId) {
-      throw new Error('يجب تحديد المنتج أو المتغير لإضافته إلى السلة');
-    }
-    if (qty <= 0) {
-      throw new Error('الكمية يجب أن تكون أكبر من صفر');
-    }
+    try {
+      const { variantId, productId, qty } = input;
+      if (!variantId && !productId) {
+        throw new CartException(ErrorCode.CART_INVALID_DATA, {
+          reason: 'missing_product_or_variant',
+          message: 'يجب تحديد المنتج أو المتغير لإضافته إلى السلة',
+        });
+      }
+      if (qty <= 0) {
+        throw new CartInvalidQuantityException({
+          qty,
+          message: 'الكمية يجب أن تكون أكبر من صفر',
+        });
+      }
 
     const resolved = await this.resolveCartItemIdentifiers({
       variantId,
@@ -1269,9 +1300,30 @@ export class CartService {
       }
     }
 
-    this.ensureCapacity(cart);
-    cart.lastActivityAt = new Date();
-    return { items: this.toView(cart) };
+      this.ensureCapacity(cart);
+      cart.lastActivityAt = new Date();
+      return { items: this.toView(cart) };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to add or update cart item', {
+        error: err.message,
+        stack: err.stack,
+        variantId: input.variantId,
+        productId: input.productId,
+        qty: input.qty,
+      });
+
+      if (error instanceof CartException) {
+        throw error;
+      }
+
+      throw new CartException(ErrorCode.CART_ADD_FAILED, {
+        variantId: input.variantId,
+        productId: input.productId,
+        qty: input.qty,
+        error: err.message,
+      });
+    }
   }
 
   private toStringId(value?: unknown): string | undefined {
@@ -1506,7 +1558,7 @@ export class CartService {
     if (input.variantId) {
       const variant = await this.variantModel.findById(input.variantId).lean();
       if (!variant) {
-        throw new Error('المتغير غير موجود');
+        throw new CartVariantNotFoundException({ variantId: input.variantId });
       }
 
       const product = await this.productModel
@@ -1514,7 +1566,11 @@ export class CartService {
         .populate('mainImageId')
         .lean();
       if (!product) {
-        throw new Error('المنتج المرتبط بالمتغير غير موجود');
+        throw new CartProductNotFoundException({
+          productId: variant.productId,
+          variantId: input.variantId,
+          reason: 'product_linked_to_variant_not_found',
+        });
       }
 
       const variantRecord = variant as unknown as Record<string, unknown>;
@@ -1584,7 +1640,7 @@ export class CartService {
         .populate('mainImageId')
         .lean();
       if (!product) {
-        throw new Error('المنتج غير موجود');
+        throw new CartProductNotFoundException({ productId: input.productId });
       }
 
       const productRecord = product as unknown as Record<string, unknown>;
@@ -1649,7 +1705,10 @@ export class CartService {
       };
     }
 
-    throw new Error('يجب تحديد معرف المتغير أو المنتج');
+    throw new CartException(ErrorCode.CART_INVALID_DATA, {
+      reason: 'missing_variant_or_product_id',
+      message: 'يجب تحديد معرف المتغير أو المنتج',
+    });
   }
 
   private async resolveCartItemIdentifiersBatch(input: {
@@ -1672,14 +1731,18 @@ export class CartService {
     if (input.variantId) {
       const variant = input.variantMap.get(input.variantId);
       if (!variant) {
-        throw new Error('المتغير غير موجود');
+        throw new CartVariantNotFoundException({ variantId: input.variantId });
       }
 
       const variantRecord = variant as unknown as Record<string, unknown>;
       const productIdStr = String(variantRecord['productId']);
       const product = input.productMap.get(productIdStr);
       if (!product) {
-        throw new Error('المنتج المرتبط بالمتغير غير موجود');
+        throw new CartProductNotFoundException({
+          productId: productIdStr,
+          variantId: input.variantId,
+          reason: 'product_linked_to_variant_not_found',
+        });
       }
 
       // استخدام الأسعار المخزنة مباشرة
@@ -1722,7 +1785,7 @@ export class CartService {
     if (input.productId) {
       const product = input.productMap.get(input.productId);
       if (!product) {
-        throw new Error('المنتج غير موجود');
+        throw new CartProductNotFoundException({ productId: input.productId });
       }
 
       const productRecord = product as unknown as Record<string, unknown>;
@@ -1764,7 +1827,10 @@ export class CartService {
       };
     }
 
-    throw new Error('يجب تحديد معرف المتغير أو المنتج');
+    throw new CartException(ErrorCode.CART_INVALID_DATA, {
+      reason: 'missing_variant_or_product_id',
+      message: 'يجب تحديد معرف المتغير أو المنتج',
+    });
   }
 
   // ---------- preview
@@ -3119,34 +3185,57 @@ export class CartService {
   }
 
   async getCartById(cartId: string) {
-    const cart = await this.cartModel
-      .findById(cartId)
-      .populate('userId', 'firstName lastName storeName email phone')
-      .populate('items.variantId')
-      .lean();
+    try {
+      const cart = await this.cartModel
+        .findById(cartId)
+        .populate('userId', 'firstName lastName storeName email phone')
+        .populate('items.variantId')
+        .lean();
 
-    if (!cart) {
-      throw new Error('Cart not found');
-    }
+      if (!cart) {
+        throw new CartNotFoundException({ cartId });
+      }
 
     const userSummary = this.buildUserSummary(cart.userId);
 
-    return {
-      ...cart,
-      userId: userSummary?._id ?? this.toStringId(cart.userId) ?? cart.userId,
-      ...(userSummary ? { user: userSummary } : {}),
-    };
+      return {
+        ...cart,
+        userId: userSummary?._id ?? this.toStringId(cart.userId) ?? cart.userId,
+        ...(userSummary ? { user: userSummary } : {}),
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to get cart by ID', {
+        error: err.message,
+        stack: err.stack,
+        cartId,
+      });
+
+      if (error instanceof CartException) {
+        throw error;
+      }
+
+      throw new CartException(ErrorCode.CART_INVALID_DATA, {
+        cartId,
+        error: err.message,
+      });
+    }
   }
 
   async convertToOrder(cartId: string) {
-    const cart = await this.cartModel.findById(cartId);
-    if (!cart) {
-      throw new Error('Cart not found');
-    }
+    try {
+      const cart = await this.cartModel.findById(cartId);
+      if (!cart) {
+        throw new CartNotFoundException({ cartId });
+      }
 
-    if (cart.status === CartStatus.CONVERTED) {
-      throw new Error('Cart already converted');
-    }
+      if (cart.status === CartStatus.CONVERTED) {
+        throw new CartAlreadyConvertedException({
+          cartId,
+          convertedAt: cart.convertedAt,
+          convertedToOrderId: cart.convertedToOrderId,
+        });
+      }
 
     // Update cart status
     cart.status = CartStatus.CONVERTED;
@@ -3154,11 +3243,28 @@ export class CartService {
     cart.convertedToOrderId = new Types.ObjectId(); // Placeholder - should be actual order ID
     await cart.save();
 
-    return {
-      cartId: cart._id,
-      orderId: cart.convertedToOrderId,
-      convertedAt: cart.convertedAt,
-    };
+      return {
+        cartId: cart._id,
+        orderId: cart.convertedToOrderId,
+        convertedAt: cart.convertedAt,
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to convert cart to order', {
+        error: err.message,
+        stack: err.stack,
+        cartId,
+      });
+
+      if (error instanceof CartException) {
+        throw error;
+      }
+
+      throw new CartException(ErrorCode.CART_UPDATE_FAILED, {
+        cartId,
+        error: err.message,
+      });
+    }
   }
 
   // ---------- helper methods for analytics

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CacheService } from '../../../shared/cache/cache.service';
+import { AnalyticsCacheException } from '../../../shared/exceptions';
 
 @Injectable()
 export class AnalyticsCacheService {
@@ -189,8 +190,16 @@ export class AnalyticsCacheService {
       await this.cacheService.clear('analytics:*');
       this.logger.log('Successfully cleared all analytics cache');
     } catch (error) {
-      this.logger.error('Error clearing all analytics cache:', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Error clearing all analytics cache:', {
+        error: err.message,
+        stack: err.stack,
+      });
+
+      throw new AnalyticsCacheException({
+        operation: 'clear_all',
+        error: err.message,
+      });
     }
   }
 

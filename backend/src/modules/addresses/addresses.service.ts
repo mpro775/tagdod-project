@@ -72,86 +72,164 @@ export class AddressesService {
    * Create new address
    */
   async create(userId: string, dto: CreateAddressDto) {
-    // Check if this will be the first address
-    const existingAddresses = await this.addressModel.countDocuments({
-      userId: new Types.ObjectId(userId),
-      deletedAt: null,
-    });
+    try {
+      // Check if this will be the first address
+      const existingAddresses = await this.addressModel.countDocuments({
+        userId: new Types.ObjectId(userId),
+        deletedAt: null,
+      });
 
-    // If it's the first address, make it default automatically
-    const isDefault = dto.isDefault || existingAddresses === 0;
+      // If it's the first address, make it default automatically
+      const isDefault = dto.isDefault || existingAddresses === 0;
 
-    // If setting as default, unset all other defaults
-    if (isDefault) {
-      await this.addressModel.updateMany(
-        { userId: new Types.ObjectId(userId) },
-        { $set: { isDefault: false } },
-      );
+      // If setting as default, unset all other defaults
+      if (isDefault) {
+        await this.addressModel.updateMany(
+          { userId: new Types.ObjectId(userId) },
+          { $set: { isDefault: false } },
+        );
+      }
+
+      const address = new this.addressModel({
+        ...dto,
+        userId: new Types.ObjectId(userId),
+        isDefault,
+        isActive: true,
+        usageCount: 0,
+      });
+
+      await address.save();
+
+      this.logger.log(`Address created for user ${userId}: ${address._id}`);
+
+      return address;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Error creating address for user ${userId}: ${err.message}`, {
+        error: err.message,
+        stack: err.stack,
+        userId,
+        dto: {
+          label: dto.label,
+          city: dto.city,
+        },
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع AddressException
+      if (error instanceof AddressException) {
+        throw error;
+      }
+
+      // معالجة أخطاء MongoDB
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        const mongoError = error as { keyPattern?: Record<string, unknown> };
+        const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        throw new AddressException(ErrorCode.ADDRESS_INVALID_DATA, {
+          reason: 'duplicate_field',
+          field,
+          message: `${field} موجود مسبقاً`,
+        });
+      }
+
+      throw new AddressException(ErrorCode.ADDRESS_CREATE_FAILED, {
+        userId,
+        error: err.message,
+      });
     }
-
-    const address = new this.addressModel({
-      ...dto,
-      userId: new Types.ObjectId(userId),
-      isDefault,
-      isActive: true,
-      usageCount: 0,
-    });
-
-    await address.save();
-
-    this.logger.log(`Address created for user ${userId}: ${address._id}`);
-
-    return address;
   }
 
   /**
    * Update address
    */
   async update(userId: string, id: string, dto: UpdateAddressDto) {
-    const address = await this.get(userId, id);
+    try {
+      const address = await this.get(userId, id);
 
-    // If setting as default, unset all other defaults
-    if (dto.isDefault === true) {
-      await this.addressModel.updateMany(
-        { userId: new Types.ObjectId(userId), _id: { $ne: id } },
-        { $set: { isDefault: false } },
-      );
+      // If setting as default, unset all other defaults
+      if (dto.isDefault === true) {
+        await this.addressModel.updateMany(
+          { userId: new Types.ObjectId(userId), _id: { $ne: id } },
+          { $set: { isDefault: false } },
+        );
+      }
+
+      Object.assign(address, dto);
+      await address.save();
+
+      this.logger.log(`Address updated for user ${userId}: ${id}`);
+
+      return address;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      
+      // إعادة رمي الخطأ إذا كان من نوع AddressException
+      if (error instanceof AddressException || error instanceof AddressNotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(`Error updating address ${id} for user ${userId}: ${err.message}`, {
+        error: err.message,
+        stack: err.stack,
+        userId,
+        addressId: id,
+      });
+
+      throw new AddressException(ErrorCode.ADDRESS_UPDATE_FAILED, {
+        userId,
+        addressId: id,
+        error: err.message,
+      });
     }
-
-    Object.assign(address, dto);
-    await address.save();
-
-    this.logger.log(`Address updated for user ${userId}: ${id}`);
-
-    return address;
   }
 
   /**
    * Delete address (soft delete)
    */
   async remove(userId: string, id: string) {
-    const address = await this.get(userId, id);
+    try {
+      const address = await this.get(userId, id);
 
-    // If it's the default address, make another one default
-    if (address.isDefault) {
-      const nextAddress = await this.addressModel.findOne({
-        userId: new Types.ObjectId(userId),
-        deletedAt: null,
-        _id: { $ne: id },
+      // If it's the default address, make another one default
+      if (address.isDefault) {
+        const nextAddress = await this.addressModel.findOne({
+          userId: new Types.ObjectId(userId),
+          deletedAt: null,
+          _id: { $ne: id },
+        });
+
+        if (nextAddress) {
+          nextAddress.isDefault = true;
+          await nextAddress.save();
+        }
+      }
+
+      address.deletedAt = new Date();
+      await address.save();
+
+      this.logger.log(`Address deleted for user ${userId}: ${id}`);
+
+      return { deleted: true };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      
+      // إعادة رمي الخطأ إذا كان من نوع AddressException
+      if (error instanceof AddressException || error instanceof AddressNotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(`Error deleting address ${id} for user ${userId}: ${err.message}`, {
+        error: err.message,
+        stack: err.stack,
+        userId,
+        addressId: id,
       });
 
-      if (nextAddress) {
-        nextAddress.isDefault = true;
-        await nextAddress.save();
-      }
+      throw new AddressException(ErrorCode.ADDRESS_DELETE_FAILED, {
+        userId,
+        addressId: id,
+        error: err.message,
+      });
     }
-
-    address.deletedAt = new Date();
-    await address.save();
-
-    this.logger.log(`Address deleted for user ${userId}: ${id}`);
-
-    return { deleted: true };
   }
 
   /**

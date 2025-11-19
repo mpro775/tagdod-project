@@ -126,7 +126,11 @@ export class ProductService {
         });
       }
 
-      throw err;
+      throw new ProductException(ErrorCode.PRODUCT_CREATE_FAILED, {
+        name: dto.name,
+        nameEn: dto.nameEn,
+        error: err.message,
+      });
     }
   }
 
@@ -894,7 +898,18 @@ export class ProductService {
         compareAtPriceUSD: source.compareAtPriceUSD,
         costPriceUSD: source.costPriceUSD,
       });
-      throw err;
+      
+      // إعادة رمي الخطأ إذا كان من نوع ProductException
+      if (error instanceof ProductException) {
+        throw error;
+      }
+      
+      throw new ProductException(ErrorCode.PRODUCT_INVALID_PRICE, {
+        basePriceUSD: source.basePriceUSD,
+        compareAtPriceUSD: source.compareAtPriceUSD,
+        costPriceUSD: source.costPriceUSD,
+        error: err.message,
+      });
     }
   }
 

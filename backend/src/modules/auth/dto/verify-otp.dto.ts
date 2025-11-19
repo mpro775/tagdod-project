@@ -4,7 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class VerifyOtpDto {
   @ApiProperty({
     description: 'رقم الهاتف المرتبط بكود التحقق',
-    example: '+966501234567',
+    example: '+967777123456',
     pattern: '^\\+?[1-9]\\d{1,14}$',
     minLength: 10,
     maxLength: 15

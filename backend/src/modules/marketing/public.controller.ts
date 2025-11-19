@@ -1,15 +1,17 @@
-import { Controller, Get, Query, Param, Req } from '@nestjs/common';
+import { Controller, Get, Query, Param, Req, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiQuery,
-  ApiParam
+  ApiParam,
+  ApiBearerAuth
 } from '@nestjs/swagger';
 import { MarketingService } from './marketing.service';
 import { PricingQueryDto } from './dto/price-rule.dto';
 import { ValidateCouponDto } from './dto/coupon.dto';
 import { BannerLocation, BannerNavigationType } from './schemas/banner.schema';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 
 @ApiTags('التسويق-العام')
 @Controller('marketing')
@@ -90,16 +92,18 @@ export class MarketingPublicController {
   }
 
   @Get('banners')
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'الحصول على البانرات النشطة',
-    description: 'استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. إذا كان المستخدم مسجل دخول، سيتم عرض البانرات المتوافقة مع أدواره. للمستخدمين غير المسجلين، سيتم عرض البانرات العامة فقط.'
+    description: 'استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. يتطلب توكن مصادقة لتحديد نوع المستخدم وعرض البانرات المناسبة له.'
   })
   @ApiQuery({
     name: 'location',
     required: false,
     enum: BannerLocation,
     description: 'موقع عرض البانر',
-    example: 'home'
+    example: 'home_top'
   })
   @ApiResponse({
     status: 200,
@@ -113,25 +117,39 @@ export class MarketingPublicController {
             type: 'object',
             properties: {
               id: { type: 'string', example: 'banner123', description: 'معرف البانر' },
-              title: { type: 'string', example: 'عرض خاص', description: 'عنوان البانر' },
-              imageUrl: { type: 'string', example: 'https://cdn.example.com/banner.jpg', description: 'رابط صورة البانر' },
+              image: { 
+                type: 'object',
+                properties: {
+                  id: { type: 'string', example: 'img123' },
+                  url: { type: 'string', example: 'https://cdn.example.com/banner.jpg' }
+                }
+              },
               linkUrl: { type: 'string', example: 'https://example.com/special-offer', description: 'رابط البانر (للتوافق مع الإصدارات القديمة)' },
               navigationType: { type: 'string', enum: Object.values(BannerNavigationType), example: 'category', description: 'نوع التنقل: external_url, category, product, section, none' },
               navigationTarget: { type: 'string', example: 'category123', description: 'الهدف من التنقل: معرف الفئة، معرف المنتج، اسم القسم، أو رابط خارجي' },
               navigationParams: { type: 'object', example: {}, description: 'معاملات إضافية للتنقل' },
-              location: { type: 'string', enum: Object.values(BannerLocation), example: 'home', description: 'موقع البانر' },
-              isActive: { type: 'boolean', example: true, description: 'حالة البانر' }
+              location: { type: 'string', enum: Object.values(BannerLocation), example: 'home_top', description: 'موقع البانر' },
+              sortOrder: { type: 'number', example: 1, description: 'ترتيب العرض' },
+              isActive: { type: 'boolean', example: true, description: 'حالة البانر' },
+              altText: { type: 'string', example: 'عرض خاص', description: 'النص البديل للصورة' }
             }
           }
         }
       }
     }
   })
+  @ApiResponse({
+    status: 401,
+    description: 'توكن غير صالح أو منتهي الصلاحية'
+  })
   async getActiveBanners(
     @Query('location') location?: BannerLocation,
     @Req() req?: { user?: { roles?: string[] } }
   ) {
-    const userRoles = req?.user?.roles;
+    if (!req?.user) {
+      return [];
+    }
+    const userRoles = req.user.roles;
     const banners = await this.svc.getActiveBanners(location, userRoles);
     return banners;
   }

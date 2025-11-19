@@ -8,6 +8,12 @@ import { User, UserDocument } from '../users/schemas/user.schema';
 import { Cart, CartDocument } from '../cart/schemas/cart.schema';
 import { AdvancedReport, AdvancedReportDocument, ReportCategory, ReportPriority } from './schemas/advanced-report.schema';
 import { SystemMonitoringService } from '../system-monitoring/system-monitoring.service';
+import {
+  AnalyticsReportNotFoundException,
+  AnalyticsReportGenerationFailedException,
+  AnalyticsException,
+  ErrorCode
+} from '../../shared/exceptions';
 
 const COMPLETED_STATUSES = ['completed'] as const;
 
@@ -1540,8 +1546,28 @@ export class AdvancedAnalyticsService {
       };
 
     } catch (error) {
-      this.logger.error('Error generating advanced report:', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Error generating advanced report:', {
+        error: err.message,
+        stack: err.stack,
+        data: {
+          category: data.category,
+          startDate: data.startDate,
+          endDate: data.endDate,
+        },
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع AnalyticsException
+      if (error instanceof AnalyticsException) {
+        throw error;
+      }
+
+      throw new AnalyticsReportGenerationFailedException({
+        category: data.category,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        error: err.message,
+      });
     }
   }
 
@@ -1611,7 +1637,7 @@ export class AdvancedAnalyticsService {
       .lean();
 
     if (!report) {
-      throw new Error('Report not found');
+      throw new AnalyticsReportNotFoundException({ reportId });
     }
 
     return {
@@ -1661,7 +1687,7 @@ export class AdvancedAnalyticsService {
       .lean();
 
     if (!report) {
-      throw new Error('Report not found');
+      throw new AnalyticsReportNotFoundException({ reportId });
     }
 
     return {
@@ -1678,7 +1704,7 @@ export class AdvancedAnalyticsService {
     const result = await this.advancedReportModel.deleteOne({ reportId });
 
     if (result.deletedCount === 0) {
-      throw new Error('Report not found');
+      throw new AnalyticsReportNotFoundException({ reportId });
     }
 
     return { success: true, message: 'Report deleted successfully' };

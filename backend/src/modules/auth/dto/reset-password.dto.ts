@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class ResetPasswordDto {
   @ApiProperty({
     description: 'رقم الهاتف المرتبط بالحساب',
-    example: '+966501234567',
+    example: '+967777123456',
     pattern: '^\\+?[1-9]\\d{1,14}$',
     minLength: 10,
     maxLength: 15

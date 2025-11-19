@@ -3,6 +3,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { AnalyticsService } from '../analytics.service';
 import { StockAlertService } from '../../products/services/stock-alert.service';
 import { PeriodType } from '../schemas/analytics-snapshot.schema';
+import {
+  AnalyticsCronJobFailedException,
+  AnalyticsException,
+} from '../../../shared/exceptions';
 
 @Injectable()
 export class AnalyticsCronService {
@@ -27,7 +31,26 @@ export class AnalyticsCronService {
       
       this.logger.log('Daily analytics generated successfully');
     } catch (error) {
-      this.logger.error('Failed to generate daily analytics:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to generate daily analytics', {
+        error: err.message,
+        stack: err.stack,
+        period: PeriodType.DAILY,
+      });
+
+      if (error instanceof AnalyticsException) {
+        throw new AnalyticsCronJobFailedException({
+          jobName: 'generateDailyAnalytics',
+          period: PeriodType.DAILY,
+          error: err.message,
+        });
+      }
+
+      throw new AnalyticsCronJobFailedException({
+        jobName: 'generateDailyAnalytics',
+        period: PeriodType.DAILY,
+        error: err.message,
+      });
     }
   }
 
@@ -45,7 +68,26 @@ export class AnalyticsCronService {
       
       this.logger.log('Weekly analytics generated successfully');
     } catch (error) {
-      this.logger.error('Failed to generate weekly analytics:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to generate weekly analytics', {
+        error: err.message,
+        stack: err.stack,
+        period: PeriodType.WEEKLY,
+      });
+
+      if (error instanceof AnalyticsException) {
+        throw new AnalyticsCronJobFailedException({
+          jobName: 'generateWeeklyAnalytics',
+          period: PeriodType.WEEKLY,
+          error: err.message,
+        });
+      }
+
+      throw new AnalyticsCronJobFailedException({
+        jobName: 'generateWeeklyAnalytics',
+        period: PeriodType.WEEKLY,
+        error: err.message,
+      });
     }
   }
 
@@ -63,7 +105,26 @@ export class AnalyticsCronService {
       
       this.logger.log('Monthly analytics generated successfully');
     } catch (error) {
-      this.logger.error('Failed to generate monthly analytics:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to generate monthly analytics', {
+        error: err.message,
+        stack: err.stack,
+        period: PeriodType.MONTHLY,
+      });
+
+      if (error instanceof AnalyticsException) {
+        throw new AnalyticsCronJobFailedException({
+          jobName: 'generateMonthlyAnalytics',
+          period: PeriodType.MONTHLY,
+          error: err.message,
+        });
+      }
+
+      throw new AnalyticsCronJobFailedException({
+        jobName: 'generateMonthlyAnalytics',
+        period: PeriodType.MONTHLY,
+        error: err.message,
+      });
     }
   }
 
@@ -81,7 +142,17 @@ export class AnalyticsCronService {
       
       this.logger.log('Low stock alerts check completed');
     } catch (error) {
-      this.logger.error('Failed to check low stock alerts:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to check low stock alerts', {
+        error: err.message,
+        stack: err.stack,
+        jobName: 'checkLowStockAlerts',
+      });
+
+      throw new AnalyticsCronJobFailedException({
+        jobName: 'checkLowStockAlerts',
+        error: err.message,
+      });
     }
   }
 
@@ -98,7 +169,24 @@ export class AnalyticsCronService {
       
       this.logger.log('Analytics cache cleared successfully');
     } catch (error) {
-      this.logger.error('Failed to clear analytics cache:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to clear analytics cache', {
+        error: err.message,
+        stack: err.stack,
+        jobName: 'clearOldAnalyticsCache',
+      });
+
+      if (error instanceof AnalyticsException) {
+        throw new AnalyticsCronJobFailedException({
+          jobName: 'clearOldAnalyticsCache',
+          error: err.message,
+        });
+      }
+
+      throw new AnalyticsCronJobFailedException({
+        jobName: 'clearOldAnalyticsCache',
+        error: err.message,
+      });
     }
   }
 
@@ -116,7 +204,26 @@ export class AnalyticsCronService {
       
       this.logger.log('Quarterly analytics generated successfully');
     } catch (error) {
-      this.logger.error('Failed to generate quarterly analytics:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to generate quarterly analytics', {
+        error: err.message,
+        stack: err.stack,
+        period: PeriodType.QUARTERLY,
+      });
+
+      if (error instanceof AnalyticsException) {
+        throw new AnalyticsCronJobFailedException({
+          jobName: 'generateQuarterlyAnalytics',
+          period: PeriodType.QUARTERLY,
+          error: err.message,
+        });
+      }
+
+      throw new AnalyticsCronJobFailedException({
+        jobName: 'generateQuarterlyAnalytics',
+        period: PeriodType.QUARTERLY,
+        error: err.message,
+      });
     }
   }
 
@@ -134,7 +241,26 @@ export class AnalyticsCronService {
       
       this.logger.log('Yearly analytics generated successfully');
     } catch (error) {
-      this.logger.error('Failed to generate yearly analytics:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to generate yearly analytics', {
+        error: err.message,
+        stack: err.stack,
+        period: PeriodType.YEARLY,
+      });
+
+      if (error instanceof AnalyticsException) {
+        throw new AnalyticsCronJobFailedException({
+          jobName: 'generateYearlyAnalytics',
+          period: PeriodType.YEARLY,
+          error: err.message,
+        });
+      }
+
+      throw new AnalyticsCronJobFailedException({
+        jobName: 'generateYearlyAnalytics',
+        period: PeriodType.YEARLY,
+        error: err.message,
+      });
     }
   }
 
@@ -152,7 +278,24 @@ export class AnalyticsCronService {
       
       this.logger.log(`Analytics health check passed. Cache stats: ${JSON.stringify(cacheStats)}`);
     } catch (error) {
-      this.logger.error('Analytics health check failed:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Analytics health check failed', {
+        error: err.message,
+        stack: err.stack,
+        jobName: 'analyticsHealthCheck',
+      });
+
+      if (error instanceof AnalyticsException) {
+        throw new AnalyticsCronJobFailedException({
+          jobName: 'analyticsHealthCheck',
+          error: err.message,
+        });
+      }
+
+      throw new AnalyticsCronJobFailedException({
+        jobName: 'analyticsHealthCheck',
+        error: err.message,
+      });
     }
   }
 }

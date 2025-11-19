@@ -7,6 +7,7 @@ import {
   ProductNotFoundException,
   VariantNotFoundException,
   ProductException,
+  ExchangeRateFetchFailedException,
   ErrorCode 
 } from '../../../shared/exceptions';
 import { AttributesService } from '../../attributes/attributes.service';
@@ -98,7 +99,11 @@ export class VariantService {
           } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             this.logger.error(`Error enriching attribute ${av.attributeId}: ${err.message}`);
-            throw err;
+            throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+              attributeId: av.attributeId,
+              valueId: av.valueId,
+              error: err.message,
+            });
           }
         }),
       );
@@ -119,7 +124,11 @@ export class VariantService {
               error: err.message,
               productId: dto.productId,
             });
-            throw new Error('فشل في جلب أسعار الصرف. يرجى المحاولة مرة أخرى');
+            throw new ExchangeRateFetchFailedException({
+              productId: dto.productId,
+              attempts: 3,
+              error: err.message,
+            });
           }
           this.logger.warn(`Retrying exchange rates fetch, ${retries} attempts remaining`);
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -127,7 +136,10 @@ export class VariantService {
       }
 
       if (!rates) {
-        throw new Error('فشل في جلب أسعار الصرف');
+        throw new ExchangeRateFetchFailedException({
+          productId: dto.productId,
+          reason: 'rates_not_available',
+        });
       }
 
       const pricingFields = await this.productPricingCalculator.calculateVariantPricing(
@@ -151,7 +163,11 @@ export class VariantService {
             existingVariantId: existingVariant._id,
             productId: dto.productId,
           });
-          throw new Error(`SKU ${dto.sku} موجود مسبقاً`);
+          throw new ProductException(ErrorCode.VARIANT_DUPLICATE_SKU, {
+            sku: dto.sku,
+            productId: dto.productId,
+            existingVariantId: existingVariant._id.toString(),
+          });
         }
       }
 
@@ -209,10 +225,24 @@ export class VariantService {
       if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
         const mongoError = error as { keyPattern?: Record<string, unknown> };
         const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
-        throw new Error(`${field === 'sku' ? 'SKU' : field} موجود مسبقاً`);
+        if (field === 'sku') {
+          throw new ProductException(ErrorCode.VARIANT_DUPLICATE_SKU, {
+            sku: dto.sku,
+            productId: dto.productId,
+            reason: 'duplicate_sku',
+          });
+        }
+        throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+          field,
+          reason: 'duplicate_field',
+          message: `${field} موجود مسبقاً`,
+        });
       }
 
-      throw err;
+      throw new ProductException(ErrorCode.VARIANT_CREATE_FAILED, {
+        productId: dto.productId,
+        error: err.message,
+      });
     }
   }
 

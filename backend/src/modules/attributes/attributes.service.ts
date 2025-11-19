@@ -6,7 +6,15 @@ import { AttributeValue } from './schemas/attribute-value.schema';
 import { AttributeGroup } from './schemas/attribute-group.schema';
 import { slugify } from '../../shared/utils/slug.util';
 import { 
-  DomainException,
+  AttributeNotFoundException,
+  AttributeAlreadyExistsException,
+  AttributeInUseException,
+  AttributeValueNotFoundException,
+  AttributeValueAlreadyExistsException,
+  AttributeValueInUseException,
+  AttributeValueInvalidHexException,
+  AttributeValueHexRequiredException,
+  AttributeException,
   ErrorCode 
 } from '../../shared/exceptions';
 
@@ -23,41 +31,81 @@ export class AttributesService {
   // ==================== Attributes ====================
 
   async createAttribute(dto: Partial<Attribute>) {
-    const slug = slugify(dto.nameEn!);
+    try {
+      const slug = slugify(dto.nameEn!);
 
-    // التحقق من عدم التكرار
-    const existing = await this.attributeModel.findOne({ slug, deletedAt: null });
-    if (existing) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'attribute', reason: 'already_exists' });
+      // التحقق من عدم التكرار
+      const existing = await this.attributeModel.findOne({ slug, deletedAt: null });
+      if (existing) {
+        throw new AttributeAlreadyExistsException({ slug, attributeId: existing._id.toString() });
+      }
+
+      const attribute = await this.attributeModel.create({
+        ...dto,
+        slug,
+        usageCount: 0,
+      });
+
+      return attribute;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      
+      // إعادة رمي الخطأ إذا كان من نوع AttributeException
+      if (error instanceof AttributeException) {
+        throw error;
+      }
+
+      // معالجة أخطاء MongoDB
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        const mongoError = error as { keyPattern?: Record<string, unknown> };
+        const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        throw new AttributeException(ErrorCode.ATTRIBUTE_INVALID_DATA, {
+          reason: 'duplicate_field',
+          field,
+          message: `${field} موجود مسبقاً`,
+        });
+      }
+
+      throw new AttributeException(ErrorCode.ATTRIBUTE_CREATE_FAILED, {
+        name: dto.name,
+        nameEn: dto.nameEn,
+        error: err.message,
+      });
     }
-
-    const attribute = await this.attributeModel.create({
-      ...dto,
-      slug,
-      usageCount: 0,
-    });
-
-    return attribute;
   }
 
   async updateAttribute(id: string, patch: Partial<Attribute>) {
-    const attribute = await this.attributeModel.findById(id);
-    
-    if (!attribute) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
-    }
+    try {
+      const attribute = await this.attributeModel.findById(id);
+      
+      if (!attribute) {
+        throw new AttributeNotFoundException({ attributeId: id });
+      }
 
-    if (attribute.deletedAt) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'deleted' });
-    }
+      if (attribute.deletedAt) {
+        throw new AttributeNotFoundException({ attributeId: id, reason: 'deleted' });
+      }
 
-    if (patch.nameEn) {
-      const slug = slugify(patch.nameEn);
-      patch.slug = slug;
-    }
+      if (patch.nameEn) {
+        const slug = slugify(patch.nameEn);
+        patch.slug = slug;
+      }
 
-    await this.attributeModel.updateOne({ _id: id }, { $set: patch });
-    return this.attributeModel.findById(id);
+      await this.attributeModel.updateOne({ _id: id }, { $set: patch });
+      return this.attributeModel.findById(id);
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      
+      // إعادة رمي الخطأ إذا كان من نوع AttributeException
+      if (error instanceof AttributeException || error instanceof AttributeNotFoundException) {
+        throw error;
+      }
+
+      throw new AttributeException(ErrorCode.ATTRIBUTE_UPDATE_FAILED, {
+        attributeId: id,
+        error: err.message,
+      });
+    }
   }
 
   async getAttribute(id: string) {
@@ -66,7 +114,7 @@ export class AttributesService {
       .lean();
 
     if (!attribute) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
+      throw new AttributeNotFoundException({ attributeId: id });
     }
 
     // جلب القيم (تأكد من مطابقة ObjectId)
@@ -188,33 +236,46 @@ export class AttributesService {
   }
 
   async deleteAttribute(id: string, userId: string) {
-    const attribute = await this.attributeModel.findById(id);
+    try {
+      const attribute = await this.attributeModel.findById(id);
 
-    if (!attribute) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_found' });
-    }
+      if (!attribute) {
+        throw new AttributeNotFoundException({ attributeId: id });
+      }
 
-    // فحص الاستخدام
-    if (attribute.usageCount > 0) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { 
+      // فحص الاستخدام
+      if (attribute.usageCount > 0) {
+        throw new AttributeInUseException({ 
+          attributeId: id,
+          usageCount: attribute.usageCount 
+        });
+      }
+
+      attribute.deletedAt = new Date();
+      attribute.deletedBy = userId;
+      await attribute.save();
+
+      return attribute;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      
+      // إعادة رمي الخطأ إذا كان من نوع AttributeException
+      if (error instanceof AttributeException || error instanceof AttributeNotFoundException || error instanceof AttributeInUseException) {
+        throw error;
+      }
+
+      throw new AttributeException(ErrorCode.ATTRIBUTE_DELETE_FAILED, {
         attributeId: id,
-        reason: 'in_use', 
-        usageCount: attribute.usageCount 
+        error: err.message,
       });
     }
-
-    attribute.deletedAt = new Date();
-    attribute.deletedBy = userId;
-    await attribute.save();
-
-    return attribute;
   }
 
   async restoreAttribute(id: string) {
     const attribute = await this.attributeModel.findById(id);
 
     if (!attribute || !attribute.deletedAt) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: id, reason: 'not_deleted' });
+      throw new AttributeException(ErrorCode.ATTRIBUTE_INVALID_DATA, { attributeId: id, reason: 'not_deleted' });
     }
 
     attribute.deletedAt = null;
@@ -227,116 +288,169 @@ export class AttributesService {
   // ==================== Attribute Values ====================
 
   async createValue(attributeId: string, dto: Partial<AttributeValue>) {
-    const attribute = await this.attributeModel.findById(attributeId);
+    try {
+      const attribute = await this.attributeModel.findById(attributeId);
 
-    if (!attribute) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId, reason: 'not_found' });
-    }
-
-    if (dto.hexCode !== undefined) {
-      const normalizedHex = dto.hexCode.trim();
-      dto.hexCode = normalizedHex ? normalizedHex.toUpperCase() : undefined;
-    }
-
-    if (attribute.type === AttributeType.COLOR) {
-      if (!dto.hexCode) {
-        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'required_for_color' });
+      if (!attribute) {
+        throw new AttributeNotFoundException({ attributeId });
       }
 
-      if (!HEX_COLOR_REGEX.test(dto.hexCode)) {
-        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
+      if (dto.hexCode !== undefined) {
+        const normalizedHex = dto.hexCode.trim();
+        dto.hexCode = normalizedHex ? normalizedHex.toUpperCase() : undefined;
       }
-    } else if (dto.hexCode && !HEX_COLOR_REGEX.test(dto.hexCode)) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
+
+      if (attribute.type === AttributeType.COLOR) {
+        if (!dto.hexCode) {
+          throw new AttributeValueHexRequiredException({ attributeId, attributeType: attribute.type });
+        }
+
+        if (!HEX_COLOR_REGEX.test(dto.hexCode)) {
+          throw new AttributeValueInvalidHexException({ attributeId, hexCode: dto.hexCode });
+        }
+      } else if (dto.hexCode && !HEX_COLOR_REGEX.test(dto.hexCode)) {
+        throw new AttributeValueInvalidHexException({ attributeId, hexCode: dto.hexCode });
+      }
+
+      const slug = slugify(dto.value!);
+
+      // التحقق من عدم التكرار
+      const existing = await this.valueModel.findOne({ 
+        attributeId, 
+        slug, 
+        deletedAt: null 
+      });
+
+      if (existing) {
+        throw new AttributeValueAlreadyExistsException({ attributeId, value: dto.value, valueId: existing._id.toString() });
+      }
+
+      const value = await this.valueModel.create({
+        ...dto,
+        attributeId: new Types.ObjectId(attributeId),
+        slug,
+        usageCount: 0,
+      });
+
+      return value;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      
+      // إعادة رمي الخطأ إذا كان من نوع AttributeException
+      if (error instanceof AttributeException) {
+        throw error;
+      }
+
+      // معالجة أخطاء MongoDB
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        const mongoError = error as { keyPattern?: Record<string, unknown> };
+        const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        throw new AttributeException(ErrorCode.ATTRIBUTE_INVALID_DATA, {
+          reason: 'duplicate_field',
+          field,
+          message: `${field} موجود مسبقاً`,
+        });
+      }
+
+      throw new AttributeException(ErrorCode.ATTRIBUTE_INVALID_DATA, {
+        attributeId,
+        value: dto.value,
+        error: err.message,
+      });
     }
-
-    const slug = slugify(dto.value!);
-
-    // التحقق من عدم التكرار
-    const existing = await this.valueModel.findOne({ 
-      attributeId, 
-      slug, 
-      deletedAt: null 
-    });
-
-    if (existing) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { value: dto.value, reason: 'already_exists' });
-    }
-
-    const value = await this.valueModel.create({
-      ...dto,
-      attributeId: new Types.ObjectId(attributeId),
-      slug,
-      usageCount: 0,
-    });
-
-    return value;
   }
 
   async updateValue(id: string, patch: Partial<AttributeValue>) {
-    const value = await this.valueModel.findById(id);
+    try {
+      const value = await this.valueModel.findById(id);
 
-    if (!value) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { valueId: id, reason: 'not_found' });
-    }
-
-    if (patch.hexCode !== undefined) {
-      const normalizedHex = patch.hexCode.trim();
-      patch.hexCode = normalizedHex ? normalizedHex.toUpperCase() : undefined;
-    }
-
-    const attribute = await this.attributeModel.findById(value.attributeId);
-
-    if (!attribute) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { attributeId: value.attributeId, reason: 'not_found' });
-    }
-
-    if (attribute.type === AttributeType.COLOR) {
-      const nextHex = patch.hexCode ?? value.hexCode;
-
-      if (!nextHex) {
-        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'required_for_color' });
+      if (!value) {
+        throw new AttributeValueNotFoundException({ valueId: id });
       }
 
-      if (!HEX_COLOR_REGEX.test(nextHex)) {
-        throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
+      if (patch.hexCode !== undefined) {
+        const normalizedHex = patch.hexCode.trim();
+        patch.hexCode = normalizedHex ? normalizedHex.toUpperCase() : undefined;
       }
 
-      if (patch.hexCode) {
-        patch.hexCode = patch.hexCode.toUpperCase();
+      const attribute = await this.attributeModel.findById(value.attributeId);
+
+      if (!attribute) {
+        throw new AttributeNotFoundException({ attributeId: value.attributeId });
       }
-    } else if (patch.hexCode && !HEX_COLOR_REGEX.test(patch.hexCode)) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { field: 'hexCode', reason: 'invalid_hex' });
-    }
 
-    if (patch.value) {
-      patch.slug = slugify(patch.value);
-    }
+      if (attribute.type === AttributeType.COLOR) {
+        const nextHex = patch.hexCode ?? value.hexCode;
 
-    await this.valueModel.updateOne({ _id: id }, { $set: patch });
-    return this.valueModel.findById(id);
+        if (!nextHex) {
+          throw new AttributeValueHexRequiredException({ attributeId: value.attributeId, attributeType: attribute.type });
+        }
+
+        if (!HEX_COLOR_REGEX.test(nextHex)) {
+          throw new AttributeValueInvalidHexException({ attributeId: value.attributeId, hexCode: nextHex });
+        }
+
+        if (patch.hexCode) {
+          patch.hexCode = patch.hexCode.toUpperCase();
+        }
+      } else if (patch.hexCode && !HEX_COLOR_REGEX.test(patch.hexCode)) {
+        throw new AttributeValueInvalidHexException({ attributeId: value.attributeId, hexCode: patch.hexCode });
+      }
+
+      if (patch.value) {
+        patch.slug = slugify(patch.value);
+      }
+
+      await this.valueModel.updateOne({ _id: id }, { $set: patch });
+      return this.valueModel.findById(id);
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      
+      // إعادة رمي الخطأ إذا كان من نوع AttributeException
+      if (error instanceof AttributeException) {
+        throw error;
+      }
+
+      throw new AttributeException(ErrorCode.ATTRIBUTE_INVALID_DATA, {
+        valueId: id,
+        error: err.message,
+      });
+    }
   }
 
   async deleteValue(id: string, userId: string) {
-    const value = await this.valueModel.findById(id);
+    try {
+      const value = await this.valueModel.findById(id);
 
-    if (!value) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { valueId: id, reason: 'not_found' });
-    }
+      if (!value) {
+        throw new AttributeValueNotFoundException({ valueId: id });
+      }
 
-    if (value.usageCount > 0) {
-      throw new DomainException(ErrorCode.VALIDATION_ERROR, { 
+      if (value.usageCount > 0) {
+        throw new AttributeValueInUseException({ 
+          valueId: id,
+          usageCount: value.usageCount 
+        });
+      }
+
+      value.deletedAt = new Date();
+      value.deletedBy = userId;
+      await value.save();
+
+      return value;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      
+      // إعادة رمي الخطأ إذا كان من نوع AttributeException
+      if (error instanceof AttributeException) {
+        throw error;
+      }
+
+      throw new AttributeException(ErrorCode.ATTRIBUTE_INVALID_DATA, {
         valueId: id,
-        reason: 'in_use', 
-        usageCount: value.usageCount 
+        error: err.message,
       });
     }
-
-    value.deletedAt = new Date();
-    value.deletedBy = userId;
-    await value.save();
-
-    return value;
   }
 
   async listValues(attributeId: string) {
